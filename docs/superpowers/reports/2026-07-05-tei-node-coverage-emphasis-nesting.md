@@ -1,15 +1,16 @@
 # TEI Node Coverage Emphasis Nesting Measurement
 
 This report records the measurement requested by
-`/tmp/tei-node-coverage-gaps-report.md` before changing parser-IR `emphasis`
-from flattened text to inline children.
+`/tmp/tei-node-coverage-gaps-report.md` that motivated changing parser-IR
+`emphasis` from flattened text to inline children.
 
 ## Scope
 
-This is measurement only. It does not change the parser-IR schema and does not
-add `inline_children` yet. The purpose is to quantify how often AAT inline
-containers contain semantic inline nodes that current parser-IR `emphasis.text`
-cannot preserve.
+This is the unchanged measurement used to size the gap. The follow-up
+implementation now adds transitional parser-IR `emphasis.inline_children` while
+retaining legacy `emphasis.text`; the purpose of this report remains to
+quantify how often AAT inline containers contain semantic inline nodes that
+flat `emphasis.text` could not preserve.
 
 Measured container kinds:
 
@@ -94,30 +95,35 @@ Representative nested containers:
 
 ## Interpretation
 
-This measurement supports the schema direction in the gap report:
+This measurement supported the schema direction in the gap report and now
+serves as the evidence trail for the implemented migration:
 
-1. Parser-IR `emphasis` needs inline children. A single string field cannot
+1. Parser-IR `emphasis` needed inline children. A single string field could not
    preserve ruby, gaiji, warigaki, accent, raw, or figure nodes inside container
    contexts.
-2. The migration must be versioned. The current `text` field is still needed
+2. The migration is versioned. The current `text` field is still needed
    for legacy parser-IR documents and for consumers that have not yet adopted
    recursive inline rendering.
-3. Recursive rendering needs a depth policy. Most adapters have shallow
+3. Recursive rendering uses a depth policy. Most adapters have shallow
    container nesting, but `aozora2` currently exposes a maximum depth of 244.
-   That depth is likely a parser artifact, but the schema and renderer still
-   need an explicit recursion guard or normalization policy.
-4. Ruby preservation is the highest-value first acceptance case. It is the
+   That depth is likely a parser artifact, so producer and renderer code use a
+   recursion guard rather than treating unbounded nesting as structurally
+   trustworthy.
+4. Ruby preservation was the highest-value first acceptance case. It is the
    dominant semantic node inside containers and directly affects TEI `<ruby
    type="furigana">` output.
 
-## Next Work
+## Follow-Up Status
 
-1. Draft the parser-IR `emphasis.inline_children` schema migration with a
-   transitional shape that accepts both `text` and `inline_children`.
-2. Add renderer tests in ABC for nested `<hi>` and `<hi><ruby
-   type="furigana">...</ruby></hi>`.
-3. Add converter tests in ab-validator showing that style/font-size/yokogumi
-   containers preserve inline child nodes rather than flattening to
-   `emphasis.text`.
-4. Include a recursion-depth guard or normalizer in the implementation plan
-   before accepting deeply nested `aozora2` fixtures as-is.
+Implemented in the parser-IR emphasis inline-children migration:
+
+1. ABC parser-IR schema accepts transitional `emphasis` nodes with `text`,
+   `inline_children`, or both.
+2. ABC TEI rendering consumes `inline_children` recursively, including nested
+   `<hi>` and `<hi><ruby type="furigana">...</ruby></hi>`.
+3. ABC plaintext rendering consumes visible child text only; ruby readings and
+   metadata are not emitted.
+4. ab-validator emits `inline_children` for style/font-size/tcy/keigakomi/
+   caption/yokogumi containers while retaining legacy `text`.
+5. `just aat-to-parser-ir-full-audit 24` verified the five-parser corpus after
+   the migration: 89,169 AAT files attempted, 89,169 succeeded, 0 failed.

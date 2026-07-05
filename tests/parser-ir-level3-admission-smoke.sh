@@ -52,7 +52,7 @@ cat > "$mapping_file" <<'JSON'
   "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
   "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+  "target_parser_ir_schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-01",
@@ -178,7 +178,7 @@ cat > "$invalid_mapping_file" <<'JSON'
   "mapping_version": "0.2.3",
   "mapping_schema_hash": "",
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+  "target_parser_ir_schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
   "transform_rule_descriptions": []
 }
 JSON
@@ -214,7 +214,7 @@ jq -e '.mapping.mapping_version == "0.2.3"' "$summary_json"
 jq -e '.mapping.mapping_hash | test("^sha256:[0-9a-f]{64}$")' "$summary_json"
 jq -e '.mapping.mapping_schema_hash == "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"' "$summary_json"
 jq -e '.mapping.target_parser_ir_schema_id == "https://w3id.org/abc/schemas/parser-ir.schema.json"' "$summary_json"
-jq -e '.mapping.target_parser_ir_schema_hash == "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913"' "$summary_json"
+jq -e '.mapping.target_parser_ir_schema_hash == "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712"' "$summary_json"
 jq -e '.mapping.generated_mapping_rules == 1' "$summary_json"
 jq -e '.plain_prose_admission.rows_total == 5' "$summary_json"
 jq -e '.plain_prose_admission.rows_passed == 2' "$summary_json"

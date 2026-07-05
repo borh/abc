@@ -5,7 +5,7 @@
     "works_scanned": 17894,
     "unallowlisted_unknown_markers_total": 0
   },
-  "parser_ir_infrastructure_verdict": "LEVEL3_IR_INFRASTRUCTURE_READY",
+  "parser_ir_infrastructure_verdict": "LEVEL3_IR_INFRASTRUCTURE_BLOCKED",
   "plain_prose_admission": {
     "scope": "tei-eaj-generated-matrix plain_prose rows",
     "plaintext_policy": {
@@ -13,38 +13,43 @@
       "ruby_expanded_surfaces": "diagnostic_only",
       "metadata_policy": "exclude_typed_metadata_from_plaintext"
     },
-    "rows_total": 108,
+    "rows_total": 135,
     "rows_passed": 1,
-    "rows_failed": 107,
-    "verdict": "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY",
+    "rows_failed": 134,
+    "verdict": "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_EVIDENCE_AND_ABC_RENDERER",
     "blocking_owners": [
       "adapter",
-      "policy"
+      "policy",
+      "evidence",
+      "abc_renderer"
     ],
     "failures_by_owner": {
-      "adapter": 82,
-      "policy": 103
+      "abc_renderer": 2,
+      "adapter": 86,
+      "evidence": 2,
+      "policy": 130
     },
     "failures_by_adapter": {
+      "aozora": 27,
       "aozora-epub3": 27,
       "aozora-rs": 27,
       "aozora2": 26,
       "aozora2html": 27
     },
     "text_policy_buckets": {
-      "base_drop_parentheticals_equal": 15,
       "base_equal": 5,
-      "different": 42,
+      "different": 66,
       "ruby_expanded_equal": 4,
-      "ruby_expanded_parenless_equal": 37,
-      "ruby_expanded_parenless_generated_contains_tei_eaj": 4,
+      "ruby_expanded_parenless_equal": 54,
+      "ruby_expanded_parenless_generated_contains_tei_eaj": 5,
       "ruby_expanded_parenless_tei_eaj_contains_generated": 1
     },
     "paragraph_origin_buckets": {
-      "adapter_collapsed": 6,
+      "adapter_collapsed": 10,
       "adapter_over_segmented": 75,
       "adapter_under_segmented": 1,
-      "aligned": 26
+      "aligned": 47,
+      "empty_body_paragraph_range": 2
     },
     "failed_rows": [
       {
@@ -112,6 +117,21 @@
         ]
       },
       {
+        "work_id": "15099",
+        "title": "長崎小品",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
+        ]
+      },
+      {
         "work_id": "15938",
         "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
         "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
@@ -180,6 +200,25 @@
         ]
       },
       {
+        "work_id": "15938",
+        "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "abc_renderer",
+          "evidence",
+          "policy"
+        ],
+        "reasons": [
+          "materialization did not pass",
+          "unknown paragraph origin: empty_body_paragraph_range",
+          "text policy required for different"
+        ]
+      },
+      {
         "work_id": "236",
         "title": "ア、秋",
         "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
@@ -243,6 +282,21 @@
         ],
         "reasons": [
           "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "236",
+        "title": "ア、秋",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -297,6 +351,23 @@
         "title": "天災と国防",
         "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
         "adapter": "aozora2",
+        "paragraph_origin_bucket": "adapter_collapsed",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "reasons": [
+          "paragraph origin is adapter_collapsed",
+          "text policy required for different"
+        ]
+      },
+      {
+        "work_id": "2509",
+        "title": "天災と国防",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+        "adapter": "aozora",
         "paragraph_origin_bucket": "adapter_collapsed",
         "body_text_match_bucket": "different",
         "passed": false,
@@ -378,6 +449,23 @@
         ]
       },
       {
+        "work_id": "43077",
+        "title": "地震雑感",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "adapter_collapsed",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "reasons": [
+          "paragraph origin is adapter_collapsed",
+          "text policy required for different"
+        ]
+      },
+      {
         "work_id": "45093",
         "title": "乳母車",
         "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
@@ -446,6 +534,25 @@
         ]
       },
       {
+        "work_id": "45093",
+        "title": "乳母車",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "abc_renderer",
+          "evidence",
+          "policy"
+        ],
+        "reasons": [
+          "materialization did not pass",
+          "unknown paragraph origin: empty_body_paragraph_range",
+          "text policy required for different"
+        ]
+      },
+      {
         "work_id": "4872",
         "title": "愛読書の印象",
         "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
@@ -510,6 +617,23 @@
         ]
       },
       {
+        "work_id": "4872",
+        "title": "愛読書の印象",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "adapter_collapsed",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "reasons": [
+          "paragraph origin is adapter_collapsed",
+          "text policy required for different"
+        ]
+      },
+      {
         "work_id": "53386",
         "title": "〔月光の鉛のなかに〕",
         "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
@@ -572,6 +696,21 @@
         ]
       },
       {
+        "work_id": "53386",
+        "title": "〔月光の鉛のなかに〕",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
+        ]
+      },
+      {
         "work_id": "56996",
         "title": "書簡 山田邦子宛",
         "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
@@ -626,7 +765,7 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "adapter_over_segmented",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "adapter",
@@ -634,7 +773,22 @@
         ],
         "reasons": [
           "paragraph origin is adapter_over_segmented",
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "56996",
+        "title": "書簡 山田邦子宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -694,13 +848,28 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/56998_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "policy"
         ],
         "reasons": [
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "56998",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/56998_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -759,6 +928,23 @@
         "title": "書簡 大杉栄宛",
         "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
         "adapter": "aozora2",
+        "paragraph_origin_bucket": "adapter_collapsed",
+        "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
+        "passed": false,
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "reasons": [
+          "paragraph origin is adapter_collapsed",
+          "text policy required for ruby_expanded_parenless_generated_contains_tei_eaj"
+        ]
+      },
+      {
+        "work_id": "56999",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
+        "adapter": "aozora",
         "paragraph_origin_bucket": "adapter_collapsed",
         "body_text_match_bucket": "different",
         "passed": false,
@@ -828,13 +1014,28 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57001_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "policy"
         ],
         "reasons": [
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57001",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57001_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -885,6 +1086,21 @@
         ]
       },
       {
+        "work_id": "57002",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57002_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
+        ]
+      },
+      {
         "work_id": "57003",
         "title": "書簡 大杉栄宛",
         "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
@@ -941,13 +1157,28 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "policy"
         ],
         "reasons": [
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57003",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -1007,13 +1238,28 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "policy"
         ],
         "reasons": [
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57004",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -1073,13 +1319,28 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57005_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "policy"
         ],
         "reasons": [
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57005",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57005_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -1138,6 +1399,21 @@
         "title": "書簡 大杉栄宛",
         "tei_eaj_file": "data/complete/tei_lib_lv3/57006_tei.xml",
         "adapter": "aozora2",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57006",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57006_tei.xml",
+        "adapter": "aozora",
         "paragraph_origin_bucket": "aligned",
         "body_text_match_bucket": "different",
         "passed": false,
@@ -1205,6 +1481,21 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57037_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57037",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57037_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
         "body_text_match_bucket": "different",
         "passed": false,
         "owners": [
@@ -1220,7 +1511,7 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
         "adapter": "aozora2html",
         "paragraph_origin_bucket": "adapter_over_segmented",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "adapter",
@@ -1228,7 +1519,7 @@
         ],
         "reasons": [
           "paragraph origin is adapter_over_segmented",
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
         ]
       },
       {
@@ -1254,7 +1545,7 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
         "adapter": "aozora-rs",
         "paragraph_origin_bucket": "adapter_over_segmented",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "adapter",
@@ -1262,7 +1553,7 @@
         ],
         "reasons": [
           "paragraph origin is adapter_over_segmented",
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
         ]
       },
       {
@@ -1271,13 +1562,28 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "policy"
         ],
         "reasons": [
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57038",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -1337,13 +1643,28 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57039_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "policy"
         ],
         "reasons": [
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57039",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57039_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -1403,13 +1724,28 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57040_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "policy"
         ],
         "reasons": [
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57040",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57040_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -1469,13 +1805,28 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57041_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "policy"
         ],
         "reasons": [
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57041",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57041_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -1535,13 +1886,28 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57042_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "policy"
         ],
         "reasons": [
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57042",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57042_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -1600,6 +1966,21 @@
         "title": "書簡 大杉栄宛",
         "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
         "adapter": "aozora2",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
+        ]
+      },
+      {
+        "work_id": "57043",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
+        "adapter": "aozora",
         "paragraph_origin_bucket": "aligned",
         "body_text_match_bucket": "different",
         "passed": false,
@@ -1677,6 +2058,21 @@
         ]
       },
       {
+        "work_id": "57044",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
+        ]
+      },
+      {
         "work_id": "57046",
         "title": "書簡 木村荘太宛",
         "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
@@ -1731,7 +2127,7 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "adapter_over_segmented",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "adapter",
@@ -1739,7 +2135,22 @@
         ],
         "reasons": [
           "paragraph origin is adapter_over_segmented",
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57046",
+        "title": "書簡 木村荘太宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       },
       {
@@ -1797,7 +2208,7 @@
         "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "adapter_over_segmented",
-        "body_text_match_bucket": "base_drop_parentheticals_equal",
+        "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
           "adapter",
@@ -1805,34 +2216,49 @@
         ],
         "reasons": [
           "paragraph origin is adapter_over_segmented",
-          "text policy required for base_drop_parentheticals_equal"
+          "text policy required for ruby_expanded_parenless_equal"
+        ]
+      },
+      {
+        "work_id": "57047",
+        "title": "書簡 武部ツタ宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
+        "adapter": "aozora",
+        "paragraph_origin_bucket": "aligned",
+        "body_text_match_bucket": "different",
+        "passed": false,
+        "owners": [
+          "policy"
+        ],
+        "reasons": [
+          "text policy required for different"
         ]
       }
     ]
   },
   "profile_lanes": {
     "drama": {
-      "rows": 34,
+      "rows": 50,
       "verdict": "LANE_POLICY_REQUIRED"
     },
     "front_back_matter": {
-      "rows": 8,
+      "rows": 10,
       "verdict": "LANE_POLICY_REQUIRED"
     },
     "lv4_enrichment": {
-      "rows": 37,
+      "rows": 45,
       "verdict": "LANE_OUT_OF_SCOPE_FOR_LEVEL3"
     },
     "notes": {
-      "rows": 27,
+      "rows": 35,
       "verdict": "LANE_POLICY_REQUIRED"
     },
     "plain_prose": {
-      "rows": 108,
+      "rows": 135,
       "verdict": "LANE_READY_FOR_GATE_IMPLEMENTATION"
     },
     "verse": {
-      "rows": 6,
+      "rows": 10,
       "verdict": "LANE_POLICY_REQUIRED"
     }
   },
@@ -1867,17 +2293,17 @@
   "mapping": {
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
     "mapping_version": "0.2.3",
-    "mapping_hash": "sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b",
+    "mapping_hash": "sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf",
     "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
     "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-    "target_parser_ir_schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+    "target_parser_ir_schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
     "generated_mapping_rules": 714
   },
   "inputs": {
     "workset": "/home/bor/Projects/ab-validator/../abc/docs/handoffs/tei-eaj-aozora-workset-export.json",
     "structural_summary": "/home/bor/Projects/ab-validator/docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json",
     "mapping": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json",
-    "abc_root": "/home/bor/Projects/ab-validator/../abc",
+    "abc_root": "/home/bor/Projects/abc",
     "adapter_preference": [
       "aozora2html",
       "aozora-epub3",
@@ -1886,6 +2312,7 @@
       "aozora"
     ],
     "candidate_mode": "all",
+    "jobs": 24,
     "max_rows": 0,
     "tei_eaj_file_filter": []
   }

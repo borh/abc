@@ -4,10 +4,10 @@
   :aat_adapter_version "aozora-adapter 0.1.0 aozora 0.4.1"
   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
   :mapping_version "0.2.3"
-  :mapping_hash "sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b"
+  :mapping_hash "sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf"
   :mapping_schema_hash "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-  :parser_ir_schema_hash "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913"
+  :parser_ir_schema_hash "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712"
   :evidence_scope {:evidence_type :conversion-audit
                    :adapter "aozora"
                    :adapter_version "aozora-adapter 0.1.0 aozora 0.4.1"
@@ -16,8 +16,8 @@
                    :files_succeeded 17886
                    :files_failed 0
                    :parser_ir_nodes 988246
-                   :divergence_records 161319
-                   :divergence_occurrences 5100160
+                   :divergence_records 161252
+                   :divergence_occurrences 5100075
                    :rules_total 714
                    :rules_emitted 16
                    :rules_missing 698
@@ -28,10 +28,10 @@
   :aat_adapter_version "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21"
   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
   :mapping_version "0.2.3"
-  :mapping_hash "sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b"
+  :mapping_hash "sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf"
   :mapping_schema_hash "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-  :parser_ir_schema_hash "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913"
+  :parser_ir_schema_hash "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712"
   :evidence_scope {:evidence_type :conversion-audit
                    :adapter "aozora-epub3"
                    :adapter_version "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21"
@@ -52,10 +52,10 @@
   :aat_adapter_version "aozora-rs-adapter 0.1.0 2b4e8d1"
   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
   :mapping_version "0.2.3"
-  :mapping_hash "sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b"
+  :mapping_hash "sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf"
   :mapping_schema_hash "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-  :parser_ir_schema_hash "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913"
+  :parser_ir_schema_hash "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712"
   :evidence_scope {:evidence_type :conversion-audit
                    :adapter "aozora-rs"
                    :adapter_version "aozora-rs-adapter 0.1.0 2b4e8d1"
@@ -64,11 +64,11 @@
                    :files_succeeded 17894
                    :files_failed 0
                    :parser_ir_nodes 7821839
-                   :divergence_records 217665
-                   :divergence_occurrences 11926731
+                   :divergence_records 212023
+                   :divergence_occurrences 11870545
                    :rules_total 714
-                   :rules_emitted 25
-                   :rules_missing 689
+                   :rules_emitted 24
+                   :rules_missing 690
                    :unsupported_occurrences 0}
   :compatibility "lossy"}
 {:aat_version 1
@@ -76,10 +76,10 @@
   :aat_adapter_version "aozora2-adapter 0.1.0 aozora-core-0.7.1"
   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
   :mapping_version "0.2.3"
-  :mapping_hash "sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b"
+  :mapping_hash "sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf"
   :mapping_schema_hash "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-  :parser_ir_schema_hash "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913"
+  :parser_ir_schema_hash "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712"
   :evidence_scope {:evidence_type :conversion-audit
                    :adapter "aozora2"
                    :adapter_version "aozora2-adapter 0.1.0 aozora-core-0.7.1"
@@ -88,11 +88,11 @@
                    :files_succeeded 17856
                    :files_failed 0
                    :parser_ir_nodes 5618304
-                   :divergence_records 227302
-                   :divergence_occurrences 11937470
+                   :divergence_records 224161
+                   :divergence_occurrences 11911099
                    :rules_total 714
-                   :rules_emitted 670
-                   :rules_missing 44
+                   :rules_emitted 671
+                   :rules_missing 43
                    :unsupported_occurrences 81154}
   :compatibility "lossy"}
 {:aat_version 1
@@ -100,10 +100,10 @@
   :aat_adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1"
   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
   :mapping_version "0.2.3"
-  :mapping_hash "sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b"
+  :mapping_hash "sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf"
   :mapping_schema_hash "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-  :parser_ir_schema_hash "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913"
+  :parser_ir_schema_hash "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712"
   :evidence_scope {:evidence_type :conversion-audit
                    :adapter "aozora2html"
                    :adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1"
@@ -112,8 +112,8 @@
                    :files_succeeded 17689
                    :files_failed 0
                    :parser_ir_nodes 8330573
-                   :divergence_records 240212
-                   :divergence_occurrences 11980288
+                   :divergence_records 239910
+                   :divergence_occurrences 11977591
                    :rules_total 714
                    :rules_emitted 112
                    :rules_missing 602

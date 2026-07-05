@@ -170,9 +170,14 @@ The incorporated backlog is:
 
 ## Next Work
 
-1. Commit the raw/accent/yokogumi conversion recovery slice after verification.
-2. Start the emphasis inline-children measurement/schema plan; it is the
-   highest-leverage remaining Parser IR gap by occurrence count.
-3. Prepare the accent taxonomy measurement as the next semantic recovery step;
+1. Treat the emphasis inline-children migration as closed by
+   `docs/superpowers/reports/2026-07-05-tei-node-coverage-emphasis-nesting.md`:
+   the five-parser audit now converts 89,169 AAT files with 0 failures while
+   preserving nested ruby/emphasis structure in parser-IR.
+2. Prepare the accent taxonomy measurement as the next semantic recovery step;
    conversion no longer fails, but the current `style = code` projection is a
    measured compatibility bridge, not the final TEI vocabulary.
+3. Add first-class `warigaki`, `raw-source`, and gaiji resolved-value schema
+   deltas before claiming full generated TEI Level 2/3 coverage. The `/tmp`
+   node-coverage gap report is the active backlog source for those remaining
+   parser-IR representability gaps.

@@ -35,21 +35,21 @@
   "mapping": {
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
     "mapping_version": "0.2.3",
-    "mapping_hash": "sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b",
+    "mapping_hash": "sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf",
     "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
-    "target_parser_ir_schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+    "target_parser_ir_schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
     "generated_mapping_rules": 714
   },
   "plain_prose_scope": {
-    "rows_total": 113,
+    "rows_total": 140,
     "works_total": 32
   },
   "classification_counts": {
-    "adapter_paragraph_bug": 82,
+    "adapter_paragraph_bug": 86,
     "evidence_gap": 5,
-    "ruby_metadata_not_plaintext": 46,
-    "source_note_metadata_excluded": 15,
-    "source_text_policy_required": 42
+    "ruby_metadata_not_plaintext": 64,
+    "source_text_policy_required": 66,
+    "tei_eaj_editorial_segmentation": 2
   },
   "blocking_owners": [
     "adapter",
@@ -57,9 +57,9 @@
     "policy"
   ],
   "blocking_owner_counts": {
-    "adapter": 82,
+    "adapter": 86,
     "evidence": 5,
-    "policy": 103
+    "policy": 130
   },
   "rows": [
     {
@@ -161,6 +161,29 @@
       ]
     },
     {
+      "work_id": "15099",
+      "title": "長崎小品",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
+      ]
+    },
+    {
       "work_id": "15938",
       "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
       "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
@@ -265,6 +288,31 @@
       ]
     },
     {
+      "work_id": "15938",
+      "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "empty_body_paragraph_range",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "tei_eaj_editorial_segmentation",
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "failed"
+      },
+      "reasons": [
+        "paragraph segmentation requires profile policy: empty_body_paragraph_range",
+        "text policy required for different"
+      ]
+    },
+    {
       "work_id": "236",
       "title": "ア、秋",
       "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
@@ -363,6 +411,29 @@
       },
       "reasons": [
         "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "236",
+      "title": "ア、秋",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -444,6 +515,32 @@
       "level": null,
       "state": null,
       "adapter": "aozora2",
+      "paragraph_origin_bucket": "adapter_collapsed",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "adapter_paragraph_bug",
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "adapter",
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "paragraph origin is adapter_collapsed",
+        "text policy required for different"
+      ]
+    },
+    {
+      "work_id": "2509",
+      "title": "天災と国防",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
       "paragraph_origin_bucket": "adapter_collapsed",
       "body_text_match_bucket": "different",
       "classifications": [
@@ -568,6 +665,32 @@
       ]
     },
     {
+      "work_id": "43077",
+      "title": "地震雑感",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "adapter_collapsed",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "adapter_paragraph_bug",
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "adapter",
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "paragraph origin is adapter_collapsed",
+        "text policy required for different"
+      ]
+    },
+    {
       "work_id": "45093",
       "title": "乳母車",
       "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
@@ -672,6 +795,31 @@
       ]
     },
     {
+      "work_id": "45093",
+      "title": "乳母車",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "empty_body_paragraph_range",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "tei_eaj_editorial_segmentation",
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "failed"
+      },
+      "reasons": [
+        "paragraph segmentation requires profile policy: empty_body_paragraph_range",
+        "text policy required for different"
+      ]
+    },
+    {
       "work_id": "4872",
       "title": "愛読書の印象",
       "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
@@ -767,6 +915,32 @@
       "reasons": [
         "paragraph origin is adapter_collapsed",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "4872",
+      "title": "愛読書の印象",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "adapter_collapsed",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "adapter_paragraph_bug",
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "adapter",
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "paragraph origin is adapter_collapsed",
+        "text policy required for different"
       ]
     },
     {
@@ -865,6 +1039,29 @@
       ]
     },
     {
+      "work_id": "53386",
+      "title": "〔月光の鉛のなかに〕",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
+      ]
+    },
+    {
       "work_id": "56996",
       "title": "書簡 山田邦子宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
@@ -947,10 +1144,10 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "adapter_over_segmented",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
         "adapter_paragraph_bug",
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
@@ -962,7 +1159,30 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "56996",
+      "title": "書簡 山田邦子宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -1051,9 +1271,9 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "policy"
@@ -1063,7 +1283,30 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "56998",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/56998_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -1151,6 +1394,32 @@
       "level": null,
       "state": null,
       "adapter": "aozora2",
+      "paragraph_origin_bucket": "adapter_collapsed",
+      "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
+      "classifications": [
+        "adapter_paragraph_bug",
+        "ruby_metadata_not_plaintext"
+      ],
+      "blocking_owners": [
+        "adapter",
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "paragraph origin is adapter_collapsed",
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "56999",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
       "paragraph_origin_bucket": "adapter_collapsed",
       "body_text_match_bucket": "different",
       "classifications": [
@@ -1256,9 +1525,9 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "policy"
@@ -1268,7 +1537,30 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57001",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57001_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -1361,6 +1653,29 @@
       "reasons": []
     },
     {
+      "work_id": "57002",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57002_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
+      ]
+    },
+    {
       "work_id": "57003",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
@@ -1446,9 +1761,9 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "policy"
@@ -1458,7 +1773,30 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57003",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -1547,9 +1885,9 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "policy"
@@ -1559,7 +1897,30 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57004",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -1648,9 +2009,9 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "policy"
@@ -1660,7 +2021,30 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57005",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57005_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -1748,6 +2132,29 @@
       "level": null,
       "state": null,
       "adapter": "aozora2",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
+      "classifications": [
+        "ruby_metadata_not_plaintext"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57006",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57006_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
       "classifications": [
@@ -1850,6 +2257,29 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
+      "classifications": [
+        "ruby_metadata_not_plaintext"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57037",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57037_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
       "classifications": [
         "source_text_policy_required"
@@ -1873,10 +2303,10 @@
       "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
         "adapter_paragraph_bug",
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
@@ -1888,7 +2318,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
     },
     {
@@ -1925,10 +2355,10 @@
       "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
         "adapter_paragraph_bug",
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
@@ -1940,7 +2370,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
     },
     {
@@ -1951,9 +2381,9 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "policy"
@@ -1963,7 +2393,30 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57038",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -2052,9 +2505,9 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "policy"
@@ -2064,7 +2517,30 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57039",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57039_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -2153,9 +2629,9 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "policy"
@@ -2165,7 +2641,30 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57040",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57040_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -2254,9 +2753,9 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "policy"
@@ -2266,7 +2765,30 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57041",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57041_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -2355,9 +2877,9 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "policy"
@@ -2367,7 +2889,30 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57042",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57042_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -2455,6 +3000,29 @@
       "level": null,
       "state": null,
       "adapter": "aozora2",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
+      ]
+    },
+    {
+      "work_id": "57043",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
       "classifications": [
@@ -2573,6 +3141,29 @@
       ]
     },
     {
+      "work_id": "57044",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
+      ]
+    },
+    {
       "work_id": "57046",
       "title": "書簡 木村荘太宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
@@ -2655,10 +3246,10 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "adapter_over_segmented",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
         "adapter_paragraph_bug",
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
@@ -2670,7 +3261,30 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57046",
+      "title": "書簡 木村荘太宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {
@@ -2756,10 +3370,10 @@
       "state": null,
       "adapter": "aozora2",
       "paragraph_origin_bucket": "adapter_over_segmented",
-      "body_text_match_bucket": "base_drop_parentheticals_equal",
+      "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
         "adapter_paragraph_bug",
-        "source_note_metadata_excluded"
+        "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
@@ -2771,7 +3385,30 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "source-note or parenthetical source attribution belongs outside body plaintext"
+        "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": "57047",
+      "title": "書簡 武部ツタ宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
+      "level": null,
+      "state": null,
+      "adapter": "aozora",
+      "paragraph_origin_bucket": "aligned",
+      "body_text_match_bucket": "different",
+      "classifications": [
+        "source_text_policy_required"
+      ],
+      "blocking_owners": [
+        "policy"
+      ],
+      "evidence": {
+        "missing_required_parsers_for_row": [],
+        "materialization_status": "passed"
+      },
+      "reasons": [
+        "text policy required for different"
       ]
     },
     {

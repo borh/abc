@@ -72,7 +72,7 @@ fn legacy_schema_hashes_match_mapping_artifact() {
     );
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913"
+        "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712"
     );
 }
 
@@ -682,6 +682,11 @@ fn recovers_accent_and_inline_yokogumi_without_fatal_conversion() {
             "type": "emphasis",
             "span": {"start": 2, "end": 5, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
             "text": "ABC",
+            "inline_children": [{
+                "type": "text",
+                "span": {"start": 2, "end": 5, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
+                "text": "ABC"
+            }],
             "style": "yokogumi",
         }))
     );
@@ -1084,6 +1089,229 @@ fn measured_policy_projects_style_heading_warning_and_warigaki() {
             .any(|record| record["parser_ir_pointer"] == "warnings[].span.line")
     );
 
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn preserves_ruby_inside_emphasis_inline_children() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "emphasis-inline-children",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:9393939393939393939393939393939393939393939393939393939393939393",
+        ),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [{
+                "kind": "style",
+                "style_type": "bold",
+                "content": [
+                    {"kind": "text", "value": "前"},
+                    {"kind": "ruby", "base": "東京", "reading": "とうきょう", "direction": "right"},
+                    {"kind": "text", "value": "後"}
+                ]
+            }]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/type"),
+        Some(&json!("emphasis"))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/text"),
+        Some(&json!("前東京後"))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/inline_children/0/text"),
+        Some(&json!("前"))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/inline_children/1/ruby/reading"),
+        Some(&json!("とうきょう"))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/inline_children/2/text"),
+        Some(&json!("後"))
+    );
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn preserves_gaiji_inside_emphasis_inline_children() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "emphasis-inline-gaiji",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+        ),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [{
+                "kind": "style",
+                "style_type": "bold",
+                "content": [
+                    {"kind": "text", "value": "前"},
+                    {
+                        "kind": "gaiji",
+                        "description": "gaiji-G",
+                        "resolved": "G",
+                        "jis_code": null,
+                        "unresolved_reason": null
+                    },
+                    {"kind": "text", "value": "後"}
+                ]
+            }]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/text"),
+        Some(&json!("前G後"))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/inline_children/1/gaiji/unicode"),
+        Some(&json!("G"))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/inline_children/1/gaiji/raw_marker"),
+        Some(&json!("gaiji-G"))
+    );
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn preserves_nested_inline_container_children() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "nested-inline-container",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:9494949494949494949494949494949494949494949494949494949494949494",
+        ),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [{
+                "kind": "style",
+                "style_type": "outer",
+                "content": [{
+                    "kind": "tcy",
+                    "content": [
+                        {"kind": "text", "value": "12"}
+                    ]
+                }]
+            }]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/style"),
+        Some(&json!("outer"))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/text"),
+        Some(&json!("12"))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/inline_children/0/style"),
+        Some(&json!("tcy"))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/inline_children/0/inline_children/0/text"),
+        Some(&json!("12"))
+    );
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn inline_children_depth_limit_records_warning() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let mut nested = json!({"kind": "text", "value": "深"});
+    for _ in 0..65 {
+        nested = json!({
+            "kind": "style",
+            "style_type": "nested",
+            "content": [nested]
+        });
+    }
+    let aat = json!({
+        "version": 1,
+        "work_id": "inline-depth-warning",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2",
+        ),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [nested]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/type"),
+        Some(&json!("emphasis"))
+    );
+    let warnings = output
+        .parser_ir
+        .pointer("/warnings")
+        .and_then(Value::as_array)
+        .expect("warnings array");
+    assert!(
+        warnings.iter().any(|warning| {
+            warning["message"]
+                .as_str()
+                .is_some_and(|message| message.contains("inline_children depth limit"))
+                && warning["message"]
+                    .as_str()
+                    .is_some_and(|message| message.contains("blocks[0].content[0]"))
+        }),
+        "expected inline_children depth warning, got {warnings:?}"
+    );
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 

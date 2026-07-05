@@ -15,15 +15,42 @@
     (update acc :current-division conj node)
     (update acc :body-children conj node)))
 
+(defn- layout-rend [layout]
+  (case (get layout "kind")
+    "jisage" (when-some [indent (get layout "indent")]
+               (str "jisage indent(" indent ")"))
+    "burasage" (let [first-line (get layout "first_line_indent")
+                     continuation (get layout "continuation_indent")]
+                 (when (and (some? first-line) (some? continuation))
+                   (str "burasage first(" first-line ") rest(" continuation ")")))
+    "chitsuki" (let [align (get layout "align")
+                     offset (get layout "offset_from_end")]
+                 (when (and align (some? offset))
+                   (str "chitsuki align(" align ") offset-from-end(" offset ")")))
+    "jizume" (when-some [width (get layout "width")]
+               (str "jizume width(" width ")"))
+    "line-jisage" (when-some [indent (get layout "indent")]
+                    (str "line-jisage indent(" indent ")"))
+    nil))
+
+(defn- paragraph-attrs [paragraph]
+  (when-let [rend (some-> (get paragraph "layout") layout-rend)]
+    {:rend rend}))
+
 (defn- source-note-hiccup [node]
   [:note {:type (get node "note_type")}
    (get node "text")])
 
 (defn- flush-paragraph [acc]
   (if (seq (:current-paragraph acc))
-    (assoc (append-structural-child acc (into [:p] (:current-paragraph acc)))
-           :current-paragraph [])
-    acc))
+    (let [paragraph-node (into (cond-> [:p]
+                                 (:current-paragraph-attrs acc)
+                                 (conj (:current-paragraph-attrs acc)))
+                               (:current-paragraph acc))]
+      (assoc (append-structural-child acc paragraph-node)
+             :current-paragraph []
+             :current-paragraph-attrs nil))
+    (assoc acc :current-paragraph-attrs nil)))
 
 (defn- flush-division [acc]
   (if (seq (:current-division acc))
@@ -175,6 +202,7 @@
   {:body-children []
    :current-division []
    :current-paragraph []
+   :current-paragraph-attrs nil
    :front-notes []
    :back-notes []
    :char_declarations []
@@ -234,6 +262,7 @@
         node-slice (subvec nodes start end)]
     (case (get paragraph "role")
       "body" (-> acc
+                 (assoc :current-paragraph-attrs (paragraph-attrs paragraph))
                  (render-node-seq node-slice)
                  flush-paragraph)
       "source-note" (-> acc
@@ -241,6 +270,7 @@
                         (render-node-seq node-slice)
                         flush-paragraph)
       (-> acc
+          (assoc :current-paragraph-attrs (paragraph-attrs paragraph))
           (render-node-seq node-slice)
           flush-paragraph))))
 

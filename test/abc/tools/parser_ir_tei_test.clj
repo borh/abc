@@ -112,6 +112,47 @@
              (:node_counts result)))
       (is (empty? (:omitted result))))))
 
+(deftest paragraph-layout-renders-as-tei-rend-test
+  (testing "paragraph layout metadata is projected to TEI p@rend"
+    (let [parser-ir {"nodes" [{"type" "text"
+                               "span" {"start" 0 "end" 6}
+                               "text" "台詞"}
+                              {"type" "text"
+                               "span" {"start" 6 "end" 36}
+                               "text" "（大正十一年十二月）"}]
+                     "paragraphs" [{"id" "p000000"
+                                    "span" {"start" 0 "end" 6
+                                            "coordinate_system" "decoded_utf8"}
+                                    "span_source" "direct"
+                                    "node_range" {"start" 0 "end" 1}
+                                    "role" "body"
+                                    "source_pointer" "blocks[0]"
+                                    "classification" "direct"
+                                    "layout" {"kind" "burasage"
+                                              "first_line_indent" 0
+                                              "continuation_indent" 1
+                                              "source" "aat-style"}}
+                                   {"id" "p000001"
+                                    "span" {"start" 6 "end" 36
+                                            "coordinate_system" "decoded_utf8"}
+                                    "span_source" "direct"
+                                    "node_range" {"start" 1 "end" 2}
+                                    "role" "body"
+                                    "source_pointer" "blocks[1]"
+                                    "classification" "direct"
+                                    "layout" {"kind" "chitsuki"
+                                              "align" "right"
+                                              "offset_from_end" 1
+                                              "source" "aat-style"}}]}
+          result (parser-ir-tei/render parser-ir)]
+      (is (= [:text
+              [:body
+               [:p {:rend "burasage first(0) rest(1)"} "台詞"]
+               [:p {:rend "chitsuki align(right) offset-from-end(1)"} "（大正十一年十二月）"]]]
+             (:body result)))
+      (is (= {"text" 2} (:node_counts result)))
+      (is (empty? (:omitted result))))))
+
 (deftest gaiji-reference-declaration-contract-test
   (testing "fixture gaiji.reference is preserved as ref and charDecl id"
     (let [result (parser-ir-tei/render

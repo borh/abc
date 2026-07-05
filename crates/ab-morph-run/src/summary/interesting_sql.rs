@@ -16,11 +16,15 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
-use arrow_array::{Array, Float64Array, RecordBatch, StringArray, UInt64Array};
+use arrow_array::{Array, BooleanArray, Float64Array, RecordBatch, StringArray, UInt64Array};
+use arrow_schema::{DataType, Field, Schema};
+use parquet::arrow::ArrowWriter;
+use parquet::basic::{Compression, ZstdLevel};
+use parquet::file::properties::WriterProperties;
 
 use super::interesting::{
-    AnomalyRow, InterestingTextFilter, PatternKind, PatternStats, RarityConfig, RegionExampleOut,
-    SqlSignature, WarehouseInterestingOptions,
+    AnomalyRow, InterestingTextFilter, PatternAccumulator, PatternKind, PatternStats,
+    RarityConfig, RegionExampleOut, RegionOccurrence, SqlSignature, WarehouseInterestingOptions,
 };
 use super::pattern_id::pattern_id;
 use super::summary_body::{
@@ -37,18 +41,9 @@ use crate::warehouse::schema::WarehouseTable;
 /// `char::is_whitespace` accepts but RE2's `\s` does not.
 const PUNCT_ONLY_REGEX: &str = "^[\\p{P}\\p{Z}\\s\u{000B}\u{0085}]*$";
 
-/// Composite-key separator for feature-signature exclusion literals.
-const FIELD_SEP: char = '\u{1f}';
-
 #[derive(serde::Deserialize)]
 struct JsonSurfaceGroup {
     surfaces: Vec<String>,
-    analyzers: Vec<String>,
-}
-
-#[derive(serde::Deserialize)]
-struct JsonValueGroup {
-    value: Option<String>,
     analyzers: Vec<String>,
 }
 
@@ -276,31 +271,6 @@ region_sig AS (
     )
 }
 
-/// `feature_groups` CTE: one canonical value-group signature per
-/// `(region, feature_key, scope)` group.
-fn feature_groups_cte(features: &str, feature_key_predicate: &str) -> String {
-    format!(
-        r"per_value AS (
-    SELECT f.source_id, f.text_id, f.region_index, f.feature_key,
-           f.scope_type, f.scope_position, f.scope_surface, f.feature_value,
-           list_sort(list(DISTINCT f.analyzer_id)) AS analyzers
-    FROM read_parquet({features}) f
-    JOIN (SELECT source_id, text_id, region_index FROM base_regions
-          WHERE has_feature_disagreement) b USING (source_id, text_id, region_index)
-    WHERE {feature_key_predicate}
-    GROUP BY f.source_id, f.text_id, f.region_index, f.feature_key,
-             f.scope_type, f.scope_position, f.scope_surface, f.feature_value
-),
-feature_groups AS (
-    SELECT source_id, text_id, region_index, feature_key, scope_type, scope_position, scope_surface,
-           CAST(to_json(list_sort(list(struct_pack(value := feature_value, analyzers := analyzers)))) AS VARCHAR) AS sig,
-           count(*) AS value_count
-    FROM per_value
-    GROUP BY source_id, text_id, region_index, feature_key, scope_type, scope_position, scope_surface
-)"
-    )
-}
-
 fn feature_key_in_predicate(keys: &[String]) -> String {
     let list = keys
         .iter()
@@ -399,8 +369,14 @@ kind_source AS (
     )
 }
 
+/// Stage query for the feature kind: dedupe to one row per
+/// `(region, feature_key, scope, value)` with a fixed-size per-analyzer
+/// `bool_or` pivot, externally sorted so Rust can stream contiguous
+/// groups. Grouped `list(...)`/ordered aggregates cannot spill in DuckDB
+/// and OOM'd on the full corpus (~162M feature regions); `bool_or` states
+/// and `ORDER BY` both go to disk cleanly.
 #[allow(clippy::too_many_arguments)]
-fn feature_query(
+fn feature_stage_query(
     regions: &str,
     analyzers: &str,
     features: &str,
@@ -408,32 +384,35 @@ fn feature_query(
     feature_predicate: &str,
     works_join: &str,
     rarity_key: &str,
-    max_region_examples: usize,
+    analyzer_ids: &[String],
 ) -> String {
     let base = base_regions_cte(regions, analyzers, filter, "r.has_feature_disagreement");
-    let groups = feature_groups_cte(features, feature_predicate);
-    let rollup = pattern_rollup_sql(
-        "feature_source",
-        "feature_key, scope_type, scope_position, scope_surface, sig",
-        "pattern_key",
-        max_region_examples,
-    );
+    let analyzer_flags = analyzer_ids
+        .iter()
+        .enumerate()
+        .map(|(index, analyzer_id)| {
+            format!(
+                "bool_or(f.analyzer_id = {}) AS analyzer_{index}",
+                sql_literal(analyzer_id)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",\n       ");
     format!(
-        r"WITH {base},
-{groups},
-feature_source AS (
-    SELECT g.feature_key, g.scope_type, g.scope_position, g.scope_surface, g.sig,
-           g.feature_key || chr(31) || g.scope_type || chr(31) ||
-               coalesce(CAST(g.scope_position AS VARCHAR), '') || chr(31) ||
-               coalesce(g.scope_surface, '') || chr(31) || g.sig AS pattern_key,
-           b.source_id, b.text_id, b.region_index, b.char_start, b.char_end,
-           b.has_coverage_mismatch, {rarity_key} AS rarity_key
-    FROM feature_groups g
-    JOIN base_regions b USING (source_id, text_id, region_index)
-    {works_join}
-    WHERE g.value_count > 1
-),
-{rollup}"
+        r"WITH {base}
+SELECT f.feature_key, f.scope_type, f.scope_position, f.scope_surface,
+       f.source_id, f.text_id, f.region_index,
+       b.char_start, b.char_end, b.has_coverage_mismatch,
+       {rarity_key} AS rarity_key,
+       f.feature_value,
+       {analyzer_flags}
+FROM read_parquet({features}) f
+JOIN base_regions b USING (source_id, text_id, region_index)
+{works_join}
+WHERE {feature_predicate}
+GROUP BY ALL
+ORDER BY f.feature_key, f.scope_type, f.scope_position, f.scope_surface,
+         f.source_id, f.text_id, f.region_index, f.feature_value"
     )
 }
 
@@ -447,10 +426,6 @@ fn column<'a, T: 'static>(batch: &'a RecordBatch, name: &str) -> Result<&'a T> {
         .as_any()
         .downcast_ref::<T>()
         .with_context(|| format!("column {name} has unexpected type"))
-}
-
-fn optional_string(array: &StringArray, row: usize) -> Option<String> {
-    (!array.is_null(row)).then(|| array.value(row).to_owned())
 }
 
 struct CommonAggregates {
@@ -563,65 +538,225 @@ fn parse_seg_coverage_rows(batches: &[RecordBatch]) -> Result<Vec<PatternStats>>
     Ok(patterns)
 }
 
-fn parse_feature_rows(batches: &[RecordBatch]) -> Result<Vec<PatternStats>> {
-    let mut patterns = Vec::new();
-    for batch in batches {
-        let feature_keys = column::<StringArray>(batch, "feature_key")?;
-        let scope_types = column::<StringArray>(batch, "scope_type")?;
-        let scope_positions = column::<UInt64Array>(batch, "scope_position")?;
-        let scope_surfaces = column::<StringArray>(batch, "scope_surface")?;
-        let sigs = column::<StringArray>(batch, "sig")?;
+/// One fully-buffered `(region, feature_key, scope)` group from the
+/// sorted stage output.
+struct FeatureGroup {
+    feature_key: String,
+    scope_type: String,
+    scope_position: Option<u64>,
+    scope_surface: Option<String>,
+    source_id: String,
+    text_id: String,
+    region_index: u64,
+    char_start: u64,
+    char_end: u64,
+    has_coverage_mismatch: bool,
+    rarity_key: String,
+    values: Vec<(Option<String>, Vec<String>)>,
+}
+
+impl FeatureGroup {
+    fn matches_row(&self, row: &FeatureStageRowRef<'_>) -> bool {
+        self.feature_key == row.feature_key
+            && self.scope_type == row.scope_type
+            && self.scope_position == row.scope_position
+            && self.scope_surface.as_deref() == row.scope_surface
+            && self.source_id == row.source_id
+            && self.text_id == row.text_id
+            && self.region_index == row.region_index
+    }
+
+    fn into_key(self) -> Result<Option<(NwayPatternKey, FeatureOccurrence)>> {
+        if self.values.len() < 2 {
+            return Ok(None);
+        }
+        let mut feature_values = self
+            .values
+            .into_iter()
+            .map(|(value, analyzers)| NwayFeatureValueGroupRow { value, analyzers })
+            .collect::<Vec<_>>();
+        canonicalize_feature_values(&mut feature_values);
+        let key = NwayPatternKey {
+            kind: "feature".to_owned(),
+            segmentation_groups: Vec::new(),
+            feature_key: Some(self.feature_key.clone()),
+            feature_scope: Some(scope_from_columns(
+                &self.scope_type,
+                self.scope_position,
+                self.scope_surface.clone(),
+            )?),
+            feature_values,
+        };
+        Ok(Some((
+            key,
+            FeatureOccurrence {
+                source_id: self.source_id,
+                text_id: self.text_id,
+                region_index: self.region_index,
+                char_start: self.char_start,
+                char_end: self.char_end,
+                has_coverage_mismatch: self.has_coverage_mismatch,
+                rarity_key: self.rarity_key,
+            },
+        )))
+    }
+}
+
+struct FeatureOccurrence {
+    source_id: String,
+    text_id: String,
+    region_index: u64,
+    char_start: u64,
+    char_end: u64,
+    has_coverage_mismatch: bool,
+    rarity_key: String,
+}
+
+struct FeatureStageRowRef<'a> {
+    feature_key: &'a str,
+    scope_type: &'a str,
+    scope_position: Option<u64>,
+    scope_surface: Option<&'a str>,
+    source_id: &'a str,
+    text_id: &'a str,
+    region_index: u64,
+}
+
+/// Streams a sorted stage file, invoking `sink` once per completed
+/// `(region, feature_key, scope)` group that has more than one value
+/// group. Bounded memory: one group buffered at a time.
+fn stream_feature_stage(
+    path: &Path,
+    analyzer_ids: &[String],
+    sink: &mut impl FnMut(NwayPatternKey, FeatureOccurrence) -> Result<()>,
+) -> Result<()> {
+    let mut current: Option<FeatureGroup> = None;
+    for batch in read_warehouse_parquet_file(path)? {
+        let feature_keys = column::<StringArray>(&batch, "feature_key")?;
+        let scope_types = column::<StringArray>(&batch, "scope_type")?;
+        let scope_positions = column::<UInt64Array>(&batch, "scope_position")?;
+        let scope_surfaces = column::<StringArray>(&batch, "scope_surface")?;
+        let source_ids = column::<StringArray>(&batch, "source_id")?;
+        let text_ids = column::<StringArray>(&batch, "text_id")?;
+        let region_indices = column::<UInt64Array>(&batch, "region_index")?;
+        let char_starts = column::<UInt64Array>(&batch, "char_start")?;
+        let char_ends = column::<UInt64Array>(&batch, "char_end")?;
+        let coverage = column::<BooleanArray>(&batch, "has_coverage_mismatch")?;
+        let rarity_keys = column::<StringArray>(&batch, "rarity_key")?;
+        let feature_values = column::<StringArray>(&batch, "feature_value")?;
+        let analyzer_flags = analyzer_ids
+            .iter()
+            .enumerate()
+            .map(|(index, _)| column::<BooleanArray>(&batch, &format!("analyzer_{index}")))
+            .collect::<Result<Vec<_>>>()?;
         for row in 0..batch.num_rows() {
-            let sig = sigs.value(row).to_owned();
-            let value_groups: Vec<JsonValueGroup> =
-                serde_json::from_str(&sig).context("failed to parse value-group JSON")?;
-            let mut feature_values = value_groups
-                .into_iter()
-                .map(|group| NwayFeatureValueGroupRow {
-                    value: group.value,
-                    analyzers: group.analyzers,
-                })
-                .collect::<Vec<_>>();
-            canonicalize_feature_values(&mut feature_values);
-            let scope_position =
-                (!scope_positions.is_null(row)).then(|| scope_positions.value(row));
-            let scope_surface = optional_string(scope_surfaces, row);
-            let key = NwayPatternKey {
-                kind: "feature".to_owned(),
-                segmentation_groups: Vec::new(),
-                feature_key: Some(feature_keys.value(row).to_owned()),
-                feature_scope: Some(scope_from_columns(
-                    scope_types.value(row),
-                    scope_position,
-                    scope_surface.clone(),
-                )?),
-                feature_values,
+            let row_ref = FeatureStageRowRef {
+                feature_key: feature_keys.value(row),
+                scope_type: scope_types.value(row),
+                scope_position: (!scope_positions.is_null(row))
+                    .then(|| scope_positions.value(row)),
+                scope_surface: (!scope_surfaces.is_null(row))
+                    .then(|| scope_surfaces.value(row)),
+                source_id: source_ids.value(row),
+                text_id: text_ids.value(row),
+                region_index: region_indices.value(row),
             };
-            let common = read_common_aggregates(batch, row)?;
-            patterns.push(PatternStats {
-                pattern_id: pattern_id(&key),
-                key,
-                kind: PatternKind::Feature,
-                examples: common.examples,
-                source_count: common.source_count,
-                text_count: common.text_count,
-                sample_source_ids: common.sample_source_ids,
-                sample_text_ids: common.sample_text_ids,
-                rarity_count: common.rarity_count,
-                coverage_region_count: common.coverage_region_count,
-                span_p90: common.span_p90,
-                region_examples: common.region_examples,
-                sql_signature: Some(SqlSignature::Feature {
-                    feature_key: feature_keys.value(row).to_owned(),
-                    scope_type: scope_types.value(row).to_owned(),
-                    scope_position,
-                    scope_surface,
-                    sig,
-                }),
-            });
+            let group_matches = current
+                .as_ref()
+                .is_some_and(|group| group.matches_row(&row_ref));
+            if !group_matches {
+                if let Some(group) = current.take()
+                    && let Some((key, occurrence)) = group.into_key()?
+                {
+                    sink(key, occurrence)?;
+                }
+                current = Some(FeatureGroup {
+                    feature_key: row_ref.feature_key.to_owned(),
+                    scope_type: row_ref.scope_type.to_owned(),
+                    scope_position: row_ref.scope_position,
+                    scope_surface: row_ref.scope_surface.map(str::to_owned),
+                    source_id: row_ref.source_id.to_owned(),
+                    text_id: row_ref.text_id.to_owned(),
+                    region_index: row_ref.region_index,
+                    char_start: char_starts.value(row),
+                    char_end: char_ends.value(row),
+                    has_coverage_mismatch: coverage.value(row),
+                    rarity_key: rarity_keys.value(row).to_owned(),
+                    values: Vec::new(),
+                });
+            }
+            let value = (!feature_values.is_null(row)).then(|| feature_values.value(row).to_owned());
+            let analyzers = analyzer_flags
+                .iter()
+                .enumerate()
+                .filter(|(_, flags)| flags.value(row))
+                .map(|(index, _)| analyzer_ids[index].clone())
+                .collect::<Vec<_>>();
+            current
+                .as_mut()
+                .expect("group buffered")
+                .values
+                .push((value, analyzers));
         }
     }
-    Ok(patterns)
+    if let Some(group) = current.take()
+        && let Some((key, occurrence)) = group.into_key()?
+    {
+        sink(key, occurrence)?;
+    }
+    Ok(())
+}
+
+/// Writes the `(source_id, text_id, region_index)` exclusion set for the
+/// anomaly channel's top-feature-pattern anti-join.
+fn write_region_exclusions(
+    path: &Path,
+    regions: &BTreeSet<(String, String, u64)>,
+) -> Result<()> {
+    let schema = std::sync::Arc::new(Schema::new(vec![
+        Field::new("source_id", DataType::Utf8, false),
+        Field::new("text_id", DataType::Utf8, false),
+        Field::new("region_index", DataType::UInt64, false),
+    ]));
+    let batch = RecordBatch::try_new(
+        schema.clone(),
+        vec![
+            std::sync::Arc::new(StringArray::from(
+                regions
+                    .iter()
+                    .map(|(source_id, _, _)| source_id.as_str())
+                    .collect::<Vec<_>>(),
+            )),
+            std::sync::Arc::new(StringArray::from(
+                regions
+                    .iter()
+                    .map(|(_, text_id, _)| text_id.as_str())
+                    .collect::<Vec<_>>(),
+            )),
+            std::sync::Arc::new(UInt64Array::from(
+                regions
+                    .iter()
+                    .map(|(_, _, region_index)| *region_index)
+                    .collect::<Vec<_>>(),
+            )),
+        ],
+    )?;
+    let properties = WriterProperties::builder()
+        .set_compression(Compression::ZSTD(ZstdLevel::try_new(3)?))
+        .build();
+    let file = std::fs::File::create(path)
+        .with_context(|| format!("failed to create {}", path.display()))?;
+    let mut writer = ArrowWriter::try_new(file, schema, Some(properties))?;
+    writer.write(&batch)?;
+    writer.close()?;
+    Ok(())
+}
+
+pub(super) struct DuckdbCollected {
+    pub(super) patterns: Vec<PatternStats>,
+    /// Sorted feature-stage parquet files, retained until the anomaly
+    /// channel's exclusion pass has consumed them.
+    pub(super) feature_stage_files: Vec<PathBuf>,
 }
 
 /// Collects pattern statistics via the DuckDB CLI. Returns `None` when no
@@ -631,11 +766,13 @@ pub(super) fn collect_patterns_duckdb(
     run_dir: &Path,
     options: &WarehouseInterestingOptions,
     rarity: &RarityConfig,
-) -> Result<Option<Vec<PatternStats>>> {
+    analyzer_ids: &std::collections::BTreeSet<String>,
+) -> Result<Option<DuckdbCollected>> {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
     let (works_join, rarity_key) = rarity_sql(run_dir, rarity);
+    let analyzer_ids = analyzer_ids.iter().cloned().collect::<Vec<_>>();
 
     remove_stale_temp_outputs(run_dir);
     let Some(feature_keys) = discover_feature_keys(run_dir, &features, options.feature_profile)?
@@ -663,9 +800,11 @@ pub(super) fn collect_patterns_duckdb(
     let mut patterns = parse_seg_coverage_rows(&read_warehouse_parquet_file(&seg_out)?)?;
     let _ = fs::remove_file(&seg_out);
 
+    let mut accumulator = PatternAccumulator::default();
+    let mut feature_stage_files = Vec::new();
     for (index, batch_keys) in feature_keys.chunks(feature_key_batch_size()).enumerate() {
         let feat_out = temp_output_path(run_dir, &format!("feat-{index}"));
-        let feat_body = feature_query(
+        let feat_body = feature_stage_query(
             &regions,
             &analyzers,
             &features,
@@ -673,7 +812,7 @@ pub(super) fn collect_patterns_duckdb(
             &feature_key_in_predicate(batch_keys),
             &works_join,
             &rarity_key,
-            options.max_region_examples,
+            &analyzer_ids,
         );
         let sql = format!(
             "{settings}\nCOPY ({feat_body}) TO {feat_out} (FORMAT PARQUET, COMPRESSION ZSTD);",
@@ -683,39 +822,35 @@ pub(super) fn collect_patterns_duckdb(
         if !run_duckdb_statement(run_dir, sql, "interestingness feature aggregation")? {
             return Ok(None);
         }
-        patterns.extend(parse_feature_rows(&read_warehouse_parquet_file(&feat_out)?)?);
-        let _ = fs::remove_file(&feat_out);
+        stream_feature_stage(&feat_out, &analyzer_ids, &mut |key, occurrence| {
+            accumulator.record(
+                key,
+                PatternKind::Feature,
+                &RegionOccurrence {
+                    source_id: &occurrence.source_id,
+                    text_id: &occurrence.text_id,
+                    region_index: occurrence.region_index,
+                    char_start: occurrence.char_start,
+                    char_end: occurrence.char_end,
+                    has_coverage_mismatch: occurrence.has_coverage_mismatch,
+                    rarity_key: &occurrence.rarity_key,
+                },
+                options.max_region_examples,
+            );
+            Ok(())
+        })?;
+        feature_stage_files.push(feat_out);
     }
+    patterns.extend(accumulator.finalize());
 
     // Deterministic pattern order regardless of DuckDB's group emission
     // order (ranking re-sorts, but rank tie-breaks read pattern order via
     // pattern_id, and the path-equality test compares full summaries).
     patterns.sort_by(|left, right| left.pattern_id.cmp(&right.pattern_id));
-    Ok(Some(patterns))
-}
-
-fn feature_exclusion_literal(
-    feature_key: &str,
-    scope_type: &str,
-    scope_position: Option<u64>,
-    scope_surface: Option<&str>,
-    sig: &str,
-) -> String {
-    let mut value = String::new();
-    value.push_str(feature_key);
-    value.push(FIELD_SEP);
-    value.push_str(scope_type);
-    value.push(FIELD_SEP);
-    if let Some(position) = scope_position {
-        value.push_str(&position.to_string());
-    }
-    value.push(FIELD_SEP);
-    if let Some(surface) = scope_surface {
-        value.push_str(surface);
-    }
-    value.push(FIELD_SEP);
-    value.push_str(sig);
-    value
+    Ok(Some(DuckdbCollected {
+        patterns,
+        feature_stage_files,
+    }))
 }
 
 /// Computes the anomaly channel via DuckDB: disagreement regions passing
@@ -725,18 +860,18 @@ pub(super) fn anomalies_duckdb(
     run_dir: &Path,
     options: &WarehouseInterestingOptions,
     top: &[&PatternStats],
+    feature_stage_files: &[PathBuf],
+    analyzer_ids: &std::collections::BTreeSet<String>,
 ) -> Result<Vec<AnomalyRow>> {
     if options.anomalies == 0 {
         return Ok(Vec::new());
     }
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
-    let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
 
     let mut seg_sigs = BTreeSet::new();
     let mut cov_sigs = BTreeSet::new();
-    let mut feature_keys = BTreeSet::new();
-    let mut feature_literals = BTreeSet::new();
+    let mut top_feature_keys = BTreeSet::new();
     for stats in top {
         match (&stats.sql_signature, stats.kind) {
             (Some(SqlSignature::Groups { sig }), PatternKind::Segmentation) => {
@@ -745,24 +880,8 @@ pub(super) fn anomalies_duckdb(
             (Some(SqlSignature::Groups { sig }), _) => {
                 cov_sigs.insert(sig.clone());
             }
-            (
-                Some(SqlSignature::Feature {
-                    feature_key,
-                    scope_type,
-                    scope_position,
-                    scope_surface,
-                    sig,
-                }),
-                _,
-            ) => {
-                feature_keys.insert(feature_key.clone());
-                feature_literals.insert(feature_exclusion_literal(
-                    feature_key,
-                    scope_type,
-                    *scope_position,
-                    scope_surface.as_deref(),
-                    sig,
-                ));
+            (None, PatternKind::Feature) => {
+                top_feature_keys.insert(stats.key.clone());
             }
             (None, _) => anyhow::bail!(
                 "pattern {} has no SQL signature; anomaly exclusion cannot be built",
@@ -770,6 +889,33 @@ pub(super) fn anomalies_duckdb(
             ),
         }
     }
+
+    // Top-feature-pattern regions: re-stream the sorted stage files (kept
+    // from collection) and write the matching region keys to an exclusion
+    // parquet for the anti-join. Analyzer ids are irrelevant here — group
+    // keys are rebuilt from the same rows, so pass the stage's analyzer
+    // flags through unchanged.
+    let feature_exclusion_path = if top_feature_keys.is_empty() {
+        None
+    } else {
+        let analyzer_ids = analyzer_ids.iter().cloned().collect::<Vec<_>>();
+        let mut excluded = BTreeSet::new();
+        for path in feature_stage_files {
+            stream_feature_stage(path, &analyzer_ids, &mut |key, occurrence| {
+                if top_feature_keys.contains(&key) {
+                    excluded.insert((
+                        occurrence.source_id,
+                        occurrence.text_id,
+                        occurrence.region_index,
+                    ));
+                }
+                Ok(())
+            })?;
+        }
+        let path = temp_output_path(run_dir, "feature-exclusions");
+        write_region_exclusions(&path, &excluded)?;
+        Some(path)
+    };
 
     let base = base_regions_cte(&regions, &analyzers, options.filter, "TRUE");
     let mut ctes = vec![base];
@@ -796,25 +942,12 @@ pub(super) fn anomalies_duckdb(
             ));
         }
     }
-    if !feature_literals.is_empty() {
-        let keys = feature_keys
-            .iter()
-            .map(|key| sql_literal(key))
-            .collect::<Vec<_>>()
-            .join(", ");
-        ctes.push(feature_groups_cte(
-            &features,
-            &format!("f.feature_key IN ({keys})"),
-        ));
-        let list = sig_in_list(&feature_literals);
-        let sep = format!("chr({})", FIELD_SEP as u32);
+    if let Some(path) = &feature_exclusion_path {
+        let exclusion_table = sql_literal(&path.display().to_string());
         exclusions.push(format!(
-            "NOT EXISTS (SELECT 1 FROM feature_groups g \
-             WHERE g.source_id = b.source_id AND g.text_id = b.text_id \
-             AND g.region_index = b.region_index AND g.value_count > 1 \
-             AND (g.feature_key || {sep} || g.scope_type || {sep} || \
-                  coalesce(CAST(g.scope_position AS VARCHAR), '') || {sep} || \
-                  coalesce(g.scope_surface, '') || {sep} || g.sig) IN ({list}))"
+            "NOT EXISTS (SELECT 1 FROM read_parquet({exclusion_table}) e \
+             WHERE e.source_id = b.source_id AND e.text_id = b.text_id \
+             AND e.region_index = b.region_index)"
         ));
     }
     let exclusion_clause = if exclusions.is_empty() {
@@ -869,8 +1002,12 @@ LIMIT {limit}",
         }
     }
     let _ = fs::remove_file(&out);
+    if let Some(path) = &feature_exclusion_path {
+        let _ = fs::remove_file(path);
+    }
     Ok(rows)
 }
+
 
 fn sig_in_list(values: &BTreeSet<String>) -> String {
     values

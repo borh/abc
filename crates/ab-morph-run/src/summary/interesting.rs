@@ -346,15 +346,10 @@ fn coverage_pattern_key(facts: &[WarehouseRegionAnalyzerFact]) -> Option<NwayPat
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum SqlSignature {
     /// Segmentation/coverage kinds: the canonical surface-group JSON.
+    /// Feature-kind patterns from the DuckDB engine carry no SQL
+    /// signature; their anomaly exclusion re-streams the sorted stage
+    /// files instead.
     Groups { sig: String },
-    /// Feature kind: grouping columns plus the canonical value-group JSON.
-    Feature {
-        feature_key: String,
-        scope_type: String,
-        scope_position: Option<u64>,
-        scope_surface: Option<String>,
-        sig: String,
-    },
 }
 
 /// Finalized per-pattern statistics, engine-agnostic. Both collection
@@ -397,39 +392,36 @@ struct PatternAccum {
     region_examples: Vec<RegionExampleOut>,
 }
 
-enum AnomalySource {
-    InMemory {
-        memberships: BTreeMap<WarehouseRegionKey, BTreeSet<usize>>,
-        region_flags: BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>,
-        punctuation_only: BTreeSet<WarehouseRegionKey>,
-    },
-    /// DuckDB engine: anomalies are computed by a follow-up query once the
-    /// top pattern set is known.
-    Deferred,
+/// One pattern occurrence, engine-agnostic. Both the in-memory engine and
+/// the DuckDB streaming feature path feed these into
+/// [`PatternAccumulator`], so per-pattern statistics are computed by one
+/// code path regardless of engine.
+pub(super) struct RegionOccurrence<'a> {
+    pub(super) source_id: &'a str,
+    pub(super) text_id: &'a str,
+    pub(super) region_index: u64,
+    pub(super) char_start: u64,
+    pub(super) char_end: u64,
+    pub(super) has_coverage_mismatch: bool,
+    pub(super) rarity_key: &'a str,
 }
 
-struct Collected {
-    patterns: Vec<PatternStats>,
-    anomaly_source: AnomalySource,
-}
-
-struct InMemoryAccumulators<'a> {
+#[derive(Default)]
+pub(super) struct PatternAccumulator {
     index_of: BTreeMap<NwayPatternKey, usize>,
     keys: Vec<(NwayPatternKey, PatternKind)>,
     accums: Vec<PatternAccum>,
-    memberships: BTreeMap<WarehouseRegionKey, BTreeSet<usize>>,
-    work_by_source: Option<&'a BTreeMap<String, String>>,
-    max_region_examples: usize,
 }
 
-impl InMemoryAccumulators<'_> {
-    fn record(
+impl PatternAccumulator {
+    /// Records one occurrence and returns the pattern's dense index.
+    pub(super) fn record(
         &mut self,
         key: NwayPatternKey,
         kind: PatternKind,
-        region: &WarehouseRegionKey,
-        flags: &WarehouseRegionFlags,
-    ) {
+        occurrence: &RegionOccurrence<'_>,
+        max_region_examples: usize,
+    ) -> usize {
         let next_index = self.accums.len();
         let index = *self.index_of.entry(key.clone()).or_insert(next_index);
         if index == next_index {
@@ -438,35 +430,35 @@ impl InMemoryAccumulators<'_> {
         }
         let accum = &mut self.accums[index];
         accum.examples += 1;
-        accum.source_ids.insert(region.source_id.clone());
-        accum.text_ids.insert(region.text_id.clone());
-        let rarity_key = self
-            .work_by_source
-            .and_then(|map| map.get(&region.source_id))
-            .unwrap_or(&region.source_id);
-        accum.rarity_keys.insert(rarity_key.clone());
-        if flags.has_coverage_mismatch {
+        if !accum.source_ids.contains(occurrence.source_id) {
+            accum.source_ids.insert(occurrence.source_id.to_owned());
+        }
+        if !accum.text_ids.contains(occurrence.text_id) {
+            accum.text_ids.insert(occurrence.text_id.to_owned());
+        }
+        if !accum.rarity_keys.contains(occurrence.rarity_key) {
+            accum.rarity_keys.insert(occurrence.rarity_key.to_owned());
+        }
+        if occurrence.has_coverage_mismatch {
             accum.coverage_region_count += 1;
         }
-        accum.span_lengths.push(flags.char_end - flags.char_start);
-        if accum.region_examples.len() < self.max_region_examples {
+        accum
+            .span_lengths
+            .push(occurrence.char_end - occurrence.char_start);
+        if accum.region_examples.len() < max_region_examples {
             accum.region_examples.push(RegionExampleOut {
-                source_id: region.source_id.clone(),
-                text_id: region.text_id.clone(),
-                region_index: region.region_index,
-                char_start: flags.char_start,
-                char_end: flags.char_end,
+                source_id: occurrence.source_id.to_owned(),
+                text_id: occurrence.text_id.to_owned(),
+                region_index: occurrence.region_index,
+                char_start: occurrence.char_start,
+                char_end: occurrence.char_end,
             });
         }
-        self.memberships
-            .entry(region.clone())
-            .or_default()
-            .insert(index);
+        index
     }
 
-    fn finalize(self) -> (Vec<PatternStats>, BTreeMap<WarehouseRegionKey, BTreeSet<usize>>) {
-        let patterns = self
-            .keys
+    pub(super) fn finalize(self) -> Vec<PatternStats> {
+        self.keys
             .into_iter()
             .zip(self.accums)
             .map(|((key, kind), accum)| PatternStats {
@@ -494,8 +486,70 @@ impl InMemoryAccumulators<'_> {
                 region_examples: accum.region_examples,
                 sql_signature: None,
             })
-            .collect();
-        (patterns, self.memberships)
+            .collect()
+    }
+}
+
+enum AnomalySource {
+    InMemory {
+        memberships: BTreeMap<WarehouseRegionKey, BTreeSet<usize>>,
+        region_flags: BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>,
+        punctuation_only: BTreeSet<WarehouseRegionKey>,
+    },
+    /// DuckDB engine: anomalies are computed by a follow-up query once the
+    /// top pattern set is known. Carries the sorted feature-stage parquet
+    /// files retained for the top-pattern region exclusion pass.
+    Deferred {
+        feature_stage_files: Vec<std::path::PathBuf>,
+    },
+}
+
+struct Collected {
+    patterns: Vec<PatternStats>,
+    anomaly_source: AnomalySource,
+}
+
+struct InMemoryAccumulators<'a> {
+    patterns: PatternAccumulator,
+    memberships: BTreeMap<WarehouseRegionKey, BTreeSet<usize>>,
+    work_by_source: Option<&'a BTreeMap<String, String>>,
+    max_region_examples: usize,
+}
+
+impl InMemoryAccumulators<'_> {
+    fn record(
+        &mut self,
+        key: NwayPatternKey,
+        kind: PatternKind,
+        region: &WarehouseRegionKey,
+        flags: &WarehouseRegionFlags,
+    ) {
+        let rarity_key = self
+            .work_by_source
+            .and_then(|map| map.get(&region.source_id))
+            .map_or(region.source_id.as_str(), String::as_str);
+        let index = self.patterns.record(
+            key,
+            kind,
+            &RegionOccurrence {
+                source_id: &region.source_id,
+                text_id: &region.text_id,
+                region_index: region.region_index,
+                char_start: flags.char_start,
+                char_end: flags.char_end,
+                has_coverage_mismatch: flags.has_coverage_mismatch,
+                rarity_key,
+            },
+            self.max_region_examples,
+        );
+        self.memberships
+            .entry(region.clone())
+            .or_default()
+            .insert(index);
+    }
+
+    fn finalize(self) -> (Vec<PatternStats>, BTreeMap<WarehouseRegionKey, BTreeSet<usize>>) {
+        (self.patterns.finalize(), self.memberships)
     }
 }
 
@@ -608,9 +662,7 @@ fn collect_in_memory(
     }
 
     let mut accumulators = InMemoryAccumulators {
-        index_of: BTreeMap::new(),
-        keys: Vec::new(),
-        accums: Vec::new(),
+        patterns: PatternAccumulator::default(),
         memberships: BTreeMap::new(),
         work_by_source: rarity.work_by_source.as_ref(),
         max_region_examples: options.max_region_examples,
@@ -943,10 +995,12 @@ pub fn summarize_warehouse_interesting(
     let collected = match options.engine {
         InterestingEngine::InMemory => collect_in_memory(run_dir, &options, &rarity)?,
         InterestingEngine::Duckdb | InterestingEngine::Auto => {
-            match interesting_sql::collect_patterns_duckdb(run_dir, &options, &rarity)? {
-                Some(patterns) => Collected {
-                    patterns,
-                    anomaly_source: AnomalySource::Deferred,
+            match interesting_sql::collect_patterns_duckdb(run_dir, &options, &rarity, &analyzer_ids)? {
+                Some(collected) => Collected {
+                    patterns: collected.patterns,
+                    anomaly_source: AnomalySource::Deferred {
+                        feature_stage_files: collected.feature_stage_files,
+                    },
                 },
                 None if options.engine == InterestingEngine::Duckdb => {
                     bail!(
@@ -963,6 +1017,14 @@ pub fn summarize_warehouse_interesting(
     let order = ranked_order(&collected.patterns, &scores);
 
     if let Some(explain_id) = &options.explain {
+        if let AnomalySource::Deferred {
+            feature_stage_files,
+        } = &collected.anomaly_source
+        {
+            for path in feature_stage_files {
+                let _ = std::fs::remove_file(path);
+            }
+        }
         let index = collected
             .patterns
             .iter()
@@ -999,12 +1061,24 @@ pub fn summarize_warehouse_interesting(
             &top_set,
             options.anomalies,
         ),
-        AnomalySource::Deferred => {
+        AnomalySource::Deferred {
+            feature_stage_files,
+        } => {
             let top_stats = top
                 .iter()
                 .map(|index| &collected.patterns[*index])
                 .collect::<Vec<_>>();
-            interesting_sql::anomalies_duckdb(run_dir, &options, &top_stats)?
+            let anomalies = interesting_sql::anomalies_duckdb(
+                run_dir,
+                &options,
+                &top_stats,
+                feature_stage_files,
+                &analyzer_ids,
+            );
+            for path in feature_stage_files {
+                let _ = std::fs::remove_file(path);
+            }
+            anomalies?
         }
     };
 

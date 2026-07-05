@@ -42,7 +42,10 @@ pub use script::ScriptCategory;
 pub use select::resolve_source_id_aat_paths;
 pub(crate) use summary::WAREHOUSE_CORE_FEATURE_KEYS;
 pub use summary::{
-    CompactDifferenceKindFilter, CompactDifferenceSummaryOptions, CompactDifferenceSummaryRow,
+    AnomalyRow, CompactDifferenceKindFilter, CompactDifferenceSummaryOptions,
+    CompactDifferenceSummaryRow, InterestingOutputFormat, InterestingRow, InterestingSummary,
+    InterestingTextFilter, RegionExampleOut, ScoreVersionBlock, SignalExplain,
+    WarehouseInterestingOptions, summarize_warehouse_interesting, write_interesting_tsv,
     CompactExampleFilter, CompactExampleSummaryOptions, CompactExampleSummaryRow,
     CompactExampleSummarySort, CompactSummaryGroupBy, CompactSummaryOptions, CompactSummaryRow,
     CompactSummarySort, NwayPatternKind, NwayPatternOptions, NwayPatternRow, NwaySummaryOptions,

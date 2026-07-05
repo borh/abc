@@ -143,49 +143,49 @@ pub(crate) struct WarehousePatternAccumulator {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct WarehouseRegionKey {
-    run_id: String,
-    source_id: String,
-    text_id: String,
-    region_index: u64,
+    pub(super) run_id: String,
+    pub(super) source_id: String,
+    pub(super) text_id: String,
+    pub(super) region_index: u64,
 }
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct WarehouseRegionFlags {
-    byte_start: u64,
-    byte_end: u64,
-    char_start: u64,
-    char_end: u64,
-    is_nonempty_whitespace: bool,
-    is_agreement: bool,
-    has_coverage_mismatch: bool,
-    has_segmentation_disagreement: bool,
-    has_feature_disagreement: bool,
+    pub(super) byte_start: u64,
+    pub(super) byte_end: u64,
+    pub(super) char_start: u64,
+    pub(super) char_end: u64,
+    pub(super) is_nonempty_whitespace: bool,
+    pub(super) is_agreement: bool,
+    pub(super) has_coverage_mismatch: bool,
+    pub(super) has_segmentation_disagreement: bool,
+    pub(super) has_feature_disagreement: bool,
 }
 
 #[derive(Debug, Clone)]
 pub(crate) struct WarehouseRegionAnalyzerFact {
-    key: WarehouseRegionKey,
-    analyzer_id: String,
-    covers_exactly: bool,
-    morpheme_start: u64,
-    morpheme_end: u64,
-    surfaces: Vec<String>,
+    pub(super) key: WarehouseRegionKey,
+    pub(super) analyzer_id: String,
+    pub(super) covers_exactly: bool,
+    pub(super) morpheme_start: u64,
+    pub(super) morpheme_end: u64,
+    pub(super) surfaces: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct WarehouseFeatureGroupKey {
-    region: WarehouseRegionKey,
-    feature_key: String,
-    scope_type: String,
-    scope_position: Option<u64>,
-    scope_surface: Option<String>,
+    pub(super) region: WarehouseRegionKey,
+    pub(super) feature_key: String,
+    pub(super) scope_type: String,
+    pub(super) scope_position: Option<u64>,
+    pub(super) scope_surface: Option<String>,
 }
 
 #[derive(Debug, Clone)]
 pub(crate) struct WarehouseFeatureDiffFact {
-    key: WarehouseFeatureGroupKey,
-    feature_value: Option<String>,
-    analyzer_id: String,
+    pub(super) key: WarehouseFeatureGroupKey,
+    pub(super) feature_value: Option<String>,
+    pub(super) analyzer_id: String,
 }
 
 #[derive(Debug, Clone)]
@@ -2460,14 +2460,14 @@ fn warehouse_feature_profile_filter(profile: WarehouseFeatureProfile) -> &'stati
     }
 }
 
-fn warehouse_feature_key_in_profile(feature_key: &str, profile: WarehouseFeatureProfile) -> bool {
+pub(super) fn warehouse_feature_key_in_profile(feature_key: &str, profile: WarehouseFeatureProfile) -> bool {
     match profile {
         WarehouseFeatureProfile::Raw | WarehouseFeatureProfile::Schema => true,
         WarehouseFeatureProfile::Core => matches!(feature_key, "pos1" | "pos2" | "pos3" | "pos4"),
     }
 }
 
-fn warehouse_feature_facts_for_profile(
+pub(super) fn warehouse_feature_facts_for_profile(
     profile: WarehouseFeatureProfile,
     facts: Vec<WarehouseFeatureDiffFact>,
 ) -> Vec<WarehouseFeatureDiffFact> {
@@ -3171,7 +3171,7 @@ fn compare_warehouse_pairwise_rows(
         .then_with(|| left.to_analyzer.cmp(&right.to_analyzer))
 }
 
-fn read_warehouse_region_flags(
+pub(super) fn read_warehouse_region_flags(
     run_dir: &Path,
 ) -> Result<BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>> {
     let mut regions = BTreeMap::new();
@@ -3324,7 +3324,7 @@ fn read_warehouse_source_text_ids(run_dir: &Path) -> Result<BTreeMap<String, Str
     Ok(source_text_ids)
 }
 
-fn read_warehouse_region_analyzers(run_dir: &Path) -> Result<Vec<WarehouseRegionAnalyzerFact>> {
+pub(super) fn read_warehouse_region_analyzers(run_dir: &Path) -> Result<Vec<WarehouseRegionAnalyzerFact>> {
     let mut facts = Vec::new();
     for batch in read_warehouse_table(run_dir, WarehouseTable::NwayRegionAnalyzers)? {
         let run_id = string_column(&batch, 0)?;
@@ -3355,7 +3355,7 @@ fn read_warehouse_region_analyzers(run_dir: &Path) -> Result<Vec<WarehouseRegion
     Ok(facts)
 }
 
-fn read_warehouse_feature_diffs(run_dir: &Path) -> Result<Vec<WarehouseFeatureDiffFact>> {
+pub(super) fn read_warehouse_feature_diffs(run_dir: &Path) -> Result<Vec<WarehouseFeatureDiffFact>> {
     let mut facts = Vec::new();
     for batch in read_warehouse_table(run_dir, WarehouseTable::NwayFeatureDiffs)? {
         let run_id = string_column(&batch, 0)?;
@@ -3545,7 +3545,7 @@ fn warehouse_text_filter_matches_nonempty_whitespace(
     }
 }
 
-fn read_warehouse_table(run_dir: &Path, table: WarehouseTable) -> Result<Vec<RecordBatch>> {
+pub(super) fn read_warehouse_table(run_dir: &Path, table: WarehouseTable) -> Result<Vec<RecordBatch>> {
     let path = run_dir.join(table.file_name());
     if path.is_dir() {
         let mut paths = fs::read_dir(&path)
@@ -3567,7 +3567,7 @@ fn read_warehouse_table(run_dir: &Path, table: WarehouseTable) -> Result<Vec<Rec
     read_warehouse_parquet_file(&path)
 }
 
-fn read_warehouse_parquet_file(path: &Path) -> Result<Vec<RecordBatch>> {
+pub(super) fn read_warehouse_parquet_file(path: &Path) -> Result<Vec<RecordBatch>> {
     let file = File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
     let reader = ParquetRecordBatchReaderBuilder::try_new(file)
         .with_context(|| format!("failed to read parquet metadata from {}", path.display()))?
@@ -3578,7 +3578,7 @@ fn read_warehouse_parquet_file(path: &Path) -> Result<Vec<RecordBatch>> {
         .with_context(|| format!("failed to read {}", path.display()))
 }
 
-fn string_column(batch: &RecordBatch, index: usize) -> Result<&StringArray> {
+pub(super) fn string_column(batch: &RecordBatch, index: usize) -> Result<&StringArray> {
     batch
         .column(index)
         .as_any()
@@ -3586,7 +3586,7 @@ fn string_column(batch: &RecordBatch, index: usize) -> Result<&StringArray> {
         .with_context(|| format!("column {index} is not a StringArray"))
 }
 
-fn u64_column(batch: &RecordBatch, index: usize) -> Result<&UInt64Array> {
+pub(super) fn u64_column(batch: &RecordBatch, index: usize) -> Result<&UInt64Array> {
     batch
         .column(index)
         .as_any()

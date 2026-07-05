@@ -1,4 +1,5 @@
 mod compact;
+mod interesting;
 mod nway;
 mod pattern_id;
 mod patterns;
@@ -8,6 +9,7 @@ mod warehouse;
 mod write;
 
 pub use compact::*;
+pub use interesting::*;
 pub use nway::*;
 pub(crate) use types::WAREHOUSE_CORE_FEATURE_KEYS;
 pub use types::*;

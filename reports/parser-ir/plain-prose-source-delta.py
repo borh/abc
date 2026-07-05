@@ -227,16 +227,7 @@ def build_summary(
     coverage, missing_by_row = parser_evidence_coverage(plain_rows)
     if coverage["verdict"] != "FIVE_PARSER_EVIDENCE_COMPLETE" and not allow_missing_parser_evidence:
         raise SystemExit("missing parser evidence; rerun with --allow-missing-parser-evidence for exploratory report")
-    missing_consumed: set[tuple[str, str]] = set()
-    classified: list[dict[str, Any]] = []
-    for row in plain_rows:
-        key = row_key(row)
-        missing_for_row: list[str] = []
-        if key not in missing_consumed:
-            missing_for_row = missing_by_row.get(key, [])
-            if missing_for_row:
-                missing_consumed.add(key)
-        classified.append(classify_row(row, missing_for_row))
+    classified = [classify_row(row, missing_by_row.get(row_key(row), [])) for row in plain_rows]
     classification_counts = Counter(
         classification for row in classified for classification in row["classifications"]
     )

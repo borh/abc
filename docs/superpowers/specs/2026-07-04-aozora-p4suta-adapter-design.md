@@ -447,7 +447,7 @@ Each is restated with its **falsifier** in §12.
   external contract; new adapter-facing tooling must consume AAT JSON.
 - **Indirect tier (map `aozora render` HTML → AAT).** Rejected: duplicates
   the `aozora2html` Indirect tier, loses spans/diagnostics, adds no new
-  measurement value over the existing four adapters.
+  measurement value over the existing adapter set.
 - **Treat `aozora-notation-spec` as the sole authority.** Rejected: it is
   explicitly unofficial. Its vectors are valuable independent evidence, but
   source-inventory measurement and AAT/parser-IR conversion evidence remain

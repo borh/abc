@@ -6,14 +6,15 @@
 
 ## Context
 
-`ab-validator` currently measures four active Aozora parser adapters:
+`ab-validator` currently measures five active Aozora parser adapters:
 
+- `aozora`
 - `aozora2`
 - `aozora2html`
 - `aozora-rs`
 - `aozora-epub3`
 
-The next candidate parser is `P4suta/aozora`, a Rust Aozora Bunko notation parser. Its repository describes a parser for ruby, bouten, tate-chu-yoko, gaiji references, kunten/kaeriten, indentation containers, and page/section breaks. It also exposes document-level CLI commands such as `check`, `fmt`, `render`, and `inspect`, and accepts stdin with auto-detected UTF-8 or Shift_JIS input.
+The newest parser lane is `P4suta/aozora`, a Rust Aozora Bunko notation parser. Its repository describes a parser for ruby, bouten, tate-chu-yoko, gaiji references, kunten/kaeriten, indentation containers, and page/section breaks. It also exposes document-level CLI commands such as `check`, `fmt`, `render`, and `inspect`, and accepts stdin with auto-detected UTF-8 or Shift_JIS input.
 
 The same author also maintains `P4suta/aozora-notation-spec`, an unofficial draft specification with ABNF grammar, processing model, diagnostics catalogue, and machine-readable conformance vectors. The spec states that it is not affiliated with or endorsed by Aozora Bunko. It is useful comparison material, but it must not replace:
 

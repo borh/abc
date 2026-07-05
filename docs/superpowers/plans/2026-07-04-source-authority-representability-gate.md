@@ -995,7 +995,7 @@ In `docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md`, add:
 ```markdown
 ## Source Authority Caveat
 
-Parser-IR conversion evidence over four adapters is not a proof that AAT can
+Parser-IR conversion evidence over the five active parser adapters is not a proof that AAT can
 represent the Aozora source language. The source-authority inventory at
 `docs/superpowers/reports/2026-07-04-source-authority-representability.md`
 is the representability gate, and the current run is failing:

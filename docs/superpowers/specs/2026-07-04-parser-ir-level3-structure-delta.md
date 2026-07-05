@@ -11,9 +11,12 @@ Current parser-IR can render a valid linear text stream, but it cannot honestly 
 The problem is not measurement anymore. The current ab-validator evidence shows that paragraph structure exists upstream, while parser-IR drops it:
 
 - `docs/superpowers/reports/2026-07-04-melos-structural-probe.md`
-  - 4 adapter inputs measured for Melos.
-  - 4 parser-IR paragraph gaps.
-  - 4 source-attribution gaps.
+  - Historical four-adapter measurement for Melos, before the `aozora` lane was
+    added.
+  - The current Level 3 gate must use all five parser lanes:
+    `aozora`, `aozora2`, `aozora2html`, `aozora-rs`, and `aozora-epub3`.
+  - The historical run found parser-IR paragraph and source-attribution gaps in
+    every measured adapter input.
 - `docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md`
   - 62 TEI-EAJ rows scanned from ABC's pinned workset export.
   - 55 rows with AAT evidence.

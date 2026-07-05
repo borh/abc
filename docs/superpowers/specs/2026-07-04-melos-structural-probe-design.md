@@ -37,7 +37,7 @@ Add a measurement-only Melos structural probe that emits parser-IR evidence for:
 - Do not perform TEI-EAJ XML comparison in ab-validator; ABC owns that report.
 - Do not fold TEI-EAJ Level 4 enrichment (`persName`, `placeName`, `said`, etc.)
   into parser compatibility.
-- Do not treat agreement among four parsers as source-authority proof.
+- Do not treat agreement among five parsers as source-authority proof.
 
 ## Inputs
 

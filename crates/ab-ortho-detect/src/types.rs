@@ -44,7 +44,7 @@ pub struct OffsetMap {
     /// normalized-text byte range to the corresponding original-text range.
     /// Tuple: (normalized_byte_offset, original_byte_offset,
     ///         length_in_normalized, length_in_original).
-    entries: Vec<(usize, usize, usize, usize)>,
+    pub(crate) entries: Vec<(usize, usize, usize, usize)>,
 }
 
 impl OffsetMap {

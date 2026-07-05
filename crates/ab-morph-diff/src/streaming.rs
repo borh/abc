@@ -290,6 +290,8 @@ mod tests {
             source_text: source.to_owned(),
             morphemes: morphemes.into_iter().collect(),
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         }
     }
 

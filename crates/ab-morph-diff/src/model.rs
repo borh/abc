@@ -124,6 +124,10 @@ pub struct Analysis {
     pub source_text: String,
     pub morphemes: Vec<Morpheme>,
     pub warnings: Vec<AnalyzerWarning>,
+    /// Orthographic normalizations applied before tokenization.
+    pub ortho_annotations: Option<Vec<ab_ortho_detect::OrthoAnnotation>>,
+    /// Maps normalized-text byte ranges to original-text byte ranges.
+    pub ortho_offset_map: Option<ab_ortho_detect::OffsetMap>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

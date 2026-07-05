@@ -25,6 +25,8 @@ pub(crate) fn build_analysis_from_tokens(
         source_text,
         morphemes,
         warnings: Vec::new(),
+        ortho_annotations: None,
+        ortho_offset_map: None,
     })
 }
 

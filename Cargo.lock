@@ -144,6 +144,7 @@ dependencies = [
 name = "ab-morph-diff"
 version = "0.1.0"
 dependencies = [
+ "ab-ortho-detect",
  "criterion",
  "proptest",
  "serde",

@@ -1072,6 +1072,8 @@ fn test_analysis(kind: TestAnalyzerKind, document: &PlainTextDocument) -> Analys
         source_text: document.text.clone(),
         morphemes,
         warnings: Vec::new(),
+        ortho_annotations: None,
+        ortho_offset_map: None,
     }
 }
 
@@ -1942,6 +1944,8 @@ mod tests {
                 },
             ],
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         };
 
         let mut report = StringStatsReport::default();
@@ -2045,6 +2049,8 @@ mod tests {
                 features: FeatureMap::new(),
             }],
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         }
     }
 

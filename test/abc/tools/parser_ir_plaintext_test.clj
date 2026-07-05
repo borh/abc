@@ -62,6 +62,26 @@
                        "classification" "heuristic"
                        "source_pointer" "blocks[78]"}]})))))
 
+(deftest paragraph-layout-does-not-enter-plaintext-test
+  (testing "plaintext ignores paragraph layout metadata and emits content only"
+    (is (= "台詞"
+           (plaintext/render-string
+            {"nodes" [{"type" "text"
+                       "span" {"start" 0 "end" 6}
+                       "text" "台詞"}]
+             "paragraphs" [{"id" "p000000"
+                            "span" {"start" 0 "end" 6
+                                    "coordinate_system" "decoded_utf8"}
+                            "span_source" "direct"
+                            "node_range" {"start" 0 "end" 1}
+                            "role" "body"
+                            "source_pointer" "blocks[0]"
+                            "classification" "direct"
+                            "layout" {"kind" "burasage"
+                                      "first_line_indent" 0
+                                      "continuation_indent" 1
+                                      "source" "aat-style"}}]})))))
+
 (deftest render-omits-empty-or-missing-policy-metadata-test
   (testing "plaintext omits policy-required metadata when node payload is empty or missing"
     (is (= {:text ""

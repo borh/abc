@@ -12,17 +12,24 @@ ABC now accepts the parser-IR structure needed for the first Level 3 paragraph/s
 - TEI two-path rendering:
   - old documents without `paragraphs[]` keep the existing flat `nodes[]` path,
   - documents with populated `paragraphs[]` render by paragraph ranges,
-- plaintext source notes are kept separate from body text by appending back-placement notes after the body.
+- plaintext source notes are kept separate from body text by appending back-placement notes after the body,
+- optional paragraph `layout` metadata for Aozora indentation/alignment layout.
 
-The old parser-IR schema hash remains accepted for legacy ab-validator compatibility fixtures. The current schema hash is:
+Older parser-IR schema hashes remain accepted for legacy ab-validator compatibility fixtures. The current schema hash is:
 
-`sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2`
+`sha256:87560244b6d3e25bc231ed352b03b95e8931484df7dc18abe26f91a94c52f4a3`
 
 ## Renderer Policy
 
 For TEI:
 
 - `role = "body"` paragraph rows render as body `<p>` elements.
+- `paragraphs[].layout` renders as `p@rend` tokens:
+  - `jisage indent(N)`,
+  - `burasage first(N) rest(M)`,
+  - `chitsuki align(right) offset-from-end(N)`,
+  - `jizume width(N)`,
+  - `line-jisage indent(N)`.
 - `source-note.placement = "back"` renders in TEI back matter as a source note.
 - `source-note.placement = "body"` renders inline/local at the paragraph position.
 - `source-note.placement = "front"` renders in front matter.
@@ -31,6 +38,7 @@ For TEI:
 For plaintext:
 
 - body text remains in source node order,
+- paragraph layout is ignored and never appears in plaintext output,
 - `placement = "back"` source notes are appended after a blank line,
 - body-base-text comparison should ignore `source-note` nodes rather than using plaintext output as the base-text extractor.
 
@@ -50,10 +58,11 @@ There is still no manifest/admission field that formally claims "Level 3". When 
 Next ab-validator work:
 
 1. Sync `schemas/parser-ir.schema.json` into `data/abc-schemas/schemas/parser-ir.schema.json`.
-2. Update schema hash expectations to `sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2`.
+2. Update schema hash expectations to `sha256:87560244b6d3e25bc231ed352b03b95e8931484df7dc18abe26f91a94c52f4a3`.
 3. Regenerate mapping from measured mapper rules against the new parser-IR schema.
 4. Update `ab-aat-to-parser-ir` to emit:
    - `paragraphs[]` for AAT paragraph blocks,
    - `source-note` nodes for measured/heuristic source attribution,
    - `span_source` on paragraph rows.
+   - `layout` on paragraph rows for AAT `jisage`, `burasage`, `chitsuki`, `jizume`, and `line-jisage`.
 5. Rerun conversion audit and structural probes before adding new compatibility registry entries for the new schema hash.

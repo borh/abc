@@ -385,10 +385,10 @@ Expected: all three focused tests pass.
 Run:
 
 ```bash
-bin/kaocha --focus 'abc.tools.validate-design-bundle-test' --focus 'abc.tools.parser-ir-tei-test' --focus 'abc.tools.parser-ir-plaintext-test' --focus 'abc.tools.materialize-publication-test'
+ABC_TEI_SCHEMA_SKIP=1 bin/kaocha --focus 'abc.tools.validate-design-bundle-test' --focus 'abc.tools.parser-ir-tei-test' --focus 'abc.tools.parser-ir-plaintext-test' --focus 'abc.tools.materialize-publication-test'
 ```
 
-Expected: all focused namespaces pass.
+Expected: all focused namespaces pass. `ABC_TEI_SCHEMA_SKIP=1` is the established local path when `TEI_SCHEMA_PATH` is not set; the Nix validation app exercises the TEI schema path separately.
 
 - [ ] **Step 6: Run schema hash command and record the new hash in the commit message body**
 
@@ -413,7 +413,7 @@ Run:
 
 ```bash
 git diff --check
-bin/kaocha --focus 'abc.tools.validate-design-bundle-test' --focus 'abc.tools.parser-ir-tei-test' --focus 'abc.tools.parser-ir-plaintext-test' --focus 'abc.tools.materialize-publication-test'
+ABC_TEI_SCHEMA_SKIP=1 bin/kaocha --focus 'abc.tools.validate-design-bundle-test' --focus 'abc.tools.parser-ir-tei-test' --focus 'abc.tools.parser-ir-plaintext-test' --focus 'abc.tools.materialize-publication-test'
 clojure -M:abc/validate-design-bundle
 ```
 

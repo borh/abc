@@ -49,6 +49,9 @@
 (def ^:private legacy-parser-ir-schema-hash
   "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396")
 
+(def ^:private latest-admitted-parser-ir-schema-hash
+  "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d")
+
 (def ^:private current-parser-ir-schema-hash
   "sha256:87560244b6d3e25bc231ed352b03b95e8931484df7dc18abe26f91a94c52f4a3")
 
@@ -210,6 +213,10 @@
   (is (empty?
        (validate/schema-hash-errors
         {"parser_ir_schema_hash" legacy-parser-ir-schema-hash
+         "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"})))
+  (is (empty?
+       (validate/schema-hash-errors
+        {"parser_ir_schema_hash" latest-admitted-parser-ir-schema-hash
          "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"})))
   (is (= [(str "ab-validator parser_ir_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash " current-parser-ir-schema-hash)
           "ab-validator diagnostic_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000008 does not match ABC diagnostic schema hash sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"]
@@ -617,7 +624,7 @@
    :mapping_hash v4-mapping-hash
    :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-   :parser_ir_schema_hash current-parser-ir-schema-hash})
+   :parser_ir_schema_hash latest-admitted-parser-ir-schema-hash})
 
 (def ^:private v4-epub3-registry-entry
   (assoc v4-epub3-compat-query
@@ -646,7 +653,7 @@
    :mapping_hash v4-mapping-hash
    :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-   :parser_ir_schema_hash current-parser-ir-schema-hash})
+   :parser_ir_schema_hash latest-admitted-parser-ir-schema-hash})
 
 (def ^:private v4-rs-registry-entry
   (assoc v4-rs-compat-query
@@ -675,7 +682,7 @@
    :mapping_hash v4-mapping-hash
    :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-   :parser_ir_schema_hash current-parser-ir-schema-hash})
+   :parser_ir_schema_hash latest-admitted-parser-ir-schema-hash})
 
 (def ^:private v4-aozora2-registry-entry
   (assoc v4-aozora2-compat-query
@@ -704,7 +711,7 @@
    :mapping_hash v4-mapping-hash
    :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-   :parser_ir_schema_hash current-parser-ir-schema-hash})
+   :parser_ir_schema_hash latest-admitted-parser-ir-schema-hash})
 
 (def ^:private v4-html-registry-entry
   (assoc v4-html-compat-query
@@ -896,7 +903,7 @@
            (compat/admission-report
             {:entries [v3-epub3-registry-entry v3-rs-registry-entry v3-html-registry-entry]}
             {:entries [v3-epub3-registry-entry v3-rs-registry-entry v3-html-registry-entry]}))))
-  (testing "reports when current 0.2.3 Level 3 producer candidates are admitted exactly"
+  (testing "reports when latest admitted 0.2.3 Level 3 producer candidates are admitted exactly"
     (is (= {:status :admitted
             :candidate-count 4
             :admitted [v4-epub3-registry-entry

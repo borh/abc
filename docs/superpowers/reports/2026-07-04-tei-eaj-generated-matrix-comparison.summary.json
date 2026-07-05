@@ -28396,9 +28396,9 @@
       "tei_eaj_file": "data/draft/tei_lib_lv4/54457_tei.xml",
       "selected_aat": {
         "label": "aozora:54457",
-        "path": "/db/ab-validator/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter/001668_54457-49c91f8ee388.json",
+        "path": "/db/ab-validator/aat-corpus/aozora-tei-eaj-sanitized-20260705T030000Z/aat/aozora-adapter/001668_54457-49c91f8ee388.json",
         "adapter": "aozora",
-        "adapter_version": "aozora-adapter 0.1.0 aozora 0.4.1"
+        "adapter_version": "aozora-adapter 0.1.0 aozora 0.4.1-dev+g5df2cfa"
       },
       "aat": {
         "block_count": 1,

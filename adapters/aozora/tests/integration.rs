@@ -148,6 +148,26 @@ fn preserves_visible_text_around_ruby_in_source_order() {
 }
 
 #[test]
+fn slices_constructs_in_upstream_sanitized_coordinate_space() {
+    let source = "Title\r\n-------------------------------------------------------\r\n本文｜青梅《おうめ》後\r\n";
+    let aat = run_aat(source);
+    let content = paragraph_content(&aat);
+    let kinds = content
+        .iter()
+        .map(|node| node["kind"].as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    assert_eq!(kinds, ["text", "ruby", "text"]);
+    assert_eq!(
+        content[0]["value"],
+        "Title\n\n-------------------------------------------------------\n本文"
+    );
+    assert_eq!(content[1]["base"], "青梅");
+    assert_eq!(content[1]["reading"], "おうめ");
+    assert_eq!(content[2]["value"], "後\n");
+}
+
+#[test]
 fn html_mode_delegates_to_upstream_renderer() {
     let stdout = run_mode("｜青梅《おうめ》後", "html");
     let html = String::from_utf8(stdout).expect("html utf-8");

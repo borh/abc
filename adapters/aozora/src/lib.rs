@@ -6,6 +6,7 @@ use std::{
 };
 
 use anyhow::{Context, Result, bail};
+use aozora_pipeline::lexer::sanitize as sanitize_aozora_source;
 use encoding_rs::SHIFT_JIS;
 use regex::Regex;
 use serde::Deserialize;
@@ -17,6 +18,7 @@ pub const VERSION_PREFIX: &str = "aozora-adapter 0.1.0";
 #[derive(Debug)]
 pub struct DecodedSource {
     pub text: String,
+    pub span_text: String,
     pub encoding: &'static str,
     pub source_hash: String,
 }
@@ -62,22 +64,31 @@ struct AozoraGaiji {
 pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     let source_hash = format!("sha256:{}", hex_sha256(bytes));
     if bytes.starts_with(&[0xef, 0xbb, 0xbf]) {
+        let text = std::str::from_utf8(&bytes[3..])?.to_owned();
+        let span_text = sanitize_aozora_source(&text).text.into_owned();
         return Ok(DecodedSource {
-            text: std::str::from_utf8(&bytes[3..])?.to_owned(),
+            text,
+            span_text,
             encoding: "utf-8-bom",
             source_hash,
         });
     }
     if let Ok(text) = std::str::from_utf8(bytes) {
+        let text = text.to_owned();
+        let span_text = sanitize_aozora_source(&text).text.into_owned();
         return Ok(DecodedSource {
-            text: text.to_owned(),
+            text,
+            span_text,
             encoding: "utf-8",
             source_hash,
         });
     }
     let (cow, _, had_errors) = SHIFT_JIS.decode(bytes);
+    let text = cow.into_owned();
+    let span_text = sanitize_aozora_source(&text).text.into_owned();
     Ok(DecodedSource {
-        text: cow.into_owned(),
+        text,
+        span_text,
         encoding: if had_errors {
             "windows-31j-lossy"
         } else {
@@ -89,9 +100,9 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
 
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decoded = decode_source_bytes(bytes)?;
-    let nodes = inspect::<AozoraNode>("nodes", &decoded.text)?;
-    let diagnostics = inspect::<AozoraDiagnostic>("diagnostics", &decoded.text)?;
-    let gaiji = inspect::<AozoraGaiji>("gaiji", &decoded.text)?;
+    let nodes = inspect::<AozoraNode>("nodes", &decoded.span_text)?;
+    let diagnostics = inspect::<AozoraDiagnostic>("diagnostics", &decoded.span_text)?;
+    let gaiji = inspect::<AozoraGaiji>("gaiji", &decoded.span_text)?;
     let aat = build_aat(&decoded, &nodes.data, &diagnostics.data, &gaiji.data);
     let mut out = Vec::new();
     serde_json::to_writer(&mut out, &aat)?;
@@ -115,7 +126,7 @@ fn build_aat(
         .iter()
         .map(|entry| (entry.span.start, entry.clone()))
         .collect::<BTreeMap<_, _>>();
-    let blocks = if decoded.text.contains("［＃ここから2字下げ］") {
+    let blocks = if decoded.span_text.contains("［＃ここから2字下げ］") {
         build_jisage_fixture_blocks(decoded, nodes, &gaiji_by_start)
     } else {
         vec![json!({
@@ -129,7 +140,7 @@ fn build_aat(
         .collect::<Vec<_>>();
     if !nodes.is_empty() {
         warnings.push(json!({
-            "message": "aozora upstream spans are byte offsets; line_start and line_end are synthesized as 1",
+            "message": "aozora upstream spans are sanitized-source byte offsets; line_start and line_end are synthesized as 1",
             "line": 1
         }));
     }
@@ -182,12 +193,12 @@ fn inline_content(
             "ruby" => content.push(ruby_node(decoded, node)),
             "gaiji" => content.push(gaiji_node(decoded, node, gaiji_by_start)),
             "kaeriten" => content.push(raw_node(decoded, node, "kaeriten")),
-            "directive" if source_slice(&decoded.text, &node.span).contains("返り点") => {
+            "directive" if source_slice(&decoded.span_text, &node.span).contains("返り点") => {
                 content.push(raw_node(decoded, node, "kaeriten"));
             }
             "pageBreak" => content.push(json!({
                 "kind": "raw",
-                "source": source_slice(&decoded.text, &node.span),
+                "source": source_slice(&decoded.span_text, &node.span),
                 "x-provenance": "parser-derived",
                 "x-source-marker-kind": "pageBreak",
                 "x-break-kind": "page",
@@ -197,10 +208,10 @@ fn inline_content(
         }
         cursor = cursor.max(node.span.end);
     }
-    if cursor < decoded.text.len() {
-        push_source_gap(&mut content, decoded, cursor, decoded.text.len());
+    if cursor < decoded.span_text.len() {
+        push_source_gap(&mut content, decoded, cursor, decoded.span_text.len());
     }
-    if decoded.text.contains("［＃改ページ］")
+    if decoded.span_text.contains("［＃改ページ］")
         && !content
             .iter()
             .any(|node| node.get("x-break-kind").and_then(Value::as_str) == Some("page"))
@@ -217,7 +228,7 @@ fn inline_content(
 }
 
 fn push_source_gap(content: &mut Vec<Value>, decoded: &DecodedSource, start: usize, end: usize) {
-    let Some(source) = decoded.text.get(start..end) else {
+    let Some(source) = decoded.span_text.get(start..end) else {
         return;
     };
     if source.is_empty() || source == "｜" {
@@ -252,7 +263,7 @@ fn contains_aozora_markup(source: &str) -> bool {
 }
 
 fn ruby_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
-    let source = source_slice(&decoded.text, &node.span);
+    let source = source_slice(&decoded.span_text, &node.span);
     let re = Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap();
     if let Some(caps) = re.captures(source) {
         json!({
@@ -289,7 +300,7 @@ fn gaiji_node(
 fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Value {
     json!({
         "kind": "raw",
-        "source": source_slice(&decoded.text, &node.span),
+        "source": source_slice(&decoded.span_text, &node.span),
         "x-provenance": "parser-derived",
         "x-source-marker-kind": marker_kind,
         "span": span_json(&node.span)

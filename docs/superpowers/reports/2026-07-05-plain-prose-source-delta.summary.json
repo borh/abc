@@ -8,19 +8,18 @@
     "aozora"
   ],
   "parser_evidence_coverage": {
-    "verdict": "FIVE_PARSER_EVIDENCE_INCOMPLETE",
+    "verdict": "FIVE_PARSER_EVIDENCE_COMPLETE",
     "observed_rows_by_parser": {
+      "aozora": 27,
       "aozora-epub3": 27,
       "aozora-rs": 27,
       "aozora2": 27,
       "aozora2html": 27
     },
-    "missing_parsers": [
-      "aozora"
-    ],
-    "row_entries_missing_required_parser_evidence": 108,
-    "work_files_missing_required_parser_evidence": 27,
-    "rows_missing_required_parser_evidence": 108
+    "missing_parsers": [],
+    "row_entries_missing_required_parser_evidence": 0,
+    "work_files_missing_required_parser_evidence": 0,
+    "rows_missing_required_parser_evidence": 0
   },
   "source_authority_gate": {
     "gate_status": "SOURCE_AUTHORITY_GATE_PASS",
@@ -48,7 +47,6 @@
   "classification_counts": {
     "adapter_paragraph_bug": 82,
     "evidence_gap": 5,
-    "missing_parser_evidence": 108,
     "ruby_metadata_not_plaintext": 46,
     "source_note_metadata_excluded": 15,
     "source_text_policy_required": 42
@@ -60,7 +58,7 @@
   ],
   "blocking_owner_counts": {
     "adapter": 82,
-    "evidence": 113,
+    "evidence": 5,
     "policy": 103
   },
   "rows": [
@@ -74,23 +72,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -105,23 +98,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -136,21 +124,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "source_text_policy_required"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "text policy required for different"
       ]
     },
@@ -164,21 +147,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "source_text_policy_required"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "text policy required for different"
       ]
     },
@@ -192,23 +170,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -223,23 +196,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -254,23 +222,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -285,23 +248,18 @@
       "paragraph_origin_bucket": "adapter_collapsed",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "failed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_collapsed",
         "text policy required for different"
       ]
@@ -316,23 +274,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -347,23 +300,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -378,23 +326,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -409,21 +352,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
     },
@@ -437,21 +375,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "source_text_policy_required"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "text policy required for different"
       ]
     },
@@ -465,21 +398,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "source_text_policy_required"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "text policy required for different"
       ]
     },
@@ -493,23 +421,18 @@
       "paragraph_origin_bucket": "adapter_collapsed",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_collapsed",
         "text policy required for different"
       ]
@@ -524,23 +447,18 @@
       "paragraph_origin_bucket": "adapter_collapsed",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_collapsed",
         "text policy required for different"
       ]
@@ -555,23 +473,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_tei_eaj_contains_generated",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -586,23 +499,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -617,23 +525,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -648,23 +551,18 @@
       "paragraph_origin_bucket": "adapter_under_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_under_segmented",
         "text policy required for different"
       ]
@@ -679,23 +577,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -710,23 +603,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -741,23 +629,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -772,23 +655,18 @@
       "paragraph_origin_bucket": "adapter_collapsed",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_collapsed",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -803,21 +681,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_equal",
       "classifications": [
-        "missing_parser_evidence",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
     },
@@ -831,21 +704,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_equal",
       "classifications": [
-        "missing_parser_evidence",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
     },
@@ -859,23 +727,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -890,23 +753,18 @@
       "paragraph_origin_bucket": "adapter_collapsed",
       "body_text_match_bucket": "ruby_expanded_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_collapsed",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -921,23 +779,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -952,21 +805,16 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "evidence"
+        "adapter"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented"
       ]
     },
@@ -980,21 +828,16 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "evidence"
+        "adapter"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented"
       ]
     },
@@ -1008,21 +851,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
       "classifications": [
-        "missing_parser_evidence",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
     },
@@ -1036,23 +874,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1067,23 +900,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -1098,21 +926,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
     },
@@ -1126,23 +949,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
@@ -1157,23 +975,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1188,23 +1001,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -1219,23 +1027,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1250,21 +1053,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
     },
@@ -1278,23 +1076,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1309,23 +1102,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -1340,23 +1128,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1371,23 +1154,18 @@
       "paragraph_origin_bucket": "adapter_collapsed",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_collapsed",
         "text policy required for different"
       ]
@@ -1402,23 +1180,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1433,23 +1206,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -1464,23 +1232,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1495,21 +1258,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
     },
@@ -1523,21 +1281,16 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "evidence"
+        "adapter"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented"
       ]
     },
@@ -1551,23 +1304,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -1582,21 +1330,16 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "evidence"
+        "adapter"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented"
       ]
     },
@@ -1609,21 +1352,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "base_equal",
-      "classifications": [
-        "missing_parser_evidence"
-      ],
-      "blocking_owners": [
-        "evidence"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "missing required parser evidence: aozora"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57003",
@@ -1635,23 +1370,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1666,23 +1396,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -1697,23 +1422,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1728,21 +1448,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
     },
@@ -1756,23 +1471,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1787,23 +1497,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1818,23 +1523,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1849,21 +1549,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
     },
@@ -1877,23 +1572,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1908,23 +1598,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -1939,23 +1624,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -1970,21 +1650,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
     },
@@ -1998,23 +1673,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -2029,23 +1699,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -2060,23 +1725,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -2091,21 +1751,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "source_text_policy_required"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "text policy required for different"
       ]
     },
@@ -2119,23 +1774,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -2150,23 +1800,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -2181,23 +1826,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -2212,21 +1852,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "source_text_policy_required"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "text policy required for different"
       ]
     },
@@ -2240,23 +1875,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
@@ -2271,23 +1901,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -2302,23 +1927,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
@@ -2333,21 +1953,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
     },
@@ -2361,23 +1976,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -2392,23 +2002,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -2423,23 +2028,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -2454,21 +2054,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
     },
@@ -2482,23 +2077,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -2513,23 +2103,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -2544,23 +2129,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -2575,21 +2155,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
     },
@@ -2603,23 +2178,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -2634,23 +2204,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -2665,23 +2230,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -2696,21 +2256,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
     },
@@ -2724,23 +2279,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -2755,23 +2305,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -2786,23 +2331,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -2817,21 +2357,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
     },
@@ -2845,23 +2380,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -2876,23 +2406,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -2907,23 +2432,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -2938,21 +2458,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "source_text_policy_required"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "text policy required for different"
       ]
     },
@@ -2966,23 +2481,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -2997,23 +2507,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -3028,23 +2533,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -3059,21 +2559,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "source_text_policy_required"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "text policy required for different"
       ]
     },
@@ -3087,23 +2582,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -3118,23 +2608,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "text policy required for different"
       ]
@@ -3149,21 +2634,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
     },
@@ -3177,23 +2657,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]
@@ -3208,23 +2683,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -3239,23 +2709,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
@@ -3270,21 +2735,16 @@
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "missing_parser_evidence",
         "ruby_metadata_not_plaintext"
       ],
       "blocking_owners": [
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
       ]
     },
@@ -3298,23 +2758,18 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
       "classifications": [
-        "missing_parser_evidence",
         "adapter_paragraph_bug",
         "source_note_metadata_excluded"
       ],
       "blocking_owners": [
         "adapter",
-        "evidence",
         "policy"
       ],
       "evidence": {
-        "missing_required_parsers_for_row": [
-          "aozora"
-        ],
+        "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "missing required parser evidence: aozora",
         "paragraph origin is adapter_over_segmented",
         "source-note or parenthetical source attribution belongs outside body plaintext"
       ]

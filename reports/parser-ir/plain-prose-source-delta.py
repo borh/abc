@@ -141,6 +141,27 @@ def structural_rows_by_file(structural: dict[str, Any]) -> dict[str, dict[str, A
     return by_file
 
 
+def structural_adapters(row: dict[str, Any] | None) -> set[str]:
+    if not isinstance(row, dict):
+        return set()
+    inputs = row.get("aat_inputs", [])
+    if not isinstance(inputs, list):
+        return set()
+    adapters: set[str] = set()
+    for entry in inputs:
+        if not isinstance(entry, dict):
+            continue
+        aat = entry.get("aat")
+        adapter = None
+        if isinstance(aat, dict):
+            adapter = aat.get("adapter")
+        if not adapter:
+            adapter = entry.get("adapter")
+        if adapter:
+            adapters.add(str(adapter))
+    return adapters
+
+
 def load_source_authority_gate(
     admission: dict[str, Any], source: dict[str, Any]
 ) -> tuple[dict[str, Any], bool, str | None]:
@@ -312,14 +333,21 @@ def apply_source_authority_gate(
 
 
 def parser_evidence_coverage(
-    rows: list[dict[str, Any]],
+    rows: list[dict[str, Any]], structural_by_file: dict[str, dict[str, Any]]
 ) -> tuple[dict[str, Any], dict[tuple[str, str], list[str]]]:
-    observed_rows_by_parser = Counter(row_adapter(row) for row in rows)
-    observed_global = set(observed_rows_by_parser)
-    missing_global = [parser for parser in REQUIRED_PARSERS if parser not in observed_global]
     adapters_by_row: dict[tuple[str, str], set[str]] = defaultdict(set)
     for row in rows:
-        adapters_by_row[row_key(row)].add(row_adapter(row))
+        key = row_key(row)
+        tei_eaj_file = str(row.get("tei_eaj_file") or "")
+        adapters_by_row[key].update(structural_adapters(structural_by_file.get(tei_eaj_file)))
+        adapters_by_row[key].add(row_adapter(row))
+
+    observed_rows_by_parser: Counter[str] = Counter()
+    for adapters in adapters_by_row.values():
+        for adapter in adapters:
+            observed_rows_by_parser[adapter] += 1
+    observed_global = set(observed_rows_by_parser)
+    missing_global = [parser for parser in REQUIRED_PARSERS if parser not in observed_global]
     missing_by_row = {
         key: [parser for parser in REQUIRED_PARSERS if parser not in adapters]
         for key, adapters in adapters_by_row.items()
@@ -355,7 +383,7 @@ def build_summary(
         admission, source
     )
     plain_rows = [row for row in matrix.get("rows", []) if row_profile(row) == "plain_prose"]
-    coverage, missing_by_row = parser_evidence_coverage(plain_rows)
+    coverage, missing_by_row = parser_evidence_coverage(plain_rows, structural_by_file)
     if coverage["verdict"] != "FIVE_PARSER_EVIDENCE_COMPLETE" and not allow_missing_parser_evidence:
         raise SystemExit("missing parser evidence; rerun with --allow-missing-parser-evidence for exploratory report")
     classified_rows = [classify_row(row, missing_by_row.get(row_key(row), [])) for row in plain_rows]

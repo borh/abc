@@ -4,7 +4,7 @@ Date: 2026-07-04
 
 ## Verdict
 
-`PARSER_IR_LEVEL3_REPRESENTABLE_WITH_ADAPTER_AND_SOURCE_AUTHORITY_GAPS`
+`PARSER_IR_LEVEL3_INFRASTRUCTURE_READY_PROFILE_ADMISSION_REQUIRED`
 
 Parser-IR can now carry Level 3 paragraph/source-note structure when the AAT
 input supplies it. The whole pinned TEI-EAJ/aozora_tei comparison no longer has
@@ -20,15 +20,17 @@ a row-level parser-IR representability gap:
 | adapter gap rows | 18 |
 | evidence gap rows | 5 |
 
-This is not yet a full Level 3 TEI admission claim. The remaining blockers are
-now evidence and policy blockers:
+This is not yet a full Level 3 TEI admission claim. Source-authority
+representability has passed for the current corpus snapshot: the current
+source-authority report is `SOURCE_AUTHORITY_GATE_PASS` with 17,894 works
+scanned and 0 unallowlisted unknown markers. Source inventory is therefore not
+a current blocker, though future corpus or scanner changes must rerun the gate.
 
-- source-authority representability is still failing,
-- adapter paragraph fidelity is inconsistent,
-- TEI-EAJ uses drama, verse, note, front/back, and Level 4 enrichment profiles
-  that cannot be judged by paragraph-count parity alone,
-- one parser input, `aozora2`, is currently Melos-scoped rather than broad
-  workset evidence.
+The remaining blockers are:
+
+1. Adapter paragraph fidelity is inconsistent.
+2. TEI-EAJ uses drama, verse, note, front/back, and Level 4 enrichment profiles that cannot be judged by paragraph-count parity alone.
+3. One parser input, `aozora2`, is currently Melos-scoped rather than broad workset evidence.
 
 The two former `15099` evidence gaps were false negatives. TEI-EAJ identifies
 the work as `15099`, while the measured Aozora corpora materialize the same
@@ -132,11 +134,7 @@ compatibility gates.
 
 ## Current Blockers to Level 3 TEI Generation
 
-1. Source-authority representability must pass or have explicit waivers. The
-   current source-authority report is still
-   `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`, with 260 unallowlisted
-   source markers. Four parser outputs are triangulation, not proof that all
-   Aozora source constructs are representable.
+1. Source-authority representability has passed for the current corpus snapshot. The current source-authority report is `SOURCE_AUTHORITY_GATE_PASS` with 17,894 works scanned and 0 unallowlisted unknown markers. This removes source inventory as a current blocker, but future corpus or scanner changes must rerun the gate.
 
 2. Adapter paragraph fidelity must be profile-aware. The broad adapters preserve
    enough paragraph data to prove parser-IR can carry it, but not enough to claim
@@ -157,8 +155,10 @@ compatibility gates.
    source-text fidelity analysis before they can be used as publication gates.
 
 5. Durable work identity still belongs in ABC. The local TEI-EAJ filename alias
-   for `15099` is useful evidence, but ABC should own source aliases for durable
-   compatibility records.
+  for `15099` is useful evidence, but ABC should own source aliases for durable
+  compatibility records.
+
+The current admission policy is now specified in `docs/superpowers/specs/2026-07-05-profile-aware-level3-tei-admission.md` and measured in `docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.md`. That report separates `LEVEL3_IR_INFRASTRUCTURE_READY` from `LEVEL3_PLAIN_PROSE_ADMITTED` so parser-IR capability and adapter admission are not conflated.
 
 ## Recommended Bridge to Level 3
 
@@ -172,8 +172,7 @@ compatibility gates.
      structure is Level 3 or deferred,
    - Level 4 enrichment: keep named entities and `said`-style markup outside
      parser compatibility unless ABC promotes them.
-3. Resolve source-authority strict errors before claiming all Aozora markdown is
-   representable.
+3. Source-authority strict errors are closed for the current corpus snapshot. Future scanner or corpus changes must rerun `just source-authority-representability-gate`, but this is no longer a current Level 3 blocker.
 4. Fix adapter fidelity in this order:
    - `aozora-rs` collapse rows,
    - `aozora2` workset coverage or explicit Melos-only scope,

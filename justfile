@@ -276,6 +276,16 @@ parser-ir-level3-tei-eaj-generated-matrix-audit MAX_ROWS="0" OUT_DIR="" STRUCTUR
 		--candidate-mode all \
 		--max-rows "{{MAX_ROWS}}"
 
+parser-ir-level3-admission-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-level3-admission-smoke.sh"
+
+parser-ir-level3-admission-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.summary.json":
+	@python3 "{{repo_root}}/reports/parser-ir/level3-admission.py" \
+		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
+		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}"
+
 tei-eaj-structural-expansion JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
 	@test -f "{{tei_eaj_workset}}" || { echo "missing TEI-EAJ workset export: {{tei_eaj_workset}}" >&2; exit 2; }
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"

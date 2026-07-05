@@ -109,9 +109,7 @@ pub(crate) fn run_analyze_aat_with_nway_impl(
     if analyzer_ids.is_empty() {
         bail!("provide at least one --analyzer");
     }
-    if jobs == 0 {
-        bail!("--jobs must be at least 1");
-    }
+    let jobs = crate::auto_jobs::resolve_jobs(jobs, analyzer_ids.len());
     let inputs = discover_aat_inputs(aat, aat_dir)?;
     let input_mode = if aat.is_some() { "aat" } else { "aat_dir" };
     let input_path = aat
@@ -177,15 +175,13 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
     jobs: usize,
     warehouse_profile: WarehouseProfile,
 ) -> Result<()> {
-    if jobs == 0 {
-        bail!("--jobs must be greater than zero");
-    }
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
     }
     if analyzer_ids.is_empty() {
         bail!("provide at least one --analyzer");
     }
+    let jobs = crate::auto_jobs::resolve_jobs(jobs, analyzer_ids.len());
     let inputs = discover_aat_inputs(aat, aat_dir)?;
     let input_mode = if aat.is_some() { "aat" } else { "aat_dir" };
     let input_path = aat

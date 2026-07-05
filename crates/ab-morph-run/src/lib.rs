@@ -1,3 +1,4 @@
+mod auto_jobs;
 mod compact;
 mod nway;
 mod options;
@@ -1162,7 +1163,10 @@ mod tests {
     }
 
     #[test]
-    fn rejects_zero_jobs() {
+    fn zero_jobs_resolves_to_auto_instead_of_erroring() {
+        // `--jobs 0` now means "auto" (memory-aware resolution), so it no
+        // longer bails on the jobs check; the run proceeds to the next
+        // validation step (a missing --aat file, here) instead.
         let err = run_analyze_aat(
             Some(Path::new("a.json")),
             None,
@@ -1178,7 +1182,7 @@ mod tests {
             None,
         )
         .unwrap_err();
-        assert!(err.to_string().contains("at least 1"));
+        assert!(err.to_string().contains("--aat must point to a regular file"));
     }
 
     #[test]

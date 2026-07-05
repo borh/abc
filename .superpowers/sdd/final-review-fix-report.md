@@ -22,3 +22,10 @@
 - Normalized custom-schema ownership tokens to `custom_schema` anywhere this report emits custom-schema unsupported owners, including unknown node kinds and unsupported field/diagnostic placeholders.
 - Extended the smoke harness with assertions for `diagnostic_coverage.by_field."warnings[].code"` and an unknown parser-IR node fixture that requires `.node_coverage.unsupported[0].owner == "custom_schema"`.
 - Regenerated `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json` and `docs/superpowers/reports/2026-07-06-ir-publication-coverage.md` via `just parser-ir-publication-coverage-report`.
+
+## 2026-07-06 IR Publication Coverage final re-review closing fixes
+
+- Added `field_key_for_pointer()` alongside `diagnostic_field_key()` and now skip known `FIELD_COVERAGE_SPECS` pointers during `source_construct_coverage`, so field facts like `heading.level`, `gaiji.raw_marker`, and `ruby.direction` stay in `field_coverage` instead of leaking into unsupported construct gaps.
+- Removed the non-spec unsupported owner fallback token `evidence`; unknown rule categories now fall back to the allowed `policy` owner, while the explicit category-to-owner mappings remain `parser_ir_schema`, `custom_schema`, `aat_to_parser_ir_converter`, and `policy`.
+- Extended unsupported gap items with prevalence metadata: rule-based gaps parse `Observed N occurrences` from rule descriptions into `observed_occurrences` with `prevalence_source: "rule_description"`, and schema/node-based gaps now emit `observed_occurrences: null` plus `prevalence_source: "unavailable"`.
+- Tightened the smoke harness to assert that `heading.level` and `gaiji.raw_marker` do not appear in unsupported gaps, that no unsupported owner is `evidence`, and that both rule-based and node-based unsupported gaps expose the expected prevalence shape.

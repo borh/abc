@@ -247,6 +247,7 @@ CLASS_ORDER = (
     "unsupported_gap",
 )
 DIRECT_POINTER_PATTERN = re.compile(r"^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$")
+OBSERVED_OCCURRENCES_PATTERN = re.compile(r"\bObserved\s+(\d+)\s+occurrences\b", re.IGNORECASE)
 CUSTOM_SCHEMA_OWNER = "custom_schema"
 
 
@@ -402,6 +403,17 @@ def diagnostic_field_key(pointer: Any) -> str | None:
     return None
 
 
+def field_key_for_pointer(pointer: Any) -> str | None:
+    if not isinstance(pointer, str):
+        return None
+    candidate = pointer.strip()
+    if not DIRECT_POINTER_PATTERN.fullmatch(candidate):
+        return None
+    if candidate in FIELD_COVERAGE_SPECS:
+        return candidate
+    return None
+
+
 def diagnostic_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
     by_field: dict[str, dict[str, Any]] = {}
     unsupported: list[dict[str, Any]] = []
@@ -491,7 +503,16 @@ def unsupported_owner(rule: dict[str, Any], construct: str) -> str:
         "STRUCTURAL": "aat_to_parser_ir_converter",
         "AMBIGUITY": "policy",
     }
-    return owners.get(category, "evidence")
+    return owners.get(category, "policy")
+
+
+def unsupported_gap_prevalence(rule: dict[str, Any]) -> tuple[int | None, str]:
+    description = rule.get("description")
+    if isinstance(description, str):
+        match = OBSERVED_OCCURRENCES_PATTERN.search(description)
+        if match is not None:
+            return int(match.group(1)), "rule_description"
+    return None, "unavailable"
 
 
 def source_construct_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
@@ -499,6 +520,8 @@ def source_construct_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
     unsupported: list[dict[str, Any]] = []
     for rule in mapping.get("transform_rule_descriptions", []):
         if diagnostic_field_key(rule.get("parser_ir_pointer")) is not None:
+            continue
+        if field_key_for_pointer(rule.get("parser_ir_pointer")) is not None:
             continue
         aat_pointer = rule.get("aat_pointer")
         construct = construct_from_rule(rule)
@@ -531,6 +554,7 @@ def source_construct_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
                 }
             )
         if coverage_class == "unsupported_gap":
+            observed_occurrences, prevalence_source = unsupported_gap_prevalence(rule)
             unsupported.append(
                 {
                     "rule_id": rule.get("rule_id"),
@@ -538,6 +562,8 @@ def source_construct_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
                     "parser_ir_pointer": rule.get("parser_ir_pointer"),
                     "category": category,
                     "owner": unsupported_owner(rule, construct),
+                    "observed_occurrences": observed_occurrences,
+                    "prevalence_source": prevalence_source,
                 }
             )
     return {
@@ -693,10 +719,31 @@ def unsupported_gaps(
     diagnostic_coverage: dict[str, Any],
     construct_coverage: dict[str, Any],
 ) -> dict[str, Any]:
-    items = []
-    items.extend(node_coverage.get("unsupported", []))
-    items.extend(field_coverage.get("unsupported", []))
-    items.extend(diagnostic_coverage.get("unsupported", []))
+    items: list[dict[str, Any]] = []
+    for raw_item in node_coverage.get("unsupported", []):
+        items.append(
+            {
+                **raw_item,
+                "observed_occurrences": None,
+                "prevalence_source": "unavailable",
+            }
+        )
+    for raw_item in field_coverage.get("unsupported", []):
+        items.append(
+            {
+                **raw_item,
+                "observed_occurrences": None,
+                "prevalence_source": "unavailable",
+            }
+        )
+    for raw_item in diagnostic_coverage.get("unsupported", []):
+        items.append(
+            {
+                **raw_item,
+                "observed_occurrences": None,
+                "prevalence_source": "unavailable",
+            }
+        )
     items.extend(construct_coverage.get("unsupported", []))
     return {
         "count": len(items),

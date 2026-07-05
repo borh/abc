@@ -90,7 +90,21 @@ cat > "$mapping" <<'JSON'
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].content[].raw_material",
       "parser_ir_pointer": "(none)",
-      "description": "fixture unsupported raw source"
+      "description": "Observed 288 occurrences; fixture unsupported raw source"
+    },
+    {
+      "rule_id": "A-02",
+      "category": "AMBIGUITY",
+      "aat_pointer": "blocks[].content[].heading.level",
+      "parser_ir_pointer": "heading.level",
+      "description": "heading level projects to parser-IR policy field"
+    },
+    {
+      "rule_id": "A-03",
+      "category": "AMBIGUITY",
+      "aat_pointer": "blocks[].content[].gaiji.raw_marker",
+      "parser_ir_pointer": "gaiji.raw_marker",
+      "description": "gaiji raw marker projects to parser-IR policy field"
     },
     {
       "rule_id": "S-10",
@@ -192,13 +206,16 @@ jq -e '.node_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_jso
 jq -e '.node_coverage.counts_by_class.tei_policy_projection == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.by_construct.image.class == "tei_exact"' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.by_construct.caption.class == "tei_policy_projection"' "$summary_json" >/dev/null
-jq -e '.source_construct_coverage.counts_by_class.tei_exact == 2' "$summary_json" >/dev/null
+jq -e '.source_construct_coverage.counts_by_class.tei_exact == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.tei_policy_projection == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.unsupported_gap == 1' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.count == 1' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[0].aat_pointer == "blocks[].content[].raw_material"' "$summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[0].observed_occurrences == 288' "$summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[0].prevalence_source == "rule_description"' "$summary_json" >/dev/null
 jq -e '([.unsupported_gaps.items[] | select(.aat_pointer == "blocks[].content[].figure.caption" or .aat_pointer == "blocks[].content[].figure.filename")] | length) == 0' "$summary_json" >/dev/null
+jq -e '([.unsupported_gaps.items[] | select(.parser_ir_pointer == "heading.level" or .parser_ir_pointer == "gaiji.raw_marker")] | length) == 0' "$summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$summary_json" >/dev/null
 rg -n "IR Publication Coverage" "$report_md" >/dev/null
 rg -n "Field Coverage" "$report_md" >/dev/null
@@ -264,6 +281,8 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
 jq -e '.unsupported_gaps.count == 1' "$unknown_summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[0].aat_pointer == "blocks[].content[].mystery_marker"' "$unknown_summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[0].owner == "policy"' "$unknown_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[0].observed_occurrences == null' "$unknown_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[0].prevalence_source == "unavailable"' "$unknown_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$unknown_summary_json" >/dev/null
 
 cat > "$owner_mapping" <<'JSON'
@@ -328,7 +347,8 @@ jq -e '.unsupported_gaps.items[] | select(.rule_id == "U-99") | .owner == "parse
 jq -e '.unsupported_gaps.items[] | select(.rule_id == "L-99") | .owner == "custom_schema"' "$owner_summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[] | select(.rule_id == "S-99") | .owner == "aat_to_parser_ir_converter"' "$owner_summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[] | select(.rule_id == "A-99") | .owner == "policy"' "$owner_summary_json" >/dev/null
-jq -e '.unsupported_gaps.items[] | select(.rule_id == "X-99") | .owner == "evidence"' "$owner_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[] | select(.rule_id == "X-99") | .owner == "policy"' "$owner_summary_json" >/dev/null
+jq -e '([.unsupported_gaps.items[] | select(.owner == "evidence")] | length) == 0' "$owner_summary_json" >/dev/null
 
 python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
@@ -412,3 +432,5 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
 
 jq -e '.node_coverage.by_node_type."mystery-node".class == "unsupported_gap"' "$unknown_node_summary_json" >/dev/null
 jq -e '.node_coverage.unsupported[0].owner == "custom_schema"' "$unknown_node_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[0].observed_occurrences == null' "$unknown_node_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[0].prevalence_source == "unavailable"' "$unknown_node_summary_json" >/dev/null

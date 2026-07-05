@@ -66,40 +66,39 @@ Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS`
 | `tei_exact` | 3 |
 | `tei_policy_projection` | 5 |
 | `tei_plus_abc_extension` | 2 |
-| `unsupported_gap` | 25 |
+| `unsupported_gap` | 21 |
 
 ## Unsupported gaps
 
-Count: 185
+Count: 165
 
 | Owner | Count |
 |---|---:|
 | `aat_to_parser_ir_converter` | 5 |
-| `custom_schema` | 105 |
-| `evidence` | 19 |
+| `custom_schema` | 104 |
 | `parser_ir_schema` | 15 |
 | `policy` | 41 |
 
 - `blocks[].children[].children[].content[].accent` owner `policy`
-- `blocks[].children[].children[].content[].gaiji.jis_code` owner `policy`
 - `blocks[].children[].children[].content[].span` owner `policy`
 - `blocks[].children[].children[].content[].style` owner `policy`
 - `blocks[].children[].children[].content[].warigaki.upper[].span` owner `policy`
-- `blocks[].children[].children[].heading.level` owner `policy`
 - `blocks[].children[].children[].span` owner `policy`
 - `blocks[].children[].content[].accent` owner `policy`
 - `blocks[].children[].content[].content[].accent` owner `policy`
-- `blocks[].children[].content[].content[].gaiji.jis_code` owner `policy`
 - `blocks[].children[].content[].content[].span` owner `policy`
 - `blocks[].children[].content[].content[].style` owner `policy`
-- `blocks[].children[].content[].gaiji.jis_code` owner `policy`
 - `blocks[].children[].content[].span` owner `policy`
 - `blocks[].children[].content[].style` owner `policy`
 - `blocks[].children[].content[].warigaki.lower[].span` owner `policy`
-- `blocks[].children[].content[].warigaki.upper[].gaiji.jis_code` owner `policy`
 - `blocks[].children[].content[].warigaki.upper[].span` owner `policy`
 - `blocks[].children[].content[].warigaki.upper[].style` owner `policy`
-- `blocks[].children[].heading.level` owner `policy`
+- `blocks[].children[].span` owner `policy`
+- `blocks[].content[].accent` owner `policy`
+- `blocks[].content[].content[].accent` owner `policy`
+- `blocks[].content[].content[].span` owner `policy`
+- `blocks[].content[].content[].style` owner `policy`
+- `blocks[].content[].content[].warigaki.upper[].span` owner `policy`
 
 ## Plaintext Policy
 

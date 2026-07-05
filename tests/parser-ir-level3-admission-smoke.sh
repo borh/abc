@@ -287,6 +287,7 @@ jq -e '.plain_prose_admission.plaintext_policy.ruby_expanded_surfaces == "admit_
 jq -e '.plain_prose_admission.plaintext_policy.metadata_policy == "exclude_typed_metadata_from_plaintext"' "$summary_json"
 jq -e '.profile_lanes.drama.verdict == "LANE_POLICY_REQUIRED"' "$summary_json"
 jq -e '.profile_lanes.verse.verdict == "LANE_POLICY_REQUIRED"' "$summary_json"
+jq -e '.profile_lanes.lineated_text.verdict == "LANE_POLICY_REQUIRED"' "$summary_json"
 jq -e '.profile_lanes.lv4_enrichment.verdict == "LANE_OUT_OF_SCOPE_FOR_LEVEL3"' "$summary_json"
 jq -e '.evidence_gaps.rows == 1' "$summary_json"
 rg -n 'LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY' "$report_md"

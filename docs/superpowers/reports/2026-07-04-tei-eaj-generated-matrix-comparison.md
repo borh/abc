@@ -60,10 +60,11 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | profile | rows |
 |---|---:|
 | drama | 50 |
-| front_back_matter | 10 |
-| lv4_enrichment | 45 |
+| front_back_matter | 5 |
+| lineated_text | 120 |
+| lv4_enrichment | 35 |
 | notes | 35 |
-| plain_prose | 135 |
+| plain_prose | 30 |
 | verse | 10 |
 
 ## Paragraph Origin by TEI-EAJ Profile
@@ -77,22 +78,25 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | drama | converter_paragraph_mismatch | 7 |
 | drama | page_break_projection | 2 |
 | front_back_matter | adapter_collapsed | 2 |
-| front_back_matter | adapter_over_segmented | 5 |
-| front_back_matter | aligned | 3 |
-| lv4_enrichment | adapter_collapsed | 15 |
-| lv4_enrichment | adapter_over_segmented | 18 |
+| front_back_matter | adapter_over_segmented | 3 |
+| lineated_text | adapter_collapsed | 3 |
+| lineated_text | adapter_over_segmented | 70 |
+| lineated_text | adapter_raw_only | 1 |
+| lineated_text | aligned | 46 |
+| lv4_enrichment | adapter_collapsed | 13 |
+| lv4_enrichment | adapter_over_segmented | 12 |
 | lv4_enrichment | adapter_under_segmented | 1 |
-| lv4_enrichment | aligned | 7 |
+| lv4_enrichment | aligned | 5 |
 | lv4_enrichment | source_note_back_routing | 4 |
 | notes | adapter_collapsed | 15 |
 | notes | adapter_over_segmented | 14 |
 | notes | adapter_under_segmented | 4 |
 | notes | aligned | 2 |
-| plain_prose | adapter_collapsed | 10 |
-| plain_prose | adapter_over_segmented | 75 |
-| plain_prose | adapter_raw_only | 2 |
+| plain_prose | adapter_collapsed | 9 |
+| plain_prose | adapter_over_segmented | 13 |
+| plain_prose | adapter_raw_only | 1 |
 | plain_prose | adapter_under_segmented | 1 |
-| plain_prose | aligned | 47 |
+| plain_prose | aligned | 6 |
 | verse | adapter_collapsed | 4 |
 | verse | adapter_over_segmented | 3 |
 | verse | adapter_under_segmented | 1 |

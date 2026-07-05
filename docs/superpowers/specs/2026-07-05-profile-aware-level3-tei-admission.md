@@ -22,14 +22,16 @@ Current evidence:
   - adapter gap rows: 32
   - evidence gap rows: 5
 - `docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.md`
-  - parser-input rows attempted: 173
-  - materialized through parser-IR and ABC TEI: 173
+  - parser-input rows attempted: 285
+  - materialized through parser-IR and ABC TEI: 285
   - materialization failures: 0
   - skipped rows: 5
-  - TEI-EAJ profile buckets: plain prose 81, drama 30, Level 4 enrichment 29, notes 21, front/back matter 6, verse 6
+  - TEI-EAJ profile buckets after lineated-text classification: plain prose 30,
+    lineated text 120, drama 50, Level 4 enrichment 35, notes 35,
+    front/back matter 5, verse 10
   - paragraph origin buckets: adapter over-segmented 123, adapter collapsed 18, adapter under-segmented 7, aligned 18, source-note back routing 4, page-break projection 3
 
-The current blocker is admission semantics. The TEI-EAJ workset mixes plain prose, drama, verse, notes, front/back matter, and Level 4 enrichment. A raw TEI `<p>` count comparison is not a valid Level 3 gate across those profiles. It conflates:
+The current blocker is admission semantics. The TEI-EAJ workset mixes plain prose, drama, verse, lineated text, notes, front/back matter, and Level 4 enrichment. A raw TEI `<p>` count comparison is not a valid Level 3 gate across those profiles. It conflates:
 
 - parser-IR representability,
 - adapter paragraph segmentation,
@@ -54,14 +56,14 @@ The next decision must define which profile surfaces are Level 3 parser compatib
 
 Adopt a profile-aware Level 3 admission model.
 
-Use `plain_prose` as the first hard Level 3 adapter-admission gate. Keep drama, verse, notes, front/back matter, and Level 4 enrichment in explicit policy lanes until each lane has source-authority-backed TEI P5 mapping rules.
+Use `plain_prose` as the first hard Level 3 adapter-admission gate. Keep drama, verse, lineated text, notes, front/back matter, and Level 4 enrichment in explicit policy lanes until each lane has source-authority-backed TEI P5 mapping rules.
 
 This creates two separate verdicts:
 
 1. `LEVEL3_IR_INFRASTRUCTURE_READY`
    - Parser-IR can carry paragraph/source-note structure.
    - AAT-to-parser-IR conversion and ABC TEI materialization succeed for the measured candidates.
-   - This is already supported by the current 173-row generated-TEI matrix.
+   - This is already supported by the current 285-row generated-TEI matrix.
 
 2. `LEVEL3_PLAIN_PROSE_ADMITTED`
    - An adapter or parser input satisfies the plain-prose Level 3 gate over its declared evidence scope.
@@ -77,7 +79,11 @@ Profiles:
 
 - `plain_prose`: prose body where paragraph/source-note/text policy is the relevant Level 3 surface.
 - `drama`: rows containing drama structure such as `sp`, `speaker`, or `stage`.
-- `verse`: rows containing verse structure such as `lg` or `l`.
+- `verse`: rows containing explicit verse structure such as `lg` or `l`.
+- `lineated_text`: rows whose body text is line-break-dominant, such as a small
+  number of paragraphs carrying many `<lb>` boundaries. These rows are not
+  automatically poems, but prose paragraph parity is the wrong Level 3 gate for
+  them.
 - `notes`: rows dominated by note-like or apparatus-like structures.
 - `front_back_matter`: rows where front/back divisions are the primary structural issue.
 - `lv4_enrichment`: rows where the mismatch is primarily semantic/editorial enrichment such as `persName`, `placeName`, `roleName`, `said`, or equivalent.
@@ -141,7 +147,11 @@ Drama lane decisions:
 
 ### Verse
 
-Verse is not judged by prose paragraph parity. TEI P5 line structures such as `lg` and `l` should be emitted when Aozora source markup or parser evidence identifies verse/line structure.
+Verse and lineated text are not judged by prose paragraph parity. TEI P5 line
+structures such as `lg` and `l` should be emitted when Aozora source markup or
+parser evidence identifies verse structure; lineated non-verse text needs a
+separate policy for preserving source line breaks, typically as `<lb>` inside
+the appropriate block.
 
 Verse lane decisions:
 
@@ -266,7 +276,7 @@ The next implementation plan should:
 4. Add a smoke fixture proving:
    - plain prose aligned rows can pass,
    - adapter over/under/collapsed rows fail adapter admission,
-   - drama/verse/Level 4 rows go to policy lanes instead of failing plain prose,
+   - drama/verse/lineated-text/Level 4 rows go to policy lanes instead of failing plain prose,
    - source-note back routing is not counted as a body paragraph failure,
    - unresolved evidence gaps stay separate.
 5. Keep ABC registry/manifest hardening separate. Admission reports can cite compatibility evidence, but ABC owns registry acceptance.

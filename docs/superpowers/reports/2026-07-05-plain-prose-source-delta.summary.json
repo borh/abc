@@ -48,7 +48,7 @@
     "adapter_paragraph_bug": 86,
     "evidence_gap": 5,
     "parser_ir_projection_bug": 2,
-    "ruby_metadata_not_plaintext": 64,
+    "ruby_metadata_not_plaintext": 6,
     "source_text_policy_required": 66
   },
   "blocking_owners": [
@@ -61,7 +61,7 @@
     "adapter": 86,
     "evidence": 5,
     "parser_ir": 2,
-    "policy": 130
+    "policy": 72
   },
   "rows": [
     {
@@ -325,20 +325,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -351,20 +348,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -377,20 +371,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -402,19 +393,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "236",
@@ -703,20 +688,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -755,20 +737,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -781,20 +760,17 @@
       "paragraph_origin_bucket": "adapter_collapsed",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_collapsed",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_collapsed"
       ]
     },
     {
@@ -832,19 +808,13 @@
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "4872",
@@ -855,19 +825,13 @@
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "4872",
@@ -879,20 +843,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -905,20 +866,17 @@
       "paragraph_origin_bucket": "adapter_collapsed",
       "body_text_match_bucket": "ruby_expanded_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_collapsed",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_collapsed"
       ]
     },
     {
@@ -1075,20 +1033,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -1126,19 +1081,13 @@
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "56996",
@@ -1150,20 +1099,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -1199,20 +1145,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -1251,20 +1194,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -1276,19 +1216,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "56998",
@@ -1453,20 +1387,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -1505,20 +1436,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -1530,19 +1458,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57001",
@@ -1689,20 +1611,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -1741,20 +1660,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -1766,19 +1682,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57003",
@@ -1813,20 +1723,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -1839,20 +1746,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -1865,20 +1769,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -1890,19 +1791,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57004",
@@ -1937,20 +1832,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -1989,20 +1881,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2014,19 +1903,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57005",
@@ -2061,20 +1944,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2113,20 +1993,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2138,19 +2015,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57006",
@@ -2185,20 +2056,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2237,20 +2105,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2262,19 +2127,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57037",
@@ -2309,20 +2168,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2361,20 +2217,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2386,19 +2239,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57038",
@@ -2433,20 +2280,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2485,20 +2329,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2510,19 +2351,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57039",
@@ -2557,20 +2392,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2609,20 +2441,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2634,19 +2463,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57040",
@@ -2681,20 +2504,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2733,20 +2553,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2758,19 +2575,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57041",
@@ -2805,20 +2616,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2857,20 +2665,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -2882,19 +2687,13 @@
       "adapter": "aozora2",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57042",
@@ -3177,20 +2976,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -3228,19 +3024,13 @@
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57046",
@@ -3252,20 +3042,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -3301,20 +3088,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -3327,20 +3111,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {
@@ -3352,19 +3133,13 @@
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
-      "classifications": [
-        "ruby_metadata_not_plaintext"
-      ],
-      "blocking_owners": [
-        "policy"
-      ],
+      "classifications": [],
+      "blocking_owners": [],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
-      "reasons": [
-        "ruby-expanded surfaces require generated ruby structure for admission"
-      ]
+      "reasons": []
     },
     {
       "work_id": "57047",
@@ -3376,20 +3151,17 @@
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
       "classifications": [
-        "adapter_paragraph_bug",
-        "ruby_metadata_not_plaintext"
+        "adapter_paragraph_bug"
       ],
       "blocking_owners": [
-        "adapter",
-        "policy"
+        "adapter"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces require generated ruby structure for admission"
+        "paragraph origin is adapter_over_segmented"
       ]
     },
     {

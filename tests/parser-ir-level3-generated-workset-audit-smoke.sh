@@ -227,6 +227,7 @@ jq -e '.rows[0].generated_tei.body_p_count >= 1' "$out_dir/audit/summary.json" >
 jq -e '.rows[0].tei_eaj.body_p_count == 2' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].tei_eaj.structure_profile == "plain_prose"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].tei_eaj.structure_profiles == ["plain_prose"]' "$out_dir/audit/summary.json" >/dev/null
+jq -e '[.rows[] | select((.generated_tei.document_tag_counts.ruby // 0) > 0 and (.generated_tei.document_tag_counts.rb // 0) > 0 and (.generated_tei.document_tag_counts.rt // 0) > 0)] | length >= 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].tei_eaj.body_tag_counts.p == 2' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].aat.paragraph_blocks >= 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].classification.paragraph_delta_bucket != null' "$out_dir/audit/summary.json" >/dev/null

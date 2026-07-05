@@ -390,12 +390,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 30
+          "p": 30,
+          "ruby": 151,
+          "rb": 151,
+          "rt": 151
         },
         "document_tag_counts": {
           "body": 1,
           "p": 30,
           "note": 1,
+          "ruby": 151,
+          "rb": 151,
+          "rt": 151,
           "persName": 3
         }
       },
@@ -542,12 +548,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 154
+          "p": 154,
+          "ruby": 150,
+          "rb": 150,
+          "rt": 150
         },
         "document_tag_counts": {
           "body": 1,
           "p": 154,
           "note": 1,
+          "ruby": 150,
+          "rb": 150,
+          "rt": 150,
           "persName": 3
         }
       },
@@ -692,12 +704,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 151,
+          "rb": 151,
+          "rt": 151
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 151,
+          "rb": 151,
+          "rt": 151,
           "persName": 3
         }
       },
@@ -844,12 +862,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 28
+          "p": 28,
+          "ruby": 151,
+          "rb": 151,
+          "rt": 151
         },
         "document_tag_counts": {
           "body": 1,
           "p": 28,
           "note": 1,
+          "ruby": 151,
+          "rb": 151,
+          "rt": 151,
           "persName": 3
         }
       },
@@ -995,12 +1019,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 1,
-          "note": 10
+          "note": 10,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 11,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -1145,12 +1175,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 62
+          "p": 62,
+          "ruby": 126,
+          "rb": 126,
+          "rt": 126
         },
         "document_tag_counts": {
           "body": 1,
           "p": 62,
           "note": 1,
+          "ruby": 126,
+          "rb": 126,
+          "rt": 126,
           "persName": 3
         }
       },
@@ -1283,12 +1319,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 62
+          "p": 62,
+          "ruby": 120,
+          "rb": 120,
+          "rt": 120
         },
         "document_tag_counts": {
           "body": 1,
           "p": 62,
           "note": 1,
+          "ruby": 120,
+          "rb": 120,
+          "rt": 120,
           "persName": 3
         }
       },
@@ -1421,12 +1463,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 126,
+          "rb": 126,
+          "rt": 126
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 126,
+          "rb": 126,
+          "rt": 126,
           "persName": 3
         }
       },
@@ -1559,12 +1607,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 127,
+          "rb": 127,
+          "rt": 127
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 127,
+          "rb": 127,
+          "rt": 127,
           "persName": 3
         }
       },
@@ -1698,12 +1752,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 1,
-          "note": 13
+          "note": 13,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 14,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -1836,12 +1896,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 8
+          "p": 8,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 8,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -1975,12 +2041,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 8
+          "p": 8,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 8,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -2114,12 +2186,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 15
+          "p": 15,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 15,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -2253,12 +2331,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -2531,12 +2615,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 29
+          "p": 29,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10
         },
         "document_tag_counts": {
           "body": 1,
           "p": 29,
           "note": 1,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10,
           "persName": 3
         }
       },
@@ -2669,12 +2759,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 29
+          "p": 29,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10
         },
         "document_tag_counts": {
           "body": 1,
           "p": 29,
           "note": 1,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10,
           "persName": 3
         }
       },
@@ -2807,12 +2903,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 33
+          "p": 33,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10
         },
         "document_tag_counts": {
           "body": 1,
           "p": 33,
           "note": 1,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10,
           "persName": 3
         }
       },
@@ -2945,12 +3047,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10,
           "persName": 3
         }
       },
@@ -3222,12 +3330,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 28
+          "p": 28,
+          "ruby": 60,
+          "rb": 60,
+          "rt": 60
         },
         "document_tag_counts": {
           "body": 1,
           "p": 28,
           "note": 1,
+          "ruby": 60,
+          "rb": 60,
+          "rt": 60,
           "persName": 3
         }
       },
@@ -3359,12 +3473,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 28
+          "p": 28,
+          "ruby": 60,
+          "rb": 60,
+          "rt": 60
         },
         "document_tag_counts": {
           "body": 1,
           "p": 28,
           "note": 1,
+          "ruby": 60,
+          "rb": 60,
+          "rt": 60,
           "persName": 3
         }
       },
@@ -3496,12 +3616,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 60,
+          "rb": 60,
+          "rt": 60
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 60,
+          "rb": 60,
+          "rt": 60,
           "persName": 3
         }
       },
@@ -3633,12 +3759,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 60,
+          "rb": 60,
+          "rt": 60
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 60,
+          "rb": 60,
+          "rt": 60,
           "persName": 3
         }
       },
@@ -3771,12 +3903,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 1,
-          "note": 16
+          "note": 16,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 17,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -3908,12 +4046,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 4
+          "p": 4,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 4,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -4049,12 +4193,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 4
+          "p": 4,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 4,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -4190,12 +4340,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 8
+          "p": 8,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 8,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -4331,12 +4487,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -4616,12 +4778,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 32
+          "p": 32,
+          "ruby": 24,
+          "rb": 24,
+          "rt": 24
         },
         "document_tag_counts": {
           "body": 1,
           "p": 32,
           "note": 1,
+          "ruby": 24,
+          "rb": 24,
+          "rt": 24,
           "persName": 3
         }
       },
@@ -4757,12 +4925,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 33
+          "p": 33,
+          "ruby": 23,
+          "rb": 23,
+          "rt": 23
         },
         "document_tag_counts": {
           "body": 1,
           "p": 33,
           "note": 1,
+          "ruby": 23,
+          "rb": 23,
+          "rt": 23,
           "persName": 3
         }
       },
@@ -4897,12 +5071,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 40
+          "p": 40,
+          "ruby": 24,
+          "rb": 24,
+          "rt": 24
         },
         "document_tag_counts": {
           "body": 1,
           "p": 40,
           "note": 1,
+          "ruby": 24,
+          "rb": 24,
+          "rt": 24,
           "persName": 3
         }
       },
@@ -5037,12 +5217,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 4
+          "p": 4,
+          "ruby": 24,
+          "rb": 24,
+          "rt": 24
         },
         "document_tag_counts": {
           "body": 1,
           "p": 4,
           "note": 1,
+          "ruby": 24,
+          "rb": 24,
+          "rt": 24,
           "persName": 3
         }
       },
@@ -5316,12 +5502,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 186
+          "p": 186,
+          "ruby": 143,
+          "rb": 143,
+          "rt": 143
         },
         "document_tag_counts": {
           "body": 1,
           "p": 186,
           "note": 1,
+          "ruby": 143,
+          "rb": 143,
+          "rt": 143,
           "persName": 3
         }
       },
@@ -5458,12 +5650,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 186
+          "p": 186,
+          "ruby": 138,
+          "rb": 138,
+          "rt": 138
         },
         "document_tag_counts": {
           "body": 1,
           "p": 186,
           "note": 1,
+          "ruby": 138,
+          "rb": 138,
+          "rt": 138,
           "persName": 3
         }
       },
@@ -5600,12 +5798,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 202
+          "p": 202,
+          "ruby": 143,
+          "rb": 143,
+          "rt": 143
         },
         "document_tag_counts": {
           "body": 1,
           "p": 202,
           "note": 1,
+          "ruby": 143,
+          "rb": 143,
+          "rt": 143,
           "persName": 3
         }
       },
@@ -5742,12 +5946,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 143,
+          "rb": 143,
+          "rt": 143
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 143,
+          "rb": 143,
+          "rt": 143,
           "persName": 3
         }
       },
@@ -6027,12 +6237,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 6
+          "p": 6,
+          "ruby": 9,
+          "rb": 9,
+          "rt": 9
         },
         "document_tag_counts": {
           "body": 1,
           "p": 6,
           "note": 1,
+          "ruby": 9,
+          "rb": 9,
+          "rt": 9,
           "persName": 3
         }
       },
@@ -6169,12 +6385,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 12
+          "p": 12,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 12,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -6311,12 +6533,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 12
+          "p": 12,
+          "ruby": 9,
+          "rb": 9,
+          "rt": 9
         },
         "document_tag_counts": {
           "body": 1,
           "p": 12,
           "note": 1,
+          "ruby": 9,
+          "rb": 9,
+          "rt": 9,
           "persName": 3
         }
       },
@@ -6453,12 +6681,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 9,
+          "rb": 9,
+          "rt": 9
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 9,
+          "rb": 9,
+          "rt": 9,
           "persName": 3
         }
       },
@@ -6739,12 +6973,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 26
+          "p": 26,
+          "ruby": 41,
+          "rb": 41,
+          "rt": 41
         },
         "document_tag_counts": {
           "body": 1,
           "p": 26,
           "note": 1,
+          "ruby": 41,
+          "rb": 41,
+          "rt": 41,
           "persName": 3
         }
       },
@@ -6882,12 +7122,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 26
+          "p": 26,
+          "ruby": 41,
+          "rb": 41,
+          "rt": 41
         },
         "document_tag_counts": {
           "body": 1,
           "p": 26,
           "note": 1,
+          "ruby": 41,
+          "rb": 41,
+          "rt": 41,
           "persName": 3
         }
       },
@@ -7024,12 +7270,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 41,
+          "rb": 41,
+          "rt": 41
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 41,
+          "rb": 41,
+          "rt": 41,
           "persName": 3
         }
       },
@@ -7168,12 +7420,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 3,
-          "note": 1
+          "note": 1,
+          "ruby": 41,
+          "rb": 41,
+          "rt": 41
         },
         "document_tag_counts": {
           "body": 1,
           "p": 3,
           "note": 2,
+          "ruby": 41,
+          "rb": 41,
+          "rt": 41,
           "persName": 3
         }
       },
@@ -7453,12 +7711,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 18
+          "p": 18,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 18,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -7591,12 +7855,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 18
+          "p": 18,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 18,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -7729,12 +7999,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 27
+          "p": 27,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 27,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -7867,12 +8143,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -8143,12 +8425,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 5
+          "p": 5,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 5,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -8280,12 +8568,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 5
+          "p": 5,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 5,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -8417,12 +8711,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 9
+          "p": 9,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 9,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -8554,12 +8854,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -8829,12 +9135,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 8
+          "p": 8,
+          "ruby": 4,
+          "rb": 4,
+          "rt": 4
         },
         "document_tag_counts": {
           "body": 1,
           "p": 8,
           "note": 1,
+          "ruby": 4,
+          "rb": 4,
+          "rt": 4,
           "persName": 3
         }
       },
@@ -8969,12 +9281,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 8
+          "p": 8,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 8,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -9109,12 +9427,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 4,
+          "rb": 4,
+          "rt": 4
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 4,
+          "rb": 4,
+          "rt": 4,
           "persName": 3
         }
       },
@@ -9250,12 +9574,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 1,
-          "note": 1
+          "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 2,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -9533,12 +9863,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 406
+          "p": 406,
+          "ruby": 445,
+          "rb": 445,
+          "rt": 445
         },
         "document_tag_counts": {
           "body": 1,
           "p": 406,
           "note": 1,
+          "ruby": 445,
+          "rb": 445,
+          "rt": 445,
           "persName": 3
         }
       },
@@ -9677,12 +10013,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 400
+          "p": 400,
+          "ruby": 422,
+          "rb": 422,
+          "rt": 422
         },
         "document_tag_counts": {
           "body": 1,
           "p": 400,
           "note": 1,
+          "ruby": 422,
+          "rb": 422,
+          "rt": 422,
           "persName": 3
         }
       },
@@ -9819,12 +10161,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 445,
+          "rb": 445,
+          "rt": 445
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 445,
+          "rb": 445,
+          "rt": 445,
           "persName": 3
         }
       },
@@ -9964,12 +10312,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 8,
-          "note": 37
+          "note": 37,
+          "ruby": 445,
+          "rb": 445,
+          "rt": 445
         },
         "document_tag_counts": {
           "body": 1,
           "p": 8,
           "note": 38,
+          "ruby": 445,
+          "rb": 445,
+          "rt": 445,
           "persName": 3
         }
       },
@@ -10107,12 +10461,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 1,
-          "note": 27
+          "note": 27,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 28,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -10249,12 +10609,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 76
+          "p": 76,
+          "ruby": 298,
+          "rb": 298,
+          "rt": 298
         },
         "document_tag_counts": {
           "body": 1,
           "p": 76,
           "note": 1,
+          "ruby": 298,
+          "rb": 298,
+          "rt": 298,
           "persName": 3
         }
       },
@@ -10391,12 +10757,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 76
+          "p": 76,
+          "ruby": 293,
+          "rb": 293,
+          "rt": 293
         },
         "document_tag_counts": {
           "body": 1,
           "p": 76,
           "note": 1,
+          "ruby": 293,
+          "rb": 293,
+          "rt": 293,
           "persName": 3
         }
       },
@@ -10533,12 +10905,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 80
+          "p": 80,
+          "ruby": 298,
+          "rb": 298,
+          "rt": 298
         },
         "document_tag_counts": {
           "body": 1,
           "p": 80,
           "note": 1,
+          "ruby": 298,
+          "rb": 298,
+          "rt": 298,
           "persName": 3
         }
       },
@@ -10675,12 +11053,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 298,
+          "rb": 298,
+          "rt": 298
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 298,
+          "rb": 298,
+          "rt": 298,
           "persName": 3
         }
       },
@@ -11644,12 +12028,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 20
+          "p": 20,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 20,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -11785,12 +12175,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 20
+          "p": 20,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 20,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -11925,12 +12321,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -12065,12 +12467,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -12348,12 +12756,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 16
+          "p": 16,
+          "ruby": 8,
+          "rb": 8,
+          "rt": 8
         },
         "document_tag_counts": {
           "body": 1,
           "p": 16,
           "note": 1,
+          "ruby": 8,
+          "rb": 8,
+          "rt": 8,
           "persName": 3
         }
       },
@@ -12501,12 +12915,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 127
+          "p": 127,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 127,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -12652,12 +13072,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -12805,12 +13231,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 7
+          "p": 7,
+          "ruby": 8,
+          "rb": 8,
+          "rt": 8
         },
         "document_tag_counts": {
           "body": 1,
           "p": 7,
           "note": 1,
+          "ruby": 8,
+          "rb": 8,
+          "rt": 8,
           "persName": 3
         }
       },
@@ -13108,12 +13540,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 8
+          "p": 8,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 8,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -13248,12 +13686,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 9
+          "p": 9,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 9,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -13388,12 +13832,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -13528,12 +13978,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 3
+          "p": 3,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 3,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -13809,12 +14265,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 9
+          "p": 9,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 9,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -13949,12 +14411,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 10
+          "p": 10,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 10,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -14089,12 +14557,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 16
+          "p": 16,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 16,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -14229,12 +14703,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -14510,12 +14990,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 9
+          "p": 9,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 9,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -14649,12 +15135,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 10
+          "p": 10,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 10,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -14788,12 +15280,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 17
+          "p": 17,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 17,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -14927,12 +15425,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -15206,12 +15710,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 13
+          "p": 13,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 13,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -15346,12 +15856,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 14
+          "p": 14,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 14,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -15486,12 +16002,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 20
+          "p": 20,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 20,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -15626,12 +16148,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -16595,12 +17123,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 5
+          "p": 5,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 5,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -16735,12 +17269,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 6
+          "p": 6,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 6,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -16875,12 +17415,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 12
+          "p": 12,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 12,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -17015,12 +17561,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -17296,12 +17848,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 11
+          "p": 11,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 11,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -17436,12 +17994,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 12
+          "p": 12,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 12,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -17576,12 +18140,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 18
+          "p": 18,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 18,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -17716,12 +18286,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -17997,12 +18573,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 13
+          "p": 13,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 13,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -18137,12 +18719,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 14
+          "p": 14,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 14,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -18277,12 +18865,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 20
+          "p": 20,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 20,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -18417,12 +19011,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -18698,12 +19298,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 10
+          "p": 10,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 10,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -18838,12 +19444,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 11
+          "p": 11,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 11,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -18978,12 +19590,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 17
+          "p": 17,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 17,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -19118,12 +19736,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -19399,12 +20023,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 10
+          "p": 10,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 10,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -19539,12 +20169,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 11
+          "p": 11,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 11,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -19679,12 +20315,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 17
+          "p": 17,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 17,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -19819,12 +20461,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -20100,12 +20748,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 6
+          "p": 6,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 6,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -20240,12 +20894,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 10
+          "p": 10,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 10,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -20380,12 +21040,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 13
+          "p": 13,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 13,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -20520,12 +21186,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -20801,12 +21473,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 7
+          "p": 7,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 7,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -20941,12 +21619,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 8
+          "p": 8,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 8,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -21081,12 +21765,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 14
+          "p": 14,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 14,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -21221,12 +21911,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -21502,12 +22198,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 11
+          "p": 11,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 11,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -21642,12 +22344,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 12
+          "p": 12,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 12,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -21782,12 +22490,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 18
+          "p": 18,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 18,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -21922,12 +22636,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 3
         }
       },
@@ -22203,12 +22923,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 6
+          "p": 6,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 6,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -22343,12 +23069,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 7
+          "p": 7,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 7,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -22483,12 +23215,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 13
+          "p": 13,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 13,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -22623,12 +23361,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -22904,12 +23648,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 10
+          "p": 10,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 10,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -23044,12 +23794,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 11
+          "p": 11,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 11,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -23184,12 +23940,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 17
+          "p": 17,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 17,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -23324,12 +24086,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -23605,12 +24373,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 9
+          "p": 9,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 9,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -23745,12 +24519,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 10
+          "p": 10,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 10,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -23885,12 +24665,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 16
+          "p": 16,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 16,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -24025,12 +24811,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 5,
+          "rb": 5,
+          "rt": 5,
           "persName": 3
         }
       },
@@ -24307,12 +25099,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 12
+          "p": 12,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 12,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -24447,12 +25245,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 14
+          "p": 14,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 14,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -24586,12 +25390,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 20
+          "p": 20,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 20,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -24725,12 +25535,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -25005,12 +25821,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 14
+          "p": 14,
+          "ruby": 12,
+          "rb": 12,
+          "rt": 12
         },
         "document_tag_counts": {
           "body": 1,
           "p": 14,
           "note": 1,
+          "ruby": 12,
+          "rb": 12,
+          "rt": 12,
           "persName": 3
         }
       },
@@ -25146,12 +25968,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 16
+          "p": 16,
+          "ruby": 12,
+          "rb": 12,
+          "rt": 12
         },
         "document_tag_counts": {
           "body": 1,
           "p": 16,
           "note": 1,
+          "ruby": 12,
+          "rb": 12,
+          "rt": 12,
           "persName": 3
         }
       },
@@ -25286,12 +26114,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 12,
+          "rb": 12,
+          "rt": 12
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 12,
+          "rb": 12,
+          "rt": 12,
           "persName": 3
         }
       },
@@ -25426,12 +26260,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 2
+          "p": 2,
+          "ruby": 12,
+          "rb": 12,
+          "rt": 12
         },
         "document_tag_counts": {
           "body": 1,
           "p": 2,
           "note": 1,
+          "ruby": 12,
+          "rb": 12,
+          "rt": 12,
           "persName": 3
         }
       },
@@ -25708,12 +26548,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 8
+          "p": 8,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 8,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -25849,12 +26695,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 9
+          "p": 9,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 9,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -25989,12 +26841,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -26129,12 +26987,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 2
+          "p": 2,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 2,
           "note": 1,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -26411,12 +27275,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 4
+          "p": 4,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 4,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -26553,12 +27423,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 5
+          "p": 5,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 5,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -26694,12 +27570,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -26835,12 +27717,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 2
+          "p": 2,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 2,
           "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -27118,12 +28006,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 134
+          "p": 134,
+          "ruby": 185,
+          "rb": 185,
+          "rt": 185
         },
         "document_tag_counts": {
           "body": 1,
           "p": 134,
           "note": 1,
+          "ruby": 185,
+          "rb": 185,
+          "rt": 185,
           "persName": 3
         }
       },
@@ -27268,12 +28162,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 134
+          "p": 134,
+          "ruby": 184,
+          "rb": 184,
+          "rt": 184
         },
         "document_tag_counts": {
           "body": 1,
           "p": 134,
           "note": 1,
+          "ruby": 184,
+          "rb": 184,
+          "rt": 184,
           "persName": 3
         }
       },
@@ -27418,12 +28318,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 145
+          "p": 145,
+          "ruby": 185,
+          "rb": 185,
+          "rt": 185
         },
         "document_tag_counts": {
           "body": 1,
           "p": 145,
           "note": 1,
+          "ruby": 185,
+          "rb": 185,
+          "rt": 185,
           "persName": 3
         }
       },
@@ -27568,12 +28474,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 185,
+          "rb": 185,
+          "rt": 185
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 185,
+          "rb": 185,
+          "rt": 185,
           "persName": 3
         }
       },
@@ -27869,12 +28781,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 62
+          "p": 62,
+          "ruby": 126,
+          "rb": 126,
+          "rt": 126
         },
         "document_tag_counts": {
           "body": 1,
           "p": 62,
           "note": 1,
+          "ruby": 126,
+          "rb": 126,
+          "rt": 126,
           "persName": 3
         }
       },
@@ -28019,12 +28937,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 62
+          "p": 62,
+          "ruby": 120,
+          "rb": 120,
+          "rt": 120
         },
         "document_tag_counts": {
           "body": 1,
           "p": 62,
           "note": 1,
+          "ruby": 120,
+          "rb": 120,
+          "rt": 120,
           "persName": 3
         }
       },
@@ -28169,12 +29093,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 126,
+          "rb": 126,
+          "rt": 126
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 126,
+          "rb": 126,
+          "rt": 126,
           "persName": 3
         }
       },
@@ -28319,12 +29249,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 127,
+          "rb": 127,
+          "rt": 127
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 127,
+          "rb": 127,
+          "rt": 127,
           "persName": 3
         }
       },
@@ -28470,12 +29406,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 1,
-          "note": 13
+          "note": 13,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 14,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -28620,7 +29562,10 @@
         "back_source_note_count": 1,
         "body_tag_counts": {
           "body": 1,
-          "p": 74
+          "p": 74,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88
         },
         "document_tag_counts": {
           "body": 1,
@@ -28628,6 +29573,9 @@
           "div": 1,
           "p": 74,
           "note": 2,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 3
         }
       },
@@ -28643,6 +29591,9 @@
           "p": 17,
           "roleName": 13,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 97,
           "placeName": 24,
           "rs": 181
@@ -28655,6 +29606,9 @@
           "said": 59,
           "note": 3,
           "lb": 11,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 104,
           "placeName": 24,
           "rs": 182
@@ -28767,7 +29721,10 @@
         "back_source_note_count": 1,
         "body_tag_counts": {
           "body": 1,
-          "p": 74
+          "p": 74,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88
         },
         "document_tag_counts": {
           "body": 1,
@@ -28775,6 +29732,9 @@
           "div": 1,
           "p": 74,
           "note": 2,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 3
         }
       },
@@ -28790,6 +29750,9 @@
           "p": 17,
           "roleName": 13,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 97,
           "placeName": 24,
           "rs": 181
@@ -28802,6 +29765,9 @@
           "said": 59,
           "note": 3,
           "lb": 11,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 104,
           "placeName": 24,
           "rs": 182
@@ -28940,6 +29906,9 @@
           "p": 17,
           "roleName": 13,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 97,
           "placeName": 24,
           "rs": 181
@@ -28952,6 +29921,9 @@
           "said": 59,
           "note": 3,
           "lb": 11,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 104,
           "placeName": 24,
           "rs": 182
@@ -29068,12 +30040,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 79
+          "p": 79,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88
         },
         "document_tag_counts": {
           "body": 1,
           "p": 79,
           "note": 1,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 3
         }
       },
@@ -29089,6 +30067,9 @@
           "p": 17,
           "roleName": 13,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 97,
           "placeName": 24,
           "rs": 181
@@ -29101,6 +30082,9 @@
           "said": 59,
           "note": 3,
           "lb": 11,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 104,
           "placeName": 24,
           "rs": 182
@@ -29217,12 +30201,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 3
         }
       },
@@ -29238,6 +30228,9 @@
           "p": 17,
           "roleName": 13,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 97,
           "placeName": 24,
           "rs": 181
@@ -29250,6 +30243,9 @@
           "said": 59,
           "note": 3,
           "lb": 11,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 104,
           "placeName": 24,
           "rs": 182
@@ -29366,7 +30362,10 @@
         "back_source_note_count": 1,
         "body_tag_counts": {
           "body": 1,
-          "p": 74
+          "p": 74,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88
         },
         "document_tag_counts": {
           "body": 1,
@@ -29374,6 +30373,9 @@
           "div": 1,
           "p": 74,
           "note": 2,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 3
         }
       },
@@ -29389,6 +30391,9 @@
           "p": 17,
           "roleName": 16,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 215,
           "placeName": 51,
           "rs": 87
@@ -29399,6 +30404,9 @@
           "p": 19,
           "roleName": 16,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 229,
           "placeName": 51,
           "rs": 87
@@ -29511,7 +30519,10 @@
         "back_source_note_count": 1,
         "body_tag_counts": {
           "body": 1,
-          "p": 74
+          "p": 74,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88
         },
         "document_tag_counts": {
           "body": 1,
@@ -29519,6 +30530,9 @@
           "div": 1,
           "p": 74,
           "note": 2,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 3
         }
       },
@@ -29534,6 +30548,9 @@
           "p": 17,
           "roleName": 16,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 215,
           "placeName": 51,
           "rs": 87
@@ -29544,6 +30561,9 @@
           "p": 19,
           "roleName": 16,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 229,
           "placeName": 51,
           "rs": 87
@@ -29682,6 +30702,9 @@
           "p": 17,
           "roleName": 16,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 215,
           "placeName": 51,
           "rs": 87
@@ -29692,6 +30715,9 @@
           "p": 19,
           "roleName": 16,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 229,
           "placeName": 51,
           "rs": 87
@@ -29808,12 +30834,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 79
+          "p": 79,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88
         },
         "document_tag_counts": {
           "body": 1,
           "p": 79,
           "note": 1,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 3
         }
       },
@@ -29829,6 +30861,9 @@
           "p": 17,
           "roleName": 16,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 215,
           "placeName": 51,
           "rs": 87
@@ -29839,6 +30874,9 @@
           "p": 19,
           "roleName": 16,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 229,
           "placeName": 51,
           "rs": 87
@@ -29955,12 +30993,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 3
         }
       },
@@ -29976,6 +31020,9 @@
           "p": 17,
           "roleName": 16,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 215,
           "placeName": 51,
           "rs": 87
@@ -29986,6 +31033,9 @@
           "p": 19,
           "roleName": 16,
           "said": 59,
+          "ruby": 88,
+          "rb": 88,
+          "rt": 88,
           "persName": 229,
           "placeName": 51,
           "rs": 87
@@ -30102,12 +31152,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 39
+          "p": 39,
+          "ruby": 123,
+          "rb": 123,
+          "rt": 123
         },
         "document_tag_counts": {
           "body": 1,
           "p": 39,
           "note": 1,
+          "ruby": 123,
+          "rb": 123,
+          "rt": 123,
           "persName": 3
         }
       },
@@ -30243,12 +31299,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 39
+          "p": 39,
+          "ruby": 123,
+          "rb": 123,
+          "rt": 123
         },
         "document_tag_counts": {
           "body": 1,
           "p": 39,
           "note": 1,
+          "ruby": 123,
+          "rb": 123,
+          "rt": 123,
           "persName": 3
         }
       },
@@ -30384,12 +31446,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 43
+          "p": 43,
+          "ruby": 123,
+          "rb": 123,
+          "rt": 123
         },
         "document_tag_counts": {
           "body": 1,
           "p": 43,
           "note": 1,
+          "ruby": 123,
+          "rb": 123,
+          "rt": 123,
           "persName": 3
         }
       },
@@ -30525,12 +31593,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 123,
+          "rb": 123,
+          "rt": 123
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 123,
+          "rb": 123,
+          "rt": 123,
           "persName": 3
         }
       },
@@ -30667,12 +31741,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 1,
-          "note": 45
+          "note": 45,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 46,
+          "ruby": 2,
+          "rb": 2,
+          "rt": 2,
           "persName": 3
         }
       },
@@ -30810,12 +31890,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 15
+          "p": 15,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22
         },
         "document_tag_counts": {
           "body": 1,
           "p": 15,
           "note": 1,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22,
           "persName": 3
         }
       },
@@ -30957,12 +32043,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 12
+          "p": 12,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22
         },
         "document_tag_counts": {
           "body": 1,
           "p": 12,
           "note": 1,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22,
           "persName": 3
         }
       },
@@ -31103,12 +32195,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 23
+          "p": 23,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22
         },
         "document_tag_counts": {
           "body": 1,
           "p": 23,
           "note": 1,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22,
           "persName": 3
         }
       },
@@ -31249,12 +32347,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 4
+          "p": 4,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22
         },
         "document_tag_counts": {
           "body": 1,
           "p": 4,
           "note": 1,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22,
           "persName": 3
         }
       },
@@ -31395,12 +32499,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 1,
-          "note": 4
+          "note": 4,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 5,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -31541,12 +32651,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 61
+          "p": 61,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 61,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -31698,12 +32814,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 148
+          "p": 148,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 148,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -31854,12 +32976,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -32011,12 +33139,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 28
+          "p": 28,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7
         },
         "document_tag_counts": {
           "body": 1,
           "p": 28,
           "note": 1,
+          "ruby": 7,
+          "rb": 7,
+          "rt": 7,
           "persName": 3
         }
       },
@@ -32326,12 +33460,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 30
+          "p": 30,
+          "ruby": 151,
+          "rb": 151,
+          "rt": 151
         },
         "document_tag_counts": {
           "body": 1,
           "p": 30,
           "note": 1,
+          "ruby": 151,
+          "rb": 151,
+          "rt": 151,
           "persName": 3
         }
       },
@@ -32477,12 +33617,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 154
+          "p": 154,
+          "ruby": 150,
+          "rb": 150,
+          "rt": 150
         },
         "document_tag_counts": {
           "body": 1,
           "p": 154,
           "note": 1,
+          "ruby": 150,
+          "rb": 150,
+          "rt": 150,
           "persName": 3
         }
       },
@@ -32626,12 +33772,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 151,
+          "rb": 151,
+          "rt": 151
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 151,
+          "rb": 151,
+          "rt": 151,
           "persName": 3
         }
       },
@@ -32777,12 +33929,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 28
+          "p": 28,
+          "ruby": 151,
+          "rb": 151,
+          "rt": 151
         },
         "document_tag_counts": {
           "body": 1,
           "p": 28,
           "note": 1,
+          "ruby": 151,
+          "rb": 151,
+          "rt": 151,
           "persName": 3
         }
       },
@@ -32927,12 +34085,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 1,
-          "note": 10
+          "note": 10,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 11,
+          "ruby": 1,
+          "rb": 1,
+          "rt": 1,
           "persName": 3
         }
       },
@@ -33077,12 +34241,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 466
+          "p": 466,
+          "ruby": 746,
+          "rb": 746,
+          "rt": 746
         },
         "document_tag_counts": {
           "body": 1,
           "p": 466,
           "note": 1,
+          "ruby": 746,
+          "rb": 746,
+          "rt": 746,
           "persName": 3
         }
       },
@@ -33233,12 +34403,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 529
+          "p": 529,
+          "ruby": 746,
+          "rb": 746,
+          "rt": 746
         },
         "document_tag_counts": {
           "body": 1,
           "p": 529,
           "note": 1,
+          "ruby": 746,
+          "rb": 746,
+          "rt": 746,
           "persName": 3
         }
       },
@@ -33388,12 +34564,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 746,
+          "rb": 746,
+          "rt": 746
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 746,
+          "rb": 746,
+          "rt": 746,
           "persName": 3
         }
       },
@@ -33544,12 +34726,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 6
+          "p": 6,
+          "ruby": 745,
+          "rb": 745,
+          "rt": 745
         },
         "document_tag_counts": {
           "body": 1,
           "p": 6,
           "note": 1,
+          "ruby": 745,
+          "rb": 745,
+          "rt": 745,
           "persName": 3
         }
       },
@@ -33700,12 +34888,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 1,
-          "note": 70
+          "note": 70,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 71,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 3
         }
       },
@@ -33855,12 +35049,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 186
+          "p": 186,
+          "ruby": 143,
+          "rb": 143,
+          "rt": 143
         },
         "document_tag_counts": {
           "body": 1,
           "p": 186,
           "note": 1,
+          "ruby": 143,
+          "rb": 143,
+          "rt": 143,
           "persName": 3
         }
       },
@@ -33997,12 +35197,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 186
+          "p": 186,
+          "ruby": 138,
+          "rb": 138,
+          "rt": 138
         },
         "document_tag_counts": {
           "body": 1,
           "p": 186,
           "note": 1,
+          "ruby": 138,
+          "rb": 138,
+          "rt": 138,
           "persName": 3
         }
       },
@@ -34139,12 +35345,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 202
+          "p": 202,
+          "ruby": 143,
+          "rb": 143,
+          "rt": 143
         },
         "document_tag_counts": {
           "body": 1,
           "p": 202,
           "note": 1,
+          "ruby": 143,
+          "rb": 143,
+          "rt": 143,
           "persName": 3
         }
       },
@@ -34281,12 +35493,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 143,
+          "rb": 143,
+          "rt": 143
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 143,
+          "rb": 143,
+          "rt": 143,
           "persName": 3
         }
       },
@@ -34567,12 +35785,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 27
+          "p": 27,
+          "ruby": 14,
+          "rb": 14,
+          "rt": 14
         },
         "document_tag_counts": {
           "body": 1,
           "p": 27,
           "note": 1,
+          "ruby": 14,
+          "rb": 14,
+          "rt": 14,
           "persName": 3
         }
       },
@@ -34710,12 +35934,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 27
+          "p": 27,
+          "ruby": 14,
+          "rb": 14,
+          "rt": 14
         },
         "document_tag_counts": {
           "body": 1,
           "p": 27,
           "note": 1,
+          "ruby": 14,
+          "rb": 14,
+          "rt": 14,
           "persName": 3
         }
       },
@@ -34852,12 +36082,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 14,
+          "rb": 14,
+          "rt": 14
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 14,
+          "rb": 14,
+          "rt": 14,
           "persName": 3
         }
       },
@@ -34995,12 +36231,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 5
+          "p": 5,
+          "ruby": 14,
+          "rb": 14,
+          "rt": 14
         },
         "document_tag_counts": {
           "body": 1,
           "p": 5,
           "note": 1,
+          "ruby": 14,
+          "rb": 14,
+          "rt": 14,
           "persName": 3
         }
       },
@@ -35280,12 +36522,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 134
+          "p": 134,
+          "ruby": 185,
+          "rb": 185,
+          "rt": 185
         },
         "document_tag_counts": {
           "body": 1,
           "p": 134,
           "note": 1,
+          "ruby": 185,
+          "rb": 185,
+          "rt": 185,
           "persName": 3
         }
       },
@@ -35427,12 +36675,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 134
+          "p": 134,
+          "ruby": 184,
+          "rb": 184,
+          "rt": 184
         },
         "document_tag_counts": {
           "body": 1,
           "p": 134,
           "note": 1,
+          "ruby": 184,
+          "rb": 184,
+          "rt": 184,
           "persName": 3
         }
       },
@@ -35574,12 +36828,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 145
+          "p": 145,
+          "ruby": 185,
+          "rb": 185,
+          "rt": 185
         },
         "document_tag_counts": {
           "body": 1,
           "p": 145,
           "note": 1,
+          "ruby": 185,
+          "rb": 185,
+          "rt": 185,
           "persName": 3
         }
       },
@@ -35721,12 +36981,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 185,
+          "rb": 185,
+          "rt": 185
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 185,
+          "rb": 185,
+          "rt": 185,
           "persName": 3
         }
       },
@@ -36017,12 +37283,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 450
+          "p": 450,
+          "ruby": 196,
+          "rb": 196,
+          "rt": 196
         },
         "document_tag_counts": {
           "body": 1,
           "p": 450,
           "note": 1,
+          "ruby": 196,
+          "rb": 196,
+          "rt": 196,
           "persName": 3
         }
       },
@@ -36168,12 +37440,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 880
+          "p": 880,
+          "ruby": 195,
+          "rb": 195,
+          "rt": 195
         },
         "document_tag_counts": {
           "body": 1,
           "p": 880,
           "note": 1,
+          "ruby": 195,
+          "rb": 195,
+          "rt": 195,
           "persName": 3
         }
       },
@@ -36318,12 +37596,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 196,
+          "rb": 196,
+          "rt": 196
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 196,
+          "rb": 196,
+          "rt": 196,
           "persName": 3
         }
       },
@@ -36470,12 +37754,18 @@
         "body_tag_counts": {
           "body": 1,
           "p": 331,
-          "note": 1
+          "note": 1,
+          "ruby": 196,
+          "rb": 196,
+          "rt": 196
         },
         "document_tag_counts": {
           "body": 1,
           "p": 331,
           "note": 2,
+          "ruby": 196,
+          "rb": 196,
+          "rt": 196,
           "persName": 3
         }
       },
@@ -36771,12 +38061,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 77
+          "p": 77,
+          "ruby": 17,
+          "rb": 17,
+          "rt": 17
         },
         "document_tag_counts": {
           "body": 1,
           "p": 77,
           "note": 1,
+          "ruby": 17,
+          "rb": 17,
+          "rt": 17,
           "persName": 3
         }
       },
@@ -36915,12 +38211,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 77
+          "p": 77,
+          "ruby": 17,
+          "rb": 17,
+          "rt": 17
         },
         "document_tag_counts": {
           "body": 1,
           "p": 77,
           "note": 1,
+          "ruby": 17,
+          "rb": 17,
+          "rt": 17,
           "persName": 3
         }
       },
@@ -37059,12 +38361,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 82
+          "p": 82,
+          "ruby": 17,
+          "rb": 17,
+          "rt": 17
         },
         "document_tag_counts": {
           "body": 1,
           "p": 82,
           "note": 1,
+          "ruby": 17,
+          "rb": 17,
+          "rt": 17,
           "persName": 3
         }
       },
@@ -37203,12 +38511,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 17,
+          "rb": 17,
+          "rt": 17
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 17,
+          "rb": 17,
+          "rt": 17,
           "persName": 3
         }
       },
@@ -37493,12 +38807,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 74
+          "p": 74,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22
         },
         "document_tag_counts": {
           "body": 1,
           "p": 74,
           "note": 1,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22,
           "persName": 3
         }
       },
@@ -37512,13 +38832,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 24,
-          "note": 20
+          "note": 20,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10
         },
         "document_tag_counts": {
           "body": 1,
           "p": 25,
           "note": 22,
           "lb": 13,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -37633,12 +38959,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 74
+          "p": 74,
+          "ruby": 21,
+          "rb": 21,
+          "rt": 21
         },
         "document_tag_counts": {
           "body": 1,
           "p": 74,
           "note": 1,
+          "ruby": 21,
+          "rb": 21,
+          "rt": 21,
           "persName": 3
         }
       },
@@ -37652,13 +38984,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 24,
-          "note": 20
+          "note": 20,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10
         },
         "document_tag_counts": {
           "body": 1,
           "p": 25,
           "note": 22,
           "lb": 13,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -37772,12 +39110,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 21,
+          "rb": 21,
+          "rt": 21
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 21,
+          "rb": 21,
+          "rt": 21,
           "persName": 3
         }
       },
@@ -37791,13 +39135,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 24,
-          "note": 20
+          "note": 20,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10
         },
         "document_tag_counts": {
           "body": 1,
           "p": 25,
           "note": 22,
           "lb": 13,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -37912,12 +39262,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 6
+          "p": 6,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22
         },
         "document_tag_counts": {
           "body": 1,
           "p": 6,
           "note": 1,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22,
           "persName": 3
         }
       },
@@ -37931,13 +39287,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 24,
-          "note": 20
+          "note": 20,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10
         },
         "document_tag_counts": {
           "body": 1,
           "p": 25,
           "note": 22,
           "lb": 13,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -38071,13 +39433,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 24,
-          "note": 20
+          "note": 20,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10
         },
         "document_tag_counts": {
           "body": 1,
           "p": 25,
           "note": 22,
           "lb": 13,
+          "ruby": 10,
+          "rb": 10,
+          "rt": 10,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -38192,12 +39560,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 74
+          "p": 74,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22
         },
         "document_tag_counts": {
           "body": 1,
           "p": 74,
           "note": 1,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22,
           "persName": 3
         }
       },
@@ -38211,13 +39585,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 13,
-          "note": 2
+          "note": 2,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 14,
           "note": 3,
           "lb": 13,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -38332,12 +39712,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 74
+          "p": 74,
+          "ruby": 21,
+          "rb": 21,
+          "rt": 21
         },
         "document_tag_counts": {
           "body": 1,
           "p": 74,
           "note": 1,
+          "ruby": 21,
+          "rb": 21,
+          "rt": 21,
           "persName": 3
         }
       },
@@ -38351,13 +39737,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 13,
-          "note": 2
+          "note": 2,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 14,
           "note": 3,
           "lb": 13,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -38471,12 +39863,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 21,
+          "rb": 21,
+          "rt": 21
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 21,
+          "rb": 21,
+          "rt": 21,
           "persName": 3
         }
       },
@@ -38490,13 +39888,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 13,
-          "note": 2
+          "note": 2,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 14,
           "note": 3,
           "lb": 13,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -38611,12 +40015,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 6
+          "p": 6,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22
         },
         "document_tag_counts": {
           "body": 1,
           "p": 6,
           "note": 1,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22,
           "persName": 3
         }
       },
@@ -38630,13 +40040,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 13,
-          "note": 2
+          "note": 2,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 14,
           "note": 3,
           "lb": 13,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -38770,13 +40186,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 13,
-          "note": 2
+          "note": 2,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6
         },
         "document_tag_counts": {
           "body": 1,
           "p": 14,
           "note": 3,
           "lb": 13,
+          "ruby": 6,
+          "rb": 6,
+          "rt": 6,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -38891,12 +40313,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 74
+          "p": 74,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22
         },
         "document_tag_counts": {
           "body": 1,
           "p": 74,
           "note": 1,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22,
           "persName": 3
         }
       },
@@ -38910,13 +40338,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 8,
-          "note": 1
+          "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 9,
           "note": 2,
           "lb": 13,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -39031,12 +40465,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 74
+          "p": 74,
+          "ruby": 21,
+          "rb": 21,
+          "rt": 21
         },
         "document_tag_counts": {
           "body": 1,
           "p": 74,
           "note": 1,
+          "ruby": 21,
+          "rb": 21,
+          "rt": 21,
           "persName": 3
         }
       },
@@ -39050,13 +40490,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 8,
-          "note": 1
+          "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 9,
           "note": 2,
           "lb": 13,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -39170,12 +40616,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 21,
+          "rb": 21,
+          "rt": 21
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 21,
+          "rb": 21,
+          "rt": 21,
           "persName": 3
         }
       },
@@ -39189,13 +40641,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 8,
-          "note": 1
+          "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 9,
           "note": 2,
           "lb": 13,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -39310,12 +40768,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 6
+          "p": 6,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22
         },
         "document_tag_counts": {
           "body": 1,
           "p": 6,
           "note": 1,
+          "ruby": 22,
+          "rb": 22,
+          "rt": 22,
           "persName": 3
         }
       },
@@ -39329,13 +40793,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 8,
-          "note": 1
+          "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 9,
           "note": 2,
           "lb": 13,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -39469,13 +40939,19 @@
         "body_tag_counts": {
           "body": 1,
           "p": 8,
-          "note": 1
+          "note": 1,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3
         },
         "document_tag_counts": {
           "body": 1,
           "p": 9,
           "note": 2,
           "lb": 13,
+          "ruby": 3,
+          "rb": 3,
+          "rt": 3,
           "persName": 2
         },
         "structure_profile": "notes",
@@ -39590,12 +41066,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 72
+          "p": 72,
+          "ruby": 66,
+          "rb": 66,
+          "rt": 66
         },
         "document_tag_counts": {
           "body": 1,
           "p": 72,
           "note": 1,
+          "ruby": 66,
+          "rb": 66,
+          "rt": 66,
           "persName": 3
         }
       },
@@ -39742,12 +41224,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 145
+          "p": 145,
+          "ruby": 66,
+          "rb": 66,
+          "rt": 66
         },
         "document_tag_counts": {
           "body": 1,
           "p": 145,
           "note": 1,
+          "ruby": 66,
+          "rb": 66,
+          "rt": 66,
           "persName": 3
         }
       },
@@ -39893,12 +41381,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 1
+          "p": 1,
+          "ruby": 66,
+          "rb": 66,
+          "rt": 66
         },
         "document_tag_counts": {
           "body": 1,
           "p": 1,
           "note": 1,
+          "ruby": 66,
+          "rb": 66,
+          "rt": 66,
           "persName": 3
         }
       },
@@ -40045,12 +41539,18 @@
         "back_source_note_count": 0,
         "body_tag_counts": {
           "body": 1,
-          "p": 43
+          "p": 43,
+          "ruby": 66,
+          "rb": 66,
+          "rt": 66
         },
         "document_tag_counts": {
           "body": 1,
           "p": 43,
           "note": 1,
+          "ruby": 66,
+          "rb": 66,
+          "rt": 66,
           "persName": 3
         }
       },

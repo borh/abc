@@ -29,8 +29,8 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 | metric | value |
 |---|---:|
 | rows_total | 135 |
-| rows_passed | 1 |
-| rows_failed | 134 |
+| rows_passed | 19 |
+| rows_failed | 116 |
 
 ### Failures By Owner
 
@@ -38,7 +38,7 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 |---|---:|
 | adapter | 86 |
 | parser_ir | 2 |
-| policy | 130 |
+| policy | 72 |
 
 ### Paragraph Origin Buckets
 
@@ -91,10 +91,9 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 | 15938 | aozora-rs | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
 | 15938 | aozora2 | adapter_collapsed | different | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
 | 15938 | aozora | converter_paragraph_mismatch | different | parser_ir, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
-| 236 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/236_tei.xml` |
-| 236 | aozora-epub3 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/236_tei.xml` |
-| 236 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/236_tei.xml` |
-| 236 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/236_tei.xml` |
+| 236 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/236_tei.xml` |
+| 236 | aozora-epub3 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/236_tei.xml` |
+| 236 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/236_tei.xml` |
 | 236 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/236_tei.xml` |
 | 2509 | aozora2html | aligned | different | policy | `data/complete/tei_lib_lv3/2509_tei.xml` |
 | 2509 | aozora-epub3 | aligned | different | policy | `data/complete/tei_lib_lv3/2509_tei.xml` |
@@ -106,94 +105,79 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 | 43077 | aozora-rs | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/43077_tei.xml` |
 | 43077 | aozora2 | adapter_under_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/43077_tei.xml` |
 | 43077 | aozora | adapter_collapsed | different | adapter, policy | `data/complete/tei_lib_lv3/43077_tei.xml` |
-| 45093 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/45093_tei.xml` |
+| 45093 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/45093_tei.xml` |
 | 45093 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/45093_tei.xml` |
-| 45093 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/45093_tei.xml` |
-| 45093 | aozora2 | adapter_collapsed | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/45093_tei.xml` |
+| 45093 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/45093_tei.xml` |
+| 45093 | aozora2 | adapter_collapsed | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/45093_tei.xml` |
 | 45093 | aozora | converter_paragraph_mismatch | different | parser_ir, policy | `data/complete/tei_lib_lv3/45093_tei.xml` |
-| 4872 | aozora2html | aligned | ruby_expanded_equal | policy | `data/complete/tei_lib_lv3/4872_tei.xml` |
-| 4872 | aozora-epub3 | aligned | ruby_expanded_equal | policy | `data/complete/tei_lib_lv3/4872_tei.xml` |
-| 4872 | aozora-rs | adapter_over_segmented | ruby_expanded_equal | adapter, policy | `data/complete/tei_lib_lv3/4872_tei.xml` |
-| 4872 | aozora2 | adapter_collapsed | ruby_expanded_equal | adapter, policy | `data/complete/tei_lib_lv3/4872_tei.xml` |
+| 4872 | aozora-rs | adapter_over_segmented | ruby_expanded_equal | adapter | `data/complete/tei_lib_lv3/4872_tei.xml` |
+| 4872 | aozora2 | adapter_collapsed | ruby_expanded_equal | adapter | `data/complete/tei_lib_lv3/4872_tei.xml` |
 | 4872 | aozora | adapter_collapsed | different | adapter, policy | `data/complete/tei_lib_lv3/4872_tei.xml` |
 | 53386 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_generated_contains_tei_eaj | adapter, policy | `data/complete/tei_lib_lv3/53386_tei.xml` |
 | 53386 | aozora-epub3 | adapter_over_segmented | base_equal | adapter | `data/complete/tei_lib_lv3/53386_tei.xml` |
 | 53386 | aozora-rs | adapter_over_segmented | base_equal | adapter | `data/complete/tei_lib_lv3/53386_tei.xml` |
 | 53386 | aozora2 | aligned | ruby_expanded_parenless_generated_contains_tei_eaj | policy | `data/complete/tei_lib_lv3/53386_tei.xml` |
 | 53386 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/53386_tei.xml` |
-| 56996 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/56996_tei.xml` |
+| 56996 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/56996_tei.xml` |
 | 56996 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/56996_tei.xml` |
-| 56996 | aozora-rs | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/56996_tei.xml` |
-| 56996 | aozora2 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/56996_tei.xml` |
+| 56996 | aozora2 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/56996_tei.xml` |
 | 56996 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/56996_tei.xml` |
-| 56998 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/56998_tei.xml` |
+| 56998 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/56998_tei.xml` |
 | 56998 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/56998_tei.xml` |
-| 56998 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/56998_tei.xml` |
-| 56998 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/56998_tei.xml` |
+| 56998 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/56998_tei.xml` |
 | 56998 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/56998_tei.xml` |
 | 56999 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_generated_contains_tei_eaj | adapter, policy | `data/complete/tei_lib_lv3/56999_tei.xml` |
 | 56999 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/56999_tei.xml` |
 | 56999 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_generated_contains_tei_eaj | adapter, policy | `data/complete/tei_lib_lv3/56999_tei.xml` |
 | 56999 | aozora2 | adapter_collapsed | ruby_expanded_parenless_generated_contains_tei_eaj | adapter, policy | `data/complete/tei_lib_lv3/56999_tei.xml` |
 | 56999 | aozora | adapter_collapsed | different | adapter, policy | `data/complete/tei_lib_lv3/56999_tei.xml` |
-| 57001 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57001_tei.xml` |
+| 57001 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57001_tei.xml` |
 | 57001 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57001_tei.xml` |
-| 57001 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57001_tei.xml` |
-| 57001 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57001_tei.xml` |
+| 57001 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57001_tei.xml` |
 | 57001 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57001_tei.xml` |
 | 57002 | aozora2html | adapter_over_segmented | base_equal | adapter | `data/complete/tei_lib_lv3/57002_tei.xml` |
 | 57002 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57002_tei.xml` |
 | 57002 | aozora-rs | adapter_over_segmented | base_equal | adapter | `data/complete/tei_lib_lv3/57002_tei.xml` |
 | 57002 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57002_tei.xml` |
-| 57003 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57003_tei.xml` |
+| 57003 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57003_tei.xml` |
 | 57003 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57003_tei.xml` |
-| 57003 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57003_tei.xml` |
-| 57003 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57003_tei.xml` |
+| 57003 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57003_tei.xml` |
 | 57003 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57003_tei.xml` |
-| 57004 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57004_tei.xml` |
-| 57004 | aozora-epub3 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57004_tei.xml` |
-| 57004 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57004_tei.xml` |
-| 57004 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57004_tei.xml` |
+| 57004 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57004_tei.xml` |
+| 57004 | aozora-epub3 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57004_tei.xml` |
+| 57004 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57004_tei.xml` |
 | 57004 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57004_tei.xml` |
-| 57005 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57005_tei.xml` |
+| 57005 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57005_tei.xml` |
 | 57005 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57005_tei.xml` |
-| 57005 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57005_tei.xml` |
-| 57005 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57005_tei.xml` |
+| 57005 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57005_tei.xml` |
 | 57005 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57005_tei.xml` |
-| 57006 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57006_tei.xml` |
+| 57006 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57006_tei.xml` |
 | 57006 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57006_tei.xml` |
-| 57006 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57006_tei.xml` |
-| 57006 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57006_tei.xml` |
+| 57006 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57006_tei.xml` |
 | 57006 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57006_tei.xml` |
-| 57037 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57037_tei.xml` |
+| 57037 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57037_tei.xml` |
 | 57037 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57037_tei.xml` |
-| 57037 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57037_tei.xml` |
-| 57037 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57037_tei.xml` |
+| 57037 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57037_tei.xml` |
 | 57037 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57037_tei.xml` |
-| 57038 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57038_tei.xml` |
+| 57038 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57038_tei.xml` |
 | 57038 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57038_tei.xml` |
-| 57038 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57038_tei.xml` |
-| 57038 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57038_tei.xml` |
+| 57038 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57038_tei.xml` |
 | 57038 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57038_tei.xml` |
-| 57039 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57039_tei.xml` |
+| 57039 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57039_tei.xml` |
 | 57039 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57039_tei.xml` |
-| 57039 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57039_tei.xml` |
-| 57039 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57039_tei.xml` |
+| 57039 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57039_tei.xml` |
 | 57039 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57039_tei.xml` |
-| 57040 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57040_tei.xml` |
+| 57040 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57040_tei.xml` |
 | 57040 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57040_tei.xml` |
-| 57040 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57040_tei.xml` |
-| 57040 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57040_tei.xml` |
+| 57040 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57040_tei.xml` |
 | 57040 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57040_tei.xml` |
-| 57041 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57041_tei.xml` |
+| 57041 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57041_tei.xml` |
 | 57041 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57041_tei.xml` |
-| 57041 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57041_tei.xml` |
-| 57041 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57041_tei.xml` |
+| 57041 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57041_tei.xml` |
 | 57041 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57041_tei.xml` |
-| 57042 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57042_tei.xml` |
+| 57042 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57042_tei.xml` |
 | 57042 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57042_tei.xml` |
-| 57042 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57042_tei.xml` |
-| 57042 | aozora2 | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57042_tei.xml` |
+| 57042 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57042_tei.xml` |
 | 57042 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57042_tei.xml` |
 | 57043 | aozora2html | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57043_tei.xml` |
 | 57043 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57043_tei.xml` |
@@ -205,13 +189,11 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 | 57044 | aozora-rs | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57044_tei.xml` |
 | 57044 | aozora2 | aligned | different | policy | `data/complete/tei_lib_lv3/57044_tei.xml` |
 | 57044 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57044_tei.xml` |
-| 57046 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57046_tei.xml` |
+| 57046 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57046_tei.xml` |
 | 57046 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/57046_tei.xml` |
-| 57046 | aozora-rs | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57046_tei.xml` |
-| 57046 | aozora2 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57046_tei.xml` |
+| 57046 | aozora2 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57046_tei.xml` |
 | 57046 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57046_tei.xml` |
-| 57047 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57047_tei.xml` |
-| 57047 | aozora-epub3 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57047_tei.xml` |
-| 57047 | aozora-rs | aligned | ruby_expanded_parenless_equal | policy | `data/complete/tei_lib_lv3/57047_tei.xml` |
-| 57047 | aozora2 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/57047_tei.xml` |
+| 57047 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57047_tei.xml` |
+| 57047 | aozora-epub3 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57047_tei.xml` |
+| 57047 | aozora2 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/57047_tei.xml` |
 | 57047 | aozora | aligned | different | policy | `data/complete/tei_lib_lv3/57047_tei.xml` |

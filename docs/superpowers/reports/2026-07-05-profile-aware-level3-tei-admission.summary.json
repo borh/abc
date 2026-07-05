@@ -14,8 +14,8 @@
       "metadata_policy": "exclude_typed_metadata_from_plaintext"
     },
     "rows_total": 135,
-    "rows_passed": 1,
-    "rows_failed": 134,
+    "rows_passed": 19,
+    "rows_failed": 116,
     "verdict": "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_PARSER_IR",
     "blocking_owners": [
       "adapter",
@@ -25,14 +25,14 @@
     "failures_by_owner": {
       "adapter": 86,
       "parser_ir": 2,
-      "policy": 130
+      "policy": 72
     },
     "failures_by_adapter": {
       "aozora": 27,
-      "aozora-epub3": 27,
-      "aozora-rs": 27,
-      "aozora2": 26,
-      "aozora2html": 27
+      "aozora-epub3": 26,
+      "aozora-rs": 24,
+      "aozora2": 13,
+      "aozora2html": 26
     },
     "text_policy_buckets": {
       "base_equal": 5,
@@ -223,12 +223,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -240,12 +238,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -257,27 +253,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "236",
-        "title": "ア、秋",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -470,12 +449,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -504,12 +481,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -521,12 +496,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_collapsed",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_collapsed"
         ]
       },
       {
@@ -550,47 +523,15 @@
         "work_id": "4872",
         "title": "愛読書の印象",
         "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
-        "adapter": "aozora2html",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_equal"
-        ]
-      },
-      {
-        "work_id": "4872",
-        "title": "愛読書の印象",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
-        "adapter": "aozora-epub3",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_equal"
-        ]
-      },
-      {
-        "work_id": "4872",
-        "title": "愛読書の印象",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
         "adapter": "aozora-rs",
         "paragraph_origin_bucket": "adapter_over_segmented",
         "body_text_match_bucket": "ruby_expanded_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -602,12 +543,10 @@
         "body_text_match_bucket": "ruby_expanded_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_collapsed",
-          "text policy required for ruby_expanded_equal"
+          "paragraph origin is adapter_collapsed"
         ]
       },
       {
@@ -713,12 +652,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -742,32 +679,15 @@
         "work_id": "56996",
         "title": "書簡 山田邦子宛",
         "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
-        "adapter": "aozora-rs",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "56996",
-        "title": "書簡 山田邦子宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "adapter_over_segmented",
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -794,12 +714,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -828,27 +746,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "56998",
-        "title": "書簡 大杉栄宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/56998_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -960,12 +861,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -994,27 +893,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57001",
-        "title": "書簡 大杉栄宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57001_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1103,12 +985,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1137,27 +1017,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57003",
-        "title": "書簡 大杉栄宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1184,12 +1047,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1201,12 +1062,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1218,27 +1077,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57004",
-        "title": "書簡 大杉栄宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1265,12 +1107,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1299,27 +1139,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57005",
-        "title": "書簡 大杉栄宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57005_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1346,12 +1169,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1380,27 +1201,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57006",
-        "title": "書簡 大杉栄宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57006_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1427,12 +1231,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1461,27 +1263,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57037",
-        "title": "書簡 大杉栄宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57037_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1508,12 +1293,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1542,27 +1325,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57038",
-        "title": "書簡 大杉栄宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1589,12 +1355,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1623,27 +1387,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57039",
-        "title": "書簡 大杉栄宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57039_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1670,12 +1417,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1704,27 +1449,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57040",
-        "title": "書簡 大杉栄宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57040_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1751,12 +1479,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1785,27 +1511,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57041",
-        "title": "書簡 大杉栄宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57041_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1832,12 +1541,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -1866,27 +1573,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57042",
-        "title": "書簡 大杉栄宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57042_tei.xml",
-        "adapter": "aozora2",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -2075,12 +1765,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -2104,32 +1792,15 @@
         "work_id": "57046",
         "title": "書簡 木村荘太宛",
         "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
-        "adapter": "aozora-rs",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57046",
-        "title": "書簡 木村荘太宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
         "adapter": "aozora2",
         "paragraph_origin_bucket": "adapter_over_segmented",
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -2156,12 +1827,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -2173,27 +1842,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
-        ]
-      },
-      {
-        "work_id": "57047",
-        "title": "書簡 武部ツタ宛",
-        "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
-        "adapter": "aozora-rs",
-        "paragraph_origin_bucket": "aligned",
-        "body_text_match_bucket": "ruby_expanded_parenless_equal",
-        "passed": false,
-        "owners": [
-          "policy"
-        ],
-        "reasons": [
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {
@@ -2205,12 +1857,10 @@
         "body_text_match_bucket": "ruby_expanded_parenless_equal",
         "passed": false,
         "owners": [
-          "adapter",
-          "policy"
+          "adapter"
         ],
         "reasons": [
-          "paragraph origin is adapter_over_segmented",
-          "text policy required for ruby_expanded_parenless_equal"
+          "paragraph origin is adapter_over_segmented"
         ]
       },
       {

@@ -199,6 +199,32 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    SummarizeWarehouseInteresting {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long, default_value_t = 50)]
+        limit: usize,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::InterestingOutputFormat::Table)]
+        format: ab_morph_run::InterestingOutputFormat,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::InterestingTextFilter::All)]
+        filter: ab_morph_run::InterestingTextFilter,
+        #[arg(long)]
+        explain: Option<String>,
+        #[arg(long, default_value_t = 10)]
+        anomalies: usize,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::InterestingEngine::Auto)]
+        engine: ab_morph_run::InterestingEngine,
+        #[arg(
+            long,
+            value_enum,
+            default_value_t = ab_morph_run::WarehouseFeatureProfile::Raw
+        )]
+        feature_profile: ab_morph_run::WarehouseFeatureProfile,
+        #[arg(long)]
+        output: Option<PathBuf>,
+        #[arg(long)]
+        force: bool,
+    },
     SummarizeWarehouseErrors {
         #[arg(long)]
         run_dir: PathBuf,
@@ -550,6 +576,55 @@ fn main() -> Result<()> {
                 println!();
             } else {
                 print_warehouse_region_table(&rows);
+            }
+            Ok(())
+        }
+        Command::SummarizeWarehouseInteresting {
+            run_dir,
+            limit,
+            format,
+            filter,
+            explain,
+            anomalies,
+            engine,
+            feature_profile,
+            output,
+            force,
+        } => {
+            let summary = ab_morph_run::summarize_warehouse_interesting(
+                &run_dir,
+                ab_morph_run::WarehouseInterestingOptions {
+                    limit,
+                    filter,
+                    anomalies,
+                    explain,
+                    max_region_examples: 5,
+                    engine,
+                    feature_profile,
+                },
+            )?;
+            let mut writer: Box<dyn Write> = match &output {
+                Some(path) => {
+                    if path.exists() && !force {
+                        bail!(
+                            "refusing to overwrite {} (pass --force to allow)",
+                            path.display()
+                        );
+                    }
+                    Box::new(File::create(path).with_context(|| {
+                        format!("failed to create {}", path.display())
+                    })?)
+                }
+                None => Box::new(std::io::stdout()),
+            };
+            match format {
+                ab_morph_run::InterestingOutputFormat::Json => {
+                    serde_json::to_writer_pretty(&mut writer, &summary)?;
+                    writeln!(writer)?;
+                }
+                ab_morph_run::InterestingOutputFormat::Table => {
+                    ab_morph_run::write_interesting_tsv(&summary, &mut writer)?;
+                }
             }
             Ok(())
         }
@@ -1521,6 +1596,61 @@ mod tests {
         assert_eq!(exclude_text_id, vec!["JISTABLE"]);
         assert_eq!(limit, 15);
         assert!(json);
+    }
+
+    #[test]
+    fn parses_summarize_warehouse_interesting_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-warehouse-interesting",
+            "--run-dir",
+            "scratch/morph-warehouse/runs/full-2026-05-01",
+            "--limit",
+            "25",
+            "--format",
+            "json",
+            "--filter",
+            "lexical-only",
+            "--anomalies",
+            "5",
+            "--output",
+            "scratch/interesting.json",
+            "--force",
+        ]);
+
+        let Command::SummarizeWarehouseInteresting {
+            run_dir,
+            limit,
+            format,
+            filter,
+            explain,
+            anomalies,
+            engine,
+            feature_profile,
+            output,
+            force,
+        } = args.command
+        else {
+            panic!("expected summarize-warehouse-interesting");
+        };
+
+        assert_eq!(engine, ab_morph_run::InterestingEngine::Auto);
+        assert_eq!(
+            feature_profile,
+            ab_morph_run::WarehouseFeatureProfile::Raw
+        );
+
+        assert_eq!(
+            run_dir,
+            PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
+        );
+        assert_eq!(limit, 25);
+        assert_eq!(format, ab_morph_run::InterestingOutputFormat::Json);
+        assert_eq!(filter, ab_morph_run::InterestingTextFilter::LexicalOnly);
+        assert_eq!(explain, None);
+        assert_eq!(anomalies, 5);
+        assert_eq!(output, Some(PathBuf::from("scratch/interesting.json")));
+        assert!(force);
     }
 
     #[test]

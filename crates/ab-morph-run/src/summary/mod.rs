@@ -1,5 +1,6 @@
 mod compact;
 mod interesting;
+mod interesting_sql;
 mod nway;
 mod pattern_id;
 mod patterns;

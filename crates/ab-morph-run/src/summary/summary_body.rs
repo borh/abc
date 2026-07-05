@@ -1637,7 +1637,7 @@ fn batch_bool_value(batch: &RecordBatch, name: &str, row: usize) -> Result<bool>
     Ok(bool_column(batch, index)?.value(row))
 }
 
-fn run_duckdb_statement(run_dir: &Path, sql: String, context: &str) -> Result<bool> {
+pub(super) fn run_duckdb_statement(run_dir: &Path, sql: String, context: &str) -> Result<bool> {
     let duckdb_bin = std::env::var("AB_DUCKDB_BIN")
         .unwrap_or_else(|_| std::env::var("DUCKDB").unwrap_or_else(|_| String::from("duckdb")));
 
@@ -2534,7 +2534,7 @@ fn sql_not_in_clause(column: &str, values: &BTreeSet<String>) -> String {
     format!("{column} NOT IN ({values})")
 }
 
-fn duckdb_table_path_literal(run_dir: &Path, table: WarehouseTable) -> String {
+pub(super) fn duckdb_table_path_literal(run_dir: &Path, table: WarehouseTable) -> String {
     let path = run_dir.join(table.file_name());
     let path = if path.is_dir() {
         path.join("*.parquet")
@@ -2551,7 +2551,7 @@ fn duckdb_copy_sql(run_dir: &Path, body: &str) -> String {
     )
 }
 
-fn duckdb_settings_sql(run_dir: &Path) -> String {
+pub(super) fn duckdb_settings_sql(run_dir: &Path) -> String {
     format!(
         "SET temp_directory = {};\nSET threads = 4;\nSET preserve_insertion_order = false;\nSET memory_limit = '16GB';",
         sql_literal(&duckdb_temp_dir(run_dir).display().to_string())
@@ -2566,7 +2566,7 @@ pub(crate) fn duckdb_temp_dir(run_dir: &Path) -> std::path::PathBuf {
         .join(".duckdb_tmp")
 }
 
-fn sql_literal(value: &str) -> String {
+pub(super) fn sql_literal(value: &str) -> String {
     format!("'{}'", value.replace('\'', "''"))
 }
 
@@ -3721,7 +3721,7 @@ pub(super) fn canonicalize_feature_values(values: &mut [NwayFeatureValueGroupRow
 
 pub(super) fn nway_pattern_display(key: &NwayPatternKey) -> String {
     match key.kind.as_str() {
-        "segmentation" => key
+        "segmentation" | "coverage" => key
             .segmentation_groups
             .iter()
             .map(|group| {

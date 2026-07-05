@@ -6,6 +6,12 @@
 //! patterns fall below the cutoff. Reads only existing v1 tables; degrades
 //! honestly (`rarity_basis = "source"`) when `aozora_works.parquet` is
 //! absent. See `docs/superpowers/specs/2026-07-05-interestingness-ranking-design.md`.
+//!
+//! Two collection engines produce identical results: a DuckDB CLI
+//! aggregation (required at full-corpus scale — the full Aozora warehouse
+//! holds ~165M regions and ~17.8B feature-diff rows, far beyond what the
+//! in-memory path can hold) and a pure in-memory path used for small runs,
+//! tests, and environments without a `duckdb` binary.
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
@@ -18,13 +24,15 @@ use clap::ValueEnum;
 use serde::Serialize;
 use unicode_properties::{GeneralCategoryGroup, UnicodeGeneralCategory};
 
+use super::interesting_sql;
 use super::pattern_id::{PATTERN_ID_VERSION, pattern_id};
 use super::summary_body::{
     NwayPatternKey, WarehouseRegionAnalyzerFact, WarehouseRegionFlags, WarehouseRegionKey,
     canonicalize_segmentation_groups, nway_pattern_display, read_warehouse_feature_diffs,
     read_warehouse_parquet_file, read_warehouse_region_analyzers, read_warehouse_region_flags,
     read_warehouse_table, string_column, warehouse_feature_facts_for_profile,
-    warehouse_feature_pattern_key, warehouse_segmentation_pattern_key,
+    warehouse_feature_key_in_profile, warehouse_feature_pattern_key,
+    warehouse_segmentation_pattern_key,
 };
 use crate::nway::NwaySegmentationGroupRow;
 use crate::summary::WarehouseFeatureProfile;
@@ -48,6 +56,16 @@ pub enum InterestingOutputFormat {
     Json,
 }
 
+/// Collection engine. `Auto` prefers DuckDB (necessary at full-corpus
+/// scale) and falls back to the in-memory path when no `duckdb` binary is
+/// available.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum InterestingEngine {
+    Auto,
+    InMemory,
+    Duckdb,
+}
+
 #[derive(Debug, Clone)]
 pub struct WarehouseInterestingOptions {
     pub limit: usize,
@@ -55,6 +73,8 @@ pub struct WarehouseInterestingOptions {
     pub anomalies: usize,
     pub explain: Option<String>,
     pub max_region_examples: usize,
+    pub engine: InterestingEngine,
+    pub feature_profile: WarehouseFeatureProfile,
 }
 
 impl Default for WarehouseInterestingOptions {
@@ -65,6 +85,8 @@ impl Default for WarehouseInterestingOptions {
             anomalies: 10,
             explain: None,
             max_region_examples: 5,
+            engine: InterestingEngine::Auto,
+            feature_profile: WarehouseFeatureProfile::Raw,
         }
     }
 }
@@ -91,6 +113,10 @@ pub struct ScoreVersionBlock {
     pub lambda_missing_policy: String,
     pub anomaly_w_cov: f64,
     pub signal_profile: Vec<String>,
+    /// Which feature keys were admitted to feature-pattern collection
+    /// (`raw` = all, `core` = pos1..pos4). Changes which patterns exist,
+    /// so it gates comparability like `granularity_profile`.
+    pub feature_profile: String,
     pub rarity_basis: String,
     pub granularity_profile: String,
     pub cause_classification_profile: String,
@@ -123,7 +149,7 @@ pub struct SignalExplain {
     pub rrf_term: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, serde::Deserialize)]
 pub struct RegionExampleOut {
     pub source_id: String,
     pub text_id: String,
@@ -144,14 +170,14 @@ pub struct AnomalyRow {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum PatternKind {
+pub(super) enum PatternKind {
     Feature,
     Segmentation,
     Coverage,
 }
 
 impl PatternKind {
-    fn as_str(self) -> &'static str {
+    pub(super) fn as_str(self) -> &'static str {
         match self {
             Self::Feature => "feature",
             Self::Segmentation => "segmentation",
@@ -208,7 +234,8 @@ fn impact_weight(feature_key: &str) -> f64 {
     }
 }
 
-/// Nearest-rank 90th percentile of an unsorted, non-empty sample.
+/// Nearest-rank 90th percentile of an unsorted, non-empty sample. Matches
+/// DuckDB `quantile_disc(x, 0.9)` so both engines agree exactly.
 fn percentile_90(lengths: &[u64]) -> f64 {
     let mut sorted = lengths.to_vec();
     sorted.sort_unstable();
@@ -312,11 +339,55 @@ fn coverage_pattern_key(facts: &[WarehouseRegionAnalyzerFact]) -> Option<NwayPat
     })
 }
 
-#[derive(Debug)]
-struct PatternStats {
-    key: NwayPatternKey,
-    pattern_id: String,
-    kind: PatternKind,
+/// The raw SQL grouping columns a pattern was aggregated under (DuckDB
+/// engine only). Reused verbatim to build the anomaly channel's
+/// top-pattern exclusion predicates, so the exclusion matches the
+/// aggregation byte-for-byte.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) enum SqlSignature {
+    /// Segmentation/coverage kinds: the canonical surface-group JSON.
+    Groups { sig: String },
+    /// Feature kind: grouping columns plus the canonical value-group JSON.
+    Feature {
+        feature_key: String,
+        scope_type: String,
+        scope_position: Option<u64>,
+        scope_surface: Option<String>,
+        sig: String,
+    },
+}
+
+/// Finalized per-pattern statistics, engine-agnostic. Both collection
+/// engines must produce identical values here — pinned by the
+/// path-equality test.
+#[derive(Debug, Clone)]
+pub(super) struct PatternStats {
+    pub(super) key: NwayPatternKey,
+    pub(super) pattern_id: String,
+    pub(super) kind: PatternKind,
+    pub(super) examples: usize,
+    pub(super) source_count: usize,
+    pub(super) text_count: usize,
+    pub(super) sample_source_ids: Vec<String>,
+    pub(super) sample_text_ids: Vec<String>,
+    pub(super) rarity_count: usize,
+    pub(super) coverage_region_count: usize,
+    pub(super) span_p90: f64,
+    pub(super) region_examples: Vec<RegionExampleOut>,
+    pub(super) sql_signature: Option<SqlSignature>,
+}
+
+/// Rarity configuration shared by both engines: basis and denominator are
+/// always computed in Rust from `sources` plus the optional
+/// `aozora_works.parquet` projection.
+pub(super) struct RarityConfig {
+    pub(super) work_by_source: Option<BTreeMap<String, String>>,
+    pub(super) basis: &'static str,
+    pub(super) total: usize,
+}
+
+#[derive(Debug, Default)]
+struct PatternAccum {
     examples: usize,
     source_ids: BTreeSet<String>,
     text_ids: BTreeSet<String>,
@@ -326,26 +397,32 @@ struct PatternStats {
     region_examples: Vec<RegionExampleOut>,
 }
 
-struct Collected {
-    run_id: String,
-    patterns: Vec<PatternStats>,
-    /// Region → indices into `patterns`, for the anomaly channel.
-    memberships: BTreeMap<WarehouseRegionKey, BTreeSet<usize>>,
-    region_flags: BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>,
-    punctuation_only: BTreeSet<WarehouseRegionKey>,
-    rarity_basis: &'static str,
-    rarity_total: usize,
+enum AnomalySource {
+    InMemory {
+        memberships: BTreeMap<WarehouseRegionKey, BTreeSet<usize>>,
+        region_flags: BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>,
+        punctuation_only: BTreeSet<WarehouseRegionKey>,
+    },
+    /// DuckDB engine: anomalies are computed by a follow-up query once the
+    /// top pattern set is known.
+    Deferred,
 }
 
-struct Accumulators<'a> {
-    index_of: BTreeMap<NwayPatternKey, usize>,
+struct Collected {
     patterns: Vec<PatternStats>,
+    anomaly_source: AnomalySource,
+}
+
+struct InMemoryAccumulators<'a> {
+    index_of: BTreeMap<NwayPatternKey, usize>,
+    keys: Vec<(NwayPatternKey, PatternKind)>,
+    accums: Vec<PatternAccum>,
     memberships: BTreeMap<WarehouseRegionKey, BTreeSet<usize>>,
     work_by_source: Option<&'a BTreeMap<String, String>>,
     max_region_examples: usize,
 }
 
-impl Accumulators<'_> {
+impl InMemoryAccumulators<'_> {
     fn record(
         &mut self,
         key: NwayPatternKey,
@@ -353,51 +430,72 @@ impl Accumulators<'_> {
         region: &WarehouseRegionKey,
         flags: &WarehouseRegionFlags,
     ) {
-        let next_index = self.patterns.len();
+        let next_index = self.accums.len();
         let index = *self.index_of.entry(key.clone()).or_insert(next_index);
         if index == next_index {
-            self.patterns.push(PatternStats {
-                pattern_id: pattern_id(&key),
-                key,
-                kind,
-                examples: 0,
-                source_ids: BTreeSet::new(),
-                text_ids: BTreeSet::new(),
-                rarity_keys: BTreeSet::new(),
-                coverage_region_count: 0,
-                span_lengths: Vec::new(),
-                region_examples: Vec::new(),
-            });
+            self.keys.push((key, kind));
+            self.accums.push(PatternAccum::default());
         }
-        let stats = &mut self.patterns[index];
-        stats.examples += 1;
-        stats.source_ids.insert(region.source_id.clone());
-        stats.text_ids.insert(region.text_id.clone());
+        let accum = &mut self.accums[index];
+        accum.examples += 1;
+        accum.source_ids.insert(region.source_id.clone());
+        accum.text_ids.insert(region.text_id.clone());
         let rarity_key = self
             .work_by_source
             .and_then(|map| map.get(&region.source_id))
             .unwrap_or(&region.source_id);
-        stats.rarity_keys.insert(rarity_key.clone());
+        accum.rarity_keys.insert(rarity_key.clone());
         if flags.has_coverage_mismatch {
-            stats.coverage_region_count += 1;
+            accum.coverage_region_count += 1;
         }
-        stats.span_lengths.push(flags.char_end - flags.char_start);
-        let example = RegionExampleOut {
-            source_id: region.source_id.clone(),
-            text_id: region.text_id.clone(),
-            region_index: region.region_index,
-            char_start: flags.char_start,
-            char_end: flags.char_end,
-        };
-        if stats.region_examples.len() < self.max_region_examples
-            && stats.region_examples.last() != Some(&example)
-        {
-            stats.region_examples.push(example);
+        accum.span_lengths.push(flags.char_end - flags.char_start);
+        if accum.region_examples.len() < self.max_region_examples {
+            accum.region_examples.push(RegionExampleOut {
+                source_id: region.source_id.clone(),
+                text_id: region.text_id.clone(),
+                region_index: region.region_index,
+                char_start: flags.char_start,
+                char_end: flags.char_end,
+            });
         }
         self.memberships
             .entry(region.clone())
             .or_default()
             .insert(index);
+    }
+
+    fn finalize(self) -> (Vec<PatternStats>, BTreeMap<WarehouseRegionKey, BTreeSet<usize>>) {
+        let patterns = self
+            .keys
+            .into_iter()
+            .zip(self.accums)
+            .map(|((key, kind), accum)| PatternStats {
+                pattern_id: pattern_id(&key),
+                key,
+                kind,
+                examples: accum.examples,
+                source_count: accum.source_ids.len(),
+                text_count: accum.text_ids.len(),
+                sample_source_ids: accum
+                    .source_ids
+                    .iter()
+                    .take(MAX_SAMPLE_IDS)
+                    .cloned()
+                    .collect(),
+                sample_text_ids: accum
+                    .text_ids
+                    .iter()
+                    .take(MAX_SAMPLE_IDS)
+                    .cloned()
+                    .collect(),
+                rarity_count: accum.rarity_keys.len(),
+                coverage_region_count: accum.coverage_region_count,
+                span_p90: percentile_90(&accum.span_lengths),
+                region_examples: accum.region_examples,
+                sql_signature: None,
+            })
+            .collect();
+        (patterns, self.memberships)
     }
 }
 
@@ -472,15 +570,9 @@ fn read_optional_work_map(run_dir: &Path) -> Result<Option<BTreeMap<String, Stri
     Ok(Some(map))
 }
 
-fn collect_patterns(
-    run_dir: &Path,
-    run_id: String,
-    options: &WarehouseInterestingOptions,
-    source_ids: &BTreeSet<String>,
-) -> Result<Collected> {
-    let region_flags = read_warehouse_region_flags(run_dir)?;
+fn rarity_config(run_dir: &Path, source_ids: &BTreeSet<String>) -> Result<RarityConfig> {
     let work_by_source = read_optional_work_map(run_dir)?;
-    let (rarity_basis, rarity_total) = match &work_by_source {
+    let (basis, total) = match &work_by_source {
         Some(map) => {
             let works: BTreeSet<&String> = source_ids
                 .iter()
@@ -490,6 +582,19 @@ fn collect_patterns(
         }
         None => ("source", source_ids.len()),
     };
+    Ok(RarityConfig {
+        work_by_source,
+        basis,
+        total,
+    })
+}
+
+fn collect_in_memory(
+    run_dir: &Path,
+    options: &WarehouseInterestingOptions,
+    rarity: &RarityConfig,
+) -> Result<Collected> {
+    let region_flags = read_warehouse_region_flags(run_dir)?;
 
     let mut by_region = BTreeMap::<WarehouseRegionKey, Vec<WarehouseRegionAnalyzerFact>>::new();
     for fact in read_warehouse_region_analyzers(run_dir)? {
@@ -502,11 +607,12 @@ fn collect_patterns(
         }
     }
 
-    let mut accumulators = Accumulators {
+    let mut accumulators = InMemoryAccumulators {
         index_of: BTreeMap::new(),
-        patterns: Vec::new(),
+        keys: Vec::new(),
+        accums: Vec::new(),
         memberships: BTreeMap::new(),
-        work_by_source: work_by_source.as_ref(),
+        work_by_source: rarity.work_by_source.as_ref(),
         max_region_examples: options.max_region_examples,
     };
 
@@ -531,6 +637,9 @@ fn collect_patterns(
 
     let mut by_feature_group = BTreeMap::<_, Vec<_>>::new();
     for fact in read_warehouse_feature_diffs(run_dir)? {
+        if !warehouse_feature_key_in_profile(&fact.key.feature_key, options.feature_profile) {
+            continue;
+        }
         by_feature_group
             .entry(fact.key.clone())
             .or_default()
@@ -547,7 +656,7 @@ fn collect_patterns(
         ) {
             continue;
         }
-        let facts = warehouse_feature_facts_for_profile(WarehouseFeatureProfile::Raw, facts);
+        let facts = warehouse_feature_facts_for_profile(options.feature_profile, facts);
         if facts.is_empty() {
             continue;
         }
@@ -558,29 +667,25 @@ fn collect_patterns(
         }
     }
 
+    let (patterns, memberships) = accumulators.finalize();
     Ok(Collected {
-        run_id,
-        patterns: accumulators.patterns,
-        memberships: accumulators.memberships,
-        region_flags,
-        punctuation_only,
-        rarity_basis,
-        rarity_total,
+        patterns,
+        anomaly_source: AnomalySource::InMemory {
+            memberships,
+            region_flags,
+            punctuation_only,
+        },
     })
 }
 
 fn raw_signal_value(signal: Signal, stats: &PatternStats, rarity_total: usize) -> Option<f64> {
     match signal {
         Signal::Coverage => Some((1.0 + stats.coverage_region_count as f64).log2()),
-        Signal::Rarity => Some(
-            ((rarity_total as f64 + 1.0) / (stats.rarity_keys.len() as f64 + 1.0)).log2(),
-        ),
-        Signal::Impact => stats
-            .key
-            .feature_key
-            .as_deref()
-            .map(impact_weight),
-        Signal::Span => Some(percentile_90(&stats.span_lengths)),
+        Signal::Rarity => {
+            Some(((rarity_total as f64 + 1.0) / (stats.rarity_count as f64 + 1.0)).log2())
+        }
+        Signal::Impact => stats.key.feature_key.as_deref().map(impact_weight),
+        Signal::Span => Some(stats.span_p90),
     }
 }
 
@@ -594,7 +699,7 @@ struct PatternScore {
 
 /// Ranks patterns per kind per signal (raw desc, `pattern_id` asc — the
 /// deterministic tie-break) and fuses. Returns scores aligned with
-/// `collected.patterns`.
+/// `patterns`.
 fn score_patterns(patterns: &[PatternStats], rarity_total: usize) -> Vec<PatternScore> {
     let mut scores = patterns
         .iter()
@@ -603,7 +708,9 @@ fn score_patterns(patterns: &[PatternStats], rarity_total: usize) -> Vec<Pattern
             PatternScore {
                 signals: applicable
                     .iter()
-                    .map(|signal| (*signal, raw_signal_value(*signal, stats, rarity_total), None))
+                    .map(|signal| {
+                        (*signal, raw_signal_value(*signal, stats, rarity_total), None)
+                    })
                     .collect(),
                 lambda: 0.0,
                 rrf_score: 0.0,
@@ -687,20 +794,10 @@ fn build_row(stats: &PatternStats, score: &PatternScore) -> InterestingRow {
             })
             .collect(),
         examples: stats.examples,
-        source_count: stats.source_ids.len(),
-        text_count: stats.text_ids.len(),
-        sample_source_ids: stats
-            .source_ids
-            .iter()
-            .take(MAX_SAMPLE_IDS)
-            .cloned()
-            .collect(),
-        sample_text_ids: stats
-            .text_ids
-            .iter()
-            .take(MAX_SAMPLE_IDS)
-            .cloned()
-            .collect(),
+        source_count: stats.source_count,
+        text_count: stats.text_count,
+        sample_source_ids: stats.sample_source_ids.clone(),
+        sample_text_ids: stats.sample_text_ids.clone(),
         region_examples: stats.region_examples.clone(),
     }
 }
@@ -714,12 +811,7 @@ fn ranked_order(patterns: &[PatternStats], scores: &[PatternScore]) -> Vec<usize
             .rrf_score
             .partial_cmp(&scores[*left].rrf_score)
             .unwrap_or(Ordering::Equal)
-            .then_with(|| {
-                patterns[*right]
-                    .source_ids
-                    .len()
-                    .cmp(&patterns[*left].source_ids.len())
-            })
+            .then_with(|| patterns[*right].source_count.cmp(&patterns[*left].source_count))
             .then_with(|| patterns[*left].pattern_id.cmp(&patterns[*right].pattern_id))
     });
     order
@@ -728,22 +820,23 @@ fn ranked_order(patterns: &[PatternStats], scores: &[PatternScore]) -> Vec<usize
 /// Regions worth surfacing individually: disagreement regions passing the
 /// filter whose owning patterns all fell below the emitted top set (or
 /// which formed no pattern at all). Spec §Anomaly Channel.
-fn anomaly_channel(
-    collected: &Collected,
+fn anomaly_channel_in_memory(
+    memberships: &BTreeMap<WarehouseRegionKey, BTreeSet<usize>>,
+    region_flags: &BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>,
+    punctuation_only: &BTreeSet<WarehouseRegionKey>,
     filter: InterestingTextFilter,
     top_indices: &BTreeSet<usize>,
     k: usize,
 ) -> Vec<AnomalyRow> {
     let mut rows = Vec::new();
-    for (region, flags) in &collected.region_flags {
+    for (region, flags) in region_flags {
         if flags.is_agreement {
             continue;
         }
-        if !region_passes_filter(filter, flags, collected.punctuation_only.contains(region)) {
+        if !region_passes_filter(filter, flags, punctuation_only.contains(region)) {
             continue;
         }
-        if collected
-            .memberships
+        if memberships
             .get(region)
             .is_some_and(|owners| owners.iter().any(|owner| top_indices.contains(owner)))
         {
@@ -778,7 +871,15 @@ fn anomaly_channel(
     rows
 }
 
-fn score_version_block(rarity_basis: &str) -> ScoreVersionBlock {
+fn feature_profile_name(profile: WarehouseFeatureProfile) -> &'static str {
+    match profile {
+        WarehouseFeatureProfile::Raw => "raw",
+        WarehouseFeatureProfile::Core => "core",
+        WarehouseFeatureProfile::Schema => "schema",
+    }
+}
+
+fn score_version_block(rarity_basis: &str, profile: WarehouseFeatureProfile) -> ScoreVersionBlock {
     ScoreVersionBlock {
         score_version: SCORE_VERSION,
         pattern_id_version: PATTERN_ID_VERSION,
@@ -789,6 +890,7 @@ fn score_version_block(rarity_basis: &str) -> ScoreVersionBlock {
             .iter()
             .map(|name| (*name).to_owned())
             .collect(),
+        feature_profile: feature_profile_name(profile).to_owned(),
         rarity_basis: rarity_basis.to_owned(),
         granularity_profile: "none".to_owned(),
         cause_classification_profile: "absent".to_owned(),
@@ -803,12 +905,16 @@ fn score_version_block(rarity_basis: &str) -> ScoreVersionBlock {
 ///
 /// Returns an error when the run directory is not a warehouse run, the run's
 /// `schema_version` exceeds this reader's maximum, the run has fewer than two
-/// analyzers, required tables cannot be read, or `options.explain` names an
-/// unknown `pattern_id`.
+/// analyzers, required tables cannot be read, `options.engine` is `Duckdb`
+/// but no binary is available, or `options.explain` names an unknown
+/// `pattern_id`.
 pub fn summarize_warehouse_interesting(
     run_dir: &Path,
     options: WarehouseInterestingOptions,
 ) -> Result<InterestingSummary> {
+    if options.feature_profile == WarehouseFeatureProfile::Schema {
+        bail!("--feature-profile schema is not supported for interestingness ranking");
+    }
     let (schema_version, run_id) = read_run_meta(run_dir)?;
     if schema_version > READER_MAX_SCHEMA_VERSION {
         bail!(
@@ -826,15 +932,34 @@ pub fn summarize_warehouse_interesting(
     let source_ids = read_distinct_column(run_dir, WarehouseTable::Sources, 1)?;
     if source_ids.is_empty() {
         return Ok(InterestingSummary {
-            score_version: score_version_block("source"),
+            score_version: score_version_block("source", options.feature_profile),
             run_id,
             rows: Vec::new(),
             anomalies: Vec::new(),
         });
     }
 
-    let collected = collect_patterns(run_dir, run_id, &options, &source_ids)?;
-    let scores = score_patterns(&collected.patterns, collected.rarity_total);
+    let rarity = rarity_config(run_dir, &source_ids)?;
+    let collected = match options.engine {
+        InterestingEngine::InMemory => collect_in_memory(run_dir, &options, &rarity)?,
+        InterestingEngine::Duckdb | InterestingEngine::Auto => {
+            match interesting_sql::collect_patterns_duckdb(run_dir, &options, &rarity)? {
+                Some(patterns) => Collected {
+                    patterns,
+                    anomaly_source: AnomalySource::Deferred,
+                },
+                None if options.engine == InterestingEngine::Duckdb => {
+                    bail!(
+                        "no duckdb binary found (set AB_DUCKDB_BIN or install duckdb); \
+                         --engine in-memory is not viable for full-corpus warehouses"
+                    );
+                }
+                None => collect_in_memory(run_dir, &options, &rarity)?,
+            }
+        }
+    };
+
+    let scores = score_patterns(&collected.patterns, rarity.total);
     let order = ranked_order(&collected.patterns, &scores);
 
     if let Some(explain_id) = &options.explain {
@@ -844,8 +969,8 @@ pub fn summarize_warehouse_interesting(
             .position(|stats| stats.pattern_id == *explain_id)
             .with_context(|| format!("unknown pattern_id {explain_id}"))?;
         return Ok(InterestingSummary {
-            score_version: score_version_block(collected.rarity_basis),
-            run_id: collected.run_id,
+            score_version: score_version_block(rarity.basis, options.feature_profile),
+            run_id,
             rows: vec![build_row(&collected.patterns[index], &scores[index])],
             anomalies: Vec::new(),
         });
@@ -861,11 +986,31 @@ pub fn summarize_warehouse_interesting(
         .iter()
         .map(|index| build_row(&collected.patterns[*index], &scores[*index]))
         .collect();
-    let anomalies = anomaly_channel(&collected, options.filter, &top_set, options.anomalies);
+    let anomalies = match &collected.anomaly_source {
+        AnomalySource::InMemory {
+            memberships,
+            region_flags,
+            punctuation_only,
+        } => anomaly_channel_in_memory(
+            memberships,
+            region_flags,
+            punctuation_only,
+            options.filter,
+            &top_set,
+            options.anomalies,
+        ),
+        AnomalySource::Deferred => {
+            let top_stats = top
+                .iter()
+                .map(|index| &collected.patterns[*index])
+                .collect::<Vec<_>>();
+            interesting_sql::anomalies_duckdb(run_dir, &options, &top_stats)?
+        }
+    };
 
     Ok(InterestingSummary {
-        score_version: score_version_block(collected.rarity_basis),
-        run_id: collected.run_id,
+        score_version: score_version_block(rarity.basis, options.feature_profile),
+        run_id,
         rows,
         anomalies,
     })
@@ -1377,6 +1522,77 @@ mod tests {
         assert!(text.contains("1\tsegmentation\t0.016393"));
         assert!(text.contains("# anomalies"));
         assert!(text.contains("7.000000"));
+    }
+
+    fn duckdb_available() -> bool {
+        let binary = std::env::var("AB_DUCKDB_BIN")
+            .unwrap_or_else(|_| std::env::var("DUCKDB").unwrap_or_else(|_| "duckdb".to_owned()));
+        std::process::Command::new(binary)
+            .arg("-version")
+            .output()
+            .is_ok()
+    }
+
+    #[test]
+    fn coverage_pattern_has_display_string() {
+        let root = tempfile::tempdir().unwrap();
+        let run_dir = write_fixture(root.path());
+        let summary = summarize_warehouse_interesting(
+            &run_dir,
+            WarehouseInterestingOptions {
+                engine: InterestingEngine::InMemory,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let coverage = summary.rows.iter().find(|row| row.kind == "coverage").unwrap();
+        assert!(coverage.pattern.contains("ゆき"), "{}", coverage.pattern);
+    }
+
+    #[test]
+    fn duckdb_engine_matches_in_memory_engine() {
+        if !duckdb_available() {
+            eprintln!("skipping: duckdb binary not available");
+            return;
+        }
+        let root = tempfile::tempdir().unwrap();
+        let run_dir = write_fixture(root.path());
+        // Work map exercises the rarity join in both engines.
+        write_aozora_works(&run_dir, &[("w1", "src-a"), ("w1", "src-b")]);
+        for options in [
+            WarehouseInterestingOptions::default(),
+            WarehouseInterestingOptions {
+                limit: 1,
+                filter: InterestingTextFilter::LexicalOnly,
+                ..Default::default()
+            },
+            WarehouseInterestingOptions {
+                feature_profile: WarehouseFeatureProfile::Core,
+                anomalies: 3,
+                ..Default::default()
+            },
+        ] {
+            let in_memory = summarize_warehouse_interesting(
+                &run_dir,
+                WarehouseInterestingOptions {
+                    engine: InterestingEngine::InMemory,
+                    ..options.clone()
+                },
+            )
+            .unwrap();
+            let duckdb = summarize_warehouse_interesting(
+                &run_dir,
+                WarehouseInterestingOptions {
+                    engine: InterestingEngine::Duckdb,
+                    ..options
+                },
+            )
+            .unwrap();
+            assert_eq!(
+                serde_json::to_string_pretty(&in_memory).unwrap(),
+                serde_json::to_string_pretty(&duckdb).unwrap()
+            );
+        }
     }
 
     #[test]

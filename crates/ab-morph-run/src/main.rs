@@ -74,6 +74,8 @@ enum Command {
         progress: bool,
         #[arg(long)]
         progress_interval_seconds: Option<u64>,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::OrthoDetectMode::Off)]
+        ortho_detect: ab_morph_run::OrthoDetectMode,
     },
     SummarizeWarehouseNway {
         #[arg(long)]
@@ -320,6 +322,7 @@ fn main() -> Result<()> {
             max_examples_per_comparison,
             progress,
             progress_interval_seconds,
+            ortho_detect,
         } => {
             validate_warehouse_cli(warehouse_dir.as_ref(), run_id.as_deref(), resume, jobs)?;
             if let Some(warehouse_dir) = warehouse_dir {
@@ -382,6 +385,7 @@ fn main() -> Result<()> {
                 outputs.nway_pattern_counts_output.as_deref(),
                 max_nway_examples_per_text,
                 string_stats_output.as_deref(),
+                ortho_detect,
             );
             if let Some(stop) = progress_stop {
                 stop.stop();

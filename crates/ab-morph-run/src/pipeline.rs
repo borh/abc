@@ -1,4 +1,5 @@
 use super::*;
+use crate::options::OrthoDetectMode;
 use crate::output::for_each_jsonl_or_zst_line;
 
 #[allow(clippy::too_many_arguments)]
@@ -33,6 +34,7 @@ pub(crate) fn run_analyze_aat(
         None,
         None,
         None,
+        OrthoDetectMode::Off,
     )
 }
 
@@ -54,6 +56,7 @@ pub(crate) fn run_analyze_aat_with_nway(
     nway_pattern_counts_output: Option<&Path>,
     max_nway_examples_per_text: Option<usize>,
     string_stats_output: Option<&Path>,
+    ortho_detect: OrthoDetectMode,
 ) -> Result<()> {
     run_analyze_aat_with_nway_impl(
         aat,
@@ -72,6 +75,7 @@ pub(crate) fn run_analyze_aat_with_nway(
         nway_pattern_counts_output,
         max_nway_examples_per_text,
         string_stats_output,
+        ortho_detect,
     )
 }
 
@@ -93,6 +97,7 @@ pub(crate) fn run_analyze_aat_with_nway_impl(
     nway_pattern_counts_output: Option<&Path>,
     max_nway_examples_per_text: Option<usize>,
     string_stats_output: Option<&Path>,
+    ortho_detect: OrthoDetectMode,
 ) -> Result<()> {
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
@@ -127,6 +132,7 @@ pub(crate) fn run_analyze_aat_with_nway_impl(
         nway_pattern_counts_output,
         max_nway_examples_per_text,
         string_stats_output,
+        ortho_detect,
     )
 }
 
@@ -212,6 +218,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
                     label: format!("warehouse:{run_id}"),
                     total: input_count,
                 }),
+                ortho_detect: OrthoDetectMode::Off,
             },
         )?;
     } else {
@@ -308,6 +315,7 @@ pub(crate) fn run_analyze_aat_selected_impl(
         None,
         None,
         None,
+        OrthoDetectMode::Off,
     )
 }
 
@@ -330,6 +338,7 @@ pub(crate) fn run_analyze_aat_inputs(
     nway_pattern_counts_output: Option<&Path>,
     max_nway_examples_per_text: Option<usize>,
     string_stats_output: Option<&Path>,
+    ortho_detect: OrthoDetectMode,
 ) -> Result<()> {
     if analyzer_ids.is_empty() {
         bail!("provide at least one --analyzer");
@@ -390,6 +399,7 @@ pub(crate) fn run_analyze_aat_inputs(
                 collect_string_stats,
                 warehouse: None,
                 progress: None,
+                ortho_detect,
             },
         )?
     };
@@ -577,10 +587,62 @@ pub(crate) fn run_analyze_aat_serial(
                 return Err(error.into());
             }
         };
+        // Orthographic normalization (katakana→hiragana) for pre-war text.
+        // Construct the detection Vibrato ONCE per pipeline invocation (not per document).
+        // NOTE(phase1): a dedicated VibratoAnalyzer instance is loaded even if
+        // one is already in `analyzers` — reusing it would require exposing the
+        // private LoadedAnalyzer enum. Acceptable for an evaluation harness.
+        let (normalized_text, offset_map_opt, annotations_opt): (
+            String,
+            Option<ab_ortho_detect::OffsetMap>,
+            Option<Vec<ab_ortho_detect::OrthoAnnotation>>,
+        ) = if options.ortho_detect == crate::OrthoDetectMode::Heuristic {
+            let vibrato = match ab_morph_analyzers::VibratoAnalyzer::unidic_cwj_default() {
+                Ok(v) => std::sync::Arc::new(v) as std::sync::Arc<dyn ab_ortho_detect::OrthoTokenizer>,
+                Err(error) => {
+                    if let Some(writer) = &mut errors_writer {
+                        write_error_row(
+                            &mut **writer,
+                            &RunErrorRow {
+                                input_path: input_path.clone(),
+                                source_id: Some(source_id.clone()),
+                                text_id: None,
+                                analyzer: None,
+                                stage: "ortho_detect_load".to_owned(),
+                                error: error.to_string(),
+                            },
+                        )?;
+                        continue;
+                    } else {
+                        return Err(error.into());
+                    }
+                }
+            };
+            let detector = ab_ortho_detect::heuristic::HeuristicV1::new(
+                vibrato,
+                ab_ortho_detect::heuristic::HeuristicConfig::default(),
+            );
+            let sentences = ab_plaintext::sentence_split(&document.text);
+            let annotations = detector.detect(&sentences);
+            if annotations.is_empty() {
+                (document.text.clone(), None, None)
+            } else {
+                let (norm_text, map) = ab_ortho_detect::ortho_normalize(&document.text, &annotations);
+                (norm_text, Some(map), Some(annotations))
+            }
+        } else {
+            (document.text.clone(), None, None)
+        };
+
+        let norm_doc = ab_plaintext::PlainTextDocument {
+            text_id: document.text_id.clone(),
+            source_format: document.source_format,
+            text: normalized_text,
+        };
         let mut analyses = Vec::new();
 
         for analyzer in analyzers {
-            let mut analysis = match analyzer.analyze(&document) {
+            let mut analysis = match analyzer.analyze(&norm_doc) {
                 Ok(analysis) => analysis,
                 Err(error) => {
                     if let Some(writer) = &mut warehouse_writer {
@@ -619,6 +681,13 @@ pub(crate) fn run_analyze_aat_serial(
                     return Err(error);
                 }
             };
+            // Remap morpheme byte_spans from normalized coords to original-doc coords,
+            // and attach the ortho provenance to the analysis.
+            if let Some(ref map) = offset_map_opt {
+                ab_morph_analyzers::span_builder::remap_spans(&mut analysis, map);
+            }
+            analysis.ortho_annotations = annotations_opt.clone();
+            analysis.ortho_offset_map = offset_map_opt.clone();
             if options.collect_string_stats {
                 string_stats.record_analysis(&analysis);
             }
@@ -875,6 +944,7 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
                                 label: format!("warehouse-worker-{job_index}/shard-{shard_index}"),
                                 total: batch_len,
                             }),
+                            ortho_detect: OrthoDetectMode::Off,
                         },
                     );
                     complete_warehouse_work_batch(&queue, batch_is_large);
@@ -1189,6 +1259,7 @@ pub(crate) fn run_analyze_aat_parallel(
                         collect_string_stats,
                         warehouse: None,
                         progress: None,
+                        ortho_detect: OrthoDetectMode::Off,
                     },
                 )?;
                 Ok(ShardOutput {

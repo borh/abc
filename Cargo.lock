@@ -159,6 +159,7 @@ dependencies = [
  "ab-diff-utils",
  "ab-morph-analyzers",
  "ab-morph-diff",
+ "ab-ortho-detect",
  "ab-plaintext",
  "ab-warehouse",
  "anyhow",

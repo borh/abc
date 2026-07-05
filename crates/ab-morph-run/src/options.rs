@@ -5,6 +5,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::warehouse::schema::{RunAnalyzerRow, WarehousePaths, WarehouseTable};
 
+/// Controls whether orthographic normalization (katakana→hiragana) is
+/// applied to pre-war Japanese text before analysis.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OrthoDetectMode {
+    Off,
+    Heuristic,
+}
+
 /// Controls how analysis and comparison output rows are serialized.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -84,6 +93,7 @@ pub(crate) struct SerialRunOptions<'a> {
     pub(crate) collect_string_stats: bool,
     pub(crate) warehouse: Option<WarehouseRunOptions>,
     pub(crate) progress: Option<SerialProgress>,
+    pub(crate) ortho_detect: OrthoDetectMode,
 }
 
 #[derive(Debug, Clone)]

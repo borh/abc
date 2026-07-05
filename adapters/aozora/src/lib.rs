@@ -421,13 +421,34 @@ fn heading_block_from_hint(paragraph: &mut Vec<Value>, node: &Value) -> Option<V
         return None;
     }
     let heading_text = paragraph.pop()?;
-    Some(json!({
+    let indent = paragraph.last().and_then(heading_indent_marker);
+    if indent.is_some() {
+        paragraph.pop();
+    }
+    let mut heading = json!({
         "kind": "heading",
         "level": level,
         "style": style,
         "content": [heading_text],
         "x-provenance": "source-derived",
-    }))
+    });
+    if let Some(indent) = indent {
+        heading["x-indent"] = json!(indent);
+    }
+    Some(heading)
+}
+
+fn heading_indent_marker(node: &Value) -> Option<u64> {
+    if node.get("kind").and_then(Value::as_str) != Some("raw")
+        || node.get("x-source-marker-kind").and_then(Value::as_str) != Some("indent")
+    {
+        return None;
+    }
+    let source = node.get("source").and_then(Value::as_str)?;
+    if !source.contains("字下げ") {
+        return None;
+    }
+    parse_aozora_number_before(source, "字下げ")
 }
 
 fn heading_level(source: &str) -> u64 {

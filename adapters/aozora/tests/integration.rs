@@ -217,6 +217,21 @@ fn maps_source_heading_hint_to_heading_block() {
 }
 
 #[test]
+fn folds_heading_indent_marker_into_heading_metadata() {
+    let aat = run_aat("［＃８字下げ］一［＃「一」は中見出し］\n本文\n");
+    let blocks = aat["blocks"].as_array().expect("blocks");
+
+    assert_eq!(blocks.len(), 2);
+    assert_eq!(blocks[0]["kind"], "heading");
+    assert_eq!(blocks[0]["x-indent"], 8);
+    assert_eq!(blocks[0]["content"][0]["value"], "一");
+    assert_eq!(blocks[1]["kind"], "paragraph");
+    assert_eq!(blocks[1]["content"][0]["value"], "本文\n");
+    let text = serde_json::to_string(&aat).unwrap();
+    assert!(!text.contains(r#""x-source-marker-kind":"indent""#));
+}
+
+#[test]
 fn maps_paired_jisage_container_to_block() {
     let aat = run_aat("［＃ここから２字下げ］\n字下げ本文\n［＃ここで字下げ終わり］\n後\n");
     let blocks = aat["blocks"].as_array().expect("blocks");

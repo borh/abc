@@ -230,15 +230,22 @@ Adapter-version matching is exact. A future adapter-version tuple requires a
 new measured conversion-audit entry rather than wildcard or prefix registry
 matching.
 
-## Source Authority Caveat
+## Source Authority Status
 
-Parser-IR conversion evidence over four adapters is not a proof that AAT can
-represent the Aozora source language. The source-authority inventory at
-`docs/superpowers/reports/2026-07-04-source-authority-representability.md`
-is the representability gate, and the current run is failing:
-`SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`. Parser evidence remains
-triangulation only until the source inventory has no unallowlisted unknown
-markers and no reached `needs_research` representability rows.
+The source-authority inventory now passes:
+
+- report: `docs/superpowers/reports/2026-07-04-source-authority-representability.md`
+- source_authority_gate: `SOURCE_AUTHORITY_GATE_PASS`
+- works_scanned: 17,894
+- unallowlisted_unknown_markers_total: 0
+
+This removes the previous source-authority blocker for Level 2/3 parser-IR work. Parser evidence remains triangulation, but the source inventory now supplies the authority gate that all reached explicit Aozora markers have reviewed representation or explicit waiver.
+
+The next Level 3 blocker is profile-aware admission, tracked by:
+
+- spec: `docs/superpowers/specs/2026-07-05-profile-aware-level3-tei-admission.md`
+- report: `docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.md`
+- summary: `docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.summary.json`
 
 ## Release Surface
 

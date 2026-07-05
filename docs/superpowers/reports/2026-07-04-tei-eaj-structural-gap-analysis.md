@@ -20,13 +20,17 @@ a row-level parser-IR representability gap:
 | adapter gap rows | 18 |
 | evidence gap rows | 5 |
 
-This is not yet a full Level 3 TEI admission claim. The remaining blockers are
-now evidence and policy blockers:
+This is not yet a full Level 3 TEI admission claim. Source-authority
+representability has passed for the current corpus snapshot: the current
+source-authority report is `SOURCE_AUTHORITY_GATE_PASS` with 17,894 works
+scanned and 0 unallowlisted unknown markers. Source inventory is therefore not
+a current blocker, though future corpus or scanner changes must rerun the gate.
 
-1. Source-authority representability has passed for the current corpus snapshot. The current source-authority report is `SOURCE_AUTHORITY_GATE_PASS` with 17,894 works scanned and 0 unallowlisted unknown markers. This removes source inventory as a current blocker, but future corpus or scanner changes must rerun the gate.
-2. Adapter paragraph fidelity is inconsistent.
-3. TEI-EAJ uses drama, verse, note, front/back, and Level 4 enrichment profiles that cannot be judged by paragraph-count parity alone.
-4. One parser input, `aozora2`, is currently Melos-scoped rather than broad workset evidence.
+The remaining blockers are:
+
+1. Adapter paragraph fidelity is inconsistent.
+2. TEI-EAJ uses drama, verse, note, front/back, and Level 4 enrichment profiles that cannot be judged by paragraph-count parity alone.
+3. One parser input, `aozora2`, is currently Melos-scoped rather than broad workset evidence.
 
 The two former `15099` evidence gaps were false negatives. TEI-EAJ identifies
 the work as `15099`, while the measured Aozora corpora materialize the same

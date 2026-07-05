@@ -42,6 +42,13 @@ PLAINTEXT_POLICY = {
 }
 LANE_POLICY_REQUIRED = {"drama", "verse", "notes", "front_back_matter"}
 LANE_OUT_OF_SCOPE = {"lv4_enrichment"}
+REQUIRED_MAPPING_FIELDS = (
+    "mapping_id",
+    "mapping_version",
+    "mapping_schema_hash",
+    "target_parser_ir_schema_id",
+    "target_parser_ir_schema_hash",
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -77,6 +84,29 @@ def resolve_path(raw: str, base_dir: pathlib.Path) -> pathlib.Path:
     return (base_dir / path).resolve()
 
 
+def resolve_mapping_path(
+    raw: str,
+    base_dir: pathlib.Path,
+    repo_root: pathlib.Path,
+) -> pathlib.Path:
+    path = pathlib.Path(raw)
+    if not path.is_absolute():
+        return resolve_path(raw, base_dir)
+
+    try:
+        relative = path.relative_to(repo_root)
+    except ValueError:
+        parts = path.parts
+        if "data" in parts:
+            suffix = pathlib.Path(*parts[parts.index("data") :])
+            candidate = repo_root / suffix
+            if candidate.exists():
+                return candidate.resolve()
+        return path
+
+    return (repo_root / relative).resolve()
+
+
 def write_json(path: pathlib.Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -104,15 +134,38 @@ def source_authority_passed(source: dict[str, Any]) -> bool:
     )
 
 
+def require_non_empty_mapping_string(mapping: dict[str, Any], field: str) -> str:
+    value = mapping.get(field)
+    if not isinstance(value, str) or not value.strip():
+        raise SystemExit(f"mapping missing or empty required field: {field}")
+    return value
+
+
+def require_transform_rule_descriptions(mapping: dict[str, Any]) -> list[Any]:
+    value = mapping.get("transform_rule_descriptions")
+    if not isinstance(value, list) or not value:
+        raise SystemExit(
+            "mapping.transform_rule_descriptions must be a non-empty list"
+        )
+    return value
+
+
 def build_mapping_block(mapping: dict[str, Any], mapping_hash: str) -> dict[str, Any]:
+    transform_rule_descriptions = require_transform_rule_descriptions(mapping)
     return {
-        "mapping_id": mapping.get("mapping_id"),
-        "mapping_version": mapping.get("mapping_version"),
+        "mapping_id": require_non_empty_mapping_string(mapping, "mapping_id"),
+        "mapping_version": require_non_empty_mapping_string(mapping, "mapping_version"),
         "mapping_hash": mapping_hash,
-        "mapping_schema_hash": mapping.get("mapping_schema_hash"),
-        "target_parser_ir_schema_id": mapping.get("target_parser_ir_schema_id"),
-        "target_parser_ir_schema_hash": mapping.get("target_parser_ir_schema_hash"),
-        "generated_mapping_rules": len(mapping.get("transform_rule_descriptions", [])),
+        "mapping_schema_hash": require_non_empty_mapping_string(
+            mapping, "mapping_schema_hash"
+        ),
+        "target_parser_ir_schema_id": require_non_empty_mapping_string(
+            mapping, "target_parser_ir_schema_id"
+        ),
+        "target_parser_ir_schema_hash": require_non_empty_mapping_string(
+            mapping, "target_parser_ir_schema_hash"
+        ),
+        "generated_mapping_rules": len(transform_rule_descriptions),
     }
 
 
@@ -344,6 +397,7 @@ def build_summary(
 
 def render_markdown(summary: dict[str, Any]) -> str:
     plain = summary["plain_prose_admission"]
+    mapping = summary["mapping"]
     lines = [
         "# Profile-Aware Level 3 TEI Admission",
         "",
@@ -356,6 +410,16 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- plain_prose_verdict: `{plain['verdict']}`",
         f"- blocking_owners: `{', '.join(plain['blocking_owners']) or 'none'}`",
         f"- mapping_hash: `{summary['mapping']['mapping_hash']}`",
+        "",
+        "## Mapping",
+        "",
+        f"- mapping_id: `{mapping['mapping_id']}`",
+        f"- mapping_version: `{mapping['mapping_version']}`",
+        f"- mapping_hash: `{mapping['mapping_hash']}`",
+        f"- mapping_schema_hash: `{mapping['mapping_schema_hash']}`",
+        f"- target_parser_ir_schema_id: `{mapping['target_parser_ir_schema_id']}`",
+        f"- target_parser_ir_schema_hash: `{mapping['target_parser_ir_schema_hash']}`",
+        f"- generated_mapping_rules: `{mapping['generated_mapping_rules']}`",
         "",
         "## Plain Prose Admission",
         "",
@@ -425,12 +489,13 @@ def render_markdown(summary: dict[str, Any]) -> str:
 
 def main() -> int:
     args = parse_args()
+    repo_root = pathlib.Path(__file__).resolve().parents[2]
     matrix = load_json(args.matrix_summary)
     source = load_json(args.source_summary)
     mapping_input = matrix.get("inputs", {}).get("mapping")
     if not mapping_input:
         raise SystemExit("matrix summary missing inputs.mapping")
-    mapping_path = resolve_path(mapping_input, args.matrix_summary.parent)
+    mapping_path = resolve_mapping_path(mapping_input, args.matrix_summary.parent, repo_root)
     mapping = load_json(mapping_path)
     summary = build_summary(matrix, source, mapping, document_hash(mapping))
     write_json(args.summary_json, summary)

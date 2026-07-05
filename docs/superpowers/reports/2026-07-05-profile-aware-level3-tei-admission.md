@@ -10,6 +10,16 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 - blocking_owners: `adapter, policy`
 - mapping_hash: `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770`
 
+## Mapping
+
+- mapping_id: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe`
+- mapping_version: `0.2.3`
+- mapping_hash: `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770`
+- mapping_schema_hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
+- target_parser_ir_schema_id: `https://w3id.org/abc/schemas/parser-ir.schema.json`
+- target_parser_ir_schema_hash: `sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d`
+- generated_mapping_rules: `127`
+
 ## Plain Prose Admission
 
 - plaintext_surface: `body_base_text`

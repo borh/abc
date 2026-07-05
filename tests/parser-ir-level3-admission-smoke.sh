@@ -9,10 +9,19 @@ source_summary="$out_dir/source-summary.json"
 failing_source_summary="$out_dir/source-summary-failing.json"
 matrix_summary="$out_dir/matrix-summary.json"
 mapping_file="$out_dir/mapping.json"
+invalid_mapping_file="$out_dir/mapping-invalid.json"
 summary_json="$out_dir/admission.summary.json"
 report_md="$out_dir/admission.md"
 failing_summary_json="$out_dir/admission-source-fail.summary.json"
 failing_report_md="$out_dir/admission-source-fail.md"
+invalid_summary_json="$out_dir/admission-invalid-mapping.summary.json"
+invalid_report_md="$out_dir/admission-invalid-mapping.md"
+invalid_stderr="$out_dir/admission-invalid-mapping.stderr"
+foreign_checkout_root="$out_dir/foreign-checkout"
+foreign_mapping_file="$foreign_checkout_root/data/aat-to-parser-ir-mapping-v1.json"
+foreign_matrix_summary="$out_dir/matrix-summary-foreign-mapping.json"
+foreign_summary_json="$out_dir/admission-foreign-mapping.summary.json"
+foreign_report_md="$out_dir/admission-foreign-mapping.md"
 
 cat > "$source_summary" <<'JSON'
 {
@@ -157,6 +166,34 @@ cat > "$matrix_summary" <<JSON
 }
 JSON
 
+cat > "$invalid_mapping_file" <<'JSON'
+{
+  "mapping_id": "",
+  "mapping_version": "0.2.3",
+  "mapping_schema_hash": "",
+  "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+  "target_parser_ir_schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+  "transform_rule_descriptions": []
+}
+JSON
+
+mkdir -p "$(dirname "$foreign_mapping_file")"
+cat > "$foreign_mapping_file" <<'JSON'
+{
+  "mapping_id": "https://example.invalid/not-the-current-checkout",
+  "mapping_version": "999.0.0",
+  "mapping_schema_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "target_parser_ir_schema_id": "https://example.invalid/schemas/foreign-parser-ir.schema.json",
+  "target_parser_ir_schema_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "transform_rule_descriptions": [
+    {
+      "rule_id": "foreign-rule",
+      "description": "should not be loaded"
+    }
+  ]
+}
+JSON
+
 python3 "$repo_root/reports/parser-ir/level3-admission.py" \
   --matrix-summary "$matrix_summary" \
   --source-summary "$source_summary" \
@@ -169,6 +206,9 @@ jq -e '.parser_ir_infrastructure_verdict == "LEVEL3_IR_INFRASTRUCTURE_READY"' "$
 jq -e '.mapping.mapping_id == "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"' "$summary_json"
 jq -e '.mapping.mapping_version == "0.2.3"' "$summary_json"
 jq -e '.mapping.mapping_hash | test("^sha256:[0-9a-f]{64}$")' "$summary_json"
+jq -e '.mapping.mapping_schema_hash == "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"' "$summary_json"
+jq -e '.mapping.target_parser_ir_schema_id == "https://w3id.org/abc/schemas/parser-ir.schema.json"' "$summary_json"
+jq -e '.mapping.target_parser_ir_schema_hash == "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d"' "$summary_json"
 jq -e '.mapping.generated_mapping_rules == 1' "$summary_json"
 jq -e '.plain_prose_admission.rows_total == 5' "$summary_json"
 jq -e '.plain_prose_admission.rows_passed == 2' "$summary_json"
@@ -204,3 +244,67 @@ jq -e '.plain_prose_admission.rows_failed == 5' "$failing_summary_json"
 jq -e '.plain_prose_admission.verdict == "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_EVIDENCE"' "$failing_summary_json"
 jq -e '.plain_prose_admission.blocking_owners == ["adapter", "policy", "evidence"]' "$failing_summary_json"
 jq -e '.plain_prose_admission.failures_by_owner.evidence == 5' "$failing_summary_json"
+
+cat > "$foreign_matrix_summary" <<JSON
+{
+  "schema_version": "tei-eaj-generated-comparison-v1",
+  "inputs": {
+    "candidate_mode": "all",
+    "structural_summary": "fixture-structural-summary.json",
+    "mapping": "$foreign_mapping_file"
+  },
+  "totals": {
+    "rows_attempted": 0,
+    "tei_eaj_rows_attempted": 0,
+    "materialization_succeeded": 0,
+    "materialization_failed": 0,
+    "rows_skipped": 0
+  },
+  "skipped": [],
+  "rows": []
+}
+JSON
+
+python3 "$repo_root/reports/parser-ir/level3-admission.py" \
+  --matrix-summary "$foreign_matrix_summary" \
+  --source-summary "$source_summary" \
+  --summary-json "$foreign_summary_json" \
+  --report-md "$foreign_report_md"
+
+jq -e --arg expected "$(jq -r '.mapping_id' "$repo_root/data/aat-to-parser-ir-mapping-v1.json")" \
+  '.mapping.mapping_id == $expected' "$foreign_summary_json"
+jq -e --arg unexpected "https://example.invalid/not-the-current-checkout" \
+  '.mapping.mapping_id != $unexpected' "$foreign_summary_json"
+
+invalid_matrix_summary="$out_dir/matrix-summary-invalid-mapping.json"
+cat > "$invalid_matrix_summary" <<JSON
+{
+  "schema_version": "tei-eaj-generated-comparison-v1",
+  "inputs": {
+    "candidate_mode": "all",
+    "structural_summary": "fixture-structural-summary.json",
+    "mapping": "$invalid_mapping_file"
+  },
+  "totals": {
+    "rows_attempted": 0,
+    "tei_eaj_rows_attempted": 0,
+    "materialization_succeeded": 0,
+    "materialization_failed": 0,
+    "rows_skipped": 0
+  },
+  "skipped": [],
+  "rows": []
+}
+JSON
+
+if python3 "$repo_root/reports/parser-ir/level3-admission.py" \
+  --matrix-summary "$invalid_matrix_summary" \
+  --source-summary "$source_summary" \
+  --summary-json "$invalid_summary_json" \
+  --report-md "$invalid_report_md" \
+  2>"$invalid_stderr"; then
+  echo "expected invalid mapping fixture to fail" >&2
+  exit 1
+fi
+
+rg -n 'missing or empty mapping fields|transform_rule_descriptions' "$invalid_stderr"

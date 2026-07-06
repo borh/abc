@@ -15,7 +15,11 @@ coverage rows.
 ## TEI P5 Target
 
 Use TEI rendition and layout policy where TEI can carry publication-facing
-layout. TEI references should cite `../abc/references/TEI/P5/Source/Specs`.
+layout. Current local TEI citations:
+`../abc/references/TEI/P5/Source/Specs/rendition.xml`,
+`../abc/references/TEI/P5/Source/Specs/att.global.rendition.xml`,
+`../abc/references/TEI/P5/Source/Specs/layout.xml`, and
+`../abc/references/TEI/P5/Source/Specs/space.xml`.
 
 ## ABC Extension Or Sidecar
 

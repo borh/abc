@@ -16,7 +16,9 @@ text_policy_summary="$out_dir/text-policy.json"
 adapter_worksets_summary="$out_dir/adapter-worksets.json"
 dossier_dir="$out_dir/dossiers"
 parser_acceptance_spec="$out_dir/parser-acceptance.md"
+tei_p5_root="$out_dir/tei-p5"
 summary_json="$out_dir/next-work.summary.json"
+missing_root_summary_json="$out_dir/next-work.missing-root.summary.json"
 report_md="$out_dir/next-work.md"
 
 cat > "$source_summary" <<'JSON'
@@ -179,22 +181,111 @@ cat > "$adapter_worksets_summary" <<'JSON'
 JSON
 
 mkdir -p "$dossier_dir"
+mkdir -p "$tei_p5_root/Source/Specs"
+printf '<elementSpec ident="ruby"/>\n' > "$tei_p5_root/Source/Specs/ruby.xml"
+printf '<elementSpec ident="hi"/>\n' > "$tei_p5_root/Source/Specs/hi.xml"
 cat > "$dossier_dir/ruby.md" <<'MD'
 # Ruby
 
 Status: admitted
+
+## Source Inventory
+
+Ruby source rows are measured.
+
+## Parser-IR Representation
+
+Parser-IR carries ruby nodes.
+
+## TEI P5 Target
+
+Use TEI ruby policy. See `../abc/references/TEI/P5/Source/Specs/ruby.xml`.
+
+## ABC Extension Or Sidecar
+
+No sidecar is required for ordinary ruby.
+
+## Plaintext Projection
+
+Plaintext excludes ruby readings.
+
+## Current Evidence
+
+Evidence is fixture-local.
+
+## Open Decisions
+
+No fixture decision.
 MD
 cat > "$dossier_dir/warigaki.md" <<'MD'
 # Warigaki
 
 Status: schema-needed
+
+## Source Inventory
+
+Warigaki source rows are measured.
+
+## Parser-IR Representation
+
+Parser-IR needs schema work.
+
+## TEI P5 Target
+
+TEI target remains under review.
+
+## ABC Extension Or Sidecar
+
+Sidecar policy may be required.
+
+## Plaintext Projection
+
+Plaintext excludes warigaki metadata.
+
+## Current Evidence
+
+Evidence is fixture-local.
+
+## Open Decisions
+
+Schema decision remains open.
 MD
 cat > "$dossier_dir/layout-indentation.md" <<'MD'
 # Layout And Indentation
 
 Status: policy-needed
+
+## Source Inventory
+
+Layout source rows are measured.
+
+## Parser-IR Representation
+
+Parser-IR carries layout facts.
+
+## TEI P5 Target
+
+Use TEI rendition policy. See `../abc/references/TEI/P5/Source/Specs/hi.xml`.
+
+## ABC Extension Or Sidecar
+
+ABC extension policy may preserve source-exact layout kind.
+
+## Plaintext Projection
+
+Plaintext excludes layout metadata.
+
+## Current Evidence
+
+Evidence is fixture-local.
+
+## Open Decisions
+
+Policy decision remains open.
 MD
 
+mkdir -p "$out_dir/evidence"
+printf '{"ok": true}\n' > "$out_dir/evidence/existing.json"
 cat > "$parser_acceptance_spec" <<'MD'
 # Comprehensive Parser Acceptance Criteria
 
@@ -202,9 +293,20 @@ Status: Draft
 
 ## Required Evidence Inputs
 
-- source authority
-- parser lanes
+- `__EXISTING_EVIDENCE__`
+- `__MISSING_EVIDENCE__`
+- non-path parser lane evidence
 MD
+python3 - "$parser_acceptance_spec" "$out_dir/evidence/existing.json" "$out_dir/evidence/missing.json" <<'PY'
+import pathlib
+import sys
+
+path = pathlib.Path(sys.argv[1])
+text = path.read_text()
+text = text.replace("__EXISTING_EVIDENCE__", sys.argv[2])
+text = text.replace("__MISSING_EVIDENCE__", sys.argv[3])
+path.write_text(text)
+PY
 
 python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \
@@ -217,6 +319,7 @@ python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
   --text-policy-summary "$text_policy_summary" \
   --adapter-worksets-summary "$adapter_worksets_summary" \
   --dossier-dir "$dossier_dir" \
+  --tei-p5-root "$tei_p5_root" \
   --parser-acceptance-spec "$parser_acceptance_spec" \
   --summary-json "$summary_json" \
   --report-md "$report_md"
@@ -237,7 +340,30 @@ jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evide
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and (.evidence.included_buckets | sort) == (["adapter_collapsed", "adapter_over_segmented", "adapter_raw_only", "adapter_under_segmented", "converter_paragraph_mismatch"] | sort))' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and (.evidence.excluded_buckets | sort) == (["aligned", "page_break_projection", "source_note_back_routing"] | sort))' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.dossier_count == 3 and .evidence.status_counts."schema-needed" == 1)' "$summary_json" >/dev/null
-jq -e '.next_work_items[] | select(.id == "parser_acceptance_criteria" and .evidence.spec_status == "Draft" and .evidence.required_evidence_inputs == 2)' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.complete_section_count == 3 and .evidence.incomplete_section_dossiers == [])' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_count == 2 and (.evidence.dossiers[] | select(.name == "ruby" and .tei_p5_references == ["../abc/references/TEI/P5/Source/Specs/ruby.xml"])))' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_file_count == 2 and .evidence.tei_p5_reference_directory_count == 0 and .evidence.missing_tei_p5_references == [])' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_root_exists == true and .evidence.unverified_tei_p5_references == [])' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "parser_acceptance_criteria" and .evidence.spec_status == "Draft" and .evidence.required_evidence_inputs == 3)' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "parser_acceptance_criteria" and .evidence.required_evidence_paths_total == 2 and .evidence.required_evidence_paths_existing == 1 and (.evidence.missing_required_evidence_paths | length) == 1)' "$summary_json" >/dev/null
 jq -e '.calibration_only_items[] | select(.id == "tei_eaj_editorial_enrichment")' "$summary_json" >/dev/null
 rg -n "Aozora Publication Next Work" "$report_md" >/dev/null
 rg -n "letter_address_origin|front_back_source_region_policy|adapter_collapsed|schema-needed|Comprehensive Parser Acceptance Criteria" "$report_md" >/dev/null
+
+python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+  --source-summary "$source_summary" \
+  --coverage-summary "$coverage_summary" \
+  --matrix-summary "$matrix_summary" \
+  --conversion-summary "$conversion_summary" \
+  --source-reference-summary "$reference_summary" \
+  --performance-report "$performance_md" \
+  --source-disposition-summary "$source_disposition_summary" \
+  --text-policy-summary "$text_policy_summary" \
+  --adapter-worksets-summary "$adapter_worksets_summary" \
+  --dossier-dir "$dossier_dir" \
+  --tei-p5-root "$out_dir/missing-tei-p5" \
+  --parser-acceptance-spec "$parser_acceptance_spec" \
+  --summary-json "$missing_root_summary_json" \
+  --report-md "$out_dir/next-work.missing-root.md"
+
+jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_root_exists == false and .evidence.tei_p5_reference_file_count == 2 and (.evidence.unverified_tei_p5_references | length) == 2 and .evidence.missing_tei_p5_references == [])' "$missing_root_summary_json" >/dev/null

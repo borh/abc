@@ -13,9 +13,13 @@ carry parser evidence, but this dossier must still isolate kunten-specific rows.
 
 ## TEI P5 Target
 
-TEI target selection needs a local TEI P5 citation from
-`../abc/references/TEI/P5/Source/Guidelines` or
-`../abc/references/TEI/P5/Source/Specs`.
+TEI target selection needs a final policy decision. Candidate local TEI
+citations to evaluate are
+`../abc/references/TEI/P5/Source/Specs/ruby.xml`,
+`../abc/references/TEI/P5/Source/Specs/gloss.xml`,
+`../abc/references/TEI/P5/Source/Specs/note.xml`,
+`../abc/references/TEI/P5/Source/Specs/seg.xml`, and
+`../abc/references/TEI/P5/Source/Specs/span.xml`.
 
 ## ABC Extension Or Sidecar
 

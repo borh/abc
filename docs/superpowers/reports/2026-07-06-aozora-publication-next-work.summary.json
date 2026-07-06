@@ -276,61 +276,137 @@
           "policy-needed": 4,
           "schema-needed": 2
         },
+        "complete_section_count": 11,
+        "incomplete_section_dossiers": [],
+        "tei_p5_reference_count": 34,
+        "tei_p5_reference_root": "/home/bor/Projects/abc/references/TEI/P5",
+        "tei_p5_reference_root_exists": true,
+        "tei_p5_reference_file_count": 34,
+        "tei_p5_reference_directory_count": 0,
+        "directory_tei_p5_references": [],
+        "missing_tei_p5_references": [],
+        "unverified_tei_p5_references": [],
         "dossiers": [
           {
             "name": "emphasis-style",
             "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/emphasis-style.md",
-            "status": "admitted"
+            "status": "admitted",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "../abc/references/TEI/P5/Source/Specs/att.global.rendition.xml",
+              "../abc/references/TEI/P5/Source/Specs/hi.xml",
+              "../abc/references/TEI/P5/Source/Specs/rendition.xml"
+            ]
           },
           {
             "name": "gaiji",
             "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/gaiji.md",
-            "status": "admitted"
+            "status": "admitted",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "../abc/references/TEI/P5/Source/Guidelines/en/WD-NonStandardCharacters.xml",
+              "../abc/references/TEI/P5/Source/Specs/char.xml",
+              "../abc/references/TEI/P5/Source/Specs/g.xml",
+              "../abc/references/TEI/P5/Source/Specs/glyph.xml"
+            ]
           },
           {
             "name": "images-figures-captions",
             "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/images-figures-captions.md",
-            "status": "policy-needed"
+            "status": "policy-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "../abc/references/TEI/P5/Source/Specs/figDesc.xml",
+              "../abc/references/TEI/P5/Source/Specs/figure.xml",
+              "../abc/references/TEI/P5/Source/Specs/graphic.xml"
+            ]
           },
           {
             "name": "kunten",
             "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/kunten.md",
-            "status": "schema-needed"
+            "status": "schema-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "../abc/references/TEI/P5/Source/Specs/gloss.xml",
+              "../abc/references/TEI/P5/Source/Specs/note.xml",
+              "../abc/references/TEI/P5/Source/Specs/ruby.xml",
+              "../abc/references/TEI/P5/Source/Specs/seg.xml",
+              "../abc/references/TEI/P5/Source/Specs/span.xml"
+            ]
           },
           {
             "name": "layout-indentation",
             "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/layout-indentation.md",
-            "status": "policy-needed"
+            "status": "policy-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "../abc/references/TEI/P5/Source/Specs/att.global.rendition.xml",
+              "../abc/references/TEI/P5/Source/Specs/layout.xml",
+              "../abc/references/TEI/P5/Source/Specs/rendition.xml",
+              "../abc/references/TEI/P5/Source/Specs/space.xml"
+            ]
           },
           {
             "name": "malformed-source-diagnostics",
             "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/malformed-source-diagnostics.md",
-            "status": "diagnostic-only"
+            "status": "diagnostic-only",
+            "missing_sections": [],
+            "tei_p5_references": []
           },
           {
             "name": "page-line-breaks",
             "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/page-line-breaks.md",
-            "status": "policy-needed"
+            "status": "policy-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "../abc/references/TEI/P5/Source/Specs/lb.xml",
+              "../abc/references/TEI/P5/Source/Specs/milestone.xml",
+              "../abc/references/TEI/P5/Source/Specs/pb.xml"
+            ]
           },
           {
             "name": "paragraphs-headings",
             "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/paragraphs-headings.md",
-            "status": "adapter-fidelity-needed"
+            "status": "adapter-fidelity-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "../abc/references/TEI/P5/Source/Specs/div.xml",
+              "../abc/references/TEI/P5/Source/Specs/head.xml",
+              "../abc/references/TEI/P5/Source/Specs/p.xml"
+            ]
           },
           {
             "name": "ruby",
             "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/ruby.md",
-            "status": "admitted"
+            "status": "admitted",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "../abc/references/TEI/P5/Source/Specs/ruby.xml"
+            ]
           },
           {
             "name": "source-apparatus-front-back",
             "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/source-apparatus-front-back.md",
-            "status": "policy-needed"
+            "status": "policy-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "../abc/references/TEI/P5/Source/Guidelines/en/HD-Header.xml",
+              "../abc/references/TEI/P5/Source/Specs/back.xml",
+              "../abc/references/TEI/P5/Source/Specs/front.xml",
+              "../abc/references/TEI/P5/Source/Specs/fw.xml",
+              "../abc/references/TEI/P5/Source/Specs/note.xml"
+            ]
           },
           {
             "name": "warigaki",
             "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/warigaki.md",
-            "status": "schema-needed"
+            "status": "schema-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "../abc/references/TEI/P5/Source/Specs/note.xml",
+              "../abc/references/TEI/P5/Source/Specs/seg.xml",
+              "../abc/references/TEI/P5/Source/Specs/span.xml"
+            ]
           }
         ]
       }
@@ -344,7 +420,36 @@
         "hash": "sha256:78daefe231447e9943bacbe2e32c97c3727ab9abb427ee794533dbc3ff07cbc8",
         "title": "Comprehensive Parser Acceptance Criteria",
         "spec_status": "Draft",
-        "required_evidence_inputs": 6
+        "required_evidence_inputs": 6,
+        "required_evidence_paths_total": 6,
+        "required_evidence_paths_existing": 6,
+        "missing_required_evidence_paths": [],
+        "required_evidence_paths": [
+          {
+            "path": "docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json",
+            "exists": true
+          },
+          {
+            "path": "docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json",
+            "exists": true
+          },
+          {
+            "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+            "exists": true
+          },
+          {
+            "path": "docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json",
+            "exists": true
+          },
+          {
+            "path": "docs/superpowers/reports/2026-07-04-parser-performance-measurement.md",
+            "exists": true
+          },
+          {
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers",
+            "exists": true
+          }
+        ]
       }
     }
   ],
@@ -435,6 +540,10 @@
     },
     "dossier_dir": {
       "path": "docs/superpowers/specs/tei-p5-mapping-dossiers"
+    },
+    "tei_p5_root": {
+      "path": "/home/bor/Projects/abc/references/TEI/P5",
+      "exists": true
     },
     "parser_acceptance_spec": {
       "path": "docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md",

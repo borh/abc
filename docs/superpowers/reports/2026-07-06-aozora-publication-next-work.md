@@ -27,9 +27,14 @@ Verdict: `AOZORA_PUBLICATION_NEXT_WORK_OPEN`
 - `tei_p5_mapping_dossiers` (ab-validator+abc): `open`
   - dossier_count=11
   - status_counts={"adapter-fidelity-needed": 1, "admitted": 3, "diagnostic-only": 1, "policy-needed": 4, "schema-needed": 2}
+  - complete_section_count=11, incomplete_section_dossiers=[]
+  - tei_p5_reference_count=34, file_count=34, directory_count=0
+  - tei_p5_reference_root=/home/bor/Projects/abc/references/TEI/P5, root_exists=True, unverified=0
 - `parser_acceptance_criteria` (ab-validator): `open`
   - spec=docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md
   - spec_status=Draft, required_evidence_inputs=6
+  - required_evidence_paths_existing=6/6
+  - missing_required_evidence_paths=[]
 
 ## Parser Lanes
 

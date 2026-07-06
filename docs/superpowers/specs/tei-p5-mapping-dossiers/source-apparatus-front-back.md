@@ -13,8 +13,13 @@ Parser-IR carries source-note and related region evidence where available.
 
 ## TEI P5 Target
 
-ABC owns the final TEI header, front, back, or sidecar placement policy. TEI
-references should cite `../abc/references/TEI/P5/Source/Specs`.
+ABC owns the final TEI header, front, back, or sidecar placement policy.
+Current local TEI citations:
+`../abc/references/TEI/P5/Source/Specs/front.xml`,
+`../abc/references/TEI/P5/Source/Specs/back.xml`,
+`../abc/references/TEI/P5/Source/Specs/note.xml`,
+`../abc/references/TEI/P5/Source/Specs/fw.xml`, and
+`../abc/references/TEI/P5/Source/Guidelines/en/HD-Header.xml`.
 
 ## ABC Extension Or Sidecar
 

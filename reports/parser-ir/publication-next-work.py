@@ -27,6 +27,16 @@ ADAPTER_DISTORTION_EXCLUDED_BUCKETS = (
     "source_note_back_routing",
     "page_break_projection",
 )
+REQUIRED_DOSSIER_SECTIONS = (
+    "Source Inventory",
+    "Parser-IR Representation",
+    "TEI P5 Target",
+    "ABC Extension Or Sidecar",
+    "Plaintext Projection",
+    "Current Evidence",
+    "Open Decisions",
+)
+TEI_P5_REFERENCE_RE = re.compile(r"`?(\.\./abc/references/TEI/P5/[^\s`)]+)`?")
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
@@ -315,37 +325,160 @@ def parse_status(text: str) -> str:
     return match.group(1) if match else "unknown"
 
 
-def dossier_evidence(dossier_dir: pathlib.Path) -> dict[str, Any]:
-    dossiers: list[dict[str, str]] = []
+def missing_dossier_sections(text: str) -> list[str]:
+    present = set(re.findall(r"^##\s+(.+?)\s*$", text, flags=re.MULTILINE))
+    return [section for section in REQUIRED_DOSSIER_SECTIONS if section not in present]
+
+
+def tei_p5_references(text: str) -> list[str]:
+    return sorted(set(TEI_P5_REFERENCE_RE.findall(text)))
+
+
+def default_tei_p5_root() -> pathlib.Path:
+    candidates = [
+        (REPO_ROOT.parent / "abc" / "references" / "TEI" / "P5").resolve(),
+    ]
+    if REPO_ROOT.parent.name == ".worktrees":
+        candidates.append((REPO_ROOT.parents[2] / "abc" / "references" / "TEI" / "P5").resolve())
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+def resolve_tei_reference(reference: str, tei_p5_root: pathlib.Path) -> pathlib.Path:
+    prefix = "../abc/references/TEI/P5/"
+    if reference.startswith(prefix):
+        return (tei_p5_root / reference.removeprefix(prefix)).resolve()
+    if not reference.startswith("../abc/"):
+        return (REPO_ROOT / reference).resolve()
+    suffix = reference.removeprefix("../abc/")
+    candidates = [
+        (REPO_ROOT / reference).resolve(),
+        (REPO_ROOT.parent / "abc" / suffix).resolve(),
+    ]
+    if REPO_ROOT.parent.name == ".worktrees":
+        candidates.append((REPO_ROOT.parents[2] / "abc" / suffix).resolve())
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+def tei_reference_audit(references: list[str], tei_p5_root: pathlib.Path) -> dict[str, Any]:
+    directories: list[str] = []
+    missing: list[str] = []
+    unverified: list[str] = []
+    file_count = 0
+    root_exists = tei_p5_root.exists()
+    for reference in references:
+        path = resolve_tei_reference(reference, tei_p5_root)
+        if path.is_dir() or path.suffix == "":
+            directories.append(reference)
+            continue
+        file_count += 1
+        if not root_exists:
+            unverified.append(reference)
+        elif not path.is_file():
+            missing.append(reference)
+    return {
+        "root": display_path(tei_p5_root),
+        "root_exists": root_exists,
+        "file_count": file_count,
+        "directory_references": sorted(directories),
+        "missing_references": sorted(missing),
+        "unverified_references": sorted(unverified),
+    }
+
+
+def dossier_evidence(dossier_dir: pathlib.Path, tei_p5_root: pathlib.Path) -> dict[str, Any]:
+    dossiers: list[dict[str, Any]] = []
+    all_references: list[str] = []
     for path in sorted(dossier_dir.glob("*.md")):
         if path.name == "README.md":
             continue
         text = path.read_text(encoding="utf-8")
-        dossiers.append({"name": path.stem, "path": display_path(path), "status": parse_status(text)})
+        missing_sections = missing_dossier_sections(text)
+        references = tei_p5_references(text)
+        all_references.extend(references)
+        dossiers.append(
+            {
+                "name": path.stem,
+                "path": display_path(path),
+                "status": parse_status(text),
+                "missing_sections": missing_sections,
+                "tei_p5_references": references,
+            }
+        )
+    incomplete = [dossier["name"] for dossier in dossiers if dossier["missing_sections"]]
+    reference_audit = tei_reference_audit(all_references, tei_p5_root)
     return {
         "dossier_count": len(dossiers),
         "status_counts": status_counts([dossier["status"] for dossier in dossiers]),
+        "complete_section_count": len(dossiers) - len(incomplete),
+        "incomplete_section_dossiers": incomplete,
+        "tei_p5_reference_count": len(all_references),
+        "tei_p5_reference_root": reference_audit["root"],
+        "tei_p5_reference_root_exists": reference_audit["root_exists"],
+        "tei_p5_reference_file_count": reference_audit["file_count"],
+        "tei_p5_reference_directory_count": len(reference_audit["directory_references"]),
+        "directory_tei_p5_references": reference_audit["directory_references"],
+        "missing_tei_p5_references": reference_audit["missing_references"],
+        "unverified_tei_p5_references": reference_audit["unverified_references"],
         "dossiers": dossiers,
     }
 
 
-def parser_acceptance_evidence(path: pathlib.Path) -> dict[str, Any]:
-    text = path.read_text(encoding="utf-8")
-    required_inputs = 0
+def required_evidence_lines(text: str) -> list[str]:
+    values: list[str] = []
     in_required = False
     for line in text.splitlines():
         if line.startswith("## "):
             in_required = line.strip() == "## Required Evidence Inputs"
             continue
         if in_required and line.startswith("- "):
-            required_inputs += 1
+            value = line[2:].strip()
+            code_match = re.fullmatch(r"`(.+?)`", value)
+            if code_match:
+                value = code_match.group(1)
+            values.append(value)
+    return values
+
+
+def evidence_path(value: str) -> pathlib.Path | None:
+    if "/" not in value and not value.startswith("."):
+        return None
+    path = pathlib.Path(value)
+    if path.is_absolute():
+        return path
+    return (REPO_ROOT / path).resolve()
+
+
+def parser_acceptance_evidence(path: pathlib.Path) -> dict[str, Any]:
+    text = path.read_text(encoding="utf-8")
+    required_inputs = required_evidence_lines(text)
+    path_inputs: list[dict[str, Any]] = []
+    missing_paths: list[str] = []
+    for value in required_inputs:
+        path_value = evidence_path(value)
+        if path_value is None:
+            continue
+        exists = path_value.exists()
+        display = display_path(path_value)
+        path_inputs.append({"path": display, "exists": exists})
+        if not exists:
+            missing_paths.append(display)
     title_match = re.search(r"^#\s+(.+?)\s*$", text, flags=re.MULTILINE)
     return {
         "path": display_path(path),
         "hash": sha256_file(path),
         "title": title_match.group(1) if title_match else path.name,
         "spec_status": parse_status(text),
-        "required_evidence_inputs": required_inputs,
+        "required_evidence_inputs": len(required_inputs),
+        "required_evidence_paths_total": len(path_inputs),
+        "required_evidence_paths_existing": sum(1 for item in path_inputs if item["exists"]),
+        "missing_required_evidence_paths": missing_paths,
+        "required_evidence_paths": path_inputs,
     }
 
 
@@ -465,11 +598,16 @@ def render_item_evidence(item: dict[str, Any]) -> list[str]:
         return [
             f"dossier_count={evidence.get('dossier_count')}",
             f"status_counts={json.dumps(evidence.get('status_counts', {}), ensure_ascii=False, sort_keys=True)}",
+            f"complete_section_count={evidence.get('complete_section_count')}, incomplete_section_dossiers={json.dumps(evidence.get('incomplete_section_dossiers', []), ensure_ascii=False)}",
+            f"tei_p5_reference_count={evidence.get('tei_p5_reference_count')}, file_count={evidence.get('tei_p5_reference_file_count')}, directory_count={evidence.get('tei_p5_reference_directory_count')}",
+            f"tei_p5_reference_root={evidence.get('tei_p5_reference_root')}, root_exists={evidence.get('tei_p5_reference_root_exists')}, unverified={len(evidence.get('unverified_tei_p5_references', []))}",
         ]
     if item_id == "parser_acceptance_criteria":
         return [
             f"spec={evidence.get('path')}",
             f"spec_status={evidence.get('spec_status')}, required_evidence_inputs={evidence.get('required_evidence_inputs')}",
+            f"required_evidence_paths_existing={evidence.get('required_evidence_paths_existing')}/{evidence.get('required_evidence_paths_total')}",
+            f"missing_required_evidence_paths={json.dumps(evidence.get('missing_required_evidence_paths', []), ensure_ascii=False)}",
         ]
     return [f"evidence={json.dumps(evidence, ensure_ascii=False, sort_keys=True)}"]
 
@@ -484,6 +622,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
     text_policy = load_json(args.text_policy_summary)
     adapter_worksets = load_json(args.adapter_worksets_summary)
     performance_text = args.performance_report.read_text(encoding="utf-8")
+    tei_p5_root = args.tei_p5_root.resolve() if args.tei_p5_root else default_tei_p5_root()
     lanes = parser_lanes(conversion)
     completed_gates = [
         source_authority_gate(source),
@@ -501,7 +640,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
             source_disposition=source_disposition_evidence(source_disposition),
             text_policy=text_policy_evidence(text_policy),
             adapter_worksets=adapter_worksets,
-            dossiers=dossier_evidence(args.dossier_dir),
+            dossiers=dossier_evidence(args.dossier_dir, tei_p5_root),
             parser_acceptance=parser_acceptance_evidence(args.parser_acceptance_spec),
         ),
         "calibration_only_items": [
@@ -524,6 +663,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
             "text_policy_summary": input_record(args.text_policy_summary),
             "adapter_worksets_summary": input_record(args.adapter_worksets_summary),
             "dossier_dir": {"path": display_path(args.dossier_dir)},
+            "tei_p5_root": {"path": display_path(tei_p5_root), "exists": tei_p5_root.exists()},
             "parser_acceptance_spec": input_record(args.parser_acceptance_spec),
         },
     }
@@ -541,6 +681,7 @@ def main() -> None:
     parser.add_argument("--text-policy-summary", type=pathlib.Path, required=True)
     parser.add_argument("--adapter-worksets-summary", type=pathlib.Path, required=True)
     parser.add_argument("--dossier-dir", type=pathlib.Path, required=True)
+    parser.add_argument("--tei-p5-root", type=pathlib.Path)
     parser.add_argument("--parser-acceptance-spec", type=pathlib.Path, required=True)
     parser.add_argument("--summary-json", type=pathlib.Path, required=True)
     parser.add_argument("--report-md", type=pathlib.Path, required=True)

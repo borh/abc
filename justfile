@@ -339,6 +339,15 @@ source-region-disposition-samples-report SOURCE_SUMMARY="docs/superpowers/report
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}"
 
+parser-ir-text-policy-delta-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-text-policy-delta-smoke.sh"
+
+parser-ir-text-policy-delta-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-text-policy-delta.md":
+	@python3 "{{repo_root}}/reports/parser-ir/text-policy-delta.py" \
+		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}"
+
 parser-ir-publication-bundle-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-publication-bundle-smoke.sh"
 

@@ -68,11 +68,11 @@ fn legacy_schema_hashes_match_mapping_artifact() {
 
     assert_eq!(
         schema_hash(&schemas.mapping_schema).unwrap(),
-        "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
+        "sha256:23a2822cbae88533168121e8a09648441276d8af6484269ae666b90030eb1e06"
     );
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411"
+        "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2"
     );
 }
 
@@ -127,7 +127,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.2.3");
+    assert_eq!(mapping.mapping_version, "0.2.4");
     assert_eq!(mapping.transform_rule_descriptions.len(), 680);
     assert!(
         !mapping

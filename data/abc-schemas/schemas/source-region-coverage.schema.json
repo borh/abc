@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/source-region-coverage.schema.json",
   "title": "ABC Source Region Coverage Report",
+  "version": "0.2.1",
   "type": "object",
   "required": [
     "schema_version",

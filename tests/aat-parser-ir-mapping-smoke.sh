@@ -17,7 +17,7 @@ uv run --isolated --no-project --with 'jsonschema>=4.0' \
   "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/generate.py" \
   --aat-dir "$aat_dir" \
   --abc-root "$abc_root" \
-  --mapping-version 0.2.3 \
+  --mapping-version 0.2.4 \
   --out "$out_dir/aozora-rs-only.mapping.json" \
   --summary-json "$out_dir/aozora-rs-only.summary.json" \
   --assert-zero-unsupported
@@ -38,16 +38,16 @@ uv run --isolated --no-project --with 'jsonschema>=4.0' \
   --aat-dir "$aozora2_dir" \
   --aat-dir "$aozora_dir" \
   --abc-root "$abc_root" \
-  --mapping-version 0.2.3 \
+  --mapping-version 0.2.4 \
   --out "$out_dir/mapping.json" \
   --summary-json "$out_dir/summary.json"
 
-jq -e '.mapping_version == "0.2.3"' "$out_dir/mapping.json"
+jq -e '.mapping_version == "0.2.4"' "$out_dir/mapping.json"
 jq -e '(.aat_dirs | length) == 5' "$out_dir/summary.json"
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "meta.adapter" and .aat_pointer != "meta.adapter_version")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer == "meta.parse_complete")' "$out_dir/mapping.json"
-jq -e '.mapping_schema_hash == "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"' "$out_dir/summary.json"
-jq -e '.target_parser_ir_schema_hash == "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411"' "$out_dir/summary.json"
+jq -e '.mapping_schema_hash == "sha256:23a2822cbae88533168121e8a09648441276d8af6484269ae666b90030eb1e06"' "$out_dir/summary.json"
+jq -e '.target_parser_ir_schema_hash == "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2"' "$out_dir/summary.json"
 jq -e 'all(.transform_rule_descriptions[]; (.category != "STRUCTURAL") or ((.aat_pointer // "") | contains("paragraph") | not))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and (.description | test("warigaki")))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .parser_ir_pointer == "span")' "$out_dir/mapping.json"

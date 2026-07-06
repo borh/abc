@@ -11,6 +11,6 @@ out="$(python3 "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/c14n.py" \
 printf '%s\n' "$out"
 
 printf '%s\n' "$out" | rg -F \
-  "$abc_root/schemas/aat-parser-ir-mapping.schema.json	sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
+  "$abc_root/schemas/aat-parser-ir-mapping.schema.json	sha256:23a2822cbae88533168121e8a09648441276d8af6484269ae666b90030eb1e06"
 printf '%s\n' "$out" | rg -F \
-  "$abc_root/schemas/parser-ir.schema.json	sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411"
+  "$abc_root/schemas/parser-ir.schema.json	sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2"

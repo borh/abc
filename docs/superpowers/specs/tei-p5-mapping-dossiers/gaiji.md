@@ -14,9 +14,11 @@ available.
 
 ## TEI P5 Target
 
-Use TEI gaiji and character declaration policy. TEI references should cite
-`../abc/references/TEI/P5/Source/Guidelines` and
-`../abc/references/TEI/P5/Source/Specs` for the concrete element claims.
+Use TEI gaiji and character declaration policy. Current local TEI citations:
+`../abc/references/TEI/P5/Source/Guidelines/en/WD-NonStandardCharacters.xml`,
+`../abc/references/TEI/P5/Source/Specs/char.xml`,
+`../abc/references/TEI/P5/Source/Specs/g.xml`, and
+`../abc/references/TEI/P5/Source/Specs/glyph.xml`.
 
 ## ABC Extension Or Sidecar
 

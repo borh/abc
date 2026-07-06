@@ -13,8 +13,10 @@ Parser-IR carries a flat node list plus paragraph ranges and heading nodes.
 
 ## TEI P5 Target
 
-Use TEI paragraphs and heading structures. TEI references should cite
-`../abc/references/TEI/P5/Source/Specs`.
+Use TEI paragraphs and heading structures. Current local TEI citations:
+`../abc/references/TEI/P5/Source/Specs/p.xml`,
+`../abc/references/TEI/P5/Source/Specs/head.xml`, and
+`../abc/references/TEI/P5/Source/Specs/div.xml`.
 
 ## ABC Extension Or Sidecar
 

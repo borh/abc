@@ -193,6 +193,12 @@ renderer shortcut.
 
 **Purpose:** Keep the five-parser evidence matrix useful without confusing parser consensus with source authority.
 
+Parser acceptance criteria are defined in
+`docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md`.
+New parser work must not start as a replacement for the admission ledger; it
+must consume the ledger and close named source coverage, parser-IR emission,
+publication bundle, and performance criteria.
+
 **Current parser evidence lanes:**
 
 - `aozora2html`
@@ -258,7 +264,7 @@ renderer shortcut.
 These buckets are planning vocabulary. The report gate must still fold them
 back into the canonical classes from the publication contract:
 `tei_exact`, `tei_policy_projection`, `tei_plus_abc_extension`,
-`custom_sidecar`, `plaintext_only`, or `unsupported_gap`.
+`custom_sidecar`, `body_visible_text_only`, or `unsupported_gap`.
 
 **Review gate:** The coverage report has no `classified_but_not_admitted` rows and no true unsupported gaps after ABC profile/custom-contract hashes are synced.
 

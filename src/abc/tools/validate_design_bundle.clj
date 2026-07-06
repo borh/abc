@@ -244,6 +244,7 @@
     "body_end_boundary"
     "terminal_provenance"
     "colophon_metadata"
+    "letter_address_origin"
     "malformed_source"})
 
 (def source-region-classes-needing-measurement-split

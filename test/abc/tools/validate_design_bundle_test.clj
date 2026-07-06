@@ -87,7 +87,7 @@
 
 (def ^:private valid-source-region-policy
   {"policy_id" "https://w3id.org/abc/policies/source-region-publication-v0"
-   "policy_version" "0.1.0"
+   "policy_version" "0.2.0"
    "dispositions" [{"source_class" "notation_legend"
                     "target_class" "tei_policy_projection"
                     "tei_target" "encodingDesc/editorialDecl"
@@ -118,6 +118,12 @@
                     "custom_sidecar" true
                     "plaintext_projection" "omit"
                     "measurement_status" "needs_measurement_split"}
+                   {"source_class" "letter_address_origin"
+                    "target_class" "tei_policy_projection"
+                    "tei_target" "teiHeader/profileDesc/correspDesc"
+                    "custom_sidecar" true
+                    "plaintext_projection" "omit"
+                    "measurement_status" "measured"}
                    {"source_class" "malformed_source"
                     "target_class" "diagnostic"
                     "tei_target" nil

@@ -66,6 +66,65 @@ pub enum InterestingEngine {
     Duckdb,
 }
 
+/// Signal-rank pooling scope (spec §Calibration Plan step 3 A/B). Within-kind
+/// is the shipped v1 default; global pools ranks per signal across kinds
+/// (applicability unchanged: impact still fires only for feature patterns).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum RankScope {
+    WithinKind,
+    Global,
+}
+
+impl RankScope {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::WithinKind => "within-kind",
+            Self::Global => "global",
+        }
+    }
+}
+
+/// Missing-signal λ policy (spec §Calibration Plan step 4, adapted per the
+/// v1 rank-floor deviation): `rank-floor` (default) or `fixed:<v>` with
+/// v ≥ 0. Fixed values break missing-signal monotonicity past rank
+/// `1/v − k`; they exist for the calibration sweep, not for production use.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum LambdaMissingPolicy {
+    RankFloor,
+    Fixed(f64),
+}
+
+impl std::str::FromStr for LambdaMissingPolicy {
+    type Err = String;
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        if input == "rank-floor" {
+            return Ok(Self::RankFloor);
+        }
+        if let Some(value) = input.strip_prefix("fixed:") {
+            let value: f64 = value
+                .parse()
+                .map_err(|_| format!("invalid fixed λ value {value:?}"))?;
+            if !value.is_finite() || value < 0.0 {
+                return Err(format!("fixed λ must be finite and >= 0, got {value}"));
+            }
+            return Ok(Self::Fixed(value));
+        }
+        Err(format!(
+            "expected `rank-floor` or `fixed:<value>`, got {input:?}"
+        ))
+    }
+}
+
+impl std::fmt::Display for LambdaMissingPolicy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::RankFloor => write!(f, "rank-floor"),
+            Self::Fixed(value) => write!(f, "fixed:{value}"),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct WarehouseInterestingOptions {
     pub limit: usize,
@@ -75,6 +134,9 @@ pub struct WarehouseInterestingOptions {
     pub max_region_examples: usize,
     pub engine: InterestingEngine,
     pub feature_profile: WarehouseFeatureProfile,
+    pub rank_scope: RankScope,
+    pub lambda_policy: LambdaMissingPolicy,
+    pub anomaly_w_cov: f64,
 }
 
 impl Default for WarehouseInterestingOptions {
@@ -87,6 +149,9 @@ impl Default for WarehouseInterestingOptions {
             max_region_examples: 5,
             engine: InterestingEngine::Auto,
             feature_profile: WarehouseFeatureProfile::Core,
+            rank_scope: RankScope::WithinKind,
+            lambda_policy: LambdaMissingPolicy::RankFloor,
+            anomaly_w_cov: ANOMALY_W_COV,
         }
     }
 }
@@ -111,6 +176,8 @@ pub struct ScoreVersionBlock {
     /// rank-floor policy sets `λ = 1/(k + N_kind + 1)` — "just below the
     /// worst-ranked observed pattern of the kind" — which preserves it.
     pub lambda_missing_policy: String,
+    /// Signal-rank pooling scope: `"within-kind"` (v1 default) or `"global"`.
+    pub rank_scope: String,
     pub anomaly_w_cov: f64,
     pub signal_profile: Vec<String>,
     /// Which feature keys were admitted to feature-pattern collection
@@ -866,10 +933,16 @@ struct PatternScore {
     rrf_score: f64,
 }
 
-/// Ranks patterns per kind per signal (raw desc, `pattern_id` asc — the
+/// Ranks patterns per signal (raw desc, `pattern_id` asc — the
 /// deterministic tie-break) and fuses. Returns scores aligned with
-/// `patterns`.
-fn score_patterns(patterns: &[PatternStats], rarity_total: usize) -> Vec<PatternScore> {
+/// `patterns`. `rank_scope` selects whether ranking pools are formed
+/// within each kind (v1 default) or globally across all patterns.
+fn score_patterns(
+    patterns: &[PatternStats],
+    rarity_total: usize,
+    rank_scope: RankScope,
+    lambda_policy: LambdaMissingPolicy,
+) -> Vec<PatternScore> {
     let mut scores = patterns
         .iter()
         .map(|stats| {
@@ -887,58 +960,101 @@ fn score_patterns(patterns: &[PatternStats], rarity_total: usize) -> Vec<Pattern
         })
         .collect::<Vec<_>>();
 
-    for kind in [
-        PatternKind::Feature,
-        PatternKind::Segmentation,
-        PatternKind::Coverage,
-    ] {
-        let kind_indices = patterns
-            .iter()
-            .enumerate()
-            .filter(|(_, stats)| stats.kind == kind)
-            .map(|(index, _)| index)
-            .collect::<Vec<_>>();
-        if kind_indices.is_empty() {
-            continue;
-        }
-        let lambda = lambda_missing(kind_indices.len());
-        for index in &kind_indices {
-            scores[*index].lambda = lambda;
-        }
-        for (signal_slot, _signal) in Signal::applicable(kind).iter().enumerate() {
-            let mut present = kind_indices
-                .iter()
-                .filter_map(|index| {
-                    scores[*index].signals[signal_slot]
-                        .1
-                        .map(|raw| (*index, raw))
-                })
-                .collect::<Vec<_>>();
-            present.sort_by(|left, right| {
-                right
-                    .1
-                    .partial_cmp(&left.1)
-                    .unwrap_or(Ordering::Equal)
-                    .then_with(|| {
-                        patterns[left.0]
-                            .pattern_id
-                            .cmp(&patterns[right.0].pattern_id)
-                    })
-            });
-            for (rank_zero, (index, _)) in present.iter().enumerate() {
-                scores[*index].signals[signal_slot].2 = Some(rank_zero + 1);
+    let lambda_for = |pool_size: usize| match lambda_policy {
+        LambdaMissingPolicy::RankFloor => lambda_missing(pool_size),
+        LambdaMissingPolicy::Fixed(value) => value,
+    };
+
+    match rank_scope {
+        RankScope::WithinKind => {
+            for kind in [
+                PatternKind::Feature,
+                PatternKind::Segmentation,
+                PatternKind::Coverage,
+            ] {
+                let kind_indices = patterns
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, stats)| stats.kind == kind)
+                    .map(|(index, _)| index)
+                    .collect::<Vec<_>>();
+                if kind_indices.is_empty() {
+                    continue;
+                }
+                let lambda = lambda_for(kind_indices.len());
+                for index in &kind_indices {
+                    scores[*index].lambda = lambda;
+                }
+                for (signal_slot, _signal) in Signal::applicable(kind).iter().enumerate() {
+                    rank_signal_pool(patterns, &mut scores, &kind_indices, |index| {
+                        Some(signal_slot).filter(|_| patterns[index].kind == kind)
+                    });
+                }
+                for index in kind_indices {
+                    fuse_into(&mut scores, index, lambda);
+                }
             }
         }
-        for index in kind_indices {
-            let ranks = scores[index]
-                .signals
-                .iter()
-                .map(|(_, _, rank)| *rank)
-                .collect::<Vec<_>>();
-            scores[index].rrf_score = round6(fuse(&ranks, ranks.len(), lambda));
+        RankScope::Global => {
+            let all_indices = (0..patterns.len()).collect::<Vec<_>>();
+            if all_indices.is_empty() {
+                return scores;
+            }
+            let lambda = lambda_for(all_indices.len());
+            for index in &all_indices {
+                scores[*index].lambda = lambda;
+            }
+            for signal in [Signal::Coverage, Signal::Rarity, Signal::Impact, Signal::Span] {
+                rank_signal_pool(patterns, &mut scores, &all_indices, |index| {
+                    Signal::applicable(patterns[index].kind)
+                        .iter()
+                        .position(|candidate| *candidate == signal)
+                });
+            }
+            for index in all_indices {
+                fuse_into(&mut scores, index, lambda);
+            }
         }
     }
     scores
+}
+
+/// Ranks one signal's present raws (desc, `pattern_id` asc tie-break) over
+/// `pool`, writing 1-based ranks into each member's slot. `slot_of` maps a
+/// pattern index to its slot for this signal (`None` = signal not
+/// applicable to that pattern's kind — skipped, stays missing).
+fn rank_signal_pool(
+    patterns: &[PatternStats],
+    scores: &mut [PatternScore],
+    pool: &[usize],
+    slot_of: impl Fn(usize) -> Option<usize>,
+) {
+    let mut present = pool
+        .iter()
+        .filter_map(|index| {
+            let slot = slot_of(*index)?;
+            scores[*index].signals[slot].1.map(|raw| (*index, slot, raw))
+        })
+        .collect::<Vec<_>>();
+    present.sort_by(|left, right| {
+        right
+            .2
+            .partial_cmp(&left.2)
+            .unwrap_or(Ordering::Equal)
+            .then_with(|| patterns[left.0].pattern_id.cmp(&patterns[right.0].pattern_id))
+    });
+    for (rank_zero, (index, slot, _)) in present.iter().enumerate() {
+        scores[*index].signals[*slot].2 = Some(rank_zero + 1);
+    }
+}
+
+fn fuse_into(scores: &mut [PatternScore], index: usize, lambda: f64) {
+    let ranks = scores[index]
+        .signals
+        .iter()
+        .map(|(_, _, rank)| *rank)
+        .collect::<Vec<_>>();
+    scores[index].rrf_score = round6(fuse(&ranks, ranks.len(), lambda));
 }
 
 fn build_row(stats: &PatternStats, score: &PatternScore) -> InterestingRow {
@@ -996,6 +1112,7 @@ fn anomaly_channel_in_memory(
     filter: InterestingTextFilter,
     top_indices: &BTreeSet<usize>,
     k: usize,
+    w_cov: f64,
 ) -> Vec<AnomalyRow> {
     let mut rows = Vec::new();
     for (region, flags) in region_flags {
@@ -1013,7 +1130,7 @@ fn anomaly_channel_in_memory(
         }
         let char_length = flags.char_end - flags.char_start;
         let coverage_term = if flags.has_coverage_mismatch {
-            ANOMALY_W_COV
+            w_cov
         } else {
             0.0
         };
@@ -1115,13 +1232,15 @@ fn score_version_block(
     rarity_basis: &str,
     profile: WarehouseFeatureProfile,
     granularity_profile: &str,
+    options: &WarehouseInterestingOptions,
 ) -> ScoreVersionBlock {
     ScoreVersionBlock {
         score_version: SCORE_VERSION,
         pattern_id_version: PATTERN_ID_VERSION,
         rrf_k: RRF_K as u32,
-        lambda_missing_policy: "rank-floor".to_owned(),
-        anomaly_w_cov: ANOMALY_W_COV,
+        lambda_missing_policy: options.lambda_policy.to_string(),
+        rank_scope: options.rank_scope.as_str().to_owned(),
+        anomaly_w_cov: options.anomaly_w_cov,
         signal_profile: ["coverage", "rarity", "impact", "span"]
             .iter()
             .map(|name| (*name).to_owned())
@@ -1176,6 +1295,7 @@ pub fn summarize_warehouse_interesting(
                 "source",
                 options.feature_profile,
                 &granularity_profile,
+                &options,
             ),
             run_id,
             rows: Vec::new(),
@@ -1203,7 +1323,12 @@ pub fn summarize_warehouse_interesting(
         }
     };
 
-    let scores = score_patterns(&collected.patterns, rarity.total);
+    let scores = score_patterns(
+        &collected.patterns,
+        rarity.total,
+        options.rank_scope,
+        options.lambda_policy,
+    );
     let order = ranked_order(&collected.patterns, &scores);
 
     if let Some(explain_id) = &options.explain {
@@ -1217,6 +1342,7 @@ pub fn summarize_warehouse_interesting(
                 rarity.basis,
                 options.feature_profile,
                 &granularity_profile,
+                &options,
             ),
             run_id,
             rows: vec![build_row(&collected.patterns[index], &scores[index])],
@@ -1246,6 +1372,7 @@ pub fn summarize_warehouse_interesting(
             options.filter,
             &top_set,
             options.anomalies,
+            options.anomaly_w_cov,
         ),
         AnomalySource::Deferred => {
             let top_stats = top
@@ -1261,6 +1388,7 @@ pub fn summarize_warehouse_interesting(
             rarity.basis,
             options.feature_profile,
             &granularity_profile,
+            &options,
         ),
         run_id,
         rows,
@@ -1449,6 +1577,42 @@ mod tests {
             scope_surface: None,
             feature_value: Some(feature_value.to_owned()),
             analyzer_id: analyzer_id.to_owned(),
+        }
+    }
+
+    /// Minimal `PatternStats` fixture for `score_patterns`-level tests.
+    /// Fields not passed in are neutral (one example/source/text, empty
+    /// sample vecs and region examples, no SQL signature) since the
+    /// scoring tests only need to control kind, rarity, coverage, span,
+    /// and (for feature patterns) the impact-driving `feature_key`.
+    fn calib_stats(
+        kind: PatternKind,
+        pattern_id: &str,
+        rarity_count: usize,
+        coverage_region_count: usize,
+        span_p90: f64,
+        feature_key: Option<&str>,
+    ) -> PatternStats {
+        PatternStats {
+            key: NwayPatternKey {
+                kind: kind.as_str().to_owned(),
+                segmentation_groups: Vec::new(),
+                feature_key: feature_key.map(str::to_owned),
+                feature_scope: None,
+                feature_values: Vec::new(),
+            },
+            pattern_id: pattern_id.to_owned(),
+            kind,
+            examples: 1,
+            source_count: 1,
+            text_count: 1,
+            sample_source_ids: Vec::new(),
+            sample_text_ids: Vec::new(),
+            rarity_count,
+            coverage_region_count,
+            span_p90,
+            region_examples: Vec::new(),
+            sql_signature: None,
         }
     }
 
@@ -2172,5 +2336,236 @@ mod tests {
             lengths.push(max + 1);
             prop_assert!(percentile_90(&lengths) >= p90);
         }
+    }
+
+    #[test]
+    fn lambda_policy_parses_rank_floor_and_fixed() {
+        assert_eq!(
+            "rank-floor".parse::<LambdaMissingPolicy>().unwrap(),
+            LambdaMissingPolicy::RankFloor
+        );
+        assert_eq!(
+            "fixed:0.005".parse::<LambdaMissingPolicy>().unwrap(),
+            LambdaMissingPolicy::Fixed(0.005)
+        );
+        assert_eq!(
+            "fixed:0".parse::<LambdaMissingPolicy>().unwrap(),
+            LambdaMissingPolicy::Fixed(0.0)
+        );
+        assert!("fixed:-0.1".parse::<LambdaMissingPolicy>().is_err());
+        assert!("fixed:abc".parse::<LambdaMissingPolicy>().is_err());
+        assert!("floor".parse::<LambdaMissingPolicy>().is_err());
+    }
+
+    #[test]
+    fn lambda_policy_display_round_trips_into_score_block_string() {
+        assert_eq!(LambdaMissingPolicy::RankFloor.to_string(), "rank-floor");
+        assert_eq!(LambdaMissingPolicy::Fixed(0.005).to_string(), "fixed:0.005");
+        assert_eq!(LambdaMissingPolicy::Fixed(0.0).to_string(), "fixed:0");
+    }
+
+    /// Looks a signal's assigned rank up by `Signal` identity rather than
+    /// slot index — segmentation and feature kinds place the same signal
+    /// at different slots (e.g. `Span` is slot 3 for feature, slot 2 for
+    /// segmentation), so a slot-index bug in pooled ranking would not show
+    /// up if tests only ever indexed by position.
+    fn rank_by_signal(scores: &[PatternScore], index: usize, signal: Signal) -> Option<usize> {
+        scores[index]
+            .signals
+            .iter()
+            .find(|(s, _, _)| *s == signal)
+            .and_then(|(_, _, rank)| *rank)
+    }
+
+    #[test]
+    fn within_kind_default_scoring_matches_hand_computed_ranks() {
+        // 3 feature + 2 segmentation patterns, each signal given a
+        // deliberately distinct order across coverage/rarity/span/impact
+        // so no assertion could pass by accident from correlated inputs.
+        let rarity_total = 50;
+        let patterns = vec![
+            calib_stats(PatternKind::Feature, "f1", 1, 1, 50.0, Some("pos1")), // rarity 1, coverage 1, span 50, impact 4.0
+            calib_stats(PatternKind::Feature, "f2", 2, 3, 80.0, Some("lemma")), // rarity 2, coverage 3, span 80, impact 3.5
+            calib_stats(PatternKind::Feature, "f3", 4, 5, 20.0, Some("ctype")), // rarity 4, coverage 5, span 20, impact 2.5
+            calib_stats(PatternKind::Segmentation, "s1", 1, 2, 15.0, None), // rarity 1, coverage 2, span 15
+            calib_stats(PatternKind::Segmentation, "s2", 3, 6, 45.0, None), // rarity 3, coverage 6, span 45
+        ];
+        let scores = score_patterns(
+            &patterns,
+            rarity_total,
+            RankScope::WithinKind,
+            LambdaMissingPolicy::RankFloor,
+        );
+
+        // f1: coverage rank3 (raw log2(2)=1.0, lowest), rarity rank1 (raw
+        // log2(51/2) highest), impact rank1 (pos1=4.0 highest), span rank2
+        // (50.0, between f3's 20.0 and f2's 80.0).
+        assert_eq!(rank_by_signal(&scores, 0, Signal::Coverage), Some(3));
+        assert_eq!(rank_by_signal(&scores, 0, Signal::Rarity), Some(1));
+        assert_eq!(rank_by_signal(&scores, 0, Signal::Impact), Some(1));
+        assert_eq!(rank_by_signal(&scores, 0, Signal::Span), Some(2));
+        // f2: coverage rank2, rarity rank2, impact rank2 (lemma=3.5), span
+        // rank1 (80.0, highest of the three).
+        assert_eq!(rank_by_signal(&scores, 1, Signal::Coverage), Some(2));
+        assert_eq!(rank_by_signal(&scores, 1, Signal::Rarity), Some(2));
+        assert_eq!(rank_by_signal(&scores, 1, Signal::Impact), Some(2));
+        assert_eq!(rank_by_signal(&scores, 1, Signal::Span), Some(1));
+        // f3: coverage rank1 (log2(6) highest), rarity rank3 (lowest),
+        // impact rank3 (ctype=2.5, lowest), span rank3 (20.0, lowest).
+        assert_eq!(rank_by_signal(&scores, 2, Signal::Coverage), Some(1));
+        assert_eq!(rank_by_signal(&scores, 2, Signal::Rarity), Some(3));
+        assert_eq!(rank_by_signal(&scores, 2, Signal::Impact), Some(3));
+        assert_eq!(rank_by_signal(&scores, 2, Signal::Span), Some(3));
+        // s1: coverage rank2, rarity rank1, span rank2; no impact slot.
+        assert_eq!(rank_by_signal(&scores, 3, Signal::Coverage), Some(2));
+        assert_eq!(rank_by_signal(&scores, 3, Signal::Rarity), Some(1));
+        assert_eq!(rank_by_signal(&scores, 3, Signal::Span), Some(2));
+        assert_eq!(rank_by_signal(&scores, 3, Signal::Impact), None);
+        assert_eq!(scores[3].signals.len(), 3);
+        // s2: coverage rank1, rarity rank2, span rank1; no impact slot.
+        assert_eq!(rank_by_signal(&scores, 4, Signal::Coverage), Some(1));
+        assert_eq!(rank_by_signal(&scores, 4, Signal::Rarity), Some(2));
+        assert_eq!(rank_by_signal(&scores, 4, Signal::Span), Some(1));
+        assert_eq!(rank_by_signal(&scores, 4, Signal::Impact), None);
+        assert_eq!(scores[4].signals.len(), 3);
+
+        // Feature pool has 3 patterns, segmentation pool has 2.
+        let lambda_feature = 1.0 / (RRF_K + 3.0 + 1.0);
+        let lambda_segmentation = 1.0 / (RRF_K + 2.0 + 1.0);
+        for index in [0, 1, 2] {
+            assert!((scores[index].lambda - lambda_feature).abs() < 1e-12);
+        }
+        for index in [3, 4] {
+            assert!((scores[index].lambda - lambda_segmentation).abs() < 1e-12);
+        }
+
+        // rrf_score is round6 of the RRF-fusion formula applied to the
+        // ranks derived above — computed here from the formula, not by
+        // reading the ranks back out of `scores`.
+        let expected_rrf = |ranks: &[usize]| -> f64 {
+            ranks.iter().map(|rank| 1.0 / (RRF_K + *rank as f64)).sum::<f64>()
+                / ranks.len() as f64
+        };
+        assert_eq!(scores[0].rrf_score, round6(expected_rrf(&[3, 1, 1, 2])));
+        assert_eq!(scores[1].rrf_score, round6(expected_rrf(&[2, 2, 2, 1])));
+        assert_eq!(scores[2].rrf_score, round6(expected_rrf(&[1, 3, 3, 3])));
+        assert_eq!(scores[3].rrf_score, round6(expected_rrf(&[2, 1, 2])));
+        assert_eq!(scores[4].rrf_score, round6(expected_rrf(&[1, 2, 1])));
+    }
+
+    #[test]
+    fn global_rank_scope_pools_signal_ranks_across_kinds() {
+        // Two feature + two segmentation patterns with rarity raws ordered
+        // feature[0] > seg[0] > feature[1] > seg[1], and span raws ordered
+        // feature[1] > seg[0] > seg[1] > feature[0] — an independent order
+        // so the span assertion cannot pass by riding on the rarity setup.
+        let patterns = vec![
+            calib_stats(PatternKind::Feature, "feat-0", 1, 0, 10.0, Some("pos1")),
+            calib_stats(PatternKind::Feature, "feat-1", 3, 0, 40.0, Some("pos1")),
+            calib_stats(PatternKind::Segmentation, "seg-0", 2, 0, 30.0, None),
+            calib_stats(PatternKind::Segmentation, "seg-1", 4, 0, 20.0, None),
+        ];
+        let within = score_patterns(&patterns, 100, RankScope::WithinKind, LambdaMissingPolicy::RankFloor);
+        let global = score_patterns(&patterns, 100, RankScope::Global, LambdaMissingPolicy::RankFloor);
+        // seg[0] (index 2): rank 1 within its kind, rank 2 globally.
+        assert_eq!(rank_by_signal(&within, 2, Signal::Rarity), Some(1));
+        assert_eq!(rank_by_signal(&global, 2, Signal::Rarity), Some(2));
+        // Span lives at a different slot per kind (feature slot 3,
+        // segmentation slot 2 — see `Signal::applicable`); pooling must
+        // still be by signal identity, not slot position. seg[0]'s span
+        // (30.0) is within-kind rank 1 (beats seg[1]'s 20.0) but globally
+        // rank 2 (feature[1]'s 40.0 pools ahead of it).
+        assert_eq!(rank_by_signal(&within, 2, Signal::Span), Some(1));
+        assert_eq!(rank_by_signal(&global, 2, Signal::Span), Some(2));
+        // Global λ uses N_total = 4 for every pattern.
+        assert!((global[0].lambda - 1.0 / (RRF_K + 4.0 + 1.0)).abs() < 1e-12);
+        // Impact stays feature-only under global scope: segmentation
+        // patterns still have 3 signal slots.
+        assert_eq!(global[2].signals.len(), 3);
+    }
+
+    #[test]
+    fn fixed_lambda_policy_replaces_rank_floor_term() {
+        let patterns = vec![
+            calib_stats(PatternKind::Feature, "feat-0", 1, 0, 1.0, Some("pos1")),
+            calib_stats(PatternKind::Segmentation, "seg-0", 1, 0, 1.0, None),
+        ];
+        let scores = score_patterns(&patterns, 100, RankScope::WithinKind, LambdaMissingPolicy::Fixed(0.005));
+        for score in &scores {
+            assert!((score.lambda - 0.005).abs() < 1e-12);
+        }
+        let zero = score_patterns(&patterns, 100, RankScope::WithinKind, LambdaMissingPolicy::Fixed(0.0));
+        for score in &zero {
+            assert_eq!(score.lambda, 0.0);
+        }
+    }
+
+    #[test]
+    fn anomaly_w_cov_option_scales_coverage_term() {
+        let root = tempfile::tempdir().unwrap();
+        let run_dir = write_fixture(root.path());
+        let source_ids = read_distinct_column(&run_dir, WarehouseTable::Sources, 1).unwrap();
+        let rarity = rarity_config(&run_dir, &source_ids).unwrap();
+        let options = WarehouseInterestingOptions {
+            engine: InterestingEngine::InMemory,
+            ..Default::default()
+        };
+        let collected = collect_in_memory(&run_dir, &options, &rarity).unwrap();
+        let AnomalySource::InMemory {
+            memberships,
+            region_flags,
+            punctuation_only,
+        } = &collected.anomaly_source
+        else {
+            panic!("expected in-memory anomaly source");
+        };
+        let top_set = BTreeSet::new();
+        let high = anomaly_channel_in_memory(
+            memberships,
+            region_flags,
+            punctuation_only,
+            InterestingTextFilter::All,
+            &top_set,
+            10,
+            5.0,
+        );
+        let low = anomaly_channel_in_memory(
+            memberships,
+            region_flags,
+            punctuation_only,
+            InterestingTextFilter::All,
+            &top_set,
+            10,
+            2.0,
+        );
+        let high_score = high
+            .iter()
+            .find(|row| row.has_coverage_mismatch)
+            .unwrap()
+            .anomaly_score;
+        let low_score = low
+            .iter()
+            .find(|row| row.has_coverage_mismatch)
+            .unwrap()
+            .anomaly_score;
+        assert!((high_score - low_score - 3.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn score_block_records_rank_scope_and_dynamic_knobs() {
+        let block = score_version_block(
+            "source",
+            WarehouseFeatureProfile::Core,
+            "suw",
+            &WarehouseInterestingOptions {
+                rank_scope: RankScope::Global,
+                lambda_policy: LambdaMissingPolicy::Fixed(0.01),
+                anomaly_w_cov: 2.0,
+                ..WarehouseInterestingOptions::default()
+            },
+        );
+        assert_eq!(block.rank_scope, "global");
+        assert_eq!(block.lambda_missing_policy, "fixed:0.01");
+        assert!((block.anomaly_w_cov - 2.0).abs() < f64::EPSILON);
     }
 }

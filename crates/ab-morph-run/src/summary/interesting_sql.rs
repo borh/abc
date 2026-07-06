@@ -969,7 +969,7 @@ WHERE NOT b.is_agreement
 ORDER BY anomaly_score DESC, b.source_id, b.text_id, b.region_index
 LIMIT {limit}",
         ctes = ctes.join(",\n"),
-        w_cov = super::interesting::ANOMALY_W_COV,
+        w_cov = options.anomaly_w_cov,
         limit = options.anomalies,
     );
     let sql = format!(

@@ -48,7 +48,7 @@ use crate::warehouse::schema::WarehouseTable;
 /// always; do not treat a `--rank-scope within-kind` run under v2 as
 /// interchangeable with a genuine pre-2026-07-06 v1 artifact.
 pub(crate) const SCORE_VERSION: u32 = 2;
-pub(crate) const READER_MAX_SCHEMA_VERSION: u32 = 1;
+pub(crate) const READER_MAX_SCHEMA_VERSION: u32 = 2;
 pub(crate) const RRF_K: f64 = 60.0;
 pub(crate) const ANOMALY_W_COV: f64 = 5.0;
 const MAX_SAMPLE_IDS: usize = 5;
@@ -2188,7 +2188,7 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let paths = WarehousePaths::new(root.path(), RUN);
         let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
-        writer.append_runs(&[run_row(2, 0, 2)]).unwrap();
+        writer.append_runs(&[run_row(3, 0, 2)]).unwrap();
         writer
             .append_run_analyzers(&[analyzer_row("vibrato"), analyzer_row("sudachi-a")])
             .unwrap();
@@ -2201,9 +2201,28 @@ mod tests {
         assert!(
             error
                 .to_string()
-                .contains("schema_version 2 exceeds this reader's supported maximum 1"),
+                .contains("schema_version 3 exceeds this reader's supported maximum 2"),
             "{error}"
         );
+    }
+
+    #[test]
+    fn version_1_run_is_accepted() {
+        let root = tempfile::tempdir().unwrap();
+        let paths = WarehousePaths::new(root.path(), RUN);
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer.append_runs(&[run_row(1, 0, 2)]).unwrap();
+        writer
+            .append_run_analyzers(&[analyzer_row("vibrato"), analyzer_row("sudachi-a")])
+            .unwrap();
+        writer.finalize().unwrap();
+        let summary = summarize_warehouse_interesting(
+            &paths.final_dir,
+            WarehouseInterestingOptions::default(),
+        )
+        .unwrap();
+        // Empty fixture yields no rows; the point is that a v1 run passes the version gate without error.
+        assert!(summary.rows.is_empty());
     }
 
     #[test]

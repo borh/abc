@@ -15,8 +15,8 @@ use parquet::file::properties::WriterProperties;
 
 use crate::schema::{
     AnalysisRow, ErrorRow, FeaturePatternCountRow, MorphemeFeatureRow, MorphemeRow,
-    NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionRow, RunAnalyzerRow, RunRow, SourceRow,
-    WarehousePaths, WarehouseTable,
+    NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionRow, ProjectionSpanRow,
+    RunAnalyzerRow, RunRow, SourceRow, WarehousePaths, WarehouseTable,
 };
 
 const WAREHOUSE_MAX_ROW_GROUP_SIZE: usize = 50_000;
@@ -33,6 +33,7 @@ pub struct WarehouseWriter {
     runs: Option<ArrowWriter<File>>,
     run_analyzers: Option<ArrowWriter<File>>,
     sources: Option<ArrowWriter<File>>,
+    projection_spans: Option<ArrowWriter<File>>,
     analyses: Option<ArrowWriter<File>>,
     morphemes: Option<ArrowWriter<File>>,
     morpheme_features: Option<ArrowWriter<File>>,
@@ -75,6 +76,12 @@ impl WarehouseWriter {
                 tables,
                 WarehouseTable::Sources,
                 sources_schema(),
+            )?,
+            projection_spans: open_optional_table_writer(
+                &paths,
+                tables,
+                WarehouseTable::ProjectionSpans,
+                projection_spans_schema(),
             )?,
             analyses: open_optional_table_writer(
                 &paths,
@@ -134,6 +141,7 @@ impl WarehouseWriter {
             WarehouseTable::Runs => self.runs.is_some(),
             WarehouseTable::RunAnalyzers => self.run_analyzers.is_some(),
             WarehouseTable::Sources => self.sources.is_some(),
+            WarehouseTable::ProjectionSpans => self.projection_spans.is_some(),
             WarehouseTable::Analyses => self.analyses.is_some(),
             WarehouseTable::Morphemes => self.morphemes.is_some(),
             WarehouseTable::MorphemeFeatures => self.morpheme_features.is_some(),
@@ -198,6 +206,31 @@ impl WarehouseWriter {
                 string_array(rows.iter().map(|row| row.aat_path.as_str())),
                 u64_array(rows.iter().map(|row| row.source_bytes)),
                 u64_array(rows.iter().map(|row| row.source_chars)),
+            ],
+        )
+    }
+
+    pub fn append_projection_spans(&mut self, rows: &[ProjectionSpanRow]) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        let Some(writer) = self.projection_spans.as_mut() else {
+            return Ok(());
+        };
+        write_batch(
+            writer,
+            projection_spans_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_ref())),
+                string_array(rows.iter().map(|row| row.source_id.as_ref())),
+                string_array(rows.iter().map(|row| row.text_id.as_ref())),
+                u64_array(rows.iter().map(|row| row.projected_char_start)),
+                u64_array(rows.iter().map(|row| row.projected_char_end)),
+                string_array(rows.iter().map(|row| row.aat_pointer.as_str())),
+                string_array(rows.iter().map(|row| row.inline_kind.as_str())),
+                bool_array(rows.iter().map(|row| row.is_ruby_base)),
+                bool_array(rows.iter().map(|row| row.is_gaiji)),
+                bool_array(rows.iter().map(|row| row.is_note)),
             ],
         )
     }
@@ -411,6 +444,11 @@ impl WarehouseWriter {
                 .as_mut()
                 .expect("sources writer open")
                 .write(&batch)?,
+            WarehouseTable::ProjectionSpans => self
+                .projection_spans
+                .as_mut()
+                .expect("projection_spans writer open")
+                .write(&batch)?,
             WarehouseTable::Analyses => self
                 .analyses
                 .as_mut()
@@ -459,6 +497,7 @@ impl WarehouseWriter {
         close_writer(self.runs.take())?;
         close_writer(self.run_analyzers.take())?;
         close_writer(self.sources.take())?;
+        close_writer(self.projection_spans.take())?;
         close_writer(self.analyses.take())?;
         close_writer(self.morphemes.take())?;
         close_writer(self.morpheme_features.take())?;
@@ -904,6 +943,21 @@ fn sources_schema() -> Arc<Schema> {
     ])
 }
 
+fn projection_spans_schema() -> Arc<Schema> {
+    schema(vec![
+        utf8("run_id", false),
+        utf8("source_id", false),
+        utf8("text_id", false),
+        u64_field("projected_char_start", false),
+        u64_field("projected_char_end", false),
+        utf8("aat_pointer", false),
+        utf8("inline_kind", false),
+        bool_field("is_ruby_base"),
+        bool_field("is_gaiji"),
+        bool_field("is_note"),
+    ])
+}
+
 fn analyses_schema() -> Arc<Schema> {
     schema(vec![
         utf8("run_id", false),
@@ -1115,6 +1169,34 @@ mod tests {
             );
         }
 
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn writes_projection_spans_rows() {
+        let root = temp_dir("projection-spans");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_projection_spans(&[ProjectionSpanRow {
+                run_id: Arc::from("run-a"),
+                source_id: Arc::from("source-a"),
+                text_id: Arc::from("work-a"),
+                projected_char_start: 0,
+                projected_char_end: 3,
+                aat_pointer: "/blocks/0/content/1".to_owned(),
+                inline_kind: "ruby".to_owned(),
+                is_ruby_base: true,
+                is_gaiji: false,
+                is_note: false,
+            }])
+            .unwrap();
+        writer.finalize().unwrap();
+
+        assert_eq!(
+            parquet_table_row_count(&paths.final_dir, WarehouseTable::ProjectionSpans).unwrap(),
+            1
+        );
         let _ = fs::remove_dir_all(root);
     }
 

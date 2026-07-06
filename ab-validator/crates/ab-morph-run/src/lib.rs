@@ -24,7 +24,7 @@ use ab_morph_diff::{
     Analysis, Comparison, MorphDiffError, compare_pair, compare_pair_compact_with_source_text,
 };
 use ab_ortho_detect::OrthoDetector;
-use ab_plaintext::{PlainTextDocument, from_aat_value};
+use ab_plaintext::{PlainTextDocument, from_aat_value, from_aat_value_with_spans};
 use anyhow::{Context, Result, bail};
 pub use options::{OrthoDetectMode, OutputProfile, WarehouseProfile};
 use options::{SerialProgress, SerialRunOptions, WarehouseParallelOptions, WarehouseRunOptions};
@@ -1565,6 +1565,74 @@ mod tests {
     }
 
     #[test]
+    fn warehouse_full_profile_writes_projection_spans() {
+        let dir = temp_dir("warehouse-projection-spans");
+        let aat_dir = dir.join("aats");
+        let warehouse_dir = dir.join("warehouse");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::write(
+            aat_dir.join("source-a.json"),
+            tiny_aat("work-a").replace("吾輩は猫である。", "今日"),
+        )
+        .unwrap();
+
+        run_analyze_aat_warehouse(
+            None,
+            Some(&aat_dir),
+            &["test:single".to_owned(), "test:split".to_owned()],
+            &warehouse_dir,
+            "run-a",
+            1,
+            WarehouseProfile::Full,
+        )
+        .unwrap();
+
+        let run_dir = warehouse_dir.join("runs").join("run-a");
+        assert_eq!(
+            warehouse::writer::parquet_table_row_count(
+                &run_dir,
+                WarehouseTable::ProjectionSpans
+            )
+            .unwrap(),
+            1,
+            "TINY_AAT has exactly one contributing text node"
+        );
+        let views_sql = fs::read_to_string(run_dir.join("views.sql")).unwrap();
+        assert!(views_sql.contains("warehouse_projection_spans"));
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn warehouse_triage_profile_omits_projection_spans() {
+        let dir = temp_dir("warehouse-triage-spans");
+        let aat_dir = dir.join("aats");
+        let warehouse_dir = dir.join("warehouse");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::write(
+            aat_dir.join("source-a.json"),
+            tiny_aat("work-a").replace("吾輩は猫である。", "今日"),
+        )
+        .unwrap();
+
+        run_analyze_aat_warehouse(
+            None,
+            Some(&aat_dir),
+            &["test:single".to_owned(), "test:split".to_owned()],
+            &warehouse_dir,
+            "run-a",
+            1,
+            WarehouseProfile::Triage,
+        )
+        .unwrap();
+
+        let run_dir = warehouse_dir.join("runs").join("run-a");
+        assert!(!run_dir.join("projection_spans.parquet").exists());
+        let views_sql = fs::read_to_string(run_dir.join("views.sql")).unwrap();
+        assert!(!views_sql.contains("warehouse_projection_spans"));
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
     fn warehouse_mode_accepts_parallel_jobs_and_publishes_one_run() {
         let dir = temp_dir("warehouse-parallel-mode");
         let aat_dir = dir.join("aats");
@@ -1596,6 +1664,7 @@ mod tests {
         assert!(run_dir.join("runs.parquet").is_file());
         assert!(run_dir.join("sources.parquet").is_dir());
         assert!(run_dir.join("nway_regions.parquet").is_dir());
+        assert!(run_dir.join("projection_spans.parquet").is_dir());
         assert_eq!(
             fs::read_dir(warehouse_dir.join("runs"))
                 .unwrap()

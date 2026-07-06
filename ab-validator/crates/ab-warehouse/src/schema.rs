@@ -1,13 +1,14 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WarehouseTable {
     Runs,
     RunAnalyzers,
     Sources,
+    ProjectionSpans,
     Analyses,
     Morphemes,
     MorphemeFeatures,
@@ -23,6 +24,7 @@ impl WarehouseTable {
         Self::Runs,
         Self::RunAnalyzers,
         Self::Sources,
+        Self::ProjectionSpans,
         Self::Analyses,
         Self::Morphemes,
         Self::MorphemeFeatures,
@@ -35,6 +37,7 @@ impl WarehouseTable {
 
     pub const MERGED_DATA: &'static [Self] = &[
         Self::Sources,
+        Self::ProjectionSpans,
         Self::Analyses,
         Self::Morphemes,
         Self::MorphemeFeatures,
@@ -51,6 +54,7 @@ impl WarehouseTable {
             Self::Runs => "runs.parquet",
             Self::RunAnalyzers => "run_analyzers.parquet",
             Self::Sources => "sources.parquet",
+            Self::ProjectionSpans => "projection_spans.parquet",
             Self::Analyses => "analyses.parquet",
             Self::Morphemes => "morphemes.parquet",
             Self::MorphemeFeatures => "morpheme_features.parquet",
@@ -83,6 +87,18 @@ impl WarehouseTable {
                 "aat_path",
                 "source_bytes",
                 "source_chars",
+            ],
+            Self::ProjectionSpans => &[
+                "run_id",
+                "source_id",
+                "text_id",
+                "projected_char_start",
+                "projected_char_end",
+                "aat_pointer",
+                "inline_kind",
+                "is_ruby_base",
+                "is_gaiji",
+                "is_note",
             ],
             Self::Analyses => &[
                 "run_id",
@@ -243,6 +259,20 @@ pub struct SourceRow {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectionSpanRow {
+    pub run_id: Arc<str>,
+    pub source_id: Arc<str>,
+    pub text_id: Arc<str>,
+    pub projected_char_start: u64,
+    pub projected_char_end: u64,
+    pub aat_pointer: String,
+    pub inline_kind: String,
+    pub is_ruby_base: bool,
+    pub is_gaiji: bool,
+    pub is_note: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AnalysisRow {
     pub run_id: String,
     pub source_id: String,
@@ -374,9 +404,10 @@ mod tests {
             .map(|table| table.file_name())
             .collect();
 
-        assert_eq!(names.len(), 11);
+        assert_eq!(names.len(), 12);
         assert!(names.iter().all(|name| name.ends_with(".parquet")));
         assert!(names.contains(&"nway_region_analyzers.parquet"));
+        assert!(names.contains(&"projection_spans.parquet"));
         assert!(!names.contains(&"nway_segmentation_groups.parquet"));
     }
 

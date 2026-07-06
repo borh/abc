@@ -606,8 +606,16 @@ pub(crate) fn run_analyze_aat_serial(
                 return Err(error);
             }
         };
-        let document = match from_aat_value(&aat) {
-            Ok(document) => document,
+        let collect_projection_spans = warehouse_writer
+            .as_ref()
+            .is_some_and(|writer| writer.writes_table(WarehouseTable::ProjectionSpans));
+        let projected = if collect_projection_spans {
+            from_aat_value_with_spans(&aat).map(|(document, spans)| (document, Some(spans)))
+        } else {
+            from_aat_value(&aat).map(|document| (document, None))
+        };
+        let (document, projection_spans) = match projected {
+            Ok(value) => value,
             Err(error) => {
                 if let Some(writer) = &mut warehouse_writer {
                     warehouse_error_count += 1;
@@ -645,31 +653,41 @@ pub(crate) fn run_analyze_aat_serial(
                 return Err(error.into());
             }
         };
+        // P1: the parsed AAT DOM is unused past projection; drop it now so the
+        // per-document peak excludes it (several× file size on the large tail).
+        drop(aat);
         // Orthographic normalization (katakana→hiragana) for pre-war text.
-        // Detection dispatch is polymorphic: the detector (heuristic or ML) was
-        // constructed once above behind `Arc<dyn OrthoDetector>`.
-        let (normalized_text, offset_map_opt, annotations_opt): (
-            String,
+        // `None` means "no normalization applied" — analyze the document text
+        // directly with NO extra copy (P2; warehouse runs always take this path).
+        let (normalized_text_opt, offset_map_opt, annotations_opt): (
+            Option<String>,
             Option<ab_ortho_detect::OffsetMap>,
             Option<Vec<ab_ortho_detect::OrthoAnnotation>>,
         ) = if let Some(ref det) = detector {
             let sentences = ab_plaintext::sentence_split(&document.text);
             let annotations = det.detect(&sentences);
             if annotations.is_empty() {
-                (document.text.clone(), None, None)
+                (None, None, None)
             } else {
                 let (norm_text, map) =
                     ab_ortho_detect::ortho_normalize(&document.text, &annotations);
-                (norm_text, Some(map), Some(annotations))
+                (Some(norm_text), Some(map), Some(annotations))
             }
         } else {
-            (document.text.clone(), None, None)
+            (None, None, None)
         };
 
-        let norm_doc = ab_plaintext::PlainTextDocument {
-            text_id: document.text_id.clone(),
-            source_format: document.source_format,
-            text: normalized_text,
+        let normalized_doc_storage;
+        let norm_doc: &ab_plaintext::PlainTextDocument = match normalized_text_opt {
+            Some(text) => {
+                normalized_doc_storage = ab_plaintext::PlainTextDocument {
+                    text_id: document.text_id.clone(),
+                    source_format: document.source_format,
+                    text,
+                };
+                &normalized_doc_storage
+            }
+            None => &document,
         };
         // One allocation per document, shared by every per-analyzer Analysis.
         let shared_normalized: Arc<str> = Arc::from(norm_doc.text.as_str());
@@ -680,7 +698,7 @@ pub(crate) fn run_analyze_aat_serial(
         let mut analyses = Vec::new();
 
         for analyzer in analyzers {
-            let mut analysis = match analyzer.analyze(&norm_doc) {
+            let mut analysis = match analyzer.analyze(norm_doc) {
                 Ok(analysis) => analysis,
                 Err(error) => {
                     if let Some(writer) = &mut warehouse_writer {
@@ -786,6 +804,17 @@ pub(crate) fn run_analyze_aat_serial(
             let source =
                 warehouse::rows::source_row(run_id, &source_id, &input_path, first_analysis);
             writer.append_sources(&[source])?;
+            if let Some(spans) = &projection_spans {
+                for chunk in spans.chunks(WAREHOUSE_MORPHEME_ROW_BATCH_SIZE) {
+                    let rows = warehouse::rows::projection_span_rows(
+                        run_id,
+                        &source_id,
+                        &document.text_id,
+                        chunk,
+                    );
+                    writer.append_projection_spans(&rows)?;
+                }
+            }
             let analysis_rows = analyses
                 .iter()
                 .map(|analysis| warehouse::rows::analysis_row(run_id, &source_id, analysis))

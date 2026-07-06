@@ -2,13 +2,18 @@
 
 CREATE OR REPLACE VIEW warehouse_runs AS
 SELECT * FROM read_parquet('__RUN_DIR__/runs.parquet')
-WHERE schema_version = 1;
+WHERE schema_version <= 2;
 
 CREATE OR REPLACE VIEW warehouse_nway_regions AS
 SELECT * FROM read_parquet('__RUN_DIR__/nway_regions.parquet');
 
 CREATE OR REPLACE VIEW warehouse_nway_region_analyzers AS
 SELECT * FROM read_parquet('__RUN_DIR__/nway_region_analyzers.parquet');
+
+-- __PROJECTION_SPANS_BEGIN__
+CREATE OR REPLACE VIEW warehouse_projection_spans AS
+SELECT * FROM read_parquet('__RUN_DIR__/projection_spans.parquet');
+-- __PROJECTION_SPANS_END__
 
 -- __RAW_FEATURE_DIFFS_BEGIN__
 CREATE OR REPLACE VIEW warehouse_nway_feature_diffs AS

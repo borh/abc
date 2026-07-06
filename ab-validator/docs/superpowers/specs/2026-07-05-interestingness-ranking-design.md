@@ -452,6 +452,18 @@ A single-class profile (`"suw"`) means no granularity-policy noise is possible; 
 - Write `projection_spans.parquet` during analysis pass
 - Schema definition in `ab-warehouse/src/schema.rs`
 
+**Status (2026-07-07): implemented** per the cycle spec
+`docs/superpowers/specs/2026-07-06-projection-spans-design.md` (single
+sink-generic walker, byte-identical projection pinned by tests, Full-profile
+emission, `SCHEMA_VERSION` 2 with the reader-max rule). Canonical warehouse:
+`full-2026-07-06_160136-jobs8` — all 9 v1 data tables row-count-exact vs the
+prior canonical run; `projection_spans` has 10,832,338 rows over 17,811
+sources (the 74 spanless sources are the corpus's zero-char sources),
+3,524,294 ruby-base spans. `is_note` is structurally false in v1 emission
+(notes are excluded from projection) and ships as forward infrastructure.
+The same cycle landed warehouse memory fixes P1–P3; peak RSS at jobs=8 was
+36.0 GB (vs 65.6 GB at jobs=19 pre-fix).
+
 ### Phase 4: v2 Sidecar Tables
 
 - `nway_region_oracle_evidence.parquet`: ruby oracle during analysis pass
@@ -490,7 +502,7 @@ A single-class profile (`"suw"`) means no granularity-policy noise is possible; 
 |---|---|---|---|
 | 1 | Pattern-level ranking for MVP | Proposed | Existing pattern-count infrastructure; anomaly channel catches one-off regions |
 | 2 | Sidecar tables, not column modifications | Proposed | Preserves v1 reader compatibility; avoids Parquet struct deserialization risks |
-| 3 | `SCHEMA_VERSION` bumped at the first *analysis-pass-produced* sidecar table (Phase 3 `projection_spans`); reader rule then relaxed to "reject > reader max". Post-hoc imported, presence-probed sidecars (`aozora_works`) are version-neutral | Proposed | v2 readers degrade on v1; existing "reject != 1" assertion is generalized, not bypassed; `aozora_works` ships under v1 via the reader's presence probe |
+| 3 | `SCHEMA_VERSION` bumped at the first *analysis-pass-produced* sidecar table (Phase 3 `projection_spans`); reader rule then relaxed to "reject > reader max". Post-hoc imported, presence-probed sidecars (`aozora_works`) are version-neutral | Accepted 2026-07-07 (implemented: `SCHEMA_VERSION = 2`, `READER_MAX_SCHEMA_VERSION = 2`) | v2 readers degrade on v1; existing "reject != 1" assertion is generalized, not bypassed; `aozora_works` ships under v1 via the reader's presence probe |
 | 4 | Literal boundary context gated by `literal_context_policy` per run, not assumed | Proposed | Aozora is public domain and may store literal chars; BCCWJ/research-licensed corpora are not. Licensing fact is enforced at the run level, not embedded in one table's justification |
 | 5 | Oracle and cause-classification in v2, not v1 | Proposed | Requires projection_spans and lattice access not available in v1 warehouses |
 | 6 | Within-kind ranking for RRF; missing-signal handling made explicit (see §Scoring) | Superseded (rank-scope half) 2026-07-06 | Prevents impact-signal dominance over segmentation patterns; missing-data behavior is unambiguous: an absent applicable signal contributes a `λ_missing` term, not a renormalization-induced boost (see §Scoring). **Resolved 2026-07-06 (Open Question 4):** the calibration A/B against owner-labeled full-corpus data found global rank pooling beats within-kind on both p@50 (0.70 vs. 0.64) and nDCG@50 (0.7388 vs. 0.7191); per the pre-registered rule this decision's within-kind default is dropped — `rank_scope = global` is now the v2 default (`score_version` 2), `within-kind` remains available via `--rank-scope within-kind` for v1 reproduction. The `λ_missing` explicit-handling half of this decision is unaffected and remains locked (`rank-floor` policy). See `reports/morph-warehouse/calibration/2026-07-06/report.md` §4. |
@@ -507,7 +519,7 @@ A single-class profile (`"suw"`) means no granularity-policy noise is possible; 
 ## Open Questions
 
 1. **(Resolved)** v1 scope is RRF over 4 signals with no migration; oracle/cause-classification stays in v2 because they require `projection_spans` and lattice access not available in v1 warehouses. Confirmed by Decision 5.
-2. **(Open)** Should `projection_spans.parquet` be generated during `ab-morph-run analyze-aat` (analysis pass) or as a separate preprocessing step? Lean: analysis pass, because ruby-oracle resolution needs the spans at the same time as morph analysis; deferring it adds a second pass over the same AAT.
+2. **(Resolved 2026-07-07)** `projection_spans.parquet` is generated during the analysis pass (`ab-morph-run analyze-aat`), as the lean predicted: the pass already holds the parsed AAT, and ruby-oracle resolution needs the spans at analysis time. Implemented in the Phase 3 cycle (see Phase 3 status note).
 3. **(Open)** Should suppression auto-expiry be included in v2 (minimal cross-run frequency check) rather than deferred to post-MVP? Default: deferred — cross-run frequency tracking is nontrivial and v2's manual re-evaluation is the documented contract.
 4. **(Resolved via calibration)** `pattern_id` stability is now fully specified (§Pattern Identity) with a closed scope-token table and golden bijection test. Cross-run identity is achieved by `pattern_id` schema versioning + read-time fuzzy inheritance. The question of "should it incorporate additional fields" is settled: the canonical form includes `analyzer_pair` and `scope`.
 5. **(Resolved)** Anomaly channel keeps the simpler deterministic score; lifting to per-region RRF is a documented future promotion path, not the v1 default (see §Anomaly Channel).

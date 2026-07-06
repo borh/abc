@@ -461,25 +461,114 @@ impl NwayStatsAccumulator {
 }
 
 fn boundary_counts(analyses: &[&Analysis], source_len: usize) -> (usize, usize) {
-    let mut all_boundaries = BTreeSet::new();
+    // Sorted deduped Vecs instead of BTreeSets: morpheme boundaries number in
+    // the millions on large documents, and flat storage avoids the per-node
+    // BTree overhead that showed up in warehouse-run RSS profiles.
     let boundary_sets = analyses
         .iter()
         .map(|analysis| {
-            analysis
+            let mut offsets = analysis
                 .morphemes
                 .iter()
                 .flat_map(|morpheme| [morpheme.char_span.start, morpheme.char_span.end])
                 .filter(|offset| *offset != 0 && *offset != source_len)
-                .collect::<BTreeSet<_>>()
+                .collect::<Vec<_>>();
+            offsets.sort_unstable();
+            offsets.dedup();
+            offsets
         })
         .collect::<Vec<_>>();
-    for set in &boundary_sets {
-        all_boundaries.extend(set.iter().copied());
-    }
+    let mut all_boundaries = boundary_sets
+        .iter()
+        .flatten()
+        .copied()
+        .collect::<Vec<_>>();
+    all_boundaries.sort_unstable();
+    all_boundaries.dedup();
     let unanimous_boundary_count = all_boundaries
         .iter()
-        .filter(|boundary| boundary_sets.iter().all(|set| set.contains(boundary)))
+        .filter(|boundary| {
+            boundary_sets
+                .iter()
+                .all(|set| set.binary_search(boundary).is_ok())
+        })
         .count();
     let variable_boundary_count = all_boundaries.len() - unanimous_boundary_count;
     (unanimous_boundary_count, variable_boundary_count)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use crate::{Analysis, FeatureMap, Morpheme};
+
+    use super::boundary_counts;
+
+    fn features(values: &[(&str, Option<&str>)]) -> FeatureMap {
+        values
+            .iter()
+            .map(|(key, value)| ((*key).into(), value.map(Into::into)))
+            .collect()
+    }
+
+    fn m(source: &str, surface: &str, start: usize, end: usize, features: FeatureMap) -> Morpheme {
+        let byte_start = source
+            .char_indices()
+            .nth(start)
+            .map(|(idx, _)| idx)
+            .unwrap_or(source.len());
+        let byte_end = source
+            .char_indices()
+            .nth(end)
+            .map(|(idx, _)| idx)
+            .unwrap_or(source.len());
+        Morpheme {
+            surface: surface.to_owned(),
+            byte_span: byte_start..byte_end,
+            char_span: start..end,
+            features,
+        }
+    }
+
+    fn analysis(analyzer: &str, text_id: &str, source: &str, morphemes: Vec<Morpheme>) -> Analysis {
+        Analysis {
+            analyzer: analyzer.to_owned(),
+            text_id: text_id.to_owned(),
+            source_text: Arc::from(source),
+            morphemes,
+            warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
+        }
+    }
+
+    #[test]
+    fn boundary_counts_split_unanimous_and_variable() {
+        // "今日は" (3 chars): analyzer A splits 今日|は (boundary {2});
+        // analyzer B splits 今|日|は (boundaries {1, 2}).
+        // Unanimous: {2}; variable: {1}.
+        let source = "今日は";
+        let a = analysis(
+            "w",
+            "a",
+            source,
+            vec![
+                m(source, "今日", 0, 2, features(&[])),
+                m(source, "は", 2, 3, features(&[])),
+            ],
+        );
+        let b = analysis(
+            "w",
+            "b",
+            source,
+            vec![
+                m(source, "今", 0, 1, features(&[])),
+                m(source, "日", 1, 2, features(&[])),
+                m(source, "は", 2, 3, features(&[])),
+            ],
+        );
+        let (unanimous, variable) = boundary_counts(&[&a, &b], 3);
+        assert_eq!((unanimous, variable), (1, 1));
+    }
 }

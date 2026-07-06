@@ -103,7 +103,7 @@
     {
       "id": "text_policy_calibration",
       "owner": "ab-validator+abc",
-      "status": "open",
+      "status": "complete",
       "evidence": {
         "different_rows": 271,
         "generated_contains_tei_eaj_rows": 6,

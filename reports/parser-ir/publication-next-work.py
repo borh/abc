@@ -507,7 +507,27 @@ def source_disposition_status(evidence: dict[str, Any]) -> str:
 
 
 def text_policy_status(evidence: dict[str, Any]) -> str:
-    return "complete" if as_int(evidence.get("different_rows")) == 0 else "open"
+    counts = evidence.get("counts_by_cause")
+    workset_files = evidence.get("workset_files")
+    manual_workset_files = evidence.get("manual_classification_workset_files")
+    if evidence.get("schema_version") != "parser-ir-text-policy-delta-v1":
+        return "open"
+    if not isinstance(counts, dict) or not isinstance(workset_files, dict):
+        return "open"
+    if as_int(evidence.get("different_rows")) != sum(as_int(value) for value in counts.values()):
+        return "open"
+    if as_int(counts.get("unknown_text_delta")) != 0:
+        return "open"
+    for cause, count in counts.items():
+        if as_int(count) == 0:
+            continue
+        if not has_workset_file_record(workset_files.get(cause)):
+            return "open"
+    if isinstance(manual_workset_files, dict):
+        for record in manual_workset_files.values():
+            if isinstance(record, dict) and record.get("requires_manual_classification") and as_int(record.get("count")) > 0:
+                return "open"
+    return "complete"
 
 
 def has_workset_file_record(value: Any) -> bool:

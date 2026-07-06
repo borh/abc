@@ -15,7 +15,7 @@
 - `orthographic_style` enum (verbatim, exactly these five): `新字新仮名`, `新字旧仮名`, `旧字新仮名`, `旧字旧仮名`, `その他`.
 - Sidecar column order and types (spec §Column projection): `work_id` Utf8 non-null, `source_id` Utf8 non-null, `title` Utf8 non-null, `author_person_id` Utf8 nullable, `publication_year` Int32 nullable, `orthographic_style` Utf8 non-null, `genre` Utf8 nullable (always null), `metadata_record_schema_hash` Utf8 non-null, `metadata_record_retrieved_at` Utf8 non-null.
 - No `SCHEMA_VERSION` bump, no `ab-warehouse/src/sql.rs` change (spec Decision 2).
-- Parquet compression: ZSTD (warehouse convention, `ab-warehouse/src/writer.rs:785`).
+- Parquet compression: `Compression::ZSTD(ZstdLevel::try_new(3).expect("valid zstd level"))` — matching the warehouse convention exactly (`ab-warehouse/src/writer.rs:785-791`; `ZstdLevel::default()` is level 0 = no compression, do not use it).
 - Commit after every task.
 
 ---
@@ -410,7 +410,7 @@ git commit -m "feat(import-aozora): record model, validation, projection helpers
 
 **Files:**
 - Modify: `crates/ab-morph-run/src/import_aozora.rs`
-- Modify: `crates/ab-morph-run/src/summary/summary_body.rs:3549` (`read_warehouse_table` visibility `pub(super)` → `pub(crate)`)
+- Modify: `crates/ab-morph-run/src/summary/summary_body.rs:3548` (`read_warehouse_table` visibility `pub(super)` → `pub(crate)`)
 - Modify: `crates/ab-morph-run/src/summary/mod.rs` (add `pub(crate) use summary_body::read_warehouse_table;`)
 - Modify: `crates/ab-morph-run/src/lib.rs` (re-export: `pub use import_aozora::{ImportSummary, run_import_aozora_metadata};`)
 
@@ -682,7 +682,7 @@ Expected: COMPILE ERROR — `run_import_aozora_metadata` not found.
 
 - [ ] **Step 4: Write the implementation**
 
-Add to `import_aozora.rs` (extending the existing `use` block as needed):
+Add to `import_aozora.rs`. Merge these `use` items into the file's single existing top `use` block (Tasks 1–2 already imported `std::path::Path`, `anyhow::{Result, bail}`, `serde::Deserialize` — dedupe, don't duplicate):
 
 ```rust
 use std::collections::{BTreeMap, BTreeSet};
@@ -871,7 +871,9 @@ fn write_sidecar(path: &Path, rows: &SidecarColumns) -> Result<()> {
     )?;
     let file = File::create(path)?;
     let properties = WriterProperties::builder()
-        .set_compression(Compression::ZSTD(ZstdLevel::default()))
+        .set_compression(Compression::ZSTD(
+            ZstdLevel::try_new(3).expect("valid zstd level"),
+        ))
         .build();
     let mut writer = ArrowWriter::try_new(file, schema, Some(properties))?;
     writer.write(&batch)?;
@@ -903,7 +905,7 @@ git commit -m "feat(import-aozora): run-scoped aozora_works.parquet producer"
 ### Task 4: CLI wiring
 
 **Files:**
-- Modify: `crates/ab-morph-run/src/main.rs` (Command enum ~line 18–289; match ~line 322–707; tests module)
+- Modify: `crates/ab-morph-run/src/main.rs` (Command enum starts at line 18, `RerunFull` variant near line 271; `main()` match near line 322; tests module)
 
 **Interfaces:**
 - Consumes: `ab_morph_run::run_import_aozora_metadata(&run_dir, &from, force) -> Result<ImportSummary>` (Task 3).
@@ -1007,12 +1009,12 @@ git commit -m "feat(cli): import-aozora-metadata subcommand"
 ### Task 5: Reader hardenings
 
 **Files:**
-- Modify: `crates/ab-morph-run/src/summary/interesting.rs:695-746` (`read_optional_work_map`, `rarity_config`)
+- Modify: `crates/ab-morph-run/src/summary/interesting.rs:691-745` (`read_optional_work_map`, `rarity_config`)
 - Test: same file's `tests` module
 
 **Interfaces:**
-- Consumes: existing `RarityConfig { work_by_source, basis, total }`, `write_fixture`, `write_aozora_works` test helpers.
-- Produces: (1) a present-but-empty `aozora_works.parquet` behaves as absent; (2) `rarity_config` total = distinct mapped works + count of unmapped sources. No signature changes — the DuckDB engine (`interesting_sql.rs`) receives the same `RarityConfig` and already `coalesce`s unmapped sources to per-source keys, so this single function fixes both engines' denominators.
+- Consumes: existing `RarityConfig { work_by_source, basis, total }`, `write_fixture`, `write_aozora_works` test helpers, and `summarize_warehouse_interesting(&run_dir, WarehouseInterestingOptions::default())` (the scaffolding every existing test in this module uses, e.g. `work_map_switches_rarity_basis_and_dedups` at interesting.rs:1584).
+- Produces: (1) a present-but-empty `aozora_works.parquet` behaves as absent; (2) `rarity_config` total = distinct mapped works + count of unmapped sources. No signature or visibility changes — `rarity_config` is a private fn of the parent module and the `tests` submodule shares that module, so tests call it directly; the DuckDB engine (`interesting_sql.rs`) receives the same `RarityConfig` and already `coalesce`s unmapped sources to per-source keys, so this single function fixes both engines' denominators.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -1021,19 +1023,24 @@ Add to the `tests` module in `interesting.rs` (near `work_map_switches_rarity_ba
 ```rust
     #[test]
     fn empty_work_map_is_treated_as_absent() {
-        let dir = tempfile::tempdir().unwrap();
-        let run_dir = write_fixture(dir.path());
+        let root = tempfile::tempdir().unwrap();
+        let run_dir = write_fixture(root.path());
         write_aozora_works(&run_dir, &[]);
 
-        let summary = summarize(&run_dir, options_all());
+        let summary =
+            summarize_warehouse_interesting(&run_dir, WarehouseInterestingOptions::default())
+                .unwrap();
 
         assert_eq!(summary.score_version.rarity_basis, "source");
     }
 
+    // `rarity_config` is a private fn of the parent module; this tests
+    // submodule shares that module (`use super::*`), so it is callable
+    // here with no visibility change.
     #[test]
     fn rarity_denominator_counts_unmapped_sources() {
-        let dir = tempfile::tempdir().unwrap();
-        let run_dir = write_fixture(dir.path());
+        let root = tempfile::tempdir().unwrap();
+        let run_dir = write_fixture(root.path());
         // src-a mapped to w1; src-b left unmapped (falls back to a
         // per-source rarity key, so it must count in the denominator).
         write_aozora_works(&run_dir, &[("w1", "src-a")]);
@@ -1047,8 +1054,6 @@ Add to the `tests` module in `interesting.rs` (near `work_map_switches_rarity_ba
     }
 ```
 
-If the existing tests use different helper names than `summarize`/`options_all`, mirror whatever `work_map_switches_rarity_basis_and_dedups` calls — the assertion targets (`score_version.rarity_basis`, `rarity_config`) are the contract.
-
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `cargo test -p ab-morph-run --features test-analyzer empty_work_map_is_treated_as_absent rarity_denominator_counts_unmapped_sources`
@@ -1056,7 +1061,7 @@ Expected: `empty_work_map_is_treated_as_absent` FAILS (basis is `"work"`); `rari
 
 - [ ] **Step 3: Implement both hardenings**
 
-In `read_optional_work_map` (interesting.rs:695), before the final `Ok(Some(map))`:
+In `read_optional_work_map` (interesting.rs:691-727), before the final `Ok(Some(map))`:
 
 ```rust
     if map.is_empty() {
@@ -1105,25 +1110,20 @@ git commit -m "fix(interesting): empty work map treated as absent; unmapped sour
 ### Task 6: End-to-end test (import → summarize flips basis)
 
 **Files:**
-- Modify: `crates/ab-morph-run/src/import_aozora.rs` (tests module)
+- Modify: `crates/ab-morph-run/src/summary/interesting.rs` (tests module — NOT `import_aozora.rs`: the existing row-builder helpers `run_row`/`analyzer_row`/`source_row`/`region_row`/`region_analyzer_row` and the `RUN` const live here and must be reused, not duplicated)
 
 **Interfaces:**
-- Consumes: `run_import_aozora_metadata` (Task 3); `crate::summarize_warehouse_interesting`, `crate::WarehouseInterestingOptions`, `crate::InterestingEngine`, `crate::InterestingTextFilter`, `crate::WarehouseFeatureProfile`; `crate::warehouse::schema::{NwayRegionAnalyzerRow, NwayRegionRow, RunAnalyzerRow, RunRow, SCHEMA_VERSION, SourceRow, WarehousePaths}`; `crate::warehouse::writer::WarehouseWriter`.
+- Consumes: `crate::run_import_aozora_metadata` (Task 3); `crate::import_aozora::ABC_METADATA_RECORD_SCHEMA_HASH` (pub const, crate-visible through the private module path); the module's existing test helpers and `summarize_warehouse_interesting(&run_dir, WarehouseInterestingOptions::default())`.
 - Produces: proof that a produced sidecar drives `rarity_basis = "work"` through the real reader.
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the test**
 
-Append inside `mod tests` in `import_aozora.rs`. This builds a minimal real warehouse run (mirroring `interesting.rs::write_fixture` but with Aozora-style source ids — two files of one card plus one distinct card, sharing a segmentation disagreement):
+Append inside `mod tests` in `interesting.rs` (after `write_aozora_works`). The fixture mirrors `write_fixture`'s shape via the existing row builders, with Aozora-style source ids — two files of one card (000010) plus one distinct card (000020), all sharing one segmentation disagreement:
 
 ```rust
-    use crate::warehouse::schema::{
-        NwayRegionAnalyzerRow, NwayRegionRow, RunAnalyzerRow, RunRow, SCHEMA_VERSION, SourceRow,
-        WarehousePaths,
-    };
-    use crate::warehouse::writer::WarehouseWriter;
-
-    fn aozora_run_fixture(root: &Path) -> std::path::PathBuf {
-        const RUN: &str = "run-aozora";
+    /// Like `write_fixture` but with Aozora-style source ids, for
+    /// exercising the real `import-aozora-metadata` producer end-to-end.
+    fn write_aozora_id_fixture(root: &Path) -> std::path::PathBuf {
         const SOURCES: [&str; 3] = [
             "000001_10-aaaaaaaaaaaa",
             "000001_10-bbbbbbbbbbbb",
@@ -1131,129 +1131,78 @@ Append inside `mod tests` in `import_aozora.rs`. This builds a minimal real ware
         ];
         let paths = WarehousePaths::new(root, RUN);
         let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer.append_runs(&[run_row(SCHEMA_VERSION, 3, 2)]).unwrap();
         writer
-            .append_runs(&[RunRow {
-                schema_version: SCHEMA_VERSION,
-                run_id: RUN.to_owned(),
-                created_at_utc: "2026-07-06T00:00:00Z".to_owned(),
-                input_mode: "aat_dir".to_owned(),
-                input_path: "scratch/aats".to_owned(),
-                source_count: SOURCES.len() as u64,
-                analyzer_count: 2,
-                error_count: 0,
-            }])
+            .append_run_analyzers(&[analyzer_row("vibrato"), analyzer_row("sudachi-a")])
             .unwrap();
         writer
-            .append_run_analyzers(&[
-                RunAnalyzerRow {
-                    run_id: RUN.to_owned(),
-                    analyzer_id: "vibrato".to_owned(),
-                    analyzer_arg: "vibrato".to_owned(),
-                    analyzer_family: "vibrato".to_owned(),
-                },
-                RunAnalyzerRow {
-                    run_id: RUN.to_owned(),
-                    analyzer_id: "sudachi-a".to_owned(),
-                    analyzer_arg: "sudachi-a".to_owned(),
-                    analyzer_family: "sudachi".to_owned(),
-                },
-            ])
+            .append_sources(&SOURCES.map(|source_id| source_row(source_id, source_id)))
             .unwrap();
         writer
-            .append_sources(
-                &SOURCES
-                    .iter()
-                    .map(|source_id| SourceRow {
-                        run_id: RUN.to_owned(),
-                        source_id: (*source_id).to_owned(),
-                        text_id: (*source_id).to_owned(),
-                        aat_path: format!("{source_id}.json"),
-                        source_bytes: 100,
-                        source_chars: 50,
-                    })
-                    .collect::<Vec<_>>(),
-            )
-            .unwrap();
-        writer
-            .append_nway_regions(
-                &SOURCES
-                    .iter()
-                    .map(|source_id| NwayRegionRow {
-                        run_id: RUN.to_owned(),
-                        source_id: (*source_id).to_owned(),
-                        text_id: (*source_id).to_owned(),
-                        region_index: 0,
-                        byte_start: 0,
-                        byte_end: 6,
-                        char_start: 0,
-                        char_end: 2,
-                        is_nonempty_whitespace: false,
-                        is_agreement: false,
-                        has_coverage_mismatch: false,
-                        has_segmentation_disagreement: true,
-                        has_feature_disagreement: false,
-                    })
-                    .collect::<Vec<_>>(),
-            )
+            .append_nway_regions(&SOURCES.map(|source_id| {
+                region_row(source_id, source_id, 0, 0, 2, false, true, false)
+            }))
             .unwrap();
         let mut region_analyzers = Vec::new();
         for source_id in SOURCES {
-            region_analyzers.push(NwayRegionAnalyzerRow {
-                run_id: RUN.to_owned(),
-                source_id: source_id.to_owned(),
-                text_id: source_id.to_owned(),
-                region_index: 0,
-                analyzer_id: "vibrato".to_owned(),
-                covers_exactly: true,
-                morpheme_start: 0,
-                morpheme_end: 1,
-                surfaces: vec!["今日".to_owned()],
-            });
-            region_analyzers.push(NwayRegionAnalyzerRow {
-                run_id: RUN.to_owned(),
-                source_id: source_id.to_owned(),
-                text_id: source_id.to_owned(),
-                region_index: 0,
-                analyzer_id: "sudachi-a".to_owned(),
-                covers_exactly: true,
-                morpheme_start: 0,
-                morpheme_end: 2,
-                surfaces: vec!["今".to_owned(), "日".to_owned()],
-            });
+            region_analyzers.push(region_analyzer_row(
+                source_id, source_id, 0, "vibrato", &["今日"],
+            ));
+            region_analyzers.push(region_analyzer_row(
+                source_id, source_id, 0, "sudachi-a", &["今", "日"],
+            ));
         }
-        writer.append_nway_region_analyzers(&region_analyzers).unwrap();
+        writer
+            .append_nway_region_analyzers(&region_analyzers)
+            .unwrap();
         writer.finalize().unwrap();
         paths.final_dir
     }
 
-    #[test]
-    fn imported_sidecar_flips_rarity_basis_to_work() {
-        let dir = tempfile::tempdir().unwrap();
-        let run_dir = aozora_run_fixture(dir.path());
-        let export = dir.path().join("export");
-        write_export_record(&export, "000010", &record_value("000010"));
-        write_export_record(&export, "000020", &record_value("000020"));
-
-        run_import_aozora_metadata(&run_dir, &export, false).unwrap();
-        let summary = crate::summarize_warehouse_interesting(
-            &run_dir,
-            crate::WarehouseInterestingOptions {
-                limit: 10,
-                filter: crate::InterestingTextFilter::All,
-                anomalies: 0,
-                explain: None,
-                max_region_examples: 5,
-                engine: crate::InterestingEngine::InMemory,
-                feature_profile: crate::WarehouseFeatureProfile::Core,
+    /// Minimal valid ABC export record for the importer's consumed fields.
+    fn write_abc_export_record(export_dir: &Path, work_id: &str) {
+        let works = export_dir.join("works");
+        std::fs::create_dir_all(&works).unwrap();
+        let record = serde_json::json!({
+            "metadata_record_schema_id":
+                "https://w3id.org/abc/schemas/metadata-record.schema.json",
+            "metadata_record_schema_hash":
+                crate::import_aozora::ABC_METADATA_RECORD_SCHEMA_HASH,
+            "work": {
+                "work_id": work_id,
+                "title": "題名",
+                "first_published": null,
+                "orthographic_style": "新字新仮名",
+                "source_editions": []
             },
+            "contributors": [
+                {"person_id": "000035", "person_record_hash": "sha256:0",
+                 "relation_to_work": "著者"}
+            ]
+        });
+        std::fs::write(
+            works.join(format!("{work_id}.json")),
+            serde_json::to_vec(&record).unwrap(),
         )
         .unwrap();
+    }
+
+    #[test]
+    fn imported_sidecar_flips_rarity_basis_to_work() {
+        let root = tempfile::tempdir().unwrap();
+        let run_dir = write_aozora_id_fixture(root.path());
+        let export = root.path().join("export");
+        write_abc_export_record(&export, "000010");
+        write_abc_export_record(&export, "000020");
+
+        crate::run_import_aozora_metadata(&run_dir, &export, false).unwrap();
+        let summary =
+            summarize_warehouse_interesting(&run_dir, WarehouseInterestingOptions::default())
+                .unwrap();
 
         assert_eq!(summary.score_version.rarity_basis, "work");
     }
 ```
-
-If `WarehouseInterestingOptions` field names differ, mirror the construction used in `interesting.rs` tests — the assertion target is `score_version.rarity_basis == "work"` after a real import.
 
 - [ ] **Step 2: Run test to verify current state**
 
@@ -1268,7 +1217,7 @@ Expected: all PASS.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add crates/ab-morph-run/src/import_aozora.rs
+git add crates/ab-morph-run/src/summary/interesting.rs
 git commit -m "test(import-aozora): end-to-end import flips rarity_basis to work"
 ```
 
@@ -1281,18 +1230,18 @@ git commit -m "test(import-aozora): end-to-end import flips rarity_basis to work
 
 **Interfaces:** documentation only; exact edits below (spec §Governing-spec amendments).
 
-- [ ] **Step 1: Resolve the import-step TBD (§Cross-Repo Dependency, boundary rules bullet)**
+- [ ] **Step 1: Resolve the import-step TBD (§Cross-Repo Dependency, boundary rules bullet, line 88)**
 
-Replace the sentence fragment:
+Replace the full bullet (exact match — note it ends with the non-Aozora degradation sentence, which MUST be preserved):
 
 ```
-The `aozora_works` projection is regenerated by an import step (TBD: `ab-morph-run import-aozora-metadata --from <abc export dir>`); it is **never hand-edited** in the warehouse.
+- The `aozora_works` projection is regenerated by an import step (TBD: `ab-morph-run import-aozora-metadata --from <abc export dir>`); it is **never hand-edited** in the warehouse. A run that ingested a non-Aozora corpus and lacks the projection degrades the era-novelty and rarity dedup signals honestly (see §Error Behavior).
 ```
 
 with:
 
 ```
-The `aozora_works` projection is regenerated by `ab-morph-run import-aozora-metadata --run-dir <run> --from <abc export dir>`, where the export dir is ABC's `out/corpus` layout (`works/<work_id>.json`); it is **never hand-edited** in the warehouse. Producer design: `docs/superpowers/specs/2026-07-06-aozora-works-import-design.md`.
+- The `aozora_works` projection is regenerated by `ab-morph-run import-aozora-metadata --run-dir <run> --from <abc export dir>`, where the export dir is ABC's `out/corpus` layout (`works/<work_id>.json`); it is **never hand-edited** in the warehouse. Producer design: `docs/superpowers/specs/2026-07-06-aozora-works-import-design.md`. A run that ingested a non-Aozora corpus and lacks the projection degrades the era-novelty and rarity dedup signals honestly (see §Error Behavior).
 ```
 
 - [ ] **Step 2: Correct the rarity dedup claim (§Per-Signal Definitions, bold paragraph after the signal table)**
@@ -1323,29 +1272,63 @@ with:
 Aozora works may appear as multiple files under one card (different encodings, anthologized reprints). Pattern frequency counting uses distinct `work_id` from `aozora_works` (an ABC projection of `work.work_id`, i.e. the Aozora card id), not raw file count — without this, affected patterns are counted 2× (287 multi-file-card sources measured 2026-07-06). Paired 旧字/新字 editions are separate cards and deliberately remain distinct works (see §Per-Signal Definitions); serials sharing a title (e.g. 銭形平次捕物控, 438 cards) are correctly distinct works. Enforced at the rarity-signal level and recorded as `rarity_basis = "work"` in the score block.
 ```
 
-- [ ] **Step 4: Amend Decision 3 (§Decisions row 3)**
+- [ ] **Step 4: Amend Decision 3 (§Decisions table, line 478)**
 
-Replace the Decision column text:
+Replace the full table row (exact match):
 
 ```
-`SCHEMA_VERSION` bumped at first sidecar table; reader rule relaxed to "reject > reader max"
+| 3 | `SCHEMA_VERSION` bumped at first sidecar table; reader rule relaxed to "reject > reader max" | Proposed | v2 readers degrade on v1; existing "reject != 1" assertion is generalized, not bypassed |
 ```
 
 with:
 
 ```
-`SCHEMA_VERSION` bumped at the first *analysis-pass-produced* sidecar table (Phase 3 `projection_spans`); reader rule then relaxed to "reject > reader max". Post-hoc imported, presence-probed sidecars (`aozora_works`) are version-neutral
+| 3 | `SCHEMA_VERSION` bumped at the first *analysis-pass-produced* sidecar table (Phase 3 `projection_spans`); reader rule then relaxed to "reject > reader max". Post-hoc imported, presence-probed sidecars (`aozora_works`) are version-neutral | Proposed | v2 readers degrade on v1; existing "reject != 1" assertion is generalized, not bypassed; `aozora_works` ships under v1 via the reader's presence probe |
 ```
 
-- [ ] **Step 5: Add the zero-mapped-import row (§Error Behavior table)**
+- [ ] **Step 5: Add the zero-mapped-import row (§Error Behavior table, after line 549)**
 
-After the row `| aozora_works import out of sync with ABC schema … |`, add:
+Immediately after the row (exact text, do not modify it):
+
+```
+| `aozora_works` import out of sync with ABC schema (e.g., ABC renamed a field, importer not updated) | Hard error at import: `import-aozora-metadata` validates against the ABC schema hash; mismatch aborts with a message naming the expected and observed hashes |
+```
+
+add the new row:
 
 ```
 | `import-aozora-metadata` maps zero sources to ABC works (wrong export root, empty `works/`) | Hard error at import; no file written. A present-but-empty `aozora_works.parquet` is likewise treated as absent by readers |
 ```
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Align the `total_work_count` definition with the denominator fix (§Per-Signal Definitions, Rarity row, line 133)**
+
+Within the Rarity row's Source cell, replace the sentence (exact match):
+
+```
+`total_work_count` = distinct `work_id` from `aozora_works`, joined via `sources.source_id → aozora_works.source_id`.
+```
+
+with:
+
+```
+`total_work_count` = distinct `work_id` from `aozora_works` (joined via `sources.source_id → aozora_works.source_id`) plus the count of run sources absent from `aozora_works`, which coalesce to per-source rarity keys.
+```
+
+- [ ] **Step 7: Reconcile the `catalog_version` mapping row with the shipped column set (§Cross-Repo Dependency table, line 77)**
+
+Replace the full table row (exact match):
+
+```
+   | `catalog_version` | `metadata_record_schema_hash` + `source_csv_provenance.original_file_hash` | The ABC content hash is the authoritative catalog identity; we store the owner's hashes verbatim. |
+```
+
+with:
+
+```
+   | `metadata_record_schema_hash` | `metadata_record_schema_hash` | Stored verbatim (with `metadata_record_retrieved_at` alongside). The earlier `catalog_version` draft name is dropped; `source_csv_provenance` is stripped from `out/corpus` exports and is not imported. |
+```
+
+- [ ] **Step 8: Commit**
 
 ```bash
 git add docs/superpowers/specs/2026-07-05-interestingness-ranking-design.md
@@ -1411,6 +1394,8 @@ EOF
 
 Expected: assertion passes; overlap printed (expected high — only 1.6% of sources merged). If the JSON key names differ (e.g. `score_version` nesting), adapt the probe to the actual output shape; the required check is `rarity_basis == "work"`.
 
+Note: `scratch/full-novel-interesting.json` is the source-basis "before" snapshot — do not regenerate it in place; the work-basis output goes to the new file only.
+
 - [ ] **Step 5: Commit the artifact**
 
 ```bash
@@ -1422,6 +1407,6 @@ git commit -m "data: work-basis top-50 ranking for canonical full run"
 
 ## Self-review notes
 
-- Spec coverage: CLI contract (Task 4), data flow + error table (Task 3), column projection (Tasks 2–3), reader hardenings (Task 5), e2e (Task 6), governing-spec amendments (Task 7), real-data validation with expected counts (Task 8). Decision 2 (no version bump) = no task, verified by absence of `sql.rs`/`schema.rs` edits.
-- Helper-name caveats are explicit where the implementer must mirror existing test scaffolding (`summarize`/`options_all` in Task 5, options struct in Task 6) — the assertion targets are fixed, the scaffolding names are not part of the contract.
+- Spec coverage: CLI contract (Task 4), data flow + error table (Task 3), column projection (Tasks 2–3), reader hardenings (Task 5), e2e (Task 6), governing-spec amendments (Task 7, including the `total_work_count` and `catalog_version` reconciliations), real-data validation with expected counts (Task 8). Decision 2 (no version bump) = no task, verified by absence of `sql.rs`/`schema.rs` edits.
+- Reviewed 2026-07-06 against the live codebase: Task 5/6 tests use the real scaffolding (`summarize_warehouse_interesting` + `WarehouseInterestingOptions::default()`, existing row builders); all Task 7 oldText anchors are verbatim quotes from the governing spec; ZSTD level matches `ab-warehouse/src/writer.rs` exactly.
 - Type consistency: `parse_source_id -> Option<String>`, `extract_year -> Option<i32>`, `run_import_aozora_metadata(&Path, &Path, bool) -> Result<ImportSummary>` used identically in Tasks 3, 4, 6.

@@ -78,7 +78,7 @@ Composition: pure core (`parse_source_id`, `validate_record`, `project_row`, yea
 ## Reader hardenings (same change, `interesting.rs`)
 
 1. `read_optional_work_map`: treat a present-but-empty `aozora_works.parquet` as absent (defense-in-depth against the degenerate `total_work_count = 0` state the importer refuses to create).
-2. `rarity_config` denominator: `total = distinct mapped works + count of unmapped sources` (today unmapped sources contribute per-source rarity keys but are dropped from the total — an off-by-2 on the canonical run). The DuckDB path (`rarity_sql`) gets the equivalent `coalesce` counting.
+2. `rarity_config` denominator: `total = distinct mapped works + count of unmapped sources` (today unmapped sources contribute per-source rarity keys but are dropped from the total — an off-by-2 on the canonical run). No DuckDB-side change: `rarity_sql` already `coalesce`s unmapped sources to per-source keys and both engines share `RarityConfig.total`, so this one function fixes both.
 
 Expected canonical-run outcome: 17,883 rows (17,885 − 2 skipped), 17,596 distinct works, `total_work_count = 17,598` (17,596 works + 2 fallback source keys), `rarity_basis = "work"`.
 

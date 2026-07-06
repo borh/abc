@@ -12,7 +12,7 @@ Verdict: `AOZORA_PUBLICATION_NEXT_WORK_OPEN`
 
 ## Next Work Items
 
-- `source_region_disposition_samples` (ab-validator+abc): `open`
+- `source_region_disposition_samples` (ab-validator+abc): `complete`
   - classes_total=7, admitted=7, policy_needed=0
   - policy_needed_classes=[]
   - evidence_needed_classes=[]

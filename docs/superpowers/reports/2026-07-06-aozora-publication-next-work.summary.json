@@ -69,7 +69,7 @@
     {
       "id": "source_region_disposition_samples",
       "owner": "ab-validator+abc",
-      "status": "open",
+      "status": "complete",
       "evidence": {
         "verdict": "SOURCE_REGION_DISPOSITION_SAMPLES_READY",
         "classes_total": 7,

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/run-summary.schema.json",
+  "title": "ABC Parser Run Summary Event",
+  "$defs": {
+    "status": {
+      "type": "string",
+      "enum": ["passed", "warning", "failed"]
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["event", "run_id", "generated_at", "producer", "producer_version"],
+      "additionalProperties": false,
+      "properties": {
+        "event": { "const": "run-start" },
+        "run_id": { "type": "string", "minLength": 1 },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "producer": { "type": "string", "minLength": 1 },
+        "producer_version": { "type": "string", "minLength": 1 }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "event",
+        "run_id",
+        "work_id",
+        "parser_id",
+        "status",
+        "parser_ir_path",
+        "warnings_path",
+        "warning_count",
+        "error_count"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "event": { "const": "work-result" },
+        "run_id": { "type": "string", "minLength": 1 },
+        "work_id": { "type": "string", "minLength": 1 },
+        "parser_id": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/status" },
+        "parser_ir_path": { "type": "string", "minLength": 1 },
+        "warnings_path": { "type": "string", "minLength": 1 },
+        "warning_count": { "type": "integer", "minimum": 0 },
+        "error_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    {
+      "type": "object",
+      "required": [
+        "event",
+        "run_id",
+        "status",
+        "works_total",
+        "works_succeeded",
+        "works_failed",
+        "warning_count",
+        "error_count"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "event": { "const": "run-complete" },
+        "run_id": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/status" },
+        "works_total": { "type": "integer", "minimum": 0 },
+        "works_succeeded": { "type": "integer", "minimum": 0 },
+        "works_failed": { "type": "integer", "minimum": 0 },
+        "warning_count": { "type": "integer", "minimum": 0 },
+        "error_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  ]
+}

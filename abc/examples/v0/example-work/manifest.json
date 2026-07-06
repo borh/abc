@@ -1,0 +1,61 @@
+{
+  "artifact_id": "sha256:ed9b00739a19aae6ae4aa9a33d84d44067c7e10c03b32a0d7353379c783c8dbc",
+  "artifact_kind": "tei",
+  "content": 
+  {
+    "byte_length": 640,
+    "content_hash": "sha256:0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c",
+    "media_type": "application\/tei+xml",
+    "path_hint": "tei.xml"
+  },
+  "invalidated_at": null,
+  "license": 
+  {
+    "source_url": null,
+    "spdx_id": "CC0-1.0"
+  },
+  "manifest_identity_object": 
+  {
+    "analysis_recipe_hash": null,
+    "corpus_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "manifest_schema_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "metadata_record_hash": "sha256:9771a47f4f1e7c3e186044078872a5f5e2c316e0c0c8ebc3d66bdea470fd4ef5",
+    "output_format_spec_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "parser_build_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "parser_config_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "aat_parser_ir_mapping_hash": null,
+    "parser_ir_schema_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "tei_profile_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "tokenizer_build_hash": null,
+    "tokenizer_dictionary_hash": null,
+    "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+  },
+  "manifest_schema_id": "https:\/\/w3id.org\/abc\/schemas\/manifest.schema.json",
+  "notes": "Design fixture only; not a real Aozora TEI artifact.",
+  "provenance": 
+  {
+    "activity_id": "https:\/\/w3id.org\/abc\/activity\/parse-and-render-example",
+    "agent": "abc-v0-design-bundle",
+    "generated_at": "2026-04-26T00:00:00Z",
+    "plan_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "used": ["sha256:4444444444444444444444444444444444444444444444444444444444444444","sha256:5555555555555555555555555555555555555555555555555555555555555555","sha256:6666666666666666666666666666666666666666666666666666666666666666","sha256:7777777777777777777777777777777777777777777777777777777777777777","sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"],
+    "was_derived_from": ["sha256:0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a"]
+  },
+  "replacement_reason": null,
+  "sidecars": [
+    {
+      "hash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "media_type": "application\/jsonl",
+      "path_hint": "warnings.jsonl",
+      "role": "warnings"
+    },
+    {
+      "hash": "sha256:abababababababababababababababababababababababababababababababab",
+      "media_type": "application\/json",
+      "path_hint": "tei-validation-result.json",
+      "role": "validation-result"
+    }],
+  "signatures": [],
+  "superseded_by": null,
+  "validation_status": "warning"
+}

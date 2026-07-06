@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://abc.local/schemas/aat-parser-ir-divergence-bundle-v1.json",
+  "title": "AAT to Parser-IR Divergence Bundle",
+  "type": "object",
+  "required": [
+    "schema_id",
+    "schema_version",
+    "work_id",
+    "mapping",
+    "target",
+    "aat",
+    "preserved_aat_meta",
+    "summary",
+    "records"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_id": {
+      "const": "https://abc.local/schemas/aat-parser-ir-divergence-bundle-v1.json"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "work_id": { "type": "string" },
+    "mapping": {
+      "type": "object",
+      "required": ["mapping_id", "mapping_version", "mapping_schema_hash"],
+      "additionalProperties": false,
+      "properties": {
+        "mapping_id": { "type": "string", "format": "uri" },
+        "mapping_version": { "type": "string" },
+        "mapping_schema_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "required": ["parser_ir_schema_id", "parser_ir_schema_hash"],
+      "additionalProperties": false,
+      "properties": {
+        "parser_ir_schema_id": { "type": "string", "format": "uri" },
+        "parser_ir_schema_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "aat": {
+      "type": "object",
+      "required": [
+        "version",
+        "adapter",
+        "adapter_version",
+        "source_hash",
+        "parse_complete"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "type": "integer", "minimum": 1 },
+        "adapter": { "type": "string" },
+        "adapter_version": { "type": "string" },
+        "source_hash": { "$ref": "#/$defs/hash" },
+        "parse_complete": { "type": "boolean" }
+      }
+    },
+    "preserved_aat_meta": {
+      "type": "object",
+      "required": ["metrics", "semantic_summary"],
+      "additionalProperties": false,
+      "properties": {
+        "metrics": { "type": ["object", "null"] },
+        "semantic_summary": { "type": ["object", "null"] }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["LOSS", "INVENTION", "AMBIGUITY", "UNSUPPORTED", "STRUCTURAL"],
+      "additionalProperties": false,
+      "properties": {
+        "LOSS": { "type": "integer", "minimum": 0 },
+        "INVENTION": { "type": "integer", "minimum": 0 },
+        "AMBIGUITY": { "type": "integer", "minimum": 0 },
+        "UNSUPPORTED": { "type": "integer", "minimum": 0 },
+        "STRUCTURAL": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "records": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/divergence_record" }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "divergence_record": {
+      "type": "object",
+      "required": ["rule_id", "category", "message", "count", "first_path"],
+      "additionalProperties": false,
+      "properties": {
+        "rule_id": { "type": "string", "pattern": "^[A-Z]+-[0-9]+$" },
+        "category": {
+          "enum": ["LOSS", "INVENTION", "AMBIGUITY", "UNSUPPORTED", "STRUCTURAL"]
+        },
+        "aat_pointer": { "type": ["string", "null"] },
+        "parser_ir_pointer": { "type": ["string", "null"] },
+        "source_value": { "type": ["string", "integer", "boolean", "null"] },
+        "target_value": { "type": ["string", "integer", "boolean", "null"] },
+        "message": { "type": "string" },
+        "count": { "type": "integer", "minimum": 1 },
+        "first_path": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

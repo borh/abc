@@ -1,0 +1,7 @@
+{
+  "work_id": "999003",
+  "title": "Not applicable but carries a derived_manifest",
+  "status": "not_applicable",
+  "reason": "Used to assert that non-applicable records must not carry a derived_manifest.",
+  "derived_manifest": "iiif/manifest.json"
+}

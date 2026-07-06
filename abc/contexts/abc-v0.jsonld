@@ -1,0 +1,57 @@
+{
+  "@context": {
+    "abc": "https://w3id.org/abc/",
+    "crm": "http://www.cidoc-crm.org/cidoc-crm/",
+    "dcterms": "http://purl.org/dc/terms/",
+    "la": "https://linked.art/ns/terms/",
+    "prov": "http://www.w3.org/ns/prov#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "schema": "https://schema.org/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "id": "@id",
+    "type": "@type",
+
+    "DigitalObject": "la:DigitalObject",
+    "HumanMadeObject": "crm:E22_Human_Made_Object",
+    "Identifier": "crm:E42_Identifier",
+    "Language": "crm:E56_Language",
+    "LinguisticObject": "crm:E33_Linguistic_Object",
+    "Name": "crm:E33_E41_Linguistic_Appellation",
+    "Type": "crm:E55_Type",
+
+    "_label": {
+      "@id": "rdfs:label"
+    },
+    "artifactId": "abc:artifactId",
+    "canonicalManifest": {
+      "@id": "abc:canonicalManifest",
+      "@type": "@id"
+    },
+    "classified_as": {
+      "@id": "crm:P2_has_type",
+      "@type": "@id"
+    },
+    "content": {
+      "@id": "crm:P190_has_symbolic_content"
+    },
+    "identified_by": {
+      "@id": "crm:P1_is_identified_by"
+    },
+    "language": {
+      "@id": "crm:P72_has_language",
+      "@type": "@id"
+    },
+    "produced_by": {
+      "@id": "crm:P108i_was_produced_by",
+      "@type": "@id"
+    },
+    "referred_to_by": {
+      "@id": "crm:P67i_is_referred_to_by"
+    },
+    "subject_of": {
+      "@id": "crm:P129i_is_subject_of",
+      "@type": "@id"
+    }
+  }
+}

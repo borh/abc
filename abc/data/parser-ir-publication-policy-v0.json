@@ -1,0 +1,44 @@
+{
+  "policy_id": "https://w3id.org/abc/policies/parser-ir-publication-v0",
+  "policy_version": "0.1.0",
+  "renderers": {
+    "plaintext": {
+      "output_format": "UTF-8 text/plain; parser-IR node order; no trailing newline added by policy",
+      "node_policies": {
+        "text": "append text",
+        "ruby": "append ruby.base",
+        "gaiji": "append gaiji.unicode when present, otherwise gaiji.raw_marker",
+        "editor-note": "omit and report",
+        "emphasis": "append text",
+        "layout-span": "emit visible text or visible inline children only; omit layout metadata and ruby readings",
+        "heading": "surround text with newlines",
+        "indentation": "append text when present, otherwise omit and report",
+        "page-break": "append newline",
+        "line-break": "append newline",
+        "image": "append alt when present, otherwise omit and report",
+        "caption": "append text",
+        "quote": "append text when present, otherwise omit and report",
+        "source-note": "omit source-note metadata; plaintext is visible body text only"
+      }
+    },
+    "tei": {
+      "output_format": "TEI P5 XML body hiccup rendered under the ABC TEI profile",
+      "node_policies": {
+        "text": "paragraph inline text",
+        "ruby": "ruby type=furigana rb/rt with optional direction rend; furigana is the default Aozora heuristic",
+        "gaiji": "g ref resolves to charDecl",
+        "editor-note": "note",
+        "emphasis": "hi",
+        "layout-span": "render as TEI hi@rend with abc:* profile tokens; exact source marker identity remains in ABC custom preservation evidence",
+        "heading": "body head",
+        "indentation": "seg type indentation",
+        "page-break": "pb",
+        "line-break": "lb",
+        "image": "figure graphic with optional figDesc",
+        "caption": "figDesc",
+        "quote": "quote",
+        "source-note": "source note routed by placement"
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "manifest_schema_id": "https://w3id.org/abc/schemas/manifest.schema.json",
+  "artifact_id": "sha256:0101010101010101010101010101010101010101010101010101010101010101",
+  "artifact_kind": "source",
+  "validation_status": "passed",
+  "manifest_identity_object": {
+    "manifest_schema_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "corpus_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+    "metadata_record_hash": null,
+    "parser_build_hash": null,
+    "parser_config_hash": null,
+    "aat_parser_ir_mapping_hash": null,
+    "parser_ir_schema_hash": null,
+    "tei_profile_hash": null,
+    "tokenizer_build_hash": null,
+    "tokenizer_dictionary_hash": null,
+    "analysis_recipe_hash": null,
+    "output_format_spec_hash": "sha256:0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a"
+  },
+  "content": {
+    "content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+    "media_type": "text/plain; charset=Shift_JIS",
+    "byte_length": 128,
+    "path_hint": "source.txt"
+  },
+  "sidecars": [],
+  "provenance": {
+    "generated_at": "2026-04-26T00:00:00Z",
+    "activity_id": "https://w3id.org/abc/activity/source-ingest-example",
+    "agent": "abc-v0-design-bundle",
+    "plan_hash": null,
+    "used": [
+      "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    ],
+    "was_derived_from": [
+      "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    ]
+  },
+  "license": {
+    "spdx_id": "CC0-1.0",
+    "source_url": null
+  },
+  "signatures": [],
+  "superseded_by": null,
+  "invalidated_at": null,
+  "replacement_reason": null,
+  "notes": "Design fixture only; not a real Aozora source manifest."
+}

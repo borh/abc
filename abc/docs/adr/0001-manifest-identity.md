@@ -1,0 +1,120 @@
+# ADR 0001: Manifest Identity
+
+Status: Accepted
+Date: 2026-04-26
+Accepted: 2026-04-28
+Supersedes: none
+Source: `docs/high-level-architecture-note.md` v0.5
+
+## Implementation Status
+
+Acceptance criteria satisfied as of 2026-04-28. The example-work bundle
+demonstrates a real `metadata_record_hash` (Aozora 羅生門 / 芥川竜之介), with
+schema → identity → SHACL → TEI-EAJ `<teiHeader>` covered end-to-end. Failure
+manifest fixtures and canonicalization fixtures are committed and exercised by
+`nix run .#validate-design-bundle`. See archived plan
+`docs/superpowers/plans/archive/2026-04-27-metadata-data-model.md`.
+
+## Context
+
+ABC needs reproducible artifact identity for a living corpus. File paths,
+parser labels, TEI profile names, and metadata records can change independently
+of work text. The project needs a stable identity rule that works across Rust,
+Clojure/JVM, Python, JavaScript, RDF tooling, and Nix.
+
+## Terminology Clarification
+
+In v0, `artifact_id` identifies the intended derivation coordinate: the exact
+corpus input, work content, metadata record where applicable, parser/build
+inputs, schema/profile/config inputs, and output format contract.
+
+`artifact_id` is not the byte hash of the materialized output. Output bytes are
+identified by `content.content_hash`.
+
+A release MUST NOT contain two successful manifests with the same `artifact_id`
+and different `content.content_hash` values. Such a condition is a
+reproducibility conflict and must be represented as a failed release validation
+result.
+
+## Decision
+
+The v0 ArtifactID is:
+
+```text
+sha256:<hex of SHA-256(RFC8785-JCS(manifest_identity_object))>
+```
+
+The canonical manifest is JSON. RDF/PROV-O, Turtle, JSON-LD, RO-Crate, and
+indexes are derived views or publication packages.
+
+`artifact_id` is never nested inside `manifest_identity_object`; including it
+there would make identity circular.
+
+The `manifest_identity_object` contains only identity-bearing fields:
+
+- `manifest_schema_hash`
+- `corpus_snapshot_hash`
+- `work_content_hash`
+- `metadata_record_hash`
+- `parser_build_hash`
+- `parser_config_hash`
+- `parser_ir_schema_hash`
+- `tei_profile_hash`
+- `tokenizer_build_hash`
+- `tokenizer_dictionary_hash`
+- `analysis_recipe_hash`
+- `output_format_spec_hash`
+
+Absent dimensions are present as JSON `null`. Arrays inside identity fields
+must either have schema-defined order or be sorted before hashing by a stable
+key. RFC 8785 JCS does not sort arrays. For hash-only arrays that do not carry
+semantic order, v0 sorts lexicographically by full `sha256:<hex>` string before
+JCS is applied. Arrays outside `manifest_identity_object` are not
+identity-bearing unless a later schema explicitly promotes them.
+
+`output_format_spec_hash` is always present in v0. For failure manifests it
+identifies the intended output contract, such as the parser IR schema or TEI
+profile that the failed activity attempted to produce.
+
+Schema hashes are SHA-256 over a bundled JSON Schema document canonicalized
+with RFC 8785 JCS. Pretty-printing, source-file whitespace, and object member
+order in the checked-in schema file do not affect the schema hash. External
+`$ref` resolution and default expansion do not occur during hash computation.
+If a schema is split across files, the bundled schema is created first and
+becomes the schema artifact.
+
+The v0 schema hash algorithm label is:
+
+```text
+sha256-rfc8785-jcs-bundled-json-schema-v0
+```
+
+## Consequences
+
+- Every schema version is a distinct hash-addressed artifact.
+- Old manifests retain their original `manifest_schema_hash`.
+- Backward compatibility means consumers can read multiple schema versions; it
+  does not mean future ArtifactIDs keep old schema hashes.
+- Signatures, mirrors, SWHIDs, CID aliases, release channel, and generated time
+  are non-identity fields unless a later schema explicitly promotes them.
+- Parser and tokenizer coordinates use build/source hashes, not host-local
+  executable paths.
+- The schema hash appears only inside `manifest_identity_object` in v0
+  manifests, avoiding a second root value that could diverge.
+
+## Acceptance Criteria
+
+- `schemas/manifest.schema.json` validates success and failure manifests.
+- A canonicalization fixture demonstrates null dimensions and array ordering.
+- Example manifests keep `artifact_id` outside `manifest_identity_object`.
+- Failure manifests include input identity, attempted recipe identity,
+  validation status, and error sidecar references.
+- Given two successful manifests with identical `manifest_identity_object` and
+  different `content.content_hash`, release validation fails with a
+  reproducibility-conflict report unless a later schema explicitly marks the
+  artifact kind non-deterministic and non-releaseable.
+
+## Rollback
+
+If this rule is insufficient, define a new manifest schema hash and emit new
+ArtifactIDs. Do not reinterpret old manifests under the new rule.

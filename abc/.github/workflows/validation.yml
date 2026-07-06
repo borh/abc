@@ -1,0 +1,19 @@
+name: Validation
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  design-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: cachix/install-nix-action@v31
+
+      - name: Validate design bundle
+        run: |
+          nix run \
+            --override-input local-pkgs "path:${GITHUB_WORKSPACE}/nix/ci-empty-local-pkgs" \
+            .#validate-design-bundle

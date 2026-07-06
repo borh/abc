@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0"
+     xmlns:abc="https://w3id.org/abc/ns/tei"
+     xmlns:rng="http://relaxng.org/ns/structure/1.0"
+     xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>ABC Minimum Aozora TEI Profile v0</title>
+      </titleStmt>
+      <editionStmt>
+        <edition>Draft v0 targeting TEI P5 4.11.0-era ruby support.</edition>
+      </editionStmt>
+      <publicationStmt>
+        <p>Draft profile contract for ABC v0 design bundle.</p>
+      </publicationStmt>
+      <sourceDesc>
+        <p>Derived from the ABC high-level architecture note v0.5.1 and ADR 0012.</p>
+      </sourceDesc>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <schemaSpec ident="abc-tei-v0" start="TEI">
+        <desc>ABC minimum TEI profile for Aozora Bunko-derived artifacts.</desc>
+
+        <!-- TEI modules -->
+        <moduleRef key="tei"/>
+        <moduleRef key="header"/>
+        <moduleRef key="core"/>
+        <moduleRef key="textstructure"/>
+        <moduleRef key="namesdates"/>
+        <moduleRef key="transcr"/>
+        <moduleRef key="figures"/>
+        <moduleRef key="gaiji"/>
+        <moduleRef key="analysis"/>
+
+        <!-- Schematron constraint declarations -->
+        <constraintDecl scheme="schematron" queryBinding="xslt2">
+          <sch:ns prefix="tei" uri="http://www.tei-c.org/ns/1.0"/>
+          <sch:ns prefix="abc" uri="https://w3id.org/abc/ns/tei"/>
+        </constraintDecl>
+
+        <!-- Project documentation -->
+        <remarks>
+          <p>
+            This ODD is the canonical ABC v0 TEI profile contract. It must
+            generate a project-specific Relax NG schema and a project-specific
+            Schematron schema before the TEI profile is considered complete.
+          </p>
+          <p>
+            `tei_profile_hash` identifies this ODD/profile contract. Generated
+            RNG and Schematron files are derived validation artifacts; generator
+            version and stylesheet/toolchain hashes are validation-run metadata
+            unless a later ADR promotes them into profile identity.
+          </p>
+          <p>
+            Aozora ruby must preserve base text, reading, source span, and
+            whether the base scope was explicit, inferred, grouped, mid-word, or
+            ambiguous in the parser IR. Generated TEI uses `ruby @type =
+            "furigana"` as the default Aozora publication heuristic, matching
+            the TEI-EAJ jpn_classical convention, while preserving parser IR as
+            the place where future non-furigana ruby classifications can be
+            represented explicitly. Aozora gaiji output must preserve the
+            original marker and link to the resolution policy used to choose
+            Unicode, IVS, glyph, or unresolved fallback output.
+          </p>
+          <p>
+            ABC profile extensions use the namespace
+            `https://w3id.org/abc/ns/tei` and require
+            `abc:vocab-version="0"` on generated TEI roots that carry ABC
+            extension attributes. The v0 extension is attributes-only. It
+            permits derived audit projections such as `abc:preservation-record`,
+            `abc:accent-code`, `abc:style-source`, `abc:layout-kind`,
+            `abc:layout-params`, and `abc:figure-class` on ordinary TEI
+            elements. The JSON preservation sidecar remains the authoritative
+            audit ledger; ABC TEI attributes are queryable XML projections of
+            that evidence.
+          </p>
+        </remarks>
+
+        <list>
+          <head>Initial Schematron rule inventory</head>
+          <item><label>abc-tei-header-title</label> error: every generated TEI file must have a main title in `teiHeader`.</item>
+          <item><label>abc-tei-header-source-work-id</label> error: TEI header must preserve the Aozora work ID or source identifier.</item>
+          <item><label>abc-header-language-declared</label> error: teiHeader must declare at least one tei:profileDesc/tei:langUsage/tei:language with a non-empty @ident, so downstream tooling can route on document language.</item>
+          <item><label>abc-ruby-complete</label> error: ruby structures must contain base and reading components.</item>
+          <item><label>abc-ruby-base-non-empty</label> error: ruby base components must not be empty (a present-but-empty `rb` defeats `abc-ruby-complete`).</item>
+          <item><label>abc-ruby-reading-non-empty</label> error: ruby reading components must not be empty (closes the &lt;rb&gt;猫&lt;/rb&gt;&lt;rt&gt;&lt;/rt&gt; loophole that abc-ruby-complete leaves open).</item>
+          <item><label>abc-gaiji-reference</label> error: gaiji must retain original marker and either a resolved replacement or unresolved status.</item>
+          <item><label>abc-gaiji-chardecl-resolution</label> error: gaiji `@ref` fragment identifiers must point to a `charDecl/char` declaration in this document.</item>
+          <item><label>abc-char-resolution-form</label> error: tei:charDecl/tei:char must declare at least one of tei:mapping, tei:unicodeProp, tei:localProp, or tei:desc (closes the &lt;char xml:id="x"/&gt; empty-declaration loophole).</item>
+          <item><label>abc-figure-accessibility</label> warning initially: figures/images should have `figDesc`, `head`, or caption mapping where available.</item>
+          <item><label>abc-source-span-reference</label> error: elements claiming source spans must point to valid span identifiers.</item>
+          <item><label>abc-source-span-target-exists</label> error: each fragment id in `@source` must resolve to an `@xml:id` defined in this document.</item>
+          <item><label>abc-transcription-vs-annotation</label> warning initially: linguistic enrichment must not be mixed into transcription unless declared.</item>
+          <item><label>abc-vocab-version-declared</label> error: TEI roots using ABC extension attributes must declare `abc:vocab-version="0"`.</item>
+          <item><label>abc-preservation-record-shape</label> error: `abc:preservation-record` values must be deterministic sidecar record ids of the form `r000000`.</item>
+          <item><label>abc-layout-params-shape</label> error: `abc:layout-params` values must use the closed key=value grammar declared by the ABC TEI namespace design.</item>
+        </list>
+
+        <!-- Element/attribute constraints and documentation anchors -->
+        <elementSpec ident="ruby" mode="change" module="core">
+          <remarks>
+            <p>Ruby is represented with native TEI `ruby`, `rb`, and `rt` elements. Generated Aozora ruby carries `@type="furigana"` by default, with optional `@rend` preserving parser IR ruby direction.</p>
+          </remarks>
+        </elementSpec>
+        <elementSpec ident="g" mode="change" module="gaiji">
+          <remarks>
+            <p>Gaiji uses TEI `g` with a stable declaration or resolution reference.</p>
+          </remarks>
+        </elementSpec>
+        <elementSpec ident="char" mode="change" module="gaiji">
+          <remarks>
+            <p>Character declarations document unresolved or custom external-character mappings.</p>
+          </remarks>
+        </elementSpec>
+        <classSpec ident="att.global" mode="change" module="tei" type="atts">
+          <attList>
+            <attDef ident="vocab-version" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>ABC TEI namespace vocabulary major version.</desc>
+              <valList type="closed">
+                <valItem ident="0"/>
+              </valList>
+            </attDef>
+            <attDef ident="preservation-record" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Deterministic publication-preservation sidecar record id.</desc>
+              <datatype>
+                <rng:data type="string">
+                  <rng:param name="pattern">r[0-9]{6}</rng:param>
+                </rng:data>
+              </datatype>
+            </attDef>
+            <attDef ident="ir-pointer" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Parser-IR pointer for the projected publication fact.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="source-pointer" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Source or AAT pointer for the projected publication fact.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="source-marker" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Original Aozora source marker when a TEI-native rendering is normalized.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="accent-code" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Aozora accent notation code projected into TEI.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="style-source" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Aozora style source marker projected into TEI.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="layout-kind" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Closed ABC layout kind projected from parser-IR layout facts.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="layout-params" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Semicolon-delimited key=value layout parameters.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="figure-class" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Aozora figure class projected into TEI figure output.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+          </attList>
+        </classSpec>
+
+        <!-- Schematron constraint declarations -->
+        <constraintSpec ident="abc-tei-header-title" scheme="schematron">
+          <desc>Require a main title in generated ABC TEI headers.</desc>
+          <constraint>
+            <sch:rule context="tei:teiHeader">
+              <sch:assert test="tei:fileDesc/tei:titleStmt/tei:title[not(@type = 'sub')]">
+                ABC TEI requires a main title in teiHeader/fileDesc/titleStmt.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-tei-header-source-work-id" scheme="schematron">
+          <desc>Require an Aozora work ID or source identifier in generated headers.</desc>
+          <constraint>
+            <sch:rule context="tei:teiHeader">
+              <sch:assert test=".//tei:idno[@type = ('aozora-work-id', 'source-work-id')]">
+                ABC TEI requires an Aozora work ID or source work identifier.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-header-language-declared" scheme="schematron">
+          <desc>Require a declared document language in generated headers.</desc>
+          <constraint>
+            <sch:rule context="tei:TEI">
+              <sch:assert test="tei:teiHeader/tei:profileDesc/tei:langUsage/tei:language[@ident and normalize-space(@ident) != '']">
+                teiHeader must declare at least one tei:profileDesc/tei:langUsage/tei:language with non-empty @ident (abc-header-language-declared)
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-ruby-complete" scheme="schematron">
+          <desc>Require ruby base and reading components.</desc>
+          <constraint>
+            <sch:rule context="tei:ruby">
+              <sch:assert test="tei:rb and tei:rt">
+                ABC TEI ruby requires both rb and rt components.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-ruby-base-non-empty" scheme="schematron">
+          <desc>Require ruby base components to carry the underlying source token.</desc>
+          <constraint>
+            <sch:rule context="tei:ruby/tei:rb">
+              <sch:assert test="normalize-space(string(.)) != ''">
+                ABC TEI ruby base must not be empty; preserve the source token text.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-ruby-reading-non-empty" scheme="schematron">
+          <desc>Require ruby reading components to carry non-empty text.</desc>
+          <constraint>
+            <sch:rule context="tei:ruby/tei:rt">
+              <sch:assert test="normalize-space(string(.)) != ''">
+                tei:ruby/tei:rt must have non-empty content (abc-ruby-reading-non-empty)
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-gaiji-reference" scheme="schematron">
+          <desc>Require gaiji traceability and resolution status.</desc>
+          <constraint>
+            <sch:rule context="tei:g">
+              <sch:assert test="@ref or @corresp or @ana">
+                ABC TEI gaiji requires a declaration reference, source marker reference, or resolution status.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-gaiji-chardecl-resolution" scheme="schematron">
+          <desc>Require local gaiji `@ref` to resolve to a `charDecl/char` declaration in this document.</desc>
+          <constraint>
+            <sch:rule context="tei:g[starts-with(@ref, '#')]">
+              <sch:assert test="/tei:TEI/tei:teiHeader//tei:charDecl/tei:char/@xml:id = substring-after(@ref, '#')">
+                ABC TEI gaiji local @ref must point to a charDecl/char declaration in this document.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-char-resolution-form" scheme="schematron">
+          <desc>Require character declarations to carry at least one non-empty resolution form.</desc>
+          <constraint>
+            <sch:rule context="tei:charDecl/tei:char">
+              <sch:assert test="(some $m in tei:mapping satisfies normalize-space(string($m)) != '') or (some $u in tei:unicodeProp satisfies normalize-space(string($u/@value)) != '') or (some $l in tei:localProp satisfies normalize-space(string($l/@value)) != '') or (some $d in tei:desc satisfies normalize-space(string($d)) != '')">
+                tei:charDecl/tei:char must declare at least one non-empty resolution form: tei:mapping, tei:unicodeProp/@value, tei:localProp/@value, or tei:desc (abc-char-resolution-form)
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-figure-accessibility" scheme="schematron">
+          <desc>Warn when a figure has no textual description.</desc>
+          <constraint>
+            <sch:rule context="tei:figure">
+              <sch:report role="warning" test="not(tei:figDesc or tei:head or tei:p)">
+                ABC TEI figure should preserve a figDesc, head, or caption paragraph when available.
+              </sch:report>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-source-span-reference" scheme="schematron">
+          <desc>Require source-span references to be local fragment identifiers.</desc>
+          <constraint>
+            <sch:rule context="*[@source]">
+              <sch:assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies starts-with($s, '#')">
+                ABC TEI source span references must point to local span identifiers.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-source-span-target-exists" scheme="schematron">
+          <desc>Require each `@source` fragment id to resolve to an `@xml:id` in this document.</desc>
+          <constraint>
+            <sch:rule context="*[@source]">
+              <sch:assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies //*[@xml:id = substring-after($s, '#')]">
+                ABC TEI source span fragments must resolve to an existing @xml:id in this document.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-transcription-vs-annotation" scheme="schematron">
+          <desc>Warn when linguistic enrichment appears in the transcription body without declaration.</desc>
+          <constraint>
+            <sch:rule context="tei:text//tei:w | tei:text//tei:m | tei:text//tei:pc">
+              <sch:assert role="warning" test="ancestor::tei:TEI/tei:teiHeader//tei:encodingDesc//tei:tagsDecl//tei:namespace[@name = 'http://www.tei-c.org/ns/1.0']/tei:tagUsage/@gi = local-name()">
+                ABC TEI linguistic enrichment in the transcription layer must be declared in the header.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-vocab-version-declared" scheme="schematron">
+          <desc>Require generated TEI with ABC extension attributes to declare the ABC vocabulary version.</desc>
+          <constraint>
+            <sch:rule context="tei:TEI[@abc:* or .//@abc:*]">
+              <sch:assert test="@abc:vocab-version = '0'">
+                TEI roots using ABC extension attributes must declare abc:vocab-version="0".
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-preservation-record-shape" scheme="schematron">
+          <desc>Require preservation record references to use deterministic sidecar ids.</desc>
+          <constraint>
+            <sch:rule context="*[@abc:preservation-record]">
+              <sch:assert test="matches(@abc:preservation-record, '^r[0-9]{6}$')">
+                abc:preservation-record must be a deterministic preservation sidecar record id such as r000042.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-layout-params-shape" scheme="schematron">
+          <desc>Require ABC layout params to use the declared key=value grammar.</desc>
+          <constraint>
+            <sch:rule context="*[@abc:layout-params]">
+              <sch:assert test="matches(@abc:layout-params, '^[A-Za-z0-9_.:-]+=[^\s;]+(;[A-Za-z0-9_.:-]+=[^\s;]+)*$')">
+                abc:layout-params must use semicolon-delimited key=value pairs.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+      </schemaSpec>
+    </body>
+  </text>
+</TEI>

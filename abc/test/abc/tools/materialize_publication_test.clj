@@ -1,0 +1,202 @@
+(ns abc.tools.materialize-publication-test
+  (:require [abc.tools.files :as files]
+            [abc.tools.json :as abc-json]
+            [abc.tools.materialize-publication :as materialize]
+            [abc.tools.parser-ir-publication-policy :as policy]
+            [abc.tools.schema :as schema]
+            [clojure.java.io :as io]
+            [clojure.string :as string]
+            [clojure.test :refer [deftest is testing]])
+  (:import [java.nio.file Files]
+           [java.nio.file.attribute FileAttribute]))
+
+(def generated-at "2026-07-03T00:00:00Z")
+
+(defn- temp-dir [prefix]
+  (.toFile (Files/createTempDirectory prefix (make-array FileAttribute 0))))
+
+(defn- delete-tree! [dir]
+  (when dir
+    (doseq [f (reverse (file-seq dir))]
+      (.delete f))))
+
+(defn- materialize-example! [out-dir]
+  (materialize/materialize-publication!
+   {:parser-ir-path "examples/v0/example-work/parser-ir.json"
+    :source-manifest-path "examples/v0/example-work/source.manifest.json"
+    :metadata-record-path "examples/v0/example-work/metadata-record.json"
+    :persons-dir "examples/v0/example-persons"
+    :output-dir out-dir
+    :generated-at generated-at}))
+
+(defn- tei-element-body [tei local-name]
+  (second
+   (re-find (re-pattern (str "(?s)<(?:[A-Za-z0-9_-]+:)?" local-name
+                             "(?:\\s[^>]*)?>(.*?)</(?:[A-Za-z0-9_-]+:)?"
+                             local-name ">"))
+            tei)))
+
+(deftest manifest-schema-accepts-plaintext-artifact-kind-test
+  (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
+        example-manifest (files/read-json "examples/v0/example-work/manifest.json")]
+    (testing "plaintext is an allowed artifact kind"
+      (is (nil? (schema/validation-errors
+                 manifest-schema
+                 (assoc example-manifest "artifact_kind" "plaintext")))))
+    (testing "unknown artifact kinds are still rejected"
+      (is (seq (schema/validation-errors
+                manifest-schema
+                (assoc example-manifest "artifact_kind" "not-a-kind")))))))
+
+(deftest materialize-publication-test
+  (let [out-dir (temp-dir "abc-materialize-publication")
+        out-file out-dir]
+    (try
+      (let [result (materialize-example! out-file)
+            plain-file (io/file out-file "plain.txt")
+            tei-file (io/file out-file "tei.xml")
+            preservation-file (io/file out-file "preservation.json")
+            plaintext-manifest-file (io/file out-file "plaintext.manifest.json")
+            tei-manifest-file (io/file out-file "tei.manifest.json")
+            tei-validation-result-file (io/file out-file "tei-validation-result.json")
+            manifest-schema (files/read-json "schemas/manifest.schema.json")
+            preservation-schema (files/read-json "schemas/parser-ir-publication-preservation.schema.json")
+            validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
+            plaintext-manifest (files/read-json plaintext-manifest-file)
+            tei-manifest (files/read-json tei-manifest-file)
+            preservation (files/read-json preservation-file)
+            tei-validation-result (files/read-json tei-validation-result-file)
+            source-manifest (files/read-json "examples/v0/example-work/source.manifest.json")
+            source-corpus-hash (get-in source-manifest
+                                       ["manifest_identity_object"
+                                        "corpus_snapshot_hash"])]
+        (is (= {:plaintext plain-file
+                :tei tei-file
+                :preservation preservation-file
+                :plaintext-manifest plaintext-manifest-file
+                :tei-manifest tei-manifest-file
+                :tei-validation-result tei-validation-result-file}
+               result))
+        (doseq [file [plain-file tei-file plaintext-manifest-file
+                      tei-manifest-file tei-validation-result-file
+                      preservation-file]]
+          (is (.exists file) (str file " should exist")))
+        (is (string/includes? (slurp plain-file) "吾輩猫"))
+        (is (re-find #"<(?:[A-Za-z0-9_-]+:)?ruby(?:\s|>)"
+                     (slurp tei-file)))
+        (let [plain-text (slurp plain-file)
+              tei-text (slurp tei-file)
+              body-text (tei-element-body tei-text "body")
+              back-text (tei-element-body tei-text "back")]
+          (is (string/includes? tei-text "xmlns:abc=\"https://w3id.org/abc/ns/tei\""))
+          (is (string/includes? tei-text "abc:vocab-version=\"0\""))
+          (is (= 2 (count (re-seq #"<(?:[A-Za-z0-9_-]+:)?p(?:\s|>)"
+                                  body-text))))
+          (is (not (string/includes? body-text "（古伝説と、シルレルの詩から。）")))
+          (is (string/includes? back-text "type=\"source-attribution\""))
+          (is (string/includes? back-text "（古伝説と、シルレルの詩から。）"))
+          (is (string/ends-with? plain-text "\n\n（古伝説と、シルレルの詩から。）")))
+        (is (nil? (schema/validation-errors manifest-schema plaintext-manifest)))
+        (is (nil? (schema/validation-errors manifest-schema tei-manifest)))
+        (is (nil? (schema/validation-errors preservation-schema preservation)))
+        (is (nil? (schema/validation-errors
+                   validation-result-schema
+                   tei-validation-result)))
+        (is (= "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+               (get preservation "schema_id")))
+        (is (= "0.2.0" (get preservation "schema_version")))
+        (is (= source-corpus-hash
+               (get-in preservation ["source" "corpus_snapshot_hash"])))
+        (is (pos? (get-in preservation ["coverage" "record_count"])))
+        (is (some #{"custom_sidecar"}
+                  (get-in preservation ["coverage" "classes"])))
+        (is (some #{"tei_profile_projection"}
+                  (get-in preservation ["coverage" "classes"])))
+        (is (some #(= "paragraph.node_range" (get % "construct"))
+                  (get preservation "records")))
+        (is (some #(= "tei_profile_projection" (get % "class"))
+                  (get preservation "records")))
+        (is (some #(and (= "tei_profile_projection" (get % "class"))
+                        (= "heading_jisage_structure" (get % "construct")))
+                  (get preservation "records")))
+        (is (= "plaintext" (get plaintext-manifest "artifact_kind")))
+        (is (= "tei" (get tei-manifest "artifact_kind")))
+        (is (some #(and (= "preservation" (get % "role"))
+                        (= "preservation.json" (get % "path_hint")))
+                  (get tei-manifest "sidecars")))
+        (is (= "passed" (get tei-validation-result "status")))
+        (is (= "passed" (get tei-manifest "validation_status")))
+        (is (= source-corpus-hash
+               (get-in plaintext-manifest
+                       ["manifest_identity_object" "corpus_snapshot_hash"])))
+        (is (= source-corpus-hash
+               (get-in tei-manifest
+                       ["manifest_identity_object" "corpus_snapshot_hash"])))
+        (is (= (policy/policy-hash "data/parser-ir-publication-policy-v0.json")
+               (get-in plaintext-manifest
+                       ["manifest_identity_object" "output_format_spec_hash"]))))
+      (finally
+        (delete-tree! out-dir)))))
+
+(deftest materialize-publication-batch-test
+  (let [out-dir (temp-dir "abc-materialize-publication-batch")
+        batch-file (io/file out-dir "batch.json")
+        summary-file (io/file out-dir "summary.json")
+        out-a (io/file out-dir "a")
+        out-b (io/file out-dir "b")]
+    (try
+      (abc-json/write-deterministic-json-file!
+       batch-file
+       {"jobs" [{"id" "a"
+                 "parser_ir_path" "examples/v0/example-work/parser-ir.json"
+                 "source_manifest_path" "examples/v0/example-work/source.manifest.json"
+                 "metadata_record_path" "examples/v0/example-work/metadata-record.json"
+                 "persons_dir" "examples/v0/example-persons"
+                 "output_dir" (str out-a)
+                 "generated_at" generated-at}
+                {"id" "b"
+                 "parser_ir_path" "examples/v0/example-work/parser-ir.json"
+                 "source_manifest_path" "examples/v0/example-work/source.manifest.json"
+                 "metadata_record_path" "examples/v0/example-work/metadata-record.json"
+                 "persons_dir" "examples/v0/example-persons"
+                 "output_dir" (str out-b)
+                 "generated_at" generated-at}]})
+      (let [summary (materialize/materialize-publications-batch!
+                     {:batch-path (str batch-file)
+                      :summary-path (str summary-file)
+                      :jobs 2})]
+        (is (= {"jobs_total" 2
+                "jobs_succeeded" 2
+                "jobs_failed" 0
+                "jobs_concurrency" 2}
+               (select-keys summary ["jobs_total" "jobs_succeeded" "jobs_failed" "jobs_concurrency"])))
+        (is (= ["a" "b"] (mapv #(get % "id") (get summary "jobs"))))
+        (is (= ["passed" "passed"] (mapv #(get % "status") (get summary "jobs"))))
+        (is (= summary (files/read-json summary-file)))
+        (doseq [dir [out-a out-b]]
+          (is (.exists (io/file dir "plain.txt")))
+          (is (.exists (io/file dir "tei.xml")))
+          (is (= "passed"
+                 (get (files/read-json (io/file dir "tei-validation-result.json"))
+                      "status")))))
+      (finally
+        (delete-tree! out-dir)))))
+
+(deftest materialized-publication-output-is-deterministic-test
+  (let [out-dir-a (temp-dir "abc-materialize-publication-a")
+        out-dir-b (temp-dir "abc-materialize-publication-b")]
+    (try
+      (materialize-example! out-dir-a)
+      (materialize-example! out-dir-b)
+      (doseq [name ["plain.txt"
+                    "tei.xml"
+                    "preservation.json"
+                    "plaintext.manifest.json"
+                    "tei.manifest.json"
+                    "tei-validation-result.json"]]
+        (is (= (slurp (io/file out-dir-a name))
+               (slurp (io/file out-dir-b name)))
+            (str name " should be deterministic")))
+      (finally
+        (delete-tree! out-dir-a)
+        (delete-tree! out-dir-b)))))

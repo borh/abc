@@ -1,0 +1,237 @@
+{
+  "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
+  "mapping_version": "0.1.0",
+  "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+  "source_aat_version": 1,
+  "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+  "target_parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+  "transform_rule_descriptions": [
+    {
+      "rule_id": "A-01",
+      "category": "AMBIGUITY",
+      "aat_pointer": "blocks[].content[].content[].gaiji.resolved",
+      "parser_ir_pointer": "(emphasis.text)",
+      "action": "project",
+      "description": "Observed 9 occurrences; first_path=blocks[28].content[0].content[0].gaiji.resolved. style text projection used resolved gaiji string when available"
+    },
+    {
+      "rule_id": "A-02",
+      "category": "AMBIGUITY",
+      "aat_pointer": "blocks[].content[].gaiji.resolved",
+      "parser_ir_pointer": "gaiji.resolved",
+      "action": "project",
+      "description": "Observed 56187 occurrences; first_path=blocks[0].content[149].gaiji.resolved. AAT resolved is string (the chosen char); parser-IR resolved is boolean (was it resolved?)"
+    },
+    {
+      "rule_id": "A-03",
+      "category": "AMBIGUITY",
+      "aat_pointer": "blocks[].content[].style",
+      "parser_ir_pointer": "emphasis",
+      "action": "project",
+      "description": "Observed 28492 occurrences; first_path=blocks[3].content[1].style. style inline_container mapped to emphasis; parser-IR does not preserve nested inline container identity"
+    },
+    {
+      "rule_id": "A-04",
+      "category": "AMBIGUITY",
+      "aat_pointer": "blocks[].heading.level",
+      "parser_ir_pointer": "heading.level",
+      "action": "project",
+      "description": "Observed 8530 occurrences; first_path=blocks[1].heading.level. AAT heading.level range 1-3 vs parser-IR 1-6; values fit but domain differs"
+    },
+    {
+      "rule_id": "A-05",
+      "category": "AMBIGUITY",
+      "aat_pointer": "meta.source_encoding",
+      "parser_ir_pointer": "source.encoding",
+      "action": "project",
+      "description": "Observed 3 occurrences; first_path=meta.source_encoding=windows-31j-lossy. source decoding was lossy; parser-IR records only the Shift_JIS source family"
+    },
+    {
+      "rule_id": "A-06",
+      "category": "AMBIGUITY",
+      "aat_pointer": "meta.source_hash",
+      "parser_ir_pointer": "source.work_content_hash",
+      "action": "project",
+      "description": "Observed 17894 occurrences; first_path=meta.source_hash. AAT hashes raw source bytes; parser-IR work_content_hash is content hash; identifier semantics differ"
+    },
+    {
+      "rule_id": "I-01",
+      "category": "INVENTION",
+      "aat_pointer": null,
+      "parser_ir_pointer": "errors[]",
+      "action": "invent",
+      "description": "Observed 17894 occurrences; first_path=(none). parser-IR requires errors[]; AAT has no errors concept -> defaulted empty"
+    },
+    {
+      "rule_id": "I-02",
+      "category": "INVENTION",
+      "aat_pointer": null,
+      "parser_ir_pointer": "source.normalization",
+      "action": "invent",
+      "description": "Observed 17894 occurrences; first_path=(none). parser-IR requires normalization enum; AAT has none -> defaulted 'source'"
+    },
+    {
+      "rule_id": "I-03",
+      "category": "INVENTION",
+      "aat_pointer": null,
+      "parser_ir_pointer": "source.source_path",
+      "action": "invent",
+      "description": "Observed 17894 occurrences; first_path=(none). parser-IR source_path optional; AAT has none -> null"
+    },
+    {
+      "rule_id": "I-04",
+      "category": "INVENTION",
+      "aat_pointer": null,
+      "parser_ir_pointer": "schema_id/schema_hash",
+      "action": "invent",
+      "description": "Observed 17894 occurrences; first_path=(top-level). parser-IR requires schema_id+schema_hash; AAT supplies only version=1"
+    },
+    {
+      "rule_id": "I-05",
+      "category": "INVENTION",
+      "aat_pointer": "blocks[].content[].gaiji.raw_marker",
+      "parser_ir_pointer": "gaiji.raw_marker",
+      "action": "invent",
+      "description": "Observed 56187 occurrences; first_path=blocks[0].content[149].gaiji.raw_marker. AAT has no raw source marker; used description as raw_marker"
+    },
+    {
+      "rule_id": "I-06",
+      "category": "INVENTION",
+      "aat_pointer": "blocks[].content[].ruby.scope",
+      "parser_ir_pointer": "ruby.scope",
+      "action": "invent",
+      "description": "Observed 3548222 occurrences; first_path=blocks[0].content[1].ruby.scope. AAT has no scope field; defaulted to 'explicit'"
+    },
+    {
+      "rule_id": "I-07",
+      "category": "INVENTION",
+      "aat_pointer": "meta.warnings[].code",
+      "parser_ir_pointer": "warnings[].code",
+      "action": "invent",
+      "description": "Observed 94307 occurrences; first_path=meta.warnings[].code. AAT warning has no code -> defaulted 'AAT_WARNING'"
+    },
+    {
+      "rule_id": "I-08",
+      "category": "INVENTION",
+      "aat_pointer": "meta.warnings[].severity",
+      "parser_ir_pointer": "warnings[].severity",
+      "action": "invent",
+      "description": "Observed 94307 occurrences; first_path=meta.warnings[].severity. AAT warning has no severity -> defaulted 'warning'"
+    },
+    {
+      "rule_id": "L-01",
+      "category": "LOSS",
+      "aat_pointer": "blocks[].content[].content[].ruby.reading",
+      "parser_ir_pointer": "(emphasis.text)",
+      "action": "drop",
+      "description": "Observed 5664 occurrences; first_path=blocks[1].content[0].content[6].ruby.reading. style text projection kept ruby base text only; reading not represented inside emphasis.text"
+    },
+    {
+      "rule_id": "L-02",
+      "category": "LOSS",
+      "aat_pointer": "blocks[].content[].gaiji.unicode",
+      "parser_ir_pointer": "gaiji.unicode",
+      "action": "drop",
+      "description": "Observed 56187 occurrences; first_path=blocks[0].content[149].gaiji.unicode. AAT does not separate unicode codepoint from resolved string"
+    },
+    {
+      "rule_id": "L-03",
+      "category": "LOSS",
+      "aat_pointer": "blocks[].heading.content[]=ruby",
+      "parser_ir_pointer": null,
+      "action": "drop",
+      "description": "Observed 4 occurrences; first_path=blocks[1116].heading.content[1]=ruby. non-text inline inside heading flattened to text projection; structure lost"
+    },
+    {
+      "rule_id": "L-04",
+      "category": "LOSS",
+      "aat_pointer": "blocks[].heading.style",
+      "parser_ir_pointer": null,
+      "action": "drop",
+      "description": "Observed 8530 occurrences; first_path=blocks[1].heading.style. heading.style='handled_elsewhere' dropped"
+    },
+    {
+      "rule_id": "L-05",
+      "category": "LOSS",
+      "aat_pointer": "meta.adapter",
+      "parser_ir_pointer": null,
+      "action": "drop",
+      "description": "Observed 17894 occurrences; first_path=meta.adapter. adapter='aozora-rs' dropped; parser-IR carries no producer identity / parse status"
+    },
+    {
+      "rule_id": "L-06",
+      "category": "LOSS",
+      "aat_pointer": "meta.adapter_version",
+      "parser_ir_pointer": null,
+      "action": "drop",
+      "description": "Observed 17894 occurrences; first_path=meta.adapter_version. adapter_version='aozora-rs-adapter 0.1.0 2b4e8d1' dropped; parser-IR carries no producer identity / parse status"
+    },
+    {
+      "rule_id": "L-07",
+      "category": "LOSS",
+      "aat_pointer": "meta.metrics",
+      "parser_ir_pointer": null,
+      "action": "drop",
+      "description": "Observed 17894 occurrences; first_path=meta.metrics. performance/fallback metrics dropped; adapter-fidelity concern not representable"
+    },
+    {
+      "rule_id": "L-08",
+      "category": "LOSS",
+      "aat_pointer": "meta.parse_complete",
+      "parser_ir_pointer": null,
+      "action": "drop",
+      "description": "Observed 17894 occurrences; first_path=meta.parse_complete. parse_complete=True dropped; parser-IR carries no producer identity / parse status"
+    },
+    {
+      "rule_id": "L-09",
+      "category": "LOSS",
+      "aat_pointer": "meta.semantic_summary",
+      "parser_ir_pointer": null,
+      "action": "drop",
+      "description": "Observed 17894 occurrences; first_path=meta.semantic_summary. semantic_summary provenance dropped; adapter-fidelity concern not representable"
+    },
+    {
+      "rule_id": "S-01",
+      "category": "STRUCTURAL",
+      "aat_pointer": "blocks[][block=heading]",
+      "parser_ir_pointer": null,
+      "action": "flatten",
+      "description": "Observed 8530 occurrences; first_path=blocks[1][block=heading]. block container of kind 'heading' has no parser-IR node; boundary + span + style lost, only inlines emitted"
+    },
+    {
+      "rule_id": "S-02",
+      "category": "STRUCTURAL",
+      "aat_pointer": "blocks[][block=paragraph]",
+      "parser_ir_pointer": null,
+      "action": "flatten",
+      "description": "Observed 637088 occurrences; first_path=blocks[0][block=paragraph]. block container of kind 'paragraph' has no parser-IR node; boundary + span + style lost, only inlines emitted"
+    }
+  ],
+  "loss_taxonomy": {
+    "LOSS": {
+      "description": "AAT carries information that parser-IR has no field for.",
+      "default_action": "drop-sidecar",
+      "records_sidecar": true
+    },
+    "INVENTION": {
+      "description": "parser-IR requires a value that AAT does not supply.",
+      "default_action": "invent",
+      "records_sidecar": false
+    },
+    "AMBIGUITY": {
+      "description": "Same concept exists in both schemas but with different semantics or range.",
+      "default_action": "drop-sidecar",
+      "records_sidecar": true
+    },
+    "UNSUPPORTED": {
+      "description": "AAT node kind has no parser-IR representation.",
+      "default_action": "drop-sidecar",
+      "records_sidecar": true
+    },
+    "STRUCTURAL": {
+      "description": "Tree-shape differences force boundary/span loss.",
+      "default_action": "drop-sidecar",
+      "records_sidecar": true
+    }
+  }
+}

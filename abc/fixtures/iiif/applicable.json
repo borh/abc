@@ -1,0 +1,7 @@
+{
+  "work_id": "999000",
+  "title": "Hypothetical facsimile bundle",
+  "status": "applicable",
+  "reason": "Page facsimiles are available; an IIIF Presentation 3.0 manifest is published alongside the TEI.",
+  "derived_manifest": "iiif/manifest.json"
+}

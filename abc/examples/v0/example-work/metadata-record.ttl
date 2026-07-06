@@ -1,0 +1,41 @@
+@prefix abc: <https://w3id.org/abc/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix dcndl: <http://ndl.go.jp/dcndl/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdag2: <http://RDVocab.info/ElementsGr2/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://www.aozora.gr.jp/cards/000879/card127.html>
+  a bibo:Document ;
+  a schema:CreativeWork ;
+  dc:subject "NDC 913"^^dcndl:NDC ;
+  dcterms:available "1997-10-29"^^xsd:date ;
+  dcterms:creator <http://www.aozora.gr.jp/index_pages/person000879.html> ;
+  dcterms:identifier "000127"^^xsd:int ;
+  dcterms:modified "2022-07-16"^^xsd:date ;
+  dcterms:rights <https://creativecommons.org/publicdomain/mark/1.0/> ;
+  dcterms:title [ dcndl:titleTranscription "らしょうもん" ; rdf:value "羅生門" ] ;
+  abc:orthographicStyle "新字新仮名" .
+
+<http://www.aozora.gr.jp/index_pages/person000879.html>
+  a foaf:Person ;
+  rdag2:dateOfBirth "1892-03-01"^^xsd:date ;
+  rdag2:dateOfDeath "1927-07-24"^^xsd:date ;
+  dcterms:identifier "000879"^^xsd:int ;
+  foaf:familyName "芥川" ;
+  foaf:givenName "竜之介" ;
+  foaf:name "芥川 竜之介" ;
+  abc:edtfDateOfBirth "1892-03-01"^^abc:EDTF ;
+  abc:edtfDateOfDeath "1927-07-24"^^abc:EDTF ;
+  abc:familyNameForSort "あくたかわ" ;
+  abc:familyNameReading "あくたがわ" ;
+  abc:familyNameRomaji "Akutagawa" ;
+  abc:givenNameForSort "りゆうのすけ" ;
+  abc:givenNameReading "りゅうのすけ" ;
+  abc:givenNameRomaji "Ryunosuke" .

@@ -1153,25 +1153,45 @@
           vibrato-dictionaries = vibratoDictionaries;
         };
 
-        apps.default = flake-utils.lib.mkApp {
-          drv = abValidator;
-        };
+        apps.default =
+          flake-utils.lib.mkApp {
+            drv = abValidator;
+          }
+          // {
+            meta.description = "Run the ab-validator CLI";
+          };
 
-        apps.aat-oracle-data-schema-smoke = flake-utils.lib.mkApp {
-          drv = aatOracleDataSchemaSmokeShell;
-        };
+        apps.aat-oracle-data-schema-smoke =
+          flake-utils.lib.mkApp {
+            drv = aatOracleDataSchemaSmokeShell;
+          }
+          // {
+            meta.description = "Run the AAT oracle data schema smoke test";
+          };
 
-        apps.aozora2html-rust-parity = flake-utils.lib.mkApp {
-          drv = aozora2htmlRustParityShell;
-        };
+        apps.aozora2html-rust-parity =
+          flake-utils.lib.mkApp {
+            drv = aozora2htmlRustParityShell;
+          }
+          // {
+            meta.description = "Run the aozora2html Rust mapper parity smoke test";
+          };
 
-        apps.ab-aat-to-parser-ir = flake-utils.lib.mkApp {
-          drv = abAatToParserIr;
-        };
+        apps.ab-aat-to-parser-ir =
+          flake-utils.lib.mkApp {
+            drv = abAatToParserIr;
+          }
+          // {
+            meta.description = "Run the AAT to parser-IR conversion CLI";
+          };
 
-        apps.adapter-fidelity-notes-schema-smoke = flake-utils.lib.mkApp {
-          drv = adapterFidelityNotesSchemaSmokeShell;
-        };
+        apps.adapter-fidelity-notes-schema-smoke =
+          flake-utils.lib.mkApp {
+            drv = adapterFidelityNotesSchemaSmokeShell;
+          }
+          // {
+            meta.description = "Run the adapter fidelity notes schema smoke test";
+          };
 
         checks = {
           default = workspaceCheck;

@@ -95,7 +95,9 @@
           (is (not (string/includes? body-text "（古伝説と、シルレルの詩から。）")))
           (is (string/includes? back-text "type=\"source-attribution\""))
           (is (string/includes? back-text "（古伝説と、シルレルの詩から。）"))
-          (is (string/ends-with? plain-text "\n\n（古伝説と、シルレルの詩から。）")))
+          (is (not (string/includes?
+                    plain-text
+                    "（古伝説と、シルレルの詩から。）"))))
         (is (nil? (schema/validation-errors manifest-schema plaintext-manifest)))
         (is (nil? (schema/validation-errors manifest-schema tei-manifest)))
         (is (nil? (schema/validation-errors preservation-schema preservation)))

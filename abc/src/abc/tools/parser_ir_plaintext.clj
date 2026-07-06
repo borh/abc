@@ -10,11 +10,6 @@
 (defn- present-text? [text]
   (seq text))
 
-(defn- append-separated-note [acc key node-text]
-  (if (present-text? node-text)
-    (update acc key conj node-text)
-    acc))
-
 (declare render-node)
 
 (def ^:private max-inline-depth 64)

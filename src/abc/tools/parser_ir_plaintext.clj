@@ -123,14 +123,8 @@
 
 (defn- render-source-note-node
   ([acc node] (render-source-note-node acc node 0))
-  ([acc node _depth]
-   (if-not (present-text? (get node "text"))
-     (mark-omitted acc "source-note")
-     (case (get node "placement")
-       "front" (append-separated-note acc :front_notes (get node "text"))
-       "body" (append-text acc (get node "text"))
-       "back" (append-separated-note acc :source_notes (get node "text"))
-       (mark-omitted acc "source-note")))))
+  ([acc _node _depth]
+   (mark-omitted acc "source-note")))
 
 (def ^:private node-renderers
   {"text" render-text-node

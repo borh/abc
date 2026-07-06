@@ -144,6 +144,11 @@ After ABC lands the policy/validation work, send ab-validator:
 - whether terminal provenance and colophon metadata need a new ab-validator
   measurement split
 
-ab-validator will then sync ABC schema/profile snapshots, regenerate the source
-authority and IR publication coverage reports, and assert that the full mapping
-goal still reports complete coverage.
+ab-validator will then sync ABC schema/profile snapshots, regenerate:
+
+- `docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json`
+- `docs/superpowers/reports/2026-07-04-source-authority-representability.md`
+- `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json`
+- `docs/superpowers/reports/2026-07-06-ir-publication-coverage.md`
+
+Then assert that the full mapping goal still reports complete coverage.

@@ -46,16 +46,34 @@
 
 (deftest render-string-test
   (testing "plaintext renders visible text policy for every current node type"
-    (is (= "\nH\nABX※［＃y］CD\n\nALTCAPQ\n\nSRC"
+    (is (= "\nH\nABX※［＃y］CD\n\nALTCAPQ"
            (plaintext/render-string all-node-parser-ir)))))
 
 (deftest source-note-back-matter-is-separated-test
-  (testing "back-placement source notes are rendered after the body text"
-    (is (= "Body\n\n（古伝説と、シルレルの詩から。）"
-           (plaintext/render-string
+  (testing "front/back/body source notes are metadata and do not enter plaintext"
+    (is (= {:text "Body"
+            :node_counts {"text" 1 "source-note" 3}
+            :omitted [{:type "source-note" :policy "omitted"}
+                      {:type "source-note" :policy "omitted"}
+                      {:type "source-note" :policy "omitted"}]}
+           (plaintext/render
             {"nodes" [{"type" "text" "span" {"start" 0 "end" 4} "text" "Body"}
                       {"type" "source-note"
                        "span" {"start" 4 "end" 20}
+                       "text" "入力者注"
+                       "note_type" "transcriber-note"
+                       "placement" "front"
+                       "classification" "direct"
+                       "source_pointer" "blocks[0]"}
+                      {"type" "source-note"
+                       "span" {"start" 20 "end" 32}
+                       "text" "本文注"
+                       "note_type" "bibliographic-note"
+                       "placement" "body"
+                       "classification" "direct"
+                       "source_pointer" "blocks[1]"}
+                      {"type" "source-note"
+                       "span" {"start" 32 "end" 72}
                        "text" "（古伝説と、シルレルの詩から。）"
                        "note_type" "source-attribution"
                        "placement" "back"
@@ -173,6 +191,8 @@
   (testing "render returns omitted node notes"
     (let [result (plaintext/render all-node-parser-ir)]
       (is (= "editor-note" (:type (first (:omitted result)))))
+      (is (some #(= {:type "source-note" :policy "omitted"} %)
+                (:omitted result)))
       (is (= {"heading" 1 "text" 1 "ruby" 1 "gaiji" 2 "editor-note" 1
               "emphasis" 1 "indentation" 1 "page-break" 1 "line-break" 1
               "image" 1 "caption" 1 "quote" 1 "source-note" 1}

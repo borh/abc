@@ -120,7 +120,7 @@
       "additionalProperties": false,
       "required": ["role", "hash", "media_type"],
       "properties": {
-        "role": { "type": "string", "enum": ["warnings", "errors", "validation-result", "rdf-view", "index-entry", "mapping-divergence", "preservation"] },
+        "role": { "type": "string", "enum": ["warnings", "errors", "validation-result", "rdf-view", "index-entry", "mapping-divergence", "preservation", "source-region-coverage"] },
         "hash": { "$ref": "#/$defs/hash" },
         "media_type": { "type": "string" },
         "path_hint": { "type": ["string", "null"] }

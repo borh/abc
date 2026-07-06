@@ -18,7 +18,7 @@
         "image": "append alt when present, otherwise omit and report",
         "caption": "append text",
         "quote": "append text when present, otherwise omit and report",
-        "source-note": "append front/back source notes outside body text; append body source notes inline"
+        "source-note": "omit source-note metadata; plaintext is visible body text only"
       }
     },
     "tei": {

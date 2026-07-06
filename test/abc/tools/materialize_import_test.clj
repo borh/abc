@@ -35,7 +35,7 @@
                                      "c" "quote\"slash\\"}))))
 
 (deftest schema-hash-test
-  (is (= "sha256:c8492e91c2fe3af48e3efe92b8a83b1f0a51775186805764877bbec8835b510e"
+  (is (= "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1"
          (manifest/schema-hash "schemas/manifest.schema.json")))
   (is (not= (str "sha256:" (files/sha256-file "schemas/manifest.schema.json"))
             (manifest/schema-hash "schemas/manifest.schema.json"))))
@@ -100,6 +100,12 @@
                 "media_type" "application/json"
                 "path_hint" "divergence.json"}
                (first (filter #(= "mapping-divergence" (get % "role"))
+                              (get parser-manifest "sidecars")))))
+        (is (= {"role" "source-region-coverage"
+                "hash" (str "sha256:" (files/sha256-file "examples/ab-validator-output/source-region-coverage.json"))
+                "media_type" "application/json"
+                "path_hint" "source-region-coverage.json"}
+               (first (filter #(= "source-region-coverage" (get % "role"))
                               (get parser-manifest "sidecars")))))
         (is (= (str "sha256:" (files/sha256-file "examples/ab-validator-output/parser-ir.json"))
                (get-in parser-manifest ["content" "content_hash"])))

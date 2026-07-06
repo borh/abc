@@ -4,6 +4,7 @@
             [abc.tools.malli :as am]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.parser-evidence :as parser-evidence]
+            [abc.tools.parser-ir-plaintext :as plaintext]
             [abc.tools.schema :as schema]
             [abc.tools.shacl :as shacl]
             [abc.tools.validate-design-bundle :as validate]
@@ -61,6 +62,68 @@
 
 (def ^:private parser-ir-schema-hash
   legacy-parser-ir-schema-hash)
+
+(def ^:private valid-source-region-coverage
+  {"schema_version" "aozora-source-region-coverage-v1"
+   "gate_status" "SOURCE_AUTHORITY_GATE_PASS"
+   "works_scanned" 17894
+   "unknown_markers_total" 14886
+   "unallowlisted_unknown_markers_total" 0
+   "representability" {"typed_occurrences" 4570071
+                       "raw_preserved_occurrences" 46382
+                       "out_of_body_occurrences" 950
+                       "malformed_noise_occurrences" 13936
+                       "unsupported_occurrences" 0
+                       "needs_research_occurrences" 0}
+   "source_region_coverage" {"body_typed_occurrences" 4570071
+                             "body_raw_preserved_occurrences" 46382
+                             "source_apparatus_occurrences" 13920
+                             "front_matter_occurrences" 14627
+                             "back_matter_occurrences" 243
+                             "malformed_source_occurrences" 16
+                             "unsupported_body_markup_occurrences" 0
+                             "unknown_region_occurrences" 0
+                             "unknown_unreviewed_occurrences" 0}})
+
+(def ^:private valid-source-region-policy
+  {"policy_id" "https://w3id.org/abc/policies/source-region-publication-v0"
+   "policy_version" "0.1.0"
+   "dispositions" [{"source_class" "notation_legend"
+                    "target_class" "tei_policy_projection"
+                    "tei_target" "encodingDesc/editorialDecl"
+                    "custom_sidecar" true
+                    "plaintext_projection" "omit"
+                    "measurement_status" "measured"}
+                   {"source_class" "notation_placeholder"
+                    "target_class" "custom_sidecar"
+                    "tei_target" nil
+                    "custom_sidecar" true
+                    "plaintext_projection" "omit"
+                    "measurement_status" "measured"}
+                   {"source_class" "body_end_boundary"
+                    "target_class" "custom_sidecar"
+                    "tei_target" nil
+                    "custom_sidecar" true
+                    "plaintext_projection" "omit"
+                    "measurement_status" "measured"}
+                   {"source_class" "terminal_provenance"
+                    "target_class" "tei_policy_projection"
+                    "tei_target" "text/back/div[@type='source']"
+                    "custom_sidecar" true
+                    "plaintext_projection" "omit"
+                    "measurement_status" "needs_measurement_split"}
+                   {"source_class" "colophon_metadata"
+                    "target_class" "tei_policy_projection"
+                    "tei_target" "teiHeader/sourceDesc"
+                    "custom_sidecar" true
+                    "plaintext_projection" "omit"
+                    "measurement_status" "needs_measurement_split"}
+                   {"source_class" "malformed_source"
+                    "target_class" "diagnostic"
+                    "tei_target" nil
+                    "custom_sidecar" true
+                    "plaintext_projection" "omit"
+                    "measurement_status" "measured"}]})
 
 (def ^:private complete-manifest-inputs
   {"producer" "ab-validator"
@@ -188,6 +251,100 @@
                      "schemas/aat-parser-ir-divergence-bundle.schema.json"]))
         (is (= {:entries []} @registry-checked))
         (is (= {:entries []} @parser-evidence-checked))))))
+
+(deftest validate-json-schemas-includes-source-region-coverage-contract-test
+  (testing "design-bundle schema pass validates the source-region coverage contract"
+    (let [checked-paths (atom [])]
+      (with-redefs [validate/schema-valid! (fn [_schema path]
+                                             (swap! checked-paths conj path)
+                                             nil)
+                    validate/validate-json! (fn [& _args] nil)
+                    validate/validate-json-lines! (fn [& _args] nil)
+                    validate/validation-errors (fn [_schema value]
+                                                 (if (and (map? value)
+                                                          (contains? value "rule_id"))
+                                                   nil
+                                                   [:expected-error]))
+                    compat/load-registry (fn [] {:entries []})
+                    compat/validate-registry! (fn [_registry] :ok)
+                    parser-evidence/load-index (fn [] {:entries []})
+                    parser-evidence/validate-index! (fn [_index] :ok)]
+        (validate/validate-json-schemas! [])
+        (is (some #{"schemas/source-region-coverage.schema.json"}
+                  @checked-paths))))))
+
+(deftest source-region-coverage-errors-test
+  (testing "accepts the current ab-validator source-region coverage contract"
+    (is (empty? (validate/source-region-coverage-errors
+                 valid-source-region-coverage
+                 valid-source-region-policy))))
+  (testing "requires the v1 schema version and passing source authority gate"
+    (is (seq (validate/source-region-coverage-errors
+              (assoc valid-source-region-coverage
+                     "schema_version" "old")
+              valid-source-region-policy)))
+    (is (seq (validate/source-region-coverage-errors
+              (assoc valid-source-region-coverage
+                     "gate_status" "SOURCE_AUTHORITY_GATE_BLOCKED")
+              valid-source-region-policy))))
+  (testing "blocks unreviewed, unknown-region, or unsupported body source markup"
+    (doseq [path [["unallowlisted_unknown_markers_total"]
+                  ["source_region_coverage" "unsupported_body_markup_occurrences"]
+                  ["source_region_coverage" "unknown_region_occurrences"]
+                  ["source_region_coverage" "unknown_unreviewed_occurrences"]]]
+      (is (seq (validate/source-region-coverage-errors
+                (assoc-in valid-source-region-coverage path 1)
+                valid-source-region-policy))
+          (str "expected source-region gate to reject " path))))
+  (testing "keeps legacy aliases honest during ABC migration"
+    (is (seq (validate/source-region-coverage-errors
+              (assoc-in valid-source-region-coverage
+                        ["representability" "malformed_noise_occurrences"]
+                        1)
+              valid-source-region-policy)))
+    (is (seq (validate/source-region-coverage-errors
+              (assoc-in valid-source-region-coverage
+                        ["representability" "unsupported_occurrences"]
+                        1)
+              valid-source-region-policy)))))
+
+(deftest source-region-policy-errors-test
+  (testing "requires a disposition for every source-apparatus class ABC owns"
+    (is (seq (validate/source-region-policy-errors
+              (update valid-source-region-policy
+                      "dispositions"
+                      #(remove (fn [row]
+                                 (= "malformed_source" (get row "source_class")))
+                               %))))))
+  (testing "requires plaintext omission for source apparatus and diagnostics"
+    (is (seq (validate/source-region-policy-errors
+              (assoc-in valid-source-region-policy
+                        ["dispositions" 0 "plaintext_projection"]
+                        "include")))))
+  (testing "requires terminal provenance and colophon rows to declare the current measurement split limitation"
+    (is (seq (validate/source-region-policy-errors
+              (assoc-in valid-source-region-policy
+                        ["dispositions" 3 "measurement_status"]
+                        "measured"))))))
+
+(deftest source-region-publication-fixture-test
+  (testing "fixture covers front apparatus, body text, body-end boundary, and back matter plaintext omission"
+    (let [fixture (files/read-json
+                   "fixtures/source-region/valid/source-apparatus-publication-bundle.json")
+          coverage (get fixture "source_region_coverage_report")
+          policy (get fixture "source_region_publication_policy")
+          parser-ir (get fixture "parser_ir")]
+      (is (empty? (validate/source-region-coverage-errors coverage policy)))
+      (is (= #{"notation_legend"
+               "notation_placeholder"
+               "body_end_boundary"
+               "terminal_provenance"
+               "colophon_metadata"
+               "malformed_source"}
+             (set (map #(get % "source_class")
+                       (get policy "dispositions")))))
+      (is (= (get fixture "expected_plaintext")
+             (plaintext/render-string parser-ir))))))
 
 (deftest comparison-report-schema-test
   (testing "accepts a well-formed comparison report"

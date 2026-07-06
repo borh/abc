@@ -588,7 +588,7 @@
     },
     "coverage_summary": {
       "path": "docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json",
-      "hash": "sha256:8056b0a4b917058a1dcdfa4b4047a1ca71cd1c725ea1f8c6fea15af46ff36a36",
+      "hash": "sha256:41fb3b337db38227d03e306457ab2d0fe7a5643bbcfac611df848a8e19cfa683",
       "hash_basis": "canonical_json_without_next_work_dashboard"
     },
     "matrix_summary": {
@@ -609,7 +609,7 @@
     },
     "source_disposition_summary": {
       "path": "docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json",
-      "hash": "sha256:d6581c0eb0e03678514b0a7b614c2b6dd096dd0904402b98b47d70e5d60aa7ae"
+      "hash": "sha256:e607da37f55a6d014c88218899bd57b12744d0a694a99dffc76622c8ab31943d"
     },
     "text_policy_summary": {
       "path": "docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json",

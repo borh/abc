@@ -16,7 +16,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 from reports.lib.hashing import file_sha256 as sha256_file
 from reports.lib.hashing import sha256_hex
 from reports.lib.io import read_json, write_json
-from reports.lib.paths import display_path, repo_root
+from reports.lib.paths import display_path, repo_root, tei_p5_root as configured_tei_p5_root
 
 SCHEMA_VERSION = "aozora-publication-next-work-v1"
 VERDICT_OPEN = "AOZORA_PUBLICATION_NEXT_WORK_OPEN"
@@ -64,6 +64,8 @@ def display_tei_p5_root(path: pathlib.Path) -> str:
     resolved = path.resolve()
     parts = resolved.parts
     if len(parts) >= 4 and parts[-4:] == ("abc", "references", "TEI", "P5"):
+        return "abc/references/TEI/P5"
+    if (resolved / "Source" / "Specs").is_dir():
         return "abc/references/TEI/P5"
     return display_path(path)
 
@@ -350,15 +352,7 @@ def logical_abc_reference(reference: str) -> str:
 
 
 def default_tei_p5_root() -> pathlib.Path:
-    candidates = [
-        (REPO_ROOT.parent / "abc" / "references" / "TEI" / "P5").resolve(),
-    ]
-    if REPO_ROOT.parent.name == ".worktrees":
-        candidates.append((REPO_ROOT.parents[2] / "abc" / "references" / "TEI" / "P5").resolve())
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    return candidates[0]
+    return configured_tei_p5_root()
 
 
 def resolve_tei_reference(reference: str, tei_p5_root: pathlib.Path) -> pathlib.Path:

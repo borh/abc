@@ -13,6 +13,11 @@
       url = "path:./ab-validator";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    tei-p5 = {
+      url = "github:TEIC/TEI";
+      flake = false;
+    };
   };
 
   outputs =
@@ -21,6 +26,7 @@
       nixpkgs,
       abc,
       ab-validator,
+      tei-p5,
       ...
     }:
     let
@@ -46,6 +52,23 @@
           flake.${outputName}.${system}
         else
           { };
+
+      teiP5Reference =
+        pkgs:
+        pkgs.runCommand "tei-p5-reference"
+          {
+            src = tei-p5;
+          }
+          ''
+            mkdir -p "$out"
+            for path in "$src"/P5/*; do
+              ln -s "$path" "$out/$(basename "$path")"
+            done
+
+            test -f "$out/Source/Specs/ruby.xml"
+            test -f "$out/Source/Specs/hi.xml"
+            test -f "$out/Source/Guidelines/en/HD-Header.xml"
+          '';
 
       monorepoScripts =
         pkgs:
@@ -123,6 +146,7 @@
         prefixAttrs "abc-" (optionalOutputAttrs abc "checks" system)
         // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "checks" system)
         // {
+          monorepo-tei-p5-reference = teiP5Reference pkgs;
           monorepo-schema-drift =
             pkgs.runCommand "soranoha-monorepo-schema-drift"
               {
@@ -143,8 +167,14 @@
 
       packages = forAllSystems (
         system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
         prefixAttrs "abc-" (optionalOutputAttrs abc "packages" system)
         // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "packages" system)
+        // {
+          tei-p5-reference = teiP5Reference pkgs;
+        }
       );
 
       devShells = forAllSystems (

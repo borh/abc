@@ -43,6 +43,12 @@ dictionaries are nix-only flake outputs; `just dictionary-build-all` populates
 `dictionary/compiled/` with symlinks into the nix store, so the monorepo needs
 no reference to `vibrato-pipe`.
 
+Additional delta (2026-07-07): TEI P5 references are pinned by the root flake
+as `.#tei-p5-reference`. The `ab-validator` publication next-work report still
+uses a local `abc/references/TEI/P5` checkout when present, but falls back to
+the pinned flake output so TEI dossier validation no longer depends on an
+untracked sibling checkout.
+
 ## Validation Commands
 
 Run from the monorepo root:
@@ -53,6 +59,7 @@ just schema-drift
 just root-flake-check-no-build
 just check-no-build
 just validate-migration
+nix build .#tei-p5-reference --no-link
 nix run .#schema-drift
 nix run .#split-import-parity-audit
 ```
@@ -71,6 +78,8 @@ What they prove:
 - `validate-migration`: runs monorepo schema/policy drift and root no-build
   validation together. Split-repo parity is intentionally not part of this
   default gate after the monorepo becomes the working source tree.
+- `nix build .#tei-p5-reference --no-link`: verifies the pinned TEI P5
+  reference tree exposes the files cited by the publication mapping dossiers.
 
 The root flake prefixes component outputs instead of renaming them:
 
@@ -85,6 +94,8 @@ Live transition code should resolve cross-component paths through explicit roots
 
 - `AB_WORKSPACE_ROOT` for the monorepo root
 - `AB_ABC_ROOT` when an operator intentionally uses a non-default ABC checkout
+- `AB_TEI_P5_ROOT` when an operator intentionally uses a non-default TEI P5
+  reference checkout
 - `AB_DB_ROOT` for local large corpus data under `/db`
 
 Historical reports and dated plans may still mention `/home/bor/Projects/...`,

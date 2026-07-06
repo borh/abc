@@ -51,6 +51,13 @@ def policy_dir() -> Path:
     return repo_root() / "data" / "abc-schemas" / "data"
 
 
+def tei_p5_root() -> Path:
+    """Return the configured TEI P5 reference root."""
+    if value := os.environ.get("AB_TEI_P5_ROOT"):
+        return Path(value).resolve()
+    return (abc_root() / "references" / "TEI" / "P5").resolve()
+
+
 def display_path(path: Path) -> str:
     """Return a stable repo/workspace-relative path for report JSON."""
     resolved = path.resolve()

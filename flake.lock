@@ -359,7 +359,8 @@
       "inputs": {
         "ab-validator": "ab-validator",
         "abc": "abc",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "tei-p5": "tei-p5"
       }
     },
     "rust-overlay": {
@@ -411,6 +412,22 @@
       "original": {
         "owner": "TEI-EAJ",
         "repo": "aozora_tei",
+        "type": "github"
+      }
+    },
+    "tei-p5": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1783277870,
+        "narHash": "sha256-oxGOIRhts/qHOV5X2SmH+9ULwNAKVk7fakbH8joARJA=",
+        "owner": "TEIC",
+        "repo": "TEI",
+        "rev": "47e376348f0b560bd17e5863f4654f87d36e1fc9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "TEIC",
+        "repo": "TEI",
         "type": "github"
       }
     }

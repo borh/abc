@@ -26,6 +26,7 @@ complete_text_summary_json="$out_dir/next-work.complete-text.summary.json"
 complete_adapter_summary_json="$out_dir/next-work.complete-adapter.summary.json"
 complete_all_summary_json="$out_dir/next-work.complete-all.summary.json"
 missing_root_summary_json="$out_dir/next-work.missing-root.summary.json"
+env_tei_root_summary_json="$out_dir/next-work.env-tei-root.summary.json"
 report_md="$out_dir/next-work.md"
 
 cat > "$source_summary" <<'JSON'
@@ -642,3 +643,21 @@ python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
   --report-md "$out_dir/next-work.missing-root.md"
 
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_root_exists == false and .evidence.tei_p5_reference_file_count == 2 and (.evidence.unverified_tei_p5_references | length) == 2 and .evidence.missing_tei_p5_references == [])' "$missing_root_summary_json" >/dev/null
+
+AB_TEI_P5_ROOT="$tei_p5_root" python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+  --source-summary "$source_summary" \
+  --coverage-summary "$coverage_summary" \
+  --matrix-summary "$matrix_summary" \
+  --conversion-summary "$conversion_summary" \
+  --source-reference-summary "$reference_summary" \
+  --performance-report "$performance_md" \
+  --source-disposition-summary "$source_disposition_summary" \
+  --text-policy-summary "$text_policy_summary" \
+  --adapter-worksets-summary "$adapter_worksets_summary" \
+  --dossier-dir "$dossier_dir" \
+  --parser-acceptance-spec "$parser_acceptance_spec" \
+  --summary-json "$env_tei_root_summary_json" \
+  --report-md "$out_dir/next-work.env-tei-root.md"
+
+jq -e '.evidence_inputs.tei_p5_root.exists == true' "$env_tei_root_summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_root_exists == true and .evidence.tei_p5_reference_file_count == 2 and .evidence.unverified_tei_p5_references == [])' "$env_tei_root_summary_json" >/dev/null

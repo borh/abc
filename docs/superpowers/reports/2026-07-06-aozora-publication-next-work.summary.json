@@ -71,7 +71,37 @@
       "owner": "ab-validator+abc",
       "status": "open",
       "evidence": {
-        "reason": "front/back apparatus classes need disposition samples and policy confirmation"
+        "verdict": "SOURCE_REGION_DISPOSITION_SAMPLES_READY",
+        "classes_total": 7,
+        "admitted_classes": [
+          "body_end_boundary",
+          "colophon_metadata",
+          "malformed_source",
+          "notation_legend",
+          "notation_placeholder",
+          "terminal_provenance"
+        ],
+        "admitted_count": 6,
+        "policy_needed_classes": [
+          "letter_address_origin"
+        ],
+        "policy_needed_count": 1,
+        "evidence_needed_classes": [
+          "letter_address_origin"
+        ],
+        "status_counts": {
+          "admitted": 6,
+          "policy_needed": 1
+        },
+        "measured_occurrences_by_class": {
+          "body_end_boundary": 90268,
+          "colophon_metadata": 89416,
+          "letter_address_origin": 0,
+          "malformed_source": 16,
+          "notation_legend": 13920,
+          "notation_placeholder": 14627,
+          "terminal_provenance": 609
+        }
       }
     },
     {
@@ -81,7 +111,18 @@
       "evidence": {
         "different_rows": 271,
         "generated_contains_tei_eaj_rows": 6,
-        "tei_eaj_contains_generated_rows": 1
+        "tei_eaj_contains_generated_rows": 1,
+        "schema_version": "parser-ir-text-policy-delta-v1",
+        "counts_by_cause": {
+          "adapter_text_loss": 55,
+          "body_visible_layout_policy": 51,
+          "front_back_source_region_policy": 48,
+          "ruby_or_parenthetical_policy": 63,
+          "tei_eaj_editorial_or_enrichment": 48,
+          "unknown_text_delta": 6
+        },
+        "source_markup_backed_blockers": 223,
+        "calibration_only_rows": 7
       }
     },
     {
@@ -101,7 +142,20 @@
           "aligned",
           "source_note_back_routing",
           "page_break_projection"
-        ]
+        ],
+        "schema_version": "adapter-fidelity-worksets-v1",
+        "worksets": {
+          "adapter_collapsed": 67,
+          "adapter_over_segmented": 127,
+          "adapter_raw_only": 2,
+          "adapter_under_segmented": 14,
+          "converter_paragraph_mismatch": 8
+        },
+        "excluded_counts": {
+          "aligned": 60,
+          "page_break_projection": 3,
+          "source_note_back_routing": 4
+        }
       }
     },
     {
@@ -109,7 +163,71 @@
       "owner": "ab-validator+abc",
       "status": "open",
       "evidence": {
-        "reason": "feature-family dossiers must pin TEI P5 target, ABC extension, sidecar, diagnostic, or body-visible-text-only disposition"
+        "dossier_count": 11,
+        "status_counts": {
+          "adapter-fidelity-needed": 1,
+          "admitted": 3,
+          "diagnostic-only": 1,
+          "policy-needed": 4,
+          "schema-needed": 2
+        },
+        "dossiers": [
+          {
+            "name": "emphasis-style",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/emphasis-style.md",
+            "status": "admitted"
+          },
+          {
+            "name": "gaiji",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/gaiji.md",
+            "status": "admitted"
+          },
+          {
+            "name": "images-figures-captions",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/images-figures-captions.md",
+            "status": "policy-needed"
+          },
+          {
+            "name": "kunten",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/kunten.md",
+            "status": "schema-needed"
+          },
+          {
+            "name": "layout-indentation",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/layout-indentation.md",
+            "status": "policy-needed"
+          },
+          {
+            "name": "malformed-source-diagnostics",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/malformed-source-diagnostics.md",
+            "status": "diagnostic-only"
+          },
+          {
+            "name": "page-line-breaks",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/page-line-breaks.md",
+            "status": "policy-needed"
+          },
+          {
+            "name": "paragraphs-headings",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/paragraphs-headings.md",
+            "status": "adapter-fidelity-needed"
+          },
+          {
+            "name": "ruby",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/ruby.md",
+            "status": "admitted"
+          },
+          {
+            "name": "source-apparatus-front-back",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/source-apparatus-front-back.md",
+            "status": "policy-needed"
+          },
+          {
+            "name": "warigaki",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/warigaki.md",
+            "status": "schema-needed"
+          }
+        ]
       }
     },
     {
@@ -117,7 +235,11 @@
       "owner": "ab-validator",
       "status": "open",
       "evidence": {
-        "reason": "future parser work needs measured acceptance criteria before replacing parser comparison evidence"
+        "path": "docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md",
+        "hash": "sha256:78daefe231447e9943bacbe2e32c97c3727ab9abb427ee794533dbc3ff07cbc8",
+        "title": "Comprehensive Parser Acceptance Criteria",
+        "spec_status": "Draft",
+        "required_evidence_inputs": 6
       }
     }
   ],
@@ -193,6 +315,25 @@
     "performance_report": {
       "path": "docs/superpowers/reports/2026-07-04-parser-performance-measurement.md",
       "hash": "sha256:4603fc0f3f175dc2524e0ac1b4f312df020cecfda5728cc8fbfe04f0337d49cd"
+    },
+    "source_disposition_summary": {
+      "path": "docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json",
+      "hash": "sha256:87f777d8734d80c2d8ffa6a7ae65748db87594d56101a398e3d5c5d03e557a23"
+    },
+    "text_policy_summary": {
+      "path": "docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json",
+      "hash": "sha256:b32e31b709a0cf93ef0f3c6b95712899366719efcf0ee725159e03b7ad1c4e38"
+    },
+    "adapter_worksets_summary": {
+      "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.summary.json",
+      "hash": "sha256:5a12a6fff7f4ee4dcf6d124747345dd3e4e5104e1b9ea62c9f5b20d43767a54a"
+    },
+    "dossier_dir": {
+      "path": "docs/superpowers/specs/tei-p5-mapping-dossiers"
+    },
+    "parser_acceptance_spec": {
+      "path": "docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md",
+      "hash": "sha256:78daefe231447e9943bacbe2e32c97c3727ab9abb427ee794533dbc3ff07cbc8"
     }
   }
 }

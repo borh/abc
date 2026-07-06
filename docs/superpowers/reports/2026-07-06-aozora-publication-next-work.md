@@ -13,10 +13,22 @@ Verdict: `AOZORA_PUBLICATION_NEXT_WORK_OPEN`
 ## Next Work Items
 
 - `source_region_disposition_samples` (ab-validator+abc): `open`
+  - classes_total=7, admitted=6, policy_needed=1
+  - policy_needed_classes=["letter_address_origin"]
+  - evidence_needed_classes=["letter_address_origin"]
 - `text_policy_calibration` (ab-validator+abc): `open`
+  - different_rows=271, source_markup_backed_blockers=223, calibration_only_rows=7
+  - counts_by_cause={"adapter_text_loss": 55, "body_visible_layout_policy": 51, "front_back_source_region_policy": 48, "ruby_or_parenthetical_policy": 63, "tei_eaj_editorial_or_enrichment": 48, "unknown_text_delta": 6}
 - `adapter_fidelity_worksets` (ab-validator): `open`
+  - adapter_distortion_rows=218
+  - worksets={"adapter_collapsed": 67, "adapter_over_segmented": 127, "adapter_raw_only": 2, "adapter_under_segmented": 14, "converter_paragraph_mismatch": 8}
+  - excluded_counts={"aligned": 60, "page_break_projection": 3, "source_note_back_routing": 4}
 - `tei_p5_mapping_dossiers` (ab-validator+abc): `open`
+  - dossier_count=11
+  - status_counts={"adapter-fidelity-needed": 1, "admitted": 3, "diagnostic-only": 1, "policy-needed": 4, "schema-needed": 2}
 - `parser_acceptance_criteria` (ab-validator): `open`
+  - spec=docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md
+  - spec_status=Draft, required_evidence_inputs=6
 
 ## Parser Lanes
 

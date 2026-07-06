@@ -11,6 +11,11 @@ matrix_summary="$out_dir/matrix.json"
 conversion_summary="$out_dir/conversion.json"
 reference_summary="$out_dir/reference.json"
 performance_md="$out_dir/performance.md"
+source_disposition_summary="$out_dir/source-disposition.json"
+text_policy_summary="$out_dir/text-policy.json"
+adapter_worksets_summary="$out_dir/adapter-worksets.json"
+dossier_dir="$out_dir/dossiers"
+parser_acceptance_spec="$out_dir/parser-acceptance.md"
 summary_json="$out_dir/next-work.summary.json"
 report_md="$out_dir/next-work.md"
 
@@ -109,6 +114,88 @@ cat > "$performance_md" <<'MD'
 DNF is useful signal.
 MD
 
+cat > "$source_disposition_summary" <<'JSON'
+{
+  "schema_version": "source-region-disposition-samples-v1",
+  "verdict": "SOURCE_REGION_DISPOSITION_SAMPLES_OPEN",
+  "classes": [
+    {
+      "source_class": "terminal_provenance",
+      "status": "admitted",
+      "measured_occurrences": 3
+    },
+    {
+      "source_class": "letter_address_origin",
+      "status": "policy_needed",
+      "measurement_status": "evidence_needed"
+    }
+  ]
+}
+JSON
+
+cat > "$text_policy_summary" <<'JSON'
+{
+  "schema_version": "parser-ir-text-policy-delta-v1",
+  "total_different_rows": 9,
+  "counts_by_cause": {
+    "ruby_or_parenthetical_policy": 2,
+    "front_back_source_region_policy": 3,
+    "body_visible_layout_policy": 1,
+    "adapter_text_loss": 2,
+    "tei_eaj_editorial_or_enrichment": 1,
+    "unknown_text_delta": 0
+  },
+  "source_markup_backed_blockers": [{"row_id": "r1"}, {"row_id": "r2"}],
+  "calibration_only_rows": [{"row_id": "r3"}]
+}
+JSON
+
+cat > "$adapter_worksets_summary" <<'JSON'
+{
+  "schema_version": "adapter-fidelity-worksets-v1",
+  "worksets": {
+    "adapter_over_segmented": {"count": 4},
+    "adapter_collapsed": {"count": 3},
+    "adapter_under_segmented": {"count": 1},
+    "converter_paragraph_mismatch": {"count": 1},
+    "adapter_raw_only": {"count": 1}
+  },
+  "excluded_counts": {
+    "aligned": 2,
+    "source_note_back_routing": 5,
+    "page_break_projection": 6
+  }
+}
+JSON
+
+mkdir -p "$dossier_dir"
+cat > "$dossier_dir/ruby.md" <<'MD'
+# Ruby
+
+Status: admitted
+MD
+cat > "$dossier_dir/warigaki.md" <<'MD'
+# Warigaki
+
+Status: schema-needed
+MD
+cat > "$dossier_dir/layout-indentation.md" <<'MD'
+# Layout And Indentation
+
+Status: policy-needed
+MD
+
+cat > "$parser_acceptance_spec" <<'MD'
+# Comprehensive Parser Acceptance Criteria
+
+Status: Draft
+
+## Required Evidence Inputs
+
+- source authority
+- parser lanes
+MD
+
 python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \
   --coverage-summary "$coverage_summary" \
@@ -116,6 +203,11 @@ python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
   --conversion-summary "$conversion_summary" \
   --source-reference-summary "$reference_summary" \
   --performance-report "$performance_md" \
+  --source-disposition-summary "$source_disposition_summary" \
+  --text-policy-summary "$text_policy_summary" \
+  --adapter-worksets-summary "$adapter_worksets_summary" \
+  --dossier-dir "$dossier_dir" \
+  --parser-acceptance-spec "$parser_acceptance_spec" \
   --summary-json "$summary_json" \
   --report-md "$report_md"
 
@@ -126,9 +218,15 @@ jq -e '.completed_gates[] | select(.id == "source_authority" and .status == "com
 jq -e '.completed_gates[] | select(.id == "source_authority" and .evidence.counter_source == "source_region_coverage")' "$summary_json" >/dev/null
 jq -e '([.parser_lanes[].adapter] | sort) == (["aozora", "aozora-epub3", "aozora-rs", "aozora2", "aozora2html"] | sort)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" and .owner == "ab-validator+abc")' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" and .evidence.classes_total == 2 and .evidence.policy_needed_classes == ["letter_address_origin"])' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.different_rows == 9)' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.counts_by_cause.front_back_source_region_policy == 3 and .evidence.source_markup_backed_blockers == 2)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evidence.adapter_distortion_rows == 10)' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evidence.worksets.adapter_collapsed == 3 and .evidence.excluded_counts.page_break_projection == 6)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and (.evidence.included_buckets | sort) == (["adapter_collapsed", "adapter_over_segmented", "adapter_raw_only", "adapter_under_segmented", "converter_paragraph_mismatch"] | sort))' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and (.evidence.excluded_buckets | sort) == (["aligned", "page_break_projection", "source_note_back_routing"] | sort))' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.dossier_count == 3 and .evidence.status_counts."schema-needed" == 1)' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "parser_acceptance_criteria" and .evidence.spec_status == "Draft" and .evidence.required_evidence_inputs == 2)' "$summary_json" >/dev/null
 jq -e '.calibration_only_items[] | select(.id == "tei_eaj_editorial_enrichment")' "$summary_json" >/dev/null
 rg -n "Aozora Publication Next Work" "$report_md" >/dev/null
+rg -n "letter_address_origin|front_back_source_region_policy|adapter_collapsed|schema-needed|Comprehensive Parser Acceptance Criteria" "$report_md" >/dev/null

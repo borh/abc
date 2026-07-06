@@ -245,7 +245,7 @@ The model carries no training-provenance metadata; verify its source before trus
             default_value_t = ab_morph_run::WarehouseFeatureProfile::Core
         )]
         feature_profile: ab_morph_run::WarehouseFeatureProfile,
-        #[arg(long, value_enum, default_value_t = ab_morph_run::RankScope::WithinKind)]
+        #[arg(long, value_enum, default_value_t = ab_morph_run::RankScope::Global)]
         rank_scope: ab_morph_run::RankScope,
         #[arg(long, default_value = "rank-floor")]
         lambda_missing_policy: ab_morph_run::LambdaMissingPolicy,
@@ -1818,7 +1818,7 @@ mod tests {
         assert_eq!(anomalies, 5);
         assert_eq!(output, Some(PathBuf::from("scratch/interesting.json")));
         assert!(force);
-        assert_eq!(rank_scope, ab_morph_run::RankScope::WithinKind);
+        assert_eq!(rank_scope, ab_morph_run::RankScope::Global);
         assert_eq!(
             lambda_missing_policy,
             ab_morph_run::LambdaMissingPolicy::RankFloor

@@ -38,7 +38,16 @@ use crate::nway::NwaySegmentationGroupRow;
 use crate::summary::WarehouseFeatureProfile;
 use crate::warehouse::schema::WarehouseTable;
 
-pub(crate) const SCORE_VERSION: u32 = 1;
+/// v2 (2026-07-06 calibration): default `rank_scope` flipped from
+/// within-kind to global per the spec's pre-registered Open Question 4
+/// rule (global won both p@50 and nDCG@50 against within-kind on the
+/// full-corpus labels). `v1` scores remain reproducible via
+/// `--rank-scope within-kind`, but that flag only reproduces v1
+/// *numbers* — the artifact's `score_version` is still whatever this
+/// build stamps (`2`), so cross-version comparison stays forbidden as
+/// always; do not treat a `--rank-scope within-kind` run under v2 as
+/// interchangeable with a genuine pre-2026-07-06 v1 artifact.
+pub(crate) const SCORE_VERSION: u32 = 2;
 pub(crate) const READER_MAX_SCHEMA_VERSION: u32 = 1;
 pub(crate) const RRF_K: f64 = 60.0;
 pub(crate) const ANOMALY_W_COV: f64 = 5.0;
@@ -66,9 +75,13 @@ pub enum InterestingEngine {
     Duckdb,
 }
 
-/// Signal-rank pooling scope (spec §Calibration Plan step 3 A/B). Within-kind
-/// is the shipped v1 default; global pools ranks per signal across kinds
-/// (applicability unchanged: impact still fires only for feature patterns).
+/// Signal-rank pooling scope (spec §Calibration Plan step 3 A/B). `Global`
+/// pools ranks per signal across kinds (applicability unchanged: impact
+/// still fires only for feature patterns) and is the shipped v2 default
+/// per the 2026-07-06 calibration (Open Question 4 resolution: global beat
+/// within-kind on both p@50 and nDCG@50). `WithinKind` was the v1 default
+/// and remains available via `--rank-scope within-kind` for reproducing
+/// pre-calibration artifacts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum RankScope {
     WithinKind,
@@ -225,7 +238,7 @@ impl Default for WarehouseInterestingOptions {
             max_region_examples: 5,
             engine: InterestingEngine::Auto,
             feature_profile: WarehouseFeatureProfile::Core,
-            rank_scope: RankScope::WithinKind,
+            rank_scope: RankScope::Global,
             lambda_policy: LambdaMissingPolicy::RankFloor,
             anomaly_w_cov: ANOMALY_W_COV,
             score_mode: ScoreMode::Rrf,
@@ -1981,14 +1994,36 @@ mod tests {
         .unwrap();
         assert_eq!(summary.rows.len(), 3);
         assert!(summary.rows.iter().all(|row| !row.pattern.contains('、')));
-        // With one pattern per kind, every signal ranks 1: RRF = 1/61.
-        for row in &summary.rows {
-            assert_eq!(row.rrf_score, 0.016393, "row {}", row.pattern_id);
-        }
-        // Tie on score: source_count desc puts the two-source segmentation
-        // pattern first.
-        assert_eq!(summary.rows[0].kind, "segmentation");
-        assert_eq!(summary.rows[0].source_count, 2);
+        // Under the default (global) rank scope, Coverage/Rarity/Span pool
+        // ranks across all three surviving patterns instead of trivially
+        // ranking 1st-of-1 within each kind, so they no longer tie. Raw
+        // signal values (hand-computed from `write_fixture`, rarity_total
+        // = 2 source ids):
+        //   coverage pattern (src-a r1, 1 occurrence, coverage=true):
+        //     Coverage = log2(1+1) = 1.0            (rank 1/3)
+        //     Rarity   = log2((2+1)/(1+1)) = log2(1.5) = 0.584963 (rank 1/3, tie-break pattern_id "bda0d6…" < "fc1912…")
+        //     Span     = char_end-char_start = 3     (rank 1/3)
+        //   feature pattern (src-a r2, pos1 名詞/動詞, 1 occurrence):
+        //     Coverage = log2(1+0) = 0.0             (rank 3/3, tie-break pattern_id "fc1912…" > "aa9e4b…")
+        //     Rarity   = log2((2+1)/(1+1)) = 0.584963 (rank 2/3, loses the tie to the coverage pattern's pattern_id)
+        //     Impact   = impact_weight("pos1") = 4.0 (rank 1/1 — Impact's pool is feature-only)
+        //     Span     = 1                            (rank 3/3)
+        //   segmentation pattern (今日 split, src-a r0 + src-b r0, 2 occurrences):
+        //     Coverage = log2(1+0) = 0.0              (rank 2/3, tie-break pattern_id "aa9e4b…" < "fc1912…")
+        //     Rarity   = log2((2+1)/(2+1)) = log2(1) = 0.0 (rank 3/3 — worst, 2 distinct source ids)
+        //     Span     = 2                             (rank 2/3)
+        // RRF terms are 1/(60+rank): rank1 -> 1/61 = 0.0163934426…,
+        // rank2 -> 1/62 = 0.0161290323…, rank3 -> 1/63 = 0.0158730159….
+        //   coverage:     (1/61 + 1/61 + 1/61) / 3           = 0.016393
+        //   feature:      (1/63 + 1/62 + 1/61 + 1/63) / 4    = 0.016067
+        //   segmentation: (1/62 + 1/63 + 1/62) / 3           = 0.016044
+        assert_eq!(summary.rows[0].kind, "coverage");
+        assert_eq!(summary.rows[0].rrf_score, 0.016393);
+        assert_eq!(summary.rows[1].kind, "feature");
+        assert_eq!(summary.rows[1].rrf_score, 0.016067);
+        assert_eq!(summary.rows[2].kind, "segmentation");
+        assert_eq!(summary.rows[2].rrf_score, 0.016044);
+        assert_eq!(summary.rows[2].source_count, 2);
     }
 
     #[test]
@@ -2075,17 +2110,29 @@ mod tests {
             },
         )
         .unwrap();
-        // Top-1 is the two-source segmentation pattern; its regions are
-        // excluded. Coverage region (chars 2..5) scores 5 + log2(4) = 7;
-        // feature region (chars 5..6) scores log2(2) = 1. The punctuation
-        // region is excluded by the filter.
+        // Under the default (global) rank scope the coverage pattern is
+        // now top-1 (see `lexical_only_filter_excludes_punctuation_only_patterns`'s
+        // hand-computed rrf_score 0.016393, highest of the three), so its
+        // region (chars 2..5, has_coverage_mismatch=true) is excluded from
+        // the anomaly channel instead of the segmentation pattern's.
+        // Remaining disagreement regions passing the lexical filter:
+        //   src-a/txt-a region 0 (segmentation, chars 0..2, length 2,
+        //     no coverage mismatch): log2(1+2) = log2(3) = 1.584963
+        //   src-b/txt-b region 0 (segmentation, chars 0..2, length 2,
+        //     no coverage mismatch): log2(1+2) = log2(3) = 1.584963
+        //   src-a/txt-a region 2 (feature, chars 5..6, length 1,
+        //     no coverage mismatch): log2(1+1) = log2(2) = 1.0
+        // The punctuation region is excluded by the filter. Tie on score
+        // between the two region-0 rows breaks on source_id asc
+        // ("src-a" < "src-b").
         assert_eq!(summary.rows.len(), 1);
+        assert_eq!(summary.rows[0].kind, "coverage");
         let scored = summary
             .anomalies
             .iter()
             .map(|row| (row.region_index, row.anomaly_score))
             .collect::<Vec<_>>();
-        assert_eq!(scored, vec![(1, 7.0), (2, 1.0)]);
+        assert_eq!(scored, vec![(0, 1.584963), (0, 1.584963), (2, 1.0)]);
     }
 
     #[test]
@@ -2276,7 +2323,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(first, second);
-        assert!(first.contains("\"score_version\": 1"));
+        assert!(first.contains("\"score_version\": 2"));
         assert!(first.contains("\"lambda_missing_policy\": \"rank-floor\""));
     }
 
@@ -2297,9 +2344,19 @@ mod tests {
         write_interesting_tsv(&summary, &mut buffer).unwrap();
         let text = String::from_utf8(buffer).unwrap();
         assert!(text.starts_with("rank\tkind\trrf_score"));
-        assert!(text.contains("1\tsegmentation\t0.016393"));
+        // Under the default (global) rank scope the top-1 pattern is the
+        // coverage pattern (rrf_score 0.016393 — see the hand-computed
+        // arithmetic in `lexical_only_filter_excludes_punctuation_only_patterns`),
+        // not the segmentation pattern. Its region is therefore excluded
+        // from the anomaly channel (see
+        // `anomaly_channel_surfaces_regions_below_cutoff`'s hand-computed
+        // arithmetic), leaving the two segmentation-owned region-0 rows
+        // (log2(3) = 1.584963 each) and the feature-owned region-2 row
+        // (log2(2) = 1.0, formatted `1.000000`) as anomalies.
+        assert!(text.contains("1\tcoverage\t0.016393"));
         assert!(text.contains("# anomalies"));
-        assert!(text.contains("7.000000"));
+        assert!(text.contains("1.584963"));
+        assert!(text.contains("1.000000"));
     }
 
     fn duckdb_available() -> bool {

@@ -1,6 +1,6 @@
 # Comprehensive Parser Acceptance Criteria
 
-Status: Draft
+Status: Accepted
 Date: 2026-07-06
 Owner boundary: ab-validator owns parser measurement, source coverage, and
 acceptance evidence. ABC owns publication rendering, TEI profile, custom
@@ -15,6 +15,10 @@ source authority.
 Acceptance is based on source inventory, parser-IR emission, publication bundle
 validation, and bounded performance evidence. TEI-EAJ remains calibration
 evidence, not the admission authority.
+
+This status accepts the criteria for judging parser candidates. It does not
+admit any parser candidate by itself; parser admission still requires measured
+evidence against these criteria.
 
 ## Required Evidence Inputs
 

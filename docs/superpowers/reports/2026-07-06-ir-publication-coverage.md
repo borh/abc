@@ -34,7 +34,7 @@ Rows failed: `0`
 |---|---:|
 ## Next Work Dashboard
 
-Verdict: `AOZORA_PUBLICATION_NEXT_WORK_OPEN`
+Verdict: `AOZORA_PUBLICATION_NEXT_WORK_COMPLETE`
 
 Evidence: `docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json`
 

@@ -6254,10 +6254,10 @@
   },
   "next_work_dashboard": {
     "path": "docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json",
-    "hash": "sha256:79001e17ce84ccc32cdb91c7d4bc03b4a6cb6002027c594bfde4e098aafa379e",
+    "hash": "sha256:5abf94dbcd7a3df413042011132b256357b17cd349a0b5668a01b99a5c9fd82c",
     "schema_version": "aozora-publication-next-work-v1",
     "schema_valid": true,
-    "verdict": "AOZORA_PUBLICATION_NEXT_WORK_OPEN",
+    "verdict": "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE",
     "next_work_items_count": 5,
     "item_ids": [
       "source_region_disposition_samples",

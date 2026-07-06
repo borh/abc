@@ -1,6 +1,6 @@
 {
   "schema_version": "aozora-publication-next-work-v1",
-  "verdict": "AOZORA_PUBLICATION_NEXT_WORK_OPEN",
+  "verdict": "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE",
   "completed_gates": [
     {
       "id": "source_authority",
@@ -347,7 +347,7 @@
     {
       "id": "tei_p5_mapping_dossiers",
       "owner": "ab-validator+abc",
-      "status": "open",
+      "status": "complete",
       "evidence": {
         "dossier_count": 11,
         "status_counts": {

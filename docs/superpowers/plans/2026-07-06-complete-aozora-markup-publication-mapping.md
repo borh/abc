@@ -29,7 +29,7 @@ The current measured reports already satisfy the ab-validator-side coverage gate
 
 - `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json`
   - `verdict == "IR_PUBLICATION_COVERAGE_COMPLETE"`
-  - `next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_OPEN"`
+  - `next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE"`
   - `parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_COMPLETE"`
   - `publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"`
   - required parsers: `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, `aozora`
@@ -384,7 +384,7 @@ jq -e '.verdict == "SOURCE_REFERENCE_RECONCILIATION_COMPLETE" and .totals.observ
 jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED" and .scope.rows_validated == 25 and .scope.rows_failed == 0' docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json
 jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.publication_bundle_contract.validation_scope == "batch" and .publication_bundle_contract.rows_validated == 285 and .publication_bundle_contract.rows_failed == 0' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
-jq -e '.next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_OPEN"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
+jq -e '.next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_COMPLETE"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED" and .scope.kind == "full-tei-eaj-matrix" and .scope.rows_validated == 285 and .scope.rows_failed == 0 and .checks.plaintext_body_only == true' docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json
 git diff --check

@@ -23,6 +23,7 @@ summary_json="$out_dir/next-work.summary.json"
 complete_source_summary_json="$out_dir/next-work.complete-source.summary.json"
 complete_text_summary_json="$out_dir/next-work.complete-text.summary.json"
 complete_adapter_summary_json="$out_dir/next-work.complete-adapter.summary.json"
+complete_all_summary_json="$out_dir/next-work.complete-all.summary.json"
 missing_root_summary_json="$out_dir/next-work.missing-root.summary.json"
 report_md="$out_dir/next-work.md"
 
@@ -400,6 +401,7 @@ jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evide
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and (.evidence.included_buckets | sort) == (["adapter_collapsed", "adapter_over_segmented", "adapter_raw_only", "adapter_under_segmented", "converter_paragraph_mismatch"] | sort))' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and (.evidence.excluded_buckets | sort) == (["aligned", "page_break_projection", "source_note_back_routing"] | sort))' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.dossier_count == 3 and .evidence.status_counts."schema-needed" == 1)' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .status == "complete")' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.complete_section_count == 3 and .evidence.incomplete_section_dossiers == [])' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_count == 2 and (.evidence.dossiers[] | select(.name == "ruby" and .tei_p5_references == ["../abc/references/TEI/P5/Source/Specs/ruby.xml"])))' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_file_count == 2 and .evidence.tei_p5_reference_directory_count == 0 and .evidence.missing_tei_p5_references == [])' "$summary_json" >/dev/null
@@ -590,6 +592,37 @@ python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
 
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .status == "complete" and .evidence.adapter_distortion_rows == 10)' "$complete_adapter_summary_json" >/dev/null
 rg -n -F '`adapter_fidelity_worksets` (ab-validator): `complete`' "$out_dir/next-work.complete-adapter.md" >/dev/null
+
+cat > "$parser_acceptance_spec" <<MD
+# Comprehensive Parser Acceptance Criteria
+
+Status: Accepted
+
+## Required Evidence Inputs
+
+- \`$out_dir/evidence/existing.json\`
+- non-path parser lane evidence
+MD
+
+python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+  --source-summary "$source_summary" \
+  --coverage-summary "$coverage_summary" \
+  --matrix-summary "$matrix_summary" \
+  --conversion-summary "$conversion_summary" \
+  --source-reference-summary "$reference_summary" \
+  --performance-report "$performance_md" \
+  --source-disposition-summary "$source_disposition_summary" \
+  --text-policy-summary "$complete_text_policy_summary" \
+  --adapter-worksets-summary "$complete_adapter_worksets_summary" \
+  --dossier-dir "$dossier_dir" \
+  --tei-p5-root "$tei_p5_root" \
+  --parser-acceptance-spec "$parser_acceptance_spec" \
+  --summary-json "$complete_all_summary_json" \
+  --report-md "$out_dir/next-work.complete-all.md"
+
+jq -e '.verdict == "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE"' "$complete_all_summary_json" >/dev/null
+jq -e '([.next_work_items[].status] | all(. == "complete"))' "$complete_all_summary_json" >/dev/null
+rg -n -F 'Verdict: `AOZORA_PUBLICATION_NEXT_WORK_COMPLETE`' "$out_dir/next-work.complete-all.md" >/dev/null
 
 python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \

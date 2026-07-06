@@ -1,0 +1,8 @@
+{
+  "left_len": 50,
+  "right_len": 50,
+  "overlap": 50,
+  "jaccard": 1.0,
+  "kendall_tau_b": 1.0,
+  "score_version_mismatches": []
+}

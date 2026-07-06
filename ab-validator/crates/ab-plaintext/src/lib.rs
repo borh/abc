@@ -6,7 +6,10 @@ use std::fmt;
 
 use serde::Serialize;
 
-pub use aat::{from_aat_value, visible_text_projection};
+pub use aat::{
+    ProjectionSpan, from_aat_value, from_aat_value_with_spans, visible_text_projection,
+    visible_text_projection_with_spans,
+};
 pub use aozora::from_aozora_honbun_bytes;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

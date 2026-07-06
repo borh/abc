@@ -37,6 +37,7 @@ SOURCE_MARKUP_BACKED_CAUSES = {
     "adapter_text_loss",
     "unknown_text_delta",
 }
+LETTER_REGION_MARKERS = ("宛先", "発信地")
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
@@ -98,6 +99,30 @@ def body_text_relation(row: dict[str, Any]) -> str:
     return str(text.get("body_base_text_relation") or text.get("body_text_match_bucket") or "")
 
 
+def first_diff_preview(row: dict[str, Any], side: str) -> str:
+    first_diff = row.get("text", {}).get("body_base_text_first_diff")
+    if not isinstance(first_diff, dict):
+        return ""
+    return str(first_diff.get(f"{side}_preview") or "")
+
+
+def tei_eaj_preview_starts_with_parenthetical_reading(row: dict[str, Any]) -> bool:
+    preview = first_diff_preview(row, "tei_eaj").lstrip()
+    return preview.startswith("（") and "）" in preview[:16]
+
+
+def generated_preview_starts_with_letter_region(row: dict[str, Any]) -> bool:
+    generated = first_diff_preview(row, "generated").lstrip()
+    tei_eaj = first_diff_preview(row, "tei_eaj").lstrip()
+    generated_prefix = generated[:32]
+    tei_eaj_prefix = tei_eaj[:32]
+    has_generated_marker = any(
+        generated_prefix.startswith(marker) or f"］{marker}" in generated_prefix for marker in LETTER_REGION_MARKERS
+    )
+    has_tei_eaj_marker = any(marker in tei_eaj_prefix for marker in LETTER_REGION_MARKERS)
+    return has_generated_marker and not has_tei_eaj_marker
+
+
 def paragraph_origin(row: dict[str, Any]) -> str:
     classification = row.get("classification", {})
     return str(classification.get("paragraph_origin_bucket") or "")
@@ -117,6 +142,10 @@ def classify_different(row: dict[str, Any]) -> str:
         return "body_visible_layout_policy"
     if origin in ADAPTER_BUCKETS:
         return "adapter_text_loss"
+    if tei_eaj_preview_starts_with_parenthetical_reading(row):
+        return "ruby_or_parenthetical_policy"
+    if generated_preview_starts_with_letter_region(row):
+        return "front_back_source_region_policy"
     return "unknown_text_delta"
 
 

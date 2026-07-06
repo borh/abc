@@ -12,7 +12,7 @@ report_md="$out_dir/text-policy-delta.md"
 cat > "$matrix_summary" <<'JSON'
 {
   "body_text_relation_buckets": {
-    "different": 9,
+    "different": 15,
     "equal": 1,
     "generated_contains_tei_eaj": 1
   },
@@ -93,6 +93,96 @@ cat > "$matrix_summary" <<'JSON'
       "classification": {"paragraph_origin_bucket": "aligned", "source_note_body_excluded": false}
     },
     {
+      "work_id": "ruby-near-1",
+      "selected_aat": {"adapter": "aozora2html"},
+      "text": {
+        "body_base_text_relation": "different",
+        "body_base_text_first_diff": {
+          "generated_preview": "していることは事実である。",
+          "tei_eaj_preview": "（ようえい）していることは事実である。"
+        },
+        "surface_relations": {
+          "ruby_expanded_parenless": {"relation": "different", "length_delta": -2},
+          "base_drop_parentheticals": {"relation": "different", "length_delta": -2}
+        }
+      },
+      "tei_eaj": {"structure_profiles": ["plain_prose"]},
+      "classification": {"paragraph_origin_bucket": "aligned", "source_note_body_excluded": false}
+    },
+    {
+      "work_id": "notes-ruby-1",
+      "selected_aat": {"adapter": "aozora-epub3"},
+      "text": {
+        "body_base_text_relation": "different",
+        "body_base_text_first_diff": {
+          "generated_preview": "なく降らす時などは、",
+          "tei_eaj_preview": "（とめど）なく降らす時などは、"
+        },
+        "surface_relations": {
+          "ruby_expanded_parenless": {"relation": "different", "length_delta": 0},
+          "base_drop_parentheticals": {"relation": "different", "length_delta": 0}
+        }
+      },
+      "tei_eaj": {"structure_profiles": ["notes"]},
+      "classification": {"paragraph_origin_bucket": "aligned", "source_note_body_excluded": false}
+    },
+    {
+      "work_id": "letter-region-1",
+      "selected_aat": {"adapter": "aozora2"},
+      "text": {
+        "body_base_text_relation": "different",
+        "body_base_text_first_diff": {
+          "generated_preview": "宛先東京市麹町区三番町六四第一福四萬館発信地千葉県",
+          "tei_eaj_preview": "雑誌ありがたう御座いました。"
+        },
+        "surface_relations": {}
+      },
+      "tei_eaj": {"structure_profiles": ["plain_prose"]},
+      "classification": {"paragraph_origin_bucket": "aligned", "source_note_body_excluded": false}
+    },
+    {
+      "work_id": "front-parenthetical-precedence",
+      "selected_aat": {"adapter": "aozora2html"},
+      "text": {
+        "body_base_text_relation": "different",
+        "body_base_text_first_diff": {
+          "generated_preview": "していることは事実である。",
+          "tei_eaj_preview": "（ようえい）していることは事実である。"
+        },
+        "surface_relations": {}
+      },
+      "tei_eaj": {"structure_profiles": ["front_back_matter"]},
+      "classification": {"paragraph_origin_bucket": "aligned", "source_note_body_excluded": false}
+    },
+    {
+      "work_id": "layout-parenthetical-precedence",
+      "selected_aat": {"adapter": "aozora2html"},
+      "text": {
+        "body_base_text_relation": "different",
+        "body_base_text_first_diff": {
+          "generated_preview": "していることは事実である。",
+          "tei_eaj_preview": "（ようえい）していることは事実である。"
+        },
+        "surface_relations": {}
+      },
+      "tei_eaj": {"structure_profiles": ["lineated_text"]},
+      "classification": {"paragraph_origin_bucket": "aligned", "source_note_body_excluded": false}
+    },
+    {
+      "work_id": "adapter-parenthetical-precedence",
+      "selected_aat": {"adapter": "aozora2html"},
+      "text": {
+        "body_base_text_relation": "different",
+        "body_base_text_first_diff": {
+          "generated_preview": "していることは事実である。",
+          "tei_eaj_preview": "（ようえい）していることは事実である。"
+        },
+        "surface_relations": {}
+      },
+      "tei_eaj": {"structure_profiles": ["plain_prose"]},
+      "classification": {"paragraph_origin_bucket": "adapter_over_segmented", "source_note_body_excluded": false}
+    },
+    {
       "work_id": "calibration-1",
       "selected_aat": {"adapter": "aozora"},
       "text": {"body_base_text_relation": "generated_contains_tei_eaj", "surface_relations": {}},
@@ -116,13 +206,14 @@ python3 "$repo_root/reports/parser-ir/text-policy-delta.py" \
   --report-md "$report_md"
 
 jq -e '.schema_version == "parser-ir-text-policy-delta-v1"' "$summary_json" >/dev/null
-jq -e '.total_different_rows == 9' "$summary_json" >/dev/null
+jq -e '.total_different_rows == 15' "$summary_json" >/dev/null
 jq -e '.total_different_rows == (.counts_by_cause | to_entries | map(.value) | add)' "$summary_json" >/dev/null
-jq -e '.counts_by_cause.ruby_or_parenthetical_policy == 2' "$summary_json" >/dev/null
-jq -e '.counts_by_cause.front_back_source_region_policy == 2' "$summary_json" >/dev/null
-jq -e '.counts_by_cause.body_visible_layout_policy == 2' "$summary_json" >/dev/null
-jq -e '.counts_by_cause.adapter_text_loss == 2' "$summary_json" >/dev/null
+jq -e '.counts_by_cause.ruby_or_parenthetical_policy == 4' "$summary_json" >/dev/null
+jq -e '.counts_by_cause.front_back_source_region_policy == 4' "$summary_json" >/dev/null
+jq -e '.counts_by_cause.body_visible_layout_policy == 3' "$summary_json" >/dev/null
+jq -e '.counts_by_cause.adapter_text_loss == 3' "$summary_json" >/dev/null
 jq -e '.counts_by_cause.tei_eaj_editorial_or_enrichment == 1' "$summary_json" >/dev/null
+jq -e '.counts_by_cause.unknown_text_delta == 0' "$summary_json" >/dev/null
 jq -e '.already_equal_rows == 1' "$summary_json" >/dev/null
 jq -e '.calibration_only_rows[] | select(.body_text_relation == "generated_contains_tei_eaj")' "$summary_json" >/dev/null
 jq -e '([.source_markup_backed_blockers[].cause] | index("tei_eaj_editorial_or_enrichment") | not)' "$summary_json" >/dev/null

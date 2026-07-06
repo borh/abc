@@ -114,10 +114,10 @@
         "counts_by_cause": {
           "adapter_text_loss": 55,
           "body_visible_layout_policy": 51,
-          "front_back_source_region_policy": 48,
-          "ruby_or_parenthetical_policy": 63,
+          "front_back_source_region_policy": 50,
+          "ruby_or_parenthetical_policy": 67,
           "tei_eaj_editorial_or_enrichment": 48,
-          "unknown_text_delta": 6
+          "unknown_text_delta": 0
         },
         "source_markup_backed_blockers": 223,
         "calibration_only_rows": 7
@@ -427,7 +427,7 @@
     },
     "text_policy_summary": {
       "path": "docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json",
-      "hash": "sha256:b32e31b709a0cf93ef0f3c6b95712899366719efcf0ee725159e03b7ad1c4e38"
+      "hash": "sha256:319fc85bbf25d027f3b05135ded3ef528518b999e3af4f73d524c864163f2194"
     },
     "adapter_worksets_summary": {
       "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.summary.json",

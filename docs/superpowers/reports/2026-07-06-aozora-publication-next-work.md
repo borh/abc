@@ -18,7 +18,7 @@ Verdict: `AOZORA_PUBLICATION_NEXT_WORK_OPEN`
   - evidence_needed_classes=[]
 - `text_policy_calibration` (ab-validator+abc): `open`
   - different_rows=271, source_markup_backed_blockers=223, calibration_only_rows=7
-  - counts_by_cause={"adapter_text_loss": 55, "body_visible_layout_policy": 51, "front_back_source_region_policy": 48, "ruby_or_parenthetical_policy": 63, "tei_eaj_editorial_or_enrichment": 48, "unknown_text_delta": 6}
+  - counts_by_cause={"adapter_text_loss": 55, "body_visible_layout_policy": 51, "front_back_source_region_policy": 50, "ruby_or_parenthetical_policy": 67, "tei_eaj_editorial_or_enrichment": 48, "unknown_text_delta": 0}
 - `adapter_fidelity_worksets` (ab-validator): `open`
   - adapter_distortion_rows=218
   - worksets={"adapter_collapsed": 67, "adapter_over_segmented": 127, "adapter_raw_only": 2, "adapter_under_segmented": 14, "converter_paragraph_mismatch": 8}

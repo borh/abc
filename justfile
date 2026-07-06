@@ -314,6 +314,20 @@ parser-ir-plain-prose-source-delta-report ADMISSION_SUMMARY="docs/superpowers/re
 parser-ir-publication-coverage-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-publication-coverage-smoke.sh"
 
+parser-ir-publication-next-work-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-publication-next-work-smoke.sh"
+
+parser-ir-publication-next-work-report SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" COVERAGE_SUMMARY="docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" CONVERSION_SUMMARY="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json" SOURCE_REFERENCE_SUMMARY="docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json" PERFORMANCE_REPORT="docs/superpowers/reports/2026-07-04-parser-performance-measurement.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-aozora-publication-next-work.md":
+	@python3 "{{repo_root}}/reports/parser-ir/publication-next-work.py" \
+		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
+		--coverage-summary "{{repo_root}}/{{COVERAGE_SUMMARY}}" \
+		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
+		--conversion-summary "{{repo_root}}/{{CONVERSION_SUMMARY}}" \
+		--source-reference-summary "{{repo_root}}/{{SOURCE_REFERENCE_SUMMARY}}" \
+		--performance-report "{{repo_root}}/{{PERFORMANCE_REPORT}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}"
+
 parser-ir-publication-bundle-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-publication-bundle-smoke.sh"
 

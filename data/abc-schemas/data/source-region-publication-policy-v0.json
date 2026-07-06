@@ -1,6 +1,6 @@
 {
   "policy_id": "https://w3id.org/abc/policies/source-region-publication-v0",
-  "policy_version": "0.1.0",
+  "policy_version": "0.2.0",
   "notes": [
     "ABC owns publication disposition for ab-validator source-region facts.",
     "terminal_provenance and colophon_metadata are policy-admitted but require a later ab-validator measurement split before separate prevalence claims."
@@ -42,6 +42,14 @@
       "source_class": "colophon_metadata",
       "target_class": "tei_policy_projection",
       "tei_target": "teiHeader/sourceDesc",
+      "custom_sidecar": true,
+      "plaintext_projection": "omit",
+      "measurement_status": "measured"
+    },
+    {
+      "source_class": "letter_address_origin",
+      "target_class": "tei_policy_projection",
+      "tei_target": "teiHeader/profileDesc/correspDesc",
       "custom_sidecar": true,
       "plaintext_projection": "omit",
       "measurement_status": "measured"

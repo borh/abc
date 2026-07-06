@@ -22,7 +22,7 @@ TRUSTED_ABC_PRESERVATION_SCHEMA_PATH = (
 ABC_SOURCE_REGION_SCHEMA_ID = "https://w3id.org/abc/schemas/source-region-coverage.schema.json"
 ABC_SOURCE_REGION_SCHEMA_VERSION = "aozora-source-region-coverage-v1"
 ABC_SOURCE_REGION_POLICY_ID = "https://w3id.org/abc/policies/source-region-publication-v0"
-ABC_SOURCE_REGION_POLICY_VERSION = "0.1.0"
+ABC_SOURCE_REGION_POLICY_VERSION = "0.2.0"
 TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH = (
     REPO_ROOT / "data/abc-schemas/schemas/source-region-coverage.schema.json"
 ).resolve()
@@ -61,12 +61,14 @@ SOURCE_REGION_REQUIRED_CLASSES = {
     "body_end_boundary",
     "terminal_provenance",
     "colophon_metadata",
+    "letter_address_origin",
     "malformed_source",
 }
 SOURCE_REGION_MEASURED_CLASS_COUNTERS = {
     "body_end_boundary": "body_end_boundary_occurrences",
     "terminal_provenance": "terminal_provenance_occurrences",
     "colophon_metadata": "colophon_metadata_occurrences",
+    "letter_address_origin": "letter_address_origin_occurrences",
 }
 SOURCE_REGION_ALLOWED_TARGET_CLASSES = {
     "tei_policy_projection",

@@ -222,11 +222,10 @@ The next step is sample-backed disposition evidence for:
 - malformed source diagnostics;
 - letter address/origin rows such as `宛先` and `発信地`.
 
-The current source-region policy file does not admit `letter_address_origin` as
-a source class. Current reports now measure those rows with
-`source_region_coverage.letter_address_origin_occurrences: 6`, but ABC
-disposition policy is still open. Treat them as policy work, not missing
-evidence.
+The source-region policy file admits `letter_address_origin` as a source class
+with TEI target `teiHeader/profileDesc/correspDesc`. Current reports measure
+those rows with `source_region_coverage.letter_address_origin_occurrences: 6`.
+Treat them as admitted source-region policy rows, not missing evidence.
 
 The output must distinguish source facts from publication decisions:
 

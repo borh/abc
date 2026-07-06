@@ -13,8 +13,8 @@ Verdict: `AOZORA_PUBLICATION_NEXT_WORK_OPEN`
 ## Next Work Items
 
 - `source_region_disposition_samples` (ab-validator+abc): `open`
-  - classes_total=7, admitted=6, policy_needed=1
-  - policy_needed_classes=["letter_address_origin"]
+  - classes_total=7, admitted=7, policy_needed=0
+  - policy_needed_classes=[]
   - evidence_needed_classes=[]
 - `text_policy_calibration` (ab-validator+abc): `open`
   - different_rows=271, source_markup_backed_blockers=223, calibration_only_rows=7
@@ -28,7 +28,7 @@ Verdict: `AOZORA_PUBLICATION_NEXT_WORK_OPEN`
   - excluded_counts={"aligned": 60, "page_break_projection": 3, "source_note_back_routing": 4}
 - `tei_p5_mapping_dossiers` (ab-validator+abc): `open`
   - dossier_count=11
-  - status_counts={"adapter-fidelity-needed": 1, "admitted": 3, "diagnostic-only": 1, "policy-needed": 4, "schema-needed": 2}
+  - status_counts={"adapter-fidelity-needed": 1, "admitted": 4, "diagnostic-only": 1, "policy-needed": 3, "schema-needed": 2}
   - complete_section_count=11, incomplete_section_dossiers=[]
   - tei_p5_reference_count=34, file_count=34, directory_count=0
   - tei_p5_reference_root=/home/bor/Projects/abc/references/TEI/P5, root_exists=True, unverified=0

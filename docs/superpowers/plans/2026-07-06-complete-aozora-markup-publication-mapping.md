@@ -99,13 +99,15 @@ coordination and must be reconciled with that spec if the vocabulary changes.
   - `body_end_boundary`
   - `terminal_provenance`
   - `colophon_metadata`
+  - `letter_address_origin`
   - `malformed_source`
 - Use explicit source-region counters for prevalence:
   `body_end_boundary_occurrences: 243`,
   `terminal_provenance_occurrences: 609`,
   `colophon_metadata_occurrences: 89416`, and
   `letter_address_origin_occurrences: 6`.
-- Decide ABC disposition policy for measured `letter_address_origin` rows.
+- Admit measured `letter_address_origin` rows as TEI policy projection to
+  `teiHeader/profileDesc/correspDesc`.
 - Preserve malformed-source residues as diagnostics, not unsupported syntax.
 - Keep plaintext body-only.
 
@@ -352,9 +354,9 @@ Complete Aozora Bunko markup publication mapping: every observed source markup a
 
 ## Immediate Next Tasks
 
-1. Settle ABC disposition policy for measured `letter_address_origin` rows
-   (`宛先` / `発信地`), which now have source evidence but remain
-   `policy_needed`.
+1. Use the now-admitted source-region disposition policy for measured
+   `letter_address_origin` rows (`宛先` / `発信地`) when validating publication
+   coverage and bundle evidence.
 2. Keep the full-matrix materialization and
    `parser-ir-publication-bundle-batch-validation` current; only feed the
    full-matrix batch summary into `parser-ir-publication-coverage-report` while

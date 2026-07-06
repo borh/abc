@@ -76,20 +76,18 @@
         "admitted_classes": [
           "body_end_boundary",
           "colophon_metadata",
+          "letter_address_origin",
           "malformed_source",
           "notation_legend",
           "notation_placeholder",
           "terminal_provenance"
         ],
-        "admitted_count": 6,
-        "policy_needed_classes": [
-          "letter_address_origin"
-        ],
-        "policy_needed_count": 1,
+        "admitted_count": 7,
+        "policy_needed_classes": [],
+        "policy_needed_count": 0,
         "evidence_needed_classes": [],
         "status_counts": {
-          "admitted": 6,
-          "policy_needed": 1
+          "admitted": 7
         },
         "measured_occurrences_by_class": {
           "body_end_boundary": 243,
@@ -354,9 +352,9 @@
         "dossier_count": 11,
         "status_counts": {
           "adapter-fidelity-needed": 1,
-          "admitted": 3,
+          "admitted": 4,
           "diagnostic-only": 1,
-          "policy-needed": 4,
+          "policy-needed": 3,
           "schema-needed": 2
         },
         "complete_section_count": 11,
@@ -470,7 +468,7 @@
           {
             "name": "source-apparatus-front-back",
             "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/source-apparatus-front-back.md",
-            "status": "policy-needed",
+            "status": "admitted",
             "missing_sections": [],
             "tei_p5_references": [
               "../abc/references/TEI/P5/Source/Guidelines/en/HD-Header.xml",
@@ -590,7 +588,7 @@
     },
     "coverage_summary": {
       "path": "docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json",
-      "hash": "sha256:95d6746e8d81fa53c60f3c8ef48a1f644b6126a733d8467d9fc0214db46bccd4",
+      "hash": "sha256:8056b0a4b917058a1dcdfa4b4047a1ca71cd1c725ea1f8c6fea15af46ff36a36",
       "hash_basis": "canonical_json_without_next_work_dashboard"
     },
     "matrix_summary": {
@@ -611,7 +609,7 @@
     },
     "source_disposition_summary": {
       "path": "docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json",
-      "hash": "sha256:4a5090779b837799433682286fb6f78221a122acc3c0ba0cda3cc4a4844fc9a6"
+      "hash": "sha256:d6581c0eb0e03678514b0a7b614c2b6dd096dd0904402b98b47d70e5d60aa7ae"
     },
     "text_policy_summary": {
       "path": "docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json",

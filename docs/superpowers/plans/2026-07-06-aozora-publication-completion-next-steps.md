@@ -842,7 +842,7 @@ jq -e -n \
   --slurpfile next docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json \
   --slurpfile adapter docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.summary.json \
   '($next[0].next_work_items[] | select(.id == "adapter_fidelity_worksets") | .evidence.included_buckets | sort) == ($adapter[0].included_buckets | sort)'
-jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "policy_needed")' docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json
+jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "admitted" and .tei_target == "teiHeader/profileDesc/correspDesc")' docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json
 jq -e '.next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_OPEN"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.next_work_dashboard.schema_valid == true' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 git diff --check

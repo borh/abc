@@ -494,6 +494,9 @@ jq -e '.source_region_contract.verdict == "SOURCE_REGION_CONTRACT_CONFIRMED_BY_A
 jq -e '.source_region_contract.schema_id == "https://w3id.org/abc/schemas/source-region-coverage.schema.json"' "$summary_json" >/dev/null
 jq -e '.source_region_contract.schema_version == "aozora-source-region-coverage-v1"' "$summary_json" >/dev/null
 jq -e '.source_region_contract.policy_id == "https://w3id.org/abc/policies/source-region-publication-v0"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.policy_version == "0.2.0"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.policy_classes | index("letter_address_origin")' "$summary_json" >/dev/null
+jq -e '.source_region_contract.missing_policy_classes == []' "$summary_json" >/dev/null
 jq -e '.source_region_contract.manifest_sidecar_role_present == true' "$summary_json" >/dev/null
 jq -e '.parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_COMPLETE"' "$summary_json" >/dev/null
 jq -e '.plaintext_policy.metadata_policy == "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance"' "$summary_json" >/dev/null

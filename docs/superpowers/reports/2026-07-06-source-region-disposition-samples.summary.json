@@ -3,9 +3,9 @@
   "verdict": "SOURCE_REGION_DISPOSITION_SAMPLES_READY",
   "policy": {
     "policy_id": "https://w3id.org/abc/policies/source-region-publication-v0",
-    "policy_version": "0.1.0",
+    "policy_version": "0.2.0",
     "path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
-    "hash": "sha256:b307706ee8b998a0639e6664cea55a287ff6a8247c991779022595bf99b3a47d"
+    "hash": "sha256:7880c0c5b059425b944f87e672bdc96a7df7304c58c166543c54ed68919d11bc"
   },
   "source_summary": {
     "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
@@ -44,10 +44,10 @@
     },
     {
       "source_class": "letter_address_origin",
-      "status": "policy_needed",
-      "policy_class_present": false,
-      "target_class": null,
-      "tei_target": null,
+      "status": "admitted",
+      "policy_class_present": true,
+      "target_class": "tei_policy_projection",
+      "tei_target": "teiHeader/profileDesc/correspDesc",
       "custom_sidecar": true,
       "plaintext_projection": "omit",
       "measurement_status": "measured",

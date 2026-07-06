@@ -29,18 +29,18 @@
     "schema_id": "https://w3id.org/abc/schemas/source-region-coverage.schema.json",
     "schema_version": "aozora-source-region-coverage-v1",
     "policy_id": "https://w3id.org/abc/policies/source-region-publication-v0",
-    "policy_version": "0.1.0",
+    "policy_version": "0.2.0",
     "path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
     "policy_path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
     "manifest_schema_path": "data/abc-schemas/schemas/manifest.schema.json",
     "schema_hash": "sha256:63b305b270faae053e6978dbb207c370482408151f9464a56c36f662e30149d8",
-    "policy_hash": "sha256:752c75e286e5e5f4e3eca0160079356224c4e76807f770d47af2315ba07d0aeb",
+    "policy_hash": "sha256:be986dd075e864eff239f36023a91716fc71a9f5604fd5f3f9b989ecf41c810a",
     "manifest_schema_hash": "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1",
     "trusted_schema_path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
     "trusted_policy_path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
     "trusted_manifest_schema_path": "data/abc-schemas/schemas/manifest.schema.json",
     "trusted_schema_hash": "sha256:63b305b270faae053e6978dbb207c370482408151f9464a56c36f662e30149d8",
-    "trusted_policy_hash": "sha256:752c75e286e5e5f4e3eca0160079356224c4e76807f770d47af2315ba07d0aeb",
+    "trusted_policy_hash": "sha256:be986dd075e864eff239f36023a91716fc71a9f5604fd5f3f9b989ecf41c810a",
     "trusted_manifest_schema_hash": "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1",
     "trusted_schema_path_match": true,
     "trusted_policy_path_match": true,
@@ -71,6 +71,7 @@
     "policy_classes": [
       "body_end_boundary",
       "colophon_metadata",
+      "letter_address_origin",
       "malformed_source",
       "notation_legend",
       "notation_placeholder",
@@ -91,7 +92,8 @@
     "measured_class_counters": {
       "body_end_boundary": "body_end_boundary_occurrences",
       "terminal_provenance": "terminal_provenance_occurrences",
-      "colophon_metadata": "colophon_metadata_occurrences"
+      "colophon_metadata": "colophon_metadata_occurrences",
+      "letter_address_origin": "letter_address_origin_occurrences"
     },
     "missing_measured_class_counters": [],
     "unmeasured_policy_classes": [],
@@ -6252,7 +6254,7 @@
   },
   "next_work_dashboard": {
     "path": "docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json",
-    "hash": "sha256:e8c40614f8025f6d9cdb74ccd215e2737e97c4adc292db4eca8a7ba50b3d0634",
+    "hash": "sha256:5bfffa9018cc22e0523948b6ac156b7c2484b298544f3b50c0dd3eb2370bfd7c",
     "schema_version": "aozora-publication-next-work-v1",
     "schema_valid": true,
     "verdict": "AOZORA_PUBLICATION_NEXT_WORK_OPEN",

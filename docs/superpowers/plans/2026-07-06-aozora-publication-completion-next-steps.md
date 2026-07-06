@@ -297,8 +297,8 @@ Expected:
   exists;
 - `docs/superpowers/reports/2026-07-06-aozora-publication-next-work.md`
   exists;
-- current verdict is `AOZORA_PUBLICATION_NEXT_WORK_OPEN` because follow-up work
-  remains even though current gates are green.
+- current verdict is `AOZORA_PUBLICATION_NEXT_WORK_COMPLETE` because the five
+  next-work evidence items are addressed and current gates are green.
 
 - [ ] **Step 7: Verify**
 
@@ -307,7 +307,7 @@ Run:
 ```bash
 bash tests/parser-ir-publication-next-work-smoke.sh
 python3 -m py_compile reports/parser-ir/publication-next-work.py
-jq -e '.verdict == "AOZORA_PUBLICATION_NEXT_WORK_OPEN"' docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json
+jq -e '.verdict == "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE"' docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json
 jq -e '([.parser_lanes[].adapter] | sort) == (["aozora", "aozora-epub3", "aozora-rs", "aozora2", "aozora2html"] | sort)' docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json
 git diff --check
 ```
@@ -795,7 +795,7 @@ Run:
 bash tests/parser-ir-publication-coverage-smoke.sh
 python3 -m py_compile reports/parser-ir/publication-coverage.py
 just parser-ir-publication-coverage-report
-jq -e '.next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_OPEN"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
+jq -e '.next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 git diff --check
 ```
 
@@ -832,7 +832,7 @@ python3 -m py_compile \
   reports/parser-ir/text-policy-delta.py \
   reports/parser-ir/adapter-fidelity-worksets.py \
   reports/parser-ir/publication-coverage.py
-jq -e '.verdict == "AOZORA_PUBLICATION_NEXT_WORK_OPEN"' docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json
+jq -e '.verdict == "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE"' docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json
 jq -e '.evidence_inputs.coverage_summary.hash_basis == "canonical_json_without_next_work_dashboard"' docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json
 jq -e -n \
   --slurpfile next docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json \
@@ -843,7 +843,7 @@ jq -e -n \
   --slurpfile adapter docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.summary.json \
   '($next[0].next_work_items[] | select(.id == "adapter_fidelity_worksets") | .evidence.included_buckets | sort) == ($adapter[0].included_buckets | sort)'
 jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "admitted" and .tei_target == "teiHeader/profileDesc/correspDesc")' docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json
-jq -e '.next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_OPEN"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
+jq -e '.next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.next_work_dashboard.schema_valid == true' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 git diff --check
 ```

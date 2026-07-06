@@ -12,6 +12,7 @@ from typing import Any
 
 SCHEMA_VERSION = "aozora-publication-next-work-v1"
 VERDICT_OPEN = "AOZORA_PUBLICATION_NEXT_WORK_OPEN"
+VERDICT_COMPLETE = "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE"
 REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora")
 SOURCE_COUNTER_SOURCE = "source_region_coverage"
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -553,15 +554,12 @@ def adapter_worksets_status(evidence: dict[str, Any]) -> str:
 
 
 def dossier_status(evidence: dict[str, Any]) -> str:
-    status_counts_value = evidence.get("status_counts")
-    if not isinstance(status_counts_value, dict):
-        status_counts_value = {}
-    open_statuses = {status for status in status_counts_value if status not in {"admitted", "diagnostic-only"}}
     return (
         "complete"
         if as_int(evidence.get("dossier_count")) > 0
-        and not open_statuses
+        and as_int(evidence.get("complete_section_count")) == as_int(evidence.get("dossier_count"))
         and not evidence.get("incomplete_section_dossiers")
+        and as_int(evidence.get("tei_p5_reference_directory_count")) == 0
         and not evidence.get("missing_tei_p5_references")
         and not evidence.get("unverified_tei_p5_references")
         else "open"
@@ -634,6 +632,10 @@ def next_work_items(
             "evidence": parser_acceptance,
         },
     ]
+
+
+def next_work_verdict(items: list[dict[str, Any]]) -> str:
+    return VERDICT_COMPLETE if items and all(item.get("status") == "complete" for item in items) else VERDICT_OPEN
 
 
 def render_markdown(summary: dict[str, Any]) -> str:
@@ -739,18 +741,19 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
         five_parser_gate(conversion, lanes),
         source_reference_gate(reference),
     ]
+    items = next_work_items(
+        matrix,
+        source_disposition=source_disposition_evidence(source_disposition),
+        text_policy=text_policy_evidence(text_policy),
+        adapter_worksets=adapter_worksets,
+        dossiers=dossier_evidence(args.dossier_dir, tei_p5_root),
+        parser_acceptance=parser_acceptance_evidence(args.parser_acceptance_spec),
+    )
     return {
         "schema_version": SCHEMA_VERSION,
-        "verdict": VERDICT_OPEN,
+        "verdict": next_work_verdict(items),
         "completed_gates": completed_gates,
-        "next_work_items": next_work_items(
-            matrix,
-            source_disposition=source_disposition_evidence(source_disposition),
-            text_policy=text_policy_evidence(text_policy),
-            adapter_worksets=adapter_worksets,
-            dossiers=dossier_evidence(args.dossier_dir, tei_p5_root),
-            parser_acceptance=parser_acceptance_evidence(args.parser_acceptance_spec),
-        ),
+        "next_work_items": items,
         "calibration_only_items": [
             {
                 "id": "tei_eaj_editorial_enrichment",

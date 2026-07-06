@@ -1523,6 +1523,88 @@ mod tests {
         writer.close().unwrap();
     }
 
+    /// Like `write_fixture` but with Aozora-style source ids, for
+    /// exercising the real `import-aozora-metadata` producer end-to-end.
+    fn write_aozora_id_fixture(root: &Path) -> std::path::PathBuf {
+        const SOURCES: [&str; 3] = [
+            "000001_10-aaaaaaaaaaaa",
+            "000001_10-bbbbbbbbbbbb",
+            "000002_20-cccccccccccc",
+        ];
+        let paths = WarehousePaths::new(root, RUN);
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer.append_runs(&[run_row(SCHEMA_VERSION, 3, 2)]).unwrap();
+        writer
+            .append_run_analyzers(&[analyzer_row("vibrato"), analyzer_row("sudachi-a")])
+            .unwrap();
+        writer
+            .append_sources(&SOURCES.map(|source_id| source_row(source_id, source_id)))
+            .unwrap();
+        writer
+            .append_nway_regions(&SOURCES.map(|source_id| {
+                region_row(source_id, source_id, 0, 0, 2, false, true, false)
+            }))
+            .unwrap();
+        let mut region_analyzers = Vec::new();
+        for source_id in SOURCES {
+            region_analyzers.push(region_analyzer_row(
+                source_id, source_id, 0, "vibrato", &["今日"],
+            ));
+            region_analyzers.push(region_analyzer_row(
+                source_id, source_id, 0, "sudachi-a", &["今", "日"],
+            ));
+        }
+        writer
+            .append_nway_region_analyzers(&region_analyzers)
+            .unwrap();
+        writer.finalize().unwrap();
+        paths.final_dir
+    }
+
+    /// Minimal valid ABC export record for the importer's consumed fields.
+    fn write_abc_export_record(export_dir: &Path, work_id: &str) {
+        let works = export_dir.join("works");
+        std::fs::create_dir_all(&works).unwrap();
+        let record = serde_json::json!({
+            "metadata_record_schema_id":
+                "https://w3id.org/abc/schemas/metadata-record.schema.json",
+            "metadata_record_schema_hash":
+                crate::import_aozora::ABC_METADATA_RECORD_SCHEMA_HASH,
+            "work": {
+                "work_id": work_id,
+                "title": "題名",
+                "first_published": null,
+                "orthographic_style": "新字新仮名",
+                "source_editions": []
+            },
+            "contributors": [
+                {"person_id": "000035", "person_record_hash": "sha256:0",
+                 "relation_to_work": "著者"}
+            ]
+        });
+        std::fs::write(
+            works.join(format!("{work_id}.json")),
+            serde_json::to_vec(&record).unwrap(),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn imported_sidecar_flips_rarity_basis_to_work() {
+        let root = tempfile::tempdir().unwrap();
+        let run_dir = write_aozora_id_fixture(root.path());
+        let export = root.path().join("export");
+        write_abc_export_record(&export, "000010");
+        write_abc_export_record(&export, "000020");
+
+        crate::run_import_aozora_metadata(&run_dir, &export, false).unwrap();
+        let summary =
+            summarize_warehouse_interesting(&run_dir, WarehouseInterestingOptions::default())
+                .unwrap();
+
+        assert_eq!(summary.score_version.rarity_basis, "work");
+    }
+
     #[test]
     fn collects_all_three_pattern_kinds() {
         let root = tempfile::tempdir().unwrap();

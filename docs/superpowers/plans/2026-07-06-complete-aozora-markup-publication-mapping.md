@@ -53,7 +53,10 @@ The current measured reports already satisfy the ab-validator-side coverage gate
 That is a measured admission state, not the end of the project. The remaining
 work is durability and scale: ab-validator must keep the synced ABC contracts
 current, broaden cross-artifact validation beyond the fixture bundle, and keep
-adapter/parser evidence current as inputs change.
+adapter/parser evidence current as inputs change. A full five-parser TEI-EAJ
+matrix bundle run has also been materialized and validated as diagnostic
+evidence; it found plaintext policy blockers that must be closed before that
+larger scope can replace the representative admission evidence.
 
 ## Workstream 1: ABC Source-Region Integration
 
@@ -152,10 +155,29 @@ python3 reports/parser-ir/publication-coverage.py \
 
 Existing pre-contract `/db` materialization directories are useful for
 comparison, but they do not prove the current publication bundle contract if
-they lack current preservation sidecars. The next bundle-validation step is
-full-corpus materialization when runtime is acceptable. The current
-representative evidence validates `25/25` rows and is cited by the publication
-coverage report with `publication_bundle_contract.validation_scope == "batch"`.
+they lack current preservation sidecars. The current representative evidence
+validates `25/25` rows and is cited by the publication coverage report with
+`publication_bundle_contract.validation_scope == "batch"`.
+
+The current full five-parser TEI-EAJ matrix diagnostic evidence is:
+
+- `docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json`
+  - `scope.kind == "full-tei-eaj-matrix"`
+  - `scope.rows_validated == 285`
+  - `scope.rows_failed == 10`
+  - all checks pass except `plaintext_body_only`
+- `docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.md`
+
+The 10 full-matrix failures are not parser-IR/schema/preservation failures.
+They are plaintext policy failures:
+
+- 8 rows include letter front metadata such as `宛先` and `発信地` in plaintext.
+- 2 rows include a page/section marker `10` in plaintext.
+
+Those facts should be routed to TEI front/back/header, layout metadata, or
+custom preservation as appropriate. They must not appear in plaintext. The
+full-matrix report is therefore diagnostic until ABC fixes the plaintext
+routing policy and a rerun reaches `rows_failed == 0`.
 
 ## Workstream 3: Parser Evidence And Adapter Fidelity
 
@@ -275,10 +297,13 @@ Complete Aozora Bunko markup publication mapping: every observed source markup a
 
 ## Immediate Next Tasks
 
-1. Scale batch parser-IR publication materialization from the 25-row
-   representative smoke to the full corpus when runtime is acceptable.
-2. Run `parser-ir-publication-bundle-batch-validation` against the full-corpus
-   output and feed the batch summary into `parser-ir-publication-coverage-report`.
+1. Resolve the full five-parser TEI-EAJ matrix plaintext blockers in ABC:
+   front-letter metadata (`宛先` / `発信地`) and page/section marker text must be
+   omitted from plaintext and routed to TEI/custom preservation instead.
+2. Rerun full-matrix materialization and
+   `parser-ir-publication-bundle-batch-validation`; only feed the full-matrix
+   batch summary into `parser-ir-publication-coverage-report` after it reaches
+   `rows_failed == 0`.
 3. Keep all five parser evidence lanes current:
    `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
 4. Compare source inventory against Aozora manual and
@@ -301,6 +326,7 @@ jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED" and .scope.rows_
 jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.publication_bundle_contract.validation_scope == "batch" and .publication_bundle_contract.rows_validated == 25 and .publication_bundle_contract.rows_failed == 0' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_COMPLETE"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
+jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_FAILED" and .scope.kind == "full-tei-eaj-matrix" and .scope.rows_validated == 285 and .scope.rows_failed == 10 and .checks.plaintext_body_only == false and all(.failures[]; .details.kind == "plaintext_mismatch")' docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json
 git diff --check
 ```
 

@@ -210,3 +210,4 @@ jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_FAILED"' "$failed_summar
 jq -e '.scope.rows_discovered == 3 and .scope.rows_failed == 1' "$failed_summary_json" >/dev/null
 jq -e '.checks.plaintext_body_only == false' "$failed_summary_json" >/dev/null
 jq -e '.failures[] | select(.row_id == "row-c" and .check == "plaintext_body_only")' "$failed_summary_json" >/dev/null
+jq -e '.failures[] | select(.row_id == "row-c" and .check == "plaintext_body_only" and .details.kind == "plaintext_mismatch" and .details.expected_length == 3 and .details.actual_length == 5)' "$failed_summary_json" >/dev/null

@@ -16,7 +16,8 @@ Current state:
   the terminal domain model: the dominant class is Aozora source apparatus such
   as notation legends, while only a small residue is genuinely malformed
   source. The next schema rotation should split this into source-region and
-  apparatus counters.
+  apparatus counters while keeping legacy counters as computed compatibility
+  aliases until ABC confirms migration.
 - Five parser lanes are present in the generated matrix:
   `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
 - ABC owns the custom preservation contract and TEI profile evidence now synced
@@ -52,7 +53,8 @@ Remaining work is no longer "make TEI-EAJ Level 2/3 pass." It is:
 2. Rotate source-authority reporting from legacy `out_of_body` /
    `malformed_noise` counters to explicit source-region and apparatus classes:
    body, front matter, back matter, notation legend, boundary/provenance, and
-   malformed source diagnostics.
+   malformed source diagnostics. The rotation must keep legacy counter aliases
+   and a contract test during the downstream migration window.
 3. Ensure every Aozora markup and source-apparatus family has a TEI P5,
    TEI-plus-ABC-extension, custom-sidecar, diagnostic, or explicit unsupported
    classification.

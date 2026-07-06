@@ -72,8 +72,8 @@ Each source occurrence should have four independent facts:
 3. **Apparatus kind**
    - What role the occurrence plays when it is not ordinary body markup.
 4. **Publication disposition**
-   - How the occurrence is represented in TEI, ABC custom preservation, or
-     diagnostics.
+   - The ABC-admitted TEI/custom/diagnostic target once ABC policy evidence is
+     synced into ab-validator.
 
 This separates values that were previously braided together:
 
@@ -91,12 +91,14 @@ The region vocabulary should be explicit and closed in v1:
 | `front_matter` | Material before the main body: title metadata, notation legends, input notes, source setup. | Excluded unless source explicitly marks visible body text. |
 | `body` | Main work text and body-level Aozora markup. | Visible base text only. |
 | `back_matter` | Material after the body: source attribution, bibliography, input/proofing metadata, colophon. | Excluded from body plaintext. |
-| `source_apparatus` | Explanatory Aozora markup examples or source-processing instructions that may occur in front/back contexts. | Excluded from body plaintext. |
 | `unknown_region` | Scanner cannot yet assign region. | Blocks full source-region admission until reviewed. |
 
-`source_apparatus` can overlap front/back in the source model, but the report
-should carry one primary `document_region` plus one `apparatus_kind` so counts
-remain stable.
+Region is where in the source document. Apparatus kind is what the occurrence
+means. They are orthogonal: an occurrence has exactly one `document_region`, and
+it may also have an `apparatus_kind`. For example, a notation legend is
+`document_region = "front_matter"` and `apparatus_kind = "notation_legend"`;
+the body-end marker is a boundary occurrence with its own apparatus kind, not a
+separate region.
 
 ## Apparatus Kinds
 
@@ -121,6 +123,7 @@ occurrence summary with this shape:
 
 ```json
 {
+  "schema_version": "aozora-source-region-coverage-v1",
   "source_region_coverage": {
     "body_typed_occurrences": 0,
     "body_raw_preserved_occurrences": 0,
@@ -143,18 +146,22 @@ Each reviewed class should also carry:
   "raw": "［＃］",
   "document_region": "front_matter",
   "apparatus_kind": "notation_legend",
-  "publication_disposition": "custom_sidecar",
+  "publication_disposition": "abc_policy_required",
   "source_inventory_row": null,
-  "tei_target": "encodingDesc/editorialDecl",
+  "tei_target": null,
   "plaintext_projection": "omit",
   "occurrences": 13920,
   "sample_works": ["000005_5"]
 }
 ```
 
-The exact field names may evolve during implementation, but the values above
-are the contract: source apparatus is not malformed, and body-text omission is
-not the same as unrepresented source.
+`document_region` and `apparatus_kind` are ab-validator source facts.
+`publication_disposition` and `tei_target` are ABC-owned policy facts. Before
+ABC admits a policy, ab-validator should use a pending value such as
+`abc_policy_required`; after ABC evidence is synced, the same report can carry
+the admitted TEI/custom target. The exact field names may evolve during
+implementation, but the values above are the contract: source apparatus is not
+malformed, and body-text omission is not the same as unrepresented source.
 
 ## Completion Gate
 
@@ -162,7 +169,7 @@ The source-region portion of the full Aozora-to-TEI/custom goal is complete only
 when all of the following are true for the measured corpus scope:
 
 - `unknown_unreviewed_occurrences == 0`
-- `unknown_region_occurrences == 0` for recurring classes
+- `unknown_region_occurrences == 0`
 - `unsupported_body_markup_occurrences == 0`
 - every `source_apparatus` class has a TEI/header/front/back or custom-sidecar
   disposition
@@ -175,6 +182,9 @@ when all of the following are true for the measured corpus scope:
 
 The gate may still pass with malformed source diagnostics if those diagnostics
 are reviewed and preserved. It must not pass with unclassified body markup.
+Any non-zero unknown-region row, even a singleton, must have a named owner and
+next action and must keep the full source-region gate out of a complete state
+until resolved.
 
 ## TEI And Custom Mapping Policy
 
@@ -185,7 +195,7 @@ Source regions map as follows:
 | Body Aozora markup | TEI P5 where faithful; TEI plus ABC extension or custom sidecar where exact source identity would be lost. | This is the main publication mapping. |
 | Source notation legend | TEI `encodingDesc/editorialDecl` or ABC sidecar. | It explains markup policy; it is not body content. |
 | Body-end boundary | Region boundary plus preservation record. | It should drive segmentation; it is not visible body text. |
-| Final source attribution | Parser-IR `source-note` with `placement="back"` when source evidence supports it. | TEI back/source note, not body base text. |
+| Final source attribution | Source fact: `document_region = "back_matter"` and `apparatus_kind = "terminal_provenance"`. | ABC owns whether this becomes Parser-IR `source-note placement="back"`, TEI back matter, TEI header metadata, or custom sidecar. |
 | Colophon/provenance metadata | TEI header/sourceDesc/back policy or ABC sidecar. | Exact placement is ABC-owned. |
 | Truly malformed source residue | Diagnostic/preservation sidecar. | Do not treat as unsupported Aozora syntax. |
 
@@ -195,12 +205,14 @@ This policy is compatible with the current plaintext rule:
 
 ## Scanner Design Constraint
 
-Do not add a second source-recognition scanner for this contract.
+Do not add a second source-marker recognition scanner for this contract.
 
 The region/apparatus layer should build on the shared source marker recognition
-engine already used by source inventory. Adding a parallel front/back scanner
+engine already used by source inventory. Adding a parallel marker recognizer
 would create a false authority seam: two recognizers would have to agree on
 which byte ranges are markers before they can disagree on region or policy.
+Region segmentation may use non-marker source cues, work metadata, and line
+structure, but it must not reimplement marker recognition.
 
 The correct decomposition is:
 
@@ -223,6 +235,20 @@ evidence:
 | `unsupported_occurrences` | `unsupported_body_markup_occurrences`; should remain zero for completion. |
 | `needs_research_occurrences` | unknown/unreviewed buckets with owner and next action. |
 
+During schema rotation, legacy fields must remain as computed compatibility
+aliases until ABC confirms migration to the new JSON contract. At minimum:
+
+- `out_of_body_occurrences == front_matter_occurrences +
+  back_matter_occurrences + boundary/provenance apparatus occurrences that are
+  not otherwise body-visible`
+- `malformed_noise_occurrences == source_apparatus_occurrences +
+  malformed_source_occurrences` for the legacy allowlist scope being replaced
+- `unsupported_occurrences == unsupported_body_markup_occurrences`
+
+The source-authority JSON must gain an explicit schema version, and the
+compatibility aliases need a contract test so downstream consumers cannot be
+silently broken during the rotation.
+
 The expected first split from the current corpus is:
 
 - most `CommandFullwidth` `［＃］` occurrences move to
@@ -240,8 +266,11 @@ implemented and regenerated.
 1. **Schema and terminology split**
    - Add source-region coverage fields to
      `data/aozora-source-inventory.schema.json`.
-   - Keep legacy counters only as compatibility fields or remove them in a
-     deliberate schema-version rotation.
+   - Add a schema-version field for the source-region JSON contract.
+   - Keep legacy counters as computed compatibility aliases until ABC confirms
+     migration.
+   - Add a contract test that asserts alias identities between legacy counters
+     and the new source-region counters.
 
 2. **Allowlist scope rotation**
    - Replace terminal scopes `out_of_body` and `malformed_noise` with explicit
@@ -253,6 +282,8 @@ implemented and regenerated.
    - Classify notation legend lines by context, not only by raw marker.
    - Add a fixture where the same raw marker is apparatus in front matter but
      would be reviewed differently inside body text.
+   - Add a fixture that demonstrates marker recognition remains shared while
+     region segmentation uses marker spans plus non-marker line/work metadata.
 
 4. **Report regeneration**
    - Regenerate source-authority JSON/Markdown.
@@ -286,9 +317,13 @@ drop or normalize information.
 ## Self-Review
 
 - Trust boundary: source recognition and region classification are measured by
-  ab-validator; ABC owns publication placement.
+  ab-validator; ABC owns publication placement and TEI/custom targets.
 - Values vs places: raw marker, source region, apparatus kind, and publication
   disposition are separate values, not overloaded counters.
+- Orthogonality: `document_region` is one of front/body/back/unknown;
+  apparatus identity is carried only by `apparatus_kind`.
+- Compatibility: legacy counters must remain aliases until downstream consumers
+  migrate.
 - Plaintext policy: plaintext remains visible body text only.
 - Completion honesty: full mapping cannot hide source apparatus under malformed
   or out-of-body counters.

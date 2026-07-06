@@ -1,0 +1,48 @@
+{
+  "schema_contract_version": "abc-schema-contracts-v1",
+  "canonicalization": "abc-legacy-json-c14n-v0",
+  "schemas": [
+    {
+      "path": "schemas/aat-parser-ir-divergence.schema.json",
+      "id": "https://w3id.org/abc/schemas/aat-parser-ir-divergence.schema.json",
+      "title": "AAT to Parser-IR Divergence Record",
+      "version": "0.3.0",
+      "hash": "sha256:2988774e66e6ed43dfc396348c695cf5b537f10075d03bd80a437b542a3b8741"
+    },
+    {
+      "path": "schemas/aat-parser-ir-mapping.schema.json",
+      "id": "https://w3id.org/abc/schemas/aat-parser-ir-mapping.schema.json",
+      "title": "AAT to Parser-IR Mapping",
+      "version": "0.2.3",
+      "hash": "sha256:23a2822cbae88533168121e8a09648441276d8af6484269ae666b90030eb1e06"
+    },
+    {
+      "path": "schemas/manifest.schema.json",
+      "id": "https://w3id.org/abc/schemas/manifest.schema.json",
+      "title": "ABC Artifact Manifest",
+      "version": "0.4.0",
+      "hash": "sha256:24c58800a9a31efdf9e2b9e3fab328b13c43dd8052a8ec4cf761c9fb510431b2"
+    },
+    {
+      "path": "schemas/parser-ir-publication-preservation.schema.json",
+      "id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
+      "title": "ABC Parser-IR Publication Preservation Sidecar",
+      "version": "0.2.0",
+      "hash": "sha256:8ad6d80cd434f4540b3a95bd1e1953eda72f4e5fe4c0e65f090077c70699beb8"
+    },
+    {
+      "path": "schemas/parser-ir.schema.json",
+      "id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+      "title": "ABC Parser IR",
+      "version": "0.5.0",
+      "hash": "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2"
+    },
+    {
+      "path": "schemas/source-region-coverage.schema.json",
+      "id": "https://w3id.org/abc/schemas/source-region-coverage.schema.json",
+      "title": "ABC Source Region Coverage Report",
+      "version": "0.2.1",
+      "hash": "sha256:953c31f967c192852b0ed000ce073e272306c3468dd34e37f760fb3f4f138863"
+    }
+  ]
+}

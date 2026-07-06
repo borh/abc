@@ -516,6 +516,9 @@
             test -f ${./src/abc/tools/tei.clj}
             test -f ${./src/abc/tools/tei_header.clj}
             test -f ${./src/abc/tools/validate_design_bundle.clj}
+            test -f ${./tools/schema_contracts.py}
+            test -f ${./schemas/README.md}
+            test -f ${./schemas/schema-contracts.json}
             test -f ${./schemas/metadata-record.schema.json}
             test -f ${./schemas/person-record.schema.json}
             test -f ${./schemas/tei-profile.rng}
@@ -569,6 +572,17 @@
             mkdir -p "$out"
             echo "schemas/tei-profile.{rng,sch} match the ODD-derived artifacts." > "$out/result.txt"
           '';
+
+          schema-contract-drift =
+            pkgs.runCommand "abc-schema-contract-drift" { nativeBuildInputs = [ pkgs.python3 ]; }
+              ''
+                cp -R ${./.} source
+                chmod -R u+w source
+                cd source
+                python3 tools/schema_contracts.py
+                mkdir -p "$out"
+                echo "schemas/schema-contracts.json matches the checked-in schemas." > "$out/result.txt"
+              '';
 
           tei-eaj-aozora-comparison-source = pkgs.runCommand "abc-tei-eaj-aozora-comparison-source" { } ''
             test -f ${tei-eaj-aozora-tei}/README.md

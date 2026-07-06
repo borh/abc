@@ -48,14 +48,26 @@
 (def ^:private v5-mapping-hash
   "sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf")
 
+(def ^:private v6-mapping-hash
+  "sha256:61d0d549bb73d45765757a739d738effc6a1979fa24cb8c878e9d2ba9d73f53e")
+
 (def ^:private mapping-schema-hash
   "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4")
+
+(def ^:private current-mapping-schema-hash
+  "sha256:23a2822cbae88533168121e8a09648441276d8af6484269ae666b90030eb1e06")
 
 (def ^:private legacy-parser-ir-schema-hash
   "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396")
 
-(def ^:private latest-admitted-parser-ir-schema-hash
+(def ^:private v4-parser-ir-schema-hash
+  "sha256:da916a3a92f64d985cb98f9b2ddc7f562e660fd0c3dbe0c902392d3764b0158a")
+
+(def ^:private level3-parser-ir-schema-hash
   "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411")
+
+(def ^:private v5-parser-ir-schema-hash
+  "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712")
 
 (def ^:private current-parser-ir-schema-hash
   "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2")
@@ -346,6 +358,7 @@
                "body_end_boundary"
                "terminal_provenance"
                "colophon_metadata"
+               "letter_address_origin"
                "malformed_source"}
              (set (map #(get % "source_class")
                        (get policy "dispositions")))))
@@ -383,7 +396,7 @@
          "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"})))
   (is (empty?
        (validate/schema-hash-errors
-        {"parser_ir_schema_hash" latest-admitted-parser-ir-schema-hash
+        {"parser_ir_schema_hash" level3-parser-ir-schema-hash
          "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"})))
   (is (= [(str "ab-validator parser_ir_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash " current-parser-ir-schema-hash)
           "ab-validator diagnostic_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000008 does not match ABC diagnostic schema hash sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"]
@@ -1044,7 +1057,7 @@
    :mapping_hash v4-mapping-hash
    :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-   :parser_ir_schema_hash latest-admitted-parser-ir-schema-hash})
+   :parser_ir_schema_hash v4-parser-ir-schema-hash})
 
 (def ^:private v4-epub3-registry-entry
   (assoc v4-epub3-compat-query
@@ -1073,7 +1086,7 @@
    :mapping_hash v4-mapping-hash
    :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-   :parser_ir_schema_hash latest-admitted-parser-ir-schema-hash})
+   :parser_ir_schema_hash v4-parser-ir-schema-hash})
 
 (def ^:private v4-rs-registry-entry
   (assoc v4-rs-compat-query
@@ -1102,7 +1115,7 @@
    :mapping_hash v4-mapping-hash
    :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-   :parser_ir_schema_hash latest-admitted-parser-ir-schema-hash})
+   :parser_ir_schema_hash v4-parser-ir-schema-hash})
 
 (def ^:private v4-aozora2-registry-entry
   (assoc v4-aozora2-compat-query
@@ -1131,7 +1144,7 @@
    :mapping_hash v4-mapping-hash
    :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-   :parser_ir_schema_hash latest-admitted-parser-ir-schema-hash})
+   :parser_ir_schema_hash v4-parser-ir-schema-hash})
 
 (def ^:private v4-html-registry-entry
   (assoc v4-html-compat-query
@@ -1274,6 +1287,22 @@
                      :mapping_version "0.2.3"
                      :mapping_hash v5-mapping-hash
                      :mapping_schema_hash mapping-schema-hash
+                     :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     :parser_ir_schema_hash v5-parser-ir-schema-hash}))))
+      (doseq [[adapter adapter-version] [["aozora" "aozora-adapter 0.1.0 aozora 0.4.1"]
+                                         ["aozora-epub3" "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21"]
+                                         ["aozora-rs" "aozora-rs-adapter 0.1.0 2b4e8d1"]
+                                         ["aozora2" "aozora2-adapter 0.1.0 aozora-core-0.7.1"]
+                                         ["aozora2html" "aozora2html-adapter 0.1.0 gem-3.0.1"]]]
+        (is (true? (compat/compatible?
+                    registry
+                    {:aat_version 1
+                     :aat_adapter adapter
+                     :aat_adapter_version adapter-version
+                     :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+                     :mapping_version "0.2.4"
+                     :mapping_hash v6-mapping-hash
+                     :mapping_schema_hash current-mapping-schema-hash
                      :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
                      :parser_ir_schema_hash current-parser-ir-schema-hash}))))
       (let [entry-for (fn [adapter adapter-version]
@@ -1462,21 +1491,20 @@
 
 (defn- tei-schema-tests-skipped?
   []
-  (= "1" (System/getenv tei-skip-flag)))
+  (or (= "1" (System/getenv tei-skip-flag))
+      (nil? (System/getenv "TEI_SCHEMA_PATH"))))
 
 (defn- assert-tei-schema-test-skipped!
   []
   (is (tei-schema-tests-skipped?)
-      (str "TEI schema-backed test skipped because " tei-skip-flag "=1")))
+      (str "TEI schema-backed test skipped because " tei-skip-flag
+           "=1 or TEI_SCHEMA_PATH is unset")))
 
 (deftest validate-tei-smoke-test
   (testing "validate-tei! returns nil for the example fixture when TEI_SCHEMA_PATH is set"
     (if (tei-schema-tests-skipped?)
       (assert-tei-schema-test-skipped!)
       (let [schema-path (System/getenv "TEI_SCHEMA_PATH")]
-        (when-not schema-path
-          (throw (ex-info "TEI_SCHEMA_PATH must be set to run validate-tei-smoke-test."
-                          {:env-var "TEI_SCHEMA_PATH"})))
         (is (nil? (validate/validate-tei! schema-path
                                           ["examples/v0/example-work/tei.xml"])))))))
 

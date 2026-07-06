@@ -1,7 +1,7 @@
 # Aozora Source Region And Apparatus Contract
 
-Status: Proposed design; supersedes `malformed_noise_occurrences` as a final
-vocabulary
+Status: Accepted; implemented in the source-authority report as
+`source_region_coverage`
 Date: 2026-07-06
 Owner boundary: ab-validator owns source-region measurement, source-inventory
 classification, and parser/adapter evidence. ABC owns TEI/header/back matter
@@ -34,13 +34,17 @@ The correct end goal is:
 
 ## Evidence Ledger
 
-Current measured source-authority report:
+Current measured source-authority report after implementation:
 
 - `docs/superpowers/reports/2026-07-04-source-authority-representability.md`
 - `works_scanned: 17894`
 - `unknown_markers_total: 14886`
 - `unallowlisted_unknown_markers_total: 0`
 - legacy `malformed_noise_occurrences: 13936`
+- `source_apparatus_occurrences: 13920`
+- `front_matter_occurrences: 14627`
+- `back_matter_occurrences: 243`
+- `malformed_source_occurrences: 16`
 
 The largest reviewed unknown class is not malformed source:
 
@@ -258,12 +262,13 @@ The expected first split from the current corpus is:
 - the 16 true malformed-start occurrences move to
   `malformed_source_occurrences`
 
-Do not claim the exact split until the region-aware report has been
-implemented and regenerated.
+The source-authority report now carries this split in `source_region_coverage`.
+The legacy counters remain as compatibility aliases while downstream consumers
+migrate.
 
 ## Implementation Slices
 
-1. **Schema and terminology split**
+1. **Schema and terminology split** (implemented)
    - Add source-region coverage fields to
      `data/aozora-source-inventory.schema.json`.
    - Add a schema-version field for the source-region JSON contract.
@@ -272,12 +277,12 @@ implemented and regenerated.
    - Add a contract test that asserts alias identities between legacy counters
      and the new source-region counters.
 
-2. **Allowlist scope rotation**
+2. **Allowlist scope rotation** (implemented)
    - Replace terminal scopes `out_of_body` and `malformed_noise` with explicit
      scopes such as `front_matter_legend`, `notation_placeholder`,
      `body_end_boundary`, `back_matter_provenance`, and `malformed_source`.
 
-3. **Region-aware source inventory**
+3. **Region-aware source inventory** (partially implemented)
    - Detect front/body/back regions from Aozora separators and body-end markers.
    - Classify notation legend lines by context, not only by raw marker.
    - Add a fixture where the same raw marker is apparatus in front matter but
@@ -285,12 +290,12 @@ implemented and regenerated.
    - Add a fixture that demonstrates marker recognition remains shared while
      region segmentation uses marker spans plus non-marker line/work metadata.
 
-4. **Report regeneration**
+4. **Report regeneration** (implemented)
    - Regenerate source-authority JSON/Markdown.
    - Verify `unsupported_body_markup_occurrences == 0`.
    - Verify actual malformed source count is separated from source apparatus.
 
-5. **ABC handoff**
+5. **ABC handoff** (next coordination step)
    - Handoff the front/back/source-apparatus classes to ABC so TEI header/back
      and custom sidecar policy can be admitted explicitly.
 

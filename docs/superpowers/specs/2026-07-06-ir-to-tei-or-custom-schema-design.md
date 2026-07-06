@@ -351,12 +351,11 @@ families.
 
 Source-authority note:
 
-- The current source-authority report still contains the legacy counter
-  `malformed_noise_occurrences`.
-- That counter is not the final domain vocabulary. It currently combines
-  source-apparatus legend occurrences with a small number of genuinely malformed
-  source residues.
-- The next source-authority schema rotation should split it according to
+- The current source-authority report keeps legacy counters for downstream
+  compatibility and adds `source_region_coverage` as the terminal vocabulary.
+- The legacy `malformed_noise_occurrences` counter is now split into
+  `source_apparatus_occurrences` and `malformed_source_occurrences`.
+- The source-region contract is:
   `docs/superpowers/specs/2026-07-06-aozora-source-region-and-apparatus-contract.md`.
 
 ## Sequencing

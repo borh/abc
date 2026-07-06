@@ -27,6 +27,19 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - unsupported_occurrences: 0
 - needs_research_occurrences: 0
 
+## Source Region Coverage
+
+- schema_version: `aozora-source-region-coverage-v1`
+- body_typed_occurrences: 4570071
+- body_raw_preserved_occurrences: 46382
+- source_apparatus_occurrences: 13920
+- front_matter_occurrences: 14627
+- back_matter_occurrences: 243
+- malformed_source_occurrences: 16
+- unsupported_body_markup_occurrences: 0
+- unknown_region_occurrences: 0
+- unknown_unreviewed_occurrences: 0
+
 ## Rows
 
 | row | works | occurrences | samples |
@@ -107,7 +120,7 @@ None.
 
 ## Inputs
 
-- matrix: `data/aozora-syntax-coverage.toml`
-- index: `scratch/ab-index.json`
+- matrix: `/home/bor/Projects/ab-validator/.worktrees/source-region-apparatus/data/aozora-syntax-coverage.toml`
+- index: `/home/bor/Projects/ab-validator/scratch/ab-index.json`
 - corpus: `/home/bor/Dependencies/aozorabunko`
-- allowlist: `data/aozora-source-inventory-allowlist.toml`
+- allowlist: `/home/bor/Projects/ab-validator/.worktrees/source-region-apparatus/data/aozora-source-inventory-allowlist.toml`

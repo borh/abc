@@ -33,6 +33,13 @@ This makes `abc/schemas` the only schema byte source in the monorepo while
 preserving `ab-validator/data/abc-schemas/schema-contracts.json` as the
 consumer-side contract snapshot.
 
+Additional delta (2026-07-07): `ab-validator/dictionary` is a real local
+directory (`compiled/`, `optimized/`) instead of the split repo's symlink to
+`../vibrato-pipe/dictionary`, which dangles in the monorepo layout. Analyzer
+dictionaries are nix-only flake outputs; `just dictionary-build-all` populates
+`dictionary/compiled/` with symlinks into the nix store, so the monorepo needs
+no reference to `vibrato-pipe`.
+
 ## Validation Commands
 
 Run from the monorepo root:

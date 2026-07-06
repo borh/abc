@@ -24,7 +24,7 @@ owner_mapping="$out_dir/mapping-owner-categories.json"
 owner_summary_json="$out_dir/coverage-owner-categories.summary.json"
 owner_report_md="$out_dir/coverage-owner-categories.md"
 valid_custom_contract="$out_dir/custom-contract.valid.json"
-confirmed_custom_contract="$out_dir/custom-contract.confirmed.json"
+spoofed_custom_contract="$out_dir/custom-contract.spoofed.json"
 invalid_custom_contract="$out_dir/custom-contract.invalid.json"
 invalid_contract_summary_json="$out_dir/coverage-invalid-contract.summary.json"
 invalid_contract_report_md="$out_dir/coverage-invalid-contract.md"
@@ -225,11 +225,48 @@ cat > "$valid_custom_contract" <<'JSON'
 }
 JSON
 
-cat > "$confirmed_custom_contract" <<'JSON'
+cat > "$spoofed_custom_contract" <<'JSON'
 {
   "$id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
-  "schema_version": "0.1.0",
-  "title": "ABC Parser-IR Publication Preservation Sidecar"
+  "schema_version": "0.2.0",
+  "title": "ABC Parser-IR Publication Preservation Sidecar",
+  "properties": {
+    "coverage": {
+      "properties": {
+        "classes": {
+          "items": {
+            "enum": ["custom_sidecar", "tei_profile_projection"]
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "record": {
+      "properties": {
+        "class": {
+          "enum": ["custom_sidecar", "tei_profile_projection"]
+        },
+        "construct": {
+          "enum": [
+            "accent",
+            "diagnostic",
+            "figure_metadata",
+            "gaiji_resolution",
+            "heading_jisage_structure",
+            "mapping_identity",
+            "paragraph.node_range",
+            "paragraph.source_pointer",
+            "producer_metrics",
+            "source_identity",
+            "source_note.classification",
+            "span_coordinates",
+            "style_rendition"
+          ]
+        }
+      }
+    }
+  }
 }
 JSON
 
@@ -251,6 +288,7 @@ jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' "$sum
 jq -e '.parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_COMPLETE"' "$summary_json" >/dev/null
 jq -e '.plaintext_policy.metadata_policy == "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance"' "$summary_json" >/dev/null
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_MISSING"' "$summary_json" >/dev/null
+jq -e '.tei_profile_contract.verdict == "TEI_PROFILE_CONTRACT_MISSING"' "$summary_json" >/dev/null
 jq -e '.field_coverage.by_field."gaiji.raw_marker".class == "tei_policy_projection"' "$summary_json" >/dev/null
 jq -e '.field_coverage.by_field."paragraph.layout".class == "tei_policy_projection"' "$summary_json" >/dev/null
 jq -e '.field_coverage.by_field."mapping.identity".class == "custom_sidecar"' "$summary_json" >/dev/null
@@ -289,7 +327,7 @@ jq -e '.closure_gaps.true_unsupported_gaps.items[0].closure_family == null' "$su
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$summary_json" >/dev/null
 rg -n "IR Publication Coverage" "$report_md" >/dev/null
 rg -n "Field Coverage" "$report_md" >/dev/null
-rg -n "Unsupported gaps" "$report_md" >/dev/null
+rg -n "Raw Unsupported-Derived Mapping Rows" "$report_md" >/dev/null
 
 jq 'del(.transform_rule_descriptions[] | select(.category == "UNSUPPORTED"))' "$mapping" > "$supported_mapping"
 
@@ -319,6 +357,7 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
 
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_CANDIDATE_PROVIDED"' "$candidate_summary_json" >/dev/null
 jq -e '.custom_contract.schema_id == "https://example.org/abc/custom-contract-candidate.json"' "$candidate_summary_json" >/dev/null
+jq -e '.tei_profile_contract.verdict == "TEI_PROFILE_CONTRACT_MISSING"' "$candidate_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
 
 python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
@@ -327,16 +366,79 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --source-summary "$source_summary" \
   --matrix-summary "$matrix_summary" \
   --source-delta-summary "$source_delta" \
-  --custom-contract-schema "$confirmed_custom_contract" \
+  --custom-contract-schema "$spoofed_custom_contract" \
+  --summary-json "$candidate_summary_json" \
+  --report-md "$candidate_report_md"
+
+jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_CANDIDATE_PROVIDED"' "$candidate_summary_json" >/dev/null
+jq -e '.tei_profile_contract.verdict == "TEI_PROFILE_CONTRACT_MISSING"' "$candidate_summary_json" >/dev/null
+jq -e '.closure_gaps.admitted_by_custom_contract.count == 0' "$candidate_summary_json" >/dev/null
+jq -e '.closure_gaps.admitted_by_tei_profile.count == 0' "$candidate_summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.count == 7' "$candidate_summary_json" >/dev/null
+jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$supported_mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --custom-contract-schema "$repo_root/data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json" \
   --summary-json "$candidate_summary_json" \
   --report-md "$candidate_report_md"
 
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$candidate_summary_json" >/dev/null
+jq -e '.tei_profile_contract.verdict == "TEI_PROFILE_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$candidate_summary_json" >/dev/null
 jq -e '.closure_gaps.admitted_by_custom_contract.count == 1' "$candidate_summary_json" >/dev/null
 jq -e '.closure_gaps.admitted_by_custom_contract.counts_by_family.span_coordinates == 1' "$candidate_summary_json" >/dev/null
-jq -e '.closure_gaps.classified_but_not_admitted.count == 6' "$candidate_summary_json" >/dev/null
+jq -e '.closure_gaps.admitted_by_tei_profile.count == 4' "$candidate_summary_json" >/dev/null
+jq -e '.closure_gaps.admitted_by_tei_profile.counts_by_family.style_rendition == 1' "$candidate_summary_json" >/dev/null
+jq -e '.closure_gaps.admitted_by_tei_profile.counts_by_family.figure_metadata == 1' "$candidate_summary_json" >/dev/null
+jq -e '.closure_gaps.admitted_by_tei_profile.counts_by_family.heading_jisage_structure == 2' "$candidate_summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.count == 2' "$candidate_summary_json" >/dev/null
 jq -e '([.closure_gaps.classified_but_not_admitted.items[] | select(.closure_family == "span_coordinates")] | length) == 0' "$candidate_summary_json" >/dev/null
+jq -e '([.closure_gaps.classified_but_not_admitted.items[] | select(.closure_family == "style_rendition" or .closure_family == "figure_metadata" or .closure_family == "heading_jisage_structure")] | length) == 0' "$candidate_summary_json" >/dev/null
+jq -e '.unsupported_derived_closure_coverage.counts_by_status.admitted_by_custom_contract == 1' "$candidate_summary_json" >/dev/null
+jq -e '.unsupported_derived_closure_coverage.counts_by_status.admitted_by_tei_profile == 4' "$candidate_summary_json" >/dev/null
+jq -e '.unsupported_derived_closure_coverage.counts_by_status.classified_but_not_admitted == 2' "$candidate_summary_json" >/dev/null
+jq -e '.unsupported_derived_closure_coverage.counts_by_status.true_unsupported_gap == 0' "$candidate_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
+
+REPO_ROOT="$repo_root" python3 - <<'PY'
+import importlib.util
+import os
+import pathlib
+
+script = pathlib.Path(os.environ["REPO_ROOT"]) / "reports/parser-ir/publication-coverage.py"
+spec = importlib.util.spec_from_file_location("publication_coverage", script)
+module = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+spec.loader.exec_module(module)
+
+coverage_only = {
+    "verdict": "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION",
+    "schema_id": module.ABC_PRESERVATION_SCHEMA_ID,
+    "schema_version": module.ABC_PRESERVATION_SCHEMA_VERSION,
+    "record_classes": ["custom_sidecar"],
+    "coverage_classes": ["custom_sidecar", "tei_profile_projection"],
+    "constructs": sorted(module.TEI_PROFILE_CONSTRUCTS),
+}
+result = module.tei_profile_contract_block(coverage_only)
+assert result["verdict"] == "TEI_PROFILE_CONTRACT_INCOMPLETE", result
+assert result["missing_record_classes"] == ["tei_profile_projection"], result
+
+missing_construct = {
+    "verdict": "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION",
+    "schema_id": module.ABC_PRESERVATION_SCHEMA_ID,
+    "schema_version": module.ABC_PRESERVATION_SCHEMA_VERSION,
+    "record_classes": ["custom_sidecar", "tei_profile_projection"],
+    "coverage_classes": ["custom_sidecar", "tei_profile_projection"],
+    "constructs": ["accent", "figure_metadata", "style_rendition"],
+}
+result = module.tei_profile_contract_block(missing_construct)
+assert result["verdict"] == "TEI_PROFILE_CONTRACT_INCOMPLETE", result
+assert result["missing_constructs"] == ["heading_jisage_structure"], result
+PY
 
 cat > "$unknown_mapping" <<'JSON'
 {

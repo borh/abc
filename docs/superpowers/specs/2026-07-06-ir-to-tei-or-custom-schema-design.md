@@ -1,6 +1,6 @@
 # IR To TEI Or Custom Schema Publication Contract
 
-Status: Proposed for review
+Status: Accepted; implemented as the current IR publication coverage gate
 Date: 2026-07-06
 Owner boundary: ABC owns the publication contract, TEI profile, custom extension/schema, plaintext policy, and renderer behavior. ab-validator owns measured source-authority, parser/adapter evidence, AAT-to-parser-IR mapping evidence, and generated-output coverage reports.
 
@@ -12,9 +12,11 @@ but it is not the exact end state.
 
 The real goal is:
 
-> Every Parser-IR construct must be publication-accounted-for. Use TEI P5 where
-> TEI is a faithful target. Use an explicit ABC custom schema, extension, or
-> sidecar where TEI is not exact. Plaintext remains metadata-free visible text.
+> Complete TEI mapping from Aozora Bunko markup through parser-IR. Every
+> observed Parser-IR construct and source-derived Aozora markup family must be
+> publication-accounted-for. Use TEI P5 where TEI is a faithful target. Use an
+> explicit ABC custom schema, extension, or sidecar where TEI is not exact.
+> Plaintext remains metadata-free visible text.
 
 Current evidence shows why this distinction matters:
 
@@ -299,31 +301,55 @@ metadata needed only by TEI/custom consumers.
 - Do not use custom schema as an excuse to skip faithful TEI P5 mappings.
 - Do not put ruby readings or metadata into plaintext.
 
+## Current Implementation State
+
+The first implementation of this contract is measured in:
+
+- `docs/superpowers/reports/2026-07-06-ir-publication-coverage.md`
+- `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json`
+
+Current measured verdict:
+
+- `IR_PUBLICATION_COVERAGE_COMPLETE`
+- `FIVE_PARSER_EVIDENCE_COMPLETE` for `aozora2html`, `aozora-epub3`,
+  `aozora-rs`, `aozora2`, and `aozora`
+- `SOURCE_AUTHORITY_GATE_PASS` over 17,894 works
+- `CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
+- `TEI_PROFILE_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
+- `classified_but_not_admitted.count == 0`
+- `true_unsupported_gaps.count == 0`
+
+The report can still list raw unsupported-derived rows because the mapping
+artifact preserves depth-specific divergence identities. Completion is judged by
+the closure buckets after those rows are folded into TEI/profile/custom
+families.
+
 ## Sequencing
 
-1. **ABC protocol decision**
-   - Choose JSON sidecar first, TEI namespace extension first, or both.
-   - Define schema identity and manifest linkage.
+1. **Keep source-authority evidence current**
+   - Rerun the source-authority representability gate when the corpus, scanner,
+     parser adapters, or notation-spec comparison changes.
+   - Treat new unallowlisted source markers as mapping debt until reviewed.
 
-2. **Coverage report in ab-validator**
-   - Build the IR publication coverage report over current parser-IR outputs.
-   - Count every node kind, relevant field, and source construct by mapping
+2. **Keep coverage reporting synchronized**
+   - Regenerate the IR publication coverage report whenever ABC schema/profile
+     hashes, mapping hashes, or parser evidence changes.
+   - Fail on any newly observed Aozora markup family without a TEI/profile/custom
      class.
-   - Fail on any observed construct without a class.
 
-3. **High-leverage schema/rendering deltas**
+3. **High-leverage schema/rendering deltas still worth tracking**
    - `gaiji.resolved` semantic alignment.
    - warigaki node or sidecar preservation path.
    - raw-source recovery path.
    - accent code measurement and rendition vocabulary.
    - quote/caption pass-through measurement if still blocked in any adapter.
 
-4. **Five-parser evidence completion**
-   - Ensure `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and
-     `aozora` all have current corpus evidence where feasible.
+4. **Five-parser evidence maintenance**
+   - Keep `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`
+     current where feasible.
    - Report parser-specific unsupported gaps separately from IR/schema gaps.
 
-5. **Admission**
+5. **Admission maintenance**
    - Claim full IR publication coverage only when all observed facts are in
      `tei_exact`, `tei_policy_projection`, `tei_plus_abc_extension`,
      `custom_sidecar`, or `plaintext_only`, and `unsupported_gap` is empty.

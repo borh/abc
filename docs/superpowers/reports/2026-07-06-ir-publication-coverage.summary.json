@@ -16,7 +16,7 @@
     "parser_ir_schema_hash": "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411",
     "custom_contract_required": true
   },
-  "verdict": "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS",
+  "verdict": "IR_PUBLICATION_COVERAGE_COMPLETE",
   "source_authority_gate": {
     "gate_status": "SOURCE_AUTHORITY_GATE_PASS",
     "works_scanned": 17894,
@@ -53,9 +53,49 @@
   "custom_contract": {
     "verdict": "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION",
     "schema_id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
-    "schema_version": "0.1.0",
-    "path": "/home/bor/Projects/ab-validator/data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json",
+    "schema_version": "0.2.0",
+    "path": "data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json",
+    "contract_hash": "sha256:2366be5f83e660289cf7961e41fa0fb630b57e26458358733d4b5099ee86abb9",
+    "trusted_schema_path": "data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json",
+    "trusted_schema_hash": "sha256:2366be5f83e660289cf7961e41fa0fb630b57e26458358733d4b5099ee86abb9",
+    "trusted_schema_path_match": true,
+    "record_classes": [
+      "custom_sidecar",
+      "tei_profile_projection"
+    ],
+    "coverage_classes": [
+      "custom_sidecar",
+      "tei_profile_projection"
+    ],
+    "constructs": [
+      "accent",
+      "diagnostic",
+      "figure_metadata",
+      "gaiji_resolution",
+      "heading_jisage_structure",
+      "mapping_identity",
+      "paragraph.node_range",
+      "paragraph.source_pointer",
+      "producer_metrics",
+      "source_identity",
+      "source_note.classification",
+      "span_coordinates",
+      "style_rendition"
+    ],
     "message": "ABC-owned parser-IR publication preservation schema is available and admits custom-sidecar publication facts."
+  },
+  "tei_profile_contract": {
+    "verdict": "TEI_PROFILE_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION",
+    "schema_id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
+    "schema_version": "0.2.0",
+    "record_class": "tei_profile_projection",
+    "constructs": [
+      "accent",
+      "figure_metadata",
+      "heading_jisage_structure",
+      "style_rendition"
+    ],
+    "message": "ABC preservation schema admits TEI profile projection records for the measured namespace-extension families."
   },
   "mapping": {
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
@@ -2374,6 +2414,7 @@
     ]
   },
   "unsupported_gaps": {
+    "description": "Raw unsupported-derived mapping rows before closure folding. Use unsupported_derived_closure_coverage or closure_gaps to decide whether any row remains a true unsupported gap.",
     "count": 151,
     "counts_by_owner": {
       "aat_to_parser_ir_converter": 5,
@@ -4188,20 +4229,13 @@
         }
       ]
     },
-    "classified_but_not_admitted": {
+    "admitted_by_tei_profile": {
       "count": 120,
       "counts_by_family": {
         "accent": 14,
         "figure_metadata": 85,
         "heading_jisage_structure": 7,
         "style_rendition": 14
-      },
-      "counts_by_lane": {
-        "tei_plus_abc_extension": 14,
-        "tei_policy_projection": 106
-      },
-      "counts_by_owner": {
-        "policy": 120
       },
       "items": [
         {
@@ -4215,7 +4249,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-06",
@@ -4228,7 +4263,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-09",
@@ -4241,7 +4277,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-12",
@@ -4254,7 +4291,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-13",
@@ -4267,7 +4305,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-24",
@@ -4280,7 +4319,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-28",
@@ -4293,7 +4333,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-33",
@@ -4306,7 +4347,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-37",
@@ -4319,7 +4361,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-40",
@@ -4332,7 +4375,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-41",
@@ -4345,7 +4389,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-98",
@@ -4358,7 +4403,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-103",
@@ -4371,7 +4417,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-107",
@@ -4384,7 +4431,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-109",
@@ -4397,7 +4445,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-113",
@@ -4410,7 +4459,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-114",
@@ -4423,7 +4473,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "A-125",
@@ -4436,7 +4487,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "I-08",
@@ -4449,7 +4501,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "I-11",
@@ -4462,7 +4515,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "I-12",
@@ -4475,7 +4529,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "I-19",
@@ -4488,7 +4543,8 @@
           "closure_family": "heading_jisage_structure",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "I-20",
@@ -4501,7 +4557,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "I-21",
@@ -4514,7 +4571,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "I-27",
@@ -4527,7 +4585,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "I-29",
@@ -4540,7 +4599,8 @@
           "closure_family": "accent",
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
+          "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "I-32",
@@ -4553,7 +4613,8 @@
           "closure_family": "heading_jisage_structure",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-05",
@@ -4566,7 +4627,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-06",
@@ -4579,7 +4641,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-07",
@@ -4592,7 +4655,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-12",
@@ -4605,7 +4669,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-70",
@@ -4618,7 +4683,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-72",
@@ -4631,7 +4697,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-74",
@@ -4644,7 +4711,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-76",
@@ -4657,7 +4725,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-77",
@@ -4670,7 +4739,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-79",
@@ -4683,7 +4753,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-80",
@@ -4696,7 +4767,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-81",
@@ -4709,7 +4781,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-83",
@@ -4722,7 +4795,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-84",
@@ -4735,7 +4809,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-86",
@@ -4748,7 +4823,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-87",
@@ -4761,7 +4837,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-89",
@@ -4774,7 +4851,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-90",
@@ -4787,7 +4865,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-91",
@@ -4800,7 +4879,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-92",
@@ -4813,7 +4893,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-94",
@@ -4826,7 +4907,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-96",
@@ -4839,7 +4921,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-97",
@@ -4852,7 +4935,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-99",
@@ -4865,7 +4949,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-101",
@@ -4878,7 +4963,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-102",
@@ -4891,7 +4977,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-103",
@@ -4904,7 +4991,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-105",
@@ -4917,7 +5005,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-107",
@@ -4930,7 +5019,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-109",
@@ -4943,7 +5033,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-111",
@@ -4956,7 +5047,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-113",
@@ -4969,7 +5061,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-115",
@@ -4982,7 +5075,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-117",
@@ -4995,7 +5089,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-119",
@@ -5008,7 +5103,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-121",
@@ -5021,7 +5117,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-123",
@@ -5034,7 +5131,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-125",
@@ -5047,7 +5145,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-127",
@@ -5060,7 +5159,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-128",
@@ -5073,7 +5173,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-130",
@@ -5086,7 +5187,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-132",
@@ -5099,7 +5201,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-134",
@@ -5112,7 +5215,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-135",
@@ -5125,7 +5229,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-138",
@@ -5138,7 +5243,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-140",
@@ -5151,7 +5257,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-142",
@@ -5164,7 +5271,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-144",
@@ -5177,7 +5285,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-147",
@@ -5190,7 +5299,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-150",
@@ -5203,7 +5313,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-155",
@@ -5216,7 +5327,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-156",
@@ -5229,7 +5341,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-157",
@@ -5242,7 +5355,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-164",
@@ -5255,7 +5369,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-165",
@@ -5268,7 +5383,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-166",
@@ -5281,7 +5397,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-170",
@@ -5294,7 +5411,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-255",
@@ -5307,7 +5425,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-257",
@@ -5320,7 +5439,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-279",
@@ -5333,7 +5453,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-291",
@@ -5346,7 +5467,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-303",
@@ -5359,7 +5481,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-310",
@@ -5372,7 +5495,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-315",
@@ -5385,7 +5509,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-324",
@@ -5398,7 +5523,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-329",
@@ -5411,7 +5537,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-332",
@@ -5424,7 +5551,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-337",
@@ -5437,7 +5565,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-342",
@@ -5450,7 +5579,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-345",
@@ -5463,7 +5593,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-348",
@@ -5476,7 +5607,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-351",
@@ -5489,7 +5621,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-355",
@@ -5502,7 +5635,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-358",
@@ -5515,7 +5649,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-361",
@@ -5528,7 +5663,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-363",
@@ -5541,7 +5677,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-364",
@@ -5554,7 +5691,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-365",
@@ -5567,7 +5705,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-376",
@@ -5580,7 +5719,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-377",
@@ -5593,7 +5733,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-378",
@@ -5606,7 +5747,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-444",
@@ -5619,7 +5761,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-449",
@@ -5632,7 +5775,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-452",
@@ -5645,7 +5789,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-458",
@@ -5658,7 +5803,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-459",
@@ -5671,7 +5817,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-460",
@@ -5684,7 +5831,8 @@
           "closure_family": "figure_metadata",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
+          "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "L-464",
@@ -5697,7 +5845,8 @@
           "closure_family": "style_rendition",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
+          "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "S-02",
@@ -5710,7 +5859,8 @@
           "closure_family": "heading_jisage_structure",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "S-03",
@@ -5723,7 +5873,8 @@
           "closure_family": "heading_jisage_structure",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "S-04",
@@ -5736,7 +5887,8 @@
           "closure_family": "heading_jisage_structure",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "S-07",
@@ -5749,7 +5901,8 @@
           "closure_family": "heading_jisage_structure",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         },
         {
           "rule_id": "S-08",
@@ -5762,14 +5915,48 @@
           "closure_family": "heading_jisage_structure",
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
-          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
         }
       ]
+    },
+    "classified_but_not_admitted": {
+      "count": 0,
+      "counts_by_family": {},
+      "counts_by_lane": {},
+      "counts_by_owner": {},
+      "items": []
     },
     "true_unsupported_gaps": {
       "count": 0,
       "counts_by_owner": {},
       "items": []
+    }
+  },
+  "unsupported_derived_closure_coverage": {
+    "description": "Closure-adjusted view of raw unsupported-derived mapping rows. A row is a true unsupported gap only if it has no TEI/profile/custom closure family.",
+    "total": 151,
+    "counts_by_status": {
+      "admitted_by_custom_contract": 31,
+      "admitted_by_tei_profile": 120,
+      "classified_but_not_admitted": 0,
+      "true_unsupported_gap": 0
+    },
+    "counts_by_family_by_status": {
+      "admitted_by_custom_contract": {
+        "gaiji_unresolved_reason": 6,
+        "provenance_metrics": 3,
+        "source_identity": 5,
+        "span_coordinates": 17
+      },
+      "admitted_by_tei_profile": {
+        "accent": 14,
+        "figure_metadata": 85,
+        "heading_jisage_structure": 7,
+        "style_rendition": 14
+      },
+      "classified_but_not_admitted": {},
+      "true_unsupported_gap": {}
     }
   },
   "tei_eaj_calibration": {

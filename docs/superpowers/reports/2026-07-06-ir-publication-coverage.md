@@ -1,6 +1,6 @@
 # IR Publication Coverage
 
-Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS`
+Verdict: `IR_PUBLICATION_COVERAGE_COMPLETE`
 
 ## Node Coverage
 
@@ -68,7 +68,22 @@ Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS`
 | `tei_plus_abc_extension` | 2 |
 | `unsupported_gap` | 16 |
 
-## Unsupported gaps
+## Unsupported-Derived Closure Coverage
+
+Closure-adjusted view of raw unsupported-derived mapping rows. A row is a true unsupported gap only if it has no TEI/profile/custom closure family.
+
+Total raw unsupported-derived rows: 151
+
+| Status | Rows |
+|---|---:|
+| `admitted_by_custom_contract` | 31 |
+| `admitted_by_tei_profile` | 120 |
+| `classified_but_not_admitted` | 0 |
+| `true_unsupported_gap` | 0 |
+
+## Raw Unsupported-Derived Mapping Rows
+
+Raw unsupported-derived mapping rows before closure folding. Use unsupported_derived_closure_coverage or closure_gaps to decide whether any row remains a true unsupported gap.
 
 Count: 151
 
@@ -103,7 +118,9 @@ Count: 151
 
 Admitted by custom contract: 31
 
-Classified but not admitted: 120
+Admitted by TEI profile: 120
+
+Classified but not admitted: 0
 
 | Admitted family | Count |
 |---|---:|
@@ -112,7 +129,7 @@ Classified but not admitted: 120
 | `source_identity` | 5 |
 | `span_coordinates` | 17 |
 
-| Family | Count |
+| TEI profile admitted family | Count |
 |---|---:|
 | `accent` | 14 |
 | `figure_metadata` | 85 |

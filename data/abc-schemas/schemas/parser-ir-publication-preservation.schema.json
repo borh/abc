@@ -21,7 +21,7 @@
       "const": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
     },
     "schema_version": {
-      "const": "0.1.0"
+      "const": "0.2.0"
     },
     "schema_hash": {
       "$ref": "#/$defs/hash"
@@ -91,7 +91,7 @@
         "classes": {
           "type": "array",
           "items": {
-            "enum": ["custom_sidecar"]
+            "enum": ["custom_sidecar", "tei_profile_projection"]
           },
           "uniqueItems": true
         }
@@ -133,18 +133,22 @@
         "record_id": { "type": "string", "pattern": "^r[0-9]{6}$" },
         "ir_pointer": { "type": "string", "minLength": 1 },
         "tei_pointer": { "type": ["string", "null"] },
-        "class": { "const": "custom_sidecar" },
+        "class": { "enum": ["custom_sidecar", "tei_profile_projection"] },
         "construct": {
           "enum": [
+            "accent",
             "diagnostic",
+            "figure_metadata",
             "gaiji_resolution",
+            "heading_jisage_structure",
             "mapping_identity",
             "paragraph.node_range",
             "paragraph.source_pointer",
             "producer_metrics",
             "source_identity",
             "source_note.classification",
-            "span_coordinates"
+            "span_coordinates",
+            "style_rendition"
           ]
         },
         "source_pointer": { "type": ["string", "null"] },

@@ -13,8 +13,21 @@ from typing import Any
 
 SCHEMA_VERSION = "ir-publication-coverage-v1"
 REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora")
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 ABC_PRESERVATION_SCHEMA_ID = "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
-ABC_PRESERVATION_SCHEMA_VERSION = "0.1.0"
+ABC_PRESERVATION_SCHEMA_VERSION = "0.2.0"
+TRUSTED_ABC_PRESERVATION_SCHEMA_PATH = (
+    REPO_ROOT / "data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json"
+).resolve()
+TEI_PROFILE_RECORD_CLASS = "tei_profile_projection"
+TEI_PROFILE_FAMILIES = {
+    "accent",
+    "figure_metadata",
+    "heading_jisage_structure",
+    "style_rendition",
+}
+TEI_PROFILE_CONSTRUCTS = set(TEI_PROFILE_FAMILIES)
+TEI_PROFILE_LANES = {"tei_policy_projection", "tei_plus_abc_extension"}
 PLAINTEXT_POLICY = {
     "plaintext_surface": "visible_body_text",
     "metadata_policy": "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance",
@@ -710,7 +723,7 @@ def custom_contract_block(custom_contract_schema: pathlib.Path | None) -> dict[s
             "verdict": "CUSTOM_CONTRACT_INVALID",
             "schema_id": None,
             "schema_version": None,
-            "path": str(custom_contract_schema),
+            "path": display_path(custom_contract_schema),
             "message": "ABC custom preservation contract is not valid JSON.",
         }
     except OSError:
@@ -718,7 +731,7 @@ def custom_contract_block(custom_contract_schema: pathlib.Path | None) -> dict[s
             "verdict": "CUSTOM_CONTRACT_MISSING",
             "schema_id": None,
             "schema_version": None,
-            "path": str(custom_contract_schema),
+            "path": display_path(custom_contract_schema),
             "message": "ABC custom preservation contract path was supplied but could not be read.",
         }
 
@@ -730,20 +743,111 @@ def custom_contract_block(custom_contract_schema: pathlib.Path | None) -> dict[s
             contract.get("schema_version")
             or contract.get("properties", {}).get("schema_version", {}).get("const")
         )
-    if contract_id == ABC_PRESERVATION_SCHEMA_ID and contract_version == ABC_PRESERVATION_SCHEMA_VERSION:
+    record_classes = sorted(schema_enum_values(contract, ("$defs", "record", "properties", "class", "enum")))
+    coverage_classes = sorted(
+        schema_enum_values(contract, ("properties", "coverage", "properties", "classes", "items", "enum"))
+    )
+    constructs = sorted(schema_enum_values(contract, ("$defs", "record", "properties", "construct", "enum")))
+    contract_hash = document_hash(contract)
+    trusted_schema_hash = trusted_custom_contract_hash()
+    trusted_schema_path_match = custom_contract_schema.resolve() == TRUSTED_ABC_PRESERVATION_SCHEMA_PATH
+    if (
+        contract_id == ABC_PRESERVATION_SCHEMA_ID
+        and contract_version == ABC_PRESERVATION_SCHEMA_VERSION
+        and trusted_schema_path_match
+        and contract_hash == trusted_schema_hash
+    ):
         return {
             "verdict": "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION",
             "schema_id": contract_id,
             "schema_version": contract_version,
-            "path": str(custom_contract_schema),
+            "path": display_path(custom_contract_schema),
+            "contract_hash": contract_hash,
+            "trusted_schema_path": display_path(TRUSTED_ABC_PRESERVATION_SCHEMA_PATH),
+            "trusted_schema_hash": trusted_schema_hash,
+            "trusted_schema_path_match": trusted_schema_path_match,
+            "record_classes": record_classes,
+            "coverage_classes": coverage_classes,
+            "constructs": constructs,
             "message": "ABC-owned parser-IR publication preservation schema is available and admits custom-sidecar publication facts.",
         }
     return {
         "verdict": "CUSTOM_CONTRACT_CANDIDATE_PROVIDED",
         "schema_id": contract_id,
         "schema_version": contract_version,
-        "path": str(custom_contract_schema),
+        "path": display_path(custom_contract_schema),
+        "contract_hash": contract_hash,
+        "trusted_schema_path": display_path(TRUSTED_ABC_PRESERVATION_SCHEMA_PATH),
+        "trusted_schema_hash": trusted_schema_hash,
+        "trusted_schema_path_match": trusted_schema_path_match,
+        "record_classes": record_classes,
+        "coverage_classes": coverage_classes,
+        "constructs": constructs,
         "message": "Readable contract candidate recorded as evidence only; ABC-owned integration must confirm the publication contract before admission can unblock.",
+    }
+
+
+def schema_enum_values(schema: Any, path: tuple[str, ...]) -> set[str]:
+    cursor = schema
+    for key in path:
+        if not isinstance(cursor, dict):
+            return set()
+        cursor = cursor.get(key)
+    if not isinstance(cursor, list):
+        return set()
+    return {value for value in cursor if isinstance(value, str)}
+
+
+def display_path(path: pathlib.Path) -> str:
+    resolved = path.resolve()
+    try:
+        return str(resolved.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
+def trusted_custom_contract_hash() -> str | None:
+    try:
+        return document_hash(load_json(TRUSTED_ABC_PRESERVATION_SCHEMA_PATH))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def tei_profile_contract_block(custom_contract: dict[str, Any]) -> dict[str, Any]:
+    if custom_contract.get("verdict") != "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION":
+        return {
+            "verdict": "TEI_PROFILE_CONTRACT_MISSING",
+            "schema_id": custom_contract.get("schema_id"),
+            "schema_version": custom_contract.get("schema_version"),
+            "missing_record_classes": [TEI_PROFILE_RECORD_CLASS],
+            "missing_coverage_classes": [TEI_PROFILE_RECORD_CLASS],
+            "missing_constructs": sorted(TEI_PROFILE_CONSTRUCTS),
+            "message": "ABC TEI profile projection evidence is unavailable until the ABC preservation schema is confirmed.",
+        }
+
+    record_classes = set(custom_contract.get("record_classes") or [])
+    coverage_classes = set(custom_contract.get("coverage_classes") or [])
+    constructs = set(custom_contract.get("constructs") or [])
+    missing_record_classes = sorted({TEI_PROFILE_RECORD_CLASS} - record_classes)
+    missing_coverage_classes = sorted({TEI_PROFILE_RECORD_CLASS} - coverage_classes)
+    missing_constructs = sorted(TEI_PROFILE_CONSTRUCTS - constructs)
+    if missing_record_classes or missing_coverage_classes or missing_constructs:
+        return {
+            "verdict": "TEI_PROFILE_CONTRACT_INCOMPLETE",
+            "schema_id": custom_contract.get("schema_id"),
+            "schema_version": custom_contract.get("schema_version"),
+            "missing_record_classes": missing_record_classes,
+            "missing_coverage_classes": missing_coverage_classes,
+            "missing_constructs": missing_constructs,
+            "message": "ABC preservation schema is confirmed but does not admit all TEI profile projection evidence required by the coverage gate.",
+        }
+    return {
+        "verdict": "TEI_PROFILE_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION",
+        "schema_id": custom_contract.get("schema_id"),
+        "schema_version": custom_contract.get("schema_version"),
+        "record_class": TEI_PROFILE_RECORD_CLASS,
+        "constructs": sorted(TEI_PROFILE_CONSTRUCTS),
+        "message": "ABC preservation schema admits TEI profile projection records for the measured namespace-extension families.",
     }
 
 
@@ -817,6 +921,10 @@ def unsupported_gaps(
         )
     items.extend(construct_coverage.get("unsupported", []))
     return {
+        "description": (
+            "Raw unsupported-derived mapping rows before closure folding. "
+            "Use unsupported_derived_closure_coverage or closure_gaps to decide whether any row remains a true unsupported gap."
+        ),
         "count": len(items),
         "counts_by_owner": count_values(items, "owner"),
         "items": items,
@@ -879,11 +987,19 @@ def classify_closure_gap(item: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
-def closure_gaps(gaps: dict[str, Any], custom_contract: dict[str, Any]) -> dict[str, Any]:
+def closure_gaps(
+    gaps: dict[str, Any],
+    custom_contract: dict[str, Any],
+    tei_profile_contract: dict[str, Any],
+) -> dict[str, Any]:
     classified: list[dict[str, Any]] = []
     admitted_by_custom_contract: list[dict[str, Any]] = []
+    admitted_by_tei_profile: list[dict[str, Any]] = []
     true_unsupported: list[dict[str, Any]] = []
     custom_contract_confirmed = custom_contract.get("verdict") == "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"
+    tei_profile_confirmed = (
+        tei_profile_contract.get("verdict") == "TEI_PROFILE_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"
+    )
     for item in gaps.get("items", []):
         closure_item = classify_closure_gap(item)
         if closure_item is None:
@@ -892,6 +1008,14 @@ def closure_gaps(gaps: dict[str, Any], custom_contract: dict[str, Any]) -> dict[
             admitted_by_custom_contract.append(
                 {**closure_item, "admitted_by": custom_contract.get("schema_id")}
             )
+        elif (
+            tei_profile_confirmed
+            and closure_item.get("closure_family") in TEI_PROFILE_FAMILIES
+            and closure_item.get("closure_lane") in TEI_PROFILE_LANES
+        ):
+            admitted_by_tei_profile.append(
+                {**closure_item, "admitted_by": tei_profile_contract.get("schema_id")}
+            )
         else:
             classified.append(closure_item)
     return {
@@ -899,6 +1023,11 @@ def closure_gaps(gaps: dict[str, Any], custom_contract: dict[str, Any]) -> dict[
             "count": len(admitted_by_custom_contract),
             "counts_by_family": count_values(admitted_by_custom_contract, "closure_family"),
             "items": admitted_by_custom_contract,
+        },
+        "admitted_by_tei_profile": {
+            "count": len(admitted_by_tei_profile),
+            "counts_by_family": count_values(admitted_by_tei_profile, "closure_family"),
+            "items": admitted_by_tei_profile,
         },
         "classified_but_not_admitted": {
             "count": len(classified),
@@ -911,6 +1040,29 @@ def closure_gaps(gaps: dict[str, Any], custom_contract: dict[str, Any]) -> dict[
             "count": len(true_unsupported),
             "counts_by_owner": count_values(true_unsupported, "owner"),
             "items": true_unsupported,
+        },
+    }
+
+
+def unsupported_derived_closure_coverage(closures: dict[str, Any]) -> dict[str, Any]:
+    status_items = {
+        "admitted_by_custom_contract": closures["admitted_by_custom_contract"].get("items", []),
+        "admitted_by_tei_profile": closures["admitted_by_tei_profile"].get("items", []),
+        "classified_but_not_admitted": closures["classified_but_not_admitted"].get("items", []),
+        "true_unsupported_gap": closures["true_unsupported_gaps"].get("items", []),
+    }
+    return {
+        "description": (
+            "Closure-adjusted view of raw unsupported-derived mapping rows. "
+            "A row is a true unsupported gap only if it has no TEI/profile/custom closure family."
+        ),
+        "total": sum(len(items) for items in status_items.values()),
+        "counts_by_status": {
+            status: len(items) for status, items in status_items.items()
+        },
+        "counts_by_family_by_status": {
+            status: count_values(items, "closure_family")
+            for status, items in status_items.items()
         },
     }
 
@@ -930,8 +1082,6 @@ def publication_verdict(
         return "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"
     if closures["classified_but_not_admitted"].get("count", 0) > 0:
         return "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"
-    if gaps.get("count", 0) > 0:
-        return "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"
     if custom_contract.get("verdict") != "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION":
         return "IR_PUBLICATION_COVERAGE_BLOCKED_CUSTOM_CONTRACT_MISSING"
     return "IR_PUBLICATION_COVERAGE_COMPLETE"
@@ -951,8 +1101,9 @@ def build_summary(
     construct_coverage = source_construct_coverage(mapping)
     evidence = parser_evidence_coverage(matrix, source_delta)
     custom_contract = custom_contract_block(custom_contract_schema)
+    tei_profile_contract = tei_profile_contract_block(custom_contract)
     gaps = unsupported_gaps(node_coverage, field_coverage, diagnostics, construct_coverage)
-    closures = closure_gaps(gaps, custom_contract)
+    closures = closure_gaps(gaps, custom_contract, tei_profile_contract)
     source_passed = source_authority_passed(source)
     return {
         "schema_version": SCHEMA_VERSION,
@@ -969,6 +1120,7 @@ def build_summary(
             "calibration": "tei_eaj_calibration_only",
         },
         "custom_contract": custom_contract,
+        "tei_profile_contract": tei_profile_contract,
         "mapping": mapping_block(mapping),
         "node_coverage": node_coverage,
         "field_coverage": field_coverage,
@@ -976,6 +1128,7 @@ def build_summary(
         "source_construct_coverage": construct_coverage,
         "unsupported_gaps": gaps,
         "closure_gaps": closures,
+        "unsupported_derived_closure_coverage": unsupported_derived_closure_coverage(closures),
         "tei_eaj_calibration": {
             "matrix_schema_version": matrix.get("schema_version"),
             "rows_attempted": matrix.get("totals", {}).get("rows_attempted"),
@@ -991,6 +1144,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     field_counts = summary["field_coverage"]["counts_by_class"]
     diagnostic_counts = summary["diagnostic_coverage"]["counts_by_class"]
     construct_counts = summary["source_construct_coverage"]["counts_by_class"]
+    adjusted_closure = summary["unsupported_derived_closure_coverage"]
     gaps = summary["unsupported_gaps"]
     closures = summary["closure_gaps"]
     lines = [
@@ -1020,7 +1174,28 @@ def render_markdown(summary: dict[str, Any]) -> str:
     lines.extend(["", "## Source Construct Coverage", "", "| Class | Constructs |", "|---|---:|"])
     for name, count in construct_counts.items():
         lines.append(f"| `{name}` | {count} |")
-    lines.extend(["", "## Unsupported gaps", "", f"Count: {gaps['count']}", ""])
+    lines.extend([
+        "",
+        "## Unsupported-Derived Closure Coverage",
+        "",
+        adjusted_closure["description"],
+        "",
+        f"Total raw unsupported-derived rows: {adjusted_closure['total']}",
+        "",
+        "| Status | Rows |",
+        "|---|---:|",
+    ])
+    for status, count in adjusted_closure["counts_by_status"].items():
+        lines.append(f"| `{status}` | {count} |")
+    lines.extend([
+        "",
+        "## Raw Unsupported-Derived Mapping Rows",
+        "",
+        gaps["description"],
+        "",
+        f"Count: {gaps['count']}",
+        "",
+    ])
     if gaps.get("counts_by_owner"):
         lines.extend(["| Owner | Count |", "|---|---:|"])
         for owner, count in gaps["counts_by_owner"].items():
@@ -1035,12 +1210,19 @@ def render_markdown(summary: dict[str, Any]) -> str:
         "",
         f"Admitted by custom contract: {closures['admitted_by_custom_contract']['count']}",
         "",
+        f"Admitted by TEI profile: {closures['admitted_by_tei_profile']['count']}",
+        "",
         f"Classified but not admitted: {closures['classified_but_not_admitted']['count']}",
         "",
     ])
     if closures["admitted_by_custom_contract"].get("counts_by_family"):
         lines.extend(["| Admitted family | Count |", "|---|---:|"])
         for family, count in closures["admitted_by_custom_contract"]["counts_by_family"].items():
+            lines.append(f"| `{family}` | {count} |")
+        lines.append("")
+    if closures["admitted_by_tei_profile"].get("counts_by_family"):
+        lines.extend(["| TEI profile admitted family | Count |", "|---|---:|"])
+        for family, count in closures["admitted_by_tei_profile"]["counts_by_family"].items():
             lines.append(f"| `{family}` | {count} |")
         lines.append("")
     if closures["classified_but_not_admitted"].get("counts_by_family"):

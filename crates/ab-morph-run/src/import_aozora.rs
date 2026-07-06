@@ -2,10 +2,21 @@
 //! of ABC's `metadata-record.schema.json` export.
 //! Design: docs/superpowers/specs/2026-07-06-aozora-works-import-design.md
 
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs::{self, File};
 use std::path::Path;
+use std::sync::Arc;
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
+use arrow_array::{Array, Int32Array, RecordBatch, StringArray};
+use arrow_schema::{DataType, Field, Schema};
+use parquet::arrow::ArrowWriter;
+use parquet::basic::{Compression, ZstdLevel};
+use parquet::file::properties::WriterProperties;
 use serde::Deserialize;
+
+use crate::summary::read_warehouse_table;
+use crate::warehouse::schema::WarehouseTable;
 
 /// ABC metadata-record schema hash this importer was written against.
 /// Every export record must declare exactly this hash; an ABC schema
@@ -152,6 +163,188 @@ fn publication_year(record: &MetadataRecord) -> Option<i32> {
         })
 }
 
+/// Outcome counts for one `import-aozora-metadata` invocation.
+#[derive(Debug)]
+pub struct ImportSummary {
+    pub works_imported: usize,
+    pub sources_mapped: usize,
+    pub skipped_source_ids: Vec<String>,
+}
+
+/// Materializes `<run_dir>/aozora_works.parquet` from an ABC export
+/// (`<from>/works/<work_id>.json`). Spec: 2026-07-06 design doc; error
+/// behavior follows its table verbatim.
+pub fn run_import_aozora_metadata(
+    run_dir: &Path,
+    from: &Path,
+    force: bool,
+) -> Result<ImportSummary> {
+    let output = run_dir.join("aozora_works.parquet");
+    if output.exists() && !force {
+        bail!(
+            "refusing to overwrite {} (pass --force to allow)",
+            output.display()
+        );
+    }
+    let works_dir = from.join("works");
+    if !works_dir.is_dir() {
+        bail!(
+            "{} is not an ABC export root: missing works/ directory",
+            from.display()
+        );
+    }
+
+    let mut source_ids = BTreeSet::new();
+    for batch in read_warehouse_table(run_dir, WarehouseTable::Sources)? {
+        let index = batch
+            .schema()
+            .index_of("source_id")
+            .context("sources.parquet is missing a source_id column")?;
+        let values = batch
+            .column(index)
+            .as_any()
+            .downcast_ref::<StringArray>()
+            .context("sources.source_id is not a StringArray")?;
+        for row in 0..batch.num_rows() {
+            source_ids.insert(values.value(row).to_owned());
+        }
+    }
+
+    let mut sources_by_work = BTreeMap::<String, Vec<String>>::new();
+    let mut skipped_source_ids = Vec::new();
+    for source_id in source_ids {
+        match parse_source_id(&source_id) {
+            Some(work_id) => sources_by_work.entry(work_id).or_default().push(source_id),
+            None => skipped_source_ids.push(source_id),
+        }
+    }
+
+    let retrieved_at = chrono::Utc::now().to_rfc3339();
+    let mut rows = SidecarColumns::default();
+    let mut works_imported = 0usize;
+    for (work_id, work_sources) in sources_by_work {
+        let path = works_dir.join(format!("{work_id}.json"));
+        if !path.exists() {
+            // Absence is a coverage gap (tolerated, warned); corruption
+            // below is a contract violation (hard error).
+            eprintln!(
+                "import-aozora-metadata: no export record {}; skipping {} source(s)",
+                path.display(),
+                work_sources.len()
+            );
+            skipped_source_ids.extend(work_sources);
+            continue;
+        }
+        let bytes = fs::read(&path).with_context(|| format!("failed to read {}", path.display()))?;
+        let record: MetadataRecord = serde_json::from_slice(&bytes)
+            .with_context(|| format!("failed to parse {}", path.display()))?;
+        validate_record(&record, &work_id, &path)?;
+        works_imported += 1;
+        for source_id in work_sources {
+            rows.push(&work_id, &source_id, &record, &retrieved_at);
+        }
+    }
+    skipped_source_ids.sort();
+
+    if rows.len() == 0 {
+        bail!(
+            "zero sources mapped to ABC works; refusing to write an empty projection \
+             (is {} the right export root for this run?)",
+            from.display()
+        );
+    }
+
+    let temp = run_dir.join("aozora_works.parquet.tmp");
+    write_sidecar(&temp, &rows)
+        .with_context(|| format!("failed to write {}", temp.display()))?;
+    fs::rename(&temp, &output)
+        .with_context(|| format!("failed to rename {} to {}", temp.display(), output.display()))?;
+
+    Ok(ImportSummary {
+        works_imported,
+        sources_mapped: rows.len(),
+        skipped_source_ids,
+    })
+}
+
+/// Column-major accumulator for the 9 sidecar columns. Rows arrive
+/// pre-sorted by (work_id, source_id) via the BTreeMap iteration order.
+#[derive(Default)]
+struct SidecarColumns {
+    work_ids: Vec<String>,
+    source_ids: Vec<String>,
+    titles: Vec<String>,
+    author_person_ids: Vec<Option<String>>,
+    publication_years: Vec<Option<i32>>,
+    orthographic_styles: Vec<String>,
+    schema_hashes: Vec<String>,
+    retrieved_ats: Vec<String>,
+}
+
+impl SidecarColumns {
+    fn len(&self) -> usize {
+        self.work_ids.len()
+    }
+
+    fn push(&mut self, work_id: &str, source_id: &str, record: &MetadataRecord, retrieved_at: &str) {
+        self.work_ids.push(work_id.to_owned());
+        self.source_ids.push(source_id.to_owned());
+        self.titles.push(record.work.title.clone());
+        self.author_person_ids
+            .push(author_person_id(record).map(str::to_owned));
+        self.publication_years.push(publication_year(record));
+        self.orthographic_styles
+            .push(record.work.orthographic_style.clone());
+        self.schema_hashes
+            .push(record.metadata_record_schema_hash.clone());
+        self.retrieved_ats.push(retrieved_at.to_owned());
+    }
+}
+
+fn write_sidecar(path: &Path, rows: &SidecarColumns) -> Result<()> {
+    let schema = Arc::new(Schema::new(vec![
+        Field::new("work_id", DataType::Utf8, false),
+        Field::new("source_id", DataType::Utf8, false),
+        Field::new("title", DataType::Utf8, false),
+        Field::new("author_person_id", DataType::Utf8, true),
+        Field::new("publication_year", DataType::Int32, true),
+        Field::new("orthographic_style", DataType::Utf8, false),
+        Field::new("genre", DataType::Utf8, true),
+        Field::new("metadata_record_schema_hash", DataType::Utf8, false),
+        Field::new("metadata_record_retrieved_at", DataType::Utf8, false),
+    ]));
+    let genre: Vec<Option<&str>> = vec![None; rows.len()];
+    let batch = RecordBatch::try_new(
+        schema.clone(),
+        vec![
+            Arc::new(StringArray::from_iter_values(rows.work_ids.iter())),
+            Arc::new(StringArray::from_iter_values(rows.source_ids.iter())),
+            Arc::new(StringArray::from_iter_values(rows.titles.iter())),
+            Arc::new(StringArray::from(
+                rows.author_person_ids
+                    .iter()
+                    .map(|value| value.as_deref())
+                    .collect::<Vec<_>>(),
+            )),
+            Arc::new(Int32Array::from(rows.publication_years.clone())),
+            Arc::new(StringArray::from_iter_values(rows.orthographic_styles.iter())),
+            Arc::new(StringArray::from(genre)),
+            Arc::new(StringArray::from_iter_values(rows.schema_hashes.iter())),
+            Arc::new(StringArray::from_iter_values(rows.retrieved_ats.iter())),
+        ],
+    )?;
+    let file = File::create(path)?;
+    let properties = WriterProperties::builder()
+        .set_compression(Compression::ZSTD(
+            ZstdLevel::try_new(3).expect("valid zstd level"),
+        ))
+        .build();
+    let mut writer = ArrowWriter::try_new(file, schema, Some(properties))?;
+    writer.write(&batch)?;
+    writer.close()?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -292,5 +485,233 @@ mod tests {
         value["work"]["source_editions"] = serde_json::json!([]);
         let parsed: MetadataRecord = serde_json::from_value(value).unwrap();
         assert_eq!(publication_year(&parsed), None);
+    }
+
+    use std::fs::{self, File};
+    use std::sync::Arc;
+
+    use arrow_array::{RecordBatch, StringArray};
+    use arrow_schema::{DataType, Field, Schema};
+    use parquet::arrow::ArrowWriter;
+
+    fn write_sources_parquet(run_dir: &Path, source_ids: &[&str]) {
+        let schema = Arc::new(Schema::new(vec![Field::new(
+            "source_id",
+            DataType::Utf8,
+            false,
+        )]));
+        let batch = RecordBatch::try_new(
+            schema.clone(),
+            vec![Arc::new(StringArray::from(source_ids.to_vec()))],
+        )
+        .unwrap();
+        let file = File::create(run_dir.join("sources.parquet")).unwrap();
+        let mut writer = ArrowWriter::try_new(file, schema, None).unwrap();
+        writer.write(&batch).unwrap();
+        writer.close().unwrap();
+    }
+
+    fn write_export_record(export_dir: &Path, work_id: &str, value: &serde_json::Value) {
+        let works = export_dir.join("works");
+        fs::create_dir_all(&works).unwrap();
+        fs::write(
+            works.join(format!("{work_id}.json")),
+            serde_json::to_vec(value).unwrap(),
+        )
+        .unwrap();
+    }
+
+    fn read_sidecar(run_dir: &Path) -> Vec<RecordBatch> {
+        let file = File::open(run_dir.join("aozora_works.parquet")).unwrap();
+        parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder::try_new(file)
+            .unwrap()
+            .build()
+            .unwrap()
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .unwrap()
+    }
+
+    fn string_at(batch: &RecordBatch, column: &str, row: usize) -> Option<String> {
+        let index = batch.schema().index_of(column).unwrap();
+        let values = batch
+            .column(index)
+            .as_any()
+            .downcast_ref::<StringArray>()
+            .unwrap();
+        values.is_valid(row).then(|| values.value(row).to_owned())
+    }
+
+    #[test]
+    fn imports_run_scoped_projection() {
+        let dir = tempfile::tempdir().unwrap();
+        let run_dir = dir.path().join("run");
+        let export = dir.path().join("export");
+        fs::create_dir_all(&run_dir).unwrap();
+        // Two files of one card (multi-file merge) + one distinct work.
+        write_sources_parquet(
+            &run_dir,
+            &[
+                "000001_10-aaaaaaaaaaaa",
+                "000001_10-bbbbbbbbbbbb",
+                "000002_20-cccccccccccc",
+            ],
+        );
+        write_export_record(&export, "000010", &record_value("000010"));
+        write_export_record(&export, "000020", &record_value("000020"));
+
+        let summary = run_import_aozora_metadata(&run_dir, &export, false).unwrap();
+
+        assert_eq!(summary.works_imported, 2);
+        assert_eq!(summary.sources_mapped, 3);
+        assert!(summary.skipped_source_ids.is_empty());
+        let batches = read_sidecar(&run_dir);
+        let rows: usize = batches.iter().map(RecordBatch::num_rows).sum();
+        assert_eq!(rows, 3);
+        let batch = &batches[0];
+        assert_eq!(
+            batch.schema().fields().iter().map(|f| f.name().as_str()).collect::<Vec<_>>(),
+            vec![
+                "work_id",
+                "source_id",
+                "title",
+                "author_person_id",
+                "publication_year",
+                "orthographic_style",
+                "genre",
+                "metadata_record_schema_hash",
+                "metadata_record_retrieved_at",
+            ]
+        );
+        // Rows are sorted by (work_id, source_id).
+        assert_eq!(string_at(batch, "work_id", 0).as_deref(), Some("000010"));
+        assert_eq!(
+            string_at(batch, "source_id", 0).as_deref(),
+            Some("000001_10-aaaaaaaaaaaa")
+        );
+        assert_eq!(string_at(batch, "title", 0).as_deref(), Some("聖三稜玻璃"));
+        assert_eq!(
+            string_at(batch, "author_person_id", 0).as_deref(),
+            Some("000136")
+        );
+        assert_eq!(
+            string_at(batch, "orthographic_style", 0).as_deref(),
+            Some("旧字旧仮名")
+        );
+        assert_eq!(string_at(batch, "genre", 0), None);
+        assert_eq!(
+            string_at(batch, "metadata_record_schema_hash", 0).as_deref(),
+            Some(ABC_METADATA_RECORD_SCHEMA_HASH)
+        );
+        let years = batch
+            .column(batch.schema().index_of("publication_year").unwrap())
+            .as_any()
+            .downcast_ref::<arrow_array::Int32Array>()
+            .unwrap();
+        assert_eq!(years.value(0), 1988);
+    }
+
+    #[test]
+    fn skips_unparsable_and_missing_works_with_warning() {
+        let dir = tempfile::tempdir().unwrap();
+        let run_dir = dir.path().join("run");
+        let export = dir.path().join("export");
+        fs::create_dir_all(&run_dir).unwrap();
+        write_sources_parquet(
+            &run_dir,
+            &[
+                "000001_10-aaaaaaaaaaaa",
+                "000025_kantou-20379f2add12", // unparsable slug
+                "000989_352-eeeeeeeeeeee",    // no export record
+            ],
+        );
+        write_export_record(&export, "000010", &record_value("000010"));
+
+        let summary = run_import_aozora_metadata(&run_dir, &export, false).unwrap();
+
+        assert_eq!(summary.works_imported, 1);
+        assert_eq!(summary.sources_mapped, 1);
+        assert_eq!(
+            summary.skipped_source_ids,
+            vec![
+                "000025_kantou-20379f2add12".to_owned(),
+                "000989_352-eeeeeeeeeeee".to_owned(),
+            ]
+        );
+    }
+
+    #[test]
+    fn zero_mapped_sources_is_a_hard_error_and_writes_nothing() {
+        let dir = tempfile::tempdir().unwrap();
+        let run_dir = dir.path().join("run");
+        let export = dir.path().join("export");
+        fs::create_dir_all(&run_dir).unwrap();
+        fs::create_dir_all(export.join("works")).unwrap();
+        write_sources_parquet(&run_dir, &["000025_kantou-20379f2add12"]);
+
+        let err = run_import_aozora_metadata(&run_dir, &export, false)
+            .unwrap_err()
+            .to_string();
+
+        assert!(err.contains("zero"), "{err}");
+        assert!(!run_dir.join("aozora_works.parquet").exists());
+    }
+
+    #[test]
+    fn missing_works_directory_is_a_hard_error() {
+        let dir = tempfile::tempdir().unwrap();
+        let run_dir = dir.path().join("run");
+        fs::create_dir_all(&run_dir).unwrap();
+        write_sources_parquet(&run_dir, &["000001_10-aaaaaaaaaaaa"]);
+
+        let err = run_import_aozora_metadata(&run_dir, dir.path(), false)
+            .unwrap_err()
+            .to_string();
+
+        assert!(err.contains("works"), "{err}");
+    }
+
+    #[test]
+    fn malformed_record_json_is_a_hard_error_naming_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let run_dir = dir.path().join("run");
+        let export = dir.path().join("export");
+        fs::create_dir_all(&run_dir).unwrap();
+        write_sources_parquet(&run_dir, &["000001_10-aaaaaaaaaaaa"]);
+        fs::create_dir_all(export.join("works")).unwrap();
+        fs::write(export.join("works/000010.json"), b"{not json").unwrap();
+
+        let err = run_import_aozora_metadata(&run_dir, &export, false)
+            .unwrap_err()
+            .to_string();
+
+        assert!(err.contains("000010.json"), "{err}");
+    }
+
+    #[test]
+    fn refuses_overwrite_without_force_and_allows_with_force() {
+        let dir = tempfile::tempdir().unwrap();
+        let run_dir = dir.path().join("run");
+        let export = dir.path().join("export");
+        fs::create_dir_all(&run_dir).unwrap();
+        write_sources_parquet(&run_dir, &["000001_10-aaaaaaaaaaaa"]);
+        write_export_record(&export, "000010", &record_value("000010"));
+
+        run_import_aozora_metadata(&run_dir, &export, false).unwrap();
+        let err = run_import_aozora_metadata(&run_dir, &export, false)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("--force"), "{err}");
+        run_import_aozora_metadata(&run_dir, &export, true).unwrap();
+    }
+
+    #[test]
+    fn missing_sources_parquet_is_a_hard_error() {
+        let dir = tempfile::tempdir().unwrap();
+        let run_dir = dir.path().join("run");
+        let export = dir.path().join("export");
+        fs::create_dir_all(&run_dir).unwrap();
+        fs::create_dir_all(export.join("works")).unwrap();
+
+        assert!(run_import_aozora_metadata(&run_dir, &export, false).is_err());
     }
 }

@@ -3545,7 +3545,7 @@ fn warehouse_text_filter_matches_nonempty_whitespace(
     }
 }
 
-pub(super) fn read_warehouse_table(run_dir: &Path, table: WarehouseTable) -> Result<Vec<RecordBatch>> {
+pub(crate) fn read_warehouse_table(run_dir: &Path, table: WarehouseTable) -> Result<Vec<RecordBatch>> {
     let path = run_dir.join(table.file_name());
     if path.is_dir() {
         let mut paths = fs::read_dir(&path)

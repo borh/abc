@@ -1,0 +1,420 @@
+{
+  "nodes": {
+    "ab-validator": {
+      "inputs": {
+        "aozorabunko-src": "aozorabunko-src",
+        "flake-utils": "flake-utils",
+        "mecab-dic-converter-src": "mecab-dic-converter-src",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "reference-aozora-epub3-src": "reference-aozora-epub3-src",
+        "reference-aozora-notation-spec-src": "reference-aozora-notation-spec-src",
+        "reference-aozora-parser-js-src": "reference-aozora-parser-js-src",
+        "reference-aozora-rs-src": "reference-aozora-rs-src",
+        "reference-aozora-src": "reference-aozora-src",
+        "reference-aozora2-src": "reference-aozora2-src",
+        "reference-aozorabunko-extractor-src": "reference-aozorabunko-extractor-src",
+        "rust-overlay": "rust-overlay"
+      },
+      "locked": {
+        "path": "./ab-validator",
+        "type": "path"
+      },
+      "original": {
+        "path": "./ab-validator",
+        "type": "path"
+      },
+      "parent": []
+    },
+    "abc": {
+      "inputs": {
+        "clj-nix": "clj-nix",
+        "crane": "crane",
+        "local-pkgs": "local-pkgs",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "tei-eaj-aozora-tei": "tei-eaj-aozora-tei"
+      },
+      "locked": {
+        "path": "./abc",
+        "type": "path"
+      },
+      "original": {
+        "path": "./abc",
+        "type": "path"
+      },
+      "parent": []
+    },
+    "aozorabunko-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777068010,
+        "narHash": "sha256-g46OHD5oLs2iVkO+DjsD0dtD0sWp3YzJMKc94JoPLvM=",
+        "owner": "aozorabunko",
+        "repo": "aozorabunko",
+        "rev": "0e9ea3e586eb0aa34039fabfc85a407d2f98b165",
+        "type": "github"
+      },
+      "original": {
+        "owner": "aozorabunko",
+        "repo": "aozorabunko",
+        "rev": "0e9ea3e586eb0aa34039fabfc85a407d2f98b165",
+        "type": "github"
+      }
+    },
+    "clj-nix": {
+      "inputs": {
+        "devshell": "devshell",
+        "nix-fetcher-data": "nix-fetcher-data",
+        "nixpkgs": [
+          "abc",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1776760934,
+        "narHash": "sha256-WVzvTigFwWcJ0VkAFMzA3jE8kbHGahCJ0FJFqVYhPqM=",
+        "owner": "jlesquembre",
+        "repo": "clj-nix",
+        "rev": "2b1290ee56e9bbd50e9b5874c985d34ad2f1b458",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jlesquembre",
+        "repo": "clj-nix",
+        "type": "github"
+      }
+    },
+    "crane": {
+      "locked": {
+        "lastModified": 1779041105,
+        "narHash": "sha256-nnGD2f8OlAZT2i5OfwikJsw+ifWfiA4d6A8BWlgOXV0=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "10e6e3cb966f7cfcc789fe5eee7a85f3188ce08b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "ref": "v0.23.4",
+        "repo": "crane",
+        "type": "github"
+      }
+    },
+    "devshell": {
+      "inputs": {
+        "nixpkgs": [
+          "abc",
+          "clj-nix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1768818222,
+        "narHash": "sha256-460jc0+CZfyaO8+w8JNtlClB2n4ui1RbHfPTLkpwhU8=",
+        "owner": "numtide",
+        "repo": "devshell",
+        "rev": "255a2b1725a20d060f566e4755dbf571bbbb5f76",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "devshell",
+        "type": "github"
+      }
+    },
+    "flake-parts": {
+      "inputs": {
+        "nixpkgs-lib": "nixpkgs-lib"
+      },
+      "locked": {
+        "lastModified": 1719745305,
+        "narHash": "sha256-xwgjVUpqSviudEkpQnioeez1Uo2wzrsMaJKJClh+Bls=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "c3c5ecc05edc7dafba779c6c1a61cd08ac6583e9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "local-pkgs": {
+      "flake": false,
+      "locked": {
+        "path": "./nix/ci-empty-local-pkgs",
+        "type": "path"
+      },
+      "original": {
+        "path": "./nix/ci-empty-local-pkgs",
+        "type": "path"
+      },
+      "parent": [
+        "abc"
+      ]
+    },
+    "mecab-dic-converter-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777975318,
+        "narHash": "sha256-L02lXaS/ULm+zpKMm3Fji2vpdKiAvl4dWJL6O4Fcgcg=",
+        "owner": "tomokane",
+        "repo": "mecab-dic-converter",
+        "rev": "d24dcf25ce47170ca9e661c003b5d3345e98dac9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tomokane",
+        "repo": "mecab-dic-converter",
+        "rev": "d24dcf25ce47170ca9e661c003b5d3345e98dac9",
+        "type": "github"
+      }
+    },
+    "nix-fetcher-data": {
+      "inputs": {
+        "flake-parts": "flake-parts",
+        "nixpkgs": [
+          "abc",
+          "clj-nix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1755022803,
+        "narHash": "sha256-/QtBdVfZlrRJW5enUoWlBE2wrLXJBMJ45X0rZh0jiaU=",
+        "owner": "jlesquembre",
+        "repo": "nix-fetcher-data",
+        "rev": "9da3926b1459d6ff15268072d1c51351b82811b9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jlesquembre",
+        "repo": "nix-fetcher-data",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1783224372,
+        "narHash": "sha256-8i/87eeoqiGE4yOTjwSA3Eh/ziJRQEmd/unYU+K27sk=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d407951447dcd00442e97087bf374aad70c04cea",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs-lib": {
+      "locked": {
+        "lastModified": 1717284937,
+        "narHash": "sha256-lIbdfCsf8LMFloheeE6N31+BMIeixqyQWbSr2vk79EQ=",
+        "type": "tarball",
+        "url": "https://github.com/NixOS/nixpkgs/archive/eb9ceca17df2ea50a250b6b27f7bf6ab0186f198.tar.gz"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://github.com/NixOS/nixpkgs/archive/eb9ceca17df2ea50a250b6b27f7bf6ab0186f198.tar.gz"
+      }
+    },
+    "reference-aozora-epub3-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1779867396,
+        "narHash": "sha256-H8Vyrv3QWM9vpb2hTIYlRwb2stapKuLON6UzyjBWUfE=",
+        "owner": "AozoraEpub3-JDK21",
+        "repo": "AozoraEpub3-JDK21",
+        "rev": "966a127a613b864d998e3448cdaa5f66a0519c1b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "AozoraEpub3-JDK21",
+        "repo": "AozoraEpub3-JDK21",
+        "type": "github"
+      }
+    },
+    "reference-aozora-notation-spec-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782996881,
+        "narHash": "sha256-/Zs3OqKkyw+cUQDldW+tMBs26F6GZZ0yfPAszyvXz50=",
+        "owner": "P4suta",
+        "repo": "aozora-notation-spec",
+        "rev": "b60665fd50b596c967254f99b61f418495656fef",
+        "type": "github"
+      },
+      "original": {
+        "owner": "P4suta",
+        "repo": "aozora-notation-spec",
+        "type": "github"
+      }
+    },
+    "reference-aozora-parser-js-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1550938107,
+        "narHash": "sha256-561YlmRQon4yC9RMQgVet3DudLk01UuOrSTIc7JCfZo=",
+        "owner": "cognitom",
+        "repo": "aozora-parser.js",
+        "rev": "abaf45422051f418905d9d269f1d2db28ebeed05",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cognitom",
+        "repo": "aozora-parser.js",
+        "type": "github"
+      }
+    },
+    "reference-aozora-rs-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778117994,
+        "narHash": "sha256-bBPtWKURMmyCeym8dsvfzvwAlY5096uK6xZL2w7XwYs=",
+        "owner": "kinoko0518",
+        "repo": "aozora-rs",
+        "rev": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kinoko0518",
+        "repo": "aozora-rs",
+        "type": "github"
+      }
+    },
+    "reference-aozora-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1783113030,
+        "narHash": "sha256-361j+iuMv9Ep5P2XMQ90qTh5M5S8jqPImy2qGn8GXtE=",
+        "owner": "P4suta",
+        "repo": "aozora",
+        "rev": "5df2cfa55a96da3ac74943ab56611b0134ec8076",
+        "type": "github"
+      },
+      "original": {
+        "owner": "P4suta",
+        "repo": "aozora",
+        "type": "github"
+      }
+    },
+    "reference-aozora2-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1767543435,
+        "narHash": "sha256-nrtxilPBk6Xu+XWMih4NhKvKwiq9damCIS8zIUalDkI=",
+        "owner": "takahashim",
+        "repo": "aozora2",
+        "rev": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+        "type": "github"
+      },
+      "original": {
+        "owner": "takahashim",
+        "repo": "aozora2",
+        "type": "github"
+      }
+    },
+    "reference-aozorabunko-extractor-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1698412426,
+        "narHash": "sha256-DqNVhnY9IlTbFLCtPBx9AvwBNM8+u4s2v7JcXYVf7cw=",
+        "owner": "globis-org",
+        "repo": "aozorabunko-extractor",
+        "rev": "ce439c2b43a4ec0312d12bb89d49e8b186ff0c27",
+        "type": "github"
+      },
+      "original": {
+        "owner": "globis-org",
+        "repo": "aozorabunko-extractor",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "ab-validator": "ab-validator",
+        "abc": "abc",
+        "nixpkgs": "nixpkgs"
+      }
+    },
+    "rust-overlay": {
+      "inputs": {
+        "nixpkgs": [
+          "ab-validator",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1782962170,
+        "narHash": "sha256-HsaK9yDDypMB2TPxAYz0mPKtmYhgNwFQa72b3Ko6kRE=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "e3fa5cf86b93914b8f312b2a1ca14fbb139c655c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
+    "tei-eaj-aozora-tei": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1764241777,
+        "narHash": "sha256-pWiv4ScVRDwzcW1SyCBio9mHMsSLVyVwkqw0GSzIUO8=",
+        "owner": "TEI-EAJ",
+        "repo": "aozora_tei",
+        "rev": "77a675fc2771936f9544505d922d4cd45075338c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "TEI-EAJ",
+        "repo": "aozora_tei",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

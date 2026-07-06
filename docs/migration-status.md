@@ -40,8 +40,11 @@ Run from the monorepo root:
 ```sh
 just parity-audit
 just schema-drift
+just root-flake-check-no-build
 just check-no-build
 just validate-migration
+nix run .#schema-drift
+nix run .#parity-audit
 ```
 
 What they prove:
@@ -49,9 +52,20 @@ What they prove:
 - `parity-audit`: tracked source parity against the split repos, allowing only
   the documented schema symlink delta.
 - `schema-drift`: `ab-validator` schema contracts still match `abc/schemas`.
+- `root-flake-check-no-build`: the root flake evaluates monorepo checks and
+  prefixed component checks without building large outputs.
 - `check-no-build`: both component flakes evaluate through their no-build
-  checks from the monorepo layout.
-- `validate-migration`: runs the parity audit and no-build validation together.
+  checks from the monorepo layout. This is retained as a direct component
+  fallback while the root flake settles.
+- `validate-migration`: runs the parity audit and root no-build validation
+  together.
+
+The root flake prefixes component outputs instead of renaming them:
+
+- `abc` flake outputs are exposed as `abc-*`.
+- `ab-validator` flake outputs are exposed as `ab-validator-*`.
+- Monorepo-local checks/apps use unprefixed names such as `schema-drift`,
+  `parity-audit`, and `validate-migration`.
 
 ## Path Policy
 
@@ -71,6 +85,24 @@ Known active exceptions:
   script and accepts an explicit `--abc-root`.
 - `ab-validator/crates/ab-morph-run` tests keep `../abc/out/corpus` as an
   explicit CLI argument fixture. The command itself requires `--from`.
+
+## Naming Policy
+
+Soranoha is the physical monorepo and integration project name. It is not yet a
+replacement for the accepted ABC contract surface.
+
+Do not rename these surfaces as part of monorepo setup:
+
+- `abc.*` Clojure namespaces
+- `abc.tools.*` command namespaces and app semantics
+- `https://w3id.org/abc/...` vocabulary and artifact identity URIs
+- `abc-...` Schematron rule IDs and validation-result references
+- historical manifest, parser-evidence, TEI, RDF, SHACL, and fixture paths
+
+Any future Soranoha rename needs a dedicated ADR that decides whether Soranoha
+is a public project name, code namespace, vocabulary base, component taxonomy,
+or a phased combination. Until then, root flake output prefixes are operational
+labels, not a public vocabulary migration.
 
 ## Heavy Data Policy
 

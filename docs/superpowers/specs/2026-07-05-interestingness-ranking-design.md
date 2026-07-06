@@ -105,6 +105,21 @@ For each pattern `p` and each **applicable** signal `s`:
 
 1. Compute raw signal value `v_s(p)`.
 2. Rank all patterns *of the same kind* by `v_s(p)` descending → `rank_s(p)` (1 = best). Within-kind ranking prevents impact signals from structurally advantaging feature patterns over segmentation patterns. (Open Question 4 — see §Calibration Plan: an A/B against global RRF will confirm or refute that within-kind ranking is empirically worth the comparability constraint.)
+
+   **Resolved 2026-07-06 (Open Question 4):** the calibration A/B found the
+   opposite of the hypothesis this rationale anticipated — global ranking
+   (pooling `rank_s(p)` across all kinds, not just within a pattern's own
+   kind) beat within-kind on both p@50 (0.70 vs. 0.64) and nDCG@50 (0.7388
+   vs. 0.7191) against owner-labeled full-corpus data. Per the
+   pre-registered rule in §Calibration Plan step 3, within-kind ranking is
+   dropped as the default: `rank_scope = global` is now the v2 default
+   (`score_version` 1 → 2), with `within-kind` retained as an explicit
+   `--rank-scope` option for reproducing pre-calibration (v1) artifacts.
+   The comparability-constraint concern this step originally raised was
+   real but did not outweigh global's measured ranking quality on this
+   corpus; see `reports/morph-warehouse/calibration/2026-07-06/report.md`
+   §4 for the full numbers, including a margin-fragility caveat (the
+   0.70-vs-0.64 gap is decided by only 5 unique-per-method rows out of 50).
 3. Fuse:
 
 ```
@@ -397,7 +412,7 @@ Select sentences by **set-cover over top-ranked pattern_ids**: greedily pick sen
 - New CLI subcommand in `ab-morph-run/src/main.rs`
 - New summarization logic in `ab-morph-run/src/summary/` (following patterns in `summary_body.rs`)
 - Reads existing v1 tables only; no schema migration
-- RRF computation: per-signal ranking within-kind, signal-profile tracking (**fusion policy per §Scoring: Normalized RRF Fusion**, including the missing-data behavior pinned by the property-based test)
+- RRF computation: per-signal ranking within-kind, signal-profile tracking (**fusion policy per §Scoring: Normalized RRF Fusion**, including the missing-data behavior pinned by the property-based test) *(historical: within-kind was the v1-shipped default; the 2026-07-06 calibration lock flipped the default to global ranking — see §Calibration Plan step 3 and Decision 6)*
 - `--explain` decomposition mode
 - Anomaly channel with simple deterministic per-region score (W_COV defaults to 5.0; tuned in §Calibration Plan)
 - `--filter lexical-only` defined as a Unicode GC predicate over `char_start..char_end` (§`--filter lexical-only` Definition)
@@ -478,7 +493,7 @@ A single-class profile (`"suw"`) means no granularity-policy noise is possible; 
 | 3 | `SCHEMA_VERSION` bumped at the first *analysis-pass-produced* sidecar table (Phase 3 `projection_spans`); reader rule then relaxed to "reject > reader max". Post-hoc imported, presence-probed sidecars (`aozora_works`) are version-neutral | Proposed | v2 readers degrade on v1; existing "reject != 1" assertion is generalized, not bypassed; `aozora_works` ships under v1 via the reader's presence probe |
 | 4 | Literal boundary context gated by `literal_context_policy` per run, not assumed | Proposed | Aozora is public domain and may store literal chars; BCCWJ/research-licensed corpora are not. Licensing fact is enforced at the run level, not embedded in one table's justification |
 | 5 | Oracle and cause-classification in v2, not v1 | Proposed | Requires projection_spans and lattice access not available in v1 warehouses |
-| 6 | Within-kind ranking for RRF; missing-signal handling made explicit (see §Scoring) | Proposed | Prevents impact-signal dominance over segmentation patterns; missing-data behavior is unambiguous: an absent applicable signal contributes a `λ_missing` term, not a renormalization-induced boost (see §Scoring) |
+| 6 | Within-kind ranking for RRF; missing-signal handling made explicit (see §Scoring) | Superseded (rank-scope half) 2026-07-06 | Prevents impact-signal dominance over segmentation patterns; missing-data behavior is unambiguous: an absent applicable signal contributes a `λ_missing` term, not a renormalization-induced boost (see §Scoring). **Resolved 2026-07-06 (Open Question 4):** the calibration A/B against owner-labeled full-corpus data found global rank pooling beats within-kind on both p@50 (0.70 vs. 0.64) and nDCG@50 (0.7388 vs. 0.7191); per the pre-registered rule this decision's within-kind default is dropped — `rank_scope = global` is now the v2 default (`score_version` 2), `within-kind` remains available via `--rank-scope within-kind` for v1 reproduction. The `λ_missing` explicit-handling half of this decision is unaffected and remains locked (`rank-floor` policy). See `reports/morph-warehouse/calibration/2026-07-06/report.md` §4. |
 | 7 | `projection_spans.parquet` as minimal structural bridge | Proposed | Narrower than full Gap 7; enables oracle/artifact without committing to block-type ranking |
 | 8 | Paired-edition tests as separate command | Proposed | Independent of warehouse version; produces suspect violations, not absolute errors |
 | 9 | Review ledger append-only with maintainer override; verdict inheritance is read-time graph traversal with write-time cache | Proposed | Audit trail; inter-reviewer disagreement measurable; maintainer resolves suppression conflicts; inheritance single-path at read time avoids stale-write risk |
@@ -604,7 +619,7 @@ Before locking v1 defaults:
 2. Compare top-50 RRF output against two baselines:
    - **Frequency sort** (most common patterns first)
    - **Random sort**
-3. **A/B within-kind vs global RRF (Open Question 4):** also produce a top-50 with signals ranked globally (across kinds), not within-kind. If within-kind ranking does not measurably beat global on p@50 / nDCG@50, drop the within-kind split — it adds the `signal_profile` comparability constraint for a benefit that may not exist. Decision 6 is conditional on this measurement.
+3. **A/B within-kind vs global RRF (Open Question 4):** also produce a top-50 with signals ranked globally (across kinds), not within-kind. If within-kind ranking does not measurably beat global on p@50 / nDCG@50, drop the within-kind split — it adds the `signal_profile` comparability constraint for a benefit that may not exist. Decision 6 is conditional on this measurement. **2026-07-06 result: RESOLVED — global wins.** Owner-labeled full-corpus data: `rrf-global` p@50 = 0.70 / nDCG@50 = 0.7388054023634453 vs. `rrf-within` p@50 = 0.64 / nDCG@50 = 0.7191302568437826. Within-kind does not measurably beat global (it measurably loses on both metrics), so per this step's own rule the within-kind split is dropped as the default: `rank_scope = global` is now the v2 default (`score_version` 1 → 2), `within-kind` retained as an explicit `--rank-scope` option for reproducing pre-calibration artifacts. Owner-confirmed 2026-07-06. Margin fragility recorded: the two top-50s share 45/50 patterns, so the entire p@50 gap is decided by 3 rows across the 5-vs-5 patterns unique to each method, some of which the owner flagged as noisy during labeling — see `reports/morph-warehouse/calibration/2026-07-06/report.md` §4 for the full caveat.
 4. **Missing-data sweep (S5), shipped as a policy A/B (v1 rank-floor deviation):** the letter above sweeps a fixed `λ_missing` constant, but a fixed value breaks the missing-signal monotonicity guarantee past rank `1/λ - k` — the implementation ships `--lambda-missing-policy rank-floor|fixed:<v>` instead (`score_version.lambda_missing_policy`, e.g. `"rank-floor"` or `"fixed:0.01"`), with `rank-floor` (`λ = 1/(k + N_kind + 1)`, "just below the worst-ranked observed pattern of the kind") as the shipped default. Calibration compares `rank-floor` against `fixed:0`, `fixed:0.005`, `fixed:0.010` on the representative triage corpus, preserving the original intent (top-50 stability under missing-data handling) as a policy comparison rather than a constant sweep. Confirm top-50 ordering is stable (Kendall τ within threshold) across the fixed variants vs. rank-floor; if the sweep reshuffles top-50, revisit signal definitions before locking. **2026-07-06 result:** all three fixed variants are stable vs. rank-floor (in fact exactly identical, overlap 50/50 τ-b 1.0) — verified in code as structural, not sample luck: every v1 signal is total for every pattern kind currently produced (`Coverage`/`Rarity`/`Span` always present; `Impact` applies only to `Feature`-kind patterns, whose `feature_key` is always present), so `λ_missing` has no code path to fire on v1 data. `rank-floor` is locked (see `reports/morph-warehouse/calibration/2026-07-06/report.md` §2); the policy remains real infrastructure for v2 optional signals that can be legitimately absent per-pattern.
 5. **Anomaly-weight sweep:** sweep `anomaly_w_cov ∈ {2.0, 5.0, 10.0}`; confirm the top-10 anomaly regions surface coverage gaps and long-span disagreements rather than noise.
 6. Label each ranked row from the top-50 with verdicts (`bug`, `expected-policy`, `expected-dictionary`, `corpus-artifact`, `noise`, `unclear`).
@@ -613,17 +628,25 @@ Before locking v1 defaults:
 9. After calibration, lock the v1 signal definitions, default RRF k=60, `λ_missing`, and `anomaly_w_cov` constants. `inheritance_jaccard_threshold`: **n/a — not implemented in v1** (locking deferred to the feature that introduces it; grep-verified no occurrence in the crate as of 2026-07-06 — locking a knob that doesn't exist would fabricate a default).
 10. Post-MVP: when `review_events` accumulates sufficient labels from the review ledger, fit a learning-to-rank model on `(per-signal-rank, verdict)` tuples. The RRF scaffold is compatible — replace fusion with learned model while keeping per-signal rank computation unchanged.
 
-**Status (2026-07-06):** steps 1-5 and 9 (except the RRF-vs-frequency/rank-scope
-verdicts, which are gated on step 8) executed mechanically against the
-canonical warehouses. Artifacts at `reports/morph-warehouse/calibration/2026-07-06/`
+**Status (2026-07-06, UPDATED — labels received, gate PASSED, v1 LOCKED):**
+steps 1-9 are complete. Owner labels were received 2026-07-06
+(`labels/labels-filled.tsv`, 155 pooled rows, all verdicted); scores were
+reproduced via `score-interesting-labels` and matched the owner's reported
+numbers exactly (`labels/scores.json`). **Step 8's RRF-vs-frequency gate
+PASSED**: p@50 0.70 (global) / 0.64 (within-kind) vs. 0.16 (frequency) —
+over a 4x margin either way. **Step 3's rank-scope A/B resolved: global
+beat within-kind** on both p@50 (0.70 vs. 0.64) and nDCG@50 (0.7388 vs.
+0.7191); the pre-registered rule fired, so `rank_scope = global` is now
+the default. Artifacts at `reports/morph-warehouse/calibration/2026-07-06/`
 (`report.md` is the entry point; `runs.md`, `sweep-analysis.md`,
 `full/wcov-full-analysis.md`, and `labels/` hold the supporting detail).
-Locked now: `rrf_k = 60` (unchanged), `lambda_missing_policy = rank-floor`,
-`anomaly_w_cov = 5.0` (dormant on this corpus). `inheritance_jaccard_threshold`
-is n/a per step 9 above. **Owner labels are pending** (`labels/labels.tsv`,
-155 pooled rows) and **step 8's RRF-vs-frequency gate is pending** on those
-labels — the v1 signal-definition lock is conditional on that gate passing,
-not yet final.
+
+**Final locked defaults:** `rrf_k = 60` (unchanged), `lambda_missing_policy
+= rank-floor`, `anomaly_w_cov = 5.0` (dormant on this corpus), `rank_scope
+= global` (new default, was `within-kind`). `score_version` is now `2`
+(bumped alongside the `rank_scope` default flip). `inheritance_jaccard_threshold`
+is n/a per step 9 above. **The v1 signal-definition lock is FINAL** — no
+step remains pending.
 
 ## Tie-Breaking and Determinism
 
@@ -642,11 +665,11 @@ Every output document carries a `score_version` block recording every knob that 
 
 ```json
 {
-  "score_version": 1,
+  "score_version": 2,
   "pattern_id_version": 1,
   "rrf_k": 60,
   "lambda_missing_policy": "rank-floor",
-  "rank_scope": "within-kind",
+  "rank_scope": "global",
   "score_mode": "rrf",
   "sample_seed": null,
   "anomaly_w_cov": 5.0,
@@ -659,13 +682,18 @@ Every output document carries a `score_version` block recording every knob that 
 }
 ```
 
+(`score_version: 2` and `rank_scope: "global"` are the shipped defaults
+since the 2026-07-06 calibration lock; `rank_scope: "within-kind"` remains
+a valid, explicitly-requested value for reproducing pre-calibration `v1`
+artifacts — see §Calibration Plan step 3's resolution.)
+
 `lambda_missing_policy` records the calibration policy (`"rank-floor"` or
 `"fixed:<v>"`, e.g. `"fixed:0.01"`) rather than a bare `λ_missing` scalar —
 see §Calibration Plan step 4's v1 rank-floor deviation.
 
 Any change to default weights, normalization, tie-breaking, RRF k-constant, `λ_missing`, anomaly weight, inheritance threshold, or component semantics increments `score_version`. The profile fields record the *data context* that the score was computed in:
 
-- `rank_scope`: `"within-kind"` (v1 default; signal ranks pooled per pattern kind) or `"global"` (signal ranks pooled across all kinds, per Open Question 4 / §Calibration Plan step 3). Added post-v1 as a calibration knob; `#[serde(default = "within-kind")]` so pre-calibration artifacts — which predate the field and were always within-kind — deserialize honestly instead of failing to parse.
+- `rank_scope`: `"global"` (signal ranks pooled across all kinds; **the v2 default since the 2026-07-06 calibration lock**, per Open Question 4 / §Calibration Plan step 3's resolution) or `"within-kind"` (signal ranks pooled per pattern kind; the v1 default, still available via `--rank-scope within-kind` for reproducing pre-calibration artifacts). Added post-v1 as a calibration knob; `#[serde(default = "within-kind")]` so pre-calibration artifacts — which predate the field, were produced before the default flip, and were always within-kind — deserialize honestly instead of failing to parse. This deserialization default intentionally does **not** track the current CLI/library default: it describes what *old* artifacts actually were, not what new ones should be.
 - `score_mode`: `"rrf"` (v1 default) or one of the calibration baselines, `"frequency"` or `"random"` (§Calibration Plan step 2). Added post-v1; `#[serde(default = "rrf")]` for the same pre-calibration-artifact reason as `rank_scope`.
 - `sample_seed`: the Fisher-Yates seed for `score_mode: "random"`; `null` for every other mode (an ignored seed would misdescribe the artifact). Added post-v1; `#[serde(default)]` (`null`) for pre-calibration artifacts, which predate `score_mode: "random"` and so never had a seed.
 - `signal_profile`: which signals were active. Scores are comparable only within the same profile.

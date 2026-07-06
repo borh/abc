@@ -6,8 +6,15 @@ the governing spec's §Calibration Plan (steps 1-9) against
 Tasks 1-8 built the knobs (rank scope, λ-missing policy, anomaly weight,
 baseline score modes), the comparison/labeling/metrics tooling, ran the
 sweeps and method rankings, and produced the owner's blind labeling package.
-**The v1 lock is conditional**, not delivered here: it completes only when
-the owner's labels return and spec step 8's gate passes. See §7.
+**The v1 lock is now final.** The owner's blind labels returned
+2026-07-06; spec step 8's RRF-vs-frequency gate **PASSED** (RRF beats
+frequency by more than 4x on p@50: 0.70 vs. 0.16 under global scope, 0.64
+vs. 0.16 under within-kind); and spec step 3's pre-registered Open
+Question 4 rule fired: global rank scope beat within-kind on both metrics
+(p@50 0.70 vs. 0.64; nDCG@50 0.7388 vs. 0.7191), so `rank_scope` flips
+from within-kind to **global** as the new default, with `SCORE_VERSION`
+bumped `1` -> `2`. See §7 and §8 for the full measured outcome and the
+final locked-defaults table.
 
 All artifacts referenced below live under
 `reports/morph-warehouse/calibration/2026-07-06/`.
@@ -127,7 +134,7 @@ irrelevant to every ranking this corpus's disagreement data can produce.
 Re-validate if/when a corpus or analyzer set surfaces real
 `has_coverage_mismatch = true` regions.
 
-## 4. Rank scope: within-kind vs. global — pending labels
+## 4. Rank scope: within-kind vs. global — RESOLVED (global wins)
 
 | Corpus | Overlap/50 | Jaccard | Kendall τ-b | D6 verdict |
 |---|---|---|---|---|
@@ -136,27 +143,50 @@ Re-validate if/when a corpus or analyzer set surfaces real
 
 Both samples show real, meaningful disagreement between within-kind and
 global signal-rank pooling — τ/overlap alone cannot say *which* scope is
-better, only that they differ. **p@50 verdict pending labels**: spec step
-3's acceptance test ("if within-kind does not measurably beat global on
-p@50/nDCG@50, drop the within-kind split") is the only test that can
-decide this, and it requires the owner's blind verdicts.
+better, only that they differ. Spec step 3's acceptance test ("if
+within-kind does not measurably beat global on p@50/nDCG@50, drop the
+within-kind split") is the tie-breaker, and the owner's blind labels now
+decide it:
+
+| Method | p@50 | nDCG@50 |
+|---|---|---|
+| `rrf-global` | **0.70** | **0.7388054023634453** |
+| `rrf-within` | 0.64 | 0.7191302568437826 |
+
+**Global beats within-kind on both metrics** (+0.06 p@50, +0.0197
+nDCG@50). Spec step 3's pre-registered rule fires: within-kind does not
+measurably beat global, so the within-kind split is dropped as the
+default. `rank_scope` flips to **global**; owner-confirmed 2026-07-06.
+
+**Margin fragility, recorded honestly.** The two methods' top-50s overlap
+at 45/50 patterns (§ table above) — every labeled verdict on those 45
+shared rows counts identically toward both methods' p@50. The entire
+0.70-vs-0.64 gap (35 vs. 32 relevant-of-50, a difference of 3 rows) is
+therefore decided entirely by the 5-vs-5 patterns unique to each method's
+top-50, not by the bulk of the pool. Several of those swing rows fall in
+verdict categories the owner flagged as noisy during labeling. The
+resolution stands — it is what the pre-registered rule requires — but the
+margin is thin enough that it should not be over-read as a strong
+structural preference for global pooling; a re-label of just the unique
+rows could plausibly narrow or widen it.
 
 For reference, the continuity gate (pre-calibration artifact vs. the first
 post-calibration full run, same knobs) passed cleanly: `full/cmp-continuity.json`
 — overlap 50/50, Kendall τ-b 1.0, empty `score_version_mismatches` — proving
 the new knob plumbing did not change default-path scoring.
 
-## 5. Locked-now vs. pending-labels (spec step 9 constants)
+## 5. Locked defaults (spec step 9 constants) — FINAL
 
 | Knob | Status | Value | Basis |
 |---|---|---|---|
 | `rrf_k` | **locked** (unchanged) | `60` | never swept this campaign; no evidence to move it |
 | `lambda_missing_policy` | **locked** | `rank-floor` | §2 — stable-under-sweep AND structurally a no-op for v1 signals; wins under the plan's decision rule regardless |
 | `anomaly_w_cov` | **locked** (dormant) | `5.0` | §3 — knob provably inert on this corpus; not contradicted, not stress-tested |
-| `rank_scope` | **pending labels** | `within-kind` (current default, unchanged for now) | §4 — unstable A/B at both corpus sizes; spec step 3's p@50 test required |
+| `rank_scope` | **locked** | `global` (new default; was `within-kind`) | §4 — global beat within-kind on both p@50 (0.70 vs. 0.64) and nDCG@50 (0.7388 vs. 0.7191); spec step 3's pre-registered rule fired; owner-confirmed 2026-07-06 |
+| `score_version` | **locked** | `2` (was `1`) | bumped alongside the `rank_scope` default flip, per spec §Score Versioning |
 | `inheritance_jaccard_threshold` | **n/a** | not implemented in v1 | plan D8 (grep-verified: no occurrence in the crate); locking deferred to the feature that introduces it |
-| RRF-vs-frequency gate (step 8) | **pending labels** | — | if RRF does not beat frequency sort at p@50, the mandated outcome is "revisit signal definitions," not a lock — see §7 |
-| Overall v1 signal-definition lock | **CONDITIONAL — pending labels + step 8 gate** | — | Tasks 1-9 complete every mechanical step up to the gate; the lock itself waits on the owner |
+| RRF-vs-frequency gate (step 8) | **PASSED** | p@50 0.70 (global) / 0.64 (within-kind) vs. 0.16 (frequency) — over 4x margin either way | see §8 |
+| Overall v1 signal-definition lock | **FINAL** | — | Tasks 1-9 complete; gate passed 2026-07-06; nothing further pending |
 
 ## 6. Labeling handoff
 
@@ -225,3 +255,71 @@ after, at the cost of a rerun; either way nothing is lost.
    line (already appended below, pending-labels flag flipped) and record
    the final p@50/nDCG@50 numbers next to the lock. `inheritance_jaccard_threshold`
    stays `n/a` regardless of the gate outcome — it is not a v1 knob to lock.
+
+## 8. Outcome (measured, 2026-07-06)
+
+The owner's filled labels
+(`labels/labels-filled.tsv`, all 155 rows verdicted) were scored with
+`score-interesting-labels`; the reproduced numbers match the owner's
+reported figures exactly (`labels/scores.json`):
+
+| Method | p@50 | nDCG@50 |
+|---|---|---|
+| `frequency` | 0.16 | 0.2898142842602241 |
+| `random` | 0.56 | 0.6521337943910488 |
+| `rrf-global` | **0.70** | **0.7388054023634453** |
+| `rrf-within` | 0.64 | 0.7191302568437826 |
+
+**Verdict histogram** (155 labeled rows):
+
+| Verdict | Count |
+|---|---|
+| `bug` | 8 |
+| `corpus-artifact` | 6 |
+| `expected-dictionary` | 65 |
+| `expected-policy` | 40 |
+| `noise` | 32 |
+| `unclear` | 4 |
+
+**Step-8 gate: PASSED.** RRF clears the frequency-sort baseline by more
+than 4x on p@50 under either rank scope: 0.70 / 0.16 = 4.375x (global),
+0.64 / 0.16 = 4.0x (within-kind). The plan's premise — that RRF's added
+complexity (four signals, rank fusion, missing-data handling) must earn
+its keep over a trivial baseline — is satisfied with a wide margin. The
+mandated "revisit signal definitions" fallback does not apply.
+
+**Honest random-baseline caveat.** `random` scores p@50 = 0.56, which
+reads as surprisingly strong for a baseline with no signal at all. This is
+not an indictment of RRF; it is a property of the labeled pattern
+population itself: the pool is rarity-heavy (skewed toward rare, low-count
+disagreement patterns), and the owner's verdict distribution shows
+`expected-dictionary` (65/155, gain 2) and `expected-policy` (40/155, gain
+1) dominating over `noise` (32/155, gain 0) and `unclear` (4/155, gain 0)
+— so a large fraction of *any* reasonably-sized random sample of this pool
+lands on a "relevant" or partially-relevant verdict, inflating the random
+baseline's score. Read against this, RRF's edge over random is real but
+modest: +0.14 p@50 for `rrf-global` (0.70 vs. 0.56), +0.08 for
+`rrf-within` (0.64 vs. 0.56). RRF's decisive win is over `frequency`
+(§ step-8 gate above), not over `random` — the random baseline should not
+be mistaken for a weak/uninformative comparison point in this corpus.
+
+**Rank-scope resolution:** see §4 — global wins both metrics, the
+pre-registered rule fired, owner-confirmed 2026-07-06, margin fragility
+recorded.
+
+**Final locked-defaults table:**
+
+| Knob | Locked value |
+|---|---|
+| `rrf_k` | `60` |
+| `lambda_missing_policy` | `rank-floor` |
+| `anomaly_w_cov` | `5.0` (dormant on this corpus — §3) |
+| `rank_scope` | `global` |
+| `score_version` | `2` |
+| `inheritance_jaccard_threshold` | `n/a` (not implemented in v1) |
+
+**Provenance:** owner's labels copied to
+`labels/labels-filled.tsv`; scores reproduced to `labels/scores.json` via
+`cargo run --release -p ab-morph-run -- score-interesting-labels --labels
+labels/labels-filled.tsv --mapping labels/mapping.json`, matching the
+owner-reported numbers exactly (no discrepancy, no rerun needed).

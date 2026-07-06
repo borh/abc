@@ -497,6 +497,8 @@ jq -e '.source_region_contract.policy_id == "https://w3id.org/abc/policies/sourc
 jq -e '.source_region_contract.policy_version == "0.2.0"' "$summary_json" >/dev/null
 jq -e '.source_region_contract.policy_classes | index("letter_address_origin")' "$summary_json" >/dev/null
 jq -e '.source_region_contract.missing_policy_classes == []' "$summary_json" >/dev/null
+jq -e '.source_region_contract.invalid_measurement_status_classes == []' "$summary_json" >/dev/null
+jq -e '.source_region_contract.missing_measurement_split_classes == ["colophon_metadata", "terminal_provenance"]' "$summary_json" >/dev/null
 jq -e '.source_region_contract.manifest_sidecar_role_present == true' "$summary_json" >/dev/null
 jq -e '.parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_COMPLETE"' "$summary_json" >/dev/null
 jq -e '.plaintext_policy.metadata_policy == "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance"' "$summary_json" >/dev/null

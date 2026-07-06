@@ -13,12 +13,11 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 from reports.lib.hashing import file_sha256 as sha256_file
 from reports.lib.io import read_json, write_json
-from reports.lib.paths import repo_root
+from reports.lib.paths import display_path
 
 SCHEMA_VERSION = "source-region-disposition-samples-v1"
 VERDICT = "SOURCE_REGION_DISPOSITION_SAMPLES_READY"
 LETTER_CLASS = "letter_address_origin"
-REPO_ROOT = repo_root()
 SOURCE_COUNTERS = {
     "notation_legend": "source_apparatus_occurrences",
     "notation_placeholder": "front_matter_occurrences",
@@ -35,13 +34,6 @@ def load_json(path: pathlib.Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise SystemExit(f"{path} must contain a JSON object")
     return value
-
-
-def display_path(path: pathlib.Path) -> str:
-    try:
-        return str(path.resolve().relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path)
 
 
 def as_int(value: Any) -> int:

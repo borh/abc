@@ -18,11 +18,10 @@ if str(_REPO_ROOT) not in sys.path:
 from reports.lib.hashing import sha256_hex
 from reports.lib.io import read_json as load_json
 from reports.lib.io import write_json
-from reports.lib.paths import policy_dir, repo_root, schemas_dir
+from reports.lib.paths import display_path, policy_dir, schemas_dir
 
 SCHEMA_VERSION = "ir-publication-coverage-v1"
 REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora")
-REPO_ROOT = repo_root()
 ABC_PRESERVATION_SCHEMA_ID = "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
 ABC_PRESERVATION_SCHEMA_VERSION = "0.2.0"
 TRUSTED_ABC_PRESERVATION_SCHEMA_PATH = (
@@ -86,6 +85,7 @@ SOURCE_REGION_ALLOWED_TARGET_CLASSES = {
     "diagnostic",
     "unsupported_gap",
 }
+SOURCE_REGION_ALLOWED_MEASUREMENT_STATUSES = {"measured", "needs_measurement_split"}
 PUBLICATION_BUNDLE_EVIDENCE_SCHEMA_VERSION = "publication-bundle-validation-evidence-v1"
 PUBLICATION_BUNDLE_BATCH_EVIDENCE_SCHEMA_VERSION = "publication-bundle-batch-validation-evidence-v1"
 PUBLICATION_BUNDLE_PASSED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_PASSED"
@@ -851,11 +851,16 @@ def source_region_contract_block(
         for source_class, counter in SOURCE_REGION_MEASURED_CLASS_COUNTERS.items()
         if counter not in source_region_counters
     )
-    unmeasured_policy_classes = sorted(
+    invalid_measurement_status_classes = sorted(
+        source_class
+        for source_class, row in disposition_by_class.items()
+        if row.get("measurement_status") not in SOURCE_REGION_ALLOWED_MEASUREMENT_STATUSES
+    )
+    measurement_split_policy_classes = sorted(
         source_class
         for source_class in SOURCE_REGION_MEASURED_CLASS_COUNTERS
         if disposition_by_class.get(source_class, {}).get("measurement_status")
-        != "measured"
+        == "needs_measurement_split"
     )
     manifest_sidecar_roles = schema_enum_values(
         manifest_doc,
@@ -889,7 +894,7 @@ def source_region_contract_block(
         and not invalid_target_classes
         and not non_omitted_plaintext_classes
         and not missing_measured_class_counters
-        and not unmeasured_policy_classes
+        and not invalid_measurement_status_classes
         and manifest_sidecar_role_present
         and schema_path_match
         and policy_path_match
@@ -942,8 +947,9 @@ def source_region_contract_block(
         "non_omitted_plaintext_classes": non_omitted_plaintext_classes,
         "measured_class_counters": SOURCE_REGION_MEASURED_CLASS_COUNTERS,
         "missing_measured_class_counters": missing_measured_class_counters,
-        "unmeasured_policy_classes": unmeasured_policy_classes,
-        "missing_measurement_split_classes": unmeasured_policy_classes,
+        "invalid_measurement_status_classes": invalid_measurement_status_classes,
+        "unmeasured_policy_classes": measurement_split_policy_classes,
+        "missing_measurement_split_classes": measurement_split_policy_classes,
         "message": (
             "ABC source-region schema, publication policy, and manifest sidecar role are confirmed."
             if confirmed
@@ -1087,14 +1093,6 @@ def schema_enum_values(schema: Any, path: tuple[str, ...]) -> set[str]:
     if not isinstance(cursor, list):
         return set()
     return {value for value in cursor if isinstance(value, str)}
-
-
-def display_path(path: pathlib.Path) -> str:
-    resolved = path.resolve()
-    try:
-        return str(resolved.relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path)
 
 
 def trusted_custom_contract_hash() -> str | None:

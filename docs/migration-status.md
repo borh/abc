@@ -26,12 +26,15 @@ schema contract layout:
 
 - removed copied schema files under `ab-validator/data/abc-schemas/schemas/*.schema.json`
 - added `ab-validator/data/abc-schemas/schemas` as a symlink to `../../../abc/schemas`
+- replaced `ab-validator/data/abc-schemas/data/source-region-publication-policy-v0.json`
+  with a symlink to `../../../../abc/data/source-region-publication-policy-v0.json`
 - updated `ab-validator/data/abc-schemas/README.md` to document the monorepo
   source of truth
 
-This makes `abc/schemas` the only schema byte source in the monorepo while
-preserving `ab-validator/data/abc-schemas/schema-contracts.json` as the
-consumer-side contract snapshot.
+This makes `abc/schemas` the only schema byte source and `abc/data` the
+source-region policy source of truth in the monorepo while preserving
+`ab-validator/data/abc-schemas/schema-contracts.json` as the consumer-side
+contract snapshot.
 
 Additional delta (2026-07-07): `ab-validator/dictionary` is a real local
 directory (`compiled/`, `optimized/`) instead of the split repo's symlink to
@@ -45,34 +48,36 @@ no reference to `vibrato-pipe`.
 Run from the monorepo root:
 
 ```sh
-just parity-audit
+just split-import-parity-audit
 just schema-drift
 just root-flake-check-no-build
 just check-no-build
 just validate-migration
 nix run .#schema-drift
-nix run .#parity-audit
+nix run .#split-import-parity-audit
 ```
 
 What they prove:
 
-- `parity-audit`: tracked source parity against the split repos, allowing only
-  the documented schema symlink delta.
-- `schema-drift`: `ab-validator` schema contracts still match `abc/schemas`.
+- `split-import-parity-audit`: optional tracked source parity against the split
+  repos, retained only as a cutover audit.
+- `schema-drift`: `ab-validator` schema contracts still match `abc/schemas` and
+  its source-region policy symlink still points at `abc/data`.
 - `root-flake-check-no-build`: the root flake evaluates monorepo checks and
   prefixed component checks without building large outputs.
 - `check-no-build`: both component flakes evaluate through their no-build
   checks from the monorepo layout. This is retained as a direct component
   fallback while the root flake settles.
-- `validate-migration`: runs the parity audit and root no-build validation
-  together.
+- `validate-migration`: runs monorepo schema/policy drift and root no-build
+  validation together. Split-repo parity is intentionally not part of this
+  default gate after the monorepo becomes the working source tree.
 
 The root flake prefixes component outputs instead of renaming them:
 
 - `abc` flake outputs are exposed as `abc-*`.
 - `ab-validator` flake outputs are exposed as `ab-validator-*`.
 - Monorepo-local checks/apps use unprefixed names such as `schema-drift`,
-  `parity-audit`, and `validate-migration`.
+  `split-import-parity-audit`, and `validate-migration`.
 
 ## Path Policy
 

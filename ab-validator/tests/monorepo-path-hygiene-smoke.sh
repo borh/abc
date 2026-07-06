@@ -40,7 +40,7 @@ def walk(value: object, key_path: tuple[str, ...] = ()) -> None:
 
 walk(summary)
 if bad_values:
-    print("pre-monorepo path hygiene failed:", file=sys.stderr)
+    print("monorepo path hygiene failed:", file=sys.stderr)
     for value in bad_values:
         print(f"- {value}", file=sys.stderr)
     raise SystemExit(1)
@@ -51,4 +51,4 @@ if rg -n 'AB_ABC_ROOT:-.*\.\./abc' "$repo_root/tests"; then
   exit 1
 fi
 
-echo "pre-monorepo path hygiene smoke ok"
+echo "monorepo path hygiene smoke ok"

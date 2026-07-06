@@ -22,4 +22,19 @@ python3 "$repo_root/ab-validator/scripts/compare_abc_schema_contracts.py" \
   --local "$repo_root/ab-validator/data/abc-schemas/schema-contracts.json" \
   --abc "$repo_root/abc"
 
+policy_link="$repo_root/ab-validator/data/abc-schemas/data/source-region-publication-policy-v0.json"
+expected_policy="$repo_root/abc/data/source-region-publication-policy-v0.json"
+
+if [[ ! -L "$policy_link" ]]; then
+  echo "expected $policy_link to be a symlink to abc/data/source-region-publication-policy-v0.json" >&2
+  exit 1
+fi
+
+actual_policy="$(readlink -f "$policy_link")"
+expected_policy="$(readlink -f "$expected_policy")"
+if [[ "$actual_policy" != "$expected_policy" ]]; then
+  echo "source-region policy symlink points at $actual_policy, expected $expected_policy" >&2
+  exit 1
+fi
+
 echo "monorepo schema drift check ok"

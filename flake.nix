@@ -65,7 +65,7 @@
             exec bash scripts/monorepo-schema-drift.sh "$@"
           '';
 
-          parity-audit = pkgs.writeShellScript "soranoha-parity-audit" ''
+          split-import-parity-audit = pkgs.writeShellScript "soranoha-split-import-parity-audit" ''
             set -euo pipefail
             export PATH="${runtimePath}:$PATH"
             exec python3 scripts/monorepo-parity-audit.py "$@"
@@ -74,7 +74,6 @@
           validate-migration = pkgs.writeShellScript "soranoha-validate-migration" ''
             set -euo pipefail
             export PATH="${runtimePath}:$PATH"
-            python3 scripts/monorepo-parity-audit.py
             bash scripts/monorepo-schema-drift.sh
             nix flake check --no-build "$@"
           '';
@@ -103,9 +102,9 @@
             program = "${scripts.schema-drift}";
             meta.description = "Check monorepo ABC schema contract drift";
           };
-          parity-audit = {
+          split-import-parity-audit = {
             type = "app";
-            program = "${scripts.parity-audit}";
+            program = "${scripts.split-import-parity-audit}";
             meta.description = "Audit monorepo tracked-file parity against split repositories";
           };
           validate-migration = {

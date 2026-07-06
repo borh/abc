@@ -4,8 +4,8 @@
   "policy": {
     "policy_id": "https://w3id.org/abc/policies/source-region-publication-v0",
     "policy_version": "0.2.0",
-    "path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
-    "hash": "sha256:7880c0c5b059425b944f87e672bdc96a7df7304c58c166543c54ed68919d11bc"
+    "path": "abc/data/source-region-publication-policy-v0.json",
+    "hash": "sha256:488c0e1c03229fc8d7592386fdf18e4fec707caf23f9199ec519456ca04b7ad8"
   },
   "source_summary": {
     "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
@@ -38,7 +38,7 @@
       "tei_target": "teiHeader/sourceDesc",
       "custom_sidecar": true,
       "plaintext_projection": "omit",
-      "measurement_status": "measured",
+      "measurement_status": "needs_measurement_split",
       "measured_counter": "colophon_metadata_occurrences",
       "measured_occurrences": 89416
     },
@@ -98,7 +98,7 @@
       "tei_target": "text/back/div[@type='source']",
       "custom_sidecar": true,
       "plaintext_projection": "omit",
-      "measurement_status": "measured",
+      "measurement_status": "needs_measurement_split",
       "measured_counter": "terminal_provenance_occurrences",
       "measured_occurrences": 609
     }

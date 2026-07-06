@@ -16,7 +16,7 @@ sys.path.insert(0, str(_REPO_ROOT))
 from reports.lib.hashing import file_sha256 as sha256_file
 from reports.lib.hashing import sha256_hex
 from reports.lib.io import read_json, write_json
-from reports.lib.paths import repo_root
+from reports.lib.paths import display_path, repo_root
 
 SCHEMA_VERSION = "aozora-publication-next-work-v1"
 VERDICT_OPEN = "AOZORA_PUBLICATION_NEXT_WORK_OPEN"
@@ -58,13 +58,6 @@ def load_json(path: pathlib.Path) -> dict[str, Any]:
 def document_hash(value: object) -> str:
     encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return sha256_hex(encoded)
-
-
-def display_path(path: pathlib.Path) -> str:
-    try:
-        return str(path.resolve().relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path)
 
 
 def display_tei_p5_root(path: pathlib.Path) -> str:

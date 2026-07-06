@@ -11,6 +11,13 @@ __pycache__/
 # Local scratch directory for benchmark/run outputs (kept out of /tmp/)
 scratch/
 
+# Flake-backed dictionary build outputs. Keep only the directory anchors.
+dictionary/compiled/*
+!dictionary/compiled/.gitkeep
+dictionary/compiled/.cache/
+dictionary/optimized/*
+!dictionary/optimized/.gitkeep
+
 # Local worktrees (isolated workspaces)
 .worktrees/
 

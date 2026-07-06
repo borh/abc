@@ -12,8 +12,8 @@
     ],
     "matrix_rows_attempted": 285,
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-    "mapping_version": "0.2.3",
-    "parser_ir_schema_hash": "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411",
+    "mapping_version": "0.2.4",
+    "parser_ir_schema_hash": "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2",
     "source_region_contract_required": true,
     "custom_contract_required": true,
     "publication_bundle_validation_required": true
@@ -30,18 +30,18 @@
     "schema_version": "aozora-source-region-coverage-v1",
     "policy_id": "https://w3id.org/abc/policies/source-region-publication-v0",
     "policy_version": "0.2.0",
-    "path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
-    "policy_path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
-    "manifest_schema_path": "data/abc-schemas/schemas/manifest.schema.json",
-    "schema_hash": "sha256:63b305b270faae053e6978dbb207c370482408151f9464a56c36f662e30149d8",
-    "policy_hash": "sha256:be986dd075e864eff239f36023a91716fc71a9f5604fd5f3f9b989ecf41c810a",
-    "manifest_schema_hash": "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1",
-    "trusted_schema_path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
-    "trusted_policy_path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
-    "trusted_manifest_schema_path": "data/abc-schemas/schemas/manifest.schema.json",
-    "trusted_schema_hash": "sha256:63b305b270faae053e6978dbb207c370482408151f9464a56c36f662e30149d8",
-    "trusted_policy_hash": "sha256:be986dd075e864eff239f36023a91716fc71a9f5604fd5f3f9b989ecf41c810a",
-    "trusted_manifest_schema_hash": "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1",
+    "path": "abc/schemas/source-region-coverage.schema.json",
+    "policy_path": "abc/data/source-region-publication-policy-v0.json",
+    "manifest_schema_path": "abc/schemas/manifest.schema.json",
+    "schema_hash": "sha256:953c31f967c192852b0ed000ce073e272306c3468dd34e37f760fb3f4f138863",
+    "policy_hash": "sha256:e6b8232c6e8a694d585c05d01129181ed3cd7677fb2bfd0b18b201d2abfbe3d8",
+    "manifest_schema_hash": "sha256:24c58800a9a31efdf9e2b9e3fab328b13c43dd8052a8ec4cf761c9fb510431b2",
+    "trusted_schema_path": "abc/schemas/source-region-coverage.schema.json",
+    "trusted_policy_path": "abc/data/source-region-publication-policy-v0.json",
+    "trusted_manifest_schema_path": "abc/schemas/manifest.schema.json",
+    "trusted_schema_hash": "sha256:953c31f967c192852b0ed000ce073e272306c3468dd34e37f760fb3f4f138863",
+    "trusted_policy_hash": "sha256:e6b8232c6e8a694d585c05d01129181ed3cd7677fb2bfd0b18b201d2abfbe3d8",
+    "trusted_manifest_schema_hash": "sha256:24c58800a9a31efdf9e2b9e3fab328b13c43dd8052a8ec4cf761c9fb510431b2",
     "trusted_schema_path_match": true,
     "trusted_policy_path_match": true,
     "trusted_manifest_schema_path_match": true,
@@ -96,8 +96,15 @@
       "letter_address_origin": "letter_address_origin_occurrences"
     },
     "missing_measured_class_counters": [],
-    "unmeasured_policy_classes": [],
-    "missing_measurement_split_classes": [],
+    "invalid_measurement_status_classes": [],
+    "unmeasured_policy_classes": [
+      "colophon_metadata",
+      "terminal_provenance"
+    ],
+    "missing_measurement_split_classes": [
+      "colophon_metadata",
+      "terminal_provenance"
+    ],
     "message": "ABC source-region schema, publication policy, and manifest sidecar role are confirmed."
   },
   "parser_evidence_coverage": {
@@ -122,7 +129,7 @@
   },
   "parser_ir_schema": {
     "schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-    "schema_hash": "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411"
+    "schema_hash": "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2"
   },
   "tei_profile": {
     "role": "primary_publication_xml",
@@ -132,10 +139,10 @@
     "verdict": "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION",
     "schema_id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
     "schema_version": "0.2.0",
-    "path": "data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json",
-    "contract_hash": "sha256:2366be5f83e660289cf7961e41fa0fb630b57e26458358733d4b5099ee86abb9",
-    "trusted_schema_path": "data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json",
-    "trusted_schema_hash": "sha256:2366be5f83e660289cf7961e41fa0fb630b57e26458358733d4b5099ee86abb9",
+    "path": "abc/schemas/parser-ir-publication-preservation.schema.json",
+    "contract_hash": "sha256:8ad6d80cd434f4540b3a95bd1e1953eda72f4e5fe4c0e65f090077c70699beb8",
+    "trusted_schema_path": "abc/schemas/parser-ir-publication-preservation.schema.json",
+    "trusted_schema_hash": "sha256:8ad6d80cd434f4540b3a95bd1e1953eda72f4e5fe4c0e65f090077c70699beb8",
     "trusted_schema_path_match": true,
     "record_classes": [
       "custom_sidecar",
@@ -382,11 +389,11 @@
   },
   "mapping": {
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-    "mapping_version": "0.2.3",
-    "mapping_hash": "sha256:ebc9b45d11469fbdeaf30c8b713a5811283f223834131961dbb8a2dba2c8e8cc",
-    "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+    "mapping_version": "0.2.4",
+    "mapping_hash": "sha256:61d0d549bb73d45765757a739d738effc6a1979fa24cb8c878e9d2ba9d73f53e",
+    "mapping_schema_hash": "sha256:23a2822cbae88533168121e8a09648441276d8af6484269ae666b90030eb1e06",
     "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-    "target_parser_ir_schema_hash": "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411",
+    "target_parser_ir_schema_hash": "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2",
     "generated_mapping_rules": 680
   },
   "node_coverage": {
@@ -6254,7 +6261,7 @@
   },
   "next_work_dashboard": {
     "path": "docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json",
-    "hash": "sha256:5abf94dbcd7a3df413042011132b256357b17cd349a0b5668a01b99a5c9fd82c",
+    "hash": "sha256:471b476590ae6e00d0c71450c9bbe545e2ce0a153ee92229ed29105f885977f0",
     "schema_version": "aozora-publication-next-work-v1",
     "schema_valid": true,
     "verdict": "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE",

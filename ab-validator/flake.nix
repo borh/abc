@@ -966,18 +966,18 @@
           ];
         };
 
-        preMonorepoPathHygieneSmokeCheck = mkSmokeCheck {
-          name = "pre-monorepo-path-hygiene-smoke-check";
-          testScript = "tests/pre-monorepo-path-hygiene-smoke.sh";
+        monorepoPathHygieneSmokeCheck = mkSmokeCheck {
+          name = "monorepo-path-hygiene-smoke-check";
+          testScript = "tests/monorepo-path-hygiene-smoke.sh";
           nativeBuildInputs = [
             pkgs.python3
             pkgs.ripgrep
           ];
         };
 
-        preMonorepoLayoutDryRunCheck = mkSmokeCheck {
-          name = "pre-monorepo-layout-dry-run-check";
-          testScript = "tests/pre-monorepo-layout-dry-run.sh";
+        monorepoWorkspaceLayoutSmokeCheck = mkSmokeCheck {
+          name = "monorepo-workspace-layout-smoke-check";
+          testScript = "tests/monorepo-workspace-layout-smoke.sh";
           nativeBuildInputs = [
             pkgs.git
             pkgs.just
@@ -1211,8 +1211,8 @@
           taxonomy-drift = taxonomyDriftCheck;
           abc-schema-contract-drift = abcSchemaContractDriftCheck;
           abc-schema-contract-compare-smoke = abcSchemaContractCompareSmokeCheck;
-          pre-monorepo-path-hygiene-smoke = preMonorepoPathHygieneSmokeCheck;
-          pre-monorepo-layout-dry-run = preMonorepoLayoutDryRunCheck;
+          monorepo-path-hygiene-smoke = monorepoPathHygieneSmokeCheck;
+          monorepo-workspace-layout-smoke = monorepoWorkspaceLayoutSmokeCheck;
           parser-ir-level3-admission-smoke = level3AdmissionSmokeCheck;
           parser-ir-plain-prose-source-delta-smoke = plainProseSourceDeltaSmokeCheck;
           parser-ir-publication-bundle-smoke = publicationBundleSmokeCheck;

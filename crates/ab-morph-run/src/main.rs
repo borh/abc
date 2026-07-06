@@ -333,6 +333,18 @@ The model carries no training-provenance metadata; verify its source before trus
         #[arg(long)]
         force: bool,
     },
+    /// Scores a filled blind labeling TSV (Task 4's export, owner-annotated
+    /// `verdict` column) plus its `mapping.json` sidecar into per-method
+    /// p@k and nDCG@k (spec §Calibration Plan step 5). Pooled evaluation:
+    /// the ideal ranking is drawn from the union of all labeled patterns.
+    ScoreInterestingLabels {
+        #[arg(long)]
+        labels: PathBuf,
+        #[arg(long)]
+        mapping: PathBuf,
+        #[arg(long, default_value_t = 50)]
+        k: usize,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -815,6 +827,16 @@ fn main() -> Result<()> {
                 output.display(),
                 mapping_output.display(),
             );
+            Ok(())
+        }
+        Command::ScoreInterestingLabels {
+            labels,
+            mapping,
+            k,
+        } => {
+            let scores = ab_morph_run::run_score_labels(&labels, &mapping, k)?;
+            serde_json::to_writer_pretty(std::io::stdout(), &scores)?;
+            println!();
             Ok(())
         }
     }
@@ -2303,6 +2325,45 @@ mod tests {
         assert_eq!(snippets_per_pattern, 3);
         assert_eq!(context_chars, 20);
         assert!(!force);
+    }
+
+    #[test]
+    fn parses_score_interesting_labels_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "score-interesting-labels",
+            "--labels",
+            "scratch/labels.tsv",
+            "--mapping",
+            "scratch/mapping.json",
+        ]);
+
+        let Command::ScoreInterestingLabels { labels, mapping, k } = args.command else {
+            panic!("expected score-interesting-labels command");
+        };
+
+        assert_eq!(labels, PathBuf::from("scratch/labels.tsv"));
+        assert_eq!(mapping, PathBuf::from("scratch/mapping.json"));
+        assert_eq!(k, 50);
+    }
+
+    #[test]
+    fn parses_score_interesting_labels_command_with_explicit_k() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "score-interesting-labels",
+            "--labels",
+            "scratch/labels.tsv",
+            "--mapping",
+            "scratch/mapping.json",
+            "--k",
+            "10",
+        ]);
+
+        let Command::ScoreInterestingLabels { k, .. } = args.command else {
+            panic!("expected score-interesting-labels command");
+        };
+        assert_eq!(k, 10);
     }
 
     #[test]

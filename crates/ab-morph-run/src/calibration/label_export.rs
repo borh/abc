@@ -17,7 +17,7 @@ use std::io::{BufReader, BufWriter, Write};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::read_ranking;
 use crate::summary::{InterestingRow, InterestingSummary, splitmix64};
@@ -73,10 +73,13 @@ const VERDICT_DESCRIPTIONS: [&str; 6] = [
     "insufficient evidence in the snippet to decide",
 ];
 
-#[derive(Serialize)]
-struct MappingEntry {
-    pattern_id: String,
-    ranks: BTreeMap<String, usize>,
+/// `mapping.json` entry (label_id → pattern_id + per-method ranks). Shared
+/// (via `pub(crate)`) with `label_score`, which deserializes a filled
+/// `mapping.json` sidecar to score p@k/nDCG@k per method.
+#[derive(Serialize, Deserialize)]
+pub(crate) struct MappingEntry {
+    pub(crate) pattern_id: String,
+    pub(crate) ranks: BTreeMap<String, usize>,
 }
 
 struct LabelRow {

@@ -13,6 +13,7 @@ SCHEMA_VERSION = "aozora-publication-next-work-v1"
 VERDICT_OPEN = "AOZORA_PUBLICATION_NEXT_WORK_OPEN"
 REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora")
 SOURCE_COUNTER_SOURCE = "source_region_coverage"
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 ADAPTER_DISTORTION_INCLUDED_BUCKETS = (
     "adapter_over_segmented",
     "adapter_collapsed",
@@ -43,6 +44,18 @@ def sha256_file(path: pathlib.Path) -> str:
     return f"sha256:{digest.hexdigest()}"
 
 
+def document_hash(value: object) -> str:
+    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
+def display_path(path: pathlib.Path) -> str:
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
 def as_int(value: Any) -> int:
     if value is None:
         return 0
@@ -56,7 +69,17 @@ def as_int(value: Any) -> int:
 
 
 def input_record(path: pathlib.Path) -> dict[str, str]:
-    return {"path": str(path), "hash": sha256_file(path)}
+    return {"path": display_path(path), "hash": sha256_file(path)}
+
+
+def coverage_input_record(path: pathlib.Path, coverage: dict[str, Any]) -> dict[str, str]:
+    stable_coverage = dict(coverage)
+    stable_coverage.pop("next_work_dashboard", None)
+    return {
+        "path": display_path(path),
+        "hash": document_hash(stable_coverage),
+        "hash_basis": "canonical_json_without_next_work_dashboard",
+    }
 
 
 def completed_gate(gate_id: str, status: str, evidence: dict[str, Any]) -> dict[str, Any]:
@@ -304,7 +327,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
         "performance": {"dnf_recorded": "DNF" in performance_text},
         "evidence_inputs": {
             "source_summary": input_record(args.source_summary),
-            "coverage_summary": input_record(args.coverage_summary),
+            "coverage_summary": coverage_input_record(args.coverage_summary, coverage),
             "matrix_summary": input_record(args.matrix_summary),
             "conversion_summary": input_record(args.conversion_summary),
             "source_reference_summary": input_record(args.source_reference_summary),

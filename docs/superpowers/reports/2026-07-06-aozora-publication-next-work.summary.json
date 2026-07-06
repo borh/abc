@@ -170,27 +170,28 @@
   },
   "evidence_inputs": {
     "source_summary": {
-      "path": "/home/bor/Projects/ab-validator/.worktrees/aozora-publication-next-work/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+      "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
       "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
     },
     "coverage_summary": {
-      "path": "/home/bor/Projects/ab-validator/.worktrees/aozora-publication-next-work/docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json",
-      "hash": "sha256:1f08d2a7dc62c3d5608819358d798c6e0869581a6479e9d90498ccbfbcda4420"
+      "path": "docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json",
+      "hash": "sha256:5d9bf4120c479deb46339a06fdb2abdbff15d83e538eeb8ce1f4dec19cb77c42",
+      "hash_basis": "canonical_json_without_next_work_dashboard"
     },
     "matrix_summary": {
-      "path": "/home/bor/Projects/ab-validator/.worktrees/aozora-publication-next-work/docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json",
+      "path": "docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json",
       "hash": "sha256:f21cea6a4ceed7fc6bd9187c3e16f70f38922a441817e6e19b187a9bf6ecd4bc"
     },
     "conversion_summary": {
-      "path": "/home/bor/Projects/ab-validator/.worktrees/aozora-publication-next-work/docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json",
+      "path": "docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json",
       "hash": "sha256:9aafbe3ceb72001f3ce7d88b49ae49589dd96dd79b71bfda61a3d736ecfc2c44"
     },
     "source_reference_summary": {
-      "path": "/home/bor/Projects/ab-validator/.worktrees/aozora-publication-next-work/docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json",
+      "path": "docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json",
       "hash": "sha256:04c9806d8bb7dbe4c4af48c29f373354de6b2351f4971e91cc5948844270eb81"
     },
     "performance_report": {
-      "path": "/home/bor/Projects/ab-validator/.worktrees/aozora-publication-next-work/docs/superpowers/reports/2026-07-04-parser-performance-measurement.md",
+      "path": "docs/superpowers/reports/2026-07-04-parser-performance-measurement.md",
       "hash": "sha256:4603fc0f3f175dc2524e0ac1b4f312df020cecfda5728cc8fbfe04f0337d49cd"
     }
   }

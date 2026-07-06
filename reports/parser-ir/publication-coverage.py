@@ -100,6 +100,7 @@ PUBLICATION_BUNDLE_REQUIRED_CHECKS = {
     "preservation_source_pointers_resolve",
     "plaintext_body_only",
 }
+NEXT_WORK_SCHEMA_VERSION = "aozora-publication-next-work-v1"
 SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 TEI_PROFILE_RECORD_CLASS = "tei_profile_projection"
 TEI_PROFILE_FAMILIES = {
@@ -1373,6 +1374,8 @@ def next_work_dashboard_block(next_work_summary_path: pathlib.Path | None) -> di
     next_work_items = evidence.get("next_work_items", []) if isinstance(evidence, dict) else []
     if not isinstance(next_work_items, list):
         next_work_items = []
+    schema_version = evidence.get("schema_version") if isinstance(evidence, dict) else None
+    schema_valid = schema_version == NEXT_WORK_SCHEMA_VERSION
     item_ids = [
         item.get("id")
         for item in next_work_items
@@ -1381,7 +1384,13 @@ def next_work_dashboard_block(next_work_summary_path: pathlib.Path | None) -> di
     return {
         "path": display_path(next_work_summary_path),
         "hash": document_hash(evidence),
-        "verdict": evidence.get("verdict") if isinstance(evidence, dict) else None,
+        "schema_version": schema_version,
+        "schema_valid": schema_valid,
+        "verdict": (
+            evidence.get("verdict")
+            if isinstance(evidence, dict) and schema_valid
+            else "NEXT_WORK_SUMMARY_SCHEMA_MISMATCH"
+        ),
         "next_work_items_count": len(next_work_items),
         "item_ids": item_ids,
     }

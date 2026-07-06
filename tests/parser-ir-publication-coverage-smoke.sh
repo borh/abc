@@ -11,8 +11,11 @@ source_summary="$out_dir/source-summary.json"
 matrix_summary="$out_dir/matrix-summary.json"
 source_delta="$out_dir/source-delta.summary.json"
 next_work_summary="$out_dir/next-work.summary.json"
+invalid_next_work_summary="$out_dir/next-work.invalid.summary.json"
 summary_json="$out_dir/coverage.summary.json"
 report_md="$out_dir/coverage.md"
+invalid_next_work_coverage_summary_json="$out_dir/coverage-invalid-next-work.summary.json"
+invalid_next_work_coverage_report_md="$out_dir/coverage-invalid-next-work.md"
 supported_mapping="$out_dir/mapping-supported.json"
 supported_summary_json="$out_dir/coverage-supported.summary.json"
 supported_report_md="$out_dir/coverage-supported.md"
@@ -224,6 +227,16 @@ JSON
 cat > "$next_work_summary" <<'JSON'
 {
   "schema_version": "aozora-publication-next-work-v1",
+  "verdict": "AOZORA_PUBLICATION_NEXT_WORK_OPEN",
+  "next_work_items": [
+    {"id": "text_policy_calibration"}
+  ]
+}
+JSON
+
+cat > "$invalid_next_work_summary" <<'JSON'
+{
+  "schema_version": "wrong-dashboard-v1",
   "verdict": "AOZORA_PUBLICATION_NEXT_WORK_OPEN",
   "next_work_items": [
     {"id": "text_policy_calibration"}
@@ -483,6 +496,8 @@ jq -e '.source_construct_coverage.counts_by_class.tei_policy_projection == 1' "$
 jq -e '.source_construct_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.unsupported_gap == 8' "$summary_json" >/dev/null
 jq -e '.next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_OPEN"' "$summary_json" >/dev/null
+jq -e '.next_work_dashboard.schema_version == "aozora-publication-next-work-v1"' "$summary_json" >/dev/null
+jq -e '.next_work_dashboard.schema_valid == true' "$summary_json" >/dev/null
 jq -e '.next_work_dashboard.next_work_items_count == 1' "$summary_json" >/dev/null
 jq -e '.next_work_dashboard.item_ids == ["text_policy_calibration"]' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.count == 8' "$summary_json" >/dev/null
@@ -504,6 +519,19 @@ jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$summary
 rg -n "IR Publication Coverage" "$report_md" >/dev/null
 rg -n "Field Coverage" "$report_md" >/dev/null
 rg -n "Raw Unsupported-Derived Mapping Rows" "$report_md" >/dev/null
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --next-work-summary "$invalid_next_work_summary" \
+  --summary-json "$invalid_next_work_coverage_summary_json" \
+  --report-md "$invalid_next_work_coverage_report_md"
+
+jq -e '.next_work_dashboard.schema_valid == false' "$invalid_next_work_coverage_summary_json" >/dev/null
+jq -e '.next_work_dashboard.verdict == "NEXT_WORK_SUMMARY_SCHEMA_MISMATCH"' "$invalid_next_work_coverage_summary_json" >/dev/null
 
 jq 'del(.transform_rule_descriptions[] | select(.category == "UNSUPPORTED"))' "$mapping" > "$supported_mapping"
 

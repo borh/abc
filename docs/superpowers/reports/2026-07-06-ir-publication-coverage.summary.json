@@ -6254,7 +6254,7 @@
   },
   "next_work_dashboard": {
     "path": "docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json",
-    "hash": "sha256:d411073641df4293ac4e99e7864203cd9717a18bc8d37d078aa28d22f8c445a5",
+    "hash": "sha256:0dc9b620b050d94e5fa988aafba6f57f160c212ab1b86cd61ea5bd3c2b843d8d",
     "schema_version": "aozora-publication-next-work-v1",
     "schema_valid": true,
     "verdict": "AOZORA_PUBLICATION_NEXT_WORK_OPEN",

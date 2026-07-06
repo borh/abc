@@ -495,12 +495,12 @@
     {
       "id": "parser_acceptance_criteria",
       "owner": "ab-validator",
-      "status": "open",
+      "status": "complete",
       "evidence": {
         "path": "docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md",
-        "hash": "sha256:78daefe231447e9943bacbe2e32c97c3727ab9abb427ee794533dbc3ff07cbc8",
+        "hash": "sha256:a332aa7ed65562072b86fc3e8d0463b2c0f91fc049f4ab9b486c3174bbbe01ee",
         "title": "Comprehensive Parser Acceptance Criteria",
-        "spec_status": "Draft",
+        "spec_status": "Accepted",
         "required_evidence_inputs": 6,
         "required_evidence_paths_total": 6,
         "required_evidence_paths_existing": 6,
@@ -628,7 +628,7 @@
     },
     "parser_acceptance_spec": {
       "path": "docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md",
-      "hash": "sha256:78daefe231447e9943bacbe2e32c97c3727ab9abb427ee794533dbc3ff07cbc8"
+      "hash": "sha256:a332aa7ed65562072b86fc3e8d0463b2c0f91fc049f4ab9b486c3174bbbe01ee"
     }
   }
 }

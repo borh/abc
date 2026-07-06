@@ -1,6 +1,21 @@
 (ns abc.tools.schema-test
-  (:require [abc.tools.schema :as schema]
+  (:require [abc.tools.files :as files]
+            [abc.tools.schema :as schema]
             [clojure.test :refer [deftest is testing]]))
+
+(def ^:private cross-project-schema-versions
+  {"schemas/parser-ir.schema.json" "0.5.0"
+   "schemas/aat-parser-ir-divergence.schema.json" "0.3.0"
+   "schemas/aat-parser-ir-mapping.schema.json" "0.2.3"
+   "schemas/manifest.schema.json" "0.4.0"
+   "schemas/parser-ir-publication-preservation.schema.json" "0.2.0"
+   "schemas/source-region-coverage.schema.json" "0.2.0"})
+
+(deftest cross-project-schemas-carry-explicit-versions-test
+  (doseq [[path expected-version] cross-project-schema-versions]
+    (is (= expected-version
+           (get (files/read-json path) "version"))
+        (str path " must expose the cross-repo schema contract version"))))
 
 (deftest schema-hash-test
   (testing "hashes are over parsed canonical JSON values, not source bytes"

@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
   "title": "ABC Parser-IR Publication Preservation Sidecar",
+  "version": "0.2.0",
   "type": "object",
   "required": [
     "schema_id",

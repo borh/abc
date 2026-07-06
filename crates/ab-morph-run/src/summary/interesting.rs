@@ -230,7 +230,7 @@ impl Default for WarehouseInterestingOptions {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, serde::Deserialize)]
 pub struct InterestingSummary {
     pub score_version: ScoreVersionBlock,
     pub run_id: String,
@@ -240,7 +240,7 @@ pub struct InterestingSummary {
 
 /// Every knob affecting cross-run comparability. Two runs are comparable
 /// only when all fields match (spec §Score Versioning).
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, serde::Deserialize)]
 pub struct ScoreVersionBlock {
     pub score_version: u32,
     pub pattern_id_version: u32,
@@ -272,7 +272,7 @@ pub struct ScoreVersionBlock {
     pub surprise: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, serde::Deserialize)]
 pub struct InterestingRow {
     pub pattern_id: String,
     pub pattern: String,
@@ -288,7 +288,7 @@ pub struct InterestingRow {
     pub region_examples: Vec<RegionExampleOut>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, serde::Deserialize)]
 pub struct SignalExplain {
     pub signal: String,
     pub status: String,
@@ -306,7 +306,7 @@ pub struct RegionExampleOut {
     pub char_end: u64,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, serde::Deserialize)]
 pub struct AnomalyRow {
     pub source_id: String,
     pub text_id: String,

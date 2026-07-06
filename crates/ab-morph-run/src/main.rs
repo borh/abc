@@ -304,6 +304,12 @@ The model carries no training-provenance metadata; verify its source before trus
         #[arg(long)]
         force: bool,
     },
+    CompareInterestingRankings {
+        #[arg(long)]
+        left: PathBuf,
+        #[arg(long)]
+        right: PathBuf,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -750,6 +756,12 @@ fn main() -> Result<()> {
                 summary.skipped_source_ids.len(),
                 skipped,
             );
+            Ok(())
+        }
+        Command::CompareInterestingRankings { left, right } => {
+            let comparison = ab_morph_run::run_compare_rankings(&left, &right)?;
+            serde_json::to_writer_pretty(std::io::stdout(), &comparison)?;
+            println!();
             Ok(())
         }
     }
@@ -2172,6 +2184,25 @@ mod tests {
         );
         assert_eq!(from, PathBuf::from("../abc/out/corpus"));
         assert!(force);
+    }
+
+    #[test]
+    fn parses_compare_interesting_rankings_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "compare-interesting-rankings",
+            "--left",
+            "scratch/rankings/left.json",
+            "--right",
+            "scratch/rankings/right.json",
+        ]);
+
+        let Command::CompareInterestingRankings { left, right } = args.command else {
+            panic!("expected compare-interesting-rankings command");
+        };
+
+        assert_eq!(left, PathBuf::from("scratch/rankings/left.json"));
+        assert_eq!(right, PathBuf::from("scratch/rankings/right.json"));
     }
 
     #[test]

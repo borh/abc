@@ -921,6 +921,10 @@ def unsupported_gaps(
         )
     items.extend(construct_coverage.get("unsupported", []))
     return {
+        "description": (
+            "Raw unsupported-derived mapping rows before closure folding. "
+            "Use unsupported_derived_closure_coverage or closure_gaps to decide whether any row remains a true unsupported gap."
+        ),
         "count": len(items),
         "counts_by_owner": count_values(items, "owner"),
         "items": items,
@@ -1040,6 +1044,29 @@ def closure_gaps(
     }
 
 
+def unsupported_derived_closure_coverage(closures: dict[str, Any]) -> dict[str, Any]:
+    status_items = {
+        "admitted_by_custom_contract": closures["admitted_by_custom_contract"].get("items", []),
+        "admitted_by_tei_profile": closures["admitted_by_tei_profile"].get("items", []),
+        "classified_but_not_admitted": closures["classified_but_not_admitted"].get("items", []),
+        "true_unsupported_gap": closures["true_unsupported_gaps"].get("items", []),
+    }
+    return {
+        "description": (
+            "Closure-adjusted view of raw unsupported-derived mapping rows. "
+            "A row is a true unsupported gap only if it has no TEI/profile/custom closure family."
+        ),
+        "total": sum(len(items) for items in status_items.values()),
+        "counts_by_status": {
+            status: len(items) for status, items in status_items.items()
+        },
+        "counts_by_family_by_status": {
+            status: count_values(items, "closure_family")
+            for status, items in status_items.items()
+        },
+    }
+
+
 def publication_verdict(
     source_passed: bool,
     evidence: dict[str, Any],
@@ -1101,6 +1128,7 @@ def build_summary(
         "source_construct_coverage": construct_coverage,
         "unsupported_gaps": gaps,
         "closure_gaps": closures,
+        "unsupported_derived_closure_coverage": unsupported_derived_closure_coverage(closures),
         "tei_eaj_calibration": {
             "matrix_schema_version": matrix.get("schema_version"),
             "rows_attempted": matrix.get("totals", {}).get("rows_attempted"),
@@ -1116,6 +1144,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     field_counts = summary["field_coverage"]["counts_by_class"]
     diagnostic_counts = summary["diagnostic_coverage"]["counts_by_class"]
     construct_counts = summary["source_construct_coverage"]["counts_by_class"]
+    adjusted_closure = summary["unsupported_derived_closure_coverage"]
     gaps = summary["unsupported_gaps"]
     closures = summary["closure_gaps"]
     lines = [
@@ -1145,7 +1174,28 @@ def render_markdown(summary: dict[str, Any]) -> str:
     lines.extend(["", "## Source Construct Coverage", "", "| Class | Constructs |", "|---|---:|"])
     for name, count in construct_counts.items():
         lines.append(f"| `{name}` | {count} |")
-    lines.extend(["", "## Unsupported gaps", "", f"Count: {gaps['count']}", ""])
+    lines.extend([
+        "",
+        "## Unsupported-Derived Closure Coverage",
+        "",
+        adjusted_closure["description"],
+        "",
+        f"Total raw unsupported-derived rows: {adjusted_closure['total']}",
+        "",
+        "| Status | Rows |",
+        "|---|---:|",
+    ])
+    for status, count in adjusted_closure["counts_by_status"].items():
+        lines.append(f"| `{status}` | {count} |")
+    lines.extend([
+        "",
+        "## Raw Unsupported-Derived Mapping Rows",
+        "",
+        gaps["description"],
+        "",
+        f"Count: {gaps['count']}",
+        "",
+    ])
     if gaps.get("counts_by_owner"):
         lines.extend(["| Owner | Count |", "|---|---:|"])
         for owner, count in gaps["counts_by_owner"].items():

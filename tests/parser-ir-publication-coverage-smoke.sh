@@ -327,7 +327,7 @@ jq -e '.closure_gaps.true_unsupported_gaps.items[0].closure_family == null' "$su
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$summary_json" >/dev/null
 rg -n "IR Publication Coverage" "$report_md" >/dev/null
 rg -n "Field Coverage" "$report_md" >/dev/null
-rg -n "Unsupported gaps" "$report_md" >/dev/null
+rg -n "Raw Unsupported-Derived Mapping Rows" "$report_md" >/dev/null
 
 jq 'del(.transform_rule_descriptions[] | select(.category == "UNSUPPORTED"))' "$mapping" > "$supported_mapping"
 
@@ -398,6 +398,10 @@ jq -e '.closure_gaps.admitted_by_tei_profile.counts_by_family.heading_jisage_str
 jq -e '.closure_gaps.classified_but_not_admitted.count == 2' "$candidate_summary_json" >/dev/null
 jq -e '([.closure_gaps.classified_but_not_admitted.items[] | select(.closure_family == "span_coordinates")] | length) == 0' "$candidate_summary_json" >/dev/null
 jq -e '([.closure_gaps.classified_but_not_admitted.items[] | select(.closure_family == "style_rendition" or .closure_family == "figure_metadata" or .closure_family == "heading_jisage_structure")] | length) == 0' "$candidate_summary_json" >/dev/null
+jq -e '.unsupported_derived_closure_coverage.counts_by_status.admitted_by_custom_contract == 1' "$candidate_summary_json" >/dev/null
+jq -e '.unsupported_derived_closure_coverage.counts_by_status.admitted_by_tei_profile == 4' "$candidate_summary_json" >/dev/null
+jq -e '.unsupported_derived_closure_coverage.counts_by_status.classified_but_not_admitted == 2' "$candidate_summary_json" >/dev/null
+jq -e '.unsupported_derived_closure_coverage.counts_by_status.true_unsupported_gap == 0' "$candidate_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
 
 REPO_ROOT="$repo_root" python3 - <<'PY'

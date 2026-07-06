@@ -2221,6 +2221,7 @@ mod tests {
             WarehouseInterestingOptions::default(),
         )
         .unwrap();
+        // Empty fixture yields no rows; the point is that a v1 run passes the version gate without error.
         assert!(summary.rows.is_empty());
     }
 

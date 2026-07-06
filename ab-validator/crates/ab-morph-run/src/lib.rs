@@ -1664,6 +1664,7 @@ mod tests {
         assert!(run_dir.join("runs.parquet").is_file());
         assert!(run_dir.join("sources.parquet").is_dir());
         assert!(run_dir.join("nway_regions.parquet").is_dir());
+        assert!(run_dir.join("projection_spans.parquet").is_dir());
         assert_eq!(
             fs::read_dir(warehouse_dir.join("runs"))
                 .unwrap()

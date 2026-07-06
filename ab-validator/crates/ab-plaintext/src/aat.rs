@@ -145,6 +145,9 @@ impl ProjectionSink for SpanSink {
     }
 }
 
+/// RFC 6901 escaping (`~0`/`~1`) is intentionally omitted: keys are a closed
+/// set of static literals (`blocks`, `content`, `children`, `upper`, `lower`,
+/// `caption`) that contain no `/` or `~`. Escape before adding dynamic keys.
 fn json_pointer(path: &[PathSeg]) -> String {
     use std::fmt::Write as _;
     let mut out = String::new();
@@ -634,10 +637,10 @@ mod tests {
         // strings include '\r' and '\n' so the remap path is exercised.
         fn arb_inline() -> impl Strategy<Value = serde_json::Value> {
             prop_oneof![
-                proptest::string::string_regex("[ab\r\nあ]{0,6}").unwrap().prop_map(|v| json!({"kind": "text", "value": v})),
-                proptest::string::string_regex("[ab\r\nあ]{0,6}").unwrap()
+                proptest::string::string_regex("[ab\r\nあ𩸽]{0,6}").unwrap().prop_map(|v| json!({"kind": "text", "value": v})),
+                proptest::string::string_regex("[ab\r\nあ𩸽]{0,6}").unwrap()
                     .prop_map(|v| json!({"kind": "ruby", "base": v, "reading": "よみ"})),
-                proptest::string::string_regex("[ab\r\nあ]{0,6}").unwrap().prop_map(|v| json!({"kind": "gaiji", "description": v})),
+                proptest::string::string_regex("[ab\r\nあ𩸽]{0,6}").unwrap().prop_map(|v| json!({"kind": "gaiji", "description": v})),
             ]
         }
 

@@ -269,6 +269,7 @@ Suggested values include: 1] human; 2] template; 3] system; 4] bot; 5] unspecifi
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
             id="abc-tei-v0-att.cmc-generatedBy-CMC_generatedBy_within_post-constraint-rule-1">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 xmlns:xi="http://www.w3.org/2001/XInclude"
@@ -371,6 +372,7 @@ Suggested values include: 1] human; 2] template; 3] system; 4] bot; 5] unspecifi
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
             id="abc-tei-v0-att.datable.w3c-att-datable-w3c-when-constraint-rule-2">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 xmlns:xi="http://www.w3.org/2001/XInclude"
@@ -381,6 +383,7 @@ Suggested values include: 1] human; 2] template; 3] system; 4] bot; 5] unspecifi
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
             id="abc-tei-v0-att.datable.w3c-att-datable-w3c-from-constraint-rule-3">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 xmlns:xi="http://www.w3.org/2001/XInclude"
@@ -391,6 +394,7 @@ Suggested values include: 1] human; 2] template; 3] system; 4] bot; 5] unspecifi
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
             id="abc-tei-v0-att.datable.w3c-att-datable-w3c-to-constraint-rule-4">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 xmlns:xi="http://www.w3.org/2001/XInclude"
@@ -703,6 +707,7 @@ Suggested values include: 1] internal; 2] external; 3] conjecture</a:documentati
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
             id="abc-tei-v0-att.global.source-source-only_1_ODD_source-constraint-rule-5">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 xmlns:xi="http://www.w3.org/2001/XInclude"
@@ -951,6 +956,7 @@ Suggested values include: 1] top; 2] bottom; 3] margin; 4] opposite; 5] overleaf
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
             id="abc-tei-v0-att.pointing-targetLang-targetLang-constraint-rule-6">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 xmlns:xi="http://www.w3.org/2001/XInclude"
@@ -1125,6 +1131,7 @@ Suggested values include: 1] sole; 2] major; 3] minor</a:documentation>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
             id="abc-tei-v0-att.spanning-spanTo-spanTo-points-to-following-constraint-rule-7">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 xmlns:xi="http://www.w3.org/2001/XInclude"
@@ -1169,6 +1176,7 @@ Suggested values include: 1] sole; 2] major; 3] minor</a:documentation>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
             id="abc-tei-v0-att.styleDef-schemeVersion-schemeVersionRequiresScheme-constraint-rule-8">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 xmlns:xi="http://www.w3.org/2001/XInclude"
@@ -1205,6 +1213,7 @@ Suggested values include: 1] sole; 2] major; 3] minor</a:documentation>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
             id="abc-tei-v0-att.typed-subtypeTyped-constraint-rule-9">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 xmlns:xi="http://www.w3.org/2001/XInclude"
@@ -1398,11 +1407,106 @@ Sample values include: 1] all; 2] most; 3] range</a:documentation>
       <ref name="att.global.rendition.attributes"/>
       <ref name="att.global.responsibility.attributes"/>
       <ref name="att.global.source.attributes"/>
+      <ref name="att.global.attribute.vocab-version"/>
+      <ref name="att.global.attribute.preservation-record"/>
+      <ref name="att.global.attribute.ir-pointer"/>
+      <ref name="att.global.attribute.source-pointer"/>
+      <ref name="att.global.attribute.source-marker"/>
+      <ref name="att.global.attribute.accent-code"/>
+      <ref name="att.global.attribute.style-source"/>
+      <ref name="att.global.attribute.layout-kind"/>
+      <ref name="att.global.attribute.layout-params"/>
+      <ref name="att.global.attribute.figure-class"/>
       <ref name="att.global.attribute.xmlid"/>
       <ref name="att.global.attribute.n"/>
       <ref name="att.global.attribute.xmllang"/>
       <ref name="att.global.attribute.xmlbase"/>
       <ref name="att.global.attribute.xmlspace"/>
+   </define>
+   <define name="att.global.attribute.vocab-version">
+      <optional>
+         <attribute name="vocab-version" ns="https://w3id.org/abc/ns/tei">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">ABC TEI namespace vocabulary major version.</a:documentation>
+            <choice>
+               <value>0</value>
+               <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0"/>
+            </choice>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.global.attribute.preservation-record">
+      <optional>
+         <attribute name="preservation-record" ns="https://w3id.org/abc/ns/tei">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">Deterministic publication-preservation sidecar record id.</a:documentation>
+            <data type="string">
+               <param name="pattern">r[0-9]{6}</param>
+            </data>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.global.attribute.ir-pointer">
+      <optional>
+         <attribute name="ir-pointer" ns="https://w3id.org/abc/ns/tei">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">Parser-IR pointer for the projected publication fact.</a:documentation>
+            <data type="string"/>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.global.attribute.source-pointer">
+      <optional>
+         <attribute name="source-pointer" ns="https://w3id.org/abc/ns/tei">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">Source or AAT pointer for the projected publication fact.</a:documentation>
+            <data type="string"/>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.global.attribute.source-marker">
+      <optional>
+         <attribute name="source-marker" ns="https://w3id.org/abc/ns/tei">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">Original Aozora source marker when a TEI-native rendering is normalized.</a:documentation>
+            <data type="string"/>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.global.attribute.accent-code">
+      <optional>
+         <attribute name="accent-code" ns="https://w3id.org/abc/ns/tei">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">Aozora accent notation code projected into TEI.</a:documentation>
+            <data type="string"/>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.global.attribute.style-source">
+      <optional>
+         <attribute name="style-source" ns="https://w3id.org/abc/ns/tei">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">Aozora style source marker projected into TEI.</a:documentation>
+            <data type="string"/>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.global.attribute.layout-kind">
+      <optional>
+         <attribute name="layout-kind" ns="https://w3id.org/abc/ns/tei">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">Closed ABC layout kind projected from parser-IR layout facts.</a:documentation>
+            <data type="string"/>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.global.attribute.layout-params">
+      <optional>
+         <attribute name="layout-params" ns="https://w3id.org/abc/ns/tei">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">Semicolon-delimited key=value layout parameters.</a:documentation>
+            <data type="string"/>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.global.attribute.figure-class">
+      <optional>
+         <attribute name="figure-class" ns="https://w3id.org/abc/ns/tei">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">Aozora figure class projected into TEI figure output.</a:documentation>
+            <data type="string"/>
+         </attribute>
+      </optional>
    </define>
    <define name="att.global.attribute.xmlid">
       <optional>
@@ -4535,6 +4639,7 @@ Sample values include: 1] rubbing; 2] mildew; 3] smoke</a:documentation>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
             id="abc-tei-v0-att.calendarSystem-calendar-calendar_attr_on_empty_element-constraint-rule-10">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 xmlns:xi="http://www.w3.org/2001/XInclude"
@@ -4594,6 +4699,7 @@ Suggested values include: 1] page; 2] column; 3] line; 4] book; 5] poem; 6] cant
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-p-abstractModel-structure-p-in-ab-or-p-constraint-rule-11">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:p">
                <sch:report test="(ancestor::tei:ab or ancestor::tei:p) and                        not( ancestor::tei:floatingText                           | parent::tei:exemplum                           | parent::tei:item                           | parent::tei:note                           | parent::tei:q                           | parent::tei:quote                           | parent::tei:remarks                           | parent::tei:said                           | parent::tei:sp                           | parent::tei:stage                           | parent::tei:cell                           | parent::tei:figure )">
@@ -4605,6 +4711,7 @@ Suggested values include: 1] page; 2] column; 3] line; 4] book; 5] poem; 6] cant
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-p-abstractModel-structure-p-in-l-constraint-rule-12">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:l//tei:p">
                <sch:assert test="ancestor::tei:floatingText | parent::tei:figure | parent::tei:note">
@@ -4823,6 +4930,7 @@ Suggested values include: 1] spoken (spoken); 2] thought (thought); 3] written (
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-desc-deprecationInfo-only-in-deprecated-constraint-rule-13">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:desc[ @type eq 'deprecationInfo']">
                <sch:assert test="../@validUntil">Information about a
@@ -4922,6 +5030,7 @@ Suggested values include: 1] deprecationInfo (deprecation information)</a:docume
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-rt-target-rt-target-not-span-constraint-rule-14">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:rt/@target">
                <sch:report test="../@from | ../@to">When target= is present, neither from= nor to= should be.</sch:report>
@@ -4939,6 +5048,7 @@ Suggested values include: 1] deprecationInfo (deprecation information)</a:docume
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-rt-from-rt-from-constraint-rule-15">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:rt/@from">
                <sch:assert test="../@to">When from= is present, the to= attribute of <sch:name/> is required.</sch:assert>
@@ -4956,6 +5066,7 @@ Suggested values include: 1] deprecationInfo (deprecation information)</a:docume
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-rt-to-rt-to-constraint-rule-16">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:rt/@to">
                <sch:assert test="../@from">When to= is present, the from= attribute of <sch:name/> is required.</sch:assert>
@@ -5464,6 +5575,7 @@ Sample values include: 1] suspension (suspension); 2] contraction (contraction);
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-ptr-ptrAtts-constraint-rule-17">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:ptr">
                <sch:report test="@target and @cRef">Only one of the attributes @target and @cRef may be supplied on <sch:name/>.</sch:report>
@@ -5487,6 +5599,7 @@ Sample values include: 1] suspension (suspension); 2] contraction (contraction);
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-ref-refAtts-constraint-rule-18">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:ref">
                <sch:report test="@target and @cRef">Only one of the attributes @target and @cRef may be supplied on <sch:name/>.</sch:report>
@@ -5552,6 +5665,7 @@ Sample values include: 1] suspension (suspension); 2] contraction (contraction);
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-list-gloss-list-must-have-labels-constraint-rule-19">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:list[@type='gloss']">
                <sch:assert test="tei:label">The content of a "gloss" list should include a sequence of one or more pairs of a label element followed by an item element</sch:assert>
@@ -6259,6 +6373,7 @@ Sample values include: 1] main; 2] sub (subordinate); 3] alt (alternate); 4] sho
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-relatedItem-targetorcontent1-constraint-rule-20">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:relatedItem">
                <sch:report test="@target and count( child::* ) &gt; 0">If the @target attribute on <sch:name/> is used, the relatedItem element must be empty</sch:report>
@@ -6294,6 +6409,7 @@ Sample values include: 1] main; 2] sub (subordinate); 3] alt (alternate); 4] sho
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-l-abstractModel-structure-l-in-l-constraint-rule-21">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:l">
                <sch:report test="ancestor::tei:l[not(.//tei:note//tei:l[. = current()])]">Abstract model violation: Lines may not contain lines or lg elements.</sch:report>
@@ -6343,6 +6459,7 @@ Sample values include: 1] main; 2] sub (subordinate); 3] alt (alternate); 4] sho
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-lg-atleast1oflggapl-constraint-rule-22">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:lg">
                <sch:assert test="count(descendant::tei:lg|descendant::tei:l|descendant::tei:gap) &gt; 0">An lg element must contain at least one child l, lg, or gap element.</sch:assert>
@@ -6352,6 +6469,7 @@ Sample values include: 1] main; 2] sub (subordinate); 3] alt (alternate); 4] sho
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-lg-abstractModel-structure-lg-in-l-constraint-rule-23">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:lg">
                <sch:report test="ancestor::tei:l[not(.//tei:note//tei:lg[. = current()])]">Abstract model violation: Lines may not contain line groups.</sch:report>
@@ -7038,6 +7156,7 @@ Suggested values include: 1] ISBN; 2] ISSN; 3] DOI; 4] URI; 5] VIAF; 6] ESTC; 7]
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-quotation-quotationContents-constraint-rule-24">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:quotation">
@@ -7323,6 +7442,7 @@ Sample values include: 1] first-line; 2] first-letter; 3] before; 4] after</a:do
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-citeStructure-match-citestructure-outer-match-constraint-rule-25">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:citeStructure[not(parent::tei:citeStructure)]">
@@ -7333,6 +7453,7 @@ Sample values include: 1] first-line; 2] first-letter; 3] before; 4] after</a:do
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-citeStructure-match-citestructure-inner-match-constraint-rule-26">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:citeStructure[parent::tei:citeStructure]">
@@ -8287,6 +8408,7 @@ Suggested values include: 1] sent; 2] received; 3] transmitted; 4] redirected; 5
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-div-abstractModel-structure-div-in-l-constraint-rule-27">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:l//tei:div">
                <sch:assert test="ancestor::tei:floatingText">
@@ -8298,6 +8420,7 @@ Suggested values include: 1] sent; 2] received; 3] transmitted; 4] redirected; 5
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-div-abstractModel-structure-div-in-ab-or-p-constraint-rule-28">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:div">
                <sch:report test="(ancestor::tei:p or ancestor::tei:ab) and not(ancestor::tei:floatingText)">
@@ -10631,6 +10754,7 @@ Sample values include: 1] e (e); 2] he (he); 3] she (she); 4] they (they)</a:doc
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-relation-ref-or-key-or-name-constraint-rule-29">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:relation">
@@ -10641,6 +10765,7 @@ Sample values include: 1] e (e); 2] he (he); 3] she (she); 4] they (they)</a:doc
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-relation-active-mutual-constraint-rule-30">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:relation">
@@ -10651,6 +10776,7 @@ Sample values include: 1] e (e); 2] he (he); 3] she (she); 4] they (they)</a:doc
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-relation-active-passive-constraint-rule-31">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:relation">
@@ -11245,6 +11371,7 @@ Sample values include: 1] atBirth; 2] atDeath; 3] dependent; 4] inherited; 5] in
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-facsimile-no_facsimile_text_nodes-constraint-rule-32">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:facsimile//tei:line | tei:facsimile//tei:zone">
@@ -11384,6 +11511,7 @@ Sample values include: 1] glued; 2] pinned; 3] sewn</a:documentation>
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-path-pathmustnotbeclosed-constraint-rule-33">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:path[@points]">
@@ -11437,6 +11565,7 @@ Sample values include: 1] glued; 2] pinned; 3] sewn</a:documentation>
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-addSpan-addSpan-requires-spanTo-constraint-rule-34">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:addSpan">
@@ -11447,6 +11576,7 @@ Sample values include: 1] glued; 2] pinned; 3] sewn</a:documentation>
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-addSpan-addSpan-requires-spanTo-fr-constraint-rule-35">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:addSpan">
@@ -11479,6 +11609,7 @@ Sample values include: 1] glued; 2] pinned; 3] sewn</a:documentation>
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-damageSpan-damageSpan-requires-spanTo-constraint-rule-36">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:damageSpan">
@@ -11489,6 +11620,7 @@ Sample values include: 1] glued; 2] pinned; 3] sewn</a:documentation>
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-damageSpan-damageSpan-requires-spanTo-fr-constraint-rule-37">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:damageSpan">
@@ -11510,6 +11642,7 @@ Sample values include: 1] glued; 2] pinned; 3] sewn</a:documentation>
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-delSpan-delSpan-requires-spanTo-constraint-rule-38">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:delSpan">
@@ -11520,6 +11653,7 @@ Sample values include: 1] glued; 2] pinned; 3] sewn</a:documentation>
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-delSpan-delSpan-requires-spanTo-fr-constraint-rule-39">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:delSpan">
@@ -11629,6 +11763,16 @@ Sample values include: 1] header; 2] footer; 3] pageNum (page number); 4] lineNu
                <ref name="model.certLike"/>
             </choice>
          </zeroOrMore>
+         <ref name="att.global.attribute.vocab-version"/>
+         <ref name="att.global.attribute.preservation-record"/>
+         <ref name="att.global.attribute.ir-pointer"/>
+         <ref name="att.global.attribute.source-pointer"/>
+         <ref name="att.global.attribute.source-marker"/>
+         <ref name="att.global.attribute.accent-code"/>
+         <ref name="att.global.attribute.style-source"/>
+         <ref name="att.global.attribute.layout-kind"/>
+         <ref name="att.global.attribute.layout-params"/>
+         <ref name="att.global.attribute.figure-class"/>
          <ref name="att.global.attribute.xmlid"/>
          <ref name="att.global.attribute.n"/>
          <ref name="att.global.attribute.xmllang"/>
@@ -11685,6 +11829,7 @@ Sample values include: 1] header; 2] footer; 3] pageNum (page number); 4] lineNu
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-subst-substContents1-constraint-rule-40">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       xmlns:xi="http://www.w3.org/2001/XInclude"
                       context="tei:subst">
@@ -13113,6 +13258,7 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-s-noNestedS-constraint-rule-41">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:s">
                <sch:report test="tei:s">You may not nest one s element within another: use seg instead</sch:report>
@@ -13271,6 +13417,7 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-span-target-from-constraint-rule-42">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:span">
                <sch:report test="@from and @target">
@@ -13282,6 +13429,7 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-span-targetto-constraint-rule-43">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:span">
                <sch:report test="@to and @target">
@@ -13293,6 +13441,7 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-span-tonotfrom-constraint-rule-44">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:span">
                <sch:report test="@to and not(@from)">
@@ -13304,6 +13453,7 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
                   xmlns:rng="http://relaxng.org/ns/structure/1.0"
                   id="abc-tei-v0-span-tofrom-constraint-rule-45">
             <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                      xmlns:abc="https://w3id.org/abc/ns/tei"
                       xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                       context="tei:span">
                <sch:report test="contains(normalize-space(@to),' ') or contains(normalize-space(@from),' ')">
@@ -13392,42 +13542,58 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </choice>
    </start>
    <sch:ns xmlns="http://www.tei-c.org/ns/1.0"
-           xmlns:sch="http://purl.oclc.org/dsdl/schematron"
-           prefix="tei"
-           uri="http://www.tei-c.org/ns/1.0"/>
-   <sch:ns xmlns="http://www.tei-c.org/ns/1.0"
+           xmlns:abc="https://w3id.org/abc/ns/tei"
            xmlns:rng="http://relaxng.org/ns/structure/1.0"
            xmlns:sch="http://purl.oclc.org/dsdl/schematron"
            prefix="tei"
            uri="http://www.tei-c.org/ns/1.0"/>
    <sch:ns xmlns="http://www.tei-c.org/ns/1.0"
+           xmlns:abc="https://w3id.org/abc/ns/tei"
+           xmlns:rng="http://relaxng.org/ns/structure/1.0"
+           xmlns:sch="http://purl.oclc.org/dsdl/schematron"
+           prefix="abc"
+           uri="https://w3id.org/abc/ns/tei"/>
+   <sch:ns xmlns="http://www.tei-c.org/ns/1.0"
+           xmlns:abc="https://w3id.org/abc/ns/tei"
+           xmlns:rng="http://relaxng.org/ns/structure/1.0"
+           xmlns:sch="http://purl.oclc.org/dsdl/schematron"
+           prefix="tei"
+           uri="http://www.tei-c.org/ns/1.0"/>
+   <sch:ns xmlns="http://www.tei-c.org/ns/1.0"
+           xmlns:abc="https://w3id.org/abc/ns/tei"
            xmlns:rng="http://relaxng.org/ns/structure/1.0"
            xmlns:sch="http://purl.oclc.org/dsdl/schematron"
            prefix="xs"
            uri="http://www.w3.org/2001/XMLSchema"/>
    <sch:ns xmlns="http://www.tei-c.org/ns/1.0"
+           xmlns:abc="https://w3id.org/abc/ns/tei"
            xmlns:rng="http://relaxng.org/ns/structure/1.0"
            xmlns:sch="http://purl.oclc.org/dsdl/schematron"
            prefix="rng"
            uri="http://relaxng.org/ns/structure/1.0"/>
    <sch:ns xmlns="http://www.tei-c.org/ns/1.0"
+           xmlns:abc="https://w3id.org/abc/ns/tei"
            xmlns:rng="http://relaxng.org/ns/structure/1.0"
            xmlns:sch="http://purl.oclc.org/dsdl/schematron"
            prefix="rna"
            uri="http://relaxng.org/ns/compatibility/annotations/1.0"/>
    <sch:ns xmlns="http://www.tei-c.org/ns/1.0"
+           xmlns:abc="https://w3id.org/abc/ns/tei"
            xmlns:rng="http://relaxng.org/ns/structure/1.0"
            xmlns:sch="http://purl.oclc.org/dsdl/schematron"
            prefix="sch"
            uri="http://purl.oclc.org/dsdl/schematron"/>
    <sch:ns xmlns="http://www.tei-c.org/ns/1.0"
+           xmlns:abc="https://w3id.org/abc/ns/tei"
            xmlns:rng="http://relaxng.org/ns/structure/1.0"
            xmlns:sch="http://purl.oclc.org/dsdl/schematron"
            prefix="sch1x"
            uri="http://www.ascc.net/xml/schematron"/>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-tei-header-title-constraint-rule-46">
+            id="abc-tei-header-title">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:teiHeader">
          <sch:assert test="tei:fileDesc/tei:titleStmt/tei:title[not(@type = 'sub')]">
@@ -13436,8 +13602,10 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-tei-header-source-work-id-constraint-rule-47">
+            id="abc-tei-header-source-work-id">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:teiHeader">
          <sch:assert test=".//tei:idno[@type = ('aozora-work-id', 'source-work-id')]">
@@ -13446,8 +13614,10 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-header-language-declared-constraint-rule-48">
+            id="abc-header-language-declared">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:TEI">
          <sch:assert test="tei:teiHeader/tei:profileDesc/tei:langUsage/tei:language[@ident and normalize-space(@ident) != '']">
@@ -13456,8 +13626,10 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-ruby-complete-constraint-rule-49">
+            id="abc-ruby-complete">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:ruby">
          <sch:assert test="tei:rb and tei:rt">
@@ -13466,8 +13638,10 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-ruby-base-non-empty-constraint-rule-50">
+            id="abc-ruby-base-non-empty">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:ruby/tei:rb">
          <sch:assert test="normalize-space(string(.)) != ''">
@@ -13476,8 +13650,10 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-ruby-reading-non-empty-constraint-rule-51">
+            id="abc-ruby-reading-non-empty">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:ruby/tei:rt">
          <sch:assert test="normalize-space(string(.)) != ''">
@@ -13486,8 +13662,10 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-gaiji-reference-constraint-rule-52">
+            id="abc-gaiji-reference">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:g">
          <sch:assert test="@ref or @corresp or @ana">
@@ -13496,8 +13674,10 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-gaiji-chardecl-resolution-constraint-rule-53">
+            id="abc-gaiji-chardecl-resolution">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:g[starts-with(@ref, '#')]">
          <sch:assert test="/tei:TEI/tei:teiHeader//tei:charDecl/tei:char/@xml:id = substring-after(@ref, '#')">
@@ -13506,8 +13686,10 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-char-resolution-form-constraint-rule-54">
+            id="abc-char-resolution-form">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:charDecl/tei:char">
          <sch:assert test="(some $m in tei:mapping satisfies normalize-space(string($m)) != '') or (some $u in tei:unicodeProp satisfies normalize-space(string($u/@value)) != '') or (some $l in tei:localProp satisfies normalize-space(string($l/@value)) != '') or (some $d in tei:desc satisfies normalize-space(string($d)) != '')">
@@ -13516,8 +13698,10 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-figure-accessibility-constraint-rule-55">
+            id="abc-figure-accessibility">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:figure">
          <sch:report role="warning" test="not(tei:figDesc or tei:head or tei:p)">
@@ -13526,8 +13710,10 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-source-span-reference-constraint-rule-56">
+            id="abc-source-span-reference">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="*[@source]">
          <sch:assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies starts-with($s, '#')">
@@ -13536,8 +13722,10 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-source-span-target-exists-constraint-rule-57">
+            id="abc-source-span-target-exists">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="*[@source]">
          <sch:assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies //*[@xml:id = substring-after($s, '#')]">
@@ -13546,13 +13734,51 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-transcription-vs-annotation-constraint-rule-58">
+            id="abc-transcription-vs-annotation">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:text//tei:w | tei:text//tei:m | tei:text//tei:pc">
          <sch:assert role="warning"
                      test="ancestor::tei:TEI/tei:teiHeader//tei:encodingDesc//tei:tagsDecl//tei:namespace[@name = 'http://www.tei-c.org/ns/1.0']/tei:tagUsage/@gi = local-name()">
                 ABC TEI linguistic enrichment in the transcription layer must be declared in the header.
+              </sch:assert>
+      </sch:rule>
+   </pattern>
+   <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
+            id="abc-vocab-version-declared">
+      <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
+                xmlns:sch="http://purl.oclc.org/dsdl/schematron"
+                context="tei:TEI[@abc:* or .//@abc:*]">
+         <sch:assert test="@abc:vocab-version = '0'">
+                TEI roots using ABC extension attributes must declare abc:vocab-version="0".
+              </sch:assert>
+      </sch:rule>
+   </pattern>
+   <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
+            id="abc-preservation-record-shape">
+      <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
+                xmlns:sch="http://purl.oclc.org/dsdl/schematron"
+                context="*[@abc:preservation-record]">
+         <sch:assert test="matches(@abc:preservation-record, '^r[0-9]{6}$')">
+                abc:preservation-record must be a deterministic preservation sidecar record id such as r000042.
+              </sch:assert>
+      </sch:rule>
+   </pattern>
+   <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
+            id="abc-layout-params-shape">
+      <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:abc="https://w3id.org/abc/ns/tei"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
+                xmlns:sch="http://purl.oclc.org/dsdl/schematron"
+                context="*[@abc:layout-params]">
+         <sch:assert test="matches(@abc:layout-params, '^[A-Za-z0-9_.:-]+=[^\s;]+(;[A-Za-z0-9_.:-]+=[^\s;]+)*$')">
+                abc:layout-params must use semicolon-delimited key=value pairs.
               </sch:assert>
       </sch:rule>
    </pattern>

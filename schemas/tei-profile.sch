@@ -6,6 +6,7 @@
    <!-- namespaces, declared: -->
    <!-- ********************* -->
    <ns prefix="tei" uri="http://www.tei-c.org/ns/1.0"/>
+   <ns prefix="abc" uri="https://w3id.org/abc/ns/tei"/>
    <ns prefix="tei" uri="http://www.tei-c.org/ns/1.0"/>
    <ns prefix="xs" uri="http://www.w3.org/2001/XMLSchema"/>
    <ns prefix="rng" uri="http://relaxng.org/ns/structure/1.0"/>
@@ -13,7 +14,7 @@
    <ns prefix="sch" uri="http://purl.oclc.org/dsdl/schematron"/>
    <ns prefix="sch1x" uri="http://www.ascc.net/xml/schematron"/>
    <!-- ******************************************************* -->
-   <!-- constraints in en, und, mul, zxx, of which there are 86 -->
+   <!-- constraints in en, und, mul, zxx, of which there are 89 -->
    <!-- ******************************************************* -->
    <pattern id="abc-tei-header-title">
       <rule context="tei:teiHeader">
@@ -79,6 +80,21 @@
       <rule context="tei:text//tei:w | tei:text//tei:m | tei:text//tei:pc">
          <assert role="warning"
                  test="ancestor::tei:TEI/tei:teiHeader//tei:encodingDesc//tei:tagsDecl//tei:namespace[@name = 'http://www.tei-c.org/ns/1.0']/tei:tagUsage/@gi = local-name()"> ABC TEI linguistic enrichment in the transcription layer must be declared in the header.</assert>
+      </rule>
+   </pattern>
+   <pattern id="abc-vocab-version-declared">
+      <rule context="tei:TEI[@abc:* or .//@abc:*]">
+         <assert test="@abc:vocab-version = '0'"> TEI roots using ABC extension attributes must declare abc:vocab-version="0".</assert>
+      </rule>
+   </pattern>
+   <pattern id="abc-preservation-record-shape">
+      <rule context="*[@abc:preservation-record]">
+         <assert test="matches(@abc:preservation-record, '^r[0-9]{6}$')"> abc:preservation-record must be a deterministic preservation sidecar record id such as r000042.</assert>
+      </rule>
+   </pattern>
+   <pattern id="abc-layout-params-shape">
+      <rule context="*[@abc:layout-params]">
+         <assert test="matches(@abc:layout-params, '^[A-Za-z0-9_.:-]+=[^\s;]+(;[A-Za-z0-9_.:-]+=[^\s;]+)*$')"> abc:layout-params must use semicolon-delimited key=value pairs.</assert>
       </rule>
    </pattern>
 </schema>

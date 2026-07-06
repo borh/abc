@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0"
+     xmlns:abc="https://w3id.org/abc/ns/tei"
+     abc:vocab-version="0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title type="main" xml:lang="ja">ABC preservation fixture</title>
+      </titleStmt>
+      <publicationStmt>
+        <publisher>ABC fixture</publisher>
+        <idno type="aozora-work-id">000001</idno>
+      </publicationStmt>
+      <sourceDesc>
+        <p>Aozora Bunko source fixture.</p>
+      </sourceDesc>
+    </fileDesc>
+    <profileDesc>
+      <langUsage>
+        <language ident="ja">日本語</language>
+      </langUsage>
+    </profileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <p abc:preservation-record="bad-record-id">本文</p>
+    </body>
+  </text>
+</TEI>

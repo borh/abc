@@ -1342,6 +1342,12 @@
                                    #{"abc-transcription-vs-annotation"}}
                 :invalid-fixtures {"fixtures/tei/invalid/missing-title.xml"
                                    #{"abc-tei-header-title"}
+                                   "fixtures/tei/invalid/abc-bad-layout-params.xml"
+                                   #{"abc-layout-params-shape"}
+                                   "fixtures/tei/invalid/abc-bad-preservation-record.xml"
+                                   #{"abc-preservation-record-shape"}
+                                   "fixtures/tei/invalid/abc-missing-vocab-version.xml"
+                                   #{"abc-vocab-version-declared"}
                                    "fixtures/tei/invalid/missing-source-work-id.xml"
                                    #{"abc-tei-header-source-work-id"}
                                    "fixtures/tei/invalid/char-empty-decl.xml"
@@ -1402,6 +1408,12 @@
                       #{"abc-transcription-vs-annotation"}}
    :invalid-fixtures {"fixtures/tei/invalid/missing-title.xml"
                       #{"abc-tei-header-title"}
+                      "fixtures/tei/invalid/abc-bad-layout-params.xml"
+                      #{"abc-layout-params-shape"}
+                      "fixtures/tei/invalid/abc-bad-preservation-record.xml"
+                      #{"abc-preservation-record-shape"}
+                      "fixtures/tei/invalid/abc-missing-vocab-version.xml"
+                      #{"abc-vocab-version-declared"}
                       "fixtures/tei/invalid/char-empty-decl.xml"
                       #{"abc-char-resolution-form"}
                       "fixtures/tei/invalid/gaiji-dangling-ref.xml"
@@ -1429,10 +1441,12 @@
     (is (nil? (validate/validate-tei-schematron! validate/tei-schematron-fixtures)))))
 
 (deftest tei-schematron-rule-universe-test
-  (testing "rule-universe extracts exactly the 13 abc-* ids from the ODD"
+  (testing "rule-universe extracts exactly the 16 abc-* ids from the ODD"
     (is (= #{"abc-tei-header-title"
              "abc-tei-header-source-work-id"
              "abc-header-language-declared"
+             "abc-layout-params-shape"
+             "abc-preservation-record-shape"
              "abc-ruby-complete"
              "abc-ruby-base-non-empty"
              "abc-ruby-reading-non-empty"
@@ -1442,7 +1456,8 @@
              "abc-figure-accessibility"
              "abc-source-span-reference"
              "abc-source-span-target-exists"
-             "abc-transcription-vs-annotation"}
+             "abc-transcription-vs-annotation"
+             "abc-vocab-version-declared"}
            (validate/rule-universe)))))
 
 (def ^:private bundle-args

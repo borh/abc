@@ -380,6 +380,9 @@
                 "fixtures/tei/valid/rashomon-minimal.xml"
                 "fixtures/tei/valid/source-span-local-ref.xml"
                 "fixtures/tei/valid/transcription-enrichment-declared.xml"
+                "fixtures/tei/invalid/abc-bad-layout-params.xml"
+                "fixtures/tei/invalid/abc-bad-preservation-record.xml"
+                "fixtures/tei/invalid/abc-missing-vocab-version.xml"
                 "fixtures/tei/invalid/char-empty-decl.xml"
                 "fixtures/tei/invalid/gaiji-dangling-ref.xml"
                 "fixtures/tei/invalid/gaiji-missing-ref.xml"
@@ -529,6 +532,12 @@
                       #{"abc-transcription-vs-annotation"}}
    :invalid-fixtures {"fixtures/tei/invalid/missing-title.xml"
                       #{"abc-tei-header-title"}
+                      "fixtures/tei/invalid/abc-bad-layout-params.xml"
+                      #{"abc-layout-params-shape"}
+                      "fixtures/tei/invalid/abc-bad-preservation-record.xml"
+                      #{"abc-preservation-record-shape"}
+                      "fixtures/tei/invalid/abc-missing-vocab-version.xml"
+                      #{"abc-vocab-version-declared"}
                       "fixtures/tei/invalid/char-empty-decl.xml"
                       #{"abc-char-resolution-form"}
                       "fixtures/tei/invalid/gaiji-dangling-ref.xml"
@@ -689,7 +698,10 @@
       (throw (ex-info "parser-IR publication plain.txt must exist and be non-empty"
                       {:path (str plain-file)})))
     (run-command! "xmllint" "--noout" (str tei-file))
-    (validate-tei! (System/getenv "TEI_SCHEMA_PATH") [tei-file])
+    ;; Parser-IR publication TEI uses the ABC namespace extension. Strict
+    ;; upstream tei_all.rng does not admit project-specific foreign attributes,
+    ;; so generated publication artifacts are validated against the customized
+    ;; ABC profile below.
     (validate-tei! "schemas/tei-profile.rng" [tei-file])
     (let [{:keys [findings]} (schematron/validate! {:schema-path "schemas/tei-profile.sch"
                                                      :xml-path (str tei-file)
@@ -927,6 +939,8 @@
                       "fixtures/tei/valid/transcription-enrichment-declared.xml"
                       "fixtures/tei/warnings/figure-missing-desc.xml"
                       "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
+                      "fixtures/tei/invalid/abc-bad-layout-params.xml"
+                      "fixtures/tei/invalid/abc-missing-vocab-version.xml"
                       "fixtures/tei/invalid/char-empty-decl.xml"
                       "fixtures/tei/invalid/gaiji-dangling-ref.xml"
                       "fixtures/tei/invalid/gaiji-missing-ref.xml"

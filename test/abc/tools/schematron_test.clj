@@ -164,6 +164,39 @@
       (is (= [:assert]
              (mapv :kind findings))))))
 
+(deftest abc-missing-vocab-version-fails-vocab-version-rule-test
+  (testing "TEI with ABC extension attributes must declare abc:vocab-version"
+    (let [{:keys [findings]} (schematron/validate!
+                              {:schema-path schema-path
+                               :xml-path "fixtures/tei/invalid/abc-missing-vocab-version.xml"
+                               :label "abc-missing-vocab-version"})]
+      (is (= ["abc-vocab-version-declared"]
+             (mapv :rule-id findings)))
+      (is (= [:error]
+             (mapv :severity findings))))))
+
+(deftest abc-bad-preservation-record-fails-record-shape-rule-test
+  (testing "abc:preservation-record must use deterministic sidecar ids"
+    (let [{:keys [findings]} (schematron/validate!
+                              {:schema-path schema-path
+                               :xml-path "fixtures/tei/invalid/abc-bad-preservation-record.xml"
+                               :label "abc-bad-preservation-record"})]
+      (is (= ["abc-preservation-record-shape"]
+             (mapv :rule-id findings)))
+      (is (= [:error]
+             (mapv :severity findings))))))
+
+(deftest abc-bad-layout-params-fails-layout-params-rule-test
+  (testing "abc:layout-params must use key=value payloads"
+    (let [{:keys [findings]} (schematron/validate!
+                              {:schema-path schema-path
+                               :xml-path "fixtures/tei/invalid/abc-bad-layout-params.xml"
+                               :label "abc-bad-layout-params"})]
+      (is (= ["abc-layout-params-shape"]
+             (mapv :rule-id findings)))
+      (is (= [:error]
+             (mapv :severity findings))))))
+
 (deftest multi-rule-pattern-is-rejected-test
   (testing "v0 evaluator rejects patterns with more than one rule until ISO claim semantics exist"
     (let [tmp (java.io.File/createTempFile "abc-sch-multi-rule" ".sch")]

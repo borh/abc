@@ -33,24 +33,59 @@
                     (str "line-jisage indent(" indent ")"))
     nil))
 
+(defn- layout-params [layout]
+  (case (get layout "kind")
+    "jisage" (when-some [indent (get layout "indent")]
+               (str "indent=" indent))
+    "burasage" (let [first-line (get layout "first_line_indent")
+                     continuation (get layout "continuation_indent")]
+                 (when (and (some? first-line) (some? continuation))
+                   (str "first-line-indent=" first-line
+                        ";continuation-indent=" continuation)))
+    "chitsuki" (let [align (get layout "align")
+                     offset (get layout "offset_from_end")]
+                 (when (and align (some? offset))
+                   (str "align=" align ";offset-from-end=" offset)))
+    "jizume" (when-some [width (get layout "width")]
+               (str "width=" width))
+    "line-jisage" (when-some [indent (get layout "indent")]
+                    (str "indent=" indent))
+    "font-size" (let [size-type (get layout "size_type")
+                      level (get layout "level")]
+                  (when (and size-type (some? level))
+                    (str "size-type=" size-type ";level=" level)))
+    "tcy" (when-let [marker (get layout "marker")]
+            (str "marker=" marker))
+    "keigakomi" (when-let [border (get layout "border")]
+                  (str "border=" border))
+    "yokogumi" "direction=horizontal"
+    nil))
+
 (defn- inline-layout-rend [layout]
   (case (get layout "kind")
     "font-size" (let [size-type (get layout "size_type")
                       level (get layout "level")]
                   (when (and size-type (some? level))
-                    (str "abc:font-size type(" size-type ") level(" level ")")))
-    "tcy" (if-let [marker (get layout "marker")]
-            (str "abc:tcy marker(" marker ")")
-            "abc:tcy")
+                    (str "font-size " size-type "(" level ")")))
+    "tcy" "text-combine-upright"
     "keigakomi" (if-let [border (get layout "border")]
-                  (str "abc:keigakomi border(" border ")")
-                  "abc:keigakomi")
-    "yokogumi" "abc:yokogumi direction(horizontal)"
+                  (str "keigakomi border(" border ")")
+                  "keigakomi")
+    "yokogumi" "yokogumi horizontal"
     nil))
 
 (defn- paragraph-attrs [paragraph]
-  (when-let [rend (some-> (get paragraph "layout") layout-rend)]
-    {:rend rend}))
+  (when-let [layout (get paragraph "layout")]
+    (let [rend (layout-rend layout)]
+      (cond-> {}
+        rend
+        (assoc :rend rend)
+
+        (get layout "kind")
+        (assoc :abc/layout-kind (get layout "kind"))
+
+        (layout-params layout)
+        (assoc :abc/layout-params (layout-params layout))))))
 
 (defn- source-note-hiccup [node]
   [:note {:type (get node "note_type")}
@@ -191,13 +226,19 @@
 (defn- render-layout-span-node
   ([acc node] (render-layout-span-node acc node 0))
   ([acc node depth]
-   (if-let [rend (some-> (get node "layout") inline-layout-rend)]
-     (render-inline-wrapper acc
-                            (seq (get node "inline_children"))
-                            (get node "text")
-                            depth
-                            [:hi {:rend rend}])
-     (mark-omitted acc "layout-span"))))
+   (let [layout (get node "layout")]
+     (if-let [rend (some-> layout inline-layout-rend)]
+       (render-inline-wrapper acc
+                              (seq (get node "inline_children"))
+                              (get node "text")
+                              depth
+                              [:hi (cond-> {:rend rend}
+                                     (get layout "kind")
+                                     (assoc :abc/layout-kind (get layout "kind"))
+
+                                     (layout-params layout)
+                                     (assoc :abc/layout-params (layout-params layout)))])
+       (mark-omitted acc "layout-span")))))
 
 (defn- render-heading-node
   ([acc node] (render-heading-node acc node 0))

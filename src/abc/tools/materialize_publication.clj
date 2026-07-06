@@ -23,7 +23,7 @@
 (def tei-schematron-path "schemas/tei-profile.sch")
 (def preservation-schema-path "schemas/parser-ir-publication-preservation.schema.json")
 (def preservation-schema-id "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json")
-(def preservation-schema-version "0.1.0")
+(def preservation-schema-version "0.2.0")
 
 (defn- write-string-file! [file value]
   (io/make-parents file)
@@ -46,7 +46,10 @@
                          (get metadata-record "contributors"))}))
 
 (defn- tei-document [header body]
-  [:TEI header body])
+  [:TEI {:xmlns/abc "https://w3id.org/abc/ns/tei"
+         :abc/vocab-version "0"}
+   header
+   body])
 
 (defn- profile-hash []
   (str "sha256:" (files/sha256-file tei-odd-path)))
@@ -194,11 +197,12 @@
 
 (defn- preservation-record [index {:keys [ir-pointer tei-pointer construct
                                           source-pointer source-inventory-row
-                                          message value]}]
+                                          message value record-class]
+                                   :or {record-class "custom_sidecar"}}]
   {"record_id" (format "r%06d" index)
    "ir_pointer" ir-pointer
    "tei_pointer" tei-pointer
-   "class" "custom_sidecar"
+   "class" record-class
    "construct" construct
    "source_pointer" source-pointer
    "source_inventory_row" source-inventory-row
@@ -303,6 +307,78 @@
         :source-inventory-row nil
         :message "Gaiji resolution status and diagnostics are preserved outside TEI publication XML."
         :value (get-in node ["gaiji" "resolved"])}))
+      (get parser-ir "nodes" [])))
+
+(defn- style-projection-records [parser-ir]
+  (keep-indexed
+   (fn [index node]
+     (when (and (= "emphasis" (get node "type"))
+                (some? (get node "style")))
+       {:record-class "tei_profile_projection"
+        :ir-pointer (json-pointer ["nodes" index "style"])
+        :tei-pointer nil
+        :construct "style_rendition"
+        :source-pointer (get node "source_pointer")
+        :source-inventory-row nil
+        :message "Parser-IR emphasis style is projected into the ABC TEI profile rendition vocabulary."
+        :value (get node "style")}))
+   (get parser-ir "nodes" [])))
+
+(defn- layout-projection-records [parser-ir]
+  (concat
+   (keep-indexed
+    (fn [index node]
+      (when (and (= "layout-span" (get node "type"))
+                 (map? (get node "layout")))
+        {:record-class "tei_profile_projection"
+         :ir-pointer (json-pointer ["nodes" index "layout"])
+         :tei-pointer nil
+         :construct "style_rendition"
+         :source-pointer (get node "source_pointer")
+         :source-inventory-row nil
+         :message "Parser-IR layout-span metadata is projected into ABC TEI profile attributes."
+         :value (pr-str (get node "layout"))}))
+    (get parser-ir "nodes" []))
+   (keep-indexed
+    (fn [index paragraph]
+      (when (map? (get paragraph "layout"))
+        {:record-class "tei_profile_projection"
+         :ir-pointer (json-pointer ["paragraphs" index "layout"])
+         :tei-pointer nil
+         :construct "heading_jisage_structure"
+         :source-pointer (get paragraph "source_pointer")
+         :source-inventory-row nil
+         :message "Parser-IR paragraph layout is projected into ABC TEI profile attributes."
+         :value (pr-str (get paragraph "layout"))}))
+    (get parser-ir "paragraphs" []))))
+
+(defn- heading-projection-records [parser-ir]
+  (keep-indexed
+   (fn [index node]
+     (when (= "heading" (get node "type"))
+       {:record-class "tei_profile_projection"
+        :ir-pointer (json-pointer ["nodes" index])
+        :tei-pointer nil
+        :construct "heading_jisage_structure"
+        :source-pointer (get node "source_pointer")
+        :source-inventory-row nil
+        :message "Parser-IR heading structure is projected to TEI head under the ABC TEI profile."
+        :value (get node "level")}))
+   (get parser-ir "nodes" [])))
+
+(defn- figure-projection-records [parser-ir]
+  (keep-indexed
+   (fn [index node]
+     (when (= "image" (get node "type"))
+       (let [figure-value (select-keys node ["src" "width" "height" "css_class"])]
+         {:record-class "tei_profile_projection"
+          :ir-pointer (json-pointer ["nodes" index])
+          :tei-pointer nil
+          :construct "figure_metadata"
+          :source-pointer (get node "source_pointer")
+          :source-inventory-row nil
+          :message "Parser-IR image metadata is projected to TEI figure/graphic under the ABC TEI profile."
+          :value (pr-str figure-value)})))
    (get parser-ir "nodes" [])))
 
 (defn- preservation-records [parser-ir]
@@ -314,8 +390,19 @@
                       (span-records "paragraphs" (get parser-ir "paragraphs" []))
                       (paragraph-preservation-records (get parser-ir "paragraphs" []))
                       (diagnostic-records parser-ir)
-                      (gaiji-records parser-ir)))]
+                      (gaiji-records parser-ir)
+                      (style-projection-records parser-ir)
+                      (layout-projection-records parser-ir)
+                      (heading-projection-records parser-ir)
+                      (figure-projection-records parser-ir)))]
     (mapv preservation-record (range) raw-records)))
+
+(defn- coverage-classes [records]
+  (->> records
+       (keep #(get % "class"))
+       set
+       sort
+       vec))
 
 (defn publication-preservation
   [{:keys [parser-ir source-manifest generated-at]}]
@@ -341,7 +428,7 @@
                   "mapping_version" (get derived-from "mapping_version")
                   "mapping_schema_hash" (get derived-from "mapping_schema_hash")})
      "coverage" {"record_count" (count records)
-                 "classes" ["custom_sidecar"]}
+                 "classes" (coverage-classes records)}
      "records" records}))
 
 (defn- artifact-manifest

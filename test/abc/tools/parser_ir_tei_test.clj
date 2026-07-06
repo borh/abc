@@ -146,8 +146,12 @@
                                        "level" 1}}]})
           paragraph (some #(when (= :p (first %)) %) (hiccup-nodes (:body result)))]
       (is (= [:p
-              [:hi {:rend "abc:tcy marker(縦中横)"} "12"]
-              [:hi {:rend "abc:font-size type(large) level(1)"} "大"]]
+              [:hi {:rend "text-combine-upright"
+                    :abc/layout-kind "tcy"
+                    :abc/layout-params "marker=縦中横"} "12"]
+              [:hi {:rend "font-size large(1)"
+                    :abc/layout-kind "font-size"
+                    :abc/layout-params "size-type=large;level=1"} "大"]]
              paragraph))
       (is (= {"layout-span" 2 "text" 1} (:node_counts result)))
       (is (empty? (:omitted result))))))
@@ -241,8 +245,12 @@
           result (parser-ir-tei/render parser-ir)]
       (is (= [:text
               [:body
-               [:p {:rend "burasage first(0) rest(1)"} "台詞"]
-               [:p {:rend "chitsuki align(right) offset-from-end(1)"} "（大正十一年十二月）"]]]
+               [:p {:rend "burasage first(0) rest(1)"
+                    :abc/layout-kind "burasage"
+                    :abc/layout-params "first-line-indent=0;continuation-indent=1"} "台詞"]
+               [:p {:rend "chitsuki align(right) offset-from-end(1)"
+                    :abc/layout-kind "chitsuki"
+                    :abc/layout-params "align=right;offset-from-end=1"} "（大正十一年十二月）"]]]
              (:body result)))
       (is (= {"text" 2} (:node_counts result)))
       (is (empty? (:omitted result))))))
@@ -285,9 +293,15 @@
           result (parser-ir-tei/render parser-ir)]
       (is (= [:text
               [:body
-               [:p {:rend "jisage indent(2)"} "一"]
-               [:p {:rend "jizume width(20)"} "二"]
-               [:p {:rend "line-jisage indent(3)"} "三"]]]
+               [:p {:rend "jisage indent(2)"
+                    :abc/layout-kind "jisage"
+                    :abc/layout-params "indent=2"} "一"]
+               [:p {:rend "jizume width(20)"
+                    :abc/layout-kind "jizume"
+                    :abc/layout-params "width=20"} "二"]
+               [:p {:rend "line-jisage indent(3)"
+                    :abc/layout-kind "line-jisage"
+                    :abc/layout-params "indent=3"} "三"]]]
              (:body result)))
       (is (= {"text" 3} (:node_counts result)))
       (is (empty? (:omitted result))))))

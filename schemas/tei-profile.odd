@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <TEI xmlns="http://www.tei-c.org/ns/1.0"
+     xmlns:abc="https://w3id.org/abc/ns/tei"
+     xmlns:rng="http://relaxng.org/ns/structure/1.0"
      xmlns:sch="http://purl.oclc.org/dsdl/schematron">
   <teiHeader>
     <fileDesc>
@@ -36,6 +38,7 @@
         <!-- Schematron constraint declarations -->
         <constraintDecl scheme="schematron" queryBinding="xslt2">
           <sch:ns prefix="tei" uri="http://www.tei-c.org/ns/1.0"/>
+          <sch:ns prefix="abc" uri="https://w3id.org/abc/ns/tei"/>
         </constraintDecl>
 
         <!-- Project documentation -->
@@ -62,6 +65,18 @@
             original marker and link to the resolution policy used to choose
             Unicode, IVS, glyph, or unresolved fallback output.
           </p>
+          <p>
+            ABC profile extensions use the namespace
+            `https://w3id.org/abc/ns/tei` and require
+            `abc:vocab-version="0"` on generated TEI roots that carry ABC
+            extension attributes. The v0 extension is attributes-only. It
+            permits derived audit projections such as `abc:preservation-record`,
+            `abc:accent-code`, `abc:style-source`, `abc:layout-kind`,
+            `abc:layout-params`, and `abc:figure-class` on ordinary TEI
+            elements. The JSON preservation sidecar remains the authoritative
+            audit ledger; ABC TEI attributes are queryable XML projections of
+            that evidence.
+          </p>
         </remarks>
 
         <list>
@@ -79,6 +94,9 @@
           <item><label>abc-source-span-reference</label> error: elements claiming source spans must point to valid span identifiers.</item>
           <item><label>abc-source-span-target-exists</label> error: each fragment id in `@source` must resolve to an `@xml:id` defined in this document.</item>
           <item><label>abc-transcription-vs-annotation</label> warning initially: linguistic enrichment must not be mixed into transcription unless declared.</item>
+          <item><label>abc-vocab-version-declared</label> error: TEI roots using ABC extension attributes must declare `abc:vocab-version="0"`.</item>
+          <item><label>abc-preservation-record-shape</label> error: `abc:preservation-record` values must be deterministic sidecar record ids of the form `r000000`.</item>
+          <item><label>abc-layout-params-shape</label> error: `abc:layout-params` values must use the closed key=value grammar declared by the ABC TEI namespace design.</item>
         </list>
 
         <!-- Element/attribute constraints and documentation anchors -->
@@ -97,6 +115,72 @@
             <p>Character declarations document unresolved or custom external-character mappings.</p>
           </remarks>
         </elementSpec>
+        <classSpec ident="att.global" mode="change" module="tei" type="atts">
+          <attList>
+            <attDef ident="vocab-version" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>ABC TEI namespace vocabulary major version.</desc>
+              <valList type="closed">
+                <valItem ident="0"/>
+              </valList>
+            </attDef>
+            <attDef ident="preservation-record" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Deterministic publication-preservation sidecar record id.</desc>
+              <datatype>
+                <rng:data type="string">
+                  <rng:param name="pattern">r[0-9]{6}</rng:param>
+                </rng:data>
+              </datatype>
+            </attDef>
+            <attDef ident="ir-pointer" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Parser-IR pointer for the projected publication fact.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="source-pointer" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Source or AAT pointer for the projected publication fact.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="source-marker" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Original Aozora source marker when a TEI-native rendering is normalized.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="accent-code" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Aozora accent notation code projected into TEI.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="style-source" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Aozora style source marker projected into TEI.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="layout-kind" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Closed ABC layout kind projected from parser-IR layout facts.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="layout-params" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Semicolon-delimited key=value layout parameters.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+            <attDef ident="figure-class" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
+              <desc>Aozora figure class projected into TEI figure output.</desc>
+              <datatype>
+                <rng:data type="string"/>
+              </datatype>
+            </attDef>
+          </attList>
+        </classSpec>
 
         <!-- Schematron constraint declarations -->
         <constraintSpec ident="abc-tei-header-title" scheme="schematron">
@@ -237,6 +321,39 @@
             <sch:rule context="tei:text//tei:w | tei:text//tei:m | tei:text//tei:pc">
               <sch:assert role="warning" test="ancestor::tei:TEI/tei:teiHeader//tei:encodingDesc//tei:tagsDecl//tei:namespace[@name = 'http://www.tei-c.org/ns/1.0']/tei:tagUsage/@gi = local-name()">
                 ABC TEI linguistic enrichment in the transcription layer must be declared in the header.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-vocab-version-declared" scheme="schematron">
+          <desc>Require generated TEI with ABC extension attributes to declare the ABC vocabulary version.</desc>
+          <constraint>
+            <sch:rule context="tei:TEI[@abc:* or .//@abc:*]">
+              <sch:assert test="@abc:vocab-version = '0'">
+                TEI roots using ABC extension attributes must declare abc:vocab-version="0".
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-preservation-record-shape" scheme="schematron">
+          <desc>Require preservation record references to use deterministic sidecar ids.</desc>
+          <constraint>
+            <sch:rule context="*[@abc:preservation-record]">
+              <sch:assert test="matches(@abc:preservation-record, '^r[0-9]{6}$')">
+                abc:preservation-record must be a deterministic preservation sidecar record id such as r000042.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-layout-params-shape" scheme="schematron">
+          <desc>Require ABC layout params to use the declared key=value grammar.</desc>
+          <constraint>
+            <sch:rule context="*[@abc:layout-params]">
+              <sch:assert test="matches(@abc:layout-params, '^[A-Za-z0-9_.:-]+=[^\s;]+(;[A-Za-z0-9_.:-]+=[^\s;]+)*$')">
+                abc:layout-params must use semicolon-delimited key=value pairs.
               </sch:assert>
             </sch:rule>
           </constraint>

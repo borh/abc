@@ -88,6 +88,8 @@
               tei-text (slurp tei-file)
               body-text (tei-element-body tei-text "body")
               back-text (tei-element-body tei-text "back")]
+          (is (string/includes? tei-text "xmlns:abc=\"https://w3id.org/abc/ns/tei\""))
+          (is (string/includes? tei-text "abc:vocab-version=\"0\""))
           (is (= 2 (count (re-seq #"<(?:[A-Za-z0-9_-]+:)?p(?:\s|>)"
                                   body-text))))
           (is (not (string/includes? body-text "（古伝説と、シルレルの詩から。）")))
@@ -102,11 +104,20 @@
                    tei-validation-result)))
         (is (= "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
                (get preservation "schema_id")))
-        (is (= "0.1.0" (get preservation "schema_version")))
+        (is (= "0.2.0" (get preservation "schema_version")))
         (is (= source-corpus-hash
                (get-in preservation ["source" "corpus_snapshot_hash"])))
         (is (pos? (get-in preservation ["coverage" "record_count"])))
+        (is (some #{"custom_sidecar"}
+                  (get-in preservation ["coverage" "classes"])))
+        (is (some #{"tei_profile_projection"}
+                  (get-in preservation ["coverage" "classes"])))
         (is (some #(= "paragraph.node_range" (get % "construct"))
+                  (get preservation "records")))
+        (is (some #(= "tei_profile_projection" (get % "class"))
+                  (get preservation "records")))
+        (is (some #(and (= "tei_profile_projection" (get % "class"))
+                        (= "heading_jisage_structure" (get % "construct")))
                   (get preservation "records")))
         (is (= "plaintext" (get plaintext-manifest "artifact_kind")))
         (is (= "tei" (get tei-manifest "artifact_kind")))

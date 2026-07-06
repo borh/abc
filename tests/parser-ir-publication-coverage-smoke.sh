@@ -10,6 +10,7 @@ mapping="$out_dir/mapping.json"
 source_summary="$out_dir/source-summary.json"
 matrix_summary="$out_dir/matrix-summary.json"
 source_delta="$out_dir/source-delta.summary.json"
+next_work_summary="$out_dir/next-work.summary.json"
 summary_json="$out_dir/coverage.summary.json"
 report_md="$out_dir/coverage.md"
 supported_mapping="$out_dir/mapping-supported.json"
@@ -217,6 +218,16 @@ cat > "$source_delta" <<'JSON'
     },
     "missing_parsers": []
   }
+}
+JSON
+
+cat > "$next_work_summary" <<'JSON'
+{
+  "schema_version": "aozora-publication-next-work-v1",
+  "verdict": "AOZORA_PUBLICATION_NEXT_WORK_OPEN",
+  "next_work_items": [
+    {"id": "text_policy_calibration"}
+  ]
 }
 JSON
 
@@ -434,6 +445,7 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --source-summary "$source_summary" \
   --matrix-summary "$matrix_summary" \
   --source-delta-summary "$source_delta" \
+  --next-work-summary "$next_work_summary" \
   --summary-json "$summary_json" \
   --report-md "$report_md"
 
@@ -470,6 +482,9 @@ jq -e '.source_construct_coverage.counts_by_class.tei_exact == 1' "$summary_json
 jq -e '.source_construct_coverage.counts_by_class.tei_policy_projection == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.unsupported_gap == 8' "$summary_json" >/dev/null
+jq -e '.next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_OPEN"' "$summary_json" >/dev/null
+jq -e '.next_work_dashboard.next_work_items_count == 1' "$summary_json" >/dev/null
+jq -e '.next_work_dashboard.item_ids == ["text_policy_calibration"]' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.count == 8' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[] | select(.aat_pointer == "blocks[].content[].raw_material") | .observed_occurrences == 288' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[] | select(.aat_pointer == "blocks[].content[].raw_material") | .prevalence_source == "rule_description"' "$summary_json" >/dev/null

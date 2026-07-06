@@ -1357,6 +1357,36 @@ def mapping_block(mapping: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def next_work_dashboard_block(next_work_summary_path: pathlib.Path | None) -> dict[str, Any] | None:
+    if next_work_summary_path is None:
+        return None
+    try:
+        evidence = load_json(next_work_summary_path)
+    except (json.JSONDecodeError, OSError):
+        return {
+            "path": display_path(next_work_summary_path),
+            "hash": None,
+            "verdict": "NEXT_WORK_SUMMARY_UNREADABLE",
+            "next_work_items_count": None,
+            "item_ids": [],
+        }
+    next_work_items = evidence.get("next_work_items", []) if isinstance(evidence, dict) else []
+    if not isinstance(next_work_items, list):
+        next_work_items = []
+    item_ids = [
+        item.get("id")
+        for item in next_work_items
+        if isinstance(item, dict) and isinstance(item.get("id"), str)
+    ]
+    return {
+        "path": display_path(next_work_summary_path),
+        "hash": document_hash(evidence),
+        "verdict": evidence.get("verdict") if isinstance(evidence, dict) else None,
+        "next_work_items_count": len(next_work_items),
+        "item_ids": item_ids,
+    }
+
+
 def parser_ir_schema_hash(parser_schema: dict[str, Any], mapping: dict[str, Any]) -> Any:
     return (
         mapping.get("target_parser_ir_schema_hash")
@@ -1606,6 +1636,7 @@ def build_summary(
     source_region_policy: pathlib.Path | None,
     manifest_schema: pathlib.Path | None,
     bundle_validation_summary: pathlib.Path | None,
+    next_work_summary: pathlib.Path | None,
 ) -> dict[str, Any]:
     node_coverage = node_coverage_from_schema(parser_schema)
     field_coverage = field_coverage_from_schema(parser_schema)
@@ -1622,10 +1653,11 @@ def build_summary(
     publication_bundle_contract = publication_bundle_contract_block(
         bundle_validation_summary,
     )
+    next_work_dashboard = next_work_dashboard_block(next_work_summary)
     gaps = unsupported_gaps(node_coverage, field_coverage, diagnostics, construct_coverage)
     closures = closure_gaps(gaps, custom_contract, tei_profile_contract)
     source_passed = source_authority_passed(source)
-    return {
+    summary = {
         "schema_version": SCHEMA_VERSION,
         "scope": summary_scope(parser_schema, mapping, source, matrix),
         "verdict": publication_verdict(
@@ -1667,6 +1699,9 @@ def build_summary(
         },
         "plaintext_policy": PLAINTEXT_POLICY,
     }
+    if next_work_dashboard is not None:
+        summary["next_work_dashboard"] = next_work_dashboard
+    return summary
 
 
 def render_markdown(summary: dict[str, Any]) -> str:
@@ -1679,6 +1714,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     closures = summary["closure_gaps"]
     source_region_contract = summary["source_region_contract"]
     publication_bundle_contract = summary["publication_bundle_contract"]
+    next_work_dashboard = summary.get("next_work_dashboard")
     lines = [
         "# IR Publication Coverage",
         "",
@@ -1715,6 +1751,22 @@ def render_markdown(summary: dict[str, Any]) -> str:
         "| Class | Node types |",
         "|---|---:|",
     ]
+    if isinstance(next_work_dashboard, dict):
+        lines.extend(
+            [
+                "## Next Work Dashboard",
+                "",
+                f"Verdict: `{next_work_dashboard.get('verdict')}`",
+                "",
+                f"Evidence: `{next_work_dashboard.get('path')}`",
+                "",
+                f"Next work items: `{next_work_dashboard.get('next_work_items_count')}`",
+                "",
+            ]
+        )
+        for item_id in next_work_dashboard.get("item_ids", []):
+            lines.append(f"- `{item_id}`")
+        lines.append("")
     for name, count in node_counts.items():
         lines.append(f"| `{name}` | {count} |")
     lines.extend(["", "## Field Coverage", "", "| Class | Field facts |", "|---|---:|"])
@@ -1827,6 +1879,7 @@ def parse_args() -> argparse.Namespace:
         default=TRUSTED_ABC_MANIFEST_SCHEMA_PATH,
     )
     parser.add_argument("--bundle-validation-summary", type=pathlib.Path)
+    parser.add_argument("--next-work-summary", type=pathlib.Path)
     parser.add_argument("--summary-json", required=True, type=pathlib.Path)
     parser.add_argument("--report-md", required=True, type=pathlib.Path)
     return parser.parse_args()
@@ -1867,6 +1920,7 @@ def main() -> None:
         source_region_policy=args.source_region_policy,
         manifest_schema=args.manifest_schema,
         bundle_validation_summary=args.bundle_validation_summary,
+        next_work_summary=args.next_work_summary,
     )
     write_json(args.summary_json, summary)
     write_text(args.report_md, render_markdown(summary))

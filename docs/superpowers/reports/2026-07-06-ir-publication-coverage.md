@@ -32,6 +32,20 @@ Rows failed: `0`
 
 | Class | Node types |
 |---|---:|
+## Next Work Dashboard
+
+Verdict: `AOZORA_PUBLICATION_NEXT_WORK_OPEN`
+
+Evidence: `docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json`
+
+Next work items: `5`
+
+- `source_region_disposition_samples`
+- `text_policy_calibration`
+- `adapter_fidelity_worksets`
+- `tei_p5_mapping_dossiers`
+- `parser_acceptance_criteria`
+
 | `tei_exact` | 7 |
 | `tei_policy_projection` | 7 |
 

@@ -6246,5 +6246,18 @@
   "plaintext_policy": {
     "plaintext_surface": "visible_body_text",
     "metadata_policy": "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance"
+  },
+  "next_work_dashboard": {
+    "path": "docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json",
+    "hash": "sha256:e77e788f574766c8166b836b9a6983090563f5baf5e64b90ee7c45c98936ff6a",
+    "verdict": "AOZORA_PUBLICATION_NEXT_WORK_OPEN",
+    "next_work_items_count": 5,
+    "item_ids": [
+      "source_region_disposition_samples",
+      "text_policy_calibration",
+      "adapter_fidelity_worksets",
+      "tei_p5_mapping_dossiers",
+      "parser_acceptance_criteria"
+    ]
   }
 }

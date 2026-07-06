@@ -650,7 +650,6 @@ Every output document carries a `score_version` block recording every knob that 
   "score_mode": "rrf",
   "sample_seed": null,
   "anomaly_w_cov": 5.0,
-  "inheritance_jaccard_threshold": 0.85,
   "signal_profile": ["coverage", "rarity", "impact", "span"],
   "rarity_basis": "work",
   "granularity_profile": "none",

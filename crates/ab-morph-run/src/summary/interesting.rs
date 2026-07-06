@@ -723,6 +723,12 @@ fn read_optional_work_map(run_dir: &Path) -> Result<Option<BTreeMap<String, Stri
             );
         }
     }
+    if map.is_empty() {
+        // A present-but-empty projection would flip rarity_basis to
+        // "work" with total 0 and degenerate the IDF; the importer
+        // refuses to create one, and the reader refuses to honor one.
+        return Ok(None);
+    }
     Ok(Some(map))
 }
 
@@ -730,11 +736,20 @@ fn rarity_config(run_dir: &Path, source_ids: &BTreeSet<String>) -> Result<Rarity
     let work_by_source = read_optional_work_map(run_dir)?;
     let (basis, total) = match &work_by_source {
         Some(map) => {
-            let works: BTreeSet<&String> = source_ids
-                .iter()
-                .filter_map(|source_id| map.get(source_id))
-                .collect();
-            ("work", works.len())
+            let mut works = BTreeSet::new();
+            let mut unmapped = 0usize;
+            for source_id in source_ids {
+                match map.get(source_id) {
+                    Some(work_id) => {
+                        works.insert(work_id.as_str());
+                    }
+                    // Unmapped sources contribute per-source rarity keys
+                    // (see InMemoryAccumulators::record and the SQL
+                    // coalesce), so they belong in the denominator.
+                    None => unmapped += 1,
+                }
+            }
+            ("work", works.len() + unmapped)
         }
         None => ("source", source_ids.len()),
     };
@@ -1595,6 +1610,38 @@ mod tests {
             let rarity = row.signals.iter().find(|s| s.signal == "rarity").unwrap();
             assert_eq!(rarity.raw_value, Some(0.0), "row {}", row.pattern_id);
         }
+    }
+
+    #[test]
+    fn empty_work_map_is_treated_as_absent() {
+        let root = tempfile::tempdir().unwrap();
+        let run_dir = write_fixture(root.path());
+        write_aozora_works(&run_dir, &[]);
+
+        let summary =
+            summarize_warehouse_interesting(&run_dir, WarehouseInterestingOptions::default())
+                .unwrap();
+
+        assert_eq!(summary.score_version.rarity_basis, "source");
+    }
+
+    // `rarity_config` is a private fn of the parent module; this tests
+    // submodule shares that module (`use super::*`), so it is callable
+    // here with no visibility change.
+    #[test]
+    fn rarity_denominator_counts_unmapped_sources() {
+        let root = tempfile::tempdir().unwrap();
+        let run_dir = write_fixture(root.path());
+        // src-a mapped to w1; src-b left unmapped (falls back to a
+        // per-source rarity key, so it must count in the denominator).
+        write_aozora_works(&run_dir, &[("w1", "src-a")]);
+        let source_ids: BTreeSet<String> =
+            ["src-a", "src-b"].iter().map(|s| (*s).to_owned()).collect();
+
+        let rarity = rarity_config(&run_dir, &source_ids).unwrap();
+
+        assert_eq!(rarity.basis, "work");
+        assert_eq!(rarity.total, 2);
     }
 
     #[test]

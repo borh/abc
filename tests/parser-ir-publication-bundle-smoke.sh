@@ -44,8 +44,15 @@ cat > "$parser_ir" <<'JSON'
       "ruby": {"base": "猫", "reading": "ねこ"}
     },
     {
+      "type": "layout-span",
+      "span": {"start": 8, "end": 10},
+      "source_pointer": "blocks[0]",
+      "text": "10",
+      "layout": {"kind": "tcy", "source": "aat-inline"}
+    },
+    {
       "type": "source-note",
-      "span": {"start": 8, "end": 28},
+      "span": {"start": 10, "end": 30},
       "text": "（古伝説と、シルレルの詩から。）",
       "placement": "back",
       "classification": "heuristic",
@@ -55,14 +62,14 @@ cat > "$parser_ir" <<'JSON'
   "paragraphs": [
     {
       "id": "p000000",
-      "node_range": {"start": 0, "end": 2},
+      "node_range": {"start": 0, "end": 3},
       "role": "body",
       "classification": "direct",
       "source_pointer": "blocks[0]"
     },
     {
       "id": "p000001",
-      "node_range": {"start": 2, "end": 3},
+      "node_range": {"start": 3, "end": 4},
       "role": "source-note",
       "classification": "heuristic",
       "source_pointer": "blocks[1]"
@@ -104,7 +111,7 @@ cat > "$source_region" <<'JSON'
 JSON
 
 cat > "$bundle_dir/plain.txt" <<'TXT'
-吾輩猫
+吾輩猫10
 TXT
 
 cat > "$bundle_dir/tei.xml" <<'XML'
@@ -112,7 +119,7 @@ cat > "$bundle_dir/tei.xml" <<'XML'
 <TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:abc="https://w3id.org/abc/ns/tei" abc:vocab-version="0">
   <text>
     <body>
-      <p>吾輩<ruby xml:id="tei-r000001" abc:preservation-record="r000001"><rb>猫</rb><rt>ねこ</rt></ruby></p>
+      <p>吾輩<ruby xml:id="tei-r000001" abc:preservation-record="r000001"><rb>猫</rb><rt>ねこ</rt></ruby><hi rend="text-combine-upright" abc:layout-kind="tcy">10</hi></p>
     </body>
     <back>
       <div type="source"><note type="source-attribution">（古伝説と、シルレルの詩から。）</note></div>

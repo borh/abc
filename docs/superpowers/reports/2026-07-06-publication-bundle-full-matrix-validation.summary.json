@@ -1,6 +1,6 @@
 {
   "schema_version": "publication-bundle-batch-validation-evidence-v1",
-  "verdict": "PUBLICATION_BUNDLE_BATCH_VALIDATION_FAILED",
+  "verdict": "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED",
   "validator": "ab-validator publication-bundle-validate batch",
   "command": "clojure -M:abc/materialize-publications-batch /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-batch.json --summary /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-summary.json --jobs 24",
   "abc_commit": "95ace31",
@@ -9,8 +9,8 @@
     "batch_root": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706",
     "rows_discovered": 285,
     "rows_validated": 285,
-    "rows_passed": 275,
-    "rows_failed": 10
+    "rows_passed": 285,
+    "rows_failed": 0
   },
   "checks": {
     "parser_ir_schema_valid": true,
@@ -25,7 +25,7 @@
     "tei_abc_projection_resolves_to_sidecar": true,
     "preservation_tei_pointers_resolve": true,
     "preservation_source_pointers_resolve": true,
-    "plaintext_body_only": false
+    "plaintext_body_only": true
   },
   "rows": [
     {
@@ -4621,7 +4621,7 @@
     {
       "row_id": "0019_01_aozora2html_56996_data_complete_tei_lib_lv3_56996_tei.xml",
       "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0019_01_aozora2html_56996_data_complete_tei_lib_lv3_56996_tei.xml",
-      "verdict": "PUBLICATION_BUNDLE_VALIDATION_FAILED",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
       "validated_bundle": {
         "parser_ir": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0019_01_aozora2html_56996_data_complete_tei_lib_lv3_56996_tei.xml/parser-ir.json",
@@ -4665,22 +4665,9 @@
         "tei_abc_projection_resolves_to_sidecar": true,
         "preservation_tei_pointers_resolve": true,
         "preservation_source_pointers_resolve": true,
-        "plaintext_body_only": false
+        "plaintext_body_only": true
       },
-      "failures": [
-        {
-          "check": "plaintext_body_only",
-          "message": "Plaintext differs from the parser-IR body-only projection.",
-          "details": {
-            "kind": "plaintext_mismatch",
-            "expected_length": 1917,
-            "actual_length": 1962,
-            "first_diff_offset": 0,
-            "expected_preview": "お手紙拝見いたしました。おかねもたしかに頂だい致しました。ありがたく御礼申上げます。この間から、あなたにはお目に懸りに伺はふか、それとも手紙でと、いろ／＼に考へ",
-            "actual_preview": "宛先東京代々木発信地小石川区指ヶ谷町青鞜社お手紙拝見いたしました。おかねもたしかに頂だい致しました。ありがたく御礼申上げます。この間から、あなたにはお目に懸りに"
-          }
-        }
-      ]
+      "failures": []
     },
     {
       "row_id": "0019_02_aozora-epub3_56996_data_complete_tei_lib_lv3_56996_tei.xml",
@@ -4787,7 +4774,7 @@
     {
       "row_id": "0019_04_aozora2_56996_data_complete_tei_lib_lv3_56996_tei.xml",
       "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0019_04_aozora2_56996_data_complete_tei_lib_lv3_56996_tei.xml",
-      "verdict": "PUBLICATION_BUNDLE_VALIDATION_FAILED",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
       "validated_bundle": {
         "parser_ir": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0019_04_aozora2_56996_data_complete_tei_lib_lv3_56996_tei.xml/parser-ir.json",
@@ -4831,22 +4818,9 @@
         "tei_abc_projection_resolves_to_sidecar": true,
         "preservation_tei_pointers_resolve": true,
         "preservation_source_pointers_resolve": true,
-        "plaintext_body_only": false
+        "plaintext_body_only": true
       },
-      "failures": [
-        {
-          "check": "plaintext_body_only",
-          "message": "Plaintext differs from the parser-IR body-only projection.",
-          "details": {
-            "kind": "plaintext_mismatch",
-            "expected_length": 1917,
-            "actual_length": 1962,
-            "first_diff_offset": 0,
-            "expected_preview": "お手紙拝見いたしました。おかねもたしかに頂だい致しました。ありがたく御礼申上げます。この間から、あなたにはお目に懸りに伺はふか、それとも手紙でと、いろ／＼に考へ",
-            "actual_preview": "宛先東京代々木発信地小石川区指ヶ谷町青鞜社お手紙拝見いたしました。おかねもたしかに頂だい致しました。ありがたく御礼申上げます。この間から、あなたにはお目に懸りに"
-          }
-        }
-      ]
+      "failures": []
     },
     {
       "row_id": "0019_05_aozora_56996_data_complete_tei_lib_lv3_56996_tei.xml",
@@ -8982,7 +8956,7 @@
     {
       "row_id": "0036_01_aozora2html_57046_data_complete_tei_lib_lv3_57046_tei.xml",
       "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0036_01_aozora2html_57046_data_complete_tei_lib_lv3_57046_tei.xml",
-      "verdict": "PUBLICATION_BUNDLE_VALIDATION_FAILED",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
       "validated_bundle": {
         "parser_ir": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0036_01_aozora2html_57046_data_complete_tei_lib_lv3_57046_tei.xml/parser-ir.json",
@@ -9026,22 +9000,9 @@
         "tei_abc_projection_resolves_to_sidecar": true,
         "preservation_tei_pointers_resolve": true,
         "preservation_source_pointers_resolve": true,
-        "plaintext_body_only": false
+        "plaintext_body_only": true
       },
-      "failures": [
-        {
-          "check": "plaintext_body_only",
-          "message": "Plaintext differs from the parser-IR body-only projection.",
-          "details": {
-            "kind": "plaintext_mismatch",
-            "expected_length": 5127,
-            "actual_length": 5155,
-            "first_diff_offset": 0,
-            "expected_preview": "御手紙拝見いたしました。そして私はあの御手紙の全面に溢れたあなたの力強い真実に強く接しました。同時に私は何とも形容の出来ない苦しい気持ちになりました。実は昨日お",
-            "actual_preview": "宛先東京市麹町区平河町発信地東京市外上駒込染井三二九辻方御手紙拝見いたしました。そして私はあの御手紙の全面に溢れたあなたの力強い真実に強く接しました。同時に私は"
-          }
-        }
-      ]
+      "failures": []
     },
     {
       "row_id": "0036_02_aozora-epub3_57046_data_complete_tei_lib_lv3_57046_tei.xml",
@@ -9148,7 +9109,7 @@
     {
       "row_id": "0036_04_aozora2_57046_data_complete_tei_lib_lv3_57046_tei.xml",
       "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0036_04_aozora2_57046_data_complete_tei_lib_lv3_57046_tei.xml",
-      "verdict": "PUBLICATION_BUNDLE_VALIDATION_FAILED",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
       "validated_bundle": {
         "parser_ir": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0036_04_aozora2_57046_data_complete_tei_lib_lv3_57046_tei.xml/parser-ir.json",
@@ -9192,22 +9153,9 @@
         "tei_abc_projection_resolves_to_sidecar": true,
         "preservation_tei_pointers_resolve": true,
         "preservation_source_pointers_resolve": true,
-        "plaintext_body_only": false
+        "plaintext_body_only": true
       },
-      "failures": [
-        {
-          "check": "plaintext_body_only",
-          "message": "Plaintext differs from the parser-IR body-only projection.",
-          "details": {
-            "kind": "plaintext_mismatch",
-            "expected_length": 5127,
-            "actual_length": 5155,
-            "first_diff_offset": 0,
-            "expected_preview": "御手紙拝見いたしました。そして私はあの御手紙の全面に溢れたあなたの力強い真実に強く接しました。同時に私は何とも形容の出来ない苦しい気持ちになりました。実は昨日お",
-            "actual_preview": "宛先東京市麹町区平河町発信地東京市外上駒込染井三二九辻方御手紙拝見いたしました。そして私はあの御手紙の全面に溢れたあなたの力強い真実に強く接しました。同時に私は"
-          }
-        }
-      ]
+      "failures": []
     },
     {
       "row_id": "0036_05_aozora_57046_data_complete_tei_lib_lv3_57046_tei.xml",
@@ -9263,7 +9211,7 @@
     {
       "row_id": "0037_01_aozora2html_57047_data_complete_tei_lib_lv3_57047_tei.xml",
       "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0037_01_aozora2html_57047_data_complete_tei_lib_lv3_57047_tei.xml",
-      "verdict": "PUBLICATION_BUNDLE_VALIDATION_FAILED",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
       "validated_bundle": {
         "parser_ir": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0037_01_aozora2html_57047_data_complete_tei_lib_lv3_57047_tei.xml/parser-ir.json",
@@ -9307,22 +9255,9 @@
         "tei_abc_projection_resolves_to_sidecar": true,
         "preservation_tei_pointers_resolve": true,
         "preservation_source_pointers_resolve": true,
-        "plaintext_body_only": false
+        "plaintext_body_only": true
       },
-      "failures": [
-        {
-          "check": "plaintext_body_only",
-          "message": "Plaintext differs from the parser-IR body-only projection.",
-          "details": {
-            "kind": "plaintext_mismatch",
-            "expected_length": 158,
-            "actual_length": 192,
-            "first_diff_offset": 0,
-            "expected_preview": "前略おかはりはありませんか、私も元気でゐます故御安心下さい。先日廿五日に女児出産魔子と名づけました。そちらではもう松茸が出てゐるやうですが、こちらではまだ手に入",
-            "actual_preview": "宛先大坂市西区松島十返町武部種吉様方発信地東京市外巣鴨村宮仲二五八三前略おかはりはありませんか、私も元気でゐます故御安心下さい。先日廿五日に女児出産魔子と名づけ"
-          }
-        }
-      ]
+      "failures": []
     },
     {
       "row_id": "0037_02_aozora-epub3_57047_data_complete_tei_lib_lv3_57047_tei.xml",
@@ -9429,7 +9364,7 @@
     {
       "row_id": "0037_04_aozora2_57047_data_complete_tei_lib_lv3_57047_tei.xml",
       "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0037_04_aozora2_57047_data_complete_tei_lib_lv3_57047_tei.xml",
-      "verdict": "PUBLICATION_BUNDLE_VALIDATION_FAILED",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
       "validated_bundle": {
         "parser_ir": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0037_04_aozora2_57047_data_complete_tei_lib_lv3_57047_tei.xml/parser-ir.json",
@@ -9473,22 +9408,9 @@
         "tei_abc_projection_resolves_to_sidecar": true,
         "preservation_tei_pointers_resolve": true,
         "preservation_source_pointers_resolve": true,
-        "plaintext_body_only": false
+        "plaintext_body_only": true
       },
-      "failures": [
-        {
-          "check": "plaintext_body_only",
-          "message": "Plaintext differs from the parser-IR body-only projection.",
-          "details": {
-            "kind": "plaintext_mismatch",
-            "expected_length": 158,
-            "actual_length": 192,
-            "first_diff_offset": 0,
-            "expected_preview": "前略おかはりはありませんか、私も元気でゐます故御安心下さい。先日廿五日に女児出産魔子と名づけました。そちらではもう松茸が出てゐるやうですが、こちらではまだ手に入",
-            "actual_preview": "宛先大坂市西区松島十返町武部種吉様方発信地東京市外巣鴨村宮仲二五八三前略おかはりはありませんか、私も元気でゐます故御安心下さい。先日廿五日に女児出産魔子と名づけ"
-          }
-        }
-      ]
+      "failures": []
     },
     {
       "row_id": "0037_05_aozora_57047_data_complete_tei_lib_lv3_57047_tei.xml",
@@ -9544,7 +9466,7 @@
     {
       "row_id": "0038_01_aozora2html_57048_data_complete_tei_lib_lv3_57048_tei.xml",
       "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0038_01_aozora2html_57048_data_complete_tei_lib_lv3_57048_tei.xml",
-      "verdict": "PUBLICATION_BUNDLE_VALIDATION_FAILED",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
       "validated_bundle": {
         "parser_ir": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0038_01_aozora2html_57048_data_complete_tei_lib_lv3_57048_tei.xml/parser-ir.json",
@@ -9588,22 +9510,9 @@
         "tei_abc_projection_resolves_to_sidecar": true,
         "preservation_tei_pointers_resolve": true,
         "preservation_source_pointers_resolve": true,
-        "plaintext_body_only": false
+        "plaintext_body_only": true
       },
-      "failures": [
-        {
-          "check": "plaintext_body_only",
-          "message": "Plaintext differs from the parser-IR body-only projection.",
-          "details": {
-            "kind": "plaintext_mismatch",
-            "expected_length": 570,
-            "actual_length": 604,
-            "first_diff_offset": 0,
-            "expected_preview": "お手紙拝見。大坂に来てゐると云ふことはやつと半月ばかり前にききました。東京に来たのだつたら尋ねて来ればよかつたのに。本郷の菊富士ホテルと云ふことは今宿のうちでも",
-            "actual_preview": "宛先大坂市西区松島十返町武部種吉様方発信地東京市外巣鴨村宮仲二五八三お手紙拝見。大坂に来てゐると云ふことはやつと半月ばかり前にききました。東京に来たのだつたら尋"
-          }
-        }
-      ]
+      "failures": []
     },
     {
       "row_id": "0038_02_aozora-epub3_57048_data_complete_tei_lib_lv3_57048_tei.xml",
@@ -9710,7 +9619,7 @@
     {
       "row_id": "0038_04_aozora2_57048_data_complete_tei_lib_lv3_57048_tei.xml",
       "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0038_04_aozora2_57048_data_complete_tei_lib_lv3_57048_tei.xml",
-      "verdict": "PUBLICATION_BUNDLE_VALIDATION_FAILED",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
       "validated_bundle": {
         "parser_ir": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0038_04_aozora2_57048_data_complete_tei_lib_lv3_57048_tei.xml/parser-ir.json",
@@ -9754,22 +9663,9 @@
         "tei_abc_projection_resolves_to_sidecar": true,
         "preservation_tei_pointers_resolve": true,
         "preservation_source_pointers_resolve": true,
-        "plaintext_body_only": false
+        "plaintext_body_only": true
       },
-      "failures": [
-        {
-          "check": "plaintext_body_only",
-          "message": "Plaintext differs from the parser-IR body-only projection.",
-          "details": {
-            "kind": "plaintext_mismatch",
-            "expected_length": 570,
-            "actual_length": 604,
-            "first_diff_offset": 0,
-            "expected_preview": "お手紙拝見。大坂に来てゐると云ふことはやつと半月ばかり前にききました。東京に来たのだつたら尋ねて来ればよかつたのに。本郷の菊富士ホテルと云ふことは今宿のうちでも",
-            "actual_preview": "宛先大坂市西区松島十返町武部種吉様方発信地東京市外巣鴨村宮仲二五八三お手紙拝見。大坂に来てゐると云ふことはやつと半月ばかり前にききました。東京に来たのだつたら尋"
-          }
-        }
-      ]
+      "failures": []
     },
     {
       "row_id": "0038_05_aozora_57048_data_complete_tei_lib_lv3_57048_tei.xml",
@@ -12936,7 +12832,7 @@
     {
       "row_id": "0051_02_aozora-epub3_1805_data_draft_tei_lib_lv4_1805_tei.xml",
       "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0051_02_aozora-epub3_1805_data_draft_tei_lib_lv4_1805_tei.xml",
-      "verdict": "PUBLICATION_BUNDLE_VALIDATION_FAILED",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
       "validated_bundle": {
         "parser_ir": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0051_02_aozora-epub3_1805_data_draft_tei_lib_lv4_1805_tei.xml/parser-ir.json",
@@ -12980,22 +12876,9 @@
         "tei_abc_projection_resolves_to_sidecar": true,
         "preservation_tei_pointers_resolve": true,
         "preservation_source_pointers_resolve": true,
-        "plaintext_body_only": false
+        "plaintext_body_only": true
       },
-      "failures": [
-        {
-          "check": "plaintext_body_only",
-          "message": "Plaintext differs from the parser-IR body-only projection.",
-          "details": {
-            "kind": "plaintext_mismatch",
-            "expected_length": 48653,
-            "actual_length": 48663,
-            "first_diff_offset": 31440,
-            "expected_preview": "れるか。安重根（哄笑）はっはっは、心配するな。（柳麗玉に支えられながら）旅費はあるぞ旅費は。はっはっは、たんまりあるぞ。黄瑞露は裏口の人を追って戸を閉めている。ポグラニチナヤの裏町、不潔な洋風街路、劉任瞻韓薬房前。十月十九日、夕ぐれ。「韓国調剤学士劉任瞻薬房」と看板を掲げた、古びた間口の狭い店。草根木皮の類が軒下に下が",
-            "actual_preview": "れるか。安重根（哄笑）はっはっは、心配するな。（柳麗玉に支えられながら）旅費はあるぞ旅費は。はっはっは、たんまりあるぞ。黄瑞露は裏口の人を追って戸を閉めている。10ポグラニチナヤの裏町、不潔な洋風街路、劉任瞻韓薬房前。十月十九日、夕ぐれ。「韓国調剤学士劉任瞻薬房」と看板を掲げた、古びた間口の狭い店。草根木皮の類が軒下に"
-          }
-        }
-      ]
+      "failures": []
     },
     {
       "row_id": "0051_03_aozora-rs_1805_data_draft_tei_lib_lv4_1805_tei.xml",
@@ -13051,7 +12934,7 @@
     {
       "row_id": "0051_04_aozora2_1805_data_draft_tei_lib_lv4_1805_tei.xml",
       "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0051_04_aozora2_1805_data_draft_tei_lib_lv4_1805_tei.xml",
-      "verdict": "PUBLICATION_BUNDLE_VALIDATION_FAILED",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
       "validated_bundle": {
         "parser_ir": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0051_04_aozora2_1805_data_draft_tei_lib_lv4_1805_tei.xml/parser-ir.json",
@@ -13095,22 +12978,9 @@
         "tei_abc_projection_resolves_to_sidecar": true,
         "preservation_tei_pointers_resolve": true,
         "preservation_source_pointers_resolve": true,
-        "plaintext_body_only": false
+        "plaintext_body_only": true
       },
-      "failures": [
-        {
-          "check": "plaintext_body_only",
-          "message": "Plaintext differs from the parser-IR body-only projection.",
-          "details": {
-            "kind": "plaintext_mismatch",
-            "expected_length": 48646,
-            "actual_length": 48656,
-            "first_diff_offset": 31435,
-            "expected_preview": "れるか。安重根（哄笑）はっはっは、心配するな。（柳麗玉に支えられながら）旅費はあるぞ旅費は。はっはっは、たんまりあるぞ。黄瑞露は裏口の人を追って戸を閉めている。ポグラニチナヤの裏町、不潔な洋風街路、劉任瞻韓薬房前。十月十九日、夕ぐれ。「韓国調剤学士劉任瞻薬房」と看板を掲げた、古びた間口の狭い店。草根木皮の類が軒下に下が",
-            "actual_preview": "れるか。安重根（哄笑）はっはっは、心配するな。（柳麗玉に支えられながら）旅費はあるぞ旅費は。はっはっは、たんまりあるぞ。黄瑞露は裏口の人を追って戸を閉めている。10ポグラニチナヤの裏町、不潔な洋風街路、劉任瞻韓薬房前。十月十九日、夕ぐれ。「韓国調剤学士劉任瞻薬房」と看板を掲げた、古びた間口の狭い店。草根木皮の類が軒下に"
-          }
-        }
-      ]
+      "failures": []
     },
     {
       "row_id": "0051_05_aozora_1805_data_draft_tei_lib_lv4_1805_tei.xml",
@@ -14694,136 +14564,5 @@
       "failures": []
     }
   ],
-  "failures": [
-    {
-      "row_id": "0019_01_aozora2html_56996_data_complete_tei_lib_lv3_56996_tei.xml",
-      "check": "plaintext_body_only",
-      "message": "Plaintext differs from the parser-IR body-only projection.",
-      "details": {
-        "kind": "plaintext_mismatch",
-        "expected_length": 1917,
-        "actual_length": 1962,
-        "first_diff_offset": 0,
-        "expected_preview": "お手紙拝見いたしました。おかねもたしかに頂だい致しました。ありがたく御礼申上げます。この間から、あなたにはお目に懸りに伺はふか、それとも手紙でと、いろ／＼に考へ",
-        "actual_preview": "宛先東京代々木発信地小石川区指ヶ谷町青鞜社お手紙拝見いたしました。おかねもたしかに頂だい致しました。ありがたく御礼申上げます。この間から、あなたにはお目に懸りに"
-      }
-    },
-    {
-      "row_id": "0019_04_aozora2_56996_data_complete_tei_lib_lv3_56996_tei.xml",
-      "check": "plaintext_body_only",
-      "message": "Plaintext differs from the parser-IR body-only projection.",
-      "details": {
-        "kind": "plaintext_mismatch",
-        "expected_length": 1917,
-        "actual_length": 1962,
-        "first_diff_offset": 0,
-        "expected_preview": "お手紙拝見いたしました。おかねもたしかに頂だい致しました。ありがたく御礼申上げます。この間から、あなたにはお目に懸りに伺はふか、それとも手紙でと、いろ／＼に考へ",
-        "actual_preview": "宛先東京代々木発信地小石川区指ヶ谷町青鞜社お手紙拝見いたしました。おかねもたしかに頂だい致しました。ありがたく御礼申上げます。この間から、あなたにはお目に懸りに"
-      }
-    },
-    {
-      "row_id": "0036_01_aozora2html_57046_data_complete_tei_lib_lv3_57046_tei.xml",
-      "check": "plaintext_body_only",
-      "message": "Plaintext differs from the parser-IR body-only projection.",
-      "details": {
-        "kind": "plaintext_mismatch",
-        "expected_length": 5127,
-        "actual_length": 5155,
-        "first_diff_offset": 0,
-        "expected_preview": "御手紙拝見いたしました。そして私はあの御手紙の全面に溢れたあなたの力強い真実に強く接しました。同時に私は何とも形容の出来ない苦しい気持ちになりました。実は昨日お",
-        "actual_preview": "宛先東京市麹町区平河町発信地東京市外上駒込染井三二九辻方御手紙拝見いたしました。そして私はあの御手紙の全面に溢れたあなたの力強い真実に強く接しました。同時に私は"
-      }
-    },
-    {
-      "row_id": "0036_04_aozora2_57046_data_complete_tei_lib_lv3_57046_tei.xml",
-      "check": "plaintext_body_only",
-      "message": "Plaintext differs from the parser-IR body-only projection.",
-      "details": {
-        "kind": "plaintext_mismatch",
-        "expected_length": 5127,
-        "actual_length": 5155,
-        "first_diff_offset": 0,
-        "expected_preview": "御手紙拝見いたしました。そして私はあの御手紙の全面に溢れたあなたの力強い真実に強く接しました。同時に私は何とも形容の出来ない苦しい気持ちになりました。実は昨日お",
-        "actual_preview": "宛先東京市麹町区平河町発信地東京市外上駒込染井三二九辻方御手紙拝見いたしました。そして私はあの御手紙の全面に溢れたあなたの力強い真実に強く接しました。同時に私は"
-      }
-    },
-    {
-      "row_id": "0037_01_aozora2html_57047_data_complete_tei_lib_lv3_57047_tei.xml",
-      "check": "plaintext_body_only",
-      "message": "Plaintext differs from the parser-IR body-only projection.",
-      "details": {
-        "kind": "plaintext_mismatch",
-        "expected_length": 158,
-        "actual_length": 192,
-        "first_diff_offset": 0,
-        "expected_preview": "前略おかはりはありませんか、私も元気でゐます故御安心下さい。先日廿五日に女児出産魔子と名づけました。そちらではもう松茸が出てゐるやうですが、こちらではまだ手に入",
-        "actual_preview": "宛先大坂市西区松島十返町武部種吉様方発信地東京市外巣鴨村宮仲二五八三前略おかはりはありませんか、私も元気でゐます故御安心下さい。先日廿五日に女児出産魔子と名づけ"
-      }
-    },
-    {
-      "row_id": "0037_04_aozora2_57047_data_complete_tei_lib_lv3_57047_tei.xml",
-      "check": "plaintext_body_only",
-      "message": "Plaintext differs from the parser-IR body-only projection.",
-      "details": {
-        "kind": "plaintext_mismatch",
-        "expected_length": 158,
-        "actual_length": 192,
-        "first_diff_offset": 0,
-        "expected_preview": "前略おかはりはありませんか、私も元気でゐます故御安心下さい。先日廿五日に女児出産魔子と名づけました。そちらではもう松茸が出てゐるやうですが、こちらではまだ手に入",
-        "actual_preview": "宛先大坂市西区松島十返町武部種吉様方発信地東京市外巣鴨村宮仲二五八三前略おかはりはありませんか、私も元気でゐます故御安心下さい。先日廿五日に女児出産魔子と名づけ"
-      }
-    },
-    {
-      "row_id": "0038_01_aozora2html_57048_data_complete_tei_lib_lv3_57048_tei.xml",
-      "check": "plaintext_body_only",
-      "message": "Plaintext differs from the parser-IR body-only projection.",
-      "details": {
-        "kind": "plaintext_mismatch",
-        "expected_length": 570,
-        "actual_length": 604,
-        "first_diff_offset": 0,
-        "expected_preview": "お手紙拝見。大坂に来てゐると云ふことはやつと半月ばかり前にききました。東京に来たのだつたら尋ねて来ればよかつたのに。本郷の菊富士ホテルと云ふことは今宿のうちでも",
-        "actual_preview": "宛先大坂市西区松島十返町武部種吉様方発信地東京市外巣鴨村宮仲二五八三お手紙拝見。大坂に来てゐると云ふことはやつと半月ばかり前にききました。東京に来たのだつたら尋"
-      }
-    },
-    {
-      "row_id": "0038_04_aozora2_57048_data_complete_tei_lib_lv3_57048_tei.xml",
-      "check": "plaintext_body_only",
-      "message": "Plaintext differs from the parser-IR body-only projection.",
-      "details": {
-        "kind": "plaintext_mismatch",
-        "expected_length": 570,
-        "actual_length": 604,
-        "first_diff_offset": 0,
-        "expected_preview": "お手紙拝見。大坂に来てゐると云ふことはやつと半月ばかり前にききました。東京に来たのだつたら尋ねて来ればよかつたのに。本郷の菊富士ホテルと云ふことは今宿のうちでも",
-        "actual_preview": "宛先大坂市西区松島十返町武部種吉様方発信地東京市外巣鴨村宮仲二五八三お手紙拝見。大坂に来てゐると云ふことはやつと半月ばかり前にききました。東京に来たのだつたら尋"
-      }
-    },
-    {
-      "row_id": "0051_02_aozora-epub3_1805_data_draft_tei_lib_lv4_1805_tei.xml",
-      "check": "plaintext_body_only",
-      "message": "Plaintext differs from the parser-IR body-only projection.",
-      "details": {
-        "kind": "plaintext_mismatch",
-        "expected_length": 48653,
-        "actual_length": 48663,
-        "first_diff_offset": 31440,
-        "expected_preview": "れるか。安重根（哄笑）はっはっは、心配するな。（柳麗玉に支えられながら）旅費はあるぞ旅費は。はっはっは、たんまりあるぞ。黄瑞露は裏口の人を追って戸を閉めている。ポグラニチナヤの裏町、不潔な洋風街路、劉任瞻韓薬房前。十月十九日、夕ぐれ。「韓国調剤学士劉任瞻薬房」と看板を掲げた、古びた間口の狭い店。草根木皮の類が軒下に下が",
-        "actual_preview": "れるか。安重根（哄笑）はっはっは、心配するな。（柳麗玉に支えられながら）旅費はあるぞ旅費は。はっはっは、たんまりあるぞ。黄瑞露は裏口の人を追って戸を閉めている。10ポグラニチナヤの裏町、不潔な洋風街路、劉任瞻韓薬房前。十月十九日、夕ぐれ。「韓国調剤学士劉任瞻薬房」と看板を掲げた、古びた間口の狭い店。草根木皮の類が軒下に"
-      }
-    },
-    {
-      "row_id": "0051_04_aozora2_1805_data_draft_tei_lib_lv4_1805_tei.xml",
-      "check": "plaintext_body_only",
-      "message": "Plaintext differs from the parser-IR body-only projection.",
-      "details": {
-        "kind": "plaintext_mismatch",
-        "expected_length": 48646,
-        "actual_length": 48656,
-        "first_diff_offset": 31435,
-        "expected_preview": "れるか。安重根（哄笑）はっはっは、心配するな。（柳麗玉に支えられながら）旅費はあるぞ旅費は。はっはっは、たんまりあるぞ。黄瑞露は裏口の人を追って戸を閉めている。ポグラニチナヤの裏町、不潔な洋風街路、劉任瞻韓薬房前。十月十九日、夕ぐれ。「韓国調剤学士劉任瞻薬房」と看板を掲げた、古びた間口の狭い店。草根木皮の類が軒下に下が",
-        "actual_preview": "れるか。安重根（哄笑）はっはっは、心配するな。（柳麗玉に支えられながら）旅費はあるぞ旅費は。はっはっは、たんまりあるぞ。黄瑞露は裏口の人を追って戸を閉めている。10ポグラニチナヤの裏町、不潔な洋風街路、劉任瞻韓薬房前。十月十九日、夕ぐれ。「韓国調剤学士劉任瞻薬房」と看板を掲げた、古びた間口の狭い店。草根木皮の類が軒下に"
-      }
-    }
-  ]
+  "failures": []
 }

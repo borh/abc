@@ -169,6 +169,28 @@ mod tests {
     }
 
     #[test]
+    fn pre_calibration_artifact_block_deserializes_with_honest_defaults() {
+        let block: crate::summary::ScoreVersionBlock = serde_json::from_value(serde_json::json!({
+            "score_version": 1,
+            "pattern_id_version": 1,
+            "rrf_k": 60,
+            "lambda_missing_policy": "rank-floor",
+            "anomaly_w_cov": 5.0,
+            "signal_profile": ["coverage", "rarity", "impact", "span"],
+            "feature_profile": "core",
+            "rarity_basis": "source",
+            "granularity_profile": "suw",
+            "cause_classification_profile": "absent",
+            "literal_context_policy": null,
+            "surprise": "absent",
+        }))
+        .expect("pre-calibration score_version block deserializes without rank_scope/score_mode/sample_seed");
+        assert_eq!(block.rank_scope, "within-kind");
+        assert_eq!(block.score_mode, "rrf");
+        assert_eq!(block.sample_seed, None);
+    }
+
+    #[test]
     fn comparison_reports_overlap_and_block_mismatches() {
         let left = fixture_summary(&["p1", "p2", "p3"], "within-kind");
         let right = fixture_summary(&["p2", "p1", "p4"], "global");

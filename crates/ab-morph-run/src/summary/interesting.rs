@@ -240,6 +240,14 @@ pub struct InterestingSummary {
 
 /// Every knob affecting cross-run comparability. Two runs are comparable
 /// only when all fields match (spec §Score Versioning).
+///
+/// `rank_scope`, `score_mode`, and `sample_seed` were added after v1
+/// shipped (the calibration knobs). Pre-calibration artifacts predate these
+/// fields and omit them entirely; their `#[serde(default = ...)]`
+/// fallbacks encode what those artifacts actually were — within-kind
+/// pooling, RRF scoring, no sampling seed — so such artifacts deserialize
+/// honestly instead of failing to parse. Serialization is unchanged: these
+/// fields are always written for artifacts produced going forward.
 #[derive(Debug, Clone, PartialEq, Serialize, serde::Deserialize)]
 pub struct ScoreVersionBlock {
     pub score_version: u32,
@@ -251,13 +259,19 @@ pub struct ScoreVersionBlock {
     /// worst-ranked observed pattern of the kind" — which preserves it.
     pub lambda_missing_policy: String,
     /// Signal-rank pooling scope: `"within-kind"` (v1 default) or `"global"`.
+    /// Absent in pre-calibration artifacts, which were always within-kind.
+    #[serde(default = "default_rank_scope")]
     pub rank_scope: String,
     /// `"rrf"` (v1 default) or one of the calibration baselines
-    /// (`"frequency"`, `"random"`).
+    /// (`"frequency"`, `"random"`). Absent in pre-calibration artifacts,
+    /// which were always RRF.
+    #[serde(default = "default_score_mode")]
     pub score_mode: String,
     /// Fisher-Yates seed for `score_mode: "random"`; always `None` (JSON
     /// `null`) otherwise (spec §Score Versioning: an ignored seed would
-    /// misdescribe the artifact).
+    /// misdescribe the artifact). Absent in pre-calibration artifacts,
+    /// which predate `score_mode: "random"` and so never had a seed.
+    #[serde(default)]
     pub sample_seed: Option<u64>,
     pub anomaly_w_cov: f64,
     pub signal_profile: Vec<String>,
@@ -270,6 +284,16 @@ pub struct ScoreVersionBlock {
     pub cause_classification_profile: String,
     pub literal_context_policy: Option<String>,
     pub surprise: String,
+}
+
+/// Pre-calibration artifacts' actual `rank_scope`: always within-kind.
+fn default_rank_scope() -> String {
+    RankScope::WithinKind.as_str().to_owned()
+}
+
+/// Pre-calibration artifacts' actual `score_mode`: always RRF.
+fn default_score_mode() -> String {
+    ScoreMode::Rrf.as_str().to_owned()
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, serde::Deserialize)]

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Execute the governing spec's §Calibration Plan (steps 1–9) against the canonical warehouse: add the four missing summarizer knobs (rank scope, λ policy, anomaly weight, baseline score modes), build the comparison/labeling/metrics tooling, run the sweeps, and hand the owner a blind labeling TSV whose completion locks the v1 defaults.
+**Goal:** Execute the governing spec's §Calibration Plan (steps 1–9) against the canonical warehouse: add the four missing summarizer knobs (rank scope, λ policy, anomaly weight, baseline score modes), build the comparison/labeling/metrics tooling, run the sweeps, and hand the owner a blind labeling TSV. **The v1 lock is conditional, not delivered by Tasks 1–9:** it completes only when the owner's labels return and the spec step-8 gate passes (RRF must beat frequency sort at p@50 — otherwise the mandated outcome is "revisit signal definitions", not a lock). Tasks 1–9 deliver everything up to that gate.
 
 **Architecture:** All ranking happens in the shared Rust function `score_patterns` (`crates/ab-morph-run/src/summary/interesting.rs:872`) — both collection engines (in-memory and DuckDB) produce `Vec<PatternStats>` and never rank in SQL, so every scoring knob is a single-site change plus CLI threading plus `score_version` recording. Three new subcommands (`compare-interesting-rankings`, `export-interesting-labels`, `score-interesting-labels`) consume the ranking JSON artifacts. Sweeps run on a new deterministic ~1000-source triage warehouse; method comparisons run on the canonical full run.
 
@@ -29,17 +29,22 @@
 | D2 | Global rank scope pools ranks **per signal name across kinds**; applicability is unchanged (impact still fires only for feature patterns); `λ_rank-floor` uses `N_total`; the fusion divisor stays each pattern's applicable-signal count | Spec step 3 asks whether the within-kind *partition* is worth its comparability constraint. Only the rank pools may differ; changing applicability or normalization would confound the A/B. |
 | D3 | Baselines reorder the same collected patterns: `--score-mode rrf\|frequency\|random`. Frequency = `examples` desc (occurrence count, "most common patterns first"), ties `source_count` desc then `pattern_id` asc. Random = Fisher–Yates over indices pre-sorted by `pattern_id`, splitmix64 keyed by `--sample-seed`. RRF signals are still computed and emitted in every mode | Collection is the expensive part and identical across methods; emitting signals keeps baseline rows fully inspectable. `score_mode` + `sample_seed` land in the score block so no artifact can be mistaken for an RRF ranking. |
 | D4 | Labeling is **pooled and blind**: union of every method's top-50, deduped by `pattern_id`, presented in seeded-shuffle order with no method/rank/score columns. One TSV scores all methods | The owner labels each pattern once (~120–170 rows instead of 200); hiding provenance prevents rank-anchoring bias. A separate `mapping.json` carries `label_id → {pattern_id, per-method ranks}` for the metrics step. |
-| D5 | Metric definitions: **p@50** counts verdicts in {`bug`, `expected-dictionary`}; **nDCG@50** gains: `bug`=3, `expected-dictionary`=2, `corpus-artifact`=1, `expected-policy`=1, `noise`=0, `unclear`=0; IDCG from the pooled union's best 50 gains (standard pooled evaluation) | The ranker's job is surfacing analyzer defects and dictionary gaps; policy differences and corpus artifacts are known/structural. Constants live in one place in code and the report invites the owner to dispute them — recomputation from the same labels is free. |
+| D5 | Metric definitions: **p@50** counts verdicts in {`bug`, `expected-dictionary`}; **nDCG@50** gains: `bug`=3, `expected-dictionary`=2, `corpus-artifact`=1, `expected-policy`=1, `noise`=0, `unclear`=0; IDCG from the pooled union's best 50 gains (standard pooled evaluation) | The ranker's job is surfacing analyzer defects and dictionary gaps; policy differences and corpus artifacts are known/structural. Constants live in one place in code and the report invites the owner to dispute them — recomputation from the same labels is free. Pooled IDCG is the methodological choice that makes methods surfacing *different* item sets comparable: every method's DCG normalizes against the best achievable ordering of the pooled labeled items, not its own surfaced set, so nDCG implicitly penalizes low-value sets while p@50 keeps the fixed denominator k. |
 | D6 | Stability thresholds (spec leaves "within threshold" open): a sweep variant is *stable* vs the default when Kendall **τ-b ≥ 0.9 over the rank intersection** AND **overlap ≥ 45/50** | τ alone is blind to set churn (it only sees the intersection); overlap alone is blind to reordering. Both bounds are recorded in the report and are analysis inputs, not code. |
 | D7 | Subset corpora are deterministic **sorted-stride** selections of AAT filenames (stride `⌊N/n⌋`, first `n`), materialized as symlink farms under `/db/ab-validator/aat-corpus/subsets/` | Reproducible without a seed, spreads selection across the card-id/person-id range (the dir is sorted by person prefix), no analyzer code change. |
 | D8 | `inheritance_jaccard_threshold` is **not implemented in v1** (grep-verified: no occurrence in the crate); spec step 9 locks it as `n/a — not implemented in v1` | Locking a knob that doesn't exist would fabricate a default. The spec amendment (Task 9) records this. |
-| D9 | Snippet extraction for the labeling TSV re-derives each source's projected text via `ab_plaintext::from_aat_value` and slices warehouse char offsets directly | Valid because the canonical run was produced without orthographic normalization (no ortho flags in the `analyze-aat` recipe invocation), so warehouse `char_*` offsets index the unnormalized projection. The exporter hard-fails on out-of-range offsets rather than emitting silently wrong snippets. |
+| D9 | Snippet extraction for the labeling TSV re-derives each source's projected text via `ab_plaintext::from_aat_value` and slices warehouse char offsets directly | Valid because the canonical run was produced without orthographic normalization (no ortho flags in the `analyze-aat` recipe invocation — Task 4 Step 0 re-verifies this in-task rather than trusting this plan-time claim), so warehouse `char_*` offsets index the unnormalized projection. The exporter hard-fails on out-of-range offsets rather than emitting silently wrong snippets. |
+| D10 | Spec step 1's "three warehouse profiles" is read as **three corpus sizes** (~100 / ~1000 / full ~17,885), not the codebase's `WarehouseProfile` enum (which selects *table subsets*: Full vs Triage). Calibration runs always use the full table profile | The spec text itself glosses its "profiles" as source counts ("small smoke corpus (~100 sources)…"); the name collision with `--warehouse-profile` is pre-existing. Recorded so nobody "fixes" a calibration run onto the Triage table subset — it omits `nway_feature_diffs`, which the feature-signal path requires. |
 
 ## File Structure
 
 - `crates/ab-morph-run/src/summary/interesting.rs` — knob enums (`RankScope`, `LambdaMissingPolicy`, `ScoreMode`), options fields, `score_patterns` scope/λ generalization, baseline ordering, anomaly W_COV threading, score-block fields (Tasks 1–2)
 - `crates/ab-morph-run/src/summary/interesting_sql.rs` — replace the `ANOMALY_W_COV` const reference with the options value (Task 1)
-- `crates/ab-morph-run/src/calibration.rs` — NEW: ranking-JSON reader structs, splitmix64, Kendall τ-b, p@k, nDCG@k, TSV emit/parse, snippet extraction; pure core + thin IO shells for the three subcommands (Tasks 3–5)
+- `crates/ab-morph-run/src/calibration/mod.rs` — NEW: module root; shared `read_ranking` + re-exports only (Tasks 3–5)
+- `crates/ab-morph-run/src/calibration/compare.rs` — NEW: Kendall τ-b, `compare_rankings`, block diff (Task 3)
+- `crates/ab-morph-run/src/calibration/label_export.rs` — NEW: pooled blind TSV export — union/dedup, blind shuffle, AAT snippet extraction, mapping.json (Task 4)
+- `crates/ab-morph-run/src/calibration/label_score.rs` — NEW: TSV parse, p@k, nDCG@k (Task 5)
+  (one responsibility per file — the three subcommands share only `read_ranking` and the Task 2 shuffle primitive; do NOT grow a single `calibration.rs`)
 - `crates/ab-morph-run/src/lib.rs` — `mod calibration;` + re-exports (Task 3)
 - `crates/ab-morph-run/src/main.rs` — CLI flags on `SummarizeWarehouseInteresting`; three new `Command` variants (Tasks 1–5)
 - `reports/morph-warehouse/calibration/make-aat-subset.sh` — NEW: sorted-stride symlink-farm builder (Task 6)
@@ -205,17 +210,53 @@ Expected: PASS (2 tests).
 
 - [ ] **Step 5: Write failing tests for scope/λ-generalized scoring and W_COV threading**
 
-The existing test module already builds `PatternStats` fixtures for `score_patterns`-level tests (see the tests around `interesting.rs:2028` and `interesting.rs:2113` that call `lambda_missing(...)` and assert fused scores — reuse their fixture builders; do NOT invent new struct-literal helpers). Add:
+The test module has NO `PatternStats` builders today — the tests near `interesting.rs:2028`/`2113` drive `fuse`/`lambda_missing` with raw rank arrays, and the integration tests go through `write_fixture` + the public entry point. Create exactly ONE minimal helper and use it for every new scoring-unit test in Tasks 1–2:
 
 ```rust
+fn calib_stats(
+    kind: PatternKind,
+    pattern_id: &str,
+    rarity_count: usize,
+    coverage_region_count: usize,
+    span_p90: f64,
+    feature_key: Option<&str>,
+) -> PatternStats
+```
+
+Fill the remaining fields neutrally (`examples`/`source_count`/`text_count` = 1, empty sample vecs and `region_examples`, `sql_signature: None`) and build the minimal `NwayPatternKey` the struct requires, threading `feature_key` through — it drives the Impact signal via `raw_signal_value`. Parameters exist only for what the tests vary. Add:
+
+```rust
+    #[test]
+    fn within_kind_default_scoring_matches_hand_computed_ranks() {
+        // Refactor-equivalence pin (write it BEFORE the Step 7 refactor; it
+        // must pass identically before and after). Mixed fixture: 3 feature
+        // patterns (feature_key Some("pos1"), distinct rarity_counts and
+        // span_p90s, varying coverage_region_count) + 2 segmentation
+        // patterns, all via calib_stats. Assert with defaults
+        // (WithinKind, RankFloor):
+        //  (a) exact per-signal ranks for EVERY pattern, looked up by
+        //      Signal identity (not slot index);
+        //  (b) lambda == 1/(60+3+1) for features, 1/(60+2+1) for
+        //      segmentation;
+        //  (c) each rrf_score equals round6 of the RRF formula computed in
+        //      the test from the EXPECTED ranks (sum of 1/(60+rank) over
+        //      applicable signals, missing → lambda, divided by applicable
+        //      count) — from the formula, never by calling score_patterns
+        //      to produce its own expectation.
+    }
+
     #[test]
     fn global_rank_scope_pools_signal_ranks_across_kinds() {
         // Two feature + two segmentation patterns with rarity raws ordered
         // feature[0] > seg[0] > feature[1] > seg[1]. Within-kind: rarity
         // ranks are 1,2 inside each kind. Global: 1,2,3,4 across kinds.
-        let patterns = /* build 4 PatternStats via the existing fixture
-                          builders: 2 feature, 2 segmentation, with
-                          rarity_count chosen to order raws as above */;
+        // ALSO assert the span signal pools across kinds — span sits at a
+        // different slot index per kind (feature slot 3, segmentation slot
+        // 2), which is exactly where a pooled-slot lookup bug would hide.
+        // Look ranks up by Signal identity.
+        let patterns = /* 4 PatternStats via calib_stats: 2 feature,
+                          2 segmentation, rarity_count ordering raws as
+                          above, span_p90 interleaved across kinds */;
         let within = score_patterns(
             &patterns, 100, RankScope::WithinKind, LambdaMissingPolicy::RankFloor,
         );
@@ -243,8 +284,8 @@ The existing test module already builds `PatternStats` fixtures for `score_patte
         // never happens for feature kind, so use the existing fixture whose
         // impact is present and instead assert on the lambda field the
         // policy sets).
-        let patterns = /* one feature + one segmentation pattern via the
-                          existing builders */;
+        let patterns = /* one feature + one segmentation pattern via
+                          calib_stats */;
         let scores = score_patterns(
             &patterns, 100, RankScope::WithinKind, LambdaMissingPolicy::Fixed(0.005),
         );
@@ -459,7 +500,7 @@ fn score_version_block(
 }
 ```
 
-Update all three `score_version_block(...)` call sites in `summarize_warehouse_interesting` (`interesting.rs:1175`, `1216`, `1260`) to pass `&options`, and the `score_patterns` call site (`interesting.rs:1206`) to pass `options.rank_scope, options.lambda_policy`. Fix any other in-crate callers the compiler reports (test helpers included).
+Update all three `score_version_block(...)` call sites in `summarize_warehouse_interesting` (`interesting.rs:1175`, `1216`, `1260`) to pass `&options` — note the `:1175` site is the pre-collection empty-run early-return branch (`rows: Vec::new()`); `options` is already in scope there, pass it the same way, no special-casing. Update the `score_patterns` call site (`interesting.rs:1206`) to pass `options.rank_scope, options.lambda_policy`. Fix any other in-crate callers the compiler reports (test helpers included).
 
 - [ ] **Step 8: Run the crate's full test suite**
 
@@ -533,10 +574,9 @@ git commit -m "feat(interesting): rank-scope, lambda-policy, anomaly-w-cov calib
 ```rust
     #[test]
     fn splitmix64_is_pinned_for_cross_version_stability() {
-        // Golden: the first three outputs for seed 1234567. Pin the values
-        // this implementation produces on first run (transcribed from
-        // Vigna's public-domain reference below); the test's job is that
-        // they never change afterward — shuffle artifacts must be
+        // Golden: the first three outputs for seed 1234567, computed at
+        // plan time from Vigna's public-domain reference algorithm. The
+        // test's job is that they never change — shuffle artifacts must be
         // reproducible years later.
         let mut state = 1234567u64;
         let observed = [
@@ -544,14 +584,22 @@ git commit -m "feat(interesting): rank-scope, lambda-policy, anomaly-w-cov calib
             splitmix64(&mut state),
             splitmix64(&mut state),
         ];
-        assert_eq!(observed, PINNED); // PINNED: [u64; 3] const, filled at first run
+        assert_eq!(
+            observed,
+            [
+                0x599e_d017_fb08_fc85,
+                0x2c73_f084_5854_0fa5,
+                0x883e_bce5_a3f2_7c77,
+            ]
+        );
     }
 
     #[test]
     fn frequency_mode_orders_by_examples_then_source_count_then_id() {
-        let patterns = /* three patterns via the existing builders with
-                          examples 5, 9, 5 and distinct source_counts on the
-                          tied pair */;
+        let patterns = /* three patterns via calib_stats (Task 1's helper);
+                          set examples 5, 9, 5 and distinct source_counts on
+                          the tied pair by mutating the returned structs —
+                          do not widen the helper's signature for this */;
         let order = baseline_order(&patterns, ScoreMode::Frequency, None).unwrap();
         // examples desc, then source_count desc, then pattern_id asc.
         assert_eq!(order, vec![1, /* tied pair by source_count desc */ ...]);
@@ -559,7 +607,7 @@ git commit -m "feat(interesting): rank-scope, lambda-policy, anomaly-w-cov calib
 
     #[test]
     fn random_mode_is_seed_deterministic_and_seed_sensitive() {
-        let patterns = /* 8 patterns via the existing builders */;
+        let patterns = /* 8 patterns via calib_stats */;
         let a = baseline_order(&patterns, ScoreMode::Random, Some(42)).unwrap();
         let b = baseline_order(&patterns, ScoreMode::Random, Some(42)).unwrap();
         let c = baseline_order(&patterns, ScoreMode::Random, Some(43)).unwrap();
@@ -572,7 +620,7 @@ git commit -m "feat(interesting): rank-scope, lambda-policy, anomaly-w-cov calib
 
     #[test]
     fn random_mode_without_seed_errors() {
-        let patterns = /* one pattern */;
+        let patterns = /* one pattern via calib_stats */;
         assert!(baseline_order(&patterns, ScoreMode::Random, None).is_err());
     }
 ```
@@ -697,10 +745,13 @@ git commit -m "feat(interesting): frequency/random baseline score modes with man
 ### Task 3: `compare-interesting-rankings` subcommand
 
 **Files:**
-- Create: `crates/ab-morph-run/src/calibration.rs`
+- Create: `crates/ab-morph-run/src/calibration/mod.rs` (module docs, shared `read_ranking`, `pub use` of the submodules' entry points)
+- Create: `crates/ab-morph-run/src/calibration/compare.rs` (everything else in this task)
 - Modify: `crates/ab-morph-run/src/lib.rs` (`mod calibration;` + re-exports)
 - Modify: `crates/ab-morph-run/src/main.rs` (new variant + arm + parse test)
 - Modify: `crates/ab-morph-run/src/summary/interesting.rs` (derive `Deserialize` on the output structs)
+
+One responsibility per file (design-review requirement): `mod.rs` holds only what Tasks 4–5 share (`read_ranking`); τ/comparison code goes in `compare.rs`. Split the plan's single code block accordingly — the module docs and `read_ranking` into `mod.rs`, the rest into `compare.rs`.
 
 **Interfaces:**
 - Consumes: ranking JSON artifacts (serialized `InterestingSummary`).
@@ -755,13 +806,14 @@ Add `serde::Deserialize` to the derives of `InterestingSummary`, `ScoreVersionBl
 
 - [ ] **Step 4: Implement the module**
 
-`crates/ab-morph-run/src/calibration.rs`:
+`crates/ab-morph-run/src/calibration/mod.rs` (docs + `read_ranking` + `mod compare; pub use compare::...;`), `crates/ab-morph-run/src/calibration/compare.rs` (the rest):
 
 ```rust
 //! Calibration tooling for the interestingness ranker (spec §Calibration
 //! Plan): ranking comparison (Kendall τ-b, overlap), pooled blind labeling
 //! export, and label scoring (p@k, nDCG@k). Pure cores with thin IO shells;
 //! ranking artifacts are the serialized `InterestingSummary` JSONs.
+//! One responsibility per submodule: compare / label_export / label_score.
 
 use std::collections::BTreeMap;
 use std::fs::File;
@@ -897,7 +949,7 @@ Plus a parse test following the file's idiom.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add crates/ab-morph-run/src/calibration.rs crates/ab-morph-run/src/lib.rs crates/ab-morph-run/src/main.rs crates/ab-morph-run/src/summary/interesting.rs crates/ab-morph-run/src/summary/mod.rs
+git add crates/ab-morph-run/src/calibration/ crates/ab-morph-run/src/lib.rs crates/ab-morph-run/src/main.rs crates/ab-morph-run/src/summary/interesting.rs crates/ab-morph-run/src/summary/mod.rs
 git commit -m "feat(calibration): compare-interesting-rankings (Kendall tau-b, overlap, block diff)"
 ```
 
@@ -906,7 +958,7 @@ git commit -m "feat(calibration): compare-interesting-rankings (Kendall tau-b, o
 ### Task 4: `export-interesting-labels` subcommand (blind pooled labeling TSV)
 
 **Files:**
-- Modify: `crates/ab-morph-run/src/calibration.rs`
+- Create: `crates/ab-morph-run/src/calibration/label_export.rs` (all of this task's code; register in `calibration/mod.rs`)
 - Modify: `crates/ab-morph-run/Cargo.toml` (add `ab-plaintext` workspace dep if absent — check first; `pipeline.rs` already uses it, so it is present)
 - Modify: `crates/ab-morph-run/src/lib.rs`, `crates/ab-morph-run/src/main.rs`
 
@@ -926,6 +978,7 @@ git commit -m "feat(calibration): compare-interesting-rankings (Kendall tau-b, o
 
 **Steps:** (same TDD cadence as prior tasks)
 
+- [ ] **Step 0 — verify the no-ortho assumption (D9) in-task:** inspect the `morph-warehouse-run-with-analyzers` recipe in the `justfile` (the invocation that produced the canonical run) and confirm the `analyze-aat` command passes no orthographic-normalization flags (check `analyze-aat`'s clap definition in `main.rs` for what such flags would be named). If an ortho flag WAS active, STOP — snippets cannot be sliced from the raw projection (offsets would index normalized text) and the task needs the offset map; escalate rather than emit wrong snippets.
 - [ ] Write failing tests for the pure helpers: `blind_order(ids, seed)`, `snippet(text, start, end, context)` (pure over `&str`), `method_name(path)`.
 - [ ] Run: `cargo test -p ab-morph-run --features test-analyzer blind_order snippet method_name` — compile FAIL.
 - [ ] Implement pure helpers; tests pass.
@@ -939,7 +992,8 @@ git commit -m "feat(calibration): compare-interesting-rankings (Kendall tau-b, o
 ### Task 5: `score-interesting-labels` subcommand (p@50, nDCG@50)
 
 **Files:**
-- Modify: `crates/ab-morph-run/src/calibration.rs`, `crates/ab-morph-run/src/lib.rs`, `crates/ab-morph-run/src/main.rs`
+- Create: `crates/ab-morph-run/src/calibration/label_score.rs` (all of this task's code; register in `calibration/mod.rs`)
+- Modify: `crates/ab-morph-run/src/lib.rs`, `crates/ab-morph-run/src/main.rs`
 
 **Interfaces:**
 - Consumes: filled `labels.tsv` + `mapping.json` (Task 4 formats).
@@ -965,10 +1019,11 @@ const VERDICT_GAINS: &[(&str, f64)] = &[
 
 **Behavioral contract:**
 1. TSV parse: skip `#` comments; require `label_id` and `verdict` columns; verdict must be one of the six (hard error naming label_id + offending value); empty verdict → hard error listing ALL unlabeled label_ids (partial labeling silently biases p@k).
+1b. **Set coherence (orphan safety):** the TSV's `label_id` set must equal `mapping.json`'s key set exactly — a missing id (owner deleted a row), an unknown id (typo), or a duplicate id is a hard error naming the offending ids in each direction. This check runs BEFORE verdict validation; without it a deleted row silently drops a pattern from every method's top-k and skews p@k.
 2. Per method (from mapping): order its labeled patterns by recorded rank; `precision_at_k` = |relevant among top-k| / k; `dcg_at_k` = Σ gain_i / log2(i+1) for i = 1..k; `idcg` from the pooled union's k best gains (D5); methods whose top-k has fewer than k pooled patterns → hard error (mapping and rankings out of sync).
 3. Output JSON to stdout (same shape convention as Task 3).
 
-**Tests:** hand-computed 5-pattern/2-method fixture (p@3 and nDCG@3 verified by hand in the test comments — show the arithmetic); unlabeled-row error lists ids; invalid verdict error; verdict histogram.
+**Tests:** hand-computed 5-pattern/2-method fixture (p@3 and nDCG@3 verified by hand in the test comments — show the arithmetic); unlabeled-row error lists ids; invalid verdict error; label_id set-mismatch errors (deleted TSV row; unknown/typo'd id; duplicated id); verdict histogram.
 
 **Steps:** same TDD cadence — failing pure tests (`precision_at_k`, `ndcg_at_k` with hand arithmetic) → implement → failing integration test over tempdir TSV+mapping → implement shell + CLI variant `ScoreInterestingLabels { labels, mapping, k (default 50) }` + parse test → full suite → commit `feat(calibration): score-interesting-labels p@k and nDCG@k`.
 
@@ -1062,7 +1117,7 @@ All commands target `--run-dir /db/ab-validator/morph-warehouse/runs/calib-triag
 
 - [ ] **Step 3: Rank-scope A/B (spec step 3)** — `--rank-scope global` → `triage-rrf-global.json`; `cmp-scope-triage.json` vs rank-floor default. (The p@50 side of step 3 waits on labels; τ/overlap now.)
 
-- [ ] **Step 4: Analysis doc** — `sweep-analysis.md`: τ/overlap table for every comparison, D6 verdicts (stable/unstable per variant), anomaly tables + reading, explicit statement of what can lock now (λ policy stays rank-floor if all fixed variants either are stable — meaning the choice barely matters, keep the monotone one — or unstable — meaning fixed λ distorts, keep rank-floor; W_COV recommendation from the tables) and what waits for labels (rank scope, step 8's RRF-vs-frequency verdict).
+- [ ] **Step 4: Analysis doc** — `sweep-analysis.md`: τ/overlap table for every comparison, D6 verdicts (stable/unstable per variant), anomaly tables + reading — note the W_COV recommendation is a *human read* of those tables (the spec's step-5 acceptance question is qualitative); record the rationale next to the tables rather than presenting the choice as mechanical — explicit statement of what can lock now (λ policy stays rank-floor if all fixed variants either are stable — meaning the choice barely matters, keep the monotone one — or unstable — meaning fixed λ distorts, keep rank-floor; W_COV recommendation from the tables) and what waits for labels (rank scope, step 8's RRF-vs-frequency verdict).
 
 - [ ] **Step 5: Commit** — `git add reports/morph-warehouse/calibration/2026-07-06/ && git commit -m "feat(calibration): triage-corpus lambda/wcov/rank-scope sweeps + analysis"`
 
@@ -1125,4 +1180,5 @@ Verify: row count = |union| (expect ~120–190), every row has ≥1 non-empty sn
 - Spec coverage: step 1 → Tasks 6+8 (three profiles + benchmarks); step 2 → Tasks 2+8; step 3 → Tasks 1+7+8 (τ now, p@50 after labels); step 4 → Tasks 1+7 (per D1); step 5 → Tasks 1+7; step 6 → Tasks 4+8 (owner fills TSV); step 7 → Tasks 5 (tooling)+9 (pending labels); step 8 → gated on labels, wiring in Task 9's report; step 9 → Task 9 (locked-now vs pending table, D8 for the missing knob); step 10 → post-MVP, untouched.
 - The owner-labeling gate is the plan's deliberate end state: Tasks 1–9 complete without owner input; p@50/nDCG@50 and the final lock happen when `labels.tsv` comes back.
 - Type consistency: `score_patterns(patterns, rarity_total, rank_scope, lambda_policy)` (Task 1) is what Task 2's `summarize_warehouse_interesting` context assumes; `splitmix64` introduced in Task 2 is consumed by Task 4; `read_ranking` introduced in Task 3 is consumed by Tasks 4–5.
-- Two tests in Task 1/2 carry `/* fixture */` placeholders by design: the binding content is the assertions; construction must reuse the file's existing builders (B2 lesson from the previous plan review — do not invent parallel fixture helpers).
+- Several tests in Tasks 1/2 carry `/* fixture */` placeholders by design: the binding content is the assertions; construction goes through the single `calib_stats` helper Task 1 introduces (verified at plan-review time: the test module has NO existing `PatternStats` builders — the unit tests near `interesting.rs:2028`/`2113` drive `fuse`/`lambda_missing` with raw rank arrays — so ONE new minimal helper is created rather than duplicating struct literals per test; B2 lesson).
+- Post-plan critical review (2026-07-06) accepted and folded in: conditional-lock framing in the Goal (S8 gate), D10 (profile-terminology decision), the hand-computed within-kind equivalence pin + span-slot global assertion (P1), inline splitmix64 golden constants (P5), the `calib_stats` correction (P6), the `:1175` early-branch note (P7), pooled-IDCG rationale in D5 (P4), `calibration/` module split (design), TSV↔mapping set-coherence invariant in Task 5 (design), Task 4 Step 0 ortho verification (trust boundary), and the Task 7 human-judgment note on W_COV.

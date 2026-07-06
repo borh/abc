@@ -239,6 +239,18 @@ def node_visible_body_text(node: dict[str, Any]) -> str:
             )
         text = node.get("text")
         return text if isinstance(text, str) else ""
+    if node_type == "layout-span":
+        children = node.get("inline_children")
+        if isinstance(children, list):
+            child_text = "".join(
+                node_visible_body_text(child)
+                for child in children
+                if isinstance(child, dict)
+            )
+            if child_text:
+                return child_text
+        text = node.get("text")
+        return text if isinstance(text, str) else ""
     if node_type in {"indentation", "quote", "caption", "editor-note"}:
         text = node.get("text")
         return text if isinstance(text, str) else ""

@@ -164,20 +164,27 @@ The current full five-parser TEI-EAJ matrix diagnostic evidence is:
 - `docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json`
   - `scope.kind == "full-tei-eaj-matrix"`
   - `scope.rows_validated == 285`
-  - `scope.rows_failed == 10`
-  - all checks pass except `plaintext_body_only`
+  - `scope.rows_failed == 0`
+  - all bundle checks pass
 - `docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.md`
 
-The 10 full-matrix failures are not parser-IR/schema/preservation failures.
-They are plaintext policy failures:
+This full-matrix bundle result proves internal publication-bundle consistency:
+Parser-IR, TEI, plaintext, manifests, source-region evidence, and preservation
+sidecars agree for every materialized row. It does not prove TEI-EAJ admission
+or complete source-region policy.
 
-- 8 rows include letter front metadata such as `宛先` and `発信地` in plaintext.
-- 2 rows include a page/section marker `10` in plaintext.
+An earlier version of this diagnostic reported 10 `plaintext_body_only`
+failures because the validator omitted visible `layout-span` text from its
+parser-IR body projection. The corrected checker follows the ABC plaintext
+policy: layout metadata is omitted, but body-visible layout text remains.
 
-Those facts should be routed to TEI front/back/header, layout metadata, or
-custom preservation as appropriate. They must not appear in plaintext. The
-full-matrix report is therefore diagnostic until ABC fixes the plaintext
-routing policy and a rerun reaches `rows_failed == 0`.
+The underlying TEI-EAJ generated matrix still carries admission gaps. In
+particular, letter address/origin rows such as `宛先` and `発信地` need a
+source-region/publication policy decision before they can be treated as
+front/header material rather than body text. TCY/page-number text such as `10`
+is currently represented as body-visible `layout-span` text; changing that
+requires an explicit source-region or layout-only policy, not a plaintext
+renderer shortcut.
 
 ## Workstream 3: Parser Evidence And Adapter Fidelity
 
@@ -345,7 +352,7 @@ jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED" and .scope.rows_
 jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.publication_bundle_contract.validation_scope == "batch" and .publication_bundle_contract.rows_validated == 25 and .publication_bundle_contract.rows_failed == 0' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_COMPLETE"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
-jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_FAILED" and .scope.kind == "full-tei-eaj-matrix" and .scope.rows_validated == 285 and .scope.rows_failed == 10 and .checks.plaintext_body_only == false and all(.failures[]; .details.kind == "plaintext_mismatch")' docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json
+jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED" and .scope.kind == "full-tei-eaj-matrix" and .scope.rows_validated == 285 and .scope.rows_failed == 0 and .checks.plaintext_body_only == true' docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json
 git diff --check
 ```
 

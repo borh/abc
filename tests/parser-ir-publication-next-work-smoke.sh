@@ -13,6 +13,7 @@ reference_summary="$out_dir/reference.json"
 performance_md="$out_dir/performance.md"
 source_disposition_summary="$out_dir/source-disposition.json"
 text_policy_summary="$out_dir/text-policy.json"
+complete_text_policy_summary="$out_dir/text-policy.complete.json"
 adapter_worksets_summary="$out_dir/adapter-worksets.json"
 complete_adapter_worksets_summary="$out_dir/adapter-worksets.complete.json"
 dossier_dir="$out_dir/dossiers"
@@ -20,6 +21,7 @@ parser_acceptance_spec="$out_dir/parser-acceptance.md"
 tei_p5_root="$out_dir/tei-p5"
 summary_json="$out_dir/next-work.summary.json"
 complete_source_summary_json="$out_dir/next-work.complete-source.summary.json"
+complete_text_summary_json="$out_dir/next-work.complete-text.summary.json"
 complete_adapter_summary_json="$out_dir/next-work.complete-adapter.summary.json"
 missing_root_summary_json="$out_dir/next-work.missing-root.summary.json"
 report_md="$out_dir/next-work.md"
@@ -387,6 +389,7 @@ jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" an
 jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" and .status == "open")' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" and .evidence.classes_total == 2 and .evidence.policy_needed_classes == ["letter_address_origin"])' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.different_rows == 9)' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .status == "open")' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.counts_by_cause.front_back_source_region_policy == 3 and .evidence.source_markup_backed_blockers == 2)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.workset_files.ruby_or_parenthetical_policy.count == 2 and .evidence.source_markup_backed_workset_files.front_back_source_region_policy.count == 3)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.manual_classification_workset_files.unknown_text_delta.count == 1 and .evidence.manual_classification_workset_files.unknown_text_delta.requires_manual_classification == true)' "$summary_json" >/dev/null
@@ -444,6 +447,90 @@ python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
 
 jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" and .status == "complete" and .evidence.policy_needed_count == 0 and .evidence.evidence_needed_classes == [])' "$complete_source_summary_json" >/dev/null
 rg -n -F '`source_region_disposition_samples` (ab-validator+abc): `complete`' "$out_dir/next-work.complete-source.md" >/dev/null
+
+cat > "$complete_text_policy_summary" <<'JSON'
+{
+  "schema_version": "parser-ir-text-policy-delta-v1",
+  "total_different_rows": 9,
+  "counts_by_cause": {
+    "ruby_or_parenthetical_policy": 2,
+    "front_back_source_region_policy": 3,
+    "body_visible_layout_policy": 1,
+    "adapter_text_loss": 2,
+    "tei_eaj_editorial_or_enrichment": 1,
+    "unknown_text_delta": 0
+  },
+  "workset_files": {
+    "ruby_or_parenthetical_policy": {
+      "path": "docs/reports/text-policy/ruby_or_parenthetical_policy.json",
+      "hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "count": 2,
+      "source_markup_backed": true
+    },
+    "front_back_source_region_policy": {
+      "path": "docs/reports/text-policy/front_back_source_region_policy.json",
+      "hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "count": 3,
+      "source_markup_backed": true
+    },
+    "body_visible_layout_policy": {
+      "path": "docs/reports/text-policy/body_visible_layout_policy.json",
+      "hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "count": 1,
+      "source_markup_backed": true
+    },
+    "adapter_text_loss": {
+      "path": "docs/reports/text-policy/adapter_text_loss.json",
+      "hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "count": 2,
+      "source_markup_backed": true
+    },
+    "tei_eaj_editorial_or_enrichment": {
+      "path": "docs/reports/text-policy/tei_eaj_editorial_or_enrichment.json",
+      "hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "count": 1,
+      "source_markup_backed": false
+    },
+    "unknown_text_delta": {
+      "path": null,
+      "hash": null,
+      "count": 0,
+      "source_markup_backed": false,
+      "requires_manual_classification": true
+    }
+  },
+  "manual_classification_workset_files": {
+    "unknown_text_delta": {
+      "path": null,
+      "hash": null,
+      "count": 0,
+      "source_markup_backed": false,
+      "requires_manual_classification": true
+    }
+  },
+  "source_markup_backed_blockers": [{"row_id": "r1"}, {"row_id": "r2"}],
+  "calibration_only_rows": [{"row_id": "r3"}]
+}
+JSON
+
+python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+  --source-summary "$source_summary" \
+  --coverage-summary "$coverage_summary" \
+  --matrix-summary "$matrix_summary" \
+  --conversion-summary "$conversion_summary" \
+  --source-reference-summary "$reference_summary" \
+  --performance-report "$performance_md" \
+  --source-disposition-summary "$source_disposition_summary" \
+  --text-policy-summary "$complete_text_policy_summary" \
+  --adapter-worksets-summary "$adapter_worksets_summary" \
+  --dossier-dir "$dossier_dir" \
+  --tei-p5-root "$tei_p5_root" \
+  --parser-acceptance-spec "$parser_acceptance_spec" \
+  --summary-json "$complete_text_summary_json" \
+  --report-md "$out_dir/next-work.complete-text.md"
+
+jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .status == "complete" and .evidence.different_rows == 9 and .evidence.source_markup_backed_blockers == 2)' "$complete_text_summary_json" >/dev/null
+rg -n -F '`text_policy_calibration` (ab-validator+abc): `complete`' "$out_dir/next-work.complete-text.md" >/dev/null
 
 cat > "$complete_adapter_worksets_summary" <<'JSON'
 {

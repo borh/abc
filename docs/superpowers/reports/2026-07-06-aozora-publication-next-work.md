@@ -16,7 +16,7 @@ Verdict: `AOZORA_PUBLICATION_NEXT_WORK_OPEN`
   - classes_total=7, admitted=7, policy_needed=0
   - policy_needed_classes=[]
   - evidence_needed_classes=[]
-- `text_policy_calibration` (ab-validator+abc): `open`
+- `text_policy_calibration` (ab-validator+abc): `complete`
   - different_rows=271, source_markup_backed_blockers=223, calibration_only_rows=7
   - counts_by_cause={"adapter_text_loss": 55, "body_visible_layout_policy": 51, "front_back_source_region_policy": 50, "ruby_or_parenthetical_policy": 67, "tei_eaj_editorial_or_enrichment": 48, "unknown_text_delta": 0}
   - source_markup_backed_worksets={"adapter_text_loss": "docs/superpowers/reports/2026-07-06-text-policy-worksets/adapter_text_loss.json", "body_visible_layout_policy": "docs/superpowers/reports/2026-07-06-text-policy-worksets/body_visible_layout_policy.json", "front_back_source_region_policy": "docs/superpowers/reports/2026-07-06-text-policy-worksets/front_back_source_region_policy.json", "ruby_or_parenthetical_policy": "docs/superpowers/reports/2026-07-06-text-policy-worksets/ruby_or_parenthetical_policy.json"}

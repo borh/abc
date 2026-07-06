@@ -21,7 +21,7 @@ Verdict: `AOZORA_PUBLICATION_NEXT_WORK_OPEN`
   - counts_by_cause={"adapter_text_loss": 55, "body_visible_layout_policy": 51, "front_back_source_region_policy": 50, "ruby_or_parenthetical_policy": 67, "tei_eaj_editorial_or_enrichment": 48, "unknown_text_delta": 0}
   - source_markup_backed_worksets={"adapter_text_loss": "docs/superpowers/reports/2026-07-06-text-policy-worksets/adapter_text_loss.json", "body_visible_layout_policy": "docs/superpowers/reports/2026-07-06-text-policy-worksets/body_visible_layout_policy.json", "front_back_source_region_policy": "docs/superpowers/reports/2026-07-06-text-policy-worksets/front_back_source_region_policy.json", "ruby_or_parenthetical_policy": "docs/superpowers/reports/2026-07-06-text-policy-worksets/ruby_or_parenthetical_policy.json"}
   - manual_classification_worksets={}
-- `adapter_fidelity_worksets` (ab-validator): `open`
+- `adapter_fidelity_worksets` (ab-validator): `complete`
   - adapter_distortion_rows=218
   - worksets={"adapter_collapsed": 67, "adapter_over_segmented": 127, "adapter_raw_only": 2, "adapter_under_segmented": 14, "converter_paragraph_mismatch": 8}
   - workset_files={"adapter_collapsed": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_collapsed/all.json", "adapter_over_segmented": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_over_segmented/all.json", "adapter_raw_only": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_raw_only/all.json", "adapter_under_segmented": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_under_segmented/all.json", "converter_paragraph_mismatch": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/converter_paragraph_mismatch/all.json"}

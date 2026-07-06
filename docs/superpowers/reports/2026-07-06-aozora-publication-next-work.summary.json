@@ -207,7 +207,7 @@
     {
       "id": "adapter_fidelity_worksets",
       "owner": "ab-validator",
-      "status": "open",
+      "status": "complete",
       "evidence": {
         "adapter_distortion_rows": 218,
         "included_buckets": [

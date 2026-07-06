@@ -606,8 +606,16 @@ pub(crate) fn run_analyze_aat_serial(
                 return Err(error);
             }
         };
-        let document = match from_aat_value(&aat) {
-            Ok(document) => document,
+        let collect_projection_spans = warehouse_writer
+            .as_ref()
+            .is_some_and(|writer| writer.writes_table(WarehouseTable::ProjectionSpans));
+        let projected = if collect_projection_spans {
+            from_aat_value_with_spans(&aat).map(|(document, spans)| (document, Some(spans)))
+        } else {
+            from_aat_value(&aat).map(|document| (document, None))
+        };
+        let (document, projection_spans) = match projected {
+            Ok(value) => value,
             Err(error) => {
                 if let Some(writer) = &mut warehouse_writer {
                     warehouse_error_count += 1;
@@ -645,6 +653,9 @@ pub(crate) fn run_analyze_aat_serial(
                 return Err(error.into());
             }
         };
+        // P1: the parsed AAT DOM is unused past projection; drop it now so the
+        // per-document peak excludes it (several× file size on the large tail).
+        drop(aat);
         // Orthographic normalization (katakana→hiragana) for pre-war text.
         // Detection dispatch is polymorphic: the detector (heuristic or ML) was
         // constructed once above behind `Arc<dyn OrthoDetector>`.
@@ -786,6 +797,17 @@ pub(crate) fn run_analyze_aat_serial(
             let source =
                 warehouse::rows::source_row(run_id, &source_id, &input_path, first_analysis);
             writer.append_sources(&[source])?;
+            if let Some(spans) = &projection_spans {
+                for chunk in spans.chunks(WAREHOUSE_MORPHEME_ROW_BATCH_SIZE) {
+                    let rows = warehouse::rows::projection_span_rows(
+                        run_id,
+                        &source_id,
+                        &document.text_id,
+                        chunk,
+                    );
+                    writer.append_projection_spans(&rows)?;
+                }
+            }
             let analysis_rows = analyses
                 .iter()
                 .map(|analysis| warehouse::rows::analysis_row(run_id, &source_id, analysis))

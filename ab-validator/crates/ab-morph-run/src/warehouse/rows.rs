@@ -5,7 +5,7 @@ use ab_morph_diff::MorphDiffError;
 use ab_morph_diff::{Analysis, NwayFeatureScope, NwayRegion, visit_nway_regions_with_source_text};
 use ab_warehouse::schema::{
     AnalysisRow, MorphemeFeatureRow, MorphemeRow, NwayFeatureDiffRow, NwayRegionAnalyzerRow,
-    NwayRegionRow, SourceRow,
+    NwayRegionRow, ProjectionSpanRow, SourceRow,
 };
 use anyhow::Result as AnyhowResult;
 
@@ -127,6 +127,32 @@ pub(crate) fn morpheme_feature_rows_for_range(
                     feature_key: key.to_string(),
                     feature_value: value.as_ref().map(ToString::to_string),
                 })
+        })
+        .collect()
+}
+
+pub(crate) fn projection_span_rows(
+    run_id: &str,
+    source_id: &str,
+    text_id: &str,
+    spans: &[ab_plaintext::ProjectionSpan],
+) -> Vec<ProjectionSpanRow> {
+    let run_id = std::sync::Arc::<str>::from(run_id);
+    let source_id = std::sync::Arc::<str>::from(source_id);
+    let text_id = std::sync::Arc::<str>::from(text_id);
+    spans
+        .iter()
+        .map(|span| ProjectionSpanRow {
+            run_id: std::sync::Arc::clone(&run_id),
+            source_id: std::sync::Arc::clone(&source_id),
+            text_id: std::sync::Arc::clone(&text_id),
+            projected_char_start: span.projected_char_start,
+            projected_char_end: span.projected_char_end,
+            aat_pointer: span.aat_pointer.clone(),
+            inline_kind: span.inline_kind.clone(),
+            is_ruby_base: span.is_ruby_base,
+            is_gaiji: span.is_gaiji,
+            is_note: span.is_note,
         })
         .collect()
 }
@@ -486,6 +512,25 @@ mod tests {
         .unwrap();
 
         assert_eq!(batched, collected);
+    }
+
+    #[test]
+    fn maps_projection_spans_to_rows_with_shared_ids() {
+        let spans = vec![ab_plaintext::ProjectionSpan {
+            projected_char_start: 0,
+            projected_char_end: 2,
+            aat_pointer: "/blocks/0/content/0".to_owned(),
+            inline_kind: "ruby".to_owned(),
+            is_ruby_base: true,
+            is_gaiji: false,
+            is_note: false,
+        }];
+        let rows = projection_span_rows("run-a", "source-a", "work-a", &spans);
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].run_id.as_ref(), "run-a");
+        assert_eq!(rows[0].text_id.as_ref(), "work-a");
+        assert_eq!(rows[0].projected_char_end, 2);
+        assert!(rows[0].is_ruby_base);
     }
 
     fn m(

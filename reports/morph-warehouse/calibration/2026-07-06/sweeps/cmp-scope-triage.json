@@ -1,0 +1,10 @@
+{
+  "left_len": 50,
+  "right_len": 50,
+  "overlap": 38,
+  "jaccard": 0.6129032258064516,
+  "kendall_tau_b": 0.519203413940256,
+  "score_version_mismatches": [
+    "rank_scope: \"within-kind\" vs \"global\""
+  ]
+}

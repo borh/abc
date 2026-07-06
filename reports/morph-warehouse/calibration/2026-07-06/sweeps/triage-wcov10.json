@@ -1,0 +1,3002 @@
+{
+  "score_version": {
+    "score_version": 1,
+    "pattern_id_version": 1,
+    "rrf_k": 60,
+    "lambda_missing_policy": "rank-floor",
+    "rank_scope": "within-kind",
+    "score_mode": "rrf",
+    "sample_seed": null,
+    "anomaly_w_cov": 10.0,
+    "signal_profile": [
+      "coverage",
+      "rarity",
+      "impact",
+      "span"
+    ],
+    "feature_profile": "core",
+    "rarity_basis": "work",
+    "granularity_profile": "suw+luw",
+    "cause_classification_profile": "absent",
+    "literal_context_policy": null,
+    "surprise": "absent"
+  },
+  "run_id": "calib-triage-1000",
+  "rows": [
+    {
+      "pattern_id": "sha256:0003961cfd2275763fecedb9809406dd4671612b57ccba05dcafa95378d38d68",
+      "pattern": "pos1 surface:living 名詞=>sudachi-a+sudachi-c+vibrato:unidic-cwj-202512 ; 感動詞=>vibrato:unidic-novel-202512",
+      "kind": "feature",
+      "rrf_score": 0.011666,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 7,
+          "rrf_term": 0.014925
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 5,
+          "rrf_term": 0.015385
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 2,
+          "rrf_term": 0.016129
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 6.0,
+          "rank": 4364,
+          "rrf_term": 0.000226
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000311_1957-8a13220d4a14"
+      ],
+      "sample_text_ids": [
+        "000311_1957"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000311_1957-8a13220d4a14",
+          "text_id": "000311_1957",
+          "region_index": 916,
+          "char_start": 1388,
+          "char_end": 1394
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:0000ac151986e09cc90cc6b78200ee9d9ad189a09b408783002626c24611ca7d",
+      "pattern": "sudachi-a+sudachi-c:[交|ら] ; vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[交ら]",
+      "kind": "segmentation",
+      "rrf_score": 0.010934,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 1,
+          "rrf_term": 0.016393
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 1,
+          "rrf_term": 0.016393
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 65346,
+          "rrf_term": 0.000015
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000050_48330-e40ce82ab55f"
+      ],
+      "sample_text_ids": [
+        "000050_48330"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000050_48330-e40ce82ab55f",
+          "text_id": "000050_48330",
+          "region_index": 12222,
+          "char_start": 17789,
+          "char_end": 17791
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00057e03fcb4e7ffb763f68c5a8065491542850f6f3a363b6976c8b059869bdf",
+      "pattern": "pos1 surface:見知り 動詞=>vibrato:unidic-novel-202512 ; 名詞=>sudachi-a+sudachi-c+vibrato:unidic-cwj-202512",
+      "kind": "feature",
+      "rrf_score": 0.010925,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 13,
+          "rrf_term": 0.013699
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 11,
+          "rrf_term": 0.014085
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 3,
+          "rrf_term": 0.015873
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 3.0,
+          "rank": 22632,
+          "rrf_term": 0.000044
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000096_2100-f3cca7424289"
+      ],
+      "sample_text_ids": [
+        "000096_2100"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000096_2100-f3cca7424289",
+          "text_id": "000096_2100",
+          "region_index": 17660,
+          "char_start": 27069,
+          "char_end": 27072
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:000255480f0899fe7a075c9250ce844a50e01002c332de8b361becb842a122ea",
+      "pattern": "sudachi-a+vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[ドイツ|皇帝] ; sudachi-c:[ドイツ皇帝]",
+      "kind": "segmentation",
+      "rrf_score": 0.010836,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 2,
+          "rrf_term": 0.016129
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 2,
+          "rrf_term": 0.016129
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 5.0,
+          "rank": 3965,
+          "rrf_term": 0.000248
+        }
+      ],
+      "examples": 2,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000255_47284-6d1748de2ed0"
+      ],
+      "sample_text_ids": [
+        "000255_47284"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000255_47284-6d1748de2ed0",
+          "text_id": "000255_47284",
+          "region_index": 90,
+          "char_start": 141,
+          "char_end": 146
+        },
+        {
+          "source_id": "000255_47284-6d1748de2ed0",
+          "text_id": "000255_47284",
+          "region_index": 747,
+          "char_start": 1178,
+          "char_end": 1183
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:0003165ed5e3aa31aa1e343d6373cefd8bb5975d7eeb66b32da554f97e95e707",
+      "pattern": "vibrato:unidic-cwj-202512:[は|だ|か] ; sudachi-a+sudachi-c:[は|だか] ; vibrato:unidic-novel-202512:[はだか]",
+      "kind": "segmentation",
+      "rrf_score": 0.010591,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 3,
+          "rrf_term": 0.015873
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 3,
+          "rrf_term": 0.015873
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 3.0,
+          "rank": 37927,
+          "rrf_term": 0.000026
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000019_42387-a4296dd29b5b"
+      ],
+      "sample_text_ids": [
+        "000019_42387"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000019_42387-a4296dd29b5b",
+          "text_id": "000019_42387",
+          "region_index": 9878,
+          "char_start": 16229,
+          "char_end": 16232
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:000495006535e56a23d609854c20c178126c0a7a28996e6cebebc72db51a7c0e",
+      "pattern": "vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[いわ|っしゃい] ; sudachi-a+sudachi-c:[いわっ|しゃ|い]",
+      "kind": "segmentation",
+      "rrf_score": 0.010522,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 5,
+          "rrf_term": 0.015385
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 5,
+          "rrf_term": 0.015385
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 6.0,
+          "rank": 1195,
+          "rrf_term": 0.000797
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000255_45395-db5d1c975af7"
+      ],
+      "sample_text_ids": [
+        "000255_45395"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000255_45395-db5d1c975af7",
+          "text_id": "000255_45395",
+          "region_index": 59732,
+          "char_start": 90456,
+          "char_end": 90462
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00045db9cf527c13f2d345b9d768da7b6292484a5ebe60d9ba53728426581a7c",
+      "pattern": "vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[嚴|勵] ; sudachi-a+sudachi-c:[嚴勵]",
+      "kind": "segmentation",
+      "rrf_score": 0.010422,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 4,
+          "rrf_term": 0.015625
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 4,
+          "rrf_term": 0.015625
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 65347,
+          "rrf_term": 0.000015
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000089_52931-e90962562720"
+      ],
+      "sample_text_ids": [
+        "000089_52931"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000089_52931-e90962562720",
+          "text_id": "000089_52931",
+          "region_index": 10359,
+          "char_start": 16889,
+          "char_end": 16891
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00071de09fe92082ba70a3a9fa26cc9fe8e0e4ba60b549ab1d8c7b129c3dab79",
+      "pattern": "sudachi-a+sudachi-c:[ぢ|やら|う] ; vibrato:unidic-cwj-202512:[ぢや|ら|う] ; vibrato:unidic-novel-202512:[ぢやらう]",
+      "kind": "segmentation",
+      "rrf_score": 0.010049,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 7,
+          "rrf_term": 0.014925
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 6,
+          "rrf_term": 0.015152
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 13953,
+          "rrf_term": 0.000071
+        }
+      ],
+      "examples": 2,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000989_50087-bf5228b49dab"
+      ],
+      "sample_text_ids": [
+        "000989_50087"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000989_50087-bf5228b49dab",
+          "text_id": "000989_50087",
+          "region_index": 246,
+          "char_start": 353,
+          "char_end": 357
+        },
+        {
+          "source_id": "000989_50087-bf5228b49dab",
+          "text_id": "000989_50087",
+          "region_index": 374,
+          "char_start": 535,
+          "char_end": 539
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:000b87cc43cf2dbf0a1d829da7e3a422de940cbe180a1e8fd509dcf49b41382a",
+      "pattern": "pos1 surface:つぶし 動詞=>sudachi-a+sudachi-c ; 名詞=>vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512",
+      "kind": "feature",
+      "rrf_score": 0.009963,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 25,
+          "rrf_term": 0.011765
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 19,
+          "rrf_term": 0.012658
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 5,
+          "rrf_term": 0.015385
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 3.0,
+          "rank": 22635,
+          "rrf_term": 0.000044
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000051_46418-4e6377188008"
+      ],
+      "sample_text_ids": [
+        "000051_46418"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000051_46418-4e6377188008",
+          "text_id": "000051_46418",
+          "region_index": 1818,
+          "char_start": 2730,
+          "char_end": 2733
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:000890f34faee8ba70096bfa71e8c88353320659efdf3741b0d3f22c2c9bd61d",
+      "pattern": "sudachi-a+vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[別所|長治] ; sudachi-c:[別所長治]",
+      "kind": "segmentation",
+      "rrf_score": 0.00983,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 9,
+          "rrf_term": 0.014493
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 7,
+          "rrf_term": 0.014925
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 13955,
+          "rrf_term": 0.000071
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000093_4790-988f1a88b812"
+      ],
+      "sample_text_ids": [
+        "000093_4790"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000093_4790-988f1a88b812",
+          "text_id": "000093_4790",
+          "region_index": 22522,
+          "char_start": 34041,
+          "char_end": 34045
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:000bdcac82c94c06d5c8eb58c0b236b53f59bb9d908064bf589056a6866ffbd3",
+      "pattern": "pos1 surface:prima 名詞=>sudachi-a+sudachi-c+vibrato:unidic-cwj-202512 ; 感動詞=>vibrato:unidic-novel-202512",
+      "kind": "feature",
+      "rrf_score": 0.009782,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 27,
+          "rrf_term": 0.011494
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 21,
+          "rrf_term": 0.012346
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 6,
+          "rrf_term": 0.015152
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 5.0,
+          "rank": 7263,
+          "rrf_term": 0.000137
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000094_2076-9e2654647a23"
+      ],
+      "sample_text_ids": [
+        "000094_2076"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000094_2076-9e2654647a23",
+          "text_id": "000094_2076",
+          "region_index": 2763,
+          "char_start": 4168,
+          "char_end": 4173
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:0009ce9edf52aefac29426f3ac3c4e738fbf67c84b8d40a28f67edbc58a80259",
+      "pattern": "sudachi-a+sudachi-c+vibrato:unidic-cwj-202512:[ねら|つ] ; vibrato:unidic-novel-202512:[ねらつ]",
+      "kind": "segmentation",
+      "rrf_score": 0.009673,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 10,
+          "rrf_term": 0.014286
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 8,
+          "rrf_term": 0.014706
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 3.0,
+          "rank": 37929,
+          "rrf_term": 0.000026
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001154_43859-df1224b81def"
+      ],
+      "sample_text_ids": [
+        "001154_43859"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001154_43859-df1224b81def",
+          "text_id": "001154_43859",
+          "region_index": 10112,
+          "char_start": 15676,
+          "char_end": 15679
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:000b2d457a6ac687ddbb7e7c9d2ff4d48025bff57a726a670dfe18f0e69d83f0",
+      "pattern": "sudachi-a+vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[辰野|隆] ; sudachi-c:[辰野隆]",
+      "kind": "segmentation",
+      "rrf_score": 0.009406,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 13,
+          "rrf_term": 0.013699
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 9,
+          "rrf_term": 0.014493
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 3.0,
+          "rank": 37930,
+          "rrf_term": 0.000026
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000035_304-40030e68abe8"
+      ],
+      "sample_text_ids": [
+        "000035_304"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000035_304-40030e68abe8",
+          "text_id": "000035_304",
+          "region_index": 19056,
+          "char_start": 29664,
+          "char_end": 29667
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:000c715562760096d7ac9a55bfefaff0c165bf6cb95e32fb74f05b001ea03cba",
+      "pattern": "sudachi-a:[にじみ|込ん] ; sudachi-c+vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[にじみ込ん]",
+      "kind": "segmentation",
+      "rrf_score": 0.009349,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 14,
+          "rrf_term": 0.013514
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 10,
+          "rrf_term": 0.014286
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 5.0,
+          "rank": 3967,
+          "rrf_term": 0.000248
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000150_16038-4513ec4b8da3"
+      ],
+      "sample_text_ids": [
+        "000150_16038"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000150_16038-4513ec4b8da3",
+          "text_id": "000150_16038",
+          "region_index": 410,
+          "char_start": 651,
+          "char_end": 656
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:000cec7bdd182f4d7a5d678da0508389beed579ca7c993e9b797efa4f80e70be",
+      "pattern": "vibrato:unidic-cwj-202512:[スタ|チオ] ; sudachi-a+sudachi-c+vibrato:unidic-novel-202512:[スタチオ]",
+      "kind": "segmentation",
+      "rrf_score": 0.009163,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 15,
+          "rrf_term": 0.013333
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 11,
+          "rrf_term": 0.014085
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 13956,
+          "rrf_term": 0.000071
+        }
+      ],
+      "examples": 2,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000096_2100-f3cca7424289"
+      ],
+      "sample_text_ids": [
+        "000096_2100"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000096_2100-f3cca7424289",
+          "text_id": "000096_2100",
+          "region_index": 128007,
+          "char_start": 196055,
+          "char_end": 196059
+        },
+        {
+          "source_id": "000096_2100-f3cca7424289",
+          "text_id": "000096_2100",
+          "region_index": 128013,
+          "char_start": 196066,
+          "char_end": 196070
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:000d53bf4c851e9105c7baf1ff96ab447765b71772bba2773f6f1a2daf7d9d60",
+      "pattern": "sudachi-a:[わき|起っ] ; sudachi-c+vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[わき起っ]",
+      "kind": "segmentation",
+      "rrf_score": 0.009039,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 16,
+          "rrf_term": 0.013158
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 12,
+          "rrf_term": 0.013889
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 13957,
+          "rrf_term": 0.000071
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001397_50070-a874d9c3a2b3"
+      ],
+      "sample_text_ids": [
+        "001397_50070"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001397_50070-a874d9c3a2b3",
+          "text_id": "001397_50070",
+          "region_index": 4929,
+          "char_start": 7479,
+          "char_end": 7483
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:000d6ad265548d1f20fa5f7e498b6c263d73ab21c2cf914cc0f158ba168e1e9f",
+      "pattern": "sudachi-a+sudachi-c:[丸|きり] ; vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[丸きり]",
+      "kind": "segmentation",
+      "rrf_score": 0.008904,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 17,
+          "rrf_term": 0.012987
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 13,
+          "rrf_term": 0.013699
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 3.0,
+          "rank": 37931,
+          "rrf_term": 0.000026
+        }
+      ],
+      "examples": 2,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000096_2117-877a89cfa5cf"
+      ],
+      "sample_text_ids": [
+        "000096_2117"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000096_2117-877a89cfa5cf",
+          "text_id": "000096_2117",
+          "region_index": 23873,
+          "char_start": 36733,
+          "char_end": 36736
+        },
+        {
+          "source_id": "000096_2117-877a89cfa5cf",
+          "text_id": "000096_2117",
+          "region_index": 32350,
+          "char_start": 49739,
+          "char_end": 49742
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:000e46be8efb7586802f42d4f611e347457d62df2cb2dee5d589989662330ae3",
+      "pattern": "sudachi-a+sudachi-c:[そ|ッ] ; vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[そッ]",
+      "kind": "segmentation",
+      "rrf_score": 0.008783,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 18,
+          "rrf_term": 0.012821
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 14,
+          "rrf_term": 0.013514
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 65349,
+          "rrf_term": 0.000015
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000903_47074-1cda7e2f3d37"
+      ],
+      "sample_text_ids": [
+        "000903_47074"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000903_47074-1cda7e2f3d37",
+          "text_id": "000903_47074",
+          "region_index": 2695,
+          "char_start": 4087,
+          "char_end": 4089
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:0016f5a8c25b8be3ebc555d154ad27281acc6c88575e89e79b2e8c8943a63c4b",
+      "pattern": "pos1 surface:みち 動詞=>vibrato:unidic-cwj-202512 ; 名詞=>sudachi-a+sudachi-c+vibrato:unidic-novel-202512",
+      "kind": "feature",
+      "rrf_score": 0.008758,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 45,
+          "rrf_term": 0.009524
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 31,
+          "rrf_term": 0.010989
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 9,
+          "rrf_term": 0.014493
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 39364,
+          "rrf_term": 0.000025
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000305_1896-88cce29c8ffe"
+      ],
+      "sample_text_ids": [
+        "000305_1896"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000305_1896-88cce29c8ffe",
+          "text_id": "000305_1896",
+          "region_index": 18515,
+          "char_start": 27204,
+          "char_end": 27206
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:001111dbef71ac37654c1712afacac0bdbd209b28fe80cccb1b79c8259114fa6",
+      "pattern": "sudachi-a+sudachi-c+vibrato:unidic-cwj-202512:[遮|つ] ; vibrato:unidic-novel-202512:[遮つ]",
+      "kind": "segmentation",
+      "rrf_score": 0.008669,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 19,
+          "rrf_term": 0.012658
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 15,
+          "rrf_term": 0.013333
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 65350,
+          "rrf_term": 0.000015
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000153_4098-5507885c2984"
+      ],
+      "sample_text_ids": [
+        "000153_4098"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000153_4098-5507885c2984",
+          "text_id": "000153_4098",
+          "region_index": 4756,
+          "char_start": 6994,
+          "char_end": 6996
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:0018e8523e2a28c13bae027b6d1e7166665afd83ed5017f8eff19fde225c90a0",
+      "pattern": "pos1 surface:倉 名詞=>vibrato:unidic-novel-202512 ; 接尾辞=>vibrato:unidic-cwj-202512",
+      "kind": "feature",
+      "rrf_score": 0.008602,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 47,
+          "rrf_term": 0.009346
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 33,
+          "rrf_term": 0.010753
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 10,
+          "rrf_term": 0.014286
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 39365,
+          "rrf_term": 0.000025
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000111_574-7e6f28992acf"
+      ],
+      "sample_text_ids": [
+        "000111_574"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000111_574-7e6f28992acf",
+          "text_id": "000111_574",
+          "region_index": 8698,
+          "char_start": 13790,
+          "char_end": 13792
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:0011375619b447e09c9676ce96a36ef626752b3e9fc706bec946d0df807a9826",
+      "pattern": "sudachi-a+vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[洗濯|機] ; sudachi-c:[洗濯機]",
+      "kind": "segmentation",
+      "rrf_score": 0.00851,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 21,
+          "rrf_term": 0.012346
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 16,
+          "rrf_term": 0.013158
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 3.0,
+          "rank": 37933,
+          "rrf_term": 0.000026
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001693_55317-7150c9d6ddf9"
+      ],
+      "sample_text_ids": [
+        "001693_55317"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001693_55317-7150c9d6ddf9",
+          "text_id": "001693_55317",
+          "region_index": 809,
+          "char_start": 1225,
+          "char_end": 1228
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:0015e966f8802c1626d1a8cdb5846357ecb09fe0419178964a3709c41ecbe749",
+      "pattern": "vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[依|憑] ; sudachi-a+sudachi-c:[依憑]",
+      "kind": "segmentation",
+      "rrf_score": 0.008302,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 24,
+          "rrf_term": 0.011905
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 17,
+          "rrf_term": 0.012987
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 65351,
+          "rrf_term": 0.000015
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000809_43011-d7c6541021fe"
+      ],
+      "sample_text_ids": [
+        "000809_43011"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000809_43011-d7c6541021fe",
+          "text_id": "000809_43011",
+          "region_index": 164,
+          "char_start": 269,
+          "char_end": 271
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:001660a2ae8abbf3969e670876fee9f7d5538a3bfd2026e775ad8e6814df9e91",
+      "pattern": "vibrato:unidic-cwj-202512:[とり|上|ぐれ] ; sudachi-a+sudachi-c:[とり|上ぐれ] ; vibrato:unidic-novel-202512:[とり上ぐれ]",
+      "kind": "segmentation",
+      "rrf_score": 0.008278,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 25,
+          "rrf_term": 0.011765
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 18,
+          "rrf_term": 0.012821
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 5.0,
+          "rank": 3968,
+          "rrf_term": 0.000248
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000148_59017-7f4e4e020e55"
+      ],
+      "sample_text_ids": [
+        "000148_59017"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000148_59017-7f4e4e020e55",
+          "text_id": "000148_59017",
+          "region_index": 2548,
+          "char_start": 4191,
+          "char_end": 4196
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00003deb3c7f7f71d410328ad9a50331b9fd678e22e0892b103671d9db9808cb",
+      "pattern": "pos3 surface:処 一般=>vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512 ; 副詞可能=>sudachi-a+sudachi-c",
+      "kind": "feature",
+      "rrf_score": 0.00821,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 1,
+          "rrf_term": 0.016393
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 1,
+          "rrf_term": 0.016393
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 1.0,
+          "rank": 24514,
+          "rrf_term": 0.000041
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 1.0,
+          "rank": 76414,
+          "rrf_term": 0.000013
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000093_4790-988f1a88b812"
+      ],
+      "sample_text_ids": [
+        "000093_4790"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000093_4790-988f1a88b812",
+          "text_id": "000093_4790",
+          "region_index": 12409,
+          "char_start": 18756,
+          "char_end": 18757
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00196ccbe35bd130db9d20fea22babf6c13a3f84937f99920f6a7b99feb49966",
+      "pattern": "sudachi-a+sudachi-c:[平|相国|清盛] ; vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[平相|国清|盛]",
+      "kind": "segmentation",
+      "rrf_score": 0.008134,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 27,
+          "rrf_term": 0.011494
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 19,
+          "rrf_term": 0.012658
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 5.0,
+          "rank": 3969,
+          "rrf_term": 0.000248
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000050_1087-ec26e377596b"
+      ],
+      "sample_text_ids": [
+        "000050_1087"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000050_1087-ec26e377596b",
+          "text_id": "000050_1087",
+          "region_index": 19844,
+          "char_start": 28475,
+          "char_end": 28480
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00006251f7f9052d8fd46b4a19e10b054a122041b5ebaab2ae05f1719ed3e81b",
+      "pattern": "pos3 surface:ねえ =>sudachi-a+sudachi-c ; 一般=>vibrato:unidic-cwj-202512",
+      "kind": "feature",
+      "rrf_score": 0.008095,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 2,
+          "rrf_term": 0.016129
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 2,
+          "rrf_term": 0.016129
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 1.0,
+          "rank": 24515,
+          "rrf_term": 0.000041
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 12331,
+          "rrf_term": 0.000081
+        }
+      ],
+      "examples": 2,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000255_45395-db5d1c975af7"
+      ],
+      "sample_text_ids": [
+        "000255_45395"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000255_45395-db5d1c975af7",
+          "text_id": "000255_45395",
+          "region_index": 89517,
+          "char_start": 135137,
+          "char_end": 135141
+        },
+        {
+          "source_id": "000255_45395-db5d1c975af7",
+          "text_id": "000255_45395",
+          "region_index": 89565,
+          "char_start": 135219,
+          "char_end": 135223
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:0000a9553fc4dd7ae08ed0e088a2fb03fd9c92954d26473ac9e3e30fec4fbb83",
+      "pattern": "pos1 surface:浸 動詞=>vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512 ; 名詞=>sudachi-a+sudachi-c",
+      "kind": "feature",
+      "rrf_score": 0.008074,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 3,
+          "rrf_term": 0.015873
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.382264,
+          "rank": 59518,
+          "rrf_term": 0.000017
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 1,
+          "rrf_term": 0.016393
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 1.0,
+          "rank": 76415,
+          "rrf_term": 0.000013
+        }
+      ],
+      "examples": 3,
+      "source_count": 2,
+      "text_count": 2,
+      "sample_source_ids": [
+        "000050_1087-ec26e377596b",
+        "000050_3586-b338d53950f9"
+      ],
+      "sample_text_ids": [
+        "000050_1087",
+        "000050_3586"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000050_1087-ec26e377596b",
+          "text_id": "000050_1087",
+          "region_index": 77005,
+          "char_start": 111086,
+          "char_end": 111087
+        },
+        {
+          "source_id": "000050_1087-ec26e377596b",
+          "text_id": "000050_1087",
+          "region_index": 98368,
+          "char_start": 142274,
+          "char_end": 142275
+        },
+        {
+          "source_id": "000050_3586-b338d53950f9",
+          "text_id": "000050_3586",
+          "region_index": 46000,
+          "char_start": 66580,
+          "char_end": 66581
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00198a893961d3803ffbb9809cb8c913f2abee475ca315d71da8b6ac3f7a0cd9",
+      "pattern": "sudachi-a+vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[閑吟|集] ; sudachi-c:[閑吟集]",
+      "kind": "segmentation",
+      "rrf_score": 0.007963,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 28,
+          "rrf_term": 0.011364
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 20,
+          "rrf_term": 0.0125
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 3.0,
+          "rank": 37935,
+          "rrf_term": 0.000026
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001383_56868-51e85c0d45d0"
+      ],
+      "sample_text_ids": [
+        "001383_56868"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001383_56868-51e85c0d45d0",
+          "text_id": "001383_56868",
+          "region_index": 42192,
+          "char_start": 73935,
+          "char_end": 73938
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00019ef66ca0410fa04ea4500782f9939273b0d9856f142b88e91835b5daa240",
+      "pattern": "pos4 surface:サビガリ =>sudachi-a+sudachi-c ; 一般=>vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512",
+      "kind": "feature",
+      "rrf_score": 0.007905,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 4,
+          "rrf_term": 0.015625
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 3,
+          "rrf_term": 0.015873
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 1.0,
+          "rank": 24516,
+          "rrf_term": 0.000041
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 12332,
+          "rrf_term": 0.000081
+        }
+      ],
+      "examples": 2,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000035_2280-1a9c6da569c9"
+      ],
+      "sample_text_ids": [
+        "000035_2280"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000035_2280-1a9c6da569c9",
+          "text_id": "000035_2280",
+          "region_index": 3137,
+          "char_start": 4897,
+          "char_end": 4901
+        },
+        {
+          "source_id": "000035_2280-1a9c6da569c9",
+          "text_id": "000035_2280",
+          "region_index": 3154,
+          "char_start": 4930,
+          "char_end": 4934
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:002212ade348bbae7b43e12adf145c15fd595c46d59604180f75021cb633e993",
+      "pattern": "pos1 surface:あがない 動詞=>sudachi-a+sudachi-c ; 名詞=>vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512",
+      "kind": "feature",
+      "rrf_score": 0.007888,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 67,
+          "rrf_term": 0.007874
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 43,
+          "rrf_term": 0.009709
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 12,
+          "rrf_term": 0.013889
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 12340,
+          "rrf_term": 0.000081
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000363_42286-e130312992b9"
+      ],
+      "sample_text_ids": [
+        "000363_42286"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000363_42286-e130312992b9",
+          "text_id": "000363_42286",
+          "region_index": 215990,
+          "char_start": 354680,
+          "char_end": 354684
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:001a0af62f156b596f0e2eb635a48650f3aef0cca415b03e5c85a08fda321d44",
+      "pattern": "sudachi-a+sudachi-c+vibrato:unidic-cwj-202512:[掩|ひ|隱|し] ; vibrato:unidic-novel-202512:[掩ひ隱し]",
+      "kind": "segmentation",
+      "rrf_score": 0.007843,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 30,
+          "rrf_term": 0.011111
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 21,
+          "rrf_term": 0.012346
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 13960,
+          "rrf_term": 0.000071
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001393_49853-a24d66a485f2"
+      ],
+      "sample_text_ids": [
+        "001393_49853"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001393_49853-a24d66a485f2",
+          "text_id": "001393_49853",
+          "region_index": 34359,
+          "char_start": 50105,
+          "char_end": 50109
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00026ddf16b8cf11a37c0774caeb5460da49a9ec7242df2a0272b4ee9244ad80",
+      "pattern": "pos2 surface:サム 固有名詞=>vibrato:unidic-cwj-202512 ; 普通名詞=>vibrato:unidic-novel-202512",
+      "kind": "feature",
+      "rrf_score": 0.007738,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 6,
+          "rrf_term": 0.015152
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 4,
+          "rrf_term": 0.015625
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 1.0,
+          "rank": 24518,
+          "rrf_term": 0.000041
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 5.0,
+          "rank": 7260,
+          "rrf_term": 0.000137
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001569_59199-1f51b6597aec"
+      ],
+      "sample_text_ids": [
+        "001569_59199"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001569_59199-1f51b6597aec",
+          "text_id": "001569_59199",
+          "region_index": 10717,
+          "char_start": 16727,
+          "char_end": 16732
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:001a5162037204e5cc252d60e6c9b04e7fd976a3ce3e1ba922ee518a68f86175",
+      "pattern": "sudachi-a+sudachi-c+vibrato:unidic-cwj-202512:[横|って] ; vibrato:unidic-novel-202512:[横っ|て]",
+      "kind": "segmentation",
+      "rrf_score": 0.007737,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 31,
+          "rrf_term": 0.010989
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 22,
+          "rrf_term": 0.012195
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 3.0,
+          "rank": 37937,
+          "rrf_term": 0.000026
+        }
+      ],
+      "examples": 2,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000168_1060-3ffc8f5be6de"
+      ],
+      "sample_text_ids": [
+        "000168_1060"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000168_1060-3ffc8f5be6de",
+          "text_id": "000168_1060",
+          "region_index": 4496,
+          "char_start": 6780,
+          "char_end": 6783
+        },
+        {
+          "source_id": "000168_1060-3ffc8f5be6de",
+          "text_id": "000168_1060",
+          "region_index": 5984,
+          "char_start": 9033,
+          "char_end": 9036
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:0022eef83d4f4bc8143fcde293201461b4495ba9eceb429bff1627db9d1e1f34",
+      "pattern": "pos1 surface:そ 代名詞=>vibrato:unidic-novel-202512 ; 副詞=>vibrato:unidic-cwj-202512",
+      "kind": "feature",
+      "rrf_score": 0.007713,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 70,
+          "rrf_term": 0.007692
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 46,
+          "rrf_term": 0.009434
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 13,
+          "rrf_term": 0.013699
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 39375,
+          "rrf_term": 0.000025
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001146_43512-eb1cb54c947b"
+      ],
+      "sample_text_ids": [
+        "001146_43512"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001146_43512-eb1cb54c947b",
+          "text_id": "001146_43512",
+          "region_index": 1381,
+          "char_start": 2154,
+          "char_end": 2156
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:001a545ffb03e1d4bc56dfdea4f0735c92dcf7b0caedccf5d5e05cdb5f2d09f3",
+      "pattern": "sudachi-a+sudachi-c+vibrato:unidic-cwj-202512:[睡|むっ] ; vibrato:unidic-novel-202512:[睡むっ]",
+      "kind": "segmentation",
+      "rrf_score": 0.007648,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 32,
+          "rrf_term": 0.01087
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 23,
+          "rrf_term": 0.012048
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 3.0,
+          "rank": 37938,
+          "rrf_term": 0.000026
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001371_49578-bac9a7f5ced1"
+      ],
+      "sample_text_ids": [
+        "001371_49578"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001371_49578-bac9a7f5ced1",
+          "text_id": "001371_49578",
+          "region_index": 8339,
+          "char_start": 12577,
+          "char_end": 12580
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:001b3142d64ebcfdb580eec7de5213c3c535bcf6450985d5e08c98ddec7130f6",
+      "pattern": "vibrato:unidic-cwj-202512:[入|來] ; sudachi-a+sudachi-c+vibrato:unidic-novel-202512:[入來]",
+      "kind": "segmentation",
+      "rrf_score": 0.007558,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 33,
+          "rrf_term": 0.010753
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 24,
+          "rrf_term": 0.011905
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 65352,
+          "rrf_term": 0.000015
+        }
+      ],
+      "examples": 2,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000064_55664-837d5b16ac87"
+      ],
+      "sample_text_ids": [
+        "000064_55664"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000064_55664-837d5b16ac87",
+          "text_id": "000064_55664",
+          "region_index": 5327,
+          "char_start": 8496,
+          "char_end": 8498
+        },
+        {
+          "source_id": "000064_55664-837d5b16ac87",
+          "text_id": "000064_55664",
+          "region_index": 5947,
+          "char_start": 9491,
+          "char_end": 9493
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00255a7ee1650ae1174b697dea88fb729c21133209f870620ebd82a58cf007fc",
+      "pattern": "pos1 surface:澁 動詞=>vibrato:unidic-novel-202512 ; 形容詞=>vibrato:unidic-cwj-202512",
+      "kind": "feature",
+      "rrf_score": 0.007558,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 73,
+          "rrf_term": 0.007519
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 49,
+          "rrf_term": 0.009174
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 14,
+          "rrf_term": 0.013514
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 39376,
+          "rrf_term": 0.000025
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000118_49770-827e26d82960"
+      ],
+      "sample_text_ids": [
+        "000118_49770"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000118_49770-827e26d82960",
+          "text_id": "000118_49770",
+          "region_index": 6317,
+          "char_start": 9336,
+          "char_end": 9338
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:001d37b87443b039d578cad1c65008fdfe6d4a86149e6ced3202ebb28d6e2713",
+      "pattern": "sudachi-a+sudachi-c:[と|りよう] ; vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[とり|よう]",
+      "kind": "segmentation",
+      "rrf_score": 0.007491,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 34,
+          "rrf_term": 0.010638
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 25,
+          "rrf_term": 0.011765
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 13961,
+          "rrf_term": 0.000071
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000148_786-3766f71efc38"
+      ],
+      "sample_text_ids": [
+        "000148_786"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000148_786-3766f71efc38",
+          "text_id": "000148_786",
+          "region_index": 3090,
+          "char_start": 5021,
+          "char_end": 5025
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00039d2bce77225ac92d8616f1c8be2ee0df9f658b8c641917a27dad06fd2e95",
+      "pattern": "pos3 surface:大浦 人名=>vibrato:unidic-novel-202512 ; 地名=>sudachi-a+sudachi-c+vibrato:unidic-cwj-202512",
+      "kind": "feature",
+      "rrf_score": 0.007481,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 8,
+          "rrf_term": 0.014706
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 6,
+          "rrf_term": 0.015152
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 1.0,
+          "rank": 24519,
+          "rrf_term": 0.000041
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 39350,
+          "rrf_term": 0.000025
+        }
+      ],
+      "examples": 13,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001095_42827-585a365dfbcc"
+      ],
+      "sample_text_ids": [
+        "001095_42827"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001095_42827-585a365dfbcc",
+          "text_id": "001095_42827",
+          "region_index": 5605,
+          "char_start": 8662,
+          "char_end": 8664
+        },
+        {
+          "source_id": "001095_42827-585a365dfbcc",
+          "text_id": "001095_42827",
+          "region_index": 8721,
+          "char_start": 13590,
+          "char_end": 13592
+        },
+        {
+          "source_id": "001095_42827-585a365dfbcc",
+          "text_id": "001095_42827",
+          "region_index": 10149,
+          "char_start": 15846,
+          "char_end": 15848
+        },
+        {
+          "source_id": "001095_42827-585a365dfbcc",
+          "text_id": "001095_42827",
+          "region_index": 13558,
+          "char_start": 21212,
+          "char_end": 21214
+        },
+        {
+          "source_id": "001095_42827-585a365dfbcc",
+          "text_id": "001095_42827",
+          "region_index": 13649,
+          "char_start": 21354,
+          "char_end": 21356
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:0003f0a0d3bd2eb8ba5dcf07193f26f35056cdf06da35ec568b458547656f863",
+      "pattern": "pos3 surface:cocher =>vibrato:unidic-novel-202512 ; 一般=>sudachi-a+sudachi-c+vibrato:unidic-cwj-202512",
+      "kind": "feature",
+      "rrf_score": 0.007421,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 9,
+          "rrf_term": 0.014493
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 7,
+          "rrf_term": 0.014925
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 1.0,
+          "rank": 24520,
+          "rrf_term": 0.000041
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 6.0,
+          "rank": 4365,
+          "rrf_term": 0.000226
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000363_42286-e130312992b9"
+      ],
+      "sample_text_ids": [
+        "000363_42286"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000363_42286-e130312992b9",
+          "text_id": "000363_42286",
+          "region_index": 17318,
+          "char_start": 28666,
+          "char_end": 28672
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:001dfef4c206e2a35958dace4e92e7557877e61127a07c5e055aa94d527d0020",
+      "pattern": "sudachi-a+sudachi-c+vibrato:unidic-cwj-202512:[奪ら|う] ; vibrato:unidic-novel-202512:[奪らう]",
+      "kind": "segmentation",
+      "rrf_score": 0.007394,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 35,
+          "rrf_term": 0.010526
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 26,
+          "rrf_term": 0.011628
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 3.0,
+          "rank": 37939,
+          "rrf_term": 0.000026
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001670_55848-ac70f92fb001"
+      ],
+      "sample_text_ids": [
+        "001670_55848"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001670_55848-ac70f92fb001",
+          "text_id": "001670_55848",
+          "region_index": 18016,
+          "char_start": 26954,
+          "char_end": 26957
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:001e346a110cd9a3b22da6515c799989044d3626869b399d60ac09a0abb7194c",
+      "pattern": "vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[於|福] ; sudachi-a+sudachi-c:[於福]",
+      "kind": "segmentation",
+      "rrf_score": 0.007309,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 36,
+          "rrf_term": 0.010417
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 27,
+          "rrf_term": 0.011494
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 65353,
+          "rrf_term": 0.000015
+        }
+      ],
+      "examples": 3,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000146_48290-e408b902b095"
+      ],
+      "sample_text_ids": [
+        "000146_48290"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000146_48290-e408b902b095",
+          "text_id": "000146_48290",
+          "region_index": 1815,
+          "char_start": 2768,
+          "char_end": 2770
+        },
+        {
+          "source_id": "000146_48290-e408b902b095",
+          "text_id": "000146_48290",
+          "region_index": 1945,
+          "char_start": 2964,
+          "char_end": 2966
+        },
+        {
+          "source_id": "000146_48290-e408b902b095",
+          "text_id": "000146_48290",
+          "region_index": 2124,
+          "char_start": 3218,
+          "char_end": 3220
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00042a7831971fed88867485116dc96162182ccc0e12f9a994e891115d651c68",
+      "pattern": "pos2 surface:着 一般=>vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512 ; 普通名詞=>sudachi-a+sudachi-c",
+      "kind": "feature",
+      "rrf_score": 0.007261,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 10,
+          "rrf_term": 0.014286
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 8,
+          "rrf_term": 0.014706
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 1.0,
+          "rank": 24521,
+          "rrf_term": 0.000041
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 1.0,
+          "rank": 76416,
+          "rrf_term": 0.000013
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001693_55317-7150c9d6ddf9"
+      ],
+      "sample_text_ids": [
+        "001693_55317"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001693_55317-7150c9d6ddf9",
+          "text_id": "001693_55317",
+          "region_index": 4755,
+          "char_start": 7306,
+          "char_end": 7307
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:001f10bf789dbf935d3e1534966096c92290b9190dd9e5d0cfa871f20062485f",
+      "pattern": "sudachi-a:[搾り|取る] ; sudachi-c+vibrato:unidic-cwj-202512+vibrato:unidic-novel-202512:[搾り取る]",
+      "kind": "segmentation",
+      "rrf_score": 0.007179,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 39,
+          "rrf_term": 0.010101
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 28,
+          "rrf_term": 0.011364
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 13962,
+          "rrf_term": 0.000071
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001305_47418-074cf2f88e26"
+      ],
+      "sample_text_ids": [
+        "001305_47418"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001305_47418-074cf2f88e26",
+          "text_id": "001305_47418",
+          "region_index": 617,
+          "char_start": 895,
+          "char_end": 899
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:000472e713f04e022dbfc44850f18493a00026fa21e6127237273135538d3b4f",
+      "pattern": "pos3 surface:しのび =>vibrato:unidic-novel-202512 ; 一般=>vibrato:unidic-cwj-202512",
+      "kind": "feature",
+      "rrf_score": 0.007175,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 11,
+          "rrf_term": 0.014085
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 9,
+          "rrf_term": 0.014493
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 1.0,
+          "rank": 24522,
+          "rrf_term": 0.000041
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 12333,
+          "rrf_term": 0.000081
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001383_56868-51e85c0d45d0"
+      ],
+      "sample_text_ids": [
+        "001383_56868"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001383_56868-51e85c0d45d0",
+          "text_id": "001383_56868",
+          "region_index": 14846,
+          "char_start": 25787,
+          "char_end": 25791
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00074d8b404e06e3a454cc508b08591945b654552dc8cc9911ea0a328d4c8de9",
+      "pattern": "pos1 surface:らん 副詞=>vibrato:unidic-cwj-202512 ; 助動詞=>vibrato:unidic-novel-202512",
+      "kind": "feature",
+      "rrf_score": 0.007109,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 19,
+          "rrf_term": 0.012658
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.382264,
+          "rank": 59521,
+          "rrf_term": 0.000017
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 4,
+          "rrf_term": 0.015625
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 5.0,
+          "rank": 7262,
+          "rrf_term": 0.000137
+        }
+      ],
+      "examples": 2,
+      "source_count": 2,
+      "text_count": 2,
+      "sample_source_ids": [
+        "001154_43859-df1224b81def",
+        "001313_47771-4500538dd74c"
+      ],
+      "sample_text_ids": [
+        "001154_43859",
+        "001313_47771"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001154_43859-df1224b81def",
+          "text_id": "001154_43859",
+          "region_index": 51080,
+          "char_start": 79601,
+          "char_end": 79606
+        },
+        {
+          "source_id": "001313_47771-4500538dd74c",
+          "text_id": "001313_47771",
+          "region_index": 3150,
+          "char_start": 4959,
+          "char_end": 4962
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:001ffeebbc87c96f55d070cda3b81caf698e5aa22c595ac975f60aee74be5494",
+      "pattern": "vibrato:unidic-cwj-202512:[星|光] ; sudachi-a+sudachi-c+vibrato:unidic-novel-202512:[星光]",
+      "kind": "segmentation",
+      "rrf_score": 0.007084,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 40,
+          "rrf_term": 0.01
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 29,
+          "rrf_term": 0.011236
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 2.0,
+          "rank": 65355,
+          "rrf_term": 0.000015
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000989_354-fc887dd39ecc"
+      ],
+      "sample_text_ids": [
+        "000989_354"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000989_354-fc887dd39ecc",
+          "text_id": "000989_354",
+          "region_index": 8244,
+          "char_start": 12297,
+          "char_end": 12299
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:0004b4c4b6c981098f0c5ba9c6604b3dd5e14d25bc13b256fcd32de82aaf66fa",
+      "pattern": "pos3 surface:Tide =>vibrato:unidic-novel-202512 ; 一般=>sudachi-a+sudachi-c+vibrato:unidic-cwj-202512",
+      "kind": "feature",
+      "rrf_score": 0.007074,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "impact",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 12,
+          "rrf_term": 0.013889
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 10,
+          "rrf_term": 0.014286
+        },
+        {
+          "signal": "impact",
+          "status": "present",
+          "raw_value": 1.0,
+          "rank": 24523,
+          "rrf_term": 0.000041
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 4.0,
+          "rank": 12334,
+          "rrf_term": 0.000081
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "001569_59199-1f51b6597aec"
+      ],
+      "sample_text_ids": [
+        "001569_59199"
+      ],
+      "region_examples": [
+        {
+          "source_id": "001569_59199-1f51b6597aec",
+          "text_id": "001569_59199",
+          "region_index": 8582,
+          "char_start": 13289,
+          "char_end": 13293
+        }
+      ]
+    },
+    {
+      "pattern_id": "sha256:00200e84ef42f9c7199581ee99a2441ff194e933691273b4f072dcabfa716f4b",
+      "pattern": "sudachi-a+sudachi-c:[衣|替|へ] ; vibrato:unidic-cwj-202512:[衣|替へ] ; vibrato:unidic-novel-202512:[衣替へ]",
+      "kind": "segmentation",
+      "rrf_score": 0.007013,
+      "signal_profile": [
+        "coverage",
+        "rarity",
+        "span"
+      ],
+      "signals": [
+        {
+          "signal": "coverage",
+          "status": "present",
+          "raw_value": 0.0,
+          "rank": 41,
+          "rrf_term": 0.009901
+        },
+        {
+          "signal": "rarity",
+          "status": "present",
+          "raw_value": 8.967226,
+          "rank": 30,
+          "rrf_term": 0.011111
+        },
+        {
+          "signal": "span",
+          "status": "present",
+          "raw_value": 3.0,
+          "rank": 37941,
+          "rrf_term": 0.000026
+        }
+      ],
+      "examples": 1,
+      "source_count": 1,
+      "text_count": 1,
+      "sample_source_ids": [
+        "000150_46618-c9d1944623b8"
+      ],
+      "sample_text_ids": [
+        "000150_46618"
+      ],
+      "region_examples": [
+        {
+          "source_id": "000150_46618-c9d1944623b8",
+          "text_id": "000150_46618",
+          "region_index": 33084,
+          "char_start": 50148,
+          "char_end": 50151
+        }
+      ]
+    }
+  ],
+  "anomalies": [
+    {
+      "source_id": "000081_455-99788317b142",
+      "text_id": "000081_455",
+      "region_index": 122,
+      "char_start": 173,
+      "char_end": 239,
+      "has_coverage_mismatch": false,
+      "anomaly_score": 6.066089
+    },
+    {
+      "source_id": "000081_455-99788317b142",
+      "text_id": "000081_455",
+      "region_index": 3056,
+      "char_start": 5018,
+      "char_end": 5084,
+      "has_coverage_mismatch": false,
+      "anomaly_score": 6.066089
+    },
+    {
+      "source_id": "000081_455-99788317b142",
+      "text_id": "000081_455",
+      "region_index": 3171,
+      "char_start": 5259,
+      "char_end": 5325,
+      "has_coverage_mismatch": false,
+      "anomaly_score": 6.066089
+    },
+    {
+      "source_id": "000124_655-e328c5c8c61a",
+      "text_id": "000124_655",
+      "region_index": 61,
+      "char_start": 82,
+      "char_end": 148,
+      "has_coverage_mismatch": false,
+      "anomaly_score": 6.066089
+    },
+    {
+      "source_id": "000124_655-e328c5c8c61a",
+      "text_id": "000124_655",
+      "region_index": 4391,
+      "char_start": 6684,
+      "char_end": 6750,
+      "has_coverage_mismatch": false,
+      "anomaly_score": 6.066089
+    },
+    {
+      "source_id": "000124_655-e328c5c8c61a",
+      "text_id": "000124_655",
+      "region_index": 7029,
+      "char_start": 10865,
+      "char_end": 10931,
+      "has_coverage_mismatch": false,
+      "anomaly_score": 6.066089
+    },
+    {
+      "source_id": "000124_655-e328c5c8c61a",
+      "text_id": "000124_655",
+      "region_index": 9181,
+      "char_start": 14214,
+      "char_end": 14280,
+      "has_coverage_mismatch": false,
+      "anomaly_score": 6.066089
+    },
+    {
+      "source_id": "000124_655-e328c5c8c61a",
+      "text_id": "000124_655",
+      "region_index": 12219,
+      "char_start": 18877,
+      "char_end": 18943,
+      "has_coverage_mismatch": false,
+      "anomaly_score": 6.066089
+    },
+    {
+      "source_id": "000124_655-e328c5c8c61a",
+      "text_id": "000124_655",
+      "region_index": 14587,
+      "char_start": 22577,
+      "char_end": 22643,
+      "has_coverage_mismatch": false,
+      "anomaly_score": 6.066089
+    },
+    {
+      "source_id": "000124_655-e328c5c8c61a",
+      "text_id": "000124_655",
+      "region_index": 15384,
+      "char_start": 23862,
+      "char_end": 23928,
+      "has_coverage_mismatch": false,
+      "anomaly_score": 6.066089
+    }
+  ]
+}

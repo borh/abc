@@ -1,5 +1,5 @@
--- Morph warehouse schema version 1.
--- Readers must reject runs.schema_version values other than 1.
+-- Morph warehouse schema version 2.
+-- Readers must reject runs.schema_version values greater than the reader's supported maximum (2).
 -- source_id is one AAT source record/file within a run.
 -- text_id is the logical work id; many source_id values may share one text_id.
 -- analyzer_family is closed in v1: vibrato | vaporetto | sudachi.
@@ -36,6 +36,23 @@ CREATE TABLE sources (
   aat_path VARCHAR,
   source_bytes UBIGINT,
   source_chars UBIGINT
+);
+
+-- projection_spans (schema v2 sidecar): projected-plaintext char offsets → AAT inline nodes.
+-- One row per node contributing ≥1 projected char; spans are disjoint and jointly cover the text.
+-- is_note is structurally FALSE in v1 emission (note nodes are excluded from projection);
+-- the column is forward infrastructure per the interestingness-ranking design.
+CREATE TABLE projection_spans (
+  run_id VARCHAR,
+  source_id VARCHAR,
+  text_id VARCHAR,
+  projected_char_start UBIGINT,
+  projected_char_end UBIGINT,
+  aat_pointer VARCHAR,
+  inline_kind VARCHAR,
+  is_ruby_base BOOLEAN,
+  is_gaiji BOOLEAN,
+  is_note BOOLEAN
 );
 
 CREATE TABLE analyses (

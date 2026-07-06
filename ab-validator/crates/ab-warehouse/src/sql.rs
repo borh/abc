@@ -46,9 +46,21 @@ pub fn write_run_views_sql(output_run_dir: &Path, final_run_dir: &Path) -> Resul
             "-- __RAW_FEATURE_DIFFS_END__",
         );
     }
+    if !output_run_dir
+        .join(WarehouseTable::ProjectionSpans.file_name())
+        .exists()
+    {
+        views = remove_marked_sql_sections(
+            &views,
+            "-- __PROJECTION_SPANS_BEGIN__",
+            "-- __PROJECTION_SPANS_END__",
+        );
+    }
     views = views
         .replace("-- __RAW_FEATURE_DIFFS_BEGIN__\n", "")
-        .replace("-- __RAW_FEATURE_DIFFS_END__\n", "");
+        .replace("-- __RAW_FEATURE_DIFFS_END__\n", "")
+        .replace("-- __PROJECTION_SPANS_BEGIN__\n", "")
+        .replace("-- __PROJECTION_SPANS_END__\n", "");
     let path = output_run_dir.join("views.sql");
     fs::write(&path, views).with_context(|| format!("failed to write {}", path.display()))?;
     Ok(())
@@ -81,7 +93,14 @@ mod tests {
             "Morph warehouse schema version {}.",
             crate::schema::SCHEMA_VERSION
         )));
-        assert!(SCHEMA_SQL.contains("Readers must reject runs.schema_version values other than 1"));
+        assert!(SCHEMA_SQL.contains(
+            "Readers must reject runs.schema_version values greater than the reader's supported maximum (2)."
+        ));
+        assert!(MORPH_VIEWS_SQL_TEMPLATE.contains(&format!(
+            "WHERE schema_version <= {}",
+            crate::schema::SCHEMA_VERSION
+        )));
+        assert!(MORPH_VIEWS_SQL_TEMPLATE.contains("__RUN_DIR__/projection_spans.parquet"));
         assert!(MORPH_VIEWS_SQL_TEMPLATE.contains("__RUN_DIR__/nway_regions.parquet"));
         assert!(MORPH_VIEWS_SQL_TEMPLATE.contains("has_segmentation_disagreement"));
         assert!(MORPH_VIEWS_SQL_TEMPLATE.contains("struct_pack"));
@@ -101,6 +120,27 @@ mod tests {
                 "schema.sql column mismatch for {table:?}"
             );
         }
+    }
+
+    #[test]
+    fn views_sql_drops_projection_spans_section_when_table_absent() {
+        let dir = std::env::temp_dir().join(format!("views-spans-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        write_run_views_sql(&dir, &dir).unwrap();
+        let views = fs::read_to_string(dir.join("views.sql")).unwrap();
+        assert!(!views.contains("warehouse_projection_spans"));
+        assert!(!views.contains("__PROJECTION_SPANS_BEGIN__"));
+
+        fs::write(
+            dir.join(WarehouseTable::ProjectionSpans.file_name()),
+            b"stub",
+        )
+        .unwrap();
+        write_run_views_sql(&dir, &dir).unwrap();
+        let views = fs::read_to_string(dir.join("views.sql")).unwrap();
+        assert!(views.contains("warehouse_projection_spans"));
+        assert!(!views.contains("__PROJECTION_SPANS_BEGIN__"));
+        let _ = fs::remove_dir_all(dir);
     }
 
     fn schema_sql_columns(table_name: &str) -> Vec<&str> {

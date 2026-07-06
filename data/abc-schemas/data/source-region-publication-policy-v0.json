@@ -36,7 +36,7 @@
       "tei_target": "text/back/div[@type='source']",
       "custom_sidecar": true,
       "plaintext_projection": "omit",
-      "measurement_status": "needs_measurement_split"
+      "measurement_status": "measured"
     },
     {
       "source_class": "colophon_metadata",
@@ -44,7 +44,7 @@
       "tei_target": "teiHeader/sourceDesc",
       "custom_sidecar": true,
       "plaintext_projection": "omit",
-      "measurement_status": "needs_measurement_split"
+      "measurement_status": "measured"
     },
     {
       "source_class": "malformed_source",

@@ -15,7 +15,9 @@ Current state:
   and adds `source_region_coverage`:
   `source_apparatus_occurrences: 13920`,
   `front_matter_occurrences: 14627`,
-  `back_matter_occurrences: 243`, and
+  `back_matter_occurrences: 90268`,
+  `terminal_provenance_occurrences: 609`,
+  `colophon_metadata_occurrences: 89416`, and
   `malformed_source_occurrences: 16`.
 - Five parser lanes are present in the generated matrix:
   `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.

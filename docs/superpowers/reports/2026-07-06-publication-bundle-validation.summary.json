@@ -23,7 +23,7 @@
     },
     "source_region_coverage": {
       "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-      "hash": "sha256:a715e23ff1848cfbc976203882a11279ea0559cd1d4db44f2011934e6eefb99e"
+      "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
     },
     "tei_manifest": {
       "path": "scratch/parser-ir-publication-bundle-validation/tei.manifest.json",

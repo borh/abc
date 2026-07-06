@@ -47,6 +47,8 @@ The current measured reports already satisfy the ab-validator-side coverage gate
   - `source_region_coverage.unsupported_body_markup_occurrences == 0`
   - `source_region_coverage.unknown_region_occurrences == 0`
   - `source_region_coverage.unknown_unreviewed_occurrences == 0`
+  - `source_region_coverage.terminal_provenance_occurrences == 609`
+  - `source_region_coverage.colophon_metadata_occurrences == 89416`
 
 That is a measured admission state, not the end of the project. The remaining
 work is durability and scale: ab-validator must keep the synced ABC contracts
@@ -79,10 +81,9 @@ coordination and must be reconciled with that spec if the vocabulary changes.
   - `terminal_provenance`
   - `colophon_metadata`
   - `malformed_source`
-- Do not infer terminal-provenance or colophon prevalence from the current
-  `back_matter_occurrences: 243`; the current report's back-matter count is
-  exhausted by `body_end_boundary` evidence and needs a separate split before
-  prevalence claims.
+- Use explicit terminal-provenance and colophon counters for prevalence:
+  `terminal_provenance_occurrences: 609` and
+  `colophon_metadata_occurrences: 89416`.
 - Preserve malformed-source residues as diagnostics, not unsupported syntax.
 - Keep plaintext body-only.
 
@@ -253,16 +254,13 @@ Complete Aozora Bunko markup publication mapping: every observed source markup a
 
 ## Immediate Next Tasks
 
-1. Split source-region measurement for `terminal_provenance` and
-   `colophon_metadata`; do not infer their prevalence from the current
-   `back_matter_occurrences: 243` body-end-boundary count.
-2. Run batch parser-IR publication materialization over a representative
+1. Run batch parser-IR publication materialization over a representative
    workset, then scale to full corpus when runtime is acceptable.
-3. Broaden publication-bundle validation from the ABC example fixture to the
+2. Broaden publication-bundle validation from the ABC example fixture to the
    representative and full-corpus materialized outputs.
-4. Keep all five parser evidence lanes current:
+3. Keep all five parser evidence lanes current:
    `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
-5. Compare source inventory against Aozora manual and
+4. Compare source inventory against Aozora manual and
    `P4suta/aozora-notation-spec` when those references change.
 
 ## Verification Commands

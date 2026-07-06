@@ -24,6 +24,19 @@ FAILED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_FAILED"
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 ABC_NS = "{https://w3id.org/abc/ns/tei}"
 XML_ID = "{http://www.w3.org/XML/1998/namespace}id"
+SOURCE_REGION_REQUIRED_COUNTERS = {
+    "body_typed_occurrences",
+    "body_raw_preserved_occurrences",
+    "source_apparatus_occurrences",
+    "front_matter_occurrences",
+    "back_matter_occurrences",
+    "terminal_provenance_occurrences",
+    "colophon_metadata_occurrences",
+    "malformed_source_occurrences",
+    "unsupported_body_markup_occurrences",
+    "unknown_region_occurrences",
+    "unknown_unreviewed_occurrences",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -103,9 +116,14 @@ def sidecar_hash_matches(
 
 def source_region_valid(source_region: dict[str, Any]) -> bool:
     region = source_region.get("source_region_coverage", {})
+    required_counters_present = all(
+        isinstance(region.get(counter), int)
+        for counter in SOURCE_REGION_REQUIRED_COUNTERS
+    )
     return bool(
         source_region.get("schema_version") == "aozora-source-region-coverage-v1"
         and source_region.get("gate_status") == "SOURCE_AUTHORITY_GATE_PASS"
+        and required_counters_present
         and (source_region.get("unallowlisted_unknown_markers_total") or 0) == 0
         and (region.get("unsupported_body_markup_occurrences") or 0) == 0
         and (region.get("unknown_region_occurrences") or 0) == 0

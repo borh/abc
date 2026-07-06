@@ -120,10 +120,17 @@ struct SourceRegionCoverageOutput {
     source_apparatus_occurrences: u64,
     front_matter_occurrences: u64,
     back_matter_occurrences: u64,
+    terminal_provenance_occurrences: u64,
+    colophon_metadata_occurrences: u64,
     malformed_source_occurrences: u64,
     unsupported_body_markup_occurrences: u64,
     unknown_region_occurrences: u64,
     unknown_unreviewed_occurrences: u64,
+}
+
+#[derive(Debug, Default)]
+struct SourceRegionTextSummary {
+    colophon_metadata_occurrences: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -153,6 +160,7 @@ enum WorkInventoryResult {
     Scanned {
         work_id: String,
         summary: ab_coverage::source_inventory::SourceInventorySummary,
+        source_region_text: SourceRegionTextSummary,
     },
     Failed {
         work_id: String,
@@ -206,9 +214,18 @@ fn main() -> Result<()> {
 
     for result in work_results {
         match result {
-            WorkInventoryResult::Scanned { work_id, summary } => {
+            WorkInventoryResult::Scanned {
+                work_id,
+                summary,
+                source_region_text,
+            } => {
                 output.works_scanned += 1;
                 output.markers_total += summary.markers_total;
+                observe_source_region_text(&mut output.source_region_coverage, source_region_text);
+                observe_source_region_events(
+                    &mut output.source_region_coverage,
+                    &summary.source_region_events,
+                );
                 for (row_id, count) in summary.row_counts {
                     let row = output.rows.entry(row_id).or_default();
                     row.occurrences += count.occurrences;
@@ -310,6 +327,7 @@ fn scan_work(
         Ok(work) => WorkInventoryResult::Scanned {
             work_id: entry.work_id.clone(),
             summary: inventory_document(&entry.work_id, &work.decoded.text, patterns),
+            source_region_text: source_region_text_summary(&work.decoded.text),
         },
         Err(err) => WorkInventoryResult::Failed {
             work_id: entry.work_id.clone(),
@@ -378,6 +396,8 @@ fn load_allowlist(path: Option<&Path>) -> Result<Vec<CompiledAllowRule>> {
                     | "front_matter_legend"
                     | "notation_placeholder"
                     | "body_end_boundary"
+                    | "terminal_provenance"
+                    | "colophon_metadata"
                     | "back_matter_provenance"
                     | "malformed_source"
             ) {
@@ -400,6 +420,45 @@ fn load_allowlist(path: Option<&Path>) -> Result<Vec<CompiledAllowRule>> {
             })
         })
         .collect()
+}
+
+fn source_region_text_summary(text: &str) -> SourceRegionTextSummary {
+    SourceRegionTextSummary {
+        colophon_metadata_occurrences: text
+            .lines()
+            .filter(|line| is_colophon_metadata_line(line.trim_start()))
+            .count() as u64,
+    }
+}
+
+fn is_colophon_metadata_line(line: &str) -> bool {
+    const COLOPHON_PREFIXES: &[&str] = &[
+        "底本：",
+        "底本:",
+        "底本の親本：",
+        "底本の親本:",
+        "親本：",
+        "親本:",
+        "初出：",
+        "初出:",
+        "入力：",
+        "入力:",
+        "校正：",
+        "校正:",
+        "校閲：",
+        "校閲:",
+        "作成日：",
+        "作成日:",
+        "修正：",
+        "修正:",
+        "ファイル作成：",
+        "ファイル作成:",
+        "青空文庫作成ファイル：",
+        "青空文庫作成ファイル:",
+    ];
+    COLOPHON_PREFIXES
+        .iter()
+        .any(|prefix| line.starts_with(prefix))
 }
 
 fn compile_optional_regex(
@@ -452,9 +511,17 @@ fn observe_allowlisted_representability(
             representability.out_of_body_occurrences += 1;
             source_region_coverage.front_matter_occurrences += 1;
         }
-        "body_end_boundary" | "back_matter_provenance" => {
+        "body_end_boundary" => {
             representability.out_of_body_occurrences += 1;
             source_region_coverage.back_matter_occurrences += 1;
+        }
+        "terminal_provenance" | "back_matter_provenance" => {
+            representability.out_of_body_occurrences += 1;
+        }
+        "colophon_metadata" => {
+            representability.out_of_body_occurrences += 1;
+            source_region_coverage.back_matter_occurrences += 1;
+            source_region_coverage.colophon_metadata_occurrences += 1;
         }
         "malformed_source" => {
             representability.malformed_noise_occurrences += 1;
@@ -462,6 +529,23 @@ fn observe_allowlisted_representability(
         }
         _ => {}
     }
+}
+
+fn observe_source_region_text(
+    source_region_coverage: &mut SourceRegionCoverageOutput,
+    summary: SourceRegionTextSummary,
+) {
+    source_region_coverage.colophon_metadata_occurrences += summary.colophon_metadata_occurrences;
+    source_region_coverage.back_matter_occurrences += summary.colophon_metadata_occurrences;
+}
+
+fn observe_source_region_events(
+    source_region_coverage: &mut SourceRegionCoverageOutput,
+    summary: &ab_coverage::source_inventory::SourceRegionEventSummary,
+) {
+    source_region_coverage.terminal_provenance_occurrences +=
+        summary.terminal_provenance_occurrences;
+    source_region_coverage.back_matter_occurrences += summary.terminal_provenance_occurrences;
 }
 
 fn observe_unknown_class(
@@ -703,6 +787,16 @@ fn write_report(path: &Path, output: &InventoryOutput) -> Result<()> {
     report.push_str(&format!(
         "- back_matter_occurrences: {}\n",
         output.source_region_coverage.back_matter_occurrences
+    ));
+    report.push_str(&format!(
+        "- terminal_provenance_occurrences: {}\n",
+        output
+            .source_region_coverage
+            .terminal_provenance_occurrences
+    ));
+    report.push_str(&format!(
+        "- colophon_metadata_occurrences: {}\n",
+        output.source_region_coverage.colophon_metadata_occurrences
     ));
     report.push_str(&format!(
         "- malformed_source_occurrences: {}\n",

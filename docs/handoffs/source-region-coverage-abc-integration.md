@@ -45,7 +45,9 @@ Current measured state:
 - `body_raw_preserved_occurrences: 46382`
 - `source_apparatus_occurrences: 13920`
 - `front_matter_occurrences: 14627`
-- `back_matter_occurrences: 243`
+- `back_matter_occurrences: 90268`
+- `terminal_provenance_occurrences: 609`
+- `colophon_metadata_occurrences: 89416`
 - `malformed_source_occurrences: 16`
 - `unsupported_body_markup_occurrences: 0`
 - `unknown_region_occurrences: 0`
@@ -70,8 +72,8 @@ The `out_of_body_occurrences` field is legacy evidence for allowlisted
 non-body markers, not the terminal front/back accounting model. In the current
 report it is the sum of notation-placeholder rows (`465 + 242`) and the
 body-end-boundary row (`243`). ABC should use `source_region_coverage` for new
-policy decisions, and should not infer separate terminal-provenance or colophon
-prevalence from `out_of_body_occurrences`.
+policy decisions. Terminal provenance and colophon metadata now have explicit
+source-region counters.
 
 ## Source Region Contract
 
@@ -109,7 +111,8 @@ custom preservation, headers, front/back matter, or diagnostics.
 | `notation_legend` | 13,920 `CommandFullwidth` `［＃］` occurrences | Decide TEI `encodingDesc`/`editorialDecl` vs custom preservation record. |
 | `notation_placeholder` | 465 `［＃…］` and 242 `［＃（…）］` occurrences | Decide whether placeholders are TEI documentation, preservation records, or both. |
 | `body_end_boundary` | 243 `［＃本文終わり］` occurrences | Treat as source region boundary evidence; do not render as body text. |
-| `terminal_provenance` / `colophon_metadata` | Not separately measured in the current source-region aggregate. The current `back_matter_occurrences: 243` is exhausted by the `body_end_boundary` row. | Add ABC fixtures/policy and, if needed, a later ab-validator measurement split before claiming separate prevalence. Decide TEI back/header/source-note/custom placement. |
+| `terminal_provenance` | 609 `SegmentBoundaryTerminalProvenance` / `［＃地付き］...` occurrences | Decide TEI back/source-note/custom placement. |
+| `colophon_metadata` | 89,416 source metadata lines such as `底本：`, `入力：`, and `校正：` | Decide TEI header/sourceDesc/revision-like policy and custom-sidecar preservation. |
 | `malformed_source` | 16 total residues | Preserve as diagnostics; do not count as unsupported Aozora syntax. |
 
 The 16 malformed-source residues are:
@@ -193,8 +196,5 @@ Implemented for ABC commit `95ace31`:
 
 Remaining follow-up:
 
-1. Split `terminal_provenance` and `colophon_metadata` measurement; current
-   `back_matter_occurrences: 243` is still exhausted by body-end-boundary
-   evidence.
-2. Add bundle validation that joins source-region evidence to parser-IR, TEI,
+1. Add bundle validation that joins source-region evidence to parser-IR, TEI,
    preservation records, manifests, and plaintext.

@@ -85,6 +85,8 @@ cat > "$source_region" <<'JSON'
     "source_apparatus_occurrences": 1,
     "front_matter_occurrences": 1,
     "back_matter_occurrences": 0,
+    "terminal_provenance_occurrences": 0,
+    "colophon_metadata_occurrences": 0,
     "malformed_source_occurrences": 0,
     "unsupported_body_markup_occurrences": 0,
     "unknown_region_occurrences": 0,

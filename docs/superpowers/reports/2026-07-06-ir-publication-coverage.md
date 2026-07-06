@@ -18,7 +18,7 @@ Verdict: `PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION`
 
 Evidence: `docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json`
 
-Bundle hash: `sha256:1f0015a8869cbe4011cae7fb01f42ef195cf4f6367709b4d2ba08c40ac98d8ef`
+Bundle hash: `sha256:dce63ce69aafc575ca8ad17ec12d8beedd4b9bb42426b2322a6e21341a9827cb`
 
 ABC commit: `95ace31`
 

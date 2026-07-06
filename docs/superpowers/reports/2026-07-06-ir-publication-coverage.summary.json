@@ -33,14 +33,14 @@
     "path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
     "policy_path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
     "manifest_schema_path": "data/abc-schemas/schemas/manifest.schema.json",
-    "schema_hash": "sha256:3879348d65a17c1cbde11a174e7aa3096163e403a1680a6e57ae071833c8240c",
-    "policy_hash": "sha256:3e969572c41754cbf7fb6ce5b6be0be780710beff5a591ca909a59882e08169a",
+    "schema_hash": "sha256:492e1f0548e29d3a7434cccbb797ab58b64ebfda12461df0dd9d45131f9ee6bd",
+    "policy_hash": "sha256:752c75e286e5e5f4e3eca0160079356224c4e76807f770d47af2315ba07d0aeb",
     "manifest_schema_hash": "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1",
     "trusted_schema_path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
     "trusted_policy_path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
     "trusted_manifest_schema_path": "data/abc-schemas/schemas/manifest.schema.json",
-    "trusted_schema_hash": "sha256:3879348d65a17c1cbde11a174e7aa3096163e403a1680a6e57ae071833c8240c",
-    "trusted_policy_hash": "sha256:3e969572c41754cbf7fb6ce5b6be0be780710beff5a591ca909a59882e08169a",
+    "trusted_schema_hash": "sha256:492e1f0548e29d3a7434cccbb797ab58b64ebfda12461df0dd9d45131f9ee6bd",
+    "trusted_policy_hash": "sha256:752c75e286e5e5f4e3eca0160079356224c4e76807f770d47af2315ba07d0aeb",
     "trusted_manifest_schema_hash": "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1",
     "trusted_schema_path_match": true,
     "trusted_policy_path_match": true,
@@ -49,9 +49,11 @@
       "back_matter_occurrences",
       "body_raw_preserved_occurrences",
       "body_typed_occurrences",
+      "colophon_metadata_occurrences",
       "front_matter_occurrences",
       "malformed_source_occurrences",
       "source_apparatus_occurrences",
+      "terminal_provenance_occurrences",
       "unknown_region_occurrences",
       "unknown_unreviewed_occurrences",
       "unsupported_body_markup_occurrences"
@@ -84,6 +86,12 @@
     "duplicate_policy_classes": [],
     "invalid_target_classes": [],
     "non_omitted_plaintext_classes": [],
+    "measured_class_counters": {
+      "terminal_provenance": "terminal_provenance_occurrences",
+      "colophon_metadata": "colophon_metadata_occurrences"
+    },
+    "missing_measured_class_counters": [],
+    "unmeasured_policy_classes": [],
     "missing_measurement_split_classes": [],
     "message": "ABC source-region schema, publication policy, and manifest sidecar role are confirmed."
   },
@@ -166,7 +174,7 @@
     "verdict": "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION",
     "schema_version": "publication-bundle-validation-evidence-v1",
     "path": "docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json",
-    "bundle_hash": "sha256:1f0015a8869cbe4011cae7fb01f42ef195cf4f6367709b4d2ba08c40ac98d8ef",
+    "bundle_hash": "sha256:dce63ce69aafc575ca8ad17ec12d8beedd4b9bb42426b2322a6e21341a9827cb",
     "abc_commit": "95ace31",
     "validator": "ab-validator publication-bundle-validate",
     "command": "clojure -M:abc/materialize-publication examples/v0/example-work/parser-ir.json examples/v0/example-work/metadata-record.json examples/v0/example-persons scratch/parser-ir-publication-bundle-validation",
@@ -189,7 +197,7 @@
       },
       "source_region_coverage": {
         "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-        "hash": "sha256:a715e23ff1848cfbc976203882a11279ea0559cd1d4db44f2011934e6eefb99e"
+        "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
       },
       "tei": {
         "path": "scratch/parser-ir-publication-bundle-validation/tei.xml",

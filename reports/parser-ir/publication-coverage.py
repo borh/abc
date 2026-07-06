@@ -38,6 +38,8 @@ SOURCE_REGION_REQUIRED_COUNTERS = {
     "source_apparatus_occurrences",
     "front_matter_occurrences",
     "back_matter_occurrences",
+    "terminal_provenance_occurrences",
+    "colophon_metadata_occurrences",
     "malformed_source_occurrences",
     "unsupported_body_markup_occurrences",
     "unknown_region_occurrences",
@@ -59,7 +61,10 @@ SOURCE_REGION_REQUIRED_CLASSES = {
     "colophon_metadata",
     "malformed_source",
 }
-SOURCE_REGION_MEASUREMENT_SPLIT_CLASSES = {"terminal_provenance", "colophon_metadata"}
+SOURCE_REGION_MEASURED_CLASS_COUNTERS = {
+    "terminal_provenance": "terminal_provenance_occurrences",
+    "colophon_metadata": "colophon_metadata_occurrences",
+}
 SOURCE_REGION_ALLOWED_TARGET_CLASSES = {
     "tei_policy_projection",
     "tei_plus_abc_extension",
@@ -824,11 +829,16 @@ def source_region_contract_block(
         for source_class, row in disposition_by_class.items()
         if row.get("plaintext_projection") != "omit"
     )
-    missing_measurement_split_classes = sorted(
+    missing_measured_class_counters = sorted(
         source_class
-        for source_class in SOURCE_REGION_MEASUREMENT_SPLIT_CLASSES
+        for source_class, counter in SOURCE_REGION_MEASURED_CLASS_COUNTERS.items()
+        if counter not in source_region_counters
+    )
+    unmeasured_policy_classes = sorted(
+        source_class
+        for source_class in SOURCE_REGION_MEASURED_CLASS_COUNTERS
         if disposition_by_class.get(source_class, {}).get("measurement_status")
-        != "needs_measurement_split"
+        != "measured"
     )
     manifest_sidecar_roles = schema_enum_values(
         manifest_doc,
@@ -861,7 +871,8 @@ def source_region_contract_block(
         and not duplicate_policy_classes
         and not invalid_target_classes
         and not non_omitted_plaintext_classes
-        and not missing_measurement_split_classes
+        and not missing_measured_class_counters
+        and not unmeasured_policy_classes
         and manifest_sidecar_role_present
         and schema_path_match
         and policy_path_match
@@ -912,7 +923,10 @@ def source_region_contract_block(
         "duplicate_policy_classes": duplicate_policy_classes,
         "invalid_target_classes": invalid_target_classes,
         "non_omitted_plaintext_classes": non_omitted_plaintext_classes,
-        "missing_measurement_split_classes": missing_measurement_split_classes,
+        "measured_class_counters": SOURCE_REGION_MEASURED_CLASS_COUNTERS,
+        "missing_measured_class_counters": missing_measured_class_counters,
+        "unmeasured_policy_classes": unmeasured_policy_classes,
+        "missing_measurement_split_classes": unmeasured_policy_classes,
         "message": (
             "ABC source-region schema, publication policy, and manifest sidecar role are confirmed."
             if confirmed

@@ -7,7 +7,7 @@
 id = "terminal-provenance-note"
 kind = "SegmentBoundaryTerminalProvenance"
 raw_pattern = "^［＃地付き］"
-scope = "back_matter_provenance"
+scope = "terminal_provenance"
 reason = "Terminal bibliography/provenance metadata is not body AAT."
 evidence = "docs/aat-contract.md"
 

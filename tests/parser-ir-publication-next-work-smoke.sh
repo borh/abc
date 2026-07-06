@@ -14,11 +14,13 @@ performance_md="$out_dir/performance.md"
 source_disposition_summary="$out_dir/source-disposition.json"
 text_policy_summary="$out_dir/text-policy.json"
 adapter_worksets_summary="$out_dir/adapter-worksets.json"
+complete_adapter_worksets_summary="$out_dir/adapter-worksets.complete.json"
 dossier_dir="$out_dir/dossiers"
 parser_acceptance_spec="$out_dir/parser-acceptance.md"
 tei_p5_root="$out_dir/tei-p5"
 summary_json="$out_dir/next-work.summary.json"
 complete_source_summary_json="$out_dir/next-work.complete-source.summary.json"
+complete_adapter_summary_json="$out_dir/next-work.complete-adapter.summary.json"
 missing_root_summary_json="$out_dir/next-work.missing-root.summary.json"
 report_md="$out_dir/next-work.md"
 
@@ -389,6 +391,7 @@ jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidenc
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.workset_files.ruby_or_parenthetical_policy.count == 2 and .evidence.source_markup_backed_workset_files.front_back_source_region_policy.count == 3)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.manual_classification_workset_files.unknown_text_delta.count == 1 and .evidence.manual_classification_workset_files.unknown_text_delta.requires_manual_classification == true)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evidence.adapter_distortion_rows == 10)' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .status == "open")' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evidence.worksets.adapter_collapsed == 3 and .evidence.excluded_counts.page_break_projection == 6)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evidence.workset_files.adapter_collapsed.all.count == 2 and .evidence.workset_files.adapter_collapsed.by_adapter."aozora-rs".count == 1)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and (.evidence.included_buckets | sort) == (["adapter_collapsed", "adapter_over_segmented", "adapter_raw_only", "adapter_under_segmented", "converter_paragraph_mismatch"] | sort))' "$summary_json" >/dev/null
@@ -441,6 +444,65 @@ python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
 
 jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" and .status == "complete" and .evidence.policy_needed_count == 0 and .evidence.evidence_needed_classes == [])' "$complete_source_summary_json" >/dev/null
 rg -n -F '`source_region_disposition_samples` (ab-validator+abc): `complete`' "$out_dir/next-work.complete-source.md" >/dev/null
+
+cat > "$complete_adapter_worksets_summary" <<'JSON'
+{
+  "schema_version": "adapter-fidelity-worksets-v1",
+  "worksets": {
+    "adapter_over_segmented": {"count": 4},
+    "adapter_collapsed": {"count": 3},
+    "adapter_under_segmented": {"count": 1},
+    "converter_paragraph_mismatch": {"count": 1},
+    "adapter_raw_only": {"count": 1}
+  },
+  "workset_files": {
+    "adapter_over_segmented": {
+      "all": {"path": "docs/reports/worksets/adapter_over_segmented/all.json", "hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "count": 4},
+      "by_adapter": {}
+    },
+    "adapter_collapsed": {
+      "all": {"path": "docs/reports/worksets/adapter_collapsed/all.json", "hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "count": 3},
+      "by_adapter": {}
+    },
+    "adapter_under_segmented": {
+      "all": {"path": "docs/reports/worksets/adapter_under_segmented/all.json", "hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "count": 1},
+      "by_adapter": {}
+    },
+    "converter_paragraph_mismatch": {
+      "all": {"path": "docs/reports/worksets/converter_paragraph_mismatch/all.json", "hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "count": 1},
+      "by_adapter": {}
+    },
+    "adapter_raw_only": {
+      "all": {"path": "docs/reports/worksets/adapter_raw_only/all.json", "hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555", "count": 1},
+      "by_adapter": {}
+    }
+  },
+  "excluded_counts": {
+    "aligned": 2,
+    "source_note_back_routing": 5,
+    "page_break_projection": 6
+  }
+}
+JSON
+
+python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+  --source-summary "$source_summary" \
+  --coverage-summary "$coverage_summary" \
+  --matrix-summary "$matrix_summary" \
+  --conversion-summary "$conversion_summary" \
+  --source-reference-summary "$reference_summary" \
+  --performance-report "$performance_md" \
+  --source-disposition-summary "$source_disposition_summary" \
+  --text-policy-summary "$text_policy_summary" \
+  --adapter-worksets-summary "$complete_adapter_worksets_summary" \
+  --dossier-dir "$dossier_dir" \
+  --tei-p5-root "$tei_p5_root" \
+  --parser-acceptance-spec "$parser_acceptance_spec" \
+  --summary-json "$complete_adapter_summary_json" \
+  --report-md "$out_dir/next-work.complete-adapter.md"
+
+jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .status == "complete" and .evidence.adapter_distortion_rows == 10)' "$complete_adapter_summary_json" >/dev/null
+rg -n -F '`adapter_fidelity_worksets` (ab-validator): `complete`' "$out_dir/next-work.complete-adapter.md" >/dev/null
 
 python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \

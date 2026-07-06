@@ -510,8 +510,26 @@ def text_policy_status(evidence: dict[str, Any]) -> str:
     return "complete" if as_int(evidence.get("different_rows")) == 0 else "open"
 
 
+def has_workset_file_record(value: Any) -> bool:
+    if not isinstance(value, dict):
+        return False
+    return bool(value.get("path")) and bool(value.get("hash")) and "count" in value
+
+
 def adapter_worksets_status(evidence: dict[str, Any]) -> str:
-    return "complete" if as_int(evidence.get("adapter_distortion_rows")) == 0 else "open"
+    worksets = evidence.get("worksets")
+    workset_files = evidence.get("workset_files")
+    if evidence.get("schema_version") != "adapter-fidelity-worksets-v1":
+        return "open"
+    if not isinstance(worksets, dict) or not isinstance(workset_files, dict):
+        return "open"
+    for bucket in ADAPTER_DISTORTION_INCLUDED_BUCKETS:
+        if bucket not in worksets:
+            return "open"
+        record = workset_files.get(bucket)
+        if not isinstance(record, dict) or not has_workset_file_record(record.get("all")):
+            return "open"
+    return "complete"
 
 
 def dossier_status(evidence: dict[str, Any]) -> str:

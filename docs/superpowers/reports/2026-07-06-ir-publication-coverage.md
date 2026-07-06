@@ -12,6 +12,16 @@ Policy: `https://w3id.org/abc/policies/source-region-publication-v0` `0.1.0`
 
 Manifest sidecar role present: `true`
 
+## Publication Bundle Contract
+
+Verdict: `PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION`
+
+Evidence: `docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json`
+
+Bundle hash: `sha256:1f0015a8869cbe4011cae7fb01f42ef195cf4f6367709b4d2ba08c40ac98d8ef`
+
+ABC commit: `95ace31`
+
 ## Node Coverage
 
 | Class | Node types |

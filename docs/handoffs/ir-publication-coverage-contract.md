@@ -21,12 +21,17 @@ Current state:
   `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
 - ABC owns the custom preservation contract and TEI profile evidence now synced
   into ab-validator.
+- ab-validator now records fixture-level publication bundle validation evidence
+  that joins parser-IR, TEI XML, plaintext, preservation sidecar,
+  source-region evidence, TEI manifest, and plaintext manifest.
 - Plaintext remains metadata-free visible text.
 
 ab-validator report:
 
 - `docs/superpowers/reports/2026-07-06-ir-publication-coverage.md`
 - `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json`
+- `docs/superpowers/reports/2026-07-06-publication-bundle-validation.md`
+- `docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json`
 
 Current report verdict:
 
@@ -35,6 +40,7 @@ Current report verdict:
 - `source_region_contract.verdict == SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
 - `custom_contract.verdict == CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
 - `tei_profile_contract.verdict == TEI_PROFILE_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
+- `publication_bundle_contract.verdict == PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION`
 - `closure_gaps.classified_but_not_admitted.count == 0`
 - `closure_gaps.true_unsupported_gaps.count == 0`
 
@@ -62,6 +68,12 @@ Remaining work is no longer "make TEI-EAJ Level 2/3 pass." It is:
    TEI-EAJ editorial enrichment as parser-required markup.
 5. Keep ABC profile/schema hashes, preservation records, and ab-validator
    coverage reports synchronized whenever the publication contract changes.
+
+The next scale step is to run the same bundle validation over a representative
+materialized workset and then the full materialized corpus. The current bundle
+evidence is intentionally fixture-level: it proves the cross-artifact contract
+exists and is wired into the admission gate, not that every corpus work has
+already been materialized.
 
 Design reference:
 

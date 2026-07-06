@@ -67,6 +67,33 @@ SOURCE_REGION_ALLOWED_TARGET_CLASSES = {
     "diagnostic",
     "unsupported_gap",
 }
+PUBLICATION_BUNDLE_EVIDENCE_SCHEMA_VERSION = "publication-bundle-validation-evidence-v1"
+PUBLICATION_BUNDLE_PASSED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_PASSED"
+PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS = {
+    "parser_ir",
+    "tei",
+    "plaintext",
+    "preservation",
+    "source_region_coverage",
+    "tei_manifest",
+    "plaintext_manifest",
+}
+PUBLICATION_BUNDLE_REQUIRED_CHECKS = {
+    "parser_ir_schema_valid",
+    "tei_profile_valid",
+    "preservation_schema_valid",
+    "source_region_coverage_valid",
+    "tei_manifest_valid",
+    "plaintext_manifest_valid",
+    "tei_manifest_references_preservation",
+    "tei_manifest_references_validation_result",
+    "source_region_sidecar_role_available",
+    "tei_abc_projection_resolves_to_sidecar",
+    "preservation_tei_pointers_resolve",
+    "preservation_source_pointers_resolve",
+    "plaintext_body_only",
+}
+SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 TEI_PROFILE_RECORD_CLASS = "tei_profile_projection"
 TEI_PROFILE_FAMILIES = {
     "accent",
@@ -1091,6 +1118,114 @@ def tei_profile_contract_block(custom_contract: dict[str, Any]) -> dict[str, Any
     }
 
 
+def publication_bundle_contract_block(bundle_summary_path: pathlib.Path | None) -> dict[str, Any]:
+    if bundle_summary_path is None:
+        return {
+            "verdict": "PUBLICATION_BUNDLE_CONTRACT_MISSING",
+            "schema_version": None,
+            "path": None,
+            "bundle_hash": None,
+            "missing_artifacts": sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS),
+            "missing_checks": sorted(PUBLICATION_BUNDLE_REQUIRED_CHECKS),
+            "failed_checks": [],
+            "message": "ABC publication bundle validation evidence has not been supplied to this report.",
+        }
+
+    try:
+        evidence = load_json(bundle_summary_path)
+    except json.JSONDecodeError:
+        return {
+            "verdict": "PUBLICATION_BUNDLE_CONTRACT_INVALID",
+            "schema_version": None,
+            "path": display_path(bundle_summary_path),
+            "bundle_hash": None,
+            "missing_artifacts": sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS),
+            "missing_checks": sorted(PUBLICATION_BUNDLE_REQUIRED_CHECKS),
+            "failed_checks": [],
+            "message": "ABC publication bundle validation evidence is not valid JSON.",
+        }
+    except OSError:
+        return {
+            "verdict": "PUBLICATION_BUNDLE_CONTRACT_MISSING",
+            "schema_version": None,
+            "path": display_path(bundle_summary_path),
+            "bundle_hash": None,
+            "missing_artifacts": sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS),
+            "missing_checks": sorted(PUBLICATION_BUNDLE_REQUIRED_CHECKS),
+            "failed_checks": [],
+            "message": "ABC publication bundle validation evidence path was supplied but could not be read.",
+        }
+
+    validated_bundle = evidence.get("validated_bundle", {}) if isinstance(evidence, dict) else {}
+    checks = evidence.get("checks", {}) if isinstance(evidence, dict) else {}
+    present_artifacts = {
+        name
+        for name, artifact in validated_bundle.items()
+        if isinstance(name, str)
+        and isinstance(artifact, dict)
+        and isinstance(artifact.get("path"), str)
+        and artifact.get("path")
+        and isinstance(artifact.get("hash"), str)
+        and SHA256_PATTERN.fullmatch(artifact.get("hash"))
+    }
+    missing_artifacts = sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS - present_artifacts)
+    invalid_artifact_hashes = sorted(
+        name
+        for name, artifact in validated_bundle.items()
+        if name in PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS
+        and isinstance(artifact, dict)
+        and isinstance(artifact.get("hash"), str)
+        and not SHA256_PATTERN.fullmatch(artifact.get("hash"))
+    )
+    missing_checks = sorted(
+        check
+        for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS
+        if check not in checks
+    )
+    failed_checks = sorted(
+        check
+        for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS
+        if checks.get(check) is not True
+    )
+    confirmed = (
+        isinstance(evidence, dict)
+        and evidence.get("schema_version") == PUBLICATION_BUNDLE_EVIDENCE_SCHEMA_VERSION
+        and evidence.get("verdict") == PUBLICATION_BUNDLE_PASSED_VERDICT
+        and not missing_artifacts
+        and not invalid_artifact_hashes
+        and not missing_checks
+        and not failed_checks
+    )
+    return {
+        "verdict": (
+            "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"
+            if confirmed
+            else "PUBLICATION_BUNDLE_CONTRACT_INCOMPLETE"
+        ),
+        "schema_version": evidence.get("schema_version") if isinstance(evidence, dict) else None,
+        "path": display_path(bundle_summary_path),
+        "bundle_hash": document_hash(evidence),
+        "abc_commit": evidence.get("abc_commit") if isinstance(evidence, dict) else None,
+        "validator": evidence.get("validator") if isinstance(evidence, dict) else None,
+        "command": evidence.get("command") if isinstance(evidence, dict) else None,
+        "validated_bundle": {
+            key: validated_bundle.get(key)
+            for key in sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS)
+            if key in validated_bundle
+        },
+        "checks": {key: checks.get(key) for key in sorted(PUBLICATION_BUNDLE_REQUIRED_CHECKS)},
+        "missing_artifacts": missing_artifacts,
+        "invalid_artifact_hashes": invalid_artifact_hashes,
+        "missing_checks": missing_checks,
+        "failed_checks": failed_checks,
+        "message": (
+            "ABC publication bundle validation evidence confirms parser-IR, TEI, preservation, source-region, manifest, and plaintext cross-artifact checks."
+            if confirmed
+            else "ABC publication bundle validation evidence is missing required artifacts or cross-artifact checks."
+        ),
+    }
+
+
 def mapping_block(mapping: dict[str, Any]) -> dict[str, Any]:
     return {
         "mapping_id": mapping.get("mapping_id"),
@@ -1126,6 +1261,7 @@ def summary_scope(
         "parser_ir_schema_hash": parser_ir_schema_hash(parser_schema, mapping),
         "source_region_contract_required": True,
         "custom_contract_required": True,
+        "publication_bundle_validation_required": True,
     }
 
 
@@ -1313,6 +1449,7 @@ def publication_verdict(
     evidence: dict[str, Any],
     source_region_contract: dict[str, Any],
     custom_contract: dict[str, Any],
+    publication_bundle_contract: dict[str, Any],
     gaps: dict[str, Any],
     closures: dict[str, Any],
 ) -> str:
@@ -1331,6 +1468,11 @@ def publication_verdict(
         return "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"
     if custom_contract.get("verdict") != "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION":
         return "IR_PUBLICATION_COVERAGE_BLOCKED_CUSTOM_CONTRACT_MISSING"
+    if (
+        publication_bundle_contract.get("verdict")
+        != "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"
+    ):
+        return "IR_PUBLICATION_COVERAGE_BLOCKED_BUNDLE_VALIDATION_MISSING"
     return "IR_PUBLICATION_COVERAGE_COMPLETE"
 
 
@@ -1344,6 +1486,7 @@ def build_summary(
     source_region_schema: pathlib.Path | None,
     source_region_policy: pathlib.Path | None,
     manifest_schema: pathlib.Path | None,
+    bundle_validation_summary: pathlib.Path | None,
 ) -> dict[str, Any]:
     node_coverage = node_coverage_from_schema(parser_schema)
     field_coverage = field_coverage_from_schema(parser_schema)
@@ -1357,6 +1500,9 @@ def build_summary(
     )
     custom_contract = custom_contract_block(custom_contract_schema)
     tei_profile_contract = tei_profile_contract_block(custom_contract)
+    publication_bundle_contract = publication_bundle_contract_block(
+        bundle_validation_summary,
+    )
     gaps = unsupported_gaps(node_coverage, field_coverage, diagnostics, construct_coverage)
     closures = closure_gaps(gaps, custom_contract, tei_profile_contract)
     source_passed = source_authority_passed(source)
@@ -1368,6 +1514,7 @@ def build_summary(
             evidence,
             source_region_contract,
             custom_contract,
+            publication_bundle_contract,
             gaps,
             closures,
         ),
@@ -1384,6 +1531,7 @@ def build_summary(
         },
         "custom_contract": custom_contract,
         "tei_profile_contract": tei_profile_contract,
+        "publication_bundle_contract": publication_bundle_contract,
         "mapping": mapping_block(mapping),
         "node_coverage": node_coverage,
         "field_coverage": field_coverage,
@@ -1411,6 +1559,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     gaps = summary["unsupported_gaps"]
     closures = summary["closure_gaps"]
     source_region_contract = summary["source_region_contract"]
+    publication_bundle_contract = summary["publication_bundle_contract"]
     lines = [
         "# IR Publication Coverage",
         "",
@@ -1425,6 +1574,16 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"Policy: `{source_region_contract.get('policy_id')}` `{source_region_contract.get('policy_version')}`",
         "",
         f"Manifest sidecar role present: `{str(source_region_contract.get('manifest_sidecar_role_present')).lower()}`",
+        "",
+        "## Publication Bundle Contract",
+        "",
+        f"Verdict: `{publication_bundle_contract['verdict']}`",
+        "",
+        f"Evidence: `{publication_bundle_contract.get('path')}`",
+        "",
+        f"Bundle hash: `{publication_bundle_contract.get('bundle_hash')}`",
+        "",
+        f"ABC commit: `{publication_bundle_contract.get('abc_commit')}`",
         "",
         "## Node Coverage",
         "",
@@ -1542,6 +1701,7 @@ def parse_args() -> argparse.Namespace:
         type=pathlib.Path,
         default=TRUSTED_ABC_MANIFEST_SCHEMA_PATH,
     )
+    parser.add_argument("--bundle-validation-summary", type=pathlib.Path)
     parser.add_argument("--summary-json", required=True, type=pathlib.Path)
     parser.add_argument("--report-md", required=True, type=pathlib.Path)
     return parser.parse_args()
@@ -1581,6 +1741,7 @@ def main() -> None:
         source_region_schema=args.source_region_schema,
         source_region_policy=args.source_region_policy,
         manifest_schema=args.manifest_schema,
+        bundle_validation_summary=args.bundle_validation_summary,
     )
     write_json(args.summary_json, summary)
     write_text(args.report_md, render_markdown(summary))

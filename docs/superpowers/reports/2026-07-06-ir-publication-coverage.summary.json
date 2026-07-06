@@ -15,7 +15,8 @@
     "mapping_version": "0.2.3",
     "parser_ir_schema_hash": "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411",
     "source_region_contract_required": true,
-    "custom_contract_required": true
+    "custom_contract_required": true,
+    "publication_bundle_validation_required": true
   },
   "verdict": "IR_PUBLICATION_COVERAGE_COMPLETE",
   "source_authority_gate": {
@@ -160,6 +161,65 @@
       "style_rendition"
     ],
     "message": "ABC preservation schema admits TEI profile projection records for the measured namespace-extension families."
+  },
+  "publication_bundle_contract": {
+    "verdict": "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION",
+    "schema_version": "publication-bundle-validation-evidence-v1",
+    "path": "docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json",
+    "bundle_hash": "sha256:1f0015a8869cbe4011cae7fb01f42ef195cf4f6367709b4d2ba08c40ac98d8ef",
+    "abc_commit": "95ace31",
+    "validator": "ab-validator publication-bundle-validate",
+    "command": "clojure -M:abc/materialize-publication examples/v0/example-work/parser-ir.json examples/v0/example-work/metadata-record.json examples/v0/example-persons scratch/parser-ir-publication-bundle-validation",
+    "validated_bundle": {
+      "parser_ir": {
+        "path": "/home/bor/Projects/abc/examples/v0/example-work/parser-ir.json",
+        "hash": "sha256:9cf1deea122bb617383cdc258b4588f23d4b1e4f7cb4f9a0b975d33e9cc47c71"
+      },
+      "plaintext": {
+        "path": "scratch/parser-ir-publication-bundle-validation/plain.txt",
+        "hash": "sha256:0fbdc483e265393182ab4f1cc4d896b10a81894f1565dc53cc91bab1e6a636f4"
+      },
+      "plaintext_manifest": {
+        "path": "scratch/parser-ir-publication-bundle-validation/plaintext.manifest.json",
+        "hash": "sha256:b80743012459887ef4a48f5048dd11aa390009c31bdd7fcee7628a94c6eea690"
+      },
+      "preservation": {
+        "path": "scratch/parser-ir-publication-bundle-validation/preservation.json",
+        "hash": "sha256:857557e9ac6bbc94d5f6820f0bffc5e211fc1c7020ec0faedf96bfb97cc860a1"
+      },
+      "source_region_coverage": {
+        "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+        "hash": "sha256:a715e23ff1848cfbc976203882a11279ea0559cd1d4db44f2011934e6eefb99e"
+      },
+      "tei": {
+        "path": "scratch/parser-ir-publication-bundle-validation/tei.xml",
+        "hash": "sha256:993db1f00c6be2c3910e51de19923f33547ae8b3985ecaf2ab10a9df8116bff1"
+      },
+      "tei_manifest": {
+        "path": "scratch/parser-ir-publication-bundle-validation/tei.manifest.json",
+        "hash": "sha256:2491c178515d334f92734af723e173d2735e7e992be18f5b8188ab0d6b723c35"
+      }
+    },
+    "checks": {
+      "parser_ir_schema_valid": true,
+      "plaintext_body_only": true,
+      "plaintext_manifest_valid": true,
+      "preservation_schema_valid": true,
+      "preservation_source_pointers_resolve": true,
+      "preservation_tei_pointers_resolve": true,
+      "source_region_coverage_valid": true,
+      "source_region_sidecar_role_available": true,
+      "tei_abc_projection_resolves_to_sidecar": true,
+      "tei_manifest_references_preservation": true,
+      "tei_manifest_references_validation_result": true,
+      "tei_manifest_valid": true,
+      "tei_profile_valid": true
+    },
+    "missing_artifacts": [],
+    "invalid_artifact_hashes": [],
+    "missing_checks": [],
+    "failed_checks": [],
+    "message": "ABC publication bundle validation evidence confirms parser-IR, TEI, preservation, source-region, manifest, and plaintext cross-artifact checks."
   },
   "mapping": {
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",

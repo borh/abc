@@ -30,9 +30,15 @@ The current measured reports already satisfy the ab-validator-side coverage gate
 - `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json`
   - `verdict == "IR_PUBLICATION_COVERAGE_COMPLETE"`
   - `parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_COMPLETE"`
+  - `publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"`
   - required parsers: `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, `aozora`
   - `closure_gaps.classified_but_not_admitted.count == 0`
   - `closure_gaps.true_unsupported_gaps.count == 0`
+- `docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json`
+  - `verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED"`
+  - validates the materialized ABC parser-IR fixture bundle across parser-IR,
+    TEI XML, plaintext, preservation sidecar, source-region evidence, TEI
+    manifest, and plaintext manifest
 - `docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json`
   - `schema_version == "aozora-source-region-coverage-v1"`
   - `gate_status == "SOURCE_AUTHORITY_GATE_PASS"`
@@ -43,9 +49,9 @@ The current measured reports already satisfy the ab-validator-side coverage gate
   - `source_region_coverage.unknown_unreviewed_occurrences == 0`
 
 That is a measured admission state, not the end of the project. The remaining
-work is durability: ab-validator must keep the synced ABC source-region
-contract current, cross-artifact validation must prove the outputs agree, and
-adapter/parser evidence must stay current as inputs change.
+work is durability and scale: ab-validator must keep the synced ABC contracts
+current, broaden cross-artifact validation beyond the fixture bundle, and keep
+adapter/parser evidence current as inputs change.
 
 ## Workstream 1: ABC Source-Region Integration
 
@@ -116,6 +122,18 @@ after syncing the ABC source-region schema, policy, and manifest sidecar role.
 - Add ab-validator checks only for facts ab-validator owns: source-region counts, parser evidence completeness, mapping/coverage report shape, and synced schema hashes.
 
 **Review gate:** A fixture bundle with source apparatus, body markup, TEI projection, sidecar records, and plaintext passes ABC validation and is cited by path/hash in ab-validator's report.
+
+**Current status:** Implemented for the ABC parser-IR example fixture. Regenerate
+with:
+
+```bash
+just parser-ir-publication-bundle-validation
+just parser-ir-publication-coverage-report
+```
+
+The next bundle-validation step is scale, not existence: run the same checks
+over a representative workset, then the full materialized corpus when runtime
+is acceptable.
 
 ## Workstream 3: Parser Evidence And Adapter Fidelity
 
@@ -238,10 +256,10 @@ Complete Aozora Bunko markup publication mapping: every observed source markup a
 1. Split source-region measurement for `terminal_provenance` and
    `colophon_metadata`; do not infer their prevalence from the current
    `back_matter_occurrences: 243` body-end-boundary count.
-2. Add cross-artifact bundle checks that join source-region evidence,
-   parser-IR, TEI XML, preservation sidecar, manifests, and plaintext.
-3. Run batch parser-IR publication materialization over a representative
+2. Run batch parser-IR publication materialization over a representative
    workset, then scale to full corpus when runtime is acceptable.
+3. Broaden publication-bundle validation from the ABC example fixture to the
+   representative and full-corpus materialized outputs.
 4. Keep all five parser evidence lanes current:
    `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
 5. Compare source inventory against Aozora manual and
@@ -254,8 +272,12 @@ Run these in ab-validator after each contract-affecting change:
 ```bash
 bash tests/source-representability-gate-smoke.sh
 bash tests/source-inventory-smoke.sh
+bash tests/parser-ir-publication-bundle-smoke.sh
+bash tests/parser-ir-publication-coverage-smoke.sh
 jq -e '.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
 jq -e '.source_region_coverage.unsupported_body_markup_occurrences == 0 and .source_region_coverage.unknown_region_occurrences == 0 and .source_region_coverage.unknown_unreviewed_occurrences == 0' docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
+jq -e '.verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED"' docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json
+jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_COMPLETE"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 git diff --check
 ```

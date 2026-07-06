@@ -347,11 +347,12 @@ source-region-disposition-samples-report SOURCE_SUMMARY="docs/superpowers/report
 parser-ir-text-policy-delta-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-text-policy-delta-smoke.sh"
 
-parser-ir-text-policy-delta-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-text-policy-delta.md":
+parser-ir-text-policy-delta-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-text-policy-delta.md" WORKSETS_DIR="docs/superpowers/reports/2026-07-06-text-policy-worksets":
 	@python3 "{{repo_root}}/reports/parser-ir/text-policy-delta.py" \
 		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
-		--report-md "{{repo_root}}/{{REPORT_MD}}"
+		--report-md "{{repo_root}}/{{REPORT_MD}}" \
+		--worksets-dir "{{repo_root}}/{{WORKSETS_DIR}}"
 
 parser-ir-adapter-fidelity-worksets-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-adapter-fidelity-worksets-smoke.sh"

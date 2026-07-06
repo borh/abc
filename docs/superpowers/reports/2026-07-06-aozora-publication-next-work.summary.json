@@ -120,7 +120,90 @@
           "unknown_text_delta": 0
         },
         "source_markup_backed_blockers": 223,
-        "calibration_only_rows": 7
+        "calibration_only_rows": 7,
+        "workset_files": {
+          "ruby_or_parenthetical_policy": {
+            "count": 67,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/ruby_or_parenthetical_policy.json",
+            "hash": "sha256:bf41591d558d7a19c45b11470b783e7cfebe66e71602faf981d3ccb5389da3a1"
+          },
+          "front_back_source_region_policy": {
+            "count": 50,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/front_back_source_region_policy.json",
+            "hash": "sha256:ebc35751a56d677d4a319d81fd9dc607112de030b7b5fbc1e962d4c9cf027c20"
+          },
+          "body_visible_layout_policy": {
+            "count": 51,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/body_visible_layout_policy.json",
+            "hash": "sha256:714c1d5a0e152e8d7d066d450191e6160eb78d302af37d67627195ea1d3e865f"
+          },
+          "adapter_text_loss": {
+            "count": 55,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/adapter_text_loss.json",
+            "hash": "sha256:48ce7bcb3456a8b0f25ced62c692c1c5a9d84f3b55f546ff86c9f39ddc019394"
+          },
+          "tei_eaj_editorial_or_enrichment": {
+            "count": 48,
+            "source_markup_backed": false,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/tei_eaj_editorial_or_enrichment.json",
+            "hash": "sha256:16ed6ab1db18f21a5ea8b1051d88bc7ba30891c67c8bb7cbd363937d04bee2e1"
+          },
+          "unknown_text_delta": {
+            "count": 0,
+            "source_markup_backed": false,
+            "requires_manual_classification": true,
+            "path": null,
+            "hash": null
+          }
+        },
+        "source_markup_backed_workset_files": {
+          "ruby_or_parenthetical_policy": {
+            "count": 67,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/ruby_or_parenthetical_policy.json",
+            "hash": "sha256:bf41591d558d7a19c45b11470b783e7cfebe66e71602faf981d3ccb5389da3a1"
+          },
+          "front_back_source_region_policy": {
+            "count": 50,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/front_back_source_region_policy.json",
+            "hash": "sha256:ebc35751a56d677d4a319d81fd9dc607112de030b7b5fbc1e962d4c9cf027c20"
+          },
+          "body_visible_layout_policy": {
+            "count": 51,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/body_visible_layout_policy.json",
+            "hash": "sha256:714c1d5a0e152e8d7d066d450191e6160eb78d302af37d67627195ea1d3e865f"
+          },
+          "adapter_text_loss": {
+            "count": 55,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/adapter_text_loss.json",
+            "hash": "sha256:48ce7bcb3456a8b0f25ced62c692c1c5a9d84f3b55f546ff86c9f39ddc019394"
+          }
+        },
+        "manual_classification_workset_files": {
+          "unknown_text_delta": {
+            "count": 0,
+            "source_markup_backed": false,
+            "requires_manual_classification": true,
+            "path": null,
+            "hash": null
+          }
+        }
       }
     },
     {
@@ -532,7 +615,7 @@
     },
     "text_policy_summary": {
       "path": "docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json",
-      "hash": "sha256:319fc85bbf25d027f3b05135ded3ef528518b999e3af4f73d524c864163f2194"
+      "hash": "sha256:ff262754f8eb59bf7452b6dcf366e31a64da0d587a605923ed1f70c71cf1096e"
     },
     "adapter_worksets_summary": {
       "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.summary.json",

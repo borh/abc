@@ -30,13 +30,15 @@ ADAPTER_BUCKETS = {
 LAYOUT_PROFILES = {"lineated_text", "verse"}
 FRONT_BACK_PROFILES = {"front_back_matter"}
 EDITORIAL_PROFILES = {"lv4_enrichment"}
-SOURCE_MARKUP_BACKED_CAUSES = {
+SOURCE_MARKUP_BACKED_CAUSES = (
     "ruby_or_parenthetical_policy",
     "front_back_source_region_policy",
     "body_visible_layout_policy",
     "adapter_text_loss",
+)
+MANUAL_CLASSIFICATION_CAUSES = (
     "unknown_text_delta",
-}
+)
 LETTER_REGION_MARKERS = ("宛先", "発信地")
 
 
@@ -54,6 +56,11 @@ def sha256_file(path: pathlib.Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return f"sha256:{digest.hexdigest()}"
+
+
+def write_json(path: pathlib.Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def display_path(path: pathlib.Path) -> str:
@@ -164,6 +171,30 @@ def compact_row(row: dict[str, Any], index: int, cause: str | None = None) -> di
     return result
 
 
+def write_worksets(worksets_dir: pathlib.Path | None, rows_by_cause: dict[str, list[dict[str, Any]]]) -> dict[str, dict[str, Any]]:
+    records: dict[str, dict[str, Any]] = {}
+    if worksets_dir is not None:
+        worksets_dir.mkdir(parents=True, exist_ok=True)
+        for cause in CAUSES:
+            (worksets_dir / f"{cause}.json").unlink(missing_ok=True)
+    for cause in CAUSES:
+        rows = rows_by_cause[cause]
+        record: dict[str, Any] = {
+            "count": len(rows),
+            "source_markup_backed": cause in SOURCE_MARKUP_BACKED_CAUSES,
+            "requires_manual_classification": cause in MANUAL_CLASSIFICATION_CAUSES,
+            "path": None,
+            "hash": None,
+        }
+        if rows and worksets_dir is not None:
+            path = worksets_dir / f"{cause}.json"
+            write_json(path, rows)
+            record["path"] = display_path(path)
+            record["hash"] = sha256_file(path)
+        records[cause] = record
+    return records
+
+
 def build_summary(args: argparse.Namespace) -> dict[str, Any]:
     matrix = load_json(args.matrix_summary)
     rows = matrix.get("rows")
@@ -171,6 +202,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
         rows = []
     counts = Counter({cause: 0 for cause in CAUSES})
     examples: dict[str, list[dict[str, Any]]] = {cause: [] for cause in CAUSES}
+    rows_by_cause: dict[str, list[dict[str, Any]]] = {cause: [] for cause in CAUSES}
     source_blockers: list[dict[str, Any]] = []
     calibration_only: list[dict[str, Any]] = []
     already_equal = 0
@@ -185,6 +217,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
             counts[cause] += 1
             total_different += 1
             compact = compact_row(raw_row, index, cause)
+            rows_by_cause[cause].append(compact)
             if len(examples[cause]) < 10:
                 examples[cause].append(compact)
             if cause in SOURCE_MARKUP_BACKED_CAUSES:
@@ -195,6 +228,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
             calibration_only.append(compact_row(raw_row, index))
 
     bucket_different = matrix.get("body_text_relation_buckets", {}).get("different")
+    workset_files = write_worksets(args.worksets_dir, rows_by_cause)
     return {
         "schema_version": SCHEMA_VERSION,
         "matrix_summary": {"path": display_path(args.matrix_summary), "hash": sha256_file(args.matrix_summary)},
@@ -202,9 +236,16 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
         "matrix_bucket_different_rows": bucket_different,
         "counts_by_cause": dict(counts),
         "source_markup_backed_blockers": source_blockers,
+        "source_markup_backed_workset_files": {
+            cause: workset_files[cause] for cause in CAUSES if cause in SOURCE_MARKUP_BACKED_CAUSES
+        },
+        "manual_classification_workset_files": {
+            cause: workset_files[cause] for cause in CAUSES if cause in MANUAL_CLASSIFICATION_CAUSES
+        },
         "calibration_only_rows": calibration_only,
         "already_equal_rows": already_equal,
         "examples_by_cause": examples,
+        "workset_files": workset_files,
     }
 
 
@@ -219,6 +260,10 @@ def render_markdown(summary: dict[str, Any]) -> str:
     ]
     for cause, count in summary["counts_by_cause"].items():
         lines.append(f"| `{cause}` | {count} |")
+    lines.extend(["", "## Workset Files", "", "| cause | rows | path |", "| --- | ---: | --- |"])
+    for cause, record in summary["workset_files"].items():
+        path = record.get("path") or ""
+        lines.append(f"| `{cause}` | {record.get('count')} | `{path}` |")
     lines.extend(["", f"Calibration-only rows: {len(summary['calibration_only_rows'])}", ""])
     return "\n".join(lines)
 
@@ -228,6 +273,7 @@ def main() -> None:
     parser.add_argument("--matrix-summary", type=pathlib.Path, required=True)
     parser.add_argument("--summary-json", type=pathlib.Path, required=True)
     parser.add_argument("--report-md", type=pathlib.Path, required=True)
+    parser.add_argument("--worksets-dir", type=pathlib.Path)
     args = parser.parse_args()
     summary = build_summary(args)
     args.summary_json.parent.mkdir(parents=True, exist_ok=True)

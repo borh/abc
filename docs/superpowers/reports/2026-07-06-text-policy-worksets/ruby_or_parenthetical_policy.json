@@ -1,0 +1,811 @@
+[
+  {
+    "row_id": "236::aozora2html::236_tei.xml::15",
+    "work_id": "236",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "236::aozora-epub3::236_tei.xml::16",
+    "work_id": "236",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "236::aozora-rs::236_tei.xml::17",
+    "work_id": "236",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "236::aozora2::236_tei.xml::18",
+    "work_id": "236",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "2509::aozora2html::2509_tei.xml::20",
+    "work_id": "2509",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "plain_prose"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "2509::aozora-epub3::2509_tei.xml::21",
+    "work_id": "2509",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "plain_prose"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "4464::aozora-epub3::4464_tei.xml::46",
+    "work_id": "4464",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/4464_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "notes",
+      "verse"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "4464::aozora-rs::4464_tei.xml::47",
+    "work_id": "4464",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/4464_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "notes",
+      "verse"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "4464::aozora2::4464_tei.xml::48",
+    "work_id": "4464",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/4464_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_under_segmented",
+    "structure_profiles": [
+      "notes",
+      "verse"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "45093::aozora2html::45093_tei.xml::50",
+    "work_id": "45093",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "45093::aozora-rs::45093_tei.xml::52",
+    "work_id": "45093",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "45093::aozora2::45093_tei.xml::53",
+    "work_id": "45093",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "4872::aozora2html::4872_tei.xml::55",
+    "work_id": "4872",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "plain_prose"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "4872::aozora-epub3::4872_tei.xml::56",
+    "work_id": "4872",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "plain_prose"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "4872::aozora-rs::4872_tei.xml::57",
+    "work_id": "4872",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "plain_prose"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "4872::aozora2::4872_tei.xml::58",
+    "work_id": "4872",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "plain_prose"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "50502::aozora2html::50502_tei.xml::60",
+    "work_id": "50502",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/50502_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "notes"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "50502::aozora-epub3::50502_tei.xml::61",
+    "work_id": "50502",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/50502_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "notes"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "56996::aozora2html::56996_tei.xml::90",
+    "work_id": "56996",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "56996::aozora-rs::56996_tei.xml::92",
+    "work_id": "56996",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "56996::aozora2::56996_tei.xml::93",
+    "work_id": "56996",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "56998::aozora2html::56998_tei.xml::95",
+    "work_id": "56998",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/56998_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "56998::aozora-rs::56998_tei.xml::97",
+    "work_id": "56998",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/56998_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "56998::aozora2::56998_tei.xml::98",
+    "work_id": "56998",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/56998_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57001::aozora2html::57001_tei.xml::105",
+    "work_id": "57001",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57001_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57001::aozora-rs::57001_tei.xml::107",
+    "work_id": "57001",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57001_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57001::aozora2::57001_tei.xml::108",
+    "work_id": "57001",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57001_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57003::aozora2html::57003_tei.xml::115",
+    "work_id": "57003",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57003::aozora-rs::57003_tei.xml::117",
+    "work_id": "57003",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57003::aozora2::57003_tei.xml::118",
+    "work_id": "57003",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57004::aozora2html::57004_tei.xml::120",
+    "work_id": "57004",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57004::aozora-epub3::57004_tei.xml::121",
+    "work_id": "57004",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57004::aozora-rs::57004_tei.xml::122",
+    "work_id": "57004",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57004::aozora2::57004_tei.xml::123",
+    "work_id": "57004",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57005::aozora2html::57005_tei.xml::125",
+    "work_id": "57005",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57005_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57005::aozora-rs::57005_tei.xml::127",
+    "work_id": "57005",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57005_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57005::aozora2::57005_tei.xml::128",
+    "work_id": "57005",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57005_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57006::aozora2html::57006_tei.xml::130",
+    "work_id": "57006",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57006_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57006::aozora-rs::57006_tei.xml::132",
+    "work_id": "57006",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57006_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57006::aozora2::57006_tei.xml::133",
+    "work_id": "57006",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57006_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57037::aozora2html::57037_tei.xml::135",
+    "work_id": "57037",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57037_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57037::aozora-rs::57037_tei.xml::137",
+    "work_id": "57037",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57037_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57037::aozora2::57037_tei.xml::138",
+    "work_id": "57037",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57037_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57038::aozora2html::57038_tei.xml::140",
+    "work_id": "57038",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57038::aozora-rs::57038_tei.xml::142",
+    "work_id": "57038",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57038::aozora2::57038_tei.xml::143",
+    "work_id": "57038",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57039::aozora2html::57039_tei.xml::145",
+    "work_id": "57039",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57039_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57039::aozora-rs::57039_tei.xml::147",
+    "work_id": "57039",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57039_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57039::aozora2::57039_tei.xml::148",
+    "work_id": "57039",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57039_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57040::aozora2html::57040_tei.xml::150",
+    "work_id": "57040",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57040_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57040::aozora-rs::57040_tei.xml::152",
+    "work_id": "57040",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57040_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57040::aozora2::57040_tei.xml::153",
+    "work_id": "57040",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57040_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57041::aozora2html::57041_tei.xml::155",
+    "work_id": "57041",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57041_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57041::aozora-rs::57041_tei.xml::157",
+    "work_id": "57041",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57041_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57041::aozora2::57041_tei.xml::158",
+    "work_id": "57041",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57041_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57042::aozora2html::57042_tei.xml::160",
+    "work_id": "57042",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57042_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57042::aozora-rs::57042_tei.xml::162",
+    "work_id": "57042",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57042_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57042::aozora2::57042_tei.xml::163",
+    "work_id": "57042",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57042_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57046::aozora2html::57046_tei.xml::175",
+    "work_id": "57046",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57046::aozora-rs::57046_tei.xml::177",
+    "work_id": "57046",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57046::aozora2::57046_tei.xml::178",
+    "work_id": "57046",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57047::aozora2html::57047_tei.xml::180",
+    "work_id": "57047",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57047::aozora-epub3::57047_tei.xml::181",
+    "work_id": "57047",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57047::aozora-rs::57047_tei.xml::182",
+    "work_id": "57047",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "57047::aozora2::57047_tei.xml::183",
+    "work_id": "57047",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "1126::aozora-rs::1126_tei.xml::227",
+    "work_id": "1126",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/draft/tei_lib_lv3/1126_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "drama",
+      "front_back_matter"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  },
+  {
+    "row_id": "86::aozora2html::86_tei.xml::245",
+    "work_id": "86",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/draft/tei_lib_lv3/86_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "drama",
+      "front_back_matter"
+    ],
+    "cause": "ruby_or_parenthetical_policy"
+  }
+]

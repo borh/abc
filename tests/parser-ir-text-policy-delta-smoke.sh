@@ -8,6 +8,7 @@ trap 'rm -rf "$out_dir"' EXIT
 matrix_summary="$out_dir/matrix.json"
 summary_json="$out_dir/text-policy-delta.summary.json"
 report_md="$out_dir/text-policy-delta.md"
+worksets_dir="$out_dir/text-policy-worksets"
 
 cat > "$matrix_summary" <<'JSON'
 {
@@ -200,10 +201,15 @@ cat > "$matrix_summary" <<'JSON'
 }
 JSON
 
+mkdir -p "$worksets_dir"
+printf '[{"stale": true}]\n' > "$worksets_dir/ruby_or_parenthetical_policy.json"
+printf 'keep\n' > "$worksets_dir/unrelated.txt"
+
 python3 "$repo_root/reports/parser-ir/text-policy-delta.py" \
   --matrix-summary "$matrix_summary" \
   --summary-json "$summary_json" \
-  --report-md "$report_md"
+  --report-md "$report_md" \
+  --worksets-dir "$worksets_dir"
 
 jq -e '.schema_version == "parser-ir-text-policy-delta-v1"' "$summary_json" >/dev/null
 jq -e '.total_different_rows == 15' "$summary_json" >/dev/null
@@ -217,4 +223,16 @@ jq -e '.counts_by_cause.unknown_text_delta == 0' "$summary_json" >/dev/null
 jq -e '.already_equal_rows == 1' "$summary_json" >/dev/null
 jq -e '.calibration_only_rows[] | select(.body_text_relation == "generated_contains_tei_eaj")' "$summary_json" >/dev/null
 jq -e '([.source_markup_backed_blockers[].cause] | index("tei_eaj_editorial_or_enrichment") | not)' "$summary_json" >/dev/null
+jq -e '.workset_files.ruby_or_parenthetical_policy.count == 4 and .workset_files.ruby_or_parenthetical_policy.source_markup_backed == true and (.workset_files.ruby_or_parenthetical_policy.hash | test("^sha256:[0-9a-f]{64}$"))' "$summary_json" >/dev/null
+jq -e '.workset_files.front_back_source_region_policy.count == 4 and .workset_files.body_visible_layout_policy.count == 3 and .workset_files.adapter_text_loss.count == 3' "$summary_json" >/dev/null
+jq -e '.workset_files.tei_eaj_editorial_or_enrichment.count == 1 and .workset_files.tei_eaj_editorial_or_enrichment.source_markup_backed == false' "$summary_json" >/dev/null
+jq -e '.workset_files.unknown_text_delta.count == 0 and .workset_files.unknown_text_delta.path == null and .workset_files.unknown_text_delta.source_markup_backed == false and .workset_files.unknown_text_delta.requires_manual_classification == true' "$summary_json" >/dev/null
+jq -e '(.source_markup_backed_workset_files | keys | sort) == (["adapter_text_loss", "body_visible_layout_policy", "front_back_source_region_policy", "ruby_or_parenthetical_policy"] | sort)' "$summary_json" >/dev/null
+jq -e '.manual_classification_workset_files.unknown_text_delta.requires_manual_classification == true and .manual_classification_workset_files.unknown_text_delta.source_markup_backed == false' "$summary_json" >/dev/null
+test -e "$worksets_dir/unrelated.txt"
+jq -e 'length == 4 and .[0].cause == "ruby_or_parenthetical_policy"' "$worksets_dir/ruby_or_parenthetical_policy.json" >/dev/null
+jq -e 'length == 4 and all(.[]; .cause == "front_back_source_region_policy")' "$worksets_dir/front_back_source_region_policy.json" >/dev/null
+jq -e 'length == 1 and .[0].cause == "tei_eaj_editorial_or_enrichment"' "$worksets_dir/tei_eaj_editorial_or_enrichment.json" >/dev/null
+test ! -e "$worksets_dir/unknown_text_delta.json"
 rg -n "Text Policy Delta" "$report_md" >/dev/null
+rg -n "Workset Files" "$report_md" >/dev/null

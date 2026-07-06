@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://abc.local/schemas/aat-oracle-cases-v1.json",
+  "type": "object",
+  "required": ["aat_version", "evidence", "case"],
+  "additionalProperties": false,
+  "properties": {
+    "aat_version": { "const": 1 },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/Evidence" }
+    },
+    "case": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/Case" }
+    }
+  },
+  "$defs": {
+    "Evidence": {
+      "type": "object",
+      "required": ["id", "kind", "citation", "supports", "independent"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "enum": ["reference_table", "unicode", "aozora_rule", "curator_note"]
+        },
+        "citation": { "type": "string", "minLength": 1 },
+        "locator": { "type": "string" },
+        "url": { "type": "string" },
+        "supports": { "type": "string", "minLength": 1 },
+        "independent": { "type": "boolean" },
+        "notes": { "type": "string" }
+      }
+    },
+    "ReviewEntry": {
+      "type": "object",
+      "required": ["status", "reviewer", "reviewed_at"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["draft", "reviewed", "disputed", "retired"]
+        },
+        "reviewer": { "type": "string", "minLength": 1 },
+        "reviewed_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "notes": { "type": "string" }
+      }
+    },
+    "Case": {
+      "type": "object",
+      "required": [
+        "id",
+        "syntax_row_ids",
+        "category",
+        "source_utf8",
+        "evidence_ids",
+        "review",
+        "oracle"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "syntax_row_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "category": { "type": "string", "minLength": 1 },
+        "source_utf8": { "type": "string", "minLength": 1 },
+        "evidence_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "review": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/ReviewEntry" }
+        },
+        "notes": { "type": "string" },
+        "oracle": { "$ref": "#/$defs/OracleExpectations" }
+      }
+    },
+    "OracleExpectations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "visible_text": { "type": "string" },
+        "nodes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/NodeAssertion" }
+        },
+        "sequence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/SequenceAssertion" }
+        },
+        "gaiji": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/GaijiAssertion" }
+        }
+      }
+    },
+    "NodeAssertion": {
+      "type": "object",
+      "required": ["selector", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "selector": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "count": { "type": "integer", "minimum": 0 },
+        "min_count": { "type": "integer", "minimum": 0 },
+        "absent": { "type": "boolean" },
+        "fields": { "type": "object" },
+        "field_absent": { "type": "array", "items": { "type": "string" } },
+        "evidence_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "SequenceAssertion": {
+      "type": "object",
+      "required": ["selector", "kinds"],
+      "additionalProperties": false,
+      "properties": {
+        "selector": { "type": "string", "minLength": 1 },
+        "kinds": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "evidence_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "GaijiAssertion": {
+      "type": "object",
+      "required": ["selector", "description", "resolved"],
+      "additionalProperties": false,
+      "properties": {
+        "selector": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "resolved": { "type": ["string", "null"] },
+        "jis_code": { "type": ["string", "null"] },
+        "unresolved_reason": { "type": ["string", "null"] },
+        "source": { "type": "string" },
+        "evidence_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

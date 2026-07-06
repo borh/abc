@@ -1,0 +1,1379 @@
+[[observation]]
+case_id = "gaiji.jis.2-13-47"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter supplements aozora-rs-gaiji v0.6.0 with the oracle JIS mapping for this marker."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { resolved = "撑", jis_code = "2-13-47" }
+evidence = "adapters/aozora-rs/src/aat.rs"
+
+[[observation]]
+case_id = "gaiji.jis.2-13-47"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora-core 0.7.1 resolves this JIS-form marker to 撑."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { resolved = "撑", jis_code = "2-13-47" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "ruby.gaiji.inline_base"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora-core 0.7.1 emits a ruby node with the resolved JIS gaiji as structured base_content."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "噯", reading = "おくび" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.bold_italic.block"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora-core 0.7.1 emits balanced block scopes for bold and italic; the adapter preserves them as AAT style scopes."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "bold" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.font_size.block_larger"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora-core 0.7.1 emits block font-size scope with magnitude; the adapter preserves direction and level."
+selector = "blocks.*.content.*"
+kind = "font_size"
+fields = { size_type = "larger", level = 2 }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "layout.tcy.block"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora-core 0.7.1 emits balanced block TCY scope; the adapter preserves it as an AAT tcy scope."
+selector = "blocks.*.content.*"
+kind = "tcy"
+fields = {}
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "gaiji.jis.2-13-47"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders this JIS gaiji as an image fallback; the adapter source-derived recovery resolves it through the local JIS X 0213 table."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "「てへん＋掌」、第4水準2-13-47", resolved = "撑", jis_code = "2-13-47", unresolved_reason = "" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "gaiji.unicode.u546d"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders this Unicode gaiji as plain text; the adapter source-derived recovery restores the gaiji node from the source marker."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "「口＋世」、U+546D", resolved = "呭", jis_code = "", unresolved_reason = "" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "ruby.gaiji.inline_base"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter resolves the JIS gaiji and preserves it as ruby base content."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "噯", reading = "おくび", direction = "right" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "ruby.gaiji.inline_base"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders gaiji ruby through image fallback; the adapter source-derived recovery resolves the gaiji base and preserves ruby content."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "噯", reading = "おくび", direction = "right" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "ruby.double.right_left"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits ruby for ruby.double.right_left; oracle correctness is tracked separately."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "青空文庫", reading = "あおぞらぶんこ", direction = "right" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "ruby.double.right_left"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders right ruby and leaves left ruby as a source note; the adapter source-derived recovery records both readings."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "青空文庫", reading = "あおぞらぶんこ", direction = "right", x-left-reading = "aozora bunko" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "ruby.placement.left"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for ruby.placement.left; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "ruby.placement.left"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html leaves left-ruby placement as a source note; the adapter source-derived recovery emits an AAT ruby node with left direction."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "青空文庫", reading = "あおぞらぶんこ", direction = "left" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "ruby.nested_forbidden.target_includes_ruby"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits ruby for ruby.nested_forbidden.target_includes_ruby; oracle correctness is tracked separately."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "青空文庫", reading = "あおぞらぶんこ", direction = "right" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "ruby.nested_forbidden.target_includes_ruby"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders the base ruby and source note; the adapter source-derived recovery records the forbidden nested-ruby note as raw error metadata."
+selector = "blocks.*.content.*"
+kind = "raw"
+fields = { x-error-kind = "nested_ruby_forbidden" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "annotation.chuuki.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for annotation.chuuki.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "annotation.chuuki.basic"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders chuuki as ruby; the adapter source-derived recovery marks the annotation type."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "喋", reading = "ママ", direction = "right", x-annotation-type = "chuuki" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "annotation.bouki.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for annotation.bouki.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "annotation.bouki.basic"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders bouki as ruby with spacing entities; the adapter source-derived recovery marks bouki and normalizes the repeated marker."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "血が流れ", reading = "××××", direction = "right", x-annotation-type = "bouki" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "gaiji.dakuten_katakana.ve"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter resolves dakuten katakana JIS marker through the oracle supplement."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "濁点付き片仮名ヱ、1-7-84", resolved = "ヹ", jis_code = "1-7-84" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "gaiji.dakuten_katakana.ve"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders this dakuten katakana marker as an image fallback; the adapter source-derived recovery resolves it through the local JIS X 0213 table."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "濁点付き片仮名ヱ、1-7-84", resolved = "ヹ", jis_code = "1-7-84", unresolved_reason = "" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "gaiji.un_embed.description_only"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter preserves description-only gaiji as unresolved metadata."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "底本では欠字", resolved = "", unresolved_reason = "unresolved" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "gaiji.un_embed.description_only"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html leaves description-only gaiji as note text; the adapter source-derived recovery emits unresolved gaiji metadata."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "底本では欠字", resolved = "", jis_code = "", unresolved_reason = "unresolved" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "iteration.kunoji.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for iteration.kunoji.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "iteration.kunoji.basic"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders the kunoji source glyphs literally; the adapter source-derived recovery emits the normalized iteration mark gaiji."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "くの字点", resolved = "〳〵", jis_code = "", unresolved_reason = "" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "accent.diacritic.e_acute"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for accent.diacritic.e_acute; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "accent.diacritic.e_acute"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders the accent as gaiji image fallback; the adapter source-derived recovery emits an AAT accent node."
+selector = "blocks.*.content.*"
+kind = "accent"
+fields = { code = "1-09-63", name = "アキュートアクセント付きE小文字", resolved = "é" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "kunten.kaeriten.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for kunten.kaeriten.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "kunten.kaeriten.basic"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html leaves kaeriten as note text; the adapter source-derived recovery emits AAT kaeriten style metadata."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "kaeriten", x-marker = "一" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "kunten.okurigana.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for kunten.okurigana.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "kunten.okurigana.basic"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html leaves kunten okurigana as note text; the adapter source-derived recovery emits annotation ruby metadata."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "", reading = "読", direction = "right", x-annotation-type = "okurigana" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "heading.inline_form.large"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter reconstructs inline-form large heading as an AAT heading block."
+selector = "blocks.*"
+kind = "heading"
+fields = { level = 1, style = "normal" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "heading.inline_form.large"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits heading for heading.inline_form.large; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "heading"
+fields = { level = 1, style = "normal" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "heading.dogyo.medium"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter reconstructs dogyo medium heading as an AAT heading block."
+selector = "blocks.*"
+kind = "heading"
+fields = { level = 2, style = "dogyo" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "heading.dogyo.medium"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits heading for heading.dogyo.medium; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "heading"
+fields = { level = 2, style = "dogyo" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "heading.mado.small"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter reconstructs mado small heading as an AAT heading block."
+selector = "blocks.*"
+kind = "heading"
+fields = { level = 3, style = "mado" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "heading.mado.small"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits heading for heading.mado.small; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "heading"
+fields = { level = 3, style = "mado" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "decoration.boten.white_sesame"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits style for decoration.boten.white_sesame; oracle correctness is tracked separately."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "boten" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "decoration.boten.white_sesame"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders white-sesame boten with a parser-specific class; the adapter normalizes it to parser-neutral AAT style metadata."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "boten", x-boten-kind = "white_sesame" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.bousen.double"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter preserves double bousen as style metadata."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "bousen", x-line-kind = "double" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "decoration.bousen.double"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders double bousen with a parser-specific class; the adapter normalizes it to parser-neutral AAT style metadata."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "bousen", x-line-kind = "double" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.bold_italic.block"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph text for block bold/italic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/new-block-cases/decoration.bold_italic.block/report.json"
+
+[[observation]]
+case_id = "decoration.bold_italic.block"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders block bold/italic as classed divs; the adapter normalizes those classes to AAT style scopes."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "bold" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.bold_italic.both"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders bold/italic with parser-specific classes; the adapter normalizes them to parser-neutral AAT style scopes."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "bold" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.font_size.larger"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter preserves inline larger-font command as a font_size node."
+selector = "blocks.*.content.*"
+kind = "font_size"
+fields = { size_type = "larger", level = 2 }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "decoration.font_size.larger"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders inline font size as a parser-specific class; the adapter normalizes it to an AAT font_size node."
+selector = "blocks.*.content.*"
+kind = "font_size"
+fields = { size_type = "larger", level = 2 }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.font_size.block_larger"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph text for block font-size; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/new-block-cases/decoration.font_size.block_larger/report.json"
+
+[[observation]]
+case_id = "decoration.font_size.block_larger"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders block font size as a classed div; the adapter normalizes it to an AAT font_size node."
+selector = "blocks.*.content.*"
+kind = "font_size"
+fields = { size_type = "larger", level = 2 }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.keigakomi.inline"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for decoration.keigakomi.inline; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "decoration.keigakomi.inline"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders inline keigakomi as a parser-specific style class; the adapter normalizes it to an AAT keigakomi node."
+selector = "blocks.*.content.*"
+kind = "keigakomi"
+fields = {}
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.direction_override.left_boten"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for decoration.direction_override.left_boten; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "decoration.direction_override.left_boten"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders directional boten with a parser-specific class; the adapter normalizes it to AAT boten placement metadata."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "boten", x-placement = "left" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "indentation.jisage_oneline.two_chars"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for indentation.jisage_oneline.two_chars; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "indentation.jisage_oneline.two_chars"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders one-line jisage as a block; the adapter source-derived recovery emits line-scoped jisage style metadata."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "jisage_line", x-indent = 2 }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "indentation.chitsuki.line"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for indentation.chitsuki.line; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "indentation.chitsuki.line"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders line chitsuki as an empty classed div; the adapter source-derived recovery emits line-scoped chitsuki style metadata."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "chitsuki", x-align = "right" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "indentation.jizume.width"
+adapter = "aozora-rs"
+status = "aborts"
+summary = "aozora-rs emits paragraph for indentation.jizume.width; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "indentation.jizume.width"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders jizume as a classed div; the adapter source-derived recovery emits jizume width metadata."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "jizume", x-width = 4 }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "indentation.burasage.hanging"
+adapter = "aozora-rs"
+status = "aborts"
+summary = "aozora-rs emits paragraph for indentation.burasage.hanging; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "indentation.burasage.hanging"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders burasage as a classed div; the adapter source-derived recovery emits hanging indent metadata."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "burasage", x-indent-first = 2, x-indent-rest = 4 }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "layout.yokogumi.inline"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for layout.yokogumi.inline; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "layout.yokogumi.inline"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders yokogumi as a parser-specific style class; the adapter source-derived recovery emits an AAT yokogumi node."
+selector = "blocks.*.content.*"
+kind = "yokogumi"
+fields = {}
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "layout.tcy.inline"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for layout.tcy.inline; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "layout.tcy.inline"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders inline TCY as plain text; the adapter source-derived recovery emits an AAT tcy node."
+selector = "blocks.*.content.*"
+kind = "tcy"
+fields = {}
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "layout.tcy.block"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph text for block TCY; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/new-block-cases/layout.tcy.block/report.json"
+
+[[observation]]
+case_id = "layout.tcy.block"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html leaves block TCY commands as notes and text; the adapter source-derived recovery emits an AAT tcy node."
+selector = "blocks.*.content.*"
+kind = "tcy"
+fields = {}
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "warigaki.parenthetical.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for warigaki.parenthetical.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "warigaki.parenthetical.basic"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders parenthetical warigaki as a parser-specific style; the adapter source-derived recovery emits an AAT warigaki node."
+selector = "blocks.*.content.*"
+kind = "warigaki"
+fields = {}
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "caption.inline.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for caption.inline.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "caption.inline.basic"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits inline caption for caption.inline.basic; oracle correctness is tracked separately."
+selector = "blocks.*.content.*"
+kind = "caption"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "caption.block.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter reconstructs block caption scope."
+selector = "blocks.*"
+kind = "caption_block"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "caption.block.basic"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders block captions as classed divs; the adapter source-derived recovery emits an AAT caption_block."
+selector = "blocks.*"
+kind = "caption_block"
+fields = {}
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "figure.image_inline.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for figure.image_inline.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "figure.image_inline.basic"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits paragraph for figure.image_inline.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "editor_note.unmapped.blank"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for editor_note.unmapped.blank; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "editor_note.unmapped.blank"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html leaves page-side editor notes as note text; the adapter source-derived recovery preserves it as empty text metadata."
+selector = "blocks.*.content.*"
+kind = "text"
+fields = { value = "", x-editor-note = "左頁" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "reference.frontref.boten"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for reference.frontref.boten; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "reference.frontref.boten"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html leaves front-reference boten as note text; the adapter source-derived recovery emits AAT boten with front-reference metadata."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "boten", x-frontref = "強調" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "break.line_explicit.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph for break.line_explicit.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "break.line_explicit.basic"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits source-derived explicit line break text for break.line_explicit.basic; oracle correctness is tracked separately."
+selector = "blocks.*.content.*"
+kind = "text"
+fields = { value = "前\n後", x-break-kind = "line" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "break.page.basic"
+adapter = "aozora-rs"
+status = "aborts"
+summary = "aozora-rs emits paragraph for break.page.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "break.page.basic"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits source-derived page break paragraph metadata for break.page.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = { x-break-kind = "page" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "heading.basic.large"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits heading for heading.basic.large; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "heading"
+fields = { level = 1 }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "heading.basic.large"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits heading for heading.basic.large; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "heading"
+fields = { level = 1, style = "normal" }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "emphasis.boten.basic"
+adapter = "aozora2html"
+status = "normalised"
+summary = "aozora2html renders basic boten as a parser-specific style class; the adapter normalizes it to parser-neutral boten."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "boten" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "indentation.jisage_block.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter reconstructs block jisage scope."
+selector = "blocks.*"
+kind = "jisage_block"
+fields = { x-indent = 2 }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "indentation.jisage_block.basic"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits jisage_block for indentation.jisage_block.basic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "jisage_block"
+fields = { x-indent = 2 }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "warichu.basic.inline"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter preserves warichu as an AAT warigaki inline node."
+selector = "blocks.*.content.*"
+kind = "warigaki"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "warichu.basic.inline"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits warigaki for warichu.basic.inline; oracle correctness is tracked separately."
+selector = "blocks.*.content.*"
+kind = "warigaki"
+fields = {}
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "figure.image_caption.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter reconstructs figure metadata and caption content."
+selector = "blocks.*.content.*"
+kind = "figure"
+fields = { filename = "fig00001_01.png", alt = "猫の図", width = 321, height = 123 }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "figure.image_caption.basic"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits figure metadata for figure.image_caption.basic; oracle correctness is tracked separately."
+selector = "blocks.*.content.*"
+kind = "figure"
+fields = { filename = "fig00001_01.png", alt = "猫の図", width = 321, height = 123 }
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "gaiji.unicode.u546d"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter resolves Unicode-codepoint gaiji through aozora-rs-gaiji."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "「口＋世」、U+546D", resolved = "呭" }
+evidence = "adapters/aozora-rs/src/aat.rs"
+
+[[observation]]
+case_id = "decoration.bold_italic.both"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter reconstructs inline bold and italic style scopes."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "bold" }
+evidence = "adapters/aozora-rs/src/aat.rs"
+
+[[observation]]
+case_id = "ruby.basic.simple"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter preserves ordinary ruby as an AAT ruby node."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "吾輩", reading = "わがはい", direction = "right" }
+evidence = "adapters/aozora-rs/src/aat.rs"
+
+[[observation]]
+case_id = "ruby.basic.simple"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits ordinary ruby as an AAT ruby node."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "吾輩", reading = "わがはい", direction = "right" }
+evidence = "adapters/aozora2html/src/lib.rs"
+
+[[observation]]
+case_id = "emphasis.boten.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter reconstructs basic boten emphasis as an AAT style scope."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "boten" }
+evidence = "adapters/aozora-rs/src/aat.rs"
+
+[[observation]]
+case_id = "gaiji.unicode.u546d"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "「口＋世」、U+546D", resolved = "呭", jis_code = "", unresolved_reason = "" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "ruby.double.right_left"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "青空文庫", reading = "あおぞらぶんこ", direction = "right", x-left-reading = "aozora bunko" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "ruby.placement.left"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "青空文庫", reading = "あおぞらぶんこ", direction = "left" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "ruby.nested_forbidden.target_includes_ruby"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "raw"
+fields = { x-error-kind = "nested_ruby_forbidden" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "annotation.chuuki.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "喋", reading = "ママ", direction = "right", x-annotation-type = "chuuki" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "annotation.bouki.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "血が流れ", reading = "××××", direction = "right", x-annotation-type = "bouki" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "gaiji.dakuten_katakana.ve"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "濁点付き片仮名ヱ、1-7-84", resolved = "ヹ", jis_code = "1-7-84", unresolved_reason = "" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "gaiji.un_embed.description_only"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "底本では欠字", resolved = "", jis_code = "", unresolved_reason = "unresolved" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "iteration.kunoji.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "くの字点", resolved = "〳〵", jis_code = "", unresolved_reason = "" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "accent.diacritic.e_acute"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "accent"
+fields = { code = "1-09-63", name = "アキュートアクセント付きE小文字", resolved = "é" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "kunten.kaeriten.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "kaeriten", x-marker = "一" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "kunten.okurigana.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "", reading = "読", direction = "right", x-annotation-type = "okurigana" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "heading.inline_form.large"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*"
+kind = "heading"
+fields = { level = 1, style = "normal" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "heading.dogyo.medium"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*"
+kind = "heading"
+fields = { level = 2, style = "dogyo" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "heading.mado.small"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*"
+kind = "heading"
+fields = { level = 3, style = "mado" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.boten.white_sesame"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "boten", x-boten-kind = "white_sesame" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.bousen.double"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "bousen", x-line-kind = "double" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.bold_italic.both"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "bold" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.font_size.larger"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "font_size"
+fields = { size_type = "larger", level = 2 }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.keigakomi.inline"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "keigakomi"
+fields = {}
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.direction_override.left_boten"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "boten", x-placement = "left" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "indentation.jisage_oneline.two_chars"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "jisage_line", x-indent = 2 }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "indentation.chitsuki.line"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "chitsuki", x-align = "right" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "indentation.jizume.width"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "jizume", x-width = 4 }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "indentation.burasage.hanging"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "burasage", x-indent-first = 2, x-indent-rest = 4 }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "layout.yokogumi.inline"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "yokogumi"
+fields = {}
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "layout.tcy.inline"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "tcy"
+fields = {}
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "warigaki.parenthetical.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "warigaki"
+fields = {}
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "caption.inline.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "caption"
+fields = {}
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "caption.block.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*"
+kind = "caption_block"
+fields = {}
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "figure.image_inline.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "figure"
+fields = { filename = "fig00001_01.png", alt = "猫の図", width = 321, height = 123 }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "editor_note.unmapped.blank"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "text"
+fields = { value = "", x-editor-note = "左頁" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "reference.frontref.boten"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "boten", x-frontref = "強調" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "break.line_explicit.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "text"
+fields = { value = "前\n後", x-break-kind = "line" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "break.page.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*"
+kind = "paragraph"
+fields = { x-break-kind = "page" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "ruby.basic.simple"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "吾輩", reading = "わがはい", direction = "right" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "heading.basic.large"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*"
+kind = "heading"
+fields = { level = 1, style = "normal" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "emphasis.boten.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "boten" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "indentation.jisage_block.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*"
+kind = "jisage_block"
+fields = { x-indent = 2 }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "warichu.basic.inline"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "warigaki"
+fields = {}
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "figure.image_caption.basic"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora2 adapter output matches the reviewed AAT oracle for this source-level syntax case."
+selector = "blocks.*.content.*"
+kind = "figure"
+fields = { filename = "fig00001_01.png", alt = "猫の図", width = 321, height = 123 }
+evidence = "adapters/aozora2/src/lib.rs"

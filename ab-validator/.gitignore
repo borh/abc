@@ -1,0 +1,21 @@
+# Local research corpora and parser checkouts
+references/
+.direnv/
+target/
+adapters/*/target/
+result
+result-*
+__pycache__/
+*.pyc
+
+# Local scratch directory for benchmark/run outputs (kept out of /tmp/)
+scratch/
+
+# Local worktrees (isolated workspaces)
+.worktrees/
+
+# Local tool state
+.cargo/.*
+.cargo/git/
+.cargo/registry/
+.claude/settings.local.json

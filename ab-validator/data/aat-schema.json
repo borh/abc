@@ -1,0 +1,321 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://abc.local/schemas/aat-v1.json",
+  "type": "object",
+  "required": ["version", "work_id", "blocks", "meta"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "work_id": { "type": "string" },
+    "blocks": { "type": "array", "items": { "$ref": "#/$defs/block" } },
+    "meta": { "$ref": "#/$defs/meta" }
+  },
+  "$defs": {
+    "span": {
+      "type": "object",
+      "required": ["line_start", "line_end", "byte_start", "byte_end"],
+      "additionalProperties": false,
+      "properties": {
+        "line_start": { "type": "integer", "minimum": 1 },
+        "line_end": { "type": "integer", "minimum": 1 },
+        "byte_start": { "type": "integer", "minimum": 0 },
+        "byte_end": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "required": [
+        "adapter",
+        "adapter_version",
+        "source_encoding",
+        "source_hash",
+        "parse_complete",
+        "warnings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "adapter": { "type": "string" },
+        "adapter_version": { "type": "string" },
+        "source_encoding": { "enum": ["utf-8", "utf-8-bom", "windows-31j", "windows-31j-lossy"] },
+        "source_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "parse_complete": { "type": "boolean" },
+        "warnings": { "type": "array", "items": { "$ref": "#/$defs/warning" } },
+        "metrics": { "$ref": "#/$defs/metrics" },
+        "semantic_summary": { "$ref": "#/$defs/semantic_summary" }
+      }
+    },
+    "semantic_summary": {
+      "type": "object",
+      "required": ["syntax"],
+      "additionalProperties": false,
+      "properties": {
+        "syntax": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/semantic_summary_node" }
+          }
+        }
+      }
+    },
+    "semantic_summary_node": {
+      "type": "object",
+      "required": ["kind", "value", "provenance"],
+      "additionalProperties": false,
+      "properties": {
+        "source_span": { "$ref": "#/$defs/source_span" },
+        "kind": { "type": "string" },
+        "value": { "type": "object" },
+        "provenance": { "type": "string" }
+      }
+    },
+    "source_span": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "decode_ms",
+        "body_selection_ms",
+        "tokenize_ms",
+        "scopenize_ms",
+        "retokenize_ms",
+        "aat_build_ms",
+        "projection_check_ms",
+        "fallback_build_ms",
+        "source_bytes",
+        "validation_body_bytes",
+        "parser_body_bytes",
+        "tokenized_count",
+        "retokenized_count",
+        "parser_nodes",
+        "parser_normalized_nodes",
+        "source_supplement_nodes",
+        "source_fallback_nodes",
+        "fallback_used",
+        "fallback_reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "decode_ms": { "type": "number", "minimum": 0 },
+        "body_selection_ms": { "type": "number", "minimum": 0 },
+        "tokenize_ms": { "type": "number", "minimum": 0 },
+        "scopenize_ms": { "type": "number", "minimum": 0 },
+        "retokenize_ms": { "type": "number", "minimum": 0 },
+        "aat_build_ms": { "type": "number", "minimum": 0 },
+        "projection_check_ms": { "type": "number", "minimum": 0 },
+        "fallback_build_ms": { "type": "number", "minimum": 0 },
+        "source_bytes": { "type": "integer", "minimum": 0 },
+        "validation_body_bytes": { "type": "integer", "minimum": 0 },
+        "parse_body_strategy": { "enum": ["parser_meta", "separator_fallback"] },
+        "parser_body_bytes": { "type": "integer", "minimum": 0 },
+        "tokenized_count": { "type": "integer", "minimum": 0 },
+        "retokenized_count": { "type": "integer", "minimum": 0 },
+        "parser_nodes": { "type": "integer", "minimum": 0 },
+        "parser_normalized_nodes": { "type": "integer", "minimum": 0 },
+        "source_supplement_nodes": { "type": "integer", "minimum": 0 },
+        "source_fallback_nodes": { "type": "integer", "minimum": 0 },
+        "fallback_used": { "type": "boolean" },
+        "fallback_reason": {
+          "enum": [
+            "none",
+            "projection_mismatch",
+            "large_body",
+            "source_supplement_hotspot",
+            "parser_failure"
+          ]
+        }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "required": ["message"],
+      "additionalProperties": false,
+      "properties": {
+        "line": { "type": "integer", "minimum": 1 },
+        "path": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    },
+    "block": {
+      "oneOf": [
+        { "$ref": "#/$defs/paragraph" },
+        { "$ref": "#/$defs/heading" },
+        { "$ref": "#/$defs/block_container" }
+      ]
+    },
+    "inline": {
+      "oneOf": [
+        { "$ref": "#/$defs/text" },
+        { "$ref": "#/$defs/ruby" },
+        { "$ref": "#/$defs/gaiji" },
+        { "$ref": "#/$defs/accent" },
+        { "$ref": "#/$defs/figure" },
+        { "$ref": "#/$defs/raw" },
+        { "$ref": "#/$defs/inline_container" },
+        { "$ref": "#/$defs/warigaki" }
+      ]
+    },
+    "paragraph": {
+      "type": "object",
+      "required": ["kind", "content"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": { "const": "paragraph" },
+        "span": { "$ref": "#/$defs/span" },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/inline" } }
+      }
+    },
+    "heading": {
+      "type": "object",
+      "required": ["kind", "level", "style", "content"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": { "const": "heading" },
+        "level": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "style": { "type": "string" },
+        "span": { "$ref": "#/$defs/span" },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/inline" } }
+      }
+    },
+    "block_container": {
+      "type": "object",
+      "required": ["kind", "children"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": {
+          "enum": [
+            "jisage_block",
+            "quote_block",
+            "keigakomi_block",
+            "yokogumi_block",
+            "caption_block"
+          ]
+        },
+        "span": { "$ref": "#/$defs/span" },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/block" } }
+      }
+    },
+    "text": {
+      "type": "object",
+      "required": ["kind", "value"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": { "const": "text" },
+        "value": { "type": "string" },
+        "span": { "$ref": "#/$defs/span" }
+      }
+    },
+    "ruby": {
+      "type": "object",
+      "required": ["kind", "base", "reading"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": { "const": "ruby" },
+        "base": { "type": "string" },
+        "reading": { "type": "string" },
+        "base_content": { "type": "array", "items": { "$ref": "#/$defs/inline" } },
+        "reading_content": { "type": "array", "items": { "$ref": "#/$defs/inline" } },
+        "direction": { "enum": ["right", "left"] },
+        "span": { "$ref": "#/$defs/span" }
+      }
+    },
+    "gaiji": {
+      "type": "object",
+      "required": ["kind", "description", "resolved", "unresolved_reason"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": { "const": "gaiji" },
+        "description": { "type": "string" },
+        "resolved": { "type": ["string", "null"] },
+        "jis_code": { "type": ["string", "null"] },
+        "unresolved_reason": { "type": ["string", "null"] },
+        "span": { "$ref": "#/$defs/span" }
+      }
+    },
+    "accent": {
+      "type": "object",
+      "required": ["kind", "code", "name", "resolved"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": { "const": "accent" },
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "resolved": { "type": ["string", "null"] },
+        "span": { "$ref": "#/$defs/span" }
+      }
+    },
+    "figure": {
+      "type": "object",
+      "required": ["kind", "filename", "alt", "css_class"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": { "const": "figure" },
+        "filename": { "type": "string" },
+        "alt": { "type": "string" },
+        "css_class": { "type": "string" },
+        "width": { "type": ["integer", "null"], "minimum": 0 },
+        "height": { "type": ["integer", "null"], "minimum": 0 },
+        "caption": { "type": ["array", "null"], "items": { "$ref": "#/$defs/inline" } },
+        "span": { "$ref": "#/$defs/span" }
+      }
+    },
+    "raw": {
+      "type": "object",
+      "required": ["kind", "source"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": { "const": "raw" },
+        "source": { "type": "string" },
+        "x-provenance": {
+          "type": "string",
+          "enum": ["parser-derived", "source-derived", "adapter-derived"]
+        },
+        "x-source-marker-kind": { "type": "string" },
+        "span": { "$ref": "#/$defs/span" }
+      }
+    },
+    "inline_container": {
+      "type": "object",
+      "required": ["kind", "content"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": { "enum": ["style", "font_size", "tcy", "keigakomi", "yokogumi", "caption"] },
+        "style_type": { "type": "string" },
+        "size_type": { "type": "string" },
+        "level": { "type": "integer" },
+        "class_name": { "type": "string" },
+        "span": { "$ref": "#/$defs/span" },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/inline" } }
+      }
+    },
+    "warigaki": {
+      "type": "object",
+      "required": ["kind", "upper", "lower"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": { "const": "warigaki" },
+        "span": { "$ref": "#/$defs/span" },
+        "upper": { "type": "array", "items": { "$ref": "#/$defs/inline" } },
+        "lower": { "type": "array", "items": { "$ref": "#/$defs/inline" } }
+      }
+    }
+  }
+}

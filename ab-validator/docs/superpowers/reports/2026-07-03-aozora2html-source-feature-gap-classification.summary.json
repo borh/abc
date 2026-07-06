@@ -1,0 +1,1707 @@
+{
+  "run_dir": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z",
+  "residual_summary": "/home/bor/Projects/ab-validator/.worktrees/aozora2html-final-four-gap/docs/superpowers/reports/2026-07-03-aozora2html-policy-residual-triage.summary.json",
+  "families": {
+    "warigaki": {
+      "source_feature_without_aat_observation": 29,
+      "marker_class_counts": {
+        "warigaki.compact_start_end": 63,
+        "warigaki.koko_start_end": 3,
+        "warigaki.with_source_line_break": 3
+      },
+      "context_hint_counts": {
+        "base_text_note": 27,
+        "notation_example": 17,
+        "publication_or_editor_note": 22
+      },
+      "adapter_obligation_candidates": 0
+    },
+    "kunten": {
+      "source_feature_without_aat_observation": 3,
+      "marker_class_counts": {
+        "kunten.kaeriten.compact": 7,
+        "kunten.okurigana.parenthesized": 5
+      },
+      "context_hint_counts": {
+        "base_text_note": 4,
+        "notation_example": 4
+      },
+      "adapter_obligation_candidates": 0
+    }
+  },
+  "marker_class_counts": {
+    "kunten.kaeriten.compact": 7,
+    "kunten.okurigana.parenthesized": 5,
+    "warigaki.compact_start_end": 63,
+    "warigaki.koko_start_end": 3,
+    "warigaki.with_source_line_break": 3
+  },
+  "context_hint_counts": {
+    "base_text_note": 31,
+    "notation_example": 21,
+    "publication_or_editor_note": 22
+  },
+  "works": {
+    "000106_57905": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/000106/files/57905_ruby_60056.zip::zento_kakuseifu.txt",
+      "html_path": "cards/000106/files/55787_74814.html",
+      "marker_classes": [
+        "warigaki.compact_start_end",
+        "warigaki.with_source_line_break"
+      ],
+      "context_hints": [
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 279,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end",
+            "warigaki.with_source_line_break"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］",
+            "［＃改行］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "000121_45086": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/000121/files/45086_ruby_63482.zip::ryokan_monogatari_temarito_hachino_ko.txt",
+      "html_path": "cards/000121/files/59955_75178.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 2269,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "000416_47410": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/000416/files/47410_ruby_51216.zip::kangoku_sowa_menkainin_hikaejo.txt",
+      "html_path": "cards/000416/files/57137_60131.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 374,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "000712_52955": {
+      "family_membership": [
+        "kunten"
+      ],
+      "txt_path": "cards/000712/files/52955_txt_42598.zip::shitao_matsuruno_bun.txt",
+      "html_path": "cards/000712/files/52341_42513.html",
+      "marker_classes": [
+        "kunten.kaeriten.compact"
+      ],
+      "context_hints": [
+        "base_text_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 20,
+          "feature": "kaeriten",
+          "marker_classes": [
+            "kunten.kaeriten.compact"
+          ],
+          "markers": [
+            "［＃レ］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "000712_52957": {
+      "family_membership": [
+        "kunten"
+      ],
+      "txt_path": "cards/000712/files/52957_ruby_42613.zip::katsujishio_matsuruno_bun.txt",
+      "html_path": "cards/000712/files/52341_42513.html",
+      "marker_classes": [
+        "kunten.kaeriten.compact"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 15,
+          "feature": "kaeriten",
+          "marker_classes": [
+            "kunten.kaeriten.compact"
+          ],
+          "markers": [
+            "［＃一］",
+            "［＃二］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 26,
+          "feature": "kaeriten",
+          "marker_classes": [
+            "kunten.kaeriten.compact"
+          ],
+          "markers": [
+            "［＃一］",
+            "［＃二］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "000754_48376": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/000754/files/48376_ruby_31929.zip::omu.txt",
+      "html_path": "cards/000754/files/48376_32555.html",
+      "marker_classes": [
+        "warigaki.koko_start_end"
+      ],
+      "context_hints": [
+        "base_text_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 122,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.koko_start_end"
+          ],
+          "markers": [
+            "［＃ここから割り注］",
+            "［＃ここで割り注終わり］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "000933_47549": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/000933/files/47549_ruby_49475.zip::tachibanano_akemi.txt",
+      "html_path": "cards/000933/files/47787_74042.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 68,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43203": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43203_txt_21548.zip::01dokushaeno_kojo.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 9,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 23,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43204": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43204_ruby_21962.zip::02butokai_satsujinjiken.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 12,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 380,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 381,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43205": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43205_ruby_23201.zip::03misshitsu_daihanzai.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 12,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 305,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 306,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43206": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43206_ruby_23202.zip::04makyono_kai.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 224,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 225,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43207": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43207_ruby_23203.zip::05aa_mujo.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 15,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 295,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 296,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43208": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43208_ruby_23204.zip::06manbiki_kazoku.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 15,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 275,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 276,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43209": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43209_ruby_23205.zip::07chio_miru_shinju.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 15,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 305,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 306,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43210": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43210_ruby_23206.zip::08ishino_shita.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 15,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 442,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 443,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43211": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43211_ruby_23207.zip::09tokeikanno_himitsu.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 12,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 248,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 249,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43212": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43212_ruby_23208.zip::10fukumen_yashiki.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 15,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 334,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 335,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43213": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43213_ruby_23209.zip::11reishoki.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 15,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 264,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 265,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43214": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43214_ruby_23210.zip::12inazumawa_mitari.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 275,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 276,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43215": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43215_ruby_23211.zip::13guyo.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 291,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 292,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43216": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43216_ruby_23300.zip::14maboroshino_to.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 12,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 284,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 285,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43217": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43217_ruby_23301.zip::15rottenamu_bijinjutsu.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 15,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 504,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 505,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43218": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43218_ruby_23302.zip::16akawana.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 15,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 478,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 479,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43219": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43219_ruby_23303.zip::17kazokuwa_rokunin.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 15,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 399,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 400,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43220": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43220_ruby_23304.zip::18okami_daimyojin.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 359,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 360,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43221": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43221_ruby_23305.zip::19odoru_tokei.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 12,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 335,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 336,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43222": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43222_ruby_23306.zip::20kojiki_danshaku.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 15,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 435,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 436,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001095_43223": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001095/files/43223_ruby_23307.zip::21tonbi_otoko.txt",
+      "html_path": "cards/001095/files/61106_75661.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example",
+        "publication_or_editor_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 12,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 268,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 269,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "publication_or_editor_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001231_46296": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001231/files/46296_txt_35652.zip::indono_seijin.txt",
+      "html_path": "cards/001231/files/46296_35960.html",
+      "marker_classes": [
+        "warigaki.koko_start_end",
+        "warigaki.with_source_line_break"
+      ],
+      "context_hints": [
+        "base_text_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 31,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.koko_start_end",
+            "warigaki.with_source_line_break"
+          ],
+          "markers": [
+            "［＃ここから割り注］",
+            "［＃ここで割り注終わり］",
+            "［＃改行］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001231_46297": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001231/files/46297_txt_37292.zip::sekaini_okeru_indo.txt",
+      "html_path": "cards/001231/files/46296_35960.html",
+      "marker_classes": [
+        "warigaki.koko_start_end",
+        "warigaki.with_source_line_break"
+      ],
+      "context_hints": [
+        "base_text_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 39,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.koko_start_end",
+            "warigaki.with_source_line_break"
+          ],
+          "markers": [
+            "［＃ここから割り注］",
+            "［＃ここで割り注終わり］",
+            "［＃改行］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001383_56944": {
+      "family_membership": [
+        "kunten"
+      ],
+      "txt_path": "cards/001383/files/56944_ruby_58238.zip::kiino_kunino_kitsune.txt",
+      "html_path": "cards/001383/files/57349_60032.html",
+      "marker_classes": [
+        "kunten.kaeriten.compact",
+        "kunten.okurigana.parenthesized"
+      ],
+      "context_hints": [
+        "base_text_note",
+        "notation_example"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 17,
+          "feature": "kaeriten",
+          "marker_classes": [
+            "kunten.kaeriten.compact",
+            "kunten.okurigana.parenthesized"
+          ],
+          "markers": [
+            "［＃一］",
+            "［＃二］",
+            "［＃（キニ）］",
+            "［＃（ク）］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 17,
+          "feature": "okurigana",
+          "marker_classes": [
+            "kunten.kaeriten.compact",
+            "kunten.okurigana.parenthesized"
+          ],
+          "markers": [
+            "［＃一］",
+            "［＃二］",
+            "［＃（キニ）］",
+            "［＃（ク）］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 20,
+          "feature": "okurigana",
+          "marker_classes": [
+            "kunten.okurigana.parenthesized"
+          ],
+          "markers": [
+            "［＃（ノ）］"
+          ],
+          "context_hints": [
+            "notation_example"
+          ]
+        },
+        {
+          "line_number": 38,
+          "feature": "kaeriten",
+          "marker_classes": [
+            "kunten.kaeriten.compact",
+            "kunten.okurigana.parenthesized"
+          ],
+          "markers": [
+            "［＃一］",
+            "［＃二］",
+            "［＃（キニ）］",
+            "［＃（ク）］",
+            "［＃（ノ）］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        },
+        {
+          "line_number": 38,
+          "feature": "okurigana",
+          "marker_classes": [
+            "kunten.kaeriten.compact",
+            "kunten.okurigana.parenthesized"
+          ],
+          "markers": [
+            "［＃一］",
+            "［＃二］",
+            "［＃（キニ）］",
+            "［＃（ク）］",
+            "［＃（ノ）］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    "001383_58152": {
+      "family_membership": [
+        "warigaki"
+      ],
+      "txt_path": "cards/001383/files/58152_ruby_72433.zip::gikyokutai_shosetsu_manatsuno_yono_koi.txt",
+      "html_path": "cards/001383/files/57349_60032.html",
+      "marker_classes": [
+        "warigaki.compact_start_end"
+      ],
+      "context_hints": [
+        "base_text_note"
+      ],
+      "source_encoding": "windows-31j",
+      "line_records": [
+        {
+          "line_number": 127,
+          "feature": "warigaki",
+          "marker_classes": [
+            "warigaki.compact_start_end"
+          ],
+          "markers": [
+            "［＃割り注終わり］",
+            "［＃割り注］"
+          ],
+          "context_hints": [
+            "base_text_note"
+          ]
+        }
+      ],
+      "errors": []
+    }
+  },
+  "worksets": {
+    "warigaki.adapter_obligation_candidates": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/source-feature-gap-worksets/warigaki-adapter-obligation-candidates.json",
+    "kunten.adapter_obligation_candidates": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/source-feature-gap-worksets/kunten-adapter-obligation-candidates.json",
+    "adapter_obligation_union": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/source-feature-gap-worksets/source-feature-gap-adapter-obligation-union.json",
+    "unknown_union": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/source-feature-gap-worksets/source-feature-gap-unknown-union.json",
+    "source_index_only_candidates": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/source-feature-gap-worksets/source-feature-gap-source-index-only-candidates.json"
+  },
+  "verdict_inputs": {
+    "source_feature_without_aat_observation": {
+      "warigaki": 29,
+      "kunten": 3
+    },
+    "adapter_obligation_candidates": {
+      "warigaki": 0,
+      "kunten": 0,
+      "union": 0
+    },
+    "source_index_only_candidates": 32,
+    "unknown": 0
+  }
+}

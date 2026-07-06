@@ -1,0 +1,21 @@
+[package]
+name = "ab-morph-analyzers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Japanese morphological analyzer adapters and output normalization"
+repository = "https://github.com/your-org/ab-validator"
+readme = "../../README.md"
+keywords = ["japanese", "morphology", "tokenizer", "nlp"]
+categories = ["text-processing"]
+
+[dependencies]
+ab-morph-diff.workspace = true
+ab-ortho-detect.workspace = true
+ab-plaintext.workspace = true
+rkyv.workspace = true
+serde.workspace = true
+sudachi.workspace = true
+vaporetto.workspace = true
+vibrato-rkyv.workspace = true
+zstd.workspace = true

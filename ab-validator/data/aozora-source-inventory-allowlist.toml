@@ -1,0 +1,76 @@
+# Reviewed source markers that are inventory-visible but do not block the v1
+# representability gate. Each entry must match by kind plus either body_pattern
+# or raw_pattern. Use this only for out-of-body, malformed corpus noise, or
+# intentionally unsupported-v1 markers.
+
+[[allow]]
+id = "terminal-provenance-note"
+kind = "SegmentBoundaryTerminalProvenance"
+raw_pattern = "^［＃地付き］"
+scope = "terminal_provenance"
+reason = "Terminal bibliography/provenance metadata is not body AAT."
+evidence = "docs/aat-contract.md"
+
+[[allow]]
+id = "boilerplate-empty-command-legend"
+kind = "CommandFullwidth"
+raw_pattern = "^［＃］$"
+scope = "front_matter_legend"
+reason = "Empty fullwidth command marker occurs in Aozora boilerplate that explains input annotations, not as body transcription markup."
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+
+[[allow]]
+id = "boilerplate-kaeriten-placeholder"
+kind = "CommandFullwidth"
+raw_pattern = "^［＃…］$"
+scope = "notation_placeholder"
+reason = "Aozora header legends use this placeholder to explain return-point notation; it is not body transcription markup."
+evidence = "scratch/ab-index.json:000038_1408"
+
+[[allow]]
+id = "boilerplate-okurigana-placeholder"
+kind = "CommandFullwidth"
+raw_pattern = "^［＃（…）］$"
+scope = "notation_placeholder"
+reason = "Aozora header legends use this placeholder to explain kunten okurigana notation; it is not body transcription markup."
+evidence = "scratch/ab-index.json:000026_50238"
+
+[[allow]]
+id = "body-end-boundary"
+kind = "CommandFullwidth"
+raw_pattern = "^［＃本文終わり］$"
+scope = "body_end_boundary"
+reason = "The marker separates body text from bibliographic/provenance metadata and is not itself body AAT."
+evidence = "scratch/ab-index.json:000009_226"
+
+[[allow]]
+id = "malformed-fullwidth-command-start"
+kind = "MalformedCommand"
+raw_pattern = "^［＃$"
+scope = "malformed_source"
+reason = "The shared source scanner reached an unterminated fullwidth command start in corpus text; it is retained as reviewed malformed source noise, not a representable Aozora feature."
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+
+[[allow]]
+id = "malformed-fullwidth-gaiji-start"
+kind = "MalformedGaiji"
+raw_pattern = "^※［＃$"
+scope = "malformed_source"
+reason = "The shared source scanner reached an unterminated gaiji command start in corpus text; it is retained as reviewed malformed source noise, not a representable Aozora feature."
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+
+[[allow]]
+id = "malformed-implicit-ruby-start"
+kind = "MalformedImplicitRuby"
+raw_pattern = "^《$"
+scope = "malformed_source"
+reason = "The shared source scanner reached an unterminated implicit ruby start in corpus text; it is retained as reviewed malformed source noise, not a representable Aozora feature."
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+
+[[allow]]
+id = "malformed-accent-notation-start"
+kind = "MalformedAccentNotation"
+raw_pattern = "^〔$"
+scope = "malformed_source"
+reason = "The shared source scanner reached an unterminated accent-notation start in corpus text; it is retained as reviewed malformed source noise, not a representable Aozora feature."
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"

@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" == "--version" ]]; then
+  echo "test-adapter 0.0.1 test"
+  exit 0
+fi
+
+mode=""
+if [[ "${1:-}" == "--mode" && $# -ge 2 ]]; then
+  mode="$2"
+fi
+
+case "$mode" in
+  aat)
+    script="$(mktemp)"
+    trap 'rm -f "$script"' EXIT
+    cat > "$script" <<'PY'
+import hashlib
+import json
+import re
+import sys
+
+raw = sys.stdin.buffer.read()
+if raw.startswith(b"\xef\xbb\xbf"):
+    text = raw[3:].decode("utf-8")
+    encoding = "utf-8-bom"
+else:
+    try:
+        text = raw.decode("utf-8")
+        encoding = "utf-8"
+    except UnicodeDecodeError:
+        text = raw.decode("cp932")
+        encoding = "windows-31j"
+
+source_hash = "sha256:" + hashlib.sha256(raw).hexdigest()
+
+def span_for(start, end):
+    line = text.count("\n", 0, start) + 1
+    return {
+        "line_start": line,
+        "line_end": line,
+        "byte_start": len(text[:start].encode("utf-8")),
+        "byte_end": len(text[:end].encode("utf-8")),
+    }
+
+content = []
+pos = 0
+pattern = re.compile(r"(?P<ruby_base>[^｜\s《》※［＃]+)《(?P<reading>[^》]+)》|※［＃(?P<gaiji>[^］]+)］")
+for match in pattern.finditer(text):
+    if match.start() > pos:
+        content.append({"kind": "text", "value": text[pos:match.start()], "span": span_for(pos, match.start())})
+    if match.group("reading") is not None:
+        content.append({
+            "kind": "ruby",
+            "base": match.group("ruby_base"),
+            "reading": match.group("reading"),
+            "span": span_for(match.start(), match.end()),
+        })
+    else:
+        description = match.group("gaiji")
+        resolved = None
+        u = re.search(r"U\+([0-9A-Fa-f]{4,6})", description)
+        if u:
+            resolved = chr(int(u.group(1), 16))
+        content.append({
+            "kind": "gaiji",
+            "description": description,
+            "resolved": resolved,
+            "jis_code": None,
+            "unresolved_reason": None if resolved else "not resolved by test-adapter",
+            "span": span_for(match.start(), match.end()),
+        })
+    pos = match.end()
+
+if pos < len(text):
+    content.append({"kind": "text", "value": text[pos:], "span": span_for(pos, len(text))})
+if not content:
+    content.append({"kind": "text", "value": "", "span": {"line_start": 1, "line_end": 1, "byte_start": 0, "byte_end": 0}})
+
+aat = {
+    "version": 1,
+    "work_id": "test_work",
+    "blocks": [{"kind": "paragraph", "content": content}],
+    "meta": {
+        "adapter": "test-adapter",
+        "adapter_version": "0.0.1 test",
+        "source_encoding": encoding,
+        "source_hash": source_hash,
+        "parse_complete": True,
+        "warnings": [],
+    },
+}
+json.dump(aat, sys.stdout, ensure_ascii=False, indent=2)
+print()
+PY
+    python3 "$script"
+    ;;
+  html)
+    python3 -c 'import html,sys; print("<p>" + html.escape(sys.stdin.read()) + "</p>")'
+    ;;
+  *)
+    echo "usage: test-adapter --mode aat|html < input.txt" >&2
+    exit 1
+    ;;
+esac

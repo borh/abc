@@ -1,0 +1,101 @@
+[workspace]
+members = [
+    "crates/ab-source-syntax",
+    "crates/ab-encoding",
+    "crates/ab-ir",
+    "crates/ab-index",
+    "crates/ab-check",
+    "crates/ab-compare",
+    "crates/ab-coverage",
+    "crates/ab-diff-utils",
+    "crates/ab-morph-diff",
+    "crates/ab-ortho-detect",
+    "crates/ab-ortho-detect-ml",
+    "crates/ab-plaintext",
+    "crates/ab-morph-analyzers",
+    "crates/ab-morph-run",
+    "crates/ab-warehouse",
+    "crates/ab-oracle",
+    "crates/ab-aat-to-parser-ir",
+]
+resolver = "2"
+exclude = [
+    "adapters/aozora",
+    "adapters/aozora2",
+    "adapters/aozora2html",
+    "adapters/aozora-rs",
+    "adapters/aozora-epub3",
+    "references",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+anyhow = "1.0"
+arrow-array = "56"
+arrow-schema = "56"
+ab-diff-utils = { path = "crates/ab-diff-utils" }
+ab-morph-diff = { path = "crates/ab-morph-diff" }
+ab-ortho-detect = { path = "crates/ab-ortho-detect" }
+ab-plaintext = { path = "crates/ab-plaintext" }
+ab-morph-analyzers = { path = "crates/ab-morph-analyzers" }
+ab-morph-run = { path = "crates/ab-morph-run" }
+ab-warehouse = { path = "crates/ab-warehouse" }
+ab-ir = { path = "crates/ab-ir" }
+ab-check = { path = "crates/ab-check" }
+ab-source-syntax = { path = "crates/ab-source-syntax" }
+ab-encoding = { path = "crates/ab-encoding" }
+ab-aat-to-parser-ir = { path = "crates/ab-aat-to-parser-ir" }
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4.5", features = ["derive"] }
+criterion = "0.8"
+encoding_rs = "0.8"
+flate2 = "1.0"
+jsonschema = "0.46"
+rayon = "1.10"
+regex = "1.10"
+rustc-hash = "2"
+linfa-logistic = "0.8"
+ndarray = "0.16"
+linfa = "0.8"
+bincode = "1"
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_json = { version = "1.0", features = ["unbounded_depth"] }
+serde_stacker = "0.1"
+parquet = { version = "56", default-features = false, features = ["arrow", "zstd"] }
+sha2 = "0.10"
+tempfile = "3"
+tl = "0.7"
+toml = "1.1.2"
+toml_edit = "0.22"
+thiserror = "2"
+unicode-normalization = "0.1"
+unicode-properties = "0.1"
+proptest = "1.5"
+vaporetto = "0.6.5"
+vibrato-rkyv = { git = "https://github.com/o24s/vibrato-rkyv.git", rev = "6467251cdb945f8f0ca0c6bfd8c96036ab9d4e12", features = ["legacy"] }
+walkdir = "2.5"
+zip = { version = "2.4", default-features = false, features = ["deflate"] }
+# Keep this aligned with vibrato-rkyv's Sudachi benchmark pin.
+sudachi = { git = "https://github.com/WorksApplications/sudachi.rs.git", rev = "54e85e8f7e0a6c4b570cd7b103506b080dc60c92" }
+zstd = "0.13"
+
+# rkyv is a transitive dependency via vibrato-rkyv. Force pointer_width_64
+# so that the serialized dictionary format matches what mecab-dic-converter
+# produces (it also enables this feature on its rkyv dependency). Without
+# this, dictionaries produced by mecab-dic-converter are incompatible with
+# ab-validator's vibrato-rkyv fork.
+rkyv = { version = "0.8", features = ["pointer_width_64"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+
+[profile.bench]
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"

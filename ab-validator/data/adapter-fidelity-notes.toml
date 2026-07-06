@@ -1,0 +1,99 @@
+[[note]]
+id = "aozora-rs-gaiji-jis-unresolved"
+adapter = "aozora-rs"
+syntax_row_ids = ["gaiji.jis_code"]
+status = "active"
+summary = "Adapter faithfully follows aozora-rs-gaiji v0.6.0 for JIS-form gaiji; some remain unresolved relative to the oracle."
+evidence = "docs/adapter-fidelity.md"
+
+[[note]]
+id = "aozora-rs-cross-oracle-observations-needed"
+adapter = "aozora-rs"
+syntax_row_ids = ["ruby.basic", "heading.basic", "decoration.boten", "indentation.jisage_block", "warichu.basic", "figure.image_caption"]
+status = "retired"
+summary = "Cross-adapter oracle triage previously showed broad aozora-rs reviewed-case failures without upstream observations."
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+retired_by = "observations: classify aozora-rs cross-adapter oracle failures"
+
+[[note]]
+id = "aozora-rs-cross-oracle-observed-divergence"
+adapter = "aozora-rs"
+syntax_row_ids = ["ruby.basic", "heading.basic", "decoration.boten", "indentation.jisage_block", "warichu.basic", "figure.image_caption"]
+status = "retired"
+summary = "Upstream observations previously covered aozora-rs reviewed oracle failures; aozora-rs now passes the reviewed oracle matrix."
+evidence = "data/aat-upstream-observations.toml"
+retired_by = "fixes: aozora-rs reviewed oracle matrix green"
+
+[[note]]
+id = "aozora2-blocks-raw-before-reconstruction"
+adapter = "aozora2"
+syntax_row_ids = ["indentation.jisage_block", "caption.block", "layout.yokogumi"]
+status = "retired"
+summary = "Adapter previously preserved supported block markers only as raw nodes before block reconstruction was implemented."
+evidence = "adapters/aozora2/src/lib.rs"
+retired_by = "feat: reconstruct aozora2 block containers"
+
+[[note]]
+id = "aozora2-unsupported-block-types-raw"
+adapter = "aozora2"
+syntax_row_ids = ["layout.tcy"]
+status = "retired"
+summary = "Adapter previously reconstructed headings, jisage, chitsuki, jizume, burasage, caption, keigakomi, and yokogumi, but preserved scoped tcy and related inline-display block boundaries as raw nodes."
+evidence = "adapters/aozora2/src/lib.rs"
+retired_by = "feat: reconstruct aozora2 inline-display block scopes"
+
+[[note]]
+id = "aozora2html-xhtml-projection"
+adapter = "aozora2html"
+syntax_row_ids = ["gaiji.marker", "warichu.basic"]
+status = "active"
+summary = "Adapter maps rendered XHTML, so source-only markup distinctions absent from XHTML cannot always be recovered."
+evidence = "adapters/aozora2html/README.md"
+
+[[note]]
+id = "aozora2html-cross-oracle-source-level-limits"
+adapter = "aozora2html"
+syntax_row_ids = ["gaiji.marker", "ruby.placement_directional", "heading.basic", "decoration.boten", "warichu.basic", "figure.image_caption"]
+status = "active"
+summary = "Cross-adapter oracle triage confirms aozora2html is mostly below source-level AAT oracle expectations because it maps rendered XHTML; failures must be split into recoverable notes-span reconstruction and unrecoverable rendered-output loss."
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[note]]
+id = "aozora2html-full-xhtml-corpus"
+adapter = "aozora2html"
+syntax_row_ids = ["gaiji.marker", "ruby.basic", "heading.basic", "layout.yokogumi", "figure.image_caption"]
+status = "active"
+summary = "Full local upstream-XHTML comparison uses references/aozorabunko only: report_id upstream-xhtml-full loaded 17,601 observations with 15,231 rendered-body proxy rows (6,321 raw XHTML matches plus 8,910 normalized main_text matches), 2,179 main_text mismatches, 58 local_adapter_error rows, 132 upstream_missing_main_text rows, and 1 both_missing_main_text row."
+evidence = "reports/aat-fidelity/upstream-xhtml-full-summary.md"
+
+[[note]]
+id = "aozora-epub3-html-derived"
+adapter = "aozora-epub3"
+syntax_row_ids = []
+status = "active"
+summary = "--mode html emits extracted/filtered body XHTML from the EPUB, not raw upstream parser output like aozora2html."
+evidence = "docs/superpowers/specs/2026-07-04-aozora-epub3-adapter-design.md"
+
+[[note]]
+id = "aozora-epub3-halfwidth-numeral-annotations"
+adapter = "aozora-epub3"
+syntax_row_ids = ["indentation.jisage_block"]
+status = "active"
+summary = "AozoraEpub3 requires full-width numerals in some annotations (e.g. ［＃ここから２字下げ］). Half-width variants are logged as unsupported."
+evidence = "docs/handoffs/adding-aozora2-aozoraepub3-parser-support.md"
+
+[[note]]
+id = "aozora-epub3-warichu-malformed"
+adapter = "aozora-epub3"
+syntax_row_ids = ["warichu.basic"]
+status = "active"
+summary = "AozoraEpub3 1.3.4-jdk21 emits malformed HTML for warichu blocks and reports [ERROR] 割り注終わりなし; source-derived warichu recovery is a no-op because the schema warigaki kind needs upper/lower rows unrecoverable from rendered split spans."
+evidence = "docs/handoffs/adding-aozora2-aozoraepub3-parser-support.md"
+
+[[note]]
+id = "aozora-initial-json-inspect-adapter"
+adapter = "aozora"
+syntax_row_ids = []
+status = "active"
+summary = "Initial aozora adapter maps from the upstream inspect JSON surface and raw-preserves unsupported node kinds."
+evidence = "docs/superpowers/specs/2026-07-05-aozora-parser-and-notation-spec-comparator.md"

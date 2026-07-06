@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://abc.local/schemas/aat-upstream-observations-v1.json",
+  "type": "object",
+  "required": ["observation"],
+  "additionalProperties": false,
+  "properties": {
+    "observation": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Observation" }
+    }
+  },
+  "$defs": {
+    "Observation": {
+      "type": "object",
+      "required": ["case_id", "adapter", "status", "summary"],
+      "additionalProperties": false,
+      "properties": {
+        "case_id": { "type": "string", "minLength": 1 },
+        "adapter": { "type": "string", "minLength": 1 },
+        "status": {
+          "enum": ["parsed", "normalised", "unresolved", "dropped", "aborts", "unknown"]
+        },
+        "summary": { "type": "string", "minLength": 1 },
+        "selector": { "type": "string" },
+        "kind": { "type": "string" },
+        "fields": { "type": "object" },
+        "evidence": { "type": "string" }
+      }
+    }
+  }
+}

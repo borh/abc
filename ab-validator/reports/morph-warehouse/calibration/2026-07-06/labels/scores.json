@@ -1,0 +1,35 @@
+{
+  "k": 50,
+  "relevance": "a verdict counts as relevant when it indicates the ranker surfaced an analyzer defect or dictionary gap: bug, expected-dictionary",
+  "gains": "bug=3, expected-dictionary=2, corpus-artifact=1, expected-policy=1, noise=0, unclear=0",
+  "verdict_counts": {
+    "bug": 8,
+    "corpus-artifact": 6,
+    "expected-dictionary": 65,
+    "expected-policy": 40,
+    "noise": 32,
+    "unclear": 4
+  },
+  "methods": {
+    "full-frequency": {
+      "labeled": 50,
+      "precision_at_k": 0.16,
+      "ndcg_at_k": 0.2898142842602241
+    },
+    "full-random": {
+      "labeled": 50,
+      "precision_at_k": 0.56,
+      "ndcg_at_k": 0.6521337943910488
+    },
+    "full-rrf-global": {
+      "labeled": 50,
+      "precision_at_k": 0.7,
+      "ndcg_at_k": 0.7388054023634453
+    },
+    "full-rrf-within": {
+      "labeled": 50,
+      "precision_at_k": 0.64,
+      "ndcg_at_k": 0.7191302568437826
+    }
+  }
+}

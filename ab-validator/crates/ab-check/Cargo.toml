@@ -1,0 +1,41 @@
+[package]
+name = "ab-check"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Japanese text validation and quality checks for Aozora Bunko documents"
+repository = "https://github.com/your-org/ab-validator"
+readme = "../../README.md"
+keywords = ["japanese", "text-processing", "validation", "diff"]
+categories = ["text-processing"]
+
+[dependencies]
+ab-plaintext.workspace = true
+ab-source-syntax.workspace = true
+ab-encoding.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+flate2.workspace = true
+jsonschema.workspace = true
+rayon.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_stacker.workspace = true
+unicode-normalization.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+tempfile.workspace = true
+
+[[example]]
+name = "vtbo_locate"
+path = "examples/vtbo_locate.rs"
+
+[[bench]]
+name = "aat_json_io"
+harness = false
+
+[[bench]]
+name = "check_properties"
+harness = false

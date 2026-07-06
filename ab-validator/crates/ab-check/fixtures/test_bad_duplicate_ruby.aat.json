@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "work_id": "test_work",
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "content": [
+        { "kind": "ruby", "base": "吾輩", "reading": "わがはい" },
+        { "kind": "text", "value": "吾輩は猫である。" }
+      ]
+    }
+  ],
+  "meta": {
+    "adapter": "test-adapter",
+    "adapter_version": "0.0.1 test",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "parse_complete": true,
+    "warnings": []
+  }
+}

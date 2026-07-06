@@ -1,0 +1,229 @@
+use std::path::PathBuf;
+
+use ab_aat_to_parser_ir::{
+    ConversionOptions, MappingDocument, PreparedConverter, SchemaSet,
+    structural_probe::{
+        StructuralProbeConfig, TeiEajStructuralExpansionConfig, parse_input_spec,
+        run_structural_probe, run_tei_eaj_structural_expansion, write_structural_probe_reports,
+        write_tei_eaj_expansion_reports,
+    },
+};
+use anyhow::{Context, Result};
+use clap::{Parser, Subcommand};
+
+mod audit;
+
+#[derive(Debug, Parser)]
+struct Args {
+    #[command(subcommand)]
+    command: Command,
+}
+
+#[derive(Debug, Subcommand)]
+enum Command {
+    Convert {
+        #[arg(long)]
+        aat: PathBuf,
+        #[arg(long)]
+        mapping: PathBuf,
+        #[arg(long)]
+        parser_ir_out: PathBuf,
+        #[arg(long)]
+        divergence_out: PathBuf,
+        #[arg(long)]
+        abc_root: Option<PathBuf>,
+    },
+    AuditCorpus {
+        #[arg(long = "aat-dir", required = true)]
+        aat_dirs: Vec<PathBuf>,
+        #[arg(long)]
+        mapping: PathBuf,
+        #[arg(long)]
+        summary_json: PathBuf,
+        #[arg(long)]
+        report_md: PathBuf,
+        #[arg(long)]
+        compat_edn_out: Option<PathBuf>,
+        #[arg(long, default_value_t = 0)]
+        jobs: usize,
+        #[arg(long)]
+        abc_root: Option<PathBuf>,
+    },
+    StructuralProbe {
+        #[arg(long = "aat", required = true)]
+        aat_inputs: Vec<String>,
+        #[arg(long)]
+        mapping: PathBuf,
+        #[arg(long)]
+        summary_json: PathBuf,
+        #[arg(long)]
+        report_md: PathBuf,
+        #[arg(long)]
+        abc_root: Option<PathBuf>,
+    },
+    TeiEajStructuralExpansion {
+        #[arg(long)]
+        workset: PathBuf,
+        #[arg(long = "aat-dir", required = true)]
+        aat_dirs: Vec<String>,
+        #[arg(long)]
+        mapping: PathBuf,
+        #[arg(long)]
+        summary_json: PathBuf,
+        #[arg(long)]
+        report_md: PathBuf,
+        #[arg(long)]
+        abc_root: Option<PathBuf>,
+    },
+}
+
+fn main() -> Result<()> {
+    let args = Args::parse();
+    match args.command {
+        Command::Convert {
+            aat,
+            mapping,
+            parser_ir_out,
+            divergence_out,
+            abc_root,
+        } => {
+            let repo_root = resolve_repo_root(&mapping)?;
+            let abc_root = abc_root
+                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
+            let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
+            let mapping = MappingDocument::from_path(&mapping)?;
+            let schemas = SchemaSet::load(&repo_root, &abc_root)?;
+            let output = PreparedConverter::new(mapping, schemas)?
+                .convert(aat, ConversionOptions::default())?;
+            std::fs::write(
+                parser_ir_out,
+                serde_json::to_string_pretty(&output.parser_ir)? + "\n",
+            )?;
+            std::fs::write(
+                divergence_out,
+                serde_json::to_string_pretty(&output.divergence_bundle)? + "\n",
+            )?;
+        }
+        Command::AuditCorpus {
+            aat_dirs,
+            mapping,
+            summary_json,
+            report_md,
+            compat_edn_out,
+            jobs,
+            abc_root,
+        } => {
+            let repo_root = resolve_repo_root(&mapping)?;
+            let summary = audit::run_audit(audit::CorpusAuditConfig {
+                aat_dirs,
+                mapping_path: mapping,
+                summary_json,
+                report_md,
+                compat_edn_out,
+                abc_root,
+                repo_root,
+                jobs,
+            })?;
+            eprintln!(
+                "audited {} AAT files: {} succeeded, {} failed",
+                summary.files_attempted(),
+                summary.files_succeeded(),
+                summary.files_failed()
+            );
+        }
+        Command::StructuralProbe {
+            aat_inputs,
+            mapping,
+            summary_json,
+            report_md,
+            abc_root,
+        } => {
+            let repo_root = resolve_repo_root(&mapping)?;
+            let abc_root = abc_root
+                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
+            let inputs = aat_inputs
+                .iter()
+                .map(|spec| parse_input_spec(spec))
+                .collect::<Result<Vec<_>>>()?;
+            let mapping = MappingDocument::from_path(&mapping)?;
+            let schemas = SchemaSet::load(&repo_root, &abc_root)?;
+            let summary = run_structural_probe(StructuralProbeConfig {
+                inputs,
+                mapping,
+                schemas,
+            })?;
+            write_structural_probe_reports(&summary, &summary_json, &report_md)?;
+            eprintln!(
+                "probed {} AAT inputs: {} conversion(s) succeeded, {} failed",
+                summary.totals.inputs,
+                summary.totals.conversions_succeeded,
+                summary.totals.conversions_failed
+            );
+        }
+        Command::TeiEajStructuralExpansion {
+            workset,
+            aat_dirs,
+            mapping,
+            summary_json,
+            report_md,
+            abc_root,
+        } => {
+            let repo_root = resolve_repo_root(&mapping)?;
+            let abc_root = abc_root
+                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
+            let aat_dirs = aat_dirs
+                .iter()
+                .map(|spec| parse_input_spec(spec))
+                .collect::<Result<Vec<_>>>()?;
+            let mapping = MappingDocument::from_path(&mapping)?;
+            let schemas = SchemaSet::load(&repo_root, &abc_root)?;
+            let summary = run_tei_eaj_structural_expansion(TeiEajStructuralExpansionConfig {
+                workset_path: workset,
+                aat_dirs,
+                mapping,
+                schemas,
+            })?;
+            write_tei_eaj_expansion_reports(&summary, &summary_json, &report_md)?;
+            eprintln!(
+                "expanded {} TEI-EAJ row(s): {} with AAT evidence, {} parser-IR gap row(s), {} evidence gap row(s)",
+                summary.rows.len(),
+                summary.totals.rows_with_aat_evidence,
+                summary.totals.parser_ir_gap_rows,
+                summary.totals.evidence_gap_rows
+            );
+        }
+    }
+    Ok(())
+}
+
+fn resolve_repo_root(mapping: &std::path::Path) -> Result<PathBuf> {
+    if let Some(value) = std::env::var_os("AB_VALIDATOR_REPO_ROOT") {
+        return Ok(PathBuf::from(value));
+    }
+
+    let cwd = std::env::current_dir().context("failed to read current directory")?;
+    if let Some(mapping_dir) = mapping.parent()
+        && mapping_dir.file_name().and_then(|name| name.to_str()) == Some("data")
+        && let Some(candidate) = mapping_dir.parent()
+    {
+        let candidate = if candidate.as_os_str().is_empty() {
+            cwd.clone()
+        } else if candidate.is_absolute() {
+            candidate.to_path_buf()
+        } else {
+            cwd.join(candidate)
+        };
+        if candidate.join("data/aat-schema.json").is_file() {
+            return Ok(candidate);
+        }
+    }
+
+    if cwd.join("data/aat-schema.json").is_file() {
+        return Ok(cwd);
+    }
+
+    Ok(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."))
+}

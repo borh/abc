@@ -1,0 +1,626 @@
+[
+  {
+    "row_id": "4411::aozora2html::4411_tei.xml::40",
+    "work_id": "4411",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/4411_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "4411::aozora-epub3::4411_tei.xml::41",
+    "work_id": "4411",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/4411_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "4411::aozora-rs::4411_tei.xml::42",
+    "work_id": "4411",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/4411_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "4411::aozora2::4411_tei.xml::43",
+    "work_id": "4411",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/4411_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "51520::aozora2html::51520_tei.xml::70",
+    "work_id": "51520",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/51520_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "51520::aozora-epub3::51520_tei.xml::71",
+    "work_id": "51520",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/51520_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "51520::aozora-rs::51520_tei.xml::72",
+    "work_id": "51520",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/51520_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "51520::aozora2::51520_tei.xml::73",
+    "work_id": "51520",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/51520_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "51520::aozora::51520_tei.xml::74",
+    "work_id": "51520",
+    "adapter": "aozora",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/51520_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "57048::aozora2html::57048_tei.xml::185",
+    "work_id": "57048",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57048_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "57048::aozora-epub3::57048_tei.xml::186",
+    "work_id": "57048",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57048_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "57048::aozora-rs::57048_tei.xml::187",
+    "work_id": "57048",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57048_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "57048::aozora2::57048_tei.xml::188",
+    "work_id": "57048",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57048_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "57048::aozora::57048_tei.xml::189",
+    "work_id": "57048",
+    "adapter": "aozora",
+    "tei_eaj_file": "data/complete/tei_lib_lv3/57048_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lineated_text",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "1567::aozora-epub3::1567_header_updated.xml::201",
+    "work_id": "1567",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/1567_header_updated.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "source_note_back_routing",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "1567::aozora::1567_header_updated.xml::202",
+    "work_id": "1567",
+    "adapter": "aozora",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/1567_header_updated.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "1567::aozora-epub3::1567_tei.xml::206",
+    "work_id": "1567",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/1567_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "source_note_back_routing",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "1567::aozora::1567_tei.xml::207",
+    "work_id": "1567",
+    "adapter": "aozora",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/1567_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "45245::aozora2html::45245_tei.xml::210",
+    "work_id": "45245",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/45245_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "45245::aozora-epub3::45245_tei.xml::211",
+    "work_id": "45245",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/45245_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "45245::aozora-rs::45245_tei.xml::212",
+    "work_id": "45245",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/45245_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "45245::aozora2::45245_tei.xml::213",
+    "work_id": "45245",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/45245_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "45245::aozora::45245_tei.xml::214",
+    "work_id": "45245",
+    "adapter": "aozora",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/45245_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "50362::aozora2html::50362_tei.xml::215",
+    "work_id": "50362",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/50362_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "50362::aozora-epub3::50362_tei.xml::216",
+    "work_id": "50362",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/50362_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "50362::aozora-rs::50362_tei.xml::217",
+    "work_id": "50362",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/50362_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "50362::aozora2::50362_tei.xml::218",
+    "work_id": "50362",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/50362_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_under_segmented",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "50362::aozora::50362_tei.xml::219",
+    "work_id": "50362",
+    "adapter": "aozora",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/50362_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "7928::aozora2html::7928_tei.xml::220",
+    "work_id": "7928",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/7928_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_under_segmented",
+    "structure_profiles": [
+      "drama",
+      "front_back_matter",
+      "lv4_enrichment",
+      "verse"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "7928::aozora-epub3::7928_tei.xml::221",
+    "work_id": "7928",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/7928_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "drama",
+      "front_back_matter",
+      "lv4_enrichment",
+      "verse"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "7928::aozora-rs::7928_tei.xml::222",
+    "work_id": "7928",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/7928_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "drama",
+      "front_back_matter",
+      "lv4_enrichment",
+      "verse"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "7928::aozora2::7928_tei.xml::223",
+    "work_id": "7928",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/7928_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "converter_paragraph_mismatch",
+    "structure_profiles": [
+      "drama",
+      "front_back_matter",
+      "lv4_enrichment",
+      "verse"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "7928::aozora::7928_tei.xml::224",
+    "work_id": "7928",
+    "adapter": "aozora",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/7928_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "drama",
+      "front_back_matter",
+      "lv4_enrichment",
+      "verse"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "1576::aozora2html::1576_tei.xml::230",
+    "work_id": "1576",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/draft/tei_lib_lv3/1576_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "page_break_projection",
+    "structure_profiles": [
+      "drama",
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "1576::aozora-epub3::1576_tei.xml::231",
+    "work_id": "1576",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/draft/tei_lib_lv3/1576_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "drama",
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "1576::aozora-rs::1576_tei.xml::232",
+    "work_id": "1576",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/draft/tei_lib_lv3/1576_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "drama",
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "1576::aozora2::1576_tei.xml::233",
+    "work_id": "1576",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/draft/tei_lib_lv3/1576_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "converter_paragraph_mismatch",
+    "structure_profiles": [
+      "drama",
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "1576::aozora::1576_tei.xml::234",
+    "work_id": "1576",
+    "adapter": "aozora",
+    "tei_eaj_file": "data/draft/tei_lib_lv3/1576_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "drama",
+      "front_back_matter",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "2571::aozora2html::2571_tei.xml::255",
+    "work_id": "2571",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/draft/tei_lib_lv4/2571_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "2571::aozora-epub3::2571_tei.xml::256",
+    "work_id": "2571",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/draft/tei_lib_lv4/2571_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "2571::aozora-rs::2571_tei.xml::257",
+    "work_id": "2571",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/draft/tei_lib_lv4/2571_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lineated_text",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "2571::aozora2::2571_tei.xml::258",
+    "work_id": "2571",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/draft/tei_lib_lv4/2571_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "lineated_text",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "2571::aozora::2571_tei.xml::259",
+    "work_id": "2571",
+    "adapter": "aozora",
+    "tei_eaj_file": "data/draft/tei_lib_lv4/2571_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "lineated_text",
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "54457::aozora2html::54457_tei.xml::280",
+    "work_id": "54457",
+    "adapter": "aozora2html",
+    "tei_eaj_file": "data/draft/tei_lib_lv4/54457_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "54457::aozora-epub3::54457_tei.xml::281",
+    "work_id": "54457",
+    "adapter": "aozora-epub3",
+    "tei_eaj_file": "data/draft/tei_lib_lv4/54457_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "aligned",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "54457::aozora-rs::54457_tei.xml::282",
+    "work_id": "54457",
+    "adapter": "aozora-rs",
+    "tei_eaj_file": "data/draft/tei_lib_lv4/54457_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_over_segmented",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "54457::aozora2::54457_tei.xml::283",
+    "work_id": "54457",
+    "adapter": "aozora2",
+    "tei_eaj_file": "data/draft/tei_lib_lv4/54457_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  },
+  {
+    "row_id": "54457::aozora::54457_tei.xml::284",
+    "work_id": "54457",
+    "adapter": "aozora",
+    "tei_eaj_file": "data/draft/tei_lib_lv4/54457_tei.xml",
+    "body_text_relation": "different",
+    "paragraph_origin_bucket": "adapter_collapsed",
+    "structure_profiles": [
+      "lv4_enrichment"
+    ],
+    "cause": "tei_eaj_editorial_or_enrichment"
+  }
+]

@@ -1,0 +1,3670 @@
+# Aozora Bunko syntax coverage matrix.
+#
+# Schema (also documented in docs/superpowers/specs/2026-04-28-syntax-coverage-methodology.md):
+#
+# Each [[syntax]] row enumerates one Aozora Bunko syntactic feature. Required
+# flat fields (id, priority, category, feature_keys, reference_sources,
+# source_examples, source_patterns, ir_nodes, aat_nodes, tei_projection,
+# plaintext_projection, comparison_projection, validation_properties,
+# adapter_expectations, status, status_reason) match the SyntaxRow struct in
+# crates/ab-index/src/syntax_coverage.rs.
+#
+# Each row also carries open-keyed parser/adapter sub-tables and a
+# corpus_prevalence sub-table:
+#
+#   [syntax.parsers.<parser_id>]
+#     recognition = parsed | normalised | unrecognised | aborts | unknown
+#     evidence    = "<file>:<line>"
+#     notes       = "..."
+#
+#   [syntax.adapters.<adapter_id>]
+#     aat_fidelity = preserved | lossy | dropped | synthesised | not_applicable | unknown
+#     evidence     = "<file>:<line>"
+#     notes        = "..."
+#
+#   [syntax.corpus_prevalence]
+#     works_with_feature = <int>
+#     total_occurrences  = <int>
+#     detector_id        = "<row_id>"
+#     coverage_basis     = full_corpus | stratified_sample | not_run
+#     sample_works       = ["<work_id>", ...]   # up to 5
+#
+#   [syntax.representability]
+#     source_inventory_row = "<row_id>"
+#     status               = typed | raw_preserved | out_of_body | unsupported | needs_research
+#     aat_nodes            = ["<aat_kind>", ...]
+#     raw_fallback         = true | false
+#     evidence             = "<file>:<line>"
+#     notes                = "..."
+#
+# Adding a new parser/adapter is purely additive: append a new
+# [syntax.parsers.<id>] / [syntax.adapters.<id>] sub-table per row.
+#
+# Forbidden combinations (to be enforced by crates/ab-coverage):
+#   - recognition = "aborts"        => aat_fidelity must be "not_applicable"
+#   - recognition = "parsed"        => aat_fidelity must NOT be "synthesised"
+#   - recognition = "unrecognised"  => aat_fidelity must be "synthesised" or "not_applicable"
+
+# =============================================================================
+# Priority 1 rows (original 9; flat fields verbatim)
+# =============================================================================
+
+[[syntax]]
+id = "ruby.basic"
+priority = 1
+category = "inline_annotation"
+feature_keys = ["ruby", "ruby_prefix", "left_ruby"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+]
+source_examples = ["吾輩《わがはい》", "｜あのひと《...》", "［＃「左」の左に「ひだり」のルビ］"]
+source_patterns = ['《[^》]+》', '｜[^《\n]+《[^》]+》', '［＃「[^」]+」の左に「[^」]+」のルビ］']
+ir_nodes = ["Inline::Ruby"]
+aat_nodes = ["ruby"]
+tei_projection = "ruby/rb/rt"
+plaintext_projection = "base_only"
+comparison_projection = "base_only"
+validation_properties = ["ruby_completeness", "semantic_ruby_sequence"]
+adapter_expectations = ["preserve reading", "preserve base order", "distinguish left placement"]
+oracle_cases = ["ruby.basic.simple", "ruby.gaiji.inline_base"]
+status = "partial"
+status_reason = "current ab-ir and AAT use a flat ruby base string"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/ruby_parser.rs:35"
+notes = "extract_ruby_base handler for ruby syntax (《》)"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/parser.rs:10"
+notes = "ruby fn parses 《...》; RubyDelimiter handles ｜base《...》; conversion.rs:33 builds Deco::Ruby scope"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/ruby.rb:11"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2/src/lib.rs:138"
+notes = 'adapter emits ruby AAT node (kind="ruby") with reading; parser recognises via Node::Ruby'
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora-rs/src/aat.rs:247"
+notes = "DecoBegin(Deco::Ruby) emits Inline::Ruby with reading via push_ruby_inline at aat.rs:356"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = ""
+
+[syntax.corpus_prevalence]
+works_with_feature = 14190
+total_occurrences = 10493869
+detector_id = "ruby_basic"
+coverage_basis = "full_corpus"
+sample_works = ["001529_50685", "000118_1745", "000148_56923", "001562_56145", "000077_1323"]
+
+[syntax.representability]
+source_inventory_row = "ruby.basic"
+status = "typed"
+aat_nodes = ["ruby"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "AAT has a typed ruby node; raw fallback remains available for malformed or unsupported source variants."
+
+[[syntax]]
+id = "gaiji.marker"
+priority = 1
+category = "glyph"
+feature_keys = ["gaiji", "unicode_codepoint", "jis_code", "dakuten"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+]
+source_examples = ["※［＃「口＋世」、U+546D］", "※［＃小書き片仮名ン、237-11］"]
+source_patterns = ['※［＃[^］]+］', 'U\+[0-9A-Fa-f]{4,6}', '[0-9A-Fa-f]{1,2}-[0-9A-Fa-f]{4}', '濁点付き|半濁点付き']
+ir_nodes = ["Inline::GaijiRef", "GaijiKind"]
+aat_nodes = ["gaiji"]
+tei_projection = "g with charDecl or external character reference"
+plaintext_projection = "resolved_character_or_drop"
+comparison_projection = "resolved_character_or_drop"
+validation_properties = ["gaiji_resolution", "semantic_gaiji_sequence", "gaiji_resolution_quality"]
+adapter_expectations = ["preserve source marker", "classify gaiji kind", "report unresolved reason"]
+oracle_cases = ["gaiji.jis.2-13-47", "gaiji.unicode.u546d"]
+status = "partial"
+status_reason = "current ab-ir stores gaiji as description plus resolved string without typed kind"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:52"
+notes = "Node::Gaiji variant with description, unicode, jis_code fields"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/parser.rs:23"
+notes = "※［＃...］ has no gaiji-specific handler; ※ is plain text and the inner command falls through to Note::Unknown"
+
+[syntax.parsers.aozora2html]
+recognition = "normalised"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/gaiji.rb:6"
+notes = "gaiji marker resolved by --use-unicode"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2/src/lib.rs:162"
+notes = "adapter emits gaiji AAT node from source events; parser captures structured Node::Gaiji"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "synthesised"
+evidence = "adapters/aozora-rs/src/aat.rs:1242"
+notes = "parsed_gaiji parses ※［＃...］ from source events to emit GaijiRef; bypasses parser"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "span gaiji preserved as text, marker lost"
+
+[syntax.corpus_prevalence]
+works_with_feature = 6715
+total_occurrences = 189770
+detector_id = "gaiji_marker"
+coverage_basis = "full_corpus"
+sample_works = ["JISTABLE", "000311_2012", "000129_2084", "001161_43624", "001161_48122"]
+
+[syntax.representability]
+source_inventory_row = "gaiji.marker"
+status = "typed"
+aat_nodes = ["gaiji"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:120"
+notes = "AAT has a typed gaiji node; raw fallback covers unresolved marker forms and adapter gaps."
+
+[[syntax]]
+id = "gaiji_ruby.inline_base"
+priority = 1
+category = "inline_annotation"
+feature_keys = ["gaiji", "ruby"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+]
+source_examples = ["※［＃「口＋愛」、第3水準1-15-23］《おくび》"]
+source_patterns = ['※［＃[^］]+］《[^》]+》']
+ir_nodes = ["Inline::Ruby", "Inline::GaijiRef"]
+aat_nodes = ["gaiji", "ruby"]
+tei_projection = "ruby/rb/g/rt"
+plaintext_projection = "resolved_base_or_drop_with_attached_reading"
+comparison_projection = "resolved_base_or_drop_with_attached_reading"
+validation_properties = ["semantic_ruby_sequence", "semantic_gaiji_sequence", "gaiji_resolution_quality"]
+adapter_expectations = ["preserve ruby relationship in IR", "do not emit orphan ruby when AAT cannot represent unresolved base"]
+oracle_cases = ["ruby.gaiji.inline_base"]
+status = "partial"
+status_reason = "resolved gaiji bases can be represented with ruby.base_content; unresolved bases still need warning and fallback policy"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:22"
+notes = "Parser handles both ruby and gaiji nodes sequentially"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/parser.rs:23"
+notes = "gaiji marker not parsed; following 《...》 ruby has no kanji base so backref_to_scope yields empty span; combined construct unrecognised"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "ruby with gaiji base"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2/src/lib.rs:139"
+notes = "adapter emits ruby without structured gaiji base, reads orphan handling test at 230"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "synthesised"
+evidence = "adapters/aozora-rs/src/aat.rs:790"
+notes = "structured_source_fallback_blocks_with_events emits gaiji+ruby from source events when last_gaiji_end matches ruby span"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = ""
+
+[syntax.corpus_prevalence]
+works_with_feature = 4689
+total_occurrences = 46471
+detector_id = "gaiji_ruby_inline_base"
+coverage_basis = "full_corpus"
+sample_works = ["000129_2084", "001930_58400", "001562_52417", "001562_56146", "000019_4376"]
+
+[syntax.representability]
+source_inventory_row = "gaiji_ruby.inline_base"
+status = "typed"
+aat_nodes = ["gaiji", "ruby"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119; docs/aat-contract.md:120"
+notes = "The source construct can be represented by typed gaiji plus ruby nodes; raw fallback covers unresolved bases."
+
+[[syntax]]
+id = "heading.basic"
+priority = 1
+category = "block"
+feature_keys = ["midashi"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+]
+source_examples = ["［＃大見出し］", "［＃「見出し」は中見出し］"]
+source_patterns = ['［＃「[^\n]*」は[大中小]見出し］', '［＃「[^\n]*」に[大中小]見出し］', '［＃(ここから|ここで)?[大中小]見出し?(終わり)?］', '［＃ここで見出し終わり］', '［＃[大中小]?見出し文字］']
+ir_nodes = ["Block::Heading"]
+aat_nodes = ["heading"]
+tei_projection = "head"
+plaintext_projection = "heading_text"
+comparison_projection = "heading_text"
+validation_properties = ["heading_level_consistency", "heading_structure"]
+adapter_expectations = ["preserve heading level", "preserve heading text order"]
+oracle_cases = ["heading.basic.large"]
+status = "partial"
+status_reason = "heading validation is currently shallow"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:42"
+notes = "Node::Midashi variant with level and style"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/sandwiched.rs:94"
+notes = "sandwiched_begin handles 大見出し/中見出し/小見出し; backref handles 「ref」は大見出し"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/midashi.rb:6"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "adapter only parses inline content; block-level midashi not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora-rs/src/aat.rs:256"
+notes = "Deco::AHead/BHead/CHead emit Block::Heading with level 1/2/3"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = ""
+
+[syntax.corpus_prevalence]
+works_with_feature = 3643
+total_occurrences = 76796
+detector_id = "heading_basic"
+coverage_basis = "full_corpus"
+sample_works = ["001562_33224", "001097_43785", "000286_49178", "001558_52688", "000910_60326"]
+
+[syntax.representability]
+source_inventory_row = "heading.basic"
+status = "typed"
+aat_nodes = ["heading"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:103"
+notes = "AAT has a typed heading block; raw fallback covers unsupported heading marker variants."
+
+[[syntax]]
+id = "emphasis.basic"
+priority = 1
+category = "inline_annotation"
+feature_keys = ["boten", "bosen", "bold", "italic", "sesame"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+]
+source_examples = ["［＃「語」に傍点］", "［＃太字］", "［＃白ゴマ傍点］"]
+source_patterns = ['［＃「[^」]+」に傍点］|［＃傍点］', '［＃「[^」]+」に傍線］|［＃傍線］', '［＃「[^」]+」は太字］|［＃太字］', '［＃「[^」]+」は斜体］|［＃斜体］', '白ゴマ傍点|黒ゴマ傍点|丸傍点']
+ir_nodes = ["Inline::Style"]
+aat_nodes = ["style"]
+tei_projection = "hi with rendition"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["style_scope_balance"]
+adapter_expectations = ["preserve style variant", "preserve style scope"]
+oracle_cases = ["emphasis.boten.basic"]
+status = "partial"
+status_reason = "style variants are not yet matrix-keyed in validation reports"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:32"
+notes = "Node::Style variant with style_type for boten, bousen, bold, italic"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/sandwiched.rs:97"
+notes = "sandwiched_begin parses 太字/斜体/boten/bosen; backref handles 「base」は太字"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/decorate.rb:6"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "adapter only parses inline content as text; styles not projected"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora-rs/src/aat.rs:285"
+notes = "DecoBegin emits Inline::Style with stable_style_type bold/italic/boten/bosen"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = ""
+
+[syntax.corpus_prevalence]
+works_with_feature = 6467
+total_occurrences = 310208
+detector_id = "emphasis_basic"
+coverage_basis = "full_corpus"
+sample_works = ["000281_3597", "001161_43624", "001670_55342", "000281_3598", "000281_3595"]
+
+[syntax.representability]
+source_inventory_row = "emphasis.basic"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "AAT has typed style nodes for emphasis scopes; subrows track variant fidelity, while raw fallback covers adapters that collapse or drop specific style details."
+
+[[syntax]]
+id = "indentation.basic"
+priority = 1
+category = "layout"
+feature_keys = ["jisage_line", "jisage_block", "chitsuki"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+]
+source_examples = ["［＃２字下げ］", "［＃ここから２字下げ］", "［＃地付き］"]
+source_patterns = ['［＃[０-９0-9]+字下げ］', '［＃ここから[０-９0-9]+字下げ］', '［＃地付き］|［＃[０-９0-9]+字上げ］']
+ir_nodes = ["Block::Layout"]
+aat_nodes = ["jisage_block", "style"]
+tei_projection = "p or lg with rend/layout attributes"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve indentation magnitude", "preserve block scope"]
+oracle_cases = ["indentation.jisage_block.basic"]
+status = "partial"
+status_reason = "block-scoped jisage has AAT coverage; one-line jisage and chitsuki remain partial"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:14"
+notes = "parse_block_start handles jisage, chitsuki patterns"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/wholeline.rs:38"
+notes = "wholeline parses N字下げ/地付き/N字上げ; multiline parses ここからN字下げ"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/indent.rb:1"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "adapter ignores block structure; no indentation in AAT output"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora-rs/src/aat.rs:425"
+notes = "stable_style_type returns 'indent'/'grounded'/'low_flying' but level/magnitude not preserved in Inline::Style"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = ""
+
+[syntax.corpus_prevalence]
+works_with_feature = 8084
+total_occurrences = 133045
+detector_id = "indentation_basic"
+coverage_basis = "full_corpus"
+sample_works = ["001025_50909", "000294_1858", "001670_55342", "001562_33224", "001674_54899"]
+
+[syntax.representability]
+source_inventory_row = "indentation.basic"
+status = "typed"
+aat_nodes = ["jisage_block", "style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:104"
+notes = "Priority-1 indentation is an aggregate over block indent, one-line indent, chitsuki, jizume, and burasage; AAT has typed jisage_block/style forms when adapters preserve them, with raw fallback for lossy adapters."
+
+[[syntax]]
+id = "warichu.basic"
+priority = 1
+category = "inline_annotation"
+feature_keys = ["warigaki"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+]
+source_examples = ["［＃割り注］", "［＃ここから割り注］"]
+source_patterns = ['［＃割り注］|［＃ここから割り注］', '［＃(ここで)?割り注終わり］', '［＃以下の括弧内割注］', '［＃「[^」]+」は割り注で処理］']
+ir_nodes = ["Inline::Warichu", "Block::Warichu"]
+aat_nodes = ["style"]
+tei_projection = "note or seg with rendition"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["style_scope_balance"]
+adapter_expectations = ["preserve warichu content", "preserve inline or block scope"]
+oracle_cases = ["warichu.basic.inline"]
+status = "partial"
+status_reason = "current IR lacks warichu-specific nodes"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:110"
+notes = "Node::Warigaki with upper/lower variants"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/sandwiched.rs:103"
+notes = "sandwiched_begin parses 割り注 → SandwichedBegins::Warichu → Deco::Warichu"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/multiline.rb:1"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "warigaki nodes not projected in AAT output"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora-rs/src/aat.rs:434"
+notes = "Deco::Warichu maps to style 'warichu' via stable_style_type"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "warichu content as paragraph"
+
+[syntax.corpus_prevalence]
+works_with_feature = 357
+total_occurrences = 6360
+detector_id = "warichu_basic"
+coverage_basis = "full_corpus"
+sample_works = ["001930_58400", "001094_42603", "001930_58401", "000125_1317", "001395_49905"]
+
+[syntax.representability]
+source_inventory_row = "warichu.basic"
+status = "typed"
+aat_nodes = ["warigaki", "style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:130"
+notes = "AAT has a typed warigaki node and existing style fallback for warichu; raw fallback remains for unrecoverable forms."
+
+[[syntax]]
+id = "figure.image_caption"
+priority = 1
+category = "media"
+feature_keys = ["image", "caption"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+]
+source_examples = ["［＃（fig.png）入る］", "［＃キャプション］"]
+source_patterns = ['［＃（?[^］\n]+\.(png|jpg|jpeg|gif)）?入る］', '［＃キャプション］|［＃ここからキャプション］']
+ir_nodes = ["Block::Figure", "Inline::Caption"]
+aat_nodes = ["figure", "caption"]
+tei_projection = "figure/graphic/head"
+plaintext_projection = "caption_only"
+comparison_projection = "caption_only"
+validation_properties = ["figure_caption_integrity"]
+adapter_expectations = ["preserve image path", "preserve caption relationship"]
+oracle_cases = ["figure.image_caption.basic"]
+status = "partial"
+status_reason = "AAT has a structured figure node; current adapters still vary in figure and caption fidelity"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/content_parser.rs:8"
+notes = "try_parse_image handles caption/filename patterns"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/single.rs:79"
+notes = "Single::Figure parses caption（path、横W×縦H）入る into Figure{path, caption, size}"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/img.rb:6"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "image nodes not included in AAT paragraph output"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora-rs/src/aat.rs:240"
+notes = "Retokenized::Figure flattened to Inline::gaiji using figure.to_string(); structured path/caption/size lost (per inline comment)"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "img alt preserved, caption structure lost"
+
+[syntax.corpus_prevalence]
+works_with_feature = 103
+total_occurrences = 1777
+detector_id = "figure_image_caption"
+coverage_basis = "full_corpus"
+sample_works = ["001764_55990", "001185_45210", "001574_52529", "001054_18371", "001492_51194"]
+
+[syntax.representability]
+source_inventory_row = "figure.image_caption"
+status = "typed"
+aat_nodes = ["figure", "caption"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:122; docs/aat-contract.md:129"
+notes = "This matrix uses a combined priority-1 image/caption row; AAT has typed figure and caption nodes."
+
+[[syntax]]
+id = "break.page_line"
+priority = 1
+category = "milestone"
+feature_keys = ["page_break", "line_break"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+]
+source_examples = ["［＃改ページ］", "［＃改行］"]
+source_patterns = ['［＃(改ページ|改頁|改丁|改段|改見開き)(右|左)?(、[^］]+)?］', '［＃改行］']
+ir_nodes = ["Inline::Break", "Block::Milestone"]
+aat_nodes = ["paragraph"]
+tei_projection = "pb/lb"
+plaintext_projection = "newline_or_drop"
+comparison_projection = "whitespace_normalized"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve break order", "distinguish page and line breaks"]
+oracle_cases = ["break.page.basic"]
+status = "partial"
+status_reason = "AAT represents breaks as empty paragraphs with x-break-kind metadata; adapter support is still partial"
+
+[syntax.parsers.aozora2]
+recognition = "unrecognised"
+evidence = ""
+notes = "No explicit page/line break handler in parser"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/single.rs:60"
+notes = "改ページ/改頁/改丁/改段/改見開き parsed to Single::PageBreak/RectoBreak/ColumnBreak/SpreadBreak; ページの左右中央 parsed via wholeline.rs:41"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:1"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "not_applicable"
+evidence = ""
+notes = "Parser does not recognize; adapter has no projection"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora-rs/src/aat.rs:238"
+notes = "All Retokenized::Break variants flush_paragraph; no node distinguishes PageBreak/RectoBreak/etc"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "br as raw HTML"
+
+[syntax.corpus_prevalence]
+works_with_feature = 826
+total_occurrences = 7804
+detector_id = "break_page_line"
+coverage_basis = "full_corpus"
+sample_works = ["000042_1684", "001529_546", "001670_55342", "001693_55317", "000081_47027"]
+
+[syntax.representability]
+source_inventory_row = "break.page_line"
+status = "typed"
+aat_nodes = ["paragraph", "text"]
+raw_fallback = true
+evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs; ../abc/test/abc/tools/parser_ir_tei_test.clj"
+notes = "AAT source-derived page breaks project to parser-IR page-break and TEI pb; source-derived explicit line breaks project to parser-IR line-break and TEI lb."
+
+[[syntax]]
+id = "layout.center_page"
+priority = 2
+category = "layout"
+feature_keys = ["center_page", "alignment"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/layout.md", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:conformance/vectors/center_page/vector.json"]
+source_examples = ["［＃ページの左右中央］", "［＃ここからページの左右中央］", "［＃中央揃え］"]
+source_patterns = ['［＃(ここから)?ページの左右中央に?］', '［＃ページ(の天地左右中央|上段の左右中央|の天地中央)］', '［＃左右中央］', '［＃中央(寄せ|揃え)］', '［＃[^］]*(ページの(上部|下部)、)?左右中央(に|縦組みで)?[^］]*］', '［＃[^］]*中央に配置］', '［＃[^］]*[０-９0-9]+行の中央[^］]*］', '［＃[^］]*中央やや下がり目[^］]*］']
+ir_nodes = []
+aat_nodes = ["raw"]
+tei_projection = "p or seg rend=center"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["single_line_scope"]
+adapter_expectations = ["preserve page-centering marker or center alignment"]
+oracle_cases = []
+status = "needs_research"
+status_reason = "Page-centering markers are corpus-observed layout directives; current AAT/parser-IR typed center support has not been measured."
+
+[syntax.representability]
+source_inventory_row = "layout.center_page"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/layout.md"
+notes = "TEI P5 can preserve page centering as rend=center on a paragraph or segment. v1 records source-authority coverage as raw-preserved until adapters expose a typed center alignment node."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes page-center markers; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/wholeline.rs:41"
+notes = "wholeline parser recognizes page centering, but the current AAT projection does not preserve a typed center node."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes page-center markers; parser-specific typed behavior remains to be measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed page-center AAT projection has been measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora-rs/src/aat.rs:238"
+notes = "AAT projection flushes paragraphs for wholeline/single break handling and does not preserve a typed center node."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed page-center AAT projection has been measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "layout_center_page"
+coverage_basis = "not_run"
+sample_works = []
+
+# =============================================================================
+# Priority 2 rows (added 2026-04-28; sourced from references/parsers/aozora2html
+# tag classes and chuuki tables, cross-referenced with kijyunn.html and
+# chuuki_ichiran.html. parser/adapter values are placeholders for Task 3.)
+# =============================================================================
+
+[[syntax]]
+id = "ruby.double"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["ruby"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html", "references/parsers/aozora2html/lib/aozora2html/tag/ruby.rb"]
+source_examples = ["｜text《upper》《lower》"]
+source_patterns = ['｜[^《\n]+《[^》]+》《[^》]+》']
+ir_nodes = []
+aat_nodes = ["ruby"]
+tei_projection = "ruby/rb/rt with multiple rt"
+plaintext_projection = "base_only"
+comparison_projection = "base_only"
+validation_properties = ["semantic_ruby_sequence"]
+adapter_expectations = ["preserve both reading layers"]
+oracle_cases = ["ruby.double.right_left"]
+status = "needs_research"
+status_reason = "double-ruby pattern; aozora2html rearranges via rearrange_ruby"
+
+[syntax.parsers.aozora2]
+recognition = "normalised"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/ruby_parser.rs:70"
+notes = "Parser extracts ruby base but flattens nested ruby into single node"
+
+[syntax.parsers.aozora-rs]
+recognition = "normalised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/scopenizer/parser.rs:47"
+notes = "RubyDelimiter handler emits one Deco::Ruby; second 《...》 attaches via backref to last kanji run; double-ruby relationship not represented"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/ruby.rb:43"
+notes = "double ruby validation"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2/src/lib.rs:141"
+notes = "adapter emits flat ruby; cannot represent nested structure"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora-rs/src/aat.rs:362"
+notes = "push_ruby_inline emits one ruby node per Deco::Ruby; nested ruby suppressed by contains_ruby_inline check; multiple readings flattened"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "under_ruby ignored"
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "ruby_double"
+coverage_basis = "full_corpus"
+sample_works = []
+
+[[syntax]]
+id = "ruby.placement_directional"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["left_ruby"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html", "references/parsers/aozora2html/lib/aozora2html.rb"]
+source_examples = ["［＃「base」の左に「reading」のルビ］", "下に「reading」のルビ", "［＃左にルビ付き］"]
+source_patterns = ['［＃「[^」]+」の(左|下)に「[^」]+」のルビ］', '(左|下)に「[^」]+」の(ルビ|注記)', '［＃(左|下)にルビ付き］']
+ir_nodes = ["Inline::Ruby"]
+aat_nodes = ["ruby"]
+tei_projection = "ruby with @place"
+plaintext_projection = "base_only"
+comparison_projection = "base_only"
+validation_properties = ["semantic_ruby_sequence"]
+adapter_expectations = ["preserve placement attribute"]
+oracle_cases = ["ruby.placement.left"]
+status = "needs_research"
+status_reason = "directional ruby placement (left/below)"
+
+[syntax.representability]
+source_inventory_row = "ruby.placement_directional"
+status = "typed"
+aat_nodes = ["ruby"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "AAT ruby has a direction field, and TEI can preserve directional placement with ruby placement metadata; raw fallback covers adapters that still drop direction."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:28"
+notes = "Node::Ruby.direction field (Right or Left)"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/backref.rs:60"
+notes = "backref に/は arms have no '左に「reading」のルビ' or '下に「reading」のルビ' handler; falls through to Note::Unknown"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/ruby.rb:11"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:141"
+notes = "AAT ruby node has no direction field; information discarded"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:368"
+notes = "RubyPlacement::Right hard-coded throughout; no synthesis path for left/below placement"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "left/right placement mapped"
+
+[syntax.corpus_prevalence]
+works_with_feature = 31
+total_occurrences = 397
+detector_id = "ruby_placement_directional"
+coverage_basis = "full_corpus"
+sample_works = ["001930_58400", "001930_58401", "001395_49905", "001932_59115", "001932_59114"]
+
+[[syntax]]
+id = "ruby.nested_forbidden"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["ruby"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/ruby.rb"]
+source_examples = ["（attempt at triple-nested ruby）"]
+source_patterns = []
+ir_nodes = []
+aat_nodes = []
+tei_projection = "n/a"
+plaintext_projection = "n/a"
+comparison_projection = "n/a"
+validation_properties = []
+adapter_expectations = ["report parser error"]
+oracle_cases = ["ruby.nested_forbidden.target_includes_ruby"]
+status = "needs_research"
+status_reason = "aozora2html raises Aozora2Html::Error on triple-nested ruby"
+
+[syntax.parsers.aozora2]
+recognition = "normalised"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/ruby_parser.rs:98"
+notes = "Parser rejects gaiji-like nodes as ruby base; normalizes to text"
+
+[syntax.parsers.aozora-rs]
+recognition = "normalised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/scopenizer/parser.rs:118"
+notes = "scopenizer accumulates BackRefFailed errors for nested ruby but does not abort; outer/inner scopes flattened into separate Deco::Ruby decos"
+
+[syntax.parsers.aozora2html]
+recognition = "aborts"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/ruby.rb:50"
+notes = "dont_use_double_ruby error"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "not_applicable"
+evidence = ""
+notes = "Parser forbids nested structure; adapter sees normalized output"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora-rs/src/aat.rs:362"
+notes = "push_ruby_inline drops outer ruby when contains_ruby_inline is true; nested structure suppressed"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "not_applicable"
+evidence = ""
+notes = ""
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "ruby_nested_forbidden"
+coverage_basis = "full_corpus"
+sample_works = []
+
+[[syntax]]
+id = "annotation.chuuki"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["editor_note"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
+source_examples = ["「base」の「annotation」の注記", "「text」の注記付き"]
+source_patterns = ['「[^」]+」の「[^」]+」の注記', '「[^」]+」の注記付き', '〔[^〕]+〕', '［＃[^］]*(底本|ママ|誤植|誤記|誤り|誤訳|欠落|欠如|脱落|脱字|省略|伏字|伏せ字|註|注記|校注|初出では|初出時|初出の|余分か|全集|定本|筑摩版|創元社版|桃源社版|岩波文庫の注|岩波文庫版|旺文社文庫版|改行を挿入|原文まま|本文はありません|抜けていると考えられる|と思われる|本文の書き下し文では|本文では|初刊本|判読困難につき推定)[^］]*］', '［＃ルビは「[^」]+」に(かかる|掛かる)］', '［＃ルビは「[^」]+」に付く］', '［＃「[^」]+」にルビ］', '［＃「[^」]+」のルビ］', '［＃入力者注\([０-９0-9]+\)］', '［ルビの「[^」]+」は底本では「[^」]+」］', '［＃「[^」]+」か？］', '［＃「[^」]+」あるいは「[^」]+」か］', '［＃「今の天皇」は「大正天皇」］', '［＃「本誌」は「改造」］']
+ir_nodes = []
+aat_nodes = ["ruby"]
+tei_projection = "note or ruby"
+plaintext_projection = "base_only"
+comparison_projection = "base_only"
+validation_properties = []
+adapter_expectations = ["preserve annotation as ruby-like attachment"]
+oracle_cases = ["annotation.chuuki.basic"]
+status = "needs_research"
+status_reason = "PAT_CHUUKI in lib/aozora2html.rb; uses ruby rearrangement"
+
+[syntax.representability]
+source_inventory_row = "annotation.chuuki"
+status = "raw_preserved"
+aat_nodes = ["ruby"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "Editorial annotations have TEI note/ruby projections, but current adapters drop common forms; source text must remain the authority until a typed source-note policy lands."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/reference_parser.rs:59"
+notes = "try_parse_annotation_ruby handles chuuki (注記) patterns"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/backref.rs:83"
+notes = "backref に arm requires 「base」に「note」の注記 but matrix examples use の; aozora-rs lacks の-form chuuki handler"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:104"
+notes = "PAT_CHUUKI pattern"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "annotation ruby nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "Adapter has no synthesis path for の-form chuuki annotation"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "chuuki table used, marker emitted separately"
+
+[syntax.corpus_prevalence]
+works_with_feature = 9
+total_occurrences = 12
+detector_id = "annotation_chuuki"
+coverage_basis = "full_corpus"
+sample_works = ["001266_51368", "000908_51450", "000146_49258", "000301_1872", "000311_33189"]
+
+[[syntax]]
+id = "annotation.bouki"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["editor_note"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
+source_examples = ["「*」の傍記"]
+source_patterns = ['「.」の傍記']
+ir_nodes = []
+aat_nodes = ["ruby"]
+tei_projection = "note"
+plaintext_projection = "base_only"
+comparison_projection = "base_only"
+validation_properties = []
+adapter_expectations = ["preserve marginal gloss"]
+oracle_cases = ["annotation.bouki.basic"]
+status = "needs_research"
+status_reason = "single-character side gloss; PAT_BOUKI in lib/aozora2html.rb"
+
+[syntax.representability]
+source_inventory_row = "annotation.bouki"
+status = "raw_preserved"
+aat_nodes = ["ruby"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "Side gloss annotations can project to TEI notes, but current adapter evidence is lossy; raw source preservation is the reviewed v1 guarantee."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/command_parser.rs:162"
+notes = "try_parse_side_note handles bouki (傍記) patterns"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/backref.rs:60"
+notes = "No 傍記 handler in any backref/sandwiched/multiline/wholeline/single arm"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:105"
+notes = "PAT_BOUKI pattern"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "side note nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "Adapter has no synthesis path for bouki side-gloss annotation"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "bouki markers not mapped in adapter"
+
+[syntax.corpus_prevalence]
+works_with_feature = 12
+total_occurrences = 127
+detector_id = "annotation_bouki"
+coverage_basis = "full_corpus"
+sample_works = ["000491_2698", "000287_3062", "000287_3061", "000219_2932", "000869_2707"]
+
+[[syntax]]
+id = "annotation.layout_note"
+priority = 2
+category = "source_annotation"
+feature_keys = ["source_note", "layout_note", "metamark"]
+reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃「A」と「B」の句の上には、この二つの句を括る波括弧あり］", "［＃「｝」は前の５行にわたる］"]
+source_patterns = ['［＃「[^\n]+」と「[^\n]+」の句の上には、この二つの句を括る波括弧あり］', '［＃「[^\n]+」は前の[０-９0-9一二三四五六七八九十]+行にわたる」?］', '［＃以下「[^\n]+」と「[^\n]+」は「[^\n]+」の下で二行に分かれ、「[^\n]+」「[^\n]+」の下に上向きのくくり記号］', '［＃「[^\n]+」と「[^\n]+」の中間に「[^\n]+」］', '［＃「[^\n]+」と「[^\n]+」は[０-９0-9一二三四五六七八九十]+行］', '［＃場面設定の表題、及び「[^」]+」で始まる最初の行以外は、[０-９0-9一二三四五六七八九十]+文字下げた位置で頭を揃える］', '［＃本文の台詞部分は[０-９0-9一二三四五六七八九十]+行目から、その台詞の最後まで天より[０-９0-9一二三四五六七八九十]+字下げ。ト書き部分は天より[０-９0-9一二三四五六七八九十]+字下げ（ト書きの段落の１行目は[０-９0-9一二三四五六七八九十]+字下げてある）］']
+ir_nodes = ["source-note"]
+aat_nodes = ["raw"]
+tei_projection = "note or metamark/span"
+plaintext_projection = "source_note_or_drop_from_body_base_text"
+comparison_projection = "source_note_or_drop_from_body_base_text"
+validation_properties = ["source_note_label_preservation"]
+adapter_expectations = ["preserve layout/metamark note marker or surface text"]
+oracle_cases = []
+status = "needs_research"
+status_reason = "Aozora source carries explicit layout/metamark annotations such as brace spans and multi-line bracket notes; v1 reviews these as raw-preserved TEI-representable notes."
+
+[syntax.representability]
+source_inventory_row = "annotation.layout_note"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "The source-authority gate records layout/metamark notes as raw-preserved material. Typed span/metamark modeling remains a parser-IR vocabulary follow-up."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes layout/metamark notes; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes layout/metamark notes; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes layout/metamark notes; parser-specific typed behavior not yet measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed layout/metamark AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed layout/metamark AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed layout/metamark AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "annotation_layout_note"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
+id = "source.note_label"
+priority = 2
+category = "source_annotation"
+feature_keys = ["source_note", "source_label", "role_label"]
+reference_sources = ["docs/superpowers/specs/2026-07-04-parser-ir-level3-structure-delta.md", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃劇場名］", "［＃長男］", "［＃探偵小説家、生理学者。本名は、林髞］"]
+source_patterns = ['［＃[^］]*(劇場名|ホテル名|お手伝いさん|夫人|スカーフ|小説家|生理学者|長男|次男|三男|長女|次女|三女|従弟|従妹|家庭教師|父|母|甥|夫|ゴーリキー|トゥルビン家のありし日|並木道|昼食|国男|未完|注釈番号)[^］]*］', '［＃(中條|倉知)[^］]*］', '［＃(宮本顕治|村田安|村田敏子、荒木茂の姪|松平正次|労農赤色海軍|協同組合住宅|吼えろ、支那|西村茂樹|辻馬車)］', '［＃[А-Яа-яЁё]+(、[^］]+|＝[^］]+)?］', '［＃[^］]*(同窓会|の意|別称|学者|随筆家|科学思想家|＝[^］]+|死ぬこと)[^］]*］', '［＃(この日、[^］]+|ここには[^］]+引用されている|ここに[^］]+「[^」]+」入る|以上、[^］]+による解説|以下、新聞の切抜き|ドイツの開発した、[^］]+|マリアナ基地からの[^］]+|天皇、[^］]+|実際は[^］]+最終のたより)］', '［＃(わが息子|われらが青春|アコーデオン|カバンを持った男|カルタ遊び|ケーキ|サマータイム|メリー・ツィン|モスクワの官営売店|モスクワプロレタリア作家協会|ロシアプロレタリア作家同盟|中村吉蔵|久米正雄|五ヵ年計画|伊藤白蓮|全日本無産者芸術団体協議会|八十勝|共産主義青年同盟|宮本トミ|宮本友子|宮本捨吉)］', '［＃[^］]*(バチェラー八重子|ペレール|ルイバコフ|中山正直|中川八十勝|中村吉右衛門|宮本顕治|富樫はつ|小林房次郎|山尾市次郎|岡東浩|弁護士、政治家)[^］]*］']
+ir_nodes = ["source-note"]
+aat_nodes = ["raw"]
+tei_projection = "note type=source-label or typed role/name markup after editorial enrichment"
+plaintext_projection = "source_note_or_drop_from_body_base_text"
+comparison_projection = "source_note_or_drop_from_body_base_text"
+validation_properties = ["source_note_label_preservation"]
+adapter_expectations = ["preserve source label marker or surface text"]
+oracle_cases = []
+status = "needs_research"
+status_reason = "Aozora corpus contains bracketed role/title/object labels that are TEI-representable as source notes, but semantic role/name enrichment remains outside the source-authority gate."
+
+[syntax.representability]
+source_inventory_row = "source.note_label"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "The gate records source-side labels as raw-preserved source-note material. It does not claim named-entity or cast-list enrichment; those remain downstream editorial TEI decisions."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes label notes; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes label notes; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes label notes; parser-specific typed behavior remains to be measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed source-label AAT projection has been measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed source-label AAT projection has been measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed source-label AAT projection has been measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "source_note_label"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
+id = "source.reviewed_residual_command"
+priority = 3
+category = "source_annotation"
+feature_keys = ["source_note", "layout_note", "residual_command"]
+reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃ここから紙幣の文字の訳文］", "［＃「（一）」は自注］", "［＃現代語訳「...」］"]
+source_patterns = [
+  '［＃ここからページ下部縦組み］',
+  '［＃ページ下部縦組み終わり］',
+  '［＃ここから罫仕切り[^］]*］',
+  '［＃ここで罫仕切り終わり］',
+  '［＃ここから[^］]*訳文］',
+  '［＃ここで訳文終わり］',
+  '［＃この行は[^］]*(横組み|横書き|枠囲み)[^］]*］',
+  '［＃「[^」]+」は(枠囲い|点線丸囲み|自注)］',
+  '［＃「[^」]+」全体にかかるルビ］',
+  '［＃「[^」]+」は中中見出し］',
+  '［＃中文字、ゴシック体］',
+  '［＃前の行とは0\.5行アキ、「[^」]+」はゴシック体］',
+  '［＃列項目名[^］]*］',
+  '［＃[左右]図の解説文終わり］',
+  '［＃図「[^］]+］',
+  '［＃次行は[^］]+］',
+  '［＃行末から[^］]+］',
+  '［＃(中野鈴子|党員証|公職追放|共同印刷|共産主義者（女）|共産党員|共産党的|前衛|加藤シヅエ|十月革命|南京虫|原阿佐緒|反宗教|国際婦人デー|土曜集会|堺利彦|大杉栄|大森咲江|宮本美代|宮部金吾|小売店|少年団員|少年団|帝国主義|日本プロレタリア・エスペランチスト同盟|日本プロレタリア美術家同盟|映画館名|映画|東久邇宮稔彦首相|東京高等師範学校|河原崎長十郎|青鞜)］',
+  '［＃(休息の家|古本屋名|同志|呉昌碩|喜重郎|変わり者|夕食|大瀧菊子|大熊信行|宇陀児|官僚主義|宣伝ビラ|寿江|射撃|小杉放庵|岡田シヅ|庭園|感情の陰謀|憤怒|手塚英孝|改訂|旅行案内書|晴彦|朝永良太|朝永|木村毅|本田道之|本間久子|根津嘉一郎|正男|洋装店|洗面器|流血|湯浅アサ|湯浅善吉|湯浅芳子|湯浅誠三郎|湯浅貞雄|湿布|準|演説、報告|熱狂的|現代詩への夕べ|田村俊子|神沢フミ|神近市子|福地源一郎|竹内栖鳳|竹村書房)］',
+  '［＃(萩原喜一郎、隣家|葵|美治郎|超国家主義団体|謙|高太郎|黒田鵬心|野上豊一郎|貞の末息子|網野菊|長谷川如是閑|青山杉作|「検察官」|ロマン・キム|赤いけし|通りの名|覚え書き、ノート|〇・四一キログラム|食後の休息時間|血の日曜日|集団農場|風呂|風俗、生活様式|蓄音機|トーキー|野上彌生子|貴志（康一）|スフ|厳寒|里見勝蔵|レールが鳴り響く|「嘘の効用」|（ハヾ）|（止（波））|（ルヽ）)］',
+  '［＃(「ヤンに傍点|ここで字下げ終わり」|波罫線|「七夕」「真つすぐな街」は自由律俳句|「郷－即のへん」、232-1|引用、終わり|以降の「――」で始まる通信文の2行目以降は2字下げ|１９字下げて|ここで字下げ、横書き終わり|ここで字下げ終わり　|この読点不適当|第九章冒頭部分（五六）のこと|第六章第九段落目以降のこと|第二章後ろから数えて三段落目のこと|第二章（二五）の最後の段落のこと|第二章（二四）のこと|第一章第五節（二〇）のこと)］',
+  '［＃(灯火管制。夜間、敵機の来襲に備えて、灯りを遮ったり落としたりすこと|用もないのに廊下をうろつき回ること|口語自由詩で、民衆の現実を描こうとした、「民衆派」の詩人|移動演劇隊桜隊。広島滞在中、原爆に遭う|括弧内は「染付」と「赤繪」の二行になっている|「諸国における富の分配」の図表のこと|原文は括弧「〔〕」を使うが、他の所と一致させるため改める|（）内の文字全てに傍点、ただし読点をのぞく|ここに「下ニ詳ナリ」という注意書きが入る|罫線の部分は、「｛」「｝」で括る|闇汁の図|便箋右上に花飾り付きのページ数|３つの「｛」は１つに繋がる|「ココ」は手描きの切符の下部の線に結ばれている|正しくは「All Quiet on the Western Front」|上部欄外に「じうもんじカ」|「｝一八〇」はこの後の５行にわたる|「［Ａ］のようにも」は底本では「［Ａ］ようにも」|金馬と小金馬の対談がここにはいる。)］',
+  '［＃[^］]*(自注|注釈記号|不鮮明|読みは|現代語訳|旧称|従軍|報道班|カメラマン|農本主義者|別荘|世田谷区|項目名|食料品店名|船名|判然せず)[^］]*］',
+  '［＃[^］]*(異称|モデル|詔勅を放送|食糧統制|逮捕|根拠地|ペンネーム|対立|休戦記念日|通常議会|総同盟|預金|調印式場)[^］]*］',
+  '［＃[^］]*(友人|娘婿|戯曲|てっちゃん|映画館名|殺虫剤名|運転手|実家|愛称|お手伝い)[^］]*］',
+]
+ir_nodes = ["source-note"]
+aat_nodes = ["raw"]
+tei_projection = "note type=source-marker or rendition-specific TEI after typed vocabulary follow-up"
+plaintext_projection = "source_note_or_drop_from_body_base_text"
+comparison_projection = "source_note_or_drop_from_body_base_text"
+validation_properties = ["source_marker_preservation"]
+adapter_expectations = ["preserve reviewed residual command marker or surface text"]
+oracle_cases = []
+status = "not_modeled"
+status_reason = "The source-authority gate reached residual fullwidth commands that are TEI-representable but not yet assigned to a typed AAT/parser-IR vocabulary. This reviewed row keeps them raw-preserved without re-enabling the catch-all editor-note row."
+
+[syntax.representability]
+source_inventory_row = "source.reviewed_residual_command"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "These markers are reviewed source-side residual commands. TEI can carry them as source notes today; richer typed rendition or structural projection remains a follow-up per marker family."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes these residual commands; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes these residual commands; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes these residual commands; parser-specific typed behavior remains to be measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed residual-command AAT projection has been measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed residual-command AAT projection has been measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed residual-command AAT projection has been measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "source_reviewed_residual_command"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
+id = "source.page_reference"
+priority = 2
+category = "source_annotation"
+feature_keys = ["source_note", "page_reference", "cross_reference"]
+reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃「一三九頁」は「應神天皇」の「天の日矛」］", "［＃欄外に「続千載集巻四、秋上、太政大臣。」の校注あり］"]
+source_patterns = ['［＃「[一二三四五六七八九〇０-９0-9]+(頁|ページ)」は「[^」]+」(の「[^」]+」)?］', '［＃欄外に「[^」]+」の校注あり］', '［＃、[０-９0-9]+-(上段|下段)-[０-９0-9]+］']
+ir_nodes = ["source-note"]
+aat_nodes = ["raw"]
+tei_projection = "note type=source-reference or ref after editorial enrichment"
+plaintext_projection = "source_note_or_drop_from_body_base_text"
+comparison_projection = "source_note_or_drop_from_body_base_text"
+validation_properties = ["source_reference_preservation"]
+adapter_expectations = ["preserve source page/cross-reference note or surface text"]
+oracle_cases = []
+status = "not_modeled"
+status_reason = "Aozora corpus contains source notes that point to page/work locations. They are TEI-representable as notes or refs, but v1 only guarantees source-derived raw preservation."
+
+[syntax.representability]
+source_inventory_row = "source.page_reference"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "The source-authority gate records page/cross-reference notes as raw-preserved source-note material. Turning them into typed TEI refs is downstream editorial enrichment."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes page/cross-reference notes; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes page/cross-reference notes; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes page/cross-reference notes; parser-specific typed behavior remains to be measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed page-reference AAT projection has been measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed page-reference AAT projection has been measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed page-reference AAT projection has been measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "source_page_reference"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
+id = "gaiji.unicode_codepoint"
+priority = 2
+category = "glyph"
+feature_keys = ["gaiji", "unicode_codepoint"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/embed_gaiji.rb"]
+source_examples = ["※［＃「口＋世」、U+546D］"]
+source_patterns = ['U\+[0-9A-Fa-f]{4,6}']
+ir_nodes = ["Inline::GaijiRef"]
+aat_nodes = ["gaiji"]
+tei_projection = "g with @ref"
+plaintext_projection = "resolved_character"
+comparison_projection = "resolved_character_or_drop"
+validation_properties = ["gaiji_resolution"]
+adapter_expectations = ["resolve to Unicode codepoint when --use-unicode is on"]
+oracle_cases = ["gaiji.unicode.u546d"]
+status = "needs_research"
+status_reason = "U+ form sub-case of gaiji.marker; aozora2html uses jis2ucs.yml"
+
+[syntax.representability]
+source_inventory_row = "gaiji.unicode_codepoint"
+status = "typed"
+aat_nodes = ["gaiji"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:120"
+notes = "AAT has a typed gaiji node and TEI can preserve the codepoint as g/charDecl evidence; raw fallback covers parser or adapter resolution gaps."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:52"
+notes = "Gaiji node unicode field stores resolved codepoint"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/parser.rs:23"
+notes = "U+ codepoint form inside ※［＃...］ not handled; falls through to Note::Unknown"
+
+[syntax.parsers.aozora2html]
+recognition = "normalised"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/embed_gaiji.rb:46"
+notes = "--use-unicode mode"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2/src/lib.rs:162"
+notes = "adapter records description; resolved/unicode from parser path is dropped (description preserved)"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "synthesised"
+evidence = "adapters/aozora-rs/src/aat.rs:1249"
+notes = "parsed_gaiji extracts unicode field from source-event description and emits GaijiRef with kind UnicodeCodepoint"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "span gaiji with resolved text"
+
+[syntax.corpus_prevalence]
+works_with_feature = 625
+total_occurrences = 7122
+detector_id = "gaiji_unicode_codepoint"
+coverage_basis = "full_corpus"
+sample_works = ["001021_4852", "000129_2084", "001930_58400", "000051_4331", "001266_51368"]
+
+[[syntax]]
+id = "gaiji.jis_code"
+priority = 2
+category = "glyph"
+feature_keys = ["gaiji", "jis_code"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/embed_gaiji.rb"]
+source_examples = ["※［＃第3水準1-15-23］", "※［＃1-05-12］"]
+source_patterns = ['第[1-4一二三四]水準[0-9]-[0-9]+-[0-9]+', '[1-4]-[0-9]{1,2}-[0-9]{1,2}']
+ir_nodes = ["Inline::GaijiRef"]
+aat_nodes = ["gaiji"]
+tei_projection = "g with @ref"
+plaintext_projection = "resolved_character_or_drop"
+comparison_projection = "resolved_character_or_drop"
+validation_properties = ["gaiji_resolution"]
+adapter_expectations = ["resolve via jis2ucs table"]
+oracle_cases = ["gaiji.jis.2-13-47"]
+status = "needs_research"
+status_reason = "JIS X 0213 code form of gaiji"
+
+[syntax.representability]
+source_inventory_row = "gaiji.jis_code"
+status = "typed"
+aat_nodes = ["gaiji"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:120"
+notes = "JIS-coded gaiji can be represented as typed gaiji and projected to TEI g with a reference; raw fallback covers unresolved table lookups and lossy adapters."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:58"
+notes = "Gaiji node jis_code field stores JIS encoding"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/parser.rs:23"
+notes = "JIS code form (Nth水準/N-NN-NN) inside ※［＃...］ not handled by parser"
+
+[syntax.parsers.aozora2html]
+recognition = "normalised"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/embed_gaiji.rb:44"
+notes = "--use-jisx0213 mode"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2/src/lib.rs:155"
+notes = "adapter sets jis_code:null in AAT despite parser capturing it"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "synthesised"
+evidence = "adapters/aozora-rs/src/aat.rs:1258"
+notes = "parsed_gaiji extracts plane/row/cell from source-event description and emits GaijiKind::JisCode"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "img fallback preserves alt, not code"
+
+[syntax.corpus_prevalence]
+works_with_feature = 5662
+total_occurrences = 116905
+detector_id = "gaiji_jis_code"
+coverage_basis = "full_corpus"
+sample_works = ["000129_2084", "001562_52417", "001562_56146", "001161_43624", "000311_2012"]
+
+[[syntax]]
+id = "gaiji.dakuten_katakana"
+priority = 2
+category = "glyph"
+feature_keys = ["gaiji", "dakuten"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/dakuten_katakana.rb"]
+source_examples = ["1-07-82", "1-07-83", "1-07-84", "1-07-85"]
+source_patterns = ['1-07-8[2-5]']
+ir_nodes = ["Inline::GaijiRef"]
+aat_nodes = ["gaiji"]
+tei_projection = "g"
+plaintext_projection = "resolved_character_or_drop"
+comparison_projection = "resolved_character_or_drop"
+validation_properties = ["gaiji_resolution"]
+adapter_expectations = ["render voiced katakana glyph"]
+oracle_cases = ["gaiji.dakuten_katakana.ve"]
+status = "needs_research"
+status_reason = "voiced katakana via JIS code lookup"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:174"
+notes = "Node::DakutenKatakana variant for voiced katakana"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/parser.rs:23"
+notes = "voiced katakana JIS lookup (1-07-82..85) not implemented"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/dakuten_katakana.rb:1"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "dakuten katakana nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "synthesised"
+evidence = "adapters/aozora-rs/src/aat.rs:1258"
+notes = "parsed_gaiji handles JIS-form gaiji from source events; dakuten katakana fall through this same JIS path"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "img gaiji rendered, dakuten marker lost"
+
+[syntax.corpus_prevalence]
+works_with_feature = 447
+total_occurrences = 3757
+detector_id = "gaiji_dakuten_katakana"
+coverage_basis = "full_corpus"
+sample_works = ["000311_2012", "000207_47131", "000320_2168", "001155_51736", "000264_42773"]
+
+[[syntax]]
+id = "gaiji.un_embed"
+priority = 2
+category = "glyph"
+feature_keys = ["gaiji"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/un_embed_gaiji.rb"]
+source_examples = ["※［＃desc-with-no-jis-code］"]
+source_patterns = ['※［＃[^］0-9]+］']
+ir_nodes = ["Inline::GaijiRef"]
+aat_nodes = ["gaiji"]
+tei_projection = "g with charDecl description"
+plaintext_projection = "drop"
+comparison_projection = "drop"
+validation_properties = ["gaiji_resolution"]
+adapter_expectations = ["fall back to descriptive note"]
+oracle_cases = ["gaiji.un_embed.description_only"]
+status = "needs_research"
+status_reason = "gaiji with description but no JIS/Unicode mapping"
+
+[syntax.representability]
+source_inventory_row = "gaiji.un_embed"
+status = "typed"
+aat_nodes = ["gaiji"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:120"
+notes = "Description-only gaiji can still be represented as a typed gaiji node and TEI g/charDecl description; raw fallback preserves source text when adapters cannot resolve it."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/mod.rs:414"
+notes = "parse_gaiji_to_node handles various GaijiResult variants"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/parser.rs:23"
+notes = "No structured handler for description-only gaiji; falls to Note::Unknown"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/un_embed_gaiji.rb:1"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "embedded gaiji metadata not in AAT output"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "synthesised"
+evidence = "adapters/aozora-rs/src/aat.rs:1238"
+notes = "gaiji_inline fallback emits GaijiRef with description and no resolved kind from source events"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "un-embed marker not mapped"
+
+[syntax.corpus_prevalence]
+works_with_feature = 5515
+total_occurrences = 109961
+detector_id = "gaiji_un_embed"
+coverage_basis = "full_corpus"
+sample_works = ["000311_2012", "001161_43624", "001161_48122", "000129_2084", "001562_52417"]
+
+[[syntax]]
+id = "glyph.variant_note"
+priority = 2
+category = "glyph"
+feature_keys = ["glyph_variant", "diacritic", "fraction", "script_glyph"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/script-glyphs.md", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/fraction.md"]
+source_examples = ["［＃「e」はアクサン（´）付き］", "［＃「?!」は一字］", "［＃「1/4」は分数］"]
+source_patterns = ['［＃[^］]*(「[^」]+」|[A-Za-zΑ-ωα-ωηωεισοψ])[^］]*(上に「[^」]+」付き|下に「[^」]+」付き|「[^」]+」付き|アクサン|ウムラウト|帯気|曲アクセント|鋭アクセント|平息|ファイナルシグマ|accent grave|マクロン|長音記号|下ドット|下点|アキュートアクセント|合字|くずし字|崩し字|上ドット付き)[^］]*］', '［＃[^］]*(一字|指数|分数|覆面の英字|矢印が下向き|右横に縦棒あり|の中に「[^」]+」|やまいだれの中|右下の部分|右に「[^」]+」|小さい「[^」]+」|小さな四角|ローマ数字|○付き文字|正字と同字|同形|記号の中に入っている|「※」は|１マスに横並び|上に「[^」]+」がつく|代えて「[^」]+」|「[^」]+」を加える|２倍の長方形|二倍二重ダーシ|欠字|一文字)[^］]*］']
+ir_nodes = []
+aat_nodes = ["raw"]
+tei_projection = "note type=glyph or g with charDecl"
+plaintext_projection = "source_note_or_resolved_character"
+comparison_projection = "source_note_or_resolved_character"
+validation_properties = ["glyph_variant_preservation"]
+adapter_expectations = ["preserve source marker or resolved glyph"]
+oracle_cases = []
+status = "needs_research"
+status_reason = "Aozora corpus contains source notes describing visual glyph variants, diacritics, fractions, and script glyphs that are TEI-representable but not yet typed in AAT/parser-IR."
+
+[syntax.representability]
+source_inventory_row = "glyph.variant_note"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "TEI P5 can preserve these as glyph notes or charDecl/g references. v1 source-authority coverage keeps them raw-preserved until a typed glyph-variant node is designed."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes glyph-variant notes; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes glyph-variant notes; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes glyph-variant notes; parser-specific typed behavior remains to be measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed glyph-variant AAT projection has been measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed glyph-variant AAT projection has been measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed glyph-variant AAT projection has been measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "glyph_variant_note"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
+id = "iteration.kunoji"
+priority = 2
+category = "glyph"
+feature_keys = ["gaiji"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
+source_examples = ["／＼", "／″＼"]
+source_patterns = ['／＼', '／″＼']
+ir_nodes = []
+aat_nodes = ["gaiji"]
+tei_projection = "g"
+plaintext_projection = "drop"
+comparison_projection = "drop"
+validation_properties = []
+adapter_expectations = ["preserve iteration mark"]
+oracle_cases = ["iteration.kunoji.basic"]
+status = "needs_research"
+status_reason = "kunoji iteration mark; aozora2html flags via @chuuki_table without inline transform"
+
+[syntax.representability]
+source_inventory_row = "iteration.kunoji"
+status = "typed"
+aat_nodes = ["gaiji"]
+raw_fallback = true
+evidence = "data/aat-oracle-cases.toml:558; docs/aat-contract.md:120"
+notes = "Reviewed oracle evidence represents kunoji as a typed gaiji resolved to the Unicode vertical kana repeat mark; raw fallback covers parsers/adapters that still treat the slash glyphs as text."
+
+[syntax.parsers.aozora2]
+recognition = "unrecognised"
+evidence = ""
+notes = "No iteration mark (々、ゝ) handler in parser"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/parser.rs:34"
+notes = "／ is in the fast-skip stop set but no special handler matches; ／＼ pair emitted as plain text"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:1"
+notes = "KUNOJI/NOJI constants"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "not_applicable"
+evidence = ""
+notes = "Parser does not recognize; adapter has no projection"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "Adapter has no synthesis path for kunoji iteration mark"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "iteration marker not in adapter"
+
+[syntax.corpus_prevalence]
+works_with_feature = 3601
+total_occurrences = 80988
+detector_id = "iteration_kunoji"
+coverage_basis = "full_corpus"
+sample_works = ["001529_50685", "000118_1745", "000989_350", "000076_45641", "000989_1488"]
+
+[[syntax]]
+id = "accent.diacritic"
+priority = 2
+category = "glyph"
+feature_keys = ["accent"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/accent.rb", "references/parsers/aozora2html/yml/accent_table.yml"]
+source_examples = ["〔A`@grave〕", "〔e'@acute〕", "〔n~@tilde〕"]
+source_patterns = ['〔[^〕]+@[a-z]+〕']
+ir_nodes = []
+aat_nodes = ["accent"]
+tei_projection = "g or character entity"
+plaintext_projection = "resolved_character"
+comparison_projection = "resolved_character_or_drop"
+validation_properties = []
+adapter_expectations = ["resolve via accent table"]
+oracle_cases = ["accent.diacritic.e_acute"]
+status = "needs_research"
+status_reason = "Latin accents via ACCENT_TABLE"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:62"
+notes = "Node::Accent variant with code, name, unicode fields"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/parser.rs:34"
+notes = "〔...@name〕 syntax has no handler; emitted as plain text"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/accent.rb:6"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "accent nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No accent table or synthesis path"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "accent as img, name in alt"
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "accent_diacritic"
+coverage_basis = "full_corpus"
+sample_works = []
+
+[[syntax]]
+id = "accent.dotted_letter"
+priority = 2
+category = "glyph"
+feature_keys = ["accent_dot", "diacritic", "emphasis"]
+reference_sources = ["P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/accent-dot.md", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:conformance/vectors/accent_dot_below/vector.json"]
+source_examples = ["［＃mは上ドット付き］", "［＃sは下ドット付き］", "［＃２つめのsは下ドット付き］"]
+source_patterns = ['［＃(([前後]の|最後の|[０-９0-9]+つめの)?[A-Za-z]+は(ともに|それぞれ)?[上下]ドット付き)([。、]([前後]の|最後の|[０-９0-9]+つめの)?[A-Za-z]+は(ともに|それぞれ)?[上下]ドット付き)*］']
+ir_nodes = []
+aat_nodes = ["raw"]
+tei_projection = "hi rend=accent-dot or g with charDecl"
+plaintext_projection = "resolved_character_or_source"
+comparison_projection = "resolved_character_or_source"
+validation_properties = ["forward_reference_resolution"]
+adapter_expectations = ["preserve dotted-letter directive or resolved glyph"]
+oracle_cases = []
+status = "needs_research"
+status_reason = "Dotted Sanskrit/Pali letter directives are corpus-observed and independently specified by P4suta's draft notation vectors, but current AAT/parser-IR typed support has not been measured."
+
+[syntax.representability]
+source_inventory_row = "accent.dotted_letter"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/accent-dot.md"
+notes = "TEI P5 can preserve the construct as a highlighted dotted-letter span or character declaration; v1 source-authority coverage records it as raw-preserved until adapters expose a typed dotted-letter node."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes dotted-letter markers; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes dotted-letter markers; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes dotted-letter markers; parser-specific typed behavior remains to be measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed dotted-letter AAT projection has been measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed dotted-letter AAT projection has been measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed dotted-letter AAT projection has been measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "accent_dotted_letter"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
+id = "kunten.kaeriten"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["kaeriten"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/kaeriten.rb"]
+source_examples = ["［＃レ］", "［＃一］", "［＃二］", "［＃上］", "［＃返り点一］"]
+source_patterns = ['［＃(?:返り点)?[一二三四五六七八九十レ上中下甲乙丙丁天地人]+］', '［＃レ点］', '［＃「[^」]*」は返り点］', '［＃「」内の「[^」]+」は返り点(、以下同じ)?］', '［＃「」内の[一二三四五六七八九十レ上中下甲乙丙丁天地人]+は返り点］', '［＃以下の「」内の「[^」]+」は返り点］', '［＃[^］]*「[一二三四五六七八九十レ上中下甲乙丙丁天地人]+」は返り点］', '［＃以下、?「[一二三四五六七八九十レ上中下甲乙丙丁天地人]+」は返り点］', '［＃以下の「」内の、「[一二三四五六七八九十レ上中下甲乙丙丁天地人]+」は返り点］', '［＃返り点の「[一二三四五六七八九十レ上中下甲乙丙丁天地人]+」あり］']
+ir_nodes = []
+aat_nodes = ["style"]
+tei_projection = "hi rend=kaeriten"
+plaintext_projection = "drop"
+comparison_projection = "drop"
+validation_properties = []
+adapter_expectations = ["preserve return-point marker"]
+oracle_cases = ["kunten.kaeriten.basic"]
+status = "needs_research"
+status_reason = "classical Chinese return-point marker"
+
+[syntax.representability]
+source_inventory_row = "kunten.kaeriten"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "data/aat-oracle-cases.toml:614; docs/aat-contract.md:124"
+notes = "Reviewed oracle evidence represents return points as style_type=kaeriten with source marker metadata; raw fallback covers adapter paths that drop kunten."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:128"
+notes = "Node::Kaeriten variant for classical kaeriten marks"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/single.rs:65"
+notes = "Bare 一/レ/上/etc inside ［＃...］ parsed as Single::Kundoku, but ［＃返り点一］ form does not match (返り点 prefix unhandled); falls through to Note::Unknown"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/kaeriten.rb:6"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "kaeriten nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:237"
+notes = "Even when bare Kundoku tokens are produced, adapter discards Retokenized::Kunten; for the matrix's 返り点 form there is no synthesis path"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "sub.kaeriten maps to style_type=kaeriten and is preserved in ruby base_content when embedded in ruby bases"
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "kunten_kaeriten"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
+id = "kunten.okurigana"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["okurigana"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/okurigana.rb"]
+source_examples = ["［＃（ノ）］", "［＃（ス）］", "［＃（レント）］", "［＃訓点送り仮名「読」］"]
+source_patterns = ['［＃（[ァ-ヴーぁ-ゖ一-龯々〆ヵヶ]{1,12}）］', '［＃訓点送り仮名「[^」]+」］', '［＃送り仮名「[^」]+」］']
+ir_nodes = []
+aat_nodes = ["ruby"]
+tei_projection = "hi rend=okurigana"
+plaintext_projection = "drop"
+comparison_projection = "drop"
+validation_properties = []
+adapter_expectations = ["preserve okurigana marker"]
+oracle_cases = ["kunten.okurigana.basic"]
+status = "needs_research"
+status_reason = "kunten okurigana mark"
+
+[syntax.representability]
+source_inventory_row = "kunten.okurigana"
+status = "typed"
+aat_nodes = ["ruby"]
+raw_fallback = true
+evidence = "data/aat-oracle-cases.toml:641; docs/aat-contract.md:119"
+notes = "Reviewed oracle evidence represents okurigana as an empty-base ruby with x-annotation-type=okurigana; raw fallback covers adapter paths that drop compact or named markers."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:131"
+notes = "Node::Okurigana variant for kunten okurigana"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/single.rs:78"
+notes = "Bare ［＃（読）］ would parse as Single::Okurigana, but ［＃訓点送り仮名「読」］ form not handled"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/okurigana.rb:6"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "okurigana nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:237"
+notes = "Retokenized::Okurigana discarded by adapter; no synthesis for 訓点送り仮名 marker form"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "sup.okurigana unmapped"
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "kunten_okurigana"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
+id = "heading.inline_form"
+priority = 2
+category = "block"
+feature_keys = ["midashi"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/midashi.rb"]
+source_examples = ["「序章」の大見出し", "「節」の中見出し"]
+source_patterns = ['「[^」]+」の[大中小]見出し']
+ir_nodes = ["Block::Heading"]
+aat_nodes = ["heading"]
+tei_projection = "head"
+plaintext_projection = "heading_text"
+comparison_projection = "heading_text"
+validation_properties = ["heading_level_consistency"]
+adapter_expectations = ["preserve heading level inferred from inline marker"]
+oracle_cases = ["heading.inline_form.large"]
+status = "needs_research"
+status_reason = "inline-form heading; complements heading.basic block form"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/reference_parser.rs:25"
+notes = "try_parse_reference handles 「target」は見出し patterns"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/backref.rs:60"
+notes = "backref requires は/に, but inline-form heading uses の (「序章」の大見出し); pattern unrecognised"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/midashi.rb:6"
+notes = "inline midashi"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "inline heading nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No synthesis path for の-form inline heading"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = ""
+
+[syntax.corpus_prevalence]
+works_with_feature = 11
+total_occurrences = 20
+detector_id = "heading_inline_form"
+coverage_basis = "full_corpus"
+sample_works = ["001670_55342", "001524_51918", "001524_51919", "001524_51920", "001524_51921"]
+
+[[syntax]]
+id = "heading.dogyo"
+priority = 2
+category = "block"
+feature_keys = ["midashi"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
+source_examples = ["［＃同行大見出し］", "「title」の同行中見出し"]
+source_patterns = ['同行[大中小]見出し']
+ir_nodes = ["Block::Heading"]
+aat_nodes = ["heading"]
+tei_projection = "head with @rend"
+plaintext_projection = "heading_text"
+comparison_projection = "heading_text"
+validation_properties = ["heading_level_consistency"]
+adapter_expectations = ["preserve same-line heading variant"]
+oracle_cases = ["heading.dogyo.medium"]
+status = "needs_research"
+status_reason = "dogyo (same-line) heading variant"
+
+[syntax.representability]
+source_inventory_row = "heading.dogyo"
+status = "typed"
+aat_nodes = ["heading"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:103"
+notes = "AAT heading carries a style field and TEI can preserve dogyo as head rend metadata; raw fallback covers adapters that drop the variant."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/midashi.rs:1"
+notes = "MidashiStyle::Dogyo variant for in-line headings"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/sandwiched.rs:94"
+notes = "sandwiched_begin matches 大/中/小見出し but not 同行N見出し prefixed form"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/multiline_midashi.rb:1"
+notes = "dogyo midashi"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "midashi styles not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No synthesis path for dogyo heading variant"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "div.o-midashi/naka-midashi/ko-midashi"
+
+[syntax.corpus_prevalence]
+works_with_feature = 141
+total_occurrences = 11617
+detector_id = "heading_dogyo"
+coverage_basis = "full_corpus"
+sample_works = ["001402_49940", "001566_58764", "001341_51302", "001341_55302", "001341_54938"]
+
+[[syntax]]
+id = "heading.mado"
+priority = 2
+category = "block"
+feature_keys = ["midashi"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
+source_examples = ["［＃窓大見出し］"]
+source_patterns = ['窓[大中小]見出し']
+ir_nodes = ["Block::Heading"]
+aat_nodes = ["heading"]
+tei_projection = "head with @rend"
+plaintext_projection = "heading_text"
+comparison_projection = "heading_text"
+validation_properties = ["heading_level_consistency"]
+adapter_expectations = ["preserve framed heading variant"]
+oracle_cases = ["heading.mado.small"]
+status = "needs_research"
+status_reason = "mado (framed) heading variant"
+
+[syntax.representability]
+source_inventory_row = "heading.mado"
+status = "typed"
+aat_nodes = ["heading"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:103"
+notes = "AAT heading carries a style field and TEI can preserve mado as head rend metadata; raw fallback covers adapters that drop the variant."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/midashi.rs:1"
+notes = "MidashiStyle::Mado variant for windowed headings"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/sandwiched.rs:94"
+notes = "sandwiched_begin matches 大/中/小見出し but not 窓N見出し prefixed form"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/multiline_midashi.rb:1"
+notes = "mado midashi"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "mado heading styles not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No synthesis path for mado heading variant"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "div mado class mapping"
+
+[syntax.corpus_prevalence]
+works_with_feature = 6
+total_occurrences = 1680
+detector_id = "heading_mado"
+coverage_basis = "full_corpus"
+sample_works = ["001404_49966", "000296_1864", "001520_54957", "001402_49946", "000255_47342"]
+
+[[syntax]]
+id = "decoration.boten"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["boten", "sesame"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb", "references/parsers/aozora2html/yml/command_table.yml"]
+source_examples = ["［＃「語」に傍点］", "［＃白ゴマ傍点］", "［＃丸傍点］"]
+source_patterns = ['［＃「[^\n]+」(～「[^\n]+」)?(ゴシック体)?に(([白黒丸]?ゴマ?)|白三角|黒三角|白四角|×|ばつ|蛇の目)?傍点(◎|（[^］]+）)?(、[^］]+)?］', '［＃『[^\n]+』(～『[^\n]+』)?(ゴシック体)?に(([白黒丸]?ゴマ?)|白三角|黒三角|白四角|×|ばつ|蛇の目)?傍点(◎|（[^］]+）)?(、[^］]+)?］', '［＃「[^\n]+」[のは]?傍点］', '［＃「[^\n]+」から「[^\n]+」まで傍点］', '［＃「[^\n]+」と「[^\n]+」の間に(白三角|黒三角|白四角)?傍点］', '［＃「[^\n]+」の「[^」]+」を除く部分に傍点］', '［＃「[^\n]+」に点］', '［＃[^］]*傍点（[^］]+）］', '［＃(([白黒丸]?ゴマ?)|白三角|黒三角|白四角|×|ばつ)?傍点］', '［＃(ここで)?(白三角|黒三角|白四角)?傍点終わり］']
+ir_nodes = ["Inline::Style"]
+aat_nodes = ["style"]
+tei_projection = "hi rend=boten"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["style_scope_balance"]
+adapter_expectations = ["preserve dot variant (sesame/black/white/circle)"]
+oracle_cases = ["decoration.boten.white_sesame"]
+status = "needs_research"
+status_reason = "boten (emphasis dots); sub-case of emphasis.basic with variant kinds"
+
+[syntax.representability]
+source_inventory_row = "decoration.boten"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "AAT style nodes can carry boten style_type and TEI can preserve boten as hi rend metadata; raw fallback covers variant loss such as sesame/circle/triangle collapse."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/style.rs:6"
+notes = "StyleType enum includes boten, white sesame dot, etc."
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/definition.rs:31"
+notes = "boten parser recognises sesame/circle/triangle/etc variants; sandwiched + backref both consume them"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/decorate.rb:6"
+notes = "boten marker"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "boten style nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora-rs/src/aat.rs:424"
+notes = "stable_style_type collapses Deco::Boten(BotenKind) to flat 'boten' string; sesame/circle/triangle variant lost"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "em class mapped to style"
+
+[syntax.corpus_prevalence]
+works_with_feature = 6201
+total_occurrences = 128569
+detector_id = "decoration_boten"
+coverage_basis = "full_corpus"
+sample_works = ["001161_43624", "000305_43619", "000048_48803", "000933_47550", "000048_45476"]
+
+[[syntax]]
+id = "decoration.bousen"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["bosen"]
+reference_sources = ["references/parsers/aozora2html/yml/command_table.yml"]
+source_examples = ["［＃「語」に傍線］", "［＃二重傍線］", "［＃鎖傍線］"]
+source_patterns = ['［＃「[^\n]+」に(二重|鎖|波)?傍線］', '［＃「[^\n]+」に[上下]線］', '［＃「[^\n]+」は[上下]線[^］]*］', '［＃「[^\n]+」の両側に傍線］', '［＃「[^\n]+」に波線］', '［＃(二重|鎖|波)?傍線］', '［＃(ここで)?(二重|鎖|波)?傍線終わり］', '［＃左に傍線(終わり)?］', '［＃[^］]*波線[^］]*］']
+ir_nodes = ["Inline::Style"]
+aat_nodes = ["style"]
+tei_projection = "hi rend=bousen"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["style_scope_balance"]
+adapter_expectations = ["preserve line variant (single/double/wavy/chain)"]
+oracle_cases = ["decoration.bousen.double"]
+status = "needs_research"
+status_reason = "bousen (sideline) variants"
+
+[syntax.representability]
+source_inventory_row = "decoration.bousen"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "AAT style nodes can carry bousen style_type and TEI can preserve the line styling as hi rend metadata; raw fallback covers adapters that collapse line variants."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/style.rs:29"
+notes = "StyleType variants for underline/overline (solid, double, dotted, dashed, wave)"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/definition.rs:50"
+notes = "bosen parser recognises plain/double/chain/dashed/wavy variants"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/decorate.rb:6"
+notes = "bousen marker"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "bousen style nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora-rs/src/aat.rs:423"
+notes = "stable_style_type collapses Deco::Bosen(BosenKind) to flat 'bosen'; line variant lost"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "em underline mapped"
+
+[syntax.corpus_prevalence]
+works_with_feature = 316
+total_occurrences = 35489
+detector_id = "decoration_bousen"
+coverage_basis = "full_corpus"
+sample_works = ["000019_4376", "000933_47023", "001191_55276", "000933_47202", "000140_50131"]
+
+[[syntax]]
+id = "decoration.bold_italic"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["bold", "italic"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
+source_examples = ["［＃ここから太字］", "［＃ここから斜体］", "「text」の太字", "「text」の斜体"]
+source_patterns = ['［＃ここから(太字|斜体)］', '［＃(ここで)?(太字|斜体)終わり］', '「[^」]+」の(太字|斜体)', '［＃[^］]*「[^\n]+」は(太字|斜体|斜体字|イタリック体)］', '［＃「[^\n]+」の部分は(イタリック体|太字)］', '［＃(この行は)?ゴシック体］', '［＃ゴシック］', '［＃「[^\n]+」は?ゴシック体］', '［＃「[^\n]+」はゴチック］', '［＃大文字、太字］', '［＃「[^\n]+」は大文字、太字］', '［＃[^］]*文字はゴシック体[^］]*］']
+ir_nodes = ["Inline::Style", "Block::Style"]
+aat_nodes = ["style"]
+tei_projection = "hi rend=bold|italic"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["style_scope_balance"]
+adapter_expectations = ["distinguish bold from italic"]
+oracle_cases = ["decoration.bold_italic.both", "decoration.bold_italic.block"]
+status = "needs_research"
+status_reason = "futoji/shatai variants in MultilineStyle and inline form"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/style.rs:43"
+notes = "StyleType::Bold and StyleType::Italic variants"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/sandwiched.rs:97"
+notes = "［＃太字］/［＃斜体］ parse as SandwichedBegins::BoldBegin/ItalicBegin; backref handles 「base」は太字"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/decorate.rb:6"
+notes = "bold/italic markers"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2/src/lib.rs:376"
+notes = "block-scoped bold/italic are projected to style nodes; inline backref coverage remains incomplete"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora-rs/src/aat.rs:421"
+notes = "stable_style_type maps Bold→bold, Italic→italic"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "em futoji/shatai"
+
+[syntax.corpus_prevalence]
+works_with_feature = 281
+total_occurrences = 8257
+detector_id = "decoration_bold_italic"
+coverage_basis = "full_corpus"
+sample_works = ["001784_56525", "000748_46576", "000035_52380", "000072_54444", "000113_4327"]
+
+[syntax.representability]
+source_inventory_row = "decoration.bold_italic"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "AAT style containers carry bold/italic style_type when adapters preserve the scope; raw fallback covers adapters that still collapse or drop inline variants."
+
+[[syntax]]
+id = "decoration.typeface"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["typeface", "handwritten", "kyokashotai"]
+reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃ここから手書き文字］", "［＃ここから教科書体］", "［＃「text」は手書き文字］"]
+source_patterns = ['［＃ここから(手書き文字|教科書体)］', '［＃ここで(手書き文字|教科書体)終わり］', '［＃「[^\n]+」は手書き文字］']
+ir_nodes = ["Inline::Style", "Block::Style"]
+aat_nodes = ["style", "raw"]
+tei_projection = "hi rend=typeface"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["style_scope_balance"]
+adapter_expectations = ["preserve typeface/style scope or raw marker"]
+oracle_cases = []
+status = "needs_research"
+status_reason = "Aozora source carries typeface style markers beyond bold/italic, including handwritten and textbook face; v1 keeps them reviewed and raw-preserved until typed style vocabulary is expanded."
+
+[syntax.representability]
+source_inventory_row = "decoration.typeface"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "TEI can preserve these as rendition/style metadata, but current AAT/parser-IR style vocabulary does not have reviewed handwritten/kyokashotai values."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes typeface markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes typeface markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes typeface markers; parser-specific typed behavior not yet measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No reviewed typeface-style AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No reviewed typeface-style AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No reviewed typeface-style AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "decoration_typeface"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
+id = "decoration.font_size"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["font_size"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/font_size.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_font_size.rb"]
+source_examples = ["［＃ここから小3段階大な文字］", "「text」の中2段階大な文字", "［＃「”」は下付き］"]
+source_patterns = [
+  '［＃「[^」]+」はポイント小さく右寄せ］',
+  '［＃「[^」]+」は小さめの文字］',
+  '［＃ここで小文字、字下げ終わり］',
+  '［＃ここから[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字］',
+  '［＃[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字］',
+  '［＃「[^」]+」は[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字］',
+  '［＃(ここで)?(小さな|大きな)文字終わり］',
+  '［＃行右小書き(終わり)?］',
+  '［＃「[^\n]+」は行[左右]小書き］',
+  '［＃「[^\n]+」は小書き右寄せ］',
+  '［＃「[^」]+」は(すべて)?[上下]付き(小文字|小書き)?］',
+  '［＃「[^」]+」はそれぞれ縦中横、数字は[上下]付き小書き］',
+  '［＃[^］]+すべて[上下]付き小文字[^］]*］',
+  '［＃「[^」]+」は小書き］',
+  '［＃「[^\n]+」[はの]小(さい)?文字］',
+  '［＃「[^」]+」の「[^」]+」は小書き］',
+  '［＃「[^\n]+」は[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字］',
+  '［＃「[^」]+」は上部に出ている］',
+  '［＃「[^」]+」は「[^」]+」の[上下]付き(小文字|小書き)?］',
+  '［＃「[^」]+」は本文より小さいサイズの文字］',
+  '［＃「[^」]+」は[０-９0-9一二三四五六七八九十]+度位右上がり］',
+  '［＃「[^\n]+」は[^］]*ポイントを下げ[^］]*］',
+  '［＃この行はポイントを下げ、[^］]+］',
+  '［＃ここのみ[^］]*小さい字「[^」]+」になっている］',
+  '［＃ここから小文字、[^］]+］',
+  '［＃[^］]*[０-９0-9一二三四五六七八九十]+文字目の「[^」]+」は[上下]付き小文字[^］]*］',
+  '［＃ここで[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字終わり］',
+  '［＃[０-９0-9一二三四五六七八九十]+回り大きな文字］',
+  '［＃[大中小]文字］',
+  '［＃大文字、太字］',
+  '小さい活字',
+  '小さい活字も終わり',
+  '「[^」]+」の[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字',
+]
+ir_nodes = ["Inline::Style", "Block::Style"]
+aat_nodes = ["font_size"]
+tei_projection = "hi rend=fontsize|subscript|superscript|raised"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["style_scope_balance"]
+adapter_expectations = ["preserve magnitude and direction"]
+oracle_cases = ["decoration.font_size.larger", "decoration.font_size.block_larger"]
+status = "needs_research"
+status_reason = "block + inline font-size adjustments"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:118"
+notes = "Node::FontSize with Dai/Sho and level (1-5)"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/multiline.rs:138"
+notes = "smaller_block_begins/bigger_block_begins parse N段階小さな文字/N段階大きな文字; sandwiched and backref forms handled too"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/font_size.rb:1"
+notes = "font size markers"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2/src/lib.rs:376"
+notes = "block-scoped font size is projected with direction and level; inline/backref coverage remains incomplete"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora-rs/src/aat.rs:431"
+notes = "stable_style_type returns 'smaller'/'bigger' but level (1-N) is dropped"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "em dai/sho classes"
+
+[syntax.corpus_prevalence]
+works_with_feature = 762
+total_occurrences = 11561
+detector_id = "decoration_font_size"
+coverage_basis = "full_corpus"
+sample_works = ["001977_60827", "002168_51895", "001569_56726", "001869_57569", "001924_58230"]
+
+[syntax.representability]
+source_inventory_row = "decoration.font_size"
+status = "typed"
+aat_nodes = ["font_size", "style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:125"
+notes = "AAT has a typed font_size inline container with size_type/level/content; style fallback covers parser adapters that collapse font-size to style."
+
+[[syntax]]
+id = "decoration.keigakomi"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["keigakomi"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/keigakomi.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_keigakomi.rb"]
+source_examples = ["［＃ここから罫囲み］", "［＃ここで罫囲み終わり］", "「text」の罫囲み"]
+source_patterns = ['［＃ここから罫囲み］', '［＃(ここで)?罫囲み(終わり)?］', '［＃ここで字下げ、(枠|罫)囲み終わり］', '「[^\n]+」[のは]罫囲み', '［＃「[^\n]+」は枠囲み］', '［＃「[^\n]+」に枠囲み］', '［＃「[^\n]+」に枠線］', '［＃「[^\n]+」は[^］]*罫囲み］', '［＃「[^\n]+」は「□」囲み］', '［＃[^］]*「[^\n]+」は罫で囲む］', '［＃[^］]*オモテケイ囲み］', '［＃[^］]*ミシン罫囲み］', '［＃[^］]*罫線囲み］']
+ir_nodes = ["Inline::Style", "Block::Style"]
+aat_nodes = ["keigakomi"]
+tei_projection = "ab rend=keigakomi"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve box border scope"]
+oracle_cases = ["decoration.keigakomi.inline"]
+status = "needs_research"
+status_reason = "rule-line box; block + inline forms"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:92"
+notes = "Node::Keigakomi variant"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/multiline.rs:156"
+notes = "multiline_begins lacks 罫囲み handler; sandwiched_begin lacks it too; falls through to Note::Unknown"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/keigakomi.rb:1"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "keigakomi nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No synthesis path for keigakomi"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "keigakomi as em, structure lost"
+
+[syntax.corpus_prevalence]
+works_with_feature = 135
+total_occurrences = 458
+detector_id = "decoration_keigakomi"
+coverage_basis = "full_corpus"
+sample_works = ["000160_45621", "001095_42626", "001779_58486", "001095_43163", "001779_57517"]
+
+[syntax.representability]
+source_inventory_row = "decoration.keigakomi"
+status = "typed"
+aat_nodes = ["keigakomi", "style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:137"
+notes = "AAT permits keigakomi inline containers and style fallback; TEI can preserve the ruled-box intent as rend metadata while parser adapters remain lossy."
+
+[[syntax]]
+id = "decoration.direction_override"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["boten", "bosen"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
+source_examples = ["［＃「語」の左に傍点］", "［＃「語」の下に傍線］"]
+source_patterns = ['［＃「[^」]+」の(左|下|上)に(傍点|傍線)］']
+ir_nodes = []
+aat_nodes = ["style"]
+tei_projection = "hi rend=boten place=left|under"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = []
+adapter_expectations = ["preserve placement attribute on dot/line"]
+oracle_cases = ["decoration.direction_override.left_boten"]
+status = "needs_research"
+status_reason = "boten/bousen with directional placement override"
+
+[syntax.representability]
+source_inventory_row = "decoration.direction_override"
+status = "raw_preserved"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "The underlying style can be represented, but AAT has no explicit placement field for left/under overrides yet; source preservation is the reviewed v1 guarantee until that placement policy is typed."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:98"
+notes = "Node::Yokogumi variant for horizontal text override"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/backref.rs:83"
+notes = "backref に arm only handles bosen/boten directly or 「note」の注記; ［＃「ref」の左に傍点］ form not matched"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:49"
+notes = "PAT_DIRECTION pattern"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "yokogumi nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No directional placement attribute on style nodes"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "direction override not mapped"
+
+[syntax.corpus_prevalence]
+works_with_feature = 6
+total_occurrences = 65
+detector_id = "decoration_direction_override"
+coverage_basis = "full_corpus"
+sample_works = ["001242_46444", "000866_3039", "001094_42603", "001467_50733", "000096_935"]
+
+[[syntax]]
+id = "indentation.jisage_block"
+priority = 2
+category = "layout"
+feature_keys = ["jisage_block"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/jisage.rb", "references/parsers/aozora2html/lib/aozora2html/tag/multiline_jisage.rb"]
+source_examples = ["［＃ここから2字下げ］", "［＃ここで2字下げ終わり］"]
+source_patterns = ['［＃ここから[０-９0-9一二三四五六七八九十]+字下げ］', '［＃(ここより|以下)[０-９0-9一二三四五六七八九十]+字下げ］', '［＃ここから最後まで[０-９0-9一二三四五六七八九十]+字下げ］', '［＃ここから[０-９0-9]+字下げ、１行[０-９0-9]+字組みで］', '［＃ここから[０-９0-9]+字下げ、[０-９0-9]+字詰め］', '［＃ここから[０-９0-9]+字下げ、[^］]+］', '［＃「[^\n]+」全体、天より[０-９0-9一二三四五六七八九十]+字下げ］', '［＃天より[０-９0-9一二三四五六七八九十]+字下げて地より[０-９0-9一二三四五六七八九十]+字上げで］', '［＃改行ごとに[０-９0-9一二三四五六七八九十]+字下げ］', '［＃([０-９0-9一二三四五六七八九十]+字|字)?下げ(ここまで|終わり|終り)］', '［＃ここで[０-９0-9一二三四五六七八九十]+字下げ終わり］', '［＃ここで字下げ(おわり|終り|終わり)］', '［＃ここで文字下げ終わり］', '［＃ここで地下げ終わり］', '［＃ここか[０-９0-9一二三四五六七八九十]+字下げ］', '［＃ここで字下げ終わり、[^］]+終わり］', '［＃ここで字下げ、[０-９0-9]+字組み終わり］', '［＃ここから[０-９0-9一二三四五六七八九十]+　?字下げ[^］]*］', '［＃ここから字下げ］', '［＃「[^\n]+」の文字の下から[０-９0-9一二三四五六七八九十]+字下げ[^］]*］', '［＃「[０-９0-9一二三四五六七八九十]+字下げ」］', '［＃場面設定の表題、及び「[^」]+」で始まる最初の行以外は、[０-９0-9一二三四五六七八九十]+文字下げた位置で頭を揃える］', '［＃天から[０-９0-9一二三四五六七八九十]+字下げて］', '［＃本文の台詞部分は[０-９0-9一二三四五六七八九十]+行目から、その台詞の最後まで天より[０-９0-9一二三四五六七八九十]+字下げ。ト書き部分は天より[０-９0-9一二三四五六七八九十]+字下げ（ト書きの段落の１行目は[０-９0-9一二三四五六七八九十]+字下げてある）］']
+ir_nodes = ["Block::Layout"]
+aat_nodes = ["jisage_block"]
+tei_projection = "p rend=jisage"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve indentation magnitude and scope"]
+oracle_cases = ["indentation.jisage_block.basic"]
+status = "needs_research"
+status_reason = "block-scoped indent; sub-case of indentation.basic"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:11"
+notes = "parse_block_start with jisage type and width parameter"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/multiline.rs:105"
+notes = "block_indent_begins parses ここからN字下げ to MultiLineBegins::BlockIndent(level); ここで字下げ終わり closes"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/multiline_jisage.rb:6"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "block-level indentation not in AAT output"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora-rs/src/aat.rs:425"
+notes = "Inline::Style 'indent' emitted but level magnitude dropped"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "div.jisage_N mapped"
+
+[syntax.corpus_prevalence]
+works_with_feature = 6714
+total_occurrences = 165543
+detector_id = "indentation_jisage_block"
+coverage_basis = "full_corpus"
+sample_works = ["000294_1858", "001310_51839", "001025_50909", "001310_51838", "001310_51837"]
+
+[syntax.representability]
+source_inventory_row = "indentation.jisage_block"
+status = "typed"
+aat_nodes = ["jisage_block", "style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:104"
+notes = "Block-scoped jisage maps to AAT jisage_block when preserved; style fallback covers parsers that flatten indentation but keep layout intent."
+
+[[syntax]]
+id = "indentation.jisage_oneline"
+priority = 2
+category = "layout"
+feature_keys = ["jisage_line"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/oneline_jisage.rb"]
+source_examples = ["［＃この行2字下げ］"]
+source_patterns = ['［＃この行[０-９0-9]+字下げ］', '［＃天から[０-９0-9]+字下げ］', '［＃[０-９0-9]+字下がる］']
+ir_nodes = ["Block::Layout"]
+aat_nodes = ["style"]
+tei_projection = "lb rend=jisage"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = []
+adapter_expectations = ["apply indent to single line only"]
+oracle_cases = ["indentation.jisage_oneline.two_chars"]
+status = "needs_research"
+status_reason = "single-line indent variant"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:115"
+notes = "try_parse_line_indent for line-level jisage"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/wholeline.rs:38"
+notes = "wholeline expects optional 天から prefix then digit; ［＃この行N字下げ］ form does not match (この行 prefix unhandled)"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/oneline_jisage.rb:1"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "line indentation not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No synthesis path for one-line jisage"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "span jisage inline"
+
+[syntax.corpus_prevalence]
+works_with_feature = 1
+total_occurrences = 2
+detector_id = "indentation_jisage_oneline"
+coverage_basis = "full_corpus"
+sample_works = ["000284_2227"]
+
+[syntax.representability]
+source_inventory_row = "indentation.jisage_oneline"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "One-line jisage can be preserved as a style/layout scope with TEI line-level rend metadata; raw fallback covers adapters that do not emit a dedicated line-indent node."
+
+[[syntax]]
+id = "indentation.chitsuki"
+priority = 2
+category = "layout"
+feature_keys = ["chitsuki"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/chitsuki.rb"]
+source_examples = ["［＃ここから地付き］", "［＃ここから2字上げ］", "［＃この行地付き］"]
+source_patterns = ['［＃(ここから|この行)?(地付き|右寄せ|[０-９0-9]+字上げ)］', '［＃「地付き］', '［＃こ地付き］', '［＃(ここから)?地から[０-９0-9]+字上げ］', '［＃地より[０-９0-9]+字(上げ|上がり)］', '［＃ここで(地付き|字上げ)終わり］', '［＃下げて、?地より[０-９0-9]+字あきで］', '［＃[０-９0-9]+字下げ(て、?|、)地より[０-９0-9]+字あきで］', '［＃天より[０-９0-9]+字下げ、地より[０-９0-9]+字上げで］', '［＃地付き、地より[０-９0-9]+字(アキ|あき)］', '［＃地付きで］', '［＃下げて地付きで］', '［＃地寄せ］', '［＃以下、?地付き］', '［＃以下の文章は地付き］', '［＃この日付は行末に記す］', '［＃この行はポイントを下げて、地より[０-９0-9]+字上げ］', '［＃この行は行末より[０-９0-9]+字上がり］', '［＃(「[^\n]+」は)?文末より[０-９0-9]+字上げ揃え］', '［＃[^］]*(下揃え|頭揃え)[^］]*］', '［＃「[^\n]+」は地付き、地より[^］]+字(アキ|あき)］', '［＃ゴシック体、地付き、地より[^］]+字あげ］', '［＃『[^\n]+』は地付き］', '［＃[^］]*頭[^］]*揃っている。?］', '［＃「[^\n]+」は天より[０-９0-9一二三四五六七八九十]+字下げ、地より[０-９0-9一二三四五六七八九十]+字上げ］', '［＃[^］]*地より[０-９0-9一二三四五六七八九十]+字上げ[^］]*］', '［＃地から[０-９0-9一二三四五六七八九十]+字上げ］', '［＃字下げ、地付きここまで］', '［＃「[^」]+」は地付(き|け)］', '［＃「[^」]+」はポイント小さく右寄せ］', '［＃下げて、地付きで］']
+ir_nodes = ["Block::Layout"]
+aat_nodes = ["style"]
+tei_projection = "p rend=chitsuki"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve right-alignment magnitude and scope"]
+oracle_cases = ["indentation.chitsuki.line"]
+status = "needs_research"
+status_reason = "right-alignment / jiage; not currently surfaced beyond indentation.basic"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:125"
+notes = "try_parse_line_chitsuki handles baseline and offset patterns"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/multiline.rs:120"
+notes = "chitsuki_begins parses ここから地付き; chiyose_block_begins parses ここから地からN字上げ; wholeline handles single-line forms"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/chitsuki.rb:8"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "chitsuki baseline nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora-rs/src/aat.rs:427"
+notes = "Deco::Grounded → 'grounded' style; Deco::LowFlying(level) → 'low_flying' (level lost but type preserved)"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "chitsuki alignment preserved in style"
+
+[syntax.corpus_prevalence]
+works_with_feature = 2172
+total_occurrences = 7931
+detector_id = "indentation_chitsuki"
+coverage_basis = "full_corpus"
+sample_works = ["001025_50909", "000740_49078", "000150_46615", "000150_46616", "000150_46617"]
+
+[syntax.representability]
+source_inventory_row = "indentation.chitsuki"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "Chitsuki/right-alignment is representable as typed style/layout intent in AAT and TEI rend metadata when adapters preserve it."
+
+[[syntax]]
+id = "indentation.jizume"
+priority = 2
+category = "layout"
+feature_keys = ["jisage_block"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/jizume.rb"]
+source_examples = ["［＃ここから字詰め4］", "［＃ここで字詰め終わり］"]
+source_patterns = ['［＃ここから[０-９0-9]+字詰め］', '［＃ここから字詰め[０-９0-9]+］', '［＃ここから[０-９0-9]+字下げ、１行[０-９0-9]+字組みで］', '［＃ここから[０-９0-9]+字下げ、[０-９0-9]+字詰め］', '［＃ここで字詰め終わり］', '［＃ここで字下げ、[０-９0-9]+字組み終わり］']
+ir_nodes = ["Block::Layout"]
+aat_nodes = ["style"]
+tei_projection = "p rend=jizume"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve fixed-width column"]
+oracle_cases = ["indentation.jizume.width"]
+status = "needs_research"
+status_reason = "fixed character-width block (jizume)"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/block.rs:13"
+notes = "BlockType::Jizume for character compression"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/multiline.rs:150"
+notes = "kerning_begins expects N字詰め (digit then 字詰め); matrix form 字詰めN (字詰め then digit) does not match"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/jizume.rb:1"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "jizume block nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No synthesis path for matrix-form jizume"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "jizume letter-spacing not mapped"
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "indentation_jizume"
+coverage_basis = "full_corpus"
+sample_works = []
+
+[syntax.representability]
+source_inventory_row = "indentation.jizume"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "Jizume/fixed-width layout is representable as typed style/layout intent with TEI rend metadata; raw fallback covers adapters that currently drop width details."
+
+[[syntax]]
+id = "indentation.burasage"
+priority = 2
+category = "layout"
+feature_keys = ["jisage_block"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
+source_examples = ["［＃ここから折り返して2字下げ、4字下げ］"]
+source_patterns = ['［＃ここから折り返して[０-９0-9]+字下げ', '［＃ここから[０-９0-9]+字下げ、折り返して[０-９0-9]+字下げ］', '［＃ここから[０-９0-9]+字下げ折り返して[０-９0-9]+字下げ］', '［＃ここから改行[０-９0-9]+字下げ、折り返して[０-９0-9]+字下げ］', '［＃(ここから)?(改行)?天付き、折り返して[０-９0-9]+字下げ］', '［＃台詞はすべて、折り返し[０-９0-9]+行目から、天より[０-９0-9]+字下げ］', '［＃本文の台詞部分は[０-９0-9]+行目から、その台詞の最後まで天より[０-９0-9]+字下げ。］', '［＃数字は[０-９0-9]+字下げ、説明文は[０-９0-9]+字下げ］', '［＃次の[^］]*行目以降[^］]*字下げ］', '［＃ここから天付き折り返して[０-９0-9]+字下げ］']
+ir_nodes = ["Block::Layout"]
+aat_nodes = ["style"]
+tei_projection = "p rend=burasage"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve hanging-indent magnitude pair"]
+oracle_cases = ["indentation.burasage.hanging"]
+status = "needs_research"
+status_reason = "hanging-indent / wrap-continuation form"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:48"
+notes = "try_parse_burasage for hanging indent with wrap width"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/multiline.rs:108"
+notes = "block_indent_begins handles N字下げ、折り返してM字下げ → MultiLineBegins::HangingIndent(N,M)"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/oneline_indent.rb:1"
+notes = "burasage via jisage"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "burasage block nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora-rs/src/aat.rs:426"
+notes = "Deco::Hanging((fst,snd)) flattens to 'hanging' style; magnitude pair dropped"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "burasage div not recognized"
+
+[syntax.corpus_prevalence]
+works_with_feature = 718
+total_occurrences = 5233
+detector_id = "indentation_burasage"
+coverage_basis = "full_corpus"
+sample_works = ["001099_46996", "001097_43785", "001402_49940", "001848_59607", "001848_59608"]
+
+[syntax.representability]
+source_inventory_row = "indentation.burasage"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "Hanging-indent layout is representable as typed style/layout intent with TEI rend metadata; raw fallback covers adapters that lose the magnitude pair."
+
+[[syntax]]
+id = "layout.yokogumi"
+priority = 2
+category = "layout"
+feature_keys = ["yokogumi"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/multiline_yokogumi.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_yokogumi.rb"]
+source_examples = ["［＃ここから横組み］", "「ABC」の横組み"]
+source_patterns = ['［＃ここから横組み］', '［＃横組み］', '［＃(ここで)?横組み終わり］', '［＃ここ(から|で)左から右への横組み(終わり)?］', '［＃ここで字下げ、横組み終わり］', '「[^」]+」の横組み', '［＃「[^」]+」は横組み］', '［＃「[^\n]+」は横書き］', '［＃横書き、[^］]+］', '［＃以下の[^］]*横書き］', '［＃[^］]*横組み右揃え[^］]*］', '［＃(ここから|ここで)?ページ上部横組み(終わり)?］', '［＃ここから本文外に横書き］', '［＃ここで本文外横書き終わり］', '［＃ここから横書き］', '［＃ここで横書き終わり］']
+ir_nodes = ["Block::Layout", "Inline::Style"]
+aat_nodes = ["yokogumi"]
+tei_projection = "ab rend=yokogumi"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve writing-mode toggle scope"]
+oracle_cases = ["layout.yokogumi.inline"]
+status = "needs_research"
+status_reason = "horizontal-in-vertical block + inline forms"
+
+[syntax.representability]
+source_inventory_row = "layout.yokogumi"
+status = "typed"
+aat_nodes = ["yokogumi"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:127"
+notes = "AAT has a typed yokogumi inline container and TEI can preserve horizontal composition with rend metadata; raw fallback covers adapters that do not recover the scope."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:98"
+notes = "Node::Yokogumi variant for horizontal text direction"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/multiline.rs:156"
+notes = "multiline_begins lacks 横組み handler; sandwiched 横組み matches plain ［＃横組み］ but not the matrix-pattern ［＃ここから横組み］ or 「ABC」の横組み (の-form unsupported)"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/multiline_yokogumi.rb:6"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "yokogumi nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No synthesis path for ここから/の-form yokogumi"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "div.yokogumi layout"
+
+[syntax.corpus_prevalence]
+works_with_feature = 407
+total_occurrences = 1842
+detector_id = "layout_yokogumi"
+coverage_basis = "full_corpus"
+sample_works = ["000096_2110", "000034_55507", "000106_49617", "000288_1760", "000121_43274"]
+
+[[syntax]]
+id = "layout.tcy"
+priority = 2
+category = "layout"
+feature_keys = ["tcy"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/dir.rb"]
+source_examples = ["「12」の縦中横", "［＃ここから縦中横］"]
+source_patterns = ['「[^」]+」(の|は)縦中横', '［＃(ここから)?縦中横］', '［＃(ここで)?縦中横終わり］', '［＃「[^」]+」は横一列］', '［＃「[^」]+」はそれぞれ縦中横[^］]*］', '［＃「[^」]+」(?:、「[^」]+」)+はそれぞれ縦中横[^］]*］', '［＃（[^\n]+）は縦中横］', '［＃（[^\n]+）は縦中横、「[^」]+」は縦組み］', '［＃「[^」]+」は[０-９0-9]+日～[０-９0-9]+日の下に縦中横］', '［＃「[^」]+」は[０-９0-9]+度回転］']
+ir_nodes = ["Inline::Style", "Block::Style"]
+aat_nodes = ["tcy"]
+tei_projection = "hi rend=tcy"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = []
+adapter_expectations = ["preserve TCY span"]
+oracle_cases = ["layout.tcy.inline", "layout.tcy.block"]
+status = "needs_research"
+status_reason = "tate-chu-yoko (horizontal in vertical) inline; aozora2html emits dir=ltr span"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:86"
+notes = "Node::Tcy (vertical-to-horizontal) variant"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/backref.rs:67"
+notes = "backref は arm includes 縦中横 but matrix uses の (「12」の縦中横); pattern unrecognised"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:52"
+notes = "TCY_COMMAND"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2/src/lib.rs:376"
+notes = "block-scoped TCY is projected; の-form inline coverage remains incomplete"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No synthesis path for の-form TCY"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "tcy marker not in adapter"
+
+[syntax.corpus_prevalence]
+works_with_feature = 90
+total_occurrences = 542
+detector_id = "layout_tcy"
+coverage_basis = "full_corpus"
+sample_works = ["000150_46616", "000879_21", "002265_62126", "001506_52459", "002265_62462"]
+
+[syntax.representability]
+source_inventory_row = "layout.tcy"
+status = "typed"
+aat_nodes = ["tcy"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:126"
+notes = "AAT has a typed tcy inline container; parser-IR currently flattens to emphasis/text with divergence, while TEI projection preserves the layout intent as hi rend=tcy."
+
+[[syntax]]
+id = "layout.multicolumn"
+priority = 2
+category = "layout"
+feature_keys = ["multicolumn", "dan-gumi"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃ここから２段組み］", "［＃ここで段組み終わり］"]
+source_patterns = ['［＃ここから[０-９0-9]+段組み?］', '［＃ここで([０-９0-9]+段組み?|段組み?)終わり］', '［＃段組み適用外］', '［＃「[^\n]+」と「[^\n]+」は[０-９0-9]+列に並ぶ］', '［＃「[^\n]+」と「[^\n]+」は横並びになっている］', '［＃[０-９0-9]+段目］', '［＃[^］]*１行内で[０-９0-9]+行に分けられている］', '［＃[^］]*[０-９0-9]+行組み[^］]*］', '［＃ここから[０-９0-9]+段組み、段間に罫］', '［＃ここで[０-９0-9]+段組み、罫囲み終わり］', '［＃ここで段組、[^］]+終わり］', '［＃ここから[０-９0-9]+段組、[上下]段］', '［＃ここで[０-９0-9]+段組、[上下]段終わり］']
+ir_nodes = ["Raw"]
+aat_nodes = ["raw"]
+tei_projection = "div rend=columns"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve raw multi-column marker until typed AAT/parser-IR support lands"]
+oracle_cases = []
+status = "not_modeled"
+status_reason = "Aozora multi-column layout has a TEI P5 projection, but AAT/parser-IR currently only preserve it as source-derived raw marker evidence."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes multi-column markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes multi-column markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes multi-column markers; parser-specific typed behavior not yet measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed multi-column AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed multi-column AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed multi-column AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "layout_multicolumn"
+coverage_basis = "not_run"
+sample_works = []
+
+[syntax.representability]
+source_inventory_row = "layout.multicolumn"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "data/aat-schema.json:277"
+notes = "TEI can represent multi-column layout as a division or block with column rendition metadata, but AAT/parser-IR do not yet have typed multi-column nodes. The reviewed v1 guarantee is source-derived raw marker preservation."
+
+[[syntax]]
+id = "structure.quote_block"
+priority = 2
+category = "structure"
+feature_keys = ["quote_block", "letter_block"]
+reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃ここから引用文、３字下げ］", "［＃引用文終わり］", "［＃これより手紙文、１字下げ］"]
+source_patterns = ['［＃ここから引用文、[０-９0-9]+字下げ(、[０-９0-9]+行アキ)?］', '［＃(引用文終わり|ここで引用文終り|ここで引用文終わり)］', '［＃(これより|ここより|ここから)手紙文、[０-９0-9]+字下げ］', '［＃ここから引用文、[０-９0-9]+字下げ、[^］]+］']
+ir_nodes = ["Raw"]
+aat_nodes = ["raw"]
+tei_projection = "quote or div type=letter"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve raw quote/letter block marker until typed AAT/parser-IR support lands"]
+oracle_cases = []
+status = "not_modeled"
+status_reason = "Aozora quote and letter block markers have TEI P5 projections, but AAT/parser-IR currently only preserve them as source-derived raw marker evidence."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes quote/letter block markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes quote/letter block markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes quote/letter block markers; parser-specific typed behavior not yet measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed quote/letter block AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed quote/letter block AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed quote/letter block AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "structure_quote_block"
+coverage_basis = "not_run"
+sample_works = []
+
+[syntax.representability]
+source_inventory_row = "structure.quote_block"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "data/aat-schema.json:277"
+notes = "TEI can represent source quote and letter blocks as quote or typed div material. The reviewed v1 guarantee is source-derived raw marker preservation until typed AAT/parser-IR structure lands."
+
+[[syntax]]
+id = "structure.table"
+priority = 2
+category = "structure"
+feature_keys = ["table", "table_group", "table_border"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃ここから表］", "［＃ここで表終わり］", "［＃ここから表組］"]
+source_patterns = ['［＃ここから表(組|罫囲み)?］', '［＃ここで表(組|罫囲み)?終わり］', '［＃ここで字下げ、表罫囲み終わり］', '［＃ここからプログラム、表罫囲み］', '［＃ここでプログラム（表罫囲み）終わり］', '［＃[０-９0-9一二三四五六七八九十]+行目］', '［＃ここに表組入る、別ファイル（[^）]+）参照］', '［＃ここから横組みの表］', '［＃ここで横組みの表終わり］']
+ir_nodes = ["Raw"]
+aat_nodes = ["raw"]
+tei_projection = "table"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve raw table marker until typed AAT/parser-IR table support lands"]
+oracle_cases = []
+status = "not_modeled"
+status_reason = "Aozora table blocks have a TEI P5 projection, but AAT/parser-IR currently only preserve them as source-derived raw marker evidence."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes table markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes table markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes table markers; parser-specific typed behavior not yet measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed table AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed table AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed table AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "structure_table"
+coverage_basis = "not_run"
+sample_works = []
+
+[syntax.representability]
+source_inventory_row = "structure.table"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "data/aat-schema.json:277"
+notes = "TEI P5 can represent tables directly, but AAT/parser-IR do not yet have typed table nodes. The reviewed v1 guarantee is source-derived raw marker preservation."
+
+[[syntax]]
+id = "warigaki.parenthetical"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["warigaki"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
+source_examples = ["［＃割書］"]
+source_patterns = ['［＃割書］', '［＃割書終わり］', '「[^」]+」の割書']
+ir_nodes = ["Inline::Warichu"]
+aat_nodes = ["warigaki"]
+tei_projection = "seg rend=warigaki"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = []
+adapter_expectations = ["distinguish from warichu"]
+oracle_cases = ["warigaki.parenthetical.basic"]
+status = "needs_research"
+status_reason = "warigaki (parenthetical aside); related to but distinct from warichu"
+
+[syntax.representability]
+source_inventory_row = "warigaki.parenthetical"
+status = "typed"
+aat_nodes = ["warigaki"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:130"
+notes = "AAT has a typed warigaki node and TEI can preserve the aside as warigaki rendition; raw fallback covers parsers/adapters that conflate or drop the parenthetical form."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:110"
+notes = "Node::Warigaki with upper/lower division"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/sandwiched.rs:103"
+notes = "sandwiched_begin recognises 割り注 (warichu) but not 割書 (warigaki); these are distinct"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:56"
+notes = "WARIGAKI_COMMAND"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "warigaki nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No synthesis path for warigaki parenthetical aside"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "warigaki as em, marker lost"
+
+[syntax.corpus_prevalence]
+works_with_feature = 1
+total_occurrences = 1
+detector_id = "warigaki_parenthetical"
+coverage_basis = "full_corpus"
+sample_works = ["000034_519"]
+
+[[syntax]]
+id = "caption.inline"
+priority = 2
+category = "media"
+feature_keys = ["caption"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/inline_caption.rb"]
+source_examples = ["「figure description」のキャプション", "［＃「第一図」はキャプション］"]
+source_patterns = ['「[^\n]+」のキャプション', '「[^\n]+」はキャプション']
+ir_nodes = ["Inline::Caption"]
+aat_nodes = ["caption"]
+tei_projection = "head"
+plaintext_projection = "caption_only"
+comparison_projection = "caption_only"
+validation_properties = []
+adapter_expectations = ["associate caption with nearest figure"]
+oracle_cases = ["caption.inline.basic"]
+status = "needs_research"
+status_reason = "inline-form caption; sub-case of figure.image_caption"
+
+[syntax.representability]
+source_inventory_row = "caption.inline"
+status = "typed"
+aat_nodes = ["caption"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:129"
+notes = "AAT has a typed inline caption node and TEI can preserve it as figure/head; raw fallback covers adapters that flatten or drop caption structure."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:104"
+notes = "Node::Caption variant"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/backref.rs:60"
+notes = "backref needs は/に; matrix の-form 「desc」のキャプション does not match any handler"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/inline_caption.rb:1"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "caption nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No synthesis path for inline caption"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "caption in paragraph, structure lost"
+
+[syntax.corpus_prevalence]
+works_with_feature = 147
+total_occurrences = 2680
+detector_id = "caption_inline"
+coverage_basis = "full_corpus"
+sample_works = ["001574_52529", "001054_18371", "001404_49966", "000320_43481", "001492_51195"]
+
+[[syntax]]
+id = "caption.block"
+priority = 2
+category = "media"
+feature_keys = ["caption"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/multiline_caption.rb"]
+source_examples = ["［＃ここからキャプション］", "［＃ここでキャプション終わり］"]
+source_patterns = ['［＃ここからキャプション］', '［＃(ここで)?キャプション終わり］', '［＃ここから図表下部解説文］', '［＃ここで図表下部解説文終わり］']
+ir_nodes = ["Block::Figure", "Inline::Caption"]
+aat_nodes = ["caption_block"]
+tei_projection = "figure/head"
+plaintext_projection = "caption_only"
+comparison_projection = "caption_only"
+validation_properties = []
+adapter_expectations = ["preserve block-level caption scope"]
+oracle_cases = ["caption.block.basic"]
+status = "needs_research"
+status_reason = "block-form caption"
+
+[syntax.representability]
+source_inventory_row = "caption.block"
+status = "typed"
+aat_nodes = ["caption_block"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:108"
+notes = "AAT has a caption_block container and TEI can preserve it as figure/head; raw fallback covers parsers/adapters that do not distinguish block caption scope."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:107"
+notes = "BlockStart/BlockEnd for caption blocks"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/multiline.rs:156"
+notes = "multiline_begins lacks キャプション handler; ［＃ここからキャプション］ falls through to Note::Unknown"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/multiline_caption.rb:1"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "block-level captions not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No synthesis path for block caption scope"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "caption block not distinguished"
+
+[syntax.corpus_prevalence]
+works_with_feature = 29
+total_occurrences = 620
+detector_id = "caption_block"
+coverage_basis = "full_corpus"
+sample_works = ["001574_52529", "001492_51195", "001548_52232", "001054_18371", "001266_46820"]
+
+[[syntax]]
+id = "figure.image_inline"
+priority = 2
+category = "media"
+feature_keys = ["image"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/img.rb"]
+source_examples = ["alt（fig001.png、横600×縦400）入る"]
+source_patterns = ['[^（\n]*（fig[^）]*\.(png|jpg|jpeg|gif)[^）]*）入る', '［＃図[０-９0-9]+(、[^］]+|入る)］', '［＃図形[^］]+］', '［＃ここに[^］]*(挿し絵|挿絵)入る］', '［＃ここに[^］]*挿絵あり］', '［＃[^］]*写真（fig[^）]*）入る］', '［＃カット「[^」]+」入る[^］]*］', '［＃「[^」]+」の表題付きの楽譜入る（略）］', '［＃図「[^」]+」入る[^］]*］', '［＃図[０-９0-9]+～図[０-９0-9]+は[^］]+］', '［＃[^］]*地図入る[^］]*］', '［＃[^］]*写真[^］]*あり］', '［＃[^］]*挿絵（fig[^）]*）入る］', '［＃[^］]*図入る］', '［＃楽譜入る］']
+ir_nodes = ["Block::Figure"]
+aat_nodes = ["figure"]
+tei_projection = "figure/graphic"
+plaintext_projection = "alt_only"
+comparison_projection = "alt_only"
+validation_properties = []
+adapter_expectations = ["preserve src, dimensions, alt"]
+oracle_cases = ["figure.image_inline.basic"]
+status = "needs_research"
+status_reason = "inline image without caption"
+
+[syntax.representability]
+source_inventory_row = "figure.image_inline"
+status = "typed"
+aat_nodes = ["figure"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:122"
+notes = "AAT has a typed figure node and TEI can preserve filename/graphic intent; raw fallback covers adapter paths that flatten image metadata."
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:72"
+notes = "Node::Img with filename, alt, width, height"
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/single.rs:49"
+notes = "Single::Figure parser handles caption（path、横W×縦H）入る form; size optional"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/img.rb:6"
+notes = "inline image"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "image nodes not projected to AAT paragraph content"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora-rs/src/aat.rs:240"
+notes = "Retokenized::Figure flattened to gaiji using figure.to_string(); structured src/dim/alt fields lost (per inline comment on line 244)"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "img alt preserved, inline context lost"
+
+[syntax.corpus_prevalence]
+works_with_feature = 5459
+total_occurrences = 58586
+detector_id = "figure_image_inline"
+coverage_basis = "full_corpus"
+sample_works = ["001764_55990", "000866_3039", "001185_45210", "001574_52529", "001569_52468"]
+
+[[syntax]]
+id = "editor_note.unmapped"
+priority = 2
+category = "reference"
+feature_keys = ["editor_note"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/editor_note.rb"]
+source_examples = ["［＃左頁］", "［＃ローマ数字（II）］"]
+source_patterns = ['［＃[^］]+］']
+ir_nodes = []
+aat_nodes = ["text"]
+tei_projection = "note rend=editor"
+plaintext_projection = "content_only"
+comparison_projection = "drop"
+validation_properties = []
+adapter_expectations = ["fall back gracefully when no specific handler matches"]
+oracle_cases = ["editor_note.unmapped.blank"]
+status = "needs_research"
+status_reason = "catch-all for ［＃...］ commands not matched by other handlers"
+
+[syntax.parsers.aozora2]
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:151"
+notes = "Node::Note variant for editorial annotations"
+
+[syntax.parsers.aozora-rs]
+recognition = "normalised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/parser.rs:23"
+notes = "Unmatched ［＃...］ commands captured as Note::Unknown(raw_str); scopenizer.rs:114 ignores them"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/editor_note.rb:6"
+notes = ""
+
+[syntax.adapters.aozora2]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "note nodes not projected to AAT"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora-rs/src/aat.rs:453"
+notes = "strip_cross_node_commands removes any leftover ［＃...］ text from inline content; Note::Unknown produces no AAT node"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "span.notes unmapped, command syntax lost"
+
+[syntax.corpus_prevalence]
+works_with_feature = 13834
+total_occurrences = 682387
+detector_id = "editor_note_unmapped"
+coverage_basis = "full_corpus"
+sample_works = ["001670_55342", "001025_50909", "001185_45210", "001848_59607", "001764_55990"]
+
+[[syntax]]
+id = "reference.frontref"
+priority = 2
+category = "reference"
+feature_keys = ["editor_note"]
+reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
+source_examples = ["「ref」に「ref2」の傍点", "「ref」の「ref2」の太字"]
+source_patterns = ['「[^」]+」(に|の)「[^」]+」の[^］]+']
+ir_nodes = []
+aat_nodes = ["style"]
+tei_projection = "ref"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = []
+adapter_expectations = ["resolve forward reference target"]
+oracle_cases = ["reference.frontref.boten"]
+status = "needs_research"
+status_reason = "front-reference style application via PAT_FRONTREF"
+
+[syntax.representability]
+source_inventory_row = "reference.frontref"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "data/aat-oracle-cases.toml:1347; docs/aat-contract.md:124"
+notes = "Reviewed oracle evidence represents front references as style nodes with x-frontref metadata; raw fallback covers parsers/adapters that cannot attach the later annotation target."
+
+[syntax.parsers.aozora2]
+recognition = "normalised"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:163"
+notes = "UnresolvedReference nodes indicate forward references not yet resolved"
+
+[syntax.parsers.aozora-rs]
+recognition = "unrecognised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/backref.rs:83"
+notes = "backref に/は arms do not handle 「ref」に「ref2」の傍点 (two-target form); falls through to Note::Unknown"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:102"
+notes = "PAT_FRONTREF pattern"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "not_applicable"
+evidence = ""
+notes = "Parser emits unresolved marker; adapter has no projection for references"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "not_applicable"
+evidence = "adapters/aozora-rs/src/aat.rs:1"
+notes = "No reference resolution or synthesis path"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "anchor kept, link structure lost"
+
+[syntax.corpus_prevalence]
+works_with_feature = 757
+total_occurrences = 3956
+detector_id = "reference_frontref"
+coverage_basis = "full_corpus"
+sample_works = ["001404_49966", "000076_45641", "000146_44913", "002240_61619", "000908_51396"]
+
+[[syntax]]
+id = "break.line_explicit"
+priority = 2
+category = "milestone"
+feature_keys = ["line_break"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html"]
+source_examples = ["［＃改行］"]
+source_patterns = ['［＃改行］']
+ir_nodes = ["Inline::Break"]
+aat_nodes = ["text"]
+tei_projection = "lb"
+plaintext_projection = "newline"
+comparison_projection = "whitespace_normalized"
+validation_properties = []
+adapter_expectations = ["emit explicit line break"]
+oracle_cases = ["break.line_explicit.basic"]
+status = "partial"
+status_reason = "explicit line breaks now have typed parser-IR and TEI projection; adapter support is still uneven"
+
+[syntax.parsers.aozora2]
+recognition = "unrecognised"
+evidence = ""
+notes = "No explicit newline/break command handler in parser"
+
+[syntax.parsers.aozora-rs]
+recognition = "normalised"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/single.rs:60"
+notes = "Single only recognises 改ページ/改頁/改丁/改段/改見開き; 改行 not in the alt; ［＃改行］ falls to Note::Unknown"
+
+[syntax.parsers.aozora2html]
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:1"
+notes = "explicit line break"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "not_applicable"
+evidence = ""
+notes = "Parser does not recognize; adapter has no projection"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora-rs/src/aat.rs:453"
+notes = "strip_cross_node_commands strips the marker; no Inline::Break emitted for 改行"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/src/lib.rs"
+notes = "br flushes paragraph"
+
+[syntax.corpus_prevalence]
+works_with_feature = 47
+total_occurrences = 165
+detector_id = "break_line_explicit"
+coverage_basis = "full_corpus"
+sample_works = ["002240_61619", "002177_60663", "000866_3039", "001508_51404", "000799_60993"]
+
+[syntax.representability]
+source_inventory_row = "break.line_explicit"
+status = "typed"
+aat_nodes = ["text"]
+raw_fallback = true
+evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs; ../abc/test/abc/tools/parser_ir_tei_test.clj"
+notes = "Source-derived AAT text with x-break-kind = line is projected as parser-IR line-break and TEI lb while preserving surrounding text nodes."

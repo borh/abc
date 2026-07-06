@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://abc.local/schemas/adapter-fidelity-notes-v1.json",
+  "type": "object",
+  "required": ["note"],
+  "additionalProperties": false,
+  "properties": {
+    "note": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/Note" }
+    }
+  },
+  "$defs": {
+    "Note": {
+      "type": "object",
+      "required": ["id", "adapter", "syntax_row_ids", "status", "summary"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "adapter": { "type": "string", "minLength": 1 },
+        "syntax_row_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "status": { "enum": ["active", "retired"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "evidence": { "type": "string" },
+        "retired_by": { "type": "string" }
+      }
+    }
+  }
+}

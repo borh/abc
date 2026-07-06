@@ -1,0 +1,139 @@
+[features.ruby]
+pattern = '《[^》]+》'
+description = "Ruby annotation (furigana)"
+
+[features.ruby_prefix]
+pattern = '｜[^《\n]+《[^》]+》'
+description = "Explicit ruby base marker"
+
+[features.gaiji]
+pattern = '※［＃[^］]+］'
+description = "External character (gaiji)"
+
+[features.jisage_line]
+pattern = '［＃[０-９0-9]+字下げ］'
+description = "Single-line indentation"
+
+[features.jisage_block]
+pattern = '［＃ここから[０-９0-9]+字下げ］'
+description = "Indented block"
+
+[features.chitsuki]
+pattern = '［＃地付き］|［＃[０-９0-9]+字上げ］'
+description = "Bottom/right aligned line"
+
+[features.midashi]
+pattern = '［＃「[^」]+」は[大中小]見出し］|［＃[大中小]見出し］'
+description = "Heading annotations"
+
+[features.boten]
+pattern = '［＃「[^」]+」に傍点］|［＃傍点］'
+description = "Emphasis dots"
+
+[features.bosen]
+pattern = '［＃「[^」]+」に傍線］|［＃傍線］'
+description = "Emphasis line"
+
+[features.bold]
+pattern = '［＃「[^」]+」は太字］|［＃太字］'
+description = "Bold styling"
+
+[features.italic]
+pattern = '［＃「[^」]+」は斜体］|［＃斜体］'
+description = "Italic styling"
+
+[features.font_size]
+pattern = '［＃「[^」]+」は[大中小]きな文字］|［＃[大中小]きな文字］'
+description = "Font size changes"
+
+[features.tcy]
+pattern = '［＃縦中横］|［＃「[^」]+」は縦中横］'
+description = "Tate-chu-yoko"
+
+[features.yokogumi]
+pattern = '［＃ここから横組み］|［＃横組み］'
+description = "Horizontal writing section"
+
+[features.warigaki]
+pattern = '［＃割り注］|［＃ここから割り注］'
+description = "Warigaki split annotation"
+
+[features.quote_block]
+pattern = '［＃ここから引用］'
+description = "Quote block"
+
+[features.keigakomi]
+pattern = '［＃ここから罫囲み］'
+description = "Boxed block"
+
+[features.caption]
+pattern = '［＃キャプション］|［＃ここからキャプション］'
+description = "Caption"
+
+[features.image]
+pattern = '［＃（?[^］\n]+\.(png|jpg|jpeg|gif)）?入る］'
+description = "Image insertion"
+
+[features.page_break]
+pattern = '［＃改ページ］|［＃ページの左右中央］'
+description = "Page break or page positioning"
+
+[features.line_break]
+pattern = '［＃改行］'
+description = "Explicit line break"
+
+[features.emphasis_start_end]
+pattern = '［＃ここから[^］]+］|［＃ここで[^］]+終わり］'
+description = "Generic start/end annotation"
+
+[features.okurigana]
+pattern = '［＃「[^」]+」の左に「[^」]+」］|［＃（[ァ-ヴーぁ-ゖ一-龯々〆ヵヶ]{1,12}）］'
+description = "Okurigana, reread, or side annotation"
+
+[features.kaeriten]
+pattern = '［＃(?:返り点)?[一二三四五六七八九十レ上中下甲乙丙丁天地人]+］|［＃レ点］'
+description = "Kanbun return marks"
+
+[features.accent]
+pattern = '〔[A-Za-z][^〕]*〕'
+description = "Accent notation"
+
+[features.editor_note]
+pattern = '［＃[^］]+］'
+description = "Editor note or generic Aozora command"
+
+[features.unicode_codepoint]
+pattern = 'U\+[0-9A-Fa-f]{4,6}'
+description = "Unicode codepoint reference"
+
+[features.jis_code]
+pattern = '[0-9A-Fa-f]{1,2}-[0-9A-Fa-f]{4}'
+description = "JIS plane-row-cell code"
+
+[features.sesame]
+pattern = '白ゴマ傍点|黒ゴマ傍点|丸傍点'
+description = "Specific emphasis dot variants"
+
+[features.mado]
+pattern = '［＃窓］|［＃ここから窓］'
+description = "Window annotation"
+
+[features.superscript]
+pattern = '［＃「[^」]+」は上付き小文字］|［＃上付き小文字］'
+description = "Superscript text"
+
+[features.subscript]
+pattern = '［＃「[^」]+」は下付き小文字］|［＃下付き小文字］'
+description = "Subscript text"
+
+[features.left_ruby]
+pattern = '［＃「[^」]+」の左に「[^」]+」のルビ］'
+description = "Left-side ruby"
+
+[features.external_link]
+pattern = 'https?://[^\s）］]+'
+description = "External URL in source"
+
+[features.dakuten]
+pattern = '濁点付き|半濁点付き'
+description = "Dakuten/handakuten character annotation"

@@ -1,0 +1,38 @@
+# kunten-source-excerpt.txt
+#
+# Source work:
+#   work_id (Aozora book id): 4644
+#   card path:               cards/000250/card1338.html
+#   txt archive:             cards/000250/files/4644_ruby_15596.zip
+#   txt member:              hoo_kansho07.txt  (SHIFT_JIS)
+#   title:                   放翁鑑賞 その七 ――放翁詩話三十章――
+#   author:                  河上肇
+#   encoding of this fixture: UTF-8
+#
+# Extracted via:
+#   unzip -p cards/000250/files/4644_ruby_15596.zip "hoo_kansho07.txt" \
+#     | iconv -f SHIFT_JIS -t UTF-8
+#
+# This excerpt is a verbatim copy of two regions of the source text:
+#   (A) the header block that self-documents the ［＃…］ 返り点 notation
+#       (source lines 17-19), and
+#   (B) a two-line Su Dongpo (蘇東坡) couplet densely annotated with both
+#       返り点 (一/二/レ/上/中/下) and 送り仮名/再読文字 markers ((ノ)/(ス)/(レント))
+#       (source lines 100-101), plus the bracketing indentation directives.
+#
+# Quotation is consistent with Aozora-gr.jp redistribution terms (free
+# non-commercial reuse with attribution). Kept small for fixture use.
+#
+# --- BEGIN EXCERPT (A): notation header (source L17-19) ---
+
+　［＃…］：返り点
+　（例）四月熟［＃二］黄梅［＃一］
+
+# --- BEGIN EXCERPT (B): annotated couplet (source L99-102) ---
+
+［＃ここから２字下げ］
+一朶［＃（ノ）］妖紅翠欲［＃（ス）］［＃レ］流［＃（レント）］、　　春光囘照雪霜羞
+化工只欲［＃レ］呈［＃二］新巧［＃一］、　　不［＃下］放［＃二］間花［＃一］得［＃中］少休［＃上］
+［＃ここで字下げ終わり］
+
+# --- END EXCERPT ---

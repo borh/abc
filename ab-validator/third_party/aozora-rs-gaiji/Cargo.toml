@@ -1,0 +1,28 @@
+[package]
+name = "aozora-rs-gaiji"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+
+[workspace]
+
+[features]
+default = ["gaiji", "menkuten"]
+
+gaiji = []
+menkuten = []
+gaiji_rev = []
+
+[dependencies]
+rkyv = "0.8"
+winnow = "0.7.14"
+gaiji-chuki-parser = { path = "gaiji-chuki-parser" }
+
+[build-dependencies]
+pdfium-render = "0.8"
+flate2 = "1.0"
+tar = "0.4"
+rkyv = "0.8"
+winnow = "0.7.14"
+gaiji-chuki-parser = { path = "gaiji-chuki-parser" }
+ureq = "3.3.0"

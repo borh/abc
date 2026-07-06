@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/ab-validator/aozora-syntax-coverage.schema.json",
+  "title": "Aozora Bunko Syntax Coverage Matrix",
+  "description": "Schema for data/aozora-syntax-coverage.toml. Each [[syntax]] row enumerates one Aozora Bunko syntactic feature. The flat fields mirror crates/ab-index/src/syntax_coverage.rs::SyntaxRow. Open-keyed parser/adapter sub-tables and a corpus_prevalence sub-table are validated below.",
+  "type": "object",
+  "required": ["syntax"],
+  "properties": {
+    "syntax": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/SyntaxRow" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "SyntaxRow": {
+      "type": "object",
+      "required": [
+        "id",
+        "priority",
+        "category",
+        "feature_keys",
+        "reference_sources",
+        "source_examples",
+        "source_patterns",
+        "ir_nodes",
+        "aat_nodes",
+        "tei_projection",
+        "plaintext_projection",
+        "comparison_projection",
+        "validation_properties",
+        "adapter_expectations",
+        "status",
+        "status_reason"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "priority": { "type": "integer", "minimum": 1, "maximum": 255 },
+        "category": { "type": "string", "minLength": 1 },
+        "feature_keys": { "type": "array", "items": { "type": "string" } },
+        "reference_sources": { "type": "array", "items": { "type": "string" } },
+        "source_examples": { "type": "array", "items": { "type": "string" } },
+        "source_patterns": { "type": "array", "items": { "type": "string" } },
+        "ir_nodes": { "type": "array", "items": { "type": "string" } },
+        "aat_nodes": { "type": "array", "items": { "type": "string" } },
+        "tei_projection": {
+          "type": "string",
+          "description": "TEI P5 projection target for this explicit Aozora source marker. Required to be non-empty for typed, raw_preserved, and out_of_body representability claims."
+        },
+        "plaintext_projection": { "type": "string" },
+        "comparison_projection": { "type": "string" },
+        "validation_properties": { "type": "array", "items": { "type": "string" } },
+        "adapter_expectations": { "type": "array", "items": { "type": "string" } },
+        "oracle_cases": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Optional reverse links to data/aat-oracle-cases.toml case ids."
+        },
+        "status": { "$ref": "#/$defs/SyntaxStatus" },
+        "status_reason": { "type": "string" },
+        "parsers": {
+          "type": "object",
+          "description": "Open-keyed map of parser id to ParserCell. Adding a parser is purely additive.",
+          "additionalProperties": { "$ref": "#/$defs/ParserCell" }
+        },
+        "adapters": {
+          "type": "object",
+          "description": "Open-keyed map of adapter id to AdapterCell. Adding an adapter is purely additive.",
+          "additionalProperties": { "$ref": "#/$defs/AdapterCell" }
+        },
+        "representability": { "$ref": "#/$defs/RepresentabilityCell" },
+        "corpus_prevalence": { "$ref": "#/$defs/CorpusPrevalence" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["representability"],
+            "properties": {
+              "representability": {
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "enum": ["typed", "raw_preserved", "out_of_body"]
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "tei_projection": {
+                "pattern": "\\S",
+                "not": { "pattern": "^[Nn]/[Aa]$" }
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "SyntaxStatus": {
+      "type": "string",
+      "enum": ["covered", "partial", "not_modeled", "needs_research"]
+    },
+    "Recognition": {
+      "type": "string",
+      "description": "What the underlying parser does when it encounters this feature.",
+      "enum": ["parsed", "normalised", "unrecognised", "aborts", "unknown"]
+    },
+    "AatFidelity": {
+      "type": "string",
+      "description": "What survives in the adapter's AAT JSON output.",
+      "enum": [
+        "preserved",
+        "lossy",
+        "dropped",
+        "synthesised",
+        "not_applicable",
+        "unknown"
+      ]
+    },
+    "ParserCell": {
+      "type": "object",
+      "required": ["recognition"],
+      "properties": {
+        "recognition": { "$ref": "#/$defs/Recognition" },
+        "evidence": {
+          "type": "string",
+          "description": "Optional <file>:<line> pointer in the upstream parser source."
+        },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "AdapterCell": {
+      "type": "object",
+      "required": ["aat_fidelity"],
+      "properties": {
+        "aat_fidelity": { "$ref": "#/$defs/AatFidelity" },
+        "evidence": {
+          "type": "string",
+          "description": "Optional <file>:<line> pointer in the adapter source or a fixture path."
+        },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "RepresentabilityStatus": {
+      "type": "string",
+      "enum": [
+        "typed",
+        "raw_preserved",
+        "out_of_body",
+        "unsupported",
+        "needs_research"
+      ]
+    },
+    "RepresentabilityCell": {
+      "type": "object",
+      "required": ["source_inventory_row", "status", "raw_fallback"],
+      "properties": {
+        "source_inventory_row": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Matrix row id used by the source inventory for this source marker class."
+        },
+        "status": { "$ref": "#/$defs/RepresentabilityStatus" },
+        "aat_nodes": { "type": "array", "items": { "type": "string" } },
+        "raw_fallback": { "type": "boolean" },
+        "evidence": {
+          "type": "string",
+          "description": "Pointer to the contract, plan, report, or source proving the representability decision."
+        },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "CoverageBasis": {
+      "type": "string",
+      "enum": ["full_corpus", "stratified_sample", "not_run"]
+    },
+    "CorpusPrevalence": {
+      "type": "object",
+      "required": [
+        "works_with_feature",
+        "total_occurrences",
+        "coverage_basis",
+        "sample_works"
+      ],
+      "properties": {
+        "works_with_feature": { "type": "integer", "minimum": 0 },
+        "total_occurrences": { "type": "integer", "minimum": 0 },
+        "detector_id": {
+          "type": "string",
+          "description": "Identifier of the detector in ab-coverage that counts this row. Conventionally the row id with '.' replaced by '_'."
+        },
+        "coverage_basis": { "$ref": "#/$defs/CoverageBasis" },
+        "sample_works": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 5,
+          "description": "Up to 5 representative work ids exhibiting this feature."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

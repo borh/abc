@@ -1,0 +1,32 @@
+[package]
+name = "ab-index"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Feature index extractor for Aozora text processing pipelines"
+repository = "https://github.com/your-org/ab-validator"
+readme = "../../README.md"
+keywords = ["japanese", "text-processing", "indexing", "features"]
+categories = ["text-processing"]
+
+[dependencies]
+ab-encoding = { workspace = true, features = ["serde"] }
+anyhow.workspace = true
+chrono.workspace = true
+clap.workspace = true
+flate2.workspace = true
+rayon.workspace = true
+regex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+toml.workspace = true
+walkdir.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+[[bench]]
+name = "index_build"
+harness = false

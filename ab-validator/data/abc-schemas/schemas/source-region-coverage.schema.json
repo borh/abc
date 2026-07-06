@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/source-region-coverage.schema.json",
+  "title": "ABC Source Region Coverage Report",
+  "version": "0.2.1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "gate_status",
+    "works_scanned",
+    "unallowlisted_unknown_markers_total",
+    "representability",
+    "source_region_coverage"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "schema_version": {
+      "const": "aozora-source-region-coverage-v1"
+    },
+    "gate_status": {
+      "type": "string",
+      "enum": ["SOURCE_AUTHORITY_GATE_PASS", "SOURCE_AUTHORITY_GATE_FAIL"]
+    },
+    "works_scanned": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "unknown_markers_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "unallowlisted_unknown_markers_total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "representability": {
+      "type": "object",
+      "required": [
+        "typed_occurrences",
+        "raw_preserved_occurrences",
+        "out_of_body_occurrences",
+        "malformed_noise_occurrences",
+        "unsupported_occurrences",
+        "needs_research_occurrences"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "typed_occurrences": { "type": "integer", "minimum": 0 },
+        "raw_preserved_occurrences": { "type": "integer", "minimum": 0 },
+        "out_of_body_occurrences": { "type": "integer", "minimum": 0 },
+        "malformed_noise_occurrences": { "type": "integer", "minimum": 0 },
+        "unsupported_occurrences": { "type": "integer", "minimum": 0 },
+        "needs_research_occurrences": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "source_region_coverage": {
+      "type": "object",
+      "required": [
+        "body_typed_occurrences",
+        "body_raw_preserved_occurrences",
+        "source_apparatus_occurrences",
+        "front_matter_occurrences",
+        "back_matter_occurrences",
+        "body_end_boundary_occurrences",
+        "terminal_provenance_occurrences",
+        "colophon_metadata_occurrences",
+        "letter_address_origin_occurrences",
+        "malformed_source_occurrences",
+        "unsupported_body_markup_occurrences",
+        "unknown_region_occurrences",
+        "unknown_unreviewed_occurrences"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "body_typed_occurrences": { "type": "integer", "minimum": 0 },
+        "body_raw_preserved_occurrences": { "type": "integer", "minimum": 0 },
+        "source_apparatus_occurrences": { "type": "integer", "minimum": 0 },
+        "front_matter_occurrences": { "type": "integer", "minimum": 0 },
+        "back_matter_occurrences": { "type": "integer", "minimum": 0 },
+        "body_end_boundary_occurrences": { "type": "integer", "minimum": 0 },
+        "terminal_provenance_occurrences": { "type": "integer", "minimum": 0 },
+        "colophon_metadata_occurrences": { "type": "integer", "minimum": 0 },
+        "letter_address_origin_occurrences": { "type": "integer", "minimum": 0 },
+        "malformed_source_occurrences": { "type": "integer", "minimum": 0 },
+        "unsupported_body_markup_occurrences": { "type": "integer", "minimum": 0 },
+        "unknown_region_occurrences": { "type": "integer", "minimum": 0 },
+        "unknown_unreviewed_occurrences": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

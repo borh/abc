@@ -18,6 +18,7 @@ dossier_dir="$out_dir/dossiers"
 parser_acceptance_spec="$out_dir/parser-acceptance.md"
 tei_p5_root="$out_dir/tei-p5"
 summary_json="$out_dir/next-work.summary.json"
+complete_source_summary_json="$out_dir/next-work.complete-source.summary.json"
 missing_root_summary_json="$out_dir/next-work.missing-root.summary.json"
 report_md="$out_dir/next-work.md"
 
@@ -381,6 +382,7 @@ jq -e '.completed_gates[] | select(.id == "source_authority" and .status == "com
 jq -e '.completed_gates[] | select(.id == "source_authority" and .evidence.counter_source == "source_region_coverage")' "$summary_json" >/dev/null
 jq -e '([.parser_lanes[].adapter] | sort) == (["aozora", "aozora-epub3", "aozora-rs", "aozora2", "aozora2html"] | sort)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" and .owner == "ab-validator+abc")' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" and .status == "open")' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" and .evidence.classes_total == 2 and .evidence.policy_needed_classes == ["letter_address_origin"])' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.different_rows == 9)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.counts_by_cause.front_back_source_region_policy == 3 and .evidence.source_markup_backed_blockers == 2)' "$summary_json" >/dev/null
@@ -401,6 +403,44 @@ jq -e '.next_work_items[] | select(.id == "parser_acceptance_criteria" and .evid
 jq -e '.calibration_only_items[] | select(.id == "tei_eaj_editorial_enrichment")' "$summary_json" >/dev/null
 rg -n "Aozora Publication Next Work" "$report_md" >/dev/null
 rg -n "letter_address_origin|front_back_source_region_policy|ruby_or_parenthetical_policy.json|unknown_text_delta.json|adapter_collapsed|schema-needed|Comprehensive Parser Acceptance Criteria" "$report_md" >/dev/null
+
+cat > "$source_disposition_summary" <<'JSON'
+{
+  "schema_version": "source-region-disposition-samples-v1",
+  "verdict": "SOURCE_REGION_DISPOSITION_SAMPLES_READY",
+  "classes": [
+    {
+      "source_class": "terminal_provenance",
+      "status": "admitted",
+      "measured_occurrences": 3
+    },
+    {
+      "source_class": "letter_address_origin",
+      "status": "admitted",
+      "measured_occurrences": 2
+    }
+  ]
+}
+JSON
+
+python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+  --source-summary "$source_summary" \
+  --coverage-summary "$coverage_summary" \
+  --matrix-summary "$matrix_summary" \
+  --conversion-summary "$conversion_summary" \
+  --source-reference-summary "$reference_summary" \
+  --performance-report "$performance_md" \
+  --source-disposition-summary "$source_disposition_summary" \
+  --text-policy-summary "$text_policy_summary" \
+  --adapter-worksets-summary "$adapter_worksets_summary" \
+  --dossier-dir "$dossier_dir" \
+  --tei-p5-root "$tei_p5_root" \
+  --parser-acceptance-spec "$parser_acceptance_spec" \
+  --summary-json "$complete_source_summary_json" \
+  --report-md "$out_dir/next-work.complete-source.md"
+
+jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" and .status == "complete" and .evidence.policy_needed_count == 0 and .evidence.evidence_needed_classes == [])' "$complete_source_summary_json" >/dev/null
+rg -n -F '`source_region_disposition_samples` (ab-validator+abc): `complete`' "$out_dir/next-work.complete-source.md" >/dev/null
 
 python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \

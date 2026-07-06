@@ -492,6 +492,54 @@ def parser_acceptance_evidence(path: pathlib.Path) -> dict[str, Any]:
     }
 
 
+def source_disposition_status(evidence: dict[str, Any]) -> str:
+    status_counts_value = evidence.get("status_counts")
+    if not isinstance(status_counts_value, dict):
+        status_counts_value = {}
+    return (
+        "complete"
+        if as_int(evidence.get("classes_total")) > 0
+        and as_int(evidence.get("policy_needed_count")) == 0
+        and not evidence.get("evidence_needed_classes")
+        and set(status_counts_value) <= {"admitted"}
+        else "open"
+    )
+
+
+def text_policy_status(evidence: dict[str, Any]) -> str:
+    return "complete" if as_int(evidence.get("different_rows")) == 0 else "open"
+
+
+def adapter_worksets_status(evidence: dict[str, Any]) -> str:
+    return "complete" if as_int(evidence.get("adapter_distortion_rows")) == 0 else "open"
+
+
+def dossier_status(evidence: dict[str, Any]) -> str:
+    status_counts_value = evidence.get("status_counts")
+    if not isinstance(status_counts_value, dict):
+        status_counts_value = {}
+    open_statuses = {status for status in status_counts_value if status not in {"admitted", "diagnostic-only"}}
+    return (
+        "complete"
+        if as_int(evidence.get("dossier_count")) > 0
+        and not open_statuses
+        and not evidence.get("incomplete_section_dossiers")
+        and not evidence.get("missing_tei_p5_references")
+        and not evidence.get("unverified_tei_p5_references")
+        else "open"
+    )
+
+
+def parser_acceptance_status(evidence: dict[str, Any]) -> str:
+    return (
+        "complete"
+        if evidence.get("spec_status") in {"Accepted", "Admitted", "Complete"}
+        and as_int(evidence.get("required_evidence_paths_total")) == as_int(evidence.get("required_evidence_paths_existing"))
+        and not evidence.get("missing_required_evidence_paths")
+        else "open"
+    )
+
+
 def next_work_items(
     matrix: dict[str, Any],
     *,
@@ -520,31 +568,31 @@ def next_work_items(
         {
             "id": "source_region_disposition_samples",
             "owner": "ab-validator+abc",
-            "status": "open",
+            "status": source_disposition_status(source_disposition),
             "evidence": source_disposition,
         },
         {
             "id": "text_policy_calibration",
             "owner": "ab-validator+abc",
-            "status": "open",
+            "status": text_policy_status(text_evidence),
             "evidence": text_evidence,
         },
         {
             "id": "adapter_fidelity_worksets",
             "owner": "ab-validator",
-            "status": "open",
+            "status": adapter_worksets_status(adapter_evidence),
             "evidence": adapter_evidence,
         },
         {
             "id": "tei_p5_mapping_dossiers",
             "owner": "ab-validator+abc",
-            "status": "open",
+            "status": dossier_status(dossiers),
             "evidence": dossiers,
         },
         {
             "id": "parser_acceptance_criteria",
             "owner": "ab-validator",
-            "status": "open",
+            "status": parser_acceptance_status(parser_acceptance),
             "evidence": parser_acceptance,
         },
     ]

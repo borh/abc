@@ -12,12 +12,19 @@ contains body-visible text only.
 from __future__ import annotations
 
 import argparse
-import hashlib
-import json
 import pathlib
 import re
+import sys
 import xml.etree.ElementTree as ET
 from typing import Any
+
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from reports.lib.hashing import file_sha256
+from reports.lib.io import read_json, write_json
+from reports.lib.paths import repo_root
 
 SCHEMA_VERSION = "publication-bundle-validation-evidence-v1"
 BATCH_SCHEMA_VERSION = "publication-bundle-batch-validation-evidence-v1"
@@ -25,7 +32,7 @@ PASSED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_PASSED"
 FAILED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_FAILED"
 BATCH_PASSED_VERDICT = "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED"
 BATCH_FAILED_VERDICT = "PUBLICATION_BUNDLE_BATCH_VALIDATION_FAILED"
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+REPO_ROOT = repo_root()
 ABC_NS = "{https://w3id.org/abc/ns/tei}"
 XML_ID = "{http://www.w3.org/XML/1998/namespace}id"
 SOURCE_REGION_REQUIRED_COUNTERS = {
@@ -80,15 +87,6 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-def load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def write_json(path: pathlib.Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
 def write_text(path: pathlib.Path, value: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(value, encoding="utf-8")
@@ -96,7 +94,7 @@ def write_text(path: pathlib.Path, value: str) -> None:
 
 def file_hash(path: pathlib.Path) -> str | None:
     try:
-        return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+        return file_sha256(path)
     except OSError:
         return None
 
@@ -326,12 +324,12 @@ def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
     failures: list[dict[str, Any]] = []
 
     try:
-        parser_ir = load_json(args.parser_ir)
-        source_region = load_json(args.source_region_summary)
-        preservation = load_json(paths["preservation"])
-        tei_manifest = load_json(paths["tei_manifest"])
-        plaintext_manifest = load_json(paths["plaintext_manifest"])
-        tei_validation = load_json(paths["tei_validation_result"])
+        parser_ir = read_json(args.parser_ir)
+        source_region = read_json(args.source_region_summary)
+        preservation = read_json(paths["preservation"])
+        tei_manifest = read_json(paths["tei_manifest"])
+        plaintext_manifest = read_json(paths["plaintext_manifest"])
+        tei_validation = read_json(paths["tei_validation_result"])
         plaintext = paths["plaintext"].read_text(encoding="utf-8")
         tei_root = ET.parse(paths["tei"]).getroot()
     except (json.JSONDecodeError, OSError, ET.ParseError) as error:

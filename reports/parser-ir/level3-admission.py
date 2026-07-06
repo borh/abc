@@ -4,11 +4,19 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import pathlib
+import sys
 from collections import Counter
 from typing import Any
+
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from reports.lib.hashing import sha256_hex
+from reports.lib.io import read_json, write_json
+from reports.lib.paths import repo_root
 
 SCHEMA_VERSION = "profile-aware-level3-tei-admission-v1"
 PASSING_PARAGRAPH_ORIGINS = {"aligned", "source_note_back_routing"}
@@ -69,10 +77,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
 def canonical_json(value: object) -> str:
     return json.dumps(
         value,
@@ -83,7 +87,7 @@ def canonical_json(value: object) -> str:
 
 
 def document_hash(value: object) -> str:
-    return "sha256:" + hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
+    return sha256_hex(canonical_json(value))
 
 
 def resolve_path(raw: str, base_dir: pathlib.Path) -> pathlib.Path:
@@ -117,11 +121,6 @@ def resolve_mapping_path(
         )
 
     return (repo_root / relative).resolve()
-
-
-def write_json(path: pathlib.Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def write_text(path: pathlib.Path, value: str) -> None:
@@ -647,14 +646,14 @@ def render_markdown(summary: dict[str, Any]) -> str:
 
 def main() -> int:
     args = parse_args()
-    repo_root = pathlib.Path(__file__).resolve().parents[2]
-    matrix = load_json(args.matrix_summary)
-    source = load_json(args.source_summary)
+    root = repo_root()
+    matrix = read_json(args.matrix_summary)
+    source = read_json(args.source_summary)
     mapping_input = matrix.get("inputs", {}).get("mapping")
     if not mapping_input:
         raise SystemExit("matrix summary missing inputs.mapping")
-    mapping_path = resolve_mapping_path(mapping_input, args.matrix_summary.parent, repo_root)
-    mapping = load_json(mapping_path)
+    mapping_path = resolve_mapping_path(mapping_input, args.matrix_summary.parent, root)
+    mapping = read_json(mapping_path)
     summary = build_summary(matrix, source, mapping, document_hash(mapping))
     write_json(args.summary_json, summary)
     write_text(args.report_md, render_markdown(summary))

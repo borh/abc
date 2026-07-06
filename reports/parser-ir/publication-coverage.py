@@ -4,33 +4,42 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import pathlib
 import re
+import sys
 from collections import Counter
 from typing import Any
 
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from reports.lib.hashing import sha256_hex
+from reports.lib.io import read_json as load_json
+from reports.lib.io import write_json
+from reports.lib.paths import policy_dir, repo_root, schemas_dir
+
 SCHEMA_VERSION = "ir-publication-coverage-v1"
 REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora")
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+REPO_ROOT = repo_root()
 ABC_PRESERVATION_SCHEMA_ID = "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
 ABC_PRESERVATION_SCHEMA_VERSION = "0.2.0"
 TRUSTED_ABC_PRESERVATION_SCHEMA_PATH = (
-    REPO_ROOT / "data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json"
+    schemas_dir() / "parser-ir-publication-preservation.schema.json"
 ).resolve()
 ABC_SOURCE_REGION_SCHEMA_ID = "https://w3id.org/abc/schemas/source-region-coverage.schema.json"
 ABC_SOURCE_REGION_SCHEMA_VERSION = "aozora-source-region-coverage-v1"
 ABC_SOURCE_REGION_POLICY_ID = "https://w3id.org/abc/policies/source-region-publication-v0"
 ABC_SOURCE_REGION_POLICY_VERSION = "0.2.0"
 TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH = (
-    REPO_ROOT / "data/abc-schemas/schemas/source-region-coverage.schema.json"
+    schemas_dir() / "source-region-coverage.schema.json"
 ).resolve()
 TRUSTED_ABC_SOURCE_REGION_POLICY_PATH = (
-    REPO_ROOT / "data/abc-schemas/data/source-region-publication-policy-v0.json"
+    policy_dir() / "source-region-publication-policy-v0.json"
 ).resolve()
 TRUSTED_ABC_MANIFEST_SCHEMA_PATH = (
-    REPO_ROOT / "data/abc-schemas/schemas/manifest.schema.json"
+    schemas_dir() / "manifest.schema.json"
 ).resolve()
 SOURCE_REGION_REQUIRED_COUNTERS = {
     "body_typed_occurrences",
@@ -1899,15 +1908,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def write_json(path: pathlib.Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
 def write_text(path: pathlib.Path, value: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(value, encoding="utf-8")
@@ -1918,7 +1918,7 @@ def canonical_json(value: object) -> str:
 
 
 def document_hash(value: object) -> str:
-    return "sha256:" + hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
+    return sha256_hex(canonical_json(value))
 
 
 def main() -> None:

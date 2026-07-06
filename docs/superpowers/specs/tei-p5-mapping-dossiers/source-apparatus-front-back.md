@@ -33,5 +33,5 @@ and `docs/superpowers/reports/2026-07-04-source-authority-representability.summa
 
 ## Open Decisions
 
-Next action: settle `letter_address_origin` evidence and admission policy with
-ABC before treating those rows as admitted.
+Next action: settle `letter_address_origin` admission policy with ABC before
+treating those rows as admitted; ab-validator now measures 6 occurrences.

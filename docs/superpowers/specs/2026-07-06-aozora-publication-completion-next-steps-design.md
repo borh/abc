@@ -50,9 +50,11 @@ Current source-region report:
 - `source_region_coverage.body_raw_preserved_occurrences: 46382`
 - `source_region_coverage.source_apparatus_occurrences: 13920`
 - `source_region_coverage.front_matter_occurrences: 14627`
-- `source_region_coverage.back_matter_occurrences: 90268`
+- `source_region_coverage.back_matter_occurrences: 90274`
+- `source_region_coverage.body_end_boundary_occurrences: 243`
 - `source_region_coverage.terminal_provenance_occurrences: 609`
 - `source_region_coverage.colophon_metadata_occurrences: 89416`
+- `source_region_coverage.letter_address_origin_occurrences: 6`
 - `source_region_coverage.malformed_source_occurrences: 16`
 - `source_region_coverage.unsupported_body_markup_occurrences: 0`
 - `source_region_coverage.unknown_region_occurrences: 0`
@@ -221,10 +223,10 @@ The next step is sample-backed disposition evidence for:
 - letter address/origin rows such as `宛先` and `発信地`.
 
 The current source-region policy file does not admit `letter_address_origin` as
-a source class. In current reports those rows are visible through TEI-EAJ
-calibration and parser-IR/TEI output, but they do not yet have a separate
-source-region counter or ABC disposition. Treat them as evidence-and-policy work
-until a measured counter and disposition exist.
+a source class. Current reports now measure those rows with
+`source_region_coverage.letter_address_origin_occurrences: 6`, but ABC
+disposition policy is still open. Treat them as policy work, not missing
+evidence.
 
 The output must distinguish source facts from publication decisions:
 

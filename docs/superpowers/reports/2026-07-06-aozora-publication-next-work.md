@@ -15,7 +15,7 @@ Verdict: `AOZORA_PUBLICATION_NEXT_WORK_OPEN`
 - `source_region_disposition_samples` (ab-validator+abc): `open`
   - classes_total=7, admitted=6, policy_needed=1
   - policy_needed_classes=["letter_address_origin"]
-  - evidence_needed_classes=["letter_address_origin"]
+  - evidence_needed_classes=[]
 - `text_policy_calibration` (ab-validator+abc): `open`
   - different_rows=271, source_markup_backed_blockers=223, calibration_only_rows=7
   - counts_by_cause={"adapter_text_loss": 55, "body_visible_layout_policy": 51, "front_back_source_region_policy": 48, "ruby_or_parenthetical_policy": 63, "tei_eaj_editorial_or_enrichment": 48, "unknown_text_delta": 6}

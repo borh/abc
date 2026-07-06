@@ -9,13 +9,13 @@
   },
   "source_summary": {
     "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-    "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63",
+    "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30",
     "works_scanned": 17894,
     "gate_status": "SOURCE_AUTHORITY_GATE_PASS"
   },
   "source_report_md": {
     "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.md",
-    "hash": "sha256:419b6d8903ea8b580a9a6f7d377f6380df1e10caebc91034d44dc0a20c6c32d8"
+    "hash": "sha256:71b05ee81ef925c2e10ecbb1a9160482755fe01c26f26da26781b0208ba404de"
   },
   "classes": [
     {
@@ -27,8 +27,8 @@
       "custom_sidecar": true,
       "plaintext_projection": "omit",
       "measurement_status": "measured",
-      "measured_counter": "back_matter_occurrences",
-      "measured_occurrences": 90268
+      "measured_counter": "body_end_boundary_occurrences",
+      "measured_occurrences": 243
     },
     {
       "source_class": "colophon_metadata",
@@ -50,9 +50,9 @@
       "tei_target": null,
       "custom_sidecar": true,
       "plaintext_projection": "omit",
-      "measurement_status": "evidence_needed",
-      "measured_counter": null,
-      "measured_occurrences": null
+      "measurement_status": "measured",
+      "measured_counter": "letter_address_origin_occurrences",
+      "measured_occurrences": 6
     },
     {
       "source_class": "malformed_source",

@@ -23,8 +23,10 @@ cat > "$source_summary" <<'JSON'
     "source_apparatus_occurrences": 11,
     "front_matter_occurrences": 13,
     "back_matter_occurrences": 17,
+    "body_end_boundary_occurrences": 5,
     "terminal_provenance_occurrences": 3,
     "colophon_metadata_occurrences": 7,
+    "letter_address_origin_occurrences": 2,
     "malformed_source_occurrences": 1
   }
 }
@@ -117,6 +119,8 @@ python3 "$repo_root/reports/source-regions/source-region-disposition-samples.py"
 jq -e '.verdict == "SOURCE_REGION_DISPOSITION_SAMPLES_READY"' "$summary_json" >/dev/null
 jq -e '.classes[] | select(.source_class == "terminal_provenance" and .plaintext_projection == "omit")' "$summary_json" >/dev/null
 jq -e '.classes[] | select(.source_class == "colophon_metadata" and .tei_target == "teiHeader/sourceDesc")' "$summary_json" >/dev/null
-jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "policy_needed" and .measurement_status == "evidence_needed" and .policy_class_present == false)' "$summary_json" >/dev/null
+jq -e '.classes[] | select(.source_class == "body_end_boundary" and .measured_counter == "body_end_boundary_occurrences" and .measured_occurrences == 5)' "$summary_json" >/dev/null
+jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "policy_needed" and .measurement_status == "measured" and .measured_counter == "letter_address_origin_occurrences" and .measured_occurrences == 2 and .policy_class_present == false)' "$summary_json" >/dev/null
 jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "admitted" and .policy_class_present == true and .tei_target == "teiHeader/profileDesc/correspDesc")' "$summary_json_with_letter" >/dev/null
+jq -e '.classes[] | select(.source_class == "letter_address_origin" and .measured_counter == "letter_address_origin_occurrences" and .measured_occurrences == 2)' "$summary_json_with_letter" >/dev/null
 rg -n "Source-Region Disposition Samples" "$report_md" >/dev/null

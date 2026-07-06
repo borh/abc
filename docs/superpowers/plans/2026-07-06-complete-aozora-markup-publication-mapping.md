@@ -35,11 +35,20 @@ The current measured reports already satisfy the ab-validator-side coverage gate
   - required parsers: `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, `aozora`
   - `closure_gaps.classified_but_not_admitted.count == 0`
   - `closure_gaps.true_unsupported_gaps.count == 0`
+- `docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json`
+  - `verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED"`
+  - `scope.kind == "full-tei-eaj-matrix"`
+  - `scope.rows_validated == 285`
+  - `scope.rows_failed == 0`
+  - `checks.plaintext_body_only == true`
+  - validates the full five-parser TEI-EAJ matrix publication bundles across
+    parser-IR, TEI XML, plaintext, preservation sidecar, source-region
+    evidence, TEI manifest, and plaintext manifest
 - `docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json`
-  - `verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED"`
-  - validates the materialized ABC parser-IR fixture bundle across parser-IR,
-    TEI XML, plaintext, preservation sidecar, source-region evidence, TEI
-    manifest, and plaintext manifest
+  - legacy ABC v0 fixture diagnostic; currently
+    `verdict == "PUBLICATION_BUNDLE_VALIDATION_FAILED"` because the old fixture
+    plaintext preserves the raw gaiji marker while the current body-only
+    projection uses the gaiji fallback string
 - `docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json`
   - `schema_version == "aozora-source-region-coverage-v1"`
   - `gate_status == "SOURCE_AUTHORITY_GATE_PASS"`
@@ -48,8 +57,10 @@ The current measured reports already satisfy the ab-validator-side coverage gate
   - `source_region_coverage.unsupported_body_markup_occurrences == 0`
   - `source_region_coverage.unknown_region_occurrences == 0`
   - `source_region_coverage.unknown_unreviewed_occurrences == 0`
+  - `source_region_coverage.body_end_boundary_occurrences == 243`
   - `source_region_coverage.terminal_provenance_occurrences == 609`
   - `source_region_coverage.colophon_metadata_occurrences == 89416`
+  - `source_region_coverage.letter_address_origin_occurrences == 6`
 - `docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json`
   - current dashboard for source-region disposition samples, text-policy
     calibration, adapter-fidelity worksets, TEI P5 dossiers, and parser
@@ -89,9 +100,12 @@ coordination and must be reconciled with that spec if the vocabulary changes.
   - `terminal_provenance`
   - `colophon_metadata`
   - `malformed_source`
-- Use explicit terminal-provenance and colophon counters for prevalence:
-  `terminal_provenance_occurrences: 609` and
-  `colophon_metadata_occurrences: 89416`.
+- Use explicit source-region counters for prevalence:
+  `body_end_boundary_occurrences: 243`,
+  `terminal_provenance_occurrences: 609`,
+  `colophon_metadata_occurrences: 89416`, and
+  `letter_address_origin_occurrences: 6`.
+- Decide ABC disposition policy for measured `letter_address_origin` rows.
 - Preserve malformed-source residues as diagnostics, not unsupported syntax.
 - Keep plaintext body-only.
 
@@ -130,12 +144,16 @@ after syncing the ABC source-region schema, policy, and manifest sidecar role.
 - Keep ab-validator smoke tests focused on measuring and checking the generated reports.
 - Add ab-validator checks only for facts ab-validator owns: source-region counts, parser evidence completeness, mapping/coverage report shape, and synced schema hashes.
 
-**Review gate:** A fixture bundle with source apparatus, body markup, TEI projection, sidecar records, and plaintext passes ABC validation and is cited by path/hash in ab-validator's report.
+**Review gate:** A batch bundle with source apparatus, body markup, TEI
+projection, sidecar records, and plaintext passes validation and is cited by
+path/hash in ab-validator's report.
 
-**Current status:** Implemented for the ABC parser-IR example fixture,
-confirmed for a freshly materialized 25-row representative batch, and promoted
-to the full 285-row five-parser TEI-EAJ matrix bundle diagnostic. Regenerate
-the fixture evidence with:
+**Current status:** Confirmed for a freshly materialized 25-row representative
+batch and promoted to the full 285-row five-parser TEI-EAJ matrix bundle
+evidence. The older ABC parser-IR example fixture remains a diagnostic check;
+it currently fails the stricter plaintext body-only check on gaiji raw-marker
+projection and is not the admission evidence. Regenerate that diagnostic
+fixture with:
 
 ```bash
 just parser-ir-publication-bundle-validation
@@ -334,13 +352,13 @@ Complete Aozora Bunko markup publication mapping: every observed source markup a
 
 ## Immediate Next Tasks
 
-1. Resolve the full five-parser TEI-EAJ matrix plaintext blockers in ABC:
-   front-letter metadata (`宛先` / `発信地`) and page/section marker text must be
-   omitted from plaintext and routed to TEI/custom preservation instead.
-2. Rerun full-matrix materialization and
-   `parser-ir-publication-bundle-batch-validation`; only feed the full-matrix
-   batch summary into `parser-ir-publication-coverage-report` after it reaches
-   `rows_failed == 0`.
+1. Settle ABC disposition policy for measured `letter_address_origin` rows
+   (`宛先` / `発信地`), which now have source evidence but remain
+   `policy_needed`.
+2. Keep the full-matrix materialization and
+   `parser-ir-publication-bundle-batch-validation` current; only feed the
+   full-matrix batch summary into `parser-ir-publication-coverage-report` while
+   it has `rows_failed == 0`.
 3. Keep all five parser evidence lanes current:
    `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
 4. Rerun `just source-reference-reconciliation-report` when the source
@@ -361,7 +379,6 @@ bash tests/parser-ir-publication-coverage-smoke.sh
 jq -e '.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
 jq -e '.source_region_coverage.unsupported_body_markup_occurrences == 0 and .source_region_coverage.unknown_region_occurrences == 0 and .source_region_coverage.unknown_unreviewed_occurrences == 0' docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
 jq -e '.verdict == "SOURCE_REFERENCE_RECONCILIATION_COMPLETE" and .totals.observed_without_syntax_row == 0 and .totals.p4suta_feature_unmapped == 0' docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json
-jq -e '.verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED"' docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json
 jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED" and .scope.rows_validated == 25 and .scope.rows_failed == 0' docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json
 jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.publication_bundle_contract.validation_scope == "batch" and .publication_bundle_contract.rows_validated == 285 and .publication_bundle_contract.rows_failed == 0' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json

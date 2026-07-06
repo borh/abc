@@ -1,6 +1,6 @@
 # Publication Bundle Validation
 
-Verdict: `PUBLICATION_BUNDLE_VALIDATION_PASSED`
+Verdict: `PUBLICATION_BUNDLE_VALIDATION_FAILED`
 
 ## Checks
 
@@ -18,4 +18,8 @@ Verdict: `PUBLICATION_BUNDLE_VALIDATION_PASSED`
 | `tei_abc_projection_resolves_to_sidecar` | `true` |
 | `preservation_tei_pointers_resolve` | `true` |
 | `preservation_source_pointers_resolve` | `true` |
-| `plaintext_body_only` | `true` |
+| `plaintext_body_only` | `false` |
+
+## Failures
+
+- `plaintext_body_only`: Plaintext differs from the parser-IR body-only projection.

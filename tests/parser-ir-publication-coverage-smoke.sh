@@ -178,9 +178,33 @@ JSON
 
 cat > "$source_summary" <<'JSON'
 {
+  "schema_version": "aozora-source-region-coverage-v1",
   "gate_status": "SOURCE_AUTHORITY_GATE_PASS",
   "works_scanned": 17894,
-  "unallowlisted_unknown_markers_total": 0
+  "unallowlisted_unknown_markers_total": 0,
+  "representability": {
+    "typed_occurrences": 1,
+    "raw_preserved_occurrences": 1,
+    "out_of_body_occurrences": 0,
+    "malformed_noise_occurrences": 0,
+    "unsupported_occurrences": 0,
+    "needs_research_occurrences": 0
+  },
+  "source_region_coverage": {
+    "body_typed_occurrences": 1,
+    "body_raw_preserved_occurrences": 1,
+    "source_apparatus_occurrences": 0,
+    "front_matter_occurrences": 0,
+    "back_matter_occurrences": 0,
+    "body_end_boundary_occurrences": 0,
+    "terminal_provenance_occurrences": 0,
+    "colophon_metadata_occurrences": 0,
+    "letter_address_origin_occurrences": 0,
+    "malformed_source_occurrences": 0,
+    "unsupported_body_markup_occurrences": 0,
+    "unknown_region_occurrences": 0,
+    "unknown_unreviewed_occurrences": 0
+  }
 }
 JSON
 

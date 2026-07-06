@@ -2,7 +2,7 @@
   "schema_version": "publication-bundle-batch-validation-evidence-v1",
   "verdict": "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED",
   "validator": "ab-validator publication-bundle-validate batch",
-  "command": "clojure -M:abc/materialize-publications-batch /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-batch.json --summary /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-summary.json --jobs 24",
+  "command": "clojure -M:abc/materialize-publications-batch /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-batch.json --summary /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-summary.json",
   "abc_commit": "95ace31",
   "scope": {
     "kind": "full-tei-eaj-matrix",
@@ -51,7 +51,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
@@ -102,7 +102,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
@@ -153,7 +153,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
@@ -204,7 +204,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
@@ -255,7 +255,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
@@ -306,7 +306,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0002_01_aozora2html_15099_data_complete_tei_lib_lv3_15099_tei.xml/publication/tei.manifest.json",
@@ -357,7 +357,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0002_02_aozora-epub3_15099_data_complete_tei_lib_lv3_15099_tei.xml/publication/tei.manifest.json",
@@ -408,7 +408,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0002_03_aozora-rs_15099_data_complete_tei_lib_lv3_15099_tei.xml/publication/tei.manifest.json",
@@ -459,7 +459,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0002_04_aozora2_15099_data_complete_tei_lib_lv3_15099_tei.xml/publication/tei.manifest.json",
@@ -510,7 +510,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0002_05_aozora_15099_data_complete_tei_lib_lv3_15099_tei.xml/publication/tei.manifest.json",
@@ -561,7 +561,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0003_01_aozora2html_15938_data_complete_tei_lib_lv3_15938_tei.xml/publication/tei.manifest.json",
@@ -612,7 +612,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0003_02_aozora-epub3_15938_data_complete_tei_lib_lv3_15938_tei.xml/publication/tei.manifest.json",
@@ -663,7 +663,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0003_03_aozora-rs_15938_data_complete_tei_lib_lv3_15938_tei.xml/publication/tei.manifest.json",
@@ -714,7 +714,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0003_04_aozora2_15938_data_complete_tei_lib_lv3_15938_tei.xml/publication/tei.manifest.json",
@@ -765,7 +765,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0003_05_aozora_15938_data_complete_tei_lib_lv3_15938_tei.xml/publication/tei.manifest.json",
@@ -816,7 +816,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0004_01_aozora2html_236_data_complete_tei_lib_lv3_236_tei.xml/publication/tei.manifest.json",
@@ -867,7 +867,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0004_02_aozora-epub3_236_data_complete_tei_lib_lv3_236_tei.xml/publication/tei.manifest.json",
@@ -918,7 +918,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0004_03_aozora-rs_236_data_complete_tei_lib_lv3_236_tei.xml/publication/tei.manifest.json",
@@ -969,7 +969,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0004_04_aozora2_236_data_complete_tei_lib_lv3_236_tei.xml/publication/tei.manifest.json",
@@ -1020,7 +1020,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0004_05_aozora_236_data_complete_tei_lib_lv3_236_tei.xml/publication/tei.manifest.json",
@@ -1071,7 +1071,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0005_01_aozora2html_2509_data_complete_tei_lib_lv3_2509_tei.xml/publication/tei.manifest.json",
@@ -1122,7 +1122,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0005_02_aozora-epub3_2509_data_complete_tei_lib_lv3_2509_tei.xml/publication/tei.manifest.json",
@@ -1173,7 +1173,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0005_03_aozora-rs_2509_data_complete_tei_lib_lv3_2509_tei.xml/publication/tei.manifest.json",
@@ -1224,7 +1224,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0005_04_aozora2_2509_data_complete_tei_lib_lv3_2509_tei.xml/publication/tei.manifest.json",
@@ -1275,7 +1275,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0005_05_aozora_2509_data_complete_tei_lib_lv3_2509_tei.xml/publication/tei.manifest.json",
@@ -1326,7 +1326,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0006_01_aozora2html_42320_data_complete_tei_lib_lv3_42320_tei.xml/publication/tei.manifest.json",
@@ -1377,7 +1377,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0006_02_aozora-epub3_42320_data_complete_tei_lib_lv3_42320_tei.xml/publication/tei.manifest.json",
@@ -1428,7 +1428,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0006_03_aozora-rs_42320_data_complete_tei_lib_lv3_42320_tei.xml/publication/tei.manifest.json",
@@ -1479,7 +1479,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0006_04_aozora2_42320_data_complete_tei_lib_lv3_42320_tei.xml/publication/tei.manifest.json",
@@ -1530,7 +1530,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0006_05_aozora_42320_data_complete_tei_lib_lv3_42320_tei.xml/publication/tei.manifest.json",
@@ -1581,7 +1581,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0007_01_aozora2html_43077_data_complete_tei_lib_lv3_43077_tei.xml/publication/tei.manifest.json",
@@ -1632,7 +1632,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0007_02_aozora-epub3_43077_data_complete_tei_lib_lv3_43077_tei.xml/publication/tei.manifest.json",
@@ -1683,7 +1683,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0007_03_aozora-rs_43077_data_complete_tei_lib_lv3_43077_tei.xml/publication/tei.manifest.json",
@@ -1734,7 +1734,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0007_04_aozora2_43077_data_complete_tei_lib_lv3_43077_tei.xml/publication/tei.manifest.json",
@@ -1785,7 +1785,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0007_05_aozora_43077_data_complete_tei_lib_lv3_43077_tei.xml/publication/tei.manifest.json",
@@ -1836,7 +1836,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0008_01_aozora2html_43563_data_complete_tei_lib_lv3_43563_tei.xml/publication/tei.manifest.json",
@@ -1887,7 +1887,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0008_02_aozora-epub3_43563_data_complete_tei_lib_lv3_43563_tei.xml/publication/tei.manifest.json",
@@ -1938,7 +1938,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0008_03_aozora-rs_43563_data_complete_tei_lib_lv3_43563_tei.xml/publication/tei.manifest.json",
@@ -1989,7 +1989,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0008_04_aozora2_43563_data_complete_tei_lib_lv3_43563_tei.xml/publication/tei.manifest.json",
@@ -2040,7 +2040,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0008_05_aozora_43563_data_complete_tei_lib_lv3_43563_tei.xml/publication/tei.manifest.json",
@@ -2091,7 +2091,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0009_01_aozora2html_4411_data_complete_tei_lib_lv3_4411_tei.xml/publication/tei.manifest.json",
@@ -2142,7 +2142,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0009_02_aozora-epub3_4411_data_complete_tei_lib_lv3_4411_tei.xml/publication/tei.manifest.json",
@@ -2193,7 +2193,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0009_03_aozora-rs_4411_data_complete_tei_lib_lv3_4411_tei.xml/publication/tei.manifest.json",
@@ -2244,7 +2244,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0009_04_aozora2_4411_data_complete_tei_lib_lv3_4411_tei.xml/publication/tei.manifest.json",
@@ -2295,7 +2295,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0009_05_aozora_4411_data_complete_tei_lib_lv3_4411_tei.xml/publication/tei.manifest.json",
@@ -2346,7 +2346,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0010_01_aozora2html_4464_data_complete_tei_lib_lv3_4464_tei.xml/publication/tei.manifest.json",
@@ -2397,7 +2397,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0010_02_aozora-epub3_4464_data_complete_tei_lib_lv3_4464_tei.xml/publication/tei.manifest.json",
@@ -2448,7 +2448,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0010_03_aozora-rs_4464_data_complete_tei_lib_lv3_4464_tei.xml/publication/tei.manifest.json",
@@ -2499,7 +2499,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0010_04_aozora2_4464_data_complete_tei_lib_lv3_4464_tei.xml/publication/tei.manifest.json",
@@ -2550,7 +2550,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0010_05_aozora_4464_data_complete_tei_lib_lv3_4464_tei.xml/publication/tei.manifest.json",
@@ -2601,7 +2601,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0011_01_aozora2html_45093_data_complete_tei_lib_lv3_45093_tei.xml/publication/tei.manifest.json",
@@ -2652,7 +2652,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0011_02_aozora-epub3_45093_data_complete_tei_lib_lv3_45093_tei.xml/publication/tei.manifest.json",
@@ -2703,7 +2703,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0011_03_aozora-rs_45093_data_complete_tei_lib_lv3_45093_tei.xml/publication/tei.manifest.json",
@@ -2754,7 +2754,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0011_04_aozora2_45093_data_complete_tei_lib_lv3_45093_tei.xml/publication/tei.manifest.json",
@@ -2805,7 +2805,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0011_05_aozora_45093_data_complete_tei_lib_lv3_45093_tei.xml/publication/tei.manifest.json",
@@ -2856,7 +2856,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0012_01_aozora2html_4872_data_complete_tei_lib_lv3_4872_tei.xml/publication/tei.manifest.json",
@@ -2907,7 +2907,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0012_02_aozora-epub3_4872_data_complete_tei_lib_lv3_4872_tei.xml/publication/tei.manifest.json",
@@ -2958,7 +2958,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0012_03_aozora-rs_4872_data_complete_tei_lib_lv3_4872_tei.xml/publication/tei.manifest.json",
@@ -3009,7 +3009,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0012_04_aozora2_4872_data_complete_tei_lib_lv3_4872_tei.xml/publication/tei.manifest.json",
@@ -3060,7 +3060,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0012_05_aozora_4872_data_complete_tei_lib_lv3_4872_tei.xml/publication/tei.manifest.json",
@@ -3111,7 +3111,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0013_01_aozora2html_50502_data_complete_tei_lib_lv3_50502_tei.xml/publication/tei.manifest.json",
@@ -3162,7 +3162,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0013_02_aozora-epub3_50502_data_complete_tei_lib_lv3_50502_tei.xml/publication/tei.manifest.json",
@@ -3213,7 +3213,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0013_03_aozora-rs_50502_data_complete_tei_lib_lv3_50502_tei.xml/publication/tei.manifest.json",
@@ -3264,7 +3264,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0013_04_aozora2_50502_data_complete_tei_lib_lv3_50502_tei.xml/publication/tei.manifest.json",
@@ -3315,7 +3315,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0013_05_aozora_50502_data_complete_tei_lib_lv3_50502_tei.xml/publication/tei.manifest.json",
@@ -3366,7 +3366,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0014_01_aozora2html_51307_data_complete_tei_lib_lv3_51307_tei.xml/publication/tei.manifest.json",
@@ -3417,7 +3417,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0014_02_aozora-epub3_51307_data_complete_tei_lib_lv3_51307_tei.xml/publication/tei.manifest.json",
@@ -3468,7 +3468,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0014_03_aozora-rs_51307_data_complete_tei_lib_lv3_51307_tei.xml/publication/tei.manifest.json",
@@ -3519,7 +3519,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0014_04_aozora2_51307_data_complete_tei_lib_lv3_51307_tei.xml/publication/tei.manifest.json",
@@ -3570,7 +3570,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0014_05_aozora_51307_data_complete_tei_lib_lv3_51307_tei.xml/publication/tei.manifest.json",
@@ -3621,7 +3621,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0015_01_aozora2html_51520_data_complete_tei_lib_lv3_51520_tei.xml/publication/tei.manifest.json",
@@ -3672,7 +3672,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0015_02_aozora-epub3_51520_data_complete_tei_lib_lv3_51520_tei.xml/publication/tei.manifest.json",
@@ -3723,7 +3723,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0015_03_aozora-rs_51520_data_complete_tei_lib_lv3_51520_tei.xml/publication/tei.manifest.json",
@@ -3774,7 +3774,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0015_04_aozora2_51520_data_complete_tei_lib_lv3_51520_tei.xml/publication/tei.manifest.json",
@@ -3825,7 +3825,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0015_05_aozora_51520_data_complete_tei_lib_lv3_51520_tei.xml/publication/tei.manifest.json",
@@ -3876,7 +3876,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0016_01_aozora2html_53386_data_complete_tei_lib_lv3_53386_tei.xml/publication/tei.manifest.json",
@@ -3927,7 +3927,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0016_02_aozora-epub3_53386_data_complete_tei_lib_lv3_53386_tei.xml/publication/tei.manifest.json",
@@ -3978,7 +3978,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0016_03_aozora-rs_53386_data_complete_tei_lib_lv3_53386_tei.xml/publication/tei.manifest.json",
@@ -4029,7 +4029,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0016_04_aozora2_53386_data_complete_tei_lib_lv3_53386_tei.xml/publication/tei.manifest.json",
@@ -4080,7 +4080,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0016_05_aozora_53386_data_complete_tei_lib_lv3_53386_tei.xml/publication/tei.manifest.json",
@@ -4131,7 +4131,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0017_01_aozora2html_53617_data_complete_tei_lib_lv3_53617_tei.xml/publication/tei.manifest.json",
@@ -4182,7 +4182,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0017_02_aozora-epub3_53617_data_complete_tei_lib_lv3_53617_tei.xml/publication/tei.manifest.json",
@@ -4233,7 +4233,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0017_03_aozora-rs_53617_data_complete_tei_lib_lv3_53617_tei.xml/publication/tei.manifest.json",
@@ -4284,7 +4284,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0017_04_aozora2_53617_data_complete_tei_lib_lv3_53617_tei.xml/publication/tei.manifest.json",
@@ -4335,7 +4335,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0017_05_aozora_53617_data_complete_tei_lib_lv3_53617_tei.xml/publication/tei.manifest.json",
@@ -4386,7 +4386,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0018_01_aozora2html_55783_data_complete_tei_lib_lv3_55783_tei.xml/publication/tei.manifest.json",
@@ -4437,7 +4437,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0018_02_aozora-epub3_55783_data_complete_tei_lib_lv3_55783_tei.xml/publication/tei.manifest.json",
@@ -4488,7 +4488,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0018_03_aozora-rs_55783_data_complete_tei_lib_lv3_55783_tei.xml/publication/tei.manifest.json",
@@ -4539,7 +4539,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0018_04_aozora2_55783_data_complete_tei_lib_lv3_55783_tei.xml/publication/tei.manifest.json",
@@ -4590,7 +4590,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0018_05_aozora_55783_data_complete_tei_lib_lv3_55783_tei.xml/publication/tei.manifest.json",
@@ -4641,7 +4641,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0019_01_aozora2html_56996_data_complete_tei_lib_lv3_56996_tei.xml/publication/tei.manifest.json",
@@ -4692,7 +4692,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0019_02_aozora-epub3_56996_data_complete_tei_lib_lv3_56996_tei.xml/publication/tei.manifest.json",
@@ -4743,7 +4743,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0019_03_aozora-rs_56996_data_complete_tei_lib_lv3_56996_tei.xml/publication/tei.manifest.json",
@@ -4794,7 +4794,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0019_04_aozora2_56996_data_complete_tei_lib_lv3_56996_tei.xml/publication/tei.manifest.json",
@@ -4845,7 +4845,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0019_05_aozora_56996_data_complete_tei_lib_lv3_56996_tei.xml/publication/tei.manifest.json",
@@ -4896,7 +4896,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0020_01_aozora2html_56998_data_complete_tei_lib_lv3_56998_tei.xml/publication/tei.manifest.json",
@@ -4947,7 +4947,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0020_02_aozora-epub3_56998_data_complete_tei_lib_lv3_56998_tei.xml/publication/tei.manifest.json",
@@ -4998,7 +4998,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0020_03_aozora-rs_56998_data_complete_tei_lib_lv3_56998_tei.xml/publication/tei.manifest.json",
@@ -5049,7 +5049,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0020_04_aozora2_56998_data_complete_tei_lib_lv3_56998_tei.xml/publication/tei.manifest.json",
@@ -5100,7 +5100,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0020_05_aozora_56998_data_complete_tei_lib_lv3_56998_tei.xml/publication/tei.manifest.json",
@@ -5151,7 +5151,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0021_01_aozora2html_56999_data_complete_tei_lib_lv3_56999_tei.xml/publication/tei.manifest.json",
@@ -5202,7 +5202,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0021_02_aozora-epub3_56999_data_complete_tei_lib_lv3_56999_tei.xml/publication/tei.manifest.json",
@@ -5253,7 +5253,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0021_03_aozora-rs_56999_data_complete_tei_lib_lv3_56999_tei.xml/publication/tei.manifest.json",
@@ -5304,7 +5304,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0021_04_aozora2_56999_data_complete_tei_lib_lv3_56999_tei.xml/publication/tei.manifest.json",
@@ -5355,7 +5355,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0021_05_aozora_56999_data_complete_tei_lib_lv3_56999_tei.xml/publication/tei.manifest.json",
@@ -5406,7 +5406,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0022_01_aozora2html_57001_data_complete_tei_lib_lv3_57001_tei.xml/publication/tei.manifest.json",
@@ -5457,7 +5457,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0022_02_aozora-epub3_57001_data_complete_tei_lib_lv3_57001_tei.xml/publication/tei.manifest.json",
@@ -5508,7 +5508,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0022_03_aozora-rs_57001_data_complete_tei_lib_lv3_57001_tei.xml/publication/tei.manifest.json",
@@ -5559,7 +5559,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0022_04_aozora2_57001_data_complete_tei_lib_lv3_57001_tei.xml/publication/tei.manifest.json",
@@ -5610,7 +5610,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0022_05_aozora_57001_data_complete_tei_lib_lv3_57001_tei.xml/publication/tei.manifest.json",
@@ -5661,7 +5661,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0023_01_aozora2html_57002_data_complete_tei_lib_lv3_57002_tei.xml/publication/tei.manifest.json",
@@ -5712,7 +5712,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0023_02_aozora-epub3_57002_data_complete_tei_lib_lv3_57002_tei.xml/publication/tei.manifest.json",
@@ -5763,7 +5763,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0023_03_aozora-rs_57002_data_complete_tei_lib_lv3_57002_tei.xml/publication/tei.manifest.json",
@@ -5814,7 +5814,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0023_04_aozora2_57002_data_complete_tei_lib_lv3_57002_tei.xml/publication/tei.manifest.json",
@@ -5865,7 +5865,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0023_05_aozora_57002_data_complete_tei_lib_lv3_57002_tei.xml/publication/tei.manifest.json",
@@ -5916,7 +5916,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0024_01_aozora2html_57003_data_complete_tei_lib_lv3_57003_tei.xml/publication/tei.manifest.json",
@@ -5967,7 +5967,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0024_02_aozora-epub3_57003_data_complete_tei_lib_lv3_57003_tei.xml/publication/tei.manifest.json",
@@ -6018,7 +6018,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0024_03_aozora-rs_57003_data_complete_tei_lib_lv3_57003_tei.xml/publication/tei.manifest.json",
@@ -6069,7 +6069,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0024_04_aozora2_57003_data_complete_tei_lib_lv3_57003_tei.xml/publication/tei.manifest.json",
@@ -6120,7 +6120,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0024_05_aozora_57003_data_complete_tei_lib_lv3_57003_tei.xml/publication/tei.manifest.json",
@@ -6171,7 +6171,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0025_01_aozora2html_57004_data_complete_tei_lib_lv3_57004_tei.xml/publication/tei.manifest.json",
@@ -6222,7 +6222,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0025_02_aozora-epub3_57004_data_complete_tei_lib_lv3_57004_tei.xml/publication/tei.manifest.json",
@@ -6273,7 +6273,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0025_03_aozora-rs_57004_data_complete_tei_lib_lv3_57004_tei.xml/publication/tei.manifest.json",
@@ -6324,7 +6324,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0025_04_aozora2_57004_data_complete_tei_lib_lv3_57004_tei.xml/publication/tei.manifest.json",
@@ -6375,7 +6375,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0025_05_aozora_57004_data_complete_tei_lib_lv3_57004_tei.xml/publication/tei.manifest.json",
@@ -6426,7 +6426,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0026_01_aozora2html_57005_data_complete_tei_lib_lv3_57005_tei.xml/publication/tei.manifest.json",
@@ -6477,7 +6477,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0026_02_aozora-epub3_57005_data_complete_tei_lib_lv3_57005_tei.xml/publication/tei.manifest.json",
@@ -6528,7 +6528,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0026_03_aozora-rs_57005_data_complete_tei_lib_lv3_57005_tei.xml/publication/tei.manifest.json",
@@ -6579,7 +6579,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0026_04_aozora2_57005_data_complete_tei_lib_lv3_57005_tei.xml/publication/tei.manifest.json",
@@ -6630,7 +6630,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0026_05_aozora_57005_data_complete_tei_lib_lv3_57005_tei.xml/publication/tei.manifest.json",
@@ -6681,7 +6681,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0027_01_aozora2html_57006_data_complete_tei_lib_lv3_57006_tei.xml/publication/tei.manifest.json",
@@ -6732,7 +6732,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0027_02_aozora-epub3_57006_data_complete_tei_lib_lv3_57006_tei.xml/publication/tei.manifest.json",
@@ -6783,7 +6783,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0027_03_aozora-rs_57006_data_complete_tei_lib_lv3_57006_tei.xml/publication/tei.manifest.json",
@@ -6834,7 +6834,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0027_04_aozora2_57006_data_complete_tei_lib_lv3_57006_tei.xml/publication/tei.manifest.json",
@@ -6885,7 +6885,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0027_05_aozora_57006_data_complete_tei_lib_lv3_57006_tei.xml/publication/tei.manifest.json",
@@ -6936,7 +6936,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0028_01_aozora2html_57037_data_complete_tei_lib_lv3_57037_tei.xml/publication/tei.manifest.json",
@@ -6987,7 +6987,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0028_02_aozora-epub3_57037_data_complete_tei_lib_lv3_57037_tei.xml/publication/tei.manifest.json",
@@ -7038,7 +7038,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0028_03_aozora-rs_57037_data_complete_tei_lib_lv3_57037_tei.xml/publication/tei.manifest.json",
@@ -7089,7 +7089,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0028_04_aozora2_57037_data_complete_tei_lib_lv3_57037_tei.xml/publication/tei.manifest.json",
@@ -7140,7 +7140,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0028_05_aozora_57037_data_complete_tei_lib_lv3_57037_tei.xml/publication/tei.manifest.json",
@@ -7191,7 +7191,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0029_01_aozora2html_57038_data_complete_tei_lib_lv3_57038_tei.xml/publication/tei.manifest.json",
@@ -7242,7 +7242,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0029_02_aozora-epub3_57038_data_complete_tei_lib_lv3_57038_tei.xml/publication/tei.manifest.json",
@@ -7293,7 +7293,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0029_03_aozora-rs_57038_data_complete_tei_lib_lv3_57038_tei.xml/publication/tei.manifest.json",
@@ -7344,7 +7344,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0029_04_aozora2_57038_data_complete_tei_lib_lv3_57038_tei.xml/publication/tei.manifest.json",
@@ -7395,7 +7395,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0029_05_aozora_57038_data_complete_tei_lib_lv3_57038_tei.xml/publication/tei.manifest.json",
@@ -7446,7 +7446,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0030_01_aozora2html_57039_data_complete_tei_lib_lv3_57039_tei.xml/publication/tei.manifest.json",
@@ -7497,7 +7497,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0030_02_aozora-epub3_57039_data_complete_tei_lib_lv3_57039_tei.xml/publication/tei.manifest.json",
@@ -7548,7 +7548,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0030_03_aozora-rs_57039_data_complete_tei_lib_lv3_57039_tei.xml/publication/tei.manifest.json",
@@ -7599,7 +7599,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0030_04_aozora2_57039_data_complete_tei_lib_lv3_57039_tei.xml/publication/tei.manifest.json",
@@ -7650,7 +7650,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0030_05_aozora_57039_data_complete_tei_lib_lv3_57039_tei.xml/publication/tei.manifest.json",
@@ -7701,7 +7701,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0031_01_aozora2html_57040_data_complete_tei_lib_lv3_57040_tei.xml/publication/tei.manifest.json",
@@ -7752,7 +7752,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0031_02_aozora-epub3_57040_data_complete_tei_lib_lv3_57040_tei.xml/publication/tei.manifest.json",
@@ -7803,7 +7803,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0031_03_aozora-rs_57040_data_complete_tei_lib_lv3_57040_tei.xml/publication/tei.manifest.json",
@@ -7854,7 +7854,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0031_04_aozora2_57040_data_complete_tei_lib_lv3_57040_tei.xml/publication/tei.manifest.json",
@@ -7905,7 +7905,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0031_05_aozora_57040_data_complete_tei_lib_lv3_57040_tei.xml/publication/tei.manifest.json",
@@ -7956,7 +7956,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0032_01_aozora2html_57041_data_complete_tei_lib_lv3_57041_tei.xml/publication/tei.manifest.json",
@@ -8007,7 +8007,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0032_02_aozora-epub3_57041_data_complete_tei_lib_lv3_57041_tei.xml/publication/tei.manifest.json",
@@ -8058,7 +8058,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0032_03_aozora-rs_57041_data_complete_tei_lib_lv3_57041_tei.xml/publication/tei.manifest.json",
@@ -8109,7 +8109,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0032_04_aozora2_57041_data_complete_tei_lib_lv3_57041_tei.xml/publication/tei.manifest.json",
@@ -8160,7 +8160,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0032_05_aozora_57041_data_complete_tei_lib_lv3_57041_tei.xml/publication/tei.manifest.json",
@@ -8211,7 +8211,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0033_01_aozora2html_57042_data_complete_tei_lib_lv3_57042_tei.xml/publication/tei.manifest.json",
@@ -8262,7 +8262,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0033_02_aozora-epub3_57042_data_complete_tei_lib_lv3_57042_tei.xml/publication/tei.manifest.json",
@@ -8313,7 +8313,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0033_03_aozora-rs_57042_data_complete_tei_lib_lv3_57042_tei.xml/publication/tei.manifest.json",
@@ -8364,7 +8364,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0033_04_aozora2_57042_data_complete_tei_lib_lv3_57042_tei.xml/publication/tei.manifest.json",
@@ -8415,7 +8415,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0033_05_aozora_57042_data_complete_tei_lib_lv3_57042_tei.xml/publication/tei.manifest.json",
@@ -8466,7 +8466,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0034_01_aozora2html_57043_data_complete_tei_lib_lv3_57043_tei.xml/publication/tei.manifest.json",
@@ -8517,7 +8517,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0034_02_aozora-epub3_57043_data_complete_tei_lib_lv3_57043_tei.xml/publication/tei.manifest.json",
@@ -8568,7 +8568,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0034_03_aozora-rs_57043_data_complete_tei_lib_lv3_57043_tei.xml/publication/tei.manifest.json",
@@ -8619,7 +8619,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0034_04_aozora2_57043_data_complete_tei_lib_lv3_57043_tei.xml/publication/tei.manifest.json",
@@ -8670,7 +8670,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0034_05_aozora_57043_data_complete_tei_lib_lv3_57043_tei.xml/publication/tei.manifest.json",
@@ -8721,7 +8721,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0035_01_aozora2html_57044_data_complete_tei_lib_lv3_57044_tei.xml/publication/tei.manifest.json",
@@ -8772,7 +8772,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0035_02_aozora-epub3_57044_data_complete_tei_lib_lv3_57044_tei.xml/publication/tei.manifest.json",
@@ -8823,7 +8823,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0035_03_aozora-rs_57044_data_complete_tei_lib_lv3_57044_tei.xml/publication/tei.manifest.json",
@@ -8874,7 +8874,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0035_04_aozora2_57044_data_complete_tei_lib_lv3_57044_tei.xml/publication/tei.manifest.json",
@@ -8925,7 +8925,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0035_05_aozora_57044_data_complete_tei_lib_lv3_57044_tei.xml/publication/tei.manifest.json",
@@ -8976,7 +8976,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0036_01_aozora2html_57046_data_complete_tei_lib_lv3_57046_tei.xml/publication/tei.manifest.json",
@@ -9027,7 +9027,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0036_02_aozora-epub3_57046_data_complete_tei_lib_lv3_57046_tei.xml/publication/tei.manifest.json",
@@ -9078,7 +9078,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0036_03_aozora-rs_57046_data_complete_tei_lib_lv3_57046_tei.xml/publication/tei.manifest.json",
@@ -9129,7 +9129,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0036_04_aozora2_57046_data_complete_tei_lib_lv3_57046_tei.xml/publication/tei.manifest.json",
@@ -9180,7 +9180,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0036_05_aozora_57046_data_complete_tei_lib_lv3_57046_tei.xml/publication/tei.manifest.json",
@@ -9231,7 +9231,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0037_01_aozora2html_57047_data_complete_tei_lib_lv3_57047_tei.xml/publication/tei.manifest.json",
@@ -9282,7 +9282,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0037_02_aozora-epub3_57047_data_complete_tei_lib_lv3_57047_tei.xml/publication/tei.manifest.json",
@@ -9333,7 +9333,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0037_03_aozora-rs_57047_data_complete_tei_lib_lv3_57047_tei.xml/publication/tei.manifest.json",
@@ -9384,7 +9384,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0037_04_aozora2_57047_data_complete_tei_lib_lv3_57047_tei.xml/publication/tei.manifest.json",
@@ -9435,7 +9435,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0037_05_aozora_57047_data_complete_tei_lib_lv3_57047_tei.xml/publication/tei.manifest.json",
@@ -9486,7 +9486,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0038_01_aozora2html_57048_data_complete_tei_lib_lv3_57048_tei.xml/publication/tei.manifest.json",
@@ -9537,7 +9537,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0038_02_aozora-epub3_57048_data_complete_tei_lib_lv3_57048_tei.xml/publication/tei.manifest.json",
@@ -9588,7 +9588,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0038_03_aozora-rs_57048_data_complete_tei_lib_lv3_57048_tei.xml/publication/tei.manifest.json",
@@ -9639,7 +9639,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0038_04_aozora2_57048_data_complete_tei_lib_lv3_57048_tei.xml/publication/tei.manifest.json",
@@ -9690,7 +9690,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0038_05_aozora_57048_data_complete_tei_lib_lv3_57048_tei.xml/publication/tei.manifest.json",
@@ -9741,7 +9741,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0039_01_aozora2html_86_data_complete_tei_lib_lv3_86_tei.xml/publication/tei.manifest.json",
@@ -9792,7 +9792,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0039_02_aozora-epub3_86_data_complete_tei_lib_lv3_86_tei.xml/publication/tei.manifest.json",
@@ -9843,7 +9843,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0039_03_aozora-rs_86_data_complete_tei_lib_lv3_86_tei.xml/publication/tei.manifest.json",
@@ -9894,7 +9894,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0039_04_aozora2_86_data_complete_tei_lib_lv3_86_tei.xml/publication/tei.manifest.json",
@@ -9945,7 +9945,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0039_05_aozora_86_data_complete_tei_lib_lv3_86_tei.xml/publication/tei.manifest.json",
@@ -9996,7 +9996,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0040_01_aozora2html_15099_data_complete_tei_lib_lv4_104_15099.xml/publication/tei.manifest.json",
@@ -10047,7 +10047,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0040_02_aozora-epub3_15099_data_complete_tei_lib_lv4_104_15099.xml/publication/tei.manifest.json",
@@ -10098,7 +10098,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0040_03_aozora-rs_15099_data_complete_tei_lib_lv4_104_15099.xml/publication/tei.manifest.json",
@@ -10149,7 +10149,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0040_04_aozora2_15099_data_complete_tei_lib_lv4_104_15099.xml/publication/tei.manifest.json",
@@ -10200,7 +10200,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0040_05_aozora_15099_data_complete_tei_lib_lv4_104_15099.xml/publication/tei.manifest.json",
@@ -10251,7 +10251,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0041_01_aozora2html_1567_data_complete_tei_lib_lv4_1567_header_updated.xml/publication/tei.manifest.json",
@@ -10302,7 +10302,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0041_02_aozora-epub3_1567_data_complete_tei_lib_lv4_1567_header_updated.xml/publication/tei.manifest.json",
@@ -10353,7 +10353,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0041_03_aozora_1567_data_complete_tei_lib_lv4_1567_header_updated.xml/publication/tei.manifest.json",
@@ -10404,7 +10404,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0041_04_aozora-rs_1567_data_complete_tei_lib_lv4_1567_header_updated.xml/publication/tei.manifest.json",
@@ -10455,7 +10455,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0041_05_aozora2_1567_data_complete_tei_lib_lv4_1567_header_updated.xml/publication/tei.manifest.json",
@@ -10506,7 +10506,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0042_01_aozora2html_1567_data_complete_tei_lib_lv4_1567_tei.xml/publication/tei.manifest.json",
@@ -10557,7 +10557,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0042_02_aozora-epub3_1567_data_complete_tei_lib_lv4_1567_tei.xml/publication/tei.manifest.json",
@@ -10608,7 +10608,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0042_03_aozora_1567_data_complete_tei_lib_lv4_1567_tei.xml/publication/tei.manifest.json",
@@ -10659,7 +10659,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0042_04_aozora-rs_1567_data_complete_tei_lib_lv4_1567_tei.xml/publication/tei.manifest.json",
@@ -10710,7 +10710,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0042_05_aozora2_1567_data_complete_tei_lib_lv4_1567_tei.xml/publication/tei.manifest.json",
@@ -10761,7 +10761,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0043_01_aozora2html_45245_data_complete_tei_lib_lv4_45245_tei.xml/publication/tei.manifest.json",
@@ -10812,7 +10812,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0043_02_aozora-epub3_45245_data_complete_tei_lib_lv4_45245_tei.xml/publication/tei.manifest.json",
@@ -10863,7 +10863,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0043_03_aozora-rs_45245_data_complete_tei_lib_lv4_45245_tei.xml/publication/tei.manifest.json",
@@ -10914,7 +10914,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0043_04_aozora2_45245_data_complete_tei_lib_lv4_45245_tei.xml/publication/tei.manifest.json",
@@ -10965,7 +10965,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0043_05_aozora_45245_data_complete_tei_lib_lv4_45245_tei.xml/publication/tei.manifest.json",
@@ -11016,7 +11016,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0044_01_aozora2html_50362_data_complete_tei_lib_lv4_50362_tei.xml/publication/tei.manifest.json",
@@ -11067,7 +11067,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0044_02_aozora-epub3_50362_data_complete_tei_lib_lv4_50362_tei.xml/publication/tei.manifest.json",
@@ -11118,7 +11118,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0044_03_aozora-rs_50362_data_complete_tei_lib_lv4_50362_tei.xml/publication/tei.manifest.json",
@@ -11169,7 +11169,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0044_04_aozora2_50362_data_complete_tei_lib_lv4_50362_tei.xml/publication/tei.manifest.json",
@@ -11220,7 +11220,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0044_05_aozora_50362_data_complete_tei_lib_lv4_50362_tei.xml/publication/tei.manifest.json",
@@ -11271,7 +11271,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0045_01_aozora2html_7928_data_complete_tei_lib_lv4_7928_tei.xml/publication/tei.manifest.json",
@@ -11322,7 +11322,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0045_02_aozora-epub3_7928_data_complete_tei_lib_lv4_7928_tei.xml/publication/tei.manifest.json",
@@ -11373,7 +11373,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0045_03_aozora-rs_7928_data_complete_tei_lib_lv4_7928_tei.xml/publication/tei.manifest.json",
@@ -11424,7 +11424,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0045_04_aozora2_7928_data_complete_tei_lib_lv4_7928_tei.xml/publication/tei.manifest.json",
@@ -11475,7 +11475,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0045_05_aozora_7928_data_complete_tei_lib_lv4_7928_tei.xml/publication/tei.manifest.json",
@@ -11526,7 +11526,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0046_01_aozora2html_1126_data_draft_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
@@ -11577,7 +11577,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0046_02_aozora-epub3_1126_data_draft_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
@@ -11628,7 +11628,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0046_03_aozora-rs_1126_data_draft_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
@@ -11679,7 +11679,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0046_04_aozora2_1126_data_draft_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
@@ -11730,7 +11730,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0046_05_aozora_1126_data_draft_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
@@ -11781,7 +11781,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0047_01_aozora2html_1576_data_draft_tei_lib_lv3_1576_tei.xml/publication/tei.manifest.json",
@@ -11832,7 +11832,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0047_02_aozora-epub3_1576_data_draft_tei_lib_lv3_1576_tei.xml/publication/tei.manifest.json",
@@ -11883,7 +11883,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0047_03_aozora-rs_1576_data_draft_tei_lib_lv3_1576_tei.xml/publication/tei.manifest.json",
@@ -11934,7 +11934,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0047_04_aozora2_1576_data_draft_tei_lib_lv3_1576_tei.xml/publication/tei.manifest.json",
@@ -11985,7 +11985,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0047_05_aozora_1576_data_draft_tei_lib_lv3_1576_tei.xml/publication/tei.manifest.json",
@@ -12036,7 +12036,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0048_01_aozora2html_43563_data_draft_tei_lib_lv3_43563_tei.xml/publication/tei.manifest.json",
@@ -12087,7 +12087,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0048_02_aozora-epub3_43563_data_draft_tei_lib_lv3_43563_tei.xml/publication/tei.manifest.json",
@@ -12138,7 +12138,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0048_03_aozora-rs_43563_data_draft_tei_lib_lv3_43563_tei.xml/publication/tei.manifest.json",
@@ -12189,7 +12189,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0048_04_aozora2_43563_data_draft_tei_lib_lv3_43563_tei.xml/publication/tei.manifest.json",
@@ -12240,7 +12240,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0048_05_aozora_43563_data_draft_tei_lib_lv3_43563_tei.xml/publication/tei.manifest.json",
@@ -12291,7 +12291,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0049_01_aozora2html_52208_data_draft_tei_lib_lv3_52208_tei.xml/publication/tei.manifest.json",
@@ -12342,7 +12342,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0049_02_aozora-epub3_52208_data_draft_tei_lib_lv3_52208_tei.xml/publication/tei.manifest.json",
@@ -12393,7 +12393,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0049_03_aozora-rs_52208_data_draft_tei_lib_lv3_52208_tei.xml/publication/tei.manifest.json",
@@ -12444,7 +12444,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0049_04_aozora2_52208_data_draft_tei_lib_lv3_52208_tei.xml/publication/tei.manifest.json",
@@ -12495,7 +12495,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0049_05_aozora_52208_data_draft_tei_lib_lv3_52208_tei.xml/publication/tei.manifest.json",
@@ -12546,7 +12546,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0050_01_aozora2html_86_data_draft_tei_lib_lv3_86_tei.xml/publication/tei.manifest.json",
@@ -12597,7 +12597,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0050_02_aozora-epub3_86_data_draft_tei_lib_lv3_86_tei.xml/publication/tei.manifest.json",
@@ -12648,7 +12648,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0050_03_aozora-rs_86_data_draft_tei_lib_lv3_86_tei.xml/publication/tei.manifest.json",
@@ -12699,7 +12699,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0050_04_aozora2_86_data_draft_tei_lib_lv3_86_tei.xml/publication/tei.manifest.json",
@@ -12750,7 +12750,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0050_05_aozora_86_data_draft_tei_lib_lv3_86_tei.xml/publication/tei.manifest.json",
@@ -12801,7 +12801,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0051_01_aozora2html_1805_data_draft_tei_lib_lv4_1805_tei.xml/publication/tei.manifest.json",
@@ -12852,7 +12852,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0051_02_aozora-epub3_1805_data_draft_tei_lib_lv4_1805_tei.xml/publication/tei.manifest.json",
@@ -12903,7 +12903,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0051_03_aozora-rs_1805_data_draft_tei_lib_lv4_1805_tei.xml/publication/tei.manifest.json",
@@ -12954,7 +12954,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0051_04_aozora2_1805_data_draft_tei_lib_lv4_1805_tei.xml/publication/tei.manifest.json",
@@ -13005,7 +13005,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0051_05_aozora_1805_data_draft_tei_lib_lv4_1805_tei.xml/publication/tei.manifest.json",
@@ -13056,7 +13056,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0052_01_aozora2html_2571_data_draft_tei_lib_lv4_2571_tei.xml/publication/tei.manifest.json",
@@ -13107,7 +13107,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0052_02_aozora-epub3_2571_data_draft_tei_lib_lv4_2571_tei.xml/publication/tei.manifest.json",
@@ -13158,7 +13158,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0052_03_aozora-rs_2571_data_draft_tei_lib_lv4_2571_tei.xml/publication/tei.manifest.json",
@@ -13209,7 +13209,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0052_04_aozora2_2571_data_draft_tei_lib_lv4_2571_tei.xml/publication/tei.manifest.json",
@@ -13260,7 +13260,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0052_05_aozora_2571_data_draft_tei_lib_lv4_2571_tei.xml/publication/tei.manifest.json",
@@ -13311,7 +13311,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0053_01_aozora2html_4244_data_draft_tei_lib_lv4_4244-1_tei.xml/publication/tei.manifest.json",
@@ -13362,7 +13362,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0053_02_aozora-epub3_4244_data_draft_tei_lib_lv4_4244-1_tei.xml/publication/tei.manifest.json",
@@ -13413,7 +13413,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0053_03_aozora-rs_4244_data_draft_tei_lib_lv4_4244-1_tei.xml/publication/tei.manifest.json",
@@ -13464,7 +13464,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0053_04_aozora2_4244_data_draft_tei_lib_lv4_4244-1_tei.xml/publication/tei.manifest.json",
@@ -13515,7 +13515,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0053_05_aozora_4244_data_draft_tei_lib_lv4_4244-1_tei.xml/publication/tei.manifest.json",
@@ -13566,7 +13566,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0054_01_aozora2html_4244_data_draft_tei_lib_lv4_4244-3_tei.xml/publication/tei.manifest.json",
@@ -13617,7 +13617,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0054_02_aozora-epub3_4244_data_draft_tei_lib_lv4_4244-3_tei.xml/publication/tei.manifest.json",
@@ -13668,7 +13668,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0054_03_aozora-rs_4244_data_draft_tei_lib_lv4_4244-3_tei.xml/publication/tei.manifest.json",
@@ -13719,7 +13719,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0054_04_aozora2_4244_data_draft_tei_lib_lv4_4244-3_tei.xml/publication/tei.manifest.json",
@@ -13770,7 +13770,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0054_05_aozora_4244_data_draft_tei_lib_lv4_4244-3_tei.xml/publication/tei.manifest.json",
@@ -13821,7 +13821,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0055_01_aozora2html_4244_data_draft_tei_lib_lv4_4244-4_tei.xml/publication/tei.manifest.json",
@@ -13872,7 +13872,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0055_02_aozora-epub3_4244_data_draft_tei_lib_lv4_4244-4_tei.xml/publication/tei.manifest.json",
@@ -13923,7 +13923,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0055_03_aozora-rs_4244_data_draft_tei_lib_lv4_4244-4_tei.xml/publication/tei.manifest.json",
@@ -13974,7 +13974,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0055_04_aozora2_4244_data_draft_tei_lib_lv4_4244-4_tei.xml/publication/tei.manifest.json",
@@ -14025,7 +14025,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0055_05_aozora_4244_data_draft_tei_lib_lv4_4244-4_tei.xml/publication/tei.manifest.json",
@@ -14076,7 +14076,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0056_01_aozora2html_46453_data_draft_tei_lib_lv4_46453_tei.xml/publication/tei.manifest.json",
@@ -14127,7 +14127,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0056_02_aozora-epub3_46453_data_draft_tei_lib_lv4_46453_tei.xml/publication/tei.manifest.json",
@@ -14178,7 +14178,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0056_03_aozora-rs_46453_data_draft_tei_lib_lv4_46453_tei.xml/publication/tei.manifest.json",
@@ -14229,7 +14229,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0056_04_aozora2_46453_data_draft_tei_lib_lv4_46453_tei.xml/publication/tei.manifest.json",
@@ -14280,7 +14280,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0056_05_aozora_46453_data_draft_tei_lib_lv4_46453_tei.xml/publication/tei.manifest.json",
@@ -14331,7 +14331,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0057_01_aozora2html_54457_data_draft_tei_lib_lv4_54457_tei.xml/publication/tei.manifest.json",
@@ -14382,7 +14382,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0057_02_aozora-epub3_54457_data_draft_tei_lib_lv4_54457_tei.xml/publication/tei.manifest.json",
@@ -14433,7 +14433,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0057_03_aozora-rs_54457_data_draft_tei_lib_lv4_54457_tei.xml/publication/tei.manifest.json",
@@ -14484,7 +14484,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0057_04_aozora2_54457_data_draft_tei_lib_lv4_54457_tei.xml/publication/tei.manifest.json",
@@ -14535,7 +14535,7 @@
         },
         "source_region_coverage": {
           "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-          "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+          "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
         },
         "tei_manifest": {
           "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0057_05_aozora_54457_data_draft_tei_lib_lv4_54457_tei.xml/publication/tei.manifest.json",

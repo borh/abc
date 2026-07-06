@@ -43,9 +43,11 @@ Current measured source-authority report after implementation:
 - legacy `malformed_noise_occurrences: 13936`
 - `source_apparatus_occurrences: 13920`
 - `front_matter_occurrences: 14627`
-- `back_matter_occurrences: 90268`
+- `back_matter_occurrences: 90274`
+- `body_end_boundary_occurrences: 243`
 - `terminal_provenance_occurrences: 609`
 - `colophon_metadata_occurrences: 89416`
+- `letter_address_origin_occurrences: 6`
 - `malformed_source_occurrences: 16`
 
 The largest reviewed unknown class is not malformed source:
@@ -136,8 +138,10 @@ occurrence summary with this shape:
     "source_apparatus_occurrences": 0,
     "front_matter_occurrences": 0,
     "back_matter_occurrences": 0,
+    "body_end_boundary_occurrences": 0,
     "terminal_provenance_occurrences": 0,
     "colophon_metadata_occurrences": 0,
+    "letter_address_origin_occurrences": 0,
     "malformed_source_occurrences": 0,
     "unsupported_body_markup_occurrences": 0,
     "unknown_region_occurrences": 0,
@@ -270,14 +274,16 @@ The expected first split from the current corpus is:
 Current v1 source-region counts separately measure terminal provenance and
 colophon metadata:
 
-- `body_end_boundary`: 243 occurrences
+- `body_end_boundary_occurrences`: 243 occurrences
 - `terminal_provenance_occurrences`: 609 occurrences
 - `colophon_metadata_occurrences`: 89,416 occurrences
-- `back_matter_occurrences`: 90,268 occurrences
+- `letter_address_origin_occurrences`: 6 occurrences
+- `back_matter_occurrences`: 90,274 occurrences
 
 So back matter is no longer inferred from the body-end-boundary marker; it is
-the measured sum of body-end boundaries, terminal provenance markers, and
-colophon metadata lines in the current source-authority report.
+the measured sum of body-end boundaries, terminal provenance markers, colophon
+metadata lines, and measured letter address/origin rows in the current
+source-authority report.
 The legacy counters remain as compatibility aliases while downstream consumers
 migrate.
 

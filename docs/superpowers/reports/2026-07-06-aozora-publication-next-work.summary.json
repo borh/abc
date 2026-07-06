@@ -86,17 +86,15 @@
           "letter_address_origin"
         ],
         "policy_needed_count": 1,
-        "evidence_needed_classes": [
-          "letter_address_origin"
-        ],
+        "evidence_needed_classes": [],
         "status_counts": {
           "admitted": 6,
           "policy_needed": 1
         },
         "measured_occurrences_by_class": {
-          "body_end_boundary": 90268,
+          "body_end_boundary": 243,
           "colophon_metadata": 89416,
-          "letter_address_origin": 0,
+          "letter_address_origin": 6,
           "malformed_source": 16,
           "notation_legend": 13920,
           "notation_placeholder": 14627,
@@ -293,11 +291,11 @@
   "evidence_inputs": {
     "source_summary": {
       "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-      "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+      "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
     },
     "coverage_summary": {
       "path": "docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json",
-      "hash": "sha256:5d9bf4120c479deb46339a06fdb2abdbff15d83e538eeb8ce1f4dec19cb77c42",
+      "hash": "sha256:e0dfbc5228e2f95a513fbd003c37503d50d6e8c11e4424429e0505df87f726e8",
       "hash_basis": "canonical_json_without_next_work_dashboard"
     },
     "matrix_summary": {
@@ -318,7 +316,7 @@
     },
     "source_disposition_summary": {
       "path": "docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json",
-      "hash": "sha256:87f777d8734d80c2d8ffa6a7ae65748db87594d56101a398e3d5c5d03e557a23"
+      "hash": "sha256:4a5090779b837799433682286fb6f78221a122acc3c0ba0cda3cc4a4844fc9a6"
     },
     "text_policy_summary": {
       "path": "docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json",

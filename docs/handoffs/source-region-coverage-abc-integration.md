@@ -45,9 +45,11 @@ Current measured state:
 - `body_raw_preserved_occurrences: 46382`
 - `source_apparatus_occurrences: 13920`
 - `front_matter_occurrences: 14627`
-- `back_matter_occurrences: 90268`
+- `back_matter_occurrences: 90274`
+- `body_end_boundary_occurrences: 243`
 - `terminal_provenance_occurrences: 609`
 - `colophon_metadata_occurrences: 89416`
+- `letter_address_origin_occurrences: 6`
 - `malformed_source_occurrences: 16`
 - `unsupported_body_markup_occurrences: 0`
 - `unknown_region_occurrences: 0`
@@ -113,6 +115,7 @@ custom preservation, headers, front/back matter, or diagnostics.
 | `body_end_boundary` | 243 `［＃本文終わり］` occurrences | Treat as source region boundary evidence; do not render as body text. |
 | `terminal_provenance` | 609 `SegmentBoundaryTerminalProvenance` / `［＃地付き］...` occurrences | Decide TEI back/source-note/custom placement. |
 | `colophon_metadata` | 89,416 source metadata lines such as `底本：`, `入力：`, and `校正：` | Decide TEI header/sourceDesc/revision-like policy and custom-sidecar preservation. |
+| `letter_address_origin` | 6 source-region text rows such as `宛先` and `発信地` | ABC policy still needed; evidence is now measured, not missing. |
 | `malformed_source` | 16 total residues | Preserve as diagnostics; do not count as unsupported Aozora syntax. |
 
 The 16 malformed-source residues are:
@@ -133,7 +136,8 @@ ABC should add or update validation so the design bundle can prove:
 3. `unsupported_body_markup_occurrences == 0`.
 4. `unknown_region_occurrences == 0`.
 5. `unknown_unreviewed_occurrences == 0`.
-6. Each source-apparatus class has an admitted disposition:
+6. Each measured source-apparatus class has an admitted disposition, or a
+   named policy-needed row such as `letter_address_origin`:
    TEI, TEI plus ABC extension, custom sidecar, diagnostic, or explicit
    unsupported blocker.
 7. Plaintext remains visible body text only; ruby readings, source apparatus,
@@ -164,9 +168,10 @@ that must resolve to sidecar records rather than independent facts.
 1. Accept `aozora-source-region-coverage-v1` in the design-bundle validator.
 2. Add a fixture with source apparatus in front matter, a body-end boundary, and
    terminal provenance/back matter.
-3. Decide the ABC disposition table for the source classes above, with a
-   separate measurement/fixture path for terminal provenance and colophon
-   metadata because current source-region counters do not isolate them.
+3. Decide the ABC disposition table for the source classes above. Terminal
+   provenance, colophon metadata, body-end boundaries, and letter address/origin
+   now have separate measured counters; `letter_address_origin` still needs an
+   admitted ABC policy row.
 4. Add preservation records or TEI profile rules for each admitted disposition.
 5. Add cross-file validation for parser-IR, TEI, preservation sidecar,
    source-region report, and plaintext.

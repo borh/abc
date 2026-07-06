@@ -1,6 +1,6 @@
 {
   "schema_version": "publication-bundle-validation-evidence-v1",
-  "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
+  "verdict": "PUBLICATION_BUNDLE_VALIDATION_FAILED",
   "validator": "ab-validator publication-bundle-validate",
   "command": "clojure -M:abc/materialize-publication examples/v0/example-work/parser-ir.json examples/v0/example-work/metadata-record.json examples/v0/example-persons scratch/parser-ir-publication-bundle-validation",
   "abc_commit": "95ace31",
@@ -23,7 +23,7 @@
     },
     "source_region_coverage": {
       "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-      "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+      "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
     },
     "tei_manifest": {
       "path": "scratch/parser-ir-publication-bundle-validation/tei.manifest.json",
@@ -47,7 +47,20 @@
     "tei_abc_projection_resolves_to_sidecar": true,
     "preservation_tei_pointers_resolve": true,
     "preservation_source_pointers_resolve": true,
-    "plaintext_body_only": true
+    "plaintext_body_only": false
   },
-  "failures": []
+  "failures": [
+    {
+      "check": "plaintext_body_only",
+      "message": "Plaintext differs from the parser-IR body-only projection.",
+      "details": {
+        "kind": "plaintext_mismatch",
+        "expected_length": 24,
+        "actual_length": 13,
+        "first_diff_offset": 3,
+        "expected_preview": "吾輩猫gaiji/example.png第二段一",
+        "actual_preview": "吾輩猫※［＃例字］第二段一"
+      }
+    }
+  ]
 }

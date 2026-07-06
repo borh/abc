@@ -33,13 +33,13 @@
     "path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
     "policy_path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
     "manifest_schema_path": "data/abc-schemas/schemas/manifest.schema.json",
-    "schema_hash": "sha256:492e1f0548e29d3a7434cccbb797ab58b64ebfda12461df0dd9d45131f9ee6bd",
+    "schema_hash": "sha256:63b305b270faae053e6978dbb207c370482408151f9464a56c36f662e30149d8",
     "policy_hash": "sha256:752c75e286e5e5f4e3eca0160079356224c4e76807f770d47af2315ba07d0aeb",
     "manifest_schema_hash": "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1",
     "trusted_schema_path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
     "trusted_policy_path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
     "trusted_manifest_schema_path": "data/abc-schemas/schemas/manifest.schema.json",
-    "trusted_schema_hash": "sha256:492e1f0548e29d3a7434cccbb797ab58b64ebfda12461df0dd9d45131f9ee6bd",
+    "trusted_schema_hash": "sha256:63b305b270faae053e6978dbb207c370482408151f9464a56c36f662e30149d8",
     "trusted_policy_hash": "sha256:752c75e286e5e5f4e3eca0160079356224c4e76807f770d47af2315ba07d0aeb",
     "trusted_manifest_schema_hash": "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1",
     "trusted_schema_path_match": true,
@@ -47,10 +47,12 @@
     "trusted_manifest_schema_path_match": true,
     "source_region_counters": [
       "back_matter_occurrences",
+      "body_end_boundary_occurrences",
       "body_raw_preserved_occurrences",
       "body_typed_occurrences",
       "colophon_metadata_occurrences",
       "front_matter_occurrences",
+      "letter_address_origin_occurrences",
       "malformed_source_occurrences",
       "source_apparatus_occurrences",
       "terminal_provenance_occurrences",
@@ -87,6 +89,7 @@
     "invalid_target_classes": [],
     "non_omitted_plaintext_classes": [],
     "measured_class_counters": {
+      "body_end_boundary": "body_end_boundary_occurrences",
       "terminal_provenance": "terminal_provenance_occurrences",
       "colophon_metadata": "colophon_metadata_occurrences"
     },
@@ -175,10 +178,10 @@
     "schema_version": "publication-bundle-batch-validation-evidence-v1",
     "validation_scope": "batch",
     "path": "docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json",
-    "bundle_hash": "sha256:5a1e902131daf2d32ab5acdf287864bef9ee2b8bd0e11676e6dff11bcf353022",
+    "bundle_hash": "sha256:d75136defc1b32165c9a302eb252706dff409b0018c47a64204c74b91b268129",
     "abc_commit": "95ace31",
     "validator": "ab-validator publication-bundle-validate batch",
-    "command": "clojure -M:abc/materialize-publications-batch /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-batch.json --summary /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-summary.json --jobs 24",
+    "command": "clojure -M:abc/materialize-publications-batch /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-batch.json --summary /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-summary.json",
     "rows_discovered": 285,
     "rows_validated": 285,
     "rows_failed": 0,
@@ -205,7 +208,7 @@
           },
           "source_region_coverage": {
             "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-            "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+            "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
           },
           "tei": {
             "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
@@ -239,7 +242,7 @@
           },
           "source_region_coverage": {
             "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-            "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+            "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
           },
           "tei": {
             "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
@@ -273,7 +276,7 @@
           },
           "source_region_coverage": {
             "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-            "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+            "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
           },
           "tei": {
             "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
@@ -307,7 +310,7 @@
           },
           "source_region_coverage": {
             "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-            "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+            "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
           },
           "tei": {
             "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
@@ -341,7 +344,7 @@
           },
           "source_region_coverage": {
             "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
-            "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
+            "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
           },
           "tei": {
             "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
@@ -6249,7 +6252,7 @@
   },
   "next_work_dashboard": {
     "path": "docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json",
-    "hash": "sha256:3f58a98e5b6d081180e14c221fb4ab1203ad796a99f27afca6c1b76b11f90f2a",
+    "hash": "sha256:c0128da4b8cea5f6b1ff7cec48fccef627872dc11119539ec87b6f2837e94ced",
     "schema_version": "aozora-publication-next-work-v1",
     "schema_valid": true,
     "verdict": "AOZORA_PUBLICATION_NEXT_WORK_OPEN",

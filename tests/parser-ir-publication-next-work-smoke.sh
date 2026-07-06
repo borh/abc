@@ -29,8 +29,10 @@ cat > "$source_summary" <<'JSON'
     "unsupported_body_markup_occurrences": 0,
     "unknown_region_occurrences": 0,
     "unknown_unreviewed_occurrences": 0,
+    "body_end_boundary_occurrences": 5,
     "terminal_provenance_occurrences": 3,
     "colophon_metadata_occurrences": 7,
+    "letter_address_origin_occurrences": 2,
     "malformed_source_occurrences": 1
   }
 }

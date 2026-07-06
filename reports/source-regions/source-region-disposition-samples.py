@@ -16,11 +16,11 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 SOURCE_COUNTERS = {
     "notation_legend": "source_apparatus_occurrences",
     "notation_placeholder": "front_matter_occurrences",
-    "body_end_boundary": "back_matter_occurrences",
+    "body_end_boundary": "body_end_boundary_occurrences",
     "terminal_provenance": "terminal_provenance_occurrences",
     "colophon_metadata": "colophon_metadata_occurrences",
+    LETTER_CLASS: "letter_address_origin_occurrences",
     "malformed_source": "malformed_source_occurrences",
-    LETTER_CLASS: None,
 }
 
 
@@ -112,7 +112,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
                     "tei_target": None,
                     "custom_sidecar": True,
                     "plaintext_projection": "omit",
-                    "measurement_status": "evidence_needed",
+                    "measurement_status": "measured",
                 },
                 counters,
                 present=False,

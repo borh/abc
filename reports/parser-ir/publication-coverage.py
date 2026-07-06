@@ -38,8 +38,10 @@ SOURCE_REGION_REQUIRED_COUNTERS = {
     "source_apparatus_occurrences",
     "front_matter_occurrences",
     "back_matter_occurrences",
+    "body_end_boundary_occurrences",
     "terminal_provenance_occurrences",
     "colophon_metadata_occurrences",
+    "letter_address_origin_occurrences",
     "malformed_source_occurrences",
     "unsupported_body_markup_occurrences",
     "unknown_region_occurrences",
@@ -62,6 +64,7 @@ SOURCE_REGION_REQUIRED_CLASSES = {
     "malformed_source",
 }
 SOURCE_REGION_MEASURED_CLASS_COUNTERS = {
+    "body_end_boundary": "body_end_boundary_occurrences",
     "terminal_provenance": "terminal_provenance_occurrences",
     "colophon_metadata": "colophon_metadata_occurrences",
 }

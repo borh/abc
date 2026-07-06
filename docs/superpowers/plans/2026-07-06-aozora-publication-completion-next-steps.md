@@ -365,7 +365,7 @@ Assert:
 jq -e '.verdict == "SOURCE_REGION_DISPOSITION_SAMPLES_READY"' "$summary_json"
 jq -e '.classes[] | select(.source_class == "terminal_provenance" and .plaintext_projection == "omit")' "$summary_json"
 jq -e '.classes[] | select(.source_class == "colophon_metadata" and .tei_target == "teiHeader/sourceDesc")' "$summary_json"
-jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "policy_needed" and .measurement_status == "evidence_needed" and .policy_class_present == false)' "$summary_json"
+jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "policy_needed" and .measurement_status == "measured" and .measured_counter == "letter_address_origin_occurrences" and .policy_class_present == false)' "$summary_json"
 jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "admitted" and .policy_class_present == true and .tei_target == "teiHeader/profileDesc/correspDesc")' "$summary_json_with_letter"
 ```
 
@@ -391,7 +391,8 @@ Implement a report builder that:
   written with `policy_class_present: true`;
 - if the policy omits `letter_address_origin`, adds a synthetic
   `letter_address_origin` row with `status: "policy_needed"`,
-  `measurement_status: "evidence_needed"`, and
+  `measurement_status: "measured"`,
+  `measured_counter: "letter_address_origin_occurrences"`, and
   `policy_class_present: false`;
 - records current measured counters from the source summary.
 

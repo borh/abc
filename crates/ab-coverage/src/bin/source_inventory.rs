@@ -7,10 +7,10 @@ use std::{
 
 use ab_coverage::{
     matrix::{CoverageMatrix, RepresentabilityStatus, Row},
-    source_corpus::{SourceIndexEntry, load_index_entries, read_source_work},
-    source_inventory::{UnknownMarkerExample, inventory_document, patterns_from_rows},
+    source_corpus::{load_index_entries, read_source_work, SourceIndexEntry},
+    source_inventory::{inventory_document, patterns_from_rows, UnknownMarkerExample},
 };
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use clap::Parser;
 use rayon::prelude::*;
 use regex::Regex;
@@ -120,8 +120,10 @@ struct SourceRegionCoverageOutput {
     source_apparatus_occurrences: u64,
     front_matter_occurrences: u64,
     back_matter_occurrences: u64,
+    body_end_boundary_occurrences: u64,
     terminal_provenance_occurrences: u64,
     colophon_metadata_occurrences: u64,
+    letter_address_origin_occurrences: u64,
     malformed_source_occurrences: u64,
     unsupported_body_markup_occurrences: u64,
     unknown_region_occurrences: u64,
@@ -131,6 +133,7 @@ struct SourceRegionCoverageOutput {
 #[derive(Debug, Default)]
 struct SourceRegionTextSummary {
     colophon_metadata_occurrences: u64,
+    letter_address_origin_occurrences: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -428,6 +431,10 @@ fn source_region_text_summary(text: &str) -> SourceRegionTextSummary {
             .lines()
             .filter(|line| is_colophon_metadata_line(line.trim_start()))
             .count() as u64,
+        letter_address_origin_occurrences: text
+            .lines()
+            .filter(|line| is_letter_address_origin_line(line.trim_start()))
+            .count() as u64,
     }
 }
 
@@ -459,6 +466,10 @@ fn is_colophon_metadata_line(line: &str) -> bool {
     COLOPHON_PREFIXES
         .iter()
         .any(|prefix| line.starts_with(prefix))
+}
+
+fn is_letter_address_origin_line(line: &str) -> bool {
+    line.starts_with("宛先") || line.starts_with("発信地")
 }
 
 fn compile_optional_regex(
@@ -513,10 +524,17 @@ fn observe_allowlisted_representability(
         }
         "body_end_boundary" => {
             representability.out_of_body_occurrences += 1;
+            source_region_coverage.body_end_boundary_occurrences += 1;
             source_region_coverage.back_matter_occurrences += 1;
         }
-        "terminal_provenance" | "back_matter_provenance" => {
+        "terminal_provenance" => {
             representability.out_of_body_occurrences += 1;
+            source_region_coverage.back_matter_occurrences += 1;
+            source_region_coverage.terminal_provenance_occurrences += 1;
+        }
+        "back_matter_provenance" => {
+            representability.out_of_body_occurrences += 1;
+            source_region_coverage.back_matter_occurrences += 1;
         }
         "colophon_metadata" => {
             representability.out_of_body_occurrences += 1;
@@ -537,6 +555,9 @@ fn observe_source_region_text(
 ) {
     source_region_coverage.colophon_metadata_occurrences += summary.colophon_metadata_occurrences;
     source_region_coverage.back_matter_occurrences += summary.colophon_metadata_occurrences;
+    source_region_coverage.letter_address_origin_occurrences +=
+        summary.letter_address_origin_occurrences;
+    source_region_coverage.back_matter_occurrences += summary.letter_address_origin_occurrences;
 }
 
 fn observe_source_region_events(
@@ -789,6 +810,10 @@ fn write_report(path: &Path, output: &InventoryOutput) -> Result<()> {
         output.source_region_coverage.back_matter_occurrences
     ));
     report.push_str(&format!(
+        "- body_end_boundary_occurrences: {}\n",
+        output.source_region_coverage.body_end_boundary_occurrences
+    ));
+    report.push_str(&format!(
         "- terminal_provenance_occurrences: {}\n",
         output
             .source_region_coverage
@@ -797,6 +822,12 @@ fn write_report(path: &Path, output: &InventoryOutput) -> Result<()> {
     report.push_str(&format!(
         "- colophon_metadata_occurrences: {}\n",
         output.source_region_coverage.colophon_metadata_occurrences
+    ));
+    report.push_str(&format!(
+        "- letter_address_origin_occurrences: {}\n",
+        output
+            .source_region_coverage
+            .letter_address_origin_occurrences
     ));
     report.push_str(&format!(
         "- malformed_source_occurrences: {}\n",

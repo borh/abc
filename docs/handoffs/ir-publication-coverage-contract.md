@@ -15,23 +15,29 @@ Current state:
   and adds `source_region_coverage`:
   `source_apparatus_occurrences: 13920`,
   `front_matter_occurrences: 14627`,
-  `back_matter_occurrences: 90268`,
+  `back_matter_occurrences: 90274`,
+  `body_end_boundary_occurrences: 243`,
   `terminal_provenance_occurrences: 609`,
-  `colophon_metadata_occurrences: 89416`, and
+  `colophon_metadata_occurrences: 89416`,
+  `letter_address_origin_occurrences: 6`, and
   `malformed_source_occurrences: 16`.
 - Five parser lanes are present in the generated matrix:
   `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
 - ABC owns the custom preservation contract and TEI profile evidence now synced
   into ab-validator.
-- ab-validator now records fixture-level publication bundle validation evidence
+- ab-validator now records full-matrix publication bundle validation evidence
   that joins parser-IR, TEI XML, plaintext, preservation sidecar,
-  source-region evidence, TEI manifest, and plaintext manifest.
+  source-region evidence, TEI manifest, and plaintext manifest. The older
+  single ABC v0 fixture remains diagnostic because it preserves a raw gaiji
+  marker in plaintext while the current body-only projection uses the gaiji
+  fallback string.
 - Plaintext remains metadata-free visible text.
 
 ab-validator report:
 
 - `docs/superpowers/reports/2026-07-06-ir-publication-coverage.md`
 - `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json`
+- `docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json`
 - `docs/superpowers/reports/2026-07-06-publication-bundle-validation.md`
 - `docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json`
 
@@ -71,11 +77,10 @@ Remaining work is no longer "make TEI-EAJ Level 2/3 pass." It is:
 5. Keep ABC profile/schema hashes, preservation records, and ab-validator
    coverage reports synchronized whenever the publication contract changes.
 
-The next scale step is to run the same bundle validation over a representative
-materialized workset and then the full materialized corpus. The current bundle
-evidence is intentionally fixture-level: it proves the cross-artifact contract
-exists and is wired into the admission gate, not that every corpus work has
-already been materialized.
+Bundle validation has been run over the representative materialized workset and
+the full 285-row five-parser TEI-EAJ matrix bundle. That full-matrix evidence is
+the current admission input. The single ABC v0 fixture remains useful as a
+diagnostic for fixture drift, but it is not the current passing gate evidence.
 
 Design reference:
 

@@ -18,6 +18,7 @@ cat > "$out_dir/corpus/pass/cards/000001/files/1.txt" <<'TXT'
 ［＃ここか３字下げ］
 ［＃ルビは「？符」に掛かる］
 ［＃］：入力者注　主に外字の説明や、傍点の位置の指定
+［＃…］
 ［＃本文終わり］
 ［＃
 [#fixture raw preserved]
@@ -57,6 +58,14 @@ reason = "Fixture marker exercises back-matter boundary accounting."
 evidence = "tests/source-representability-gate-smoke.sh"
 
 [[allow]]
+id = "fixture-notation-placeholder"
+kind = "CommandFullwidth"
+raw_pattern = "^［＃…］$"
+scope = "notation_placeholder"
+reason = "Fixture marker exercises front-matter notation placeholder accounting."
+evidence = "tests/source-representability-gate-smoke.sh"
+
+[[allow]]
 id = "fixture-malformed-command"
 kind = "MalformedCommand"
 raw_pattern = "^［＃$"
@@ -86,7 +95,8 @@ jq -e '.source_region_coverage.malformed_source_occurrences >= 1' "$out_dir/pass
 jq -e '.source_region_coverage.unsupported_body_markup_occurrences == 0' "$out_dir/pass.json"
 jq -e '.source_region_coverage.unknown_region_occurrences == 0' "$out_dir/pass.json"
 jq -e '.representability.malformed_noise_occurrences == (.source_region_coverage.source_apparatus_occurrences + .source_region_coverage.malformed_source_occurrences)' "$out_dir/pass.json"
-jq -e '.representability.out_of_body_occurrences == .source_region_coverage.back_matter_occurrences' "$out_dir/pass.json"
+jq -e '.representability.out_of_body_occurrences > .source_region_coverage.back_matter_occurrences' "$out_dir/pass.json"
+jq -e '.source_region_coverage.front_matter_occurrences > .source_region_coverage.back_matter_occurrences' "$out_dir/pass.json"
 jq -e '.representability.malformed_noise_occurrences >= 1' "$out_dir/pass.json"
 jq -e '.representability.unsupported_occurrences == 0' "$out_dir/pass.json"
 jq -e '.allowlisted_unknown_markers_total >= 2' "$out_dir/pass.json"

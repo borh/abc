@@ -4,6 +4,13 @@ Date: 2026-07-06
 Source repo: ab-validator
 Audience: ABC implementor
 
+Update: ABC commit `95ace31 feat(parser-ir): validate source-region coverage`
+implements the initial source-region schema, policy, manifest sidecar role, and
+design-bundle validation. ab-validator has synced the schema/policy snapshots
+and now requires
+`source_region_contract.verdict == "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"`
+in the IR publication coverage report.
+
 ## Purpose
 
 ab-validator now separates source-body markup, front/back matter, source
@@ -168,20 +175,26 @@ that must resolve to sidecar records rather than independent facts.
 
 ## ab-validator Follow-Up After ABC Lands
 
-After ABC exposes the admitted policy, ab-validator should:
+Implemented for ABC commit `95ace31`:
 
-1. Sync ABC schemas/profile artifacts into `data/abc-schemas/`.
-2. Regenerate source-authority reports:
-   - `docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json`
-   - `docs/superpowers/reports/2026-07-04-source-authority-representability.md`
-3. Regenerate IR publication coverage reports:
-   - `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json`
-   - `docs/superpowers/reports/2026-07-06-ir-publication-coverage.md`
-4. Replace pending source-apparatus dispositions with admitted TEI/custom
-   targets.
-5. Assert the full goal still has:
+- Synced ABC artifacts into `data/abc-schemas/`:
+  - `schemas/source-region-coverage.schema.json`
+  - `schemas/manifest.schema.json`
+  - `data/source-region-publication-policy-v0.json`
+- Regenerated IR publication coverage:
+  - `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json`
+  - `docs/superpowers/reports/2026-07-06-ir-publication-coverage.md`
+- Asserted the full goal still has:
    - `IR_PUBLICATION_COVERAGE_COMPLETE`
    - `SOURCE_AUTHORITY_GATE_PASS`
    - five parser evidence present
    - zero true unsupported gaps
    - zero unreviewed source-region rows
+
+Remaining follow-up:
+
+1. Split `terminal_provenance` and `colophon_metadata` measurement; current
+   `back_matter_occurrences: 243` is still exhausted by body-end-boundary
+   evidence.
+2. Add bundle validation that joins source-region evidence to parser-IR, TEI,
+   preservation records, manifests, and plaintext.

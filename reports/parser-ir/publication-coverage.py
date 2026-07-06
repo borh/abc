@@ -19,6 +19,54 @@ ABC_PRESERVATION_SCHEMA_VERSION = "0.2.0"
 TRUSTED_ABC_PRESERVATION_SCHEMA_PATH = (
     REPO_ROOT / "data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json"
 ).resolve()
+ABC_SOURCE_REGION_SCHEMA_ID = "https://w3id.org/abc/schemas/source-region-coverage.schema.json"
+ABC_SOURCE_REGION_SCHEMA_VERSION = "aozora-source-region-coverage-v1"
+ABC_SOURCE_REGION_POLICY_ID = "https://w3id.org/abc/policies/source-region-publication-v0"
+ABC_SOURCE_REGION_POLICY_VERSION = "0.1.0"
+TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH = (
+    REPO_ROOT / "data/abc-schemas/schemas/source-region-coverage.schema.json"
+).resolve()
+TRUSTED_ABC_SOURCE_REGION_POLICY_PATH = (
+    REPO_ROOT / "data/abc-schemas/data/source-region-publication-policy-v0.json"
+).resolve()
+TRUSTED_ABC_MANIFEST_SCHEMA_PATH = (
+    REPO_ROOT / "data/abc-schemas/schemas/manifest.schema.json"
+).resolve()
+SOURCE_REGION_REQUIRED_COUNTERS = {
+    "body_typed_occurrences",
+    "body_raw_preserved_occurrences",
+    "source_apparatus_occurrences",
+    "front_matter_occurrences",
+    "back_matter_occurrences",
+    "malformed_source_occurrences",
+    "unsupported_body_markup_occurrences",
+    "unknown_region_occurrences",
+    "unknown_unreviewed_occurrences",
+}
+SOURCE_REGION_REQUIRED_LEGACY_COUNTERS = {
+    "typed_occurrences",
+    "raw_preserved_occurrences",
+    "out_of_body_occurrences",
+    "malformed_noise_occurrences",
+    "unsupported_occurrences",
+    "needs_research_occurrences",
+}
+SOURCE_REGION_REQUIRED_CLASSES = {
+    "notation_legend",
+    "notation_placeholder",
+    "body_end_boundary",
+    "terminal_provenance",
+    "colophon_metadata",
+    "malformed_source",
+}
+SOURCE_REGION_MEASUREMENT_SPLIT_CLASSES = {"terminal_provenance", "colophon_metadata"}
+SOURCE_REGION_ALLOWED_TARGET_CLASSES = {
+    "tei_policy_projection",
+    "tei_plus_abc_extension",
+    "custom_sidecar",
+    "diagnostic",
+    "unsupported_gap",
+}
 TEI_PROFILE_RECORD_CLASS = "tei_profile_projection"
 TEI_PROFILE_FAMILIES = {
     "accent",
@@ -661,6 +709,191 @@ def source_authority_passed(source: dict[str, Any]) -> bool:
     )
 
 
+def source_region_contract_block(
+    source_region_schema: pathlib.Path | None,
+    source_region_policy: pathlib.Path | None,
+    manifest_schema: pathlib.Path | None,
+) -> dict[str, Any]:
+    if source_region_schema is None or source_region_policy is None or manifest_schema is None:
+        return {
+            "verdict": "SOURCE_REGION_CONTRACT_MISSING",
+            "schema_id": None,
+            "schema_version": None,
+            "policy_id": None,
+            "policy_version": None,
+            "message": "ABC source-region schema, publication policy, and manifest schema snapshots are required.",
+        }
+
+    try:
+        schema_doc = load_json(source_region_schema)
+        policy_doc = load_json(source_region_policy)
+        manifest_doc = load_json(manifest_schema)
+    except json.JSONDecodeError:
+        return {
+            "verdict": "SOURCE_REGION_CONTRACT_INVALID",
+            "schema_id": None,
+            "schema_version": None,
+            "policy_id": None,
+            "policy_version": None,
+            "path": display_path(source_region_schema),
+            "policy_path": display_path(source_region_policy),
+            "manifest_schema_path": display_path(manifest_schema),
+            "message": "ABC source-region contract snapshot is not valid JSON.",
+        }
+    except OSError:
+        return {
+            "verdict": "SOURCE_REGION_CONTRACT_MISSING",
+            "schema_id": None,
+            "schema_version": None,
+            "policy_id": None,
+            "policy_version": None,
+            "path": display_path(source_region_schema),
+            "policy_path": display_path(source_region_policy),
+            "manifest_schema_path": display_path(manifest_schema),
+            "message": "ABC source-region contract snapshot path was supplied but could not be read.",
+        }
+
+    schema_id = schema_doc.get("$id") if isinstance(schema_doc, dict) else None
+    schema_version = None
+    if isinstance(schema_doc, dict):
+        schema_version = schema_doc.get("properties", {}).get("schema_version", {}).get("const")
+    policy_id = policy_doc.get("policy_id") if isinstance(policy_doc, dict) else None
+    policy_version = policy_doc.get("policy_version") if isinstance(policy_doc, dict) else None
+    source_region_counters = set()
+    representability_counters = set()
+    if isinstance(schema_doc, dict):
+        source_region_counters = set(
+            schema_doc.get("properties", {})
+            .get("source_region_coverage", {})
+            .get("required", [])
+        )
+        representability_counters = set(
+            schema_doc.get("properties", {})
+            .get("representability", {})
+            .get("required", [])
+        )
+    dispositions = policy_doc.get("dispositions", []) if isinstance(policy_doc, dict) else []
+    disposition_by_class = {
+        row.get("source_class"): row
+        for row in dispositions
+        if isinstance(row, dict) and isinstance(row.get("source_class"), str)
+    }
+    policy_classes = set(disposition_by_class)
+    missing_policy_classes = sorted(SOURCE_REGION_REQUIRED_CLASSES - policy_classes)
+    duplicate_policy_classes = sorted(
+        source_class
+        for source_class, count in Counter(
+            row.get("source_class") for row in dispositions if isinstance(row, dict)
+        ).items()
+        if isinstance(source_class, str) and count > 1
+    )
+    invalid_target_classes = sorted(
+        source_class
+        for source_class, row in disposition_by_class.items()
+        if row.get("target_class") not in SOURCE_REGION_ALLOWED_TARGET_CLASSES
+    )
+    non_omitted_plaintext_classes = sorted(
+        source_class
+        for source_class, row in disposition_by_class.items()
+        if row.get("plaintext_projection") != "omit"
+    )
+    missing_measurement_split_classes = sorted(
+        source_class
+        for source_class in SOURCE_REGION_MEASUREMENT_SPLIT_CLASSES
+        if disposition_by_class.get(source_class, {}).get("measurement_status")
+        != "needs_measurement_split"
+    )
+    manifest_sidecar_roles = schema_enum_values(
+        manifest_doc,
+        ("$defs", "sidecar", "properties", "role", "enum"),
+    )
+    manifest_sidecar_role_present = "source-region-coverage" in manifest_sidecar_roles
+    schema_hash = document_hash(schema_doc)
+    policy_hash = document_hash(policy_doc)
+    manifest_schema_hash = document_hash(manifest_doc)
+    trusted_schema_hash = trusted_json_hash(TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH)
+    trusted_policy_hash = trusted_json_hash(TRUSTED_ABC_SOURCE_REGION_POLICY_PATH)
+    trusted_manifest_schema_hash = trusted_json_hash(TRUSTED_ABC_MANIFEST_SCHEMA_PATH)
+    schema_path_match = source_region_schema.resolve() == TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH
+    policy_path_match = source_region_policy.resolve() == TRUSTED_ABC_SOURCE_REGION_POLICY_PATH
+    manifest_schema_path_match = manifest_schema.resolve() == TRUSTED_ABC_MANIFEST_SCHEMA_PATH
+    missing_source_region_counters = sorted(
+        SOURCE_REGION_REQUIRED_COUNTERS - source_region_counters
+    )
+    missing_legacy_counters = sorted(
+        SOURCE_REGION_REQUIRED_LEGACY_COUNTERS - representability_counters
+    )
+    confirmed = (
+        schema_id == ABC_SOURCE_REGION_SCHEMA_ID
+        and schema_version == ABC_SOURCE_REGION_SCHEMA_VERSION
+        and policy_id == ABC_SOURCE_REGION_POLICY_ID
+        and policy_version == ABC_SOURCE_REGION_POLICY_VERSION
+        and not missing_source_region_counters
+        and not missing_legacy_counters
+        and not missing_policy_classes
+        and not duplicate_policy_classes
+        and not invalid_target_classes
+        and not non_omitted_plaintext_classes
+        and not missing_measurement_split_classes
+        and manifest_sidecar_role_present
+        and schema_path_match
+        and policy_path_match
+        and manifest_schema_path_match
+        and schema_hash == trusted_schema_hash
+        and policy_hash == trusted_policy_hash
+        and manifest_schema_hash == trusted_manifest_schema_hash
+    )
+    return {
+        "verdict": (
+            "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"
+            if confirmed
+            else "SOURCE_REGION_CONTRACT_CANDIDATE_PROVIDED"
+        ),
+        "schema_id": schema_id,
+        "schema_version": schema_version,
+        "policy_id": policy_id,
+        "policy_version": policy_version,
+        "path": display_path(source_region_schema),
+        "policy_path": display_path(source_region_policy),
+        "manifest_schema_path": display_path(manifest_schema),
+        "schema_hash": schema_hash,
+        "policy_hash": policy_hash,
+        "manifest_schema_hash": manifest_schema_hash,
+        "trusted_schema_path": display_path(TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH),
+        "trusted_policy_path": display_path(TRUSTED_ABC_SOURCE_REGION_POLICY_PATH),
+        "trusted_manifest_schema_path": display_path(TRUSTED_ABC_MANIFEST_SCHEMA_PATH),
+        "trusted_schema_hash": trusted_schema_hash,
+        "trusted_policy_hash": trusted_policy_hash,
+        "trusted_manifest_schema_hash": trusted_manifest_schema_hash,
+        "trusted_schema_path_match": schema_path_match,
+        "trusted_policy_path_match": policy_path_match,
+        "trusted_manifest_schema_path_match": manifest_schema_path_match,
+        "source_region_counters": sorted(source_region_counters),
+        "legacy_representability_counters": sorted(representability_counters),
+        "policy_classes": sorted(policy_classes),
+        "target_classes": sorted(
+            {
+                row.get("target_class")
+                for row in disposition_by_class.values()
+                if isinstance(row.get("target_class"), str)
+            }
+        ),
+        "manifest_sidecar_role_present": manifest_sidecar_role_present,
+        "missing_source_region_counters": missing_source_region_counters,
+        "missing_legacy_counters": missing_legacy_counters,
+        "missing_policy_classes": missing_policy_classes,
+        "duplicate_policy_classes": duplicate_policy_classes,
+        "invalid_target_classes": invalid_target_classes,
+        "non_omitted_plaintext_classes": non_omitted_plaintext_classes,
+        "missing_measurement_split_classes": missing_measurement_split_classes,
+        "message": (
+            "ABC source-region schema, publication policy, and manifest sidecar role are confirmed."
+            if confirmed
+            else "Readable source-region contract candidate recorded as evidence only; synced ABC integration must confirm the source-region contract before admission can unblock."
+        ),
+    }
+
+
 def parser_evidence_coverage(matrix: dict[str, Any], source_delta: dict[str, Any]) -> dict[str, Any]:
     observed = Counter()
     qualified_rows = 0
@@ -813,6 +1046,13 @@ def trusted_custom_contract_hash() -> str | None:
         return None
 
 
+def trusted_json_hash(path: pathlib.Path) -> str | None:
+    try:
+        return document_hash(load_json(path))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
 def tei_profile_contract_block(custom_contract: dict[str, Any]) -> dict[str, Any]:
     if custom_contract.get("verdict") != "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION":
         return {
@@ -884,6 +1124,7 @@ def summary_scope(
         "mapping_id": mapping.get("mapping_id"),
         "mapping_version": mapping.get("mapping_version"),
         "parser_ir_schema_hash": parser_ir_schema_hash(parser_schema, mapping),
+        "source_region_contract_required": True,
         "custom_contract_required": True,
     }
 
@@ -1070,12 +1311,18 @@ def unsupported_derived_closure_coverage(closures: dict[str, Any]) -> dict[str, 
 def publication_verdict(
     source_passed: bool,
     evidence: dict[str, Any],
+    source_region_contract: dict[str, Any],
     custom_contract: dict[str, Any],
     gaps: dict[str, Any],
     closures: dict[str, Any],
 ) -> str:
     if not source_passed:
         return "IR_PUBLICATION_COVERAGE_BLOCKED_SOURCE_AUTHORITY"
+    if (
+        source_region_contract.get("verdict")
+        != "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"
+    ):
+        return "IR_PUBLICATION_COVERAGE_BLOCKED_SOURCE_REGION_CONTRACT_MISSING"
     if evidence.get("verdict") != "FIVE_PARSER_EVIDENCE_COMPLETE":
         return "IR_PUBLICATION_COVERAGE_BLOCKED_INCOMPLETE_PARSER_EVIDENCE"
     if closures["true_unsupported_gaps"].get("count", 0) > 0:
@@ -1094,12 +1341,20 @@ def build_summary(
     matrix: dict[str, Any],
     source_delta: dict[str, Any],
     custom_contract_schema: pathlib.Path | None,
+    source_region_schema: pathlib.Path | None,
+    source_region_policy: pathlib.Path | None,
+    manifest_schema: pathlib.Path | None,
 ) -> dict[str, Any]:
     node_coverage = node_coverage_from_schema(parser_schema)
     field_coverage = field_coverage_from_schema(parser_schema)
     diagnostics = diagnostic_coverage(mapping)
     construct_coverage = source_construct_coverage(mapping)
     evidence = parser_evidence_coverage(matrix, source_delta)
+    source_region_contract = source_region_contract_block(
+        source_region_schema,
+        source_region_policy,
+        manifest_schema,
+    )
     custom_contract = custom_contract_block(custom_contract_schema)
     tei_profile_contract = tei_profile_contract_block(custom_contract)
     gaps = unsupported_gaps(node_coverage, field_coverage, diagnostics, construct_coverage)
@@ -1108,8 +1363,16 @@ def build_summary(
     return {
         "schema_version": SCHEMA_VERSION,
         "scope": summary_scope(parser_schema, mapping, source, matrix),
-        "verdict": publication_verdict(source_passed, evidence, custom_contract, gaps, closures),
+        "verdict": publication_verdict(
+            source_passed,
+            evidence,
+            source_region_contract,
+            custom_contract,
+            gaps,
+            closures,
+        ),
         "source_authority_gate": source_authority_gate(source),
+        "source_region_contract": source_region_contract,
         "parser_evidence_coverage": evidence,
         "parser_ir_schema": {
             "schema_id": parser_schema.get("$id"),
@@ -1147,10 +1410,21 @@ def render_markdown(summary: dict[str, Any]) -> str:
     adjusted_closure = summary["unsupported_derived_closure_coverage"]
     gaps = summary["unsupported_gaps"]
     closures = summary["closure_gaps"]
+    source_region_contract = summary["source_region_contract"]
     lines = [
         "# IR Publication Coverage",
         "",
         f"Verdict: `{summary['verdict']}`",
+        "",
+        "## Source Region Contract",
+        "",
+        f"Verdict: `{source_region_contract['verdict']}`",
+        "",
+        f"Schema: `{source_region_contract.get('schema_id')}` `{source_region_contract.get('schema_version')}`",
+        "",
+        f"Policy: `{source_region_contract.get('policy_id')}` `{source_region_contract.get('policy_version')}`",
+        "",
+        f"Manifest sidecar role present: `{str(source_region_contract.get('manifest_sidecar_role_present')).lower()}`",
         "",
         "## Node Coverage",
         "",
@@ -1253,6 +1527,21 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--matrix-summary", required=True, type=pathlib.Path)
     parser.add_argument("--source-delta-summary", required=True, type=pathlib.Path)
     parser.add_argument("--custom-contract-schema", type=pathlib.Path)
+    parser.add_argument(
+        "--source-region-schema",
+        type=pathlib.Path,
+        default=TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH,
+    )
+    parser.add_argument(
+        "--source-region-policy",
+        type=pathlib.Path,
+        default=TRUSTED_ABC_SOURCE_REGION_POLICY_PATH,
+    )
+    parser.add_argument(
+        "--manifest-schema",
+        type=pathlib.Path,
+        default=TRUSTED_ABC_MANIFEST_SCHEMA_PATH,
+    )
     parser.add_argument("--summary-json", required=True, type=pathlib.Path)
     parser.add_argument("--report-md", required=True, type=pathlib.Path)
     return parser.parse_args()
@@ -1289,6 +1578,9 @@ def main() -> None:
         matrix=load_json(args.matrix_summary),
         source_delta=load_json(args.source_delta_summary),
         custom_contract_schema=args.custom_contract_schema,
+        source_region_schema=args.source_region_schema,
+        source_region_policy=args.source_region_policy,
+        manifest_schema=args.manifest_schema,
     )
     write_json(args.summary_json, summary)
     write_text(args.report_md, render_markdown(summary))

@@ -285,6 +285,11 @@ jq -e '.schema_version == "ir-publication-coverage-v1"' "$summary_json" >/dev/nu
 jq -e '.scope.kind == "ir_publication_coverage"' "$summary_json" >/dev/null
 jq -e '.scope.required_parsers == ["aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora"]' "$summary_json" >/dev/null
 jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.verdict == "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.schema_id == "https://w3id.org/abc/schemas/source-region-coverage.schema.json"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.schema_version == "aozora-source-region-coverage-v1"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.policy_id == "https://w3id.org/abc/policies/source-region-publication-v0"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.manifest_sidecar_role_present == true' "$summary_json" >/dev/null
 jq -e '.parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_COMPLETE"' "$summary_json" >/dev/null
 jq -e '.plaintext_policy.metadata_policy == "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance"' "$summary_json" >/dev/null
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_MISSING"' "$summary_json" >/dev/null
@@ -388,6 +393,7 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --report-md "$candidate_report_md"
 
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$candidate_summary_json" >/dev/null
+jq -e '.source_region_contract.verdict == "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$candidate_summary_json" >/dev/null
 jq -e '.tei_profile_contract.verdict == "TEI_PROFILE_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$candidate_summary_json" >/dev/null
 jq -e '.closure_gaps.admitted_by_custom_contract.count == 1' "$candidate_summary_json" >/dev/null
 jq -e '.closure_gaps.admitted_by_custom_contract.counts_by_family.span_coordinates == 1' "$candidate_summary_json" >/dev/null

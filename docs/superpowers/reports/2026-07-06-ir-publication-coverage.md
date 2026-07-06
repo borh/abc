@@ -2,6 +2,16 @@
 
 Verdict: `IR_PUBLICATION_COVERAGE_COMPLETE`
 
+## Source Region Contract
+
+Verdict: `SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
+
+Schema: `https://w3id.org/abc/schemas/source-region-coverage.schema.json` `aozora-source-region-coverage-v1`
+
+Policy: `https://w3id.org/abc/policies/source-region-publication-v0` `0.1.0`
+
+Manifest sidecar role present: `true`
+
 ## Node Coverage
 
 | Class | Node types |

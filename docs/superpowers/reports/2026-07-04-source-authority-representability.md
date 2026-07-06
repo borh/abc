@@ -120,7 +120,7 @@ None.
 
 ## Inputs
 
-- matrix: `/home/bor/Projects/ab-validator/.worktrees/source-region-apparatus/data/aozora-syntax-coverage.toml`
-- index: `/home/bor/Projects/ab-validator/scratch/ab-index.json`
-- corpus: `/home/bor/Dependencies/aozorabunko`
-- allowlist: `/home/bor/Projects/ab-validator/.worktrees/source-region-apparatus/data/aozora-source-inventory-allowlist.toml`
+- matrix: `/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml`
+- index: `scratch/ab-index.json`
+- corpus: `references/aozorabunko`
+- allowlist: `/home/bor/Projects/ab-validator/data/aozora-source-inventory-allowlist.toml`

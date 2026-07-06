@@ -32,6 +32,7 @@ Current report verdict:
 
 - `IR_PUBLICATION_COVERAGE_COMPLETE`
 - `parser_evidence_coverage.verdict == FIVE_PARSER_EVIDENCE_COMPLETE`
+- `source_region_contract.verdict == SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
 - `custom_contract.verdict == CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
 - `tei_profile_contract.verdict == TEI_PROFILE_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
 - `closure_gaps.classified_but_not_admitted.count == 0`
@@ -49,8 +50,10 @@ Remaining work is no longer "make TEI-EAJ Level 2/3 pass." It is:
 
 1. Keep the source-authority scanner and source-inventory matrix current as new
    Aozora marker families or parser adapters land.
-2. Coordinate ABC consumption of `source_region_coverage`, keeping legacy
-   counter aliases during the downstream migration window.
+2. Keep ABC source-region contract snapshots synchronized:
+   `source-region-coverage.schema.json`,
+   `source-region-publication-policy-v0.json`, and
+   `manifest.schema.json` with the `source-region-coverage` sidecar role.
 3. Ensure every Aozora markup and source-apparatus family has a TEI P5,
    TEI-plus-ABC-extension, custom-sidecar, diagnostic, or explicit unsupported
    classification.

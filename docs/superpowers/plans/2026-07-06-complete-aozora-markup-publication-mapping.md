@@ -42,7 +42,10 @@ The current measured reports already satisfy the ab-validator-side coverage gate
   - `source_region_coverage.unknown_region_occurrences == 0`
   - `source_region_coverage.unknown_unreviewed_occurrences == 0`
 
-That is a measured admission state, not the end of the project. The remaining work is durability: ABC must consume the source-region contract, cross-artifact validation must prove the outputs agree, and adapter/parser evidence must stay current as inputs change.
+That is a measured admission state, not the end of the project. The remaining
+work is durability: ab-validator must keep the synced ABC source-region
+contract current, cross-artifact validation must prove the outputs agree, and
+adapter/parser evidence must stay current as inputs change.
 
 ## Workstream 1: ABC Source-Region Integration
 
@@ -79,11 +82,18 @@ coordination and must be reconciled with that spec if the vocabulary changes.
 
 **ab-validator follow-up after ABC lands:**
 
-- Sync changed ABC schemas/profile snapshots into `data/abc-schemas/`.
-- Regenerate the source-authority and IR publication coverage reports.
-- Update the report gate so source-apparatus dispositions are confirmed by ABC evidence rather than only pending policy.
+- Done for ABC commit `95ace31 feat(parser-ir): validate source-region coverage`.
+- Synced ABC snapshots:
+  - `data/abc-schemas/schemas/source-region-coverage.schema.json`
+  - `data/abc-schemas/schemas/manifest.schema.json`
+  - `data/abc-schemas/data/source-region-publication-policy-v0.json`
+- `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json`
+  now requires `source_region_contract.verdict ==
+  "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"` for complete
+  publication coverage.
 
-**Review gate:** ABC sends commit hash, schema/profile hashes, fixture paths, and validation output. ab-validator reports still show `IR_PUBLICATION_COVERAGE_COMPLETE` after syncing those artifacts.
+**Review gate:** ab-validator reports still show `IR_PUBLICATION_COVERAGE_COMPLETE`
+after syncing the ABC source-region schema, policy, and manifest sidecar role.
 
 ## Workstream 2: Cross-Artifact Publication Bundle Validation
 
@@ -225,15 +235,17 @@ Complete Aozora Bunko markup publication mapping: every observed source markup a
 
 ## Immediate Next Tasks
 
-1. Send `docs/handoffs/source-region-coverage-abc-integration.md` to the ABC implementor.
-2. Wait for ABC to decide and implement source-apparatus dispositions.
-3. Sync ABC schema/profile/hash evidence back into ab-validator.
-4. Regenerate:
-   - `docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json`
-   - `docs/superpowers/reports/2026-07-04-source-authority-representability.md`
-   - `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json`
-   - `docs/superpowers/reports/2026-07-06-ir-publication-coverage.md`
-5. Add or tighten cross-artifact checks only after ABC exposes the validation surface.
+1. Split source-region measurement for `terminal_provenance` and
+   `colophon_metadata`; do not infer their prevalence from the current
+   `back_matter_occurrences: 243` body-end-boundary count.
+2. Add cross-artifact bundle checks that join source-region evidence,
+   parser-IR, TEI XML, preservation sidecar, manifests, and plaintext.
+3. Run batch parser-IR publication materialization over a representative
+   workset, then scale to full corpus when runtime is acceptable.
+4. Keep all five parser evidence lanes current:
+   `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
+5. Compare source inventory against Aozora manual and
+   `P4suta/aozora-notation-spec` when those references change.
 
 ## Verification Commands
 

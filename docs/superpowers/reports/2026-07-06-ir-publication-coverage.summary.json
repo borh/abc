@@ -14,6 +14,7 @@
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
     "mapping_version": "0.2.3",
     "parser_ir_schema_hash": "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411",
+    "source_region_contract_required": true,
     "custom_contract_required": true
   },
   "verdict": "IR_PUBLICATION_COVERAGE_COMPLETE",
@@ -21,6 +22,69 @@
     "gate_status": "SOURCE_AUTHORITY_GATE_PASS",
     "works_scanned": 17894,
     "unallowlisted_unknown_markers_total": 0
+  },
+  "source_region_contract": {
+    "verdict": "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION",
+    "schema_id": "https://w3id.org/abc/schemas/source-region-coverage.schema.json",
+    "schema_version": "aozora-source-region-coverage-v1",
+    "policy_id": "https://w3id.org/abc/policies/source-region-publication-v0",
+    "policy_version": "0.1.0",
+    "path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
+    "policy_path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
+    "manifest_schema_path": "data/abc-schemas/schemas/manifest.schema.json",
+    "schema_hash": "sha256:3879348d65a17c1cbde11a174e7aa3096163e403a1680a6e57ae071833c8240c",
+    "policy_hash": "sha256:3e969572c41754cbf7fb6ce5b6be0be780710beff5a591ca909a59882e08169a",
+    "manifest_schema_hash": "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1",
+    "trusted_schema_path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
+    "trusted_policy_path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
+    "trusted_manifest_schema_path": "data/abc-schemas/schemas/manifest.schema.json",
+    "trusted_schema_hash": "sha256:3879348d65a17c1cbde11a174e7aa3096163e403a1680a6e57ae071833c8240c",
+    "trusted_policy_hash": "sha256:3e969572c41754cbf7fb6ce5b6be0be780710beff5a591ca909a59882e08169a",
+    "trusted_manifest_schema_hash": "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1",
+    "trusted_schema_path_match": true,
+    "trusted_policy_path_match": true,
+    "trusted_manifest_schema_path_match": true,
+    "source_region_counters": [
+      "back_matter_occurrences",
+      "body_raw_preserved_occurrences",
+      "body_typed_occurrences",
+      "front_matter_occurrences",
+      "malformed_source_occurrences",
+      "source_apparatus_occurrences",
+      "unknown_region_occurrences",
+      "unknown_unreviewed_occurrences",
+      "unsupported_body_markup_occurrences"
+    ],
+    "legacy_representability_counters": [
+      "malformed_noise_occurrences",
+      "needs_research_occurrences",
+      "out_of_body_occurrences",
+      "raw_preserved_occurrences",
+      "typed_occurrences",
+      "unsupported_occurrences"
+    ],
+    "policy_classes": [
+      "body_end_boundary",
+      "colophon_metadata",
+      "malformed_source",
+      "notation_legend",
+      "notation_placeholder",
+      "terminal_provenance"
+    ],
+    "target_classes": [
+      "custom_sidecar",
+      "diagnostic",
+      "tei_policy_projection"
+    ],
+    "manifest_sidecar_role_present": true,
+    "missing_source_region_counters": [],
+    "missing_legacy_counters": [],
+    "missing_policy_classes": [],
+    "duplicate_policy_classes": [],
+    "invalid_target_classes": [],
+    "non_omitted_plaintext_classes": [],
+    "missing_measurement_split_classes": [],
+    "message": "ABC source-region schema, publication policy, and manifest sidecar role are confirmed."
   },
   "parser_evidence_coverage": {
     "verdict": "FIVE_PARSER_EVIDENCE_COMPLETE",

@@ -1,17 +1,28 @@
-# ABC Schema Snapshot
+# Vendored ABC Schema Contracts
 
-This directory vendors the minimal ABC JSON schema and policy snapshot needed by
-ab-validator pure Nix checks and publication-coverage gates:
+This directory is ab-validator's checked-in snapshot of the ABC schemas it
+consumes at the adapter and publication boundary.
 
-- `schemas/aat-parser-ir-mapping.schema.json`
-- `schemas/parser-ir.schema.json`
-- `schemas/aat-parser-ir-divergence.schema.json`
-- `schemas/parser-ir-publication-preservation.schema.json`
-- `schemas/source-region-coverage.schema.json`
-- `schemas/manifest.schema.json`
-- `data/source-region-publication-policy-v0.json`
+The cross-repo contract surface is listed in `schema-contracts.json`. Each row
+records the schema `$id`, `version`, and ABC schema hash using
+`abc-legacy-json-c14n-v0`, matching ABC's own manifest and compatibility
+identity checks.
 
-The files are copied byte-for-byte from the ABC repo revision used by the
-current checked-in reports. The converter still accepts `--abc-root` and
-`AB_ABC_ROOT` so callers can validate against an explicit ABC checkout when
-needed.
+Refresh procedure:
+
+1. Copy the relevant `../abc/schemas/*.schema.json` files into `schemas/`.
+2. Copy or regenerate the ABC `schema-contracts.json` snapshot:
+
+   ```sh
+   python3 scripts/schema_contracts.py --write
+   ```
+
+3. Run the drift check:
+
+   ```sh
+   python3 scripts/schema_contracts.py
+   ```
+
+Schema bytes, versions, and hashes must move together. Historical mapping or
+compatibility evidence should keep its historical schema hashes; new evidence
+uses the current manifest row.

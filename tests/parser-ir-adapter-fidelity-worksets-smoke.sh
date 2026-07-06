@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-out_dir="$(mktemp -d "${TMPDIR:-/tmp}/ab-adapter-fidelity.XXXXXX")"
-trap 'rm -rf "$out_dir"' EXIT
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/smoke-env.sh"
+repo_root="$AB_VALIDATOR_ROOT"
+out_dir="$(smoke_tmp_dir ab-adapter-fidelity)"
+trap 'smoke_cleanup "$out_dir"' EXIT
 
 matrix_summary="$out_dir/matrix.json"
 summary_json="$out_dir/adapter-fidelity.summary.json"

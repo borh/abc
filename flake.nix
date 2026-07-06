@@ -944,6 +944,19 @@
               touch "$out"
             '';
 
+        abcSchemaContractDriftCheck =
+          pkgs.runCommand "abc-schema-contract-drift-check"
+            {
+              nativeBuildInputs = [ pkgs.python3 ];
+            }
+            ''
+              cp -R "${source}" source
+              chmod -R +w source
+              cd source
+              python3 scripts/schema_contracts.py
+              touch "$out"
+            '';
+
         abAatToParserIr =
           if hasCargoManifest && hasCargoLock then
             rustPlatform.buildRustPackage {
@@ -1152,6 +1165,7 @@
           aozora-epub3-smoke = aozoraEpub3SmokeCheck;
           adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
           taxonomy-drift = taxonomyDriftCheck;
+          abc-schema-contract-drift = abcSchemaContractDriftCheck;
           parser-ir-level3-admission-smoke = level3AdmissionSmokeCheck;
           parser-ir-plain-prose-source-delta-smoke = plainProseSourceDeltaSmokeCheck;
           parser-ir-publication-bundle-smoke = publicationBundleSmokeCheck;

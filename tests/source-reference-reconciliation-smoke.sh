@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/smoke-env.sh"
+repo_root="$AB_VALIDATOR_ROOT"
+tmp="$(smoke_tmp_dir ab-source-reference-reconciliation)"
+trap 'smoke_cleanup "$tmp"' EXIT
 
 cat > "$tmp/syntax.toml" <<'TOML'
 [[syntax]]

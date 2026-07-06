@@ -48,11 +48,11 @@ JSON
 cat > "$mapping_file" <<'JSON'
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.2.3",
-  "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+  "mapping_version": "0.2.4",
+  "mapping_schema_hash": "sha256:23a2822cbae88533168121e8a09648441276d8af6484269ae666b90030eb1e06",
   "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
+  "target_parser_ir_schema_hash": "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-01",
@@ -217,10 +217,10 @@ JSON
 cat > "$invalid_mapping_file" <<'JSON'
 {
   "mapping_id": "",
-  "mapping_version": "0.2.3",
+  "mapping_version": "0.2.4",
   "mapping_schema_hash": "",
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
+  "target_parser_ir_schema_hash": "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2",
   "transform_rule_descriptions": []
 }
 JSON
@@ -252,11 +252,11 @@ jq -e '.schema_version == "profile-aware-level3-tei-admission-v1"' "$summary_jso
 jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' "$summary_json"
 jq -e '.parser_ir_infrastructure_verdict == "LEVEL3_IR_INFRASTRUCTURE_READY"' "$summary_json"
 jq -e '.mapping.mapping_id == "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"' "$summary_json"
-jq -e '.mapping.mapping_version == "0.2.3"' "$summary_json"
+jq -e '.mapping.mapping_version == "0.2.4"' "$summary_json"
 jq -e '.mapping.mapping_hash | test("^sha256:[0-9a-f]{64}$")' "$summary_json"
-jq -e '.mapping.mapping_schema_hash == "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"' "$summary_json"
+jq -e '.mapping.mapping_schema_hash == "sha256:23a2822cbae88533168121e8a09648441276d8af6484269ae666b90030eb1e06"' "$summary_json"
 jq -e '.mapping.target_parser_ir_schema_id == "https://w3id.org/abc/schemas/parser-ir.schema.json"' "$summary_json"
-jq -e '.mapping.target_parser_ir_schema_hash == "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712"' "$summary_json"
+jq -e '.mapping.target_parser_ir_schema_hash == "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2"' "$summary_json"
 jq -e '.mapping.generated_mapping_rules == 1' "$summary_json"
 jq -e '.plain_prose_admission.rows_total == 9' "$summary_json"
 jq -e '.plain_prose_admission.rows_passed == 4' "$summary_json"

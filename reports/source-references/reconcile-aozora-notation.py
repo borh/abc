@@ -2,11 +2,16 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
-import json
 import pathlib
+import sys
 import tomllib
 from typing import Any
+
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_REPO_ROOT))
+
+from reports.lib.hashing import file_sha256 as sha256_file
+from reports.lib.io import read_json, write_json
 
 
 SCHEMA_VERSION = "aozora-source-reference-reconciliation-v1"
@@ -86,25 +91,15 @@ P4SUTA_COMPARISON_ONLY_FEATURES = {
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def write_json(path: pathlib.Path, value: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    value = read_json(path)
+    if not isinstance(value, dict):
+        raise SystemExit(f"{path}: expected JSON object")
+    return value
 
 
 def write_text(path: pathlib.Path, value: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(value, encoding="utf-8")
-
-
-def sha256_file(path: pathlib.Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return "sha256:" + digest.hexdigest()
 
 
 def load_syntax_rows(path: pathlib.Path) -> list[dict[str, Any]]:

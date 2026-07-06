@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-out_dir="$(mktemp -d "${TMPDIR:-/tmp}/ab-text-policy-delta.XXXXXX")"
-trap 'rm -rf "$out_dir"' EXIT
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/smoke-env.sh"
+repo_root="$AB_VALIDATOR_ROOT"
+out_dir="$(smoke_tmp_dir ab-text-policy-delta)"
+trap 'smoke_cleanup "$out_dir"' EXIT
 
 matrix_summary="$out_dir/matrix.json"
 summary_json="$out_dir/text-policy-delta.summary.json"

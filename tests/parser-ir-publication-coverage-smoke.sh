@@ -69,8 +69,8 @@ JSON
 cat > "$mapping" <<'JSON'
 {
   "mapping_id": "https://w3id.org/abc/mappings/fixture",
-  "mapping_version": "0.2.3",
-  "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+  "mapping_version": "0.2.4",
+  "mapping_schema_hash": "sha256:23a2822cbae88533168121e8a09648441276d8af6484269ae666b90030eb1e06",
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "target_parser_ir_schema_hash": "sha256:fixture-parser-ir",
   "transform_rule_descriptions": [
@@ -712,7 +712,7 @@ PY
 cat > "$unknown_mapping" <<'JSON'
 {
   "mapping_id": "https://w3id.org/abc/mappings/fixture-unknown",
-  "mapping_version": "0.2.3",
+  "mapping_version": "0.2.4",
   "mapping_schema_hash": "sha256:38e7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "target_parser_ir_schema_hash": "sha256:fixture-parser-ir",

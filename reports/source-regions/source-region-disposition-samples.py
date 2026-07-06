@@ -4,15 +4,21 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
-import json
 import pathlib
+import sys
 from typing import Any
+
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_REPO_ROOT))
+
+from reports.lib.hashing import file_sha256 as sha256_file
+from reports.lib.io import read_json, write_json
+from reports.lib.paths import repo_root
 
 SCHEMA_VERSION = "source-region-disposition-samples-v1"
 VERDICT = "SOURCE_REGION_DISPOSITION_SAMPLES_READY"
 LETTER_CLASS = "letter_address_origin"
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+REPO_ROOT = repo_root()
 SOURCE_COUNTERS = {
     "notation_legend": "source_apparatus_occurrences",
     "notation_placeholder": "front_matter_occurrences",
@@ -25,19 +31,10 @@ SOURCE_COUNTERS = {
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
-    with path.open(encoding="utf-8") as handle:
-        value = json.load(handle)
+    value = read_json(path)
     if not isinstance(value, dict):
         raise SystemExit(f"{path} must contain a JSON object")
     return value
-
-
-def sha256_file(path: pathlib.Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return f"sha256:{digest.hexdigest()}"
 
 
 def display_path(path: pathlib.Path) -> str:
@@ -169,7 +166,7 @@ def main() -> None:
     summary = build_summary(args)
     args.summary_json.parent.mkdir(parents=True, exist_ok=True)
     args.report_md.parent.mkdir(parents=True, exist_ok=True)
-    args.summary_json.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    write_json(args.summary_json, summary)
     args.report_md.write_text(render_markdown(summary), encoding="utf-8")
 
 

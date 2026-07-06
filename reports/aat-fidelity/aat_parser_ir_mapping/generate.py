@@ -158,7 +158,7 @@ def main() -> int:
     parser.add_argument("--summary-json", type=Path, required=True)
     parser.add_argument("--report-md", type=Path)
     parser.add_argument("--assert-zero-unsupported", action="store_true")
-    parser.add_argument("--mapping-version", default="0.2.3")
+    parser.add_argument("--mapping-version", default="0.2.4")
     parser.add_argument("--aat-schema", type=Path, default=repo_root / "data/aat-schema.json")
     args = parser.parse_args()
 

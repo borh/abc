@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-out_dir="$(mktemp -d "${TMPDIR:-/tmp}/ab-publication-next-work.XXXXXX")"
-trap 'rm -rf "$out_dir"' EXIT
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/smoke-env.sh"
+repo_root="$AB_VALIDATOR_ROOT"
+out_dir="$(smoke_tmp_dir ab-publication-next-work)"
+trap 'smoke_cleanup "$out_dir"' EXIT
 
 source_summary="$out_dir/source.json"
 coverage_summary="$out_dir/coverage.json"

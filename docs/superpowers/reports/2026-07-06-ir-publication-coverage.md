@@ -16,15 +16,15 @@ Manifest sidecar role present: `true`
 
 Verdict: `PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION`
 
-Evidence: `docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json`
+Evidence: `docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json`
 
-Bundle hash: `sha256:23c2769de7b9d5499375e56dc20ecf21ab953f6ff26c3b1dea8dd5517ae21b56`
+Bundle hash: `sha256:5a1e902131daf2d32ab5acdf287864bef9ee2b8bd0e11676e6dff11bcf353022`
 
 ABC commit: `95ace31`
 
 Validation scope: `batch`
 
-Rows validated: `25`
+Rows validated: `285`
 
 Rows failed: `0`
 

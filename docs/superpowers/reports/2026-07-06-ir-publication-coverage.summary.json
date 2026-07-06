@@ -174,33 +174,33 @@
     "verdict": "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION",
     "schema_version": "publication-bundle-batch-validation-evidence-v1",
     "validation_scope": "batch",
-    "path": "docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json",
-    "bundle_hash": "sha256:23c2769de7b9d5499375e56dc20ecf21ab953f6ff26c3b1dea8dd5517ae21b56",
+    "path": "docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json",
+    "bundle_hash": "sha256:5a1e902131daf2d32ab5acdf287864bef9ee2b8bd0e11676e6dff11bcf353022",
     "abc_commit": "95ace31",
     "validator": "ab-validator publication-bundle-validate batch",
-    "command": "clojure -M:abc/materialize-publications-batch /db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/materialization-batch.json --summary /db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/materialization-summary.json",
-    "rows_discovered": 25,
-    "rows_validated": 25,
+    "command": "clojure -M:abc/materialize-publications-batch /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-batch.json --summary /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-summary.json --jobs 24",
+    "rows_discovered": 285,
+    "rows_validated": 285,
     "rows_failed": 0,
     "sample_validated_bundles": [
       {
         "row_id": "0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml",
-        "row_dir": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml",
         "validated_bundle": {
           "parser_ir": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
             "hash": "sha256:ce20c824828f799c7d67e13bdd6a62ecb352177f7ac168dfa660f0dbd408dd40"
           },
           "plaintext": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
             "hash": "sha256:7b0e498417a3be1984507ed4b71743b28d3620783e39f9242f9ac6ec8017cb61"
           },
           "plaintext_manifest": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
             "hash": "sha256:0cd073eb1c775fecf968f3eb987234c2062758230870862dad4655b062ea8ff7"
           },
           "preservation": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
             "hash": "sha256:7538133494fcb393d26b75004a210d0760386e46321fa5c0bc7ec93c5b04ed25"
           },
           "source_region_coverage": {
@@ -208,33 +208,33 @@
             "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
           },
           "tei": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
             "hash": "sha256:3dabb74e4036cb664aea56cf61869a15f892821bb447222de098102aa0b16479"
           },
           "tei_manifest": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
             "hash": "sha256:274cfd754c7cd3fe5e81427388936e0647d160a054024c0bb05451e8d7a4432c"
           }
         }
       },
       {
         "row_id": "0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml",
-        "row_dir": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml",
         "validated_bundle": {
           "parser_ir": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
             "hash": "sha256:01bbdce1fbc6ec7ab6ded377ba66c80891dec400843ba5955025e615064f8e65"
           },
           "plaintext": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
             "hash": "sha256:00c837d29d7f77e8bb996de5eabc69b62a06977eccc81241c6bbde36df201cf9"
           },
           "plaintext_manifest": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
             "hash": "sha256:a5fe769fa9a15a81b5d27ebcbeb698416412398b93b66ef3b26ae272c4dc7621"
           },
           "preservation": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
             "hash": "sha256:5f731bc0e2b08270cd9c98985ee02667285147c111b859586218cba9cb95bf6e"
           },
           "source_region_coverage": {
@@ -242,33 +242,33 @@
             "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
           },
           "tei": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
             "hash": "sha256:43968ab7fb03559d479333ec6d9ab574162e2db6131d0c099fe1695b55a335e7"
           },
           "tei_manifest": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
             "hash": "sha256:dcdfa651bd6029057dcb8aa76ecafef3fc7b1c068d7216bfaf05b66223dbc440"
           }
         }
       },
       {
         "row_id": "0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml",
-        "row_dir": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml",
         "validated_bundle": {
           "parser_ir": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
             "hash": "sha256:9eb8a44ab394c78f6b151db79dcbd3715203a543584c1d626aa81c22c6bbdf90"
           },
           "plaintext": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
             "hash": "sha256:15a5ee7e812b5f9b1b5fecb8dc6dcf92e441c845b60c7be58c2fffe867cb2067"
           },
           "plaintext_manifest": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
             "hash": "sha256:7e20c56c2ee3ed38f7c02b043f85748913401ff7ca562a7836820c6340c9fde0"
           },
           "preservation": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
             "hash": "sha256:550f9251e6359ce7cf07ed6a6c36da454e752c6bfa9553d30db231e6dbf97259"
           },
           "source_region_coverage": {
@@ -276,33 +276,33 @@
             "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
           },
           "tei": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
             "hash": "sha256:9aa2f9e47661cfc21d15ef9a41107df1197b3b5deebd03ad382df989b2e7c640"
           },
           "tei_manifest": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
             "hash": "sha256:af754962358a418cc1f868cd8cffa256aa7b51bed6cab13a79dab180e1043475"
           }
         }
       },
       {
         "row_id": "0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml",
-        "row_dir": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml",
         "validated_bundle": {
           "parser_ir": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
             "hash": "sha256:3de2378e3bae7bf9d79156f06929c395570e0cb21e198b948aae444dde438109"
           },
           "plaintext": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
             "hash": "sha256:abde615bddbd5ad2f6d2dae71b8ae13f6174034653a92bbf832a71424f1da7df"
           },
           "plaintext_manifest": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
             "hash": "sha256:c87d229ec0d13d1299236db3f4ecdf6943d9f776a9f20bf65b4b9b64af70831a"
           },
           "preservation": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
             "hash": "sha256:389d41b1dd846898afb23d31a50f13d8b923af3f3f578f8b8545596dd9e0aa30"
           },
           "source_region_coverage": {
@@ -310,33 +310,33 @@
             "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
           },
           "tei": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
             "hash": "sha256:1efbe40ca606a1ab73f7526950fbb0612fb3f3237122d328ed555fdb56345135"
           },
           "tei_manifest": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
             "hash": "sha256:8aa4b0422833cae50103536e49972d3d064d6a106f87d9c928920fa6aedcc2ba"
           }
         }
       },
       {
         "row_id": "0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml",
-        "row_dir": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml",
         "validated_bundle": {
           "parser_ir": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
             "hash": "sha256:2ccc7168d03ec287d320f15973e6aa9e788cd9a3faea40691931b9b69e5a3378"
           },
           "plaintext": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
             "hash": "sha256:8d8c93cd9b914eab2253c838a73b9752fa5f58a631c9b61d281e22283426a7aa"
           },
           "plaintext_manifest": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
             "hash": "sha256:460d319bd253fa9013e9b922b371c3e04626b15debb6ebbf8e4b908154a9129f"
           },
           "preservation": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
             "hash": "sha256:7c83e5f64728c843b89644fa86e29f54e9bb8ec13f2408f2064025fbfeabf1fc"
           },
           "source_region_coverage": {
@@ -344,11 +344,11 @@
             "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63"
           },
           "tei": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
             "hash": "sha256:8676a0c7e50e2a6dc97be1f85dd2940a15e85dd9713de453ebee5aaf68bbc701"
           },
           "tei_manifest": {
-            "path": "/db/ab-validator/parser-ir/representative-publication-bundle-current-smoke/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
             "hash": "sha256:4731087e6b24875db5c11e41a9816f45737dd053a59eee4b19c0728e9aa67aee"
           }
         }

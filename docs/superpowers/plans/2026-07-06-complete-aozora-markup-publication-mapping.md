@@ -127,8 +127,9 @@ after syncing the ABC source-region schema, policy, and manifest sidecar role.
 
 **Review gate:** A fixture bundle with source apparatus, body markup, TEI projection, sidecar records, and plaintext passes ABC validation and is cited by path/hash in ab-validator's report.
 
-**Current status:** Implemented for the ABC parser-IR example fixture and
-confirmed for a freshly materialized 25-row representative batch. Regenerate
+**Current status:** Implemented for the ABC parser-IR example fixture,
+confirmed for a freshly materialized 25-row representative batch, and promoted
+to the full 285-row five-parser TEI-EAJ matrix bundle diagnostic. Regenerate
 the fixture evidence with:
 
 ```bash
@@ -136,7 +137,7 @@ just parser-ir-publication-bundle-validation
 just parser-ir-publication-coverage-report
 ```
 
-Regenerate the current representative batch evidence with:
+Regenerate the representative batch evidence with:
 
 ```bash
 just parser-ir-level3-tei-eaj-generated-matrix-audit 5 /db/ab-validator/parser-ir/representative-publication-bundle-current-smoke docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json 24
@@ -155,9 +156,11 @@ python3 reports/parser-ir/publication-coverage.py \
 
 Existing pre-contract `/db` materialization directories are useful for
 comparison, but they do not prove the current publication bundle contract if
-they lack current preservation sidecars. The current representative evidence
-validates `25/25` rows and is cited by the publication coverage report with
-`publication_bundle_contract.validation_scope == "batch"`.
+they lack current preservation sidecars. The current publication coverage
+report cites the full matrix bundle evidence:
+`publication_bundle_contract.validation_scope == "batch"`,
+`publication_bundle_contract.rows_validated == 285`, and
+`publication_bundle_contract.rows_failed == 0`.
 
 The current full five-parser TEI-EAJ matrix diagnostic evidence is:
 
@@ -350,7 +353,7 @@ jq -e '.verdict == "SOURCE_REFERENCE_RECONCILIATION_COMPLETE" and .totals.observ
 jq -e '.verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED"' docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json
 jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED" and .scope.rows_validated == 25 and .scope.rows_failed == 0' docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json
 jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
-jq -e '.publication_bundle_contract.validation_scope == "batch" and .publication_bundle_contract.rows_validated == 25 and .publication_bundle_contract.rows_failed == 0' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
+jq -e '.publication_bundle_contract.validation_scope == "batch" and .publication_bundle_contract.rows_validated == 285 and .publication_bundle_contract.rows_failed == 0' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_COMPLETE"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED" and .scope.kind == "full-tei-eaj-matrix" and .scope.rows_validated == 285 and .scope.rows_failed == 0 and .checks.plaintext_body_only == true' docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json
 git diff --check

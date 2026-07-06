@@ -8,20 +8,20 @@ Draft design revised after review.
 
 ## Problem
 
-ABC can now publish parser-IR into TEI P5 plus a JSON preservation sidecar, and the current ab-validator coverage report shows no true unsupported parser-IR gaps. The latest report has three closure buckets:
+ABC can now publish parser-IR into TEI P5 plus a JSON preservation sidecar, and the pre-extension ab-validator coverage report showed no true unsupported parser-IR gaps. Before this namespace extension was implemented, the report had three closure buckets:
 
 - `admitted_by_custom_contract`: 31 rows
 - `classified_but_not_admitted`: 120 rows
 - `true_unsupported_gaps`: 0 rows
 
-This design covers the remaining `classified_but_not_admitted` policy rows:
+This design covers those 120 TEI-profile policy rows:
 
 - accent: 14 rules
 - figure_metadata: 85 rules
 - heading_jisage_structure: 7 rules
 - style_rendition: 14 rules
 
-The companion gap-closure design originally grouped eleven publication gap families. The custom-sidecar families are already admitted by the ABC preservation contract in the current report, and parser-IR/schema-delta families are outside this TEI namespace design. This spec is therefore not the full closure contract. It is the TEI-profile admission contract for the current 120 policy rows.
+The companion gap-closure design originally grouped eleven publication gap families. The custom-sidecar families are admitted by the ABC preservation contract, and parser-IR/schema-delta families are outside this TEI namespace design. This spec is therefore not the full closure contract. It is the TEI-profile admission contract for the 120 policy rows that moved into `admitted_by_tei_profile` after ABC schema/profile evidence landed.
 
 These 120 rows are not evidence that Aozora Bunko markup cannot be represented. They are evidence that the current ABC TEI profile does not yet declare how the renderer records source-exact Aozora presentation facts in XML when TEI P5 has no exact native slot, or when TEI's native slot is intentionally policy-normalized.
 
@@ -96,7 +96,8 @@ Pointers are intentionally index-free. If a consumer needs exact record identity
 layout-params = pair *(";" pair)
 pair          = key "=" value
 key           = "indent" / "first-line-indent" / "continuation-indent" /
-                "align" / "offset-from-end" / "width" / "marker" / "border"
+                "align" / "offset-from-end" / "width" / "marker" /
+                "border" / "size-type" / "level" / "direction"
 value         = 1*(ALPHA / DIGIT / "_" / "-" / "." / ":" / "#")
 ```
 
@@ -184,7 +185,7 @@ The reconciliation contract is:
 
 Schematron can enforce XML-local shape rules. Cross-file reconciliation between TEI and `preservation.json` belongs in ABC design-bundle validation and ab-validator coverage checks.
 
-The current ABC preservation sidecar schema version `0.1.0` admits `custom_sidecar` records. This namespace design requires a schema-compatible widening, such as a `tei_profile_projection` record class or an equivalent profile-evidence section, before `abc:preservation-record` can be mandatory for TEI-profile rows. Until that widening exists, the coverage gate must not claim sidecar-reconciled XML attributes.
+The current ABC preservation sidecar schema version `0.2.0` admits both `custom_sidecar` and `tei_profile_projection` records. The coverage gate may claim TEI-profile admission only when ab-validator is using the trusted synced ABC schema, the canonical schema hash matches, and `tei_profile_projection` is present in both the record-class enum and coverage-class enum.
 
 ## Admission Matrix
 

@@ -1,6 +1,6 @@
 # IR Publication Coverage
 
-Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS`
+Verdict: `IR_PUBLICATION_COVERAGE_COMPLETE`
 
 ## Node Coverage
 
@@ -103,7 +103,9 @@ Count: 151
 
 Admitted by custom contract: 31
 
-Classified but not admitted: 120
+Admitted by TEI profile: 120
+
+Classified but not admitted: 0
 
 | Admitted family | Count |
 |---|---:|
@@ -112,7 +114,7 @@ Classified but not admitted: 120
 | `source_identity` | 5 |
 | `span_coordinates` | 17 |
 
-| Family | Count |
+| TEI profile admitted family | Count |
 |---|---:|
 | `accent` | 14 |
 | `figure_metadata` | 85 |

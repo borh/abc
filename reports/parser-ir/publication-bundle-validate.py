@@ -111,8 +111,16 @@ def artifact(path: pathlib.Path) -> dict[str, Any]:
     return {"path": display_path(path), "hash": file_hash(path)}
 
 
-def add_failure(failures: list[dict[str, str]], check: str, message: str) -> bool:
-    failures.append({"check": check, "message": message})
+def add_failure(
+    failures: list[dict[str, Any]],
+    check: str,
+    message: str,
+    details: dict[str, Any] | None = None,
+) -> bool:
+    failure: dict[str, Any] = {"check": check, "message": message}
+    if details is not None:
+        failure["details"] = details
+    failures.append(failure)
     return False
 
 
@@ -256,6 +264,34 @@ def plaintext_body_only(parser_ir: dict[str, Any], plaintext: str) -> bool:
     )
 
 
+def preview_around(value: str, offset: int, radius: int = 80) -> str:
+    start = max(0, offset - radius)
+    end = min(len(value), offset + radius)
+    return value[start:end]
+
+
+def plaintext_mismatch_details(parser_ir: dict[str, Any], plaintext: str) -> dict[str, Any] | None:
+    expected = normalize_plaintext(parser_ir_body_plaintext(parser_ir))
+    actual = normalize_plaintext(plaintext)
+    if expected == actual:
+        return None
+    first_diff: int | None = None
+    for offset, (expected_char, actual_char) in enumerate(zip(expected, actual)):
+        if expected_char != actual_char:
+            first_diff = offset
+            break
+    if first_diff is None:
+        first_diff = min(len(expected), len(actual))
+    return {
+        "kind": "plaintext_mismatch",
+        "expected_length": len(expected),
+        "actual_length": len(actual),
+        "first_diff_offset": first_diff,
+        "expected_preview": preview_around(expected, first_diff),
+        "actual_preview": preview_around(actual, first_diff),
+    }
+
+
 def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
     publication_dir = args.publication_dir
     paths = {
@@ -273,7 +309,7 @@ def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
         for key, path in paths.items()
         if key != "tei_validation_result"
     }
-    failures: list[dict[str, str]] = []
+    failures: list[dict[str, Any]] = []
 
     try:
         parser_ir = load_json(args.parser_ir)
@@ -355,7 +391,8 @@ def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
         for record in preservation.get("records", [])
         if isinstance(record, dict) and record.get("source_pointer") is not None
     )
-    checks["plaintext_body_only"] = plaintext_body_only(parser_ir, plaintext)
+    plaintext_details = plaintext_mismatch_details(parser_ir, plaintext)
+    checks["plaintext_body_only"] = plaintext_details is None
 
     messages = {
         "parser_ir_schema_valid": "Parser-IR JSON does not carry the expected ABC parser-IR schema identity.",
@@ -370,11 +407,12 @@ def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
         "tei_abc_projection_resolves_to_sidecar": "A TEI abc:preservation-record value does not resolve to a preservation record_id.",
         "preservation_tei_pointers_resolve": "A preservation tei_pointer does not resolve to a TEI xml:id.",
         "preservation_source_pointers_resolve": "A preservation source_pointer does not resolve to a parser-IR source_pointer.",
-        "plaintext_body_only": "Plaintext contains ruby reading text or source-note metadata.",
+        "plaintext_body_only": "Plaintext differs from the parser-IR body-only projection.",
     }
     for check, passed in checks.items():
         if not passed:
-            add_failure(failures, check, messages[check])
+            details = plaintext_details if check == "plaintext_body_only" else None
+            add_failure(failures, check, messages[check], details)
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -408,7 +446,7 @@ def discover_batch_rows(batch_root: pathlib.Path) -> list[tuple[str, pathlib.Pat
 def validate_batch(args: argparse.Namespace) -> dict[str, Any]:
     row_inputs = discover_batch_rows(args.batch_root)
     rows: list[dict[str, Any]] = []
-    failures: list[dict[str, str]] = []
+    failures: list[dict[str, Any]] = []
 
     for row_id, parser_ir, publication_dir in row_inputs:
         row_args = argparse.Namespace(
@@ -436,6 +474,11 @@ def validate_batch(args: argparse.Namespace) -> dict[str, Any]:
                         "row_id": row_id,
                         "check": str(failure.get("check")),
                         "message": str(failure.get("message")),
+                        **(
+                            {"details": failure.get("details")}
+                            if isinstance(failure.get("details"), dict)
+                            else {}
+                        ),
                     }
                 )
 
@@ -504,6 +547,22 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 lines.append(
                     f"- `{failure['row_id']}` `{failure['check']}`: {failure['message']}"
                 )
+                details = failure.get("details")
+                if isinstance(details, dict) and details.get("kind") == "plaintext_mismatch":
+                    lines.append(
+                        "  - first_diff_offset: "
+                        f"`{details.get('first_diff_offset')}`; "
+                        "expected_length: "
+                        f"`{details.get('expected_length')}`; "
+                        "actual_length: "
+                        f"`{details.get('actual_length')}`"
+                    )
+                    lines.append(
+                        f"  - expected_preview: `{details.get('expected_preview', '')}`"
+                    )
+                    lines.append(
+                        f"  - actual_preview: `{details.get('actual_preview', '')}`"
+                    )
         lines.append("")
         return "\n".join(lines)
 

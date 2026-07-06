@@ -12,6 +12,7 @@ mod write;
 pub use compact::*;
 pub use interesting::*;
 pub use nway::*;
+pub(crate) use interesting::splitmix64;
 pub(crate) use types::WAREHOUSE_CORE_FEATURE_KEYS;
 pub(crate) use summary_body::read_warehouse_table;
 pub use types::*;

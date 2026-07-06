@@ -310,6 +310,29 @@ The model carries no training-provenance metadata; verify its source before trus
         #[arg(long)]
         right: PathBuf,
     },
+    /// Blind pooled labeling TSV export (spec §Calibration Plan): union of
+    /// several `--input` ranking JSONs' pattern pools, deduped and
+    /// seed-shuffled into blind `label_id`s, with text snippets sliced from
+    /// the AAT corpus. `mapping.json` is the only place `pattern_id` and
+    /// per-method ranks are recorded.
+    ExportInterestingLabels {
+        #[arg(long = "input", required = true)]
+        input: Vec<PathBuf>,
+        #[arg(long)]
+        aat_dir: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+        #[arg(long)]
+        mapping_output: PathBuf,
+        #[arg(long, default_value_t = 20260706)]
+        seed: u64,
+        #[arg(long, default_value_t = 3)]
+        snippets_per_pattern: usize,
+        #[arg(long, default_value_t = 20)]
+        context_chars: usize,
+        #[arg(long)]
+        force: bool,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -762,6 +785,36 @@ fn main() -> Result<()> {
             let comparison = ab_morph_run::run_compare_rankings(&left, &right)?;
             serde_json::to_writer_pretty(std::io::stdout(), &comparison)?;
             println!();
+            Ok(())
+        }
+        Command::ExportInterestingLabels {
+            input,
+            aat_dir,
+            output,
+            mapping_output,
+            seed,
+            snippets_per_pattern,
+            context_chars,
+            force,
+        } => {
+            let summary = ab_morph_run::run_export_labels(&ab_morph_run::ExportLabelsOptions {
+                inputs: input,
+                aat_dir,
+                output: output.clone(),
+                mapping_output: mapping_output.clone(),
+                seed,
+                snippets_per_pattern,
+                context_chars,
+                force,
+            })?;
+            eprintln!(
+                "exported {} labeling row(s) pooling {} method(s) ({}) to {} (mapping: {})",
+                summary.rows,
+                summary.methods.len(),
+                summary.methods.join(", "),
+                output.display(),
+                mapping_output.display(),
+            );
             Ok(())
         }
     }
@@ -2203,6 +2256,53 @@ mod tests {
 
         assert_eq!(left, PathBuf::from("scratch/rankings/left.json"));
         assert_eq!(right, PathBuf::from("scratch/rankings/right.json"));
+    }
+
+    #[test]
+    fn parses_export_interesting_labels_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "export-interesting-labels",
+            "--input",
+            "scratch/rankings/left.json",
+            "--input",
+            "scratch/rankings/right.json",
+            "--aat-dir",
+            "scratch/aat",
+            "--output",
+            "scratch/labels.tsv",
+            "--mapping-output",
+            "scratch/mapping.json",
+        ]);
+
+        let Command::ExportInterestingLabels {
+            input,
+            aat_dir,
+            output,
+            mapping_output,
+            seed,
+            snippets_per_pattern,
+            context_chars,
+            force,
+        } = args.command
+        else {
+            panic!("expected export-interesting-labels command");
+        };
+
+        assert_eq!(
+            input,
+            vec![
+                PathBuf::from("scratch/rankings/left.json"),
+                PathBuf::from("scratch/rankings/right.json"),
+            ]
+        );
+        assert_eq!(aat_dir, PathBuf::from("scratch/aat"));
+        assert_eq!(output, PathBuf::from("scratch/labels.tsv"));
+        assert_eq!(mapping_output, PathBuf::from("scratch/mapping.json"));
+        assert_eq!(seed, 20260706);
+        assert_eq!(snippets_per_pattern, 3);
+        assert_eq!(context_chars, 20);
+        assert!(!force);
     }
 
     #[test]

@@ -13,8 +13,10 @@ use anyhow::{Context, Result};
 use crate::summary::InterestingSummary;
 
 mod compare;
+mod label_export;
 
 pub use compare::{RankingComparison, run_compare_rankings};
+pub use label_export::{ExportLabelsOptions, ExportSummary, run_export_labels};
 
 /// Reads a ranking artifact (a serialized `InterestingSummary` JSON), shared
 /// by ranking comparison (this module) and label scoring (a later task).

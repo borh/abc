@@ -41,7 +41,9 @@ const LARGE_INPUT_THRESHOLD_BYTES: u64 = 5 * 1024 * 1024;
 const WAREHOUSE_MORPHEME_ROW_BATCH_SIZE: usize = 50_000;
 const WAREHOUSE_REGULAR_BATCH_SIZE: usize = 32;
 
-pub use calibration::{RankingComparison, run_compare_rankings};
+pub use calibration::{
+    ExportLabelsOptions, ExportSummary, RankingComparison, run_compare_rankings, run_export_labels,
+};
 pub use import_aozora::{ImportSummary, run_import_aozora_metadata};
 pub use nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
 pub use script::ScriptCategory;

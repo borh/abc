@@ -10,9 +10,13 @@ Current state:
 - The IR publication coverage report is complete for the current measured
   scope.
 - Source authority passes over 17,894 works with 0 unallowlisted unknown source
-  markers and 0 unsupported source-feature occurrences. The 13,936 reviewed
-  malformed/boilerplate markers are reported separately as
-  `malformed_noise_occurrences`, not as unmapped Aozora markup.
+  markers and 0 unsupported source-feature occurrences.
+- The current source-authority report still uses the legacy counter
+  `malformed_noise_occurrences` for 13,936 reviewed occurrences. That is not
+  the terminal domain model: the dominant class is Aozora source apparatus such
+  as notation legends, while only a small residue is genuinely malformed
+  source. The next schema rotation should split this into source-region and
+  apparatus counters.
 - Five parser lanes are present in the generated matrix:
   `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
 - ABC owns the custom preservation contract and TEI profile evidence now synced
@@ -45,10 +49,19 @@ Remaining work is no longer "make TEI-EAJ Level 2/3 pass." It is:
 
 1. Keep the source-authority scanner and source-inventory matrix current as new
    Aozora marker families or parser adapters land.
-2. Ensure every Aozora markup family has a TEI P5, TEI-plus-ABC-extension,
-   custom-sidecar, or explicit unsupported classification.
-3. Improve adapter fidelity where comparison evidence shows lost or distorted
+2. Rotate source-authority reporting from legacy `out_of_body` /
+   `malformed_noise` counters to explicit source-region and apparatus classes:
+   body, front matter, back matter, notation legend, boundary/provenance, and
+   malformed source diagnostics.
+3. Ensure every Aozora markup and source-apparatus family has a TEI P5,
+   TEI-plus-ABC-extension, custom-sidecar, diagnostic, or explicit unsupported
+   classification.
+4. Improve adapter fidelity where comparison evidence shows lost or distorted
    source structure, especially paragraph/text segmentation, without treating
    TEI-EAJ editorial enrichment as parser-required markup.
-4. Keep ABC profile/schema hashes, preservation records, and ab-validator
+5. Keep ABC profile/schema hashes, preservation records, and ab-validator
    coverage reports synchronized whenever the publication contract changes.
+
+Design reference:
+
+- `docs/superpowers/specs/2026-07-06-aozora-source-region-and-apparatus-contract.md`

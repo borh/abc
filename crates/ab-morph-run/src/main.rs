@@ -251,6 +251,10 @@ The model carries no training-provenance metadata; verify its source before trus
         lambda_missing_policy: ab_morph_run::LambdaMissingPolicy,
         #[arg(long, default_value_t = 5.0)]
         anomaly_w_cov: f64,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::ScoreMode::Rrf)]
+        score_mode: ab_morph_run::ScoreMode,
+        #[arg(long)]
+        sample_seed: Option<u64>,
         #[arg(long)]
         output: Option<PathBuf>,
         #[arg(long)]
@@ -637,6 +641,8 @@ fn main() -> Result<()> {
             rank_scope,
             lambda_missing_policy,
             anomaly_w_cov,
+            score_mode,
+            sample_seed,
             output,
             force,
         } => {
@@ -653,6 +659,8 @@ fn main() -> Result<()> {
                     rank_scope,
                     lambda_policy: lambda_missing_policy,
                     anomaly_w_cov,
+                    score_mode,
+                    sample_seed,
                 },
             )?;
             let mut writer: Box<dyn Write> = match &output {
@@ -1703,6 +1711,8 @@ mod tests {
             rank_scope,
             lambda_missing_policy,
             anomaly_w_cov,
+            score_mode,
+            sample_seed,
             output,
             force,
         } = args.command
@@ -1733,6 +1743,8 @@ mod tests {
             ab_morph_run::LambdaMissingPolicy::RankFloor
         );
         assert!((anomaly_w_cov - 5.0).abs() < f64::EPSILON);
+        assert_eq!(score_mode, ab_morph_run::ScoreMode::Rrf);
+        assert_eq!(sample_seed, None);
     }
 
     #[test]
@@ -1764,6 +1776,30 @@ mod tests {
             ab_morph_run::LambdaMissingPolicy::Fixed(0.005)
         );
         assert!((anomaly_w_cov - 2.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn parses_summarize_interesting_score_mode_and_sample_seed() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-warehouse-interesting",
+            "--run-dir",
+            "/tmp/run",
+            "--score-mode",
+            "random",
+            "--sample-seed",
+            "7",
+        ]);
+        let Command::SummarizeWarehouseInteresting {
+            score_mode,
+            sample_seed,
+            ..
+        } = args.command
+        else {
+            panic!("expected summarize-warehouse-interesting");
+        };
+        assert_eq!(score_mode, ab_morph_run::ScoreMode::Random);
+        assert_eq!(sample_seed, Some(7));
     }
 
     #[test]

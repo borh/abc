@@ -125,6 +125,76 @@ impl std::fmt::Display for LambdaMissingPolicy {
     }
 }
 
+/// Baseline score mode (spec §Calibration Plan step 2): `rrf` (default, the
+/// shipped v1 ranking) or one of two non-learned baselines the calibration
+/// campaign compares it against.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum ScoreMode {
+    Rrf,
+    Frequency,
+    Random,
+}
+
+impl ScoreMode {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Rrf => "rrf",
+            Self::Frequency => "frequency",
+            Self::Random => "random",
+        }
+    }
+}
+
+/// splitmix64 (Vigna, public domain): stable across Rust/platform versions,
+/// which `rand::StdRng` explicitly is not. Used for the random baseline and
+/// the labeling-TSV blind shuffle.
+pub(crate) fn splitmix64(state: &mut u64) -> u64 {
+    *state = state.wrapping_add(0x9E37_79B9_7F4A_7C15);
+    let mut z = *state;
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    z ^ (z >> 31)
+}
+
+/// Ordering for the non-RRF baselines (spec §Calibration Plan step 2).
+/// Frequency: `examples` desc, `source_count` desc, `pattern_id` asc.
+/// Random: Fisher–Yates over indices pre-sorted by `pattern_id`, keyed by
+/// the mandatory seed (spec §Tie-Breaking: randomness requires a seed).
+fn baseline_order(
+    patterns: &[PatternStats],
+    mode: ScoreMode,
+    sample_seed: Option<u64>,
+) -> Result<Vec<usize>> {
+    match mode {
+        ScoreMode::Rrf => bail!("baseline_order is not for rrf mode"),
+        ScoreMode::Frequency => {
+            let mut order = (0..patterns.len()).collect::<Vec<_>>();
+            order.sort_by(|left, right| {
+                patterns[*right]
+                    .examples
+                    .cmp(&patterns[*left].examples)
+                    .then_with(|| patterns[*right].source_count.cmp(&patterns[*left].source_count))
+                    .then_with(|| patterns[*left].pattern_id.cmp(&patterns[*right].pattern_id))
+            });
+            Ok(order)
+        }
+        ScoreMode::Random => {
+            let seed = sample_seed
+                .context("--score-mode random requires --sample-seed (determinism contract)")?;
+            let mut order = (0..patterns.len()).collect::<Vec<_>>();
+            order.sort_by(|left, right| {
+                patterns[*left].pattern_id.cmp(&patterns[*right].pattern_id)
+            });
+            let mut state = seed;
+            for i in (1..order.len()).rev() {
+                let j = (splitmix64(&mut state) % (i as u64 + 1)) as usize;
+                order.swap(i, j);
+            }
+            Ok(order)
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct WarehouseInterestingOptions {
     pub limit: usize,
@@ -137,6 +207,8 @@ pub struct WarehouseInterestingOptions {
     pub rank_scope: RankScope,
     pub lambda_policy: LambdaMissingPolicy,
     pub anomaly_w_cov: f64,
+    pub score_mode: ScoreMode,
+    pub sample_seed: Option<u64>,
 }
 
 impl Default for WarehouseInterestingOptions {
@@ -152,6 +224,8 @@ impl Default for WarehouseInterestingOptions {
             rank_scope: RankScope::WithinKind,
             lambda_policy: LambdaMissingPolicy::RankFloor,
             anomaly_w_cov: ANOMALY_W_COV,
+            score_mode: ScoreMode::Rrf,
+            sample_seed: None,
         }
     }
 }
@@ -178,6 +252,13 @@ pub struct ScoreVersionBlock {
     pub lambda_missing_policy: String,
     /// Signal-rank pooling scope: `"within-kind"` (v1 default) or `"global"`.
     pub rank_scope: String,
+    /// `"rrf"` (v1 default) or one of the calibration baselines
+    /// (`"frequency"`, `"random"`).
+    pub score_mode: String,
+    /// Fisher-Yates seed for `score_mode: "random"`; always `None` (JSON
+    /// `null`) otherwise (spec §Score Versioning: an ignored seed would
+    /// misdescribe the artifact).
+    pub sample_seed: Option<u64>,
     pub anomaly_w_cov: f64,
     pub signal_profile: Vec<String>,
     /// Which feature keys were admitted to feature-pattern collection
@@ -1240,6 +1321,8 @@ fn score_version_block(
         rrf_k: RRF_K as u32,
         lambda_missing_policy: options.lambda_policy.to_string(),
         rank_scope: options.rank_scope.as_str().to_owned(),
+        score_mode: options.score_mode.as_str().to_owned(),
+        sample_seed: options.sample_seed,
         anomaly_w_cov: options.anomaly_w_cov,
         signal_profile: ["coverage", "rarity", "impact", "span"]
             .iter()
@@ -1269,6 +1352,9 @@ pub fn summarize_warehouse_interesting(
 ) -> Result<InterestingSummary> {
     if options.feature_profile == WarehouseFeatureProfile::Schema {
         bail!("--feature-profile schema is not supported for interestingness ranking");
+    }
+    if options.score_mode != ScoreMode::Random && options.sample_seed.is_some() {
+        bail!("--sample-seed is only meaningful with --score-mode random");
     }
     let (schema_version, run_id) = read_run_meta(run_dir)?;
     if schema_version > READER_MAX_SCHEMA_VERSION {
@@ -1329,7 +1415,10 @@ pub fn summarize_warehouse_interesting(
         options.rank_scope,
         options.lambda_policy,
     );
-    let order = ranked_order(&collected.patterns, &scores);
+    let order = match options.score_mode {
+        ScoreMode::Rrf => ranked_order(&collected.patterns, &scores),
+        mode => baseline_order(&collected.patterns, mode, options.sample_seed)?,
+    };
 
     if let Some(explain_id) = &options.explain {
         let index = collected
@@ -2567,5 +2656,110 @@ mod tests {
         assert_eq!(block.rank_scope, "global");
         assert_eq!(block.lambda_missing_policy, "fixed:0.01");
         assert!((block.anomaly_w_cov - 2.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn score_block_records_score_mode_and_sample_seed() {
+        let block = score_version_block(
+            "source",
+            WarehouseFeatureProfile::Core,
+            "suw",
+            &WarehouseInterestingOptions {
+                score_mode: ScoreMode::Random,
+                sample_seed: Some(7),
+                ..WarehouseInterestingOptions::default()
+            },
+        );
+        assert_eq!(block.score_mode, "random");
+        assert_eq!(block.sample_seed, Some(7));
+    }
+
+    #[test]
+    fn splitmix64_is_pinned_for_cross_version_stability() {
+        // Golden: the first three outputs for seed 1234567, computed at
+        // plan time from Vigna's public-domain reference algorithm. The
+        // test's job is that they never change — shuffle artifacts must be
+        // reproducible years later.
+        let mut state = 1234567u64;
+        let observed = [
+            splitmix64(&mut state),
+            splitmix64(&mut state),
+            splitmix64(&mut state),
+        ];
+        assert_eq!(
+            observed,
+            [
+                0x599e_d017_fb08_fc85,
+                0x2c73_f084_5854_0fa5,
+                0x883e_bce5_a3f2_7c77,
+            ]
+        );
+    }
+
+    #[test]
+    fn frequency_mode_orders_by_examples_then_source_count_then_id() {
+        let mut patterns = vec![
+            calib_stats(PatternKind::Feature, "p0", 1, 1, 1.0, Some("pos1")),
+            calib_stats(PatternKind::Feature, "p1", 1, 1, 1.0, Some("pos1")),
+            calib_stats(PatternKind::Feature, "p2", 1, 1, 1.0, Some("pos1")),
+        ];
+        patterns[0].examples = 5;
+        patterns[0].source_count = 3;
+        patterns[1].examples = 9;
+        patterns[1].source_count = 1;
+        patterns[2].examples = 5;
+        patterns[2].source_count = 7;
+        let order = baseline_order(&patterns, ScoreMode::Frequency, None).unwrap();
+        // examples desc, then source_count desc, then pattern_id asc.
+        assert_eq!(order, vec![1, 2, 0]);
+    }
+
+    #[test]
+    fn random_mode_is_seed_deterministic_and_seed_sensitive() {
+        let patterns = (0..8)
+            .map(|i| {
+                calib_stats(
+                    PatternKind::Feature,
+                    &format!("p{i}"),
+                    1,
+                    1,
+                    1.0,
+                    Some("pos1"),
+                )
+            })
+            .collect::<Vec<_>>();
+        let a = baseline_order(&patterns, ScoreMode::Random, Some(42)).unwrap();
+        let b = baseline_order(&patterns, ScoreMode::Random, Some(42)).unwrap();
+        let c = baseline_order(&patterns, ScoreMode::Random, Some(43)).unwrap();
+        assert_eq!(a, b);
+        assert_ne!(a, c);
+        let mut sorted = a.clone();
+        sorted.sort_unstable();
+        assert_eq!(sorted, (0..8).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn random_mode_without_seed_errors() {
+        let patterns = vec![calib_stats(PatternKind::Feature, "p0", 1, 1, 1.0, Some("pos1"))];
+        assert!(baseline_order(&patterns, ScoreMode::Random, None).is_err());
+    }
+
+    #[test]
+    fn sample_seed_with_non_random_score_mode_is_rejected() {
+        let root = tempfile::tempdir().unwrap();
+        let run_dir = write_fixture(root.path());
+        let err = summarize_warehouse_interesting(
+            &run_dir,
+            WarehouseInterestingOptions {
+                score_mode: ScoreMode::Rrf,
+                sample_seed: Some(7),
+                ..WarehouseInterestingOptions::default()
+            },
+        )
+        .unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("--sample-seed is only meaningful with --score-mode random")
+        );
     }
 }

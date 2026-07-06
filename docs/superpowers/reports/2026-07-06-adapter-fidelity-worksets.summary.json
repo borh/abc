@@ -2223,6 +2223,113 @@
       "count": 2
     }
   },
+  "workset_files": {
+    "adapter_over_segmented": {
+      "all": {
+        "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_over_segmented/all.json",
+        "hash": "sha256:278c4edb8da247f68b59d157dfe596a983c761a1fe480324c3df057a7637efe0",
+        "count": 47
+      },
+      "by_adapter": {
+        "aozora-epub3": {
+          "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_over_segmented/aozora-epub3.json",
+          "hash": "sha256:ed5ecf5143dd9386d545bf26c7cf6915f88932bd9fefdfc1569a5fea85c7d3c9",
+          "count": 42
+        },
+        "aozora-rs": {
+          "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_over_segmented/aozora-rs.json",
+          "hash": "sha256:6b252524c0d91d288c7cedf983ed4b3447dd528ed15cada5c1640ee4a7267b56",
+          "count": 32
+        },
+        "aozora2": {
+          "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_over_segmented/aozora2.json",
+          "hash": "sha256:193e54350635b14397b79129f065e6f830ec723f6fe3a73c285336703b39995f",
+          "count": 4
+        },
+        "aozora2html": {
+          "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_over_segmented/aozora2html.json",
+          "hash": "sha256:2f376f872605ee391e1e28e40d1f9b8d40c27420109395c62ed7e8c5f6e8f3aa",
+          "count": 38
+        }
+      }
+    },
+    "adapter_collapsed": {
+      "all": {
+        "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_collapsed/all.json",
+        "hash": "sha256:78c15b5d8db3e9331953ef8b875d53bfa0b817e33214f9cbcb16b4d1aebc9f06",
+        "count": 28
+      },
+      "by_adapter": {
+        "aozora": {
+          "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_collapsed/aozora.json",
+          "hash": "sha256:3fe00b2287154207acebe473ab1cc4e789e69e446f24ca5acdda38cb3354dd7e",
+          "count": 26
+        },
+        "aozora-rs": {
+          "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_collapsed/aozora-rs.json",
+          "hash": "sha256:73fd78c5acb0061035072bafb533ab4d60125485aafb6a855f5da9c8666ffe77",
+          "count": 13
+        },
+        "aozora2": {
+          "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_collapsed/aozora2.json",
+          "hash": "sha256:0366aaae869ee24d33a912d76e350827d4fe72b1e7ddf570a670108606e0df61",
+          "count": 16
+        }
+      }
+    },
+    "adapter_under_segmented": {
+      "all": {
+        "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_under_segmented/all.json",
+        "hash": "sha256:82891a5c7c55f3afcaf838702fa96dd94958e933ae48ba50275569c40c5eae7d",
+        "count": 9
+      },
+      "by_adapter": {
+        "aozora-epub3": {
+          "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_under_segmented/aozora-epub3.json",
+          "hash": "sha256:38316194c29ccd8c0312c57137f3f29acd6f9898057df8165af9bbbca3a9febe",
+          "count": 2
+        },
+        "aozora2": {
+          "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_under_segmented/aozora2.json",
+          "hash": "sha256:689e03e1ce74fb8c0edd279815136398e57930c7877e98a58107bdfdd726221c",
+          "count": 5
+        },
+        "aozora2html": {
+          "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_under_segmented/aozora2html.json",
+          "hash": "sha256:9b645755657692f72c93953b5a811badbc2740e7cb6b8ecae7c1f5d2fd02ec04",
+          "count": 4
+        }
+      }
+    },
+    "converter_paragraph_mismatch": {
+      "all": {
+        "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/converter_paragraph_mismatch/all.json",
+        "hash": "sha256:7faed1510708057ad92dc7da15399c985692fb68a5936db74f324365f5b71dcb",
+        "count": 7
+      },
+      "by_adapter": {
+        "aozora2": {
+          "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/converter_paragraph_mismatch/aozora2.json",
+          "hash": "sha256:7faed1510708057ad92dc7da15399c985692fb68a5936db74f324365f5b71dcb",
+          "count": 7
+        }
+      }
+    },
+    "adapter_raw_only": {
+      "all": {
+        "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_raw_only/all.json",
+        "hash": "sha256:0caec24ee67628cf319432abe97597cfbe87ea25afe201417242fe00afefa2d5",
+        "count": 2
+      },
+      "by_adapter": {
+        "aozora": {
+          "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_raw_only/aozora.json",
+          "hash": "sha256:0caec24ee67628cf319432abe97597cfbe87ea25afe201417242fe00afefa2d5",
+          "count": 2
+        }
+      }
+    }
+  },
   "excluded_counts": {
     "aligned": 60,
     "source_note_back_routing": 4,

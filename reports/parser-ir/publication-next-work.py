@@ -303,6 +303,7 @@ def adapter_worksets_evidence(summary: dict[str, Any], fallback_distortion_rows:
         "schema_version": summary.get("schema_version"),
         "adapter_distortion_rows": total,
         "worksets": worksets,
+        "workset_files": summary.get("workset_files", {}),
         "excluded_counts": excluded_counts,
         "included_buckets": list(ADAPTER_DISTORTION_INCLUDED_BUCKETS),
         "excluded_buckets": list(ADAPTER_DISTORTION_EXCLUDED_BUCKETS),
@@ -449,9 +450,15 @@ def render_item_evidence(item: dict[str, Any]) -> list[str]:
             f"counts_by_cause={json.dumps(evidence.get('counts_by_cause', {}), ensure_ascii=False, sort_keys=True)}",
         ]
     if item_id == "adapter_fidelity_worksets":
+        workset_file_paths = {
+            bucket: record.get("all", {}).get("path")
+            for bucket, record in evidence.get("workset_files", {}).items()
+            if isinstance(record, dict)
+        }
         return [
             f"adapter_distortion_rows={evidence.get('adapter_distortion_rows')}",
             f"worksets={json.dumps(evidence.get('worksets', {}), ensure_ascii=False, sort_keys=True)}",
+            f"workset_files={json.dumps(workset_file_paths, ensure_ascii=False, sort_keys=True)}",
             f"excluded_counts={json.dumps(evidence.get('excluded_counts', {}), ensure_ascii=False, sort_keys=True)}",
         ]
     if item_id == "tei_p5_mapping_dossiers":

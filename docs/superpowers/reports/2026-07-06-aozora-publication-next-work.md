@@ -22,6 +22,7 @@ Verdict: `AOZORA_PUBLICATION_NEXT_WORK_OPEN`
 - `adapter_fidelity_worksets` (ab-validator): `open`
   - adapter_distortion_rows=218
   - worksets={"adapter_collapsed": 67, "adapter_over_segmented": 127, "adapter_raw_only": 2, "adapter_under_segmented": 14, "converter_paragraph_mismatch": 8}
+  - workset_files={"adapter_collapsed": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_collapsed/all.json", "adapter_over_segmented": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_over_segmented/all.json", "adapter_raw_only": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_raw_only/all.json", "adapter_under_segmented": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_under_segmented/all.json", "converter_paragraph_mismatch": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/converter_paragraph_mismatch/all.json"}
   - excluded_counts={"aligned": 60, "page_break_projection": 3, "source_note_back_routing": 4}
 - `tei_p5_mapping_dossiers` (ab-validator+abc): `open`
   - dossier_count=11

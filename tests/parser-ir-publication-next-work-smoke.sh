@@ -162,6 +162,14 @@ cat > "$adapter_worksets_summary" <<'JSON'
     "converter_paragraph_mismatch": {"count": 1},
     "adapter_raw_only": {"count": 1}
   },
+  "workset_files": {
+    "adapter_collapsed": {
+      "all": {"path": "docs/reports/worksets/adapter_collapsed/all.json", "hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "count": 2},
+      "by_adapter": {
+        "aozora-rs": {"path": "docs/reports/worksets/adapter_collapsed/aozora-rs.json", "hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "count": 1}
+      }
+    }
+  },
   "excluded_counts": {
     "aligned": 2,
     "source_note_back_routing": 5,
@@ -225,6 +233,7 @@ jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidenc
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.counts_by_cause.front_back_source_region_policy == 3 and .evidence.source_markup_backed_blockers == 2)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evidence.adapter_distortion_rows == 10)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evidence.worksets.adapter_collapsed == 3 and .evidence.excluded_counts.page_break_projection == 6)' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evidence.workset_files.adapter_collapsed.all.count == 2 and .evidence.workset_files.adapter_collapsed.by_adapter."aozora-rs".count == 1)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and (.evidence.included_buckets | sort) == (["adapter_collapsed", "adapter_over_segmented", "adapter_raw_only", "adapter_under_segmented", "converter_paragraph_mismatch"] | sort))' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and (.evidence.excluded_buckets | sort) == (["aligned", "page_break_projection", "source_note_back_routing"] | sort))' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.dossier_count == 3 and .evidence.status_counts."schema-needed" == 1)' "$summary_json" >/dev/null

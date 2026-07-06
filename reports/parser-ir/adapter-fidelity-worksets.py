@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import pathlib
+import shutil
 from typing import Any
 
 SCHEMA_VERSION = "adapter-fidelity-worksets-v1"
@@ -35,6 +36,17 @@ def sha256_file(path: pathlib.Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return f"sha256:{digest.hexdigest()}"
+
+
+def write_json_array(path: pathlib.Path, values: list[str]) -> dict[str, Any]:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    unique_values = sorted(set(values))
+    path.write_text(json.dumps(unique_values, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return {
+        "path": display_path(path),
+        "hash": sha256_file(path),
+        "count": len(unique_values),
+    }
 
 
 def display_path(path: pathlib.Path) -> str:
@@ -112,15 +124,53 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
             excluded_counts[bucket] += 1
         elif bucket:
             unknown_bucket_counts[bucket] = unknown_bucket_counts.get(bucket, 0) + 1
+    workset_files = (
+        write_workset_files(args.worksets_dir, worksets)
+        if args.worksets_dir is not None
+        else {}
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "matrix_summary": {"path": display_path(args.matrix_summary), "hash": sha256_file(args.matrix_summary)},
         "included_buckets": list(INCLUDED_BUCKETS),
         "excluded_buckets": list(EXCLUDED_BUCKETS),
         "worksets": worksets,
+        "workset_files": workset_files,
         "excluded_counts": excluded_counts,
         "unknown_bucket_counts": unknown_bucket_counts,
     }
+
+
+def write_workset_files(worksets_dir: pathlib.Path, worksets: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    if worksets_dir.exists():
+        if worksets_dir.is_dir():
+            shutil.rmtree(worksets_dir)
+        else:
+            worksets_dir.unlink()
+    files: dict[str, Any] = {}
+    for bucket, workset in worksets.items():
+        rows = [row for row in workset.get("rows", []) if isinstance(row, dict)]
+        bucket_dir = worksets_dir / bucket
+        files[bucket] = {
+            "all": write_json_array(
+                bucket_dir / "all.json",
+                [str(row["work_id"]) for row in rows if row.get("work_id") is not None],
+            ),
+            "by_adapter": {},
+        }
+        by_adapter: dict[str, list[str]] = {}
+        for row in rows:
+            adapter_name = row.get("adapter")
+            work_id = row.get("work_id")
+            if adapter_name is None or work_id is None:
+                continue
+            by_adapter.setdefault(str(adapter_name), []).append(str(work_id))
+        for adapter_name, work_ids in sorted(by_adapter.items()):
+            files[bucket]["by_adapter"][adapter_name] = write_json_array(
+                bucket_dir / f"{adapter_name}.json",
+                work_ids,
+            )
+    return files
 
 
 def render_markdown(summary: dict[str, Any]) -> str:
@@ -133,6 +183,13 @@ def render_markdown(summary: dict[str, Any]) -> str:
     for bucket, workset in summary["worksets"].items():
         lines.append(f"| `{bucket}` | {workset['count']} |")
     lines.extend(["", "Excluded buckets: " + ", ".join(f"`{bucket}`" for bucket in summary["excluded_buckets"]), ""])
+    if summary.get("workset_files"):
+        lines.extend(["## Runnable Worksets", ""])
+        for bucket, record in summary["workset_files"].items():
+            lines.append(f"- `{bucket}` all: `{record['all']['path']}` ({record['all']['count']} works)")
+            for adapter_name, adapter_record in record["by_adapter"].items():
+                lines.append(f"  - `{adapter_name}`: `{adapter_record['path']}` ({adapter_record['count']} works)")
+        lines.append("")
     return "\n".join(lines)
 
 
@@ -141,6 +198,7 @@ def main() -> None:
     parser.add_argument("--matrix-summary", type=pathlib.Path, required=True)
     parser.add_argument("--summary-json", type=pathlib.Path, required=True)
     parser.add_argument("--report-md", type=pathlib.Path, required=True)
+    parser.add_argument("--worksets-dir", type=pathlib.Path)
     args = parser.parse_args()
     summary = build_summary(args)
     args.summary_json.parent.mkdir(parents=True, exist_ok=True)

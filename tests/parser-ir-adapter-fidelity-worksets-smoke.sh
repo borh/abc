@@ -8,6 +8,7 @@ trap 'rm -rf "$out_dir"' EXIT
 matrix_summary="$out_dir/matrix.json"
 summary_json="$out_dir/adapter-fidelity.summary.json"
 report_md="$out_dir/adapter-fidelity.md"
+worksets_dir="$out_dir/worksets"
 
 cat > "$matrix_summary" <<'JSON'
 {
@@ -80,10 +81,14 @@ cat > "$matrix_summary" <<'JSON'
 }
 JSON
 
+mkdir -p "$worksets_dir/stale_bucket"
+printf '["stale"]\n' > "$worksets_dir/stale_bucket/stale-adapter.json"
+
 python3 "$repo_root/reports/parser-ir/adapter-fidelity-worksets.py" \
   --matrix-summary "$matrix_summary" \
   --summary-json "$summary_json" \
-  --report-md "$report_md"
+  --report-md "$report_md" \
+  --worksets-dir "$worksets_dir"
 
 jq -e '.schema_version == "adapter-fidelity-worksets-v1"' "$summary_json" >/dev/null
 jq -e '(.included_buckets | sort) == (["adapter_collapsed", "adapter_over_segmented", "adapter_raw_only", "adapter_under_segmented", "converter_paragraph_mismatch"] | sort)' "$summary_json" >/dev/null
@@ -93,6 +98,14 @@ jq -e '.worksets.adapter_collapsed.rows[] | select(.work_id == "collapsed" and .
 jq -e '.worksets.adapter_under_segmented.rows[] | select(.work_id == "under" and .adapter == "aozora2")' "$summary_json" >/dev/null
 jq -e '.worksets.converter_paragraph_mismatch.rows[] | select(.work_id == "converter" and .source_note_count == 1)' "$summary_json" >/dev/null
 jq -e '.worksets.adapter_raw_only.rows[] | select(.work_id == "raw" and .paragraph_count == 0)' "$summary_json" >/dev/null
+jq -e '.workset_files.adapter_over_segmented.all.count == 1 and .workset_files.adapter_over_segmented.by_adapter.aozora2html.count == 1' "$summary_json" >/dev/null
+jq -e '.workset_files.adapter_collapsed.by_adapter."aozora-rs".count == 1' "$summary_json" >/dev/null
+jq -e '.workset_files.adapter_under_segmented.by_adapter.aozora2.count == 1' "$summary_json" >/dev/null
+jq -e '. == ["over"]' "$worksets_dir/adapter_over_segmented/all.json" >/dev/null
+jq -e '. == ["over"]' "$worksets_dir/adapter_over_segmented/aozora2html.json" >/dev/null
+jq -e '. == ["collapsed"]' "$worksets_dir/adapter_collapsed/aozora-rs.json" >/dev/null
+jq -e '. == ["under"]' "$worksets_dir/adapter_under_segmented/aozora2.json" >/dev/null
+test ! -e "$worksets_dir/stale_bucket/stale-adapter.json"
 jq -e '([.worksets[].rows[].work_id] | index("aligned") | not)' "$summary_json" >/dev/null
 jq -e '([.worksets[].rows[].work_id] | index("source-note") | not)' "$summary_json" >/dev/null
 jq -e '([.worksets[].rows[].work_id] | index("page-break") | not)' "$summary_json" >/dev/null

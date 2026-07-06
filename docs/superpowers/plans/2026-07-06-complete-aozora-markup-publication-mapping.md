@@ -275,6 +275,22 @@ back into the canonical classes from the publication contract:
 
 **Review gate:** Updated reports include the new input identity and either preserve `IR_PUBLICATION_COVERAGE_COMPLETE` or identify a named blocker with owner and prevalence.
 
+**Current status:** Source-reference reconciliation is measured for the current
+source inventory, curated syntax table, and P4suta notation-spec comparison:
+
+- `docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json`
+  - `verdict == "SOURCE_REFERENCE_RECONCILIATION_COMPLETE"`
+  - `observed_without_syntax_row == 0`
+  - `p4suta_feature_unmapped == 0`
+  - `p4suta_feature_comparison_only == 4`
+- `docs/superpowers/reports/2026-07-06-source-reference-reconciliation.md`
+
+Regenerate with:
+
+```bash
+just source-reference-reconciliation-report
+```
+
 ## Workstream 6: Goal Definition And Non-Goals
 
 **Goal statement to keep using:**
@@ -306,8 +322,9 @@ Complete Aozora Bunko markup publication mapping: every observed source markup a
    `rows_failed == 0`.
 3. Keep all five parser evidence lanes current:
    `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
-4. Compare source inventory against Aozora manual and
-   `P4suta/aozora-notation-spec` when those references change.
+4. Rerun `just source-reference-reconciliation-report` when the source
+   inventory, Aozora manual evidence, syntax coverage table, or
+   `P4suta/aozora-notation-spec` changes.
 
 ## Verification Commands
 
@@ -316,11 +333,13 @@ Run these in ab-validator after each contract-affecting change:
 ```bash
 bash tests/source-representability-gate-smoke.sh
 bash tests/source-inventory-smoke.sh
+bash tests/source-reference-reconciliation-smoke.sh
 bash tests/parser-ir-publication-bundle-smoke.sh
 bash tests/parser-ir-publication-bundle-batch-smoke.sh
 bash tests/parser-ir-publication-coverage-smoke.sh
 jq -e '.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
 jq -e '.source_region_coverage.unsupported_body_markup_occurrences == 0 and .source_region_coverage.unknown_region_occurrences == 0 and .source_region_coverage.unknown_unreviewed_occurrences == 0' docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
+jq -e '.verdict == "SOURCE_REFERENCE_RECONCILIATION_COMPLETE" and .totals.observed_without_syntax_row == 0 and .totals.p4suta_feature_unmapped == 0' docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json
 jq -e '.verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED"' docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json
 jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED" and .scope.rows_validated == 25 and .scope.rows_failed == 0' docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json
 jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json

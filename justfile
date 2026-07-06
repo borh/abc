@@ -197,6 +197,18 @@ source-inventory-smoke:
 source-representability-gate-smoke:
 	@bash "{{repo_root}}/tests/source-representability-gate-smoke.sh"
 
+source-reference-reconciliation-smoke:
+	@bash "{{repo_root}}/tests/source-reference-reconciliation-smoke.sh"
+
+source-reference-reconciliation-report SYNTAX_COVERAGE="data/aozora-syntax-coverage.toml" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" NOTATION_SUMMARY="docs/superpowers/reports/2026-07-05-aozora-notation-spec-comparison.summary.json" MANUAL_ROOT="/home/bor/Dependencies/aozorabunko/rules" REPORT_MD="docs/superpowers/reports/2026-07-06-source-reference-reconciliation.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json":
+	@python3 "{{repo_root}}/reports/source-references/reconcile-aozora-notation.py" \
+		--syntax-coverage "{{repo_root}}/{{SYNTAX_COVERAGE}}" \
+		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
+		--notation-summary "{{repo_root}}/{{NOTATION_SUMMARY}}" \
+		--manual-root "{{MANUAL_ROOT}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}"
+
 source-inventory-flake-smoke:
 	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
 	nix build "{{repo_root}}#checks.$system.source-inventory-smoke" --print-build-logs

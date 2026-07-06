@@ -1,0 +1,1245 @@
+{
+  "schema_version": "aozora-source-reference-reconciliation-v1",
+  "verdict": "SOURCE_REFERENCE_RECONCILIATION_COMPLETE",
+  "inputs": {
+    "syntax_coverage": "/home/bor/Projects/ab-validator/.worktrees/source-reference-reconciliation/data/aozora-syntax-coverage.toml",
+    "source_summary": "/home/bor/Projects/ab-validator/.worktrees/source-reference-reconciliation/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+    "notation_summary": "/home/bor/Projects/ab-validator/.worktrees/source-reference-reconciliation/docs/superpowers/reports/2026-07-05-aozora-notation-spec-comparison.summary.json",
+    "manual_root": "/home/bor/Dependencies/aozorabunko/rules"
+  },
+  "totals": {
+    "syntax_rows": 56,
+    "official_syntax_rows": 16,
+    "source_inventory_rows": 50,
+    "documented_observed": 15,
+    "documented_unobserved": 1,
+    "observed_without_syntax_row": 0,
+    "p4suta_features": 24,
+    "p4suta_feature_mapped": 20,
+    "p4suta_feature_unmapped": 0,
+    "p4suta_feature_unobserved": 0,
+    "p4suta_feature_comparison_only": 4
+  },
+  "manual_reference_files": [
+    {
+      "filename": "kijyunn.html",
+      "path": "/home/bor/Dependencies/aozorabunko/rules/kijyunn.html",
+      "exists": true,
+      "hash": "sha256:c57aad0a4fa00a15a99ba792a951e74981dd73e2021ca989dd53b70ed0740b24"
+    }
+  ],
+  "documented_observed": [
+    {
+      "syntax_id": "ruby.basic",
+      "source_inventory_row": "ruby.basic",
+      "representability_status": "typed",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html"
+      ],
+      "source_patterns": [
+        "《[^》]+》",
+        "｜[^《\\n]+《[^》]+》",
+        "［＃「[^」]+」の左に「[^」]+」のルビ］"
+      ],
+      "works_with_marker": 14321,
+      "occurrences": 3607926,
+      "sample_works": [
+        "000005_5",
+        "000005_53194",
+        "000005_55215",
+        "000005_55216",
+        "000005_55217"
+      ]
+    },
+    {
+      "syntax_id": "gaiji.marker",
+      "source_inventory_row": "gaiji.marker",
+      "representability_status": "typed",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html"
+      ],
+      "source_patterns": [
+        "※［＃[^］]+］",
+        "U\\+[0-9A-Fa-f]{4,6}",
+        "[0-9A-Fa-f]{1,2}-[0-9A-Fa-f]{4}",
+        "濁点付き|半濁点付き"
+      ],
+      "works_with_marker": 5931,
+      "occurrences": 62355,
+      "sample_works": [
+        "000005_5",
+        "000006_1868",
+        "000006_1869",
+        "000006_3310",
+        "000006_383"
+      ]
+    },
+    {
+      "syntax_id": "gaiji_ruby.inline_base",
+      "source_inventory_row": "gaiji_ruby.inline_base",
+      "representability_status": "typed",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html"
+      ],
+      "source_patterns": [
+        "※［＃[^］]+］《[^》]+》"
+      ],
+      "works_with_marker": 2799,
+      "occurrences": 13450,
+      "sample_works": [
+        "000005_5",
+        "000006_1869",
+        "000006_3310",
+        "000008_1083",
+        "000008_47357"
+      ]
+    },
+    {
+      "syntax_id": "heading.basic",
+      "source_inventory_row": "heading.basic",
+      "representability_status": "typed",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html"
+      ],
+      "source_patterns": [
+        "［＃「[^\\n]*」は[大中小]見出し］",
+        "［＃「[^\\n]*」に[大中小]見出し］",
+        "［＃(ここから|ここで)?[大中小]見出し?(終わり)?］",
+        "［＃ここで見出し終わり］",
+        "［＃[大中小]?見出し文字］"
+      ],
+      "works_with_marker": 3696,
+      "occurrences": 80592,
+      "sample_works": [
+        "000005_53194",
+        "000006_58819",
+        "000008_1083",
+        "000008_47357",
+        "000008_47386"
+      ]
+    },
+    {
+      "syntax_id": "emphasis.basic",
+      "source_inventory_row": "emphasis.basic",
+      "representability_status": "typed",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html"
+      ],
+      "source_patterns": [
+        "［＃「[^」]+」に傍点］|［＃傍点］",
+        "［＃「[^」]+」に傍線］|［＃傍線］",
+        "［＃「[^」]+」は太字］|［＃太字］",
+        "［＃「[^」]+」は斜体］|［＃斜体］",
+        "白ゴマ傍点|黒ゴマ傍点|丸傍点"
+      ],
+      "works_with_marker": 6576,
+      "occurrences": 157494,
+      "sample_works": [
+        "000005_53194",
+        "000006_1869",
+        "000006_382",
+        "000006_383",
+        "000006_58819"
+      ]
+    },
+    {
+      "syntax_id": "indentation.basic",
+      "source_inventory_row": "indentation.basic",
+      "representability_status": "typed",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html"
+      ],
+      "source_patterns": [
+        "［＃[０-９0-9]+字下げ］",
+        "［＃ここから[０-９0-9]+字下げ］",
+        "［＃地付き］|［＃[０-９0-9]+字上げ］"
+      ],
+      "works_with_marker": 8169,
+      "occurrences": 134393,
+      "sample_works": [
+        "000005_5",
+        "000005_53194",
+        "000006_1868",
+        "000006_1869",
+        "000006_3310"
+      ]
+    },
+    {
+      "syntax_id": "warichu.basic",
+      "source_inventory_row": "warichu.basic",
+      "representability_status": "typed",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html"
+      ],
+      "source_patterns": [
+        "［＃割り注］|［＃ここから割り注］",
+        "［＃(ここで)?割り注終わり］",
+        "［＃以下の括弧内割注］",
+        "［＃「[^」]+」は割り注で処理］"
+      ],
+      "works_with_marker": 362,
+      "occurrences": 6605,
+      "sample_works": [
+        "000005_53194",
+        "000006_1868",
+        "000006_1869",
+        "000034_519",
+        "000038_42202"
+      ]
+    },
+    {
+      "syntax_id": "figure.image_caption",
+      "source_inventory_row": "figure.image_caption",
+      "representability_status": "typed",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html"
+      ],
+      "source_patterns": [
+        "［＃（?[^］\\n]+\\.(png|jpg|jpeg|gif)）?入る］",
+        "［＃キャプション］|［＃ここからキャプション］"
+      ],
+      "works_with_marker": 103,
+      "occurrences": 1777,
+      "sample_works": [
+        "000019_42378",
+        "000019_42379",
+        "000019_42380",
+        "000019_42381",
+        "000019_42382"
+      ]
+    },
+    {
+      "syntax_id": "break.page_line",
+      "source_inventory_row": "break.page_line",
+      "representability_status": "typed",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html"
+      ],
+      "source_patterns": [
+        "［＃(改ページ|改頁|改丁|改段|改見開き)(右|左)?(、[^］]+)?］",
+        "［＃改行］"
+      ],
+      "works_with_marker": 943,
+      "occurrences": 9229,
+      "sample_works": [
+        "000005_53194",
+        "000006_1869",
+        "000009_55881",
+        "000011_889",
+        "000011_899"
+      ]
+    },
+    {
+      "syntax_id": "layout.center_page",
+      "source_inventory_row": "layout.center_page",
+      "representability_status": "raw_preserved",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html",
+        "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/layout.md",
+        "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:conformance/vectors/center_page/vector.json"
+      ],
+      "source_patterns": [
+        "［＃(ここから)?ページの左右中央に?］",
+        "［＃ページ(の天地左右中央|上段の左右中央|の天地中央)］",
+        "［＃左右中央］",
+        "［＃中央(寄せ|揃え)］",
+        "［＃[^］]*(ページの(上部|下部)、)?左右中央(に|縦組みで)?[^］]*］",
+        "［＃[^］]*中央に配置］",
+        "［＃[^］]*[０-９0-9]+行の中央[^］]*］",
+        "［＃[^］]*中央やや下がり目[^］]*］"
+      ],
+      "works_with_marker": 263,
+      "occurrences": 885,
+      "sample_works": [
+        "000005_53194",
+        "000009_55881",
+        "000011_899",
+        "000025_47220",
+        "000026_219"
+      ]
+    },
+    {
+      "syntax_id": "ruby.placement_directional",
+      "source_inventory_row": "ruby.placement_directional",
+      "representability_status": "typed",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html",
+        "references/parsers/aozora2html/lib/aozora2html.rb"
+      ],
+      "source_patterns": [
+        "［＃「[^」]+」の(左|下)に「[^」]+」のルビ］",
+        "(左|下)に「[^」]+」の(ルビ|注記)",
+        "［＃(左|下)にルビ付き］"
+      ],
+      "works_with_marker": 31,
+      "occurrences": 318,
+      "sample_works": [
+        "000034_1213",
+        "000050_3581",
+        "000129_694",
+        "000146_49258",
+        "000146_50202"
+      ]
+    },
+    {
+      "syntax_id": "glyph.variant_note",
+      "source_inventory_row": "glyph.variant_note",
+      "representability_status": "raw_preserved",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html",
+        "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/script-glyphs.md",
+        "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/fraction.md"
+      ],
+      "source_patterns": [
+        "［＃[^］]*(「[^」]+」|[A-Za-zΑ-ωα-ωηωεισοψ])[^］]*(上に「[^」]+」付き|下に「[^」]+」付き|「[^」]+」付き|アクサン|ウムラウト|帯気|曲アクセント|鋭アクセント|平息|ファイナルシグマ|accent grave|マクロン|長音記号|下ドット|下点|アキュートアクセント|合字|くずし字|崩し字|上ドット付き)[^］]*］",
+        "［＃[^］]*(一字|指数|分数|覆面の英字|矢印が下向き|右横に縦棒あり|の中に「[^」]+」|やまいだれの中|右下の部分|右に「[^」]+」|小さい「[^」]+」|小さな四角|ローマ数字|○付き文字|正字と同字|同形|記号の中に入っている|「※」は|１マスに横並び|上に「[^」]+」がつく|代えて「[^」]+」|「[^」]+」を加える|２倍の長方形|二倍二重ダーシ|欠字|一文字)[^］]*］"
+      ],
+      "works_with_marker": 1954,
+      "occurrences": 7634,
+      "sample_works": [
+        "000006_1869",
+        "000008_1083",
+        "000008_47386",
+        "000011_55301",
+        "000011_889"
+      ]
+    },
+    {
+      "syntax_id": "layout.multicolumn",
+      "source_inventory_row": "layout.multicolumn",
+      "representability_status": "raw_preserved",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html",
+        "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+      ],
+      "source_patterns": [
+        "［＃ここから[０-９0-9]+段組み?］",
+        "［＃ここで([０-９0-9]+段組み?|段組み?)終わり］",
+        "［＃段組み適用外］",
+        "［＃「[^\\n]+」と「[^\\n]+」は[０-９0-9]+列に並ぶ］",
+        "［＃「[^\\n]+」と「[^\\n]+」は横並びになっている］",
+        "［＃[０-９0-9]+段目］",
+        "［＃[^］]*１行内で[０-９0-9]+行に分けられている］",
+        "［＃[^］]*[０-９0-9]+行組み[^］]*］",
+        "［＃ここから[０-９0-9]+段組み、段間に罫］",
+        "［＃ここで[０-９0-9]+段組み、罫囲み終わり］",
+        "［＃ここで段組、[^］]+終わり］",
+        "［＃ここから[０-９0-9]+段組、[上下]段］",
+        "［＃ここで[０-９0-9]+段組、[上下]段終わり］"
+      ],
+      "works_with_marker": 26,
+      "occurrences": 73,
+      "sample_works": [
+        "000035_1566",
+        "000042_2471",
+        "000061_377",
+        "000081_45631",
+        "000082_1309"
+      ]
+    },
+    {
+      "syntax_id": "structure.table",
+      "source_inventory_row": "structure.table",
+      "representability_status": "raw_preserved",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html",
+        "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+      ],
+      "source_patterns": [
+        "［＃ここから表(組|罫囲み)?］",
+        "［＃ここで表(組|罫囲み)?終わり］",
+        "［＃ここで字下げ、表罫囲み終わり］",
+        "［＃ここからプログラム、表罫囲み］",
+        "［＃ここでプログラム（表罫囲み）終わり］",
+        "［＃[０-９0-9一二三四五六七八九十]+行目］",
+        "［＃ここに表組入る、別ファイル（[^）]+）参照］",
+        "［＃ここから横組みの表］",
+        "［＃ここで横組みの表終わり］"
+      ],
+      "works_with_marker": 7,
+      "occurrences": 46,
+      "sample_works": [
+        "000042_2345",
+        "000042_2348",
+        "000042_2449",
+        "000096_2100",
+        "000311_2745"
+      ]
+    },
+    {
+      "syntax_id": "break.line_explicit",
+      "source_inventory_row": "break.line_explicit",
+      "representability_status": "typed",
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html"
+      ],
+      "source_patterns": [
+        "［＃改行］"
+      ],
+      "works_with_marker": 47,
+      "occurrences": 161,
+      "sample_works": [
+        "000075_4250",
+        "000081_47027",
+        "000083_46289",
+        "000106_56858",
+        "000106_57905"
+      ]
+    }
+  ],
+  "documented_unobserved": [
+    {
+      "syntax_id": "ruby.double",
+      "source_inventory_row": null,
+      "representability_status": null,
+      "reference_sources": [
+        "references/aozorabunko/rules/kijyunn.html",
+        "references/parsers/aozora2html/lib/aozora2html/tag/ruby.rb"
+      ],
+      "source_patterns": [
+        "｜[^《\\n]+《[^》]+》《[^》]+》"
+      ],
+      "works_with_marker": 0,
+      "occurrences": 0,
+      "sample_works": []
+    }
+  ],
+  "observed_without_syntax_row": [],
+  "p4suta_feature_mapped": [
+    {
+      "feature": "accent",
+      "vectors": [
+        "accent_decomposition_applied"
+      ],
+      "levels": [
+        "may"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 6,
+      "fail": 0,
+      "warning": 6,
+      "pass": 0,
+      "syntax_rows": [
+        "accent.dotted_letter"
+      ],
+      "source_inventory_rows": [
+        "accent.dotted_letter"
+      ],
+      "occurrences": 93
+    },
+    {
+      "feature": "annotation",
+      "vectors": [
+        "annotation",
+        "correction_sic",
+        "correction_textual_note",
+        "editor_note",
+        "left_ruby_pair",
+        "ruby_attached",
+        "ruby_retarget"
+      ],
+      "levels": [
+        "must",
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 42,
+      "fail": 0,
+      "warning": 42,
+      "pass": 0,
+      "syntax_rows": [
+        "annotation.bouki",
+        "annotation.chuuki",
+        "annotation.layout_note",
+        "glyph.variant_note",
+        "source.note_label",
+        "source.page_reference",
+        "source.reviewed_residual_command"
+      ],
+      "source_inventory_rows": [
+        "annotation.bouki",
+        "annotation.chuuki",
+        "annotation.layout_note",
+        "glyph.variant_note",
+        "source.note_label",
+        "source.page_reference",
+        "source.reviewed_residual_command"
+      ],
+      "occurrences": 45193
+    },
+    {
+      "feature": "bouten",
+      "vectors": [
+        "bouten",
+        "bouten_black_triangle",
+        "bouten_chain_line",
+        "bouten_forward_interior",
+        "bouten_forward_no_referent",
+        "bouten_range",
+        "bouten_range_chain_line",
+        "bouten_target_ambiguous",
+        "mismatched_bouten_container"
+      ],
+      "levels": [
+        "must",
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 54,
+      "fail": 0,
+      "warning": 54,
+      "pass": 0,
+      "syntax_rows": [
+        "decoration.boten"
+      ],
+      "source_inventory_rows": [
+        "decoration.boten"
+      ],
+      "occurrences": 129086
+    },
+    {
+      "feature": "break",
+      "vectors": [
+        "break_in_single_line_container",
+        "page_break",
+        "section_break"
+      ],
+      "levels": [
+        "must",
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 18,
+      "fail": 0,
+      "warning": 18,
+      "pass": 0,
+      "syntax_rows": [
+        "break.line_explicit",
+        "break.page_line"
+      ],
+      "source_inventory_rows": [
+        "break.line_explicit",
+        "break.page_line"
+      ],
+      "occurrences": 9390
+    },
+    {
+      "feature": "container",
+      "vectors": [
+        "align_end_container",
+        "center_page",
+        "font_size_bare_range",
+        "head_flush_single",
+        "head_flush_wrap_indent",
+        "indent_center",
+        "indent_container",
+        "indent_from_top",
+        "indent_line_kumi",
+        "indent_line_width_compound",
+        "keigakomi_container",
+        "line_width_container",
+        "mismatched_container_close",
+        "unrecognised_container_directive",
+        "wrap_indent"
+      ],
+      "levels": [
+        "must",
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 90,
+      "fail": 0,
+      "warning": 90,
+      "pass": 0,
+      "syntax_rows": [
+        "indentation.basic",
+        "indentation.burasage",
+        "indentation.chitsuki",
+        "indentation.jisage_block",
+        "indentation.jisage_oneline",
+        "indentation.jizume",
+        "layout.center_page",
+        "structure.quote_block"
+      ],
+      "source_inventory_rows": [
+        "indentation.basic",
+        "indentation.burasage",
+        "indentation.chitsuki",
+        "indentation.jisage_block",
+        "indentation.jisage_oneline",
+        "indentation.jizume",
+        "layout.center_page",
+        "structure.quote_block"
+      ],
+      "occurrences": 267446
+    },
+    {
+      "feature": "emphasis",
+      "vectors": [
+        "accent_dot_above",
+        "accent_dot_below",
+        "accent_dot_cluster",
+        "accent_dot_dangyou_unknown",
+        "accent_dot_former_latter",
+        "accent_dot_multi_clause",
+        "accent_dot_ordinal",
+        "accent_dot_ruby_base_unknown",
+        "accent_dot_tortoise",
+        "accent_dot_uppercase",
+        "bold_block",
+        "bold_forward",
+        "bold_forward_gothic_no_referent",
+        "bold_forward_interior",
+        "bold_forward_no_referent",
+        "bold_inline",
+        "box_enclosure",
+        "box_enclosure_no_referent",
+        "emphasis_mixed",
+        "font_size_absolute_small_forward",
+        "font_size_block",
+        "font_size_larger_forward",
+        "font_size_larger_no_referent",
+        "font_size_smaller_forward",
+        "fraction_forward",
+        "fraction_forward_no_referent",
+        "italic_block",
+        "italic_forward",
+        "italic_forward_no_referent",
+        "italic_inline",
+        "side_glyph_left",
+        "side_glyph_left_no_referent",
+        "side_glyph_left_range",
+        "side_glyph_right",
+        "side_glyph_right_no_referent",
+        "side_glyph_right_range",
+        "subscript_forward",
+        "subscript_forward_no_referent",
+        "superscript_forward",
+        "superscript_forward_no_referent"
+      ],
+      "levels": [
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 240,
+      "fail": 0,
+      "warning": 240,
+      "pass": 0,
+      "syntax_rows": [
+        "emphasis.basic",
+        "decoration.bold_italic",
+        "decoration.bousen",
+        "decoration.font_size",
+        "decoration.typeface"
+      ],
+      "source_inventory_rows": [
+        "decoration.bold_italic",
+        "decoration.bousen",
+        "decoration.font_size",
+        "decoration.typeface",
+        "emphasis.basic"
+      ],
+      "occurrences": 235965
+    },
+    {
+      "feature": "gaiji",
+      "vectors": [
+        "gaiji",
+        "gaiji_composed_glyph",
+        "gaiji_composed_seiji",
+        "gaiji_double_paren",
+        "roman_numeral",
+        "standalone_gaiji",
+        "unresolved_gaiji"
+      ],
+      "levels": [
+        "must",
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 42,
+      "fail": 0,
+      "warning": 42,
+      "pass": 0,
+      "syntax_rows": [
+        "gaiji.marker",
+        "gaiji.jis_code",
+        "gaiji.un_embed",
+        "gaiji.unicode_codepoint",
+        "gaiji_ruby.inline_base"
+      ],
+      "source_inventory_rows": [
+        "gaiji.jis_code",
+        "gaiji.marker",
+        "gaiji.un_embed",
+        "gaiji.unicode_codepoint",
+        "gaiji_ruby.inline_base"
+      ],
+      "occurrences": 134985
+    },
+    {
+      "feature": "heading",
+      "vectors": [
+        "heading",
+        "heading_block",
+        "heading_forward_no_referent",
+        "heading_hint",
+        "heading_paired_window",
+        "heading_promoted",
+        "heading_ruby_hint",
+        "heading_same_line",
+        "heading_window"
+      ],
+      "levels": [
+        "must",
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 54,
+      "fail": 0,
+      "warning": 54,
+      "pass": 0,
+      "syntax_rows": [
+        "heading.basic",
+        "heading.dogyo",
+        "heading.mado"
+      ],
+      "source_inventory_rows": [
+        "heading.basic",
+        "heading.dogyo",
+        "heading.mado"
+      ],
+      "occurrences": 94111
+    },
+    {
+      "feature": "horizontal",
+      "vectors": [
+        "horizontal_container",
+        "horizontal_inline_forward",
+        "horizontal_inline_forward_no_referent"
+      ],
+      "levels": [
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 18,
+      "fail": 0,
+      "warning": 18,
+      "pass": 0,
+      "syntax_rows": [
+        "layout.yokogumi"
+      ],
+      "source_inventory_rows": [
+        "layout.yokogumi"
+      ],
+      "occurrences": 3690
+    },
+    {
+      "feature": "kaeriten",
+      "vectors": [
+        "kaeriten"
+      ],
+      "levels": [
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 6,
+      "fail": 0,
+      "warning": 6,
+      "pass": 0,
+      "syntax_rows": [
+        "kunten.kaeriten"
+      ],
+      "source_inventory_rows": [
+        "kunten.kaeriten"
+      ],
+      "occurrences": 27987
+    },
+    {
+      "feature": "keigakomi",
+      "vectors": [
+        "keigakomi_inline_forward",
+        "keigakomi_inline_framed"
+      ],
+      "levels": [
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 12,
+      "fail": 0,
+      "warning": 12,
+      "pass": 0,
+      "syntax_rows": [
+        "decoration.keigakomi"
+      ],
+      "source_inventory_rows": [
+        "decoration.keigakomi"
+      ],
+      "occurrences": 717
+    },
+    {
+      "feature": "kunten",
+      "vectors": [
+        "boki",
+        "bracketed_kaeriten_no_pair",
+        "kaeriten_outside_kanbun",
+        "left_ruby",
+        "side_note_left"
+      ],
+      "levels": [
+        "may",
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 30,
+      "fail": 0,
+      "warning": 30,
+      "pass": 0,
+      "syntax_rows": [
+        "kunten.kaeriten",
+        "kunten.okurigana"
+      ],
+      "source_inventory_rows": [
+        "kunten.kaeriten",
+        "kunten.okurigana"
+      ],
+      "occurrences": 34549
+    },
+    {
+      "feature": "layout",
+      "vectors": [
+        "indent_compound_styled",
+        "line_bold_single",
+        "line_font_size_bold_single",
+        "line_font_size_single"
+      ],
+      "levels": [
+        "must",
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 24,
+      "fail": 0,
+      "warning": 24,
+      "pass": 0,
+      "syntax_rows": [
+        "indentation.basic",
+        "indentation.burasage",
+        "indentation.chitsuki",
+        "indentation.jisage_block",
+        "indentation.jisage_oneline",
+        "indentation.jizume",
+        "layout.center_page"
+      ],
+      "source_inventory_rows": [
+        "indentation.basic",
+        "indentation.burasage",
+        "indentation.chitsuki",
+        "indentation.jisage_block",
+        "indentation.jisage_oneline",
+        "indentation.jizume",
+        "layout.center_page"
+      ],
+      "occurrences": 267425
+    },
+    {
+      "feature": "ruby",
+      "vectors": [
+        "empty_ruby_reading",
+        "nested_ruby",
+        "ruby_explicit",
+        "ruby_implicit"
+      ],
+      "levels": [
+        "must",
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 24,
+      "fail": 0,
+      "warning": 24,
+      "pass": 0,
+      "syntax_rows": [
+        "ruby.basic",
+        "ruby.placement_directional",
+        "gaiji_ruby.inline_base"
+      ],
+      "source_inventory_rows": [
+        "gaiji_ruby.inline_base",
+        "ruby.basic",
+        "ruby.placement_directional"
+      ],
+      "occurrences": 3621694
+    },
+    {
+      "feature": "sashie",
+      "vectors": [
+        "sashie",
+        "sashie_caption",
+        "sashie_dimensions"
+      ],
+      "levels": [
+        "must",
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 18,
+      "fail": 0,
+      "warning": 18,
+      "pass": 0,
+      "syntax_rows": [
+        "figure.image_caption",
+        "figure.image_inline"
+      ],
+      "source_inventory_rows": [
+        "figure.image_caption",
+        "figure.image_inline"
+      ],
+      "occurrences": 7654
+    },
+    {
+      "feature": "structural-marker",
+      "vectors": [
+        "body_end",
+        "forced_break"
+      ],
+      "levels": [
+        "must"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 12,
+      "fail": 0,
+      "warning": 12,
+      "pass": 0,
+      "syntax_rows": [
+        "reference.frontref",
+        "source.note_label"
+      ],
+      "source_inventory_rows": [
+        "reference.frontref",
+        "source.note_label"
+      ],
+      "occurrences": 5302
+    },
+    {
+      "feature": "tables_columns",
+      "vectors": [
+        "columns_container",
+        "table_container"
+      ],
+      "levels": [
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 12,
+      "fail": 0,
+      "warning": 12,
+      "pass": 0,
+      "syntax_rows": [
+        "layout.multicolumn",
+        "structure.table"
+      ],
+      "source_inventory_rows": [
+        "layout.multicolumn",
+        "structure.table"
+      ],
+      "occurrences": 119
+    },
+    {
+      "feature": "tate_chu_yoko",
+      "vectors": [
+        "tate_chu_yoko_found"
+      ],
+      "levels": [
+        "must"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 6,
+      "fail": 0,
+      "warning": 6,
+      "pass": 0,
+      "syntax_rows": [
+        "layout.tcy"
+      ],
+      "source_inventory_rows": [
+        "layout.tcy"
+      ],
+      "occurrences": 19794
+    },
+    {
+      "feature": "tcy",
+      "vectors": [
+        "tate_chu_yoko"
+      ],
+      "levels": [
+        "must"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 6,
+      "fail": 1,
+      "warning": 5,
+      "pass": 0,
+      "syntax_rows": [
+        "layout.tcy"
+      ],
+      "source_inventory_rows": [
+        "layout.tcy"
+      ],
+      "occurrences": 19794
+    },
+    {
+      "feature": "warichu",
+      "vectors": [
+        "warichu_inline"
+      ],
+      "levels": [
+        "must"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 6,
+      "fail": 0,
+      "warning": 6,
+      "pass": 0,
+      "syntax_rows": [
+        "warichu.basic"
+      ],
+      "source_inventory_rows": [
+        "warichu.basic"
+      ],
+      "occurrences": 6605
+    }
+  ],
+  "p4suta_feature_unmapped": [],
+  "p4suta_feature_unobserved": [],
+  "p4suta_feature_comparison_only": [
+    {
+      "feature": "angle_quote",
+      "vectors": [
+        "angle_quote"
+      ],
+      "levels": [
+        "must"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 6,
+      "fail": 0,
+      "warning": 6,
+      "pass": 0
+    },
+    {
+      "feature": "composite",
+      "vectors": [
+        "mixed_ruby_bouten",
+        "nested_containers",
+        "pageful"
+      ],
+      "levels": [
+        "may",
+        "must",
+        "should"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 18,
+      "fail": 0,
+      "warning": 18,
+      "pass": 0
+    },
+    {
+      "feature": "plain",
+      "vectors": [
+        "plain_text"
+      ],
+      "levels": [
+        "must"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 6,
+      "fail": 0,
+      "warning": 6,
+      "pass": 0
+    },
+    {
+      "feature": "recovery",
+      "vectors": [
+        "pua_collision",
+        "unclosed_bracket"
+      ],
+      "levels": [
+        "must"
+      ],
+      "adapters": [
+        "ab-aozora",
+        "aozora",
+        "aozora-epub3",
+        "aozora-rs",
+        "aozora2",
+        "aozora2html"
+      ],
+      "rows": 12,
+      "fail": 2,
+      "warning": 10,
+      "pass": 0
+    }
+  ]
+}

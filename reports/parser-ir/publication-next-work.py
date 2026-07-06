@@ -284,13 +284,23 @@ def text_policy_evidence(summary: dict[str, Any]) -> dict[str, Any]:
     counts = summary.get("counts_by_cause")
     if not isinstance(counts, dict):
         counts = {}
-    return {
+    evidence = {
         "schema_version": summary.get("schema_version"),
         "different_rows": as_int(summary.get("total_different_rows")),
         "counts_by_cause": {str(key): as_int(value) for key, value in sorted(counts.items())},
         "source_markup_backed_blockers": list_length(summary.get("source_markup_backed_blockers")),
         "calibration_only_rows": list_length(summary.get("calibration_only_rows")),
     }
+    workset_files = summary.get("workset_files")
+    if isinstance(workset_files, dict):
+        evidence["workset_files"] = workset_files
+    source_workset_files = summary.get("source_markup_backed_workset_files")
+    if isinstance(source_workset_files, dict):
+        evidence["source_markup_backed_workset_files"] = source_workset_files
+    manual_workset_files = summary.get("manual_classification_workset_files")
+    if isinstance(manual_workset_files, dict):
+        evidence["manual_classification_workset_files"] = manual_workset_files
+    return evidence
 
 
 def workset_counts(value: Any) -> dict[str, int]:
@@ -578,9 +588,21 @@ def render_item_evidence(item: dict[str, Any]) -> list[str]:
             f"evidence_needed_classes={json.dumps(evidence.get('evidence_needed_classes', []), ensure_ascii=False)}",
         ]
     if item_id == "text_policy_calibration":
+        workset_file_paths = {
+            cause: record.get("path")
+            for cause, record in evidence.get("source_markup_backed_workset_files", {}).items()
+            if isinstance(record, dict) and record.get("path")
+        }
+        manual_workset_file_paths = {
+            cause: record.get("path")
+            for cause, record in evidence.get("manual_classification_workset_files", {}).items()
+            if isinstance(record, dict) and record.get("path")
+        }
         return [
             f"different_rows={evidence.get('different_rows')}, source_markup_backed_blockers={evidence.get('source_markup_backed_blockers')}, calibration_only_rows={evidence.get('calibration_only_rows')}",
             f"counts_by_cause={json.dumps(evidence.get('counts_by_cause', {}), ensure_ascii=False, sort_keys=True)}",
+            f"source_markup_backed_worksets={json.dumps(workset_file_paths, ensure_ascii=False, sort_keys=True)}",
+            f"manual_classification_worksets={json.dumps(manual_workset_file_paths, ensure_ascii=False, sort_keys=True)}",
         ]
     if item_id == "adapter_fidelity_worksets":
         workset_file_paths = {

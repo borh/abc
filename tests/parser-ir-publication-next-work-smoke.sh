@@ -149,6 +149,56 @@ cat > "$text_policy_summary" <<'JSON'
     "tei_eaj_editorial_or_enrichment": 1,
     "unknown_text_delta": 0
   },
+  "workset_files": {
+    "ruby_or_parenthetical_policy": {
+      "path": "docs/reports/text-policy/ruby_or_parenthetical_policy.json",
+      "hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "count": 2,
+      "source_markup_backed": true
+    },
+    "front_back_source_region_policy": {
+      "path": "docs/reports/text-policy/front_back_source_region_policy.json",
+      "hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "count": 3,
+      "source_markup_backed": true
+    },
+    "tei_eaj_editorial_or_enrichment": {
+      "path": "docs/reports/text-policy/tei_eaj_editorial_or_enrichment.json",
+      "hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "count": 1,
+      "source_markup_backed": false
+    },
+    "unknown_text_delta": {
+      "path": "docs/reports/text-policy/unknown_text_delta.json",
+      "hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "count": 1,
+      "source_markup_backed": false,
+      "requires_manual_classification": true
+    }
+  },
+  "source_markup_backed_workset_files": {
+    "ruby_or_parenthetical_policy": {
+      "path": "docs/reports/text-policy/ruby_or_parenthetical_policy.json",
+      "hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "count": 2,
+      "source_markup_backed": true
+    },
+    "front_back_source_region_policy": {
+      "path": "docs/reports/text-policy/front_back_source_region_policy.json",
+      "hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "count": 3,
+      "source_markup_backed": true
+    }
+  },
+  "manual_classification_workset_files": {
+    "unknown_text_delta": {
+      "path": "docs/reports/text-policy/unknown_text_delta.json",
+      "hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "count": 1,
+      "source_markup_backed": false,
+      "requires_manual_classification": true
+    }
+  },
   "source_markup_backed_blockers": [{"row_id": "r1"}, {"row_id": "r2"}],
   "calibration_only_rows": [{"row_id": "r3"}]
 }
@@ -334,6 +384,8 @@ jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" an
 jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" and .evidence.classes_total == 2 and .evidence.policy_needed_classes == ["letter_address_origin"])' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.different_rows == 9)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.counts_by_cause.front_back_source_region_policy == 3 and .evidence.source_markup_backed_blockers == 2)' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.workset_files.ruby_or_parenthetical_policy.count == 2 and .evidence.source_markup_backed_workset_files.front_back_source_region_policy.count == 3)' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.manual_classification_workset_files.unknown_text_delta.count == 1 and .evidence.manual_classification_workset_files.unknown_text_delta.requires_manual_classification == true)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evidence.adapter_distortion_rows == 10)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evidence.worksets.adapter_collapsed == 3 and .evidence.excluded_counts.page_break_projection == 6)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evidence.workset_files.adapter_collapsed.all.count == 2 and .evidence.workset_files.adapter_collapsed.by_adapter."aozora-rs".count == 1)' "$summary_json" >/dev/null
@@ -348,7 +400,7 @@ jq -e '.next_work_items[] | select(.id == "parser_acceptance_criteria" and .evid
 jq -e '.next_work_items[] | select(.id == "parser_acceptance_criteria" and .evidence.required_evidence_paths_total == 2 and .evidence.required_evidence_paths_existing == 1 and (.evidence.missing_required_evidence_paths | length) == 1)' "$summary_json" >/dev/null
 jq -e '.calibration_only_items[] | select(.id == "tei_eaj_editorial_enrichment")' "$summary_json" >/dev/null
 rg -n "Aozora Publication Next Work" "$report_md" >/dev/null
-rg -n "letter_address_origin|front_back_source_region_policy|adapter_collapsed|schema-needed|Comprehensive Parser Acceptance Criteria" "$report_md" >/dev/null
+rg -n "letter_address_origin|front_back_source_region_policy|ruby_or_parenthetical_policy.json|unknown_text_delta.json|adapter_collapsed|schema-needed|Comprehensive Parser Acceptance Criteria" "$report_md" >/dev/null
 
 python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \

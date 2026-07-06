@@ -80,15 +80,14 @@
     "local-pkgs": {
       "flake": false,
       "locked": {
-        "lastModified": 1782996551,
-        "narHash": "sha256-r2UDbY3NZHztw+7yUDGKXPzsqnTn/4lRtQr6PvZcmvA=",
-        "path": "/home/bor/Projects/nix/pkgs",
+        "path": "./nix/ci-empty-local-pkgs",
         "type": "path"
       },
       "original": {
-        "path": "/home/bor/Projects/nix/pkgs",
+        "path": "./nix/ci-empty-local-pkgs",
         "type": "path"
-      }
+      },
+      "parent": []
     },
     "nix-fetcher-data": {
       "inputs": {

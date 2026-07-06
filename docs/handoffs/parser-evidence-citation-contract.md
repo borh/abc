@@ -6,7 +6,7 @@ Date: 2026-07-04
 ## Purpose
 
 ADR 0002 is still Draft because ABC has not defined how producer-side
-`../ab-validator` measurements become ABC parser-selection evidence. ABC now
+`ab-validator` measurements become ABC parser-selection evidence. ABC now
 has strong downstream compatibility evidence, but parser selection and
 parser-IR conversion compatibility are not the same decision.
 
@@ -15,12 +15,13 @@ move from "candidate criteria" to an accepted evidence policy.
 
 ## Monorepo Boundary
 
-The planned monorepo migration removes the physical `../ab-validator` checkout
+The planned monorepo migration removes the physical sibling checkout
 boundary, not the logical boundary between producer measurement and ABC
 publication admission. ABC should therefore record evidence by logical
 workspace-relative component paths such as
-`ab-validator/docs/superpowers/reports/...`, with current `../ab-validator/...`
-paths treated only as temporary locators.
+`ab-validator/docs/superpowers/reports/...`. Local filesystem paths are
+operator rerun locators only and are omitted from the committed pre-monorepo
+index when they would imply a durable sibling-checkout layout.
 
 The first machine-readable index for that policy is
 `data/parser-evidence-citations.edn`. It is validated by
@@ -70,8 +71,8 @@ ABC should cite producer evidence in three separate classes:
 
 An ABC parser-evidence citation should record:
 
-- report path relative to `../ab-validator`;
 - logical workspace-relative path;
+- optional local rerun locator outside artifact identity;
 - report SHA-256;
 - adapter name;
 - exact adapter version string, with no wildcards;

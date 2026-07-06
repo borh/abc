@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     local-pkgs = {
-      url = "path:/home/bor/Projects/nix/pkgs";
+      url = "path:./nix/ci-empty-local-pkgs";
       flake = false;
     };
     tei-eaj-aozora-tei = {

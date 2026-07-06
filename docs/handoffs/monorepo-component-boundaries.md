@@ -17,6 +17,10 @@ Related historical design input:
 
 - `docs/superpowers/specs/2026-07-03-soranoha-naming-design.md`
 
+Operational cutoff checklist:
+
+- `docs/handoffs/pre-monorepo-cutoff-readiness.md`
+
 That plan proposed a full `abc` to `soranoha` migration across Clojure
 namespaces, JSON-LD contexts, SHACL, Schematron rule IDs, Nix apps, and tests.
 It is useful as a component taxonomy, but it is too broad to execute as a

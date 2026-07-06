@@ -46,17 +46,17 @@ Current source-region report:
 - `docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json`
 - `works_scanned: 17894`
 - `gate_status: SOURCE_AUTHORITY_GATE_PASS`
-- `body_typed_occurrences: 4570071`
-- `body_raw_preserved_occurrences: 46382`
-- `source_apparatus_occurrences: 13920`
-- `front_matter_occurrences: 14627`
-- `back_matter_occurrences: 90268`
-- `terminal_provenance_occurrences: 609`
-- `colophon_metadata_occurrences: 89416`
-- `malformed_source_occurrences: 16`
-- `unsupported_body_markup_occurrences: 0`
-- `unknown_region_occurrences: 0`
-- `unknown_unreviewed_occurrences: 0`
+- `source_region_coverage.body_typed_occurrences: 4570071`
+- `source_region_coverage.body_raw_preserved_occurrences: 46382`
+- `source_region_coverage.source_apparatus_occurrences: 13920`
+- `source_region_coverage.front_matter_occurrences: 14627`
+- `source_region_coverage.back_matter_occurrences: 90268`
+- `source_region_coverage.terminal_provenance_occurrences: 609`
+- `source_region_coverage.colophon_metadata_occurrences: 89416`
+- `source_region_coverage.malformed_source_occurrences: 16`
+- `source_region_coverage.unsupported_body_markup_occurrences: 0`
+- `source_region_coverage.unknown_region_occurrences: 0`
+- `source_region_coverage.unknown_unreviewed_occurrences: 0`
 
 Current publication coverage report:
 
@@ -76,6 +76,8 @@ Current full-matrix TEI-EAJ calibration:
 - `tei_eaj_rows_attempted: 57`
 - `materialization_failed: 0`
 - `rows_skipped: 5`
+- `tei_eaj_rows_attempted` counts TEI-EAJ source rows. `rows_attempted`
+  expands those rows across the five parser lanes.
 - paragraph origin buckets:
   - `adapter_over_segmented: 127`
   - `adapter_collapsed: 67`
@@ -137,13 +139,17 @@ The project should use four gates:
 2. **Publication representation gate**
    - Every admitted source or parser-IR fact has one target lane:
      `tei_exact`, `tei_policy_projection`, `tei_plus_abc_extension`,
-     `custom_sidecar`, `diagnostic`, `plaintext_only`, or
+     `custom_sidecar`, `diagnostic`, `body_visible_text_only`, or
      `unsupported_gap`.
+   - `body_visible_text_only` is a disposition for ordinary visible body text,
+     not permission for front/back/source apparatus to appear in plaintext.
 
 3. **Cross-artifact bundle gate**
    - Parser-IR, TEI, plaintext, preservation, source-region evidence, and
      manifests agree.
    - This gate is currently green for 285 matrix rows.
+   - This gate is independent of the publication representation gate. It can
+     be green while the next-work/admission ledger remains open.
 
 4. **Calibration/fidelity gate**
    - TEI-EAJ comparison and five-parser evidence are used to find adapter,
@@ -213,6 +219,12 @@ The next step is sample-backed disposition evidence for:
 - colophon metadata;
 - malformed source diagnostics;
 - letter address/origin rows such as `宛先` and `発信地`.
+
+The current source-region policy file does not admit `letter_address_origin` as
+a source class. In current reports those rows are visible through TEI-EAJ
+calibration and parser-IR/TEI output, but they do not yet have a separate
+source-region counter or ABC disposition. Treat them as evidence-and-policy work
+until a measured counter and disposition exist.
 
 The output must distinguish source facts from publication decisions:
 

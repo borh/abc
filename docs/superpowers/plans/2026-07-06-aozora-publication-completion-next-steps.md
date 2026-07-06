@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the next-step admission evidence needed to finish complete Aozora Bunko markup publication mapping to TEI P5, ABC extension, custom sidecar, diagnostic, or plaintext-only targets.
+**Goal:** Build the next-step admission evidence needed to finish complete Aozora Bunko markup publication mapping to TEI P5, ABC extension, custom sidecar, diagnostic, or body-visible-text-only targets.
 
 **Architecture:** Add a single next-work ledger report first, then use it to drive focused source-region, text-policy, adapter-fidelity, TEI P5 dossier, and parser-acceptance slices. ab-validator remains the measurement/admission repo; ABC remains the TEI/profile/custom-schema owner.
 
@@ -37,12 +37,6 @@
   - Add `parser-ir-publication-next-work-report`.
 - Modify `docs/superpowers/plans/2026-07-06-complete-aozora-markup-publication-mapping.md`
   - Point the overarching plan to the new next-work ledger as the current dashboard.
-- Optional later task files:
-  - `reports/parser-ir/text-policy-delta.py`
-  - `tests/parser-ir-text-policy-delta-smoke.sh`
-  - `reports/parser-ir/adapter-fidelity-worksets.py`
-  - `tests/parser-ir-adapter-fidelity-worksets-smoke.sh`
-  - `docs/superpowers/specs/tei-p5-mapping-dossiers/*.md`
 
 ## Task 1: Add The Next-Work Ledger Report
 
@@ -96,6 +90,7 @@ cat > "$source_summary" <<'JSON'
   "schema_version": "aozora-source-region-coverage-v1",
   "gate_status": "SOURCE_AUTHORITY_GATE_PASS",
   "works_scanned": 2,
+  "unknown_region_occurrences": 999,
   "source_region_coverage": {
     "unsupported_body_markup_occurrences": 0,
     "unknown_region_occurrences": 0,
@@ -136,7 +131,9 @@ cat > "$matrix_summary" <<'JSON'
     "aligned": 2,
     "adapter_over_segmented": 4,
     "adapter_collapsed": 3,
-    "converter_paragraph_mismatch": 1
+    "converter_paragraph_mismatch": 1,
+    "source_note_back_routing": 5,
+    "page_break_projection": 6
   },
   "body_text_relation_buckets": {
     "equal": 1,
@@ -195,10 +192,13 @@ jq -e '.schema_version == "aozora-publication-next-work-v1"' "$summary_json" >/d
 jq -e '.verdict == "AOZORA_PUBLICATION_NEXT_WORK_OPEN"' "$summary_json" >/dev/null
 jq -e '.completed_gates[] | select(.id == "publication_bundle_contract" and .status == "complete")' "$summary_json" >/dev/null
 jq -e '.completed_gates[] | select(.id == "source_authority" and .status == "complete")' "$summary_json" >/dev/null
+jq -e '.completed_gates[] | select(.id == "source_authority" and .evidence.counter_source == "source_region_coverage")' "$summary_json" >/dev/null
 jq -e '([.parser_lanes[].adapter] | sort) == (["aozora", "aozora-epub3", "aozora-rs", "aozora2", "aozora2html"] | sort)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "source_region_disposition_samples" and .owner == "ab-validator+abc")' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "text_policy_calibration" and .evidence.different_rows == 9)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and .evidence.adapter_distortion_rows == 10)' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and (.evidence.included_buckets | sort) == (["adapter_collapsed", "adapter_over_segmented", "adapter_raw_only", "adapter_under_segmented", "converter_paragraph_mismatch"] | sort))' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and (.evidence.excluded_buckets | sort) == (["aligned", "page_break_projection", "source_note_back_routing"] | sort))' "$summary_json" >/dev/null
 jq -e '.calibration_only_items[] | select(.id == "tei_eaj_editorial_enrichment")' "$summary_json" >/dev/null
 rg -n "Aozora Publication Next Work" "$report_md" >/dev/null
 ```
@@ -220,9 +220,14 @@ Create `reports/parser-ir/publication-next-work.py` with these behaviors:
 
 - parse all input JSON files;
 - read the performance Markdown as text and record whether it mentions `DNF`;
+- read source-region counters from
+  `source_summary["source_region_coverage"]`; do not read flat top-level
+  counter names because the real summary does not expose them flat and the
+  smoke intentionally includes a bogus flat value;
 - compute completed gates:
   - `source_authority` complete when source gate passes and unknown/unsupported
-    counters are zero;
+    counters under `source_region_coverage` are zero, and include
+    `evidence.counter_source: "source_region_coverage"`;
   - `ir_publication_coverage` complete when coverage verdict is
     `IR_PUBLICATION_COVERAGE_COMPLETE`;
   - `publication_bundle_contract` complete when bundle rows failed is zero;
@@ -237,9 +242,14 @@ Create `reports/parser-ir/publication-next-work.py` with these behaviors:
   - `tei_p5_mapping_dossiers`;
   - `parser_acceptance_criteria`.
 - compute `text_policy_calibration.evidence.different_rows` from
-  `body_text_relation_buckets.different`;
+  `body_text_relation_buckets.different`; this value must later equal
+  `text-policy-delta.total_different_rows`;
 - compute `adapter_fidelity_worksets.evidence.adapter_distortion_rows` as the
-  sum of all paragraph-origin buckets except `aligned`,
+  sum of these included paragraph-origin buckets:
+  `adapter_over_segmented`, `adapter_collapsed`, `adapter_under_segmented`,
+  `converter_paragraph_mismatch`, and `adapter_raw_only`;
+- emit `adapter_fidelity_worksets.evidence.included_buckets` with that exact
+  included set and `excluded_buckets` with `aligned`,
   `source_note_back_routing`, and `page_break_projection`;
 - emit `calibration_only_items` containing `tei_eaj_editorial_enrichment`.
 
@@ -343,13 +353,20 @@ git commit -m "feat(publication): add next-work admission ledger"
 - [ ] **Step 1: Write a failing smoke**
 
 Create `tests/source-region-disposition-samples-smoke.sh` with fixture JSON
-that includes the six source-region classes and policy dispositions. Assert:
+that includes the six source-region classes and policy dispositions. Use two
+policy fixtures:
+
+- one fixture that omits `letter_address_origin`;
+- one fixture that includes `letter_address_origin` with an admitted target.
+
+Assert:
 
 ```bash
 jq -e '.verdict == "SOURCE_REGION_DISPOSITION_SAMPLES_READY"' "$summary_json"
 jq -e '.classes[] | select(.source_class == "terminal_provenance" and .plaintext_projection == "omit")' "$summary_json"
 jq -e '.classes[] | select(.source_class == "colophon_metadata" and .tei_target == "teiHeader/sourceDesc")' "$summary_json"
-jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "policy_needed")' "$summary_json"
+jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "policy_needed" and .measurement_status == "evidence_needed" and .policy_class_present == false)' "$summary_json"
+jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "admitted" and .policy_class_present == true and .tei_target == "teiHeader/profileDesc/correspDesc")' "$summary_json_with_letter"
 ```
 
 - [ ] **Step 2: Run the smoke to verify it fails**
@@ -366,11 +383,16 @@ Expected: fail because the script does not exist.
 
 Implement a report builder that:
 
-- reads `data/abc-schemas/data/source-region-publication-policy-v0.json`;
+- reads `data/abc-schemas/data/source-region-publication-policy-v0.json`
+  from `.dispositions[]`;
 - emits all policy classes with `target_class`, `tei_target`,
   `custom_sidecar`, `plaintext_projection`, and `measurement_status`;
-- adds `letter_address_origin` as `policy_needed` until ABC/source-region
-  policy explicitly admits it;
+- if the policy contains `letter_address_origin`, emits that policy class as
+  written with `policy_class_present: true`;
+- if the policy omits `letter_address_origin`, adds a synthetic
+  `letter_address_origin` row with `status: "policy_needed"`,
+  `measurement_status: "evidence_needed"`, and
+  `policy_class_present: false`;
 - records current measured counters from the source summary.
 
 - [ ] **Step 4: Generate current report**
@@ -420,6 +442,7 @@ git commit -m "feat(source): report source-region disposition samples"
 - Consumes: `--matrix-summary PATH`
 - Produces:
   - `schema_version: "parser-ir-text-policy-delta-v1"`
+  - `total_different_rows`
   - `counts_by_cause`
   - `source_markup_backed_blockers`
   - `calibration_only_rows`
@@ -441,15 +464,25 @@ Use the matrix row fields already present:
 - `classification.paragraph_origin_bucket`
 - `text.body_base_text_relation`
 
-Classify rows into:
+Classify every row counted by `body_text_relation_buckets.different` into
+exactly one of:
 
 - `ruby_or_parenthetical_policy`
 - `front_back_source_region_policy`
 - `body_visible_layout_policy`
 - `adapter_text_loss`
 - `tei_eaj_editorial_or_enrichment`
-- `already_equal`
 - `unknown_text_delta`
+
+Rows with `body_text_relation == "equal"` may be reported separately as
+`already_equal`, but must not contribute to `total_different_rows`.
+
+The smoke and current report must assert:
+
+```bash
+jq -e '.total_different_rows == (.counts_by_cause | to_entries | map(.value) | add)' "$summary_json"
+jq -e '.total_different_rows == 9' "$summary_json"
+```
 
 - [ ] **Step 3: Generate and verify current report**
 
@@ -462,6 +495,10 @@ python3 reports/parser-ir/text-policy-delta.py \
   --report-md docs/superpowers/reports/2026-07-06-text-policy-delta.md
 bash tests/parser-ir-text-policy-delta-smoke.sh
 python3 -m py_compile reports/parser-ir/text-policy-delta.py
+jq -e -n \
+  --slurpfile next docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json \
+  --slurpfile text docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json \
+  '($next[0].next_work_items[] | select(.id == "text_policy_calibration") | .evidence.different_rows) == $text[0].total_different_rows'
 git diff --check
 ```
 
@@ -501,6 +538,13 @@ workset contains the expected adapter/work IDs and that calibration-safe buckets
 such as `aligned`, `source_note_back_routing`, and `page_break_projection` are
 not emitted as adapter-fidelity blockers.
 
+The smoke must also assert the exact bucket policy:
+
+```bash
+jq -e '(.included_buckets | sort) == (["adapter_collapsed", "adapter_over_segmented", "adapter_raw_only", "adapter_under_segmented", "converter_paragraph_mismatch"] | sort)' "$summary_json"
+jq -e '(.excluded_buckets | sort) == (["aligned", "page_break_projection", "source_note_back_routing"] | sort)' "$summary_json"
+```
+
 - [ ] **Step 2: Implement workset generator**
 
 Generate JSON arrays of row objects under the report summary, not `/db`. Each
@@ -514,6 +558,9 @@ row object should include:
 - `parser_ir_nodes`
 - `paragraph_count`
 - `source_note_count`
+
+Also emit top-level `included_buckets` and `excluded_buckets` arrays matching
+the Task 1 adapter-fidelity evidence policy.
 
 - [ ] **Step 3: Generate current report and verify**
 
@@ -573,6 +620,16 @@ git commit -m "feat(parser-ir): generate adapter fidelity worksets"
 The README must state that TEI P5 references live in
 `../abc/references/TEI/P5` and that each dossier must cite exact local paths
 when TEI P5 is used for a claim.
+
+Before writing the README, verify the local TEI checkout path:
+
+```bash
+test -d ../abc/references/TEI/P5
+find ../abc/references/TEI/P5 -maxdepth 2 -type d | sort | sed -n '1,40p'
+```
+
+Record in the README that this path exists locally and is the citation base for
+TEI P5 claims.
 
 - [ ] **Step 2: Create initial dossier stubs with known evidence**
 
@@ -668,6 +725,7 @@ git commit -m "docs(parser): define comprehensive parser acceptance criteria"
 **Files:**
 - Modify: `reports/parser-ir/publication-coverage.py`
 - Modify: `tests/parser-ir-publication-coverage-smoke.sh`
+- Modify: `justfile`
 - Modify: `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json`
 - Modify: `docs/superpowers/reports/2026-07-06-ir-publication-coverage.md`
 - Modify: `docs/superpowers/plans/2026-07-06-complete-aozora-markup-publication-mapping.md`
@@ -706,40 +764,46 @@ When present, include:
 - next work item count;
 - item IDs.
 
-- [ ] **Step 3: Regenerate current coverage report**
+- [ ] **Step 3: Update the canonical just recipe**
+
+Modify `parser-ir-publication-coverage-report` in `justfile`:
+
+- change the default `BUNDLE_VALIDATION_SUMMARY` to
+  `docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json`,
+  because the current admission dashboard is based on all 285 matrix rows;
+- add `NEXT_WORK_SUMMARY="docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json"`;
+- append `--next-work-summary "{{repo_root}}/{{NEXT_WORK_SUMMARY}}"` to
+  `args` when `NEXT_WORK_SUMMARY` is non-empty.
+
+The canonical recipe must be the source of truth for report regeneration; do
+not leave a manual command that uses different bundle evidence.
+
+- [ ] **Step 4: Regenerate current coverage report**
 
 Run:
 
 ```bash
-python3 reports/parser-ir/publication-coverage.py \
-  --parser-ir-schema data/abc-schemas/schemas/parser-ir.schema.json \
-  --mapping data/aat-to-parser-ir-mapping-v1.json \
-  --source-summary docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json \
-  --matrix-summary docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json \
-  --source-delta-summary docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json \
-  --custom-contract-schema data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json \
-  --bundle-validation-summary docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json \
-  --next-work-summary docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json \
-  --summary-json docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json \
-  --report-md docs/superpowers/reports/2026-07-06-ir-publication-coverage.md
+just parser-ir-publication-coverage-report
 ```
 
-- [ ] **Step 4: Verify**
+- [ ] **Step 5: Verify**
 
 Run:
 
 ```bash
 bash tests/parser-ir-publication-coverage-smoke.sh
 python3 -m py_compile reports/parser-ir/publication-coverage.py
+just parser-ir-publication-coverage-report
 jq -e '.next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_OPEN"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 git diff --check
 ```
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add reports/parser-ir/publication-coverage.py \
   tests/parser-ir-publication-coverage-smoke.sh \
+  justfile \
   docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json \
   docs/superpowers/reports/2026-07-06-ir-publication-coverage.md \
   docs/superpowers/plans/2026-07-06-complete-aozora-markup-publication-mapping.md
@@ -756,6 +820,7 @@ bash tests/source-region-disposition-samples-smoke.sh
 bash tests/parser-ir-text-policy-delta-smoke.sh
 bash tests/parser-ir-adapter-fidelity-worksets-smoke.sh
 bash tests/parser-ir-publication-coverage-smoke.sh
+just parser-ir-publication-coverage-report
 python3 -m py_compile \
   reports/parser-ir/publication-next-work.py \
   reports/source-regions/source-region-disposition-samples.py \

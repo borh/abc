@@ -657,30 +657,37 @@ pub(crate) fn run_analyze_aat_serial(
         // per-document peak excludes it (several× file size on the large tail).
         drop(aat);
         // Orthographic normalization (katakana→hiragana) for pre-war text.
-        // Detection dispatch is polymorphic: the detector (heuristic or ML) was
-        // constructed once above behind `Arc<dyn OrthoDetector>`.
-        let (normalized_text, offset_map_opt, annotations_opt): (
-            String,
+        // `None` means "no normalization applied" — analyze the document text
+        // directly with NO extra copy (P2; warehouse runs always take this path).
+        let (normalized_text_opt, offset_map_opt, annotations_opt): (
+            Option<String>,
             Option<ab_ortho_detect::OffsetMap>,
             Option<Vec<ab_ortho_detect::OrthoAnnotation>>,
         ) = if let Some(ref det) = detector {
             let sentences = ab_plaintext::sentence_split(&document.text);
             let annotations = det.detect(&sentences);
             if annotations.is_empty() {
-                (document.text.clone(), None, None)
+                (None, None, None)
             } else {
                 let (norm_text, map) =
                     ab_ortho_detect::ortho_normalize(&document.text, &annotations);
-                (norm_text, Some(map), Some(annotations))
+                (Some(norm_text), Some(map), Some(annotations))
             }
         } else {
-            (document.text.clone(), None, None)
+            (None, None, None)
         };
 
-        let norm_doc = ab_plaintext::PlainTextDocument {
-            text_id: document.text_id.clone(),
-            source_format: document.source_format,
-            text: normalized_text,
+        let normalized_doc_storage;
+        let norm_doc: &ab_plaintext::PlainTextDocument = match normalized_text_opt {
+            Some(text) => {
+                normalized_doc_storage = ab_plaintext::PlainTextDocument {
+                    text_id: document.text_id.clone(),
+                    source_format: document.source_format,
+                    text,
+                };
+                &normalized_doc_storage
+            }
+            None => &document,
         };
         // One allocation per document, shared by every per-analyzer Analysis.
         let shared_normalized: Arc<str> = Arc::from(norm_doc.text.as_str());
@@ -691,7 +698,7 @@ pub(crate) fn run_analyze_aat_serial(
         let mut analyses = Vec::new();
 
         for analyzer in analyzers {
-            let mut analysis = match analyzer.analyze(&norm_doc) {
+            let mut analysis = match analyzer.analyze(norm_doc) {
                 Ok(analysis) => analysis,
                 Err(error) => {
                     if let Some(writer) = &mut warehouse_writer {

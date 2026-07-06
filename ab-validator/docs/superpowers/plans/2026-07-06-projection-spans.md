@@ -17,7 +17,8 @@
 - Spec-exact tokens: table file `projection_spans.parquet`; columns `run_id, source_id, text_id, projected_char_start, projected_char_end, aat_pointer, inline_kind, is_ruby_base, is_gaiji, is_note`; `SCHEMA_VERSION = 2`; `READER_MAX_SCHEMA_VERSION = 2`; policy line "Readers must reject runs.schema_version values greater than the reader's supported maximum (2)."
 - `is_note` is structurally false in v1 emission (notes are excluded from projection); the column ships anyway per the governing spec's column table.
 - Full profile only: the triage table lists in `crates/ab-morph-run/src/options.rs` must NOT gain the new table.
-- Task 7 runs real dictionaries from the main checkout (not a worktree; repo-root `dictionary` is a tracked symlink that dangles in worktrees — if a worktree is unavoidable: `ln -sfn /home/bor/Projects/ab-validator/dictionary dictionary`, then `git checkout -- dictionary` before committing).
+- Task 7 runs real dictionaries via the monorepo's own flake outputs: `ab-validator/dictionary` (a dangling split-repo symlink at plan time) is replaced by a real local directory with `compiled/` + `optimized/` subdirs; `just dictionary-build-all` populates it from `nix build .#vibrato-dict-* --print-out-paths` symlinks. Owner-decided 2026-07-06; record as an intentional monorepo delta in `docs/migration-status.md`.
+- Owner-decided 2026-07-06: implementation lands in the soranoha monorepo on branch `feat/projection-spans`; the `parity-audit` gate is deferred (drift vs the split repos is pre-existing: monorepo commit 62e49db plus abc-side changes) — do NOT run `just validate-migration` as a task gate; run `just root-flake-check-no-build` instead.
 - Commits end with the trailer: `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
 
 ---
@@ -1403,10 +1404,22 @@ git commit -m "perf(morph-diff): flat sorted boundary vectors in n-way stats"
 cargo test -p ab-plaintext && cargo test -p ab-warehouse && cargo test -p ab-morph-diff \
   && cargo test -p ab-morph-run --features test-analyzer \
   && cargo clippy --workspace --all-targets --features ab-morph-run/test-analyzer 2>&1 | tail -1
-cd /home/bor/Projects/soranoha && just validate-migration && cd ab-validator
+cd /home/bor/Projects/soranoha && just root-flake-check-no-build && cd ab-validator
 ```
 
-Expected: all suites pass, clippy clean, migration gates pass.
+Expected: all suites pass, clippy clean, root flake evaluates. (`parity-audit` is intentionally NOT a gate this cycle — see Global Constraints.)
+
+Also make the monorepo dictionary dir flake-native (once, before the run):
+
+```bash
+rm ab-validator/dictionary   # dangling symlink to ../vibrato-pipe/dictionary
+mkdir -p ab-validator/dictionary/compiled ab-validator/dictionary/optimized
+touch ab-validator/dictionary/compiled/.gitkeep ab-validator/dictionary/optimized/.gitkeep
+# record the delta in docs/migration-status.md §Intentional Deltas, then:
+git add -A ab-validator/dictionary docs/migration-status.md
+git commit -m "chore(monorepo): flake-native dictionary dir replaces split-repo symlink"
+just -f ab-validator/justfile dictionary-build-all   # populates compiled/ from flake outputs
+```
 
 - [ ] **Step 2: Full-corpus run under time -v (jobs=8, Full profile)**
 

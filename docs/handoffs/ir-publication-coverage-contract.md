@@ -63,3 +63,4 @@ Remaining work is no longer "make TEI-EAJ Level 2/3 pass." It is:
 Design reference:
 
 - `docs/superpowers/specs/2026-07-06-aozora-source-region-and-apparatus-contract.md`
+- `docs/handoffs/source-region-coverage-abc-integration.md`

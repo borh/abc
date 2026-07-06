@@ -242,9 +242,10 @@ evidence:
 During schema rotation, legacy fields must remain as computed compatibility
 aliases until ABC confirms migration to the new JSON contract. At minimum:
 
-- `out_of_body_occurrences == front_matter_occurrences +
-  back_matter_occurrences + boundary/provenance apparatus occurrences that are
-  not otherwise body-visible`
+- `out_of_body_occurrences` remains a legacy counter for allowlisted non-body
+  marker rows. In the current report it is the sum of notation placeholders and
+  body-end-boundary rows (`465 + 242 + 243`), not a complete front/back matter
+  total.
 - `malformed_noise_occurrences == source_apparatus_occurrences +
   malformed_source_occurrences` for the legacy allowlist scope being replaced
 - `unsupported_occurrences == unsupported_body_markup_occurrences`
@@ -261,6 +262,12 @@ The expected first split from the current corpus is:
 - `［＃…］` and `［＃（…）］` move to notation-placeholder apparatus
 - the 16 true malformed-start occurrences move to
   `malformed_source_occurrences`
+
+Current v1 source-region counts do not separately measure terminal provenance
+or colophon metadata prevalence. The current `back_matter_occurrences: 243`
+matches the `body_end_boundary` row, so later ABC policy or ab-validator
+measurement must split terminal-provenance and colophon classes before making
+separate prevalence claims for them.
 
 The source-authority report now carries this split in `source_region_coverage`.
 The legacy counters remain as compatibility aliases while downstream consumers

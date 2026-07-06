@@ -13,6 +13,8 @@ summary_json="$out_dir/source-region-samples.summary.json"
 summary_json_with_letter="$out_dir/source-region-samples-with-letter.summary.json"
 report_md="$out_dir/source-region-samples.md"
 report_md_with_letter="$out_dir/source-region-samples-with-letter.md"
+repo_policy_summary_json="$out_dir/source-region-samples-repo-policy.summary.json"
+repo_policy_report_md="$out_dir/source-region-samples-repo-policy.md"
 
 cat > "$source_summary" <<'JSON'
 {
@@ -124,3 +126,12 @@ jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status 
 jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "admitted" and .policy_class_present == true and .tei_target == "teiHeader/profileDesc/correspDesc")' "$summary_json_with_letter" >/dev/null
 jq -e '.classes[] | select(.source_class == "letter_address_origin" and .measured_counter == "letter_address_origin_occurrences" and .measured_occurrences == 2)' "$summary_json_with_letter" >/dev/null
 rg -n "Source-Region Disposition Samples" "$report_md" >/dev/null
+
+python3 "$repo_root/reports/source-regions/source-region-disposition-samples.py" \
+  --source-summary "$repo_root/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" \
+  --source-report-md "$repo_root/docs/superpowers/reports/2026-07-04-source-authority-representability.md" \
+  --policy "$repo_root/data/abc-schemas/data/source-region-publication-policy-v0.json" \
+  --summary-json "$repo_policy_summary_json" \
+  --report-md "$repo_policy_report_md"
+
+jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status == "admitted" and .policy_class_present == true and .tei_target == "teiHeader/profileDesc/correspDesc")' "$repo_policy_summary_json" >/dev/null

@@ -1,6 +1,6 @@
 # Source Apparatus Front And Back
 
-Status: policy-needed
+Status: admitted
 
 ## Source Inventory
 
@@ -38,5 +38,6 @@ and `docs/superpowers/reports/2026-07-04-source-authority-representability.summa
 
 ## Open Decisions
 
-Next action: settle `letter_address_origin` admission policy with ABC before
-treating those rows as admitted; ab-validator now measures 6 occurrences.
+No open source-region disposition decisions remain for the measured apparatus
+classes. `letter_address_origin` is admitted as a TEI policy projection to
+`teiHeader/profileDesc/correspDesc`; ab-validator measures 6 occurrences.

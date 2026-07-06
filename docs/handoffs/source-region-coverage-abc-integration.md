@@ -115,7 +115,7 @@ custom preservation, headers, front/back matter, or diagnostics.
 | `body_end_boundary` | 243 `［＃本文終わり］` occurrences | Treat as source region boundary evidence; do not render as body text. |
 | `terminal_provenance` | 609 `SegmentBoundaryTerminalProvenance` / `［＃地付き］...` occurrences | Decide TEI back/source-note/custom placement. |
 | `colophon_metadata` | 89,416 source metadata lines such as `底本：`, `入力：`, and `校正：` | Decide TEI header/sourceDesc/revision-like policy and custom-sidecar preservation. |
-| `letter_address_origin` | 6 source-region text rows such as `宛先` and `発信地` | ABC policy still needed; evidence is now measured, not missing. |
+| `letter_address_origin` | 6 source-region text rows such as `宛先` and `発信地` | Admitted as TEI policy projection to `teiHeader/profileDesc/correspDesc`; plaintext omits it. |
 | `malformed_source` | 16 total residues | Preserve as diagnostics; do not count as unsupported Aozora syntax. |
 
 The 16 malformed-source residues are:
@@ -168,10 +168,10 @@ that must resolve to sidecar records rather than independent facts.
 1. Accept `aozora-source-region-coverage-v1` in the design-bundle validator.
 2. Add a fixture with source apparatus in front matter, a body-end boundary, and
    terminal provenance/back matter.
-3. Decide the ABC disposition table for the source classes above. Terminal
-   provenance, colophon metadata, body-end boundaries, and letter address/origin
-   now have separate measured counters; `letter_address_origin` still needs an
-   admitted ABC policy row.
+3. Keep the ABC disposition table synced for the source classes above.
+   Terminal provenance, colophon metadata, body-end boundaries, and letter
+   address/origin now have separate measured counters; `letter_address_origin`
+   is admitted to `teiHeader/profileDesc/correspDesc`.
 4. Add preservation records or TEI profile rules for each admitted disposition.
 5. Add cross-file validation for parser-IR, TEI, preservation sidecar,
    source-region report, and plaintext.

@@ -11,6 +11,7 @@ from collections import Counter
 from typing import Any
 
 SCHEMA_VERSION = "parser-ir-text-policy-delta-v1"
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 CAUSES = (
     "ruby_or_parenthetical_policy",
     "front_back_source_region_policy",
@@ -52,6 +53,13 @@ def sha256_file(path: pathlib.Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return f"sha256:{digest.hexdigest()}"
+
+
+def display_path(path: pathlib.Path) -> str:
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
 
 
 def row_id(row: dict[str, Any], index: int) -> str:
@@ -160,7 +168,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
     bucket_different = matrix.get("body_text_relation_buckets", {}).get("different")
     return {
         "schema_version": SCHEMA_VERSION,
-        "matrix_summary": {"path": str(args.matrix_summary), "hash": sha256_file(args.matrix_summary)},
+        "matrix_summary": {"path": display_path(args.matrix_summary), "hash": sha256_file(args.matrix_summary)},
         "total_different_rows": total_different,
         "matrix_bucket_different_rows": bucket_different,
         "counts_by_cause": dict(counts),

@@ -4,17 +4,17 @@
   "policy": {
     "policy_id": "https://w3id.org/abc/policies/source-region-publication-v0",
     "policy_version": "0.1.0",
-    "path": "/home/bor/Projects/ab-validator/.worktrees/aozora-publication-next-work/data/abc-schemas/data/source-region-publication-policy-v0.json",
+    "path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
     "hash": "sha256:b307706ee8b998a0639e6664cea55a287ff6a8247c991779022595bf99b3a47d"
   },
   "source_summary": {
-    "path": "/home/bor/Projects/ab-validator/.worktrees/aozora-publication-next-work/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+    "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
     "hash": "sha256:8de2e69b56d58ce5f3f35dfe18cec5115948080306144d88717af8d283c05e63",
     "works_scanned": 17894,
     "gate_status": "SOURCE_AUTHORITY_GATE_PASS"
   },
   "source_report_md": {
-    "path": "/home/bor/Projects/ab-validator/.worktrees/aozora-publication-next-work/docs/superpowers/reports/2026-07-04-source-authority-representability.md",
+    "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.md",
     "hash": "sha256:419b6d8903ea8b580a9a6f7d377f6380df1e10caebc91034d44dc0a20c6c32d8"
   },
   "classes": [

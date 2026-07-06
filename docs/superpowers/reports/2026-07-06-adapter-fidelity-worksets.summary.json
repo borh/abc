@@ -1,7 +1,7 @@
 {
   "schema_version": "adapter-fidelity-worksets-v1",
   "matrix_summary": {
-    "path": "/home/bor/Projects/ab-validator/.worktrees/aozora-publication-next-work/docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json",
+    "path": "docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json",
     "hash": "sha256:f21cea6a4ceed7fc6bd9187c3e16f70f38922a441817e6e19b187a9bf6ecd4bc"
   },
   "included_buckets": [

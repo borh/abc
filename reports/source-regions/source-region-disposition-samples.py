@@ -12,6 +12,7 @@ from typing import Any
 SCHEMA_VERSION = "source-region-disposition-samples-v1"
 VERDICT = "SOURCE_REGION_DISPOSITION_SAMPLES_READY"
 LETTER_CLASS = "letter_address_origin"
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 SOURCE_COUNTERS = {
     "notation_legend": "source_apparatus_occurrences",
     "notation_placeholder": "front_matter_occurrences",
@@ -37,6 +38,13 @@ def sha256_file(path: pathlib.Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return f"sha256:{digest.hexdigest()}"
+
+
+def display_path(path: pathlib.Path) -> str:
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
 
 
 def as_int(value: Any) -> int:
@@ -117,16 +125,16 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
         "policy": {
             "policy_id": policy.get("policy_id"),
             "policy_version": policy.get("policy_version"),
-            "path": str(args.policy),
+            "path": display_path(args.policy),
             "hash": sha256_file(args.policy),
         },
         "source_summary": {
-            "path": str(args.source_summary),
+            "path": display_path(args.source_summary),
             "hash": sha256_file(args.source_summary),
             "works_scanned": source.get("works_scanned"),
             "gate_status": source.get("gate_status"),
         },
-        "source_report_md": {"path": str(args.source_report_md), "hash": sha256_file(args.source_report_md)},
+        "source_report_md": {"path": display_path(args.source_report_md), "hash": sha256_file(args.source_report_md)},
         "classes": classes,
     }
 

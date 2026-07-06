@@ -10,6 +10,7 @@ import pathlib
 from typing import Any
 
 SCHEMA_VERSION = "adapter-fidelity-worksets-v1"
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 INCLUDED_BUCKETS = (
     "adapter_over_segmented",
     "adapter_collapsed",
@@ -34,6 +35,13 @@ def sha256_file(path: pathlib.Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return f"sha256:{digest.hexdigest()}"
+
+
+def display_path(path: pathlib.Path) -> str:
+    try:
+        return str(path.resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
 
 
 def as_int(value: Any) -> int:
@@ -106,7 +114,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
             unknown_bucket_counts[bucket] = unknown_bucket_counts.get(bucket, 0) + 1
     return {
         "schema_version": SCHEMA_VERSION,
-        "matrix_summary": {"path": str(args.matrix_summary), "hash": sha256_file(args.matrix_summary)},
+        "matrix_summary": {"path": display_path(args.matrix_summary), "hash": sha256_file(args.matrix_summary)},
         "included_buckets": list(INCLUDED_BUCKETS),
         "excluded_buckets": list(EXCLUDED_BUCKETS),
         "worksets": worksets,

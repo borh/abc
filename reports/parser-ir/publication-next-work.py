@@ -67,6 +67,14 @@ def display_path(path: pathlib.Path) -> str:
         return str(path)
 
 
+def display_tei_p5_root(path: pathlib.Path) -> str:
+    resolved = path.resolve()
+    parts = resolved.parts
+    if len(parts) >= 4 and parts[-4:] == ("abc", "references", "TEI", "P5"):
+        return "abc/references/TEI/P5"
+    return display_path(path)
+
+
 def as_int(value: Any) -> int:
     if value is None:
         return 0
@@ -399,7 +407,7 @@ def tei_reference_audit(references: list[str], tei_p5_root: pathlib.Path) -> dic
         elif not path.is_file():
             missing.append(reference)
     return {
-        "root": display_path(tei_p5_root),
+        "root": display_tei_p5_root(tei_p5_root),
         "root_exists": root_exists,
         "file_count": file_count,
         "directory_references": sorted(directories),
@@ -780,7 +788,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
             "text_policy_summary": input_record(args.text_policy_summary),
             "adapter_worksets_summary": input_record(args.adapter_worksets_summary),
             "dossier_dir": {"path": display_path(args.dossier_dir)},
-            "tei_p5_root": {"path": display_path(tei_p5_root), "exists": tei_p5_root.exists()},
+            "tei_p5_root": {"path": display_tei_p5_root(tei_p5_root), "exists": tei_p5_root.exists()},
             "parser_acceptance_spec": input_record(args.parser_acceptance_spec),
         },
     }

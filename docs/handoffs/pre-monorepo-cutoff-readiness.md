@@ -36,6 +36,8 @@ python3 scripts/schema_contracts.py
 python3 scripts/compare_abc_schema_contracts.py --abc /path/to/abc
 bash tests/abc-schema-contract-compare-smoke.sh
 bash tests/parser-ir-publication-next-work-smoke.sh
+bash tests/pre-monorepo-path-hygiene-smoke.sh
+bash tests/pre-monorepo-layout-dry-run.sh
 nix flake check --no-build
 ```
 
@@ -52,3 +54,6 @@ not as a reason to wait indefinitely.
 - `AB_WORKSPACE_ROOT` identifies a local workspace containing logical
   components such as `abc/` and `ab-validator/`.
 - `AB_ABC_ROOT` overrides the ABC checkout root for local two-repo operation.
+- Active smoke tests resolve ABC through the same workspace policy. Historical
+  plans and reports may still mention old sibling paths when they are archival
+  evidence rather than current artifact identity.

@@ -2,7 +2,9 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-abc_root="${AB_ABC_ROOT:-"$repo_root/../abc"}"
+source "$repo_root/tests/lib/smoke-env.sh"
+
+abc_root="$(smoke_abc_root)"
 workset="${AB_TEI_EAJ_WORKSET:-"$abc_root/docs/handoffs/tei-eaj-aozora-workset-export.json"}"
 aat_path="${AB_LEVEL3_AAT:-"/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000035_1567-32ff5a089d67.json"}"
 tei_eaj_file="${AB_LEVEL3_TEI_EAJ_FILE:-"data/complete/tei_lib_lv4/1567_tei.xml"}"

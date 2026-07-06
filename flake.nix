@@ -966,6 +966,31 @@
           ];
         };
 
+        preMonorepoPathHygieneSmokeCheck = mkSmokeCheck {
+          name = "pre-monorepo-path-hygiene-smoke-check";
+          testScript = "tests/pre-monorepo-path-hygiene-smoke.sh";
+          nativeBuildInputs = [
+            pkgs.python3
+            pkgs.ripgrep
+          ];
+        };
+
+        preMonorepoLayoutDryRunCheck = mkSmokeCheck {
+          name = "pre-monorepo-layout-dry-run-check";
+          testScript = "tests/pre-monorepo-layout-dry-run.sh";
+          nativeBuildInputs = [
+            pkgs.git
+            pkgs.just
+            pkgs.python3
+          ];
+          extraPreScript = ''
+            git init -q
+            mkdir -p "$work_dir/abc/schemas"
+            cp "${source}/data/abc-schemas/schema-contracts.json" "$work_dir/abc/schemas/schema-contracts.json"
+            export AB_ABC_ROOT="$work_dir/abc"
+          '';
+        };
+
         abAatToParserIr =
           if hasCargoManifest && hasCargoLock then
             rustPlatform.buildRustPackage {
@@ -1166,6 +1191,8 @@
           taxonomy-drift = taxonomyDriftCheck;
           abc-schema-contract-drift = abcSchemaContractDriftCheck;
           abc-schema-contract-compare-smoke = abcSchemaContractCompareSmokeCheck;
+          pre-monorepo-path-hygiene-smoke = preMonorepoPathHygieneSmokeCheck;
+          pre-monorepo-layout-dry-run = preMonorepoLayoutDryRunCheck;
           parser-ir-level3-admission-smoke = level3AdmissionSmokeCheck;
           parser-ir-plain-prose-source-delta-smoke = plainProseSourceDeltaSmokeCheck;
           parser-ir-publication-bundle-smoke = publicationBundleSmokeCheck;

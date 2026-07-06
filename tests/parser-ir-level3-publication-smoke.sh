@@ -2,7 +2,9 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-abc_root="${AB_ABC_ROOT:-"$repo_root/../abc"}"
+source "$repo_root/tests/lib/smoke-env.sh"
+
+abc_root="$(smoke_abc_root)"
 aat_path="${AB_LEVEL3_AAT:-"$repo_root/tests/fixtures/aat-parser-ir/real-aozora2html-sample.aat.json"}"
 expect_source_note="${AB_LEVEL3_EXPECT_SOURCE_NOTE:-0}"
 

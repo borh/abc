@@ -2,7 +2,9 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-abc_root="${AB_ABC_ROOT:-"$repo_root/../abc"}"
+source "$repo_root/tests/lib/smoke-env.sh"
+
+abc_root="$(smoke_abc_root)"
 
 if [[ ! -d "$abc_root" ]]; then
   echo "missing ABC repo at $abc_root; set AB_ABC_ROOT=/path/to/abc" >&2

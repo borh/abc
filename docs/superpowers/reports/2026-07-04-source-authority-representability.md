@@ -23,7 +23,8 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - typed_occurrences: 4570071
 - raw_preserved_occurrences: 46382
 - out_of_body_occurrences: 950
-- unsupported_occurrences: 13936
+- malformed_noise_occurrences: 13936
+- unsupported_occurrences: 0
 - needs_research_occurrences: 0
 
 ## Rows
@@ -106,7 +107,7 @@ None.
 
 ## Inputs
 
-- matrix: `/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml`
+- matrix: `data/aozora-syntax-coverage.toml`
 - index: `scratch/ab-index.json`
 - corpus: `/home/bor/Dependencies/aozorabunko`
-- allowlist: `/home/bor/Projects/ab-validator/data/aozora-source-inventory-allowlist.toml`
+- allowlist: `data/aozora-source-inventory-allowlist.toml`

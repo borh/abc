@@ -10,7 +10,9 @@ Current state:
 - The IR publication coverage report is complete for the current measured
   scope.
 - Source authority passes over 17,894 works with 0 unallowlisted unknown source
-  markers.
+  markers and 0 unsupported source-feature occurrences. The 13,936 reviewed
+  malformed/boilerplate markers are reported separately as
+  `malformed_noise_occurrences`, not as unmapped Aozora markup.
 - Five parser lanes are present in the generated matrix:
   `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
 - ABC owns the custom preservation contract and TEI profile evidence now synced

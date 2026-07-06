@@ -105,6 +105,7 @@ struct RepresentabilityOutput {
     typed_occurrences: u64,
     raw_preserved_occurrences: u64,
     out_of_body_occurrences: u64,
+    malformed_noise_occurrences: u64,
     unsupported_occurrences: u64,
     needs_research_occurrences: u64,
 }
@@ -409,7 +410,7 @@ fn observe_allowlisted_representability(
     match rule.scope.as_str() {
         "out_of_body" => representability.out_of_body_occurrences += 1,
         "unsupported_v1" => representability.raw_preserved_occurrences += 1,
-        "malformed_noise" => representability.unsupported_occurrences += 1,
+        "malformed_noise" => representability.malformed_noise_occurrences += 1,
         _ => {}
     }
 }
@@ -604,6 +605,10 @@ fn write_report(path: &Path, output: &InventoryOutput) -> Result<()> {
     report.push_str(&format!(
         "- out_of_body_occurrences: {}\n",
         output.representability.out_of_body_occurrences
+    ));
+    report.push_str(&format!(
+        "- malformed_noise_occurrences: {}\n",
+        output.representability.malformed_noise_occurrences
     ));
     report.push_str(&format!(
         "- unsupported_occurrences: {}\n",

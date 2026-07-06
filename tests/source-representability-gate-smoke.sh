@@ -58,7 +58,8 @@ TOML
 
 jq -e '.representability.typed_occurrences >= 1' "$out_dir/pass.json"
 jq -e '.representability.raw_preserved_occurrences >= 1' "$out_dir/pass.json"
-jq -e '.representability.unsupported_occurrences >= 1' "$out_dir/pass.json"
+jq -e '.representability.malformed_noise_occurrences >= 1' "$out_dir/pass.json"
+jq -e '.representability.unsupported_occurrences == 0' "$out_dir/pass.json"
 jq -e '.allowlisted_unknown_markers_total >= 2' "$out_dir/pass.json"
 jq -e '.unallowlisted_unknown_markers_total == 0' "$out_dir/pass.json"
 jq -e '.rows["structure.quote_block"].occurrences >= 1' "$out_dir/pass.json"

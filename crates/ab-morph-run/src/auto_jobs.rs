@@ -46,10 +46,15 @@ fn fallback_jobs(nproc: usize) -> usize {
     (nproc / 4).clamp(1, 8)
 }
 
-pub(crate) fn auto_jobs(nproc: usize, mem_available_bytes: Option<u64>, analyzer_count: usize) -> usize {
+pub(crate) fn auto_jobs(
+    nproc: usize,
+    mem_available_bytes: Option<u64>,
+    analyzer_count: usize,
+) -> usize {
     match mem_available_bytes {
         Some(mem) if mem > 0 => {
-            let budget = (mem / MEM_FRACTION_DEN * MEM_FRACTION_NUM).saturating_sub(FIXED_OVERHEAD_BYTES);
+            let budget =
+                (mem / MEM_FRACTION_DEN * MEM_FRACTION_NUM).saturating_sub(FIXED_OVERHEAD_BYTES);
             let by_memory = (budget / per_job_bytes(analyzer_count)) as usize;
             by_memory.clamp(1, nproc)
         }
@@ -57,7 +62,12 @@ pub(crate) fn auto_jobs(nproc: usize, mem_available_bytes: Option<u64>, analyzer
     }
 }
 
-pub(crate) fn resolve_requested(requested: usize, nproc: usize, mem_available_bytes: Option<u64>, analyzer_count: usize) -> usize {
+pub(crate) fn resolve_requested(
+    requested: usize,
+    nproc: usize,
+    mem_available_bytes: Option<u64>,
+    analyzer_count: usize,
+) -> usize {
     if requested == 0 {
         auto_jobs(nproc, mem_available_bytes, analyzer_count)
     } else {
@@ -92,7 +102,9 @@ pub(crate) fn resolve_jobs(requested: usize, analyzer_count: usize) -> usize {
             per_job_bytes(analyzer_count) as f64 / GIB as f64,
             FIXED_OVERHEAD_BYTES as f64 / GIB as f64,
         ),
-        (0, None) => eprintln!("auto-jobs: {jobs} (MemAvailable unreadable; fallback max(1, min(nproc/4, 8)) with nproc={nproc})"),
+        (0, None) => eprintln!(
+            "auto-jobs: {jobs} (MemAvailable unreadable; fallback max(1, min(nproc/4, 8)) with nproc={nproc})"
+        ),
         (n, Some(m)) => {
             let budget_jobs = auto_jobs(nproc, Some(m), analyzer_count);
             if n > budget_jobs {

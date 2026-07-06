@@ -527,17 +527,17 @@ pub(crate) fn run_analyze_aat_serial(
                             },
                         )?;
                     } else {
-                        eprintln!("ab-morph-run: failed to load Vibrato for ortho detection: {error}");
+                        eprintln!(
+                            "ab-morph-run: failed to load Vibrato for ortho detection: {error}"
+                        );
                     }
                     return Err(error.into());
                 }
             };
-            Some(Arc::new(
-                ab_ortho_detect::heuristic::HeuristicV1::new(
-                    vibrato,
-                    ab_ortho_detect::heuristic::HeuristicConfig::default(),
-                ),
-            ))
+            Some(Arc::new(ab_ortho_detect::heuristic::HeuristicV1::new(
+                vibrato,
+                ab_ortho_detect::heuristic::HeuristicConfig::default(),
+            )))
         }
         OrthoDetectMode::Ml => {
             let path = options.ortho_ml_model.as_ref().ok_or_else(|| {
@@ -546,11 +546,7 @@ pub(crate) fn run_analyze_aat_serial(
                 )
             })?;
             let model = ab_ortho_detect::ml::MlLogisticRegression::load(path).map_err(|e| {
-                anyhow::anyhow!(
-                    "failed to load ML model from {}: {}",
-                    path.display(),
-                    e
-                )
+                anyhow::anyhow!("failed to load ML model from {}: {}", path.display(), e)
             })?;
             Some(Arc::new(model))
         }
@@ -678,8 +674,9 @@ pub(crate) fn run_analyze_aat_serial(
         // One allocation per document, shared by every per-analyzer Analysis.
         let shared_normalized: Arc<str> = Arc::from(norm_doc.text.as_str());
         // The original text is only needed when ortho remap can fire.
-        let shared_original: Option<Arc<str>> =
-            offset_map_opt.is_some().then(|| Arc::from(document.text.as_str()));
+        let shared_original: Option<Arc<str>> = offset_map_opt
+            .is_some()
+            .then(|| Arc::from(document.text.as_str()));
         let mut analyses = Vec::new();
 
         for analyzer in analyzers {
@@ -1624,8 +1621,8 @@ fn cleanup_orphaned_shard_staging_with_needle(warehouse_dir: &Path, needle: &str
         if !name.starts_with(STAGING_SHARD_PREFIX) {
             continue; // merge-owned staging ({run_id}.{pid}) has its own cleanup
         }
-        let alive = staging_entry_owner(&entry.path())
-            .is_some_and(|pid| staging_owner_alive(pid, needle));
+        let alive =
+            staging_entry_owner(&entry.path()).is_some_and(|pid| staging_owner_alive(pid, needle));
         if !alive {
             eprintln!(
                 "removing orphaned shard staging {} (owner dead or marker missing)",

@@ -10,8 +10,8 @@
 use std::io::{BufRead, BufReader};
 use std::sync::Arc;
 
-use ab_ortho_detect::heuristic::{HeuristicConfig, HeuristicV1};
 use ab_ortho_detect::OrthoDetector;
+use ab_ortho_detect::heuristic::{HeuristicConfig, HeuristicV1};
 use ab_plaintext::sentence_split;
 use serde::{Deserialize, Serialize};
 

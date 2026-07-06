@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/tests/lib/smoke-env.sh"
+repo_root="$AB_VALIDATOR_ROOT"
+tmp="$(smoke_tmp_dir ab-validator-notation-spec-comparator)"
+trap 'smoke_cleanup "$tmp"' EXIT
 
 mkdir -p "$tmp/vectors/ruby_explicit" "$tmp/vectors/unsupported_shape"
 
@@ -45,12 +46,12 @@ cat > "$tmp/vectors/unsupported_shape/vector.json" <<'JSON'
 }
 JSON
 
-cat > "$tmp/fake-aozora" <<'SH'
-#!/usr/bin/env bash
+cat > "$tmp/fake-aozora" <<SH
+#!${BASH}
 set -euo pipefail
-kind="$2"
-input="$(cat)"
-case "$kind:$input" in
+kind="\$2"
+input="\$(cat)"
+case "\$kind:\$input" in
   nodes:｜青梅*)
     printf '{"schemaVersion":1,"data":[{"kind":"ruby","span":{"start":0,"end":24}}]}\n'
     ;;
@@ -70,8 +71,8 @@ esac
 SH
 chmod +x "$tmp/fake-aozora"
 
-cat > "$tmp/fake-aat-adapter" <<'SH'
-#!/usr/bin/env bash
+cat > "$tmp/fake-aat-adapter" <<SH
+#!${BASH}
 set -euo pipefail
 cat >/dev/null
 printf '{"version":1,"meta":{"adapter":"fake-aat","parse_complete":true},"blocks":[{"kind":"paragraph","content":[{"kind":"ruby","base":"青梅","reading":"おうめ"}]}]}\n'

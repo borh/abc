@@ -712,9 +712,10 @@ fn main() -> Result<()> {
                             path.display()
                         );
                     }
-                    Box::new(File::create(path).with_context(|| {
-                        format!("failed to create {}", path.display())
-                    })?)
+                    Box::new(
+                        File::create(path)
+                            .with_context(|| format!("failed to create {}", path.display()))?,
+                    )
                 }
                 None => Box::new(std::io::stdout()),
             };
@@ -829,11 +830,7 @@ fn main() -> Result<()> {
             );
             Ok(())
         }
-        Command::ScoreInterestingLabels {
-            labels,
-            mapping,
-            k,
-        } => {
+        Command::ScoreInterestingLabels { labels, mapping, k } => {
             let scores = ab_morph_run::run_score_labels(&labels, &mapping, k)?;
             serde_json::to_writer_pretty(std::io::stdout(), &scores)?;
             println!();
@@ -1808,10 +1805,7 @@ mod tests {
         };
 
         assert_eq!(engine, ab_morph_run::InterestingEngine::Auto);
-        assert_eq!(
-            feature_profile,
-            ab_morph_run::WarehouseFeatureProfile::Core
-        );
+        assert_eq!(feature_profile, ab_morph_run::WarehouseFeatureProfile::Core);
 
         assert_eq!(
             run_dir,

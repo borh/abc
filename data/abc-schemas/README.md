@@ -10,7 +10,7 @@ identity checks.
 
 Refresh procedure:
 
-1. Copy the relevant `../abc/schemas/*.schema.json` files into `schemas/`.
+1. Copy the relevant `abc/schemas/*.schema.json` files into `schemas/`.
 2. Copy or regenerate the ABC `schema-contracts.json` snapshot:
 
    ```sh
@@ -21,6 +21,13 @@ Refresh procedure:
 
    ```sh
    python3 scripts/schema_contracts.py
+   ```
+
+4. When an ABC checkout is available, compare the vendored snapshot against
+   ABC's authoritative contract manifest:
+
+   ```sh
+   python3 scripts/compare_abc_schema_contracts.py --abc /path/to/abc
    ```
 
 Schema bytes, versions, and hashes must move together. Historical mapping or

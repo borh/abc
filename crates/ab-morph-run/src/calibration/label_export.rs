@@ -60,8 +60,7 @@ const VERDICTS: [&str; 6] = [
     "unclear",
 ];
 
-const HEADER_COMMENT_INTRO: &str =
-    "# Blind pooled labeling export (spec §Calibration Plan). Fill in `verdict` \
+const HEADER_COMMENT_INTRO: &str = "# Blind pooled labeling export (spec §Calibration Plan). Fill in `verdict` \
      with exactly one of:";
 
 const VERDICT_DESCRIPTIONS: [&str; 6] = [
@@ -225,8 +224,7 @@ fn load_aat_document(
         return Ok(());
     }
     let path = aat_dir.join(format!("{source_id}.json"));
-    let file =
-        File::open(&path).with_context(|| format!("missing AAT file {}", path.display()))?;
+    let file = File::open(&path).with_context(|| format!("missing AAT file {}", path.display()))?;
     let value: serde_json::Value = serde_json::from_reader(BufReader::new(file))
         .with_context(|| format!("failed to parse {}", path.display()))?;
     let document = ab_plaintext::from_aat_value(&value)
@@ -247,7 +245,10 @@ fn write_labels_tsv(path: &Path, snippets_per_pattern: usize, rows: &[LabelRow])
     }
     writeln!(out, "# `notes` is free text.")?;
 
-    write!(out, "label_id\tkind\tpattern\texamples\tsource_count\ttext_count")?;
+    write!(
+        out,
+        "label_id\tkind\tpattern\texamples\tsource_count\ttext_count"
+    )?;
     for n in 1..=snippets_per_pattern {
         write!(out, "\tsnippet_{n}")?;
     }
@@ -315,7 +316,13 @@ fn snippet(text: &str, char_start: u64, char_end: u64, context: usize) -> Result
 
 fn scrub(text: &str) -> String {
     text.chars()
-        .map(|ch| if matches!(ch, '\t' | '\n' | '\r') { '␣' } else { ch })
+        .map(|ch| {
+            if matches!(ch, '\t' | '\n' | '\r') {
+                '␣'
+            } else {
+                ch
+            }
+        })
         .collect()
 }
 
@@ -525,7 +532,9 @@ mod tests {
         // Header comment block documents all six verdicts verbatim.
         for verdict in VERDICTS {
             assert!(
-                lines.iter().any(|line| line.starts_with('#') && line.contains(verdict)),
+                lines
+                    .iter()
+                    .any(|line| line.starts_with('#') && line.contains(verdict)),
                 "missing verdict `{verdict}` in header block"
             );
         }

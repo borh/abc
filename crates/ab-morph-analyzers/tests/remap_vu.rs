@@ -9,9 +9,7 @@ use std::sync::Arc;
 
 use ab_morph_analyzers::span_builder::remap_spans;
 use ab_morph_diff::{Analysis, FeatureMap, Morpheme};
-use ab_ortho_detect::{
-    OrthoAnnotation, OrthoNormalization, ortho_normalize,
-};
+use ab_ortho_detect::{OrthoAnnotation, OrthoNormalization, ortho_normalize};
 
 /// normalized `今日う゛` = 12 bytes (今=3, 日=3, う=3, ゛=3)
 /// original   `今日ヴ`   =  9 bytes (今=3, 日=3, ヴ=3)
@@ -122,7 +120,12 @@ fn remap_is_identity_for_empty_offset_map() {
     );
 
     // Empty OffsetMap = no annotations were applied (the typical case).
-    remap_spans(&mut analysis, &ab_ortho_detect::OffsetMap::empty(), "今日ヴ").unwrap();
+    remap_spans(
+        &mut analysis,
+        &ab_ortho_detect::OffsetMap::empty(),
+        "今日ヴ",
+    )
+    .unwrap();
 
     // Nothing changed.
     let m = &analysis.morphemes[0];

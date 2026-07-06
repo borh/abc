@@ -785,7 +785,7 @@ fn tei_eaj_file_id_aliases(tei_eaj_file: &str, work_id: &str) -> BTreeSet<String
         .split(|ch: char| !ch.is_ascii_digit())
         .filter(|part| !part.is_empty())
         .collect();
-    if !numeric_tokens.iter().any(|token| *token == work_id) {
+    if !numeric_tokens.contains(&work_id) {
         return BTreeSet::new();
     }
 

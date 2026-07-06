@@ -66,7 +66,9 @@ pub fn extract_char_features(text: &str) -> CharFeatures {
     let max_bigram_repeat = if total_chars >= 2 {
         let mut bigram_counts = std::collections::HashMap::new();
         for window in chars.windows(2) {
-            *bigram_counts.entry((window[0], window[1])).or_insert(0usize) += 1;
+            *bigram_counts
+                .entry((window[0], window[1]))
+                .or_insert(0usize) += 1;
         }
         bigram_counts.values().max().copied().unwrap_or(0)
     } else {
@@ -138,8 +140,7 @@ fn is_katakana(ch: char) -> bool {
 }
 
 fn is_kanji(ch: char) -> bool {
-    ('\u{4E00}'..='\u{9FFF}').contains(&ch)
-        || ('\u{3400}'..='\u{4DBF}').contains(&ch) // CJK Ext-A
+    ('\u{4E00}'..='\u{9FFF}').contains(&ch) || ('\u{3400}'..='\u{4DBF}').contains(&ch) // CJK Ext-A
 }
 
 /// Count immediate ABAB-style bigram echoes (optionally ッ-separated), faithful

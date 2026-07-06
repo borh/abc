@@ -253,9 +253,7 @@ fn cross_validate(
         }
 
         let ds = linfa::Dataset::new(x_tr, y_tr);
-        let model = LogisticRegression::default()
-            .max_iterations(500)
-            .fit(&ds)?;
+        let model = LogisticRegression::default().max_iterations(500).fit(&ds)?;
 
         // Predict::predict returns the actual class labels (i32 here), NOT
         // probabilities-then-threshold. Using predict_probabilities >= 0.5
@@ -292,14 +290,12 @@ fn cross_validate(
         per_fold.push((recall, precision, f1, accuracy, n_te));
     }
 
-    let mean =
-        |proj: fn(FoldMetrics) -> f64| -> f64 {
-            per_fold.iter().map(|m| proj(*m)).sum::<f64>() / k as f64
-        };
-    let reduce =
-        |proj: fn(FoldMetrics) -> f64, init: f64, f: fn(f64, f64) -> f64| -> f64 {
-            per_fold.iter().map(|m| proj(*m)).fold(init, f)
-        };
+    let mean = |proj: fn(FoldMetrics) -> f64| -> f64 {
+        per_fold.iter().map(|m| proj(*m)).sum::<f64>() / k as f64
+    };
+    let reduce = |proj: fn(FoldMetrics) -> f64, init: f64, f: fn(f64, f64) -> f64| -> f64 {
+        per_fold.iter().map(|m| proj(*m)).fold(init, f)
+    };
     let recall_of: fn(FoldMetrics) -> f64 = |m| m.0;
     let precision_of: fn(FoldMetrics) -> f64 = |m| m.1;
     let f1_of: fn(FoldMetrics) -> f64 = |m| m.2;

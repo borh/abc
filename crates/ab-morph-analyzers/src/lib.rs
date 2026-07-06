@@ -53,8 +53,14 @@ mod integration_tests {
 
         assert_eq!(vibrato_analysis.text_id, "wagahai");
         assert_eq!(sudachi_analysis.text_id, "wagahai");
-        assert_eq!(vibrato_analysis.source_text.as_ref(), document.text.as_str());
-        assert_eq!(sudachi_analysis.source_text.as_ref(), document.text.as_str());
+        assert_eq!(
+            vibrato_analysis.source_text.as_ref(),
+            document.text.as_str()
+        );
+        assert_eq!(
+            sudachi_analysis.source_text.as_ref(),
+            document.text.as_str()
+        );
         assert!(!vibrato_analysis.morphemes.is_empty());
         assert!(!sudachi_analysis.morphemes.is_empty());
     }

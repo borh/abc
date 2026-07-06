@@ -108,10 +108,10 @@ impl MappingDocument {
                 );
             }
             let folded_aat_pointer = rule.aat_pointer.as_deref().map(fold_aat_pointer);
-            if let Some(pointer) = &folded_aat_pointer {
-                if !aat_pointer_exists(&schemas.aat_schema, pointer) {
-                    bail!("{} has non-schema AAT pointer {pointer}", rule.rule_id);
-                }
+            if let Some(pointer) = &folded_aat_pointer
+                && !aat_pointer_exists(&schemas.aat_schema, pointer)
+            {
+                bail!("{} has non-schema AAT pointer {pointer}", rule.rule_id);
             }
             let key = (
                 rule.category.clone(),
@@ -123,40 +123,6 @@ impl MappingDocument {
             }
         }
         Ok(MappingIndex { rules })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::schema::{abc_legacy_json_hash, read_json};
-    use std::path::PathBuf;
-
-    fn repo_root() -> PathBuf {
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
-    }
-
-    #[test]
-    fn from_path_computes_mapping_document_hash() {
-        let path = repo_root().join("data/aat-to-parser-ir-mapping-v1.json");
-        let mapping = MappingDocument::from_path(&path).expect("mapping loads");
-        let value = read_json(&path).expect("mapping json reads");
-        let expected = abc_legacy_json_hash(&value).expect("hash computes");
-        assert_eq!(mapping.document_hash, expected);
-        assert!(mapping.document_hash.starts_with("sha256:"));
-        assert_eq!(mapping.document_hash.len(), "sha256:".len() + 64);
-    }
-
-    #[test]
-    fn aat_pointer_checker_accepts_deep_recursive_inline_paths() {
-        let schema = read_json(&repo_root().join("data/aat-schema.json")).expect("schema reads");
-        let mut pointer = "blocks[]".to_owned();
-        for _ in 0..80 {
-            pointer.push_str(".content[]");
-        }
-        pointer.push_str(".gaiji.resolved");
-
-        assert!(aat_pointer_exists(&schema, &pointer));
     }
 }
 
@@ -320,4 +286,38 @@ fn kind_values(node: &Value) -> Vec<String> {
         .filter_map(Value::as_str)
         .map(ToOwned::to_owned)
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::schema::{abc_legacy_json_hash, read_json};
+    use std::path::PathBuf;
+
+    fn repo_root() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+    }
+
+    #[test]
+    fn from_path_computes_mapping_document_hash() {
+        let path = repo_root().join("data/aat-to-parser-ir-mapping-v1.json");
+        let mapping = MappingDocument::from_path(&path).expect("mapping loads");
+        let value = read_json(&path).expect("mapping json reads");
+        let expected = abc_legacy_json_hash(&value).expect("hash computes");
+        assert_eq!(mapping.document_hash, expected);
+        assert!(mapping.document_hash.starts_with("sha256:"));
+        assert_eq!(mapping.document_hash.len(), "sha256:".len() + 64);
+    }
+
+    #[test]
+    fn aat_pointer_checker_accepts_deep_recursive_inline_paths() {
+        let schema = read_json(&repo_root().join("data/aat-schema.json")).expect("schema reads");
+        let mut pointer = "blocks[]".to_owned();
+        for _ in 0..80 {
+            pointer.push_str(".content[]");
+        }
+        pointer.push_str(".gaiji.resolved");
+
+        assert!(aat_pointer_exists(&schema, &pointer));
+    }
 }

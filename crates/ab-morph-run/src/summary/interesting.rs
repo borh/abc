@@ -173,7 +173,11 @@ fn baseline_order(
                 patterns[*right]
                     .examples
                     .cmp(&patterns[*left].examples)
-                    .then_with(|| patterns[*right].source_count.cmp(&patterns[*left].source_count))
+                    .then_with(|| {
+                        patterns[*right]
+                            .source_count
+                            .cmp(&patterns[*left].source_count)
+                    })
                     .then_with(|| patterns[*left].pattern_id.cmp(&patterns[*right].pattern_id))
             });
             Ok(order)
@@ -453,7 +457,11 @@ fn rrf_term(rank: Option<usize>, lambda: f64) -> f64 {
 /// applicable-signal count.
 fn fuse(ranks: &[Option<usize>], applicable_count: usize, lambda: f64) -> f64 {
     debug_assert_eq!(ranks.len(), applicable_count);
-    ranks.iter().map(|rank| rrf_term(*rank, lambda)).sum::<f64>() / applicable_count as f64
+    ranks
+        .iter()
+        .map(|rank| rrf_term(*rank, lambda))
+        .sum::<f64>()
+        / applicable_count as f64
 }
 
 /// Every char is punctuation (`P*`), a separator (`Z*`), or whitespace
@@ -629,7 +637,10 @@ struct PatternAccum {
 
 impl PatternAccum {
     fn push_span(&mut self, length: u32) {
-        match self.span_lengths.binary_search_by_key(&length, |(len, _)| *len) {
+        match self
+            .span_lengths
+            .binary_search_by_key(&length, |(len, _)| *len)
+        {
             Ok(position) => self.span_lengths[position].1 += 1,
             Err(position) => self.span_lengths.insert(position, (length, 1)),
         }
@@ -734,17 +745,15 @@ impl PatternAccumulator {
                 region_examples: accum
                     .region_examples
                     .into_iter()
-                    .map(
-                        |(source_id, text_id, region_index, char_start, char_end)| {
-                            RegionExampleOut {
-                                source_id: interner.resolve(source_id).to_owned(),
-                                text_id: interner.resolve(text_id).to_owned(),
-                                region_index,
-                                char_start,
-                                char_end,
-                            }
-                        },
-                    )
+                    .map(|(source_id, text_id, region_index, char_start, char_end)| {
+                        RegionExampleOut {
+                            source_id: interner.resolve(source_id).to_owned(),
+                            text_id: interner.resolve(text_id).to_owned(),
+                            region_index,
+                            char_start,
+                            char_end,
+                        }
+                    })
                     .collect(),
                 sql_signature: None,
             })
@@ -807,7 +816,12 @@ impl InMemoryAccumulators<'_> {
             .insert(index);
     }
 
-    fn finalize(self) -> (Vec<PatternStats>, BTreeMap<WarehouseRegionKey, BTreeSet<usize>>) {
+    fn finalize(
+        self,
+    ) -> (
+        Vec<PatternStats>,
+        BTreeMap<WarehouseRegionKey, BTreeSet<usize>>,
+    ) {
         (self.patterns.finalize(), self.memberships)
     }
 }
@@ -1056,7 +1070,11 @@ fn score_patterns(
                 signals: applicable
                     .iter()
                     .map(|signal| {
-                        (*signal, raw_signal_value(*signal, stats, rarity_total), None)
+                        (
+                            *signal,
+                            raw_signal_value(*signal, stats, rarity_total),
+                            None,
+                        )
                     })
                     .collect(),
                 lambda: 0.0,
@@ -1109,7 +1127,12 @@ fn score_patterns(
             for index in &all_indices {
                 scores[*index].lambda = lambda;
             }
-            for signal in [Signal::Coverage, Signal::Rarity, Signal::Impact, Signal::Span] {
+            for signal in [
+                Signal::Coverage,
+                Signal::Rarity,
+                Signal::Impact,
+                Signal::Span,
+            ] {
                 rank_signal_pool(patterns, &mut scores, &all_indices, |index| {
                     Signal::applicable(patterns[index].kind)
                         .iter()
@@ -1138,7 +1161,9 @@ fn rank_signal_pool(
         .iter()
         .filter_map(|index| {
             let slot = slot_of(*index)?;
-            scores[*index].signals[slot].1.map(|raw| (*index, slot, raw))
+            scores[*index].signals[slot]
+                .1
+                .map(|raw| (*index, slot, raw))
         })
         .collect::<Vec<_>>();
     present.sort_by(|left, right| {
@@ -1146,7 +1171,11 @@ fn rank_signal_pool(
             .2
             .partial_cmp(&left.2)
             .unwrap_or(Ordering::Equal)
-            .then_with(|| patterns[left.0].pattern_id.cmp(&patterns[right.0].pattern_id))
+            .then_with(|| {
+                patterns[left.0]
+                    .pattern_id
+                    .cmp(&patterns[right.0].pattern_id)
+            })
     });
     for (rank_zero, (index, slot, _)) in present.iter().enumerate() {
         scores[*index].signals[*slot].2 = Some(rank_zero + 1);
@@ -1201,7 +1230,11 @@ fn ranked_order(patterns: &[PatternStats], scores: &[PatternScore]) -> Vec<usize
             .rrf_score
             .partial_cmp(&scores[*left].rrf_score)
             .unwrap_or(Ordering::Equal)
-            .then_with(|| patterns[*right].source_count.cmp(&patterns[*left].source_count))
+            .then_with(|| {
+                patterns[*right]
+                    .source_count
+                    .cmp(&patterns[*left].source_count)
+            })
             .then_with(|| patterns[*left].pattern_id.cmp(&patterns[*right].pattern_id))
     });
     order
@@ -1417,7 +1450,12 @@ pub fn summarize_warehouse_interesting(
     let collected = match options.engine {
         InterestingEngine::InMemory => collect_in_memory(run_dir, &options, &rarity)?,
         InterestingEngine::Duckdb | InterestingEngine::Auto => {
-            match interesting_sql::collect_patterns_duckdb(run_dir, &options, &rarity, &analyzer_ids)? {
+            match interesting_sql::collect_patterns_duckdb(
+                run_dir,
+                &options,
+                &rarity,
+                &analyzer_ids,
+            )? {
                 Some(patterns) => Collected {
                     patterns,
                     anomaly_source: AnomalySource::Deferred,
@@ -1737,7 +1775,9 @@ mod tests {
     fn write_fixture(root: &Path) -> std::path::PathBuf {
         let paths = WarehousePaths::new(root, RUN);
         let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
-        writer.append_runs(&[run_row(SCHEMA_VERSION, 2, 2)]).unwrap();
+        writer
+            .append_runs(&[run_row(SCHEMA_VERSION, 2, 2)])
+            .unwrap();
         writer
             .append_run_analyzers(&[analyzer_row("vibrato"), analyzer_row("sudachi-a")])
             .unwrap();
@@ -1810,7 +1850,9 @@ mod tests {
         ];
         let paths = WarehousePaths::new(root, RUN);
         let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
-        writer.append_runs(&[run_row(SCHEMA_VERSION, 3, 2)]).unwrap();
+        writer
+            .append_runs(&[run_row(SCHEMA_VERSION, 3, 2)])
+            .unwrap();
         writer
             .append_run_analyzers(&[analyzer_row("vibrato"), analyzer_row("sudachi-a")])
             .unwrap();
@@ -1818,17 +1860,26 @@ mod tests {
             .append_sources(&SOURCES.map(|source_id| source_row(source_id, source_id)))
             .unwrap();
         writer
-            .append_nway_regions(&SOURCES.map(|source_id| {
-                region_row(source_id, source_id, 0, 0, 2, false, true, false)
-            }))
+            .append_nway_regions(
+                &SOURCES
+                    .map(|source_id| region_row(source_id, source_id, 0, 0, 2, false, true, false)),
+            )
             .unwrap();
         let mut region_analyzers = Vec::new();
         for source_id in SOURCES {
             region_analyzers.push(region_analyzer_row(
-                source_id, source_id, 0, "vibrato", &["今日"],
+                source_id,
+                source_id,
+                0,
+                "vibrato",
+                &["今日"],
             ));
             region_analyzers.push(region_analyzer_row(
-                source_id, source_id, 0, "sudachi-a", &["今", "日"],
+                source_id,
+                source_id,
+                0,
+                "sudachi-a",
+                &["今", "日"],
             ));
         }
         writer
@@ -1906,7 +1957,11 @@ mod tests {
         // the default (non-Sudachi) `suw` class.
         assert_eq!(summary.score_version.granularity_profile, "suw");
         // Coverage pattern admitted with a single surface group.
-        let coverage = summary.rows.iter().find(|row| row.kind == "coverage").unwrap();
+        let coverage = summary
+            .rows
+            .iter()
+            .find(|row| row.kind == "coverage")
+            .unwrap();
         assert_eq!(coverage.region_examples.len(), 1);
         assert_eq!(coverage.region_examples[0].char_start, 2);
         assert_eq!(coverage.region_examples[0].char_end, 5);
@@ -1943,7 +1998,11 @@ mod tests {
         let summary =
             summarize_warehouse_interesting(&run_dir, WarehouseInterestingOptions::default())
                 .unwrap();
-        let coverage = summary.rows.iter().find(|row| row.kind == "coverage").unwrap();
+        let coverage = summary
+            .rows
+            .iter()
+            .find(|row| row.kind == "coverage")
+            .unwrap();
         let signal = coverage
             .signals
             .iter()
@@ -2036,7 +2095,11 @@ mod tests {
         let ranked =
             summarize_warehouse_interesting(&run_dir, WarehouseInterestingOptions::default())
                 .unwrap();
-        let wanted = ranked.rows.iter().find(|row| row.kind == "feature").unwrap();
+        let wanted = ranked
+            .rows
+            .iter()
+            .find(|row| row.kind == "feature")
+            .unwrap();
 
         let explained = summarize_warehouse_interesting(
             &run_dir,
@@ -2101,8 +2164,12 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let paths = WarehousePaths::new(root.path(), RUN);
         let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
-        writer.append_runs(&[run_row(SCHEMA_VERSION, 0, 1)]).unwrap();
-        writer.append_run_analyzers(&[analyzer_row("vibrato")]).unwrap();
+        writer
+            .append_runs(&[run_row(SCHEMA_VERSION, 0, 1)])
+            .unwrap();
+        writer
+            .append_run_analyzers(&[analyzer_row("vibrato")])
+            .unwrap();
         writer.finalize().unwrap();
         let error = summarize_warehouse_interesting(
             &paths.final_dir,
@@ -2117,7 +2184,9 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let paths = WarehousePaths::new(root.path(), RUN);
         let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
-        writer.append_runs(&[run_row(SCHEMA_VERSION, 0, 2)]).unwrap();
+        writer
+            .append_runs(&[run_row(SCHEMA_VERSION, 0, 2)])
+            .unwrap();
         writer
             .append_run_analyzers(&[analyzer_row("vibrato"), analyzer_row("sudachi-a")])
             .unwrap();
@@ -2140,7 +2209,9 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let paths = WarehousePaths::new(root.path(), RUN);
         let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
-        writer.append_runs(&[run_row(SCHEMA_VERSION, 0, 2)]).unwrap();
+        writer
+            .append_runs(&[run_row(SCHEMA_VERSION, 0, 2)])
+            .unwrap();
         writer
             .append_run_analyzers(&[sudachi_analyzer_row("sudachi-a"), analyzer_row("vibrato")])
             .unwrap();
@@ -2158,7 +2229,9 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let paths = WarehousePaths::new(root.path(), RUN);
         let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
-        writer.append_runs(&[run_row(SCHEMA_VERSION, 0, 2)]).unwrap();
+        writer
+            .append_runs(&[run_row(SCHEMA_VERSION, 0, 2)])
+            .unwrap();
         writer
             .append_run_analyzers(&[
                 sudachi_analyzer_row("sudachi-a"),
@@ -2250,7 +2323,11 @@ mod tests {
             },
         )
         .unwrap();
-        let coverage = summary.rows.iter().find(|row| row.kind == "coverage").unwrap();
+        let coverage = summary
+            .rows
+            .iter()
+            .find(|row| row.kind == "coverage")
+            .unwrap();
         assert!(coverage.pattern.contains("ゆき"), "{}", coverage.pattern);
     }
 
@@ -2332,7 +2409,10 @@ mod tests {
 
     #[test]
     fn granularity_profile_sudachi_mode_a_only_is_suw() {
-        assert_eq!(granularity_profile_token(&[af("sudachi-a", "sudachi")]), "suw");
+        assert_eq!(
+            granularity_profile_token(&[af("sudachi-a", "sudachi")]),
+            "suw"
+        );
         // A non-sudachi analyzer alongside mode A adds no additional class.
         assert_eq!(
             granularity_profile_token(&[af("sudachi-a", "sudachi"), af("vibrato", "vibrato")]),
@@ -2342,12 +2422,18 @@ mod tests {
 
     #[test]
     fn granularity_profile_sudachi_mode_b_is_muw() {
-        assert_eq!(granularity_profile_token(&[af("sudachi-b", "sudachi")]), "muw");
+        assert_eq!(
+            granularity_profile_token(&[af("sudachi-b", "sudachi")]),
+            "muw"
+        );
     }
 
     #[test]
     fn granularity_profile_sudachi_mode_c_is_luw() {
-        assert_eq!(granularity_profile_token(&[af("sudachi-c", "sudachi")]), "luw");
+        assert_eq!(
+            granularity_profile_token(&[af("sudachi-c", "sudachi")]),
+            "luw"
+        );
         assert_eq!(
             granularity_profile_token(&[af("sudachi-c", "sudachi"), af("vaporetto", "vaporetto")]),
             "suw+luw"
@@ -2556,7 +2642,10 @@ mod tests {
         // ranks derived above — computed here from the formula, not by
         // reading the ranks back out of `scores`.
         let expected_rrf = |ranks: &[usize]| -> f64 {
-            ranks.iter().map(|rank| 1.0 / (RRF_K + *rank as f64)).sum::<f64>()
+            ranks
+                .iter()
+                .map(|rank| 1.0 / (RRF_K + *rank as f64))
+                .sum::<f64>()
                 / ranks.len() as f64
         };
         assert_eq!(scores[0].rrf_score, round6(expected_rrf(&[3, 1, 1, 2])));
@@ -2578,8 +2667,18 @@ mod tests {
             calib_stats(PatternKind::Segmentation, "seg-0", 2, 0, 30.0, None),
             calib_stats(PatternKind::Segmentation, "seg-1", 4, 0, 20.0, None),
         ];
-        let within = score_patterns(&patterns, 100, RankScope::WithinKind, LambdaMissingPolicy::RankFloor);
-        let global = score_patterns(&patterns, 100, RankScope::Global, LambdaMissingPolicy::RankFloor);
+        let within = score_patterns(
+            &patterns,
+            100,
+            RankScope::WithinKind,
+            LambdaMissingPolicy::RankFloor,
+        );
+        let global = score_patterns(
+            &patterns,
+            100,
+            RankScope::Global,
+            LambdaMissingPolicy::RankFloor,
+        );
         // seg[0] (index 2): rank 1 within its kind, rank 2 globally.
         assert_eq!(rank_by_signal(&within, 2, Signal::Rarity), Some(1));
         assert_eq!(rank_by_signal(&global, 2, Signal::Rarity), Some(2));
@@ -2603,11 +2702,21 @@ mod tests {
             calib_stats(PatternKind::Feature, "feat-0", 1, 0, 1.0, Some("pos1")),
             calib_stats(PatternKind::Segmentation, "seg-0", 1, 0, 1.0, None),
         ];
-        let scores = score_patterns(&patterns, 100, RankScope::WithinKind, LambdaMissingPolicy::Fixed(0.005));
+        let scores = score_patterns(
+            &patterns,
+            100,
+            RankScope::WithinKind,
+            LambdaMissingPolicy::Fixed(0.005),
+        );
         for score in &scores {
             assert!((score.lambda - 0.005).abs() < 1e-12);
         }
-        let zero = score_patterns(&patterns, 100, RankScope::WithinKind, LambdaMissingPolicy::Fixed(0.0));
+        let zero = score_patterns(
+            &patterns,
+            100,
+            RankScope::WithinKind,
+            LambdaMissingPolicy::Fixed(0.0),
+        );
         for score in &zero {
             assert_eq!(score.lambda, 0.0);
         }
@@ -2764,7 +2873,14 @@ mod tests {
 
     #[test]
     fn random_mode_without_seed_errors() {
-        let patterns = vec![calib_stats(PatternKind::Feature, "p0", 1, 1, 1.0, Some("pos1"))];
+        let patterns = vec![calib_stats(
+            PatternKind::Feature,
+            "p0",
+            1,
+            1,
+            1.0,
+            Some("pos1"),
+        )];
         assert!(baseline_order(&patterns, ScoreMode::Random, None).is_err());
     }
 

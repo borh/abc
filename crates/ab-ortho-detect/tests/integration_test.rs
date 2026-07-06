@@ -1,11 +1,15 @@
 //! Integration tests for the ortho-detect pipeline (kata→hira + OffsetMap
-//! + HeuristicV1 cascade). Tests that require the Vibrato dictionary are
-//! marked `#[ignore]` and run with `--ignored` when `AB_VIBRATO_DICT` is set.
+//! + HeuristicV1 cascade).
+//!
+//! Tests that require the Vibrato dictionary are marked `#[ignore]` and run
+//! with `--ignored` when `AB_VIBRATO_DICT` is set.
 
 use std::sync::Arc;
 
 use ab_ortho_detect::heuristic::{HeuristicConfig, HeuristicV1};
-use ab_ortho_detect::{OrthoAnnotation, OrthoDetector, OrthoNormalization, OrthoTokenizer, ortho_normalize};
+use ab_ortho_detect::{
+    OrthoAnnotation, OrthoDetector, OrthoNormalization, OrthoTokenizer, ortho_normalize,
+};
 
 /// A stub tokenizer that returns no tokens — exercises the character-level
 /// cascade without needing a real dictionary.
@@ -72,7 +76,10 @@ fn cascade_rejects_hiragana_sentence() {
     let detector = HeuristicV1::new(Arc::new(StubTokenizer), HeuristicConfig::default());
     let sentences = ab_plaintext::sentence_split("吾輩は猫である。名前はまだ無い。");
     let annotations = detector.detect(&sentences);
-    assert!(annotations.is_empty(), "modern hiragana text must not be normalized");
+    assert!(
+        annotations.is_empty(),
+        "modern hiragana text must not be normalized"
+    );
 }
 
 #[test]
@@ -80,7 +87,10 @@ fn cascade_rejects_short_katakana_sentence() {
     let detector = HeuristicV1::new(Arc::new(StubTokenizer), HeuristicConfig::default());
     let sentences = ab_plaintext::sentence_split("猫ダ。");
     let annotations = detector.detect(&sentences);
-    assert!(annotations.is_empty(), "short katakana sentence must be rejected");
+    assert!(
+        annotations.is_empty(),
+        "short katakana sentence must be rejected"
+    );
 }
 
 #[test]
@@ -95,7 +105,10 @@ fn cascade_accepts_full_katakana_prose() {
     let sentences = ab_plaintext::sentence_split("吾輩ハ猫デアル果テ");
     let annotations = detector.detect(&sentences);
     assert_eq!(annotations.len(), 1);
-    assert_eq!(annotations[0].kind, OrthoNormalization::ScriptKatakanaToHiragana);
+    assert_eq!(
+        annotations[0].kind,
+        OrthoNormalization::ScriptKatakanaToHiragana
+    );
     assert_eq!(annotations[0].normalized_text, "吾輩は猫である果て");
 }
 
@@ -120,8 +133,13 @@ fn detect_and_normalize_katakana_prose() {
     let sentences = ab_plaintext::sentence_split(text);
     let annotations = detector.detect(&sentences);
     assert!(
-        annotations.iter().any(|a| a.normalized_text == "私は学校に毎日通って、勉強していましたよ。"),
+        annotations
+            .iter()
+            .any(|a| a.normalized_text == "私は学校に毎日通って、勉強していましたよ。"),
         "expected 私ハ学校ニ毎日通ッテ、勉強シテイマシタヨ。 to be normalized; got: {:?}",
-        annotations.iter().map(|a| &a.normalized_text).collect::<Vec<_>>()
+        annotations
+            .iter()
+            .map(|a| &a.normalized_text)
+            .collect::<Vec<_>>()
     );
 }

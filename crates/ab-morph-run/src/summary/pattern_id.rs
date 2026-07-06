@@ -230,7 +230,10 @@ mod tests {
             NwayFeatureScopeRow::WholeRegion,
             vec![(Some("x"), vec!["a"]), (Some("y"), vec!["b"])],
         );
-        assert_eq!(pattern_id(&key), pattern_id_from_digest(&pattern_digest(&key)));
+        assert_eq!(
+            pattern_id(&key),
+            pattern_id_from_digest(&pattern_digest(&key))
+        );
     }
 
     #[test]
@@ -285,7 +288,10 @@ mod tests {
             NwayFeatureScopeRow::Surface {
                 surface: "\u{304b}\u{3099}".to_owned(),
             },
-            vec![(Some("\u{304b}\u{3099}"), vec!["a"]), (Some("x"), vec!["b"])],
+            vec![
+                (Some("\u{304b}\u{3099}"), vec!["a"]),
+                (Some("x"), vec!["b"]),
+            ],
         );
         let precomposed = feature_key(
             "kana",
@@ -330,10 +336,7 @@ mod tests {
 
     fn arb_feature_values() -> impl Strategy<Value = Vec<NwayFeatureValueGroupRow>> {
         proptest::collection::vec(
-            (
-                proptest::option::of("\\PC{0,6}"),
-                arb_analyzers(),
-            )
+            (proptest::option::of("\\PC{0,6}"), arb_analyzers())
                 .prop_map(|(value, analyzers)| NwayFeatureValueGroupRow { value, analyzers }),
             2..4,
         )

@@ -111,7 +111,10 @@ pub enum MlError {
     #[error("bincode deserialize error: {0}")]
     Bincode(#[from] bincode::Error),
     #[error("feature name mismatch: expected {expected:?}, got {got:?}")]
-    FeatureNameMismatch { expected: Vec<String>, got: Vec<String> },
+    FeatureNameMismatch {
+        expected: Vec<String>,
+        got: Vec<String>,
+    },
 }
 
 #[cfg(test)]
@@ -129,7 +132,10 @@ mod tests {
         };
         let h = model_hash(&m);
         assert_eq!(h.len(), 64);
-        assert!(h.chars().all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c)));
+        assert!(
+            h.chars()
+                .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c))
+        );
         // Deterministic across calls.
         assert_eq!(h, model_hash(&m));
     }
@@ -138,7 +144,10 @@ mod tests {
     fn ml_detector_accepts_katakana_with_positive_weights() {
         // Weight katakana_ratio high, rest zero; intercept chosen so ratio>0.5 → accept.
         let mut weights = vec![0.0; FEATURE_NAMES.len()];
-        let kidx = FEATURE_NAMES.iter().position(|n| *n == "katakana_ratio").unwrap();
+        let kidx = FEATURE_NAMES
+            .iter()
+            .position(|n| *n == "katakana_ratio")
+            .unwrap();
         weights[kidx] = 10.0;
         let m = MlModel {
             feature_names: FEATURE_NAMES.iter().map(|s| (*s).to_string()).collect(),
@@ -150,14 +159,23 @@ mod tests {
         // "吾輩ハ猫デアル" — katakana_ratio 4/7 ≈ 0.571 > 0.5.
         let spans = ab_plaintext::sentence_split("吾輩ハ猫デアル");
         let anns = det.detect(&spans);
-        assert!(!anns.is_empty(), "katakana-dominant sentence should be accepted");
-        assert!(anns[0].confidence.is_some(), "ML detector sets confidence (unlike heuristic None)");
+        assert!(
+            !anns.is_empty(),
+            "katakana-dominant sentence should be accepted"
+        );
+        assert!(
+            anns[0].confidence.is_some(),
+            "ML detector sets confidence (unlike heuristic None)"
+        );
     }
 
     #[test]
     fn ml_detector_rejects_hiragana() {
         let mut weights = vec![0.0; FEATURE_NAMES.len()];
-        let kidx = FEATURE_NAMES.iter().position(|n| *n == "katakana_ratio").unwrap();
+        let kidx = FEATURE_NAMES
+            .iter()
+            .position(|n| *n == "katakana_ratio")
+            .unwrap();
         weights[kidx] = 10.0;
         let m = MlModel {
             feature_names: FEATURE_NAMES.iter().map(|s| (*s).to_string()).collect(),

@@ -1,12 +1,10 @@
-pub mod types;
-pub mod script;
 pub mod features;
 pub mod heuristic;
 pub mod ml;
+pub mod script;
+pub mod types;
 
-pub use types::{
-    OffsetMap, OrthoAnnotation, OrthoDetectorId, OrthoMapError, OrthoNormalization,
-};
+pub use types::{OffsetMap, OrthoAnnotation, OrthoDetectorId, OrthoMapError, OrthoNormalization};
 
 use ab_plaintext::SentenceSpan;
 
@@ -39,10 +37,7 @@ pub trait OrthoDetector: Send + Sync {
 /// Annotations must be sorted by source_byte_range and non-overlapping.
 /// Gaps of unchanged text between annotations produce identity map entries.
 #[must_use]
-pub fn ortho_normalize(
-    original: &str,
-    annotations: &[OrthoAnnotation],
-) -> (String, OffsetMap) {
+pub fn ortho_normalize(original: &str, annotations: &[OrthoAnnotation]) -> (String, OffsetMap) {
     if annotations.is_empty() {
         return (original.to_owned(), OffsetMap::empty());
     }

@@ -2460,7 +2460,10 @@ fn warehouse_feature_profile_filter(profile: WarehouseFeatureProfile) -> &'stati
     }
 }
 
-pub(super) fn warehouse_feature_key_in_profile(feature_key: &str, profile: WarehouseFeatureProfile) -> bool {
+pub(super) fn warehouse_feature_key_in_profile(
+    feature_key: &str,
+    profile: WarehouseFeatureProfile,
+) -> bool {
     match profile {
         WarehouseFeatureProfile::Raw | WarehouseFeatureProfile::Schema => true,
         WarehouseFeatureProfile::Core => matches!(feature_key, "pos1" | "pos2" | "pos3" | "pos4"),
@@ -3324,7 +3327,9 @@ fn read_warehouse_source_text_ids(run_dir: &Path) -> Result<BTreeMap<String, Str
     Ok(source_text_ids)
 }
 
-pub(super) fn read_warehouse_region_analyzers(run_dir: &Path) -> Result<Vec<WarehouseRegionAnalyzerFact>> {
+pub(super) fn read_warehouse_region_analyzers(
+    run_dir: &Path,
+) -> Result<Vec<WarehouseRegionAnalyzerFact>> {
     let mut facts = Vec::new();
     for batch in read_warehouse_table(run_dir, WarehouseTable::NwayRegionAnalyzers)? {
         let run_id = string_column(&batch, 0)?;
@@ -3355,7 +3360,9 @@ pub(super) fn read_warehouse_region_analyzers(run_dir: &Path) -> Result<Vec<Ware
     Ok(facts)
 }
 
-pub(super) fn read_warehouse_feature_diffs(run_dir: &Path) -> Result<Vec<WarehouseFeatureDiffFact>> {
+pub(super) fn read_warehouse_feature_diffs(
+    run_dir: &Path,
+) -> Result<Vec<WarehouseFeatureDiffFact>> {
     let mut facts = Vec::new();
     for batch in read_warehouse_table(run_dir, WarehouseTable::NwayFeatureDiffs)? {
         let run_id = string_column(&batch, 0)?;
@@ -3545,7 +3552,10 @@ fn warehouse_text_filter_matches_nonempty_whitespace(
     }
 }
 
-pub(crate) fn read_warehouse_table(run_dir: &Path, table: WarehouseTable) -> Result<Vec<RecordBatch>> {
+pub(crate) fn read_warehouse_table(
+    run_dir: &Path,
+    table: WarehouseTable,
+) -> Result<Vec<RecordBatch>> {
     let path = run_dir.join(table.file_name());
     if path.is_dir() {
         let mut paths = fs::read_dir(&path)

@@ -45,7 +45,7 @@ REQUIRED_DOSSIER_SECTIONS = (
     "Current Evidence",
     "Open Decisions",
 )
-TEI_P5_REFERENCE_RE = re.compile(r"`?(\.\./abc/references/TEI/P5/[^\s`)]+)`?")
+TEI_P5_REFERENCE_RE = re.compile(r"`?((?:\.\./)?abc/references/TEI/P5/[^\s`)]+)`?")
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
@@ -341,7 +341,11 @@ def missing_dossier_sections(text: str) -> list[str]:
 
 
 def tei_p5_references(text: str) -> list[str]:
-    return sorted(set(TEI_P5_REFERENCE_RE.findall(text)))
+    return sorted({logical_abc_reference(reference) for reference in TEI_P5_REFERENCE_RE.findall(text)})
+
+
+def logical_abc_reference(reference: str) -> str:
+    return reference.removeprefix("../")
 
 
 def default_tei_p5_root() -> pathlib.Path:
@@ -357,9 +361,12 @@ def default_tei_p5_root() -> pathlib.Path:
 
 
 def resolve_tei_reference(reference: str, tei_p5_root: pathlib.Path) -> pathlib.Path:
-    prefix = "../abc/references/TEI/P5/"
+    prefix = "abc/references/TEI/P5/"
     if reference.startswith(prefix):
         return (tei_p5_root / reference.removeprefix(prefix)).resolve()
+    legacy_prefix = "../abc/references/TEI/P5/"
+    if reference.startswith(legacy_prefix):
+        return (tei_p5_root / reference.removeprefix(legacy_prefix)).resolve()
     if not reference.startswith("../abc/"):
         return (REPO_ROOT / reference).resolve()
     suffix = reference.removeprefix("../abc/")

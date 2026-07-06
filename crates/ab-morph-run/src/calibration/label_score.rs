@@ -81,8 +81,10 @@ pub fn run_score_labels(labels: &Path, mapping: &Path, k: usize) -> Result<Label
 
     let verdicts = validate_verdicts(&rows)?;
 
-    let mut verdict_counts: BTreeMap<String, usize> =
-        VERDICT_GAINS.iter().map(|(v, _)| ((*v).to_owned(), 0)).collect();
+    let mut verdict_counts: BTreeMap<String, usize> = VERDICT_GAINS
+        .iter()
+        .map(|(v, _)| ((*v).to_owned(), 0))
+        .collect();
     for verdict in verdicts.values() {
         *verdict_counts
             .get_mut(verdict.as_str())
@@ -91,7 +93,12 @@ pub fn run_score_labels(labels: &Path, mapping: &Path, k: usize) -> Result<Label
 
     let gains: BTreeMap<&str, f64> = verdicts
         .iter()
-        .map(|(id, verdict)| (id.as_str(), verdict_gain(verdict).expect("validated verdict")))
+        .map(|(id, verdict)| {
+            (
+                id.as_str(),
+                verdict_gain(verdict).expect("validated verdict"),
+            )
+        })
         .collect();
 
     // Pooled ideal: the k best gains over the whole labeled union (same for
@@ -201,11 +208,21 @@ fn parse_label_rows(path: &Path) -> Result<Vec<(String, String)>> {
     let label_id_index = columns
         .iter()
         .position(|column| *column == "label_id")
-        .with_context(|| format!("labels TSV {} header has no `label_id` column", path.display()))?;
+        .with_context(|| {
+            format!(
+                "labels TSV {} header has no `label_id` column",
+                path.display()
+            )
+        })?;
     let verdict_index = columns
         .iter()
         .position(|column| *column == "verdict")
-        .with_context(|| format!("labels TSV {} header has no `verdict` column", path.display()))?;
+        .with_context(|| {
+            format!(
+                "labels TSV {} header has no `verdict` column",
+                path.display()
+            )
+        })?;
 
     let mut rows = Vec::new();
     for line in lines {
@@ -246,16 +263,14 @@ fn check_label_id_sets_match(
     let tsv_ids: BTreeSet<String> = rows.iter().map(|(label_id, _)| label_id.clone()).collect();
     let mapping_ids: BTreeSet<String> = mapping.keys().cloned().collect();
 
-    let missing_from_tsv: BTreeSet<String> =
-        mapping_ids.difference(&tsv_ids).cloned().collect();
+    let missing_from_tsv: BTreeSet<String> = mapping_ids.difference(&tsv_ids).cloned().collect();
     let unknown_in_tsv: BTreeSet<String> = tsv_ids.difference(&mapping_ids).cloned().collect();
 
     if missing_from_tsv.is_empty() && unknown_in_tsv.is_empty() {
         return Ok(());
     }
 
-    let mut message =
-        String::from("labels TSV label_id set does not match mapping.json's key set");
+    let mut message = String::from("labels TSV label_id set does not match mapping.json's key set");
     if !missing_from_tsv.is_empty() {
         message.push_str(&format!(
             "; present in mapping.json but missing from the TSV (deleted row?): {}",

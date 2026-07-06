@@ -387,8 +387,7 @@ pub struct AatProjection {
     /// for a future TEI/XML renderer that will consume `ortho_choices()` to
     /// emit `<choice><orig>…</orig><reg>…</reg></choice>`. Wiring the producer
     /// is a separate sub-project (no TEI renderer exists in the workspace).
-    pub ortho_normalizations:
-        Option<Vec<ab_ortho_detect::OrthoAnnotation>>,
+    pub ortho_normalizations: Option<Vec<ab_ortho_detect::OrthoAnnotation>>,
 }
 
 impl AatProjection {
@@ -1606,7 +1605,6 @@ mod tests {
 mod ortho_tests {
     use super::*;
     use ab_ortho_detect::{OrthoAnnotation, OrthoNormalization};
-    use std::ops::Range;
 
     fn ann(start: usize, end: usize, norm: &str) -> OrthoAnnotation {
         OrthoAnnotation {

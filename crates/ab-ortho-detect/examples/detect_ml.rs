@@ -18,8 +18,8 @@
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
-use ab_ortho_detect::ml::MlLogisticRegression;
 use ab_ortho_detect::OrthoDetector;
+use ab_ortho_detect::ml::MlLogisticRegression;
 use ab_plaintext::sentence_split;
 use serde::{Deserialize, Serialize};
 

@@ -23,16 +23,16 @@ use parquet::basic::{Compression, ZstdLevel};
 use parquet::file::properties::WriterProperties;
 
 use super::interesting::{
-    AnomalyRow, InterestingTextFilter, PatternAccumulator, PatternKind, PatternStats,
-    RarityConfig, RegionExampleOut, RegionOccurrence, SqlSignature, WarehouseInterestingOptions,
+    AnomalyRow, InterestingTextFilter, PatternAccumulator, PatternKind, PatternStats, RarityConfig,
+    RegionExampleOut, RegionOccurrence, SqlSignature, WarehouseInterestingOptions,
 };
 use super::pattern_id::pattern_id;
 use super::summary_body::{
-    NwayPatternKey, duckdb_table_path_literal, read_warehouse_parquet_file,
-    run_duckdb_statement, sql_literal,
+    NwayPatternKey, duckdb_table_path_literal, read_warehouse_parquet_file, run_duckdb_statement,
+    sql_literal,
 };
-use crate::nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
 use super::summary_body::{canonicalize_feature_values, canonicalize_segmentation_groups};
+use crate::nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
 use crate::summary::WarehouseFeatureProfile;
 use crate::warehouse::schema::WarehouseTable;
 
@@ -120,12 +120,7 @@ base_regions AS (
 /// Rarity-key expression and optional `works` join clause.
 fn rarity_sql(run_dir: &Path, rarity: &RarityConfig) -> (String, String) {
     if rarity.work_by_source.is_some() {
-        let works = sql_literal(
-            &run_dir
-                .join("aozora_works.parquet")
-                .display()
-                .to_string(),
-        );
+        let works = sql_literal(&run_dir.join("aozora_works.parquet").display().to_string());
         (
             format!(
                 "LEFT JOIN (SELECT DISTINCT source_id, work_id FROM read_parquet({works})) w \
@@ -645,10 +640,8 @@ fn stream_feature_stage(
             let row_ref = FeatureStageRowRef {
                 feature_key: feature_keys.value(row),
                 scope_type: scope_types.value(row),
-                scope_position: (!scope_positions.is_null(row))
-                    .then(|| scope_positions.value(row)),
-                scope_surface: (!scope_surfaces.is_null(row))
-                    .then(|| scope_surfaces.value(row)),
+                scope_position: (!scope_positions.is_null(row)).then(|| scope_positions.value(row)),
+                scope_surface: (!scope_surfaces.is_null(row)).then(|| scope_surfaces.value(row)),
                 source_id: source_ids.value(row),
                 text_id: text_ids.value(row),
                 region_index: region_indices.value(row),
@@ -676,7 +669,8 @@ fn stream_feature_stage(
                     values: Vec::new(),
                 });
             }
-            let value = (!feature_values.is_null(row)).then(|| feature_values.value(row).to_owned());
+            let value =
+                (!feature_values.is_null(row)).then(|| feature_values.value(row).to_owned());
             let analyzers = analyzer_flags
                 .iter()
                 .enumerate()
@@ -700,10 +694,7 @@ fn stream_feature_stage(
 
 /// Writes the `(source_id, text_id, region_index)` exclusion set for the
 /// anomaly channel's top-feature-pattern anti-join.
-fn write_region_exclusions(
-    path: &Path,
-    regions: &BTreeSet<(String, String, u64)>,
-) -> Result<()> {
+fn write_region_exclusions(path: &Path, regions: &BTreeSet<(String, String, u64)>) -> Result<()> {
     let schema = std::sync::Arc::new(Schema::new(vec![
         Field::new("source_id", DataType::Utf8, false),
         Field::new("text_id", DataType::Utf8, false),
@@ -1008,7 +999,6 @@ LIMIT {limit}",
     }
     Ok(rows)
 }
-
 
 fn sig_in_list(values: &BTreeSet<String>) -> String {
     values

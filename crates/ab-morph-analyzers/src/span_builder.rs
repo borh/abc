@@ -193,17 +193,11 @@ pub fn remap_spans(
     }
 }
 
-fn char_byte_to_char_span(
-    char_map: &CharByteMap,
-    byte_span: Range<usize>,
-) -> Option<Range<usize>> {
+fn char_byte_to_char_span(char_map: &CharByteMap, byte_span: Range<usize>) -> Option<Range<usize>> {
     if byte_span.start > byte_span.end {
         return None;
     }
-    Some(
-        char_map.char_count_at_byte(byte_span.start)
-            ..char_map.char_count_at_byte(byte_span.end),
-    )
+    Some(char_map.char_count_at_byte(byte_span.start)..char_map.char_count_at_byte(byte_span.end))
 }
 
 #[cfg(test)]

@@ -72,10 +72,7 @@ impl OrthoDetector for HeuristicV1 {
         OrthoDetectorId::HeuristicV1
     }
 
-    fn detect(
-        &self,
-        sentences: &[SentenceSpan<'_>],
-    ) -> Vec<OrthoAnnotation> {
+    fn detect(&self, sentences: &[SentenceSpan<'_>]) -> Vec<OrthoAnnotation> {
         let mut annotations = Vec::new();
 
         for sentence in sentences {
@@ -233,40 +230,31 @@ mod tests {
 
     #[test]
     fn rejects_hiragana_sentence_without_dictionary() {
-        let detector = HeuristicV1::new(
-            Arc::new(StubTokenizer),
-            HeuristicConfig::default(),
-        );
+        let detector = HeuristicV1::new(Arc::new(StubTokenizer), HeuristicConfig::default());
         let annotations = detector.detect(&[make_span("これは猫です")]);
-        assert!(annotations.is_empty(), "hiragana sentence must not be normalized");
+        assert!(
+            annotations.is_empty(),
+            "hiragana sentence must not be normalized"
+        );
     }
 
     #[test]
     fn rejects_short_sentence_without_dictionary() {
-        let detector = HeuristicV1::new(
-            Arc::new(StubTokenizer),
-            HeuristicConfig::default(),
-        );
+        let detector = HeuristicV1::new(Arc::new(StubTokenizer), HeuristicConfig::default());
         let annotations = detector.detect(&[make_span("猫ダ")]);
         assert!(annotations.is_empty(), "3-char sentence must be rejected");
     }
 
     #[test]
     fn rejects_character_runs_without_dictionary() {
-        let detector = HeuristicV1::new(
-            Arc::new(StubTokenizer),
-            HeuristicConfig::default(),
-        );
+        let detector = HeuristicV1::new(Arc::new(StubTokenizer), HeuristicConfig::default());
         let annotations = detector.detect(&[make_span("アアアアアアアア")]);
         assert!(annotations.is_empty(), "stuttering must be rejected");
     }
 
     #[test]
     fn accepts_katakana_prose_without_dictionary() {
-        let detector = HeuristicV1::new(
-            Arc::new(StubTokenizer),
-            HeuristicConfig::default(),
-        );
+        let detector = HeuristicV1::new(Arc::new(StubTokenizer), HeuristicConfig::default());
         // 吾輩ハ猫デアル果テ: 9 chars, 5 katakana (ハデアルテ) + 4 kanji (吾輩猫果),
         // ratio 5/9 ≈ 0.556 > 0.5. No hiragana, ≥8 chars, uniqueness 9/9 = 1.0,
         // max_bigram_repeat 1/9, char_run_repeat 0/9, repeated_bigram_pattern 0/9,

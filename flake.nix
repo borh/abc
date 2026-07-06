@@ -957,6 +957,15 @@
               touch "$out"
             '';
 
+        abcSchemaContractCompareSmokeCheck = mkSmokeCheck {
+          name = "abc-schema-contract-compare-smoke-check";
+          testScript = "tests/abc-schema-contract-compare-smoke.sh";
+          nativeBuildInputs = [
+            pkgs.python3
+            pkgs.ripgrep
+          ];
+        };
+
         abAatToParserIr =
           if hasCargoManifest && hasCargoLock then
             rustPlatform.buildRustPackage {
@@ -1035,25 +1044,15 @@
           '';
         };
 
-        aozoraNotationSpecComparatorSmokeCheck =
-          pkgs.runCommand "aozora-notation-spec-comparator-smoke-check"
-            {
-              nativeBuildInputs = [
-                pkgs.bash
-                pkgs.jq
-                pkgs.python3
-                pkgs.ripgrep
-              ];
-            }
-            ''
-              work_dir="$TMPDIR/work"
-              cp -R ${source} "$work_dir"
-              chmod -R u+w "$work_dir"
-              substituteInPlace "$work_dir/tests/aozora-notation-spec-comparator-smoke.sh" \
-                --replace-fail '#!/usr/bin/env bash' '#!${pkgs.bash}/bin/bash'
-              bash "$work_dir/tests/aozora-notation-spec-comparator-smoke.sh"
-              touch "$out"
-            '';
+        aozoraNotationSpecComparatorSmokeCheck = mkSmokeCheck {
+          name = "aozora-notation-spec-comparator-smoke-check";
+          testScript = "tests/aozora-notation-spec-comparator-smoke.sh";
+          nativeBuildInputs = [
+            pkgs.jq
+            pkgs.python3
+            pkgs.ripgrep
+          ];
+        };
 
         # Reproducible adapter check: build the mapper fully offline from the
         # vendored cargo deps and validate fixture-driven AAT against
@@ -1166,6 +1165,7 @@
           adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
           taxonomy-drift = taxonomyDriftCheck;
           abc-schema-contract-drift = abcSchemaContractDriftCheck;
+          abc-schema-contract-compare-smoke = abcSchemaContractCompareSmokeCheck;
           parser-ir-level3-admission-smoke = level3AdmissionSmokeCheck;
           parser-ir-plain-prose-source-delta-smoke = plainProseSourceDeltaSmokeCheck;
           parser-ir-publication-bundle-smoke = publicationBundleSmokeCheck;

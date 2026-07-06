@@ -98,8 +98,13 @@ struct ContributorRecord {
 }
 
 /// ABC `orthographic_style` enum, verbatim (spec Global Constraints).
-const ORTHOGRAPHIC_STYLES: &[&str] =
-    &["新字新仮名", "新字旧仮名", "旧字新仮名", "旧字旧仮名", "その他"];
+const ORTHOGRAPHIC_STYLES: &[&str] = &[
+    "新字新仮名",
+    "新字旧仮名",
+    "旧字新仮名",
+    "旧字旧仮名",
+    "その他",
+];
 
 fn validate_record(record: &MetadataRecord, expected_work_id: &str, path: &Path) -> Result<()> {
     if record.metadata_record_schema_hash != ABC_METADATA_RECORD_SCHEMA_HASH {
@@ -235,7 +240,8 @@ pub fn run_import_aozora_metadata(
             skipped_source_ids.extend(work_sources);
             continue;
         }
-        let bytes = fs::read(&path).with_context(|| format!("failed to read {}", path.display()))?;
+        let bytes =
+            fs::read(&path).with_context(|| format!("failed to read {}", path.display()))?;
         let record: MetadataRecord = serde_json::from_slice(&bytes)
             .with_context(|| format!("failed to parse {}", path.display()))?;
         validate_record(&record, &work_id, &path)?;
@@ -255,10 +261,14 @@ pub fn run_import_aozora_metadata(
     }
 
     let temp = run_dir.join("aozora_works.parquet.tmp");
-    write_sidecar(&temp, &rows)
-        .with_context(|| format!("failed to write {}", temp.display()))?;
-    fs::rename(&temp, &output)
-        .with_context(|| format!("failed to rename {} to {}", temp.display(), output.display()))?;
+    write_sidecar(&temp, &rows).with_context(|| format!("failed to write {}", temp.display()))?;
+    fs::rename(&temp, &output).with_context(|| {
+        format!(
+            "failed to rename {} to {}",
+            temp.display(),
+            output.display()
+        )
+    })?;
 
     Ok(ImportSummary {
         works_imported,
@@ -286,7 +296,13 @@ impl SidecarColumns {
         self.work_ids.len()
     }
 
-    fn push(&mut self, work_id: &str, source_id: &str, record: &MetadataRecord, retrieved_at: &str) {
+    fn push(
+        &mut self,
+        work_id: &str,
+        source_id: &str,
+        record: &MetadataRecord,
+        retrieved_at: &str,
+    ) {
         self.work_ids.push(work_id.to_owned());
         self.source_ids.push(source_id.to_owned());
         self.titles.push(record.work.title.clone());
@@ -327,7 +343,9 @@ fn write_sidecar(path: &Path, rows: &SidecarColumns) -> Result<()> {
                     .collect::<Vec<_>>(),
             )),
             Arc::new(Int32Array::from(rows.publication_years.clone())),
-            Arc::new(StringArray::from_iter_values(rows.orthographic_styles.iter())),
+            Arc::new(StringArray::from_iter_values(
+                rows.orthographic_styles.iter(),
+            )),
             Arc::new(StringArray::from(genre)),
             Arc::new(StringArray::from_iter_values(rows.schema_hashes.iter())),
             Arc::new(StringArray::from_iter_values(rows.retrieved_ats.iter())),
@@ -569,7 +587,12 @@ mod tests {
         assert_eq!(rows, 3);
         let batch = &batches[0];
         assert_eq!(
-            batch.schema().fields().iter().map(|f| f.name().as_str()).collect::<Vec<_>>(),
+            batch
+                .schema()
+                .fields()
+                .iter()
+                .map(|f| f.name().as_str())
+                .collect::<Vec<_>>(),
             vec![
                 "work_id",
                 "source_id",

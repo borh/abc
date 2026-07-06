@@ -28,10 +28,22 @@ pub fn kata_to_hira(text: &str) -> String {
             }
 
             // Obsolete kana: ヷ→わ゛, ヸ→ゐ゛, ヹ→ゑ゛, ヺ→を゛
-            '\u{30F7}' => { out.push('\u{308F}'); out.push('\u{309B}'); }
-            '\u{30F8}' => { out.push('\u{3090}'); out.push('\u{309B}'); }
-            '\u{30F9}' => { out.push('\u{3091}'); out.push('\u{309B}'); }
-            '\u{30FA}' => { out.push('\u{3092}'); out.push('\u{309B}'); }
+            '\u{30F7}' => {
+                out.push('\u{308F}');
+                out.push('\u{309B}');
+            }
+            '\u{30F8}' => {
+                out.push('\u{3090}');
+                out.push('\u{309B}');
+            }
+            '\u{30F9}' => {
+                out.push('\u{3091}');
+                out.push('\u{309B}');
+            }
+            '\u{30FA}' => {
+                out.push('\u{3092}');
+                out.push('\u{309B}');
+            }
 
             // Full-width katakana block: U+30A1–U+30F6 → subtract 0x60
             c if ('\u{30A1}'..='\u{30F6}').contains(&c) => {

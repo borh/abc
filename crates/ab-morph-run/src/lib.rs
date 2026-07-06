@@ -20,10 +20,10 @@ use std::sync::{Arc, Mutex};
 use ab_morph_analyzers::{
     MorphAnalyzer, SudachiAnalyzer, SudachiMode, VaporettoAnalyzer, VibratoAnalyzer,
 };
-use ab_ortho_detect::OrthoDetector;
 use ab_morph_diff::{
     Analysis, Comparison, MorphDiffError, compare_pair, compare_pair_compact_with_source_text,
 };
+use ab_ortho_detect::OrthoDetector;
 use ab_plaintext::{PlainTextDocument, from_aat_value};
 use anyhow::{Context, Result, bail};
 pub use options::{OrthoDetectMode, OutputProfile, WarehouseProfile};
@@ -52,26 +52,25 @@ pub use select::resolve_source_id_aat_paths;
 pub(crate) use summary::WAREHOUSE_CORE_FEATURE_KEYS;
 pub use summary::{
     AnomalyRow, CompactDifferenceKindFilter, CompactDifferenceSummaryOptions,
-    CompactDifferenceSummaryRow, InterestingEngine, InterestingOutputFormat, InterestingRow,
-    InterestingSummary, InterestingTextFilter, LambdaMissingPolicy, RankScope, RegionExampleOut,
-    ScoreMode, ScoreVersionBlock, SignalExplain, WarehouseInterestingOptions,
-    summarize_warehouse_interesting,
-    write_interesting_tsv,
-    CompactExampleFilter, CompactExampleSummaryOptions, CompactExampleSummaryRow,
-    CompactExampleSummarySort, CompactSummaryGroupBy, CompactSummaryOptions, CompactSummaryRow,
-    CompactSummarySort, NwayPatternKind, NwayPatternOptions, NwayPatternRow, NwaySummaryOptions,
-    NwaySummaryRow, NwaySummarySort, SummaryExclusions, WarehouseErrorGroupBy,
-    WarehouseErrorSummaryOptions, WarehouseErrorSummaryRow, WarehouseFeatureDiffExampleRow,
-    WarehouseFeatureProfile, WarehousePairwiseSort, WarehousePairwiseSummaryOptions,
+    CompactDifferenceSummaryRow, CompactExampleFilter, CompactExampleSummaryOptions,
+    CompactExampleSummaryRow, CompactExampleSummarySort, CompactSummaryGroupBy,
+    CompactSummaryOptions, CompactSummaryRow, CompactSummarySort, InterestingEngine,
+    InterestingOutputFormat, InterestingRow, InterestingSummary, InterestingTextFilter,
+    LambdaMissingPolicy, NwayPatternKind, NwayPatternOptions, NwayPatternRow, NwaySummaryOptions,
+    NwaySummaryRow, NwaySummarySort, RankScope, RegionExampleOut, ScoreMode, ScoreVersionBlock,
+    SignalExplain, SummaryExclusions, WarehouseErrorGroupBy, WarehouseErrorSummaryOptions,
+    WarehouseErrorSummaryRow, WarehouseFeatureDiffExampleRow, WarehouseFeatureProfile,
+    WarehouseInterestingOptions, WarehousePairwiseSort, WarehousePairwiseSummaryOptions,
     WarehousePairwiseSummaryRow, WarehousePatternExampleOptions, WarehousePatternOptions,
     WarehouseRegionAnalyzerExampleRow, WarehouseRegionExampleRow, WarehouseRegionKind,
     WarehouseRegionOptions, WarehouseTextFilter, materialize_warehouse_core_feature_pattern_counts,
     summarize_compact_comparisons, summarize_compact_differences, summarize_compact_examples,
     summarize_nway, summarize_nway_pattern_counts, summarize_nway_patterns,
-    summarize_warehouse_errors, summarize_warehouse_nway, summarize_warehouse_nway_patterns,
-    summarize_warehouse_pairwise, summarize_warehouse_pattern_examples,
-    summarize_warehouse_regions, write_warehouse_nway_patterns_duckdb_tsv,
-    write_warehouse_pattern_examples_duckdb_tsv, write_warehouse_regions_duckdb_tsv,
+    summarize_warehouse_errors, summarize_warehouse_interesting, summarize_warehouse_nway,
+    summarize_warehouse_nway_patterns, summarize_warehouse_pairwise,
+    summarize_warehouse_pattern_examples, summarize_warehouse_regions, write_interesting_tsv,
+    write_warehouse_nway_patterns_duckdb_tsv, write_warehouse_pattern_examples_duckdb_tsv,
+    write_warehouse_regions_duckdb_tsv,
 };
 
 /// Run the selected analysis pipeline over AAT input(s).
@@ -1191,7 +1190,10 @@ mod tests {
             None,
         )
         .unwrap_err();
-        assert!(err.to_string().contains("--aat must point to a regular file"));
+        assert!(
+            err.to_string()
+                .contains("--aat must point to a regular file")
+        );
     }
 
     #[test]

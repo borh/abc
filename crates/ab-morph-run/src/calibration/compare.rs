@@ -104,7 +104,10 @@ fn score_block_mismatches(left: &InterestingSummary, right: &InterestingSummary)
 }
 
 pub fn run_compare_rankings(left: &Path, right: &Path) -> Result<RankingComparison> {
-    Ok(compare_rankings(&read_ranking(left)?, &read_ranking(right)?))
+    Ok(compare_rankings(
+        &read_ranking(left)?,
+        &read_ranking(right)?,
+    ))
 }
 
 #[cfg(test)]
@@ -199,9 +202,10 @@ mod tests {
         assert!((cmp.jaccard - 2.0 / 4.0).abs() < 1e-12);
         // p1: ranks (1,2); p2: ranks (2,1) → one discordant pair, τ = -1.
         assert!((cmp.kendall_tau_b.unwrap() + 1.0).abs() < 1e-12);
-        assert!(cmp
-            .score_version_mismatches
-            .iter()
-            .any(|m| m.contains("rank_scope")));
+        assert!(
+            cmp.score_version_mismatches
+                .iter()
+                .any(|m| m.contains("rank_scope"))
+        );
     }
 }

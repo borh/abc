@@ -7,10 +7,10 @@ use std::{
 
 use ab_coverage::{
     matrix::{CoverageMatrix, RepresentabilityStatus, Row},
-    source_corpus::{load_index_entries, read_source_work, SourceIndexEntry},
-    source_inventory::{inventory_document, patterns_from_rows, UnknownMarkerExample},
+    source_corpus::{SourceIndexEntry, load_index_entries, read_source_work},
+    source_inventory::{UnknownMarkerExample, inventory_document, patterns_from_rows},
 };
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 use rayon::prelude::*;
 use regex::Regex;

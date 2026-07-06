@@ -229,7 +229,7 @@ struct FileSuccess {
 
 #[derive(Debug)]
 enum FileOutcome {
-    Success(FileSuccess),
+    Success(Box<FileSuccess>),
     Failure { message: String },
 }
 
@@ -393,7 +393,9 @@ fn audit_file(
                     validate_output_parser_ir: true,
                 },
             ) {
-                Ok(output) => FileOutcome::Success(summarize_output(&output, mapping_hash)),
+                Ok(output) => {
+                    FileOutcome::Success(Box::new(summarize_output(&output, mapping_hash)))
+                }
                 Err(error) => FileOutcome::Failure {
                     message: format!("{error:#}"),
                 },
@@ -712,6 +714,7 @@ fn summarize(
         );
         match result.outcome {
             FileOutcome::Success(success) => {
+                let success = *success;
                 totals.files_succeeded += 1;
                 totals.parser_ir_nodes += success.parser_ir_nodes;
                 totals.divergence_records += success.divergence_records;

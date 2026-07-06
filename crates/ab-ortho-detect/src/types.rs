@@ -7,7 +7,9 @@ use serde::{Deserialize, Serialize};
 pub enum OrthoMapError {
     /// The normalized byte range crosses an OffsetMap entry boundary where
     /// byte-length changed (e.g. ヴ→う゛). Callers must split the span first.
-    #[error("normalized range {range:?} cannot be remapped: it crosses an OffsetMap entry boundary (byte {boundary}) or is a sub-span of a length-changing entry (e.g. ヴ→う゛); split the span at annotation boundaries first")]
+    #[error(
+        "normalized range {range:?} cannot be remapped: it crosses an OffsetMap entry boundary (byte {boundary}) or is a sub-span of a length-changing entry (e.g. ヴ→う゛); split the span at annotation boundaries first"
+    )]
     CrossesBoundary {
         range: std::ops::Range<usize>,
         boundary: usize,
@@ -81,10 +83,7 @@ impl OffsetMap {
     /// must split the span at annotation boundaries first.
     /// Returns [`OrthoMapError::UncoveredOffset`] if either endpoint is not
     /// covered by any entry.
-    pub fn to_original(
-        &self,
-        norm_range: Range<usize>,
-    ) -> Result<Range<usize>, OrthoMapError> {
+    pub fn to_original(&self, norm_range: Range<usize>) -> Result<Range<usize>, OrthoMapError> {
         if self.entries.is_empty() {
             return Ok(norm_range);
         }
@@ -97,19 +96,20 @@ impl OffsetMap {
             None => {
                 return Err(OrthoMapError::UncoveredOffset {
                     offset: norm_range.start,
-                })
+                });
             }
         };
 
-        let end_entry = self.entries.iter().find(|&&(noff, _, nlen, _)| {
-            norm_range.end > noff && norm_range.end <= noff + nlen
-        });
+        let end_entry = self
+            .entries
+            .iter()
+            .find(|&&(noff, _, nlen, _)| norm_range.end > noff && norm_range.end <= noff + nlen);
         let end_entry = match end_entry {
             Some(e) => e,
             None => {
                 return Err(OrthoMapError::UncoveredOffset {
                     offset: norm_range.end,
-                })
+                });
             }
         };
 

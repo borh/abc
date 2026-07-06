@@ -2,7 +2,8 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 
 repo_root := `pwd`
 repo_storage_root := `git rev-parse --path-format=absolute --git-common-dir | xargs dirname`
-abc_repo_root := env_var_or_default("AB_ABC_ROOT", repo_storage_root + "/../abc")
+workspace_root := env_var_or_default("AB_WORKSPACE_ROOT", repo_storage_root + "/..")
+abc_repo_root := env_var_or_default("AB_ABC_ROOT", workspace_root + "/abc")
 ab_db_root := env_var_or_default("AB_DB_ROOT", "/db/ab-validator")
 morph_warehouse_dir := env_var_or_default("AB_MORPH_WAREHOUSE_DIR", "/db/ab-validator/morph-warehouse")
 morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", "/db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter")
@@ -11,7 +12,7 @@ aozora2_full_aat_dir := env_var_or_default("AB_AOZORA2_AAT_DIR", ab_db_root + "/
 aozora2html_full_aat_dir := env_var_or_default("AB_AOZORA2HTML_AAT_DIR", ab_db_root + "/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter")
 aozora_epub3_full_aat_dir := env_var_or_default("AB_AOZORA_EPUB3_AAT_DIR", ab_db_root + "/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter")
 aozora_full_aat_dir := env_var_or_default("AB_AOZORA_AAT_DIR", ab_db_root + "/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter")
-tei_eaj_workset := env_var_or_default("AB_TEI_EAJ_WORKSET", repo_storage_root + "/../abc/docs/handoffs/tei-eaj-aozora-workset-export.json")
+tei_eaj_workset := env_var_or_default("AB_TEI_EAJ_WORKSET", abc_repo_root + "/docs/handoffs/tei-eaj-aozora-workset-export.json")
 aozora2html_flake := repo_root + "#aozora2html"
 vibrato_dictionary_root := repo_root + "/dictionary"
 vibrato_unidic_sources := vibrato_dictionary_root + "/unidic-sources"

@@ -88,25 +88,31 @@ fn convert_preflighted(
     let mut synthetic_warnings = Vec::new();
     let mut offset = 0_u64;
 
-    let blocks: Vec<&Value> = aat
-        .pointer("/blocks")
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-        .collect();
-    let top_level_block_count = blocks.len();
-    for (block_index, block) in blocks.into_iter().enumerate() {
-        offset = map_block(
-            block,
-            &mut nodes,
-            &mut paragraphs,
-            &mut recorder,
-            &mut synthetic_warnings,
-            offset,
-            &format!("blocks[{block_index}]"),
-            None,
-            block_index + 1 == top_level_block_count,
-        )?;
+    {
+        let mut block_outputs = BlockOutputs {
+            nodes: &mut nodes,
+            paragraphs: &mut paragraphs,
+            synthetic_warnings: &mut synthetic_warnings,
+        };
+
+        let blocks: Vec<&Value> = aat
+            .pointer("/blocks")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .collect();
+        let top_level_block_count = blocks.len();
+        for (block_index, block) in blocks.into_iter().enumerate() {
+            offset = map_block(
+                block,
+                &mut block_outputs,
+                &mut recorder,
+                offset,
+                &format!("blocks[{block_index}]"),
+                None,
+                block_index + 1 == top_level_block_count,
+            )?;
+        }
     }
 
     let source = map_source(&aat, &mut recorder)?;
@@ -142,12 +148,16 @@ fn convert_preflighted(
     })
 }
 
+struct BlockOutputs<'a> {
+    nodes: &'a mut Vec<Value>,
+    paragraphs: &'a mut Vec<Value>,
+    synthetic_warnings: &'a mut Vec<Value>,
+}
+
 fn map_block(
     block: &Value,
-    nodes: &mut Vec<Value>,
-    paragraphs: &mut Vec<Value>,
+    outputs: &mut BlockOutputs<'_>,
     recorder: &mut DivergenceRecorder,
-    synthetic_warnings: &mut Vec<Value>,
     offset: u64,
     path: &str,
     inherited_layout: Option<Value>,
@@ -160,7 +170,7 @@ fn map_block(
         "paragraph" => {
             if is_source_derived_page_break(block) {
                 let span = map_span(block.get("span"), current, current, recorder, path)?;
-                nodes.push(json!({
+                outputs.nodes.push(json!({
                     "type": "page-break",
                     "span": span,
                     "marker": "page",
@@ -181,8 +191,8 @@ fn map_block(
             } else {
                 format!("{path}.content")
             };
-            let paragraph_id = format!("p{:06}", paragraphs.len());
-            let node_start = nodes.len();
+            let paragraph_id = format!("p{:06}", outputs.paragraphs.len());
+            let node_start = outputs.nodes.len();
             let source_note_text = if is_final_top_level {
                 source_attribution_text(paragraph_content)?
             } else {
@@ -199,7 +209,7 @@ fn map_block(
                 )?;
                 let end = current + utf8_len(&text);
                 let span = map_span(block.get("span"), current, end, recorder, path)?;
-                nodes.push(json!({
+                outputs.nodes.push(json!({
                     "type": "source-note",
                     "span": span,
                     "text": text,
@@ -214,22 +224,22 @@ fn map_block(
             } else {
                 current = map_inline_content(
                     paragraph_content,
-                    nodes,
+                    outputs.nodes,
                     recorder,
-                    synthetic_warnings,
+                    outputs.synthetic_warnings,
                     current,
                     &paragraph_content_path,
                 )?;
                 role = "body";
                 classification = "direct";
             }
-            let node_end = nodes.len();
+            let node_end = outputs.nodes.len();
             if role == "body" && node_start == node_end {
                 return Ok(current);
             }
             let (span, span_source) = paragraph_span(
                 block.get("span"),
-                nodes,
+                outputs.nodes,
                 node_start,
                 node_end,
                 offset,
@@ -253,7 +263,7 @@ fn map_block(
                     .expect("paragraph JSON object")
                     .insert("layout".to_owned(), layout);
             }
-            paragraphs.push(paragraph);
+            outputs.paragraphs.push(paragraph);
         }
         "heading" => {
             recorder.record(
@@ -283,14 +293,14 @@ fn map_block(
             let inline_children = inline_children_nodes(
                 block.get("content"),
                 recorder,
-                synthetic_warnings,
+                outputs.synthetic_warnings,
                 current,
                 &format!("{path}.heading.content"),
                 0,
             )?;
             let end = current + utf8_len(&text);
             let span = map_span(block.get("span"), current, end, recorder, path)?;
-            nodes.push(json!({
+            outputs.nodes.push(json!({
                 "type": "heading",
                 "span": span,
                 "text": text,
@@ -310,10 +320,8 @@ fn map_block(
                 for (index, child) in children.into_iter().enumerate() {
                     current = map_block(
                         child,
-                        nodes,
-                        paragraphs,
+                        outputs,
                         recorder,
-                        synthetic_warnings,
                         current,
                         &format!("{path}.children[{index}]"),
                         Some(layout.clone()),
@@ -336,7 +344,7 @@ fn map_block(
                     Some(json!(1)),
                 )?;
                 let span = map_span(block.get("span"), current, current, recorder, path)?;
-                nodes.push(json!({
+                outputs.nodes.push(json!({
                     "type": "indentation",
                     "span": span,
                     "depth": 1,
@@ -345,10 +353,8 @@ fn map_block(
                 for (index, child) in children.into_iter().enumerate() {
                     current = map_block(
                         child,
-                        nodes,
-                        paragraphs,
+                        outputs,
                         recorder,
-                        synthetic_warnings,
                         current,
                         &format!("{path}.children[{index}]"),
                         None,
@@ -380,10 +386,8 @@ fn map_block(
             {
                 current = map_block(
                     child,
-                    nodes,
-                    paragraphs,
+                    outputs,
                     recorder,
-                    synthetic_warnings,
                     current,
                     &format!("{path}.children[{index}]"),
                     None,
@@ -409,10 +413,8 @@ fn map_block(
             {
                 current = map_block(
                     child,
-                    nodes,
-                    paragraphs,
+                    outputs,
                     recorder,
-                    synthetic_warnings,
                     current,
                     &format!("{path}.children[{index}]"),
                     None,
@@ -1536,16 +1538,16 @@ fn visible_inline_text(
         }
         "accent" => {
             let accent_pointer = format!("{path}.accent");
-            if let Some(target) = target_pointer {
-                if recorder.has_rule("LOSS", Some(accent_pointer.as_str()), Some(target)) {
-                    recorder.record(
-                        "LOSS",
-                        Some(accent_pointer.as_str()),
-                        Some(target),
-                        node.get("name").cloned(),
-                        None,
-                    )?;
-                }
+            if let Some(target) = target_pointer
+                && recorder.has_rule("LOSS", Some(accent_pointer.as_str()), Some(target))
+            {
+                recorder.record(
+                    "LOSS",
+                    Some(accent_pointer.as_str()),
+                    Some(target),
+                    node.get("name").cloned(),
+                    None,
+                )?;
             }
             Ok(accent_text(node))
         }
@@ -1761,16 +1763,15 @@ fn map_source(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value> {
         None,
         Some(Value::Null),
     )?;
-    for field in ["parse_complete"] {
-        let field_pointer = format!("meta.{field}");
-        recorder.record(
-            "LOSS",
-            Some(field_pointer.as_str()),
-            None,
-            meta.get(field).cloned(),
-            None,
-        )?;
-    }
+    let field = "parse_complete";
+    let field_pointer = format!("meta.{field}");
+    recorder.record(
+        "LOSS",
+        Some(field_pointer.as_str()),
+        None,
+        meta.get(field).cloned(),
+        None,
+    )?;
     if meta.get("metrics").is_some() {
         recorder.record("LOSS", Some("meta.metrics"), None, None, None)?;
     }

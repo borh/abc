@@ -328,6 +328,17 @@ parser-ir-publication-next-work-report SOURCE_SUMMARY="docs/superpowers/reports/
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}"
 
+source-region-disposition-samples-smoke:
+	@bash "{{repo_root}}/tests/source-region-disposition-samples-smoke.sh"
+
+source-region-disposition-samples-report SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" SOURCE_REPORT_MD="docs/superpowers/reports/2026-07-04-source-authority-representability.md" POLICY="data/abc-schemas/data/source-region-publication-policy-v0.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-source-region-disposition-samples.md":
+	@python3 "{{repo_root}}/reports/source-regions/source-region-disposition-samples.py" \
+		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
+		--source-report-md "{{repo_root}}/{{SOURCE_REPORT_MD}}" \
+		--policy "{{repo_root}}/{{POLICY}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}"
+
 parser-ir-publication-bundle-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-publication-bundle-smoke.sh"
 

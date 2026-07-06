@@ -944,6 +944,32 @@
               touch "$out"
             '';
 
+        publicationBundleBatchSmokeCheck =
+          pkgs.runCommand "parser-ir-publication-bundle-batch-smoke-check"
+            {
+              nativeBuildInputs = [
+                pkgs.bash
+                pkgs.coreutils
+                pkgs.jq
+                pkgs.python3
+                pkgs.ripgrep
+              ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+
+              export TMPDIR="$work_dir/tmp"
+              mkdir -p "$TMPDIR"
+              export HOME="$work_dir/home"
+              mkdir -p "$HOME"
+
+              bash tests/parser-ir-publication-bundle-batch-smoke.sh
+              touch "$out"
+            '';
+
         taxonomyDriftCheck =
           pkgs.runCommand "taxonomy-drift-check"
             {
@@ -1198,6 +1224,7 @@
           parser-ir-level3-admission-smoke = level3AdmissionSmokeCheck;
           parser-ir-plain-prose-source-delta-smoke = plainProseSourceDeltaSmokeCheck;
           parser-ir-publication-bundle-smoke = publicationBundleSmokeCheck;
+          parser-ir-publication-bundle-batch-smoke = publicationBundleBatchSmokeCheck;
           aat-to-parser-ir-smoke = abAatToParserIrCheck;
           source-inventory-smoke = sourceInventorySmokeCheck;
           source-representability-gate = sourceRepresentabilityGateCheck;

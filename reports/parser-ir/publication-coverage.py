@@ -73,7 +73,9 @@ SOURCE_REGION_ALLOWED_TARGET_CLASSES = {
     "unsupported_gap",
 }
 PUBLICATION_BUNDLE_EVIDENCE_SCHEMA_VERSION = "publication-bundle-validation-evidence-v1"
+PUBLICATION_BUNDLE_BATCH_EVIDENCE_SCHEMA_VERSION = "publication-bundle-batch-validation-evidence-v1"
 PUBLICATION_BUNDLE_PASSED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_PASSED"
+PUBLICATION_BUNDLE_BATCH_PASSED_VERDICT = "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED"
 PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS = {
     "parser_ir",
     "tei",
@@ -1170,6 +1172,108 @@ def publication_bundle_contract_block(bundle_summary_path: pathlib.Path | None) 
             "message": "ABC publication bundle validation evidence path was supplied but could not be read.",
         }
 
+    schema_version = evidence.get("schema_version") if isinstance(evidence, dict) else None
+    if schema_version == PUBLICATION_BUNDLE_BATCH_EVIDENCE_SCHEMA_VERSION:
+        checks = evidence.get("checks", {}) if isinstance(evidence, dict) else {}
+        rows = evidence.get("rows", []) if isinstance(evidence, dict) else []
+        scope = evidence.get("scope", {}) if isinstance(evidence, dict) else {}
+        rows = rows if isinstance(rows, list) else []
+        present_artifact_failures: list[str] = []
+        invalid_artifact_hashes: list[str] = []
+        sample_validated_bundles: list[dict[str, Any]] = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            row_id = str(row.get("row_id") or "")
+            validated_bundle = row.get("validated_bundle", {})
+            if not isinstance(validated_bundle, dict):
+                validated_bundle = {}
+            if len(sample_validated_bundles) < 5:
+                sample_validated_bundles.append(
+                    {
+                        "row_id": row_id,
+                        "row_dir": row.get("row_dir"),
+                        "validated_bundle": {
+                            key: validated_bundle.get(key)
+                            for key in sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS)
+                            if key in validated_bundle
+                        },
+                    }
+                )
+            row_present = {
+                name
+                for name, artifact in validated_bundle.items()
+                if isinstance(name, str)
+                and isinstance(artifact, dict)
+                and isinstance(artifact.get("path"), str)
+                and artifact.get("path")
+                and isinstance(artifact.get("hash"), str)
+                and SHA256_PATTERN.fullmatch(artifact.get("hash"))
+            }
+            present_artifact_failures.extend(
+                f"{row_id}:{name}"
+                for name in sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS - row_present)
+            )
+            invalid_artifact_hashes.extend(
+                f"{row_id}:{name}"
+                for name, artifact in validated_bundle.items()
+                if name in PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS
+                and isinstance(artifact, dict)
+                and isinstance(artifact.get("hash"), str)
+                and not SHA256_PATTERN.fullmatch(artifact.get("hash"))
+            )
+        missing_checks = sorted(
+            check
+            for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS
+            if check not in checks
+        )
+        failed_checks = sorted(
+            check
+            for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS
+            if checks.get(check) is not True
+        )
+        rows_validated = scope.get("rows_validated")
+        rows_failed = scope.get("rows_failed")
+        confirmed = (
+            evidence.get("verdict") == PUBLICATION_BUNDLE_BATCH_PASSED_VERDICT
+            and isinstance(rows_validated, int)
+            and rows_validated > 0
+            and rows_validated == len(rows)
+            and rows_failed == 0
+            and not present_artifact_failures
+            and not invalid_artifact_hashes
+            and not missing_checks
+            and not failed_checks
+        )
+        return {
+            "verdict": (
+                "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"
+                if confirmed
+                else "PUBLICATION_BUNDLE_CONTRACT_INCOMPLETE"
+            ),
+            "schema_version": schema_version,
+            "validation_scope": "batch",
+            "path": display_path(bundle_summary_path),
+            "bundle_hash": document_hash(evidence),
+            "abc_commit": evidence.get("abc_commit") if isinstance(evidence, dict) else None,
+            "validator": evidence.get("validator") if isinstance(evidence, dict) else None,
+            "command": evidence.get("command") if isinstance(evidence, dict) else None,
+            "rows_discovered": scope.get("rows_discovered") if isinstance(scope, dict) else None,
+            "rows_validated": rows_validated,
+            "rows_failed": rows_failed,
+            "sample_validated_bundles": sample_validated_bundles,
+            "checks": {key: checks.get(key) for key in sorted(PUBLICATION_BUNDLE_REQUIRED_CHECKS)},
+            "missing_artifacts": sorted(present_artifact_failures),
+            "invalid_artifact_hashes": sorted(invalid_artifact_hashes),
+            "missing_checks": missing_checks,
+            "failed_checks": failed_checks,
+            "message": (
+                "ABC publication bundle batch validation evidence confirms parser-IR, TEI, preservation, source-region, manifest, and plaintext cross-artifact checks."
+                if confirmed
+                else "ABC publication bundle batch validation evidence is missing required artifacts, rows, or cross-artifact checks."
+            ),
+        }
+
     validated_bundle = evidence.get("validated_bundle", {}) if isinstance(evidence, dict) else {}
     checks = evidence.get("checks", {}) if isinstance(evidence, dict) else {}
     present_artifacts = {
@@ -1217,6 +1321,7 @@ def publication_bundle_contract_block(bundle_summary_path: pathlib.Path | None) 
             else "PUBLICATION_BUNDLE_CONTRACT_INCOMPLETE"
         ),
         "schema_version": evidence.get("schema_version") if isinstance(evidence, dict) else None,
+        "validation_scope": "single",
         "path": display_path(bundle_summary_path),
         "bundle_hash": document_hash(evidence),
         "abc_commit": evidence.get("abc_commit") if isinstance(evidence, dict) else None,
@@ -1598,6 +1703,12 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"Bundle hash: `{publication_bundle_contract.get('bundle_hash')}`",
         "",
         f"ABC commit: `{publication_bundle_contract.get('abc_commit')}`",
+        "",
+        f"Validation scope: `{publication_bundle_contract.get('validation_scope')}`",
+        "",
+        f"Rows validated: `{publication_bundle_contract.get('rows_validated')}`",
+        "",
+        f"Rows failed: `{publication_bundle_contract.get('rows_failed')}`",
         "",
         "## Node Coverage",
         "",

@@ -305,6 +305,9 @@ parser-ir-publication-coverage-smoke:
 parser-ir-publication-bundle-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-publication-bundle-smoke.sh"
 
+parser-ir-publication-bundle-batch-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-publication-bundle-batch-smoke.sh"
+
 parser-ir-publication-bundle-validation ABC_ROOT=abc_repo_root OUT_DIR="scratch/parser-ir-publication-bundle-validation" SOURCE_REGION_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-publication-bundle-validation.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json":
 	@abc_root="$(readlink -f "{{ABC_ROOT}}")"; out_dir="{{repo_root}}/{{OUT_DIR}}"; rm -rf "$out_dir"; mkdir -p "$out_dir"; \
 	(cd "$abc_root" && clojure -M:abc/materialize-publication \
@@ -322,6 +325,19 @@ parser-ir-publication-bundle-validation ABC_ROOT=abc_repo_root OUT_DIR="scratch/
 		--publication-dir "$out_dir" \
 		--abc-commit "$abc_commit" \
 		--command "clojure -M:abc/materialize-publication examples/v0/example-work/parser-ir.json examples/v0/example-work/metadata-record.json examples/v0/example-persons {{OUT_DIR}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}"
+
+parser-ir-publication-bundle-batch-validation BATCH_ROOT="" SCOPE="representative" SOURCE_REGION_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json" ABC_ROOT=abc_repo_root:
+	@if [ -z "{{BATCH_ROOT}}" ]; then echo "BATCH_ROOT is required" >&2; exit 2; fi; \
+	abc_root="$(readlink -f "{{ABC_ROOT}}")"; \
+	abc_commit="$(git -C "$abc_root" rev-parse --short HEAD 2>/dev/null || true)"; \
+	python3 "{{repo_root}}/reports/parser-ir/publication-bundle-validate.py" \
+		--batch-root "{{BATCH_ROOT}}" \
+		--batch-scope "{{SCOPE}}" \
+		--source-region-summary "{{repo_root}}/{{SOURCE_REGION_SUMMARY}}" \
+		--abc-commit "$abc_commit" \
+		--command "clojure -M:abc/materialize-publications-batch {{BATCH_ROOT}}/materialization-batch.json --summary {{BATCH_ROOT}}/materialization-summary.json" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}"
 

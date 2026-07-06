@@ -124,17 +124,38 @@ after syncing the ABC source-region schema, policy, and manifest sidecar role.
 
 **Review gate:** A fixture bundle with source apparatus, body markup, TEI projection, sidecar records, and plaintext passes ABC validation and is cited by path/hash in ab-validator's report.
 
-**Current status:** Implemented for the ABC parser-IR example fixture. Regenerate
-with:
+**Current status:** Implemented for the ABC parser-IR example fixture and
+confirmed for a freshly materialized 25-row representative batch. Regenerate
+the fixture evidence with:
 
 ```bash
 just parser-ir-publication-bundle-validation
 just parser-ir-publication-coverage-report
 ```
 
-The next bundle-validation step is scale, not existence: run the same checks
-over a representative workset, then the full materialized corpus when runtime
-is acceptable.
+Regenerate the current representative batch evidence with:
+
+```bash
+just parser-ir-level3-tei-eaj-generated-matrix-audit 5 /db/ab-validator/parser-ir/representative-publication-bundle-current-smoke docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json 24
+just parser-ir-publication-bundle-batch-validation /db/ab-validator/parser-ir/representative-publication-bundle-current-smoke representative docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.md docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json ../abc
+python3 reports/parser-ir/publication-coverage.py \
+  --parser-ir-schema data/abc-schemas/schemas/parser-ir.schema.json \
+  --mapping data/aat-to-parser-ir-mapping-v1.json \
+  --source-summary docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json \
+  --matrix-summary docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json \
+  --source-delta-summary docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json \
+  --custom-contract-schema data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json \
+  --bundle-validation-summary docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json \
+  --summary-json docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json \
+  --report-md docs/superpowers/reports/2026-07-06-ir-publication-coverage.md
+```
+
+Existing pre-contract `/db` materialization directories are useful for
+comparison, but they do not prove the current publication bundle contract if
+they lack current preservation sidecars. The next bundle-validation step is
+full-corpus materialization when runtime is acceptable. The current
+representative evidence validates `25/25` rows and is cited by the publication
+coverage report with `publication_bundle_contract.validation_scope == "batch"`.
 
 ## Workstream 3: Parser Evidence And Adapter Fidelity
 
@@ -254,10 +275,10 @@ Complete Aozora Bunko markup publication mapping: every observed source markup a
 
 ## Immediate Next Tasks
 
-1. Run batch parser-IR publication materialization over a representative
-   workset, then scale to full corpus when runtime is acceptable.
-2. Broaden publication-bundle validation from the ABC example fixture to the
-   representative and full-corpus materialized outputs.
+1. Scale batch parser-IR publication materialization from the 25-row
+   representative smoke to the full corpus when runtime is acceptable.
+2. Run `parser-ir-publication-bundle-batch-validation` against the full-corpus
+   output and feed the batch summary into `parser-ir-publication-coverage-report`.
 3. Keep all five parser evidence lanes current:
    `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
 4. Compare source inventory against Aozora manual and
@@ -271,11 +292,14 @@ Run these in ab-validator after each contract-affecting change:
 bash tests/source-representability-gate-smoke.sh
 bash tests/source-inventory-smoke.sh
 bash tests/parser-ir-publication-bundle-smoke.sh
+bash tests/parser-ir-publication-bundle-batch-smoke.sh
 bash tests/parser-ir-publication-coverage-smoke.sh
 jq -e '.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
 jq -e '.source_region_coverage.unsupported_body_markup_occurrences == 0 and .source_region_coverage.unknown_region_occurrences == 0 and .source_region_coverage.unknown_unreviewed_occurrences == 0' docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
 jq -e '.verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED"' docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json
+jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED" and .scope.rows_validated == 25 and .scope.rows_failed == 0' docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json
 jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
+jq -e '.publication_bundle_contract.validation_scope == "batch" and .publication_bundle_contract.rows_validated == 25 and .publication_bundle_contract.rows_failed == 0' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_COMPLETE"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 git diff --check
 ```
@@ -285,6 +309,7 @@ Run this when Nix checks are in scope:
 ```bash
 system="$(nix eval --impure --raw --expr builtins.currentSystem)"
 nix build ".#checks.${system}.source-representability-gate" --print-build-logs
+nix build ".#checks.${system}.parser-ir-publication-bundle-batch-smoke" --print-build-logs
 ```
 
 ## Self-Review

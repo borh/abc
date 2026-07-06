@@ -29,6 +29,7 @@ invalid_custom_contract="$out_dir/custom-contract.invalid.json"
 invalid_contract_summary_json="$out_dir/coverage-invalid-contract.summary.json"
 invalid_contract_report_md="$out_dir/coverage-invalid-contract.md"
 bundle_summary="$out_dir/publication-bundle-validation.summary.json"
+batch_bundle_summary="$out_dir/publication-bundle-batch-validation.summary.json"
 invalid_bundle_summary="$out_dir/publication-bundle-validation.invalid.summary.json"
 incomplete_matrix_summary="$out_dir/matrix-summary-incomplete.json"
 incomplete_source_delta="$out_dir/source-delta-incomplete.summary.json"
@@ -276,6 +277,102 @@ cat > "$invalid_bundle_summary" <<'JSON'
 }
 JSON
 
+cat > "$batch_bundle_summary" <<'JSON'
+{
+  "schema_version": "publication-bundle-batch-validation-evidence-v1",
+  "verdict": "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED",
+  "validator": "ab-validator publication-bundle-validate batch",
+  "command": "clojure -M:abc/materialize-publications-batch ...",
+  "abc_commit": "95ace31",
+  "scope": {
+    "kind": "representative",
+    "batch_root": "scratch/parser-ir-publication-bundle-batch-validation",
+    "rows_discovered": 2,
+    "rows_validated": 2,
+    "rows_passed": 2,
+    "rows_failed": 0
+  },
+  "checks": {
+    "parser_ir_schema_valid": true,
+    "tei_profile_valid": true,
+    "preservation_schema_valid": true,
+    "source_region_coverage_valid": true,
+    "tei_manifest_valid": true,
+    "plaintext_manifest_valid": true,
+    "tei_manifest_references_preservation": true,
+    "tei_manifest_references_validation_result": true,
+    "source_region_sidecar_role_available": true,
+    "tei_abc_projection_resolves_to_sidecar": true,
+    "preservation_tei_pointers_resolve": true,
+    "preservation_source_pointers_resolve": true,
+    "plaintext_body_only": true
+  },
+  "rows": [
+    {
+      "row_id": "row-a",
+      "row_dir": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
+      "validated_bundle": {
+        "parser_ir": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a/parser-ir.json", "hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+        "tei": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a/publication/tei.xml", "hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},
+        "plaintext": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a/publication/plain.txt", "hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+        "preservation": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a/publication/preservation.json", "hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"},
+        "source_region_coverage": {"path": "../abc/examples/ab-validator-output/source-region-coverage.json", "hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"},
+        "tei_manifest": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a/publication/tei.manifest.json", "hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
+        "plaintext_manifest": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a/publication/plaintext.manifest.json", "hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+      },
+      "checks": {
+        "parser_ir_schema_valid": true,
+        "tei_profile_valid": true,
+        "preservation_schema_valid": true,
+        "source_region_coverage_valid": true,
+        "tei_manifest_valid": true,
+        "plaintext_manifest_valid": true,
+        "tei_manifest_references_preservation": true,
+        "tei_manifest_references_validation_result": true,
+        "source_region_sidecar_role_available": true,
+        "tei_abc_projection_resolves_to_sidecar": true,
+        "preservation_tei_pointers_resolve": true,
+        "preservation_source_pointers_resolve": true,
+        "plaintext_body_only": true
+      },
+      "failures": []
+    },
+    {
+      "row_id": "row-b",
+      "row_dir": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
+      "validated_bundle": {
+        "parser_ir": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b/parser-ir.json", "hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222"},
+        "tei": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b/publication/tei.xml", "hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333"},
+        "plaintext": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b/publication/plain.txt", "hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444"},
+        "preservation": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b/publication/preservation.json", "hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555"},
+        "source_region_coverage": {"path": "../abc/examples/ab-validator-output/source-region-coverage.json", "hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"},
+        "tei_manifest": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b/publication/tei.manifest.json", "hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666"},
+        "plaintext_manifest": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b/publication/plaintext.manifest.json", "hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777"}
+      },
+      "checks": {
+        "parser_ir_schema_valid": true,
+        "tei_profile_valid": true,
+        "preservation_schema_valid": true,
+        "source_region_coverage_valid": true,
+        "tei_manifest_valid": true,
+        "plaintext_manifest_valid": true,
+        "tei_manifest_references_preservation": true,
+        "tei_manifest_references_validation_result": true,
+        "source_region_sidecar_role_available": true,
+        "tei_abc_projection_resolves_to_sidecar": true,
+        "preservation_tei_pointers_resolve": true,
+        "preservation_source_pointers_resolve": true,
+        "plaintext_body_only": true
+      },
+      "failures": []
+    }
+  ],
+  "failures": []
+}
+JSON
+
 cat > "$valid_custom_contract" <<'JSON'
 {
   "$id": "https://example.org/abc/custom-contract-candidate.json",
@@ -472,6 +569,24 @@ jq -e '.unsupported_derived_closure_coverage.counts_by_status.admitted_by_tei_pr
 jq -e '.unsupported_derived_closure_coverage.counts_by_status.classified_but_not_admitted == 2' "$candidate_summary_json" >/dev/null
 jq -e '.unsupported_derived_closure_coverage.counts_by_status.true_unsupported_gap == 0' "$candidate_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$supported_mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --custom-contract-schema "$repo_root/data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json" \
+  --bundle-validation-summary "$batch_bundle_summary" \
+  --summary-json "$candidate_summary_json" \
+  --report-md "$candidate_report_md"
+
+jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.validation_scope == "batch"' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.rows_validated == 2 and .publication_bundle_contract.rows_failed == 0' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.checks.plaintext_body_only == true' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.sample_validated_bundles | length == 2' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.sample_validated_bundles[0].row_id == "row-a"' "$candidate_summary_json" >/dev/null
 
 python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \

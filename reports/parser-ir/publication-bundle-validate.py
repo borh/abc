@@ -15,12 +15,16 @@ import argparse
 import hashlib
 import json
 import pathlib
+import re
 import xml.etree.ElementTree as ET
 from typing import Any
 
 SCHEMA_VERSION = "publication-bundle-validation-evidence-v1"
+BATCH_SCHEMA_VERSION = "publication-bundle-batch-validation-evidence-v1"
 PASSED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_PASSED"
 FAILED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_FAILED"
+BATCH_PASSED_VERDICT = "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED"
+BATCH_FAILED_VERDICT = "PUBLICATION_BUNDLE_BATCH_VALIDATION_FAILED"
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 ABC_NS = "{https://w3id.org/abc/ns/tei}"
 XML_ID = "{http://www.w3.org/XML/1998/namespace}id"
@@ -37,18 +41,41 @@ SOURCE_REGION_REQUIRED_COUNTERS = {
     "unknown_region_occurrences",
     "unknown_unreviewed_occurrences",
 }
+REQUIRED_CHECKS = (
+    "parser_ir_schema_valid",
+    "source_region_coverage_valid",
+    "tei_profile_valid",
+    "preservation_schema_valid",
+    "tei_manifest_valid",
+    "plaintext_manifest_valid",
+    "tei_manifest_references_preservation",
+    "tei_manifest_references_validation_result",
+    "source_region_sidecar_role_available",
+    "tei_abc_projection_resolves_to_sidecar",
+    "preservation_tei_pointers_resolve",
+    "preservation_source_pointers_resolve",
+    "plaintext_body_only",
+)
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--parser-ir", required=True, type=pathlib.Path)
+    parser.add_argument("--parser-ir", type=pathlib.Path)
     parser.add_argument("--source-region-summary", required=True, type=pathlib.Path)
-    parser.add_argument("--publication-dir", required=True, type=pathlib.Path)
+    parser.add_argument("--publication-dir", type=pathlib.Path)
+    parser.add_argument("--batch-root", type=pathlib.Path)
+    parser.add_argument("--batch-scope", default="representative")
     parser.add_argument("--abc-commit")
     parser.add_argument("--command", default="clojure -M:abc/materialize-publication ...")
     parser.add_argument("--summary-json", required=True, type=pathlib.Path)
     parser.add_argument("--report-md", required=True, type=pathlib.Path)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.batch_root is not None:
+        if args.parser_ir is not None or args.publication_dir is not None:
+            parser.error("--batch-root cannot be combined with --parser-ir or --publication-dir")
+    elif args.parser_ir is None or args.publication_dir is None:
+        parser.error("single-bundle validation requires --parser-ir and --publication-dir")
+    return args
 
 
 def load_json(path: pathlib.Path) -> Any:
@@ -173,20 +200,60 @@ def tei_pointer_resolves(pointer: Any, ids: set[str]) -> bool:
     return False
 
 
+def normalize_plaintext(value: str) -> str:
+    return re.sub(r"\s+", "", value)
+
+
+def node_visible_body_text(node: dict[str, Any]) -> str:
+    node_type = node.get("type")
+    if node_type == "text":
+        return node.get("text") if isinstance(node.get("text"), str) else ""
+    if node_type == "ruby":
+        base = node.get("ruby", {}).get("base")
+        return base if isinstance(base, str) else ""
+    if node_type == "gaiji":
+        gaiji = node.get("gaiji", {})
+        for key in ("unicode", "image_or_glyph_fallback"):
+            value = gaiji.get(key)
+            if isinstance(value, str) and value:
+                return value
+        raw_marker = gaiji.get("raw_marker")
+        if isinstance(raw_marker, str) and raw_marker.startswith("※"):
+            return raw_marker
+        return ""
+    if node_type in {"emphasis", "heading"}:
+        children = node.get("inline_children")
+        if isinstance(children, list):
+            return "".join(
+                node_visible_body_text(child)
+                for child in children
+                if isinstance(child, dict)
+            )
+        text = node.get("text")
+        return text if isinstance(text, str) else ""
+    if node_type in {"indentation", "quote", "caption", "editor-note"}:
+        text = node.get("text")
+        return text if isinstance(text, str) else ""
+    if node_type in {"line-break", "page-break"}:
+        return "\n"
+    return ""
+
+
+def parser_ir_body_plaintext(parser_ir: dict[str, Any]) -> str:
+    nodes = parser_ir.get("nodes", [])
+    if not isinstance(nodes, list):
+        return ""
+    return "".join(
+        node_visible_body_text(node)
+        for node in nodes
+        if isinstance(node, dict) and node.get("type") != "source-note"
+    )
+
+
 def plaintext_body_only(parser_ir: dict[str, Any], plaintext: str) -> bool:
-    forbidden: set[str] = set()
-    for node in parser_ir.get("nodes", []):
-        if not isinstance(node, dict):
-            continue
-        if node.get("type") == "ruby":
-            reading = node.get("ruby", {}).get("reading")
-            if isinstance(reading, str) and reading:
-                forbidden.add(reading)
-        if node.get("type") == "source-note":
-            text = node.get("text")
-            if isinstance(text, str) and text:
-                forbidden.add(text)
-    return all(text not in plaintext for text in forbidden)
+    return normalize_plaintext(plaintext) == normalize_plaintext(
+        parser_ir_body_plaintext(parser_ir)
+    )
 
 
 def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
@@ -321,7 +388,125 @@ def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def discover_batch_rows(batch_root: pathlib.Path) -> list[tuple[str, pathlib.Path, pathlib.Path]]:
+    candidates: list[tuple[str, pathlib.Path, pathlib.Path]] = []
+    for parser_ir in sorted(batch_root.rglob("parser-ir.json")):
+        row_dir = parser_ir.parent
+        publication_dir = row_dir / "publication"
+        if not publication_dir.is_dir():
+            continue
+        try:
+            row_id = str(row_dir.relative_to(batch_root))
+        except ValueError:
+            row_id = str(row_dir)
+        if row_id.startswith("rows/"):
+            row_id = row_id.removeprefix("rows/")
+        candidates.append((row_id, parser_ir, publication_dir))
+    return candidates
+
+
+def validate_batch(args: argparse.Namespace) -> dict[str, Any]:
+    row_inputs = discover_batch_rows(args.batch_root)
+    rows: list[dict[str, Any]] = []
+    failures: list[dict[str, str]] = []
+
+    for row_id, parser_ir, publication_dir in row_inputs:
+        row_args = argparse.Namespace(
+            parser_ir=parser_ir,
+            source_region_summary=args.source_region_summary,
+            publication_dir=publication_dir,
+            abc_commit=args.abc_commit,
+            command=args.command,
+        )
+        row_summary = validate_bundle(row_args)
+        row_failures = row_summary.get("failures", [])
+        row = {
+            "row_id": row_id,
+            "row_dir": display_path(parser_ir.parent),
+            "verdict": row_summary.get("verdict"),
+            "validated_bundle": row_summary.get("validated_bundle", {}),
+            "checks": row_summary.get("checks", {}),
+            "failures": row_failures,
+        }
+        rows.append(row)
+        for failure in row_failures:
+            if isinstance(failure, dict):
+                failures.append(
+                    {
+                        "row_id": row_id,
+                        "check": str(failure.get("check")),
+                        "message": str(failure.get("message")),
+                    }
+                )
+
+    if not rows:
+        failures.append(
+            {
+                "row_id": "",
+                "check": "rows_present",
+                "message": "No row directories containing parser-ir.json and publication/ were found.",
+            }
+        )
+
+    checks = {
+        check: bool(rows) and all(row.get("checks", {}).get(check) is True for row in rows)
+        for check in REQUIRED_CHECKS
+    }
+    rows_failed = sum(1 for row in rows if row.get("verdict") != PASSED_VERDICT)
+    scope = {
+        "kind": args.batch_scope,
+        "batch_root": display_path(args.batch_root),
+        "rows_discovered": len(row_inputs),
+        "rows_validated": len(rows),
+        "rows_passed": len(rows) - rows_failed,
+        "rows_failed": rows_failed,
+    }
+
+    return {
+        "schema_version": BATCH_SCHEMA_VERSION,
+        "verdict": BATCH_PASSED_VERDICT if not failures else BATCH_FAILED_VERDICT,
+        "validator": "ab-validator publication-bundle-validate batch",
+        "command": args.command,
+        "abc_commit": args.abc_commit,
+        "scope": scope,
+        "checks": checks,
+        "rows": rows,
+        "failures": failures,
+    }
+
+
 def render_markdown(summary: dict[str, Any]) -> str:
+    if summary.get("schema_version") == BATCH_SCHEMA_VERSION:
+        scope = summary.get("scope", {})
+        lines = [
+            "# Publication Bundle Batch Validation",
+            "",
+            f"Verdict: `{summary['verdict']}`",
+            "",
+            "## Scope",
+            "",
+            f"Kind: `{scope.get('kind')}`",
+            "",
+            f"Rows validated: `{scope.get('rows_validated')}`",
+            "",
+            f"Rows failed: `{scope.get('rows_failed')}`",
+            "",
+            "## Checks",
+            "",
+            "| Check | Passed |",
+            "|---|---:|",
+        ]
+        for check, passed in summary.get("checks", {}).items():
+            lines.append(f"| `{check}` | `{str(passed).lower()}` |")
+        if summary.get("failures"):
+            lines.extend(["", "## Failures", ""])
+            for failure in summary["failures"][:50]:
+                lines.append(
+                    f"- `{failure['row_id']}` `{failure['check']}`: {failure['message']}"
+                )
+        lines.append("")
+        return "\n".join(lines)
+
     lines = [
         "# Publication Bundle Validation",
         "",
@@ -344,7 +529,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
 
 def main() -> None:
     args = parse_args()
-    summary = validate_bundle(args)
+    summary = validate_batch(args) if args.batch_root is not None else validate_bundle(args)
     write_json(args.summary_json, summary)
     write_text(args.report_md, render_markdown(summary))
 

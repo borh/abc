@@ -286,6 +286,14 @@ The model carries no training-provenance metadata; verify its source before trus
         #[arg(long, value_enum, default_value_t = RerunDetailArg::Full)]
         detail: RerunDetailArg,
     },
+    ImportAozoraMetadata {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        from: PathBuf,
+        #[arg(long)]
+        force: bool,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -703,6 +711,27 @@ fn main() -> Result<()> {
             max_examples_per_comparison,
             detail,
         ),
+        Command::ImportAozoraMetadata {
+            run_dir,
+            from,
+            force,
+        } => {
+            let summary = ab_morph_run::run_import_aozora_metadata(&run_dir, &from, force)?;
+            let skipped = if summary.skipped_source_ids.is_empty() {
+                String::new()
+            } else {
+                format!(": {}", summary.skipped_source_ids.join(", "))
+            };
+            eprintln!(
+                "imported {} works covering {} sources into {}; skipped {} source(s){}",
+                summary.works_imported,
+                summary.sources_mapped,
+                run_dir.join("aozora_works.parquet").display(),
+                summary.skipped_source_ids.len(),
+                skipped,
+            );
+            Ok(())
+        }
     }
 }
 
@@ -2026,6 +2055,35 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(sample_values(&values, 2), "a,b,...+2");
+    }
+
+    #[test]
+    fn parses_import_aozora_metadata_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "import-aozora-metadata",
+            "--run-dir",
+            "scratch/morph-warehouse/runs/full-2026-07-05",
+            "--from",
+            "../abc/out/corpus",
+            "--force",
+        ]);
+
+        let Command::ImportAozoraMetadata {
+            run_dir,
+            from,
+            force,
+        } = args.command
+        else {
+            panic!("expected import-aozora-metadata command");
+        };
+
+        assert_eq!(
+            run_dir,
+            PathBuf::from("scratch/morph-warehouse/runs/full-2026-07-05")
+        );
+        assert_eq!(from, PathBuf::from("../abc/out/corpus"));
+        assert!(force);
     }
 
     #[test]

@@ -605,13 +605,25 @@ Before locking v1 defaults:
    - **Frequency sort** (most common patterns first)
    - **Random sort**
 3. **A/B within-kind vs global RRF (Open Question 4):** also produce a top-50 with signals ranked globally (across kinds), not within-kind. If within-kind ranking does not measurably beat global on p@50 / nDCG@50, drop the within-kind split — it adds the `signal_profile` comparability constraint for a benefit that may not exist. Decision 6 is conditional on this measurement.
-4. **Missing-data sweep (S5):** sweep `λ_missing ∈ {0, 0.005, 0.010}` on the representative triage corpus. Confirm top-50 ordering is stable (Kendall τ within threshold); if the sweep reshuffles top-50, revisit signal definitions before locking.
+4. **Missing-data sweep (S5), shipped as a policy A/B (v1 rank-floor deviation):** the letter above sweeps a fixed `λ_missing` constant, but a fixed value breaks the missing-signal monotonicity guarantee past rank `1/λ - k` — the implementation ships `--lambda-missing-policy rank-floor|fixed:<v>` instead (`score_version.lambda_missing_policy`, e.g. `"rank-floor"` or `"fixed:0.01"`), with `rank-floor` (`λ = 1/(k + N_kind + 1)`, "just below the worst-ranked observed pattern of the kind") as the shipped default. Calibration compares `rank-floor` against `fixed:0`, `fixed:0.005`, `fixed:0.010` on the representative triage corpus, preserving the original intent (top-50 stability under missing-data handling) as a policy comparison rather than a constant sweep. Confirm top-50 ordering is stable (Kendall τ within threshold) across the fixed variants vs. rank-floor; if the sweep reshuffles top-50, revisit signal definitions before locking. **2026-07-06 result:** all three fixed variants are stable vs. rank-floor (in fact exactly identical, overlap 50/50 τ-b 1.0) — verified in code as structural, not sample luck: every v1 signal is total for every pattern kind currently produced (`Coverage`/`Rarity`/`Span` always present; `Impact` applies only to `Feature`-kind patterns, whose `feature_key` is always present), so `λ_missing` has no code path to fire on v1 data. `rank-floor` is locked (see `reports/morph-warehouse/calibration/2026-07-06/report.md` §2); the policy remains real infrastructure for v2 optional signals that can be legitimately absent per-pattern.
 5. **Anomaly-weight sweep:** sweep `anomaly_w_cov ∈ {2.0, 5.0, 10.0}`; confirm the top-10 anomaly regions surface coverage gaps and long-span disagreements rather than noise.
 6. Label each ranked row from the top-50 with verdicts (`bug`, `expected-policy`, `expected-dictionary`, `corpus-artifact`, `noise`, `unclear`).
 7. Report **precision@50** and **nDCG@50** vs. baselines.
 8. If RRF doesn't beat frequency sort at p@50, the feature isn't earning its complexity — revisit signal definitions before adding more.
-9. After calibration, lock the v1 signal definitions, default RRF k=60, `λ_missing`, `anomaly_w_cov`, and `inheritance_jaccard_threshold` constants.
+9. After calibration, lock the v1 signal definitions, default RRF k=60, `λ_missing`, and `anomaly_w_cov` constants. `inheritance_jaccard_threshold`: **n/a — not implemented in v1** (locking deferred to the feature that introduces it; grep-verified no occurrence in the crate as of 2026-07-06 — locking a knob that doesn't exist would fabricate a default).
 10. Post-MVP: when `review_events` accumulates sufficient labels from the review ledger, fit a learning-to-rank model on `(per-signal-rank, verdict)` tuples. The RRF scaffold is compatible — replace fusion with learned model while keeping per-signal rank computation unchanged.
+
+**Status (2026-07-06):** steps 1-5 and 9 (except the RRF-vs-frequency/rank-scope
+verdicts, which are gated on step 8) executed mechanically against the
+canonical warehouses. Artifacts at `reports/morph-warehouse/calibration/2026-07-06/`
+(`report.md` is the entry point; `runs.md`, `sweep-analysis.md`,
+`full/wcov-full-analysis.md`, and `labels/` hold the supporting detail).
+Locked now: `rrf_k = 60` (unchanged), `lambda_missing_policy = rank-floor`,
+`anomaly_w_cov = 5.0` (dormant on this corpus). `inheritance_jaccard_threshold`
+is n/a per step 9 above. **Owner labels are pending** (`labels/labels.tsv`,
+155 pooled rows) and **step 8's RRF-vs-frequency gate is pending** on those
+labels — the v1 signal-definition lock is conditional on that gate passing,
+not yet final.
 
 ## Tie-Breaking and Determinism
 
@@ -633,7 +645,10 @@ Every output document carries a `score_version` block recording every knob that 
   "score_version": 1,
   "pattern_id_version": 1,
   "rrf_k": 60,
-  "lambda_missing": 0.005,
+  "lambda_missing_policy": "rank-floor",
+  "rank_scope": "within-kind",
+  "score_mode": "rrf",
+  "sample_seed": null,
   "anomaly_w_cov": 5.0,
   "inheritance_jaccard_threshold": 0.85,
   "signal_profile": ["coverage", "rarity", "impact", "span"],
@@ -645,8 +660,15 @@ Every output document carries a `score_version` block recording every knob that 
 }
 ```
 
+`lambda_missing_policy` records the calibration policy (`"rank-floor"` or
+`"fixed:<v>"`, e.g. `"fixed:0.01"`) rather than a bare `λ_missing` scalar —
+see §Calibration Plan step 4's v1 rank-floor deviation.
+
 Any change to default weights, normalization, tie-breaking, RRF k-constant, `λ_missing`, anomaly weight, inheritance threshold, or component semantics increments `score_version`. The profile fields record the *data context* that the score was computed in:
 
+- `rank_scope`: `"within-kind"` (v1 default; signal ranks pooled per pattern kind) or `"global"` (signal ranks pooled across all kinds, per Open Question 4 / §Calibration Plan step 3). Added post-v1 as a calibration knob; `#[serde(default = "within-kind")]` so pre-calibration artifacts — which predate the field and were always within-kind — deserialize honestly instead of failing to parse.
+- `score_mode`: `"rrf"` (v1 default) or one of the calibration baselines, `"frequency"` or `"random"` (§Calibration Plan step 2). Added post-v1; `#[serde(default = "rrf")]` for the same pre-calibration-artifact reason as `rank_scope`.
+- `sample_seed`: the Fisher-Yates seed for `score_mode: "random"`; `null` for every other mode (an ignored seed would misdescribe the artifact). Added post-v1; `#[serde(default)]` (`null`) for pre-calibration artifacts, which predate `score_mode: "random"` and so never had a seed.
 - `signal_profile`: which signals were active. Scores are comparable only within the same profile.
 - `rarity_basis`: `"work"` (dedup via `aozora_works`) or `"source"` (fallback when `aozora_works` absent). Cross-basis comparison is forbidden.
 - `granularity_profile`: NINJAL granularity-class composition — deduped segmentation granularity classes (`"suw"`, `"muw"`, `"luw"`) present in the run's analyzers, sorted `suw < muw < luw` and joined with `"+"` (e.g. `"suw"`, `"suw+luw"`, `"suw+muw+luw"`). A run scored on a multi-class comparison is not comparable to one scored on a single-class comparison even with the same `signal_profile`.

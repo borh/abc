@@ -108,6 +108,12 @@ ceiling) is narrow and non-deterministic; the defaults run threaded it once
 | 4 | 24GB / 2 threads | in-DB OOM, anomaly feature exclusion (22.3 GiB wall), 20m04s |
 | 5 | 30GB / 2 threads | earlyoom SIGTERM at 19:46:06 with duckdb at only 32.5 GiB RSS — external (vLLM) pressure shrank MemAvailable under the watermark; 22m11s |
 
+(Numbered 1-5 here in isolation, since this table only covers the wcov
+attempts; Task 8's report (`calib-task-8-report.md`) numbers these same five
+attempts `wcov2 a`-`wcov2 e` within its longer combined log that also
+includes the earlier `full-rrf-within` attempts 1-5 — same five outcomes,
+different label scheme, no discrepancy in substance.)
+
 Given the data-layer scan proves the artifacts would be byte-identical to
 `full-rrf-within.json`'s anomalies (modulo the `anomaly_w_cov` field in the
 `score_version` block), further retries spend ~20 min each to demonstrate a

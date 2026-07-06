@@ -79,8 +79,8 @@ happened here: each comparison's mismatch list correctly names the swept
 
 The reason the *ranking itself* doesn't move is structural, not a bug: I
 checked every one of the 50 rows in `triage-rrf-rank-floor.json` and found
-**zero** signals with `status != "present"` across all 200 signal slots
-(50 rows × 4 signals). `λ_missing` (rank-floor vs fixed) only ever enters
+**zero** signals with `status != "present"` across all 170 signal slots
+(30 segmentation rows × 3 signals + 20 feature rows × 4 signals). `λ_missing` (rank-floor vs fixed) only ever enters
 the fused score for a signal that's *missing* for a given pattern — if no
 pattern in contention for the top 50 has a missing signal, the λ policy is
 provably a no-op on this window regardless of its value, and rank-floor vs.

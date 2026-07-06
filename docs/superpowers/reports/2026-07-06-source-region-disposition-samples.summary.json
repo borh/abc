@@ -1,0 +1,106 @@
+{
+  "schema_version": "source-region-disposition-samples-v1",
+  "verdict": "SOURCE_REGION_DISPOSITION_SAMPLES_READY",
+  "policy": {
+    "policy_id": "https://w3id.org/abc/policies/source-region-publication-v0",
+    "policy_version": "0.2.0",
+    "path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
+    "hash": "sha256:7880c0c5b059425b944f87e672bdc96a7df7304c58c166543c54ed68919d11bc"
+  },
+  "source_summary": {
+    "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+    "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30",
+    "works_scanned": 17894,
+    "gate_status": "SOURCE_AUTHORITY_GATE_PASS"
+  },
+  "source_report_md": {
+    "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.md",
+    "hash": "sha256:71b05ee81ef925c2e10ecbb1a9160482755fe01c26f26da26781b0208ba404de"
+  },
+  "classes": [
+    {
+      "source_class": "body_end_boundary",
+      "status": "admitted",
+      "policy_class_present": true,
+      "target_class": "custom_sidecar",
+      "tei_target": null,
+      "custom_sidecar": true,
+      "plaintext_projection": "omit",
+      "measurement_status": "measured",
+      "measured_counter": "body_end_boundary_occurrences",
+      "measured_occurrences": 243
+    },
+    {
+      "source_class": "colophon_metadata",
+      "status": "admitted",
+      "policy_class_present": true,
+      "target_class": "tei_policy_projection",
+      "tei_target": "teiHeader/sourceDesc",
+      "custom_sidecar": true,
+      "plaintext_projection": "omit",
+      "measurement_status": "measured",
+      "measured_counter": "colophon_metadata_occurrences",
+      "measured_occurrences": 89416
+    },
+    {
+      "source_class": "letter_address_origin",
+      "status": "admitted",
+      "policy_class_present": true,
+      "target_class": "tei_policy_projection",
+      "tei_target": "teiHeader/profileDesc/correspDesc",
+      "custom_sidecar": true,
+      "plaintext_projection": "omit",
+      "measurement_status": "measured",
+      "measured_counter": "letter_address_origin_occurrences",
+      "measured_occurrences": 6
+    },
+    {
+      "source_class": "malformed_source",
+      "status": "admitted",
+      "policy_class_present": true,
+      "target_class": "diagnostic",
+      "tei_target": null,
+      "custom_sidecar": true,
+      "plaintext_projection": "omit",
+      "measurement_status": "measured",
+      "measured_counter": "malformed_source_occurrences",
+      "measured_occurrences": 16
+    },
+    {
+      "source_class": "notation_legend",
+      "status": "admitted",
+      "policy_class_present": true,
+      "target_class": "tei_policy_projection",
+      "tei_target": "encodingDesc/editorialDecl",
+      "custom_sidecar": true,
+      "plaintext_projection": "omit",
+      "measurement_status": "measured",
+      "measured_counter": "source_apparatus_occurrences",
+      "measured_occurrences": 13920
+    },
+    {
+      "source_class": "notation_placeholder",
+      "status": "admitted",
+      "policy_class_present": true,
+      "target_class": "custom_sidecar",
+      "tei_target": null,
+      "custom_sidecar": true,
+      "plaintext_projection": "omit",
+      "measurement_status": "measured",
+      "measured_counter": "front_matter_occurrences",
+      "measured_occurrences": 14627
+    },
+    {
+      "source_class": "terminal_provenance",
+      "status": "admitted",
+      "policy_class_present": true,
+      "target_class": "tei_policy_projection",
+      "tei_target": "text/back/div[@type='source']",
+      "custom_sidecar": true,
+      "plaintext_projection": "omit",
+      "measurement_status": "measured",
+      "measured_counter": "terminal_provenance_occurrences",
+      "measured_occurrences": 609
+    }
+  ]
+}

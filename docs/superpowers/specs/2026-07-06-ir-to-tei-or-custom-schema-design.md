@@ -75,6 +75,15 @@ The admission claim becomes:
 > node kind and source-derived construct is classified as TEI, TEI-policy,
 > custom-preserved, plaintext-only, or unsupported with a named blocker.
 
+Source-derived constructs include Aozora source apparatus, not only body markup.
+Front matter, notation legends, body-end boundaries, source attribution, and
+colophon/provenance material must be assigned a source region and publication
+disposition. They may be excluded from body plaintext, but they are not
+malformed and are not outside the conversion goal. The detailed terminal format
+for this layer is:
+
+- `docs/superpowers/specs/2026-07-06-aozora-source-region-and-apparatus-contract.md`
+
 ## Mapping Classes
 
 Every Parser-IR node kind, node field, paragraph field, warning/error class, and
@@ -165,6 +174,22 @@ Rules:
 - Every `unsupported_gap` must carry measured prevalence when available.
 - A report with any `unsupported_gap` cannot claim full IR publication
   coverage.
+
+### `source_apparatus`
+
+The fact is valid Aozora source apparatus rather than body transcription markup.
+It must be mapped to TEI header/front/back policy or the ABC custom preservation
+contract.
+
+Examples:
+
+- notation legend examples such as `［＃］：入力者注...`
+- notation placeholders such as `［＃…］` and `［＃（…）］`
+- body-end boundary markers such as `［＃本文終わり］`
+- terminal source attribution and bibliographic/provenance lines
+
+This class is not a synonym for malformed source. Genuinely malformed residues
+belong in diagnostics.
 
 ## Initial Coverage Targets
 
@@ -286,7 +311,7 @@ Plaintext remains a separate projection with a stricter rule:
 
 > Plaintext emits only visible body text. It does not include ruby readings,
 > source notes routed to front/back, layout metadata, custom sidecar records,
-> parser warnings, or provenance.
+> source-apparatus legends, parser warnings, or provenance.
 
 This rule prevents the full-publication goal from contaminating plaintext with
 metadata needed only by TEI/custom consumers.
@@ -323,6 +348,15 @@ The report can still list raw unsupported-derived rows because the mapping
 artifact preserves depth-specific divergence identities. Completion is judged by
 the closure buckets after those rows are folded into TEI/profile/custom
 families.
+
+Source-authority note:
+
+- The current source-authority report keeps legacy counters for downstream
+  compatibility and adds `source_region_coverage` as the terminal vocabulary.
+- The legacy `malformed_noise_occurrences` counter is now split into
+  `source_apparatus_occurrences` and `malformed_source_occurrences`.
+- The source-region contract is:
+  `docs/superpowers/specs/2026-07-06-aozora-source-region-and-apparatus-contract.md`.
 
 ## Sequencing
 

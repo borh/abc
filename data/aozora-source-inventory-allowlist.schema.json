@@ -16,7 +16,16 @@
           "raw_pattern": { "type": "string" },
           "scope": {
             "type": "string",
-            "enum": ["out_of_body", "malformed_noise", "unsupported_v1"]
+            "enum": [
+              "out_of_body",
+              "malformed_noise",
+              "unsupported_v1",
+              "front_matter_legend",
+              "notation_placeholder",
+              "body_end_boundary",
+              "back_matter_provenance",
+              "malformed_source"
+            ]
           },
           "reason": { "type": "string", "minLength": 1 },
           "evidence": { "type": "string", "minLength": 1 }

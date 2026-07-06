@@ -18,6 +18,13 @@ cat > "$out_dir/corpus/pass/cards/000001/files/1.txt" <<'TXT'
 ［＃ここか３字下げ］
 ［＃ルビは「？符」に掛かる］
 ［＃］：入力者注　主に外字の説明や、傍点の位置の指定
+［＃…］
+［＃本文終わり］
+宛先東京市麹町区三番町六四
+発信地千葉県夷隅郡御宿上野屋旅館
+［＃地付き］（fixture provenance）
+底本：「fixture」
+［＃
 [#fixture raw preserved]
 TXT
 
@@ -42,8 +49,40 @@ evidence = "tests/source-representability-gate-smoke.sh"
 id = "fixture-empty-command-legend"
 kind = "CommandFullwidth"
 raw_pattern = "^［＃］$"
-scope = "malformed_noise"
-reason = "Fixture marker exercises malformed-noise allowlist accounting for Aozora boilerplate."
+scope = "front_matter_legend"
+reason = "Fixture marker exercises source-apparatus accounting for Aozora notation legend boilerplate."
+evidence = "tests/source-representability-gate-smoke.sh"
+
+[[allow]]
+id = "fixture-body-end-boundary"
+kind = "CommandFullwidth"
+raw_pattern = "^［＃本文終わり］$"
+scope = "body_end_boundary"
+reason = "Fixture marker exercises back-matter boundary accounting."
+evidence = "tests/source-representability-gate-smoke.sh"
+
+[[allow]]
+id = "fixture-terminal-provenance"
+kind = "SegmentBoundaryTerminalProvenance"
+raw_pattern = "^［＃地付き］"
+scope = "terminal_provenance"
+reason = "Fixture marker exercises terminal-provenance accounting."
+evidence = "tests/source-representability-gate-smoke.sh"
+
+[[allow]]
+id = "fixture-notation-placeholder"
+kind = "CommandFullwidth"
+raw_pattern = "^［＃…］$"
+scope = "notation_placeholder"
+reason = "Fixture marker exercises front-matter notation placeholder accounting."
+evidence = "tests/source-representability-gate-smoke.sh"
+
+[[allow]]
+id = "fixture-malformed-command"
+kind = "MalformedCommand"
+raw_pattern = "^［＃$"
+scope = "malformed_source"
+reason = "Fixture marker exercises malformed-source diagnostics."
 evidence = "tests/source-representability-gate-smoke.sh"
 TOML
 
@@ -58,6 +97,22 @@ TOML
 
 jq -e '.representability.typed_occurrences >= 1' "$out_dir/pass.json"
 jq -e '.representability.raw_preserved_occurrences >= 1' "$out_dir/pass.json"
+jq -e '.schema_version == "aozora-source-region-coverage-v1"' "$out_dir/pass.json"
+jq -e '.source_region_coverage.body_typed_occurrences >= 1' "$out_dir/pass.json"
+jq -e '.source_region_coverage.body_raw_preserved_occurrences >= 1' "$out_dir/pass.json"
+jq -e '.source_region_coverage.source_apparatus_occurrences >= 1' "$out_dir/pass.json"
+jq -e '.source_region_coverage.front_matter_occurrences >= 1' "$out_dir/pass.json"
+jq -e '.source_region_coverage.back_matter_occurrences >= 1' "$out_dir/pass.json"
+jq -e '.source_region_coverage.body_end_boundary_occurrences == 1' "$out_dir/pass.json"
+jq -e '.source_region_coverage.terminal_provenance_occurrences >= 1' "$out_dir/pass.json"
+jq -e '.source_region_coverage.colophon_metadata_occurrences >= 1' "$out_dir/pass.json"
+jq -e '.source_region_coverage.letter_address_origin_occurrences == 2' "$out_dir/pass.json"
+jq -e '.source_region_coverage.malformed_source_occurrences >= 1' "$out_dir/pass.json"
+jq -e '.source_region_coverage.unsupported_body_markup_occurrences == 0' "$out_dir/pass.json"
+jq -e '.source_region_coverage.unknown_region_occurrences == 0' "$out_dir/pass.json"
+jq -e '.representability.malformed_noise_occurrences == (.source_region_coverage.source_apparatus_occurrences + .source_region_coverage.malformed_source_occurrences)' "$out_dir/pass.json"
+jq -e '.source_region_coverage.back_matter_occurrences >= (.source_region_coverage.terminal_provenance_occurrences + .source_region_coverage.colophon_metadata_occurrences)' "$out_dir/pass.json"
+jq -e '.source_region_coverage.back_matter_occurrences >= (.source_region_coverage.terminal_provenance_occurrences + .source_region_coverage.colophon_metadata_occurrences + .source_region_coverage.letter_address_origin_occurrences)' "$out_dir/pass.json"
 jq -e '.representability.malformed_noise_occurrences >= 1' "$out_dir/pass.json"
 jq -e '.representability.unsupported_occurrences == 0' "$out_dir/pass.json"
 jq -e '.allowlisted_unknown_markers_total >= 2' "$out_dir/pass.json"

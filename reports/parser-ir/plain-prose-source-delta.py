@@ -4,10 +4,16 @@
 from __future__ import annotations
 
 import argparse
-import json
 import pathlib
+import sys
 from collections import Counter, defaultdict
 from typing import Any
+
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from reports.lib.io import read_json, write_json
 
 SCHEMA_VERSION = "plain-prose-source-delta-probe-v1"
 REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora")
@@ -63,15 +69,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--report-md", required=True, type=pathlib.Path)
     parser.add_argument("--allow-missing-parser-evidence", action="store_true")
     return parser.parse_args()
-
-
-def load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def write_json(path: pathlib.Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def write_text(path: pathlib.Path, value: str) -> None:
@@ -482,11 +479,11 @@ def render_markdown(summary: dict[str, Any]) -> str:
 
 def main() -> int:
     args = parse_args()
-    admission = load_json(args.admission_summary)
-    matrix = load_json(args.matrix_summary)
-    structural = load_json(args.structural_summary)
-    source = load_json(args.source_summary)
-    mapping = load_json(args.mapping)
+    admission = read_json(args.admission_summary)
+    matrix = read_json(args.matrix_summary)
+    structural = read_json(args.structural_summary)
+    source = read_json(args.source_summary)
+    mapping = read_json(args.mapping)
     summary = build_summary(
         admission,
         matrix,

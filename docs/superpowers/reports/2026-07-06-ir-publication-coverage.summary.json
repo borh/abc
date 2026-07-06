@@ -14,13 +14,91 @@
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
     "mapping_version": "0.2.3",
     "parser_ir_schema_hash": "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411",
-    "custom_contract_required": true
+    "source_region_contract_required": true,
+    "custom_contract_required": true,
+    "publication_bundle_validation_required": true
   },
   "verdict": "IR_PUBLICATION_COVERAGE_COMPLETE",
   "source_authority_gate": {
     "gate_status": "SOURCE_AUTHORITY_GATE_PASS",
     "works_scanned": 17894,
     "unallowlisted_unknown_markers_total": 0
+  },
+  "source_region_contract": {
+    "verdict": "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION",
+    "schema_id": "https://w3id.org/abc/schemas/source-region-coverage.schema.json",
+    "schema_version": "aozora-source-region-coverage-v1",
+    "policy_id": "https://w3id.org/abc/policies/source-region-publication-v0",
+    "policy_version": "0.2.0",
+    "path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
+    "policy_path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
+    "manifest_schema_path": "data/abc-schemas/schemas/manifest.schema.json",
+    "schema_hash": "sha256:63b305b270faae053e6978dbb207c370482408151f9464a56c36f662e30149d8",
+    "policy_hash": "sha256:be986dd075e864eff239f36023a91716fc71a9f5604fd5f3f9b989ecf41c810a",
+    "manifest_schema_hash": "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1",
+    "trusted_schema_path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
+    "trusted_policy_path": "data/abc-schemas/data/source-region-publication-policy-v0.json",
+    "trusted_manifest_schema_path": "data/abc-schemas/schemas/manifest.schema.json",
+    "trusted_schema_hash": "sha256:63b305b270faae053e6978dbb207c370482408151f9464a56c36f662e30149d8",
+    "trusted_policy_hash": "sha256:be986dd075e864eff239f36023a91716fc71a9f5604fd5f3f9b989ecf41c810a",
+    "trusted_manifest_schema_hash": "sha256:1ebabb7928c579eb3b8c31741d86f1228073a2b179928763808969f37aa06bc1",
+    "trusted_schema_path_match": true,
+    "trusted_policy_path_match": true,
+    "trusted_manifest_schema_path_match": true,
+    "source_region_counters": [
+      "back_matter_occurrences",
+      "body_end_boundary_occurrences",
+      "body_raw_preserved_occurrences",
+      "body_typed_occurrences",
+      "colophon_metadata_occurrences",
+      "front_matter_occurrences",
+      "letter_address_origin_occurrences",
+      "malformed_source_occurrences",
+      "source_apparatus_occurrences",
+      "terminal_provenance_occurrences",
+      "unknown_region_occurrences",
+      "unknown_unreviewed_occurrences",
+      "unsupported_body_markup_occurrences"
+    ],
+    "legacy_representability_counters": [
+      "malformed_noise_occurrences",
+      "needs_research_occurrences",
+      "out_of_body_occurrences",
+      "raw_preserved_occurrences",
+      "typed_occurrences",
+      "unsupported_occurrences"
+    ],
+    "policy_classes": [
+      "body_end_boundary",
+      "colophon_metadata",
+      "letter_address_origin",
+      "malformed_source",
+      "notation_legend",
+      "notation_placeholder",
+      "terminal_provenance"
+    ],
+    "target_classes": [
+      "custom_sidecar",
+      "diagnostic",
+      "tei_policy_projection"
+    ],
+    "manifest_sidecar_role_present": true,
+    "missing_source_region_counters": [],
+    "missing_legacy_counters": [],
+    "missing_policy_classes": [],
+    "duplicate_policy_classes": [],
+    "invalid_target_classes": [],
+    "non_omitted_plaintext_classes": [],
+    "measured_class_counters": {
+      "body_end_boundary": "body_end_boundary_occurrences",
+      "terminal_provenance": "terminal_provenance_occurrences",
+      "colophon_metadata": "colophon_metadata_occurrences",
+      "letter_address_origin": "letter_address_origin_occurrences"
+    },
+    "missing_measured_class_counters": [],
+    "unmeasured_policy_classes": [],
+    "missing_measurement_split_classes": [],
+    "message": "ABC source-region schema, publication policy, and manifest sidecar role are confirmed."
   },
   "parser_evidence_coverage": {
     "verdict": "FIVE_PARSER_EVIDENCE_COMPLETE",
@@ -96,6 +174,211 @@
       "style_rendition"
     ],
     "message": "ABC preservation schema admits TEI profile projection records for the measured namespace-extension families."
+  },
+  "publication_bundle_contract": {
+    "verdict": "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION",
+    "schema_version": "publication-bundle-batch-validation-evidence-v1",
+    "validation_scope": "batch",
+    "path": "docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json",
+    "bundle_hash": "sha256:d75136defc1b32165c9a302eb252706dff409b0018c47a64204c74b91b268129",
+    "abc_commit": "95ace31",
+    "validator": "ab-validator publication-bundle-validate batch",
+    "command": "clojure -M:abc/materialize-publications-batch /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-batch.json --summary /db/ab-validator/parser-ir/publication-bundle-full-current-20260706/materialization-summary.json",
+    "rows_discovered": 285,
+    "rows_validated": 285,
+    "rows_failed": 0,
+    "sample_validated_bundles": [
+      {
+        "row_id": "0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "validated_bundle": {
+          "parser_ir": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
+            "hash": "sha256:ce20c824828f799c7d67e13bdd6a62ecb352177f7ac168dfa660f0dbd408dd40"
+          },
+          "plaintext": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
+            "hash": "sha256:7b0e498417a3be1984507ed4b71743b28d3620783e39f9242f9ac6ec8017cb61"
+          },
+          "plaintext_manifest": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
+            "hash": "sha256:0cd073eb1c775fecf968f3eb987234c2062758230870862dad4655b062ea8ff7"
+          },
+          "preservation": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
+            "hash": "sha256:7538133494fcb393d26b75004a210d0760386e46321fa5c0bc7ec93c5b04ed25"
+          },
+          "source_region_coverage": {
+            "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+            "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
+          },
+          "tei": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
+            "hash": "sha256:3dabb74e4036cb664aea56cf61869a15f892821bb447222de098102aa0b16479"
+          },
+          "tei_manifest": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_01_aozora2html_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
+            "hash": "sha256:274cfd754c7cd3fe5e81427388936e0647d160a054024c0bb05451e8d7a4432c"
+          }
+        }
+      },
+      {
+        "row_id": "0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "validated_bundle": {
+          "parser_ir": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
+            "hash": "sha256:01bbdce1fbc6ec7ab6ded377ba66c80891dec400843ba5955025e615064f8e65"
+          },
+          "plaintext": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
+            "hash": "sha256:00c837d29d7f77e8bb996de5eabc69b62a06977eccc81241c6bbde36df201cf9"
+          },
+          "plaintext_manifest": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
+            "hash": "sha256:a5fe769fa9a15a81b5d27ebcbeb698416412398b93b66ef3b26ae272c4dc7621"
+          },
+          "preservation": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
+            "hash": "sha256:5f731bc0e2b08270cd9c98985ee02667285147c111b859586218cba9cb95bf6e"
+          },
+          "source_region_coverage": {
+            "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+            "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
+          },
+          "tei": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
+            "hash": "sha256:43968ab7fb03559d479333ec6d9ab574162e2db6131d0c099fe1695b55a335e7"
+          },
+          "tei_manifest": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_02_aozora-epub3_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
+            "hash": "sha256:dcdfa651bd6029057dcb8aa76ecafef3fc7b1c068d7216bfaf05b66223dbc440"
+          }
+        }
+      },
+      {
+        "row_id": "0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "validated_bundle": {
+          "parser_ir": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
+            "hash": "sha256:9eb8a44ab394c78f6b151db79dcbd3715203a543584c1d626aa81c22c6bbdf90"
+          },
+          "plaintext": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
+            "hash": "sha256:15a5ee7e812b5f9b1b5fecb8dc6dcf92e441c845b60c7be58c2fffe867cb2067"
+          },
+          "plaintext_manifest": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
+            "hash": "sha256:7e20c56c2ee3ed38f7c02b043f85748913401ff7ca562a7836820c6340c9fde0"
+          },
+          "preservation": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
+            "hash": "sha256:550f9251e6359ce7cf07ed6a6c36da454e752c6bfa9553d30db231e6dbf97259"
+          },
+          "source_region_coverage": {
+            "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+            "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
+          },
+          "tei": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
+            "hash": "sha256:9aa2f9e47661cfc21d15ef9a41107df1197b3b5deebd03ad382df989b2e7c640"
+          },
+          "tei_manifest": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_03_aozora-rs_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
+            "hash": "sha256:af754962358a418cc1f868cd8cffa256aa7b51bed6cab13a79dab180e1043475"
+          }
+        }
+      },
+      {
+        "row_id": "0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "validated_bundle": {
+          "parser_ir": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
+            "hash": "sha256:3de2378e3bae7bf9d79156f06929c395570e0cb21e198b948aae444dde438109"
+          },
+          "plaintext": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
+            "hash": "sha256:abde615bddbd5ad2f6d2dae71b8ae13f6174034653a92bbf832a71424f1da7df"
+          },
+          "plaintext_manifest": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
+            "hash": "sha256:c87d229ec0d13d1299236db3f4ecdf6943d9f776a9f20bf65b4b9b64af70831a"
+          },
+          "preservation": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
+            "hash": "sha256:389d41b1dd846898afb23d31a50f13d8b923af3f3f578f8b8545596dd9e0aa30"
+          },
+          "source_region_coverage": {
+            "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+            "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
+          },
+          "tei": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
+            "hash": "sha256:1efbe40ca606a1ab73f7526950fbb0612fb3f3237122d328ed555fdb56345135"
+          },
+          "tei_manifest": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_04_aozora2_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
+            "hash": "sha256:8aa4b0422833cae50103536e49972d3d064d6a106f87d9c928920fa6aedcc2ba"
+          }
+        }
+      },
+      {
+        "row_id": "0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "row_dir": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml",
+        "validated_bundle": {
+          "parser_ir": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/parser-ir.json",
+            "hash": "sha256:2ccc7168d03ec287d320f15973e6aa9e788cd9a3faea40691931b9b69e5a3378"
+          },
+          "plaintext": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plain.txt",
+            "hash": "sha256:8d8c93cd9b914eab2253c838a73b9752fa5f58a631c9b61d281e22283426a7aa"
+          },
+          "plaintext_manifest": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/plaintext.manifest.json",
+            "hash": "sha256:460d319bd253fa9013e9b922b371c3e04626b15debb6ebbf8e4b908154a9129f"
+          },
+          "preservation": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/preservation.json",
+            "hash": "sha256:7c83e5f64728c843b89644fa86e29f54e9bb8ec13f2408f2064025fbfeabf1fc"
+          },
+          "source_region_coverage": {
+            "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+            "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
+          },
+          "tei": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.xml",
+            "hash": "sha256:8676a0c7e50e2a6dc97be1f85dd2940a15e85dd9713de453ebee5aaf68bbc701"
+          },
+          "tei_manifest": {
+            "path": "/db/ab-validator/parser-ir/publication-bundle-full-current-20260706/rows/0001_05_aozora_1126_data_complete_tei_lib_lv3_1126_tei.xml/publication/tei.manifest.json",
+            "hash": "sha256:4731087e6b24875db5c11e41a9816f45737dd053a59eee4b19c0728e9aa67aee"
+          }
+        }
+      }
+    ],
+    "checks": {
+      "parser_ir_schema_valid": true,
+      "plaintext_body_only": true,
+      "plaintext_manifest_valid": true,
+      "preservation_schema_valid": true,
+      "preservation_source_pointers_resolve": true,
+      "preservation_tei_pointers_resolve": true,
+      "source_region_coverage_valid": true,
+      "source_region_sidecar_role_available": true,
+      "tei_abc_projection_resolves_to_sidecar": true,
+      "tei_manifest_references_preservation": true,
+      "tei_manifest_references_validation_result": true,
+      "tei_manifest_valid": true,
+      "tei_profile_valid": true
+    },
+    "missing_artifacts": [],
+    "invalid_artifact_hashes": [],
+    "missing_checks": [],
+    "failed_checks": [],
+    "message": "ABC publication bundle batch validation evidence confirms parser-IR, TEI, preservation, source-region, manifest, and plaintext cross-artifact checks."
   },
   "mapping": {
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
@@ -5968,5 +6251,20 @@
   "plaintext_policy": {
     "plaintext_surface": "visible_body_text",
     "metadata_policy": "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance"
+  },
+  "next_work_dashboard": {
+    "path": "docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json",
+    "hash": "sha256:5abf94dbcd7a3df413042011132b256357b17cd349a0b5668a01b99a5c9fd82c",
+    "schema_version": "aozora-publication-next-work-v1",
+    "schema_valid": true,
+    "verdict": "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE",
+    "next_work_items_count": 5,
+    "item_ids": [
+      "source_region_disposition_samples",
+      "text_policy_calibration",
+      "adapter_fidelity_worksets",
+      "tei_p5_mapping_dossiers",
+      "parser_acceptance_criteria"
+    ]
   }
 }

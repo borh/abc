@@ -18,11 +18,17 @@ pub struct SourceInventorySummary {
     pub markers_total: u64,
     pub row_counts: BTreeMap<String, MarkerClassSummary>,
     pub unknown_examples: Vec<UnknownMarkerExample>,
+    pub source_region_events: SourceRegionEventSummary,
 }
 
 #[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
 pub struct MarkerClassSummary {
     pub occurrences: u64,
+}
+
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+pub struct SourceRegionEventSummary {
+    pub terminal_provenance_occurrences: u64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -59,6 +65,9 @@ pub fn inventory_document(
 
     for (index, marker) in markers.iter().enumerate() {
         summary.markers_total += 1;
+        if marker.kind == SourceMarkerKind::SegmentBoundaryTerminalProvenance {
+            summary.source_region_events.terminal_provenance_occurrences += 1;
+        }
         let mut matched = matching_rows(marker.raw, &compiled_patterns);
         if let Some(next_marker) = markers.get(index + 1)
             && marker.span.end == next_marker.span.start

@@ -2,7 +2,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 
 repo_root := `pwd`
 repo_storage_root := `git rev-parse --path-format=absolute --git-common-dir | xargs dirname`
-abc_repo_root := env_var_or_default("AB_ABC_ROOT", repo_root + "/../abc")
+abc_repo_root := env_var_or_default("AB_ABC_ROOT", repo_storage_root + "/../abc")
 ab_db_root := env_var_or_default("AB_DB_ROOT", "/db/ab-validator")
 morph_warehouse_dir := env_var_or_default("AB_MORPH_WAREHOUSE_DIR", "/db/ab-validator/morph-warehouse")
 morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", "/db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter")
@@ -197,6 +197,18 @@ source-inventory-smoke:
 source-representability-gate-smoke:
 	@bash "{{repo_root}}/tests/source-representability-gate-smoke.sh"
 
+source-reference-reconciliation-smoke:
+	@bash "{{repo_root}}/tests/source-reference-reconciliation-smoke.sh"
+
+source-reference-reconciliation-report SYNTAX_COVERAGE="data/aozora-syntax-coverage.toml" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" NOTATION_SUMMARY="docs/superpowers/reports/2026-07-05-aozora-notation-spec-comparison.summary.json" MANUAL_ROOT="/home/bor/Dependencies/aozorabunko/rules" REPORT_MD="docs/superpowers/reports/2026-07-06-source-reference-reconciliation.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json":
+	@python3 "{{repo_root}}/reports/source-references/reconcile-aozora-notation.py" \
+		--syntax-coverage "{{repo_root}}/{{SYNTAX_COVERAGE}}" \
+		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
+		--notation-summary "{{repo_root}}/{{NOTATION_SUMMARY}}" \
+		--manual-root "{{MANUAL_ROOT}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}"
+
 source-inventory-flake-smoke:
 	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
 	nix build "{{repo_root}}#checks.$system.source-inventory-smoke" --print-build-logs
@@ -302,8 +314,97 @@ parser-ir-plain-prose-source-delta-report ADMISSION_SUMMARY="docs/superpowers/re
 parser-ir-publication-coverage-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-publication-coverage-smoke.sh"
 
-parser-ir-publication-coverage-report PARSER_IR_SCHEMA="data/abc-schemas/schemas/parser-ir.schema.json" MAPPING="data/aat-to-parser-ir-mapping-v1.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" SOURCE_DELTA_SUMMARY="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-ir-publication-coverage.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json" CUSTOM_CONTRACT_SCHEMA="data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json":
-	@args=(); if [ -n "{{CUSTOM_CONTRACT_SCHEMA}}" ]; then args+=(--custom-contract-schema "{{repo_root}}/{{CUSTOM_CONTRACT_SCHEMA}}"); fi; \
+parser-ir-publication-next-work-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-publication-next-work-smoke.sh"
+
+parser-ir-publication-next-work-report SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" COVERAGE_SUMMARY="docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" CONVERSION_SUMMARY="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json" SOURCE_REFERENCE_SUMMARY="docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json" PERFORMANCE_REPORT="docs/superpowers/reports/2026-07-04-parser-performance-measurement.md" SOURCE_DISPOSITION_SUMMARY="docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json" TEXT_POLICY_SUMMARY="docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json" ADAPTER_WORKSETS_SUMMARY="docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.summary.json" DOSSIER_DIR="docs/superpowers/specs/tei-p5-mapping-dossiers" PARSER_ACCEPTANCE_SPEC="docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-aozora-publication-next-work.md":
+	@python3 "{{repo_root}}/reports/parser-ir/publication-next-work.py" \
+		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
+		--coverage-summary "{{repo_root}}/{{COVERAGE_SUMMARY}}" \
+		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
+		--conversion-summary "{{repo_root}}/{{CONVERSION_SUMMARY}}" \
+		--source-reference-summary "{{repo_root}}/{{SOURCE_REFERENCE_SUMMARY}}" \
+		--performance-report "{{repo_root}}/{{PERFORMANCE_REPORT}}" \
+		--source-disposition-summary "{{repo_root}}/{{SOURCE_DISPOSITION_SUMMARY}}" \
+		--text-policy-summary "{{repo_root}}/{{TEXT_POLICY_SUMMARY}}" \
+		--adapter-worksets-summary "{{repo_root}}/{{ADAPTER_WORKSETS_SUMMARY}}" \
+		--dossier-dir "{{repo_root}}/{{DOSSIER_DIR}}" \
+		--parser-acceptance-spec "{{repo_root}}/{{PARSER_ACCEPTANCE_SPEC}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}"
+
+source-region-disposition-samples-smoke:
+	@bash "{{repo_root}}/tests/source-region-disposition-samples-smoke.sh"
+
+source-region-disposition-samples-report SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" SOURCE_REPORT_MD="docs/superpowers/reports/2026-07-04-source-authority-representability.md" POLICY="data/abc-schemas/data/source-region-publication-policy-v0.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-source-region-disposition-samples.md":
+	@python3 "{{repo_root}}/reports/source-regions/source-region-disposition-samples.py" \
+		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
+		--source-report-md "{{repo_root}}/{{SOURCE_REPORT_MD}}" \
+		--policy "{{repo_root}}/{{POLICY}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}"
+
+parser-ir-text-policy-delta-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-text-policy-delta-smoke.sh"
+
+parser-ir-text-policy-delta-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-text-policy-delta.md" WORKSETS_DIR="docs/superpowers/reports/2026-07-06-text-policy-worksets":
+	@python3 "{{repo_root}}/reports/parser-ir/text-policy-delta.py" \
+		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}" \
+		--worksets-dir "{{repo_root}}/{{WORKSETS_DIR}}"
+
+parser-ir-adapter-fidelity-worksets-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-adapter-fidelity-worksets-smoke.sh"
+
+parser-ir-adapter-fidelity-worksets-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.md" WORKSETS_DIR="docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets":
+	@python3 "{{repo_root}}/reports/parser-ir/adapter-fidelity-worksets.py" \
+		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}" \
+		--worksets-dir "{{repo_root}}/{{WORKSETS_DIR}}"
+
+parser-ir-publication-bundle-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-publication-bundle-smoke.sh"
+
+parser-ir-publication-bundle-batch-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-publication-bundle-batch-smoke.sh"
+
+parser-ir-publication-bundle-validation ABC_ROOT=abc_repo_root OUT_DIR="scratch/parser-ir-publication-bundle-validation" SOURCE_REGION_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-publication-bundle-validation.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-publication-bundle-validation.summary.json":
+	@abc_root="$(readlink -f "{{ABC_ROOT}}")"; out_dir="{{repo_root}}/{{OUT_DIR}}"; rm -rf "$out_dir"; mkdir -p "$out_dir"; \
+	(cd "$abc_root" && clojure -M:abc/materialize-publication \
+		examples/v0/example-work/parser-ir.json \
+		examples/v0/example-work/metadata-record.json \
+		examples/v0/example-persons \
+		"$out_dir" \
+		--source-manifest examples/v0/example-work/source.manifest.json \
+		--generated-at 2026-07-03T00:00:00Z) \
+		>/dev/null; \
+	abc_commit="$(git -C "$abc_root" rev-parse --short HEAD)"; \
+	python3 "{{repo_root}}/reports/parser-ir/publication-bundle-validate.py" \
+		--parser-ir "$abc_root/examples/v0/example-work/parser-ir.json" \
+		--source-region-summary "{{repo_root}}/{{SOURCE_REGION_SUMMARY}}" \
+		--publication-dir "$out_dir" \
+		--abc-commit "$abc_commit" \
+		--command "clojure -M:abc/materialize-publication examples/v0/example-work/parser-ir.json examples/v0/example-work/metadata-record.json examples/v0/example-persons {{OUT_DIR}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}"
+
+parser-ir-publication-bundle-batch-validation BATCH_ROOT="" SCOPE="representative" SOURCE_REGION_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json" ABC_ROOT=abc_repo_root:
+	@if [ -z "{{BATCH_ROOT}}" ]; then echo "BATCH_ROOT is required" >&2; exit 2; fi; \
+	abc_root="$(readlink -f "{{ABC_ROOT}}")"; \
+	abc_commit="$(git -C "$abc_root" rev-parse --short HEAD 2>/dev/null || true)"; \
+	python3 "{{repo_root}}/reports/parser-ir/publication-bundle-validate.py" \
+		--batch-root "{{BATCH_ROOT}}" \
+		--batch-scope "{{SCOPE}}" \
+		--source-region-summary "{{repo_root}}/{{SOURCE_REGION_SUMMARY}}" \
+		--abc-commit "$abc_commit" \
+		--command "clojure -M:abc/materialize-publications-batch {{BATCH_ROOT}}/materialization-batch.json --summary {{BATCH_ROOT}}/materialization-summary.json" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}"
+
+parser-ir-publication-coverage-report PARSER_IR_SCHEMA="data/abc-schemas/schemas/parser-ir.schema.json" MAPPING="data/aat-to-parser-ir-mapping-v1.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" SOURCE_DELTA_SUMMARY="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-ir-publication-coverage.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json" CUSTOM_CONTRACT_SCHEMA="data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json" BUNDLE_VALIDATION_SUMMARY="docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json" NEXT_WORK_SUMMARY="docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json":
+	@args=(); if [ -n "{{CUSTOM_CONTRACT_SCHEMA}}" ]; then args+=(--custom-contract-schema "{{repo_root}}/{{CUSTOM_CONTRACT_SCHEMA}}"); fi; if [ -n "{{BUNDLE_VALIDATION_SUMMARY}}" ]; then args+=(--bundle-validation-summary "{{repo_root}}/{{BUNDLE_VALIDATION_SUMMARY}}"); fi; if [ -n "{{NEXT_WORK_SUMMARY}}" ]; then args+=(--next-work-summary "{{repo_root}}/{{NEXT_WORK_SUMMARY}}"); fi; \
 	python3 "{{repo_root}}/reports/parser-ir/publication-coverage.py" \
 		--parser-ir-schema "{{repo_root}}/{{PARSER_IR_SCHEMA}}" \
 		--mapping "{{repo_root}}/{{MAPPING}}" \

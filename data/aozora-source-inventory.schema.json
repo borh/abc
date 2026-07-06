@@ -3,6 +3,7 @@
   "$id": "https://example.com/ab-validator/aozora-source-inventory.schema.json",
   "type": "object",
   "required": [
+    "schema_version",
     "gate_status",
     "works_scanned",
     "works_failed",
@@ -16,6 +17,7 @@
     "unknown_classes",
     "unknown_examples",
     "representability",
+    "source_region_coverage",
     "strict_errors",
     "inputs"
   ],
@@ -33,6 +35,10 @@
     "unknown_markers_total": { "type": "integer", "minimum": 0 },
     "unallowlisted_unknown_markers_total": { "type": "integer", "minimum": 0 },
     "allowlisted_unknown_markers_total": { "type": "integer", "minimum": 0 },
+    "schema_version": {
+      "type": "string",
+      "const": "aozora-source-region-coverage-v1"
+    },
     "rows": {
       "type": "object",
       "additionalProperties": {
@@ -114,6 +120,40 @@
         "malformed_noise_occurrences": { "type": "integer", "minimum": 0 },
         "unsupported_occurrences": { "type": "integer", "minimum": 0 },
         "needs_research_occurrences": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "source_region_coverage": {
+      "type": "object",
+      "required": [
+        "body_typed_occurrences",
+        "body_raw_preserved_occurrences",
+        "source_apparatus_occurrences",
+        "front_matter_occurrences",
+        "back_matter_occurrences",
+        "body_end_boundary_occurrences",
+        "terminal_provenance_occurrences",
+        "colophon_metadata_occurrences",
+        "letter_address_origin_occurrences",
+        "malformed_source_occurrences",
+        "unsupported_body_markup_occurrences",
+        "unknown_region_occurrences",
+        "unknown_unreviewed_occurrences"
+      ],
+      "properties": {
+        "body_typed_occurrences": { "type": "integer", "minimum": 0 },
+        "body_raw_preserved_occurrences": { "type": "integer", "minimum": 0 },
+        "source_apparatus_occurrences": { "type": "integer", "minimum": 0 },
+        "front_matter_occurrences": { "type": "integer", "minimum": 0 },
+        "back_matter_occurrences": { "type": "integer", "minimum": 0 },
+        "body_end_boundary_occurrences": { "type": "integer", "minimum": 0 },
+        "terminal_provenance_occurrences": { "type": "integer", "minimum": 0 },
+        "colophon_metadata_occurrences": { "type": "integer", "minimum": 0 },
+        "letter_address_origin_occurrences": { "type": "integer", "minimum": 0 },
+        "malformed_source_occurrences": { "type": "integer", "minimum": 0 },
+        "unsupported_body_markup_occurrences": { "type": "integer", "minimum": 0 },
+        "unknown_region_occurrences": { "type": "integer", "minimum": 0 },
+        "unknown_unreviewed_occurrences": { "type": "integer", "minimum": 0 }
       },
       "additionalProperties": false
     },

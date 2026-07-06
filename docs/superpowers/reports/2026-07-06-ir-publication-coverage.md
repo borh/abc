@@ -2,10 +2,50 @@
 
 Verdict: `IR_PUBLICATION_COVERAGE_COMPLETE`
 
+## Source Region Contract
+
+Verdict: `SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
+
+Schema: `https://w3id.org/abc/schemas/source-region-coverage.schema.json` `aozora-source-region-coverage-v1`
+
+Policy: `https://w3id.org/abc/policies/source-region-publication-v0` `0.2.0`
+
+Manifest sidecar role present: `true`
+
+## Publication Bundle Contract
+
+Verdict: `PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION`
+
+Evidence: `docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json`
+
+Bundle hash: `sha256:d75136defc1b32165c9a302eb252706dff409b0018c47a64204c74b91b268129`
+
+ABC commit: `95ace31`
+
+Validation scope: `batch`
+
+Rows validated: `285`
+
+Rows failed: `0`
+
 ## Node Coverage
 
 | Class | Node types |
 |---|---:|
+## Next Work Dashboard
+
+Verdict: `AOZORA_PUBLICATION_NEXT_WORK_COMPLETE`
+
+Evidence: `docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json`
+
+Next work items: `5`
+
+- `source_region_disposition_samples`
+- `text_policy_calibration`
+- `adapter_fidelity_worksets`
+- `tei_p5_mapping_dossiers`
+- `parser_acceptance_criteria`
+
 | `tei_exact` | 7 |
 | `tei_policy_projection` | 7 |
 

@@ -4,21 +4,118 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import pathlib
 import re
+import sys
 from collections import Counter
 from typing import Any
 
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from reports.lib.hashing import sha256_hex
+from reports.lib.io import read_json as load_json
+from reports.lib.io import write_json
+from reports.lib.paths import policy_dir, repo_root, schemas_dir
+
 SCHEMA_VERSION = "ir-publication-coverage-v1"
 REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora")
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+REPO_ROOT = repo_root()
 ABC_PRESERVATION_SCHEMA_ID = "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
 ABC_PRESERVATION_SCHEMA_VERSION = "0.2.0"
 TRUSTED_ABC_PRESERVATION_SCHEMA_PATH = (
-    REPO_ROOT / "data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json"
+    schemas_dir() / "parser-ir-publication-preservation.schema.json"
 ).resolve()
+ABC_SOURCE_REGION_SCHEMA_ID = "https://w3id.org/abc/schemas/source-region-coverage.schema.json"
+ABC_SOURCE_REGION_SCHEMA_VERSION = "aozora-source-region-coverage-v1"
+ABC_SOURCE_REGION_POLICY_ID = "https://w3id.org/abc/policies/source-region-publication-v0"
+ABC_SOURCE_REGION_POLICY_VERSION = "0.2.0"
+TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH = (
+    schemas_dir() / "source-region-coverage.schema.json"
+).resolve()
+TRUSTED_ABC_SOURCE_REGION_POLICY_PATH = (
+    policy_dir() / "source-region-publication-policy-v0.json"
+).resolve()
+TRUSTED_ABC_MANIFEST_SCHEMA_PATH = (
+    schemas_dir() / "manifest.schema.json"
+).resolve()
+SOURCE_REGION_REQUIRED_COUNTERS = {
+    "body_typed_occurrences",
+    "body_raw_preserved_occurrences",
+    "source_apparatus_occurrences",
+    "front_matter_occurrences",
+    "back_matter_occurrences",
+    "body_end_boundary_occurrences",
+    "terminal_provenance_occurrences",
+    "colophon_metadata_occurrences",
+    "letter_address_origin_occurrences",
+    "malformed_source_occurrences",
+    "unsupported_body_markup_occurrences",
+    "unknown_region_occurrences",
+    "unknown_unreviewed_occurrences",
+}
+SOURCE_REGION_REQUIRED_LEGACY_COUNTERS = {
+    "typed_occurrences",
+    "raw_preserved_occurrences",
+    "out_of_body_occurrences",
+    "malformed_noise_occurrences",
+    "unsupported_occurrences",
+    "needs_research_occurrences",
+}
+SOURCE_REGION_REQUIRED_CLASSES = {
+    "notation_legend",
+    "notation_placeholder",
+    "body_end_boundary",
+    "terminal_provenance",
+    "colophon_metadata",
+    "letter_address_origin",
+    "malformed_source",
+}
+SOURCE_REGION_MEASURED_CLASS_COUNTERS = {
+    "body_end_boundary": "body_end_boundary_occurrences",
+    "terminal_provenance": "terminal_provenance_occurrences",
+    "colophon_metadata": "colophon_metadata_occurrences",
+    "letter_address_origin": "letter_address_origin_occurrences",
+}
+SOURCE_REGION_ALLOWED_TARGET_CLASSES = {
+    "tei_policy_projection",
+    "tei_plus_abc_extension",
+    "custom_sidecar",
+    "diagnostic",
+    "unsupported_gap",
+}
+PUBLICATION_BUNDLE_EVIDENCE_SCHEMA_VERSION = "publication-bundle-validation-evidence-v1"
+PUBLICATION_BUNDLE_BATCH_EVIDENCE_SCHEMA_VERSION = "publication-bundle-batch-validation-evidence-v1"
+PUBLICATION_BUNDLE_PASSED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_PASSED"
+PUBLICATION_BUNDLE_BATCH_PASSED_VERDICT = "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED"
+PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS = {
+    "parser_ir",
+    "tei",
+    "plaintext",
+    "preservation",
+    "source_region_coverage",
+    "tei_manifest",
+    "plaintext_manifest",
+}
+PUBLICATION_BUNDLE_REQUIRED_CHECKS = {
+    "parser_ir_schema_valid",
+    "tei_profile_valid",
+    "preservation_schema_valid",
+    "source_region_coverage_valid",
+    "tei_manifest_valid",
+    "plaintext_manifest_valid",
+    "tei_manifest_references_preservation",
+    "tei_manifest_references_validation_result",
+    "source_region_sidecar_role_available",
+    "tei_abc_projection_resolves_to_sidecar",
+    "preservation_tei_pointers_resolve",
+    "preservation_source_pointers_resolve",
+    "plaintext_body_only",
+}
+NEXT_WORK_SCHEMA_VERSION = "aozora-publication-next-work-v1"
+SHA256_PATTERN = re.compile(r"^sha256:[0-9a-f]{64}$")
 TEI_PROFILE_RECORD_CLASS = "tei_profile_projection"
 TEI_PROFILE_FAMILIES = {
     "accent",
@@ -661,6 +758,200 @@ def source_authority_passed(source: dict[str, Any]) -> bool:
     )
 
 
+def source_region_contract_block(
+    source_region_schema: pathlib.Path | None,
+    source_region_policy: pathlib.Path | None,
+    manifest_schema: pathlib.Path | None,
+) -> dict[str, Any]:
+    if source_region_schema is None or source_region_policy is None or manifest_schema is None:
+        return {
+            "verdict": "SOURCE_REGION_CONTRACT_MISSING",
+            "schema_id": None,
+            "schema_version": None,
+            "policy_id": None,
+            "policy_version": None,
+            "message": "ABC source-region schema, publication policy, and manifest schema snapshots are required.",
+        }
+
+    try:
+        schema_doc = load_json(source_region_schema)
+        policy_doc = load_json(source_region_policy)
+        manifest_doc = load_json(manifest_schema)
+    except json.JSONDecodeError:
+        return {
+            "verdict": "SOURCE_REGION_CONTRACT_INVALID",
+            "schema_id": None,
+            "schema_version": None,
+            "policy_id": None,
+            "policy_version": None,
+            "path": display_path(source_region_schema),
+            "policy_path": display_path(source_region_policy),
+            "manifest_schema_path": display_path(manifest_schema),
+            "message": "ABC source-region contract snapshot is not valid JSON.",
+        }
+    except OSError:
+        return {
+            "verdict": "SOURCE_REGION_CONTRACT_MISSING",
+            "schema_id": None,
+            "schema_version": None,
+            "policy_id": None,
+            "policy_version": None,
+            "path": display_path(source_region_schema),
+            "policy_path": display_path(source_region_policy),
+            "manifest_schema_path": display_path(manifest_schema),
+            "message": "ABC source-region contract snapshot path was supplied but could not be read.",
+        }
+
+    schema_id = schema_doc.get("$id") if isinstance(schema_doc, dict) else None
+    schema_version = None
+    if isinstance(schema_doc, dict):
+        schema_version = schema_doc.get("properties", {}).get("schema_version", {}).get("const")
+    policy_id = policy_doc.get("policy_id") if isinstance(policy_doc, dict) else None
+    policy_version = policy_doc.get("policy_version") if isinstance(policy_doc, dict) else None
+    source_region_counters = set()
+    representability_counters = set()
+    if isinstance(schema_doc, dict):
+        source_region_counters = set(
+            schema_doc.get("properties", {})
+            .get("source_region_coverage", {})
+            .get("required", [])
+        )
+        representability_counters = set(
+            schema_doc.get("properties", {})
+            .get("representability", {})
+            .get("required", [])
+        )
+    dispositions = policy_doc.get("dispositions", []) if isinstance(policy_doc, dict) else []
+    disposition_by_class = {
+        row.get("source_class"): row
+        for row in dispositions
+        if isinstance(row, dict) and isinstance(row.get("source_class"), str)
+    }
+    policy_classes = set(disposition_by_class)
+    missing_policy_classes = sorted(SOURCE_REGION_REQUIRED_CLASSES - policy_classes)
+    duplicate_policy_classes = sorted(
+        source_class
+        for source_class, count in Counter(
+            row.get("source_class") for row in dispositions if isinstance(row, dict)
+        ).items()
+        if isinstance(source_class, str) and count > 1
+    )
+    invalid_target_classes = sorted(
+        source_class
+        for source_class, row in disposition_by_class.items()
+        if row.get("target_class") not in SOURCE_REGION_ALLOWED_TARGET_CLASSES
+    )
+    non_omitted_plaintext_classes = sorted(
+        source_class
+        for source_class, row in disposition_by_class.items()
+        if row.get("plaintext_projection") != "omit"
+    )
+    missing_measured_class_counters = sorted(
+        source_class
+        for source_class, counter in SOURCE_REGION_MEASURED_CLASS_COUNTERS.items()
+        if counter not in source_region_counters
+    )
+    unmeasured_policy_classes = sorted(
+        source_class
+        for source_class in SOURCE_REGION_MEASURED_CLASS_COUNTERS
+        if disposition_by_class.get(source_class, {}).get("measurement_status")
+        != "measured"
+    )
+    manifest_sidecar_roles = schema_enum_values(
+        manifest_doc,
+        ("$defs", "sidecar", "properties", "role", "enum"),
+    )
+    manifest_sidecar_role_present = "source-region-coverage" in manifest_sidecar_roles
+    schema_hash = document_hash(schema_doc)
+    policy_hash = document_hash(policy_doc)
+    manifest_schema_hash = document_hash(manifest_doc)
+    trusted_schema_hash = trusted_json_hash(TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH)
+    trusted_policy_hash = trusted_json_hash(TRUSTED_ABC_SOURCE_REGION_POLICY_PATH)
+    trusted_manifest_schema_hash = trusted_json_hash(TRUSTED_ABC_MANIFEST_SCHEMA_PATH)
+    schema_path_match = source_region_schema.resolve() == TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH
+    policy_path_match = source_region_policy.resolve() == TRUSTED_ABC_SOURCE_REGION_POLICY_PATH
+    manifest_schema_path_match = manifest_schema.resolve() == TRUSTED_ABC_MANIFEST_SCHEMA_PATH
+    missing_source_region_counters = sorted(
+        SOURCE_REGION_REQUIRED_COUNTERS - source_region_counters
+    )
+    missing_legacy_counters = sorted(
+        SOURCE_REGION_REQUIRED_LEGACY_COUNTERS - representability_counters
+    )
+    confirmed = (
+        schema_id == ABC_SOURCE_REGION_SCHEMA_ID
+        and schema_version == ABC_SOURCE_REGION_SCHEMA_VERSION
+        and policy_id == ABC_SOURCE_REGION_POLICY_ID
+        and policy_version == ABC_SOURCE_REGION_POLICY_VERSION
+        and not missing_source_region_counters
+        and not missing_legacy_counters
+        and not missing_policy_classes
+        and not duplicate_policy_classes
+        and not invalid_target_classes
+        and not non_omitted_plaintext_classes
+        and not missing_measured_class_counters
+        and not unmeasured_policy_classes
+        and manifest_sidecar_role_present
+        and schema_path_match
+        and policy_path_match
+        and manifest_schema_path_match
+        and schema_hash == trusted_schema_hash
+        and policy_hash == trusted_policy_hash
+        and manifest_schema_hash == trusted_manifest_schema_hash
+    )
+    return {
+        "verdict": (
+            "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"
+            if confirmed
+            else "SOURCE_REGION_CONTRACT_CANDIDATE_PROVIDED"
+        ),
+        "schema_id": schema_id,
+        "schema_version": schema_version,
+        "policy_id": policy_id,
+        "policy_version": policy_version,
+        "path": display_path(source_region_schema),
+        "policy_path": display_path(source_region_policy),
+        "manifest_schema_path": display_path(manifest_schema),
+        "schema_hash": schema_hash,
+        "policy_hash": policy_hash,
+        "manifest_schema_hash": manifest_schema_hash,
+        "trusted_schema_path": display_path(TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH),
+        "trusted_policy_path": display_path(TRUSTED_ABC_SOURCE_REGION_POLICY_PATH),
+        "trusted_manifest_schema_path": display_path(TRUSTED_ABC_MANIFEST_SCHEMA_PATH),
+        "trusted_schema_hash": trusted_schema_hash,
+        "trusted_policy_hash": trusted_policy_hash,
+        "trusted_manifest_schema_hash": trusted_manifest_schema_hash,
+        "trusted_schema_path_match": schema_path_match,
+        "trusted_policy_path_match": policy_path_match,
+        "trusted_manifest_schema_path_match": manifest_schema_path_match,
+        "source_region_counters": sorted(source_region_counters),
+        "legacy_representability_counters": sorted(representability_counters),
+        "policy_classes": sorted(policy_classes),
+        "target_classes": sorted(
+            {
+                row.get("target_class")
+                for row in disposition_by_class.values()
+                if isinstance(row.get("target_class"), str)
+            }
+        ),
+        "manifest_sidecar_role_present": manifest_sidecar_role_present,
+        "missing_source_region_counters": missing_source_region_counters,
+        "missing_legacy_counters": missing_legacy_counters,
+        "missing_policy_classes": missing_policy_classes,
+        "duplicate_policy_classes": duplicate_policy_classes,
+        "invalid_target_classes": invalid_target_classes,
+        "non_omitted_plaintext_classes": non_omitted_plaintext_classes,
+        "measured_class_counters": SOURCE_REGION_MEASURED_CLASS_COUNTERS,
+        "missing_measured_class_counters": missing_measured_class_counters,
+        "unmeasured_policy_classes": unmeasured_policy_classes,
+        "missing_measurement_split_classes": unmeasured_policy_classes,
+        "message": (
+            "ABC source-region schema, publication policy, and manifest sidecar role are confirmed."
+            if confirmed
+            else "Readable source-region contract candidate recorded as evidence only; synced ABC integration must confirm the source-region contract before admission can unblock."
+        ),
+    }
+
+
 def parser_evidence_coverage(matrix: dict[str, Any], source_delta: dict[str, Any]) -> dict[str, Any]:
     observed = Counter()
     qualified_rows = 0
@@ -813,6 +1104,13 @@ def trusted_custom_contract_hash() -> str | None:
         return None
 
 
+def trusted_json_hash(path: pathlib.Path) -> str | None:
+    try:
+        return document_hash(load_json(path))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
 def tei_profile_contract_block(custom_contract: dict[str, Any]) -> dict[str, Any]:
     if custom_contract.get("verdict") != "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION":
         return {
@@ -851,6 +1149,217 @@ def tei_profile_contract_block(custom_contract: dict[str, Any]) -> dict[str, Any
     }
 
 
+def publication_bundle_contract_block(bundle_summary_path: pathlib.Path | None) -> dict[str, Any]:
+    if bundle_summary_path is None:
+        return {
+            "verdict": "PUBLICATION_BUNDLE_CONTRACT_MISSING",
+            "schema_version": None,
+            "path": None,
+            "bundle_hash": None,
+            "missing_artifacts": sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS),
+            "missing_checks": sorted(PUBLICATION_BUNDLE_REQUIRED_CHECKS),
+            "failed_checks": [],
+            "message": "ABC publication bundle validation evidence has not been supplied to this report.",
+        }
+
+    try:
+        evidence = load_json(bundle_summary_path)
+    except json.JSONDecodeError:
+        return {
+            "verdict": "PUBLICATION_BUNDLE_CONTRACT_INVALID",
+            "schema_version": None,
+            "path": display_path(bundle_summary_path),
+            "bundle_hash": None,
+            "missing_artifacts": sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS),
+            "missing_checks": sorted(PUBLICATION_BUNDLE_REQUIRED_CHECKS),
+            "failed_checks": [],
+            "message": "ABC publication bundle validation evidence is not valid JSON.",
+        }
+    except OSError:
+        return {
+            "verdict": "PUBLICATION_BUNDLE_CONTRACT_MISSING",
+            "schema_version": None,
+            "path": display_path(bundle_summary_path),
+            "bundle_hash": None,
+            "missing_artifacts": sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS),
+            "missing_checks": sorted(PUBLICATION_BUNDLE_REQUIRED_CHECKS),
+            "failed_checks": [],
+            "message": "ABC publication bundle validation evidence path was supplied but could not be read.",
+        }
+
+    schema_version = evidence.get("schema_version") if isinstance(evidence, dict) else None
+    if schema_version == PUBLICATION_BUNDLE_BATCH_EVIDENCE_SCHEMA_VERSION:
+        checks = evidence.get("checks", {}) if isinstance(evidence, dict) else {}
+        rows = evidence.get("rows", []) if isinstance(evidence, dict) else []
+        scope = evidence.get("scope", {}) if isinstance(evidence, dict) else {}
+        rows = rows if isinstance(rows, list) else []
+        present_artifact_failures: list[str] = []
+        invalid_artifact_hashes: list[str] = []
+        sample_validated_bundles: list[dict[str, Any]] = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            row_id = str(row.get("row_id") or "")
+            validated_bundle = row.get("validated_bundle", {})
+            if not isinstance(validated_bundle, dict):
+                validated_bundle = {}
+            if len(sample_validated_bundles) < 5:
+                sample_validated_bundles.append(
+                    {
+                        "row_id": row_id,
+                        "row_dir": row.get("row_dir"),
+                        "validated_bundle": {
+                            key: validated_bundle.get(key)
+                            for key in sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS)
+                            if key in validated_bundle
+                        },
+                    }
+                )
+            row_present = {
+                name
+                for name, artifact in validated_bundle.items()
+                if isinstance(name, str)
+                and isinstance(artifact, dict)
+                and isinstance(artifact.get("path"), str)
+                and artifact.get("path")
+                and isinstance(artifact.get("hash"), str)
+                and SHA256_PATTERN.fullmatch(artifact.get("hash"))
+            }
+            present_artifact_failures.extend(
+                f"{row_id}:{name}"
+                for name in sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS - row_present)
+            )
+            invalid_artifact_hashes.extend(
+                f"{row_id}:{name}"
+                for name, artifact in validated_bundle.items()
+                if name in PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS
+                and isinstance(artifact, dict)
+                and isinstance(artifact.get("hash"), str)
+                and not SHA256_PATTERN.fullmatch(artifact.get("hash"))
+            )
+        missing_checks = sorted(
+            check
+            for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS
+            if check not in checks
+        )
+        failed_checks = sorted(
+            check
+            for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS
+            if checks.get(check) is not True
+        )
+        rows_validated = scope.get("rows_validated")
+        rows_failed = scope.get("rows_failed")
+        confirmed = (
+            evidence.get("verdict") == PUBLICATION_BUNDLE_BATCH_PASSED_VERDICT
+            and isinstance(rows_validated, int)
+            and rows_validated > 0
+            and rows_validated == len(rows)
+            and rows_failed == 0
+            and not present_artifact_failures
+            and not invalid_artifact_hashes
+            and not missing_checks
+            and not failed_checks
+        )
+        return {
+            "verdict": (
+                "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"
+                if confirmed
+                else "PUBLICATION_BUNDLE_CONTRACT_INCOMPLETE"
+            ),
+            "schema_version": schema_version,
+            "validation_scope": "batch",
+            "path": display_path(bundle_summary_path),
+            "bundle_hash": document_hash(evidence),
+            "abc_commit": evidence.get("abc_commit") if isinstance(evidence, dict) else None,
+            "validator": evidence.get("validator") if isinstance(evidence, dict) else None,
+            "command": evidence.get("command") if isinstance(evidence, dict) else None,
+            "rows_discovered": scope.get("rows_discovered") if isinstance(scope, dict) else None,
+            "rows_validated": rows_validated,
+            "rows_failed": rows_failed,
+            "sample_validated_bundles": sample_validated_bundles,
+            "checks": {key: checks.get(key) for key in sorted(PUBLICATION_BUNDLE_REQUIRED_CHECKS)},
+            "missing_artifacts": sorted(present_artifact_failures),
+            "invalid_artifact_hashes": sorted(invalid_artifact_hashes),
+            "missing_checks": missing_checks,
+            "failed_checks": failed_checks,
+            "message": (
+                "ABC publication bundle batch validation evidence confirms parser-IR, TEI, preservation, source-region, manifest, and plaintext cross-artifact checks."
+                if confirmed
+                else "ABC publication bundle batch validation evidence is missing required artifacts, rows, or cross-artifact checks."
+            ),
+        }
+
+    validated_bundle = evidence.get("validated_bundle", {}) if isinstance(evidence, dict) else {}
+    checks = evidence.get("checks", {}) if isinstance(evidence, dict) else {}
+    present_artifacts = {
+        name
+        for name, artifact in validated_bundle.items()
+        if isinstance(name, str)
+        and isinstance(artifact, dict)
+        and isinstance(artifact.get("path"), str)
+        and artifact.get("path")
+        and isinstance(artifact.get("hash"), str)
+        and SHA256_PATTERN.fullmatch(artifact.get("hash"))
+    }
+    missing_artifacts = sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS - present_artifacts)
+    invalid_artifact_hashes = sorted(
+        name
+        for name, artifact in validated_bundle.items()
+        if name in PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS
+        and isinstance(artifact, dict)
+        and isinstance(artifact.get("hash"), str)
+        and not SHA256_PATTERN.fullmatch(artifact.get("hash"))
+    )
+    missing_checks = sorted(
+        check
+        for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS
+        if check not in checks
+    )
+    failed_checks = sorted(
+        check
+        for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS
+        if checks.get(check) is not True
+    )
+    confirmed = (
+        isinstance(evidence, dict)
+        and evidence.get("schema_version") == PUBLICATION_BUNDLE_EVIDENCE_SCHEMA_VERSION
+        and evidence.get("verdict") == PUBLICATION_BUNDLE_PASSED_VERDICT
+        and not missing_artifacts
+        and not invalid_artifact_hashes
+        and not missing_checks
+        and not failed_checks
+    )
+    return {
+        "verdict": (
+            "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"
+            if confirmed
+            else "PUBLICATION_BUNDLE_CONTRACT_INCOMPLETE"
+        ),
+        "schema_version": evidence.get("schema_version") if isinstance(evidence, dict) else None,
+        "validation_scope": "single",
+        "path": display_path(bundle_summary_path),
+        "bundle_hash": document_hash(evidence),
+        "abc_commit": evidence.get("abc_commit") if isinstance(evidence, dict) else None,
+        "validator": evidence.get("validator") if isinstance(evidence, dict) else None,
+        "command": evidence.get("command") if isinstance(evidence, dict) else None,
+        "validated_bundle": {
+            key: validated_bundle.get(key)
+            for key in sorted(PUBLICATION_BUNDLE_REQUIRED_ARTIFACTS)
+            if key in validated_bundle
+        },
+        "checks": {key: checks.get(key) for key in sorted(PUBLICATION_BUNDLE_REQUIRED_CHECKS)},
+        "missing_artifacts": missing_artifacts,
+        "invalid_artifact_hashes": invalid_artifact_hashes,
+        "missing_checks": missing_checks,
+        "failed_checks": failed_checks,
+        "message": (
+            "ABC publication bundle validation evidence confirms parser-IR, TEI, preservation, source-region, manifest, and plaintext cross-artifact checks."
+            if confirmed
+            else "ABC publication bundle validation evidence is missing required artifacts or cross-artifact checks."
+        ),
+    }
+
+
 def mapping_block(mapping: dict[str, Any]) -> dict[str, Any]:
     return {
         "mapping_id": mapping.get("mapping_id"),
@@ -860,6 +1369,44 @@ def mapping_block(mapping: dict[str, Any]) -> dict[str, Any]:
         "target_parser_ir_schema_id": mapping.get("target_parser_ir_schema_id"),
         "target_parser_ir_schema_hash": mapping.get("target_parser_ir_schema_hash"),
         "generated_mapping_rules": len(mapping.get("transform_rule_descriptions", [])),
+    }
+
+
+def next_work_dashboard_block(next_work_summary_path: pathlib.Path | None) -> dict[str, Any] | None:
+    if next_work_summary_path is None:
+        return None
+    try:
+        evidence = load_json(next_work_summary_path)
+    except (json.JSONDecodeError, OSError):
+        return {
+            "path": display_path(next_work_summary_path),
+            "hash": None,
+            "verdict": "NEXT_WORK_SUMMARY_UNREADABLE",
+            "next_work_items_count": None,
+            "item_ids": [],
+        }
+    next_work_items = evidence.get("next_work_items", []) if isinstance(evidence, dict) else []
+    if not isinstance(next_work_items, list):
+        next_work_items = []
+    schema_version = evidence.get("schema_version") if isinstance(evidence, dict) else None
+    schema_valid = schema_version == NEXT_WORK_SCHEMA_VERSION
+    item_ids = [
+        item.get("id")
+        for item in next_work_items
+        if isinstance(item, dict) and isinstance(item.get("id"), str)
+    ]
+    return {
+        "path": display_path(next_work_summary_path),
+        "hash": document_hash(evidence),
+        "schema_version": schema_version,
+        "schema_valid": schema_valid,
+        "verdict": (
+            evidence.get("verdict")
+            if isinstance(evidence, dict) and schema_valid
+            else "NEXT_WORK_SUMMARY_SCHEMA_MISMATCH"
+        ),
+        "next_work_items_count": len(next_work_items),
+        "item_ids": item_ids,
     }
 
 
@@ -884,7 +1431,9 @@ def summary_scope(
         "mapping_id": mapping.get("mapping_id"),
         "mapping_version": mapping.get("mapping_version"),
         "parser_ir_schema_hash": parser_ir_schema_hash(parser_schema, mapping),
+        "source_region_contract_required": True,
         "custom_contract_required": True,
+        "publication_bundle_validation_required": True,
     }
 
 
@@ -1070,12 +1619,19 @@ def unsupported_derived_closure_coverage(closures: dict[str, Any]) -> dict[str, 
 def publication_verdict(
     source_passed: bool,
     evidence: dict[str, Any],
+    source_region_contract: dict[str, Any],
     custom_contract: dict[str, Any],
+    publication_bundle_contract: dict[str, Any],
     gaps: dict[str, Any],
     closures: dict[str, Any],
 ) -> str:
     if not source_passed:
         return "IR_PUBLICATION_COVERAGE_BLOCKED_SOURCE_AUTHORITY"
+    if (
+        source_region_contract.get("verdict")
+        != "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"
+    ):
+        return "IR_PUBLICATION_COVERAGE_BLOCKED_SOURCE_REGION_CONTRACT_MISSING"
     if evidence.get("verdict") != "FIVE_PARSER_EVIDENCE_COMPLETE":
         return "IR_PUBLICATION_COVERAGE_BLOCKED_INCOMPLETE_PARSER_EVIDENCE"
     if closures["true_unsupported_gaps"].get("count", 0) > 0:
@@ -1084,6 +1640,11 @@ def publication_verdict(
         return "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"
     if custom_contract.get("verdict") != "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION":
         return "IR_PUBLICATION_COVERAGE_BLOCKED_CUSTOM_CONTRACT_MISSING"
+    if (
+        publication_bundle_contract.get("verdict")
+        != "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"
+    ):
+        return "IR_PUBLICATION_COVERAGE_BLOCKED_BUNDLE_VALIDATION_MISSING"
     return "IR_PUBLICATION_COVERAGE_COMPLETE"
 
 
@@ -1094,22 +1655,45 @@ def build_summary(
     matrix: dict[str, Any],
     source_delta: dict[str, Any],
     custom_contract_schema: pathlib.Path | None,
+    source_region_schema: pathlib.Path | None,
+    source_region_policy: pathlib.Path | None,
+    manifest_schema: pathlib.Path | None,
+    bundle_validation_summary: pathlib.Path | None,
+    next_work_summary: pathlib.Path | None,
 ) -> dict[str, Any]:
     node_coverage = node_coverage_from_schema(parser_schema)
     field_coverage = field_coverage_from_schema(parser_schema)
     diagnostics = diagnostic_coverage(mapping)
     construct_coverage = source_construct_coverage(mapping)
     evidence = parser_evidence_coverage(matrix, source_delta)
+    source_region_contract = source_region_contract_block(
+        source_region_schema,
+        source_region_policy,
+        manifest_schema,
+    )
     custom_contract = custom_contract_block(custom_contract_schema)
     tei_profile_contract = tei_profile_contract_block(custom_contract)
+    publication_bundle_contract = publication_bundle_contract_block(
+        bundle_validation_summary,
+    )
+    next_work_dashboard = next_work_dashboard_block(next_work_summary)
     gaps = unsupported_gaps(node_coverage, field_coverage, diagnostics, construct_coverage)
     closures = closure_gaps(gaps, custom_contract, tei_profile_contract)
     source_passed = source_authority_passed(source)
-    return {
+    summary = {
         "schema_version": SCHEMA_VERSION,
         "scope": summary_scope(parser_schema, mapping, source, matrix),
-        "verdict": publication_verdict(source_passed, evidence, custom_contract, gaps, closures),
+        "verdict": publication_verdict(
+            source_passed,
+            evidence,
+            source_region_contract,
+            custom_contract,
+            publication_bundle_contract,
+            gaps,
+            closures,
+        ),
         "source_authority_gate": source_authority_gate(source),
+        "source_region_contract": source_region_contract,
         "parser_evidence_coverage": evidence,
         "parser_ir_schema": {
             "schema_id": parser_schema.get("$id"),
@@ -1121,6 +1705,7 @@ def build_summary(
         },
         "custom_contract": custom_contract,
         "tei_profile_contract": tei_profile_contract,
+        "publication_bundle_contract": publication_bundle_contract,
         "mapping": mapping_block(mapping),
         "node_coverage": node_coverage,
         "field_coverage": field_coverage,
@@ -1137,6 +1722,9 @@ def build_summary(
         },
         "plaintext_policy": PLAINTEXT_POLICY,
     }
+    if next_work_dashboard is not None:
+        summary["next_work_dashboard"] = next_work_dashboard
+    return summary
 
 
 def render_markdown(summary: dict[str, Any]) -> str:
@@ -1147,16 +1735,61 @@ def render_markdown(summary: dict[str, Any]) -> str:
     adjusted_closure = summary["unsupported_derived_closure_coverage"]
     gaps = summary["unsupported_gaps"]
     closures = summary["closure_gaps"]
+    source_region_contract = summary["source_region_contract"]
+    publication_bundle_contract = summary["publication_bundle_contract"]
+    next_work_dashboard = summary.get("next_work_dashboard")
     lines = [
         "# IR Publication Coverage",
         "",
         f"Verdict: `{summary['verdict']}`",
+        "",
+        "## Source Region Contract",
+        "",
+        f"Verdict: `{source_region_contract['verdict']}`",
+        "",
+        f"Schema: `{source_region_contract.get('schema_id')}` `{source_region_contract.get('schema_version')}`",
+        "",
+        f"Policy: `{source_region_contract.get('policy_id')}` `{source_region_contract.get('policy_version')}`",
+        "",
+        f"Manifest sidecar role present: `{str(source_region_contract.get('manifest_sidecar_role_present')).lower()}`",
+        "",
+        "## Publication Bundle Contract",
+        "",
+        f"Verdict: `{publication_bundle_contract['verdict']}`",
+        "",
+        f"Evidence: `{publication_bundle_contract.get('path')}`",
+        "",
+        f"Bundle hash: `{publication_bundle_contract.get('bundle_hash')}`",
+        "",
+        f"ABC commit: `{publication_bundle_contract.get('abc_commit')}`",
+        "",
+        f"Validation scope: `{publication_bundle_contract.get('validation_scope')}`",
+        "",
+        f"Rows validated: `{publication_bundle_contract.get('rows_validated')}`",
+        "",
+        f"Rows failed: `{publication_bundle_contract.get('rows_failed')}`",
         "",
         "## Node Coverage",
         "",
         "| Class | Node types |",
         "|---|---:|",
     ]
+    if isinstance(next_work_dashboard, dict):
+        lines.extend(
+            [
+                "## Next Work Dashboard",
+                "",
+                f"Verdict: `{next_work_dashboard.get('verdict')}`",
+                "",
+                f"Evidence: `{next_work_dashboard.get('path')}`",
+                "",
+                f"Next work items: `{next_work_dashboard.get('next_work_items_count')}`",
+                "",
+            ]
+        )
+        for item_id in next_work_dashboard.get("item_ids", []):
+            lines.append(f"- `{item_id}`")
+        lines.append("")
     for name, count in node_counts.items():
         lines.append(f"| `{name}` | {count} |")
     lines.extend(["", "## Field Coverage", "", "| Class | Field facts |", "|---|---:|"])
@@ -1253,18 +1886,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--matrix-summary", required=True, type=pathlib.Path)
     parser.add_argument("--source-delta-summary", required=True, type=pathlib.Path)
     parser.add_argument("--custom-contract-schema", type=pathlib.Path)
+    parser.add_argument(
+        "--source-region-schema",
+        type=pathlib.Path,
+        default=TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH,
+    )
+    parser.add_argument(
+        "--source-region-policy",
+        type=pathlib.Path,
+        default=TRUSTED_ABC_SOURCE_REGION_POLICY_PATH,
+    )
+    parser.add_argument(
+        "--manifest-schema",
+        type=pathlib.Path,
+        default=TRUSTED_ABC_MANIFEST_SCHEMA_PATH,
+    )
+    parser.add_argument("--bundle-validation-summary", type=pathlib.Path)
+    parser.add_argument("--next-work-summary", type=pathlib.Path)
     parser.add_argument("--summary-json", required=True, type=pathlib.Path)
     parser.add_argument("--report-md", required=True, type=pathlib.Path)
     return parser.parse_args()
-
-
-def load_json(path: pathlib.Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def write_json(path: pathlib.Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def write_text(path: pathlib.Path, value: str) -> None:
@@ -1277,7 +1918,7 @@ def canonical_json(value: object) -> str:
 
 
 def document_hash(value: object) -> str:
-    return "sha256:" + hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
+    return sha256_hex(canonical_json(value))
 
 
 def main() -> None:
@@ -1289,6 +1930,11 @@ def main() -> None:
         matrix=load_json(args.matrix_summary),
         source_delta=load_json(args.source_delta_summary),
         custom_contract_schema=args.custom_contract_schema,
+        source_region_schema=args.source_region_schema,
+        source_region_policy=args.source_region_policy,
+        manifest_schema=args.manifest_schema,
+        bundle_validation_summary=args.bundle_validation_summary,
+        next_work_summary=args.next_work_summary,
     )
     write_json(args.summary_json, summary)
     write_text(args.report_md, render_markdown(summary))

@@ -10,8 +10,12 @@ mapping="$out_dir/mapping.json"
 source_summary="$out_dir/source-summary.json"
 matrix_summary="$out_dir/matrix-summary.json"
 source_delta="$out_dir/source-delta.summary.json"
+next_work_summary="$out_dir/next-work.summary.json"
+invalid_next_work_summary="$out_dir/next-work.invalid.summary.json"
 summary_json="$out_dir/coverage.summary.json"
 report_md="$out_dir/coverage.md"
+invalid_next_work_coverage_summary_json="$out_dir/coverage-invalid-next-work.summary.json"
+invalid_next_work_coverage_report_md="$out_dir/coverage-invalid-next-work.md"
 supported_mapping="$out_dir/mapping-supported.json"
 supported_summary_json="$out_dir/coverage-supported.summary.json"
 supported_report_md="$out_dir/coverage-supported.md"
@@ -28,6 +32,9 @@ spoofed_custom_contract="$out_dir/custom-contract.spoofed.json"
 invalid_custom_contract="$out_dir/custom-contract.invalid.json"
 invalid_contract_summary_json="$out_dir/coverage-invalid-contract.summary.json"
 invalid_contract_report_md="$out_dir/coverage-invalid-contract.md"
+bundle_summary="$out_dir/publication-bundle-validation.summary.json"
+batch_bundle_summary="$out_dir/publication-bundle-batch-validation.summary.json"
+invalid_bundle_summary="$out_dir/publication-bundle-validation.invalid.summary.json"
 incomplete_matrix_summary="$out_dir/matrix-summary-incomplete.json"
 incomplete_source_delta="$out_dir/source-delta-incomplete.summary.json"
 incomplete_summary_json="$out_dir/coverage-incomplete.summary.json"
@@ -171,9 +178,33 @@ JSON
 
 cat > "$source_summary" <<'JSON'
 {
+  "schema_version": "aozora-source-region-coverage-v1",
   "gate_status": "SOURCE_AUTHORITY_GATE_PASS",
   "works_scanned": 17894,
-  "unallowlisted_unknown_markers_total": 0
+  "unallowlisted_unknown_markers_total": 0,
+  "representability": {
+    "typed_occurrences": 1,
+    "raw_preserved_occurrences": 1,
+    "out_of_body_occurrences": 0,
+    "malformed_noise_occurrences": 0,
+    "unsupported_occurrences": 0,
+    "needs_research_occurrences": 0
+  },
+  "source_region_coverage": {
+    "body_typed_occurrences": 1,
+    "body_raw_preserved_occurrences": 1,
+    "source_apparatus_occurrences": 0,
+    "front_matter_occurrences": 0,
+    "back_matter_occurrences": 0,
+    "body_end_boundary_occurrences": 0,
+    "terminal_provenance_occurrences": 0,
+    "colophon_metadata_occurrences": 0,
+    "letter_address_origin_occurrences": 0,
+    "malformed_source_occurrences": 0,
+    "unsupported_body_markup_occurrences": 0,
+    "unknown_region_occurrences": 0,
+    "unknown_unreviewed_occurrences": 0
+  }
 }
 JSON
 
@@ -214,6 +245,179 @@ cat > "$source_delta" <<'JSON'
     },
     "missing_parsers": []
   }
+}
+JSON
+
+cat > "$next_work_summary" <<'JSON'
+{
+  "schema_version": "aozora-publication-next-work-v1",
+  "verdict": "AOZORA_PUBLICATION_NEXT_WORK_OPEN",
+  "next_work_items": [
+    {"id": "text_policy_calibration"}
+  ]
+}
+JSON
+
+cat > "$invalid_next_work_summary" <<'JSON'
+{
+  "schema_version": "wrong-dashboard-v1",
+  "verdict": "AOZORA_PUBLICATION_NEXT_WORK_OPEN",
+  "next_work_items": [
+    {"id": "text_policy_calibration"}
+  ]
+}
+JSON
+
+cat > "$bundle_summary" <<'JSON'
+{
+  "schema_version": "publication-bundle-validation-evidence-v1",
+  "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
+  "validator": "ABC validate-design-bundle and parser-IR publication materializer",
+  "command": "nix run .#validate-design-bundle && clojure -M:abc/materialize-publication ...",
+  "abc_commit": "95ace31",
+  "validated_bundle": {
+    "parser_ir": {"path": "../abc/examples/v0/example-work/parser-ir.json", "hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+    "tei": {"path": "scratch/parser-ir-publication-bundle-validation/tei.xml", "hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},
+    "plaintext": {"path": "scratch/parser-ir-publication-bundle-validation/plain.txt", "hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+    "preservation": {"path": "scratch/parser-ir-publication-bundle-validation/preservation.json", "hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"},
+    "source_region_coverage": {"path": "../abc/examples/ab-validator-output/source-region-coverage.json", "hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"},
+    "tei_manifest": {"path": "scratch/parser-ir-publication-bundle-validation/tei.manifest.json", "hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
+    "plaintext_manifest": {"path": "scratch/parser-ir-publication-bundle-validation/plaintext.manifest.json", "hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+  },
+  "checks": {
+    "parser_ir_schema_valid": true,
+    "tei_profile_valid": true,
+    "preservation_schema_valid": true,
+    "source_region_coverage_valid": true,
+    "tei_manifest_valid": true,
+    "plaintext_manifest_valid": true,
+    "tei_manifest_references_preservation": true,
+    "tei_manifest_references_validation_result": true,
+    "source_region_sidecar_role_available": true,
+    "tei_abc_projection_resolves_to_sidecar": true,
+    "preservation_tei_pointers_resolve": true,
+    "preservation_source_pointers_resolve": true,
+    "plaintext_body_only": true
+  }
+}
+JSON
+
+cat > "$invalid_bundle_summary" <<'JSON'
+{
+  "schema_version": "publication-bundle-validation-evidence-v1",
+  "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
+  "validated_bundle": {},
+  "checks": {
+    "parser_ir_schema_valid": true,
+    "tei_profile_valid": true,
+    "preservation_schema_valid": true,
+    "source_region_coverage_valid": true,
+    "tei_manifest_valid": true,
+    "plaintext_manifest_valid": true,
+    "tei_manifest_references_preservation": true,
+    "tei_manifest_references_validation_result": true,
+    "source_region_sidecar_role_available": true,
+    "tei_abc_projection_resolves_to_sidecar": true,
+    "preservation_tei_pointers_resolve": true,
+    "preservation_source_pointers_resolve": true,
+    "plaintext_body_only": false
+  }
+}
+JSON
+
+cat > "$batch_bundle_summary" <<'JSON'
+{
+  "schema_version": "publication-bundle-batch-validation-evidence-v1",
+  "verdict": "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED",
+  "validator": "ab-validator publication-bundle-validate batch",
+  "command": "clojure -M:abc/materialize-publications-batch ...",
+  "abc_commit": "95ace31",
+  "scope": {
+    "kind": "representative",
+    "batch_root": "scratch/parser-ir-publication-bundle-batch-validation",
+    "rows_discovered": 2,
+    "rows_validated": 2,
+    "rows_passed": 2,
+    "rows_failed": 0
+  },
+  "checks": {
+    "parser_ir_schema_valid": true,
+    "tei_profile_valid": true,
+    "preservation_schema_valid": true,
+    "source_region_coverage_valid": true,
+    "tei_manifest_valid": true,
+    "plaintext_manifest_valid": true,
+    "tei_manifest_references_preservation": true,
+    "tei_manifest_references_validation_result": true,
+    "source_region_sidecar_role_available": true,
+    "tei_abc_projection_resolves_to_sidecar": true,
+    "preservation_tei_pointers_resolve": true,
+    "preservation_source_pointers_resolve": true,
+    "plaintext_body_only": true
+  },
+  "rows": [
+    {
+      "row_id": "row-a",
+      "row_dir": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
+      "validated_bundle": {
+        "parser_ir": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a/parser-ir.json", "hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+        "tei": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a/publication/tei.xml", "hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},
+        "plaintext": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a/publication/plain.txt", "hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+        "preservation": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a/publication/preservation.json", "hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"},
+        "source_region_coverage": {"path": "../abc/examples/ab-validator-output/source-region-coverage.json", "hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"},
+        "tei_manifest": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a/publication/tei.manifest.json", "hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"},
+        "plaintext_manifest": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-a/publication/plaintext.manifest.json", "hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+      },
+      "checks": {
+        "parser_ir_schema_valid": true,
+        "tei_profile_valid": true,
+        "preservation_schema_valid": true,
+        "source_region_coverage_valid": true,
+        "tei_manifest_valid": true,
+        "plaintext_manifest_valid": true,
+        "tei_manifest_references_preservation": true,
+        "tei_manifest_references_validation_result": true,
+        "source_region_sidecar_role_available": true,
+        "tei_abc_projection_resolves_to_sidecar": true,
+        "preservation_tei_pointers_resolve": true,
+        "preservation_source_pointers_resolve": true,
+        "plaintext_body_only": true
+      },
+      "failures": []
+    },
+    {
+      "row_id": "row-b",
+      "row_dir": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b",
+      "verdict": "PUBLICATION_BUNDLE_VALIDATION_PASSED",
+      "validated_bundle": {
+        "parser_ir": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b/parser-ir.json", "hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222"},
+        "tei": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b/publication/tei.xml", "hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333"},
+        "plaintext": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b/publication/plain.txt", "hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444"},
+        "preservation": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b/publication/preservation.json", "hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555"},
+        "source_region_coverage": {"path": "../abc/examples/ab-validator-output/source-region-coverage.json", "hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"},
+        "tei_manifest": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b/publication/tei.manifest.json", "hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666"},
+        "plaintext_manifest": {"path": "scratch/parser-ir-publication-bundle-batch-validation/rows/row-b/publication/plaintext.manifest.json", "hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777"}
+      },
+      "checks": {
+        "parser_ir_schema_valid": true,
+        "tei_profile_valid": true,
+        "preservation_schema_valid": true,
+        "source_region_coverage_valid": true,
+        "tei_manifest_valid": true,
+        "plaintext_manifest_valid": true,
+        "tei_manifest_references_preservation": true,
+        "tei_manifest_references_validation_result": true,
+        "source_region_sidecar_role_available": true,
+        "tei_abc_projection_resolves_to_sidecar": true,
+        "preservation_tei_pointers_resolve": true,
+        "preservation_source_pointers_resolve": true,
+        "plaintext_body_only": true
+      },
+      "failures": []
+    }
+  ],
+  "failures": []
 }
 JSON
 
@@ -278,6 +482,7 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --source-summary "$source_summary" \
   --matrix-summary "$matrix_summary" \
   --source-delta-summary "$source_delta" \
+  --next-work-summary "$next_work_summary" \
   --summary-json "$summary_json" \
   --report-md "$report_md"
 
@@ -285,6 +490,14 @@ jq -e '.schema_version == "ir-publication-coverage-v1"' "$summary_json" >/dev/nu
 jq -e '.scope.kind == "ir_publication_coverage"' "$summary_json" >/dev/null
 jq -e '.scope.required_parsers == ["aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora"]' "$summary_json" >/dev/null
 jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.verdict == "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.schema_id == "https://w3id.org/abc/schemas/source-region-coverage.schema.json"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.schema_version == "aozora-source-region-coverage-v1"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.policy_id == "https://w3id.org/abc/policies/source-region-publication-v0"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.policy_version == "0.2.0"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.policy_classes | index("letter_address_origin")' "$summary_json" >/dev/null
+jq -e '.source_region_contract.missing_policy_classes == []' "$summary_json" >/dev/null
+jq -e '.source_region_contract.manifest_sidecar_role_present == true' "$summary_json" >/dev/null
 jq -e '.parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_COMPLETE"' "$summary_json" >/dev/null
 jq -e '.plaintext_policy.metadata_policy == "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance"' "$summary_json" >/dev/null
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_MISSING"' "$summary_json" >/dev/null
@@ -309,6 +522,11 @@ jq -e '.source_construct_coverage.counts_by_class.tei_exact == 1' "$summary_json
 jq -e '.source_construct_coverage.counts_by_class.tei_policy_projection == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.unsupported_gap == 8' "$summary_json" >/dev/null
+jq -e '.next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_OPEN"' "$summary_json" >/dev/null
+jq -e '.next_work_dashboard.schema_version == "aozora-publication-next-work-v1"' "$summary_json" >/dev/null
+jq -e '.next_work_dashboard.schema_valid == true' "$summary_json" >/dev/null
+jq -e '.next_work_dashboard.next_work_items_count == 1' "$summary_json" >/dev/null
+jq -e '.next_work_dashboard.item_ids == ["text_policy_calibration"]' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.count == 8' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[] | select(.aat_pointer == "blocks[].content[].raw_material") | .observed_occurrences == 288' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[] | select(.aat_pointer == "blocks[].content[].raw_material") | .prevalence_source == "rule_description"' "$summary_json" >/dev/null
@@ -328,6 +546,19 @@ jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$summary
 rg -n "IR Publication Coverage" "$report_md" >/dev/null
 rg -n "Field Coverage" "$report_md" >/dev/null
 rg -n "Raw Unsupported-Derived Mapping Rows" "$report_md" >/dev/null
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --next-work-summary "$invalid_next_work_summary" \
+  --summary-json "$invalid_next_work_coverage_summary_json" \
+  --report-md "$invalid_next_work_coverage_report_md"
+
+jq -e '.next_work_dashboard.schema_valid == false' "$invalid_next_work_coverage_summary_json" >/dev/null
+jq -e '.next_work_dashboard.verdict == "NEXT_WORK_SUMMARY_SCHEMA_MISMATCH"' "$invalid_next_work_coverage_summary_json" >/dev/null
 
 jq 'del(.transform_rule_descriptions[] | select(.category == "UNSUPPORTED"))' "$mapping" > "$supported_mapping"
 
@@ -384,11 +615,16 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --matrix-summary "$matrix_summary" \
   --source-delta-summary "$source_delta" \
   --custom-contract-schema "$repo_root/data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json" \
+  --bundle-validation-summary "$bundle_summary" \
   --summary-json "$candidate_summary_json" \
   --report-md "$candidate_report_md"
 
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$candidate_summary_json" >/dev/null
+jq -e '.source_region_contract.verdict == "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$candidate_summary_json" >/dev/null
 jq -e '.tei_profile_contract.verdict == "TEI_PROFILE_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.validated_bundle.tei.path == "scratch/parser-ir-publication-bundle-validation/tei.xml"' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.checks.plaintext_body_only == true' "$candidate_summary_json" >/dev/null
 jq -e '.closure_gaps.admitted_by_custom_contract.count == 1' "$candidate_summary_json" >/dev/null
 jq -e '.closure_gaps.admitted_by_custom_contract.counts_by_family.span_coordinates == 1' "$candidate_summary_json" >/dev/null
 jq -e '.closure_gaps.admitted_by_tei_profile.count == 4' "$candidate_summary_json" >/dev/null
@@ -402,6 +638,39 @@ jq -e '.unsupported_derived_closure_coverage.counts_by_status.admitted_by_custom
 jq -e '.unsupported_derived_closure_coverage.counts_by_status.admitted_by_tei_profile == 4' "$candidate_summary_json" >/dev/null
 jq -e '.unsupported_derived_closure_coverage.counts_by_status.classified_but_not_admitted == 2' "$candidate_summary_json" >/dev/null
 jq -e '.unsupported_derived_closure_coverage.counts_by_status.true_unsupported_gap == 0' "$candidate_summary_json" >/dev/null
+jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$supported_mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --custom-contract-schema "$repo_root/data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json" \
+  --bundle-validation-summary "$batch_bundle_summary" \
+  --summary-json "$candidate_summary_json" \
+  --report-md "$candidate_report_md"
+
+jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.validation_scope == "batch"' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.rows_validated == 2 and .publication_bundle_contract.rows_failed == 0' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.checks.plaintext_body_only == true' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.sample_validated_bundles | length == 2' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.sample_validated_bundles[0].row_id == "row-a"' "$candidate_summary_json" >/dev/null
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$supported_mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --custom-contract-schema "$repo_root/data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json" \
+  --bundle-validation-summary "$invalid_bundle_summary" \
+  --summary-json "$candidate_summary_json" \
+  --report-md "$candidate_report_md"
+
+jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_INCOMPLETE"' "$candidate_summary_json" >/dev/null
+jq -e '.publication_bundle_contract.failed_checks == ["plaintext_body_only"]' "$candidate_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
 
 REPO_ROOT="$repo_root" python3 - <<'PY'

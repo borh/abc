@@ -1,4 +1,5 @@
 {
+  "schema_version": "aozora-source-region-coverage-v1",
   "gate_status": "SOURCE_AUTHORITY_GATE_PASS",
   "works_scanned": 17894,
   "works_failed": 0,
@@ -676,12 +677,27 @@
     "unsupported_occurrences": 0,
     "needs_research_occurrences": 0
   },
+  "source_region_coverage": {
+    "body_typed_occurrences": 4570071,
+    "body_raw_preserved_occurrences": 46382,
+    "source_apparatus_occurrences": 13920,
+    "front_matter_occurrences": 14627,
+    "back_matter_occurrences": 90274,
+    "body_end_boundary_occurrences": 243,
+    "terminal_provenance_occurrences": 609,
+    "colophon_metadata_occurrences": 89416,
+    "letter_address_origin_occurrences": 6,
+    "malformed_source_occurrences": 16,
+    "unsupported_body_markup_occurrences": 0,
+    "unknown_region_occurrences": 0,
+    "unknown_unreviewed_occurrences": 0
+  },
   "strict_errors": [],
   "inputs": {
-    "matrix": "data/aozora-syntax-coverage.toml",
-    "index": "scratch/ab-index.json",
-    "corpus": "/home/bor/Dependencies/aozorabunko",
-    "allowlist": "data/aozora-source-inventory-allowlist.toml",
+    "matrix": "/home/bor/Projects/ab-validator/.worktrees/source-letter-address-origin/data/aozora-syntax-coverage.toml",
+    "index": "/home/bor/Projects/ab-validator/scratch/ab-index.json",
+    "corpus": "/home/bor/Projects/ab-validator/references/aozorabunko",
+    "allowlist": "/home/bor/Projects/ab-validator/.worktrees/source-letter-address-origin/data/aozora-source-inventory-allowlist.toml",
     "work_ids": null
   }
 }

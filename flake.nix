@@ -690,6 +690,43 @@
           ps.pytest
         ]);
 
+        mkSmokeCheck =
+          {
+            name,
+            testScript,
+            nativeBuildInputs ? [ ],
+            extraEnv ? { },
+            extraPreScript ? "",
+          }:
+          let
+            envExports = pkgs.lib.concatStringsSep "\n" (
+              pkgs.lib.mapAttrsToList (k: v: "export ${k}=\"${v}\"") extraEnv
+            );
+          in
+          pkgs.runCommand name
+            {
+              nativeBuildInputs = nativeBuildInputs ++ [
+                pkgs.bash
+                pkgs.coreutils
+              ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+
+              export TMPDIR="$work_dir/tmp"
+              mkdir -p "$TMPDIR"
+              export HOME="$work_dir/home"
+              mkdir -p "$HOME"
+              ${envExports}
+              ${extraPreScript}
+
+              bash "${testScript}"
+              touch "$out"
+            '';
+
         aozora2htmlRustParityShell = pkgs.writeShellApplication {
           name = "aozora2html-rust-parity";
           runtimeInputs = [
@@ -745,19 +782,17 @@
           '';
         };
 
-        aatOracleDataSchemaSmokeCheck =
-          pkgs.runCommand "aat-oracle-data-schema-smoke-check"
-            {
-              nativeBuildInputs = [
-                pythonWithAatSchemaDeps
-              ];
-            }
-            ''
-              export AB_VALIDATOR_DIRECT_PYTHON=1
-              export AB_DB_ROOT="$TMPDIR/ab-validator"
-              bash "${source}/tests/aat-oracle-data-schema-smoke.sh"
-              touch "$out"
-            '';
+        aatOracleDataSchemaSmokeCheck = mkSmokeCheck {
+          name = "aat-oracle-data-schema-smoke-check";
+          testScript = "tests/aat-oracle-data-schema-smoke.sh";
+          nativeBuildInputs = [ pythonWithAatSchemaDeps ];
+          extraEnv = {
+            AB_VALIDATOR_DIRECT_PYTHON = "1";
+          };
+          extraPreScript = ''
+            export AB_DB_ROOT="$TMPDIR/ab-validator"
+          '';
+        };
 
         adapterFidelityNotesSchemaSmokeShell = pkgs.writeShellApplication {
           name = "adapter-fidelity-notes-schema-smoke";
@@ -770,19 +805,17 @@
           '';
         };
 
-        adapterFidelityNotesSchemaSmokeCheck =
-          pkgs.runCommand "adapter-fidelity-notes-schema-smoke-check"
-            {
-              nativeBuildInputs = [
-                pythonWithAatSchemaDeps
-              ];
-            }
-            ''
-              export AB_VALIDATOR_DIRECT_PYTHON=1
-              export AB_DB_ROOT="$TMPDIR/ab-validator"
-              bash "${source}/tests/adapter-fidelity-notes-schema-smoke.sh"
-              touch "$out"
-            '';
+        adapterFidelityNotesSchemaSmokeCheck = mkSmokeCheck {
+          name = "adapter-fidelity-notes-schema-smoke-check";
+          testScript = "tests/adapter-fidelity-notes-schema-smoke.sh";
+          nativeBuildInputs = [ pythonWithAatSchemaDeps ];
+          extraEnv = {
+            AB_VALIDATOR_DIRECT_PYTHON = "1";
+          };
+          extraPreScript = ''
+            export AB_DB_ROOT="$TMPDIR/ab-validator"
+          '';
+        };
 
         taxonomyGenerator = rustPlatform.buildRustPackage {
           pname = "ab-taxonomy-generator";
@@ -818,105 +851,71 @@
           doCheck = false;
         };
 
-        sourceInventorySmokeCheck =
-          pkgs.runCommand "source-inventory-smoke-check"
-            {
-              nativeBuildInputs = [
-                sourceInventoryBin
-                pkgs.jq
-                pkgs.ripgrep
-              ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
+        sourceInventorySmokeCheck = mkSmokeCheck {
+          name = "source-inventory-smoke-check";
+          testScript = "tests/source-inventory-smoke.sh";
+          nativeBuildInputs = [
+            sourceInventoryBin
+            pkgs.jq
+            pkgs.ripgrep
+          ];
+          extraEnv = {
+            AB_SOURCE_INVENTORY_BIN = "${sourceInventoryBin}/bin/ab-source-inventory";
+          };
+        };
 
-              export TMPDIR="$work_dir/tmp"
-              mkdir -p "$TMPDIR"
-              export HOME="$work_dir/home"
-              mkdir -p "$HOME"
-              export AB_SOURCE_INVENTORY_BIN="${sourceInventoryBin}/bin/ab-source-inventory"
+        sourceRepresentabilityGateCheck = mkSmokeCheck {
+          name = "source-representability-gate-check";
+          testScript = "tests/source-representability-gate-smoke.sh";
+          nativeBuildInputs = [
+            sourceInventoryBin
+            pkgs.jq
+            pkgs.ripgrep
+          ];
+          extraEnv = {
+            AB_SOURCE_INVENTORY_BIN = "${sourceInventoryBin}/bin/ab-source-inventory";
+          };
+        };
 
-              bash tests/source-inventory-smoke.sh
-              touch "$out"
-            '';
+        level3AdmissionSmokeCheck = mkSmokeCheck {
+          name = "parser-ir-level3-admission-smoke-check";
+          testScript = "tests/parser-ir-level3-admission-smoke.sh";
+          nativeBuildInputs = [
+            pkgs.jq
+            pkgs.python3
+            pkgs.ripgrep
+          ];
+        };
 
-        sourceRepresentabilityGateCheck =
-          pkgs.runCommand "source-representability-gate-check"
-            {
-              nativeBuildInputs = [
-                sourceInventoryBin
-                pkgs.jq
-                pkgs.ripgrep
-              ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
+        plainProseSourceDeltaSmokeCheck = mkSmokeCheck {
+          name = "parser-ir-plain-prose-source-delta-smoke-check";
+          testScript = "tests/parser-ir-plain-prose-source-delta-smoke.sh";
+          nativeBuildInputs = [
+            pkgs.jq
+            pkgs.python3
+            pkgs.ripgrep
+          ];
+        };
 
-              export TMPDIR="$work_dir/tmp"
-              mkdir -p "$TMPDIR"
-              export HOME="$work_dir/home"
-              mkdir -p "$HOME"
-              export AB_SOURCE_INVENTORY_BIN="${sourceInventoryBin}/bin/ab-source-inventory"
+        publicationBundleSmokeCheck = mkSmokeCheck {
+          name = "parser-ir-publication-bundle-smoke-check";
+          testScript = "tests/parser-ir-publication-bundle-smoke.sh";
+          nativeBuildInputs = [
+            pkgs.jq
+            pkgs.python3
+            pkgs.ripgrep
+          ];
+        };
 
-              bash tests/source-representability-gate-smoke.sh
-              touch "$out"
-            '';
-
-        level3AdmissionSmokeCheck =
-          pkgs.runCommand "parser-ir-level3-admission-smoke-check"
-            {
-              nativeBuildInputs = [
-                pkgs.bash
-                pkgs.jq
-                pkgs.python3
-                pkgs.ripgrep
-              ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
-
-              export TMPDIR="$work_dir/tmp"
-              mkdir -p "$TMPDIR"
-              export HOME="$work_dir/home"
-              mkdir -p "$HOME"
-
-              bash tests/parser-ir-level3-admission-smoke.sh
-              touch "$out"
-            '';
-
-        plainProseSourceDeltaSmokeCheck =
-          pkgs.runCommand "parser-ir-plain-prose-source-delta-smoke-check"
-            {
-              nativeBuildInputs = [
-                pkgs.bash
-                pkgs.jq
-                pkgs.python3
-                pkgs.ripgrep
-              ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
-
-              export TMPDIR="$work_dir/tmp"
-              mkdir -p "$TMPDIR"
-              export HOME="$work_dir/home"
-              mkdir -p "$HOME"
-
-              bash tests/parser-ir-plain-prose-source-delta-smoke.sh
-              touch "$out"
-            '';
+        publicationBundleBatchSmokeCheck = mkSmokeCheck {
+          name = "parser-ir-publication-bundle-batch-smoke-check";
+          testScript = "tests/parser-ir-publication-bundle-batch-smoke.sh";
+          nativeBuildInputs = [
+            pkgs.jq
+            pkgs.python3
+            pkgs.ripgrep
+          ];
+        };
 
         taxonomyDriftCheck =
           pkgs.runCommand "taxonomy-drift-check"
@@ -988,56 +987,40 @@
               '';
             };
 
-        abAatToParserIrCheck =
-          pkgs.runCommand "ab-aat-to-parser-ir-smoke-check"
-            {
-              nativeBuildInputs = [
-                pkgs.babashka
-                pkgs.clojure
-                pkgs.jq
-                pythonWithAatSchemaDeps
-              ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
+        abAatToParserIrCheck = mkSmokeCheck {
+          name = "ab-aat-to-parser-ir-smoke-check";
+          testScript = "tests/aat-to-parser-ir-cli-smoke.sh";
+          nativeBuildInputs = [
+            pkgs.babashka
+            pkgs.clojure
+            pkgs.jq
+            pythonWithAatSchemaDeps
+          ];
+          extraEnv = {
+            AB_ABC_ROOT = "${source}/data/abc-schemas";
+            AB_AAT_TO_PARSER_IR_BIN = "${abAatToParserIr}/bin/ab-aat-to-parser-ir";
+          };
+        };
 
-              export TMPDIR="$work_dir/tmp"
-              mkdir -p "$TMPDIR"
-              export HOME="$work_dir/home"
-              mkdir -p "$HOME"
-              export AB_ABC_ROOT="${source}/data/abc-schemas"
-              export AB_AAT_TO_PARSER_IR_BIN="${abAatToParserIr}/bin/ab-aat-to-parser-ir"
-
-              bash tests/aat-to-parser-ir-cli-smoke.sh
-              touch "$out"
-            '';
-
-        aozoraAdapterSmokeCheck =
-          pkgs.runCommand "aozora-adapter-smoke-check"
-            {
-              nativeBuildInputs = [
-                rustToolchain
-                pkgs.bash
-                pkgs.jq
-                pkgs.python3
-                pkgs.ripgrep
-                pkgs.python3Packages.jsonschema
-              ];
-            }
-            ''
-              work_dir="$TMPDIR/work"
-              cp -R ${source} "$work_dir"
-              chmod -R u+w "$work_dir"
-              export AB_AOZORA_BIN="${referenceAozora}/bin/aozora"
-              cargo --config "source.crates-io.replace-with='vendored-sources'" \
-                --config "source.vendored-sources.directory='${aozoraCargoDeps}'" \
-                build --manifest-path "$work_dir/adapters/aozora/Cargo.toml" --release --offline
-              bash "$work_dir/tests/aozora-adapter-smoke.sh"
-              touch "$out"
-            '';
+        aozoraAdapterSmokeCheck = mkSmokeCheck {
+          name = "aozora-adapter-smoke-check";
+          testScript = "tests/aozora-adapter-smoke.sh";
+          nativeBuildInputs = [
+            rustToolchain
+            pkgs.jq
+            pkgs.python3
+            pkgs.ripgrep
+            pkgs.python3Packages.jsonschema
+          ];
+          extraEnv = {
+            AB_AOZORA_BIN = "${referenceAozora}/bin/aozora";
+          };
+          extraPreScript = ''
+            cargo --config "source.crates-io.replace-with='vendored-sources'" \
+              --config "source.vendored-sources.directory='${aozoraCargoDeps}'" \
+              build --manifest-path "$work_dir/source/adapters/aozora/Cargo.toml" --release --offline
+          '';
+        };
 
         aozoraNotationSpecComparatorSmokeCheck =
           pkgs.runCommand "aozora-notation-spec-comparator-smoke-check"
@@ -1171,6 +1154,8 @@
           taxonomy-drift = taxonomyDriftCheck;
           parser-ir-level3-admission-smoke = level3AdmissionSmokeCheck;
           parser-ir-plain-prose-source-delta-smoke = plainProseSourceDeltaSmokeCheck;
+          parser-ir-publication-bundle-smoke = publicationBundleSmokeCheck;
+          parser-ir-publication-bundle-batch-smoke = publicationBundleBatchSmokeCheck;
           aat-to-parser-ir-smoke = abAatToParserIrCheck;
           source-inventory-smoke = sourceInventorySmokeCheck;
           source-representability-gate = sourceRepresentabilityGateCheck;

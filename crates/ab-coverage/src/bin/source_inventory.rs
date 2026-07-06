@@ -7,10 +7,10 @@ use std::{
 
 use ab_coverage::{
     matrix::{CoverageMatrix, RepresentabilityStatus, Row},
-    source_corpus::{SourceIndexEntry, load_index_entries, read_source_work},
-    source_inventory::{UnknownMarkerExample, inventory_document, patterns_from_rows},
+    source_corpus::{load_index_entries, read_source_work, SourceIndexEntry},
+    source_inventory::{inventory_document, patterns_from_rows, UnknownMarkerExample},
 };
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use clap::Parser;
 use rayon::prelude::*;
 use regex::Regex;
@@ -18,6 +18,7 @@ use serde::{Deserialize, Serialize};
 
 const UNKNOWN_CLASS_OUTPUT_LIMIT: usize = 1000;
 const UNKNOWN_CLASS_REPORT_LIMIT: usize = 50;
+const SOURCE_REGION_SCHEMA_VERSION: &str = "aozora-source-region-coverage-v1";
 
 #[derive(Parser, Debug)]
 #[command(version, about = "Source-authority Aozora marker inventory.")]
@@ -48,6 +49,7 @@ struct Cli {
 
 #[derive(Debug, Default, Serialize)]
 struct InventoryOutput {
+    schema_version: String,
     gate_status: String,
     works_scanned: u64,
     works_failed: u64,
@@ -62,6 +64,7 @@ struct InventoryOutput {
     unknown_examples: Vec<UnknownMarkerExample>,
     decode_failures: Vec<DecodeFailure>,
     representability: RepresentabilityOutput,
+    source_region_coverage: SourceRegionCoverageOutput,
     strict_errors: Vec<String>,
     inputs: Inputs,
 }
@@ -110,6 +113,29 @@ struct RepresentabilityOutput {
     needs_research_occurrences: u64,
 }
 
+#[derive(Debug, Default, Serialize)]
+struct SourceRegionCoverageOutput {
+    body_typed_occurrences: u64,
+    body_raw_preserved_occurrences: u64,
+    source_apparatus_occurrences: u64,
+    front_matter_occurrences: u64,
+    back_matter_occurrences: u64,
+    body_end_boundary_occurrences: u64,
+    terminal_provenance_occurrences: u64,
+    colophon_metadata_occurrences: u64,
+    letter_address_origin_occurrences: u64,
+    malformed_source_occurrences: u64,
+    unsupported_body_markup_occurrences: u64,
+    unknown_region_occurrences: u64,
+    unknown_unreviewed_occurrences: u64,
+}
+
+#[derive(Debug, Default)]
+struct SourceRegionTextSummary {
+    colophon_metadata_occurrences: u64,
+    letter_address_origin_occurrences: u64,
+}
+
 #[derive(Debug, Deserialize)]
 struct AllowlistFile {
     #[serde(default)]
@@ -137,6 +163,7 @@ enum WorkInventoryResult {
     Scanned {
         work_id: String,
         summary: ab_coverage::source_inventory::SourceInventorySummary,
+        source_region_text: SourceRegionTextSummary,
     },
     Failed {
         work_id: String,
@@ -166,6 +193,7 @@ fn main() -> Result<()> {
     let work_entries = load_work_entries(cli.work_ids.as_deref(), &index_entries)?;
 
     let mut output = InventoryOutput {
+        schema_version: SOURCE_REGION_SCHEMA_VERSION.to_owned(),
         inputs: Inputs {
             matrix: cli.matrix.display().to_string(),
             index: cli.index.display().to_string(),
@@ -189,9 +217,18 @@ fn main() -> Result<()> {
 
     for result in work_results {
         match result {
-            WorkInventoryResult::Scanned { work_id, summary } => {
+            WorkInventoryResult::Scanned {
+                work_id,
+                summary,
+                source_region_text,
+            } => {
                 output.works_scanned += 1;
                 output.markers_total += summary.markers_total;
+                observe_source_region_text(&mut output.source_region_coverage, source_region_text);
+                observe_source_region_events(
+                    &mut output.source_region_coverage,
+                    &summary.source_region_events,
+                );
                 for (row_id, count) in summary.row_counts {
                     let row = output.rows.entry(row_id).or_default();
                     row.occurrences += count.occurrences;
@@ -209,10 +246,13 @@ fn main() -> Result<()> {
                         observe_unknown_class(&mut unknown_classes, &work_id, &example, true);
                         observe_allowlisted_representability(
                             &mut output.representability,
+                            &mut output.source_region_coverage,
                             &rule.rule,
                         );
                     } else {
                         output.unallowlisted_unknown_markers_total += 1;
+                        output.source_region_coverage.unknown_region_occurrences += 1;
+                        output.source_region_coverage.unknown_unreviewed_occurrences += 1;
                         observe_unknown_class(&mut unknown_classes, &work_id, &example, false);
                         if output.unknown_examples.len() < 100 {
                             output.unknown_examples.push(example);
@@ -290,6 +330,7 @@ fn scan_work(
         Ok(work) => WorkInventoryResult::Scanned {
             work_id: entry.work_id.clone(),
             summary: inventory_document(&entry.work_id, &work.decoded.text, patterns),
+            source_region_text: source_region_text_summary(&work.decoded.text),
         },
         Err(err) => WorkInventoryResult::Failed {
             work_id: entry.work_id.clone(),
@@ -352,7 +393,16 @@ fn load_allowlist(path: Option<&Path>) -> Result<Vec<CompiledAllowRule>> {
             }
             if !matches!(
                 rule.scope.as_str(),
-                "out_of_body" | "malformed_noise" | "unsupported_v1"
+                "out_of_body"
+                    | "malformed_noise"
+                    | "unsupported_v1"
+                    | "front_matter_legend"
+                    | "notation_placeholder"
+                    | "body_end_boundary"
+                    | "terminal_provenance"
+                    | "colophon_metadata"
+                    | "back_matter_provenance"
+                    | "malformed_source"
             ) {
                 bail!(
                     "allowlist rule {} has invalid scope {}",
@@ -373,6 +423,53 @@ fn load_allowlist(path: Option<&Path>) -> Result<Vec<CompiledAllowRule>> {
             })
         })
         .collect()
+}
+
+fn source_region_text_summary(text: &str) -> SourceRegionTextSummary {
+    SourceRegionTextSummary {
+        colophon_metadata_occurrences: text
+            .lines()
+            .filter(|line| is_colophon_metadata_line(line.trim_start()))
+            .count() as u64,
+        letter_address_origin_occurrences: text
+            .lines()
+            .filter(|line| is_letter_address_origin_line(line.trim_start()))
+            .count() as u64,
+    }
+}
+
+fn is_colophon_metadata_line(line: &str) -> bool {
+    const COLOPHON_PREFIXES: &[&str] = &[
+        "底本：",
+        "底本:",
+        "底本の親本：",
+        "底本の親本:",
+        "親本：",
+        "親本:",
+        "初出：",
+        "初出:",
+        "入力：",
+        "入力:",
+        "校正：",
+        "校正:",
+        "校閲：",
+        "校閲:",
+        "作成日：",
+        "作成日:",
+        "修正：",
+        "修正:",
+        "ファイル作成：",
+        "ファイル作成:",
+        "青空文庫作成ファイル：",
+        "青空文庫作成ファイル:",
+    ];
+    COLOPHON_PREFIXES
+        .iter()
+        .any(|prefix| line.starts_with(prefix))
+}
+
+fn is_letter_address_origin_line(line: &str) -> bool {
+    line.starts_with("宛先") || line.starts_with("発信地")
 }
 
 fn compile_optional_regex(
@@ -405,14 +502,71 @@ fn matching_allowlist_rule<'a>(
 
 fn observe_allowlisted_representability(
     representability: &mut RepresentabilityOutput,
+    source_region_coverage: &mut SourceRegionCoverageOutput,
     rule: &AllowRule,
 ) {
     match rule.scope.as_str() {
-        "out_of_body" => representability.out_of_body_occurrences += 1,
-        "unsupported_v1" => representability.raw_preserved_occurrences += 1,
-        "malformed_noise" => representability.malformed_noise_occurrences += 1,
+        "out_of_body" => {
+            representability.out_of_body_occurrences += 1;
+        }
+        "unsupported_v1" => {
+            representability.raw_preserved_occurrences += 1;
+            source_region_coverage.body_raw_preserved_occurrences += 1;
+        }
+        "malformed_noise" | "front_matter_legend" => {
+            representability.malformed_noise_occurrences += 1;
+            source_region_coverage.source_apparatus_occurrences += 1;
+            source_region_coverage.front_matter_occurrences += 1;
+        }
+        "notation_placeholder" => {
+            representability.out_of_body_occurrences += 1;
+            source_region_coverage.front_matter_occurrences += 1;
+        }
+        "body_end_boundary" => {
+            representability.out_of_body_occurrences += 1;
+            source_region_coverage.body_end_boundary_occurrences += 1;
+            source_region_coverage.back_matter_occurrences += 1;
+        }
+        "terminal_provenance" => {
+            representability.out_of_body_occurrences += 1;
+            source_region_coverage.back_matter_occurrences += 1;
+            source_region_coverage.terminal_provenance_occurrences += 1;
+        }
+        "back_matter_provenance" => {
+            representability.out_of_body_occurrences += 1;
+            source_region_coverage.back_matter_occurrences += 1;
+        }
+        "colophon_metadata" => {
+            representability.out_of_body_occurrences += 1;
+            source_region_coverage.back_matter_occurrences += 1;
+            source_region_coverage.colophon_metadata_occurrences += 1;
+        }
+        "malformed_source" => {
+            representability.malformed_noise_occurrences += 1;
+            source_region_coverage.malformed_source_occurrences += 1;
+        }
         _ => {}
     }
+}
+
+fn observe_source_region_text(
+    source_region_coverage: &mut SourceRegionCoverageOutput,
+    summary: SourceRegionTextSummary,
+) {
+    source_region_coverage.colophon_metadata_occurrences += summary.colophon_metadata_occurrences;
+    source_region_coverage.back_matter_occurrences += summary.colophon_metadata_occurrences;
+    source_region_coverage.letter_address_origin_occurrences +=
+        summary.letter_address_origin_occurrences;
+    source_region_coverage.back_matter_occurrences += summary.letter_address_origin_occurrences;
+}
+
+fn observe_source_region_events(
+    source_region_coverage: &mut SourceRegionCoverageOutput,
+    summary: &ab_coverage::source_inventory::SourceRegionEventSummary,
+) {
+    source_region_coverage.terminal_provenance_occurrences +=
+        summary.terminal_provenance_occurrences;
+    source_region_coverage.back_matter_occurrences += summary.terminal_provenance_occurrences;
 }
 
 fn observe_unknown_class(
@@ -492,18 +646,26 @@ fn observe_row_representability(
                     ));
                 }
                 output.representability.typed_occurrences += row_output.occurrences;
+                output.source_region_coverage.body_typed_occurrences += row_output.occurrences;
             }
             RepresentabilityStatus::RawPreserved => {
                 output.representability.raw_preserved_occurrences += row_output.occurrences;
+                output.source_region_coverage.body_raw_preserved_occurrences +=
+                    row_output.occurrences;
             }
             RepresentabilityStatus::OutOfBody => {
                 output.representability.out_of_body_occurrences += row_output.occurrences;
             }
             RepresentabilityStatus::Unsupported => {
                 output.representability.unsupported_occurrences += row_output.occurrences;
+                output
+                    .source_region_coverage
+                    .unsupported_body_markup_occurrences += row_output.occurrences;
             }
             RepresentabilityStatus::NeedsResearch => {
                 output.representability.needs_research_occurrences += row_output.occurrences;
+                output.source_region_coverage.unknown_unreviewed_occurrences +=
+                    row_output.occurrences;
                 strict_errors.push(format!(
                     "source inventory row {row_id} has representability.status = needs_research"
                 ));
@@ -530,6 +692,12 @@ fn source_authority_gate_status(output: &InventoryOutput) -> &'static str {
     if output.works_failed == 0
         && output.unallowlisted_unknown_markers_total == 0
         && output.representability.needs_research_occurrences == 0
+        && output.source_region_coverage.unknown_region_occurrences == 0
+        && output.source_region_coverage.unknown_unreviewed_occurrences == 0
+        && output
+            .source_region_coverage
+            .unsupported_body_markup_occurrences
+            == 0
         && output.strict_errors.is_empty()
     {
         "SOURCE_AUTHORITY_GATE_PASS"
@@ -617,6 +785,67 @@ fn write_report(path: &Path, output: &InventoryOutput) -> Result<()> {
     report.push_str(&format!(
         "- needs_research_occurrences: {}\n",
         output.representability.needs_research_occurrences
+    ));
+
+    report.push_str("\n## Source Region Coverage\n\n");
+    report.push_str(&format!("- schema_version: `{}`\n", output.schema_version));
+    report.push_str(&format!(
+        "- body_typed_occurrences: {}\n",
+        output.source_region_coverage.body_typed_occurrences
+    ));
+    report.push_str(&format!(
+        "- body_raw_preserved_occurrences: {}\n",
+        output.source_region_coverage.body_raw_preserved_occurrences
+    ));
+    report.push_str(&format!(
+        "- source_apparatus_occurrences: {}\n",
+        output.source_region_coverage.source_apparatus_occurrences
+    ));
+    report.push_str(&format!(
+        "- front_matter_occurrences: {}\n",
+        output.source_region_coverage.front_matter_occurrences
+    ));
+    report.push_str(&format!(
+        "- back_matter_occurrences: {}\n",
+        output.source_region_coverage.back_matter_occurrences
+    ));
+    report.push_str(&format!(
+        "- body_end_boundary_occurrences: {}\n",
+        output.source_region_coverage.body_end_boundary_occurrences
+    ));
+    report.push_str(&format!(
+        "- terminal_provenance_occurrences: {}\n",
+        output
+            .source_region_coverage
+            .terminal_provenance_occurrences
+    ));
+    report.push_str(&format!(
+        "- colophon_metadata_occurrences: {}\n",
+        output.source_region_coverage.colophon_metadata_occurrences
+    ));
+    report.push_str(&format!(
+        "- letter_address_origin_occurrences: {}\n",
+        output
+            .source_region_coverage
+            .letter_address_origin_occurrences
+    ));
+    report.push_str(&format!(
+        "- malformed_source_occurrences: {}\n",
+        output.source_region_coverage.malformed_source_occurrences
+    ));
+    report.push_str(&format!(
+        "- unsupported_body_markup_occurrences: {}\n",
+        output
+            .source_region_coverage
+            .unsupported_body_markup_occurrences
+    ));
+    report.push_str(&format!(
+        "- unknown_region_occurrences: {}\n",
+        output.source_region_coverage.unknown_region_occurrences
+    ));
+    report.push_str(&format!(
+        "- unknown_unreviewed_occurrences: {}\n",
+        output.source_region_coverage.unknown_unreviewed_occurrences
     ));
 
     report.push_str("\n## Rows\n\n");

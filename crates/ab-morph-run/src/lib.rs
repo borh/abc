@@ -1,5 +1,6 @@
 mod auto_jobs;
 mod compact;
+mod import_aozora;
 mod nway;
 mod options;
 mod output;

@@ -1476,6 +1476,18 @@ git add docs/superpowers && git commit -m "docs: record Phase 3 projection_spans
 
 ---
 
+## Validation record (2026-07-07, Task 7)
+
+- **Run:** `full-2026-07-06_160136-jobs8` (Full profile, canonical 4-analyzer set, jobs=8, monorepo checkout, flake-native dictionaries). GNU time: **wall 1:22:32** (includes the cold `--release` workspace build — the binary had not been built in release mode in this checkout; analysis-only wall is therefore lower but was not separable), **peak RSS 35,972,124 kB ≈ 36.0 GB**, CPU 708%. Zero earlyoom events (MemAvailable never dropped below ~60%).
+- **P4 vs baselines:** peak RSS 36.0 GB vs 65.6 GB (jobs=19, pre-P1–P3) — a 45% reduction, though job count differs; the jobs=8 pre-fix peak was never measured, so treat the delta as indicative, not controlled. Wall not directly comparable (includes compile; prior 59:43 at jobs=19 and 42:00 at jobs=10 did not).
+- **Parity gate: PASSED exactly.** All 9 merged v1 data tables row-count-identical to canonical `full-2026-07-05_164518-jobs0` (sources 17,885; analyses 71,540; morphemes 662,984,226; morpheme_features 12,575,103,913; nway_regions 161,142,784; nway_region_analyzers 644,571,136; nway_feature_diffs 23,356,986,673; feature_pattern_counts 8,394,223; errors 0). Per-analyzer analysis counts identical (17,885 × 4).
+- **v2 metadata:** `runs.schema_version = 2`, error_count 0.
+- **projection_spans:** 10,832,338 rows (part directory, as the plan predicted for merge-compaction-exempt tables); 17,811 distinct sources — the 74 spanless sources are exactly the corpus's `source_chars = 0` sources; 3,524,294 ruby-base spans; 0 gaiji spans (this adapter emits image-fallback gaiji with `unresolved_reason`, which project nothing — consistent with the byte-identical projection); 0 note spans (structurally dormant, as designed).
+- **Summarizer end-to-end:** `summarize-warehouse-interesting --limit 5` on the v2 run succeeds (see `.superpowers/sdd/phase3-summarize-check.json` evidence noted in the session ledger).
+- **`aozora_works.parquet` carry-over:** the old canonical run carried item 1's post-hoc imported sidecar (version-neutral, no run_id column, provenance in `metadata_record_schema_hash`/`retrieved_at`); copied byte-identically into the new run before the swap (17,883 rows / 17,596 works). Summarizer presence probe verified on the new run: `rarity_basis: work`.
+- **Canonical swap:** executed after the gates above — `full-2026-07-05_164518-jobs0` removed; **`full-2026-07-06_160136-jobs8` is canonical**.
+- **Final whole-branch review:** no Critical/Important code findings after fixes (parallel-run projection_spans assertion added pre-run); follow-up recorded: `views.sql` flat `read_parquet` paths don't cover part-directory tables (pre-existing pattern affecting nway_regions/nway_feature_diffs/projection_spans alike).
+
 ## Self-Review Notes
 
 - **Spec coverage:** §Part 1 API/emission/remap/ortho → Task 1; §Part 2 schema/writer/SQL/version-bump/profile/emission-point → Tasks 2–4; §Part 3 P1 → Task 4, P2 → Task 5, P3 → Task 6, P4 → Task 7; §Error Behavior version gate → Task 3, absent-sidecar probe → Task 2 strip test + Task 4 triage test; §Test Plan items 1–3 → Task 1, 4 → Tasks 2/4, 5 → Task 3, 6 → Tasks 5/6, 7 → Task 4; §Validation → Task 7; §Deferred → Task 7 Step 5 handoff note.

@@ -26,6 +26,22 @@ Three work items selected by the owner, in priority order. Each is independently
 - Owner-in-the-loop part: labeling the top-50 with verdicts (`bug`/`expected-policy`/`expected-dictionary`/`corpus-artifact`/`noise`/`unclear`) to compute p@50 and nDCG@50. Design the label-collection format up front (TSV the owner fills?) so their time is spent once.
 - Best ordered AFTER item 1 (work-based rarity changes the rarity signal, which reshuffles rankings — calibrating before it locks against data known to be inflated). If item 1 stalls on ABC export availability, calibrate with `rarity_basis="source"` and record it in the comparability block honestly.
 
+**Status (2026-07-07): DONE** — implemented in the soranoha monorepo
+(`ab-validator/`), branch `feat/projection-spans`; spec
+`docs/superpowers/specs/2026-07-06-projection-spans-design.md`, plan + full
+validation record `docs/superpowers/plans/2026-07-06-projection-spans.md`.
+Canonical warehouse is now `full-2026-07-06_160136-jobs8` (schema_version 2,
+projection_spans 10.83M rows). The cycle also landed memory fixes P1–P3
+(drop AAT DOM post-projection; no ortho-off text clone; flat boundary
+vectors): peak RSS 36.0 GB at jobs=8 vs the 65.6 GB jobs=19 baseline.
+Carried-forward perf items for a future window: mmap-backed dictionary
+loading (~13.1 GB fixed residency — the largest remaining term),
+§3.15 intra-worker parallelism (wall-clock lever), batch-size sweeps,
+auto-jobs constant re-fit with the new P1–P3 numbers, and a views.sql fix
+for part-directory tables (flat `read_parquet` paths miss them). Next in
+the pipeline: Phase 4 ruby oracle (`nway_region_oracle_evidence`), which
+this bridge unlocks.
+
 ## Item 3: Phase 3 — `projection_spans` + ruby oracle groundwork
 
 **Goal:** the minimal structural bridge sidecar: extend `ab-plaintext`'s `visible_text_projection` (crates/ab-plaintext/src/aat.rs) to optionally emit projected-char-offset → AAT-inline-node mappings; write `projection_spans.parquet` during the analysis pass; schema in `ab-warehouse/src/schema.rs`. This unlocks the ruby oracle (spec §Aozora Oracles — ABC measured ruby.direction as the single largest divergence category, ~1.76M occurrences), which is v2's highest-leverage signal.

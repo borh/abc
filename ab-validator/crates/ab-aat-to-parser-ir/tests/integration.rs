@@ -27,114 +27,6 @@ fn schemas_and_mapping() -> (SchemaSet, MappingDocument) {
     (schemas, mapping)
 }
 
-fn schemas_and_mapping_accepting_orthographic_annotations() -> (SchemaSet, MappingDocument) {
-    let (mut schemas, mut mapping) = schemas_and_mapping();
-    let props = schemas
-        .parser_ir_schema
-        .get_mut("properties")
-        .and_then(Value::as_object_mut)
-        .expect("parser-IR schema has properties object");
-    props.insert(
-        "orthographic_annotations".to_owned(),
-        json!({
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-                "work_id",
-                "work_content_hash",
-                "coordinate_system",
-                "detector_id",
-                "annotations"
-            ],
-            "properties": {
-                "work_id": { "type": "string" },
-                "work_content_hash": {
-                    "type": "string",
-                    "pattern": "^sha256:[0-9a-f]{64}$"
-                },
-                "coordinate_system": { "const": "decoded_utf8" },
-                "detector_id": {},
-                "annotations": { "type": "array" }
-            }
-        }),
-    );
-    mapping.target_parser_ir_schema_hash = schema_hash(&schemas.parser_ir_schema).unwrap();
-    (schemas, mapping)
-}
-
-fn schemas_and_mapping_accepting_sentences_and_orthographic_annotations()
--> (SchemaSet, MappingDocument) {
-    let (mut schemas, mut mapping) = schemas_and_mapping_accepting_orthographic_annotations();
-    let props = schemas
-        .parser_ir_schema
-        .get_mut("properties")
-        .and_then(Value::as_object_mut)
-        .expect("parser-IR schema has properties object");
-    props.insert(
-        "sentence_segmentation".to_owned(),
-        json!({
-            "type": "object",
-            "additionalProperties": false,
-            "required": ["schema_version", "splitter_id", "coordinate_system", "coverage"],
-            "properties": {
-                "schema_version": { "const": "sentence-segmentation-v1" },
-                "splitter_id": { "const": "ab-plaintext-japanese-v1" },
-                "coordinate_system": { "const": "decoded_utf8" },
-                "coverage": { "const": "body-paragraphs" }
-            }
-        }),
-    );
-    props.insert(
-        "sentences".to_owned(),
-        json!({
-            "type": "array",
-            "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": [
-                    "id",
-                    "paragraph_id",
-                    "span",
-                    "node_range",
-                    "tags",
-                    "orthographic_annotation_indices"
-                ],
-                "properties": {
-                    "id": { "type": "string" },
-                    "paragraph_id": { "type": "string" },
-                    "span": {
-                        "type": "object",
-                        "required": ["start", "end", "coordinate_system"],
-                        "properties": {
-                            "start": { "type": "integer" },
-                            "end": { "type": "integer" },
-                            "coordinate_system": { "const": "decoded_utf8" }
-                        }
-                    },
-                    "node_range": {
-                        "type": "object",
-                        "required": ["start", "end"],
-                        "properties": {
-                            "start": { "type": "integer" },
-                            "end": { "type": "integer" }
-                        }
-                    },
-                    "tags": {
-                        "type": "array",
-                        "items": { "enum": ["orthographic-katakana"] }
-                    },
-                    "orthographic_annotation_indices": {
-                        "type": "array",
-                        "items": { "type": "integer" }
-                    }
-                }
-            }
-        }),
-    );
-    mapping.target_parser_ir_schema_hash = schema_hash(&schemas.parser_ir_schema).unwrap();
-    (schemas, mapping)
-}
-
 fn include_fixture_json(name: &str) -> serde_json::Value {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
@@ -354,7 +246,7 @@ fn mapping_preflight_rejects_stale_gaiji_pointers() {
 
 #[test]
 fn orthographic_annotations_inject_into_schema_valid_parser_ir() {
-    let (schemas, mapping) = schemas_and_mapping_accepting_orthographic_annotations();
+    let (schemas, mapping) = schemas_and_mapping();
     let bundle = ortho_fixture_bundle();
     let expected = serde_json::to_value(&bundle).unwrap();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
@@ -377,7 +269,7 @@ fn orthographic_annotations_inject_into_schema_valid_parser_ir() {
 
 #[test]
 fn parser_ir_emits_split_sentence_rows_and_ortho_tags() {
-    let (schemas, mapping) = schemas_and_mapping_accepting_sentences_and_orthographic_annotations();
+    let (schemas, mapping) = schemas_and_mapping();
     let bundle = ortho_fixture_bundle();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat: include_fixture_json("sentence-segmentation-input.aat.json"),
@@ -440,7 +332,7 @@ fn parser_ir_emits_split_sentence_rows_and_ortho_tags() {
 }
 
 #[test]
-fn checked_in_schema_accepts_orthographic_annotations() {
+fn checked_in_schema_accepts_sentence_segmentation_and_ortho_annotations() {
     let (schemas, mapping) = schemas_and_mapping();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat: ortho_fixture_aat(),
@@ -453,6 +345,8 @@ fn checked_in_schema_accepts_orthographic_annotations() {
     })
     .unwrap();
 
+    assert!(output.parser_ir.get("sentence_segmentation").is_some());
+    assert!(output.parser_ir.get("sentences").is_some());
     assert!(output.parser_ir.get("orthographic_annotations").is_some());
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }

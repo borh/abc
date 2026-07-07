@@ -1157,9 +1157,10 @@ impl WarehouseWorkQueue {
                 .cmp(right_size)
                 .then_with(|| left_path.cmp(right_path))
         });
+        // Large docs biggest-first: front-loading the makespan-dominating inputs (P1).
         large.sort_by(|(left_path, left_size), (right_path, right_size)| {
-            left_size
-                .cmp(right_size)
+            right_size
+                .cmp(left_size)
                 .then_with(|| left_path.cmp(right_path))
         });
         Self {
@@ -1171,7 +1172,29 @@ impl WarehouseWorkQueue {
         }
     }
 
+    /// Pop one large doc as its own batch if a large lane is free. Caller has already
+    /// checked nothing; this enforces the `large_lanes` cap and increments the counter.
+    fn pop_large_batch(&mut self) -> Option<WarehouseWorkBatch> {
+        if self.active_large_batches >= self.large_lanes {
+            return None;
+        }
+        let input = self.large.pop_front()?;
+        let shard_index = self.next_shard_index;
+        self.next_shard_index += 1;
+        self.active_large_batches += 1;
+        Some(WarehouseWorkBatch {
+            shard_index,
+            inputs: vec![input],
+            is_large: true,
+        })
+    }
+
     pub(crate) fn take_batch(&mut self) -> Option<WarehouseWorkBatch> {
+        // P1: front-load large docs (biggest-first) up to the memory-bounded lane count
+        // so they overlap the abundant regular work instead of forming an idle tail.
+        if let Some(batch) = self.pop_large_batch() {
+            return Some(batch);
+        }
         if !self.regular.is_empty() {
             let shard_index = self.next_shard_index;
             self.next_shard_index += 1;
@@ -1188,27 +1211,92 @@ impl WarehouseWorkQueue {
                 is_large: false,
             });
         }
-
-        if self.active_large_batches < self.large_lanes
-            && let Some(input) = self.large.pop_front()
-        {
-            let shard_index = self.next_shard_index;
-            self.next_shard_index += 1;
-            self.active_large_batches += 1;
-            return Some(WarehouseWorkBatch {
-                shard_index,
-                inputs: vec![input],
-                is_large: true,
-            });
-        }
-
-        None
+        // Regular exhausted: keep draining large within the lane cap (the short tail).
+        self.pop_large_batch()
     }
 
     pub(crate) fn complete_batch(&mut self, is_large: bool) {
         if is_large {
             self.active_large_batches = self.active_large_batches.saturating_sub(1);
         }
+    }
+}
+
+#[cfg(test)]
+mod work_queue_tests {
+    use super::WarehouseWorkQueue;
+    use crate::LARGE_INPUT_THRESHOLD_BYTES;
+    use std::path::PathBuf;
+
+    fn tmp_file(dir: &std::path::Path, name: &str, size: u64) -> PathBuf {
+        let p = dir.join(name);
+        std::fs::write(&p, vec![b'x'; size as usize]).unwrap();
+        p
+    }
+
+    #[test]
+    fn front_loads_largest_first_within_lane_cap() {
+        let dir = std::env::temp_dir().join(format!("wq-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let big = LARGE_INPUT_THRESHOLD_BYTES;
+        let l30 = tmp_file(&dir, "l30", big + 30);
+        let l20 = tmp_file(&dir, "l20", big + 20);
+        let l10 = tmp_file(&dir, "l10", big + 10);
+        let mut regulars = Vec::new();
+        for i in 0..5 {
+            regulars.push(tmp_file(&dir, &format!("r{i}"), 100));
+        }
+        let mut inputs = vec![l10.clone(), l30.clone(), l20.clone()];
+        inputs.extend(regulars.clone());
+
+        let mut q = WarehouseWorkQueue::new(inputs, 2); // large_lanes = 2
+
+        // First two batches are the two BIGGEST large docs, before regular is drained.
+        let b1 = q.take_batch().unwrap();
+        assert!(b1.is_large);
+        assert_eq!(b1.inputs, vec![l30.clone()]);
+        let b2 = q.take_batch().unwrap();
+        assert!(b2.is_large);
+        assert_eq!(b2.inputs, vec![l20.clone()]);
+        // Lane cap hit (2 active): next batch is REGULAR, not the 10-byte-over large doc.
+        let b3 = q.take_batch().unwrap();
+        assert!(!b3.is_large);
+        // Freeing a large lane lets the last large doc dispatch.
+        q.complete_batch(true);
+        let mut saw_l10 = false;
+        while let Some(b) = q.take_batch() {
+            if b.is_large {
+                assert_eq!(b.inputs, vec![l10.clone()]);
+                saw_l10 = true;
+            }
+            if b.is_large {
+                q.complete_batch(true);
+            }
+        }
+        assert!(saw_l10, "the last large doc must eventually dispatch");
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn covers_every_input_exactly_once() {
+        let dir = std::env::temp_dir().join(format!("wq2-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let big = LARGE_INPUT_THRESHOLD_BYTES;
+        let mut inputs = vec![tmp_file(&dir, "l1", big + 1), tmp_file(&dir, "l2", big + 2)];
+        for i in 0..70 {
+            inputs.push(tmp_file(&dir, &format!("r{i}"), 50));
+        }
+        let expected = inputs.len();
+        let mut q = WarehouseWorkQueue::new(inputs, 1);
+        let mut seen = 0;
+        while let Some(b) = q.take_batch() {
+            seen += b.inputs.len();
+            if b.is_large {
+                q.complete_batch(true);
+            }
+        }
+        assert_eq!(seen, expected, "every input returned exactly once");
+        let _ = std::fs::remove_dir_all(dir);
     }
 }
 

@@ -1826,8 +1826,10 @@ mod tests {
     }
 
     #[test]
-    fn warehouse_work_queue_batches_regular_work_before_large_work() {
-        let dir = temp_dir("dynamic-regular-first");
+    fn warehouse_work_queue_front_loads_large_work_before_regular() {
+        // P1: large docs dispatch first (within the lane cap) so they overlap the
+        // abundant regular work instead of forming an idle tail at the end of the run.
+        let dir = temp_dir("dynamic-large-first");
         fs::create_dir_all(&dir).unwrap();
         let inputs = [8 * 1024 * 1024usize, 12, 11]
             .into_iter()
@@ -1840,12 +1842,12 @@ mod tests {
             .collect::<Vec<_>>();
         let mut queue = WarehouseWorkQueue::new(inputs, 1);
 
-        let regular = queue.take_batch().unwrap();
         let large = queue.take_batch().unwrap();
+        let regular = queue.take_batch().unwrap();
 
+        assert!(large.is_large);
         assert!(!regular.is_large);
         assert_eq!(regular.inputs.len(), 2);
-        assert!(large.is_large);
         let _ = fs::remove_dir_all(dir);
     }
 

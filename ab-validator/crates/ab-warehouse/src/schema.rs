@@ -319,8 +319,8 @@ pub struct MorphemeFeatureRow {
     pub text_id: Arc<str>,
     pub analyzer_id: Arc<str>,
     pub morpheme_index: u64,
-    pub feature_key: String,
-    pub feature_value: Option<String>,
+    pub feature_key: Arc<str>,
+    pub feature_value: Option<Arc<str>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

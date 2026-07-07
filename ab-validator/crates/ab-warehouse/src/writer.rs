@@ -328,7 +328,7 @@ impl WarehouseWriter {
                 string_array(rows.iter().map(|row| row.text_id.as_ref())),
                 string_array(rows.iter().map(|row| row.analyzer_id.as_ref())),
                 u64_array(rows.iter().map(|row| row.morpheme_index)),
-                string_array(rows.iter().map(|row| row.feature_key.as_str())),
+                string_array(rows.iter().map(|row| row.feature_key.as_ref())),
                 nullable_string_array(rows.iter().map(|row| row.feature_value.as_deref())),
             ],
             &mut self.write_time,

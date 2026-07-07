@@ -24,6 +24,7 @@ SCHEMA_FILES = (
     "source-region-coverage.schema.json",
     "snapshot-index.schema.json",
     "tokenizer-profile.schema.json",
+    "token-output.schema.json",
 )
 
 

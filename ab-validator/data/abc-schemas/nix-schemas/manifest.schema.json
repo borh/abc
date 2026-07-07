@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/manifest.schema.json",
   "title": "ABC Artifact Manifest",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "type": "object",
   "required": [
     "manifest_schema_id",
@@ -123,7 +123,7 @@
       "additionalProperties": false,
       "required": ["role", "hash", "media_type"],
       "properties": {
-        "role": { "type": "string", "enum": ["warnings", "errors", "validation-result", "rdf-view", "index-entry", "mapping-divergence", "preservation", "source-region-coverage", "analysis-result"] },
+        "role": { "type": "string", "enum": ["warnings", "errors", "validation-result", "rdf-view", "index-entry", "mapping-divergence", "preservation", "source-region-coverage", "analysis-result", "token-stream"] },
         "hash": { "$ref": "#/$defs/hash" },
         "media_type": { "type": "string" },
         "path_hint": { "type": ["string", "null"] }

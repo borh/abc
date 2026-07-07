@@ -77,6 +77,52 @@
                   "notes" nil}]
     (is (nil? (schema/validation-errors manifest-schema manifest)))))
 
+(deftest manifest-schema-accepts-token-stream-sidecar-test
+  (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
+        token-output-schema-hash (manifest/schema-hash
+                                  "schemas/token-output.schema.json")
+        token-stream-hash (files/example-hash "09")
+        manifest {"manifest_schema_id" "https://w3id.org/abc/schemas/manifest.schema.json"
+                  "artifact_id" (files/example-hash "27")
+                  "artifact_kind" "tokenized"
+                  "validation_status" "passed"
+                  "manifest_identity_object" {"manifest_schema_hash" (manifest/schema-hash "schemas/manifest.schema.json")
+                                              "corpus_snapshot_hash" (files/example-hash "01")
+                                              "work_content_hash" (files/example-hash "02")
+                                              "metadata_record_hash" nil
+                                              "parser_build_hash" (files/example-hash "03")
+                                              "parser_config_hash" (files/example-hash "04")
+                                              "aat_parser_ir_mapping_hash" (files/example-hash "05")
+                                              "parser_ir_schema_hash" (files/example-hash "06")
+                                              "tei_profile_hash" nil
+                                              "tokenizer_build_hash" (files/example-hash "10")
+                                              "tokenizer_dictionary_hash" (files/example-hash "11")
+                                              "tokenizer_profile_hash" (files/example-hash "12")
+                                              "analysis_recipe_hash" nil
+                                              "output_format_spec_hash" token-output-schema-hash}
+                  "content" {"content_hash" token-stream-hash
+                             "media_type" "application/json"
+                             "byte_length" 10
+                             "path_hint" "token-stream.json"}
+                  "sidecars" [{"role" "token-stream"
+                               "hash" token-stream-hash
+                               "media_type" "application/json"
+                               "path_hint" "token-stream.json"}]
+                  "provenance" {"generated_at" "2026-07-07T00:00:00Z"
+                                "activity_id" "https://w3id.org/abc/activity/tokenize"
+                                "agent" "abc.tools.tokenize"
+                                "plan_hash" nil
+                                "used" [(files/example-hash "03")
+                                        (files/example-hash "12")]
+                                "was_derived_from" [(files/example-hash "03")]}
+                  "license" nil
+                  "signatures" []
+                  "superseded_by" nil
+                  "invalidated_at" nil
+                  "replacement_reason" nil
+                  "notes" nil}]
+    (is (nil? (schema/validation-errors manifest-schema manifest)))))
+
 (def ^:private old-mapping-hash
   "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03")
 

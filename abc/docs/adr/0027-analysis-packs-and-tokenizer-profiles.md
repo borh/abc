@@ -19,13 +19,16 @@ content-hash path are implemented as a pre-tokenization contract:
 `test/abc/tools/request_set_resolver_test.clj` cover profile label resolution
 to content hashes and registry-entry hashes.
 
-The manifest identity blocker is partially closed. Manifest schema v0.4.2 adds
-`tokenizer_profile_hash` to `manifest_identity_object`, and release validation
-now rejects successful tokenized manifests only when that coordinate is missing
-or null. ABC still cannot publish tokenized slices, tokenizer-backed stylometric
-analysis, or collection analysis packs as canonical snapshot artifacts until
-the remaining token-stream sidecar, token output schema, copied-field
-validation, and pack acceptance criteria below are implemented.
+The manifest identity and first token-stream schema blockers are partially
+closed. Manifest schema v0.4.2 added `tokenizer_profile_hash` to
+`manifest_identity_object`; manifest schema v0.4.3 adds the `token-stream`
+sidecar role; `schemas/token-output.schema.json` v0.1.0 defines the first
+accepted token-stream output contract. Release validation now rejects
+successful tokenized manifests only when the tokenizer profile coordinate is
+missing or null. ABC still cannot publish tokenized slices, tokenizer-backed
+stylometric analysis, or collection analysis packs as canonical snapshot
+artifacts until copied-field validation, tokenized materialization, and pack
+acceptance criteria below are implemented.
 
 Snapshot-publication work may proceed with TEI, plaintext, token-independent
 analysis, request-set fixtures, and snapshot indexes. It must not claim
@@ -105,9 +108,10 @@ profile content hash participates in artifact or request-set identity.
 
 Publishing standalone `tokenized` artifacts as exact release artifacts requires
 `tokenizer_profile_hash` in `manifest_identity_object`. Manifest schema v0.4.2
-adds this nullable coordinate.
+adds this nullable coordinate, and manifest schema v0.4.3 adds the
+`token-stream` sidecar role.
 
-Until the remaining token stream and validation contracts exist:
+Until the remaining materializer and validation contracts exist:
 
 - token-independent ADR 0026 analysis remains canonical;
 - tokenizer profile hashes may appear in request sets, result content, and
@@ -129,13 +133,14 @@ content, release validation fails.
 
 ### Transition Guardrail
 
-Manifest schema v0.4.2 permits `artifact_kind = "tokenized"` and carries
-`tokenizer_profile_hash` in `manifest_identity_object`. Release validation
-must reject any successful `tokenized` manifest (`artifact_kind = "tokenized"`
-and `validation_status` not equal to `failed`) whose
-`tokenizer_profile_hash` is missing or null. Prototype tokenized outputs may
-exist only as local or explicitly non-canonical artifacts until token-stream
-sidecar/schema and copied-field validation are implemented.
+Manifest schema v0.4.3 permits `artifact_kind = "tokenized"`, carries
+`tokenizer_profile_hash` in `manifest_identity_object`, and accepts the
+`token-stream` sidecar role. Release validation must reject any successful
+`tokenized` manifest (`artifact_kind = "tokenized"` and `validation_status`
+not equal to `failed`) whose `tokenizer_profile_hash` is missing or null.
+Prototype tokenized outputs may exist only as local or explicitly
+non-canonical artifacts until copied-field validation and tokenized
+materialization are implemented.
 
 ## Tokenized Slice Contract
 
@@ -507,7 +512,7 @@ as derivation failures.
 Snapshot-publication work can continue with token-independent analysis and can
 include empty tokenizer-profile arrays. It must not promote tokenizer outputs
 or tokenizer-backed metrics into the public snapshot promise before this ADR's
-remaining token-stream and validation work lands.
+remaining materialization and validation work lands.
 
 ## Acceptance Criteria
 
@@ -515,7 +520,8 @@ remaining token-stream and validation work lands.
   schema-hash discipline.
 - A manifest schema revision adds `tokenizer_profile_hash` to
   `manifest_identity_object`; `schemas/manifest.schema.json` v0.4.2 covers this.
-- Manifest sidecar roles include `token-stream`.
+- Manifest sidecar roles include `token-stream`;
+  `schemas/manifest.schema.json` v0.4.3 covers this.
 - Release validation rejects any successful `tokenized` manifest with missing
   or null `tokenizer_profile_hash`; `test/abc/tools/manifest_index_test.clj`
   covers this guardrail.
@@ -523,8 +529,8 @@ remaining token-stream and validation work lands.
   tokenizer profiles exist; `test/abc/tools/request_set_fixture_test.clj`
   requires empty `tokenizer_profile_hashes` arrays in those fixtures.
 - An accepted token output schema exists before any canonical tokenized slice
-  is accepted; its hash is used as the tokenized slice
-  `output_format_spec_hash`.
+  is accepted; `schemas/token-output.schema.json` v0.1.0 covers this, and its
+  hash is used as the tokenized slice `output_format_spec_hash`.
 - A tokenized fixture demonstrates `parser-ir-plaintext-body-v1` input,
   tokenizer profile hash, token output schema hash, and token index/input span
   coordinates.

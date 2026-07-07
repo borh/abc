@@ -11,12 +11,13 @@
    "schemas/aat-parser-ir-mapping.schema.json" "0.2.4"
    "schemas/analysis-recipe.schema.json" "0.1.0"
    "schemas/analysis-result.schema.json" "0.1.0"
-   "schemas/manifest.schema.json" "0.4.2"
+   "schemas/manifest.schema.json" "0.4.3"
    "schemas/parser-ir-publication-preservation.schema.json" "0.2.0"
    "schemas/request-set.schema.json" "0.1.1"
    "schemas/source-region-coverage.schema.json" "0.2.1"
    "schemas/snapshot-index.schema.json" "0.1.0"
-   "schemas/tokenizer-profile.schema.json" "0.1.0"})
+   "schemas/tokenizer-profile.schema.json" "0.1.0"
+   "schemas/token-output.schema.json" "0.1.0"})
 
 (deftest cross-project-schemas-carry-explicit-versions-test
   (doseq [[path expected-version] cross-project-schema-versions]
@@ -133,3 +134,14 @@
     (is (re-matches files/hash-pattern
                     (analysis-identity/tokenizer-profile-hash profile)))
     (is (nil? (schema/validation-errors profile-schema profile)))))
+
+(deftest token-output-schema-fixture-validates-test
+  (let [token-output-schema (schema/read-schema "schemas/token-output.schema.json")
+        token-stream (files/read-json "examples/v0/example-work/token-stream.json")]
+    (is (= "https://w3id.org/abc/schemas/token-output.schema.json"
+           (get token-stream "schema_id")))
+    (is (= (manifest/schema-hash "schemas/token-output.schema.json")
+           (get token-stream "schema_hash")))
+    (is (= "token-index-v1+unicode-scalar-value-input-spans"
+           (get token-stream "coordinate_system")))
+    (is (nil? (schema/validation-errors token-output-schema token-stream)))))

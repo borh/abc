@@ -34,8 +34,8 @@
       "path": "schemas/manifest.schema.json",
       "id": "https://w3id.org/abc/schemas/manifest.schema.json",
       "title": "ABC Artifact Manifest",
-      "version": "0.4.2",
-      "hash": "sha256:1b56954a6082ad2bb25478de630da36c7ec2be2be1c4ea4c9d9eda6b22170c4f"
+      "version": "0.4.3",
+      "hash": "sha256:3097d32f05a04daddab540548fb30846fa8b6a4cb1400e3af1ba7606e195f0b1"
     },
     {
       "path": "schemas/parser-ir-publication-preservation.schema.json",
@@ -78,6 +78,13 @@
       "title": "ABC Tokenizer Profile",
       "version": "0.1.0",
       "hash": "sha256:e487fdf65b70fa4de0d90db28654e46154a3ea67dac1d4243c73c54d8303dc90"
+    },
+    {
+      "path": "schemas/token-output.schema.json",
+      "id": "https://w3id.org/abc/schemas/token-output.schema.json",
+      "title": "ABC Token Output",
+      "version": "0.1.0",
+      "hash": "sha256:3f7b925bbd70255d480f72f639f045964237a84a52ee58e76642de3633ff0439"
     }
   ]
 }

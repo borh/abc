@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/token-output.schema.json",
+  "title": "ABC Token Output",
+  "version": "0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "schema_hash",
+    "tokenizer_profile_hash",
+    "producer",
+    "input_plaintext_policy_hash",
+    "token_output_schema_hash",
+    "coordinate_system",
+    "tokens",
+    "warnings"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "https://w3id.org/abc/schemas/token-output.schema.json"
+    },
+    "schema_hash": { "$ref": "#/$defs/hash" },
+    "tokenizer_profile_hash": { "$ref": "#/$defs/hash" },
+    "producer": { "$ref": "#/$defs/producer" },
+    "input_plaintext_policy_hash": { "$ref": "#/$defs/hash" },
+    "token_output_schema_hash": { "$ref": "#/$defs/hash" },
+    "coordinate_system": {
+      "const": "token-index-v1+unicode-scalar-value-input-spans"
+    },
+    "tokens": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/token" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_view_kind",
+        "artifact_id",
+        "content_hash"
+      ],
+      "properties": {
+        "input_view_kind": { "const": "parser-ir-plaintext-body-v1" },
+        "artifact_id": { "$ref": "#/$defs/hash" },
+        "content_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "inputSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "token": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "token_index",
+        "input_span",
+        "text"
+      ],
+      "properties": {
+        "token_index": { "type": "integer", "minimum": 0 },
+        "input_span": { "$ref": "#/$defs/inputSpan" },
+        "text": { "type": "string" }
+      }
+    }
+  }
+}

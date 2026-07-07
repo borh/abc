@@ -4,30 +4,9 @@
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.request-set-resolver :as resolver]
+            [abc.tools.source-snapshot-fixture :as fixture]
             [clojure.java.io :as io]
-            [clojure.test :refer [deftest is testing]])
-  (:import [java.nio.file Files]
-           [java.nio.file.attribute FileAttribute]))
-
-(defn- temp-dir [prefix]
-  (.toFile (Files/createTempDirectory prefix (make-array FileAttribute 0))))
-
-(defn- delete-tree! [dir]
-  (when dir
-    (doseq [f (reverse (file-seq dir))]
-      (.delete f))))
-
-(defn- source-snapshot! [file snapshot-inputs]
-  (let [identity-object {"snapshot_scope" "unit-test-source-snapshot"
-                         "snapshot_date" "2026-07-07"
-                         "snapshot_inputs" snapshot-inputs}
-        snapshot {"snapshot_schema_id" "https://w3id.org/abc/source-corpus-snapshot-v0.json"
-                  "snapshot_hash_algorithm" "sha256-rfc8785-jcs-v0"
-                  "snapshot_hash" (analysis-identity/hash-json-value identity-object)
-                  "snapshot_identity_object" identity-object
-                  "notes" "unit test fixture"}]
-    (abc-json/write-deterministic-json-file! file snapshot)
-    snapshot))
+            [clojure.test :refer [deftest is testing]]))
 
 (defn- source-snapshot-definition [snapshot-path]
   {"request_set_definition_version" "request-set-definition-v1"
@@ -96,10 +75,10 @@
         (is (= 2 (count (get identity-object "subjects"))))))))
 
 (deftest resolve-request-set-expands-subjects-from-source-snapshot-test
-  (let [root (temp-dir "abc-source-snapshot-subjects")
+  (let [root (fixture/temp-dir "abc-source-snapshot-subjects")
         snapshot-file (io/file root "source-snapshot.json")]
     (try
-      (let [snapshot (source-snapshot!
+      (let [snapshot (fixture/source-snapshot!
                       snapshot-file
                       [{"work_id" "000002"
                         "work_content_hash" (files/example-hash "b2")
@@ -127,13 +106,13 @@
             (is (= (analysis-identity/request-set-id resolved)
                    (get resolved "request_set_id"))))))
       (finally
-        (delete-tree! root)))))
+        (fixture/delete-tree! root)))))
 
 (deftest resolve-request-set-can-use-supplied-source-snapshot-test
-  (let [root (temp-dir "abc-supplied-source-snapshot")
+  (let [root (fixture/temp-dir "abc-supplied-source-snapshot")
         snapshot-file (io/file root "source-snapshot.json")]
     (try
-      (let [snapshot (source-snapshot!
+      (let [snapshot (fixture/source-snapshot!
                       snapshot-file
                       [{"work_id" "000777"
                         "work_content_hash" (files/example-hash "77")
@@ -154,13 +133,13 @@
         (is (= (analysis-identity/request-set-id resolved)
                (get resolved "request_set_id"))))
       (finally
-        (delete-tree! root)))))
+        (fixture/delete-tree! root)))))
 
 (deftest resolve-request-set-rejects-stale-source-snapshot-hash-test
-  (let [root (temp-dir "abc-stale-source-snapshot")
+  (let [root (fixture/temp-dir "abc-stale-source-snapshot")
         snapshot-file (io/file root "source-snapshot.json")]
     (try
-      (let [snapshot (source-snapshot!
+      (let [snapshot (fixture/source-snapshot!
                       snapshot-file
                       [{"work_id" "000001"
                         "work_content_hash" (files/example-hash "a1")
@@ -177,4 +156,4 @@
                #"Source snapshot hash mismatch"
                (resolver/resolve-request-set "source-snapshot-basic-ja")))))
       (finally
-        (delete-tree! root)))))
+        (fixture/delete-tree! root)))))

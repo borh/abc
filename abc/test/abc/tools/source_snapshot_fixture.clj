@@ -1,5 +1,6 @@
 (ns abc.tools.source-snapshot-fixture
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.analysis-identity :as analysis-identity]
+            [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [clojure.java.io :as io])
@@ -17,6 +18,20 @@
 
 (defn example-hash [suffix]
   (files/example-hash suffix))
+
+(defn source-snapshot!
+  [file snapshot-inputs]
+  (let [identity-object {"snapshot_scope" "unit-test-source-snapshot"
+                         "snapshot_date" "2026-07-07"
+                         "snapshot_inputs" snapshot-inputs}
+        snapshot {"snapshot_schema_id" "https://w3id.org/abc/source-corpus-snapshot-v0.json"
+                  "snapshot_hash_algorithm" "sha256-rfc8785-jcs-v0"
+                  "snapshot_hash" (analysis-identity/hash-json-value
+                                   identity-object)
+                  "snapshot_identity_object" identity-object
+                  "notes" "unit test fixture"}]
+    (abc-json/write-deterministic-json-file! file snapshot)
+    snapshot))
 
 (defn parser-ir [work-hash]
   {"schema_hash" (example-hash "41")

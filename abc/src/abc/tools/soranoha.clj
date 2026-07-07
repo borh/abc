@@ -618,6 +618,65 @@
                              :actual actual})))))))
   true)
 
+(defn- read-required-run-summary [root]
+  (let [run-summary-file (io/file root "run-summary.json")]
+    (when-not (.isFile run-summary-file)
+      (throw (ex-info "Snapshot root has no run-summary.json"
+                      {:path (str run-summary-file)})))
+    (files/read-json run-summary-file)))
+
+(defn- artifact-kind-counts [snapshot]
+  (into (sorted-map)
+        (frequencies (map #(get % "artifact_kind")
+                          (get snapshot "artifact_references" [])))))
+
+(defn- publication-report [snapshot run-summary validation]
+  (let [identity-object (get snapshot "snapshot_index_identity_object")]
+    {"schema_id" "https://w3id.org/abc/soranoha-publication-report-v0.json"
+     "report_version" "0.1.0"
+     "generated_at" (get snapshot "generated_at")
+     "request_set_label" (get snapshot "request_set_label")
+     "request_set_id" (get identity-object "request_set_id")
+     "snapshot_label" (get snapshot "snapshot_label")
+     "snapshot_identity_hash" (get snapshot "snapshot_identity_hash")
+     "source_snapshot_hash" (get identity-object "source_snapshot_hash")
+     "snapshot_summary" (get snapshot "summary")
+     "artifact_kind_counts" (artifact-kind-counts snapshot)
+     "manifest_reference_count" (count (get snapshot "artifact_references" []))
+     "artifact_manifest_count" (get run-summary "artifact_manifest_count")
+     "materialization_count" (get run-summary "materialization_count")
+     "parser_evidence_hashes" (get identity-object "parser_evidence_hashes")
+     "schema_hashes" (get identity-object "schema_hashes")
+     "layout_policy_hash" (get identity-object "layout_policy_hash")
+     "failure_policy_hash" (get identity-object "failure_policy_hash")
+     "manifest_index_hash" (get identity-object "manifest_index_hash")
+     "runtime_environment" (get run-summary "runtime_environment")
+     "validation" validation
+     "notes" "Citable reproduction evidence report. This file is not part of snapshot identity; cite snapshot_identity_hash, request_set_id, and artifact hashes from snapshot-index.json."}))
+
+(defn publication-report! [snapshot-root output-path]
+  (let [root (io/file snapshot-root)
+        snapshot (read-valid-snapshot-index root)]
+    (when-not (.isDirectory root)
+      (throw (ex-info "publication-report requires a snapshot root directory"
+                      {:path (str root)})))
+    (validate-snapshot-root-references! root snapshot)
+    (validate-run-summary! root snapshot)
+    (let [run-summary (read-required-run-summary root)
+          validation {"snapshot_root_valid" true
+                      "checked_manifest_references" (count (get snapshot
+                                                                "artifact_references"
+                                                                []))
+                      "run_summary_valid" true}
+          report (publication-report snapshot run-summary validation)
+          output-file (io/file output-path)]
+      (manifest/write-json-file! output-file report)
+      (println "publication_report:" (str output-file))
+      (println "snapshot_identity_hash:" (get snapshot
+                                              "snapshot_identity_hash"))
+      (println "request_set_label:" (get snapshot "request_set_label"))
+      0)))
+
 (defn explain-snapshot! [path]
   (let [snapshot (read-valid-snapshot-index path)
         summary (get snapshot "summary")]
@@ -680,6 +739,7 @@
     "  reproduce <label-or-request-set-json>"
     "  validate <snapshot-root-or-index>"
     "  explain-snapshot <snapshot-index>"
+    "  publication-report <snapshot-root> <output-path>"
     "  source-snapshot <materialized-root> <output-root> <snapshot-scope> <snapshot-date>"]))
 
 (def commands
@@ -697,6 +757,8 @@
                :run validate!}
    "explain-snapshot" {:args 1
                        :run explain-snapshot!}
+   "publication-report" {:args 2
+                         :run publication-report!}
    "source-snapshot" {:args 4
                       :run source-snapshot!}})
 

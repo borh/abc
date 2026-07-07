@@ -364,6 +364,68 @@
         (delete-tree! snapshot-root)
         (delete-tree! root)))))
 
+(deftest publication-report-command-writes-citable-reproduction-evidence-test
+  (let [root (fixture/temp-dir "abc-soranoha-publication-report")
+        snapshot-root (io/file "target/soranoha/full-corpus-basic-ja")
+        report-file (io/file root "publication-report.json")]
+    (try
+      (delete-tree! snapshot-root)
+      (let [request-set-file (write-generated-source-request-set!
+                              root
+                              "full-corpus-basic-ja")]
+        (with-out-str
+          (is (zero? (soranoha/run!
+                      ["reproduce" (str request-set-file)]))))
+        (let [out (with-out-str
+                    (is (zero? (soranoha/run!
+                                ["publication-report"
+                                 (str snapshot-root)
+                                 (str report-file)]))))
+              snapshot (files/read-json (io/file snapshot-root
+                                                 "snapshot-index.json"))
+              run-summary (files/read-json (io/file snapshot-root
+                                                    "run-summary.json"))
+              report (files/read-json report-file)]
+          (is (string/includes? out (str report-file)))
+          (is (= "https://w3id.org/abc/soranoha-publication-report-v0.json"
+                 (get report "schema_id")))
+          (is (= "0.1.0" (get report "report_version")))
+          (is (= (get snapshot "snapshot_label")
+                 (get report "snapshot_label")))
+          (is (= (get snapshot "snapshot_identity_hash")
+                 (get report "snapshot_identity_hash")))
+          (is (= (get snapshot "request_set_label")
+                 (get report "request_set_label")))
+          (is (= (get-in snapshot ["snapshot_index_identity_object"
+                                   "request_set_id"])
+                 (get report "request_set_id")))
+          (is (= (get-in snapshot ["snapshot_index_identity_object"
+                                   "source_snapshot_hash"])
+                 (get report "source_snapshot_hash")))
+          (is (= (get snapshot "summary")
+                 (get report "snapshot_summary")))
+          (is (= {"analysis" 1
+                  "parser-ir" 1
+                  "plaintext" 1
+                  "tei" 1}
+                 (get report "artifact_kind_counts")))
+          (is (= 4 (get report "manifest_reference_count")))
+          (is (= (get run-summary "artifact_manifest_count")
+                 (get report "artifact_manifest_count")))
+          (is (= (get run-summary "materialization_count")
+                 (get report "materialization_count")))
+          (is (= (parser-evidence/citable-hashes)
+                 (get report "parser_evidence_hashes")))
+          (is (= (get run-summary "runtime_environment")
+                 (get report "runtime_environment")))
+          (is (= {"snapshot_root_valid" true
+                  "checked_manifest_references" 4
+                  "run_summary_valid" true}
+                 (get report "validation")))))
+      (finally
+        (delete-tree! snapshot-root)
+        (delete-tree! root)))))
+
 (deftest reproduce-command-skips-analysis-for-generated-publication-request-set-test
   (let [root (fixture/temp-dir "abc-soranoha-reproduce-publication-source")
         snapshot-root (io/file "target/soranoha/full-corpus-publication-basic-ja")]

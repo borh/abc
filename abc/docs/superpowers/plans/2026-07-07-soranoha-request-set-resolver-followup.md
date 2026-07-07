@@ -486,3 +486,32 @@ Run `soranoha reproduce demo-basic-ja`, `soranoha validate target/soranoha/demo-
 - [x] Run `git diff --check`.
 - [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
 - [x] Run `nix flake check`.
+
+### Task 24: Publication Evidence Report Command
+
+**Files:**
+- Modify: `abc/src/abc/tools/soranoha.clj`
+- Modify: `abc/test/abc/tools/soranoha_test.clj`
+
+**Interfaces:**
+- Produces: `soranoha publication-report <snapshot-root> <output-path>`.
+- Consumes: `snapshot-index.json`, manifest references, and `run-summary.json` from a reproduced snapshot root.
+
+- [x] Add a failing Soranoha test showing a generated full-corpus reproduction can emit `publication-report.json`.
+- [x] Build a non-identity publication report with snapshot/request-set identity, artifact/failure accounting, parser/schema evidence hashes, runtime environment, and validation status.
+- [x] Reuse the existing snapshot-root and run-summary validation path before writing a report.
+- [x] Wire the Soranoha command and print report path, snapshot identity hash, and request-set label.
+
+### Task 25: Publication Evidence Report Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed publication-report command.
+- Produces: verified citable evidence report slice for snapshot publication review.
+
+- [x] Run focused Soranoha tests.
+- [x] Run `git diff --check`.
+- [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
+- [x] Run `nix flake check`.

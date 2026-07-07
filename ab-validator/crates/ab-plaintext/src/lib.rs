@@ -105,8 +105,7 @@ fn is_decimal_or_alphanumeric_period(previous: Option<char>, ch: char, next: Opt
 }
 
 fn is_period_non_boundary_neighbor(ch: char) -> bool {
-    ch.is_ascii_alphanumeric()
-        || matches!(ch, '０'..='９' | 'Ａ'..='Ｚ' | 'ａ'..='ｚ')
+    ch.is_ascii_alphanumeric() || matches!(ch, '０'..='９' | 'Ａ'..='Ｚ' | 'ａ'..='ｚ')
 }
 
 fn is_closing_quote_or_bracket(ch: char) -> bool {
@@ -235,7 +234,10 @@ mod sentence_split_tests {
                 vec!["吾輩は猫である。", "名前はまだ無い。"],
             ),
             ("え！？本当。", vec!["え！？", "本当。"]),
-            ("これは3.14です。終わり。", vec!["これは3.14です。", "終わり。"]),
+            (
+                "これは3.14です。終わり。",
+                vec!["これは3.14です。", "終わり。"],
+            ),
             ("彼は言った。）次。", vec!["彼は言った。）次。"]),
             ("一行目\n二行目。", vec!["一行目\n二行目。"]),
         ];

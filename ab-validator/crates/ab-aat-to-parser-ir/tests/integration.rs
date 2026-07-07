@@ -332,6 +332,66 @@ fn parser_ir_emits_split_sentence_rows_and_ortho_tags() {
 }
 
 #[test]
+fn sentence_segmentation_uses_ruby_base_not_reading() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let first_sentence = "名前はまだ無い。";
+    let full_text = "名前はまだ無い。ここは次。";
+    let aat = json!({
+        "version": 1,
+        "work_id": "ruby-sentence",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:abababababababababababababababababababababababababababababababab",
+        ),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [{
+                "kind": "ruby",
+                "base": "名前",
+                "reading": "めいしょう"
+            }, {
+                "kind": "text",
+                "value": "はまだ無い。ここは次。"
+            }]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/span/start"),
+        Some(&json!(0))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/span/end"),
+        Some(&json!(first_sentence.len()))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/1/span/start"),
+        Some(&json!(first_sentence.len()))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/1/span/end"),
+        Some(&json!(full_text.len()))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/node_range"),
+        Some(&json!({"start": 0, "end": 2}))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/ruby/reading"),
+        Some(&json!("めいしょう"))
+    );
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
 fn checked_in_schema_accepts_sentence_segmentation_and_ortho_annotations() {
     let (schemas, mapping) = schemas_and_mapping();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {

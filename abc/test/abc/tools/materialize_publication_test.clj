@@ -90,7 +90,7 @@
               back-text (tei-element-body tei-text "back")]
           (is (string/includes? tei-text "xmlns:abc=\"https://w3id.org/abc/ns/tei\""))
           (is (string/includes? tei-text "abc:vocab-version=\"0\""))
-          (is (= 3 (count (re-seq #"<(?:[A-Za-z0-9_-]+:)?p(?:\s|>)"
+          (is (= 2 (count (re-seq #"<(?:[A-Za-z0-9_-]+:)?p(?:\s|>)"
                                   body-text))))
           (is (not (string/includes? body-text "（古伝説と、シルレルの詩から。）")))
           (is (string/includes? back-text "type=\"source-attribution\""))

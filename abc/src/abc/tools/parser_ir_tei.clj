@@ -446,10 +446,23 @@
 (defn- sentences-by-paragraph [sentences]
   (group-by #(get % "paragraph_id") sentences))
 
+(defn- sentence-inline-node? [node]
+  (case (get node "type")
+    ("text" "ruby" "gaiji" "editor-note" "emphasis" "layout-span"
+            "indentation" "line-break" "quote") true
+    "source-note" (= "body" (get node "placement"))
+    false))
+
+(defn- sentence-wrappable-paragraph? [node-slice paragraph]
+  (and (= "body" (get paragraph "role"))
+       (every? sentence-inline-node? node-slice)))
+
 (defn- render-paragraph-row-with-sentences [nodes sentences-by-pid acc paragraph]
-  (let [paragraph-sentences (get sentences-by-pid (get paragraph "id"))]
-    (if (and (= "body" (get paragraph "role"))
-             (seq paragraph-sentences))
+  (let [{start "start" end "end"} (paragraph-range paragraph)
+        node-slice (subvec nodes start end)
+        paragraph-sentences (get sentences-by-pid (get paragraph "id"))]
+    (if (and (seq paragraph-sentences)
+             (sentence-wrappable-paragraph? node-slice paragraph))
       (-> (assoc acc :current-paragraph-attrs (paragraph-attrs paragraph))
           (as-> state
                 (reduce (partial render-sentence-row nodes)

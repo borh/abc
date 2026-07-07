@@ -357,6 +357,38 @@
       (is (= {"ruby" 1 "text" 2} (:node_counts result)))
       (is (empty? (:omitted result))))))
 
+(deftest heading-paragraph-with-sentence-rows-renders-only-head-test
+  (testing "sentence rows do not force heading-only body paragraphs into TEI p wrappers"
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "heading"
+                             "span" {"start" 0 "end" 3 "coordinate_system" "decoded_utf8"}
+                             "text" "序"
+                             "level" 1}]
+                   "paragraphs" [{"id" "p000000"
+                                  "span" {"start" 0 "end" 3 "coordinate_system" "decoded_utf8"}
+                                  "span_source" "direct"
+                                  "node_range" {"start" 0 "end" 1}
+                                  "role" "body"
+                                  "source_pointer" "blocks[0]"
+                                  "classification" "direct"}]
+                   "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
+                                            "splitter_id" "ab-plaintext-japanese-v1"
+                                            "coordinate_system" "decoded_utf8"
+                                            "coverage" "body-paragraphs"}
+                   "sentences" [{"id" "s000000"
+                                 "paragraph_id" "p000000"
+                                 "span" {"start" 0 "end" 3 "coordinate_system" "decoded_utf8"}
+                                 "node_range" {"start" 0 "end" 1}
+                                 "tags" []
+                                 "orthographic_annotation_indices" []}]})]
+      (is (= [:text
+              [:body
+               [:div
+                [:head {:n "1"} "序"]]]]
+             (:body result)))
+      (is (= {"heading" 1} (:node_counts result)))
+      (is (empty? (:omitted result))))))
+
 (deftest paragraph-layout-renders-every-supported-rend-token-test
   (testing "each supported paragraph layout kind has a deterministic TEI rend token"
     (let [parser-ir {"nodes" [{"type" "text" "span" {"start" 0 "end" 1} "text" "一"}

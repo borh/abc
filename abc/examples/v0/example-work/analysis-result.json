@@ -1,0 +1,34 @@
+{
+  "analysis_recipe_hash": "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b",
+  "input_view":
+  {
+    "coordinate_system": "unicode-scalar-value",
+    "input_view_kind": "parser-ir-plaintext-body-v1",
+    "plaintext_policy_hash": "sha256:1000000000000000000000000000000000000000000000000000000000000001",
+    "producer_artifact_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "producer_content_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "metrics": [
+    {
+      "denominator": null,
+      "metric_id": "fixture-line-count",
+      "status": "passed",
+      "unit": "line",
+      "value": 3,
+      "value_type": "integer"
+    }],
+  "schema_hash": "sha256:d282e7fa9c726a86ffbd37dcc5f3ccf6f4c19cf7e490172638797907d1602c8a",
+  "schema_id": "https:\/\/w3id.org\/abc\/schemas\/analysis-result.schema.json",
+  "subject":
+  {
+    "corpus_snapshot_hash": "sha256:f00000000000000000000000000000000000000000000000000000000000000f",
+    "git_ref": "0e9ea3e586",
+    "logical_path": "cards/000000/files/example.txt",
+    "metadata_record_hash": null,
+    "source_id": "aozora:example-work",
+    "work_content_hash": "sha256:f100000000000000000000000000000000000000000000000000000000000001",
+    "work_id": "aozora:example-work"
+  },
+  "tokenizer_profile_hash": null,
+  "warnings": []
+}

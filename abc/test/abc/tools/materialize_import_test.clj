@@ -35,7 +35,7 @@
                                      "c" "quote\"slash\\"}))))
 
 (deftest schema-hash-test
-  (is (= "sha256:24c58800a9a31efdf9e2b9e3fab328b13c43dd8052a8ec4cf761c9fb510431b2"
+  (is (= "sha256:86353a3dec96058209924c00261d560c7ef424891e0d1c2a19d71d9d07882394"
          (manifest/schema-hash "schemas/manifest.schema.json")))
   (is (not= (str "sha256:" (files/sha256-file "schemas/manifest.schema.json"))
             (manifest/schema-hash "schemas/manifest.schema.json"))))

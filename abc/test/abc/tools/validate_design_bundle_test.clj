@@ -115,7 +115,7 @@
   "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712")
 
 (def ^:private current-parser-ir-schema-hash
-  "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2")
+  "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340")
 
 (def ^:private parser-ir-schema-hash
   legacy-parser-ir-schema-hash)
@@ -623,6 +623,60 @@
                      "errors" []}]
       (is (nil? (validate/validation-errors schema parser-ir))))))
 
+(deftest parser-ir-schema-accepts-sentences-and-orthographic-annotations-test
+  (testing "parser IR carries sentence segmentation plus orthographic annotation provenance"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     "schema_hash" current-parser-ir-schema-hash
+                     "source" {"work_content_hash" (files/example-hash "11")
+                               "encoding" "UTF-8"
+                               "normalization" "source"}
+                     "nodes" [{"type" "text"
+                               "span" {"start" 0 "end" 24
+                                       "coordinate_system" "decoded_utf8"}
+                               "text" "吾輩ハ猫デアル。"}
+                              {"type" "text"
+                               "span" {"start" 24 "end" 48
+                                       "coordinate_system" "decoded_utf8"}
+                               "text" "名前はまだ無い。"}]
+                     "paragraphs" [{"id" "p000000"
+                                    "span" {"start" 0 "end" 48
+                                            "coordinate_system" "decoded_utf8"}
+                                    "span_source" "direct"
+                                    "node_range" {"start" 0 "end" 2}
+                                    "role" "body"
+                                    "source_pointer" "blocks[0]"
+                                    "classification" "direct"}]
+                     "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
+                                              "splitter_id" "ab-plaintext-japanese-v1"
+                                              "coordinate_system" "decoded_utf8"
+                                              "coverage" "body-paragraphs"}
+                     "sentences" [{"id" "s000000"
+                                   "paragraph_id" "p000000"
+                                   "span" {"start" 0 "end" 24
+                                           "coordinate_system" "decoded_utf8"}
+                                   "node_range" {"start" 0 "end" 1}
+                                   "tags" ["orthographic-katakana"]
+                                   "orthographic_annotation_indices" [0]}
+                                  {"id" "s000001"
+                                   "paragraph_id" "p000000"
+                                   "span" {"start" 24 "end" 48
+                                           "coordinate_system" "decoded_utf8"}
+                                   "node_range" {"start" 1 "end" 2}
+                                   "tags" []
+                                   "orthographic_annotation_indices" []}]
+                     "orthographic_annotations" {"work_id" "000000"
+                                                 "work_content_hash" (files/example-hash "11")
+                                                 "coordinate_system" "decoded_utf8"
+                                                 "detector_id" "HeuristicV1"
+                                                 "annotations" [{"source_byte_range" {"start" 0 "end" 24}
+                                                                 "normalized_text" "吾輩は猫である。"
+                                                                 "kind" "ScriptKatakanaToHiragana"
+                                                                 "confidence" nil}]}
+                     "warnings" []
+                     "errors" []}]
+      (is (nil? (schema/validation-errors schema parser-ir))))))
+
 (deftest parser-ir-schema-accepts-paragraph-layout-test
   (testing "paragraph rows may carry Aozora layout metadata for TEI paragraph rendering"
     (let [schema (files/read-json "schemas/parser-ir.schema.json")
@@ -946,6 +1000,53 @@
                   "source_pointer" "blocks[78]"
                   "classification" "heuristic"}]})
 
+(def ^:private sentence-parser-ir-fixture
+  {"nodes" [{"type" "text"
+             "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+             "text" "吾輩ハ猫デアル。"}
+            {"type" "text"
+             "span" {"start" 24 "end" 48 "coordinate_system" "decoded_utf8"}
+             "text" "名前はまだ無い。"}
+            {"type" "text"
+             "span" {"start" 48 "end" 63 "coordinate_system" "decoded_utf8"}
+             "text" "後続段落。"}]
+   "paragraphs" [{"id" "p000000"
+                  "span" {"start" 0 "end" 48 "coordinate_system" "decoded_utf8"}
+                  "span_source" "direct"
+                  "node_range" {"start" 0 "end" 2}
+                  "role" "body"
+                  "source_pointer" "blocks[0]"
+                  "classification" "direct"}
+                 {"id" "p000001"
+                  "span" {"start" 48 "end" 63 "coordinate_system" "decoded_utf8"}
+                  "span_source" "direct"
+                  "node_range" {"start" 2 "end" 3}
+                  "role" "body"
+                  "source_pointer" "blocks[1]"
+                  "classification" "direct"}]
+   "sentences" [{"id" "s000000"
+                 "paragraph_id" "p000000"
+                 "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                 "node_range" {"start" 0 "end" 1}
+                 "tags" ["orthographic-katakana"]
+                 "orthographic_annotation_indices" [0]}
+                {"id" "s000001"
+                 "paragraph_id" "p000000"
+                 "span" {"start" 24 "end" 48 "coordinate_system" "decoded_utf8"}
+                 "node_range" {"start" 1 "end" 2}
+                 "tags" []
+                 "orthographic_annotation_indices" []}
+                {"id" "s000002"
+                 "paragraph_id" "p000001"
+                 "span" {"start" 48 "end" 63 "coordinate_system" "decoded_utf8"}
+                 "node_range" {"start" 2 "end" 3}
+                 "tags" []
+                 "orthographic_annotation_indices" []}]
+   "orthographic_annotations" {"annotations" [{"source_byte_range" {"start" 0 "end" 24}
+                                               "normalized_text" "吾輩は猫である。"
+                                               "kind" "ScriptKatakanaToHiragana"
+                                               "confidence" nil}]}})
+
 (deftest parser-ir-paragraph-coherence-errors-test
   (testing "accepts coherent paragraph ranges"
     (is (empty? (validate/parser-ir-paragraph-coherence-errors
@@ -976,6 +1077,69 @@
             (-> level3-parser-ir-fixture
                 (assoc-in ["nodes" 1 "type"] "text")
                 (assoc-in ["paragraphs" 1 "classification"] "direct")))))))
+
+(deftest parser-ir-sentence-coherence-errors-test
+  (testing "accepts coherent sentence rows"
+    (is (empty? (validate/parser-ir-sentence-coherence-errors
+                 sentence-parser-ir-fixture))))
+  (testing "rejects a sentence referencing a missing body paragraph"
+    (is (= ["parser IR sentence s999999 references non-body paragraph p999999"]
+           (validate/parser-ir-sentence-coherence-errors
+            (update sentence-parser-ir-fixture
+                    "sentences"
+                    conj
+                    {"id" "s999999"
+                     "paragraph_id" "p999999"
+                     "span" {"start" 63 "end" 66 "coordinate_system" "decoded_utf8"}
+                     "node_range" {"start" 3 "end" 3}
+                     "tags" []
+                     "orthographic_annotation_indices" []})))))
+  (testing "rejects a sentence node range outside its paragraph"
+    (is (= ["parser IR sentence s000001 node_range starts at 0 but expected 1"]
+           (validate/parser-ir-sentence-coherence-errors
+            (assoc-in sentence-parser-ir-fixture
+                      ["sentences" 1 "node_range"]
+                      {"start" 0 "end" 2})))))
+  (testing "rejects a sentence byte span outside its paragraph"
+    (is (= ["parser IR sentence s000001 span 30..54 is outside paragraph p000000 span 0..48"
+            "parser IR sentence s000001 span starts at 30 but expected 24"
+            "parser IR body paragraph p000000 sentence spans end at 54 but paragraph span ends at 48"]
+           (validate/parser-ir-sentence-coherence-errors
+            (assoc-in sentence-parser-ir-fixture
+                      ["sentences" 1 "span"]
+                      {"start" 30 "end" 54 "coordinate_system" "decoded_utf8"})))))
+  (testing "rejects orthographic tag without annotation index"
+    (is (= ["parser IR sentence s000000 has orthographic-katakana tag without annotation indices"]
+           (validate/parser-ir-sentence-coherence-errors
+            (assoc-in sentence-parser-ir-fixture
+                      ["sentences" 0 "orthographic_annotation_indices"]
+                      [])))))
+  (testing "rejects annotation index outside annotation array"
+    (is (= ["parser IR sentence s000000 has orthographic annotation index outside annotations[]"]
+           (validate/parser-ir-sentence-coherence-errors
+            (assoc-in sentence-parser-ir-fixture
+                      ["sentences" 0 "orthographic_annotation_indices"]
+                      [1])))))
+  (testing "rejects non-empty body paragraph with no sentence rows"
+    (is (= ["parser IR body paragraph p000001 has no sentence rows"]
+           (validate/parser-ir-sentence-coherence-errors
+            (update sentence-parser-ir-fixture
+                    "sentences"
+                    #(vec (remove (fn [sentence]
+                                    (= "p000001" (get sentence "paragraph_id")))
+                                  %)))))))
+  (testing "rejects byte-span gaps"
+    (is (= ["parser IR sentence s000001 span starts at 30 but expected 24"]
+           (validate/parser-ir-sentence-coherence-errors
+            (assoc-in sentence-parser-ir-fixture
+                      ["sentences" 1 "span"]
+                      {"start" 30 "end" 48 "coordinate_system" "decoded_utf8"})))))
+  (testing "rejects node-range gaps"
+    (is (= ["parser IR sentence s000001 node_range starts at 2 but expected 1"]
+           (validate/parser-ir-sentence-coherence-errors
+            (assoc-in sentence-parser-ir-fixture
+                      ["sentences" 1 "node_range"]
+                      {"start" 2 "end" 2}))))))
 
 (def ^:private old-compat-query
   {:aat_version 1

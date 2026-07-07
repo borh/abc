@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [run!])
   (:require [abc.tools.analysis-identity :as analysis-identity]
             [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-analysis :as materialize-analysis]
             [abc.tools.materialize-publication :as materialize-publication]
@@ -12,8 +13,12 @@
             [abc.tools.source-snapshot-workset :as source-snapshot-workset]
             [abc.tools.snapshot-index :as snapshot-index]
             [abc.tools.soranoha-layout-report :as layout-report]
+            [abc.tools.soranoha-stage-publication :as stage-publication]
+            [abc.tools.tar :as tar]
+            [charred.api :as json]
             [clojure.java.io :as io]
-            [clojure.string :as string]))
+            [clojure.string :as string])
+  (:import [java.nio.charset StandardCharsets]))
 
 (defn request-set-labels []
   (request-set-resolver/request-set-labels))
@@ -531,7 +536,10 @@
 (defn snapshot-index-path [path]
   (let [file (io/file path)]
     (if (.isDirectory file)
-      (io/file file "snapshot-index.json")
+      (let [snapshot-index-file (io/file file "snapshot-index.json")]
+        (if (.isFile snapshot-index-file)
+          snapshot-index-file
+          (io/file file "index.json")))
       file)))
 
 (defn- snapshot-root-path [path]
@@ -561,6 +569,18 @@
                      :expected expected
                      :actual actual}))))
 
+(defn- validate-manifest-reference-fields! [reference manifest-value]
+  (doseq [[field expected actual]
+          [["artifact_id" (get reference "artifact_id")
+            (get manifest-value "artifact_id")]
+           ["artifact_kind" (get reference "artifact_kind")
+            (get manifest-value "artifact_kind")]
+           ["validation_status" (get reference "validation_status")
+            (get manifest-value "validation_status")]
+           ["content_hash" (get reference "content_hash")
+            (get-in manifest-value ["content" "content_hash"])]]]
+    (compare-reference-field! field reference expected actual)))
+
 (defn- validate-loose-reference! [root reference]
   (let [relative-path (get-in reference ["locator" "path"])
         manifest-file (io/file root relative-path)]
@@ -573,22 +593,37 @@
                               (get reference "manifest_content_hash")
                               (manifest/file-hash manifest-file))
     (let [manifest-value (files/read-json manifest-file)]
-      (doseq [[field expected actual]
-              [["artifact_id" (get reference "artifact_id")
-                (get manifest-value "artifact_id")]
-               ["artifact_kind" (get reference "artifact_kind")
-                (get manifest-value "artifact_kind")]
-               ["validation_status" (get reference "validation_status")
-                (get manifest-value "validation_status")]
-               ["content_hash" (get reference "content_hash")
-                (get-in manifest-value ["content" "content_hash"])]]]
-        (compare-reference-field! field reference expected actual)))))
+      (validate-manifest-reference-fields! reference manifest-value))))
+
+(defn- validate-archive-member-reference! [root reference]
+  (let [archive-path (get-in reference ["locator" "archive_path"])
+        member-path (get-in reference ["locator" "member_path"])
+        archive-file (io/file root archive-path)]
+    (when-not (.isFile archive-file)
+      (throw (ex-info "Referenced snapshot archive does not exist"
+                      {:locator (get reference "locator")
+                       :path (str archive-file)})))
+    (let [manifest-bytes (or (tar/member-bytes archive-file member-path)
+                             (throw
+                              (ex-info
+                               "Referenced snapshot archive does not contain member"
+                               {:path (str archive-file)
+                                :member_path member-path})))]
+      (compare-reference-field! "manifest_content_hash"
+                                reference
+                                (get reference "manifest_content_hash")
+                                (str "sha256:" (hash/sha256-bytes
+                                                manifest-bytes)))
+      (validate-manifest-reference-fields!
+       reference
+       (json/read-json (String. manifest-bytes StandardCharsets/UTF_8))))))
 
 (defn- validate-snapshot-root-references! [root snapshot]
   (doseq [reference (get snapshot "artifact_references" [])
           :let [locator-kind (get-in reference ["locator" "kind"])]]
     (case locator-kind
       "loose" (validate-loose-reference! root reference)
+      "archive-member" (validate-archive-member-reference! root reference)
       nil (throw (ex-info "Snapshot artifact reference has no locator kind"
                           {:reference reference}))
       true))
@@ -693,6 +728,26 @@
       (println "request_set_label:" (get snapshot "request_set_label"))
       0)))
 
+(defn stage-publication! [snapshot-root output-root]
+  (let [root (io/file snapshot-root)
+        output-root (io/file output-root)
+        snapshot (read-valid-snapshot-index root)]
+    (when-not (.isDirectory root)
+      (throw (ex-info "stage-publication requires a snapshot root directory"
+                      {:path (str root)})))
+    (validate-snapshot-root-references! root snapshot)
+    (validate-run-summary! root snapshot)
+    (let [{:keys [index-file snapshot archive-count]}
+          (stage-publication/stage-publication! {:snapshot-root root
+                                                 :staged-root output-root
+                                                 :snapshot snapshot})]
+      (println "staged_index:" (str index-file))
+      (println "snapshot_identity_hash:" (get snapshot
+                                              "snapshot_identity_hash"))
+      (println "request_set_label:" (get snapshot "request_set_label"))
+      (println "archive_count:" archive-count)
+      0)))
+
 (defn explain-snapshot! [path]
   (let [snapshot (read-valid-snapshot-index path)
         summary (get snapshot "summary")]
@@ -757,6 +812,7 @@
     "  explain-snapshot <snapshot-index>"
     "  publication-report <snapshot-root> <output-path>"
     "  layout-report <snapshot-root> <output-path>"
+    "  stage-publication <snapshot-root> <output-root>"
     "  source-snapshot <materialized-root> <output-root> <snapshot-scope> <snapshot-date>"]))
 
 (def commands
@@ -778,6 +834,8 @@
                          :run publication-report!}
    "layout-report" {:args 2
                     :run layout-report!}
+   "stage-publication" {:args 2
+                        :run stage-publication!}
    "source-snapshot" {:args 4
                       :run source-snapshot!}})
 

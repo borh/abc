@@ -544,3 +544,41 @@ Run `soranoha reproduce demo-basic-ja`, `soranoha validate target/soranoha/demo-
 - [x] Run `git diff --check`.
 - [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
 - [x] Run `nix flake check`.
+
+### Task 28: Mixed Static Publication Staging Command
+
+**Files:**
+- Create: `abc/src/abc/tools/soranoha_stage_publication.clj`
+- Modify: `abc/src/abc/tools/soranoha.clj`
+- Modify: `abc/test/abc/tools/soranoha_test.clj`
+
+**Interfaces:**
+- Produces: `soranoha stage-publication <snapshot-root> <output-root>`.
+- Consumes: a validated reproduced snapshot root with `snapshot-index.json`,
+  `run-summary.json`, and loose manifest references.
+
+- [x] Add a failing Soranoha test showing a generated full-corpus reproduction
+  can be staged into the mixed static publication layout.
+- [x] Stage TEI and plaintext as loose by-work files with loose manifest
+  locators.
+- [x] Stage analysis artifacts as a deterministic batch archive with
+  `archive-member` manifest locators.
+- [x] Preserve snapshot identity while changing locator placement.
+- [x] Let `validate <snapshot-root>` accept staged roots whose discovery file is
+  `index.json`.
+- [x] Validate staged `archive-member` manifest locators by reading the
+  archive member and checking the same manifest fields as loose locators.
+
+### Task 29: Mixed Static Publication Staging Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed `stage-publication` command.
+- Produces: verified first static publication layout staging slice.
+
+- [x] Run focused Soranoha tests.
+- [x] Run `git diff --check`.
+- [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
+- [x] Run `nix flake check`.

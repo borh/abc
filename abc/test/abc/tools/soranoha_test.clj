@@ -489,6 +489,73 @@
         (delete-tree! snapshot-root)
         (delete-tree! root)))))
 
+(deftest stage-publication-command-writes-mixed-static-layout-test
+  (let [root (fixture/temp-dir "abc-soranoha-stage-publication")
+        snapshot-root (io/file "target/soranoha/full-corpus-basic-ja")
+        staged-root (io/file root "published")]
+    (try
+      (delete-tree! snapshot-root)
+      (let [request-set-file (write-generated-source-request-set!
+                              root
+                              "full-corpus-basic-ja")]
+        (with-out-str
+          (is (zero? (soranoha/run!
+                      ["reproduce" (str request-set-file)]))))
+        (let [staged-index-file (io/file staged-root "index.json")
+              analysis-archive-file (io/file staged-root
+                                             "artifacts/analysis/batches/analysis-batch-0001.tar")
+              out (with-out-str
+                    (is (zero? (soranoha/run!
+                                ["stage-publication"
+                                 (str snapshot-root)
+                                 (str staged-root)]))))]
+          (is (string/includes? out (str staged-index-file)))
+          (is (.exists staged-index-file))
+          (when (.exists staged-index-file)
+            (let [staged-index (files/read-json staged-index-file)
+                  references (get staged-index "artifact_references")
+                  reference-by-kind (into {}
+                                          (map (juxt #(get % "artifact_kind")
+                                                     identity))
+                                          references)
+                  plaintext-ref (get reference-by-kind "plaintext")
+                  tei-ref (get reference-by-kind "tei")
+                  analysis-ref (get reference-by-kind "analysis")]
+              (is (.exists (io/file staged-root "run-summary.json")))
+              (is (= (get (files/read-json (io/file snapshot-root
+                                                    "snapshot-index.json"))
+                          "snapshot_identity_hash")
+                     (get staged-index "snapshot_identity_hash")))
+              (is (= "loose" (get-in plaintext-ref ["locator" "kind"])))
+              (is (= "manifests/by-work/alpha/plaintext.manifest.json"
+                     (get-in plaintext-ref ["locator" "path"])))
+              (is (.exists (io/file staged-root
+                                    "artifacts/plaintext/by-work/alpha/plain.txt")))
+              (is (= "loose" (get-in tei-ref ["locator" "kind"])))
+              (is (= "manifests/by-work/alpha/tei.manifest.json"
+                     (get-in tei-ref ["locator" "path"])))
+              (is (.exists (io/file staged-root
+                                    "artifacts/tei/by-work/alpha/tei.xml")))
+              (is (= "archive-member" (get-in analysis-ref ["locator"
+                                                            "kind"])))
+              (is (= "artifacts/analysis/batches/analysis-batch-0001.tar"
+                     (get-in analysis-ref ["locator" "archive_path"])))
+              (is (= "alpha/analysis.manifest.json"
+                     (get-in analysis-ref ["locator" "member_path"])))
+              (is (pos? (.length analysis-archive-file)))
+              (is (true? (snapshot-index/validate-snapshot-index! staged-index)))
+              (with-out-str
+                (is (zero? (soranoha/run! ["validate" (str staged-root)]))))
+              (spit analysis-archive-file "")
+              (let [err (java.io.StringWriter.)]
+                (binding [*err* err]
+                  (is (= 1 (soranoha/run! ["validate" (str staged-root)]))))
+                (is (string/includes? (str err)
+                                      "Referenced snapshot archive does not contain member")))))))
+      (finally
+        (delete-tree! snapshot-root)
+        (delete-tree! root)))))
+
 (deftest reproduce-command-skips-analysis-for-generated-publication-request-set-test
   (let [root (fixture/temp-dir "abc-soranoha-reproduce-publication-source")
         snapshot-root (io/file "target/soranoha/full-corpus-publication-basic-ja")]

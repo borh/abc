@@ -115,6 +115,18 @@ match, so the base falls to `nonstandard_ruby` and is *retained for review* — 
 canonicalizer never invents a match. Growing the fold table is a follow-up lever,
 not a correctness risk.
 
+**False-match surface (low risk, by construction).** The long-vowel and medial-は
+folds are aggressive unconditional substitutions (`かう→こう`, medial `ふ→う`), so
+they can over-collapse genuine modern morae (`つかう→つこう`, `とうふ→とうう`).
+Because `normalize` is applied *identically* to both the editor ruby and each
+analyzer reading, this never corrupts a true match — both sides collapse the same
+way. A *false* match would require a genuinely-wrong analyzer reading to collide
+post-fold; since analyzers emit modern kana (long-o already `おう`, never the
+historical a-row spelling), the aggressive folds effectively only fire on the
+historical editor side and normalize it correctly. The residual false-match risk
+is therefore low; the full-corpus validation's consensus-wrong spot-check is the
+empirical guard, and tightening the fold conditioning is a follow-up lever.
+
 ## Alignment (base ↔ morphemes)
 
 The ruby base's `projected_char_start..projected_char_end` and each morpheme's

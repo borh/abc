@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "work_id": "orthographic-publication-fixture",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:abababababababababababababababababababababababababababababababab",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "content": [
+        { "kind": "text", "value": "吾輩ハ猫デアル果テ。" },
+        { "kind": "ruby", "base": "名前", "reading": "めいしょう" },
+        { "kind": "text", "value": "はまだ無い。" }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "content": [
+        { "kind": "text", "value": "ここは次。" }
+      ]
+    }
+  ]
+}

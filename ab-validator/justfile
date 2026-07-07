@@ -304,6 +304,9 @@ parser-ir-level3-admission-report MATRIX_SUMMARY="docs/superpowers/reports/2026-
 parser-ir-plain-prose-source-delta-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-plain-prose-source-delta-smoke.sh"
 
+parser-ir-ortho-publication-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-ortho-publication-smoke.sh"
+
 parser-ir-plain-prose-source-delta-report ADMISSION_SUMMARY="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.summary.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" MAPPING="data/aat-to-parser-ir-mapping-v1.json" REPORT_MD="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json":
 	@python "{{repo_root}}/reports/parser-ir/plain-prose-source-delta.py" \
 		--admission-summary "{{repo_root}}/{{ADMISSION_SUMMARY}}" \

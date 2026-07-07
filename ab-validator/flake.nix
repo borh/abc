@@ -6,6 +6,11 @@
 
     flake-utils.url = "github:numtide/flake-utils";
 
+    clj-nix = {
+      url = "github:jlesquembre/clj-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -57,6 +62,7 @@
     {
       self,
       nixpkgs,
+      clj-nix,
       upstream-aozora-notation-spec-src,
       upstream-aozora-parser-js-src,
       upstream-aozora-rs-src,
@@ -71,7 +77,10 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        overlays = [ (import rust-overlay) ];
+        overlays = [
+          clj-nix.overlays.default
+          (import rust-overlay)
+        ];
         pkgs = import nixpkgs {
           inherit system overlays;
         };
@@ -113,6 +122,11 @@
           };
 
         source = cleanProjectSource ./.;
+
+        abcSource = cleanProjectSource ../abc;
+        abcCljDepsCache = pkgs.mk-deps-cache {
+          lockfile = ../abc/deps-lock.json;
+        };
 
         abcSchemaRootForNix = pkgs.runCommand "ab-validator-abc-schema-root" { } ''
           mkdir -p "$out/schemas"
@@ -800,6 +814,20 @@
           export AB_ABC_ROOT="$abc_root"
         '';
 
+        stageAbcPublicationRoot = ''
+          abc_root="$work_dir/abc"
+          cp -R "${abcSource}" "$abc_root"
+          chmod -R +w "$abc_root"
+          export HOME="${abcCljDepsCache}"
+          export JAVA_TOOL_OPTIONS="-Duser.home=${abcCljDepsCache}"
+          export CLJ_CONFIG="$HOME/.clojure"
+          export CLJ_CACHE="$TMPDIR/cp-cache"
+          export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
+          export GITLIBS="$HOME/.gitlibs"
+          mkdir -p "$CLJ_CACHE" "$XDG_CONFIG_HOME"
+          export AB_ABC_ROOT="$abc_root"
+        '';
+
         mkSmokeCheck =
           {
             name,
@@ -1025,6 +1053,23 @@
             pkgs.python3
             pkgs.ripgrep
           ];
+        };
+
+        parserIrOrthoPublicationSmokeCheck = mkSmokeCheck {
+          name = "parser-ir-ortho-publication-smoke-check";
+          testScript = "tests/parser-ir-ortho-publication-smoke.sh";
+          nativeBuildInputs = [
+            pkgs.clojure
+            pkgs.git
+            pkgs.jq
+            pkgs.ripgrep
+            pkgs.zstd
+          ];
+          extraEnv = {
+            AB_AAT_TO_PARSER_IR_BIN = "${abAatToParserIr}/bin/ab-aat-to-parser-ir";
+            AB_VIBRATO_DICT = "${vibratoDictCwj}/share/vibrato/unidic-cwj-202512.dic.zst";
+          };
+          extraPreScript = stageAbcPublicationRoot;
         };
 
         taxonomyDriftCheck =
@@ -1338,6 +1383,7 @@
           monorepo-workspace-layout-smoke = monorepoWorkspaceLayoutSmokeCheck;
           parser-ir-level3-admission-smoke = level3AdmissionSmokeCheck;
           parser-ir-plain-prose-source-delta-smoke = plainProseSourceDeltaSmokeCheck;
+          parser-ir-ortho-publication-smoke = parserIrOrthoPublicationSmokeCheck;
           parser-ir-publication-bundle-smoke = publicationBundleSmokeCheck;
           parser-ir-publication-bundle-batch-smoke = publicationBundleBatchSmokeCheck;
           aat-to-parser-ir-smoke = abAatToParserIrCheck;

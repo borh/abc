@@ -90,7 +90,7 @@
               back-text (tei-element-body tei-text "back")]
           (is (string/includes? tei-text "xmlns:abc=\"https://w3id.org/abc/ns/tei\""))
           (is (string/includes? tei-text "abc:vocab-version=\"0\""))
-          (is (= 2 (count (re-seq #"<(?:[A-Za-z0-9_-]+:)?p(?:\s|>)"
+          (is (= 3 (count (re-seq #"<(?:[A-Za-z0-9_-]+:)?p(?:\s|>)"
                                   body-text))))
           (is (not (string/includes? body-text "（古伝説と、シルレルの詩から。）")))
           (is (string/includes? back-text "type=\"source-attribution\""))
@@ -249,6 +249,48 @@
         (is (= "passed"
                (get (files/read-json (io/file out-dir "tei-validation-result.json"))
                     "status"))))
+      (finally
+        (delete-tree! work-dir)))))
+
+(deftest materialize-publication-requires-sentence-rows-test
+  (let [work-dir (temp-dir "abc-materialize-publication-missing-sentences")
+        out-dir (io/file work-dir "out")
+        parser-ir-file (io/file work-dir "parser-ir.json")]
+    (try
+      (abc-json/write-deterministic-json-file!
+       parser-ir-file
+       {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+        "schema_hash" "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340"
+        "source" {"work_content_hash" (files/example-hash "11")
+                  "encoding" "UTF-8"
+                  "normalization" "source"}
+        "nodes" [{"type" "text"
+                  "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                  "text" "吾輩ハ猫デアル。"}]
+        "paragraphs" [{"id" "p000000"
+                       "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                       "span_source" "direct"
+                       "node_range" {"start" 0 "end" 1}
+                       "role" "body"
+                       "source_pointer" "blocks[0]"
+                       "classification" "direct"}]
+        "warnings" []
+        "errors" []})
+      (let [err (try
+                  (materialize/materialize-publication!
+                   {:parser-ir-path (str parser-ir-file)
+                    :source-manifest-path "examples/v0/example-work/source.manifest.json"
+                    :metadata-record-path "examples/v0/example-work/metadata-record.json"
+                    :persons-dir "examples/v0/example-persons"
+                    :output-dir out-dir
+                    :generated-at generated-at})
+                  nil
+                  (catch clojure.lang.ExceptionInfo e
+                    e))]
+        (is (some? err))
+        (is (= ["parser IR publication requires sentence_segmentation"
+                "parser IR body paragraph p000000 has no sentence rows"]
+               (:errors (ex-data err)))))
       (finally
         (delete-tree! work-dir)))))
 

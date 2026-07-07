@@ -44,6 +44,10 @@
                    "mapping_id" "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
                    "mapping_schema_hash" (example-hash "38")
                    "mapping_version" "0.2.0"}
+   "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
+                            "splitter_id" "ab-plaintext-japanese-v1"
+                            "coordinate_system" "decoded_utf8"
+                            "coverage" "body-paragraphs"}
    "nodes" []
    "warnings" []
    "errors" []})

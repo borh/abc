@@ -101,6 +101,38 @@
       "classification": "direct"
     }
   ],
+  "sentence_segmentation": {
+    "schema_version": "sentence-segmentation-v1",
+    "splitter_id": "ab-plaintext-japanese-v1",
+    "coordinate_system": "decoded_utf8",
+    "coverage": "body-paragraphs"
+  },
+  "sentences": [
+    {
+      "id": "s000000",
+      "paragraph_id": "p000000",
+      "span": { "start": 0, "end": 24, "coordinate_system": "decoded_utf8" },
+      "node_range": { "start": 0, "end": 4 },
+      "tags": [],
+      "orthographic_annotation_indices": []
+    },
+    {
+      "id": "s000001",
+      "paragraph_id": "p000001",
+      "span": { "start": 24, "end": 31, "coordinate_system": "decoded_utf8" },
+      "node_range": { "start": 4, "end": 5 },
+      "tags": [],
+      "orthographic_annotation_indices": []
+    },
+    {
+      "id": "s000002",
+      "paragraph_id": "p000003",
+      "span": { "start": 51, "end": 55, "coordinate_system": "decoded_utf8" },
+      "node_range": { "start": 6, "end": 7 },
+      "tags": [],
+      "orthographic_annotation_indices": []
+    }
+  ],
   "warnings": [
     {
       "severity": "warning",

@@ -7,6 +7,7 @@
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.parser-ir-plaintext :as plaintext]
+            [abc.tools.parser-ir-sentence-policy :as sentence-policy]
             [abc.tools.schema :as schema]
             [abc.tools.shacl :as shacl]
             [abc.tools.validate-design-bundle :as validate]
@@ -1024,6 +1025,10 @@
                   "role" "body"
                   "source_pointer" "blocks[1]"
                   "classification" "direct"}]
+   "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
+                            "splitter_id" "ab-plaintext-japanese-v1"
+                            "coordinate_system" "decoded_utf8"
+                            "coverage" "body-paragraphs"}
    "sentences" [{"id" "s000000"
                  "paragraph_id" "p000000"
                  "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
@@ -1161,6 +1166,11 @@
             (assoc-in sentence-parser-ir-fixture
                       ["sentences" 1 "node_range"]
                       {"start" 2 "end" 2}))))))
+
+(deftest parser-ir-publication-sentence-evidence-errors-test
+  (is (= ["parser IR publication requires sentence_segmentation"]
+         (sentence-policy/publication-sentence-evidence-errors
+          (dissoc sentence-parser-ir-fixture "sentence_segmentation")))))
 
 (def ^:private old-compat-query
   {:aat_version 1

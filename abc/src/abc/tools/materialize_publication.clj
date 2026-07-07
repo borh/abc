@@ -6,6 +6,7 @@
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.parser-ir-plaintext :as plaintext]
             [abc.tools.parser-ir-publication-policy :as policy]
+            [abc.tools.parser-ir-sentence-policy :as sentence-policy]
             [abc.tools.parser-ir-tei :as parser-ir-tei]
             [abc.tools.schematron :as schematron]
             [abc.tools.tei :as tei]
@@ -521,6 +522,7 @@
   (let [output-dir (io/file output-dir)
         _ (.mkdirs output-dir)
         parser-ir (files/read-json parser-ir-path)
+        parser-ir (sentence-policy/ensure-publication-sentence-evidence! parser-ir)
         metadata-record (files/read-json metadata-record-path)
         source-manifest (read-source-manifest parser-ir-path source-manifest-path)
         plaintext-result (plaintext/render parser-ir)

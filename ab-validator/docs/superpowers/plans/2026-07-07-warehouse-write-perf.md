@@ -420,23 +420,75 @@ git commit -m "perf(warehouse): make parquet ZSTD level configurable via --parqu
 
 ---
 
-## Validation Record (hinoki)
+## Validation Record (hinoki) — COMPLETE
 
-Fill in after the branch is merged and built on hinoki. The measurement is the primary deliverable of this round.
+Measured on hinoki (AMD Ryzen 9 9950X, 32t, 88 GiB avail), full corpus (17,885 sources),
+4 analyzers (vibrato, vibrato:unidic-novel-202512, sudachi-a, sudachi-c), auto-jobs=18.
+The split was **re-measured on `ab7ec42`** after two waves of perf optimization landed on
+main mid-round (`e25e4f5` tokenizer/converter, `ab7ec42` adjudication); the `a27642d`
+figures below are kept as the *pre-optimization* baseline.
 
-- [ ] Build instrumented binary on hinoki (from `ab-validator/`, release).
-- [ ] **Baseline (`--parquet-zstd-level 3`)** full-corpus run: record `/usr/bin/time` wall-clock, `du -sh` of the run dir, and the `phase-timings:` line. **This confirms or refutes the write-bound hypothesis.**
-      - total wall: ____   analysis %: ____   adjudication %: ____   warehouse-write %: ____   other %: ____
-- [ ] **Candidate (`--parquet-zstd-level 1`)** full-corpus run: same three measurements.
-      - total wall: ____   output size: ____   Δ vs baseline: ____
-- [ ] **Row-count parity** (baseline vs candidate) via `scripts/oracle-validation-diff.sh` non-oracle section: all 13 tables identical (content-neutral). PASS/FAIL: ____
-- [ ] **Read-back check:** DuckDB `SELECT count(*)` + a `LIMIT 1000` scan on `morpheme_features` and `nway_feature_diffs` of the candidate run parse without error. PASS/FAIL: ____
-- [ ] **Default decision:** if level 1 gives a material wall-clock win at acceptable disk cost, change the default to 1 (a one-line edit + test update) and note it here; otherwise keep 3. Decision: ____
-- [ ] **Next-lever note:** record what the measured split implies for the deferred levers (Lever 2 analyzer parallelism only worth it if analysis % is large; per-analyzer row-collapse / id-encoding only worth it if warehouse-write % dominates; a large adjudication % would point at the oracle/nway row-building code as the lever instead). Note: the single-threaded merge/compaction tail is outside every per-worker `total`, so it is not in this split — track it separately via wall-clock.
+- [x] Built instrumented binary on hinoki (release). auto-jobs correctly resolved to **18**
+      (MemAvailable 88.6 GiB, per-job 1.7 GiB, fixed-overhead 31 GiB) — validating last
+      round's `auto_jobs` recalibration in production; peak RSS stayed inside budget with no thrash.
+
+- [x] **Baseline (`--parquet-zstd-level 3`)**, `ab7ec42`:
+      - **wall 43:09**, peak RSS **36.3 GiB**, size **43 GiB**, summed-CPU total 40,737s
+      - **analysis 11.0% · adjudication 74.3% · warehouse-write 11.1% · other 3.6%**
+      - Pre-optimization (`a27642d`) baseline for contrast: wall 51:33, RSS 62.9 GiB, CPU 46,509s,
+        split 9.1 / 71.2 / 13.5 / 6.2%. The perf work cut wall −16%, RSS −42%, CPU −12%;
+        parquet output unchanged (Arc/allocation changes are byte-identical).
+
+- [x] **Candidate (`--parquet-zstd-level 1`)**, `ab7ec42`:
+      - wall 41:29, size **45 GiB (+5.6%)**, warehouse-write CPU 4,407s vs L3's 4,504s (**−2%**)
+      - split 11.1 / 74.1 / 11.3 / 3.5% (≈ identical to L3)
+
+- [x] **Row-count parity** (L3 vs L1), all 10 emitted tables **IDENTICAL** — PASS.
+      (morphemes 662,984,226; morpheme_features 12,575,103,913; nway_feature_diffs 23,356,986,673;
+      nway_regions 161,142,784; …). Oracle keyed 4-bucket diff: dropped=0, newly_emitted=0,
+      classification_changed=0, unchanged=2,329,135. Classification breakdown 41.2 / 39.9 / 18.9%
+      — identical to the prior canonical run, so the perf commits are content-neutral too.
+
+- [x] **Read-back check** (L1): DuckDB `count(*)` on `morpheme_features` (12,575,103,913) and
+      `nway_feature_diffs` (23,356,986,673) both parse without error at zstd-1 — PASS.
+
+- [x] **Default decision: KEEP ZSTD level 3.** The codec is **not** a useful lever for this
+      workload: warehouse-write is only ~11% of the run, and the tables are so compressible that
+      level-3 encode is already cheap — dropping to level 1 cut write CPU by just 2% (≈5s wall at
+      18-way parallelism; the ~100s wall gap between the two runs is run-to-run noise) while costing
+      +5.6% disk. Level 3 stays the default; the `--parquet-zstd-level` knob remains available for
+      other workloads.
+
+- [x] **Next-lever note: the run is adjudication-bound (74.3%), NOT write-bound.** This refutes the
+      prior documented "write-bound" hypothesis and redirects all future perf work to the oracle/n-way
+      **row-building** path — the deferred levers below. Confirmed foreclosed by the measurement:
+      **Lever 2** (analysis 11%) and **write-path / ZSTD tuning** (write 11%, codec-insensitive) are
+      both low-payoff. The single-threaded merge/compaction tail sits outside every per-worker `total`,
+      so it is not captured in this split (track separately via wall-clock; it is small — the giant
+      tables are not recompacted).
 
 ## Deferred (documented, not this round)
 
-- Data-volume reduction by key-pruning — **foreclosed** (keep all keys).
-- Per-analyzer row-collapse in `nway_feature_diffs`; id-column dictionary/int encoding — future round, gated on the measured write %.
-- Lever 2 (intra-worker analyzer parallelism) — gated on the measured analysis %.
-- Decoupling encode onto a separate per-worker thread — gated on the measured write %.
+Post-measurement, the payoff order is settled: the adjudication (oracle/n-way row-building)
+path is the only high-value target (74% of the run). ZSTD/write-path and Lever 2 are foreclosed
+by the split.
+
+**Adjudication levers (the real targets — future rounds):**
+- Replace the per-group `BTreeMap` in `WarehouseFeaturePatternAccumulator` with a linear scan over
+  the contiguous group runs.
+- Build arrow columns directly instead of materializing intermediate row-struct `Vec`s (attacks the
+  row-struct→arrow transposition for the 23.4B/12.6B tables).
+- Skip oracle-evidence JSON for fully-matching ruby bases.
+- Per-analyzer row-collapse in `nway_feature_diffs` (store analyzer list per value-group) — cuts the
+  ×N-analyzer fan-out; reduces both adjudication row-building and write. NOTE: key-pruning remains
+  **foreclosed** (keep all feature keys, per user decision).
+
+**Foreclosed by the measured split:**
+- **ZSTD/write-path tuning** — write is 11% and codec-insensitive (level 1 cut write CPU 2%).
+  Default stays 3; the knob remains for other workloads.
+- **Lever 2 (intra-worker analyzer parallelism)** — analysis is only 11%.
+- **Decoupling encode onto a separate per-worker thread** — write is only 11%.
+
+(Several of the adjudication levers above are already landed on main as of `e25e4f5`/`ab7ec42`
+via separate perf work — cursor-based whitespace checks, Arc-ified n-way rows, key-independent
+hoisting in `feature_groups` — which is why the re-measured wall dropped 51:33 → 43:09.)

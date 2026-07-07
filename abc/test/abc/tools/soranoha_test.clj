@@ -426,6 +426,69 @@
         (delete-tree! snapshot-root)
         (delete-tree! root)))))
 
+(deftest layout-report-command-compares-static-layout-strategies-test
+  (let [root (fixture/temp-dir "abc-soranoha-layout-report")
+        snapshot-root (io/file "target/soranoha/full-corpus-basic-ja")
+        report-file (io/file root "layout-report.json")]
+    (try
+      (delete-tree! snapshot-root)
+      (let [request-set-file (write-generated-source-request-set!
+                              root
+                              "full-corpus-basic-ja")]
+        (with-out-str
+          (is (zero? (soranoha/run!
+                      ["reproduce" (str request-set-file)]))))
+        (let [out (with-out-str
+                    (is (zero? (soranoha/run!
+                                ["layout-report"
+                                 (str snapshot-root)
+                                 (str report-file)]))))
+              snapshot (files/read-json (io/file snapshot-root
+                                                 "snapshot-index.json"))
+              report (files/read-json report-file)
+              strategies (into {}
+                               (map (juxt #(get % "strategy_id") identity))
+                               (get report "strategy_estimates"))]
+          (is (string/includes? out (str report-file)))
+          (is (= "https://w3id.org/abc/soranoha-layout-report-v0.json"
+                 (get report "schema_id")))
+          (is (= "0.1.0" (get report "report_version")))
+          (is (= (get snapshot "snapshot_identity_hash")
+                 (get report "snapshot_identity_hash")))
+          (is (= (get snapshot "summary")
+                 (get report "snapshot_summary")))
+          (is (= {"analysis" 1
+                  "parser-ir" 1
+                  "plaintext" 1
+                  "tei" 1}
+                 (get report "artifact_kind_counts")))
+          (is (= {"snapshot_root_valid" true
+                  "checked_manifest_references" 4}
+                 (get report "validation")))
+          (is (= 4 (get-in report ["actual_root" "referenced_manifest_count"])))
+          (is (pos? (get-in report ["actual_root" "file_count"])))
+          (is (pos? (get-in report ["actual_root" "byte_count"])))
+          (is (= {"loose_artifact_kinds" ["plaintext" "tei"]
+                  "batched_artifact_kinds" ["analysis" "tokenized"]}
+                 (select-keys (get strategies "mixed-default-v1")
+                              ["loose_artifact_kinds"
+                               "batched_artifact_kinds"])))
+          (is (= 2 (get-in strategies ["mixed-default-v1"
+                                       "loose_content_file_count"])))
+          (is (= 1 (get-in strategies ["mixed-default-v1"
+                                       "archive_count"])))
+          (is (= 4 (get-in strategies ["all-loose-v1"
+                                       "loose_content_file_count"])))
+          (is (= 0 (get-in strategies ["all-loose-v1"
+                                       "archive_count"])))
+          (is (= 0 (get-in strategies ["all-batched-v1"
+                                       "loose_content_file_count"])))
+          (is (= 4 (get-in strategies ["all-batched-v1"
+                                       "archive_count"])))))
+      (finally
+        (delete-tree! snapshot-root)
+        (delete-tree! root)))))
+
 (deftest reproduce-command-skips-analysis-for-generated-publication-request-set-test
   (let [root (fixture/temp-dir "abc-soranoha-reproduce-publication-source")
         snapshot-root (io/file "target/soranoha/full-corpus-publication-basic-ja")]

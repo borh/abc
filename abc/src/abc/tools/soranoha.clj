@@ -11,6 +11,7 @@
             [abc.tools.schema :as schema]
             [abc.tools.source-snapshot-workset :as source-snapshot-workset]
             [abc.tools.snapshot-index :as snapshot-index]
+            [abc.tools.soranoha-layout-report :as layout-report]
             [clojure.java.io :as io]
             [clojure.string :as string]))
 
@@ -625,11 +626,6 @@
                       {:path (str run-summary-file)})))
     (files/read-json run-summary-file)))
 
-(defn- artifact-kind-counts [snapshot]
-  (into (sorted-map)
-        (frequencies (map #(get % "artifact_kind")
-                          (get snapshot "artifact_references" [])))))
-
 (defn- publication-report [snapshot run-summary validation]
   (let [identity-object (get snapshot "snapshot_index_identity_object")]
     {"schema_id" "https://w3id.org/abc/soranoha-publication-report-v0.json"
@@ -641,7 +637,7 @@
      "snapshot_identity_hash" (get snapshot "snapshot_identity_hash")
      "source_snapshot_hash" (get identity-object "source_snapshot_hash")
      "snapshot_summary" (get snapshot "summary")
-     "artifact_kind_counts" (artifact-kind-counts snapshot)
+     "artifact_kind_counts" (layout-report/artifact-kind-counts snapshot)
      "manifest_reference_count" (count (get snapshot "artifact_references" []))
      "artifact_manifest_count" (get run-summary "artifact_manifest_count")
      "materialization_count" (get run-summary "materialization_count")
@@ -672,6 +668,26 @@
           output-file (io/file output-path)]
       (manifest/write-json-file! output-file report)
       (println "publication_report:" (str output-file))
+      (println "snapshot_identity_hash:" (get snapshot
+                                              "snapshot_identity_hash"))
+      (println "request_set_label:" (get snapshot "request_set_label"))
+      0)))
+
+(defn layout-report! [snapshot-root output-path]
+  (let [root (io/file snapshot-root)
+        snapshot (read-valid-snapshot-index root)]
+    (when-not (.isDirectory root)
+      (throw (ex-info "layout-report requires a snapshot root directory"
+                      {:path (str root)})))
+    (validate-snapshot-root-references! root snapshot)
+    (let [validation {"snapshot_root_valid" true
+                      "checked_manifest_references" (count (get snapshot
+                                                                "artifact_references"
+                                                                []))}
+          report (layout-report/build-report root snapshot validation)
+          output-file (io/file output-path)]
+      (manifest/write-json-file! output-file report)
+      (println "layout_report:" (str output-file))
       (println "snapshot_identity_hash:" (get snapshot
                                               "snapshot_identity_hash"))
       (println "request_set_label:" (get snapshot "request_set_label"))
@@ -740,6 +756,7 @@
     "  validate <snapshot-root-or-index>"
     "  explain-snapshot <snapshot-index>"
     "  publication-report <snapshot-root> <output-path>"
+    "  layout-report <snapshot-root> <output-path>"
     "  source-snapshot <materialized-root> <output-root> <snapshot-scope> <snapshot-date>"]))
 
 (def commands
@@ -759,6 +776,8 @@
                        :run explain-snapshot!}
    "publication-report" {:args 2
                          :run publication-report!}
+   "layout-report" {:args 2
+                    :run layout-report!}
    "source-snapshot" {:args 4
                       :run source-snapshot!}})
 

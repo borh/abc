@@ -14,7 +14,7 @@
       "id": "https://w3id.org/abc/schemas/analysis-result.schema.json",
       "title": "ABC Analysis Result",
       "version": "0.1.0",
-      "hash": "sha256:3071476a037fc46b17077ae351ece7c8d6677294cd23b1ca47393cf3702f8fc8"
+      "hash": "sha256:d282e7fa9c726a86ffbd37dcc5f3ccf6f4c19cf7e490172638797907d1602c8a"
     },
     {
       "path": "schemas/aat-parser-ir-divergence.schema.json",

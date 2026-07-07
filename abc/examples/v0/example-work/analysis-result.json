@@ -17,11 +17,13 @@
       "value": 3,
       "value_type": "integer"
     }],
-  "schema_hash": "sha256:3071476a037fc46b17077ae351ece7c8d6677294cd23b1ca47393cf3702f8fc8",
+  "schema_hash": "sha256:d282e7fa9c726a86ffbd37dcc5f3ccf6f4c19cf7e490172638797907d1602c8a",
   "schema_id": "https:\/\/w3id.org\/abc\/schemas\/analysis-result.schema.json",
   "subject": 
   {
     "corpus_snapshot_hash": "sha256:f00000000000000000000000000000000000000000000000000000000000000f",
+    "git_ref": "refs/heads/example-work",
+    "logical_path": "examples/v0/example-work/analysis-result.json",
     "metadata_record_hash": null,
     "source_id": "aozora:example-work",
     "work_content_hash": "sha256:f100000000000000000000000000000000000000000000000000000000000001",

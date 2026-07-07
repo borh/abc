@@ -45,6 +45,8 @@
       "additionalProperties": false,
       "required": [
         "source_id",
+        "logical_path",
+        "git_ref",
         "work_id",
         "corpus_snapshot_hash",
         "work_content_hash",
@@ -52,6 +54,8 @@
       ],
       "properties": {
         "source_id": { "type": "string", "minLength": 1 },
+        "logical_path": { "type": "string", "minLength": 1 },
+        "git_ref": { "type": "string", "minLength": 1 },
         "work_id": { "type": "string", "minLength": 1 },
         "corpus_snapshot_hash": { "$ref": "#/$defs/hash" },
         "work_content_hash": { "$ref": "#/$defs/hash" },

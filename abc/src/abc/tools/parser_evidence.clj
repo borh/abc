@@ -74,3 +74,14 @@
   (let [index (edn/read-string (slurp index-path))]
     (validate-index! index)
     index))
+
+(defn citable-hashes
+  ([]
+   (citable-hashes (load-index)))
+  ([index]
+   (->> (:entries index)
+        (filter #(= :citable (:status %)))
+        (map :sha256)
+        sort
+        distinct
+        vec)))

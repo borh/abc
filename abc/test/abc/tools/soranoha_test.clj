@@ -1,6 +1,7 @@
 (ns abc.tools.soranoha-test
   (:require [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
+            [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.request-set-resolver :as resolver]
             [abc.tools.source-snapshot-fixture :as fixture]
             [abc.tools.snapshot-index :as snapshot-index]
@@ -335,15 +336,28 @@
                   (is (zero? (soranoha/run!
                               ["reproduce" (str request-set-file)]))))
             snapshot-file (io/file snapshot-root "snapshot-index.json")
+            run-summary-file (io/file snapshot-root "run-summary.json")
             parser-manifest (io/file snapshot-root
                                      "artifacts/works/alpha/parser-ir/parser-ir.manifest.json")]
         (is (string/includes? out (str snapshot-file)))
         (is (.exists parser-manifest))
         (is (.exists snapshot-file))
+        (is (.exists run-summary-file))
         (let [snapshot (files/read-json snapshot-file)]
           (is (= "full-corpus-basic-ja" (get snapshot "request_set_label")))
           (is (= 4 (get-in snapshot ["summary" "total_artifacts"])))
+          (is (= (parser-evidence/citable-hashes)
+                 (get-in snapshot ["snapshot_index_identity_object"
+                                   "parser_evidence_hashes"])))
           (is (true? (snapshot-index/validate-snapshot-index! snapshot)))
+          (let [run-summary (files/read-json run-summary-file)]
+            (is (= (get snapshot "snapshot_identity_hash")
+                   (get run-summary "snapshot_identity_hash")))
+            (is (= (get snapshot "summary")
+                   (get run-summary "snapshot_summary")))
+            (is (= (get-in snapshot ["snapshot_index_identity_object"
+                                     "parser_evidence_hashes"])
+                   (get run-summary "parser_evidence_hashes"))))
           (with-out-str
             (is (zero? (soranoha/run! ["validate" (str snapshot-root)]))))))
       (finally

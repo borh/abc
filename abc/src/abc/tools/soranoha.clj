@@ -6,6 +6,7 @@
             [abc.tools.materialize-analysis :as materialize-analysis]
             [abc.tools.materialize-publication :as materialize-publication]
             [abc.tools.materialize-source-snapshot :as materialize-source-snapshot]
+            [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.request-set-resolver :as request-set-resolver]
             [abc.tools.schema :as schema]
             [abc.tools.source-snapshot-workset :as source-snapshot-workset]
@@ -169,7 +170,7 @@
        "layout_policy" generated-snapshot-layout-policy
        "schema_hash_paths" generated-snapshot-schema-hash-paths
        "schema_hashes" []
-       "parser_evidence_hashes" []
+       "parser_evidence_hashes" (parser-evidence/citable-hashes)
        "materializations" (mapv #(generated-materialization request-set %)
                                 (work-value workset :works))
        "manifest_references" []})))
@@ -418,6 +419,38 @@
     (io/file root "artifacts" "works" subdir)
     (io/file root "artifacts")))
 
+(defn- runtime-environment []
+  {"java_version" (System/getProperty "java.version")
+   "os_name" (System/getProperty "os.name")
+   "os_arch" (System/getProperty "os.arch")
+   "available_processors" (.availableProcessors (Runtime/getRuntime))})
+
+(defn- run-summary
+  [{:keys [request-set snapshot manifest-count materialization-count]}]
+  (let [identity-object (get snapshot "snapshot_index_identity_object")]
+    {"schema_id" "https://w3id.org/abc/soranoha-run-summary-v0.json"
+     "run_summary_version" "0.1.0"
+     "generated_at" (get snapshot "generated_at")
+     "request_set_label" (get request-set "label")
+     "request_set_id" (get request-set "request_set_id")
+     "snapshot_label" (get snapshot "snapshot_label")
+     "snapshot_identity_hash" (get snapshot "snapshot_identity_hash")
+     "source_snapshot_hash" (get identity-object "source_snapshot_hash")
+     "snapshot_summary" (get snapshot "summary")
+     "artifact_manifest_count" manifest-count
+     "materialization_count" materialization-count
+     "parser_evidence_hashes" (get identity-object "parser_evidence_hashes")
+     "schema_hashes" (get identity-object "schema_hashes")
+     "layout_policy_hash" (get identity-object "layout_policy_hash")
+     "failure_policy_hash" (get identity-object "failure_policy_hash")
+     "manifest_index_hash" (get identity-object "manifest_index_hash")
+     "runtime_environment" (runtime-environment)
+     "notes" "Operational reproduction summary. This file is not part of snapshot identity; verify snapshot_identity_hash and artifact hashes through snapshot-index.json."}))
+
+(defn- write-run-summary! [path opts]
+  (manifest/write-json-file! path (run-summary opts))
+  path)
+
 (defn- materialize-entry!
   [{:keys [root materialization request-set generated-at]}]
   (let [artifact-base (artifact-base root materialization)
@@ -470,10 +503,17 @@
                     request-set generated-plan)
           output-file (snapshot-index/write-snapshot-index!
                        snapshot
-                       (str (io/file root "snapshot-index.json")))]
+                       (str (io/file root "snapshot-index.json")))
+          run-summary-file (io/file root "run-summary.json")]
+      (write-run-summary! run-summary-file
+                          {:request-set request-set
+                           :snapshot snapshot
+                           :manifest-count (count manifest-files)
+                           :materialization-count (count materializations)})
       {:root root
        :snapshot snapshot
-       :snapshot-index-file output-file})))
+       :snapshot-index-file output-file
+       :run-summary-file run-summary-file})))
 
 (defn reproduce! [label-or-path]
   (let [request-set (read-request-set label-or-path)
@@ -553,6 +593,31 @@
       true))
   true)
 
+(defn- validate-run-summary! [root snapshot]
+  (let [run-summary-file (io/file root "run-summary.json")]
+    (when (.isFile run-summary-file)
+      (let [summary (files/read-json run-summary-file)]
+        (doseq [[field expected actual]
+                [["request_set_label" (get snapshot "request_set_label")
+                  (get summary "request_set_label")]
+                 ["snapshot_label" (get snapshot "snapshot_label")
+                  (get summary "snapshot_label")]
+                 ["snapshot_identity_hash" (get snapshot "snapshot_identity_hash")
+                  (get summary "snapshot_identity_hash")]
+                 ["snapshot_summary" (get snapshot "summary")
+                  (get summary "snapshot_summary")]
+                 ["parser_evidence_hashes"
+                  (get-in snapshot ["snapshot_index_identity_object"
+                                    "parser_evidence_hashes"])
+                  (get summary "parser_evidence_hashes")]]]
+          (when-not (= expected actual)
+            (throw (ex-info (str "Run summary " field " mismatch")
+                            {:path (str run-summary-file)
+                             :field field
+                             :expected expected
+                             :actual actual})))))))
+  true)
+
 (defn explain-snapshot! [path]
   (let [snapshot (read-valid-snapshot-index path)
         summary (get snapshot "summary")]
@@ -571,7 +636,8 @@
   (let [snapshot (read-valid-snapshot-index snapshot-root)]
     (when (.isDirectory (io/file snapshot-root))
       (validate-snapshot-root-references! (snapshot-root-path snapshot-root)
-                                          snapshot))
+                                          snapshot)
+      (validate-run-summary! (snapshot-root-path snapshot-root) snapshot))
     (println "snapshot_valid: true")
     (println "snapshot_label:" (get snapshot "snapshot_label"))
     (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))

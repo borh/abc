@@ -47,6 +47,24 @@
                                        :logical_path
                                        "ab-validator/docs/other.md")]})))))
 
+(deftest parser-evidence-citable-hashes-test
+  (let [index {:entries [(assoc valid-entry
+                                :sha256 "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+                                :status :provisional)
+                         (assoc valid-entry
+                                :evidence_id "ab-validator/citable-b"
+                                :logical_path "ab-validator/docs/b.md"
+                                :sha256 "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                                :status :citable)
+                         (assoc valid-entry
+                                :evidence_id "ab-validator/citable-a"
+                                :logical_path "ab-validator/docs/a.md"
+                                :sha256 "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                                :status :citable)]}]
+    (is (= ["sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"]
+           (parser-evidence/citable-hashes index)))))
+
 (deftest parser-evidence-nullable-external-path-test
   (testing "current_external_path may be absent or nil but not blank"
     (is (empty? (parser-evidence/index-errors

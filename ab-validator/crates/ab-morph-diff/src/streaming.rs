@@ -33,7 +33,7 @@ pub(crate) fn compare_pair_compact_with_source_text(
 struct CompactAccumulator<'a> {
     from: &'a Analysis,
     to: &'a Analysis,
-    source_text: &'a str,
+    whitespace_checker: crate::stats::WhitespaceSpanChecker<'a>,
     max_examples: usize,
     one_to_one_regions: usize,
     one_to_one_with_feature_differences: usize,
@@ -63,7 +63,7 @@ impl<'a> CompactAccumulator<'a> {
         Self {
             from,
             to,
-            source_text,
+            whitespace_checker: crate::stats::WhitespaceSpanChecker::new(source_text),
             max_examples,
             one_to_one_regions: 0,
             one_to_one_with_feature_differences: 0,
@@ -94,10 +94,10 @@ impl<'a> CompactAccumulator<'a> {
                     changed_features(&from_morpheme.features, &to_morpheme.features);
                 if !feature_changes.is_empty() {
                     self.one_to_one_with_feature_differences += 1;
-                    if crate::stats::char_span_is_whitespace_only(
-                        self.source_text,
-                        &aligned.text_span,
-                    ) {
+                    if self
+                        .whitespace_checker
+                        .is_whitespace_only(&aligned.text_span)
+                    {
                         self.whitespace_feature_diff_regions += 1;
                     } else {
                         self.lexical_feature_diff_regions += 1;
@@ -116,7 +116,7 @@ impl<'a> CompactAccumulator<'a> {
             }
             Region::Segmentation(diff) => {
                 self.segmentation_regions += 1;
-                if crate::stats::char_span_is_whitespace_only(self.source_text, &diff.text_span) {
+                if self.whitespace_checker.is_whitespace_only(&diff.text_span) {
                     self.whitespace_segmentation_regions += 1;
                 } else {
                     self.lexical_segmentation_regions += 1;

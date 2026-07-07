@@ -853,9 +853,11 @@ fn tei_counts_from_xml(
 }
 
 fn tei_body_xml(xml: &str) -> &str {
-    let body_regex =
+    static BODY_REGEX: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let body_regex = BODY_REGEX.get_or_init(|| {
         regex::Regex::new(r#"(?s)<(?:[A-Za-z_][A-Za-z0-9_.-]*:)?body(?:\s[^>]*)?>(.*?)</(?:[A-Za-z_][A-Za-z0-9_.-]*:)?body>"#)
-            .expect("static TEI body regex");
+            .expect("static TEI body regex")
+    });
     body_regex
         .captures(xml)
         .and_then(|captures| captures.get(1))
@@ -863,12 +865,26 @@ fn tei_body_xml(xml: &str) -> &str {
 }
 
 fn count_xml_element(xml: &str, local_name: &str) -> u64 {
-    let pattern = format!(
-        r#"<(?:[A-Za-z_][A-Za-z0-9_.-]*:)?{}(?:[\s>/])"#,
-        regex::escape(local_name)
-    );
-    regex::Regex::new(&pattern)
-        .expect("static XML element count regex")
+    static ELEMENT_REGEXES: std::sync::OnceLock<
+        std::sync::Mutex<std::collections::BTreeMap<String, regex::Regex>>,
+    > = std::sync::OnceLock::new();
+    // Regex clones share the compiled program (Arc internally), so clone out
+    // of the cache instead of holding the lock across the scan.
+    let element_regex = {
+        let regexes = ELEMENT_REGEXES.get_or_init(Default::default);
+        let mut regexes = regexes.lock().expect("XML element regex cache lock");
+        regexes
+            .entry(local_name.to_owned())
+            .or_insert_with(|| {
+                let pattern = format!(
+                    r#"<(?:[A-Za-z_][A-Za-z0-9_.-]*:)?{}(?:[\s>/])"#,
+                    regex::escape(local_name)
+                );
+                regex::Regex::new(&pattern).expect("static XML element count regex")
+            })
+            .clone()
+    };
+    element_regex
         .find_iter(xml)
         .count()
         .try_into()

@@ -2,6 +2,21 @@ use super::*;
 use crate::options::OrthoDetectMode;
 use crate::output::for_each_jsonl_or_zst_line;
 
+/// Lets the ortho-detect heuristic tokenize through a vibrato analyzer that
+/// the run already loaded, instead of loading the dictionary a second time.
+struct SharedVibratoOrthoTokenizer(Arc<LoadedAnalyzer>);
+
+impl ab_ortho_detect::OrthoTokenizer for SharedVibratoOrthoTokenizer {
+    fn tokenize(&self, text: &str) -> Vec<ab_ortho_detect::OrthoToken> {
+        match self.0.as_ref() {
+            LoadedAnalyzer::Vibrato(analyzer) => {
+                ab_ortho_detect::OrthoTokenizer::tokenize(analyzer, text)
+            }
+            _ => unreachable!("SharedVibratoOrthoTokenizer wraps a vibrato analyzer"),
+        }
+    }
+}
+
 /// Wall-time split for a serial analyze run: time spent in the per-document
 /// analyzer loop, time spent building adjudication rows (oracle evidence +
 /// n-way row construction), time spent in the warehouse parquet write/encode
@@ -580,28 +595,41 @@ pub(crate) fn run_analyze_aat_serial(
     let detector: Option<Arc<dyn OrthoDetector>> = match options.ortho_detect {
         OrthoDetectMode::Off => None,
         OrthoDetectMode::Heuristic => {
-            let vibrato = match ab_morph_analyzers::VibratoAnalyzer::unidic_cwj_default() {
-                Ok(v) => Arc::new(v) as Arc<dyn ab_ortho_detect::OrthoTokenizer>,
-                Err(error) => {
-                    if let Some(writer) = &mut errors_writer {
-                        write_error_row(
-                            &mut **writer,
-                            &RunErrorRow {
-                                input_path: String::new(),
-                                source_id: None,
-                                text_id: None,
-                                analyzer: None,
-                                stage: "ortho_detect_load".to_owned(),
-                                error: error.to_string(),
-                            },
-                        )?;
-                    } else {
-                        eprintln!(
-                            "ab-morph-run: failed to load Vibrato for ortho detection: {error}"
-                        );
+            // Reuse an already-loaded default vibrato analyzer when the run
+            // also selected it; loading the dictionary a second time would
+            // duplicate hundreds of MB of resident memory.
+            let shared_vibrato = analyzers
+                .iter()
+                .find(|analyzer| {
+                    matches!(analyzer.as_ref(), LoadedAnalyzer::Vibrato(_))
+                        && analyzer.analyzer_id() == ab_morph_analyzers::DEFAULT_VIBRATO_ANALYZER_ID
+                })
+                .cloned();
+            let vibrato: Arc<dyn ab_ortho_detect::OrthoTokenizer> = match shared_vibrato {
+                Some(analyzer) => Arc::new(SharedVibratoOrthoTokenizer(analyzer)),
+                None => match ab_morph_analyzers::VibratoAnalyzer::unidic_cwj_default() {
+                    Ok(v) => Arc::new(v) as Arc<dyn ab_ortho_detect::OrthoTokenizer>,
+                    Err(error) => {
+                        if let Some(writer) = &mut errors_writer {
+                            write_error_row(
+                                &mut **writer,
+                                &RunErrorRow {
+                                    input_path: String::new(),
+                                    source_id: None,
+                                    text_id: None,
+                                    analyzer: None,
+                                    stage: "ortho_detect_load".to_owned(),
+                                    error: error.to_string(),
+                                },
+                            )?;
+                        } else {
+                            eprintln!(
+                                "ab-morph-run: failed to load Vibrato for ortho detection: {error}"
+                            );
+                        }
+                        return Err(error.into());
                     }
-                    return Err(error.into());
-                }
+                },
             };
             Some(Arc::new(ab_ortho_detect::heuristic::HeuristicV1::new(
                 vibrato,

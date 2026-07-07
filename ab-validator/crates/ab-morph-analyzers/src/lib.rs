@@ -10,7 +10,7 @@ pub mod vibrato;
 pub use error::AnalyzerError;
 pub use sudachi::{SudachiAnalyzer, SudachiMode};
 pub use vaporetto::VaporettoAnalyzer;
-pub use vibrato::VibratoAnalyzer;
+pub use vibrato::{DEFAULT_VIBRATO_ANALYZER_ID, VibratoAnalyzer};
 
 use ab_morph_diff::Analysis;
 use ab_plaintext::PlainTextDocument;

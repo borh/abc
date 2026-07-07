@@ -1,4 +1,6 @@
-use ab_morph_diff::{FeatureMap, FeatureValue};
+use std::sync::{Arc, LazyLock};
+
+use ab_morph_diff::{FeatureKey, FeatureMap, FeatureValue};
 
 const VIBRATO_UNIDIC_KEYS: &[&str] = &[
     "pos1",
@@ -60,6 +62,21 @@ const VAPORETTO_UNIDIC_KEYS: &[&str] = &[
     "lex_type",
 ];
 
+// Interned key names shared across tokens: cloning an Arc<str> is a refcount
+// bump, while `&'static str -> Arc<str>` allocates per token.
+static VIBRATO_UNIDIC_KEY_ARCS: LazyLock<Vec<FeatureKey>> = LazyLock::new(|| {
+    VIBRATO_UNIDIC_KEYS
+        .iter()
+        .map(|key| (*key).into())
+        .collect()
+});
+static VAPORETTO_UNIDIC_KEY_ARCS: LazyLock<Vec<FeatureKey>> = LazyLock::new(|| {
+    VAPORETTO_UNIDIC_KEYS
+        .iter()
+        .map(|key| (*key).into())
+        .collect()
+});
+
 pub(crate) fn feature_value(value: impl AsRef<str>) -> Option<FeatureValue> {
     let value = value.as_ref();
     if value.is_empty() || value == "*" {
@@ -70,33 +87,25 @@ pub(crate) fn feature_value(value: impl AsRef<str>) -> Option<FeatureValue> {
 }
 
 pub(crate) fn parse_vibrato_feature_string(feature: &str) -> FeatureMap {
-    let mut features = FeatureMap::with_capacity(VIBRATO_UNIDIC_KEYS.len());
-
-    for (index, value) in feature.split(',').enumerate() {
-        let key = VIBRATO_UNIDIC_KEYS
+    FeatureMap::from_entries(feature.split(',').enumerate().map(|(index, value)| {
+        let key = VIBRATO_UNIDIC_KEY_ARCS
             .get(index)
-            .map(|key| (*key).into())
+            .map(Arc::clone)
             .unwrap_or_else(|| format!("field_{index}").into());
-        let _ = features.insert(key, feature_value(value));
-    }
-
-    features
+        (key, feature_value(value))
+    }))
 }
 
 pub(crate) fn parse_vaporetto_feature_string<'a>(
     feature_tags: impl IntoIterator<Item = Option<std::borrow::Cow<'a, str>>>,
 ) -> FeatureMap {
-    let mut features = FeatureMap::with_capacity(VAPORETTO_UNIDIC_KEYS.len());
-
-    for (index, tag) in feature_tags.into_iter().enumerate() {
-        let key = VAPORETTO_UNIDIC_KEYS
+    FeatureMap::from_entries(feature_tags.into_iter().enumerate().map(|(index, tag)| {
+        let key = VAPORETTO_UNIDIC_KEY_ARCS
             .get(index)
-            .map(|key| (*key).into())
+            .map(Arc::clone)
             .unwrap_or_else(|| format!("field_{index}").into());
-        let _ = features.insert(key, tag.and_then(|tag| feature_value(tag.as_ref())));
-    }
-
-    features
+        (key, tag.and_then(|tag| feature_value(tag.as_ref())))
+    }))
 }
 
 #[cfg(test)]

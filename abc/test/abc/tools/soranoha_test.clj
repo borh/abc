@@ -1,6 +1,7 @@
 (ns abc.tools.soranoha-test
   (:require [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
+            [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.request-set-resolver :as resolver]
             [abc.tools.source-snapshot-fixture :as fixture]
             [abc.tools.snapshot-index :as snapshot-index]
@@ -335,17 +336,155 @@
                   (is (zero? (soranoha/run!
                               ["reproduce" (str request-set-file)]))))
             snapshot-file (io/file snapshot-root "snapshot-index.json")
+            run-summary-file (io/file snapshot-root "run-summary.json")
             parser-manifest (io/file snapshot-root
                                      "artifacts/works/alpha/parser-ir/parser-ir.manifest.json")]
         (is (string/includes? out (str snapshot-file)))
         (is (.exists parser-manifest))
         (is (.exists snapshot-file))
+        (is (.exists run-summary-file))
         (let [snapshot (files/read-json snapshot-file)]
           (is (= "full-corpus-basic-ja" (get snapshot "request_set_label")))
           (is (= 4 (get-in snapshot ["summary" "total_artifacts"])))
+          (is (= (parser-evidence/citable-hashes)
+                 (get-in snapshot ["snapshot_index_identity_object"
+                                   "parser_evidence_hashes"])))
           (is (true? (snapshot-index/validate-snapshot-index! snapshot)))
+          (let [run-summary (files/read-json run-summary-file)]
+            (is (= (get snapshot "snapshot_identity_hash")
+                   (get run-summary "snapshot_identity_hash")))
+            (is (= (get snapshot "summary")
+                   (get run-summary "snapshot_summary")))
+            (is (= (get-in snapshot ["snapshot_index_identity_object"
+                                     "parser_evidence_hashes"])
+                   (get run-summary "parser_evidence_hashes"))))
           (with-out-str
             (is (zero? (soranoha/run! ["validate" (str snapshot-root)]))))))
+      (finally
+        (delete-tree! snapshot-root)
+        (delete-tree! root)))))
+
+(deftest publication-report-command-writes-citable-reproduction-evidence-test
+  (let [root (fixture/temp-dir "abc-soranoha-publication-report")
+        snapshot-root (io/file "target/soranoha/full-corpus-basic-ja")
+        report-file (io/file root "publication-report.json")]
+    (try
+      (delete-tree! snapshot-root)
+      (let [request-set-file (write-generated-source-request-set!
+                              root
+                              "full-corpus-basic-ja")]
+        (with-out-str
+          (is (zero? (soranoha/run!
+                      ["reproduce" (str request-set-file)]))))
+        (let [out (with-out-str
+                    (is (zero? (soranoha/run!
+                                ["publication-report"
+                                 (str snapshot-root)
+                                 (str report-file)]))))
+              snapshot (files/read-json (io/file snapshot-root
+                                                 "snapshot-index.json"))
+              run-summary (files/read-json (io/file snapshot-root
+                                                    "run-summary.json"))
+              report (files/read-json report-file)]
+          (is (string/includes? out (str report-file)))
+          (is (= "https://w3id.org/abc/soranoha-publication-report-v0.json"
+                 (get report "schema_id")))
+          (is (= "0.1.0" (get report "report_version")))
+          (is (= (get snapshot "snapshot_label")
+                 (get report "snapshot_label")))
+          (is (= (get snapshot "snapshot_identity_hash")
+                 (get report "snapshot_identity_hash")))
+          (is (= (get snapshot "request_set_label")
+                 (get report "request_set_label")))
+          (is (= (get-in snapshot ["snapshot_index_identity_object"
+                                   "request_set_id"])
+                 (get report "request_set_id")))
+          (is (= (get-in snapshot ["snapshot_index_identity_object"
+                                   "source_snapshot_hash"])
+                 (get report "source_snapshot_hash")))
+          (is (= (get snapshot "summary")
+                 (get report "snapshot_summary")))
+          (is (= {"analysis" 1
+                  "parser-ir" 1
+                  "plaintext" 1
+                  "tei" 1}
+                 (get report "artifact_kind_counts")))
+          (is (= 4 (get report "manifest_reference_count")))
+          (is (= (get run-summary "artifact_manifest_count")
+                 (get report "artifact_manifest_count")))
+          (is (= (get run-summary "materialization_count")
+                 (get report "materialization_count")))
+          (is (= (parser-evidence/citable-hashes)
+                 (get report "parser_evidence_hashes")))
+          (is (= (get run-summary "runtime_environment")
+                 (get report "runtime_environment")))
+          (is (= {"snapshot_root_valid" true
+                  "checked_manifest_references" 4
+                  "run_summary_valid" true}
+                 (get report "validation")))))
+      (finally
+        (delete-tree! snapshot-root)
+        (delete-tree! root)))))
+
+(deftest layout-report-command-compares-static-layout-strategies-test
+  (let [root (fixture/temp-dir "abc-soranoha-layout-report")
+        snapshot-root (io/file "target/soranoha/full-corpus-basic-ja")
+        report-file (io/file root "layout-report.json")]
+    (try
+      (delete-tree! snapshot-root)
+      (let [request-set-file (write-generated-source-request-set!
+                              root
+                              "full-corpus-basic-ja")]
+        (with-out-str
+          (is (zero? (soranoha/run!
+                      ["reproduce" (str request-set-file)]))))
+        (let [out (with-out-str
+                    (is (zero? (soranoha/run!
+                                ["layout-report"
+                                 (str snapshot-root)
+                                 (str report-file)]))))
+              snapshot (files/read-json (io/file snapshot-root
+                                                 "snapshot-index.json"))
+              report (files/read-json report-file)
+              strategies (into {}
+                               (map (juxt #(get % "strategy_id") identity))
+                               (get report "strategy_estimates"))]
+          (is (string/includes? out (str report-file)))
+          (is (= "https://w3id.org/abc/soranoha-layout-report-v0.json"
+                 (get report "schema_id")))
+          (is (= "0.1.0" (get report "report_version")))
+          (is (= (get snapshot "snapshot_identity_hash")
+                 (get report "snapshot_identity_hash")))
+          (is (= (get snapshot "summary")
+                 (get report "snapshot_summary")))
+          (is (= {"analysis" 1
+                  "parser-ir" 1
+                  "plaintext" 1
+                  "tei" 1}
+                 (get report "artifact_kind_counts")))
+          (is (= {"snapshot_root_valid" true
+                  "checked_manifest_references" 4}
+                 (get report "validation")))
+          (is (= 4 (get-in report ["actual_root" "referenced_manifest_count"])))
+          (is (pos? (get-in report ["actual_root" "file_count"])))
+          (is (pos? (get-in report ["actual_root" "byte_count"])))
+          (is (= {"loose_artifact_kinds" ["plaintext" "tei"]
+                  "batched_artifact_kinds" ["analysis" "tokenized"]}
+                 (select-keys (get strategies "mixed-default-v1")
+                              ["loose_artifact_kinds"
+                               "batched_artifact_kinds"])))
+          (is (= 2 (get-in strategies ["mixed-default-v1"
+                                       "loose_content_file_count"])))
+          (is (= 1 (get-in strategies ["mixed-default-v1"
+                                       "archive_count"])))
+          (is (= 4 (get-in strategies ["all-loose-v1"
+                                       "loose_content_file_count"])))
+          (is (= 0 (get-in strategies ["all-loose-v1"
+                                       "archive_count"])))
+          (is (= 0 (get-in strategies ["all-batched-v1"
+                                       "loose_content_file_count"])))
+          (is (= 4 (get-in strategies ["all-batched-v1"
+                                       "archive_count"])))))
       (finally
         (delete-tree! snapshot-root)
         (delete-tree! root)))))

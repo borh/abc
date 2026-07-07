@@ -578,6 +578,7 @@ fn divergence_records_aggregate_by_mapping_rule_and_validate_against_abc_schema(
         )
         .unwrap();
 
+    let validators = ab_aat_to_parser_ir::schema::SchemaValidators::compile(&schemas).unwrap();
     let bundle = recorder
         .bundle(
             AatMeta {
@@ -592,7 +593,7 @@ fn divergence_records_aggregate_by_mapping_rule_and_validate_against_abc_schema(
                 metrics: Value::Null,
                 semantic_summary: Value::Null,
             },
-            &schemas,
+            &validators,
             &mapping,
         )
         .unwrap();

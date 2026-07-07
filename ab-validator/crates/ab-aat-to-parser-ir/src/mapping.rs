@@ -170,12 +170,22 @@ impl MappingIndex {
         aat_pointer: Option<&str>,
         parser_ir_pointer: Option<&str>,
     ) -> bool {
+        self.get_rule(category, aat_pointer, parser_ir_pointer)
+            .is_some()
+    }
+
+    pub fn get_rule(
+        &self,
+        category: &str,
+        aat_pointer: Option<&str>,
+        parser_ir_pointer: Option<&str>,
+    ) -> Option<&MappingRule> {
         let key = (
             category.to_owned(),
             aat_pointer.map(fold_aat_pointer),
             parser_ir_pointer.map(ToOwned::to_owned),
         );
-        self.rules.contains_key(&key)
+        self.rules.get(&key)
     }
 
     pub fn require_rule(
@@ -184,29 +194,27 @@ impl MappingIndex {
         aat_pointer: Option<&str>,
         parser_ir_pointer: Option<&str>,
     ) -> Result<&MappingRule> {
-        let key = (
-            category.to_owned(),
-            aat_pointer.map(fold_aat_pointer),
-            parser_ir_pointer.map(ToOwned::to_owned),
-        );
-        self.rules.get(&key).ok_or_else(|| {
-            anyhow::anyhow!(
-                "unmeasured divergence: category={category} aat_pointer={} parser_ir_pointer={}",
-                aat_pointer
-                    .map(fold_aat_pointer)
-                    .unwrap_or_else(|| "null".to_owned()),
-                parser_ir_pointer.unwrap_or("null")
-            )
-        })
+        self.get_rule(category, aat_pointer, parser_ir_pointer)
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "unmeasured divergence: category={category} aat_pointer={} parser_ir_pointer={}",
+                    aat_pointer
+                        .map(fold_aat_pointer)
+                        .unwrap_or_else(|| "null".to_owned()),
+                    parser_ir_pointer.unwrap_or("null")
+                )
+            })
     }
 }
 
 pub fn fold_aat_pointer(pointer: &str) -> String {
+    let trimmed = pointer.trim_start_matches("$.");
+    if !trimmed.contains('[') && !trimmed.contains('=') {
+        return trimmed.to_owned();
+    }
     static INDEX_RE: OnceLock<Regex> = OnceLock::new();
     let index_re = INDEX_RE.get_or_init(|| Regex::new(r"\[[0-9]+\]").expect("valid index regex"));
-    let folded = index_re
-        .replace_all(pointer.trim_start_matches("$."), "[]")
-        .to_string();
+    let folded = index_re.replace_all(trimmed, "[]").to_string();
     folded
         .split_once('=')
         .map(|(path, _)| path.to_owned())

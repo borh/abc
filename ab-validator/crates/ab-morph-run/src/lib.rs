@@ -529,13 +529,13 @@ struct WarehouseFeaturePatternEntry {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct WarehouseFeatureGroupKey {
-    source_id: String,
-    text_id: String,
+    source_id: Arc<str>,
+    text_id: Arc<str>,
     region_index: u64,
-    feature_key: String,
-    scope_type: String,
+    feature_key: Arc<str>,
+    scope_type: Arc<str>,
     scope_position: Option<u64>,
-    scope_surface: Option<String>,
+    scope_surface: Option<Arc<str>>,
 }
 
 impl WarehouseFeaturePatternAccumulator {
@@ -545,8 +545,8 @@ impl WarehouseFeaturePatternAccumulator {
             .map(|region| {
                 (
                     (
-                        region.source_id.as_str(),
-                        region.text_id.as_str(),
+                        region.source_id.as_ref(),
+                        region.text_id.as_ref(),
                         region.region_index,
                     ),
                     region.is_nonempty_whitespace,
@@ -555,7 +555,7 @@ impl WarehouseFeaturePatternAccumulator {
             .collect::<BTreeMap<_, _>>();
         let mut groups = BTreeMap::<WarehouseFeatureGroupKey, Vec<&NwayFeatureDiffRow>>::new();
         for diff in feature_diffs {
-            if !WAREHOUSE_CORE_FEATURE_KEYS.contains(&diff.feature_key.as_str()) {
+            if !WAREHOUSE_CORE_FEATURE_KEYS.contains(&diff.feature_key.as_ref()) {
                 continue;
             }
             groups
@@ -574,8 +574,8 @@ impl WarehouseFeaturePatternAccumulator {
         for (group, facts) in groups {
             let Some(is_nonempty_whitespace) = region_whitespace
                 .get(&(
-                    group.source_id.as_str(),
-                    group.text_id.as_str(),
+                    group.source_id.as_ref(),
+                    group.text_id.as_ref(),
                     group.region_index,
                 ))
                 .copied()
@@ -588,14 +588,14 @@ impl WarehouseFeaturePatternAccumulator {
             let entry = self
                 .patterns
                 .entry(WarehouseFeaturePatternKey {
-                    feature_key: group.feature_key,
+                    feature_key: group.feature_key.as_ref().to_owned(),
                     is_nonempty_whitespace,
                     pattern,
                 })
                 .or_default();
             entry.examples += 1;
-            entry.source_ids.insert(group.source_id);
-            entry.text_ids.insert(group.text_id);
+            entry.source_ids.insert(group.source_id.as_ref().to_owned());
+            entry.text_ids.insert(group.text_id.as_ref().to_owned());
         }
     }
 
@@ -623,7 +623,7 @@ fn warehouse_feature_pattern_from_rows(
     group: &WarehouseFeatureGroupKey,
     facts: &[&NwayFeatureDiffRow],
 ) -> Option<String> {
-    let mut by_value = BTreeMap::<Option<String>, Vec<String>>::new();
+    let mut by_value = BTreeMap::<Option<Arc<str>>, Vec<Arc<str>>>::new();
     for fact in facts {
         by_value
             .entry(fact.feature_value.clone())
@@ -637,7 +637,15 @@ fn warehouse_feature_pattern_from_rows(
         .into_iter()
         .map(|(value, mut analyzers)| {
             analyzers.sort();
-            format!("{}=>{}", value.unwrap_or_default(), analyzers.join("+"))
+            format!(
+                "{}=>{}",
+                value.as_deref().unwrap_or_default(),
+                analyzers
+                    .iter()
+                    .map(Arc::as_ref)
+                    .collect::<Vec<_>>()
+                    .join("+")
+            )
         })
         .collect::<Vec<_>>()
         .join(" ; ");
@@ -650,7 +658,7 @@ fn warehouse_feature_pattern_from_rows(
 }
 
 fn warehouse_feature_scope_label(group: &WarehouseFeatureGroupKey) -> String {
-    match group.scope_type.as_str() {
+    match group.scope_type.as_ref() {
         "whole_region" => "whole_region".to_owned(),
         "token_position" => format!(
             "token_position:{}",
@@ -673,8 +681,10 @@ fn warehouse_sample_ids(ids: &BTreeSet<String>) -> String {
 }
 
 fn read_aat_value(path: &Path) -> Result<Value> {
-    let file = File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
-    serde_json::from_reader(file).with_context(|| format!("failed to parse {}", path.display()))
+    // serde_json does not buffer its reader, so parse from bytes instead of
+    // issuing tiny read() syscalls against the File.
+    let bytes = fs::read(path).with_context(|| format!("failed to read {}", path.display()))?;
+    serde_json::from_slice(&bytes).with_context(|| format!("failed to parse {}", path.display()))
 }
 
 fn create_parent_dir(path: &Path) -> Result<()> {
@@ -751,18 +761,18 @@ fn write_jsonl_row<T: Serialize, W: Write + ?Sized>(writer: &mut W, row: &T) -> 
 }
 
 #[derive(Serialize)]
-struct AnalysisRow {
-    text_id: String,
-    analyzer: String,
-    analysis: Analysis,
+struct AnalysisRow<'a> {
+    text_id: &'a str,
+    analyzer: &'a str,
+    analysis: &'a Analysis,
 }
 
 #[derive(Serialize)]
-struct ComparisonRow {
-    text_id: String,
-    from_analyzer: String,
-    to_analyzer: String,
-    comparison: Comparison,
+struct ComparisonRow<'a> {
+    text_id: &'a str,
+    from_analyzer: &'a str,
+    to_analyzer: &'a str,
+    comparison: &'a Comparison,
 }
 
 #[derive(Serialize)]
@@ -936,9 +946,9 @@ fn write_analysis_row<W: Write + ?Sized>(
     match output_profile {
         OutputProfile::Full => {
             let row = AnalysisRow {
-                text_id: analysis.text_id.clone(),
-                analyzer: analysis.analyzer.clone(),
-                analysis: analysis.clone(),
+                text_id: &analysis.text_id,
+                analyzer: &analysis.analyzer,
+                analysis,
             };
             write_jsonl_row(writer, &row)
         }
@@ -965,10 +975,10 @@ fn write_comparison_rows(
                     let comparison = compare_pair(&analyses[from_index], &analyses[to_index], &[])?;
                     if let Some(writer) = writer.as_deref_mut() {
                         let row = ComparisonRow {
-                            text_id: comparison.text_id.clone(),
-                            from_analyzer: comparison.from_analyzer.clone(),
-                            to_analyzer: comparison.to_analyzer.clone(),
-                            comparison: comparison.clone(),
+                            text_id: &comparison.text_id,
+                            from_analyzer: &comparison.from_analyzer,
+                            to_analyzer: &comparison.to_analyzer,
+                            comparison: &comparison,
                         };
                         write_jsonl_row(writer, &row)?;
                     }

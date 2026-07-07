@@ -42,15 +42,48 @@ pub fn parse_json_value(bytes: &[u8]) -> Result<Value> {
     Value::deserialize(deserializer).map_err(Into::into)
 }
 
-pub fn validate_value(schema: &Value, value: &Value, label: &str) -> Result<()> {
-    let validator = jsonschema::validator_for(schema)
-        .with_context(|| format!("failed to compile {label} schema"))?;
+/// Validators compiled once from a [`SchemaSet`] so per-document (and
+/// per-record) validation skips schema recompilation.
+#[derive(Debug)]
+pub struct SchemaValidators {
+    pub parser_ir: jsonschema::Validator,
+    pub bundle: jsonschema::Validator,
+    pub abc_divergence_record: jsonschema::Validator,
+}
+
+impl SchemaValidators {
+    pub fn compile(schemas: &SchemaSet) -> Result<Self> {
+        Ok(Self {
+            parser_ir: compile_validator(&schemas.parser_ir_schema, "parser-IR")?,
+            bundle: compile_validator(&schemas.bundle_schema, "AAT parser-IR divergence bundle")?,
+            abc_divergence_record: compile_validator(
+                &schemas.abc_divergence_record_schema,
+                "ABC divergence record",
+            )?,
+        })
+    }
+}
+
+pub fn compile_validator(schema: &Value, label: &str) -> Result<jsonschema::Validator> {
+    jsonschema::validator_for(schema).with_context(|| format!("failed to compile {label} schema"))
+}
+
+pub fn validate_compiled(
+    validator: &jsonschema::Validator,
+    value: &Value,
+    label: &str,
+) -> Result<()> {
     validator.validate(value).map_err(|error| {
         anyhow::anyhow!(
             "{label} validation failed at {}: {error}",
             error.instance_path()
         )
     })
+}
+
+pub fn validate_value(schema: &Value, value: &Value, label: &str) -> Result<()> {
+    let validator = compile_validator(schema, label)?;
+    validate_compiled(&validator, value, label)
 }
 
 pub fn abc_legacy_json_c14n_v0(value: &Value) -> Result<Vec<u8>> {

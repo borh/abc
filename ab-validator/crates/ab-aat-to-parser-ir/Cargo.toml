@@ -25,4 +25,9 @@ serde_stacker = { workspace = true }
 sha2 = { workspace = true }
 
 [dev-dependencies]
+criterion = { workspace = true }
 tempfile = { workspace = true }
+
+[[bench]]
+name = "convert_aat"
+harness = false

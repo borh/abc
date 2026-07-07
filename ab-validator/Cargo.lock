@@ -12,6 +12,7 @@ dependencies = [
  "ab-plaintext",
  "anyhow",
  "clap",
+ "criterion",
  "jsonschema",
  "rayon",
  "regex",

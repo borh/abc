@@ -453,3 +453,94 @@ Run `soranoha reproduce demo-basic-ja`, `soranoha validate target/soranoha/demo-
 - [x] Run `bash scripts/monorepo-schema-drift.sh`.
 - [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
 - [x] Run `nix flake check`.
+
+### Task 22: Reproduction Evidence Summary
+
+**Files:**
+- Modify: `abc/src/abc/tools/parser_evidence.clj`
+- Modify: `abc/src/abc/tools/soranoha.clj`
+- Modify: `abc/test/abc/tools/parser_evidence_test.clj`
+- Modify: `abc/test/abc/tools/soranoha_test.clj`
+
+**Interfaces:**
+- Produces: generated snapshot indexes whose identity includes citable parser evidence hashes.
+- Produces: `run-summary.json` beside reproduced `snapshot-index.json`.
+- Consumes: `data/parser-evidence-citations.edn` citable parser evidence entries and the generated snapshot index.
+
+- [x] Add failing tests for citable parser evidence hash selection.
+- [x] Add failing Soranoha test showing generated full-corpus reproduction writes a run summary and carries parser evidence hashes in snapshot identity.
+- [x] Propagate citable parser evidence hashes into generated snapshot plans.
+- [x] Write a non-identity `run-summary.json` with request-set id, snapshot identity hash, artifact counts, parser evidence hashes, and runtime environment.
+- [x] Make `soranoha validate <snapshot-root>` check `run-summary.json` against `snapshot-index.json` when the summary exists.
+
+### Task 23: Reproduction Evidence Summary Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed parser-evidence and run-summary changes.
+- Produces: verified evidence-summary bridge toward full-corpus publication admissibility.
+
+- [x] Run focused Soranoha/snapshot/parser-evidence tests.
+- [x] Run `git diff --check`.
+- [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
+- [x] Run `nix flake check`.
+
+### Task 24: Publication Evidence Report Command
+
+**Files:**
+- Modify: `abc/src/abc/tools/soranoha.clj`
+- Modify: `abc/test/abc/tools/soranoha_test.clj`
+
+**Interfaces:**
+- Produces: `soranoha publication-report <snapshot-root> <output-path>`.
+- Consumes: `snapshot-index.json`, manifest references, and `run-summary.json` from a reproduced snapshot root.
+
+- [x] Add a failing Soranoha test showing a generated full-corpus reproduction can emit `publication-report.json`.
+- [x] Build a non-identity publication report with snapshot/request-set identity, artifact/failure accounting, parser/schema evidence hashes, runtime environment, and validation status.
+- [x] Reuse the existing snapshot-root and run-summary validation path before writing a report.
+- [x] Wire the Soranoha command and print report path, snapshot identity hash, and request-set label.
+
+### Task 25: Publication Evidence Report Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed publication-report command.
+- Produces: verified citable evidence report slice for snapshot publication review.
+
+- [x] Run focused Soranoha tests.
+- [x] Run `git diff --check`.
+- [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
+- [x] Run `nix flake check`.
+
+### Task 26: Static Layout Cost Report Command
+
+**Files:**
+- Modify: `abc/src/abc/tools/soranoha.clj`
+- Modify: `abc/test/abc/tools/soranoha_test.clj`
+
+**Interfaces:**
+- Produces: `soranoha layout-report <snapshot-root> <output-path>`.
+- Consumes: a validated reproduced snapshot root and artifact manifests referenced by `snapshot-index.json`.
+
+- [x] Add a failing Soranoha test showing a generated full-corpus reproduction can emit a static layout report.
+- [x] Build a deterministic report comparing current root files with `mixed-default-v1`, `all-loose-v1`, and `all-batched-v1` layout estimates.
+- [x] Reuse existing snapshot-root manifest validation before reading manifest content metadata.
+- [x] Wire the Soranoha command and print report path, snapshot identity hash, and request-set label.
+
+### Task 27: Static Layout Cost Report Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed layout-report command.
+- Produces: verified static layout measurement slice for snapshot publication review.
+
+- [x] Run focused Soranoha tests.
+- [x] Run `git diff --check`.
+- [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
+- [x] Run `nix flake check`.

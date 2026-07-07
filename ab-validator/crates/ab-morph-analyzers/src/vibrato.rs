@@ -15,6 +15,9 @@ use crate::{AnalyzerError, MorphAnalyzer};
 
 const VIBRATO_CHUNK_BYTES: usize = 32_000;
 const DEFAULT_VIBRATO_DICTIONARY: &str = "unidic-cwj-202512";
+/// Analyzer id assigned by [`VibratoAnalyzer::unidic_cwj_default`]; callers
+/// can match on it to share an already-loaded default dictionary.
+pub const DEFAULT_VIBRATO_ANALYZER_ID: &str = "vibrato:unidic-cwj-202512";
 // Nix-built dictionaries only: `just dictionary-build-*` symlinks flake outputs
 // into dictionary/compiled/. No other directory is consulted, so a stale
 // hand-built artifact can never shadow the nix package.
@@ -84,7 +87,7 @@ impl VibratoAnalyzer {
     /// Returns an error when the default dictionary cannot be resolved or loaded.
     pub fn unidic_cwj_default() -> Result<Self, AnalyzerError> {
         let path = default_dictionary_path()?;
-        Self::from_dictionary_path(format!("vibrato:{DEFAULT_VIBRATO_DICTIONARY}"), path)
+        Self::from_dictionary_path(DEFAULT_VIBRATO_ANALYZER_ID, path)
     }
 
     /// Load a Vibrato model from a `.zst`-compressed path.
@@ -234,7 +237,7 @@ impl MorphAnalyzer for VibratoAnalyzer {
             worker.reset_sentence(chunk.text);
             worker.tokenize();
             tokens.extend(worker.token_iter().map(|token| RawToken {
-                emitted_surface: token.surface().to_owned(),
+                emitted_surface: Some(token.surface().to_owned()),
                 byte_span: None,
                 features: parse_vibrato_feature_string(token.feature()),
             }));
@@ -254,7 +257,7 @@ impl MorphAnalyzer for VibratoAnalyzer {
         let mut analysis = build_analysis_from_tokens(
             self.analyzer_id.clone(),
             document.text_id.clone(),
-            document.text.clone(),
+            &document.text,
             tokens,
         )?;
         analysis.warnings = warnings;

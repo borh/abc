@@ -60,7 +60,7 @@ pub(crate) fn visit_nway_regions_with_source_text(
         true,
         |mut region| {
             region.region_index = stats.regions;
-            stats.record(source_text, &region);
+            stats.record(&region);
             visit(&region);
         },
     )?;
@@ -104,7 +104,7 @@ fn visit_shared_regions_with_source_len(
         let starts = cursors.clone();
 
         loop {
-            let old = cursors.clone();
+            let mut changed = false;
             for (analysis_index, analysis) in analyses.iter().enumerate() {
                 while cursors[analysis_index] < analysis.morphemes.len()
                     && analysis.morphemes[cursors[analysis_index]].char_span.start < region_end
@@ -112,9 +112,10 @@ fn visit_shared_regions_with_source_len(
                     region_end =
                         region_end.max(analysis.morphemes[cursors[analysis_index]].char_span.end);
                     cursors[analysis_index] += 1;
+                    changed = true;
                 }
             }
-            if old == cursors {
+            if !changed {
                 break;
             }
         }
@@ -193,10 +194,12 @@ pub(crate) fn covers_exactly(
 }
 
 fn segmentation_groups(per_analyzer: &[NwayAnalyzerRegion]) -> Vec<NwaySegmentationGroup> {
-    let mut groups = BTreeMap::<Vec<String>, Vec<AnalyzerId>>::new();
+    // Group by borrowed surface lists first so the (common) agreement case
+    // does not deep-clone every analyzer's surface Vec just to key the map.
+    let mut groups = BTreeMap::<&[String], Vec<AnalyzerId>>::new();
     for entry in per_analyzer {
         groups
-            .entry(entry.surfaces.clone())
+            .entry(entry.surfaces.as_slice())
             .or_default()
             .push(entry.analyzer.clone());
     }
@@ -205,7 +208,7 @@ fn segmentation_groups(per_analyzer: &[NwayAnalyzerRegion]) -> Vec<NwaySegmentat
         .map(|(surfaces, mut analyzers)| {
             analyzers.sort();
             NwaySegmentationGroup {
-                surfaces,
+                surfaces: surfaces.to_vec(),
                 analyzers,
             }
         })
@@ -220,28 +223,138 @@ fn feature_groups(
     compare_keys: &[FeatureKey],
 ) -> Vec<NwayFeatureGroup> {
     let keys = feature_keys(analyses, per_analyzer, compare_keys);
+    if keys.is_empty() {
+        return Vec::new();
+    }
+
+    // The region "shape" (scope eligibility and surface alignment) is the
+    // same for every feature key; compute it once instead of per key.
+    let whole_region_eligible = per_analyzer
+        .iter()
+        .all(|entry| entry.covers_exactly && entry.indices.len() == 1);
+    let aligned_positions = aligned_token_positions(analyses, per_analyzer);
+    let surface_hits = surface_hit_groups(analyses, per_analyzer);
+
     let mut groups = Vec::new();
     for key in keys {
-        if per_analyzer
-            .iter()
-            .all(|entry| entry.covers_exactly && entry.indices.len() == 1)
-        {
+        if whole_region_eligible {
             groups.push(feature_group_for_whole_region(
                 analyses,
                 per_analyzer,
                 key.clone(),
             ));
         }
-        groups.extend(feature_groups_by_token_position(
-            analyses,
-            per_analyzer,
-            key.clone(),
-        ));
-        groups.extend(feature_groups_by_surface(analyses, per_analyzer, key));
+        for &position in &aligned_positions {
+            let mut values = BTreeMap::<Option<crate::FeatureValue>, Vec<AnalyzerId>>::new();
+            for (analysis_index, entry) in per_analyzer.iter().enumerate() {
+                let morpheme = &analyses[analysis_index].morphemes[entry.indices.start + position];
+                values
+                    .entry(morpheme.features.get(&key).cloned().flatten())
+                    .or_default()
+                    .push(entry.analyzer.clone());
+            }
+            groups.push(value_group(
+                key.clone(),
+                NwayFeatureScope::TokenPosition { position },
+                values,
+            ));
+        }
+        for (surface, hit_indices) in &surface_hits {
+            let mut grouped = BTreeMap::<Option<crate::FeatureValue>, Vec<AnalyzerId>>::new();
+            for &(analysis_index, morpheme_index) in hit_indices {
+                grouped
+                    .entry(
+                        analyses[analysis_index].morphemes[morpheme_index]
+                            .features
+                            .get(&key)
+                            .cloned()
+                            .flatten(),
+                    )
+                    .or_default()
+                    .push(per_analyzer[analysis_index].analyzer.clone());
+            }
+            groups.push(value_group(
+                key.clone(),
+                NwayFeatureScope::Surface {
+                    surface: (*surface).to_owned(),
+                },
+                grouped,
+            ));
+        }
     }
     groups.sort();
     groups.dedup();
     groups
+}
+
+/// Token positions comparable across analyzers: every analyzer covers the
+/// region exactly with the same morpheme count (> 1) and the surfaces at the
+/// position agree. Key-independent, so computed once per region.
+fn aligned_token_positions(
+    analyses: &[&Analysis],
+    per_analyzer: &[NwayAnalyzerRegion],
+) -> Vec<usize> {
+    let Some(count) = per_analyzer
+        .first()
+        .filter(|entry| entry.covers_exactly)
+        .map(|entry| entry.indices.len())
+    else {
+        return Vec::new();
+    };
+    if count <= 1
+        || !per_analyzer
+            .iter()
+            .all(|entry| entry.covers_exactly && entry.indices.len() == count)
+    {
+        return Vec::new();
+    }
+    (0..count)
+        .filter(|&position| {
+            let surface = &analyses[0].morphemes[per_analyzer[0].indices.start + position].surface;
+            per_analyzer
+                .iter()
+                .enumerate()
+                .all(|(analysis_index, entry)| {
+                    analyses[analysis_index].morphemes[entry.indices.start + position].surface
+                        == *surface
+                })
+        })
+        .collect()
+}
+
+/// Surfaces occurring exactly once per covering analyzer in at least two
+/// analyzers, with their (analysis, morpheme) hits. Key-independent, so
+/// computed once per region.
+fn surface_hit_groups<'a>(
+    analyses: &[&'a Analysis],
+    per_analyzer: &[NwayAnalyzerRegion],
+) -> Vec<(&'a str, Vec<(usize, usize)>)> {
+    let mut hits = BTreeMap::<&str, Vec<(usize, usize)>>::new();
+    let mut counts = BTreeMap::<(usize, &str), usize>::new();
+    for (analysis_index, entry) in per_analyzer.iter().enumerate() {
+        if !entry.covers_exactly {
+            continue;
+        }
+        for morpheme_index in entry.indices.clone() {
+            let surface: &str = &analyses[analysis_index].morphemes[morpheme_index].surface;
+            *counts.entry((analysis_index, surface)).or_default() += 1;
+            hits.entry(surface)
+                .or_default()
+                .push((analysis_index, morpheme_index));
+        }
+    }
+    hits.into_iter()
+        .filter(|(surface, hit_indices)| {
+            hit_indices.len() >= 2
+                && hit_indices.iter().all(|(analysis_index, _)| {
+                    counts
+                        .get(&(*analysis_index, *surface))
+                        .copied()
+                        .unwrap_or(0)
+                        == 1
+                })
+        })
+        .collect()
 }
 
 fn feature_keys(
@@ -277,110 +390,6 @@ fn feature_group_for_whole_region(
     value_group(key, NwayFeatureScope::WholeRegion, values)
 }
 
-fn feature_groups_by_token_position(
-    analyses: &[&Analysis],
-    per_analyzer: &[NwayAnalyzerRegion],
-    key: FeatureKey,
-) -> Vec<NwayFeatureGroup> {
-    let Some(count) = per_analyzer
-        .first()
-        .filter(|entry| entry.covers_exactly)
-        .map(|entry| entry.indices.len())
-    else {
-        return Vec::new();
-    };
-    if count <= 1
-        || !per_analyzer
-            .iter()
-            .all(|entry| entry.covers_exactly && entry.indices.len() == count)
-    {
-        return Vec::new();
-    }
-
-    let mut groups = Vec::new();
-    for position in 0..count {
-        let surface = &analyses[0].morphemes[per_analyzer[0].indices.start + position].surface;
-        if !per_analyzer
-            .iter()
-            .enumerate()
-            .all(|(analysis_index, entry)| {
-                analyses[analysis_index].morphemes[entry.indices.start + position].surface
-                    == *surface
-            })
-        {
-            continue;
-        }
-        let mut values = BTreeMap::<Option<crate::FeatureValue>, Vec<AnalyzerId>>::new();
-        for (analysis_index, entry) in per_analyzer.iter().enumerate() {
-            let morpheme = &analyses[analysis_index].morphemes[entry.indices.start + position];
-            values
-                .entry(morpheme.features.get(&key).cloned().flatten())
-                .or_default()
-                .push(entry.analyzer.clone());
-        }
-        groups.push(value_group(
-            key.clone(),
-            NwayFeatureScope::TokenPosition { position },
-            values,
-        ));
-    }
-    groups
-}
-
-fn feature_groups_by_surface(
-    analyses: &[&Analysis],
-    per_analyzer: &[NwayAnalyzerRegion],
-    key: FeatureKey,
-) -> Vec<NwayFeatureGroup> {
-    let mut hits = BTreeMap::<String, Vec<(usize, usize)>>::new();
-    let mut per_analyzer_counts = BTreeMap::<(usize, String), usize>::new();
-    for (analysis_index, entry) in per_analyzer.iter().enumerate() {
-        if !entry.covers_exactly {
-            continue;
-        }
-        for morpheme_index in entry.indices.clone() {
-            let surface = analyses[analysis_index].morphemes[morpheme_index]
-                .surface
-                .clone();
-            *per_analyzer_counts
-                .entry((analysis_index, surface.clone()))
-                .or_default() += 1;
-            hits.entry(surface)
-                .or_default()
-                .push((analysis_index, morpheme_index));
-        }
-    }
-
-    hits.into_iter()
-        .filter(|(surface, values)| {
-            values.len() >= 2
-                && values.iter().all(|(analysis_index, _)| {
-                    per_analyzer_counts
-                        .get(&(*analysis_index, surface.clone()))
-                        .copied()
-                        .unwrap_or(0)
-                        == 1
-                })
-        })
-        .map(|(surface, values)| {
-            let mut grouped = BTreeMap::<Option<crate::FeatureValue>, Vec<AnalyzerId>>::new();
-            for (analysis_index, morpheme_index) in values {
-                grouped
-                    .entry(
-                        analyses[analysis_index].morphemes[morpheme_index]
-                            .features
-                            .get(&key)
-                            .cloned()
-                            .flatten(),
-                    )
-                    .or_default()
-                    .push(per_analyzer[analysis_index].analyzer.clone());
-            }
-            value_group(key.clone(), NwayFeatureScope::Surface { surface }, grouped)
-        })
-        .collect()
-}
-
 fn value_group(
     key: FeatureKey,
     scope: NwayFeatureScope,
@@ -399,7 +408,7 @@ fn value_group(
     }
 }
 
-struct NwayStatsAccumulator {
+struct NwayStatsAccumulator<'a> {
     analyzers: usize,
     regions: usize,
     agreement_regions: usize,
@@ -410,10 +419,11 @@ struct NwayStatsAccumulator {
     lexical_regions: usize,
     unanimous_boundary_count: usize,
     variable_boundary_count: usize,
+    whitespace_checker: crate::stats::WhitespaceSpanChecker<'a>,
 }
 
-impl NwayStatsAccumulator {
-    fn new(analyses: &[&Analysis], source_text: &str) -> Self {
+impl<'a> NwayStatsAccumulator<'a> {
+    fn new(analyses: &[&Analysis], source_text: &'a str) -> Self {
         let (unanimous_boundary_count, variable_boundary_count) =
             boundary_counts(analyses, source_text.chars().count());
         Self {
@@ -427,17 +437,21 @@ impl NwayStatsAccumulator {
             lexical_regions: 0,
             unanimous_boundary_count,
             variable_boundary_count,
+            whitespace_checker: crate::stats::WhitespaceSpanChecker::new(source_text),
         }
     }
 
-    fn record(&mut self, source_text: &str, region: &NwayRegion) {
+    fn record(&mut self, region: &NwayRegion) {
         self.regions += 1;
         self.agreement_regions += usize::from(region.is_agreement());
         self.regions_with_feature_disagreement += usize::from(region.has_feature_disagreement());
         self.regions_with_segmentation_disagreement +=
             usize::from(region.has_segmentation_disagreement());
         self.regions_with_coverage_mismatch += usize::from(region.has_coverage_mismatch());
-        if crate::stats::char_span_is_whitespace_only(source_text, &region.text_span) {
+        if self
+            .whitespace_checker
+            .is_whitespace_only(&region.text_span)
+        {
             self.whitespace_regions += 1;
         } else {
             self.lexical_regions += 1;

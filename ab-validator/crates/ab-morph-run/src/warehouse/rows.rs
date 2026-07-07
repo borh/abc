@@ -16,6 +16,38 @@ pub(crate) struct NwayFactRows {
     pub(crate) feature_diffs: Vec<NwayFeatureDiffRow>,
 }
 
+/// Per-document identifiers shared by every n-way fact row, hoisted to
+/// Arc<str> once so the multi-billion-row builders clone refcounts instead of
+/// allocating Strings per row.
+struct NwayRowIds {
+    run_id: std::sync::Arc<str>,
+    source_id: std::sync::Arc<str>,
+    text_id: std::sync::Arc<str>,
+    analyzers: Vec<std::sync::Arc<str>>,
+}
+
+impl NwayRowIds {
+    fn new(run_id: &str, source_id: &str, text_id: &str, analyses: &[Analysis]) -> Self {
+        Self {
+            run_id: run_id.into(),
+            source_id: source_id.into(),
+            text_id: text_id.into(),
+            analyzers: analyses
+                .iter()
+                .map(|analysis| std::sync::Arc::from(analysis.analyzer.as_str()))
+                .collect(),
+        }
+    }
+
+    fn analyzer(&self, analyzer_id: &str) -> std::sync::Arc<str> {
+        self.analyzers
+            .iter()
+            .find(|candidate| candidate.as_ref() == analyzer_id)
+            .cloned()
+            .unwrap_or_else(|| analyzer_id.into())
+    }
+}
+
 pub(crate) fn source_row(
     run_id: &str,
     source_id: &str,
@@ -124,8 +156,8 @@ pub(crate) fn morpheme_feature_rows_for_range(
                     text_id: std::sync::Arc::clone(&text_id),
                     analyzer_id: std::sync::Arc::clone(&analyzer_id),
                     morpheme_index: index as u64,
-                    feature_key: key.to_string(),
-                    feature_value: value.as_ref().map(ToString::to_string),
+                    feature_key: std::sync::Arc::clone(key),
+                    feature_value: value.as_ref().map(std::sync::Arc::clone),
                 })
         })
         .collect()
@@ -168,18 +200,11 @@ pub(crate) fn nway_fact_rows(
         .first()
         .map(|analysis| analysis.text_id.clone())
         .unwrap_or_default();
+    let ids = NwayRowIds::new(run_id, source_id, &text_id, analyses);
     let mut rows = NwayFactRows::default();
     let char_map = ab_morph_diff::CharByteMap::new(source_text);
     visit_nway_regions_with_source_text(analyses, source_text, &[], |region| {
-        push_region_rows(
-            run_id,
-            source_id,
-            &text_id,
-            source_text,
-            &char_map,
-            region,
-            &mut rows,
-        );
+        push_region_rows(&ids, source_text, &char_map, region, &mut rows);
     })?;
     Ok(rows)
 }
@@ -199,6 +224,7 @@ where
         .first()
         .map(|analysis| analysis.text_id.clone())
         .unwrap_or_default();
+    let ids = NwayRowIds::new(run_id, source_id, &text_id, analyses);
     let batch_region_limit = batch_region_limit.max(1);
     let mut rows = NwayFactRows::default();
     let mut flush_error = None;
@@ -207,15 +233,7 @@ where
         if flush_error.is_some() {
             return;
         }
-        push_region_rows(
-            run_id,
-            source_id,
-            &text_id,
-            source_text,
-            &char_map,
-            region,
-            &mut rows,
-        );
+        push_region_rows(&ids, source_text, &char_map, region, &mut rows);
         if rows.regions.len() >= batch_region_limit {
             if let Err(error) = on_batch(&rows) {
                 flush_error = Some(error);
@@ -245,9 +263,7 @@ impl NwayFactRows {
 }
 
 fn push_region_rows(
-    run_id: &str,
-    source_id: &str,
-    text_id: &str,
+    ids: &NwayRowIds,
     source_text: &str,
     char_map: &ab_morph_diff::CharByteMap,
     region: &NwayRegion,
@@ -256,9 +272,9 @@ fn push_region_rows(
     let byte_span = byte_span_from_char_span(char_map, &region.text_span);
     let excerpt = &source_text[byte_span.clone()];
     rows.regions.push(NwayRegionRow {
-        run_id: run_id.to_owned(),
-        source_id: source_id.to_owned(),
-        text_id: text_id.to_owned(),
+        run_id: std::sync::Arc::clone(&ids.run_id),
+        source_id: std::sync::Arc::clone(&ids.source_id),
+        text_id: std::sync::Arc::clone(&ids.text_id),
         region_index: region.region_index as u64,
         byte_start: byte_span.start as u64,
         byte_end: byte_span.end as u64,
@@ -276,11 +292,11 @@ fn push_region_rows(
             .per_analyzer
             .iter()
             .map(|entry| NwayRegionAnalyzerRow {
-                run_id: run_id.to_owned(),
-                source_id: source_id.to_owned(),
-                text_id: text_id.to_owned(),
+                run_id: std::sync::Arc::clone(&ids.run_id),
+                source_id: std::sync::Arc::clone(&ids.source_id),
+                text_id: std::sync::Arc::clone(&ids.text_id),
                 region_index: region.region_index as u64,
-                analyzer_id: entry.analyzer.clone(),
+                analyzer_id: ids.analyzer(&entry.analyzer),
                 covers_exactly: entry.covers_exactly,
                 morpheme_start: entry.indices.start as u64,
                 morpheme_end: entry.indices.end as u64,
@@ -296,30 +312,40 @@ fn push_region_rows(
         for value_group in &group.values {
             for analyzer_id in &value_group.analyzers {
                 rows.feature_diffs.push(NwayFeatureDiffRow {
-                    run_id: run_id.to_owned(),
-                    source_id: source_id.to_owned(),
-                    text_id: text_id.to_owned(),
+                    run_id: std::sync::Arc::clone(&ids.run_id),
+                    source_id: std::sync::Arc::clone(&ids.source_id),
+                    text_id: std::sync::Arc::clone(&ids.text_id),
                     region_index: region.region_index as u64,
-                    feature_key: group.key.to_string(),
-                    scope_type: scope_type.clone(),
+                    feature_key: std::sync::Arc::clone(&group.key),
+                    scope_type: std::sync::Arc::clone(&scope_type),
                     scope_position,
                     scope_surface: scope_surface.clone(),
-                    feature_value: value_group.value.as_ref().map(ToString::to_string),
-                    analyzer_id: analyzer_id.clone(),
+                    feature_value: value_group.value.clone(),
+                    analyzer_id: ids.analyzer(analyzer_id),
                 });
             }
         }
     }
 }
 
-fn feature_scope_parts(scope: &NwayFeatureScope) -> (String, Option<u64>, Option<String>) {
+fn feature_scope_parts(
+    scope: &NwayFeatureScope,
+) -> (
+    std::sync::Arc<str>,
+    Option<u64>,
+    Option<std::sync::Arc<str>>,
+) {
+    use std::sync::{Arc, LazyLock};
+    static WHOLE_REGION: LazyLock<Arc<str>> = LazyLock::new(|| "whole_region".into());
+    static TOKEN_POSITION: LazyLock<Arc<str>> = LazyLock::new(|| "token_position".into());
+    static SURFACE: LazyLock<Arc<str>> = LazyLock::new(|| "surface".into());
     match scope {
-        NwayFeatureScope::WholeRegion => ("whole_region".to_owned(), None, None),
+        NwayFeatureScope::WholeRegion => (Arc::clone(&WHOLE_REGION), None, None),
         NwayFeatureScope::TokenPosition { position } => {
-            ("token_position".to_owned(), Some(*position as u64), None)
+            (Arc::clone(&TOKEN_POSITION), Some(*position as u64), None)
         }
         NwayFeatureScope::Surface { surface } => {
-            ("surface".to_owned(), None, Some(surface.clone()))
+            (Arc::clone(&SURFACE), None, Some(surface.as_str().into()))
         }
     }
 }
@@ -382,11 +408,8 @@ mod tests {
 
         let features = morpheme_feature_rows("run-a", "source-a", &analysis);
         assert_eq!(features.len(), 2);
-        assert!(
-            features.iter().any(
-                |row| row.feature_key == "pos1" && row.feature_value.as_deref() == Some("名詞")
-            )
-        );
+        assert!(features.iter().any(|row| row.feature_key.as_ref() == "pos1"
+            && row.feature_value.as_deref() == Some("名詞")));
     }
 
     #[test]
@@ -415,7 +438,7 @@ mod tests {
         assert_eq!(
             features
                 .iter()
-                .map(|row| (row.morpheme_index, row.feature_key.as_str()))
+                .map(|row| (row.morpheme_index, row.feature_key.as_ref()))
                 .collect::<Vec<_>>(),
             vec![(1, "pos1"), (2, "pos1")]
         );
@@ -456,13 +479,14 @@ mod tests {
             facts
                 .region_analyzers
                 .iter()
-                .any(|row| row.analyzer_id == "vibrato" && row.surfaces == vec!["今日"])
+                .any(|row| row.analyzer_id.as_ref() == "vibrato" && row.surfaces == vec!["今日"])
         );
         assert!(
             facts
                 .region_analyzers
                 .iter()
-                .any(|row| row.analyzer_id == "sudachi-c" && row.surfaces == vec!["今", "日"])
+                .any(|row| row.analyzer_id.as_ref() == "sudachi-c"
+                    && row.surfaces == vec!["今", "日"])
         );
         assert!(facts.feature_diffs.is_empty());
     }

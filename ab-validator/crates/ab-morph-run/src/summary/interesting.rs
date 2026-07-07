@@ -1686,9 +1686,9 @@ mod tests {
         feature: bool,
     ) -> NwayRegionRow {
         NwayRegionRow {
-            run_id: RUN.to_owned(),
-            source_id: source_id.to_owned(),
-            text_id: text_id.to_owned(),
+            run_id: RUN.into(),
+            source_id: source_id.into(),
+            text_id: text_id.into(),
             region_index,
             byte_start: char_start * 3,
             byte_end: char_end * 3,
@@ -1710,11 +1710,11 @@ mod tests {
         surfaces: &[&str],
     ) -> NwayRegionAnalyzerRow {
         NwayRegionAnalyzerRow {
-            run_id: RUN.to_owned(),
-            source_id: source_id.to_owned(),
-            text_id: text_id.to_owned(),
+            run_id: RUN.into(),
+            source_id: source_id.into(),
+            text_id: text_id.into(),
             region_index,
-            analyzer_id: analyzer_id.to_owned(),
+            analyzer_id: analyzer_id.into(),
             covers_exactly: true,
             morpheme_start: 0,
             morpheme_end: surfaces.len() as u64,
@@ -1731,16 +1731,16 @@ mod tests {
         analyzer_id: &str,
     ) -> NwayFeatureDiffRow {
         NwayFeatureDiffRow {
-            run_id: RUN.to_owned(),
-            source_id: source_id.to_owned(),
-            text_id: text_id.to_owned(),
+            run_id: RUN.into(),
+            source_id: source_id.into(),
+            text_id: text_id.into(),
             region_index,
-            feature_key: feature_key.to_owned(),
-            scope_type: "whole_region".to_owned(),
+            feature_key: feature_key.into(),
+            scope_type: "whole_region".into(),
             scope_position: None,
             scope_surface: None,
-            feature_value: Some(feature_value.to_owned()),
-            analyzer_id: analyzer_id.to_owned(),
+            feature_value: Some(feature_value.into()),
+            analyzer_id: analyzer_id.into(),
         }
     }
 

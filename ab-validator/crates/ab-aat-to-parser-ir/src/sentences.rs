@@ -52,7 +52,7 @@ pub fn project_sentences(
 }
 
 fn project_paragraphs(
-    nodes: Vec<Value>,
+    mut nodes: Vec<Value>,
     paragraphs: Vec<Value>,
     ortho: Option<&crate::ortho_annotations::OrthoAnnotationsBundle>,
 ) -> Result<SentenceProjection> {
@@ -72,11 +72,11 @@ fn project_paragraphs(
             );
         }
 
-        copy_nodes(&nodes, original_cursor, range.0, &mut rewritten_nodes);
+        move_nodes(&mut nodes, original_cursor, range.0, &mut rewritten_nodes);
         let rewritten_start = rewritten_nodes.len();
         let paragraph_sentences = if paragraph.get("role").and_then(Value::as_str) == Some("body") {
             project_body_paragraph(
-                &nodes[range.0..range.1],
+                &mut nodes[range.0..range.1],
                 &mut rewritten_nodes,
                 &paragraph,
                 rewritten_start,
@@ -84,7 +84,7 @@ fn project_paragraphs(
                 ortho,
             )?
         } else {
-            copy_nodes(&nodes, range.0, range.1, &mut rewritten_nodes);
+            move_nodes(&mut nodes, range.0, range.1, &mut rewritten_nodes);
             Vec::new()
         };
         let rewritten_end = rewritten_nodes.len();
@@ -96,7 +96,8 @@ fn project_paragraphs(
         original_cursor = range.1;
     }
 
-    copy_nodes(&nodes, original_cursor, nodes.len(), &mut rewritten_nodes);
+    let remaining = nodes.len();
+    move_nodes(&mut nodes, original_cursor, remaining, &mut rewritten_nodes);
 
     Ok(SentenceProjection {
         nodes: rewritten_nodes,
@@ -107,7 +108,7 @@ fn project_paragraphs(
 }
 
 fn project_body_paragraph(
-    original_nodes: &[Value],
+    original_nodes: &mut [Value],
     rewritten_nodes: &mut Vec<Value>,
     paragraph: &Value,
     paragraph_rewritten_start: usize,
@@ -131,9 +132,8 @@ fn project_body_paragraph(
         .map(|sentence| sentence.end)
         .collect();
 
-    for node in original_nodes {
-        let segments = split_node_at_boundaries(node, &split_boundaries)?;
-        rewritten_nodes.extend(segments);
+    for node in original_nodes.iter_mut() {
+        split_node_at_boundaries(node, &split_boundaries, rewritten_nodes)?;
     }
 
     let paragraph_rewritten_end = rewritten_nodes.len();
@@ -178,8 +178,10 @@ fn project_body_paragraph(
     Ok(rows)
 }
 
-fn copy_nodes(nodes: &[Value], start: usize, end: usize, out: &mut Vec<Value>) {
-    out.extend(nodes[start..end].iter().cloned());
+fn move_nodes(nodes: &mut [Value], start: usize, end: usize, out: &mut Vec<Value>) {
+    // Each source node is consumed exactly once (the cursor advances
+    // monotonically), so move the nodes out instead of deep-cloning them.
+    out.extend(nodes[start..end].iter_mut().map(std::mem::take));
 }
 
 fn node_range(value: &Value, context: &str) -> Result<(usize, usize)> {
@@ -229,32 +231,32 @@ fn paragraph_id(paragraph: &Value) -> String {
 fn paragraph_visible_text(nodes: &[Value]) -> Result<String> {
     let mut text = String::new();
     for node in nodes {
-        text.push_str(&parser_ir_node_visible_text(node)?);
+        text.push_str(parser_ir_node_visible_text_ref(node)?);
     }
     Ok(text)
 }
 
 pub(crate) fn parser_ir_node_visible_text(node: &Value) -> Result<String> {
+    Ok(parser_ir_node_visible_text_ref(node)?.to_owned())
+}
+
+fn parser_ir_node_visible_text_ref(node: &Value) -> Result<&str> {
     let node_type = node_type(node);
     match node_type {
-        "text" | "quote" | "emphasis" | "layout-span" | "heading" | "source-note" => Ok(node
-            .get("text")
-            .and_then(Value::as_str)
-            .unwrap_or("")
-            .to_owned()),
+        "text" | "quote" | "emphasis" | "layout-span" | "heading" | "source-note" => {
+            Ok(node.get("text").and_then(Value::as_str).unwrap_or(""))
+        }
         "ruby" => Ok(node
             .pointer("/ruby/base")
             .and_then(Value::as_str)
-            .unwrap_or("")
-            .to_owned()),
+            .unwrap_or("")),
         "gaiji" => Ok(node
             .pointer("/gaiji/unicode")
             .and_then(Value::as_str)
             .or_else(|| node.pointer("/gaiji/raw_marker").and_then(Value::as_str))
-            .unwrap_or("")
-            .to_owned()),
-        "line-break" => Ok("\n".to_owned()),
-        "page-break" | "image" | "editor-note" | "indentation" => Ok(String::new()),
+            .unwrap_or("")),
+        "line-break" => Ok("\n"),
+        "page-break" | "image" | "editor-note" | "indentation" => Ok(""),
         other => bail!("unsupported parser-IR node type for sentence projection: {other}"),
     }
 }
@@ -265,7 +267,11 @@ fn node_type(node: &Value) -> &str {
         .unwrap_or("unknown")
 }
 
-fn split_node_at_boundaries(node: &Value, boundaries: &[usize]) -> Result<Vec<Value>> {
+fn split_node_at_boundaries(
+    node: &mut Value,
+    boundaries: &[usize],
+    out: &mut Vec<Value>,
+) -> Result<()> {
     let start = value_usize(node, "/span/start", "node span.start")?;
     let end = value_usize(node, "/span/end", "node span.end")?;
     let interior: Vec<usize> = boundaries
@@ -275,7 +281,8 @@ fn split_node_at_boundaries(node: &Value, boundaries: &[usize]) -> Result<Vec<Va
         .collect();
 
     if interior.is_empty() {
-        return Ok(vec![node.clone()]);
+        out.push(std::mem::take(node));
+        return Ok(());
     }
 
     if !is_splittable_text_node(node) {
@@ -286,10 +293,6 @@ fn split_node_at_boundaries(node: &Value, boundaries: &[usize]) -> Result<Vec<Va
         );
     }
 
-    let text = node
-        .get("text")
-        .and_then(Value::as_str)
-        .context("splittable node missing text")?;
     let mut segment_starts = Vec::with_capacity(interior.len() + 1);
     let mut segment_ends = Vec::with_capacity(interior.len() + 1);
     segment_starts.push(start);
@@ -297,8 +300,14 @@ fn split_node_at_boundaries(node: &Value, boundaries: &[usize]) -> Result<Vec<Va
     segment_ends.extend(interior.iter().copied());
     segment_ends.push(end);
 
-    let mut segments = Vec::with_capacity(segment_ends.len());
-    for (segment_start, segment_end) in segment_starts.into_iter().zip(segment_ends) {
+    let last_index = segment_starts.len() - 1;
+    for (index, (segment_start, segment_end)) in
+        segment_starts.into_iter().zip(segment_ends).enumerate()
+    {
+        let text = node
+            .get("text")
+            .and_then(Value::as_str)
+            .context("splittable node missing text")?;
         let local_start = segment_start - start;
         let local_end = segment_end - start;
         if !text.is_char_boundary(local_start) || !text.is_char_boundary(local_end) {
@@ -308,16 +317,22 @@ fn split_node_at_boundaries(node: &Value, boundaries: &[usize]) -> Result<Vec<Va
                 segment_start
             );
         }
-        let mut segment = node.clone();
+        let segment_text = json!(&text[local_start..local_end]);
+        // The last segment moves the original node; earlier segments clone it.
+        let mut segment = if index == last_index {
+            std::mem::take(node)
+        } else {
+            node.clone()
+        };
         set_span(&mut segment, segment_start, segment_end)?;
         let object = segment
             .as_object_mut()
             .context("node row is not an object")?;
-        object.insert("text".to_owned(), json!(&text[local_start..local_end]));
-        segments.push(segment);
+        object.insert("text".to_owned(), segment_text);
+        out.push(segment);
     }
 
-    Ok(segments)
+    Ok(())
 }
 
 fn is_splittable_text_node(node: &Value) -> bool {

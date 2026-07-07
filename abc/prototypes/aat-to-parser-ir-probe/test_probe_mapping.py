@@ -138,7 +138,7 @@ class ProbeMappingTest(unittest.TestCase):
         self.assertEqual(["A-01", "L-01"], [rule["rule_id"] for rule in rules])
         self.assertIn("Observed 2 occurrences", rules[0]["description"])
         self.assertEqual(
-            "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2",
+            "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340",
             doc["target_parser_ir_schema_hash"],
         )
         self.assertRegex(doc["mapping_schema_hash"], r"^sha256:[0-9a-f]{64}$")

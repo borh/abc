@@ -7,7 +7,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 MAPPER_BIN="${REPO_ROOT}/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
-JAR_PATH="${AB_AOZORAEPUB3_JAR:-${REPO_ROOT}/references/parsers/AozoraEpub3-JDK21/build/libs/AozoraEpub3.jar}"
+JAR_PATH="${AB_AOZORAEPUB3_JAR:-}"
 
 if [[ "${1:-}" == "--version" ]]; then
   exec "$MAPPER_BIN" --version
@@ -19,10 +19,10 @@ if [[ ! -x "$MAPPER_BIN" ]]; then
   exit 1
 fi
 
-if [[ ! -f "$JAR_PATH" ]]; then
-  echo "AozoraEpub3.jar not found: $JAR_PATH" >&2
-  echo "build it with: (cd $REPO_ROOT/references/parsers/AozoraEpub3-JDK21 && ./gradlew jar)" >&2
-  echo "or set AB_AOZORAEPUB3_JAR" >&2
+if [[ -z "$JAR_PATH" || ! -f "$JAR_PATH" ]]; then
+  echo "AozoraEpub3.jar not found: ${JAR_PATH:-<unset>}" >&2
+  echo "set AB_AOZORAEPUB3_JAR to the pinned release JAR path" >&2
+  echo "for example: AB_AOZORAEPUB3_JAR=\"\$(cd $REPO_ROOT && just aozora-epub3-jar)\"" >&2
   exit 1
 fi
 
@@ -65,7 +65,7 @@ fi
 mkdir -p "$parser_out"
 
 parser_rc=0
-java_args=(-jar "$JAR_PATH" -d "$parser_out")
+java_args=(-jar "$JAR_PATH" -d "$parser_out" -of)
 # `-enc` and its value must be two separate argv elements, not one string.
 java_args+=("${enc_args[@]}")
 java "${java_args[@]}" "$stdin_for_parser" > "$parser_err" 2>&1 || parser_rc=$?

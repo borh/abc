@@ -8,7 +8,6 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "reference-aozora-epub3-src": "reference-aozora-epub3-src",
         "reference-aozora-notation-spec-src": "reference-aozora-notation-spec-src",
         "reference-aozora-parser-js-src": "reference-aozora-parser-js-src",
         "reference-aozora-rs-src": "reference-aozora-rs-src",
@@ -241,23 +240,6 @@
       "original": {
         "type": "tarball",
         "url": "https://github.com/NixOS/nixpkgs/archive/eb9ceca17df2ea50a250b6b27f7bf6ab0186f198.tar.gz"
-      }
-    },
-    "reference-aozora-epub3-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1779867396,
-        "narHash": "sha256-H8Vyrv3QWM9vpb2hTIYlRwb2stapKuLON6UzyjBWUfE=",
-        "owner": "AozoraEpub3-JDK21",
-        "repo": "AozoraEpub3-JDK21",
-        "rev": "966a127a613b864d998e3448cdaa5f66a0519c1b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "AozoraEpub3-JDK21",
-        "repo": "AozoraEpub3-JDK21",
-        "rev": "966a127a613b864d998e3448cdaa5f66a0519c1b",
-        "type": "github"
       }
     },
     "reference-aozora-notation-spec-src": {

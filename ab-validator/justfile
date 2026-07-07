@@ -164,8 +164,9 @@ parser-performance-all-parsers:
 	test -n "$index" || { echo "INDEX=/path/to/index.json is required" >&2; exit 2; }; \
 	aozora_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora')"; \
 	aozora2html_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora2html')"; \
-	epub3_jar="${AB_AOZORAEPUB3_JAR:-{{repo_root}}/references/parsers/AozoraEpub3-JDK21/build/libs/AozoraEpub3.jar}"; \
-	test -f "$epub3_jar" || { echo "AozoraEpub3.jar not found: $epub3_jar" >&2; echo "build it with: (cd {{repo_root}}/references/parsers/AozoraEpub3-JDK21 && ./gradlew jar), or set AB_AOZORAEPUB3_JAR" >&2; exit 2; }; \
+	epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora-epub3')"; \
+	epub3_jar="${AB_AOZORAEPUB3_JAR:-$epub3_pkg/lib/AozoraEpub3.jar}"; \
+	test -f "$epub3_jar" || { echo "AozoraEpub3.jar not found: $epub3_jar" >&2; echo "set AB_AOZORAEPUB3_JAR or rebuild {{repo_root}}#reference-aozora-epub3" >&2; exit 2; }; \
 	aozora_pkg_q="$(python -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$aozora_pkg")"; \
 	epub3_jar_q="$(python -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$epub3_jar")"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora2/Cargo.toml" --release --jobs "$jobs"; \
@@ -1017,7 +1018,7 @@ morph-vaporetto-dictionary-audit:
 # ---- aozora-epub3 adapter ---------------------------------------------------
 
 aozora-epub3-jar:
-	@cd "{{repo_root}}/references/parsers/AozoraEpub3-JDK21" && ./gradlew jar
+	@out="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora-epub3')"; printf '%s/lib/AozoraEpub3.jar\n' "$out"
 
 aozora-epub3-build PROFILE="release":
 	@cargo build --manifest-path "{{repo_root}}/adapters/aozora-epub3/Cargo.toml" --{{PROFILE}}
@@ -1026,7 +1027,8 @@ aozora-epub3-test:
 	@cargo test --manifest-path "{{repo_root}}/adapters/aozora-epub3/Cargo.toml"
 
 aozora-epub3-smoke: aozora-epub3-build
-	@printf 'テスト作品\nテスト著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n\n吾輩《わがはい》は猫である。\n\n底本：テスト出版\n' \
-	  | "{{repo_root}}/adapters/aozora-epub3/aozora-epub3-adapter" --mode aat \
+	@epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora-epub3')"; \
+	printf 'テスト作品\nテスト著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n\n吾輩《わがはい》は猫である。\n\n底本：テスト出版\n' \
+	  | AB_AOZORAEPUB3_JAR="$epub3_pkg/lib/AozoraEpub3.jar" "{{repo_root}}/adapters/aozora-epub3/aozora-epub3-adapter" --mode aat \
 	  | jq -e '.meta.adapter == "aozora-epub3" and .meta.parse_complete == true and (.blocks | length >= 1)' >/dev/null
 	@echo "aozora-epub3 smoke ok"

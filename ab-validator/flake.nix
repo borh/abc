@@ -46,11 +46,6 @@
       flake = false;
     };
 
-    reference-aozora-epub3-src = {
-      url = "github:AozoraEpub3-JDK21/AozoraEpub3-JDK21/966a127a613b864d998e3448cdaa5f66a0519c1b";
-      flake = false;
-    };
-
     mecab-dic-converter-src = {
       url = "github:tomokane/mecab-dic-converter/d24dcf25ce47170ca9e661c003b5d3345e98dac9";
       flake = false;
@@ -62,7 +57,6 @@
     {
       self,
       nixpkgs,
-      reference-aozora-epub3-src,
       reference-aozora-notation-spec-src,
       reference-aozora-parser-js-src,
       reference-aozora-rs-src,
@@ -246,34 +240,49 @@
               done
             '';
 
-        referenceAozoraEpub3 = pkgs.writeShellApplication {
-          name = "reference-aozora-epub3";
-          runtimeInputs = [
-            pkgs.jdk21
-            pkgs.gradle
-          ];
-          text = ''
-            cat >&2 <<'EOF'
-            AozoraEpub3-JDK21 does not include Gradle dependency locks
-            or vendored Maven artifacts, so a pure Nix package cannot build it yet.
+        referenceAozoraEpub3Version = "1.3.6-jdk21";
 
-            From a development shell, build it with:
-
-              cd references/parsers/AozoraEpub3-JDK21
-              gradle build
-
-            To make this output fully reproducible, add Gradle dependency locking or
-            generated Nix dependency metadata for the Maven/plugin graph.
-            EOF
-            exit 1
-          '';
+        referenceAozoraEpub3Release = pkgs.fetchurl {
+          url = "https://github.com/AozoraEpub3-JDK21/AozoraEpub3-JDK21/releases/download/v${referenceAozoraEpub3Version}/AozoraEpub3-${referenceAozoraEpub3Version}.tar.gz";
+          hash = "sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=";
         };
+
+        referenceAozoraEpub3 =
+          pkgs.runCommand "reference-aozora-epub3-${referenceAozoraEpub3Version}"
+            {
+              nativeBuildInputs = [
+                pkgs.gnutar
+                pkgs.gzip
+              ];
+            }
+            ''
+              mkdir -p "$out/bin" "$out/lib/aozora-epub3" "$out/share/licenses/aozora-epub3"
+              tar -xzf ${referenceAozoraEpub3Release} -C "$out/lib/aozora-epub3"
+
+              ln -s "$out/lib/aozora-epub3/AozoraEpub3.jar" "$out/lib/AozoraEpub3.jar"
+
+              cat > "$out/bin/reference-aozora-epub3" <<'SH'
+              #!/usr/bin/env bash
+              set -euo pipefail
+              cd "__AOZORA_EPUB3_HOME__"
+              exec "__JAVA__" -jar "__AOZORA_EPUB3_HOME__/AozoraEpub3.jar" "$@"
+              SH
+              substituteInPlace "$out/bin/reference-aozora-epub3" \
+                --replace-fail "__AOZORA_EPUB3_HOME__" "$out/lib/aozora-epub3" \
+                --replace-fail "__JAVA__" "${pkgs.jdk21}/bin/java"
+              chmod +x "$out/bin/reference-aozora-epub3"
+
+              cp "$out/lib/aozora-epub3/gpl.txt" "$out/share/licenses/aozora-epub3/"
+              cp "$out/lib/aozora-epub3/LICENSE.txt" "$out/share/licenses/aozora-epub3/"
+              cp "$out/lib/aozora-epub3/THIRD-PARTY-NOTICES.txt" "$out/share/licenses/aozora-epub3/"
+            '';
 
         referenceParsers = pkgs.symlinkJoin {
           name = "reference-parsers";
           paths = [
             referenceAozora2
             referenceAozoraRs
+            referenceAozoraEpub3
             referenceAozoraParserJs
             referenceAozorabunkoExtractor
           ];
@@ -540,7 +549,9 @@
 
         nonRustReferenceMetadata = pkgs.runCommand "reference-parser-metadata-check" { } ''
           test -f ${reference-aozora-parser-js-src}/package.json
-          test -f ${reference-aozora-epub3-src}/build.gradle
+          test -f ${referenceAozoraEpub3}/lib/AozoraEpub3.jar
+          test -f ${referenceAozoraEpub3}/share/licenses/aozora-epub3/gpl.txt
+          test -f ${referenceAozoraEpub3}/share/licenses/aozora-epub3/THIRD-PARTY-NOTICES.txt
           test -f ${reference-aozorabunko-extractor-src}/Gemfile.lock
           touch "$out"
         '';
@@ -1080,19 +1091,18 @@
         };
 
         # Reproducible adapter check: build the mapper fully offline from the
-        # vendored cargo deps and validate fixture-driven AAT against
-        # data/aat-schema.json. This checks the Rust mapper only -- the
-        # AozoraEpub3 JAR cannot be built/pinned in Nix yet (see
-        # referenceAozoraEpub3), so the full wrapper+JAR smoke runs via
-        # `just aozora-epub3-smoke` and tests/aozora-epub3-adapter-smoke.sh
-        # against a locally-built JAR.
+        # vendored cargo deps, validate fixture-driven AAT against
+        # data/aat-schema.json, and smoke the full wrapper+JAR path against
+        # the pinned AozoraEpub3 release JAR exposed by referenceAozoraEpub3.
         aozoraEpub3SmokeCheck =
           pkgs.runCommand "aozora-epub3-smoke-check"
             {
               nativeBuildInputs = [
                 rustToolchain
                 pythonWithAatSchemaDeps
+                pkgs.jdk21
                 pkgs.jq
+                pkgs.unzip
               ];
             }
             ''
@@ -1126,6 +1136,11 @@
                   jsonschema.validate(aat, schema)
               print(f"aozora-epub3 smoke: {len(fixtures)} fixtures schema-valid")
               PY
+
+                            export AB_AOZORAEPUB3_JAR="${referenceAozoraEpub3}/lib/AozoraEpub3.jar"
+                            printf 'テスト作品\nテスト著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n\n吾輩《わがはい》は猫である。\n\n底本：テスト出版\n' \
+                              | ${pkgs.bash}/bin/bash "$work_dir/source/adapters/aozora-epub3/aozora-epub3-adapter" --mode aat \
+                              | jq -e '.meta.adapter == "aozora-epub3" and .meta.parse_complete == true and (.blocks | length >= 1)' >/dev/null
                             touch "$out"
             '';
       in
@@ -1275,13 +1290,13 @@
             packages = aozora2htmlTools;
           };
 
-          # Provides the toolchain to build the JAR locally and run the full
-          # wrapper smoke. Set AB_AOZORAEPUB3_JAR to override the JAR path.
+          # Provides the toolchain to run the pinned AozoraEpub3 release JAR
+          # and the full wrapper smoke. Set AB_AOZORAEPUB3_JAR to override the
+          # JAR path for local experiments.
           aozora-epub3 = pkgs.mkShell {
             packages = [
               rustToolchain
               pkgs.jdk21
-              pkgs.gradle
               pkgs.jq
               pkgs.unzip
               pkgs.python3

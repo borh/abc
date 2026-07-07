@@ -28,6 +28,32 @@
   ],
   "schema_hashes": [],
   "parser_evidence_hashes": [],
+  "materialization": {
+    "parser_ir_path": "examples/v0/example-work/parser-ir.json",
+    "warnings_path": "examples/v0/example-work/warnings.jsonl",
+    "source_manifest_path": "examples/v0/example-work/source.manifest.json",
+    "metadata_record_path": "examples/v0/example-work/metadata-record.json",
+    "persons_dir": "examples/v0/example-persons",
+    "parser_identity": {
+      "parser_build_hash": null,
+      "parser_config_hash": null,
+      "aat_parser_ir_mapping_hash": null
+    },
+    "analysis_subject": {
+      "logical_path": "cards/000000/files/example.txt",
+      "git_ref": "fixture-smoke-2026-07-07"
+    },
+    "analysis_metrics": [
+      {
+        "metric_id": "fixture-line-count",
+        "value": 3,
+        "value_type": "integer",
+        "denominator": null,
+        "unit": "line",
+        "status": "passed"
+      }
+    ]
+  },
   "manifest_references": [
     {
       "manifest_path": "examples/v0/example-work/source.manifest.json",

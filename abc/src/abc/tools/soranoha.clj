@@ -1,6 +1,9 @@
 (ns abc.tools.soranoha
   (:refer-clojure :exclude [run!])
   (:require [abc.tools.files :as files]
+            [abc.tools.manifest :as manifest]
+            [abc.tools.materialize-analysis :as materialize-analysis]
+            [abc.tools.materialize-publication :as materialize-publication]
             [abc.tools.request-set-resolver :as request-set-resolver]
             [abc.tools.schema :as schema]
             [abc.tools.snapshot-index :as snapshot-index]
@@ -50,16 +53,234 @@
 (defn default-snapshot-root [label]
   (io/file "target" "soranoha" label))
 
+(defn- delete-tree! [file]
+  (let [file (io/file file)]
+    (when (.exists file)
+      (doseq [entry (reverse (file-seq file))]
+        (.delete entry)))))
+
+(defn- copy-file! [source target]
+  (let [target (io/file target)]
+    (when-let [parent (.getParentFile target)]
+      (.mkdirs parent))
+    (io/copy (io/file source) target)
+    target))
+
+(defn- compact-hashes [& values]
+  (vec (keep identity values)))
+
+(defn- relative-path [root file]
+  (str (.relativize (.toPath (io/file root))
+                    (.toPath (io/file file)))))
+
+(defn- loose-manifest-reference [root manifest-file]
+  {"manifest_path" (str (io/file manifest-file))
+   "locator" {"kind" "loose"
+              "path" (relative-path root manifest-file)}})
+
+(defn- copied-parser-identity [materialization]
+  (get materialization "parser_identity" {}))
+
+(defn- parser-ir-manifest
+  [{:keys [parser-ir-file warnings-file source-manifest parser-identity
+           generated-at]}]
+  (let [parser-ir (files/read-json parser-ir-file)
+        source-identity (get source-manifest "manifest_identity_object")
+        parser-ir-schema-hash (get parser-ir "schema_hash")
+        identity-inputs {"corpus_snapshot_hash" (get source-identity
+                                                     "corpus_snapshot_hash")
+                         "work_content_hash" (get-in parser-ir
+                                                     ["source"
+                                                      "work_content_hash"])
+                         "parser_build_hash" (get parser-identity
+                                                  "parser_build_hash")
+                         "parser_config_hash" (get parser-identity
+                                                   "parser_config_hash")
+                         "mapping_hash" (get parser-identity
+                                             "aat_parser_ir_mapping_hash")
+                         "parser_ir_schema_hash" parser-ir-schema-hash}
+        identity-object (manifest/identity-object
+                         identity-inputs
+                         {:manifest-schema-hash (manifest/schema-hash
+                                                 "schemas/manifest.schema.json")
+                          :output-format-spec-hash parser-ir-schema-hash})
+        warnings-file (when (and warnings-file (.exists (io/file warnings-file)))
+                        (io/file warnings-file))]
+    (manifest/artifact-manifest
+     {:artifact-kind "parser-ir"
+      :validation-status "passed"
+      :identity-object identity-object
+      :content (manifest/content parser-ir-file
+                                 "application/json"
+                                 "parser-ir.json"
+                                 files/sha256-file)
+      :sidecars (cond-> []
+                  warnings-file
+                  (conj {"role" "warnings"
+                         "hash" (manifest/file-hash warnings-file)
+                         "media_type" "application/jsonl"
+                         "path_hint" "warnings.jsonl"}))
+      :generated-at generated-at
+      :activity-id "https://w3id.org/abc/activity/materialize-smoke-parser-ir"
+      :agent "abc.tools.soranoha"
+      :plan-hash nil
+      :used (compact-hashes (get identity-inputs "corpus_snapshot_hash")
+                            (get identity-inputs "work_content_hash")
+                            (get identity-inputs "parser_build_hash")
+                            (get identity-inputs "parser_config_hash")
+                            (get identity-inputs "mapping_hash")
+                            parser-ir-schema-hash)
+      :was-derived-from (compact-hashes (get identity-inputs
+                                             "corpus_snapshot_hash")
+                                        (get identity-inputs
+                                             "work_content_hash"))
+      :notes "Generated as the parser-IR producer manifest for a Soranoha smoke snapshot."})))
+
+(defn- write-parser-ir-artifacts!
+  [{:keys [root materialization generated-at]}]
+  (let [parser-dir (io/file root "artifacts" "parser-ir")
+        parser-ir-file (copy-file! (get materialization "parser_ir_path")
+                                   (io/file parser-dir "parser-ir.json"))
+        warnings-source (get materialization "warnings_path")
+        warnings-file (when warnings-source
+                        (copy-file! warnings-source
+                                    (io/file parser-dir "warnings.jsonl")))
+        source-manifest (files/read-json
+                         (get materialization "source_manifest_path"))
+        manifest-file (io/file parser-dir "parser-ir.manifest.json")]
+    (manifest/write-json-file!
+     manifest-file
+     (parser-ir-manifest {:parser-ir-file parser-ir-file
+                          :warnings-file warnings-file
+                          :source-manifest source-manifest
+                          :parser-identity (copied-parser-identity
+                                            materialization)
+                          :generated-at generated-at}))
+    {:parser-ir-file parser-ir-file
+     :manifest-file manifest-file}))
+
+(defn- write-publication-artifacts!
+  [{:keys [root materialization generated-at]}]
+  (let [build-dir (io/file root ".build" "publication")
+        plaintext-dir (io/file root "artifacts" "plaintext")
+        tei-dir (io/file root "artifacts" "tei")
+        result (materialize-publication/materialize-publication!
+                {:parser-ir-path (get materialization "parser_ir_path")
+                 :source-manifest-path (get materialization
+                                            "source_manifest_path")
+                 :metadata-record-path (get materialization
+                                            "metadata_record_path")
+                 :persons-dir (get materialization "persons_dir")
+                 :output-dir build-dir
+                 :generated-at generated-at})
+        plaintext-file (copy-file! (:plaintext result)
+                                   (io/file plaintext-dir "plain.txt"))
+        plaintext-manifest-file (copy-file! (:plaintext-manifest result)
+                                            (io/file plaintext-dir
+                                                     "plaintext.manifest.json"))
+        tei-file (copy-file! (:tei result) (io/file tei-dir "tei.xml"))
+        tei-manifest-file (copy-file! (:tei-manifest result)
+                                      (io/file tei-dir "tei.manifest.json"))]
+    (copy-file! (:tei-validation-result result)
+                (io/file tei-dir "tei-validation-result.json"))
+    (copy-file! (:preservation result)
+                (io/file tei-dir "preservation.json"))
+    (delete-tree! (io/file root ".build"))
+    {:plaintext-file plaintext-file
+     :plaintext-manifest-file plaintext-manifest-file
+     :tei-file tei-file
+     :tei-manifest-file tei-manifest-file}))
+
+(defn- analysis-recipe [request-set]
+  (let [recipe-id (get-in request-set ["resolved_recipe_labels" 0 "recipe_id"])]
+    (when-not recipe-id
+      (throw (ex-info "Request set has no resolved analysis recipe"
+                      {:request_set_label (get request-set "label")})))
+    (files/read-json (str "data/analysis-recipes/" recipe-id ".json"))))
+
+(defn- analysis-subject [request-set materialization]
+  (merge (first (get-in request-set ["request_set_identity_object"
+                                     "subjects"]))
+         (get materialization "analysis_subject" {})))
+
+(defn- write-analysis-artifacts!
+  [{:keys [root materialization request-set producer-manifest-file
+           generated-at]}]
+  (let [analysis-dir (io/file root "artifacts" "analysis")
+        result (materialize-analysis/materialize-analysis!
+                {:producer-manifest (files/read-json producer-manifest-file)
+                 :recipe (analysis-recipe request-set)
+                 :subject (analysis-subject request-set materialization)
+                 :metrics (get materialization "analysis_metrics")
+                 :output-dir analysis-dir
+                 :generated-at generated-at})]
+    {:analysis-result-file (:analysis-result result)
+     :analysis-manifest-file (:manifest result)}))
+
+(defn- materialize-snapshot-root! [label root]
+  (let [request-set (read-request-set label)
+        plan (snapshot-index/read-snapshot-plan label)
+        materialization (get plan "materialization")]
+    (when-not materialization
+      (throw (ex-info "Snapshot plan has no materialization section"
+                      {:request_set_label label})))
+    (delete-tree! root)
+    (.mkdirs (io/file root))
+    (let [generated-at (get plan "generated_at")
+          parser-result (write-parser-ir-artifacts!
+                         {:root root
+                          :materialization materialization
+                          :generated-at generated-at})
+          publication-result (write-publication-artifacts!
+                              {:root root
+                               :materialization materialization
+                               :generated-at generated-at})
+          analysis-result (write-analysis-artifacts!
+                           {:root root
+                            :materialization materialization
+                            :request-set request-set
+                            :producer-manifest-file (:manifest-file
+                                                     parser-result)
+                            :generated-at generated-at})
+          manifest-files [(:manifest-file parser-result)
+                          (:plaintext-manifest-file publication-result)
+                          (:tei-manifest-file publication-result)
+                          (:analysis-manifest-file analysis-result)]
+          generated-plan (assoc plan
+                                "manifest_references"
+                                (mapv #(loose-manifest-reference root %)
+                                      manifest-files))
+          snapshot (snapshot-index/build-snapshot-index-from-plan
+                    request-set generated-plan)
+          output-file (snapshot-index/write-snapshot-index!
+                       snapshot
+                       (str (io/file root "snapshot-index.json")))]
+      {:root root
+       :snapshot snapshot
+       :snapshot-index-file output-file})))
+
 (defn reproduce! [label]
-  (snapshot-index! label
-                   (str (io/file (default-snapshot-root label)
-                                 "snapshot-index.json"))))
+  (let [{:keys [snapshot snapshot-index-file]} (materialize-snapshot-root!
+                                                label
+                                                (default-snapshot-root label))]
+    (println "snapshot_index:" (str snapshot-index-file))
+    (println "snapshot_label:" (get snapshot "snapshot_label"))
+    (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))
+    (println "request_set_label:" (get snapshot "request_set_label"))
+    0))
 
 (defn snapshot-index-path [path]
   (let [file (io/file path)]
     (if (.isDirectory file)
       (io/file file "snapshot-index.json")
       file)))
+
+(defn- snapshot-root-path [path]
+  (let [file (io/file path)]
+    (if (.isDirectory file)
+      file
+      (or (.getParentFile file)
+          (io/file ".")))))
 
 (defn read-valid-snapshot-index [path]
   (let [snapshot-path (snapshot-index-path path)
@@ -71,6 +292,48 @@
                        :errors errors})))
     (snapshot-index/validate-snapshot-index! snapshot)
     snapshot))
+
+(defn- compare-reference-field! [label reference expected actual]
+  (when-not (= expected actual)
+    (throw (ex-info (str "Referenced snapshot manifest " label
+                         " mismatch")
+                    {:locator (get reference "locator")
+                     :field label
+                     :expected expected
+                     :actual actual}))))
+
+(defn- validate-loose-reference! [root reference]
+  (let [relative-path (get-in reference ["locator" "path"])
+        manifest-file (io/file root relative-path)]
+    (when-not (.isFile manifest-file)
+      (throw (ex-info "Referenced snapshot manifest does not exist"
+                      {:locator (get reference "locator")
+                       :path (str manifest-file)})))
+    (compare-reference-field! "manifest_content_hash"
+                              reference
+                              (get reference "manifest_content_hash")
+                              (manifest/file-hash manifest-file))
+    (let [manifest-value (files/read-json manifest-file)]
+      (doseq [[field expected actual]
+              [["artifact_id" (get reference "artifact_id")
+                (get manifest-value "artifact_id")]
+               ["artifact_kind" (get reference "artifact_kind")
+                (get manifest-value "artifact_kind")]
+               ["validation_status" (get reference "validation_status")
+                (get manifest-value "validation_status")]
+               ["content_hash" (get reference "content_hash")
+                (get-in manifest-value ["content" "content_hash"])]]]
+        (compare-reference-field! field reference expected actual)))))
+
+(defn- validate-snapshot-root-references! [root snapshot]
+  (doseq [reference (get snapshot "artifact_references" [])
+          :let [locator-kind (get-in reference ["locator" "kind"])]]
+    (case locator-kind
+      "loose" (validate-loose-reference! root reference)
+      nil (throw (ex-info "Snapshot artifact reference has no locator kind"
+                          {:reference reference}))
+      true))
+  true)
 
 (defn explain-snapshot! [path]
   (let [snapshot (read-valid-snapshot-index path)
@@ -88,6 +351,9 @@
 
 (defn validate! [snapshot-root]
   (let [snapshot (read-valid-snapshot-index snapshot-root)]
+    (when (.isDirectory (io/file snapshot-root))
+      (validate-snapshot-root-references! (snapshot-root-path snapshot-root)
+                                          snapshot))
     (println "snapshot_valid: true")
     (println "snapshot_label:" (get snapshot "snapshot_label"))
     (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))

@@ -165,7 +165,7 @@ Align `smoke-basic-ja` with the example-work `work_content_hash`, regenerate `da
 
 Run `soranoha reproduce smoke-basic-ja`, `soranoha validate target/soranoha/smoke-basic-ja`, and `soranoha explain-snapshot target/soranoha/smoke-basic-ja/snapshot-index.json`.
 
-Note: this smoke run currently validates the snapshot metadata/index path over the checked-in source and TEI manifests. It does not yet materialize a full publication root containing newly generated plaintext and analysis manifests.
+Note: this task first introduced the metadata/index path. Task 6 below replaces the `reproduce` path with a materialized smoke root.
 
 ### Task 5: Verification
 
@@ -179,5 +179,45 @@ Note: this smoke run currently validates the snapshot metadata/index path over t
 - [x] Run focused resolver/snapshot/Soranoha tests.
 - [x] Run `bash scripts/monorepo-schema-drift.sh`.
 - [x] Run `nix build .#checks.x86_64-linux.abc-adr-acceptance-criteria -L`.
+- [x] Run `git diff --check`.
+- [x] Run `nix flake check`.
+
+### Task 6: End-to-End Smoke Snapshot Root
+
+**Files:**
+- Modify: `abc/data/snapshot-plans/smoke-basic-ja.json`
+- Modify: `abc/src/abc/tools/soranoha.clj`
+- Modify: `abc/test/abc/tools/soranoha_test.clj`
+
+**Interfaces:**
+- Produces: `soranoha reproduce smoke-basic-ja` materializes parser-IR, plaintext, TEI, and token-independent analysis outputs under `target/soranoha/smoke-basic-ja`, then builds the snapshot index from the generated manifest files.
+- Consumes: existing parser-IR, publication, analysis, request-set, and snapshot-index helpers.
+
+- [x] **Step 1: Add failing reproduce-root test**
+
+Test that `reproduce smoke-basic-ja` writes parser-IR, plaintext, TEI, and analysis artifacts plus manifests, and that the generated snapshot index references those generated manifests.
+
+- [x] **Step 2: Implement plan-driven smoke materialization**
+
+Add a `materialization` section to the smoke snapshot plan and wire `reproduce` to create the smoke root before writing `snapshot-index.json`.
+
+- [x] **Step 3: Add root-level validation**
+
+Make `validate <snapshot-root>` verify loose manifest locators exist and match the manifest hashes recorded in the snapshot index.
+
+- [x] **Step 4: Run smoke reproduce/validate/explain**
+
+Run `soranoha reproduce smoke-basic-ja`, `soranoha validate target/soranoha/smoke-basic-ja`, and `soranoha explain-snapshot target/soranoha/smoke-basic-ja/snapshot-index.json`.
+
+### Task 7: Smoke-Root Slice Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed smoke-root materialization and validation changes.
+- Produces: verified end-to-end smoke snapshot slice.
+
+- [x] Run focused materialize-analysis/materialize-publication/snapshot/Soranoha tests.
 - [x] Run `git diff --check`.
 - [x] Run `nix flake check`.

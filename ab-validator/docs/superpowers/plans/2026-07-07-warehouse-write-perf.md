@@ -426,13 +426,13 @@ Fill in after the branch is merged and built on hinoki. The measurement is the p
 
 - [ ] Build instrumented binary on hinoki (from `ab-validator/`, release).
 - [ ] **Baseline (`--parquet-zstd-level 3`)** full-corpus run: record `/usr/bin/time` wall-clock, `du -sh` of the run dir, and the `phase-timings:` line. **This confirms or refutes the write-bound hypothesis.**
-      - total wall: ____   analysis %: ____   warehouse-write %: ____   other %: ____
+      - total wall: ____   analysis %: ____   adjudication %: ____   warehouse-write %: ____   other %: ____
 - [ ] **Candidate (`--parquet-zstd-level 1`)** full-corpus run: same three measurements.
       - total wall: ____   output size: ____   Δ vs baseline: ____
 - [ ] **Row-count parity** (baseline vs candidate) via `scripts/oracle-validation-diff.sh` non-oracle section: all 13 tables identical (content-neutral). PASS/FAIL: ____
 - [ ] **Read-back check:** DuckDB `SELECT count(*)` + a `LIMIT 1000` scan on `morpheme_features` and `nway_feature_diffs` of the candidate run parse without error. PASS/FAIL: ____
 - [ ] **Default decision:** if level 1 gives a material wall-clock win at acceptable disk cost, change the default to 1 (a one-line edit + test update) and note it here; otherwise keep 3. Decision: ____
-- [ ] **Next-lever note:** record what the measured split implies for the deferred levers (Lever 2 analyzer parallelism only worth it if analysis % is large; per-analyzer row-collapse / id-encoding only worth it if warehouse-write % dominates).
+- [ ] **Next-lever note:** record what the measured split implies for the deferred levers (Lever 2 analyzer parallelism only worth it if analysis % is large; per-analyzer row-collapse / id-encoding only worth it if warehouse-write % dominates; a large adjudication % would point at the oracle/nway row-building code as the lever instead). Note: the single-threaded merge/compaction tail is outside every per-worker `total`, so it is not in this split — track it separately via wall-clock.
 
 ## Deferred (documented, not this round)
 

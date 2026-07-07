@@ -11,7 +11,7 @@
    "schemas/aat-parser-ir-mapping.schema.json" "0.2.4"
    "schemas/analysis-recipe.schema.json" "0.1.0"
    "schemas/analysis-result.schema.json" "0.1.0"
-   "schemas/manifest.schema.json" "0.4.1"
+   "schemas/manifest.schema.json" "0.4.2"
    "schemas/parser-ir-publication-preservation.schema.json" "0.2.0"
    "schemas/request-set.schema.json" "0.1.1"
    "schemas/source-region-coverage.schema.json" "0.2.1"
@@ -55,6 +55,51 @@
       (finally
         (doseq [file [schema-file value-file]]
           (.delete file))))))
+
+(deftest manifest-schema-requires-tokenizer-profile-hash-coordinate-test
+  (let [manifest-schema (schema/read-schema "schemas/manifest.schema.json")
+        identity-object {"manifest_schema_hash" (manifest/schema-hash
+                                                 "schemas/manifest.schema.json")
+                         "corpus_snapshot_hash" (files/example-hash "01")
+                         "work_content_hash" (files/example-hash "02")
+                         "metadata_record_hash" nil
+                         "parser_build_hash" (files/example-hash "03")
+                         "parser_config_hash" (files/example-hash "04")
+                         "aat_parser_ir_mapping_hash" (files/example-hash "05")
+                         "parser_ir_schema_hash" (files/example-hash "06")
+                         "tei_profile_hash" nil
+                         "tokenizer_build_hash" nil
+                         "tokenizer_dictionary_hash" nil
+                         "tokenizer_profile_hash" nil
+                         "analysis_recipe_hash" nil
+                         "output_format_spec_hash" (files/example-hash "07")}
+        manifest {"manifest_schema_id" "https://w3id.org/abc/schemas/manifest.schema.json"
+                  "artifact_id" (manifest/artifact-id identity-object)
+                  "artifact_kind" "parser-ir"
+                  "validation_status" "passed"
+                  "manifest_identity_object" identity-object
+                  "content" {"content_hash" (files/example-hash "08")
+                             "media_type" "application/json"}
+                  "sidecars" []
+                  "provenance" {"generated_at" "2026-07-07T00:00:00Z"
+                                "activity_id" "https://w3id.org/abc/activity/test"
+                                "agent" "abc.tools.schema-test"
+                                "plan_hash" nil
+                                "used" []
+                                "was_derived_from" []}
+                  "license" nil
+                  "signatures" []
+                  "superseded_by" nil
+                  "invalidated_at" nil
+                  "replacement_reason" nil
+                  "notes" nil}]
+    (is (nil? (schema/validation-errors manifest-schema manifest)))
+    (is (seq (schema/validation-errors
+              manifest-schema
+              (update manifest
+                      "manifest_identity_object"
+                      dissoc
+                      "tokenizer_profile_hash"))))))
 
 (deftest analysis-schema-fixtures-validate-test
   (let [recipe-schema (schema/read-schema "schemas/analysis-recipe.schema.json")

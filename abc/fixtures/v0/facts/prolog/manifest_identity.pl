@@ -1,1 +1,1 @@
-manifest_identity('examples/v0/example-work/manifest.json', 'sha256:1ac607b30af42d2d4feb7e13e7faf5c34cb5f10d4bc2adf4aa98256a90a4dc8b').
+manifest_identity('examples/v0/example-work/manifest.json', 'sha256:bc6471b7e619889a5de779763cae28d1078969935185830c948eb627ec2269a1').

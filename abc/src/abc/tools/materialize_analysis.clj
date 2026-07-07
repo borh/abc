@@ -25,6 +25,7 @@
       "tei_profile_hash" nil
       "tokenizer_build_hash" nil
       "tokenizer_dictionary_hash" nil
+      "tokenizer_profile_hash" nil
       "analysis_recipe_hash" analysis-recipe-hash
       "output_format_spec_hash" (manifest/schema-hash "schemas/analysis-result.schema.json")}
      (select-keys producer-identity copied-parser-ir-fields))))

@@ -61,10 +61,14 @@
                        :conflicts conflicts}))))
   true)
 
+(defn- identity-value [entry field]
+  (get-in entry ["manifest_identity_object" field]))
+
 (defn tokenized-release-guardrail-errors [entries]
   (->> entries
        (filter successful-entry?)
        (filter #(= "tokenized" (get % "artifact_kind")))
+       (filter #(nil? (identity-value % "tokenizer_profile_hash")))
        (map (fn [entry]
               {:artifact_id (get entry "artifact_id")
                :manifest_path (get entry "manifest_path")
@@ -75,7 +79,7 @@
 (defn validate-tokenized-release-guardrail! [entries]
   (let [errors (tokenized-release-guardrail-errors entries)]
     (when (seq errors)
-      (throw (ex-info "Successful tokenized manifests require tokenizer_profile_hash in manifest identity schema"
+      (throw (ex-info "Successful tokenized manifests require tokenizer_profile_hash in manifest identity"
                       {:type :abc/tokenized-release-before-profile-hash
                        :errors errors}))))
   true)
@@ -85,9 +89,6 @@
    "parser_config_hash"
    "aat_parser_ir_mapping_hash"
    "parser_ir_schema_hash"])
-
-(defn- identity-value [entry field]
-  (get-in entry ["manifest_identity_object" field]))
 
 (defn- successful-parser-ir-entry? [entry]
   (and (successful-entry? entry)

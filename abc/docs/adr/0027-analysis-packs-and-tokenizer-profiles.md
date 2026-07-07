@@ -19,10 +19,13 @@ content-hash path are implemented as a pre-tokenization contract:
 `test/abc/tools/request_set_resolver_test.clj` cover profile label resolution
 to content hashes and registry-entry hashes.
 
-The manifest schema blocker remains open. ABC still cannot publish tokenized
-slices, tokenizer-backed stylometric analysis, or collection analysis packs as
-canonical snapshot artifacts until the remaining acceptance criteria below are
-implemented.
+The manifest identity blocker is partially closed. Manifest schema v0.4.2 adds
+`tokenizer_profile_hash` to `manifest_identity_object`, and release validation
+now rejects successful tokenized manifests only when that coordinate is missing
+or null. ABC still cannot publish tokenized slices, tokenizer-backed stylometric
+analysis, or collection analysis packs as canonical snapshot artifacts until
+the remaining token-stream sidecar, token output schema, copied-field
+validation, and pack acceptance criteria below are implemented.
 
 Snapshot-publication work may proceed with TEI, plaintext, token-independent
 analysis, request-set fixtures, and snapshot indexes. It must not claim
@@ -98,19 +101,19 @@ as ADR 0026 recipes. A resolver may accept labels such as
 profile content hash, registry-entry hash, and resolution time. Only the
 profile content hash participates in artifact or request-set identity.
 
-### Manifest Schema Blocker
+### Manifest Schema Coordinate
 
 Publishing standalone `tokenized` artifacts as exact release artifacts requires
-a manifest schema revision that adds `tokenizer_profile_hash` to
-`manifest_identity_object`.
+`tokenizer_profile_hash` in `manifest_identity_object`. Manifest schema v0.4.2
+adds this nullable coordinate.
 
-Until that schema exists:
+Until the remaining token stream and validation contracts exist:
 
 - token-independent ADR 0026 analysis remains canonical;
 - tokenizer profile hashes may appear in request sets, result content, and
   provenance for prototypes;
-- standalone `tokenized` artifacts must not be described as exact canonical
-  release artifacts;
+- standalone `tokenized` artifacts with missing or null `tokenizer_profile_hash`
+  must not be described as exact canonical release artifacts;
 - tokenizer-backed analysis must either remain non-canonical or fold every
   tokenizer-profile coordinate into the consuming `analysis_recipe_hash`, which
   is an interim prototype rule, not the accepted release path.
@@ -126,13 +129,13 @@ content, release validation fails.
 
 ### Transition Guardrail
 
-Current manifest schema v0.4.1 already permits `artifact_kind = "tokenized"`,
-but it cannot yet carry `tokenizer_profile_hash` in
-`manifest_identity_object`. Until the manifest schema revision lands, release
-validation must reject any successful `tokenized` manifest
-(`artifact_kind = "tokenized"` and `validation_status` not equal to `failed`).
-Prototype tokenized outputs may exist only as local or explicitly
-non-canonical artifacts.
+Manifest schema v0.4.2 permits `artifact_kind = "tokenized"` and carries
+`tokenizer_profile_hash` in `manifest_identity_object`. Release validation
+must reject any successful `tokenized` manifest (`artifact_kind = "tokenized"`
+and `validation_status` not equal to `failed`) whose
+`tokenizer_profile_hash` is missing or null. Prototype tokenized outputs may
+exist only as local or explicitly non-canonical artifacts until token-stream
+sidecar/schema and copied-field validation are implemented.
 
 ## Tokenized Slice Contract
 
@@ -488,9 +491,10 @@ an output format explicitly embeds it.
 ABC gets a release path for tokenizer-backed stylometry without making a run
 directory, warehouse table, or Nix attrset the canonical identity.
 
-The design intentionally adds a manifest schema blocker for exact tokenized
-artifacts. This is cheaper than publishing tokenized outputs under an identity
-that omits normalization, granularity, or profile configuration.
+The design intentionally staged exact tokenized artifacts behind manifest
+identity and token-stream validation work. This is cheaper than publishing
+tokenized outputs under an identity that omits normalization, granularity, or
+profile configuration.
 
 Analysis packs become useful for DuckDB/Parquet scans while remaining
 rebuildable views over per-work manifests. Per-work manifests remain the
@@ -503,18 +507,18 @@ as derivation failures.
 Snapshot-publication work can continue with token-independent analysis and can
 include empty tokenizer-profile arrays. It must not promote tokenizer outputs
 or tokenizer-backed metrics into the public snapshot promise before this ADR's
-schema and validation work lands.
+remaining token-stream and validation work lands.
 
 ## Acceptance Criteria
 
 - A `tokenizer-profile` schema exists and can be hashed with the ADR 0001 JCS
   schema-hash discipline.
 - A manifest schema revision adds `tokenizer_profile_hash` to
-  `manifest_identity_object`.
+  `manifest_identity_object`; `schemas/manifest.schema.json` v0.4.2 covers this.
 - Manifest sidecar roles include `token-stream`.
-- Until that manifest schema revision lands, release validation rejects any
-  successful `tokenized` manifest; `test/abc/tools/manifest_index_test.clj`
-  covers this pre-schema guardrail.
+- Release validation rejects any successful `tokenized` manifest with missing
+  or null `tokenizer_profile_hash`; `test/abc/tools/manifest_index_test.clj`
+  covers this guardrail.
 - Snapshot request-set fixtures remain token-independent until canonical
   tokenizer profiles exist; `test/abc/tools/request_set_fixture_test.clj`
   requires empty `tokenizer_profile_hashes` arrays in those fixtures.
@@ -568,5 +572,5 @@ tokenized artifacts under this ADR. Supersede this ADR and introduce a new
 manifest schema hash or tokenizer-profile schema hash.
 
 Do not reinterpret tokenized or tokenizer-backed analysis prototypes emitted
-before the manifest schema includes `tokenizer_profile_hash` as exact release
-artifacts.
+before manifest schema v0.4.2 includes `tokenizer_profile_hash` as exact
+release artifacts.

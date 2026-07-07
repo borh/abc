@@ -28,6 +28,7 @@
     "tei_profile_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "tokenizer_build_hash": null,
     "tokenizer_dictionary_hash": null,
+    "tokenizer_profile_hash": null,
     "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
   },
   "manifest_schema_id": "https:\/\/w3id.org\/abc\/schemas\/manifest.schema.json",

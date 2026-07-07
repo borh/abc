@@ -52,6 +52,7 @@
                                               "tei_profile_hash" nil
                                               "tokenizer_build_hash" nil
                                               "tokenizer_dictionary_hash" nil
+                                              "tokenizer_profile_hash" nil
                                               "analysis_recipe_hash" (files/example-hash "07")
                                               "output_format_spec_hash" (manifest/schema-hash "schemas/analysis-result.schema.json")}
                   "content" {"content_hash" (files/example-hash "08")

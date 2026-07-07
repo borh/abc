@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/manifest.schema.json",
   "title": "ABC Artifact Manifest",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "type": "object",
   "required": [
     "manifest_schema_id",
@@ -97,6 +97,7 @@
         "tei_profile_hash",
         "tokenizer_build_hash",
         "tokenizer_dictionary_hash",
+        "tokenizer_profile_hash",
         "analysis_recipe_hash",
         "output_format_spec_hash"
       ],
@@ -112,6 +113,7 @@
         "tei_profile_hash": { "$ref": "#/$defs/nullableHash" },
         "tokenizer_build_hash": { "$ref": "#/$defs/nullableHash" },
         "tokenizer_dictionary_hash": { "$ref": "#/$defs/nullableHash" },
+        "tokenizer_profile_hash": { "$ref": "#/$defs/nullableHash" },
         "analysis_recipe_hash": { "$ref": "#/$defs/nullableHash" },
         "output_format_spec_hash": { "$ref": "#/$defs/hash" }
       }

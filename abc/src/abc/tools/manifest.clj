@@ -46,6 +46,7 @@
    "tei_profile_hash"
    "tokenizer_build_hash"
    "tokenizer_dictionary_hash"
+   "tokenizer_profile_hash"
    "analysis_recipe_hash"
    "output_format_spec_hash"])
 
@@ -64,6 +65,7 @@
                     "tei_profile_hash" nil
                     "tokenizer_build_hash" nil
                     "tokenizer_dictionary_hash" nil
+                    "tokenizer_profile_hash" (get manifest-inputs k)
                     "analysis_recipe_hash" nil
                     "output_format_spec_hash" output-format-spec-hash)]))
         identity-keys))

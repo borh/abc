@@ -115,7 +115,9 @@ impl MorphAnalyzer for VaporettoAnalyzer {
                     })?;
 
                 Ok(RawToken {
-                    emitted_surface: token.surface().to_owned(),
+                    // The reported span re-slices the surface from the source
+                    // text, so no per-token surface String is needed.
+                    emitted_surface: None,
                     byte_span: Some(byte_span),
                     features: parse_vaporetto_feature_string(token.tags().to_vec()),
                 })
@@ -125,7 +127,7 @@ impl MorphAnalyzer for VaporettoAnalyzer {
         build_analysis_from_tokens(
             self.analyzer_id.clone(),
             document.text_id.clone(),
-            document.text.clone(),
+            &document.text,
             morphemes,
         )
     }

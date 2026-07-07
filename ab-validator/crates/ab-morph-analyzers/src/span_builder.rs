@@ -9,7 +9,10 @@ use ab_ortho_detect::{OffsetMap, OrthoMapError};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct RawToken {
-    pub emitted_surface: String,
+    /// Surface text as emitted by the analyzer. Only needed when `byte_span`
+    /// is `None` (sequential span matching); span-reporting analyzers pass
+    /// `None` so no per-token String is allocated.
+    pub emitted_surface: Option<String>,
     pub byte_span: Option<Range<usize>>,
     pub features: FeatureMap,
 }
@@ -17,10 +20,10 @@ pub(crate) struct RawToken {
 pub(crate) fn build_analysis_from_tokens(
     analyzer: AnalyzerId,
     text_id: TextId,
-    source_text: String,
+    source_text: &str,
     tokens: impl IntoIterator<Item = RawToken>,
 ) -> Result<Analysis, AnalyzerError> {
-    let morphemes = build_morphemes_from_tokens(&analyzer, &text_id, &source_text, tokens)?;
+    let morphemes = build_morphemes_from_tokens(&analyzer, &text_id, source_text, tokens)?;
 
     Ok(Analysis {
         analyzer,
@@ -55,7 +58,7 @@ pub(crate) fn build_morphemes_from_tokens(
                 text_id,
                 source_text,
                 cursor,
-                &token.emitted_surface,
+                token.emitted_surface.as_deref().unwrap_or(""),
             )?,
         };
 
@@ -208,7 +211,7 @@ mod tests {
 
     fn raw(surface: &str) -> RawToken {
         RawToken {
-            emitted_surface: surface.to_owned(),
+            emitted_surface: Some(surface.to_owned()),
             byte_span: None,
             features: FeatureMap::new(),
         }
@@ -219,7 +222,7 @@ mod tests {
         let analysis = build_analysis_from_tokens(
             "test".to_owned(),
             "t1".to_owned(),
-            "今日はA".to_owned(),
+            "今日はA",
             vec![raw("今日"), raw("は"), raw("A")],
         )
         .unwrap();
@@ -237,7 +240,7 @@ mod tests {
         let analysis = build_analysis_from_tokens(
             "test".to_owned(),
             "t2".to_owned(),
-            "吾輩\nは 猫".to_owned(),
+            "吾輩\nは 猫",
             vec![raw("吾輩"), raw("は"), raw("猫")],
         )
         .unwrap();
@@ -252,7 +255,7 @@ mod tests {
         let analysis = build_analysis_from_tokens(
             "test".to_owned(),
             "t3".to_owned(),
-            "吾輩\nは".to_owned(),
+            "吾輩\nは",
             vec![raw("吾輩"), raw("\n"), raw("は")],
         )
         .unwrap();
@@ -266,17 +269,13 @@ mod tests {
     #[test]
     fn uses_original_source_slice_for_reported_spans() {
         let token = RawToken {
-            emitted_surface: "ABC".to_owned(),
+            emitted_surface: Some("ABC".to_owned()),
             byte_span: Some(0..9),
             features: FeatureMap::new(),
         };
-        let analysis = build_analysis_from_tokens(
-            "test".to_owned(),
-            "t3".to_owned(),
-            "ＡＢＣ".to_owned(),
-            vec![token],
-        )
-        .unwrap();
+        let analysis =
+            build_analysis_from_tokens("test".to_owned(), "t3".to_owned(), "ＡＢＣ", vec![token])
+                .unwrap();
 
         assert_eq!(analysis.morphemes[0].surface, "ＡＢＣ");
         assert_eq!(analysis.morphemes[0].byte_span, 0..9);
@@ -287,29 +286,25 @@ mod tests {
     fn skips_zero_length_reported_spans() {
         let tokens = vec![
             RawToken {
-                emitted_surface: "吾輩".to_owned(),
+                emitted_surface: None,
                 byte_span: Some(0..6),
                 features: FeatureMap::new(),
             },
             RawToken {
-                emitted_surface: String::new(),
+                emitted_surface: None,
                 byte_span: Some(6..6),
                 features: FeatureMap::new(),
             },
             RawToken {
-                emitted_surface: "は".to_owned(),
+                emitted_surface: None,
                 byte_span: Some(6..9),
                 features: FeatureMap::new(),
             },
         ];
 
-        let analysis = build_analysis_from_tokens(
-            "test".to_owned(),
-            "t4".to_owned(),
-            "吾輩は".to_owned(),
-            tokens,
-        )
-        .unwrap();
+        let analysis =
+            build_analysis_from_tokens("test".to_owned(), "t4".to_owned(), "吾輩は", tokens)
+                .unwrap();
 
         assert_eq!(analysis.morphemes.len(), 2);
         assert_eq!(analysis.morphemes[0].surface, "吾輩");
@@ -321,7 +316,7 @@ mod tests {
         let err = build_analysis_from_tokens(
             "test".to_owned(),
             "t4".to_owned(),
-            "今日は".to_owned(),
+            "今日は",
             vec![raw("は")],
         )
         .unwrap_err();
@@ -337,7 +332,7 @@ mod tests {
         let analysis = build_analysis_from_tokens(
             "test".to_owned(),
             "t5".to_owned(),
-            "吾輩は猫".to_owned(),
+            "吾輩は猫",
             vec![raw("吾輩")],
         )
         .unwrap();

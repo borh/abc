@@ -40,6 +40,26 @@ impl FeatureMap {
         }
     }
 
+    /// Builds a map from entries with a single sort instead of a
+    /// binary-search insertion per entry. Later duplicates win, matching
+    /// repeated `insert` semantics.
+    #[must_use]
+    pub fn from_entries(
+        entries: impl IntoIterator<Item = (FeatureKey, Option<FeatureValue>)>,
+    ) -> Self {
+        let mut entries: Vec<_> = entries.into_iter().collect();
+        entries.sort_by(|left, right| left.0.cmp(&right.0));
+        entries.dedup_by(|later, earlier| {
+            if later.0 == earlier.0 {
+                earlier.1 = std::mem::take(&mut later.1);
+                true
+            } else {
+                false
+            }
+        });
+        Self { entries }
+    }
+
     #[must_use]
     pub fn insert(
         &mut self,

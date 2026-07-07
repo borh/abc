@@ -10,7 +10,7 @@
    "schemas/aat-parser-ir-mapping.schema.json" "0.2.3"
    "schemas/analysis-recipe.schema.json" "0.1.0"
    "schemas/analysis-result.schema.json" "0.1.0"
-   "schemas/manifest.schema.json" "0.4.0"
+   "schemas/manifest.schema.json" "0.4.1"
    "schemas/parser-ir-publication-preservation.schema.json" "0.2.0"
    "schemas/source-region-coverage.schema.json" "0.2.1"})
 

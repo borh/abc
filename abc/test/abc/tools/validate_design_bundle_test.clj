@@ -2,6 +2,7 @@
   (:require [abc.tools.aat-parser-ir-compat :as compat]
             [abc.tools.files :as files]
             [abc.tools.malli :as am]
+            [abc.tools.manifest :as manifest]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.parser-ir-plaintext :as plaintext]
@@ -31,6 +32,47 @@
              (files/read-json-lines file)))
       (finally
         (.delete file)))))
+
+(deftest manifest-schema-accepts-analysis-result-sidecar-test
+  (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
+        manifest {"manifest_schema_id" "https://w3id.org/abc/schemas/manifest.schema.json"
+                  "artifact_id" (files/example-hash "26")
+                  "artifact_kind" "analysis"
+                  "validation_status" "passed"
+                  "manifest_identity_object" {"manifest_schema_hash" (manifest/schema-hash "schemas/manifest.schema.json")
+                                              "corpus_snapshot_hash" (files/example-hash "01")
+                                              "work_content_hash" (files/example-hash "02")
+                                              "metadata_record_hash" nil
+                                              "parser_build_hash" (files/example-hash "03")
+                                              "parser_config_hash" (files/example-hash "04")
+                                              "aat_parser_ir_mapping_hash" (files/example-hash "05")
+                                              "parser_ir_schema_hash" (files/example-hash "06")
+                                              "tei_profile_hash" nil
+                                              "tokenizer_build_hash" nil
+                                              "tokenizer_dictionary_hash" nil
+                                              "analysis_recipe_hash" (files/example-hash "07")
+                                              "output_format_spec_hash" (manifest/schema-hash "schemas/analysis-result.schema.json")}
+                  "content" {"content_hash" (files/example-hash "08")
+                             "media_type" "application/json"
+                             "byte_length" 10
+                             "path_hint" "analysis-result.json"}
+                  "sidecars" [{"role" "analysis-result"
+                               "hash" (files/example-hash "08")
+                               "media_type" "application/json"
+                               "path_hint" "analysis-result.json"}]
+                  "provenance" {"generated_at" "2026-07-07T00:00:00Z"
+                                "activity_id" "https://w3id.org/abc/activity/materialize-analysis"
+                                "agent" "abc.tools.materialize-analysis"
+                                "plan_hash" nil
+                                "used" [(files/example-hash "03")]
+                                "was_derived_from" [(files/example-hash "03")]}
+                  "license" nil
+                  "signatures" []
+                  "superseded_by" nil
+                  "invalidated_at" nil
+                  "replacement_reason" nil
+                  "notes" nil}]
+    (is (nil? (schema/validation-errors manifest-schema manifest)))))
 
 (def ^:private old-mapping-hash
   "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03")

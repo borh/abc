@@ -72,18 +72,33 @@ pub(crate) struct RegionSpan {
 
 /// region_index for a base: first disagreement region overlapping the base,
 /// else the region containing base_start, else 0.
+///
+/// Bounded via binary search: regions are sorted ascending by `char_start` and
+/// tile contiguously (non-overlapping), so the set of regions overlapping
+/// `[base_start, base_end)` is a single contiguous window. `partition_point`
+/// finds its left edge in O(log R); the window is then scanned linearly for
+/// the first disagreement (same order as the original `.find`), and — since
+/// regions are non-overlapping and sorted — only the window's first entry can
+/// possibly contain `base_start` (any later entry's start is >= the first
+/// entry's end, which is already > base_start), so checking it there
+/// reproduces the original "region containing base_start" fallback exactly.
 fn region_index_for(regions: &[RegionSpan], base: &RubyBase) -> u64 {
-    let overlaps = |r: &RegionSpan| r.char_start < base.char_end && base.char_start < r.char_end;
-    regions
-        .iter()
-        .find(|r| overlaps(r) && r.is_disagreement)
-        .or_else(|| {
-            regions
-                .iter()
-                .find(|r| r.char_start <= base.char_start && base.char_start < r.char_end)
-        })
-        .map(|r| r.region_index)
-        .unwrap_or(0)
+    let bs = base.char_start;
+    let be = base.char_end;
+    let start_idx = regions.partition_point(|r| r.char_end <= bs);
+    let mut containing: Option<&RegionSpan> = None;
+    for r in &regions[start_idx..] {
+        if r.char_start >= be {
+            break;
+        }
+        if r.is_disagreement {
+            return r.region_index;
+        }
+        if containing.is_none() && r.char_start <= bs {
+            containing = Some(r);
+        }
+    }
+    containing.map(|r| r.region_index).unwrap_or(0)
 }
 
 /// One analyzer's reading over a ruby base: the raw concatenated reading, its
@@ -100,11 +115,25 @@ struct Reading {
 fn analyzer_reading(analysis: &Analysis, base: &RubyBase) -> Reading {
     let bs = base.char_start as usize;
     let be = base.char_end as usize;
-    let covered: Vec<&Morpheme> = analysis
+    // Bounded window via binary search: `analysis.morphemes` is sorted ascending
+    // by `char_span.start` and non-overlapping, so `char_span.end` is also
+    // non-decreasing. `partition_point` finds the first morpheme whose end is
+    // past `bs` (the left edge of the covered window) in O(log M); every
+    // morpheme from there on has `end` >= that first `end` > bs, so the
+    // `bs < m.char_span.end` half of the original filter holds automatically
+    // for the whole forward scan, and stopping once `start >= be` reproduces
+    // the `m.char_span.start < be` half exactly. Net effect: the identical
+    // covered set as the old O(M) filter, in O(log M + window).
+    let start_idx = analysis
         .morphemes
-        .iter()
-        .filter(|m| m.char_span.start < be && bs < m.char_span.end)
-        .collect();
+        .partition_point(|m| m.char_span.end <= bs);
+    let mut covered: Vec<&Morpheme> = Vec::new();
+    for m in &analysis.morphemes[start_idx..] {
+        if m.char_span.start >= be {
+            break;
+        }
+        covered.push(m);
+    }
     // exact tiling: non-empty, contiguous, first.start == bs, last.end == be.
     let tiles = covered.first().is_some_and(|m| m.char_span.start == bs)
         && covered.last().is_some_and(|m| m.char_span.end == be)
@@ -155,6 +184,12 @@ pub(crate) fn adjudicate(
     let mut rows = Vec::new();
     for base in ruby_bases {
         let ruby_norm = super::reading_norm::normalize(&base.reading);
+        if ruby_norm.is_empty() {
+            // An all-non-kana/interpunct-only ruby reading normalizes to "" — skip
+            // it, else an all-non-kana analyzer reading would falsely "match" on
+            // "" == "" instead of being correctly judged unadjudicable.
+            continue;
+        }
         let mut winners = Vec::new();
         let mut losers = Vec::new();
         let mut detail = serde_json::Map::new();
@@ -476,6 +511,60 @@ mod tests {
                 assert!(!row.losing_analyzers.is_empty());
             }
         }
+    }
+
+    #[test]
+    fn empty_normalized_ruby_reading_is_skipped() {
+        // "・" (interpunct only) normalizes to "" — must not be adjudicated, else
+        // an all-non-kana analyzer reading would falsely "match" on "" == "".
+        let a = analysis("vibrato", vec![morph("x", 0..1, &[("kana", "*")])]);
+        let b = analysis(
+            "sudachi-c",
+            vec![morph("x", 0..1, &[("reading_form", "*")])],
+        );
+        let rows = adjudicate("r", "s", "t", &[base(0, 1, "・")], &[a, b], &regions());
+        assert!(rows.is_empty());
+
+        // Same for a latin-string ruby reading.
+        let a = analysis("vibrato", vec![morph("x", 0..1, &[("kana", "*")])]);
+        let b = analysis(
+            "sudachi-c",
+            vec![morph("x", 0..1, &[("reading_form", "*")])],
+        );
+        let rows = adjudicate("r", "s", "t", &[base(0, 1, "ABC")], &[a, b], &regions());
+        assert!(rows.is_empty());
+    }
+
+    #[test]
+    fn ambiguous_multiple_winners_yields_null_winner() {
+        // Two analyzers match the ruby reading, one does not: ambiguous (≥2
+        // winners) is distinct from nonstandard_ruby (0 winners) and must resolve
+        // to a null winning_analyzer with classification "resolved".
+        let a = analysis(
+            "vibrato",
+            vec![morph("東京", 0..2, &[("kana", "トウキョウ")])],
+        );
+        let b = analysis(
+            "sudachi-c",
+            vec![morph("東京", 0..2, &[("reading_form", "トウキョウ")])],
+        );
+        let c = analysis(
+            "vaporetto",
+            vec![morph("東京", 0..2, &[("kana", "トウケイ")])],
+        ); // wrong
+        let rows = adjudicate(
+            "r",
+            "s",
+            "t",
+            &[base(0, 2, "とうきょう")],
+            &[a, b, c],
+            &regions(),
+        );
+        assert_eq!(rows.len(), 1);
+        assert!(rows[0].winning_analyzer.is_none());
+        assert_eq!(rows[0].losing_analyzers.len(), 1);
+        assert!(rows[0].evidence_detail.contains("\"resolved\""));
+        assert!(!rows[0].evidence_detail.contains("nonstandard_ruby"));
     }
 
     #[test]

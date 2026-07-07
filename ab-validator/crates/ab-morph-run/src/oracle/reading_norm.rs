@@ -52,9 +52,7 @@ fn apply_lexical_table(chars: &mut Vec<char>) {
     ];
     let mut s: String = chars.iter().collect();
     for (from, to) in TABLE {
-        if s.contains(from) {
-            s = s.replace(from, to);
-        }
+        s = s.replace(from, to);
     }
     *chars = s.chars().collect();
 }
@@ -127,9 +125,10 @@ fn vowel_of(ch: char) -> Option<Vowel> {
     })
 }
 
-/// The long-vowel kana for a vowel class, using modern long spellings:
-/// long-o as おう and long-e as えい, so the pron form (ー) converges with the
-/// kana form (which already uses う/い).
+/// The single kana appended after a vowel-class mora to spell out its modern
+/// long-vowel form: long-o appends う (…おう) and long-e appends い (…えい),
+/// so the pron form (ー) converges with the kana form (which already uses
+/// う/い in context).
 fn long_vowel_kana(v: Vowel) -> char {
     match v {
         Vowel::A => 'あ',

@@ -12,10 +12,14 @@ Reference spec: `docs/superpowers/specs/2026-07-08-adjudication-perf-content-neu
 
 ## Global Constraints
 
-- **CONTENT-NEUTRAL — the binding bar.** No emitted row, value, row count, column, ordering, null bitmap, or on-disk parquet byte may change for ANY table. These are refactors of *how* rows are built, never *what* is emitted.
+- **CONTENT-NEUTRAL — the binding bar.** No emitted row, value, row count, column, null bitmap, or analyzer-list element order may change for ANY table. These are refactors of *how* rows are built, never *what* is emitted.
+- **Two levels of identity — do not conflate (see spec §Validation):**
+  - **Unit level = literal byte identity** on a fixed, single-threaded input (the per-task differential/byte tests). For Lever 2, that means byte-identical *parquet* for fixed rows.
+  - **Corpus level = value/multiset identity, NOT file-byte identity.** Full-corpus parquet is not byte-stable run-to-run (parallel sharding/merge reorder rows), so the corpus bar is an order-independent multiset fingerprint per table (`count` + `sum(hash(*))` + `bit_xor(hash(*))`), NOT `du`/row-count. Row *order* is expected to differ; row *contents as a multiset* must not.
 - **Byte-identity constraints (Lever 2 especially):** preserve schema field order + count, nullable-column null handling (`append_option`/`append_null`), the `Utf8`/`UInt64` physical types (do NOT switch to dictionary), and the flush/batch boundaries (50k rows for morpheme features; 10k regions for n-way facts) and `WAREHOUSE_MAX_ROW_GROUP_SIZE = 50_000`.
-- **Genuine differential tests:** for #1 and #2, RETAIN the old implementation as a private `*_reference` function the test calls, so `assert_eq!(new, reference)` is a real equivalence check, not self-referential. Remove the reference fn only if/when a later round retires it; for this round keep it (behind `#[cfg(test)]` if it would otherwise be dead code).
-- **Add a criterion micro-bench per lever** in the owning crate, quantifying the win.
+- **Lever 2 is PRODUCER-SIDE:** the `Arc`-clone atomic traffic lives in the row producers (`rows.rs`), not the writer transposition. A writer-only change that keeps the `Vec<RowStruct>` producer is OUT OF SCOPE — it leaves the target cost intact. The producer must append directly into the column builder; the `Vec<Row>` intermediate is removed.
+- **Genuine differential tests:** for #1, #2, and #3, RETAIN the old implementation as a private `#[cfg(test)] *_reference` function the test calls, so `assert_eq!(new, reference)` is a real equivalence check, not self-referential. Keep the reference for this round.
+- **Add a criterion micro-bench per lever** in the owning crate, quantifying the win. (`ab-warehouse` has no bench harness yet — add `criterion.workspace = true` under `[dev-dependencies]` and an explicit `[[bench]]` entry; commit `Cargo.toml`.)
 - **Do NOT** touch the `nway_feature_diffs` schema (that is the deferred #4 row-collapse). This round keeps `analyzer_id` scalar.
 - Match surrounding code style.
 
@@ -39,18 +43,18 @@ Reference spec: `docs/superpowers/specs/2026-07-08-adjudication-perf-content-neu
 - Consumes: unchanged `adjudicate` signature and inputs.
 - Produces: identical `nway_region_oracle_evidence` rows; only the intermediate allocation timing changes.
 
-- [ ] **Step 1: Add a match-heavy differential/behavior test**
+- [ ] **Step 1: Retain the old loop as `adjudicate_reference` and add a full-row differential test**
 
-In the `ruby.rs` test module, add a test that adjudicates an input where the FIRST base fully matches (all analyzers agree → emits nothing) and a LATER base mismatches (emits a row), asserting: (a) exactly one row emitted, (b) its `evidence_detail` deserializes to the same `ruby_base`/`ruby_reading`/`ruby_reading_norm`/`classification`/`per_analyzer` as before. Reuse the fixtures/helpers of the existing `all_match_emits_nothing` and `evidence_detail_keeps_raw_reading` tests. This pins that deferring the map build changes nothing on either path.
+Before refactoring, copy the current `adjudicate` body verbatim into a private `#[cfg(test)] fn adjudicate_reference(...)` with the identical signature. Then add a differential test that feeds BOTH `adjudicate` and `adjudicate_reference` the same input and asserts the returned row `Vec`s are **exactly equal** — full `NwayRegionOracleEvidenceRow` equality including the byte-for-byte `evidence_detail` String and the `losing_analyzers` element order (NOT a deserialize-and-spot-check; compare the whole rows with `assert_eq!`). The input MUST include: a fully-matching base (emits nothing), a single-loser base, and a **multiple-losers** base (≥2 analyzers mismatch, to exercise `losing_analyzers` ordering and multi-entry `detail`). Reuse the fixtures of `all_match_emits_nothing` / `evidence_detail_keeps_raw_reading`.
 
-- [ ] **Step 2: Run the test against current code to confirm it passes (baseline green)**
+- [ ] **Step 2: Run to confirm reference == current (baseline green)**
 
 Run: `cargo test -p ab-morph-run oracle::ruby`
-Expected: PASS (documents current behavior before the refactor).
+Expected: PASS (reference is a verbatim copy of current → trivially equal, establishing the golden comparison).
 
 - [ ] **Step 3: Refactor the per-analyzer loop to defer map/clone work**
 
-In `adjudicate` (`ruby.rs:206-234`): in the per-analyzer loop, compute `analyzer_reading()` and `is_match` as today, but do NOT build the `detail` map entries or clone winner/loser name Strings there. Instead retain per analyzer the minimal data needed to rebuild evidence on the emit path (e.g. a small `Vec<(analyzer_handle, Reading, is_match)>` holding references/handles, not owned clones), and track `any_loser`. Keep the emit gate `if !any_loser { continue; }`. AFTER the gate, build the `detail: BTreeMap` and the winner/loser `Vec<String>` exactly as the current `234-264` code does, then serialize and push the row unchanged.
+In `adjudicate` (`ruby.rs:206-234`): in the per-analyzer loop, compute `analyzer_reading()` and `is_match` as today, but do NOT build the `detail` map entries or clone winner/loser name Strings there. Instead retain per analyzer the minimal data needed to rebuild evidence on the emit path (e.g. a small `Vec<(analyzer_handle, Reading, is_match)>` holding references/handles, not owned clones), and track `any_loser`. Keep the emit gate `if !any_loser { continue; }`. AFTER the gate, build the `detail: BTreeMap` and the winner/loser `Vec<String>` exactly as the current `234-264` code does — in the same iteration order — then serialize and push the row unchanged. `adjudicate_reference` stays as-is (the differential test now compares the two implementations).
 
 Keep `analyzer_reading()` running for every analyzer (it yields `is_match`).
 
@@ -92,14 +96,21 @@ Extract the current `groups: BTreeMap` grouping into a private `#[cfg(test)] fn 
 Run: `cargo test -p ab-morph-run feature_pattern`
 Expected: PASS (reference == current, documenting baseline).
 
-- [ ] **Step 3: Replace the map with a linear run-scan**
+- [ ] **Step 3: Replace the map with a linear run-scan (release-safe invariant)**
 
-In `record`, replace the `groups: BTreeMap<...>` build-and-iterate (`lib.rs:556-573`) with a single linear pass over the core-key-filtered `feature_diffs` that detects run boundaries where the `WarehouseFeatureGroupKey` changes (via `slice::chunk_by` on the key, or a manual boundary scan), processing each run exactly as the old `for (group, facts) in groups` body did. Add a `debug_assert!` that each new run's key was not seen earlier in this `record` call (maximal-runs invariant) — a `HashSet` of seen keys behind `cfg(debug_assertions)` is acceptable since it is debug-only.
+In `record`, replace the `groups: BTreeMap<...>` build-and-iterate (`lib.rs:556-573`) with a single linear pass over the core-key-filtered `feature_diffs` that detects run boundaries where the `WarehouseFeatureGroupKey` changes (via `slice::chunk_by` on the key, or a manual boundary scan), processing each run exactly as the old `for (group, facts) in groups` body did. Guards (BOTH required — a debug-only assert is insufficient because a future producer change could silently under-merge in release):
+  - **Release-safe:** assert `region_index` is monotone non-decreasing across the scan (O(1) state; the primary contiguity guarantee) and return an error / bail rather than silently miscount if violated.
+  - **Dev tripwire:** a `debug_assert!` (behind `cfg(debug_assertions)`, `HashSet` of seen keys) that no group key recurs non-adjacently.
+Document on `record` that it relies on `push_region_rows` emitting maximal contiguous runs, naming the Step 3b test.
 
-- [ ] **Step 4: Run the test**
+- [ ] **Step 3b: Add a producer-invariant test (CI guard)**
+
+Add a test that runs the REAL producer `push_region_rows` over representative multi-region input (multiple regions, multiple feature keys/scopes per region) and asserts the emitted `feature_diffs` form maximal contiguous group-key runs: `region_index` monotone non-decreasing, and no `WarehouseFeatureGroupKey` recurs non-adjacently. This fails CI if a future producer change breaks the invariant `record` depends on.
+
+- [ ] **Step 4: Run the tests**
 
 Run: `cargo test -p ab-morph-run feature_pattern`
-Expected: PASS — new linear path == reference on all inputs, including the interleaved stress case.
+Expected: PASS — new linear path == reference on all inputs (including the interleaved stress case), and the producer-invariant test green.
 
 - [ ] **Step 5: Add a criterion micro-bench**
 
@@ -117,41 +128,41 @@ git commit -m "perf(warehouse): linear-scan feature-pattern grouping over contig
 ### Task 3: Lever 2a — direct Arrow columns for `morpheme_features`
 
 **Files:**
-- Modify: `crates/ab-warehouse/src/writer.rs` (`append_morpheme_features` `315-336`, array helpers `952-985`)
-- Modify: `crates/ab-morph-run/src/warehouse/rows.rs` (`morpheme_feature_rows_for_range` `129-164`) and its call site (`pipeline.rs:945-967`) — only if the producer is changed to append directly; otherwise leave the builder and change only the writer's transposition.
+- Modify: `crates/ab-warehouse/src/writer.rs` (`append_morpheme_features` `315-336`, array helpers `952-985`; expose a batch-append)
+- Modify: `crates/ab-morph-run/src/warehouse/rows.rs` (`morpheme_feature_rows_for_range` `129-164`) and its call site (`pipeline.rs:945-967`) — **required**: the producer appends directly into the column builder (this is where the `Arc`-clone traffic is; see Global Constraints).
+- Add: `crates/ab-warehouse/Cargo.toml` bench setup; `crates/ab-warehouse/benches/warehouse_columns.rs`
 - Test: `crates/ab-warehouse/src/writer.rs` `#[cfg(test)]`
-- Bench: `crates/ab-warehouse/benches/` (new)
 
 **Interfaces:**
-- Produces: byte-identical `morpheme_features.parquet`.
+- Produces: byte-identical `morpheme_features.parquet`; the `Vec<MorphemeFeatureRow>` intermediate is eliminated.
 
-- [ ] **Step 1: Add a byte-identity characterization test**
+- [ ] **Step 1: Add a byte-identity characterization test (retained reference path)**
 
-In `writer.rs` tests, build a fixed `Vec<MorphemeFeatureRow>` (covering: repeated ids, a `None` `feature_value`, multiple analyzers/morphemes). Write it to a temp parquet via the CURRENT `append_morpheme_features` path (call it the reference bytes), and via the NEW direct-builder path, then assert the two output files are byte-identical (read both files' bytes, `assert_eq!`). Since Step 3 replaces the old path, capture the reference bytes in the test by keeping the old column-transposition as a private `#[cfg(test)] fn append_morpheme_features_reference` producing the same batch.
+Keep the CURRENT `Vec<Row>`→transposition as a private `#[cfg(test)] fn append_morpheme_features_reference(&mut self, &[MorphemeFeatureRow])`. In `writer.rs` tests, build a fixed `Vec<MorphemeFeatureRow>` (covering: repeated ids, a `None` `feature_value`, multiple analyzers/morphemes). Write it to a temp parquet via `append_morpheme_features_reference` (reference bytes) and via the NEW direct-builder path (fed the same logical rows), then `assert_eq!` the two files' bytes (or compare `sha256`).
 
-- [ ] **Step 2: Run to confirm the reference path is captured (green baseline)**
+- [ ] **Step 2: Run to confirm the reference path is green (golden bytes)**
 
 Run: `cargo test -p ab-warehouse morpheme_features`
-Expected: PASS (reference path == itself; establishes the golden bytes).
+Expected: PASS.
 
-- [ ] **Step 3: Introduce a direct column builder and switch the append path**
+- [ ] **Step 3: Add a direct column builder and make the PRODUCER build it directly**
 
-Add a `MorphemeFeaturesColumns` builder holding the 7 arrow builders in schema order — `StringBuilder` for `run_id, source_id, text_id, analyzer_id, feature_key`, `UInt64Builder` for `morpheme_index`, and a nullable `StringBuilder` for `feature_value` (use `append_option`/`append_null`). Give it `push_row(&MorphemeFeatureRow)` and `finish() -> Result<()>` that builds the `RecordBatch` (schema `morpheme_features_schema()`) and writes it via `write_batch` (recording `write_time`). Route `append_morpheme_features` through it. **Preserve** the 50k flush granularity and column order exactly. (Producer-side: if it is cleaner to have `pipeline.rs` push directly into the builder instead of building a `Vec<MorphemeFeatureRow>` first, do so — but the minimal change is to keep the `Vec` builder and only replace the writer's multi-pass transposition; choose the smaller diff that still removes the intermediate, and note which in the report.)
+Add a `MorphemeFeaturesColumns` builder (7 arrow builders in schema order — `StringBuilder` for `run_id, source_id, text_id, analyzer_id, feature_key`, `UInt64Builder` for `morpheme_index`, nullable `StringBuilder` for `feature_value` via `append_option`), with `push_row(...)` (or per-field `push`) and `finish() -> RecordBatch`. Change `morpheme_feature_rows_for_range` (and its `pipeline.rs` caller) to **append each morpheme-feature directly into the builder** instead of returning `Vec<MorphemeFeatureRow>`; the writer exposes a method that writes the finished `RecordBatch` (via `write_batch`, recording `write_time`). The `Vec<MorphemeFeatureRow>` intermediate MUST be gone from the production path. **Preserve** the 50k flush granularity and exact column order. A writer-only change that keeps the `Vec<Row>` producer does NOT satisfy this task.
 
 - [ ] **Step 4: Run the byte-identity test + existing writer tests**
 
-Run: `cargo test -p ab-warehouse`
-Expected: PASS — new path bytes == reference bytes; `empty_parquet_schemas_match_documented_columns` and round-trip tests still green.
+Run: `cargo test -p ab-warehouse -p ab-morph-run`
+Expected: PASS — new path bytes == reference bytes; `empty_parquet_schemas_match_documented_columns` and round-trip tests still green; pipeline tests green.
 
-- [ ] **Step 5: Add a criterion micro-bench**
+- [ ] **Step 5: Add criterion bench setup + a micro-bench**
 
-Bench appending a large synthetic `morpheme_features` batch (e.g. 500k rows) through the new path. Register and run once; record the number.
+In `crates/ab-warehouse/Cargo.toml` add `criterion.workspace = true` under `[dev-dependencies]` and a `[[bench]] name = "warehouse_columns" harness = false` entry. Add `benches/warehouse_columns.rs` benching the direct build+append of a large synthetic `morpheme_features` batch (e.g. 500k rows). Run `cargo bench -p ab-warehouse --bench warehouse_columns` once; record the number.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add crates/ab-warehouse/src/writer.rs crates/ab-warehouse/benches/ crates/ab-warehouse/Cargo.toml crates/ab-morph-run/src/warehouse/rows.rs crates/ab-morph-run/src/pipeline.rs
-git commit -m "perf(warehouse): build morpheme_features arrow columns directly"
+git add crates/ab-warehouse/src/writer.rs crates/ab-warehouse/Cargo.toml crates/ab-warehouse/benches/ crates/ab-morph-run/src/warehouse/rows.rs crates/ab-morph-run/src/pipeline.rs
+git commit -m "perf(warehouse): build morpheme_features arrow columns directly in the producer"
 ```
 
 ---
@@ -160,56 +171,63 @@ git commit -m "perf(warehouse): build morpheme_features arrow columns directly"
 
 **Files:**
 - Modify: `crates/ab-warehouse/src/writer.rs` (`append_nway_feature_diffs` `420-444`)
-- Modify: `crates/ab-morph-run/src/warehouse/rows.rs` (`push_region_rows` diffs loop `307-328`) and the n-way batch driver (`lib.rs:453-489`) — only if the producer appends directly.
+- Modify: `crates/ab-morph-run/src/warehouse/rows.rs` (`push_region_rows` diffs loop `307-328`) and the n-way batch driver (`lib.rs:453-489`) — **required**: the producer appends directly into the column builder.
+- Modify: `crates/ab-warehouse/Cargo.toml` (bench harness added in Task 3); `crates/ab-warehouse/benches/warehouse_columns.rs`
 - Test: `crates/ab-warehouse/src/writer.rs` `#[cfg(test)]`
-- Bench: `crates/ab-warehouse/benches/`
 
 **Interfaces:**
-- Produces: byte-identical `nway_feature_diffs.parquet`. `analyzer_id` stays scalar (schema unchanged).
+- Produces: byte-identical `nway_feature_diffs.parquet`; the `Vec<NwayFeatureDiffRow>` intermediate is eliminated. `analyzer_id` stays scalar (schema unchanged — #4 is deferred).
 
-- [ ] **Step 1: Add a byte-identity characterization test**
+- [ ] **Step 1: Add a byte-identity characterization test (retained reference path)**
 
-As Task 3 Step 1, for `nway_feature_diffs`: fixed `Vec<NwayFeatureDiffRow>` covering `None` `scope_position`, `None` `scope_surface`, `None` `feature_value`, multiple analyzers. Reference bytes via a retained `#[cfg(test)] fn append_nway_feature_diffs_reference`; assert new path == reference bytes.
+As Task 3 Step 1, for `nway_feature_diffs`: keep the current transposition as `#[cfg(test)] fn append_nway_feature_diffs_reference`. Fixed `Vec<NwayFeatureDiffRow>` covering `None` `scope_position`, `None` `scope_surface`, `None` `feature_value`, and multiple analyzers per value-group. Assert new direct-builder path bytes == reference path bytes.
 
 - [ ] **Step 2: Run baseline green**
 
 Run: `cargo test -p ab-warehouse nway_feature_diffs`
 Expected: PASS.
 
-- [ ] **Step 3: Introduce the direct column builder (10 columns) and switch the path**
+- [ ] **Step 3: Add the direct column builder (10 columns) and make the PRODUCER build it directly**
 
-`NwayFeatureDiffsColumns` with the 10 arrow builders in schema order — `StringBuilder` for `run_id, source_id, text_id, feature_key, scope_type, analyzer_id`, `UInt64Builder` for `region_index`, nullable `UInt64Builder` for `scope_position` (`append_option`), nullable `StringBuilder` for `scope_surface` and `feature_value`. `push_row` + `finish` → `RecordBatch` via `nway_feature_diffs_schema()`, written through `write_batch`. Preserve the 10k-region flush granularity and column order.
+`NwayFeatureDiffsColumns` with the 10 arrow builders in schema order — `StringBuilder` for `run_id, source_id, text_id, feature_key, scope_type, analyzer_id`, `UInt64Builder` for `region_index`, nullable `UInt64Builder` for `scope_position` (`append_option`), nullable `StringBuilder` for `scope_surface` and `feature_value`. `push_row`/per-field `push` + `finish` → `RecordBatch` via `nway_feature_diffs_schema()`, written via the writer's batch-append. Change `push_region_rows` (and the n-way batch driver in `lib.rs:453-489`) to append directly into the builder — no `Vec<NwayFeatureDiffRow>` in the production path. Preserve the 10k-region flush granularity and exact column order. (`analyzer_id` stays a scalar column this round.)
 
 - [ ] **Step 4: Run tests**
 
-Run: `cargo test -p ab-warehouse`
-Expected: PASS — new bytes == reference; schema/round-trip tests green.
+Run: `cargo test -p ab-warehouse -p ab-morph-run`
+Expected: PASS — new bytes == reference; schema/round-trip + pipeline tests green.
 
 - [ ] **Step 5: Add a criterion micro-bench**
 
-Bench a large synthetic `nway_feature_diffs` batch through the new path. Register and run once; record the number.
+Add an `nway_feature_diffs` case to `benches/warehouse_columns.rs` (bench harness already registered in Task 3) — direct build+append of a large synthetic batch. Run `cargo bench -p ab-warehouse --bench warehouse_columns` once; record the number.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add crates/ab-warehouse/src/writer.rs crates/ab-warehouse/benches/ crates/ab-morph-run/src/warehouse/rows.rs crates/ab-morph-run/src/lib.rs
-git commit -m "perf(warehouse): build nway_feature_diffs arrow columns directly"
+git add crates/ab-warehouse/src/writer.rs crates/ab-warehouse/Cargo.toml crates/ab-warehouse/benches/ crates/ab-morph-run/src/warehouse/rows.rs crates/ab-morph-run/src/lib.rs
+git commit -m "perf(warehouse): build nway_feature_diffs arrow columns directly in the producer"
 ```
 
 ---
 
 ## Validation Record (hinoki) — fill after merge + build
 
-The content-neutral bar: every emitted table must be **row/byte-identical** to a current-`main` baseline.
+The content-neutral bar: every affected table must be **value/multiset-identical** to a current-`main`
+baseline (row *order* may differ — parallel sharding — but row *contents as a multiset* must not). File-byte
+identity is NOT the corpus bar (see Global Constraints); `du` is not a validity check.
 
 - [ ] Build the branch on hinoki (release). Confirm the 4 micro-benches' local numbers are recorded in commits.
-- [ ] **Full-corpus run** on the branch (auto-jobs, zstd 3): record wall, peak RSS, and the `phase-timings` line.
-      - wall: ____   RSS: ____   analysis %: ____   **adjudication %: ____** (expect a fall vs 74.3%)   warehouse-write %: ____   other %: ____
-- [ ] **Parity vs a current-`main` baseline run** via `scripts/oracle-validation-diff.sh`:
-      - all 10 non-oracle tables **row-identical** (incl. `feature_pattern_counts`, `morpheme_features`, `nway_feature_diffs`): PASS/FAIL ____
-      - oracle keyed 4-bucket diff: dropped=0, newly_emitted=0, classification_changed=0: PASS/FAIL ____
-- [ ] **Byte spot-check:** `du -sb` of the two runs' `morpheme_features` / `nway_feature_diffs` / `feature_pattern_counts` dirs match (or explain any parquet-metadata-only delta). ____
+- [ ] Run a **current-`main` baseline** full-corpus run AND the **branch** run (both auto-jobs, zstd 3, same corpus). Record wall, peak RSS, and the `phase-timings` line for each.
+      - branch: wall ____   RSS ____   analysis % ____   **adjudication % ____** (expect a fall vs 74.3%)   warehouse-write % ____   other % ____
+- [ ] **Extend `scripts/oracle-validation-diff.sh`** (or a sibling script) with a per-table **order-independent value fingerprint** and run it baseline-vs-branch. For each of `feature_pattern_counts`, `morpheme_features`, `nway_feature_diffs`, and `nway_region_oracle_evidence` (INCLUDING the full `evidence_detail` column), compute over ALL columns:
+      `SELECT count(*) AS n, sum(hash(COLUMNS(*))) AS h_sum, bit_xor(hash(COLUMNS(*))) AS h_xor`
+      (or `hash(col1, col2, ...)` listing every column). **All three of `(n, h_sum, h_xor)` must match** between baseline and branch per table. PASS/FAIL: ____
+      - feature_pattern_counts ____ · morpheme_features ____ · nway_feature_diffs ____ · oracle_evidence ____
+- [ ] **Confirmatory `EXCEPT ALL`** (exact multiset diff, both directions empty) over all columns on the smaller tables (`feature_pattern_counts`, `nway_region_oracle_evidence`); optional spot-check on a `morpheme_features`/`nway_feature_diffs` shard subset if the full `EXCEPT ALL` is too heavy. PASS/FAIL: ____
+- [ ] Oracle keyed 4-bucket diff (existing check): dropped=0, newly_emitted=0, classification_changed=0. PASS/FAIL: ____
+- [ ] Row-count parity on the other (untouched) tables — should be identical. PASS/FAIL: ____
 - [ ] Record the aggregate adjudication-CPU delta and wall-clock delta vs the `ab7ec42` baseline (wall 43:09, adjudication 74.3%).
+
+> A fingerprint mismatch on any affected table is a **content regression** — stop and diagnose (do not merge); it means a refactor changed emitted values, not just layout.
 
 ## Deferred (documented, not this round)
 

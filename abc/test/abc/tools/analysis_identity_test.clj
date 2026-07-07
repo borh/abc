@@ -1,0 +1,57 @@
+(ns abc.tools.analysis-identity-test
+  (:require [abc.tools.analysis-identity :as analysis-identity]
+            [abc.tools.files :as files]
+            [abc.tools.manifest :as manifest]
+            [clojure.test :refer [deftest is testing]]))
+
+(def subject-a
+  {"source_id" "aozora:1"
+   "work_id" "aozora:1-a"
+   "work_content_hash" (files/example-hash "11")
+   "metadata_record_hash" nil})
+
+(def subject-b
+  {"source_id" "aozora:1"
+   "work_id" "aozora:1-b"
+   "work_content_hash" (files/example-hash "12")
+   "metadata_record_hash" (files/example-hash "13")})
+
+(deftest canonical-subjects-sort-and-coalesce-test
+  (is (= [subject-a subject-b]
+         (analysis-identity/canonical-subjects
+          [subject-b subject-a subject-a]))))
+
+(deftest request-set-id-excludes-derived-and-label-fields-test
+  (let [identity-object (analysis-identity/request-set-identity-object
+                         {:schema-hash (files/example-hash "01")
+                          :corpus-snapshot-hash (files/example-hash "02")
+                          :subjects [subject-b subject-a subject-a]
+                          :input-views [{"input_view_kind" "parser-ir-plaintext-body-v1"
+                                         "policy_hash" (files/example-hash "03")}]
+                          :tokenizer-profile-hashes []
+                          :analysis-recipe-hashes [(files/example-hash "04")]
+                          :missing-policy "build-missing-only"
+                          :pack-policy-hash (files/example-hash "05")})
+        request-set-a {"request_set_identity_object" identity-object
+                       "request_set_id" (files/example-hash "98")
+                       "resolved_labels" {"analysis_recipes" []}
+                       "batch_policy" "100-works-or-512mb"}
+        request-set-b (assoc request-set-a
+                             "request_set_id" (files/example-hash "99")
+                             "batch_policy" "1-work")]
+    (is (= (analysis-identity/request-set-id request-set-a)
+           (analysis-identity/request-set-id request-set-b)))
+    (is (= (manifest/artifact-id identity-object)
+           (analysis-identity/request-set-id request-set-a)))
+    (is (nil? (get-in identity-object ["subjects" 0 "metadata_record_hash"])))))
+
+(deftest resolved-recipe-label-is-non-identity-audit-data-test
+  (is (= {"recipe_id" "literary-basic-ja-v1"
+          "analysis_recipe_hash" (files/example-hash "21")
+          "registry_entry_hash" (files/example-hash "22")
+          "resolved_at" "2026-07-07T00:00:00Z"}
+         (analysis-identity/resolved-recipe-label
+          {:recipe-id "literary-basic-ja-v1"
+           :analysis-recipe-hash (files/example-hash "21")
+           :registry-entry-hash (files/example-hash "22")
+           :resolved-at "2026-07-07T00:00:00Z"}))))

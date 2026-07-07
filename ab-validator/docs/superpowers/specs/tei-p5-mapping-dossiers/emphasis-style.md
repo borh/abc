@@ -12,10 +12,10 @@ Parser-IR carries emphasis nodes and style projection evidence.
 
 ## TEI P5 Target
 
-Use TEI highlighting and rendition policy. Current local TEI citations:
-`../abc/references/TEI/P5/Source/Specs/hi.xml`,
-`../abc/references/TEI/P5/Source/Specs/rendition.xml`, and
-`../abc/references/TEI/P5/Source/Specs/att.global.rendition.xml`.
+Use TEI highlighting and rendition policy. Current flake-backed TEI citations:
+`$TEI_P5_ROOT/Source/Specs/hi.xml`,
+`$TEI_P5_ROOT/Source/Specs/rendition.xml`, and
+`$TEI_P5_ROOT/Source/Specs/att.global.rendition.xml`.
 
 ## ABC Extension Or Sidecar
 

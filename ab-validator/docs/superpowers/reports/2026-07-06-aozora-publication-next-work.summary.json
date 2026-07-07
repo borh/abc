@@ -360,7 +360,7 @@
         "complete_section_count": 11,
         "incomplete_section_dossiers": [],
         "tei_p5_reference_count": 34,
-        "tei_p5_reference_root": "abc/references/TEI/P5",
+        "tei_p5_reference_root": "$TEI_P5_ROOT",
         "tei_p5_reference_root_exists": true,
         "tei_p5_reference_file_count": 34,
         "tei_p5_reference_directory_count": 0,
@@ -374,9 +374,9 @@
             "status": "admitted",
             "missing_sections": [],
             "tei_p5_references": [
-              "abc/references/TEI/P5/Source/Specs/att.global.rendition.xml",
-              "abc/references/TEI/P5/Source/Specs/hi.xml",
-              "abc/references/TEI/P5/Source/Specs/rendition.xml"
+              "$TEI_P5_ROOT/Source/Specs/att.global.rendition.xml",
+              "$TEI_P5_ROOT/Source/Specs/hi.xml",
+              "$TEI_P5_ROOT/Source/Specs/rendition.xml"
             ]
           },
           {
@@ -385,10 +385,10 @@
             "status": "admitted",
             "missing_sections": [],
             "tei_p5_references": [
-              "abc/references/TEI/P5/Source/Guidelines/en/WD-NonStandardCharacters.xml",
-              "abc/references/TEI/P5/Source/Specs/char.xml",
-              "abc/references/TEI/P5/Source/Specs/g.xml",
-              "abc/references/TEI/P5/Source/Specs/glyph.xml"
+              "$TEI_P5_ROOT/Source/Guidelines/en/WD-NonStandardCharacters.xml",
+              "$TEI_P5_ROOT/Source/Specs/char.xml",
+              "$TEI_P5_ROOT/Source/Specs/g.xml",
+              "$TEI_P5_ROOT/Source/Specs/glyph.xml"
             ]
           },
           {
@@ -397,9 +397,9 @@
             "status": "policy-needed",
             "missing_sections": [],
             "tei_p5_references": [
-              "abc/references/TEI/P5/Source/Specs/figDesc.xml",
-              "abc/references/TEI/P5/Source/Specs/figure.xml",
-              "abc/references/TEI/P5/Source/Specs/graphic.xml"
+              "$TEI_P5_ROOT/Source/Specs/figDesc.xml",
+              "$TEI_P5_ROOT/Source/Specs/figure.xml",
+              "$TEI_P5_ROOT/Source/Specs/graphic.xml"
             ]
           },
           {
@@ -408,11 +408,11 @@
             "status": "schema-needed",
             "missing_sections": [],
             "tei_p5_references": [
-              "abc/references/TEI/P5/Source/Specs/gloss.xml",
-              "abc/references/TEI/P5/Source/Specs/note.xml",
-              "abc/references/TEI/P5/Source/Specs/ruby.xml",
-              "abc/references/TEI/P5/Source/Specs/seg.xml",
-              "abc/references/TEI/P5/Source/Specs/span.xml"
+              "$TEI_P5_ROOT/Source/Specs/gloss.xml",
+              "$TEI_P5_ROOT/Source/Specs/note.xml",
+              "$TEI_P5_ROOT/Source/Specs/ruby.xml",
+              "$TEI_P5_ROOT/Source/Specs/seg.xml",
+              "$TEI_P5_ROOT/Source/Specs/span.xml"
             ]
           },
           {
@@ -421,10 +421,10 @@
             "status": "policy-needed",
             "missing_sections": [],
             "tei_p5_references": [
-              "abc/references/TEI/P5/Source/Specs/att.global.rendition.xml",
-              "abc/references/TEI/P5/Source/Specs/layout.xml",
-              "abc/references/TEI/P5/Source/Specs/rendition.xml",
-              "abc/references/TEI/P5/Source/Specs/space.xml"
+              "$TEI_P5_ROOT/Source/Specs/att.global.rendition.xml",
+              "$TEI_P5_ROOT/Source/Specs/layout.xml",
+              "$TEI_P5_ROOT/Source/Specs/rendition.xml",
+              "$TEI_P5_ROOT/Source/Specs/space.xml"
             ]
           },
           {
@@ -440,9 +440,9 @@
             "status": "policy-needed",
             "missing_sections": [],
             "tei_p5_references": [
-              "abc/references/TEI/P5/Source/Specs/lb.xml",
-              "abc/references/TEI/P5/Source/Specs/milestone.xml",
-              "abc/references/TEI/P5/Source/Specs/pb.xml"
+              "$TEI_P5_ROOT/Source/Specs/lb.xml",
+              "$TEI_P5_ROOT/Source/Specs/milestone.xml",
+              "$TEI_P5_ROOT/Source/Specs/pb.xml"
             ]
           },
           {
@@ -451,9 +451,9 @@
             "status": "adapter-fidelity-needed",
             "missing_sections": [],
             "tei_p5_references": [
-              "abc/references/TEI/P5/Source/Specs/div.xml",
-              "abc/references/TEI/P5/Source/Specs/head.xml",
-              "abc/references/TEI/P5/Source/Specs/p.xml"
+              "$TEI_P5_ROOT/Source/Specs/div.xml",
+              "$TEI_P5_ROOT/Source/Specs/head.xml",
+              "$TEI_P5_ROOT/Source/Specs/p.xml"
             ]
           },
           {
@@ -462,7 +462,7 @@
             "status": "admitted",
             "missing_sections": [],
             "tei_p5_references": [
-              "abc/references/TEI/P5/Source/Specs/ruby.xml"
+              "$TEI_P5_ROOT/Source/Specs/ruby.xml"
             ]
           },
           {
@@ -471,11 +471,11 @@
             "status": "admitted",
             "missing_sections": [],
             "tei_p5_references": [
-              "abc/references/TEI/P5/Source/Guidelines/en/HD-Header.xml",
-              "abc/references/TEI/P5/Source/Specs/back.xml",
-              "abc/references/TEI/P5/Source/Specs/front.xml",
-              "abc/references/TEI/P5/Source/Specs/fw.xml",
-              "abc/references/TEI/P5/Source/Specs/note.xml"
+              "$TEI_P5_ROOT/Source/Guidelines/en/HD-Header.xml",
+              "$TEI_P5_ROOT/Source/Specs/back.xml",
+              "$TEI_P5_ROOT/Source/Specs/front.xml",
+              "$TEI_P5_ROOT/Source/Specs/fw.xml",
+              "$TEI_P5_ROOT/Source/Specs/note.xml"
             ]
           },
           {
@@ -484,9 +484,9 @@
             "status": "schema-needed",
             "missing_sections": [],
             "tei_p5_references": [
-              "abc/references/TEI/P5/Source/Specs/note.xml",
-              "abc/references/TEI/P5/Source/Specs/seg.xml",
-              "abc/references/TEI/P5/Source/Specs/span.xml"
+              "$TEI_P5_ROOT/Source/Specs/note.xml",
+              "$TEI_P5_ROOT/Source/Specs/seg.xml",
+              "$TEI_P5_ROOT/Source/Specs/span.xml"
             ]
           }
         ]
@@ -623,7 +623,7 @@
       "path": "docs/superpowers/specs/tei-p5-mapping-dossiers"
     },
     "tei_p5_root": {
-      "path": "abc/references/TEI/P5",
+      "path": "$TEI_P5_ROOT",
       "exists": true
     },
     "parser_acceptance_spec": {

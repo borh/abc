@@ -618,19 +618,19 @@ git commit -m "feat(parser-ir): generate adapter fidelity worksets"
 
 - [ ] **Step 1: Create dossier README**
 
-The README must state that TEI P5 references live in
-`../abc/references/TEI/P5` and that each dossier must cite exact local paths
-when TEI P5 is used for a claim.
+The README must state that TEI P5 references come from the monorepo root flake
+output `.#tei-p5-reference` and that each dossier must cite exact paths under
+`$TEI_P5_ROOT` when TEI P5 is used for a claim.
 
-Before writing the README, verify the local TEI checkout path:
+Before writing the README, verify the flake-backed TEI reference path:
 
 ```bash
-test -d ../abc/references/TEI/P5
-find ../abc/references/TEI/P5 -maxdepth 2 -type d | sort | sed -n '1,40p'
+TEI_P5_ROOT="$(nix build --no-link --print-out-paths .#tei-p5-reference)"
+test -d "$TEI_P5_ROOT"
+find -L "$TEI_P5_ROOT" -maxdepth 2 -type d | sort | sed -n '1,40p'
 ```
 
-Record in the README that this path exists locally and is the citation base for
-TEI P5 claims.
+Record in the README that `$TEI_P5_ROOT` is the citation base for TEI P5 claims.
 
 - [ ] **Step 2: Create initial dossier stubs with known evidence**
 

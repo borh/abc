@@ -12,32 +12,32 @@
     };
 
     reference-aozora2-src = {
-      url = "github:takahashim/aozora2";
+      url = "github:takahashim/aozora2/93420b53c7d52579a0ca3fde466cef8ce6d89879";
       flake = false;
     };
 
     reference-aozora-rs-src = {
-      url = "github:kinoko0518/aozora-rs";
+      url = "github:kinoko0518/aozora-rs/2b2b8f641aee9fd92ed282f03ab060c18542700c";
       flake = false;
     };
 
     reference-aozora-src = {
-      url = "github:P4suta/aozora";
+      url = "github:P4suta/aozora/5df2cfa55a96da3ac74943ab56611b0134ec8076";
       flake = false;
     };
 
     reference-aozora-notation-spec-src = {
-      url = "github:P4suta/aozora-notation-spec";
+      url = "github:P4suta/aozora-notation-spec/b60665fd50b596c967254f99b61f418495656fef";
       flake = false;
     };
 
     reference-aozora-parser-js-src = {
-      url = "github:cognitom/aozora-parser.js";
+      url = "github:cognitom/aozora-parser.js/abaf45422051f418905d9d269f1d2db28ebeed05";
       flake = false;
     };
 
     reference-aozorabunko-extractor-src = {
-      url = "github:globis-org/aozorabunko-extractor";
+      url = "github:globis-org/aozorabunko-extractor/ce439c2b43a4ec0312d12bb89d49e8b186ff0c27";
       flake = false;
     };
 
@@ -47,7 +47,7 @@
     };
 
     reference-aozora-epub3-src = {
-      url = "github:AozoraEpub3-JDK21/AozoraEpub3-JDK21";
+      url = "github:AozoraEpub3-JDK21/AozoraEpub3-JDK21/966a127a613b864d998e3448cdaa5f66a0519c1b";
       flake = false;
     };
 

@@ -14,11 +14,11 @@ available.
 
 ## TEI P5 Target
 
-Use TEI gaiji and character declaration policy. Current local TEI citations:
-`../abc/references/TEI/P5/Source/Guidelines/en/WD-NonStandardCharacters.xml`,
-`../abc/references/TEI/P5/Source/Specs/char.xml`,
-`../abc/references/TEI/P5/Source/Specs/g.xml`, and
-`../abc/references/TEI/P5/Source/Specs/glyph.xml`.
+Use TEI gaiji and character declaration policy. Current flake-backed TEI citations:
+`$TEI_P5_ROOT/Source/Guidelines/en/WD-NonStandardCharacters.xml`,
+`$TEI_P5_ROOT/Source/Specs/char.xml`,
+`$TEI_P5_ROOT/Source/Specs/g.xml`, and
+`$TEI_P5_ROOT/Source/Specs/glyph.xml`.
 
 ## ABC Extension Or Sidecar
 

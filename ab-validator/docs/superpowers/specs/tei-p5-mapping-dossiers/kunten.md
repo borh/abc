@@ -13,13 +13,13 @@ carry parser evidence, but this dossier must still isolate kunten-specific rows.
 
 ## TEI P5 Target
 
-TEI target selection needs a final policy decision. Candidate local TEI
+TEI target selection needs a final policy decision. Candidate flake-backed TEI
 citations to evaluate are
-`../abc/references/TEI/P5/Source/Specs/ruby.xml`,
-`../abc/references/TEI/P5/Source/Specs/gloss.xml`,
-`../abc/references/TEI/P5/Source/Specs/note.xml`,
-`../abc/references/TEI/P5/Source/Specs/seg.xml`, and
-`../abc/references/TEI/P5/Source/Specs/span.xml`.
+`$TEI_P5_ROOT/Source/Specs/ruby.xml`,
+`$TEI_P5_ROOT/Source/Specs/gloss.xml`,
+`$TEI_P5_ROOT/Source/Specs/note.xml`,
+`$TEI_P5_ROOT/Source/Specs/seg.xml`, and
+`$TEI_P5_ROOT/Source/Specs/span.xml`.
 
 ## ABC Extension Or Sidecar
 

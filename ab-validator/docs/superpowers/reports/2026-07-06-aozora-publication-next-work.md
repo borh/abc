@@ -31,7 +31,7 @@ Verdict: `AOZORA_PUBLICATION_NEXT_WORK_COMPLETE`
   - status_counts={"adapter-fidelity-needed": 1, "admitted": 4, "diagnostic-only": 1, "policy-needed": 3, "schema-needed": 2}
   - complete_section_count=11, incomplete_section_dossiers=[]
   - tei_p5_reference_count=34, file_count=34, directory_count=0
-  - tei_p5_reference_root=abc/references/TEI/P5, root_exists=True, unverified=0
+  - tei_p5_reference_root=$TEI_P5_ROOT, root_exists=True, unverified=0
 - `parser_acceptance_criteria` (ab-validator): `complete`
   - spec=docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md
   - spec_status=Accepted, required_evidence_inputs=6

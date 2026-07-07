@@ -15,7 +15,7 @@
     };
 
     tei-p5 = {
-      url = "github:TEIC/TEI";
+      url = "github:TEIC/TEI/P5_Release_4.11.0";
       flake = false;
     };
   };
@@ -53,23 +53,6 @@
         else
           { };
 
-      teiP5Reference =
-        pkgs:
-        pkgs.runCommand "tei-p5-reference"
-          {
-            src = tei-p5;
-          }
-          ''
-            mkdir -p "$out"
-            for path in "$src"/P5/*; do
-              ln -s "$path" "$out/$(basename "$path")"
-            done
-
-            test -f "$out/Source/Specs/ruby.xml"
-            test -f "$out/Source/Specs/hi.xml"
-            test -f "$out/Source/Guidelines/en/HD-Header.xml"
-          '';
-
       monorepoScripts =
         pkgs:
         let
@@ -94,10 +77,24 @@
             exec python3 scripts/monorepo-parity-audit.py "$@"
           '';
 
+          tei-version-coherence = pkgs.writeShellScript "soranoha-tei-version-coherence" ''
+            set -euo pipefail
+            export PATH="${runtimePath}:$PATH"
+            exec bash scripts/monorepo-tei-version-coherence.sh "$@"
+          '';
+
+          flake-input-policy = pkgs.writeShellScript "soranoha-flake-input-policy" ''
+            set -euo pipefail
+            export PATH="${runtimePath}:$PATH"
+            exec python3 scripts/monorepo-flake-input-policy.py "$@"
+          '';
+
           validate-migration = pkgs.writeShellScript "soranoha-validate-migration" ''
             set -euo pipefail
             export PATH="${runtimePath}:$PATH"
             bash scripts/monorepo-schema-drift.sh
+            bash scripts/monorepo-tei-version-coherence.sh
+            python3 scripts/monorepo-flake-input-policy.py
             nix flake check --no-build "$@"
           '';
         };
@@ -130,6 +127,16 @@
             program = "${scripts.split-import-parity-audit}";
             meta.description = "Audit monorepo tracked-file parity against split repositories";
           };
+          tei-version-coherence = {
+            type = "app";
+            program = "${scripts.tei-version-coherence}";
+            meta.description = "Check TEI P5 source/profile version coherence";
+          };
+          flake-input-policy = {
+            type = "app";
+            program = "${scripts.flake-input-policy}";
+            meta.description = "Check release-critical flake inputs are explicitly pinned";
+          };
           validate-migration = {
             type = "app";
             program = "${scripts.validate-migration}";
@@ -142,11 +149,41 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
         in
         prefixAttrs "abc-" (optionalOutputAttrs abc "checks" system)
         // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "checks" system)
         // {
-          monorepo-tei-p5-reference = teiP5Reference pkgs;
+          monorepo-tei-p5-reference = tei.reference;
+          monorepo-tei-version-coherence =
+            pkgs.runCommand "soranoha-monorepo-tei-version-coherence"
+              {
+                nativeBuildInputs = [
+                  pkgs.bash
+                  pkgs.coreutils
+                  pkgs.gnugrep
+                ];
+                src = self;
+                teiRoot = tei.reference;
+              }
+              ''
+                cd "$src"
+                AB_TEI_P5_ROOT="$teiRoot" bash scripts/monorepo-tei-version-coherence.sh "$src"
+                touch "$out"
+              '';
+          monorepo-flake-input-policy =
+            pkgs.runCommand "soranoha-monorepo-flake-input-policy"
+              {
+                nativeBuildInputs = [
+                  pkgs.python3
+                ];
+                src = self;
+              }
+              ''
+                cd "$src"
+                python3 scripts/monorepo-flake-input-policy.py "$src"
+                touch "$out"
+              '';
           monorepo-schema-drift =
             pkgs.runCommand "soranoha-monorepo-schema-drift"
               {
@@ -169,11 +206,12 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
         in
         prefixAttrs "abc-" (optionalOutputAttrs abc "packages" system)
         // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "packages" system)
         // {
-          tei-p5-reference = teiP5Reference pkgs;
+          tei-p5-reference = tei.reference;
         }
       );
 

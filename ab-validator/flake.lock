@@ -81,6 +81,7 @@
       "original": {
         "owner": "AozoraEpub3-JDK21",
         "repo": "AozoraEpub3-JDK21",
+        "rev": "966a127a613b864d998e3448cdaa5f66a0519c1b",
         "type": "github"
       }
     },
@@ -97,6 +98,7 @@
       "original": {
         "owner": "P4suta",
         "repo": "aozora-notation-spec",
+        "rev": "b60665fd50b596c967254f99b61f418495656fef",
         "type": "github"
       }
     },
@@ -113,6 +115,7 @@
       "original": {
         "owner": "cognitom",
         "repo": "aozora-parser.js",
+        "rev": "abaf45422051f418905d9d269f1d2db28ebeed05",
         "type": "github"
       }
     },
@@ -129,6 +132,7 @@
       "original": {
         "owner": "kinoko0518",
         "repo": "aozora-rs",
+        "rev": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
         "type": "github"
       }
     },
@@ -145,6 +149,7 @@
       "original": {
         "owner": "P4suta",
         "repo": "aozora",
+        "rev": "5df2cfa55a96da3ac74943ab56611b0134ec8076",
         "type": "github"
       }
     },
@@ -161,6 +166,7 @@
       "original": {
         "owner": "takahashim",
         "repo": "aozora2",
+        "rev": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
         "type": "github"
       }
     },
@@ -177,6 +183,7 @@
       "original": {
         "owner": "globis-org",
         "repo": "aozorabunko-extractor",
+        "rev": "ce439c2b43a4ec0312d12bb89d49e8b186ff0c27",
         "type": "github"
       }
     },

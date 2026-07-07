@@ -14,8 +14,8 @@ evidence is in `docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-co
 
 ## TEI P5 Target
 
-Use TEI ruby structures. Current local TEI citation:
-`../abc/references/TEI/P5/Source/Specs/ruby.xml`.
+Use TEI ruby structures. Current flake-backed TEI citation:
+`$TEI_P5_ROOT/Source/Specs/ruby.xml`.
 
 ## ABC Extension Or Sidecar
 

@@ -14,10 +14,10 @@ also reports `page_break_projection` rows.
 ## TEI P5 Target
 
 Use TEI page and line break elements where the source marker is a publication
-break. Current local TEI citations:
-`../abc/references/TEI/P5/Source/Specs/pb.xml`,
-`../abc/references/TEI/P5/Source/Specs/lb.xml`, and
-`../abc/references/TEI/P5/Source/Specs/milestone.xml`.
+break. Current flake-backed TEI citations:
+`$TEI_P5_ROOT/Source/Specs/pb.xml`,
+`$TEI_P5_ROOT/Source/Specs/lb.xml`, and
+`$TEI_P5_ROOT/Source/Specs/milestone.xml`.
 
 ## ABC Extension Or Sidecar
 

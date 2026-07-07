@@ -16,9 +16,9 @@ and extension policy rather than a final dedicated publication model.
 
 Warigaki likely maps to TEI note or inline annotation policy. Candidate local
 TEI citations to evaluate are
-`../abc/references/TEI/P5/Source/Specs/note.xml`,
-`../abc/references/TEI/P5/Source/Specs/seg.xml`, and
-`../abc/references/TEI/P5/Source/Specs/span.xml`.
+`$TEI_P5_ROOT/Source/Specs/note.xml`,
+`$TEI_P5_ROOT/Source/Specs/seg.xml`, and
+`$TEI_P5_ROOT/Source/Specs/span.xml`.
 
 ## ABC Extension Or Sidecar
 

@@ -13,10 +13,10 @@ Parser-IR carries image and caption nodes where adapters expose them.
 
 ## TEI P5 Target
 
-Use TEI figure and graphic policy. Current local TEI citations:
-`../abc/references/TEI/P5/Source/Specs/figure.xml`,
-`../abc/references/TEI/P5/Source/Specs/graphic.xml`, and
-`../abc/references/TEI/P5/Source/Specs/figDesc.xml`.
+Use TEI figure and graphic policy. Current flake-backed TEI citations:
+`$TEI_P5_ROOT/Source/Specs/figure.xml`,
+`$TEI_P5_ROOT/Source/Specs/graphic.xml`, and
+`$TEI_P5_ROOT/Source/Specs/figDesc.xml`.
 
 ## ABC Extension Or Sidecar
 

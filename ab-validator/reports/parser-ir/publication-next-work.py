@@ -45,7 +45,9 @@ REQUIRED_DOSSIER_SECTIONS = (
     "Current Evidence",
     "Open Decisions",
 )
-TEI_P5_REFERENCE_RE = re.compile(r"`?((?:\.\./)?abc/references/TEI/P5/[^\s`)]+)`?")
+TEI_P5_REFERENCE_RE = re.compile(
+    r"`?(\$TEI_P5_ROOT/[^\s`)]+|(?:\.\./)?abc/references/TEI/P5/[^\s`)]+)`?"
+)
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
@@ -66,7 +68,7 @@ def display_tei_p5_root(path: pathlib.Path) -> str:
     if len(parts) >= 4 and parts[-4:] == ("abc", "references", "TEI", "P5"):
         return "abc/references/TEI/P5"
     if (resolved / "Source" / "Specs").is_dir():
-        return "abc/references/TEI/P5"
+        return "$TEI_P5_ROOT"
     return display_path(path)
 
 
@@ -356,6 +358,9 @@ def default_tei_p5_root() -> pathlib.Path:
 
 
 def resolve_tei_reference(reference: str, tei_p5_root: pathlib.Path) -> pathlib.Path:
+    tei_root_prefix = "$TEI_P5_ROOT/"
+    if reference.startswith(tei_root_prefix):
+        return (tei_p5_root / reference.removeprefix(tei_root_prefix)).resolve()
     prefix = "abc/references/TEI/P5/"
     if reference.startswith(prefix):
         return (tei_p5_root / reference.removeprefix(prefix)).resolve()

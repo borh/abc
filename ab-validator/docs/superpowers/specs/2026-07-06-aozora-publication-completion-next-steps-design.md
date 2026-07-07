@@ -270,9 +270,9 @@ report. Performance budgets stay bounded; DNF is recorded, not hidden.
 ### 5. TEI P5 Mapping Dossiers
 
 Create one mapping dossier per Aozora feature family. Each dossier should cite
-TEI P5 where relevant from `../abc/references/TEI/P5`, the local source
-inventory, current parser-IR representation, ABC policy/sidecar target, and
-plaintext projection.
+TEI P5 where relevant from the flake-backed `.#tei-p5-reference` tree, the
+local source inventory, current parser-IR representation, ABC policy/sidecar
+target, and plaintext projection.
 
 Initial families:
 

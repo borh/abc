@@ -4,13 +4,19 @@ These dossiers track Aozora source feature families through Parser-IR, TEI P5,
 ABC extension or sidecar policy, plaintext projection, current evidence, and
 open decisions.
 
-The local TEI P5 reference checkout exists at `../abc/references/TEI/P5`.
-Use that path as the citation base for TEI P5 claims. Relevant directories
-verified during scaffold creation include:
+TEI P5 references are supplied by the monorepo root flake:
 
-- `../abc/references/TEI/P5/Source/Guidelines`
-- `../abc/references/TEI/P5/Source/Specs`
-- `../abc/references/TEI/P5/Test`
+```sh
+TEI_P5_ROOT="$(nix build --no-link --print-out-paths .#tei-p5-reference)"
+```
+
+Use `$TEI_P5_ROOT` as the citation base for TEI P5 claims. The reference is
+pinned to TEI P5 4.11.0 to match ABC's TEI profile validation basis. Relevant
+directories verified by the root flake include:
+
+- `$TEI_P5_ROOT/Source/Guidelines`
+- `$TEI_P5_ROOT/Source/Specs`
+- `$TEI_P5_ROOT/Test`
 
 Every dossier uses these sections:
 

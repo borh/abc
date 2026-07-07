@@ -44,10 +44,10 @@ dictionaries are nix-only flake outputs; `just dictionary-build-all` populates
 no reference to `vibrato-pipe`.
 
 Additional delta (2026-07-07): TEI P5 references are pinned by the root flake
-as `.#tei-p5-reference`. The `ab-validator` publication next-work report still
-uses a local `abc/references/TEI/P5` checkout when present, but falls back to
-the pinned flake output so TEI dossier validation no longer depends on an
-untracked sibling checkout.
+as `.#tei-p5-reference` at TEI P5 4.11.0 (`P5_Release_4.11.0`), matching ABC's
+TEI profile validation basis. The `ab-validator` publication next-work report
+uses this flake output by default; `AB_TEI_P5_ROOT` is reserved for an explicit
+operator override.
 
 ## Validation Commands
 
@@ -57,9 +57,13 @@ Run from the monorepo root:
 just split-import-parity-audit
 just schema-drift
 just root-flake-check-no-build
+just tei-version-coherence
+just flake-input-policy
 just check-no-build
 just validate-migration
 nix build .#tei-p5-reference --no-link
+nix run .#tei-version-coherence
+nix run .#flake-input-policy
 nix run .#schema-drift
 nix run .#split-import-parity-audit
 ```
@@ -72,6 +76,10 @@ What they prove:
   its source-region policy symlink still points at `abc/data`.
 - `root-flake-check-no-build`: the root flake evaluates monorepo checks and
   prefixed component checks without building large outputs.
+- `tei-version-coherence`: the root TEI P5 source reference and ABC TEI profile
+  inputs all target TEI P5 4.11.0.
+- `flake-input-policy`: release-critical source-evidence inputs carry explicit
+  rev/tag pins in flake input URLs, not only in lockfiles.
 - `check-no-build`: both component flakes evaluate through their no-build
   checks from the monorepo layout. This is retained as a direct component
   fallback while the root flake settles.

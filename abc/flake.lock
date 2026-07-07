@@ -161,6 +161,7 @@
       "original": {
         "owner": "TEI-EAJ",
         "repo": "aozora_tei",
+        "rev": "77a675fc2771936f9544505d922d4cd45075338c",
         "type": "github"
       }
     }

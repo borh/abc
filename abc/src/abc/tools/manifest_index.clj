@@ -122,7 +122,7 @@
                        :producer_artifact_id nil
                        :field "__producer__"
                        :analysis_value (vec (concat (get analysis-entry "provenance_was_derived_from")
-                                                     (get analysis-entry "provenance_used")))
+                                                    (get analysis-entry "provenance_used")))
                        :producer_value nil}])))
          vec)))
 

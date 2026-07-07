@@ -78,7 +78,7 @@ from the validation logic.
 |---|---|---|
 | `schemas/parser-ir.schema.json` | JSON Schema | Do not regenerate in v0; Malli may mirror small test fixtures only |
 | `schemas/manifest.schema.json` | JSON Schema | Do not regenerate in v0 |
-| `schemas/source-region-coverage.schema.json` | JSON Schema | Possible future Malli source after explicit schema rotation |
+| `schemas/source-region-coverage.schema.json` | JSON Schema | Do not regenerate in v0 |
 | TEI profile | ODD, RelaxNG, Schematron | None, except option/result maps around validators |
 | RDF graph validity | SHACL | None, except option/result maps around validators |
 | `data/aat-parser-ir-compatibility.edn` | ABC EDN registry | Malli source of structural contract |
@@ -111,7 +111,9 @@ used by future policy schemas.
 ### Layer 2 - Clojure-Owned Document Schemas
 
 Add Malli schemas for ABC-owned EDN/JSON documents whose current validators are
-mostly hand-written:
+mostly hand-written. This extends the existing `design-bundle-schemas` pattern
+in `abc.tools.malli`: schema data plus local `:fn` predicates for cross-field
+invariants that JSON Schema does not express well.
 
 - `::aat-parser-ir-compat-registry`
 - `::aat-parser-ir-compat-entry`
@@ -133,11 +135,26 @@ These schemas express local shape and basic cross-field invariants. Examples:
 - `:evidence_scope :adapter == :aat_adapter`
 - parser evidence logical paths are workspace-relative and must not start with
   `/` or `../`
+- parser evidence `:current_external_path` is optional and nullable, but any
+  non-null value must be non-blank
 
 Duplicate-key checks can remain as small explicit functions because they are
 collection-level identity checks rather than one-entry shape checks. The
 important simplification is that entry shape and entry-local invariants become
 schema data.
+
+Existing callers also depend on readable, entry-indexed error messages such as
+`entry 0 is missing :evidence_scope`. The v0 migration must preserve that
+observable behavior with a thin shell around Malli explanations:
+
+1. validate each entry with Malli,
+2. convert its explanation into the current `entry {idx} ...` style string
+   where tests already assert regex fragments,
+3. run duplicate-key checks as explicit collection-level functions.
+
+The migration should not expose raw `malli.error/humanize` output directly from
+`registry-errors` or `index-errors`; raw Malli paths lose the entry-index
+context that operators use when editing EDN files.
 
 ### Layer 3 - Export and Test Utilities
 
@@ -176,7 +193,11 @@ This slice gives immediate value because it removes duplicated validation
 logic without touching JSON Schema, TEI generation, or cross-language
 contracts.
 
-## Later Migration Slices
+## Future Direction (Unsequenced)
+
+The following slices are intentionally unsequenced. They require their own
+implementation plans and, when they export JSON Schema or change function
+instrumentation behavior, their own review.
 
 ### Policy Documents
 
@@ -190,6 +211,11 @@ non-Clojure tools. Malli validates their shape inside ABC. If Python/Rust tools
 need schema validation for them, export JSON Schema from Malli and add a drift
 gate.
 
+The drift gate must be concrete before any export lands: either re-export and
+byte-compare generated JSON Schema during `nix flake check`, or compare the
+ABC canonical schema hash against a committed expected hash. Intent alone is
+not sufficient.
+
 ### CLI and Materializer Boundaries
 
 Add function schemas around higher-risk Clojure boundaries:
@@ -202,6 +228,12 @@ Add function schemas around higher-risk Clojure boundaries:
 
 The rule is boundary-first: instrument values crossing a tool boundary, not
 every private helper.
+
+Instrumentation stance: runtime instrumentation is for development and tests.
+Production CLIs may validate explicit loaded inputs and outputs, but should not
+depend on global function instrumentation for correctness or performance. Any
+future `m/=>` or `mx/defn` slice must state which aliases enable
+instrumentation and which production paths call explicit validators.
 
 ### Generated Examples
 
@@ -236,9 +268,9 @@ contract is still the schema value plus tests.
 | Risk | Control |
 |---|---|
 | Malli becomes a second source of truth for JSON wire schemas | Keep JSON Schema authoritative unless a spec explicitly rotates ownership |
-| Generated JSON Schema drifts from Malli source | Add a drift check for every generated schema |
+| Generated JSON Schema drifts from Malli source | Add byte-compare or canonical-hash drift checks for every generated schema |
 | Function instrumentation makes tests noisy or slow | Instrument only public boundaries and keep local helper schemas out of runtime hot paths |
-| Humanized Malli errors break existing exact-string tests | Tests should assert stable content and paths, not punctuation |
+| Malli-humanized errors lose index-prefixed entry context | Keep `registry-errors` and `index-errors` as thin shells that map Malli explanations back into entry-indexed strings |
 | Duplicate-key and cross-document checks become awkward in Malli | Keep them as explicit functions; Malli handles entry-local contracts |
 | Policies hide product decisions inside schema validation | Schemas validate shape and allowed values; policy admission remains in policy documents and tests |
 
@@ -249,12 +281,18 @@ The Malli contract-layer migration is successful when:
 1. `abc.tools.aat-parser-ir-compat` and `abc.tools.parser-evidence` use shared
    Malli schemas for entry shape and scalar contracts.
 2. Their public validation APIs remain stable.
-3. Existing compatibility and parser-evidence tests still cover the same
-   invalid cases.
+3. Every `has-error?` regex currently asserted in
+   `parser_evidence_test.clj` and the AAT parser-IR registry validation tests
+   either passes unchanged or is replaced by an equivalent regex called out in
+   the migration commit message.
 4. At least one generator-backed test creates valid registry entries that pass
    the validators.
-5. No JSON Schema hash rotates.
-6. `nix flake check`, `bin/kaocha`, `bin/lint-active`, `just python-quality`,
+5. At least one generator-backed test mutates a valid entry to violate a
+   cross-field invariant, such as
+   `files_scanned != files_succeeded + files_failed`, and asserts that the
+   validator rejects it.
+6. No JSON Schema hash rotates.
+7. `nix flake check`, `bin/kaocha`, `bin/lint-active`, `just python-quality`,
    and monorepo no-build checks remain green.
 
 ## Self-Review
@@ -263,6 +301,7 @@ The Malli contract-layer migration is successful when:
 - **Internal consistency:** Malli owns Clojure/ABC-local data contracts; JSON
   Schema, TEI, SHACL, and Rust remain authoritative at their boundaries.
 - **Scope check:** First implementation slice is limited to two EDN validators.
-  Policy documents and CLI boundary schemas are explicit later slices.
+  Policy documents and CLI boundary schemas are unsequenced future directions.
 - **Ambiguity check:** Duplicate-key checks stay as explicit functions; Malli
-  handles entry-local shape and scalar/cross-field contracts.
+  handles entry-local shape and scalar/cross-field contracts; public error
+  APIs keep entry-indexed strings rather than exposing raw Malli output.

@@ -44,20 +44,26 @@ mod tests {
 
     #[test]
     fn is_positive_treats_normalize_as_accept_class() {
-        assert!(GoldRecord {
-            sentence: String::new(),
-            label: "accept".into(),
-        }
-        .is_positive());
-        assert!(GoldRecord {
-            sentence: String::new(),
-            label: "normalize".into(),
-        }
-        .is_positive());
-        assert!(!GoldRecord {
-            sentence: String::new(),
-            label: "reject".into(),
-        }
-        .is_positive());
+        assert!(
+            GoldRecord {
+                sentence: String::new(),
+                label: "accept".into(),
+            }
+            .is_positive()
+        );
+        assert!(
+            GoldRecord {
+                sentence: String::new(),
+                label: "normalize".into(),
+            }
+            .is_positive()
+        );
+        assert!(
+            !GoldRecord {
+                sentence: String::new(),
+                label: "reject".into(),
+            }
+            .is_positive()
+        );
     }
 }

@@ -1,7 +1,7 @@
 # Malli Contract Layer Design
 
 Date: 2026-07-07
-Status: Draft
+Status: Accepted
 
 ## Goal
 

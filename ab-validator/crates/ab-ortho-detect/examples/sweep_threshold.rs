@@ -13,6 +13,10 @@ struct GoldRecord {
     label: String,
 }
 
+fn is_positive(label: &str) -> bool {
+    label == "accept" || label == "normalize"
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let gold_path =
         std::env::var("ORTHO_GOLD_PATH").expect("set ORTHO_GOLD_PATH to the labeled JSONL");
@@ -43,13 +47,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         for rec in &recs {
             let spans = sentence_split(&rec.sentence);
             let anns = det.detect(&spans);
-            let pred = if anns.is_empty() { "reject" } else { "accept" };
-            match (pred, rec.label.as_str()) {
-                ("accept", "accept") => tp += 1,
-                ("reject", "accept") => fn_ += 1,
-                ("accept", "reject") => fp += 1,
-                ("reject", "reject") => tn += 1,
-                _ => {}
+            let gold_pos = is_positive(&rec.label);
+            let pred_pos = !anns.is_empty();
+            match (pred_pos, gold_pos) {
+                (true, true) => tp += 1,
+                (false, true) => fn_ += 1,
+                (true, false) => fp += 1,
+                (false, false) => tn += 1,
             }
         }
         let recall = if tp + fn_ == 0 {

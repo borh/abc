@@ -21,6 +21,10 @@ struct GoldRecord {
     label: String,
 }
 
+fn is_positive(label: &str) -> bool {
+    label == "accept" || label == "normalize"
+}
+
 #[derive(Debug, Serialize)]
 struct OutRecord<'a> {
     sentence: &'a str,
@@ -47,12 +51,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // a single sentence or contain terminals. sentence_split handles both.
         let spans = sentence_split(&rec.sentence);
         let anns = detector.detect(&spans);
+        let gold_pos = is_positive(&rec.label);
         let h_label = if anns.is_empty() { "reject" } else { "accept" };
+        let pred_pos = h_label == "accept";
         let out = OutRecord {
             sentence: &rec.sentence,
             gold: &rec.label,
             heuristic: h_label.to_string(),
-            agree: h_label == rec.label,
+            agree: gold_pos == pred_pos,
         };
         println!("{}", serde_json::to_string(&out)?);
     }

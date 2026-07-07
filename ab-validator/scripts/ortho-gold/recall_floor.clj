@@ -9,8 +9,10 @@
                      :when r]
                  r))
         n (count recs)
-        gold-pos (filter #(= "accept" (:gold %)) recs)
+        gold-pos (filter #(or (= "accept" (:gold %)) (= "normalize" (:gold %))) recs)
         gold-neg (filter #(= "reject" (:gold %)) recs)
+        gold-accept (count (filter #(= "accept" (:gold %)) recs))
+        gold-normalize (count (filter #(= "normalize" (:gold %)) recs))
         tp (count (filter :agree gold-pos))
         fn_ (count (filter #(not (:agree %)) gold-pos))
         fp (count (filter #(not (:agree %)) gold-neg))
@@ -21,7 +23,7 @@
         f1 (if (zero? (+ recall precision)) 0.0
                (/ (* 2.0 recall precision) (+ recall precision)))]
     (println "=== Recall-floor report ===")
-    (println "n:" n "gold_pos:" (count gold-pos) "gold_neg:" (count gold-neg))
+    (println "n:" n "gold_accept:" gold-accept "gold_normalize:" gold-normalize "gold_reject:" (count gold-neg) "gold_pos:" (count gold-pos))
     (println "tp:" tp "fn:" fn_ "fp:" fp "tn:" tn)
     (println "recall:" recall)
     (println "precision:" precision)

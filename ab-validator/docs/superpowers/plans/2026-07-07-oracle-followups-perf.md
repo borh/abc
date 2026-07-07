@@ -648,4 +648,62 @@ Per the spec §Validation:
 
 ## Validation Record
 
-_(Filled in after the hinoki run.)_
+Validated on hinoki (AMD Ryzen 9 9950X, 16c/32t, 88 GiB MemAvailable) against the
+prior canonical run `full-2026-07-07_055139-jobs8`. New run:
+`full-2026-07-07_oracle-followups` (4 analyzers, full profile). Diff tool:
+`scripts/oracle-validation-diff.sh`.
+
+### Correctness (A + B) — clean
+
+**Non-oracle tables: row-count-identical** (purely additive / order-only confirmed):
+sources 17,885; projection_spans 10,832,338; analyses 71,540; morphemes 662,984,226;
+morpheme_features 12,575,103,913; nway_regions 161,142,784; nway_region_analyzers
+644,571,136; nway_feature_diffs 23,356,986,673; feature_pattern_counts 8,394,223;
+errors 0.
+
+**Oracle keyed 4-bucket diff** (prior 2,337,428 → new 2,329,135):
+- dropped = **8,395** (A-wins: iteration-mark expansion turned false non-matches into
+  all-match, correctly no longer emitted).
+- newly_emitted = **102** (0.004%; the more-correct normalization exposing real
+  disagreements the old mark-dropping had spuriously matched — inspected, not a
+  regression). Arithmetic: 2,337,428 − 8,395 + 102 = 2,329,135. ✓
+- classification_changed = 962,791; unchanged = 1,366,242.
+
+**Classification transitions** (prior evidence_detail JSON → new column):
+`nonstandard_ruby → no_comparable_reading` 959,184; `nonstandard_ruby →
+nonstandard_ruby` 930,210; `resolved → resolved` 436,032; `nonstandard_ruby →
+resolved` 3,544 (A); `resolved → nonstandard_ruby` 63.
+
+**New classification breakdown:** `no_comparable_reading` 959,184 (41.2%);
+**`nonstandard_ruby` 930,375 (39.9%)** — the dictionary-development signal, now a
+first-class column, ≈half the prior conflated 1.9M; `resolved` 439,576 (18.9%).
+
+### Perf (P1) — improvement + a memory correction
+
+Full-corpus wall-clock / peak RSS on hinoki (all 4-analyzer full runs):
+
+| run | jobs | wall | peak RSS |
+|-----|------|------|----------|
+| pre-P1 (old default) | 8 | ~67 min (from prior run file mtimes) | — |
+| post-P1 | 16 | **51.6 min** | 58.0 GiB |
+| post-P1 (auto, old model) | 31 | 55.0 min | 83.2 GiB (page-cache thrash) |
+
+Subset jobs sweep (832 files / 420 MiB, large-doc-heavy) confirmed P1 removed the
+"more jobs = slower" penalty (8→12: 8:46→7:31; flat to 31), but its peak-RSS numbers
+(20.5/26.8/32.7/45.0 GiB at 8/12/16/31) **under-predicted the full corpus** — 800
+regular files never fill the per-worker morpheme write buffers.
+
+**Result:** P1 + jobs 8→16 cut the full run **~67 → 51.6 min (~23%), memory-safe.**
+But `--jobs 0` (auto) picked 31 and hit 83 GiB / thrash, *regressing* to 55 min — the
+memory-overlap caveat (spec §P1) realized. **`auto_jobs` recalibrated** (finding 4):
+the post-P1 full-corpus peak-RSS line is ≈ 31 GiB + 1.68 GiB/job (from the 16→58.0,
+31→83.2 points), so `PER_ANALYZER_BYTES` 384→411 MiB and `FIXED_OVERHEAD_BYTES`
+12.5→31 GiB. Auto now picks **18** on hinoki (projected peak inside the 70% budget)
+and scales down safely on smaller hosts (the old model would have OOM'd a 64 GiB host
+at 20 jobs on a full run). The `just morph-warehouse-run[-suw]` default changed
+`jobs=8 → 0` (auto) so the default run uses the safe optimum.
+
+**Open lever (future, not this round):** at 51.6 min the full run is now dominated by
+writing the giant feature tables (nway_feature_diffs 23.4 B rows, morpheme_features
+12.6 B rows), not analysis — the next wall-clock lever is those write paths / Lever 2,
+not scheduling.

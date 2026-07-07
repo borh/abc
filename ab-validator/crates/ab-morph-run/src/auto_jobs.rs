@@ -3,9 +3,16 @@
 //! `--jobs 0` derives a job count from `MemAvailable` so a full-corpus run
 //! never trips earlyoom (observed: jobs = nproc = 32 with 4 analyzers reached
 //! 68.5 GiB RSS and was SIGTERM'd at the 10% MemAvailable watermark).
-//! Constants are calibrated by the subset sweep in the 2026-07-05
-//! warehouse-run-perf plan (Task 4); the budget mirrors the summarizer's
-//! read-once /proc/meminfo discipline.
+//! The budget mirrors the summarizer's read-once /proc/meminfo discipline.
+//!
+//! Recalibrated 2026-07-07 (oracle-followups-perf) after the P1 front-load
+//! scheduler landed: front-loading large documents makes them overlap the
+//! regular workers' morpheme-row accumulation, so full-corpus peak RSS rose.
+//! Two full-corpus hinoki points (4 analyzers, post-P1) — jobs=16 → 58.0 GiB,
+//! jobs=31 → 83.2 GiB — give a peak-RSS line of ≈ 31 GiB + 1.67 GiB/job. The
+//! earlier subset sweep (below) badly under-predicted this because 800 regular
+//! files never fill the per-worker write buffers, so the constants now come
+//! from the full-corpus curve, not the subset.
 
 pub(crate) const GIB: u64 = 1024 * 1024 * 1024;
 /// Fraction of MemAvailable the run may budget (30% headroom for the OS,
@@ -19,24 +26,23 @@ const MEM_FRACTION_DEN: u64 = 10;
 /// analyzers (see `PER_ANALYZER_BYTES`), leaving a zero residual, so this
 /// floor is the plan's 64 MiB minimum.
 const BASE_PER_JOB_BYTES: u64 = 64 * 1024 * 1024;
-/// Additional bytes per analyzer per job. Recalibrated 2026-07-06 from the
-/// FULL-CORPUS validation run after the subset fit under-predicted: the
-/// subset sweep's slope (859,500 kB/job ÷ 4 ≈ 210 MiB) missed the corpus's
-/// large-document tail (corpus max file is 4.6× the subset max), and the
-/// jobs=32 full run was earlyoom-killed at 57,501,132 kB peak RSS —
-/// worst measured slope (57.5 GiB − 12.5 GiB intercept) / 32 jobs ≈
-/// 1.41 GiB/job, still climbing at kill time. Per the plan's worst-point
-/// rule, budget from 1.5 GiB/job (margin above the censored measurement):
-/// 1.5 GiB ÷ 4 analyzers = 384 MiB. The fit's ~12.5 GiB intercept is
-/// budgeted separately as `FIXED_OVERHEAD_BYTES` below (controller-approved
-/// deviation from the original per-job-only formula, 2026-07-06): on hosts
-/// with under ~20 GiB MemAvailable the intercept alone would exceed the 70%
-/// budget, and the original formula ignored it, risking OOM.
-const PER_ANALYZER_BYTES: u64 = 384 * 1024 * 1024;
-/// Fixed memory overhead independent of job count — shared dictionary
-/// allocations (vibrato cwj+novel, sudachi). Fitted intercept from the
-/// 2026-07-06 subset sweep: 13,147,661 kB.
-const FIXED_OVERHEAD_BYTES: u64 = 13_147_661 * 1024;
+/// Additional bytes per analyzer per job. Recalibrated 2026-07-07 from the
+/// two post-P1 full-corpus points (jobs=16 → 58.0 GiB, jobs=31 → 83.2 GiB):
+/// the peak-RSS slope is (83.2 − 58.0) / (31 − 16) = 1.68 GiB/job. Attributing
+/// the whole slope to analyzers above the 64 MiB base gives
+/// (1.68 GiB − 64 MiB) / 4 ≈ 411 MiB/analyzer. (The pre-P1 estimate was
+/// 384 MiB; the increase is P1's large-doc/regular-worker overlap.)
+const PER_ANALYZER_BYTES: u64 = 411 * 1024 * 1024;
+/// Corpus-independent baseline RSS: the intercept of the post-P1 full-corpus
+/// peak-RSS line, 58.0 GiB − 16 × 1.68 GiB ≈ 31 GiB. This is NOT just the
+/// dictionary mmaps (~12.5 GiB) — it also covers the merge/compaction working
+/// set and the write buffers that are resident regardless of job count on a
+/// full run. The earlier 12.5 GiB value was fitted from a subset that never
+/// exercised the merge, which is why `--jobs 0` picked 31 on hinoki and hit
+/// 83 GiB (page-cache thrash). Budgeting the true intercept makes auto pick a
+/// job count whose *projected* peak stays inside the 70% MemAvailable budget:
+/// on hinoki (88 GiB avail) → jobs = (0.7·88 − 31) / 1.75 ≈ 18.
+const FIXED_OVERHEAD_BYTES: u64 = 31 * GIB;
 
 fn per_job_bytes(analyzer_count: usize) -> u64 {
     BASE_PER_JOB_BYTES + analyzer_count as u64 * PER_ANALYZER_BYTES
@@ -125,30 +131,39 @@ mod tests {
 
     #[test]
     fn budget_scales_with_memory_and_analyzers() {
-        // Recalibrated constants (2026-07-06 full-corpus worst point): base
-        // 64 MiB, 384 MiB/analyzer, fixed overhead 13,147,661 kB =
-        // 13,463,204,864 B.
-        // 64 GiB available → raw budget = 68,719,476,736 / 10 × 7 = 48,103,633,715 B
+        // Recalibrated constants (2026-07-07 post-P1 full-corpus curve): base
+        // 64 MiB, 411 MiB/analyzer, fixed overhead 31 GiB = 33,285,996,544 B.
+        // 64 GiB available → raw budget = 68,719,476,736 / 10 × 7 = 48,103,633,711 B
         // (u64: 68,719,476,736 / 10 = 6,871,947,673; × 7 = 48,103,633,711);
-        // minus fixed overhead: 48,103,633,711 − 13,463,204,864 = 34,640,428,847 B.
-        // 4 analyzers → per_job = 64 + 4×384 = 1600 MiB = 1,677,721,600 B;
-        // 34,640,428,847 / 1,677,721,600 = 20.6 → 20 jobs (< nproc 64, budget binds).
+        // minus fixed overhead: 48,103,633,711 − 33,285,996,544 = 14,817,637,167 B.
+        // 4 analyzers → per_job = 64 + 4×411 = 1708 MiB = 1,790,967,808 B;
+        // 14,817,637,167 / 1,790,967,808 = 8.27 → 8 jobs (< nproc 64, budget binds).
         let mem = 64 * GIB;
-        assert_eq!(auto_jobs(64, Some(mem), 4), 20);
-        // 8 analyzers under the same memory → per_job = 64 + 8×384 = 3136 MiB
-        // = 3,288,334,336 B; 34,640,428,847 / 3,288,334,336 = 10.5 → 10 jobs.
-        assert_eq!(auto_jobs(64, Some(mem), 8), 10);
+        assert_eq!(auto_jobs(64, Some(mem), 4), 8);
+        // 8 analyzers under the same memory → per_job = 64 + 8×411 = 3352 MiB
+        // = 3,514,631,168 B; 14,817,637,167 / 3,514,631,168 = 4.2 → 4 jobs.
+        assert_eq!(auto_jobs(64, Some(mem), 8), 4);
+    }
+
+    #[test]
+    fn hinoki_full_corpus_auto_stays_in_budget() {
+        // The validation host: 88 GiB MemAvailable, 32 nproc, 4 analyzers.
+        // raw budget = 94,489,280,512 / 10 × 7 = 66,142,496,357 B; minus 31 GiB
+        // overhead = 32,856,499,813 B; / 1,790,967,808 per_job = 18.3 → 18.
+        // (Pre-recalibration this picked 31 and hit 83 GiB / page-cache thrash;
+        // 18 keeps the projected peak inside the 70% budget.)
+        assert_eq!(auto_jobs(32, Some(88 * GIB), 4), 18);
     }
 
     #[test]
     fn constrained_memory_clamps_to_one_job() {
-        // Safety property (this is the fix): on hosts under ~20 GiB
-        // MemAvailable, the fixed dictionary overhead alone can exceed the
-        // 70% budget, so the post-overhead budget must saturate to 0 rather
-        // than underflow, yielding by_memory = 0 → clamp(1, nproc) = 1.
+        // Safety property (this is the fix): on hosts under ~44 GiB
+        // MemAvailable, the fixed overhead alone can exceed the 70% budget, so
+        // the post-overhead budget must saturate to 0 rather than underflow,
+        // yielding by_memory = 0 → clamp(1, nproc) = 1.
         // 16 GiB available → raw budget = 17,179,869,184 / 10 × 7 =
-        // 12,025,908,426 B, which is less than the 13,463,204,864 B fixed
-        // overhead, so budget.saturating_sub(overhead) = 0 regardless of
+        // 12,025,908,426 B, which is less than the 33,285,996,544 B (31 GiB)
+        // fixed overhead, so budget.saturating_sub(overhead) = 0 regardless of
         // analyzer count.
         let mem = 16 * GIB;
         assert_eq!(auto_jobs(32, Some(mem), 4), 1);

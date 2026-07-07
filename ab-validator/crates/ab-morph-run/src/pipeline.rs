@@ -3,13 +3,15 @@ use crate::options::OrthoDetectMode;
 use crate::output::for_each_jsonl_or_zst_line;
 
 /// Wall-time split for a serial analyze run: time spent in the per-document
-/// analyzer loop, time spent in the warehouse parquet write/encode
+/// analyzer loop, time spent building adjudication rows (oracle evidence +
+/// n-way row construction), time spent in the warehouse parquet write/encode
 /// (`WarehouseWriter::finalize`), and the run's total wall time. `other()`
-/// derives everything not accounted for by the two measured phases (IO,
-/// AAT parsing/projection, comparison/n-way writing, etc).
+/// derives everything not accounted for by the three measured phases (IO,
+/// AAT parsing/projection, etc).
 #[derive(Debug, Default, Clone, Copy)]
 pub(crate) struct PhaseTimings {
     pub(crate) analysis: std::time::Duration,
+    pub(crate) adjudication: std::time::Duration,
     pub(crate) warehouse_write: std::time::Duration,
     pub(crate) total: std::time::Duration,
 }
@@ -17,13 +19,14 @@ pub(crate) struct PhaseTimings {
 impl PhaseTimings {
     pub(crate) fn other(&self) -> std::time::Duration {
         self.total
-            .saturating_sub(self.analysis + self.warehouse_write)
+            .saturating_sub(self.analysis + self.adjudication + self.warehouse_write)
     }
 }
 
 impl std::ops::AddAssign for PhaseTimings {
     fn add_assign(&mut self, rhs: Self) {
         self.analysis += rhs.analysis;
+        self.adjudication += rhs.adjudication;
         self.warehouse_write += rhs.warehouse_write;
         self.total += rhs.total;
     }
@@ -31,7 +34,7 @@ impl std::ops::AddAssign for PhaseTimings {
 
 /// Log a one-line, stderr-only diagnostic summary of a run's phase-timing
 /// split (mirrors the `auto-jobs:` line style in `auto_jobs.rs`). `n` is the
-/// number of workers/shards summed into `timings`. Never written to any
+/// number of shards summed into `timings`. Never written to any
 /// parquet/JSONL output — diagnostic only.
 fn log_phase_timings(n: usize, timings: &PhaseTimings) {
     let pct = |d: std::time::Duration, total: std::time::Duration| -> f64 {
@@ -42,10 +45,12 @@ fn log_phase_timings(n: usize, timings: &PhaseTimings) {
         }
     };
     eprintln!(
-        "phase-timings (summed across {n} workers): total={total:.1}s analysis={a:.1}s ({ap:.1}%) warehouse-write={w:.1}s ({wp:.1}%) other={o:.1}s ({op:.1}%)",
+        "phase-timings (summed across {n} shards): total={total:.1}s analysis={a:.1}s ({ap:.1}%) adjudication={adj:.1}s ({adjp:.1}%) warehouse-write={w:.1}s ({wp:.1}%) other={o:.1}s ({op:.1}%)",
         total = timings.total.as_secs_f64(),
         a = timings.analysis.as_secs_f64(),
         ap = pct(timings.analysis, timings.total),
+        adj = timings.adjudication.as_secs_f64(),
+        adjp = pct(timings.adjudication, timings.total),
         w = timings.warehouse_write.as_secs_f64(),
         wp = pct(timings.warehouse_write, timings.total),
         o = timings.other().as_secs_f64(),
@@ -505,6 +510,7 @@ pub(crate) fn run_analyze_aat_serial(
 ) -> Result<(StringStatsReport, PhaseTimings)> {
     let run_start = std::time::Instant::now();
     let mut analysis_time = std::time::Duration::ZERO;
+    let mut adjudication_time = std::time::Duration::ZERO;
     let resume_ids = if options.resume {
         let analyses_output = options
             .analyses_output
@@ -869,6 +875,11 @@ pub(crate) fn run_analyze_aat_serial(
         }
         analysis_time += analysis_start.elapsed();
 
+        let adj_start = std::time::Instant::now();
+        let write_before = warehouse_writer
+            .as_ref()
+            .map(|w| w.write_time())
+            .unwrap_or_default();
         if let Some(writer) = &mut warehouse_writer
             && let Some(first_analysis) = analyses.first()
         {
@@ -951,6 +962,13 @@ pub(crate) fn run_analyze_aat_serial(
                 Err(error) => return Err(error),
             }
         }
+        let write_after = warehouse_writer
+            .as_ref()
+            .map(|w| w.write_time())
+            .unwrap_or_default();
+        adjudication_time += adj_start
+            .elapsed()
+            .saturating_sub(write_after.saturating_sub(write_before));
 
         let comparison_result = if comparisons_writer.is_some() || examples_writer.is_some() {
             write_comparison_rows(
@@ -1060,6 +1078,7 @@ pub(crate) fn run_analyze_aat_serial(
     };
     let timings = PhaseTimings {
         analysis: analysis_time,
+        adjudication: adjudication_time,
         warehouse_write,
         total: run_start.elapsed(),
     };
@@ -1311,19 +1330,22 @@ mod phase_timings_tests {
         use std::time::Duration;
         let mut a = PhaseTimings {
             analysis: Duration::from_secs(2),
+            adjudication: Duration::from_secs(1),
             warehouse_write: Duration::from_secs(3),
             total: Duration::from_secs(10),
         };
         let b = PhaseTimings {
             analysis: Duration::from_secs(1),
+            adjudication: Duration::from_secs(2),
             warehouse_write: Duration::from_secs(1),
             total: Duration::from_secs(4),
         };
         a += b;
         assert_eq!(a.analysis, Duration::from_secs(3));
+        assert_eq!(a.adjudication, Duration::from_secs(3));
         assert_eq!(a.warehouse_write, Duration::from_secs(4));
         assert_eq!(a.total, Duration::from_secs(14));
-        assert_eq!(a.other(), Duration::from_secs(7)); // 14 - 3 - 4
+        assert_eq!(a.other(), Duration::from_secs(4)); // 14 - 3 - 3 - 4
     }
 
     #[test]
@@ -1332,6 +1354,7 @@ mod phase_timings_tests {
         // Overlap/measurement skew must never underflow.
         let t = PhaseTimings {
             analysis: Duration::from_secs(6),
+            adjudication: Duration::from_secs(2),
             warehouse_write: Duration::from_secs(6),
             total: Duration::from_secs(10),
         };

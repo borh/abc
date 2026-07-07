@@ -44,6 +44,30 @@ range-overlap logic.
 | TEI header/profile declaration for orthographic markup | ABC |
 | Ruby readings as reading evidence | ruby oracle / future reading-evidence contract, not sentence segmentation |
 
+### Splitter compatibility gate
+
+The repository currently has two sentence splitters:
+
+- Rust: `ab_plaintext::sentence_split`
+- Clojure: `abc.text/split-japanese-sentence`
+
+They are not assumed equivalent. Before parser-IR sentence rows become a
+publication input, implementation must run both splitters over shared fixture
+texts and a representative corpus sample, then check in the divergence report.
+The minimum fixture set must include:
+
+- ordinary Japanese period splitting;
+- adjacent terminal punctuation, such as `！？`;
+- decimal points, such as `3.14`;
+- terminal punctuation followed by closing brackets or quotes, such as `。）`;
+- newline-in-paragraph behavior.
+
+If the splitters diverge, the implementation must either port the existing ABC
+edge behavior into the Rust splitter before emitting parser-IR sentence rows, or
+document each intentional boundary change in the report and tests. The
+`splitter_id` identifies the behavior after that audit, not merely the current
+implementation of `ab_plaintext::sentence_split`.
+
 ### Parser-IR contract
 
 Add two optional top-level parser-IR fields. They become required for
@@ -153,13 +177,22 @@ sentence-enabled mode with a diagnostic naming the node type and byte boundary.
 No silent boundary snapping. This keeps parser-IR honest and avoids TEI that
 appears precise but changed the tokenizer/sentence decision.
 
+Node splitting must be projection-wide, not local to a single paragraph. When a
+node is split, the converter must produce a new node vector and rewrite every
+affected `paragraphs[].node_range` and every `sentences[].node_range` against
+the new indices. Body-paragraph sentence rows must tile the paragraph node range
+and decoded UTF-8 span with no gaps or overlaps, except for explicitly empty
+body paragraphs, which produce no sentence row.
+
 ### ABC TEI rendering
 
 ABC consumes `sentences[]` when present:
 
 1. Render paragraphs from `paragraphs[]`.
 2. For each body paragraph, group sentence rows by `paragraph_id`.
-3. Render each sentence row as `<s>`.
+3. Render each sentence row as `<s>` using the existing node renderer and
+   accumulator state, so node counts, omitted records, character declarations,
+   notes, and paragraph layout attributes are preserved.
 4. Render all nodes in `sentence.node_range` inside that `<s>`.
 5. If `sentence.tags` contains `"orthographic-katakana"`, set
    `type="orthographic-katakana"`.
@@ -234,14 +267,16 @@ Required migration steps:
 
 1. ABC schema accepts `sentence_segmentation`, `sentences`, and
    `orthographic_annotations`.
-2. ABC validation adds cross-field coherence checks for sentence rows, because
+2. The splitter compatibility audit is checked in before emission is wired into
+   publication conversion.
+3. ABC validation adds cross-field coherence checks for sentence rows, because
    JSON Schema cannot verify paragraph/node-range relationships.
-3. ab-validator mirrors the updated ABC schema.
-4. ab-validator updates the AAT -> parser-IR mapping artifact target schema
+4. ab-validator mirrors the updated ABC schema.
+5. ab-validator updates the AAT -> parser-IR mapping artifact target schema
    hash and mapping version.
-5. ab-validator emits `sentences[]` for body paragraphs.
-6. ab-validator joins `orthographic_annotations` to `sentences[].tags`.
-7. ABC TEI renderer consumes `sentences[]` and emits `<s>`.
+6. ab-validator emits `sentences[]` for body paragraphs.
+7. ab-validator joins `orthographic_annotations` to `sentences[].tags`.
+8. ABC TEI renderer consumes `sentences[]` and emits `<s>`.
 
 ## Decisions
 
@@ -255,6 +290,9 @@ Required migration steps:
 | D6 | `sentences[].tags` carries `orthographic-katakana` | ABC should not reimplement orthographic overlap logic. |
 | D7 | Keep `orthographic_annotations` as provenance | Sentence tags are derived; annotation bundle remains detector evidence. |
 | D8 | Ruby readings do not affect splitting or tokenizer input | Ruby is reading evidence, not source text. |
+| D9 | Audit Rust/Clojure splitter divergence before emission | Moving ownership should not silently change publication sentence boundaries. |
+| D10 | Sentence projection rewrites node and paragraph ranges globally | Node splitting changes indices after the split point; local rewrites are stale. |
+| D11 | Keep synthetic sentence fields out of generated-probe divergence rules | Sentence rows are converter evidence, not AAT markup divergence; record them in a separate synthetic-evidence report until the mapping schema has a dedicated section. |
 
 ## Open Questions
 

@@ -38,6 +38,22 @@
           (println "request_set_id does not match request_set_identity_object"))
         1))))
 
+(defn resolve-request-set!
+  [label output-path subject-source-path]
+  (let [request-set (request-set-resolver/resolve-request-set
+                     label
+                     {:subject-source-path subject-source-path})
+        output-file (io/file output-path)
+        subjects-count (count (get-in request-set
+                                      ["request_set_identity_object"
+                                       "subjects"]))]
+    (manifest/write-json-file! output-file request-set)
+    (println "request_set:" (str output-file))
+    (println "request_set_label:" (get request-set "label"))
+    (println "request_set_id:" (get request-set "request_set_id"))
+    (println "subjects_count:" subjects-count)
+    0))
+
 (defn build-snapshot-index [label]
   (let [request-set (read-request-set label)
         plan (snapshot-index/read-snapshot-plan label)]
@@ -463,6 +479,7 @@
     "commands:"
     "  list-request-sets"
     "  explain-request-set <label>"
+    "  resolve-request-set <label> <output-path> <source-snapshot-path>"
     "  snapshot-index <request-set-label> <output-path>"
     "  reproduce <request-set-label>"
     "  validate <snapshot-root-or-index>"
@@ -474,6 +491,8 @@
                         :run (fn [] (list-request-sets!))}
    "explain-request-set" {:args 1
                           :run explain-request-set!}
+   "resolve-request-set" {:args 3
+                          :run resolve-request-set!}
    "snapshot-index" {:args 2
                      :run snapshot-index!}
    "reproduce" {:args 1

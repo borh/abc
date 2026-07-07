@@ -129,6 +129,33 @@
       (finally
         (delete-tree! root)))))
 
+(deftest resolve-request-set-can-use-supplied-source-snapshot-test
+  (let [root (temp-dir "abc-supplied-source-snapshot")
+        snapshot-file (io/file root "source-snapshot.json")]
+    (try
+      (let [snapshot (source-snapshot!
+                      snapshot-file
+                      [{"work_id" "000777"
+                        "work_content_hash" (files/example-hash "77")
+                        "metadata_record_hash" (files/example-hash "78")}])
+            resolved (resolver/resolve-request-set
+                      "full-corpus-basic-ja"
+                      {:subject-source-path (str snapshot-file)})
+            identity-object (get resolved "request_set_identity_object")]
+        (is (= (get snapshot "snapshot_hash")
+               (get identity-object "corpus_snapshot_hash")))
+        (is (= [{"source_id" "aozora:000777"
+                 "work_id" "aozora:000777"
+                 "work_content_hash" (files/example-hash "77")
+                 "metadata_record_hash" (files/example-hash "78")}]
+               (get identity-object "subjects")))
+        (is (= (str snapshot-file)
+               (get-in resolved ["resolution" "subject_source_path"])))
+        (is (= (analysis-identity/request-set-id resolved)
+               (get resolved "request_set_id"))))
+      (finally
+        (delete-tree! root)))))
+
 (deftest resolve-request-set-rejects-stale-source-snapshot-hash-test
   (let [root (temp-dir "abc-stale-source-snapshot")
         snapshot-file (io/file root "source-snapshot.json")]

@@ -211,6 +211,47 @@
       (finally
         (delete-tree! root)))))
 
+(deftest resolve-request-set-command-uses-generated-source-snapshot-test
+  (let [root (fixture/temp-dir "abc-soranoha-resolve-source-snapshot")
+        input-root (io/file root "materialized")
+        source-snapshot-root (io/file root "source-snapshot")
+        request-set-file (io/file root "full-corpus-basic-ja.json")]
+    (try
+      (fixture/materialized-work! input-root
+                                  {:slug "alpha"
+                                   :title "一"
+                                   :work-id "000001"
+                                   :person-id "000101"
+                                   :work-hash (fixture/example-hash "a1")})
+      (with-out-str
+        (is (zero? (soranoha/run!
+                    ["source-snapshot"
+                     (str input-root)
+                     (str source-snapshot-root)
+                     "unit-test-source-snapshot"
+                     "2026-07-07"]))))
+      (let [snapshot-file (io/file source-snapshot-root "source-snapshot.json")
+            out (with-out-str
+                  (is (zero? (soranoha/run!
+                              ["resolve-request-set"
+                               "full-corpus-basic-ja"
+                               (str request-set-file)
+                               (str snapshot-file)]))))
+            resolved (files/read-json request-set-file)
+            snapshot (files/read-json snapshot-file)]
+        (is (.exists request-set-file))
+        (is (= (get snapshot "snapshot_hash")
+               (get-in resolved ["request_set_identity_object"
+                                 "corpus_snapshot_hash"])))
+        (is (= 1
+               (count (get-in resolved ["request_set_identity_object"
+                                        "subjects"]))))
+        (is (string/includes? out (str request-set-file)))
+        (is (string/includes? out (get resolved "request_set_id")))
+        (is (string/includes? out "subjects_count: 1")))
+      (finally
+        (delete-tree! root)))))
+
 (deftest unknown-command-returns-nonzero-test
   (let [err (java.io.StringWriter.)]
     (binding [*err* err]

@@ -354,3 +354,35 @@ Run `soranoha reproduce demo-basic-ja`, `soranoha validate target/soranoha/demo-
 - [x] Run `git diff --check`.
 - [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
 - [x] Run `nix flake check`.
+
+### Task 16: Source-Snapshot Backed Request-Set Resolution Command
+
+**Files:**
+- Modify: `abc/src/abc/tools/request_set_resolver.clj`
+- Modify: `abc/src/abc/tools/soranoha.clj`
+- Modify: `abc/test/abc/tools/request_set_resolver_test.clj`
+- Modify: `abc/test/abc/tools/soranoha_test.clj`
+
+**Interfaces:**
+- Produces: `soranoha resolve-request-set <label> <output-path> <source-snapshot-path>`.
+- Consumes: source snapshots produced by `soranoha source-snapshot`.
+
+- [x] Add failing resolver test for resolving `full-corpus-basic-ja` against a supplied source snapshot descriptor.
+- [x] Add failing Soranoha CLI test that generates a source snapshot, resolves a full-corpus request set from it, and writes canonical JSON.
+- [x] Implement `:subject-source-path` resolver override for definitions that already declare `subject_source`.
+- [x] Implement the `resolve-request-set` Soranoha command and print output path, request-set id, and subject count.
+- [x] Run focused request-set resolver and Soranoha tests.
+
+### Task 17: Source-Snapshot Backed Request-Set Resolution Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed request-set resolution command.
+- Produces: verified bridge from generated source snapshot descriptors to canonical request-set JSON.
+
+- [x] Run focused request-set/Soranoha/source-snapshot/snapshot tests.
+- [x] Run `git diff --check`.
+- [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
+- [x] Run `nix flake check`.

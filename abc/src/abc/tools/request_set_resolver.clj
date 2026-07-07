@@ -147,6 +147,15 @@
        :subjects (mapv #(source-snapshot-subject subject-source %)
                        inputs)})))
 
+(defn- definition-with-source-snapshot-path [definition subject-source-path]
+  (if subject-source-path
+    (if (get definition "subject_source")
+      (assoc-in definition ["subject_source" "path"] subject-source-path)
+      (throw (ex-info "Source snapshot path override requires a subject_source definition"
+                      {:label (get definition "label")
+                       :subject_source_path subject-source-path})))
+    definition))
+
 (defn- resolve-subject-coordinate [definition]
   (let [inline-subjects (get definition "subjects")
         subject-source (get definition "subject_source")]
@@ -180,9 +189,11 @@
 (defn resolve-request-set
   ([label]
    (resolve-request-set label {:resolved-at default-resolved-at}))
-  ([label {:keys [resolved-at]
+  ([label {:keys [resolved-at subject-source-path]
            :or {resolved-at default-resolved-at}}]
-   (let [definition (read-request-set-definition label)
+   (let [definition (definition-with-source-snapshot-path
+                      (read-request-set-definition label)
+                      subject-source-path)
          definition-label (get definition "label")
          subject-coordinate (resolve-subject-coordinate definition)
          resolved-recipes (mapv #(resolve-analysis-recipe % resolved-at)
@@ -206,9 +217,12 @@
                       "request_set_identity_object" identity-object
                       "resolved_recipe_labels" (mapv :label resolved-recipes)
                       "resolved_tokenizer_profile_labels" tokenizer-labels
-                      "resolution" {"source_definition_path" (request-set-definition-path label)
-                                    "resolved_at" resolved-at
-                                    "resolver_id" resolver-id}}]
+                      "resolution" (cond-> {"source_definition_path" (request-set-definition-path label)
+                                            "resolved_at" resolved-at
+                                            "resolver_id" resolver-id}
+                                     subject-source-path
+                                     (assoc "subject_source_path"
+                                            subject-source-path))}]
      (when-not (= label definition-label)
        (throw (ex-info "Request-set definition label does not match path label"
                        {:path_label label

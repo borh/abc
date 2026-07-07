@@ -3,6 +3,7 @@
 .mypy_cache/
 .cargo/
 .soranoha/
+.worktrees/
 scratch/
 out/
 result

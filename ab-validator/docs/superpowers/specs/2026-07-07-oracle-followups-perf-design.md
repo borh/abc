@@ -65,25 +65,36 @@ repeated kana is a normal hiragana that participates in every downstream layer
 *already-folded* previous hiragana, the katakana vs hiragana form of the mark is
 irrelevant after this step.
 
-New pass (replaces the step-1 `filter_map` collect):
+A mark repeats the previous **repeatable kana**, which is *not* the prolongation
+mark `ー` (kept by `kana_to_hiragana`) — a mark after `ー` must repeat the kana
+before it, and chained marks (`ゝゝ`) repeat each other's kana output. So the pass
+tracks `last_kana` explicitly rather than reading `chars.last()`:
 
 ```rust
 let mut chars: Vec<char> = Vec::new();
+let mut last_kana: Option<char> = None; // last repeatable kana (never 'ー')
 for ch in reading.nfkc() {
     match ch {
         'ゝ' | 'ヽ' => {
-            if let Some(&prev) = chars.last() {
-                chars.push(unvoiced_base(prev));
+            if let Some(prev) = last_kana {
+                let r = unvoiced_base(prev);
+                chars.push(r);
+                last_kana = Some(r); // so 'ゝゝ' chains
             }
         }
         'ゞ' | 'ヾ' => {
-            if let Some(&prev) = chars.last() {
-                chars.push(voiced_form(unvoiced_base(prev)));
+            if let Some(prev) = last_kana {
+                let r = voiced_form(unvoiced_base(prev));
+                chars.push(r);
+                last_kana = Some(r);
             }
         }
         _ => {
             if let Some(h) = kana_to_hiragana(ch) {
                 chars.push(h);
+                if h != 'ー' {
+                    last_kana = Some(h);
+                }
             }
         }
     }
@@ -101,6 +112,11 @@ the input unchanged when no voiced form exists.
   the real word: `こゝろ == こころ`. Add both: `こゝろ == こころ`, and a voiced case
   `いすゞ == いすず` (`ゞ` after `す` → `ず`).
 - Katakana mark: `normalize("スヽメ") == normalize("ススメ")`.
+- Chained marks: `normalize("たゝゝ") == normalize("たたた")` (`last_kana` follows the
+  mark's own output).
+- Mark after `ー` repeats the pre-`ー` kana, not `ー`: `normalize("たーゝ") ==
+  normalize("たーた")` (`last_kana` skips the prolongation mark). Contrived input, but
+  pins the `last_kana`-vs-`chars.last()` decision.
 - Idempotence holds (expansion produces plain kana; re-normalizing is a no-op).
 - Mark at start is dropped: `normalize("ゝあ") == normalize("あ")`.
 
@@ -123,22 +139,30 @@ They are only separable by parsing `evidence_detail` and checking every analyzer
 
 ### Three-way `classification`
 
-Computed in `adjudicate`, per emitted row:
+The pivot is whether **any analyzer produced a *comparable reading*** — i.e. exactly
+tiled the base **and** every covered morpheme had a reading feature, which the code
+already records as `align == "exact"`. The other two `align` values both mean "no
+comparable reading": `boundary-misalign` (couldn't tile) *and* `no-reading` (tiled, but
+a morpheme lacked the reading feature). Grouping those two is deliberate — neither
+yields a reading to weigh against the editor, so neither is a dictionary-development
+signal. Computed in `adjudicate`, per emitted row:
 
-| winners | any analyzer `align == "exact"` | `classification`   |
-|---------|--------------------------------|--------------------|
-| ≥1      | (any)                          | `resolved`         |
-| 0       | yes                            | `nonstandard_ruby` |
-| 0       | no                             | `unalignable`      |
+| winners | any analyzer produced a comparable reading (`align == "exact"`) | `classification`       |
+|---------|----------------------------------------------------------------|------------------------|
+| ≥1      | (yes, by construction — a winner matched)                      | `resolved`             |
+| 0       | yes                                                            | `nonstandard_ruby`     |
+| 0       | no (all `boundary-misalign` or `no-reading`)                   | `no_comparable_reading`|
 
-Rationale for "any exact" (not "all exact"): one analyzer producing a real,
-comparable reading that disagrees with the editor is already evidence of a genuine
-reading the dictionaries lack; a co-occurring alignment failure in another analyzer
-does not weaken that. `resolved` keeps its current meaning (unique winner *or*
-ambiguous ≥2-winner — the winner column already distinguishes those).
+Rationale for "any" (not "all"): one analyzer producing a real, comparable reading that
+disagrees with the editor is already evidence of a genuine reading the dictionaries
+lack; a co-occurring alignment/reading failure in another analyzer does not weaken that.
+`resolved` keeps its current meaning (unique winner *or* ambiguous ≥2-winner — the
+winner column already distinguishes those). The `no_comparable_reading` bucket is not a
+dead end: the exact per-analyzer reason (`boundary-misalign` vs `no-reading`) is still in
+`evidence_detail.per_analyzer[*].align`.
 
-`adjudicate` tracks a single `any_exact: bool` accumulated in the existing per-analyzer
-loop (it already computes each `reading.align`). `evidence_detail`'s embedded
+`adjudicate` tracks a single `any_comparable: bool` accumulated in the existing
+per-analyzer loop (set when `reading.align == "exact"`). `evidence_detail`'s embedded
 `classification` string uses the identical value (kept for provenance).
 
 ### Schema delta (additive)
@@ -154,17 +178,34 @@ Add `classification VARCHAR` to `nway_region_oracle_evidence`, positioned after
 - `sql/morph_views.sql` + `sql.rs`: add `classification` to the presence-probed
   `warehouse_nway_region_oracle_evidence` view select list.
 
-`SCHEMA_VERSION` stays **2**: the table is a v2 presence-probed sidecar introduced in
-the same cycle, no external consumer depends on its column set yet, and every run
-regenerates from scratch. (If a consumer later pins the column set, that is when the
-version moves — not now.)
+**`SCHEMA_VERSION` stays 2, with an explicit reader-stability caveat.** Presence-probing
+proves the *table* exists, not that `classification` exists — and the oracle view is
+`SELECT * FROM read_parquet(...)`, so it creates cleanly over an old run but silently
+omits the column. A *query* that references `classification` (a summarizer, or Phase 5's
+RRF) would then fail on a pre-this-change oracle run. We do **not** bump `SCHEMA_VERSION`
+(it is a warehouse-wide signal and the non-oracle tables are genuinely unchanged; bumping
+would falsely mark the whole schema as evolved) and we do **not** add JSON-backfill code
+(dead weight for a young sidecar). Instead this is documented and enforced by regen:
+
+- The prior canonical oracle run (`full-2026-07-07_055139-jobs8`) is **pre-classification
+  and not reader-stable** for any `classification`-referencing query.
+- The validation run is a **clean full regen** that supersedes it; the plan's Validation
+  Record states the prior run must be cleaned/superseded so no mixed-shape oracle sidecar
+  is queried under the new views.
+
+If a future need arises to read old and new oracle runs side by side, that is the trigger
+to add a column-presence fallback — out of scope here.
 
 ### Tests
 
 - `zero_match_is_nonstandard_ruby` (existing): both analyzers tile exactly but disagree →
   `classification == "nonstandard_ruby"`; assert the new column, not just the JSON.
-- New `all_analyzers_unalignable_is_unalignable`: every analyzer `boundary-misalign`,
-  zero winners → `classification == "unalignable"`.
+- New `all_boundary_misalign_is_no_comparable_reading`: every analyzer `boundary-misalign`,
+  zero winners → `classification == "no_comparable_reading"`.
+- New `all_no_reading_is_no_comparable_reading`: analyzers exactly tile the base but every
+  covered morpheme lacks a reading feature (`align == "no-reading"`), zero winners →
+  `classification == "no_comparable_reading"` (guards the finding-3 distinction: tiled but
+  unreadable is *not* labeled resolved/nonstandard).
 - New `resolved_row_classification`: unique winner → `"resolved"`.
 - `oracle_pipeline_from_aat_to_parquet` (existing e2e): assert the column round-trips to
   Parquet (read back one row's `classification`).
@@ -218,6 +259,14 @@ under-budget. This is acceptable and guarded, not ignored:
   sweep; any regression is measured before it can OOM a smaller host.
 - hinoki has 88 GiB available against a projected 36–59 GiB peak, so the sweep runs
   with wide headroom.
+- **The default `--jobs 0` (auto) path is validated too, not just explicit jobs.**
+  `auto_jobs` is calibrated on the old disjoint-phase behavior, so its budget could now
+  under-provision on a *smaller* host. The sweep includes a `--jobs 0` point; if its
+  measured peak RSS exceeds the model's prediction for the chosen count by a meaningful
+  margin, the plan recalibrates `auto_jobs` (a small overlap surcharge: raise
+  `PER_ANALYZER_BYTES` or add a `large_lanes × large_doc_overhead` term) rather than
+  leaving the default silently optimistic. Data-driven: no constant changes unless the
+  measurement demands them.
 
 ### Tests (`WarehouseWorkQueue` unit tests)
 
@@ -242,19 +291,44 @@ Prereq: `git pull` on hinoki, rebuild release binary.
    a few hundred regular) at the current default and confirm the oracle still emits and
    the new column populates.
 2. **Jobs sweep for P1:** on the full corpus, measure wall-clock **and peak RSS**
-   (`/usr/bin/time -v`) at `--jobs 8`, `--jobs 12`, `--jobs 16`. Expected: P1 removes
-   the tail so higher jobs now improve wall-clock (the pre-P1 recipe found 60 min@19 >
-   42 min@10 *because of* the tail). Record the sweep table.
-3. **Canonical combined run** at the sweep-chosen optimum. Confirm:
-   - Purely additive: every prior table row-count-identical to
-     `full-2026-07-07_055139-jobs8`.
-   - `classification` column present; `resolved + nonstandard_ruby + unalignable` sum
-     equals the prior total oracle row count; `nonstandard_ruby` count drops from the
-     prior 1,901,333 toward the ~942k genuine-gap figure (the balance now `unalignable`).
-   - Iteration-mark spot-checks: `武士《ものゝふ》`-class rubies now resolve/align where
-     they previously fell into the structural bucket.
-4. Record wall-clock delta and the classification breakdown in the plan's Validation
-   Record.
+   (`/usr/bin/time -v`) at `--jobs 8`, `--jobs 12`, `--jobs 16`, **and `--jobs 0`**
+   (auto). Expected: P1 removes the tail so higher jobs now improve wall-clock (the
+   pre-P1 recipe found 60 min@19 > 42 min@10 *because of* the tail). Record the sweep
+   table (jobs, wall-clock, peak RSS). Compare the `--jobs 0` peak RSS to the `auto_jobs`
+   model prediction; recalibrate per the memory-effect note only if the data demands it.
+3. **Canonical combined run** at the sweep-chosen optimum, as a **clean full regen** that
+   supersedes `full-2026-07-07_055139-jobs8` (see the schema reader-stability caveat —
+   the prior oracle sidecar is pre-`classification` and must not be queried under the new
+   views). Validate against the prior run with the invariants below.
+
+**Validation invariants (finding 1 — A legitimately changes oracle rows, so a total-count
+match is the *wrong* invariant):**
+
+- **Non-oracle tables:** every table other than `nway_region_oracle_evidence` is
+  **row-count-identical** to the prior run. A and B touch only the oracle path;
+  `reading_norm` is oracle-only; P1 reorders shard processing but changes no row's
+  content — so morphemes, projection_spans, nway_regions, etc. must not move.
+- **Oracle table:** compare **keyed** on
+  `(source_id, text_id, region_index, projected_char_start, projected_char_end)` and
+  bucket the diff, rather than matching totals:
+  - **dropped** — emitted before, absent now: iteration-mark expansion turned a
+    false non-match into an all-match, and all-match rows are correctly *not* emitted
+    (`ruby.rs` emit-iff-≥1-loser). **Expected > 0**; these are the A wins.
+  - **classification-changed** — same key, `classification` moved (chiefly
+    `nonstandard_ruby → no_comparable_reading` from B's split, or `→ resolved` from A).
+  - **newly-emitted** — present now, absent before. **Expected ≈ 0**; a non-zero count
+    means normalization turned a prior *match* into a non-match (a regression signal) and
+    must be inspected, not waved through.
+  - **unchanged** — same key, same fields.
+  - Report all four counts. Sanity: `prior_total − dropped + newly ==` new total, and the
+    new `nonstandard_ruby` count moves off the prior 1,901,333 toward the ~942k
+    genuine-gap figure (balance now `no_comparable_reading`), minus whatever A dropped.
+- **Iteration-mark spot-checks:** `武士《ものゝふ》`-class rubies appear in the **dropped**
+  or `→ resolved` buckets, confirming they now match instead of inflating non-matches.
+
+4. Record the sweep table, wall-clock delta, the four-bucket oracle diff, and the
+   classification breakdown in the plan's Validation Record. This is the "small validation
+   diff report" the invariant requires.
 
 ## Testing strategy summary
 

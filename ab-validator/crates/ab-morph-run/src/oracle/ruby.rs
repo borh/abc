@@ -475,13 +475,21 @@ mod tests {
 
     #[test]
     fn resolved_row_classification() {
-        let a = analysis("vibrato", vec![morph("東京", 0..2, &[("kana", "トウケイ")])]);
+        let a = analysis(
+            "vibrato",
+            vec![morph("東京", 0..2, &[("kana", "トウケイ")])],
+        );
         let b = analysis(
             "sudachi-c",
             vec![morph("東京", 0..2, &[("reading_form", "トウキョウ")])],
         );
         let rows = adjudicate(
-            "r", "s", "t", &[base(0, 2, "とうきょう")], &[a, b], &regions(),
+            "r",
+            "s",
+            "t",
+            &[base(0, 2, "とうきょう")],
+            &[a, b],
+            &regions(),
         );
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].classification, "resolved");

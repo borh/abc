@@ -165,12 +165,11 @@
     (files/read-json path)))
 
 (defn- orthographic-sentence-normalization? [parser-ir]
-  (or (contains? parser-ir "sentence_segmentation")
-      (boolean
-       (some (fn [sentence]
-               (some #{"orthographic-katakana"}
-                     (get sentence "tags" [])))
-             (get parser-ir "sentences" [])))))
+  (boolean
+   (some (fn [sentence]
+           (some #{"orthographic-katakana"}
+                 (get sentence "tags" [])))
+         (get parser-ir "sentences" []))))
 
 (defn- corpus-snapshot-hash [source-manifest]
   (or (get-in source-manifest ["manifest_identity_object" "corpus_snapshot_hash"])

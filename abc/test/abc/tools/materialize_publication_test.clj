@@ -252,6 +252,62 @@
       (finally
         (delete-tree! work-dir)))))
 
+(deftest materialize-publication-does-not-declare-orthographic-normalization-for-plain-sentences-test
+  (let [work-dir (temp-dir "abc-materialize-publication-plain-sentences")
+        out-dir (io/file work-dir "out")
+        parser-ir-file (io/file work-dir "parser-ir.json")]
+    (try
+      (abc-json/write-deterministic-json-file!
+       parser-ir-file
+       {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+        "schema_hash" "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340"
+        "source" {"work_content_hash" (files/example-hash "11")
+                  "encoding" "UTF-8"
+                  "normalization" "source"}
+        "nodes" [{"type" "text"
+                  "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                  "text" "吾輩は猫である。"}]
+        "paragraphs" [{"id" "p000000"
+                       "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                       "span_source" "direct"
+                       "node_range" {"start" 0 "end" 1}
+                       "role" "body"
+                       "source_pointer" "blocks[0]"
+                       "classification" "direct"}]
+        "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
+                                 "splitter_id" "ab-plaintext-japanese-v1"
+                                 "coordinate_system" "decoded_utf8"
+                                 "coverage" "body-paragraphs"}
+        "sentences" [{"id" "s000000"
+                      "paragraph_id" "p000000"
+                      "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                      "node_range" {"start" 0 "end" 1}
+                      "tags" []
+                      "orthographic_annotation_indices" []}]
+        "orthographic_annotations" {"work_id" "000000"
+                                    "work_content_hash" (files/example-hash "11")
+                                    "coordinate_system" "decoded_utf8"
+                                    "detector_id" "HeuristicV1"
+                                    "annotations" []}
+        "warnings" []
+        "errors" []})
+      (materialize/materialize-publication!
+       {:parser-ir-path (str parser-ir-file)
+        :source-manifest-path "examples/v0/example-work/source.manifest.json"
+        :metadata-record-path "examples/v0/example-work/metadata-record.json"
+        :persons-dir "examples/v0/example-persons"
+        :output-dir out-dir
+        :generated-at generated-at})
+      (let [tei-text (slurp (io/file out-dir "tei.xml"))]
+        (is (not (re-find #"<(?:[A-Za-z0-9_-]+:)?normalization\s+method=\"markup\""
+                          tei-text)))
+        (is (not (string/includes? tei-text "orthographic-katakana")))
+        (is (= "passed"
+               (get (files/read-json (io/file out-dir "tei-validation-result.json"))
+                    "status"))))
+      (finally
+        (delete-tree! work-dir)))))
+
 (deftest materialize-publication-requires-sentence-rows-test
   (let [work-dir (temp-dir "abc-materialize-publication-missing-sentences")
         out-dir (io/file work-dir "out")

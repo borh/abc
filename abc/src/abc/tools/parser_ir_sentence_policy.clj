@@ -3,6 +3,55 @@
 (defn- sentence-row-error-prefix [sentence]
   (str "parser IR sentence " (get sentence "id")))
 
+(defn- orthographic-tagged? [sentence]
+  (boolean
+   (some #{"orthographic-katakana"}
+         (get sentence "tags" []))))
+
+(defn- valid-annotation-index? [annotations index]
+  (and (integer? index)
+       (<= 0 index)
+       (< index (count annotations))))
+
+(defn- valid-range? [rng]
+  (let [start (get rng "start")
+        end (get rng "end")]
+    (and (integer? start)
+         (integer? end)
+         (<= start end))))
+
+(defn- range-label [rng]
+  (str (get rng "start") ".." (get rng "end")))
+
+(defn- ranges-overlap? [left right]
+  (and (valid-range? left)
+       (valid-range? right)
+       (< (get left "start") (get right "end"))
+       (< (get right "start") (get left "end"))))
+
+(defn- annotation-span-errors [sentence annotations annotation-indices]
+  (let [sid (get sentence "id")
+        sentence-span (get sentence "span")]
+    (vec
+     (keep
+      (fn [index]
+        (when (valid-annotation-index? annotations index)
+          (let [annotation-range (get (nth annotations index)
+                                      "source_byte_range")]
+            (cond
+              (not (valid-range? annotation-range))
+              (str "parser IR sentence " sid
+                   " orthographic annotation index " index
+                   " has invalid source_byte_range")
+
+              (not (ranges-overlap? annotation-range sentence-span))
+              (str "parser IR sentence " sid
+                   " orthographic annotation index " index
+                   " range " (range-label annotation-range)
+                   " does not overlap sentence span "
+                   (range-label sentence-span))))))
+      annotation-indices))))
+
 (defn- sentence-tiling-errors [paragraph sentences]
   (let [pid (get paragraph "id")
         paragraph-node-range (get paragraph "node_range")
@@ -86,39 +135,52 @@
                pr (get paragraph "node_range")
                span (get sentence "span")
                ps (get paragraph "span")
-               tags (set (get sentence "tags" []))
-               annotation-indices (get sentence "orthographic_annotation_indices" [])]
-           (cond-> []
-             (nil? paragraph)
-             (conj (str "parser IR sentence " sid " references non-body paragraph " pid))
+               tagged? (orthographic-tagged? sentence)
+               annotation-indices (get sentence "orthographic_annotation_indices" [])
+               invalid-annotation-index? (some #(not (valid-annotation-index?
+                                                      annotations
+                                                      %))
+                                               annotation-indices)]
+           (into
+            (cond-> []
+              (nil? paragraph)
+              (conj (str "parser IR sentence " sid " references non-body paragraph " pid))
 
-             (and paragraph
-                  (not (<= (get pr "start") (get nr "start") (get nr "end") (get pr "end"))))
-             (conj (str "parser IR sentence " sid " node_range "
-                        (get nr "start") ".." (get nr "end")
-                        " is outside paragraph " pid " node_range "
-                        (get pr "start") ".." (get pr "end")))
+              (and paragraph
+                   (not (<= (get pr "start") (get nr "start") (get nr "end") (get pr "end"))))
+              (conj (str "parser IR sentence " sid " node_range "
+                         (get nr "start") ".." (get nr "end")
+                         " is outside paragraph " pid " node_range "
+                         (get pr "start") ".." (get pr "end")))
 
-             (and paragraph
-                  (not (<= (get ps "start") (get span "start") (get span "end") (get ps "end"))))
-             (conj (str "parser IR sentence " sid " span "
-                        (get span "start") ".." (get span "end")
-                        " is outside paragraph " pid " span "
-                        (get ps "start") ".." (get ps "end")))
+              (and paragraph
+                   (not (<= (get ps "start") (get span "start") (get span "end") (get ps "end"))))
+              (conj (str "parser IR sentence " sid " span "
+                         (get span "start") ".." (get span "end")
+                         " is outside paragraph " pid " span "
+                         (get ps "start") ".." (get ps "end")))
 
-             (not (<= 0 (get nr "start" -1) (get nr "end" -1) (count nodes)))
-             (conj (str "parser IR sentence " sid " node_range is outside nodes[] length "
-                        (count nodes)))
+              (not (<= 0 (get nr "start" -1) (get nr "end" -1) (count nodes)))
+              (conj (str "parser IR sentence " sid " node_range is outside nodes[] length "
+                         (count nodes)))
 
-             (and (contains? tags "orthographic-katakana")
-                  (empty? annotation-indices))
-             (conj (str "parser IR sentence " sid
-                        " has orthographic-katakana tag without annotation indices"))
+              (and tagged?
+                   (empty? annotation-indices))
+              (conj (str "parser IR sentence " sid
+                         " has orthographic-katakana tag without annotation indices"))
 
-             (some #(or (not (integer? %)) (neg? %) (>= % (count annotations)))
-                   annotation-indices)
-             (conj (str "parser IR sentence " sid
-                        " has orthographic annotation index outside annotations[]")))))
+              (and (seq annotation-indices)
+                   (not tagged?))
+              (conj (str "parser IR sentence " sid
+                         " has orthographic annotation indices without orthographic-katakana tag"))
+
+              invalid-annotation-index?
+              (conj (str "parser IR sentence " sid
+                         " has orthographic annotation index outside annotations[]")))
+            (when tagged?
+              (annotation-span-errors sentence
+                                      annotations
+                                      annotation-indices)))))
        (map-indexed vector sentences))
       (mapcat
        (fn [paragraph]

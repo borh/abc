@@ -1125,6 +1125,18 @@
             (assoc-in sentence-parser-ir-fixture
                       ["sentences" 0 "orthographic_annotation_indices"]
                       [1])))))
+  (testing "rejects annotation index without orthographic tag"
+    (is (= ["parser IR sentence s000000 has orthographic annotation indices without orthographic-katakana tag"]
+           (validate/parser-ir-sentence-coherence-errors
+            (assoc-in sentence-parser-ir-fixture
+                      ["sentences" 0 "tags"]
+                      [])))))
+  (testing "rejects orthographic annotation outside sentence span"
+    (is (= ["parser IR sentence s000001 orthographic annotation index 0 range 0..24 does not overlap sentence span 24..48"]
+           (validate/parser-ir-sentence-coherence-errors
+            (-> sentence-parser-ir-fixture
+                (assoc-in ["sentences" 1 "tags"] ["orthographic-katakana"])
+                (assoc-in ["sentences" 1 "orthographic_annotation_indices"] [0]))))))
   (testing "rejects non-empty body paragraph with no sentence rows"
     (is (= ["parser IR body paragraph p000001 has no sentence rows"]
            (validate/parser-ir-sentence-coherence-errors

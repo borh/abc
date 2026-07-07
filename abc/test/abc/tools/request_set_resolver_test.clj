@@ -4,6 +4,7 @@
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.request-set-resolver :as resolver]
+            [abc.tools.schema :as schema]
             [abc.tools.source-snapshot-fixture :as fixture]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]))
@@ -23,6 +24,18 @@
    "pack_policy" {"schema_id" "https://w3id.org/abc/policies/request-set-pack-policy-v1"
                   "policy_id" "no-pack-v1"
                   "pack_kind" "none"}})
+
+(defn- tokenizer-profile-definition []
+  (assoc (source-snapshot-definition "unused-source-snapshot.json")
+         "label" "tokenizer-profile-basic-ja"
+         "corpus_snapshot_hash" (files/example-hash "aa")
+         "subjects" [{"source_id" "aozora:000001"
+                      "work_id" "aozora:000001"
+                      "work_content_hash" (files/example-hash "bb")
+                      "metadata_record_hash" nil}]
+         "subject_source" nil
+         "analysis_recipe_ids" []
+         "tokenizer_profile_ids" ["fixture-tokenizer-ja-v1"]))
 
 (deftest resolve-request-set-computes-identity-from-definition-test
   (let [resolved (resolver/resolve-request-set "smoke-basic-ja")
@@ -56,6 +69,30 @@
        clojure.lang.ExceptionInfo
        #"Unknown request set"
        (resolver/resolve-request-set "missing-basic-ja"))))
+
+(deftest resolve-request-set-resolves-tokenizer-profile-labels-test
+  (with-redefs [resolver/read-request-set-definition
+                (fn [_] (tokenizer-profile-definition))
+                resolver/request-set-definition-path
+                (fn [_] "unit/tokenizer-profile-basic-ja.json")]
+    (let [resolved (resolver/resolve-request-set "tokenizer-profile-basic-ja")
+          identity-object (get resolved "request_set_identity_object")
+          profile (files/read-json "data/tokenizer-profiles/fixture-tokenizer-ja-v1.json")
+          profile-hash (analysis-identity/tokenizer-profile-hash profile)
+          profile-label (first (get resolved "resolved_tokenizer_profile_labels"))]
+      (is (= [profile-hash]
+             (get identity-object "tokenizer_profile_hashes")))
+      (is (= "fixture-tokenizer-ja-v1"
+             (get profile-label "profile_id")))
+      (is (= profile-hash
+             (get profile-label "tokenizer_profile_hash")))
+      (is (re-matches files/hash-pattern
+                      (get profile-label "registry_entry_hash")))
+      (is (nil? (schema/validation-errors
+                 (schema/read-schema "schemas/request-set.schema.json")
+                 resolved)))
+      (is (= (analysis-identity/request-set-id resolved)
+             (get resolved "request_set_id"))))))
 
 (deftest full-corpus-request-sets-use-source-snapshot-subject-source-test
   (doseq [label ["full-corpus-publication-basic-ja"

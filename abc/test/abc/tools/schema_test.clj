@@ -15,7 +15,8 @@
    "schemas/parser-ir-publication-preservation.schema.json" "0.2.0"
    "schemas/request-set.schema.json" "0.1.1"
    "schemas/source-region-coverage.schema.json" "0.2.1"
-   "schemas/snapshot-index.schema.json" "0.1.0"})
+   "schemas/snapshot-index.schema.json" "0.1.0"
+   "schemas/tokenizer-profile.schema.json" "0.1.0"})
 
 (deftest cross-project-schemas-carry-explicit-versions-test
   (doseq [[path expected-version] cross-project-schema-versions]
@@ -76,3 +77,14 @@
            (get result "analysis_recipe_hash")))
     (is (nil? (schema/validation-errors recipe-schema recipe)))
     (is (nil? (schema/validation-errors result-schema result)))))
+
+(deftest tokenizer-profile-schema-fixtures-validate-test
+  (let [profile-schema (schema/read-schema "schemas/tokenizer-profile.schema.json")
+        profile (files/read-json "data/tokenizer-profiles/fixture-tokenizer-ja-v1.json")]
+    (is (= "https://w3id.org/abc/schemas/tokenizer-profile.schema.json"
+           (get profile "schema_id")))
+    (is (= (manifest/schema-hash "schemas/tokenizer-profile.schema.json")
+           (get profile "schema_hash")))
+    (is (re-matches files/hash-pattern
+                    (analysis-identity/tokenizer-profile-hash profile)))
+    (is (nil? (schema/validation-errors profile-schema profile)))))

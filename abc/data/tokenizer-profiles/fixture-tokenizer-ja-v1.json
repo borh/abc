@@ -1,0 +1,29 @@
+{
+  "dictionary": {
+    "archive_hash": "sha256:3000000000000000000000000000000000000000000000000000000000000001",
+    "build_options_hash": "sha256:3000000000000000000000000000000000000000000000000000000000000002",
+    "license": "fixture-only",
+    "name": "fixture-unidic",
+    "version": "0.1.0"
+  },
+  "encoding": "UTF-8",
+  "determinism_tier": "exact",
+  "fixture_evidence_hash": "sha256:4000000000000000000000000000000000000000000000000000000000000001",
+  "input_normalization_policy_hash": "sha256:1000000000000000000000000000000000000000000000000000000000000001",
+  "locale": "ja-JP",
+  "profile_id": "fixture-tokenizer-ja-v1",
+  "profile_version": "0.1.0",
+  "schema_hash": "sha256:e487fdf65b70fa4de0d90db28654e46154a3ea67dac1d4243c73c54d8303dc90",
+  "schema_id": "https:\/\/w3id.org\/abc\/schemas\/tokenizer-profile.schema.json",
+  "thread_policy": {
+    "mode": "single-thread"
+  },
+  "token_granularity": "short-unit-word",
+  "token_output_schema_hash": "sha256:5000000000000000000000000000000000000000000000000000000000000001",
+  "tokenizer": {
+    "build_hash": "sha256:2000000000000000000000000000000000000000000000000000000000000001",
+    "build_options_hash": "sha256:2000000000000000000000000000000000000000000000000000000000000002",
+    "name": "fixture-tokenizer",
+    "version": "0.1.0"
+  }
+}

@@ -20,6 +20,9 @@
 (def analysis-recipes-dir
   "data/analysis-recipes")
 
+(def tokenizer-profiles-dir
+  "data/tokenizer-profiles")
+
 (def resolver-id
   "abc.tools.request-set-resolver/v1")
 
@@ -60,6 +63,9 @@
 (defn- analysis-recipe-path [recipe-id]
   (str analysis-recipes-dir "/" recipe-id ".json"))
 
+(defn- tokenizer-profile-path [profile-id]
+  (str tokenizer-profiles-dir "/" profile-id ".json"))
+
 (defn- read-analysis-recipe [recipe-id]
   (let [path (analysis-recipe-path recipe-id)
         file (io/file path)]
@@ -69,18 +75,27 @@
                        :path path})))
     (files/read-json path)))
 
-(defn- recipe-registry-entry [recipe-id recipe-hash resolved-at]
-  {"semantic_id" recipe-id
-   "content_hash" recipe-hash
+(defn- read-tokenizer-profile [profile-id]
+  (let [path (tokenizer-profile-path profile-id)
+        file (io/file path)]
+    (when-not (.isFile file)
+      (throw (ex-info "Unknown tokenizer profile"
+                      {:profile_id profile-id
+                       :path path})))
+    (files/read-json path)))
+
+(defn- semantic-registry-entry [semantic-id content-hash resolved-at]
+  {"semantic_id" semantic-id
+   "content_hash" content-hash
    "valid_from" resolved-at})
 
 (defn- resolve-analysis-recipe [recipe-id resolved-at]
   (let [recipe (read-analysis-recipe recipe-id)
         recipe-hash (analysis-identity/analysis-recipe-hash recipe)
         registry-entry-hash (analysis-identity/hash-json-value
-                             (recipe-registry-entry recipe-id
-                                                    recipe-hash
-                                                    resolved-at))]
+                             (semantic-registry-entry recipe-id
+                                                      recipe-hash
+                                                      resolved-at))]
     {:hash recipe-hash
      :label (analysis-identity/resolved-recipe-label
              {:recipe-id recipe-id
@@ -88,12 +103,23 @@
               :registry-entry-hash registry-entry-hash
               :resolved-at resolved-at})}))
 
-(defn- resolved-tokenizer-profile-labels [definition]
-  (let [profile-ids (get definition "tokenizer_profile_ids" [])]
-    (when (seq profile-ids)
-      (throw (ex-info "Tokenizer profile resolution is blocked until tokenizer_profile_hash is in manifest identity"
-                      {:tokenizer_profile_ids profile-ids})))
-    []))
+(defn- resolve-tokenizer-profile [profile-id resolved-at]
+  (let [profile (read-tokenizer-profile profile-id)
+        profile-hash (analysis-identity/tokenizer-profile-hash profile)
+        registry-entry-hash (analysis-identity/hash-json-value
+                             (semantic-registry-entry profile-id
+                                                      profile-hash
+                                                      resolved-at))]
+    {:hash profile-hash
+     :label (analysis-identity/resolved-tokenizer-profile-label
+             {:profile-id profile-id
+              :tokenizer-profile-hash profile-hash
+              :registry-entry-hash registry-entry-hash
+              :resolved-at resolved-at})}))
+
+(defn- resolved-tokenizer-profile-labels [definition resolved-at]
+  (mapv #(resolve-tokenizer-profile % resolved-at)
+        (get definition "tokenizer_profile_ids" [])))
 
 (defn- required-string [label value context]
   (when (or (not (string? value)) (string/blank? value))
@@ -205,14 +231,17 @@
          subject-coordinate (resolve-subject-coordinate definition)
          resolved-recipes (mapv #(resolve-analysis-recipe % resolved-at)
                                 (get definition "analysis_recipe_ids" []))
-         tokenizer-labels (resolved-tokenizer-profile-labels definition)
+         resolved-tokenizer-profiles (resolved-tokenizer-profile-labels
+                                      definition
+                                      resolved-at)
          identity-object (analysis-identity/request-set-identity-object
                           {:schema-hash (manifest/schema-hash request-set-schema-path)
                            :corpus-snapshot-hash (:corpus-snapshot-hash
                                                   subject-coordinate)
                            :subjects (:subjects subject-coordinate)
                            :input-views (get definition "input_views")
-                           :tokenizer-profile-hashes []
+                           :tokenizer-profile-hashes (mapv :hash
+                                                           resolved-tokenizer-profiles)
                            :analysis-recipe-hashes (mapv :hash resolved-recipes)
                            :missing-policy (get definition "missing_policy")
                            :pack-policy-hash (analysis-identity/hash-json-value
@@ -224,7 +253,8 @@
                       "label" definition-label
                       "request_set_identity_object" identity-object
                       "resolved_recipe_labels" (mapv :label resolved-recipes)
-                      "resolved_tokenizer_profile_labels" tokenizer-labels
+                      "resolved_tokenizer_profile_labels" (mapv :label
+                                                                resolved-tokenizer-profiles)
                       "resolution" (cond-> {"source_definition_path" (request-set-definition-path label)
                                             "resolved_at" resolved-at
                                             "resolver_id" resolver-id}

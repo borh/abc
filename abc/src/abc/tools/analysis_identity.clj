@@ -14,6 +14,8 @@
 
 (def analysis-recipe-hash hash-json-value)
 
+(def tokenizer-profile-hash hash-json-value)
+
 (defn- required-string [label value]
   (when (or (not (string? value)) (string/blank? value))
     (throw (ex-info (str label " must be a non-empty string")
@@ -79,5 +81,12 @@
   [{:keys [recipe-id analysis-recipe-hash registry-entry-hash resolved-at]}]
   {"recipe_id" recipe-id
    "analysis_recipe_hash" analysis-recipe-hash
+   "registry_entry_hash" registry-entry-hash
+   "resolved_at" resolved-at})
+
+(defn resolved-tokenizer-profile-label
+  [{:keys [profile-id tokenizer-profile-hash registry-entry-hash resolved-at]}]
+  {"profile_id" profile-id
+   "tokenizer_profile_hash" tokenizer-profile-hash
    "registry_entry_hash" registry-entry-hash
    "resolved_at" resolved-at})

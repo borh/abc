@@ -71,6 +71,13 @@
       "title": "ABC Snapshot Index",
       "version": "0.1.0",
       "hash": "sha256:ef0aaccd2d5d86204bb22c5d94e3c3d4dab2a6cfe4b82c353873317c77a3c31f"
+    },
+    {
+      "path": "schemas/tokenizer-profile.schema.json",
+      "id": "https://w3id.org/abc/schemas/tokenizer-profile.schema.json",
+      "title": "ABC Tokenizer Profile",
+      "version": "0.1.0",
+      "hash": "sha256:e487fdf65b70fa4de0d90db28654e46154a3ea67dac1d4243c73c54d8303dc90"
     }
   ]
 }

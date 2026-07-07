@@ -9,12 +9,20 @@ Source: `docs/adr/0026-analysis-artifact-identity.md`,
 
 ## Implementation Status
 
-Not implemented.
+Partially implemented.
 
 ADR 0026's token-independent per-work analysis slice remains the only accepted
-analysis artifact shape today. This ADR defines the next contract needed before
-ABC can publish tokenized slices, tokenizer-backed stylometric analysis, and
-collection analysis packs as canonical snapshot artifacts.
+analysis artifact shape today. The tokenizer-profile schema and resolver
+content-hash path are implemented as a pre-tokenization contract:
+`schemas/tokenizer-profile.schema.json`,
+`data/tokenizer-profiles/fixture-tokenizer-ja-v1.json`, and
+`test/abc/tools/request_set_resolver_test.clj` cover profile label resolution
+to content hashes and registry-entry hashes.
+
+The manifest schema blocker remains open. ABC still cannot publish tokenized
+slices, tokenizer-backed stylometric analysis, or collection analysis packs as
+canonical snapshot artifacts until the remaining acceptance criteria below are
+implemented.
 
 Snapshot-publication work may proceed with TEI, plaintext, token-independent
 analysis, request-set fixtures, and snapshot indexes. It must not claim

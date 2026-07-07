@@ -98,6 +98,7 @@
           validate-migration = pkgs.writeShellScript "soranoha-validate-migration" ''
             set -euo pipefail
             export PATH="${runtimePath}:$PATH"
+            bash tests/monorepo-active-path-hygiene-smoke.sh
             bash scripts/monorepo-schema-drift.sh
             bash scripts/monorepo-tei-version-coherence.sh
             python scripts/monorepo-flake-input-policy.py
@@ -119,40 +120,21 @@
         let
           pkgs = import nixpkgs { inherit system; };
           scripts = monorepoScripts pkgs;
+          mkScriptApp = program: description: {
+            type = "app";
+            program = "${program}";
+            meta.description = description;
+          };
         in
         prefixAttrs "abc-" (optionalOutputAttrs abc "apps" system)
         // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "apps" system)
         // {
-          schema-drift = {
-            type = "app";
-            program = "${scripts.schema-drift}";
-            meta.description = "Check monorepo ABC schema contract drift";
-          };
-          split-import-parity-audit = {
-            type = "app";
-            program = "${scripts.split-import-parity-audit}";
-            meta.description = "Audit monorepo tracked-file parity against split repositories";
-          };
-          tei-version-coherence = {
-            type = "app";
-            program = "${scripts.tei-version-coherence}";
-            meta.description = "Check TEI P5 source/profile version coherence";
-          };
-          flake-input-policy = {
-            type = "app";
-            program = "${scripts.flake-input-policy}";
-            meta.description = "Check release-critical flake inputs are explicitly pinned";
-          };
-          python-quality = {
-            type = "app";
-            program = "${scripts.python-quality}";
-            meta.description = "Run monorepo Python ruff and mypy checks";
-          };
-          validate-migration = {
-            type = "app";
-            program = "${scripts.validate-migration}";
-            meta.description = "Run Soranoha monorepo migration validation gates";
-          };
+          schema-drift = mkScriptApp scripts.schema-drift "Check monorepo ABC schema contract drift";
+          split-import-parity-audit = mkScriptApp scripts.split-import-parity-audit "Audit monorepo tracked-file parity against split repositories";
+          tei-version-coherence = mkScriptApp scripts.tei-version-coherence "Check TEI P5 source/profile version coherence";
+          flake-input-policy = mkScriptApp scripts.flake-input-policy "Check release-critical flake inputs are explicitly pinned";
+          python-quality = mkScriptApp scripts.python-quality "Run monorepo Python ruff and mypy checks";
+          validate-migration = mkScriptApp scripts.validate-migration "Run Soranoha monorepo migration validation gates";
         }
       );
 
@@ -161,107 +143,99 @@
         let
           pkgs = import nixpkgs { inherit system; };
           tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
+          mkMonorepoCheck =
+            name: nativeBuildInputs: script:
+            pkgs.runCommand name
+              {
+                inherit nativeBuildInputs;
+                src = self;
+              }
+              ''
+                cd "$src"
+                ${script}
+                touch "$out"
+              '';
         in
         prefixAttrs "abc-" (optionalOutputAttrs abc "checks" system)
         // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "checks" system)
         // {
           monorepo-tei-p5-reference = tei.reference;
           monorepo-tei-version-coherence =
-            pkgs.runCommand "soranoha-monorepo-tei-version-coherence"
-              {
-                nativeBuildInputs = [
-                  pkgs.bash
-                  pkgs.coreutils
-                  pkgs.gnugrep
-                ];
-                src = self;
-                teiRoot = tei.reference;
-              }
+            mkMonorepoCheck "soranoha-monorepo-tei-version-coherence"
+              [
+                pkgs.bash
+                pkgs.coreutils
+                pkgs.gnugrep
+              ]
               ''
-                cd "$src"
-                AB_TEI_P5_ROOT="$teiRoot" bash scripts/monorepo-tei-version-coherence.sh "$src"
-                touch "$out"
+                AB_TEI_P5_ROOT="${tei.reference}" bash scripts/monorepo-tei-version-coherence.sh "$src"
               '';
           monorepo-flake-input-policy =
-            pkgs.runCommand "soranoha-monorepo-flake-input-policy"
-              {
-                nativeBuildInputs = [
-                  pkgs.python3
-                ];
-                src = self;
-              }
+            mkMonorepoCheck "soranoha-monorepo-flake-input-policy"
+              [
+                pkgs.python3
+              ]
               ''
-                cd "$src"
                 python scripts/monorepo-flake-input-policy.py "$src"
-                touch "$out"
               '';
           monorepo-schema-drift =
-            pkgs.runCommand "soranoha-monorepo-schema-drift"
-              {
-                nativeBuildInputs = [
-                  pkgs.bash
-                  pkgs.coreutils
-                  pkgs.python3
-                ];
-                src = self;
-              }
+            mkMonorepoCheck "soranoha-monorepo-schema-drift"
+              [
+                pkgs.bash
+                pkgs.coreutils
+                pkgs.python3
+              ]
               ''
-                cd "$src"
                 bash scripts/monorepo-schema-drift.sh
-                touch "$out"
               '';
           monorepo-runtime-config =
-            pkgs.runCommand "soranoha-monorepo-runtime-config"
-              {
-                nativeBuildInputs = [
-                  pkgs.bash
-                  pkgs.coreutils
-                ];
-                src = self;
-              }
+            mkMonorepoCheck "soranoha-monorepo-runtime-config"
+              [
+                pkgs.bash
+                pkgs.coreutils
+              ]
               ''
-                cd "$src"
                 bash tests/runtime-config-smoke.sh
-                touch "$out"
+              '';
+          monorepo-active-path-hygiene =
+            mkMonorepoCheck "soranoha-monorepo-active-path-hygiene"
+              [
+                pkgs.bash
+                pkgs.coreutils
+                pkgs.findutils
+                pkgs.ripgrep
+              ]
+              ''
+                bash tests/monorepo-active-path-hygiene-smoke.sh
               '';
           monorepo-python-quality =
-            pkgs.runCommand "soranoha-monorepo-python-quality"
-              {
-                nativeBuildInputs = [
-                  pkgs.findutils
-                  pkgs.git
-                  pkgs.gnused
-                  pkgs.mypy
-                  pkgs.python3
-                  pkgs.ruff
-                ];
-                src = self;
-              }
+            mkMonorepoCheck "soranoha-monorepo-python-quality"
+              [
+                pkgs.findutils
+                pkgs.git
+                pkgs.gnused
+                pkgs.mypy
+                pkgs.python3
+                pkgs.ruff
+              ]
               ''
-                cd "$src"
                 export RUFF_CACHE_DIR="$TMPDIR/ruff-cache"
                 export MYPY_CACHE_DIR="$TMPDIR/mypy-cache"
                 bash scripts/python-quality.sh
-                touch "$out"
               '';
           monorepo-nix-format =
-            pkgs.runCommand "soranoha-monorepo-nix-format"
-              {
-                nativeBuildInputs = [
-                  pkgs.findutils
-                  pkgs.nixfmt
-                ];
-                src = self;
-              }
+            mkMonorepoCheck "soranoha-monorepo-nix-format"
+              [
+                pkgs.findutils
+                pkgs.nixfmt
+              ]
               ''
-                cd "$src"
                 find . \
                   -path './.git' -prune -o \
                   -path './.direnv' -prune -o \
                   -path './result*' -prune -o \
                   -name '*.nix' -print0 \
                   | xargs -0 nixfmt --check
-                touch "$out"
               '';
         }
       );

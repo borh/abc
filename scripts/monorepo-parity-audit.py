@@ -120,7 +120,7 @@ def audit_ab_validator(source_root: Path, component_root: Path, abc_component: P
     link_ok = schema_link.is_symlink() and schema_link.resolve() == expected_target
 
     readme = component_root / "data/abc-schemas/README.md"
-    readme_ok = readme.exists() and "symlink to `../../../abc/schemas`" in readme.read_text(
+    readme_ok = readme.exists() and "monorepo `abc/schemas` directory" in readme.read_text(
         encoding="utf-8"
     )
 

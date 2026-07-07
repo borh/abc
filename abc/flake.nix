@@ -281,14 +281,12 @@
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
           };
-          activeClojureLintPaths = [
-            "src/abc/tools"
-            "src/abc/text.clj"
-            "src/abc/annotation/schema.clj"
-            "test/abc/tools"
-            "test/abc/text_test.clj"
-            "test/abc/annotation_schema_test.clj"
-          ];
+          manifestLines =
+            path:
+            builtins.filter (line: line != "" && !(pkgs.lib.hasPrefix "#" line)) (
+              pkgs.lib.splitString "\n" (builtins.readFile path)
+            );
+          contractSurfacePaths = manifestLines ./nix/contract-surface.txt;
         in
         {
           clj-nix-focused-tests =
@@ -334,11 +332,7 @@
                 cp -R ${./.} source
                 chmod -R u+w source
                 cd source
-                # clj-kondo is intentionally scoped to the active lint baseline.
-                # Broad `src test` currently includes dormant legacy namespaces
-                # with unresolved symbols. cljfmt is broad because formatting is
-                # syntax-only and safe across the whole Clojure tree.
-                clj-kondo --fail-level error --lint ${pkgs.lib.escapeShellArgs activeClojureLintPaths}
+                clj-kondo --fail-level error --lint src test
                 cljfmt check src test
                 mkdir -p "$out"
                 echo "ABC focused Clojure lint and format checks passed." > "$out/result.txt"
@@ -363,78 +357,10 @@
               '';
 
           contract-surface = pkgs.runCommand "abc-contract-surface-check" { } ''
-            test -f ${./resources/abc/ndc9.edn.xz}
-            test -f ${./deps-lock.json}
-            test -f ${./src/abc/annotation/schema.clj}
-            test -f ${./src/abc/text.clj}
-            test -f ${./src/abc/ndc.clj}
-            test -f ${./src/abc/tools/hash.clj}
-            test -f ${./src/abc/tools/jcs.clj}
-            test -f ${./src/abc/tools/json.clj}
-            test -f ${./src/abc/tools/schema.clj}
-            test -f ${./src/abc/tools/aozora_csv.clj}
-            test -f ${./src/abc/tools/aozora_history_audit.clj}
-            test -f ${./src/abc/tools/aozora_ingest.clj}
-            test -f ${./src/abc/git.clj}
-            test -f ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py}
-            test -f ${./prototypes/tei-eaj-comparison/test_tei_eaj_compare.py}
-            test -f ${./tools/tei_eaj_aozora_reports.py}
-            test -f ${./src/abc/tools/manifest_index.clj}
-            test -f ${./src/abc/tools/logging.clj}
-            test -f ${./src/abc/tools/manifest_to_rdf.clj}
-            test -f ${./src/abc/tools/materialize_publication.clj}
-            test -f ${./src/abc/tools/metadata_record.clj}
-            test -f ${./src/abc/tools/parser_ir_plaintext.clj}
-            test -f ${./src/abc/tools/parser_ir_publication_policy.clj}
-            test -f ${./src/abc/tools/parser_ir_tei.clj}
-            test -f ${./src/abc/tools/parser_ir_vocabulary.clj}
-            test -f ${./src/abc/tools/person_drift_history.clj}
-            test -f ${./src/abc/tools/person_record.clj}
-            test -f ${./src/abc/tools/rdf_prefixes.clj}
-            test -f ${./src/abc/tools/schematron.clj}
-            test -f ${./src/abc/tools/shacl.clj}
-            test -f ${./src/abc/tools/tei.clj}
-            test -f ${./src/abc/tools/tei_header.clj}
-            test -f ${./src/abc/tools/validate_design_bundle.clj}
-            test -f ${./tools/schema_contracts.py}
-            test -f ${./schemas/README.md}
-            test -f ${./schemas/schema-contracts.json}
-            test -f ${./schemas/metadata-record.schema.json}
-            test -f ${./schemas/person-record.schema.json}
-            test -f ${./schemas/tei-profile.rng}
-            test -f ${./schemas/tei-profile.sch}
-            test -f ${./schemas/tei-validation-result.schema.json}
-            test -f ${./test/abc/tools/hash_test.clj}
-            test -f ${./test/abc/tools/jcs_test.clj}
-            test -f ${./test/abc/tools/schema_test.clj}
-            test -f ${./test/abc/tools/manifest_index_test.clj}
-            test -f ${./test/abc/tools/manifest_to_rdf_test.clj}
-            test -f ${./test/abc/tools/materialize_import_test.clj}
-            test -f ${./test/abc/tools/materialize_publication_test.clj}
-            test -f ${./test/abc/tools/parser_ir_plaintext_test.clj}
-            test -f ${./test/abc/tools/parser_ir_publication_policy_test.clj}
-            test -f ${./test/abc/tools/parser_ir_tei_test.clj}
-            test -f ${./test/abc/tools/parser_ir_vocabulary_test.clj}
-            test -f ${./test/abc/tools/aozora_csv_test.clj}
-            test -f ${./test/abc/tools/aozora_history_audit_test.clj}
-            test -f ${./test/abc/git_blob_test.clj}
-            test -f ${./test/abc/tools/metadata_record_test.clj}
-            test -f ${./test/abc/tools/person_drift_history_test.clj}
-            test -f ${./test/abc/tools/person_record_test.clj}
-            test -f ${./test/abc/tools/aozora_ingest_test.clj}
-            test -f ${./test/abc/tools/schematron_test.clj}
-            test -f ${./test/abc/tools/shacl_test.clj}
-            test -f ${./test/abc/tools/tei_test.clj}
-            test -f ${./test/abc/tools/tei_header_test.clj}
-            test -f ${./test/abc/tools/tei_header_unit_test.clj}
-            test -f ${./examples/v0/example-work/metadata-record.json}
-            test -f ${./examples/v0/example-work/metadata-record.ttl}
-            test -f ${./examples/v0/example-persons/000879.json}
-            test -f ${./data/parser-ir-publication-policy-v0.json}
-            test -f ${./test/abc/tools/validate_design_bundle_test.clj}
-            test -f ${./test/abc/annotation_schema_test.clj}
-            test -f ${./test/abc/text_test.clj}
-            test -f ${./test/abc/ndc_test.clj}
+            cd ${./.}
+            for path in ${pkgs.lib.escapeShellArgs contractSurfacePaths}; do
+              test -f "$path"
+            done
             mkdir -p "$out"
             echo "ABC v0 contract source surface is present." > "$out/result.txt"
           '';

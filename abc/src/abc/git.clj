@@ -4,11 +4,13 @@
             [clojure.java.io :as io]
             [clojure.spec.alpha :as s])
   (:import [java.util Date]
-           [org.eclipse.jgit.lib Repository]
-           [org.eclipse.jgit.api Git]
            [org.eclipse.jgit.revwalk RevCommit RevWalk]
+           [org.eclipse.jgit.api Git]
+           [org.eclipse.jgit.diff DiffFormatter RawTextComparator]
+           [org.eclipse.jgit.lib Repository]
            [org.eclipse.jgit.treewalk TreeWalk]
-           [org.eclipse.jgit.treewalk.filter PathFilter]))
+           [org.eclipse.jgit.treewalk.filter PathFilter]
+           [org.eclipse.jgit.util.io DisabledOutputStream]))
 
 (defn load-git-repo [path]
   (load-repo path))

@@ -16,6 +16,9 @@ runtime-config:
 runtime-config-smoke:
 	@bash tests/runtime-config-smoke.sh
 
+active-path-hygiene:
+	@bash tests/monorepo-active-path-hygiene-smoke.sh
+
 python-quality:
 	@bash scripts/python-quality.sh
 
@@ -30,8 +33,8 @@ nix-format-check:
 root-flake-check-no-build:
 	@nix flake check --no-build
 
-check-no-build: runtime-config-smoke schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check
+check-no-build: runtime-config-smoke active-path-hygiene schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check
 	@(cd abc && nix flake check --no-build)
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." nix flake check --no-build)
 
-validate-migration: runtime-config-smoke schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check root-flake-check-no-build
+validate-migration: runtime-config-smoke active-path-hygiene schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check root-flake-check-no-build

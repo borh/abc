@@ -19,6 +19,18 @@ from reports.lib.hashing import sha256_hex
 from reports.lib.io import read_json as load_json
 from reports.lib.io import write_json
 from reports.lib.paths import display_path, policy_dir, schemas_dir
+from reports.lib.source_region import (
+    ALLOWED_MEASUREMENT_STATUSES as SOURCE_REGION_ALLOWED_MEASUREMENT_STATUSES,
+    ALLOWED_TARGET_CLASSES as SOURCE_REGION_ALLOWED_TARGET_CLASSES,
+    MEASURED_CLASS_COUNTERS as SOURCE_REGION_MEASURED_CLASS_COUNTERS,
+    POLICY_ID as ABC_SOURCE_REGION_POLICY_ID,
+    POLICY_VERSION as ABC_SOURCE_REGION_POLICY_VERSION,
+    REQUIRED_CLASSES as SOURCE_REGION_REQUIRED_CLASSES,
+    REQUIRED_COUNTERS as SOURCE_REGION_REQUIRED_COUNTERS,
+    REQUIRED_LEGACY_COUNTERS as SOURCE_REGION_REQUIRED_LEGACY_COUNTERS,
+    SCHEMA_ID as ABC_SOURCE_REGION_SCHEMA_ID,
+    SCHEMA_VERSION as ABC_SOURCE_REGION_SCHEMA_VERSION,
+)
 
 SCHEMA_VERSION = "ir-publication-coverage-v1"
 REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora")
@@ -29,10 +41,6 @@ ABC_PRESERVATION_SCHEMA_VERSION = "0.2.0"
 TRUSTED_ABC_PRESERVATION_SCHEMA_PATH = (
     schemas_dir() / "parser-ir-publication-preservation.schema.json"
 ).resolve()
-ABC_SOURCE_REGION_SCHEMA_ID = "https://w3id.org/abc/schemas/source-region-coverage.schema.json"
-ABC_SOURCE_REGION_SCHEMA_VERSION = "aozora-source-region-coverage-v1"
-ABC_SOURCE_REGION_POLICY_ID = "https://w3id.org/abc/policies/source-region-publication-v0"
-ABC_SOURCE_REGION_POLICY_VERSION = "0.2.0"
 TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH = (
     schemas_dir() / "source-region-coverage.schema.json"
 ).resolve()
@@ -40,52 +48,6 @@ TRUSTED_ABC_SOURCE_REGION_POLICY_PATH = (
     policy_dir() / "source-region-publication-policy-v0.json"
 ).resolve()
 TRUSTED_ABC_MANIFEST_SCHEMA_PATH = (schemas_dir() / "manifest.schema.json").resolve()
-SOURCE_REGION_REQUIRED_COUNTERS = {
-    "body_typed_occurrences",
-    "body_raw_preserved_occurrences",
-    "source_apparatus_occurrences",
-    "front_matter_occurrences",
-    "back_matter_occurrences",
-    "body_end_boundary_occurrences",
-    "terminal_provenance_occurrences",
-    "colophon_metadata_occurrences",
-    "letter_address_origin_occurrences",
-    "malformed_source_occurrences",
-    "unsupported_body_markup_occurrences",
-    "unknown_region_occurrences",
-    "unknown_unreviewed_occurrences",
-}
-SOURCE_REGION_REQUIRED_LEGACY_COUNTERS = {
-    "typed_occurrences",
-    "raw_preserved_occurrences",
-    "out_of_body_occurrences",
-    "malformed_noise_occurrences",
-    "unsupported_occurrences",
-    "needs_research_occurrences",
-}
-SOURCE_REGION_REQUIRED_CLASSES = {
-    "notation_legend",
-    "notation_placeholder",
-    "body_end_boundary",
-    "terminal_provenance",
-    "colophon_metadata",
-    "letter_address_origin",
-    "malformed_source",
-}
-SOURCE_REGION_MEASURED_CLASS_COUNTERS = {
-    "body_end_boundary": "body_end_boundary_occurrences",
-    "terminal_provenance": "terminal_provenance_occurrences",
-    "colophon_metadata": "colophon_metadata_occurrences",
-    "letter_address_origin": "letter_address_origin_occurrences",
-}
-SOURCE_REGION_ALLOWED_TARGET_CLASSES = {
-    "tei_policy_projection",
-    "tei_plus_abc_extension",
-    "custom_sidecar",
-    "diagnostic",
-    "unsupported_gap",
-}
-SOURCE_REGION_ALLOWED_MEASUREMENT_STATUSES = {"measured", "needs_measurement_split"}
 PUBLICATION_BUNDLE_EVIDENCE_SCHEMA_VERSION = "publication-bundle-validation-evidence-v1"
 PUBLICATION_BUNDLE_BATCH_EVIDENCE_SCHEMA_VERSION = "publication-bundle-batch-validation-evidence-v1"
 PUBLICATION_BUNDLE_PASSED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_PASSED"

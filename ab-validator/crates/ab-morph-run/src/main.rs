@@ -2234,7 +2234,7 @@ mod tests {
             "--run-dir",
             "scratch/morph-warehouse/runs/full-2026-07-05",
             "--from",
-            "../abc/out/corpus",
+            "abc/out/corpus",
             "--force",
         ]);
 
@@ -2251,7 +2251,7 @@ mod tests {
             run_dir,
             PathBuf::from("scratch/morph-warehouse/runs/full-2026-07-05")
         );
-        assert_eq!(from, PathBuf::from("../abc/out/corpus"));
+        assert_eq!(from, PathBuf::from("abc/out/corpus"));
         assert!(force);
     }
 

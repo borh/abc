@@ -34,3 +34,16 @@ def as_int(value: Any) -> int:
 def input_record(path: Path) -> dict[str, str]:
     """Return the standard report input evidence record for a file."""
     return {"path": display_path(path), "hash": file_sha256(path)}
+
+
+def optional_file_sha256(path: Path) -> str | None:
+    """Return a file digest, or None when an evidence artifact is missing."""
+    try:
+        return file_sha256(path)
+    except OSError:
+        return None
+
+
+def artifact_record(path: Path) -> dict[str, Any]:
+    """Return the standard report artifact evidence record for a file."""
+    return {"path": display_path(path), "hash": optional_file_sha256(path)}

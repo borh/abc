@@ -23,9 +23,10 @@ _REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from reports.lib.hashing import file_sha256
+from reports.lib.evidence import artifact_record, optional_file_sha256
 from reports.lib.io import read_json, write_json
-from reports.lib.paths import repo_root
+from reports.lib.paths import display_path
+from reports.lib.source_region import coverage_passes_source_authority
 
 SCHEMA_VERSION = "publication-bundle-validation-evidence-v1"
 BATCH_SCHEMA_VERSION = "publication-bundle-batch-validation-evidence-v1"
@@ -33,24 +34,8 @@ PASSED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_PASSED"
 FAILED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_FAILED"
 BATCH_PASSED_VERDICT = "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED"
 BATCH_FAILED_VERDICT = "PUBLICATION_BUNDLE_BATCH_VALIDATION_FAILED"
-REPO_ROOT = repo_root()
 ABC_NS = "{https://w3id.org/abc/ns/tei}"
 XML_ID = "{http://www.w3.org/XML/1998/namespace}id"
-SOURCE_REGION_REQUIRED_COUNTERS = {
-    "body_typed_occurrences",
-    "body_raw_preserved_occurrences",
-    "source_apparatus_occurrences",
-    "front_matter_occurrences",
-    "back_matter_occurrences",
-    "body_end_boundary_occurrences",
-    "terminal_provenance_occurrences",
-    "colophon_metadata_occurrences",
-    "letter_address_origin_occurrences",
-    "malformed_source_occurrences",
-    "unsupported_body_markup_occurrences",
-    "unknown_region_occurrences",
-    "unknown_unreviewed_occurrences",
-}
 REQUIRED_CHECKS = (
     "parser_ir_schema_valid",
     "source_region_coverage_valid",
@@ -93,25 +78,6 @@ def write_text(path: pathlib.Path, value: str) -> None:
     path.write_text(value, encoding="utf-8")
 
 
-def file_hash(path: pathlib.Path) -> str | None:
-    try:
-        return file_sha256(path)
-    except OSError:
-        return None
-
-
-def display_path(path: pathlib.Path) -> str:
-    resolved = path.resolve()
-    try:
-        return str(resolved.relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path)
-
-
-def artifact(path: pathlib.Path) -> dict[str, Any]:
-    return {"path": display_path(path), "hash": file_hash(path)}
-
-
 def add_failure(
     failures: list[dict[str, Any]],
     check: str,
@@ -133,7 +99,7 @@ def sidecar_by_role(manifest: dict[str, Any], role: str) -> dict[str, Any] | Non
 
 
 def content_hash_matches(manifest: dict[str, Any], path: pathlib.Path) -> bool:
-    return manifest.get("content", {}).get("content_hash") == file_hash(path)
+    return manifest.get("content", {}).get("content_hash") == optional_file_sha256(path)
 
 
 def sidecar_hash_matches(
@@ -144,24 +110,14 @@ def sidecar_hash_matches(
 ) -> bool:
     sidecar = sidecar_by_role(manifest, role)
     return bool(
-        sidecar and sidecar.get("path_hint") == path_hint and sidecar.get("hash") == file_hash(path)
+        sidecar
+        and sidecar.get("path_hint") == path_hint
+        and sidecar.get("hash") == optional_file_sha256(path)
     )
 
 
 def source_region_valid(source_region: dict[str, Any]) -> bool:
-    region = source_region.get("source_region_coverage", {})
-    required_counters_present = all(
-        isinstance(region.get(counter), int) for counter in SOURCE_REGION_REQUIRED_COUNTERS
-    )
-    return bool(
-        source_region.get("schema_version") == "aozora-source-region-coverage-v1"
-        and source_region.get("gate_status") == "SOURCE_AUTHORITY_GATE_PASS"
-        and required_counters_present
-        and (source_region.get("unallowlisted_unknown_markers_total") or 0) == 0
-        and (region.get("unsupported_body_markup_occurrences") or 0) == 0
-        and (region.get("unknown_region_occurrences") or 0) == 0
-        and (region.get("unknown_unreviewed_occurrences") or 0) == 0
-    )
+    return coverage_passes_source_authority(source_region)
 
 
 def collect_values_by_key(value: Any, key: str) -> set[str]:
@@ -311,7 +267,7 @@ def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
         "tei_validation_result": publication_dir / "tei-validation-result.json",
     }
     validated_bundle = {
-        key: artifact(path) for key, path in paths.items() if key != "tei_validation_result"
+        key: artifact_record(path) for key, path in paths.items() if key != "tei_validation_result"
     }
     failures: list[dict[str, Any]] = []
 

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/aat-parser-ir-mapping.schema.json",
   "title": "AAT to Parser-IR Mapping",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "type": "object",
   "required": [
     "mapping_id",
@@ -26,6 +26,12 @@
       "type": "array",
       "items": { "$ref": "#/$defs/rule" },
       "uniqueItems": true
+    },
+    "synthetic_evidence_descriptions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/syntheticEvidence" },
+      "uniqueItems": true,
+      "default": []
     },
     "loss_taxonomy": {
       "type": "object",
@@ -66,6 +72,25 @@
         "parser_ir_pointer": { "type": ["string", "null"] },
         "action": { "enum": ["drop", "project", "invent", "flatten", "refuse"] },
         "description": { "type": "string" }
+      }
+    },
+    "syntheticEvidence": {
+      "type": "object",
+      "required": ["evidence_id", "parser_ir_pointer", "source", "action", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "evidence_id": { "type": "string", "pattern": "^SYN-[0-9]{3}$" },
+        "parser_ir_pointer": { "type": "string", "minLength": 1 },
+        "source": {
+          "enum": [
+            "converter_policy",
+            "visible_body_text",
+            "orthographic_sidecar",
+            "sentence_overlap"
+          ]
+        },
+        "action": { "enum": ["emit", "classify", "declare"] },
+        "description": { "type": "string", "minLength": 1 }
       }
     }
   }

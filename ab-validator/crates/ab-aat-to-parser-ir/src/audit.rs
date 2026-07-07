@@ -1299,15 +1299,14 @@ fn round_seconds(seconds: f64) -> f64 {
 
 fn classify_sentence_projection_failure(message: &str) -> Option<SentenceProjectionFailureClass> {
     let marker = "sentence boundary falls inside atomic node ";
-    if let Some(rest) = message.strip_prefix(marker) {
-        if let Some((node_type, byte_text)) = rest.split_once(" at byte ") {
-            if let Ok(byte_offset) = byte_text.parse::<u64>() {
-                return Some(SentenceProjectionFailureClass::AtomicBoundary {
-                    node_type: node_type.to_owned(),
-                    byte_offset,
-                });
-            }
-        }
+    if let Some(rest) = message.strip_prefix(marker)
+        && let Some((node_type, byte_text)) = rest.split_once(" at byte ")
+        && let Ok(byte_offset) = byte_text.parse::<u64>()
+    {
+        return Some(SentenceProjectionFailureClass::AtomicBoundary {
+            node_type: node_type.to_owned(),
+            byte_offset,
+        });
     }
     if message.contains("sentence boundary")
         || message.contains("sentence spans")

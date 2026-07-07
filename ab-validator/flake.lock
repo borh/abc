@@ -1,5 +1,27 @@
 {
   "nodes": {
+    "abc": {
+      "inputs": {
+        "clj-nix": [
+          "clj-nix"
+        ],
+        "crane": "crane",
+        "local-pkgs": "local-pkgs",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "tei-eaj-aozora-tei": "tei-eaj-aozora-tei"
+      },
+      "locked": {
+        "path": "../abc",
+        "type": "path"
+      },
+      "original": {
+        "path": "../abc",
+        "type": "path"
+      },
+      "parent": []
+    },
     "aozorabunko-src": {
       "flake": false,
       "locked": {
@@ -36,6 +58,22 @@
       "original": {
         "owner": "jlesquembre",
         "repo": "clj-nix",
+        "type": "github"
+      }
+    },
+    "crane": {
+      "locked": {
+        "lastModified": 1779041105,
+        "narHash": "sha256-nnGD2f8OlAZT2i5OfwikJsw+ifWfiA4d6A8BWlgOXV0=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "10e6e3cb966f7cfcc789fe5eee7a85f3188ce08b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "ref": "v0.23.4",
+        "repo": "crane",
         "type": "github"
       }
     },
@@ -95,6 +133,20 @@
         "repo": "flake-utils",
         "type": "github"
       }
+    },
+    "local-pkgs": {
+      "flake": false,
+      "locked": {
+        "path": "./nix/ci-empty-local-pkgs",
+        "type": "path"
+      },
+      "original": {
+        "path": "./nix/ci-empty-local-pkgs",
+        "type": "path"
+      },
+      "parent": [
+        "abc"
+      ]
     },
     "mecab-dic-converter-src": {
       "flake": false,
@@ -165,6 +217,7 @@
     },
     "root": {
       "inputs": {
+        "abc": "abc",
         "aozorabunko-src": "aozorabunko-src",
         "clj-nix": "clj-nix",
         "flake-utils": "flake-utils",
@@ -211,6 +264,23 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "tei-eaj-aozora-tei": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1764241777,
+        "narHash": "sha256-pWiv4ScVRDwzcW1SyCBio9mHMsSLVyVwkqw0GSzIUO8=",
+        "owner": "TEI-EAJ",
+        "repo": "aozora_tei",
+        "rev": "77a675fc2771936f9544505d922d4cd45075338c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "TEI-EAJ",
+        "repo": "aozora_tei",
+        "rev": "77a675fc2771936f9544505d922d4cd45075338c",
         "type": "github"
       }
     },

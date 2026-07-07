@@ -6,6 +6,12 @@
 
     flake-utils.url = "github:numtide/flake-utils";
 
+    abc = {
+      url = "path:../abc";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.clj-nix.follows = "clj-nix";
+    };
+
     clj-nix = {
       url = "github:jlesquembre/clj-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -62,6 +68,7 @@
     {
       self,
       nixpkgs,
+      abc,
       clj-nix,
       upstream-aozora-notation-spec-src,
       upstream-aozora-parser-js-src,
@@ -123,9 +130,9 @@
 
         source = cleanProjectSource ./.;
 
-        abcSource = cleanProjectSource ../abc;
+        abcSource = cleanProjectSource abc.outPath;
         abcCljDepsCache = pkgs.mk-deps-cache {
-          lockfile = ../abc/deps-lock.json;
+          lockfile = "${abc.outPath}/deps-lock.json";
         };
 
         abcSchemaRootForNix = pkgs.runCommand "ab-validator-abc-schema-root" { } ''

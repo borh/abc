@@ -7,10 +7,18 @@
     abc = {
       url = "path:./abc";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.clj-nix.follows = "clj-nix";
     };
 
     ab-validator = {
       url = "path:./ab-validator";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.clj-nix.follows = "clj-nix";
+      inputs.abc.follows = "abc";
+    };
+
+    clj-nix = {
+      url = "github:jlesquembre/clj-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -138,6 +146,7 @@
         let
           pkgs = import nixpkgs { inherit system; };
           tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
+          abValidatorChecks = optionalOutputAttrs ab-validator "checks" system;
           mkMonorepoCheck =
             name: nativeBuildInputs: script:
             pkgs.runCommand name
@@ -152,8 +161,9 @@
               '';
         in
         prefixAttrs "abc-" (optionalOutputAttrs abc "checks" system)
-        // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "checks" system)
+        // prefixAttrs "ab-validator-" abValidatorChecks
         // {
+          parser-ir-ortho-publication-smoke = abValidatorChecks.parser-ir-ortho-publication-smoke;
           monorepo-tei-p5-reference = tei.reference;
           monorepo-tei-version-coherence =
             mkMonorepoCheck "soranoha-monorepo-tei-version-coherence"

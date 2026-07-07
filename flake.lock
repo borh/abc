@@ -2,7 +2,13 @@
   "nodes": {
     "ab-validator": {
       "inputs": {
+        "abc": [
+          "abc"
+        ],
         "aozorabunko-src": "aozorabunko-src",
+        "clj-nix": [
+          "clj-nix"
+        ],
         "flake-utils": "flake-utils",
         "mecab-dic-converter-src": "mecab-dic-converter-src",
         "nixpkgs": [
@@ -28,7 +34,9 @@
     },
     "abc": {
       "inputs": {
-        "clj-nix": "clj-nix",
+        "clj-nix": [
+          "clj-nix"
+        ],
         "crane": "crane",
         "local-pkgs": "local-pkgs",
         "nixpkgs": [
@@ -68,7 +76,6 @@
         "devshell": "devshell",
         "nix-fetcher-data": "nix-fetcher-data",
         "nixpkgs": [
-          "abc",
           "nixpkgs"
         ]
       },
@@ -105,7 +112,6 @@
     "devshell": {
       "inputs": {
         "nixpkgs": [
-          "abc",
           "clj-nix",
           "nixpkgs"
         ]
@@ -195,7 +201,6 @@
       "inputs": {
         "flake-parts": "flake-parts",
         "nixpkgs": [
-          "abc",
           "clj-nix",
           "nixpkgs"
         ]
@@ -246,6 +251,7 @@
       "inputs": {
         "ab-validator": "ab-validator",
         "abc": "abc",
+        "clj-nix": "clj-nix",
         "nixpkgs": "nixpkgs",
         "tei-p5": "tei-p5"
       }

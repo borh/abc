@@ -5,10 +5,13 @@
 # environment variables win over machine config files; config files win over
 # repo-local scratch defaults.
 
-if [[ -n "${SORANOHA_RUNTIME_ENV_LOADED:-}" ]]; then
+_soranoha_runtime_env_pid="${BASHPID:-$$}"
+if [[ "${SORANOHA_RUNTIME_ENV_LOADED_PID:-}" == "$_soranoha_runtime_env_pid" ]]; then
   return 0 2>/dev/null || exit 0
 fi
-export SORANOHA_RUNTIME_ENV_LOADED=1
+SORANOHA_RUNTIME_ENV_LOADED=1
+SORANOHA_RUNTIME_ENV_LOADED_PID="$_soranoha_runtime_env_pid"
+export -n SORANOHA_RUNTIME_ENV_LOADED SORANOHA_RUNTIME_ENV_LOADED_PID 2>/dev/null || true
 
 _soranoha_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _soranoha_script_root="$(cd "$_soranoha_script_dir/.." && pwd)"

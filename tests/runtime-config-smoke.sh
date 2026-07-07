@@ -7,6 +7,24 @@ runtime_env="$repo_root/scripts/soranoha-runtime-env.sh"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
+unset SORANOHA_RUNTIME_ENV_LOADED
+unset SORANOHA_RUNTIME_ENV_LOADED_PID
+unset SORANOHA_CONFIG
+unset SORANOHA_STATE_ROOT
+unset SORANOHA_REPORT_DIR
+unset AB_DB_ROOT
+unset AB_MORPH_WAREHOUSE_DIR
+unset AB_MORPH_WAREHOUSE_AAT_DIR
+unset AB_AOZORA_RS_AAT_DIR
+unset AB_AOZORA2_AAT_DIR
+unset AB_AOZORA2HTML_AAT_DIR
+unset AB_AOZORA_EPUB3_AAT_DIR
+unset AB_AOZORA_AAT_DIR
+unset AB_TEI_EAJ_WORKSET
+unset ABC_OUTPUT_ROOT
+unset ABC_REPORT_DIR
+unset AB_TEI_P5_ROOT
+
 mkdir -p "$tmp/workspace"
 
 cat > "$tmp/machine.env" <<'ENV'

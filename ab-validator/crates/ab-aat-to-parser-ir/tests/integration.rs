@@ -242,11 +242,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     assert!(mapping.transform_rule_descriptions.iter().all(|rule| {
         !matches!(
             rule.parser_ir_pointer.as_deref(),
-            Some(
-                "sentence_segmentation"
-                    | "sentences"
-                    | "orthographic_annotations"
-            )
+            Some("sentence_segmentation" | "sentences" | "orthographic_annotations")
         )
     }));
     let synthetic_pointers: std::collections::BTreeSet<_> = mapping

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors"],
   "additionalProperties": false,
@@ -48,6 +48,13 @@
       "items": { "$ref": "#/$defs/paragraph" },
       "default": []
     },
+    "sentence_segmentation": { "$ref": "#/$defs/sentenceSegmentation" },
+    "sentences": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sentence" },
+      "default": []
+    },
+    "orthographic_annotations": { "$ref": "#/$defs/orthographicAnnotations" },
     "warnings": {
       "type": "array",
       "items": { "$ref": "#/$defs/diagnostic" }
@@ -120,6 +127,106 @@
         "start": { "type": "integer", "minimum": 0 },
         "end": { "type": "integer", "minimum": 0 }
       }
+    },
+    "byteRange": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "sentenceSegmentation": {
+      "type": "object",
+      "required": ["schema_version", "splitter_id", "coordinate_system", "coverage"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": { "const": "sentence-segmentation-v1" },
+        "splitter_id": { "const": "ab-plaintext-japanese-v1" },
+        "coordinate_system": { "const": "decoded_utf8" },
+        "coverage": { "const": "body-paragraphs" }
+      }
+    },
+    "sentence": {
+      "type": "object",
+      "required": [
+        "id",
+        "paragraph_id",
+        "span",
+        "node_range",
+        "tags",
+        "orthographic_annotation_indices"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^s[0-9]{6}$" },
+        "paragraph_id": { "type": "string", "pattern": "^p[0-9]{6}$" },
+        "span": { "$ref": "#/$defs/span" },
+        "node_range": { "$ref": "#/$defs/nodeRange" },
+        "tags": {
+          "type": "array",
+          "items": { "enum": ["orthographic-katakana"] },
+          "uniqueItems": true
+        },
+        "orthographic_annotation_indices": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "orthographicAnnotations": {
+      "type": "object",
+      "required": [
+        "work_id",
+        "work_content_hash",
+        "coordinate_system",
+        "detector_id",
+        "annotations"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "work_id": { "type": "string" },
+        "work_content_hash": { "$ref": "#/$defs/hash" },
+        "coordinate_system": { "const": "decoded_utf8" },
+        "detector_id": { "$ref": "#/$defs/orthoDetectorId" },
+        "annotations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/orthographicAnnotation" }
+        }
+      }
+    },
+    "orthographicAnnotation": {
+      "type": "object",
+      "required": ["source_byte_range", "normalized_text", "kind", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "source_byte_range": { "$ref": "#/$defs/byteRange" },
+        "normalized_text": { "type": "string" },
+        "kind": { "enum": ["ScriptKatakanaToHiragana", "HistoricalToModern"] },
+        "confidence": { "type": ["integer", "null"], "minimum": 0, "maximum": 100 }
+      }
+    },
+    "orthoDetectorId": {
+      "oneOf": [
+        { "const": "HeuristicV1" },
+        {
+          "type": "object",
+          "required": ["MlLogisticRegression"],
+          "additionalProperties": false,
+          "properties": {
+            "MlLogisticRegression": {
+              "type": "object",
+              "required": ["model_hash"],
+              "additionalProperties": false,
+              "properties": {
+                "model_hash": { "$ref": "#/$defs/hash" }
+              }
+            }
+          }
+        }
+      ]
     },
     "paragraphLayout": {
       "oneOf": [

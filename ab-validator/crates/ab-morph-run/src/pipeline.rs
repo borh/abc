@@ -2,6 +2,57 @@ use super::*;
 use crate::options::OrthoDetectMode;
 use crate::output::for_each_jsonl_or_zst_line;
 
+/// Wall-time split for a serial analyze run: time spent in the per-document
+/// analyzer loop, time spent in the warehouse parquet write/encode
+/// (`WarehouseWriter::finalize`), and the run's total wall time. `other()`
+/// derives everything not accounted for by the two measured phases (IO,
+/// AAT parsing/projection, comparison/n-way writing, etc).
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct PhaseTimings {
+    pub(crate) analysis: std::time::Duration,
+    pub(crate) warehouse_write: std::time::Duration,
+    pub(crate) total: std::time::Duration,
+}
+
+impl PhaseTimings {
+    pub(crate) fn other(&self) -> std::time::Duration {
+        self.total
+            .saturating_sub(self.analysis + self.warehouse_write)
+    }
+}
+
+impl std::ops::AddAssign for PhaseTimings {
+    fn add_assign(&mut self, rhs: Self) {
+        self.analysis += rhs.analysis;
+        self.warehouse_write += rhs.warehouse_write;
+        self.total += rhs.total;
+    }
+}
+
+/// Log a one-line, stderr-only diagnostic summary of a run's phase-timing
+/// split (mirrors the `auto-jobs:` line style in `auto_jobs.rs`). `n` is the
+/// number of workers/shards summed into `timings`. Never written to any
+/// parquet/JSONL output — diagnostic only.
+fn log_phase_timings(n: usize, timings: &PhaseTimings) {
+    let pct = |d: std::time::Duration, total: std::time::Duration| -> f64 {
+        if total.is_zero() {
+            0.0
+        } else {
+            100.0 * d.as_secs_f64() / total.as_secs_f64()
+        }
+    };
+    eprintln!(
+        "phase-timings (summed across {n} workers): total={total:.1}s analysis={a:.1}s ({ap:.1}%) warehouse-write={w:.1}s ({wp:.1}%) other={o:.1}s ({op:.1}%)",
+        total = timings.total.as_secs_f64(),
+        a = timings.analysis.as_secs_f64(),
+        ap = pct(timings.analysis, timings.total),
+        w = timings.warehouse_write.as_secs_f64(),
+        wp = pct(timings.warehouse_write, timings.total),
+        o = timings.other().as_secs_f64(),
+        op = pct(timings.other(), timings.total),
+    );
+}
+
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn run_analyze_aat(
     aat: Option<&Path>,
@@ -196,7 +247,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
     let analyzer_rows = warehouse_analyzer_rows(run_id, &specs, &analyzers)?;
     if jobs == 1 {
         let input_count = inputs.len();
-        run_analyze_aat_serial(
+        let (_string_stats, timings) = run_analyze_aat_serial(
             inputs,
             &analyzers,
             SerialRunOptions {
@@ -227,6 +278,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
                 ortho_ml_model: None,
             },
         )?;
+        log_phase_timings(1, &timings);
     } else {
         run_analyze_aat_warehouse_parallel(
             inputs,
@@ -391,7 +443,7 @@ pub(crate) fn run_analyze_aat_inputs(
             collect_string_stats,
         )?
     } else {
-        run_analyze_aat_serial(
+        let (string_stats, timings) = run_analyze_aat_serial(
             inputs,
             &analyzers,
             SerialRunOptions {
@@ -411,7 +463,9 @@ pub(crate) fn run_analyze_aat_inputs(
                 ortho_detect,
                 ortho_ml_model,
             },
-        )?
+        )?;
+        log_phase_timings(1, &timings);
+        string_stats
     };
 
     if let Some(path) = manifest_output {
@@ -442,7 +496,9 @@ pub(crate) fn run_analyze_aat_serial(
     inputs: Vec<PathBuf>,
     analyzers: &[Arc<LoadedAnalyzer>],
     options: SerialRunOptions<'_>,
-) -> Result<StringStatsReport> {
+) -> Result<(StringStatsReport, PhaseTimings)> {
+    let run_start = std::time::Instant::now();
+    let mut analysis_time = std::time::Duration::ZERO;
     let resume_ids = if options.resume {
         let analyses_output = options
             .analyses_output
@@ -710,6 +766,7 @@ pub(crate) fn run_analyze_aat_serial(
             .then(|| Arc::from(document.text.as_str()));
         let mut analyses = Vec::new();
 
+        let analysis_start = std::time::Instant::now();
         for analyzer in analyzers {
             let mut analysis = match analyzer.analyze(norm_doc) {
                 Ok(analysis) => analysis,
@@ -803,6 +860,7 @@ pub(crate) fn run_analyze_aat_serial(
             }
             analyses.push(analysis);
         }
+        analysis_time += analysis_start.elapsed();
 
         if let Some(writer) = &mut warehouse_writer
             && let Some(first_analysis) = analyses.first()
@@ -977,7 +1035,7 @@ pub(crate) fn run_analyze_aat_serial(
     if let Some(writer) = &mut nway_pattern_counts_writer {
         writer.flush()?;
     }
-    if let Some(mut writer) = warehouse_writer {
+    let warehouse_write = if let Some(mut writer) = warehouse_writer {
         let warehouse = options.warehouse.as_ref().expect("warehouse options");
         writer.append_runs(&[RunRow {
             schema_version: warehouse::schema::SCHEMA_VERSION,
@@ -989,9 +1047,16 @@ pub(crate) fn run_analyze_aat_serial(
             analyzer_count: warehouse.analyzer_rows.len() as u64,
             error_count: warehouse_error_count,
         }])?;
-        let _warehouse_write_time = writer.finalize()?;
-    }
-    Ok(string_stats)
+        writer.finalize()?
+    } else {
+        std::time::Duration::ZERO
+    };
+    let timings = PhaseTimings {
+        analysis: analysis_time,
+        warehouse_write,
+        total: run_start.elapsed(),
+    };
+    Ok((string_stats, timings))
 }
 
 pub(crate) fn run_analyze_aat_warehouse_parallel(
@@ -1022,6 +1087,7 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
             handles.push(scope.spawn(move || -> Result<WarehouseShardOutput> {
                 let mut shard_run_dirs = Vec::new();
                 let mut warnings = Vec::new();
+                let mut timings = PhaseTimings::default();
                 while let Some(batch) = take_warehouse_work_batch(&queue) {
                     let shard_index = batch.shard_index;
                     let batch_is_large = batch.is_large;
@@ -1062,13 +1128,15 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
                         },
                     );
                     complete_warehouse_work_batch(&queue, batch_is_large);
-                    let batch_report = result?;
+                    let (batch_report, batch_timings) = result?;
                     warnings.extend(batch_report.warnings);
+                    timings += batch_timings;
                     shard_run_dirs.push(paths.final_dir);
                 }
                 Ok(WarehouseShardOutput {
                     shard_run_dirs,
                     warnings,
+                    timings,
                 })
             }));
         }
@@ -1089,8 +1157,10 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
     };
     let mut report = StringStatsReport::default();
     let mut outputs = outputs;
+    let mut phase_timings = PhaseTimings::default();
     for output in &mut outputs {
         report.warnings.append(&mut output.warnings);
+        phase_timings += output.timings;
     }
     let mut shard_run_dirs = outputs
         .into_iter()
@@ -1116,12 +1186,14 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
     );
     fs::remove_dir_all(&temp_root)
         .with_context(|| format!("failed to remove {}", temp_root.display()))?;
+    log_phase_timings(shard_run_dirs.len(), &phase_timings);
     Ok(report)
 }
 
 struct WarehouseShardOutput {
     shard_run_dirs: Vec<PathBuf>,
     warnings: Vec<RunWarning>,
+    timings: PhaseTimings,
 }
 
 pub(crate) struct WarehouseWorkBatch {
@@ -1219,6 +1291,43 @@ impl WarehouseWorkQueue {
         if is_large {
             self.active_large_batches = self.active_large_batches.saturating_sub(1);
         }
+    }
+}
+
+#[cfg(test)]
+mod phase_timings_tests {
+    use super::PhaseTimings;
+
+    #[test]
+    fn phase_timings_sum_and_derive_other() {
+        use std::time::Duration;
+        let mut a = PhaseTimings {
+            analysis: Duration::from_secs(2),
+            warehouse_write: Duration::from_secs(3),
+            total: Duration::from_secs(10),
+        };
+        let b = PhaseTimings {
+            analysis: Duration::from_secs(1),
+            warehouse_write: Duration::from_secs(1),
+            total: Duration::from_secs(4),
+        };
+        a += b;
+        assert_eq!(a.analysis, Duration::from_secs(3));
+        assert_eq!(a.warehouse_write, Duration::from_secs(4));
+        assert_eq!(a.total, Duration::from_secs(14));
+        assert_eq!(a.other(), Duration::from_secs(7)); // 14 - 3 - 4
+    }
+
+    #[test]
+    fn phase_timings_other_saturates() {
+        use std::time::Duration;
+        // Overlap/measurement skew must never underflow.
+        let t = PhaseTimings {
+            analysis: Duration::from_secs(6),
+            warehouse_write: Duration::from_secs(6),
+            total: Duration::from_secs(10),
+        };
+        assert_eq!(t.other(), Duration::ZERO);
     }
 }
 
@@ -1445,7 +1554,7 @@ pub(crate) fn run_analyze_aat_parallel(
                     .map(|path| shard_output_path(&output_dir, path, "nway-pattern-counts"));
                 let errors =
                     errors_output.map(|path| shard_output_path(&output_dir, path, "errors"));
-                let string_stats = run_analyze_aat_serial(
+                let (string_stats, timings) = run_analyze_aat_serial(
                     shard_inputs,
                     &analyzers,
                     SerialRunOptions {
@@ -1476,6 +1585,7 @@ pub(crate) fn run_analyze_aat_parallel(
                     nway_pattern_counts,
                     errors,
                     string_stats,
+                    timings,
                 })
             }));
         }
@@ -1548,9 +1658,14 @@ pub(crate) fn run_analyze_aat_parallel(
             string_stats.merge(&output.string_stats);
         }
     }
+    let mut phase_timings = PhaseTimings::default();
+    for output in &outputs {
+        phase_timings += output.timings;
+    }
 
     fs::remove_dir_all(&temp_root)
         .with_context(|| format!("failed to remove {}", temp_root.display()))?;
+    log_phase_timings(outputs.len(), &phase_timings);
     Ok(string_stats)
 }
 
@@ -1563,6 +1678,7 @@ struct ShardOutput {
     nway_pattern_counts: Option<PathBuf>,
     errors: Option<PathBuf>,
     string_stats: StringStatsReport,
+    timings: PhaseTimings,
 }
 
 pub(crate) fn shard_output_path(output_dir: &Path, final_path: &Path, stem: &str) -> PathBuf {

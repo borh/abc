@@ -261,3 +261,35 @@ Run `soranoha reproduce demo-basic-ja`, `soranoha validate target/soranoha/demo-
 - [x] Run focused materialize-analysis/materialize-publication/snapshot/Soranoha tests.
 - [x] Run `git diff --check`.
 - [x] Run `nix flake check`.
+
+### Task 10: Source-Snapshot Backed Full-Corpus Subjects
+
+**Files:**
+- Create: `abc/examples/v0/source-snapshot/source-snapshot.fixture.json`
+- Modify: `abc/src/abc/tools/request_set_resolver.clj`
+- Modify: `abc/test/abc/tools/request_set_resolver_test.clj`
+- Modify: `abc/data/request-set-definitions/full-corpus-*.json`
+- Modify: `abc/data/request-sets/full-corpus-*.json`
+
+**Interfaces:**
+- Produces: request-set `subject_source` expansion from a source-corpus snapshot descriptor.
+- Consumes: source snapshot `snapshot_hash` and `snapshot_identity_object.snapshot_inputs`.
+
+- [x] Add failing resolver tests for source-snapshot subject expansion and stale snapshot hash rejection.
+- [x] Implement source-snapshot subject expansion while preserving inline smoke/demo subjects.
+- [x] Switch full-corpus definitions from inline shape subjects to `subject_source`.
+- [x] Regenerate full-corpus resolved request-set goldens.
+- [x] Run focused request-set/Soranoha/design-bundle tests.
+
+### Task 11: Full-Corpus Subject-Source Slice Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed source-snapshot subject-source resolver changes.
+- Produces: verified request-set identity path for source-snapshot backed full-corpus definitions.
+
+- [x] Run `git diff --check`.
+- [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
+- [x] Run `nix flake check`.

@@ -1,15 +1,12 @@
 {
   "request_set_definition_version": "request-set-definition-v1",
   "label": "full-corpus-basic-ja",
-  "corpus_snapshot_hash": "sha256:3131313131313131313131313131313131313131313131313131313131313131",
-  "subjects": [
-    {
-      "source_id": "aozora:full-corpus-basic-shape-fixture",
-      "work_id": "aozora:full-corpus-basic-shape-fixture",
-      "work_content_hash": "sha256:3434343434343434343434343434343434343434343434343434343434343434",
-      "metadata_record_hash": null
-    }
-  ],
+  "subject_source": {
+    "kind": "source-corpus-snapshot-v0",
+    "path": "examples/v0/source-snapshot/source-snapshot.fixture.json",
+    "source_id_prefix": "aozora:",
+    "work_id_prefix": "aozora:"
+  },
   "input_views": [
     {
       "input_view_kind": "parser-ir-plaintext-body-v1",

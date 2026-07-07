@@ -26,6 +26,9 @@
 (def default-resolved-at
   "2026-07-07T00:00:00Z")
 
+(def source-snapshot-kind
+  "source-corpus-snapshot-v0")
+
 (defn- json-file? [file]
   (and (.isFile file)
        (string/ends-with? (.getName file) ".json")))
@@ -89,6 +92,91 @@
                       {:tokenizer_profile_ids profile-ids})))
     []))
 
+(defn- required-string [label value context]
+  (when (or (not (string? value)) (string/blank? value))
+    (throw (ex-info (str label " must be a non-empty string")
+                    (assoc context
+                           :label label
+                           :value value))))
+  value)
+
+(defn- source-snapshot-hash [snapshot path]
+  (let [identity-object (get snapshot "snapshot_identity_object")
+        declared-hash (get snapshot "snapshot_hash")
+        expected-hash (analysis-identity/hash-json-value identity-object)]
+    (when-not (= declared-hash expected-hash)
+      (throw (ex-info "Source snapshot hash mismatch"
+                      {:path path
+                       :declared_hash declared-hash
+                       :expected_hash expected-hash})))
+    declared-hash))
+
+(defn- source-snapshot-subject [subject-source input]
+  (let [work-id (required-string "work_id" (get input "work_id")
+                                 {:subject_source subject-source
+                                  :snapshot_input input})
+        source-id-prefix (get subject-source "source_id_prefix" "")
+        work-id-prefix (get subject-source "work_id_prefix" "")
+        work-content-hash (required-string "work_content_hash"
+                                           (get input "work_content_hash")
+                                           {:subject_source subject-source
+                                            :snapshot_input input})]
+    {"source_id" (or (get input "source_id")
+                     (str source-id-prefix work-id))
+     "work_id" (or (get input "subject_work_id")
+                   (str work-id-prefix work-id))
+     "work_content_hash" work-content-hash
+     "metadata_record_hash" (get input "metadata_record_hash")}))
+
+(defn- resolve-source-snapshot-subjects [subject-source]
+  (let [kind (get subject-source "kind")
+        path (required-string "subject_source.path"
+                              (get subject-source "path")
+                              {:subject_source subject-source})]
+    (when-not (= source-snapshot-kind kind)
+      (throw (ex-info "Unsupported request-set subject source kind"
+                      {:kind kind
+                       :allowed_kinds [source-snapshot-kind]})))
+    (let [snapshot (files/read-json path)
+          snapshot-hash (source-snapshot-hash snapshot path)
+          inputs (get-in snapshot ["snapshot_identity_object" "snapshot_inputs"])]
+      (when-not (seq inputs)
+        (throw (ex-info "Source snapshot has no snapshot_inputs"
+                        {:path path})))
+      {:corpus-snapshot-hash snapshot-hash
+       :subjects (mapv #(source-snapshot-subject subject-source %)
+                       inputs)})))
+
+(defn- resolve-subject-coordinate [definition]
+  (let [inline-subjects (get definition "subjects")
+        subject-source (get definition "subject_source")]
+    (cond
+      (and (seq inline-subjects) subject-source)
+      (throw (ex-info "Request-set definition must not define both subjects and subject_source"
+                      {:label (get definition "label")}))
+
+      subject-source
+      (let [{:keys [corpus-snapshot-hash subjects]}
+            (resolve-source-snapshot-subjects subject-source)
+            declared-hash (get definition "corpus_snapshot_hash")]
+        (when (and declared-hash (not= declared-hash corpus-snapshot-hash))
+          (throw (ex-info "Request-set definition corpus_snapshot_hash does not match subject source"
+                          {:label (get definition "label")
+                           :declared_hash declared-hash
+                           :subject_source_hash corpus-snapshot-hash})))
+        {:corpus-snapshot-hash corpus-snapshot-hash
+         :subjects subjects})
+
+      (seq inline-subjects)
+      {:corpus-snapshot-hash (required-string "corpus_snapshot_hash"
+                                              (get definition "corpus_snapshot_hash")
+                                              {:label (get definition "label")})
+       :subjects inline-subjects}
+
+      :else
+      (throw (ex-info "Request-set definition must define subjects or subject_source"
+                      {:label (get definition "label")})))))
+
 (defn resolve-request-set
   ([label]
    (resolve-request-set label {:resolved-at default-resolved-at}))
@@ -96,13 +184,15 @@
            :or {resolved-at default-resolved-at}}]
    (let [definition (read-request-set-definition label)
          definition-label (get definition "label")
+         subject-coordinate (resolve-subject-coordinate definition)
          resolved-recipes (mapv #(resolve-analysis-recipe % resolved-at)
                                 (get definition "analysis_recipe_ids" []))
          tokenizer-labels (resolved-tokenizer-profile-labels definition)
          identity-object (analysis-identity/request-set-identity-object
                           {:schema-hash (manifest/schema-hash request-set-schema-path)
-                           :corpus-snapshot-hash (get definition "corpus_snapshot_hash")
-                           :subjects (get definition "subjects")
+                           :corpus-snapshot-hash (:corpus-snapshot-hash
+                                                  subject-coordinate)
+                           :subjects (:subjects subject-coordinate)
                            :input-views (get definition "input_views")
                            :tokenizer-profile-hashes []
                            :analysis-recipe-hashes (mapv :hash resolved-recipes)

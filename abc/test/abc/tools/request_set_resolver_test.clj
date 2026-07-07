@@ -1,9 +1,49 @@
 (ns abc.tools.request-set-resolver-test
   (:require [abc.tools.analysis-identity :as analysis-identity]
             [abc.tools.files :as files]
+            [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.request-set-resolver :as resolver]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.java.io :as io]
+            [clojure.test :refer [deftest is testing]])
+  (:import [java.nio.file Files]
+           [java.nio.file.attribute FileAttribute]))
+
+(defn- temp-dir [prefix]
+  (.toFile (Files/createTempDirectory prefix (make-array FileAttribute 0))))
+
+(defn- delete-tree! [dir]
+  (when dir
+    (doseq [f (reverse (file-seq dir))]
+      (.delete f))))
+
+(defn- source-snapshot! [file snapshot-inputs]
+  (let [identity-object {"snapshot_scope" "unit-test-source-snapshot"
+                         "snapshot_date" "2026-07-07"
+                         "snapshot_inputs" snapshot-inputs}
+        snapshot {"snapshot_schema_id" "https://w3id.org/abc/source-corpus-snapshot-v0.json"
+                  "snapshot_hash_algorithm" "sha256-rfc8785-jcs-v0"
+                  "snapshot_hash" (analysis-identity/hash-json-value identity-object)
+                  "snapshot_identity_object" identity-object
+                  "notes" "unit test fixture"}]
+    (abc-json/write-deterministic-json-file! file snapshot)
+    snapshot))
+
+(defn- source-snapshot-definition [snapshot-path]
+  {"request_set_definition_version" "request-set-definition-v1"
+   "label" "source-snapshot-basic-ja"
+   "subject_source" {"kind" "source-corpus-snapshot-v0"
+                     "path" snapshot-path
+                     "source_id_prefix" "aozora:"
+                     "work_id_prefix" "aozora:"}
+   "input_views" [{"input_view_kind" "parser-ir-plaintext-body-v1"
+                   "policy_hash" "sha256:df21c590fd8d5b934fd426e632a3d8a09c2bd3fa299ca6b4c8fe4c797e1d1391"}]
+   "analysis_recipe_ids" ["literary-basic-ja-v1"]
+   "tokenizer_profile_ids" []
+   "missing_policy" "build-missing-only"
+   "pack_policy" {"schema_id" "https://w3id.org/abc/policies/request-set-pack-policy-v1"
+                  "policy_id" "no-pack-v1"
+                  "pack_kind" "none"}})
 
 (deftest resolve-request-set-computes-identity-from-definition-test
   (let [resolved (resolver/resolve-request-set "smoke-basic-ja")
@@ -37,3 +77,77 @@
        clojure.lang.ExceptionInfo
        #"Unknown request set"
        (resolver/resolve-request-set "missing-basic-ja"))))
+
+(deftest full-corpus-request-sets-use-source-snapshot-subject-source-test
+  (doseq [label ["full-corpus-publication-basic-ja"
+                 "full-corpus-analysis-basic-ja"
+                 "full-corpus-basic-ja"]]
+    (testing label
+      (let [definition (resolver/read-request-set-definition label)
+            resolved (resolver/resolve-request-set label)
+            identity-object (get resolved "request_set_identity_object")
+            source-snapshot (files/read-json
+                             (get-in definition ["subject_source" "path"]))]
+        (is (nil? (get definition "subjects")))
+        (is (= "source-corpus-snapshot-v0"
+               (get-in definition ["subject_source" "kind"])))
+        (is (= (get source-snapshot "snapshot_hash")
+               (get identity-object "corpus_snapshot_hash")))
+        (is (= 2 (count (get identity-object "subjects"))))))))
+
+(deftest resolve-request-set-expands-subjects-from-source-snapshot-test
+  (let [root (temp-dir "abc-source-snapshot-subjects")
+        snapshot-file (io/file root "source-snapshot.json")]
+    (try
+      (let [snapshot (source-snapshot!
+                      snapshot-file
+                      [{"work_id" "000002"
+                        "work_content_hash" (files/example-hash "b2")
+                        "metadata_record_hash" nil}
+                       {"work_id" "000001"
+                        "work_content_hash" (files/example-hash "a1")
+                        "metadata_record_hash" (files/example-hash "c1")}])]
+        (with-redefs [resolver/read-request-set-definition
+                      (fn [_] (source-snapshot-definition (str snapshot-file)))
+                      resolver/request-set-definition-path
+                      (fn [_] "unit/source-snapshot-basic-ja.json")]
+          (let [resolved (resolver/resolve-request-set "source-snapshot-basic-ja")
+                identity-object (get resolved "request_set_identity_object")]
+            (is (= (get snapshot "snapshot_hash")
+                   (get identity-object "corpus_snapshot_hash")))
+            (is (= [{"source_id" "aozora:000001"
+                     "work_id" "aozora:000001"
+                     "work_content_hash" (files/example-hash "a1")
+                     "metadata_record_hash" (files/example-hash "c1")}
+                    {"source_id" "aozora:000002"
+                     "work_id" "aozora:000002"
+                     "work_content_hash" (files/example-hash "b2")
+                     "metadata_record_hash" nil}]
+                   (get identity-object "subjects")))
+            (is (= (analysis-identity/request-set-id resolved)
+                   (get resolved "request_set_id"))))))
+      (finally
+        (delete-tree! root)))))
+
+(deftest resolve-request-set-rejects-stale-source-snapshot-hash-test
+  (let [root (temp-dir "abc-stale-source-snapshot")
+        snapshot-file (io/file root "source-snapshot.json")]
+    (try
+      (let [snapshot (source-snapshot!
+                      snapshot-file
+                      [{"work_id" "000001"
+                        "work_content_hash" (files/example-hash "a1")
+                        "metadata_record_hash" nil}])]
+        (abc-json/write-deterministic-json-file!
+         snapshot-file
+         (assoc snapshot "snapshot_hash" (files/example-hash "ff")))
+        (with-redefs [resolver/read-request-set-definition
+                      (fn [_] (source-snapshot-definition (str snapshot-file)))
+                      resolver/request-set-definition-path
+                      (fn [_] "unit/source-snapshot-basic-ja.json")]
+          (is (thrown-with-msg?
+               clojure.lang.ExceptionInfo
+               #"Source snapshot hash mismatch"
+               (resolver/resolve-request-set "source-snapshot-basic-ja")))))
+      (finally
+        (delete-tree! root)))))

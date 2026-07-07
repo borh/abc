@@ -1,11 +1,11 @@
 {
   "label": "full-corpus-basic-ja",
-  "request_set_id": "sha256:4ebe644872b0563d1fc40b7a973d8e20274f74b4443ed6dfad87cc1ba8434158",
+  "request_set_id": "sha256:ec60d98c20a23e658fd551dab9f85eb4c2c69f80a5d1de185ee450514b3c3792",
   "request_set_identity_object": {
     "analysis_recipe_hashes": [
       "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b"
     ],
-    "corpus_snapshot_hash": "sha256:3131313131313131313131313131313131313131313131313131313131313131",
+    "corpus_snapshot_hash": "sha256:110f2a83f5a43728af28b8f34daff5a1eebc30d6ca4142be245d89296f661544",
     "input_views": [
       {
         "input_view_kind": "parser-ir-plaintext-body-v1",
@@ -17,10 +17,16 @@
     "schema_hash": "sha256:3b8703095321a59c7acf35e0e391cc46b0b7d7d10da9bb233cb78fb0e7747f6c",
     "subjects": [
       {
-        "metadata_record_hash": null,
-        "source_id": "aozora:full-corpus-basic-shape-fixture",
-        "work_content_hash": "sha256:3434343434343434343434343434343434343434343434343434343434343434",
-        "work_id": "aozora:full-corpus-basic-shape-fixture"
+        "metadata_record_hash": "sha256:c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+        "source_id": "aozora:000001",
+        "work_content_hash": "sha256:2323232323232323232323232323232323232323232323232323232323232323",
+        "work_id": "aozora:000001"
+      },
+      {
+        "metadata_record_hash": "sha256:d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2",
+        "source_id": "aozora:000002",
+        "work_content_hash": "sha256:2424242424242424242424242424242424242424242424242424242424242424",
+        "work_id": "aozora:000002"
       }
     ],
     "tokenizer_profile_hashes": []

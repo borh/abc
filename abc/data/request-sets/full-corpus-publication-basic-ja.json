@@ -1,9 +1,9 @@
 {
   "label": "full-corpus-publication-basic-ja",
-  "request_set_id": "sha256:6b0b493be2151f5d7b12e6b75662a4d1ae1d9bdfe809bd6879a3ef2dec4afd3d",
+  "request_set_id": "sha256:60213d87214f023625fa796f539e81c2fcd86e1a720879f1b5e04964303ab05c",
   "request_set_identity_object": {
     "analysis_recipe_hashes": [],
-    "corpus_snapshot_hash": "sha256:3131313131313131313131313131313131313131313131313131313131313131",
+    "corpus_snapshot_hash": "sha256:110f2a83f5a43728af28b8f34daff5a1eebc30d6ca4142be245d89296f661544",
     "input_views": [
       {
         "input_view_kind": "parser-ir-plaintext-body-v1",
@@ -15,10 +15,16 @@
     "schema_hash": "sha256:3b8703095321a59c7acf35e0e391cc46b0b7d7d10da9bb233cb78fb0e7747f6c",
     "subjects": [
       {
-        "metadata_record_hash": null,
-        "source_id": "aozora:full-corpus-publication-shape-fixture",
-        "work_content_hash": "sha256:3232323232323232323232323232323232323232323232323232323232323232",
-        "work_id": "aozora:full-corpus-publication-shape-fixture"
+        "metadata_record_hash": "sha256:c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+        "source_id": "aozora:000001",
+        "work_content_hash": "sha256:2323232323232323232323232323232323232323232323232323232323232323",
+        "work_id": "aozora:000001"
+      },
+      {
+        "metadata_record_hash": "sha256:d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2",
+        "source_id": "aozora:000002",
+        "work_content_hash": "sha256:2424242424242424242424242424242424242424242424242424242424242424",
+        "work_id": "aozora:000002"
       }
     ],
     "tokenizer_profile_hashes": []

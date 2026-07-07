@@ -1,0 +1,52 @@
+{
+  "notes": "Fixture source snapshot descriptor used to exercise request-set subject_source expansion. It is not a public full-corpus snapshot.",
+  "snapshot_hash": "sha256:110f2a83f5a43728af28b8f34daff5a1eebc30d6ca4142be245d89296f661544",
+  "snapshot_hash_algorithm": "sha256-rfc8785-jcs-v0",
+  "snapshot_identity_object": {
+    "snapshot_date": "2026-07-07",
+    "snapshot_inputs": [
+      {
+        "aat_adapter": "fixture",
+        "aat_adapter_version": "fixture 0.1.0",
+        "aat_file_hash": "sha256:9191919191919191919191919191919191919191919191919191919191919191",
+        "aat_path": "cards/000001/files/000001.aat.json",
+        "aat_version": 1,
+        "card_url": "https://www.aozora.gr.jp/cards/000001/card000001.html",
+        "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
+        "mapping_schema_hash": "sha256:9292929292929292929292929292929292929292929292929292929292929292",
+        "mapping_version": "0.2.0",
+        "metadata_record_hash": "sha256:c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
+        "parser_ir_schema_hash": "sha256:9393939393939393939393939393939393939393939393939393939393939393",
+        "person_id": "000001",
+        "slug": "fixture-work-000001",
+        "source_encoding": "UTF-8",
+        "source_normalization": "source",
+        "title": "Fixture Work One",
+        "work_content_hash": "sha256:2323232323232323232323232323232323232323232323232323232323232323",
+        "work_id": "000001"
+      },
+      {
+        "aat_adapter": "fixture",
+        "aat_adapter_version": "fixture 0.1.0",
+        "aat_file_hash": "sha256:a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1",
+        "aat_path": "cards/000002/files/000002.aat.json",
+        "aat_version": 1,
+        "card_url": "https://www.aozora.gr.jp/cards/000002/card000002.html",
+        "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
+        "mapping_schema_hash": "sha256:a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2",
+        "mapping_version": "0.2.0",
+        "metadata_record_hash": "sha256:d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2",
+        "parser_ir_schema_hash": "sha256:a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+        "person_id": "000002",
+        "slug": "fixture-work-000002",
+        "source_encoding": "UTF-8",
+        "source_normalization": "source",
+        "title": "Fixture Work Two",
+        "work_content_hash": "sha256:2424242424242424242424242424242424242424242424242424242424242424",
+        "work_id": "000002"
+      }
+    ],
+    "snapshot_scope": "request-set-source-snapshot-fixture"
+  },
+  "snapshot_schema_id": "https://w3id.org/abc/source-corpus-snapshot-v0.json"
+}

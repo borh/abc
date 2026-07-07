@@ -1,7 +1,7 @@
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.2.5",
-  "mapping_schema_hash": "sha256:23a2822cbae88533168121e8a09648441276d8af6484269ae666b90030eb1e06",
+  "mapping_version": "0.2.6",
+  "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "target_parser_ir_schema_hash": "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340",
@@ -5445,6 +5445,36 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 119 occurrences; first_path=blocks[12].yokogumi_block. block_container kind 'yokogumi_block' has no parser-IR equivalent"
+    }
+  ],
+  "synthetic_evidence_descriptions": [
+    {
+      "evidence_id": "SYN-001",
+      "parser_ir_pointer": "sentence_segmentation",
+      "source": "converter_policy",
+      "action": "emit",
+      "description": "Declares the sentence splitter identity, coverage, and decoded UTF-8 coordinate system used by parser-IR sentence rows."
+    },
+    {
+      "evidence_id": "SYN-002",
+      "parser_ir_pointer": "sentences",
+      "source": "visible_body_text",
+      "action": "emit",
+      "description": "Records body paragraph sentence spans and node ranges derived from parser-IR visible text."
+    },
+    {
+      "evidence_id": "SYN-003",
+      "parser_ir_pointer": "sentences[].tags",
+      "source": "sentence_overlap",
+      "action": "classify",
+      "description": "Marks sentence rows whose decoded byte span overlaps an orthographic annotation."
+    },
+    {
+      "evidence_id": "SYN-004",
+      "parser_ir_pointer": "orthographic_annotations",
+      "source": "orthographic_sidecar",
+      "action": "declare",
+      "description": "Carries detector provenance and normalized text for tokenizer-facing katakana-to-hiragana normalization."
     }
   ],
   "loss_taxonomy": {

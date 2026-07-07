@@ -174,7 +174,7 @@ fn legacy_schema_hashes_match_mapping_artifact() {
 
     assert_eq!(
         schema_hash(&schemas.mapping_schema).unwrap(),
-        "sha256:23a2822cbae88533168121e8a09648441276d8af6484269ae666b90030eb1e06"
+        "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2"
     );
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
@@ -233,7 +233,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.2.5");
+    assert_eq!(mapping.mapping_version, "0.2.6");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -242,9 +242,22 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     assert!(mapping.transform_rule_descriptions.iter().all(|rule| {
         !matches!(
             rule.parser_ir_pointer.as_deref(),
-            Some("sentence_segmentation" | "sentences" | "orthographic_annotations")
+            Some(
+                "sentence_segmentation"
+                    | "sentences"
+                    | "orthographic_annotations"
+            )
         )
     }));
+    let synthetic_pointers: std::collections::BTreeSet<_> = mapping
+        .synthetic_evidence_descriptions
+        .iter()
+        .map(|entry| entry.parser_ir_pointer.as_str())
+        .collect();
+    assert!(synthetic_pointers.contains("sentence_segmentation"));
+    assert!(synthetic_pointers.contains("sentences"));
+    assert!(synthetic_pointers.contains("sentences[].tags"));
+    assert!(synthetic_pointers.contains("orthographic_annotations"));
     assert!(
         !mapping
             .transform_rule_descriptions

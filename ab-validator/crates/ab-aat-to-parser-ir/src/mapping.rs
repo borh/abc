@@ -23,6 +23,8 @@ pub struct MappingDocument {
     pub target_parser_ir_schema_id: String,
     pub target_parser_ir_schema_hash: String,
     pub transform_rule_descriptions: Vec<MappingRule>,
+    #[serde(default)]
+    pub synthetic_evidence_descriptions: Vec<SyntheticEvidenceDescription>,
     pub loss_taxonomy: BTreeMap<String, LossTaxonomyEntry>,
 }
 
@@ -32,6 +34,15 @@ pub struct MappingRule {
     pub category: String,
     pub aat_pointer: Option<String>,
     pub parser_ir_pointer: Option<String>,
+    pub action: String,
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SyntheticEvidenceDescription {
+    pub evidence_id: String,
+    pub parser_ir_pointer: String,
+    pub source: String,
     pub action: String,
     pub description: String,
 }
@@ -120,6 +131,32 @@ impl MappingDocument {
             );
             if rules.insert(key, rule.clone()).is_some() {
                 bail!("duplicate folded mapping rule {}", rule.rule_id);
+            }
+        }
+
+        let mut synthetic_ids = BTreeSet::new();
+        let mut synthetic_pointers = BTreeSet::new();
+        let transform_parser_pointers: BTreeSet<&str> = self
+            .transform_rule_descriptions
+            .iter()
+            .filter_map(|rule| rule.parser_ir_pointer.as_deref())
+            .collect();
+        for synthetic in &self.synthetic_evidence_descriptions {
+            if !synthetic_ids.insert(synthetic.evidence_id.as_str()) {
+                bail!("duplicate synthetic evidence id {}", synthetic.evidence_id);
+            }
+            if !synthetic_pointers.insert(synthetic.parser_ir_pointer.as_str()) {
+                bail!(
+                    "duplicate synthetic evidence parser_ir_pointer {}",
+                    synthetic.parser_ir_pointer
+                );
+            }
+            if transform_parser_pointers.contains(synthetic.parser_ir_pointer.as_str()) {
+                bail!(
+                    "synthetic evidence {} overlaps transform_rule_descriptions parser_ir_pointer {}",
+                    synthetic.evidence_id,
+                    synthetic.parser_ir_pointer
+                );
             }
         }
         Ok(MappingIndex { rules })

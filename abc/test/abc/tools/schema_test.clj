@@ -8,7 +8,7 @@
 (def ^:private cross-project-schema-versions
   {"schemas/parser-ir.schema.json" "0.6.0"
    "schemas/aat-parser-ir-divergence.schema.json" "0.3.0"
-   "schemas/aat-parser-ir-mapping.schema.json" "0.2.3"
+   "schemas/aat-parser-ir-mapping.schema.json" "0.2.4"
    "schemas/analysis-recipe.schema.json" "0.1.0"
    "schemas/analysis-result.schema.json" "0.1.0"
    "schemas/manifest.schema.json" "0.4.1"

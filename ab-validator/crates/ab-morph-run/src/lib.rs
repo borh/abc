@@ -4,6 +4,7 @@ mod compact;
 mod import_aozora;
 mod nway;
 mod options;
+mod oracle;
 mod output;
 mod pipeline;
 mod script;

@@ -6,6 +6,9 @@
 (def allowed-missing-policies
   #{"require-existing" "build-missing-only" "record-missing-status"})
 
+(def allowed-input-view-kinds
+  #{"parser-ir-plaintext-body-v1"})
+
 (defn hash-json-value [value]
   (hash/format-sha256 (hash/sha256-json-jcs value)))
 
@@ -21,17 +24,27 @@
 (defn- subject-sort-key [subject]
   [(required-string "source_id" (get subject "source_id"))
    (required-string "work_content_hash" (get subject "work_content_hash"))
-   (or (get subject "metadata_record_hash") "")
-   (or (get subject "work_id") "")])
+   (or (get subject "metadata_record_hash") "")])
+
+(defn- normalize-subject [subject]
+  (assoc subject "metadata_record_hash" (get subject "metadata_record_hash")))
 
 (defn canonical-subjects [subjects]
   (->> subjects
+       (map normalize-subject)
        (sort-by subject-sort-key)
        distinct
        vec))
 
 (defn- canonical-input-views [input-views]
   (->> input-views
+       (map (fn [input-view]
+              (let [input-view-kind (get input-view "input_view_kind")]
+                (when-not (contains? allowed-input-view-kinds input-view-kind)
+                  (throw (ex-info "Invalid input view kind"
+                                  {:input_view_kind input-view-kind
+                                   :allowed_input_view_kinds allowed-input-view-kinds})))
+                input-view)))
        (sort-by (juxt #(get % "input_view_kind")
                       #(get % "policy_hash")))
        distinct

@@ -2,7 +2,7 @@
   (:require [abc.tools.analysis-identity :as analysis-identity]
             [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.test :refer [deftest is]]))
 
 (def subject-a
   {"source_id" "aozora:1"
@@ -16,10 +16,39 @@
    "work_content_hash" (files/example-hash "12")
    "metadata_record_hash" (files/example-hash "13")})
 
+(def subject-c
+  {"source_id" "aozora:1"
+   "work_id" "aozora:1-c"
+   "work_content_hash" (files/example-hash "14")
+   "metadata_record_hash" nil})
+
+(def subject-d
+  {"source_id" "aozora:1"
+   "work_id" "aozora:1-c"
+   "work_content_hash" (files/example-hash "14")})
+
+(def subject-e
+  {"source_id" "aozora:1"
+   "work_id" "aozora:1-e"
+   "work_content_hash" (files/example-hash "15")
+   "metadata_record_hash" (files/example-hash "16")})
+
 (deftest canonical-subjects-sort-and-coalesce-test
   (is (= [subject-a subject-b]
          (analysis-identity/canonical-subjects
           [subject-b subject-a subject-a]))))
+
+(deftest canonical-subjects-preserves-nil-and-normalizes-missing-test
+  (is (= [subject-c]
+         (analysis-identity/canonical-subjects [subject-d subject-c])))
+  (is (= (analysis-identity/canonical-subjects [subject-c])
+         (analysis-identity/canonical-subjects [subject-d]))))
+
+(deftest subject-sort-key-omits-work-id-test
+  (is (= [(get subject-e "source_id")
+          (files/example-hash "15")
+          (files/example-hash "16")]
+         ((var-get #'analysis-identity/subject-sort-key) subject-e))))
 
 (deftest request-set-id-excludes-derived-and-label-fields-test
   (let [identity-object (analysis-identity/request-set-identity-object
@@ -44,6 +73,21 @@
     (is (= (manifest/artifact-id identity-object)
            (analysis-identity/request-set-id request-set-a)))
     (is (nil? (get-in identity-object ["subjects" 0 "metadata_record_hash"])))))
+
+(deftest request-set-identity-rejects-unsupported-input-view-kind-test
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"Invalid input view kind"
+       (analysis-identity/request-set-identity-object
+        {:schema-hash (files/example-hash "01")
+         :corpus-snapshot-hash (files/example-hash "02")
+         :subjects [subject-a]
+         :input-views [{"input_view_kind" "tei-body-text-v1"
+                        "policy_hash" (files/example-hash "03")}]
+         :tokenizer-profile-hashes []
+         :analysis-recipe-hashes []
+         :missing-policy "build-missing-only"
+         :pack-policy-hash (files/example-hash "05")}))))
 
 (deftest resolved-recipe-label-is-non-identity-audit-data-test
   (is (= {"recipe_id" "literary-basic-ja-v1"

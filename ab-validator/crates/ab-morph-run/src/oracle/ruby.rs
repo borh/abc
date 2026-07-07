@@ -1,9 +1,13 @@
 //! Ruby-base extraction and per-analyzer reading selection for the ruby oracle.
 
+use super::ruby_contract::{
+    AnalyzerRubyReadingEvidence, RubyOracleClassification, RubyReadingAlignment,
+    RubyReadingEvidenceDetail,
+};
 use ab_morph_diff::{Analysis, Morpheme};
 use ab_plaintext::ProjectionSpan;
 use ab_warehouse::schema::NwayRegionOracleEvidenceRow;
-use serde_json::{Value, json};
+use serde_json::Value;
 
 pub(crate) struct RubyBase {
     pub char_start: u64,
@@ -112,6 +116,15 @@ struct Reading {
     align: &'static str,
 }
 
+fn reading_alignment(value: &str) -> RubyReadingAlignment {
+    match value {
+        "exact" => RubyReadingAlignment::Exact,
+        "boundary-misalign" => RubyReadingAlignment::BoundaryMisalign,
+        "no-reading" => RubyReadingAlignment::NoReading,
+        other => panic!("unknown ruby reading alignment {other}"),
+    }
+}
+
 fn analyzer_reading(analysis: &Analysis, base: &RubyBase) -> Reading {
     let bs = base.char_start as usize;
     let be = base.char_end as usize;
@@ -192,7 +205,7 @@ pub(crate) fn adjudicate(
         }
         let mut winners = Vec::new();
         let mut losers = Vec::new();
-        let mut detail = serde_json::Map::new();
+        let mut detail = std::collections::BTreeMap::new();
         let mut any_comparable = false;
         for analysis in analyses {
             let reading = analyzer_reading(analysis, base);
@@ -207,12 +220,12 @@ pub(crate) fn adjudicate(
             }
             detail.insert(
                 analysis.analyzer.clone(),
-                json!({
-                    "reading": reading.raw,
-                    "norm": reading.norm,
-                    "match": is_match,
-                    "align": reading.align,
-                }),
+                AnalyzerRubyReadingEvidence {
+                    reading: reading.raw,
+                    norm: reading.norm,
+                    matches: is_match,
+                    align: reading_alignment(reading.align),
+                },
             );
         }
         // Emit iff ≥1 analyzer failed to match.
@@ -235,14 +248,20 @@ pub(crate) fn adjudicate(
         } else {
             None
         };
-        let evidence_detail = json!({
-            "ruby_base": base.base,
-            "ruby_reading": base.reading,
-            "ruby_reading_norm": ruby_norm,
-            "classification": classification,
-            "per_analyzer": detail,
+        let classification_enum = match classification {
+            "resolved" => RubyOracleClassification::Resolved,
+            "nonstandard_ruby" => RubyOracleClassification::NonstandardRuby,
+            "no_comparable_reading" => RubyOracleClassification::NoComparableReading,
+            other => panic!("unknown ruby oracle classification {other}"),
+        };
+        let evidence_detail = serde_json::to_string(&RubyReadingEvidenceDetail {
+            ruby_base: base.base.clone(),
+            ruby_reading: base.reading.clone(),
+            ruby_reading_norm: ruby_norm.clone(),
+            classification: classification_enum,
+            per_analyzer: detail,
         })
-        .to_string();
+        .expect("ruby reading evidence detail serializes");
         rows.push(NwayRegionOracleEvidenceRow {
             run_id: run_id.to_owned(),
             source_id: source_id.to_owned(),
@@ -471,17 +490,13 @@ mod tests {
         );
 
         assert_eq!(rows.len(), 1);
-        let detail: Value = serde_json::from_str(&rows[0].evidence_detail).unwrap();
-        assert_eq!(rows[0].classification, "nonstandard_ruby");
+        let detail: crate::oracle::ruby_contract::RubyReadingEvidenceDetail =
+            serde_json::from_str(&rows[0].evidence_detail).unwrap();
+        assert_eq!(detail.ruby_base, "名前");
+        assert_eq!(detail.ruby_reading, "めいしょう");
+        assert_eq!(detail.ruby_reading_norm, "めいしょう");
+        assert_eq!(rows[0].projected_char_start, 0);
         assert_eq!(rows[0].projected_char_end, 2);
-        assert_eq!(
-            detail.pointer("/per_analyzer/vibrato/align"),
-            Some(&json!("exact"))
-        );
-        assert_eq!(
-            detail.pointer("/per_analyzer/sudachi-c/align"),
-            Some(&json!("exact"))
-        );
     }
 
     #[test]

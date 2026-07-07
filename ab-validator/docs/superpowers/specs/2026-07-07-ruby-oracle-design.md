@@ -61,7 +61,8 @@ This partitions every ruby base into three outcomes:
 |---|---|---|
 | All analyzers match | boring — a *reading* oracle has nothing to adjudicate (segmentation-only differences are cause-classification's domain, not ruby's) | **no** |
 | Some match, some do not | **resolved** — winners vs losers | **yes** |
-| No analyzer matches | **nonstandard_ruby** — retained for manual review, not resolved | **yes** |
+| No analyzer matches, but at least one analyzer produced a comparable exact reading | **nonstandard_ruby** — retained for manual review, not resolved | **yes** |
+| No analyzer produced a comparable exact reading | **no_comparable_reading** — all analyzers were `boundary-misalign` or `no-reading`, so the ruby offers no dictionary comparison | **yes** |
 
 The predicate needs only the per-analyzer readings; it does not require an
 n-way disagreement to exist. This is what lets the oracle catch the
@@ -111,9 +112,11 @@ Layers, in order:
    tests. Its membership is deliberately small and explicit.
 
 **Honest degradation:** any historical form not covered by layers 3–5 does not
-match, so the base falls to `nonstandard_ruby` and is *retained for review* — the
-canonicalizer never invents a match. Growing the fold table is a follow-up lever,
-not a correctness risk.
+match. If at least one analyzer still produced a comparable exact reading, the
+base falls to `nonstandard_ruby` and is *retained for review*; if every analyzer
+was `boundary-misalign` or `no-reading`, it instead falls to
+`no_comparable_reading`. The canonicalizer never invents a match. Growing the
+fold table is a follow-up lever, not a correctness risk.
 
 **False-match surface (low risk, by construction).** The long-vowel and medial-は
 folds are aggressive unconditional substitutions (`かう→こう`, medial `ふ→う`), so
@@ -154,19 +157,27 @@ Given the per-analyzer match set over one ruby base:
 - **Two or more** match → `winning_analyzer` = `null` (ambiguous — no forced
   winner); matchers are recorded in `evidence_detail.per_analyzer`;
   `losing_analyzers` = the non-matchers.
-- **Zero** match → `winning_analyzer` = `null`; `losing_analyzers` = all
-  analyzers; `evidence_detail.classification = "nonstandard_ruby"`.
+- **Zero** match with at least one exact comparable reading →
+  `winning_analyzer` = `null`; `losing_analyzers` = all analyzers;
+  `evidence_detail.classification = "nonstandard_ruby"`.
+- **Zero** match with no exact comparable reading →
+  `winning_analyzer` = `null`; `losing_analyzers` = all analyzers;
+  `evidence_detail.classification = "no_comparable_reading"`.
 
 `evidence_detail` (JSON, `Utf8`) is the honest debug/review record:
+
+The typed serialization contract and the boundary rule that ruby readings stay
+analyzer evidence rather than parser-IR text replacement are pinned in
+`docs/superpowers/specs/2026-07-07-ruby-reading-evidence-contract.md`.
 
 ```json
 {
   "ruby_base": "東京",
   "ruby_reading": "とうきやう",
-  "ruby_reading_norm": "とーきょー",
+  "ruby_reading_norm": "とうきょう",
   "classification": "resolved",
   "per_analyzer": {
-    "vibrato:unidic-novel-202512": {"reading": "トウキョウ", "norm": "とーきょー", "match": true,  "align": "exact"},
+    "vibrato:unidic-novel-202512": {"reading": "トウキョウ", "norm": "とうきょう", "match": true,  "align": "exact"},
     "sudachi-c":                    {"reading": null,         "norm": null,        "match": false, "align": "boundary-misalign"}
   }
 }
@@ -174,8 +185,9 @@ Given the per-analyzer match set over one ruby base:
 
 `classification` ∈ `resolved` (≥1 match **and** ≥1 non-match — `winning_analyzer`
 is set when exactly one matches, else `null` with every matcher flagged
-`match: true` in `per_analyzer`) and `nonstandard_ruby` (0 match). `align` ∈
-`exact`, `boundary-misalign`, `no-reading`.
+`match: true` in `per_analyzer`), `nonstandard_ruby` (0 match, but ≥1 exact
+comparable reading), and `no_comparable_reading` (0 match and no exact
+comparable reading). `align` ∈ `exact`, `boundary-misalign`, `no-reading`.
 
 ## Table schema
 
@@ -241,7 +253,9 @@ the view. No `READER_MAX_SCHEMA_VERSION` change.
 - **Property (hegel):** normalization idempotence (`norm(norm(x)) == norm(x)`);
   katakana and hiragana spellings of the same reading canonicalize equal;
   adjudication invariants (winner ∈ matchers; `{winner} ∪ losers` = all analyzers;
-  `nonstandard_ruby ⇔ 0 matches`; a row is emitted ⇔ ≥1 non-match).
+  `nonstandard_ruby ⇔ 0 matches with ≥1 exact comparable reading`;
+  `no_comparable_reading ⇔ 0 matches with 0 exact comparable readings`;
+  a row is emitted ⇔ ≥1 non-match).
 - **Alignment:** exact-tile match, `boundary-misalign`, multi-morpheme base,
   `no-reading`.
 - **End-to-end:** a small AAT fixture carrying a resolved base, a consensus-wrong
@@ -262,7 +276,7 @@ the view. No `READER_MAX_SCHEMA_VERSION` change.
 |---|---|---|
 | R1 | Add `projected_char_start`/`projected_char_end` to the governing spec's `nway_region_oracle_evidence` table | A region can hold multiple ruby bases and a base can straddle regions, so `(…, region_index)` is not a unique key; the offsets key the row and make it self-locating without a `projection_spans` join. Amends the governing spec's table def. |
 | R2 | Emit iff ≥1 analyzer fails to match the ruby (interesting-only) | Owner fork 1. Captures resolved and consensus-wrong/nonstandard cases; drops the boring all-match majority; a reading oracle has nothing to say when all readings match. |
-| R3 | Full normalization including bounded historical-kana folding | Owner fork 2. Pre-war ruby is heavily 旧仮名 while analyzers emit modern readings; without folding, legitimate matches read as mismatches and corrupt the signal. Ambiguous folds degrade to `nonstandard_ruby`, retained not discarded. |
+| R3 | Full normalization including bounded historical-kana folding | Owner fork 2. Pre-war ruby is heavily 旧仮名 while analyzers emit modern readings; without folding, legitimate matches read as mismatches and corrupt the signal. Ambiguous folds degrade to `nonstandard_ruby` when a comparable exact reading exists, else `no_comparable_reading`; both are retained, not discarded. |
 | R4 | `winning_analyzer` set only on a unique match; null on ties or zero matches | Owner fork 3. No forced winner; `evidence_detail` carries the full per-analyzer picture. |
 | R5 | Producer only — no Phase 5 RRF integration this cycle | Owner fork 4. Matches the governing spec's phase split; keeps the cycle independently verifiable and avoids re-opening calibration. |
 | R6 | `SCHEMA_VERSION` stays 2; presence-probed views | Decision 3 bumped at the first analysis-pass sidecar; additive sidecars ship under v2 with presence-probing, as `projection_spans`/`aozora_works` already do. |

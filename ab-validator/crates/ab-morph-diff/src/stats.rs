@@ -44,12 +44,13 @@ pub(crate) fn derive_stats_with_source_text(
     let mut from_morphemes_in_segmentation = 0usize;
     let mut to_morphemes_in_segmentation = 0usize;
 
+    let mut region_whitespace = WhitespaceSpanChecker::new(source_text);
     for region in regions {
         match region {
             Region::OneToOne(_) => one_to_one_regions += 1,
             Region::Segmentation(diff) => {
                 segmentation_regions += 1;
-                if char_span_is_whitespace_only(source_text, &diff.text_span) {
+                if region_whitespace.is_whitespace_only(&diff.text_span) {
                     whitespace_segmentation_regions += 1;
                 } else {
                     lexical_segmentation_regions += 1;
@@ -73,8 +74,9 @@ pub(crate) fn derive_stats_with_source_text(
         .len();
     let mut whitespace_feature_regions = BTreeSet::new();
     let mut lexical_feature_regions = BTreeSet::new();
+    let mut diff_whitespace = WhitespaceSpanChecker::new(source_text);
     for diff in feature_diffs {
-        if char_span_is_whitespace_only(source_text, &diff.text_span) {
+        if diff_whitespace.is_whitespace_only(&diff.text_span) {
             whitespace_feature_regions.insert(diff.region_index);
         } else {
             lexical_feature_regions.insert(diff.region_index);
@@ -111,6 +113,7 @@ pub(crate) fn derive_stats_with_source_text(
     }
 }
 
+#[cfg(test)]
 pub(crate) fn char_span_is_whitespace_only(
     source_text: &str,
     span: &std::ops::Range<usize>,
@@ -123,6 +126,60 @@ pub(crate) fn char_span_is_whitespace_only(
         return false;
     };
     first.is_whitespace() && chars.all(char::is_whitespace)
+}
+
+/// Cursor-based equivalent of [`char_span_is_whitespace_only`] for callers
+/// that check spans in document order. `char_span_is_whitespace_only` decodes
+/// every char before `span.start` on each call, which is O(chars²) across
+/// regions that tile a document; this checker advances a char/byte cursor
+/// monotonically instead (it rescans from the start only if a span begins
+/// before the previous one).
+pub(crate) struct WhitespaceSpanChecker<'a> {
+    source_text: &'a str,
+    cursor_char: usize,
+    cursor_byte: usize,
+}
+
+impl<'a> WhitespaceSpanChecker<'a> {
+    pub(crate) fn new(source_text: &'a str) -> Self {
+        Self {
+            source_text,
+            cursor_char: 0,
+            cursor_byte: 0,
+        }
+    }
+
+    pub(crate) fn is_whitespace_only(&mut self, span: &std::ops::Range<usize>) -> bool {
+        if span.start >= span.end {
+            return false;
+        }
+        if span.start < self.cursor_char {
+            self.cursor_char = 0;
+            self.cursor_byte = 0;
+        }
+        while self.cursor_char < span.start {
+            let Some(ch) = self.source_text[self.cursor_byte..].chars().next() else {
+                return false;
+            };
+            self.cursor_byte += ch.len_utf8();
+            self.cursor_char += 1;
+        }
+        let mut remaining = span.end - span.start;
+        let mut seen_any = false;
+        while remaining > 0 {
+            let Some(ch) = self.source_text[self.cursor_byte..].chars().next() else {
+                break;
+            };
+            self.cursor_byte += ch.len_utf8();
+            self.cursor_char += 1;
+            if !ch.is_whitespace() {
+                return false;
+            }
+            seen_any = true;
+            remaining -= 1;
+        }
+        seen_any
+    }
 }
 
 pub(crate) fn derive_boundary_metrics(
@@ -186,7 +243,34 @@ mod tests {
         Morpheme, Region, SegmentationDiff, SegmentationKind,
     };
 
-    use super::{derive_boundary_metrics, derive_stats, derive_stats_with_source_text};
+    use super::{
+        WhitespaceSpanChecker, char_span_is_whitespace_only, derive_boundary_metrics, derive_stats,
+        derive_stats_with_source_text,
+    };
+
+    #[test]
+    fn whitespace_span_checker_matches_reference_implementation() {
+        let source = "吾輩 は\u{3000}\n猫 で ある。 x  ";
+        let char_count = source.chars().count();
+        // In-order spans (the production pattern), including empty and
+        // past-the-end spans, then a rewinding span to exercise the rescan.
+        let mut spans: Vec<std::ops::Range<usize>> = Vec::new();
+        for start in 0..=char_count + 1 {
+            for len in 0..4 {
+                spans.push(start..(start + len).min(char_count + 2));
+            }
+        }
+        spans.push(2..4); // rewind
+
+        let mut checker = WhitespaceSpanChecker::new(source);
+        for span in &spans {
+            assert_eq!(
+                checker.is_whitespace_only(span),
+                char_span_is_whitespace_only(source, span),
+                "span {span:?}"
+            );
+        }
+    }
 
     fn m(source: &str, surface: &str, start: usize, end: usize) -> Morpheme {
         let byte_start = source

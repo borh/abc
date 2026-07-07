@@ -50,37 +50,6 @@
           (.close git)
           (delete-recursive root))))))
 
-(deftest update-aozora-bunko-repo-pulls-aozora-repo-test
-  (testing "update-aozora-bunko-repo uses the supplied Aozora repo path"
-    (let [remote-dir (temp-dir "abc-git-remote")
-          local-dir (temp-dir "abc-git-local")
-          seed-dir (temp-dir "abc-git-seed")
-          remote-git (-> (Git/init) (.setDirectory remote-dir) (.setBare true) .call)
-          seed-git (-> (Git/init) (.setDirectory seed-dir) .call)]
-      (try
-        (commit-file! seed-git seed-dir "index.txt" "v1" "v1")
-        (-> seed-git .remoteAdd
-            (.setName "origin")
-            (.setUri (org.eclipse.jgit.transport.URIish. (.toString (.toURI remote-dir))))
-            .call)
-        (-> seed-git .push (.setRemote "origin") .call)
-        (let [local-git (Git/cloneRepository)]
-          (-> local-git
-              (.setURI (.toString (.toURI remote-dir)))
-              (.setDirectory local-dir)
-              .call
-              .close))
-        (commit-file! seed-git seed-dir "index.txt" "v2" "v2")
-        (-> seed-git .push (.setRemote "origin") .call)
-        (abc-git/update-aozora-bunko-repo (str local-dir))
-        (is (= "v2" (slurp (io/file local-dir "index.txt"))))
-        (finally
-          (.close remote-git)
-          (.close seed-git)
-          (delete-recursive remote-dir)
-          (delete-recursive local-dir)
-          (delete-recursive seed-dir))))))
-
 (deftest commits-touching-path-returns-chronological-path-history-test
   (testing "abc.git can discover the commits that changed one path"
     (let [root (temp-dir "abc-git-path-history")

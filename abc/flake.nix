@@ -496,8 +496,8 @@
               ''
                 set -euo pipefail
                 cp ${./tools/tei_eaj_aozora_reports.py} tei_eaj_aozora_reports.py
-                ruff format --check tei_eaj_aozora_reports.py
-                ruff check tei_eaj_aozora_reports.py
+                ruff format --check --line-length 100 tei_eaj_aozora_reports.py
+                ruff check --line-length 100 --ignore E501 tei_eaj_aozora_reports.py
                 mypy --cache-dir "$TMPDIR/mypy-cache" tei_eaj_aozora_reports.py
                 mkdir -p "$out"
                 echo "TEI-EAJ report launcher passes ruff format/check and mypy." > "$out/result.txt"

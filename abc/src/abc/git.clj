@@ -1,9 +1,8 @@
 (ns abc.git
   (:require [clj-jgit.porcelain :as git :refer
-             [load-repo git-init git-pull git-log git-blame git-add git-commit
-              git-status git-tag-create git-tag-list]]
-            [clojure.spec.alpha :as s]
-            [abc.config :refer [aozora-bunko-path repo-path]])
+             [load-repo git-log git-blame]]
+            [clojure.java.io :as io]
+            [clojure.spec.alpha :as s])
   (:import [java.util Date]
            [org.eclipse.jgit.lib Repository]
            [org.eclipse.jgit.api Git]
@@ -11,31 +10,8 @@
            [org.eclipse.jgit.treewalk TreeWalk]
            [org.eclipse.jgit.treewalk.filter PathFilter]))
 
-(defn load-aozora-bunko-git []
-  (load-repo aozora-bunko-path))
-
-(defn load-repo-git []
-  (try (load-repo repo-path)
-       (catch java.io.FileNotFoundException e
-         (git-init :dir repo-path))))
-
-(def ^:dynamic ^:private *ab-repo* nil)
-(def ^:dynamic ^:private *repo* nil)
-
 (defn load-git-repo [path]
   (load-repo path))
-
-(defn- repo-or-default []
-  (or *repo* (load-repo-git)))
-
-(defn- ab-repo-or-default []
-  (or *ab-repo* (load-aozora-bunko-git)))
-
-(defn update-aozora-bunko-repo [path]
-  (if path
-    (with-open [repo (load-git-repo path)]
-      (git-pull repo))
-    (git-pull (ab-repo-or-default))))
 
 (defn get-commit-date [^RevCommit commit]
   (.. commit (getAuthorIdent) (getWhen)))
@@ -48,20 +24,6 @@
                 (fn [commit-map] (get-commit-date (:commit commit-map)))
                 (comp - compare)
                 (git-blame repo path))))
-
-;; commit.getAuthorIdent().getWhen()).reversed()
-
-(defn current-tag-version [^Git repo]
-  (first (git-tag-list repo)))
-
-(defn current-commit [^Git repo]
-  (git-log repo))
-
-(defn commit-tei [file msg]
-  (let [repo (repo-or-default)]
-    (git-add repo file)
-    (git-commit repo file msg)
-    (git-tag-create repo msg)))
 
 (defn resolve-ref
   "Resolve `ref` in `repo` to an object id, or throw ex-info."
@@ -95,9 +57,9 @@
 (defn write-blob-at!
   "Write `path` at `ref` from `repo` to `output-file` and return the file."
   [^Git repo ref path output-file]
-  (let [file (clojure.java.io/file output-file)]
-    (clojure.java.io/make-parents file)
-    (with-open [out (clojure.java.io/output-stream file)]
+  (let [file (io/file output-file)]
+    (io/make-parents file)
+    (with-open [out (io/output-stream file)]
       (.write out (blob-bytes-at repo ref path)))
     file))
 

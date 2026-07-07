@@ -19,7 +19,7 @@ mkdir -p \
   "$residual" \
   "$generated"
 
-python3 - "$corpus" <<'PY'
+python - "$corpus" <<'PY'
 import io
 import sys
 import zipfile
@@ -193,7 +193,7 @@ cat > "$generated/residual.summary.json" <<JSON
 }
 JSON
 
-python3 "$repo_root/reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py" \
+python "$repo_root/reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py" \
   --run-dir "$run" \
   --residual-summary "$generated/residual.summary.json" \
   --out-md "$generated/source-feature-gap-classification.md" \

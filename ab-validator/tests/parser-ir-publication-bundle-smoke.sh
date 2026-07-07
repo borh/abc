@@ -195,7 +195,7 @@ cat > "$bundle_dir/plaintext.manifest.json" <<JSON
 }
 JSON
 
-python3 "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
+python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --parser-ir "$parser_ir" \
   --source-region-summary "$source_region" \
   --publication-dir "$bundle_dir" \
@@ -216,7 +216,7 @@ rg -n "Publication Bundle Validation" "$report_md" >/dev/null
 
 printf '吾輩猫ねこ\n（古伝説と、シルレルの詩から。）\n' > "$bundle_dir/plain.txt"
 
-python3 "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
+python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --parser-ir "$parser_ir" \
   --source-region-summary "$source_region" \
   --publication-dir "$bundle_dir" \

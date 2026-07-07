@@ -229,7 +229,7 @@
               pkgs.writeShellScript "abc-tei-eaj-aozora-melos-report" ''
                 set -euo pipefail
                 output="''${1:-docs/handoffs/tei-eaj-aozora-melos-comparison-report.md}"
-                exec ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                exec ${pkgs.python3}/bin/python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
                   --report melos \
                   --abc paper/demo-melos-real/tei.xml \
                   --tei-eaj-root ${tei-eaj-aozora-tei} \
@@ -246,7 +246,7 @@
               pkgs.writeShellScript "abc-tei-eaj-aozora-all-work-report" ''
                 set -euo pipefail
                 output="''${1:-docs/handoffs/tei-eaj-aozora-all-work-comparison-report.md}"
-                exec ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                exec ${pkgs.python3}/bin/python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
                   --report all-work \
                   --abc-tei-dir paper \
                   --tei-eaj-root ${tei-eaj-aozora-tei} \
@@ -263,7 +263,7 @@
               pkgs.writeShellScript "abc-tei-eaj-aozora-workset-json" ''
                 set -euo pipefail
                 output="''${1:-docs/handoffs/tei-eaj-aozora-workset-export.json}"
-                exec ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                exec ${pkgs.python3}/bin/python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
                   --report all-work \
                   --format json \
                   --abc-tei-dir paper \
@@ -283,19 +283,19 @@
                 melos_output="''${1:-docs/handoffs/tei-eaj-aozora-melos-comparison-report.md}"
                 all_work_output="''${2:-docs/handoffs/tei-eaj-aozora-all-work-comparison-report.md}"
                 workset_json_output="''${3:-docs/handoffs/tei-eaj-aozora-workset-export.json}"
-                ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                ${pkgs.python3}/bin/python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
                   --report melos \
                   --abc paper/demo-melos-real/tei.xml \
                   --tei-eaj-root ${tei-eaj-aozora-tei} \
                   --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
                   --output "$melos_output"
-                ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                ${pkgs.python3}/bin/python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
                   --report all-work \
                   --abc-tei-dir paper \
                   --tei-eaj-root ${tei-eaj-aozora-tei} \
                   --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
                   --output "$all_work_output"
-                ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                ${pkgs.python3}/bin/python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
                   --report all-work \
                   --format json \
                   --abc-tei-dir paper \
@@ -375,7 +375,7 @@
                 chmod -R u+w source
                 cd source
 
-                python3 -m unittest prototypes/aat-to-parser-ir-probe/test_probe_mapping.py
+                python -m unittest prototypes/aat-to-parser-ir-probe/test_probe_mapping.py
 
                 mkdir -p "$out"
                 echo "AAT parser-IR probe tests passed." > "$out/result.txt"
@@ -477,7 +477,7 @@
                 cp -R ${./.} source
                 chmod -R u+w source
                 cd source
-                python3 tools/schema_contracts.py
+                python tools/schema_contracts.py
                 mkdir -p "$out"
                 echo "schemas/schema-contracts.json matches the checked-in schemas." > "$out/result.txt"
               '';
@@ -497,7 +497,7 @@
               ''
                 cp -R ${./prototypes/tei-eaj-comparison} probe
                 chmod -R u+w probe
-                python3 -m unittest discover -s probe -p 'test_*.py'
+                python -m unittest discover -s probe -p 'test_*.py'
                 mkdir -p "$out"
                 echo "TEI-EAJ comparison probe tests passed." > "$out/result.txt"
               '';
@@ -520,19 +520,19 @@
                   <text><body><p>メロス</p></body></text>
                 </TEI>
                 XML
-                python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
                   --report melos \
                   --abc abc/melos.xml \
                   --tei-eaj-root ${tei-eaj-aozora-tei} \
                   --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
                   --output melos.md
-                python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
                   --report all-work \
                   --abc-tei 1567=abc/melos.xml \
                   --tei-eaj-root ${tei-eaj-aozora-tei} \
                   --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
                   --output all-work.md
-                python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
                   --report all-work \
                   --format json \
                   --abc-tei 1567=abc/melos.xml \
@@ -544,7 +544,7 @@
                 grep -q "Compared TEI-EAJ files: 2" all-work.md
                 grep -q "Missing ABC counterparts: 55" all-work.md
                 grep -q "TEI-EAJ files without candidate work IDs: 5" all-work.md
-                python3 - <<'PY'
+                python - <<'PY'
                 import json
 
                 with open("workset.json", encoding="utf-8") as fh:

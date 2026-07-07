@@ -9,7 +9,7 @@ metadata="$out_dir/metadata.csv"
 rm -rf "$out_dir"
 mkdir -p "$out_dir/cards/000001/files" "$out_dir/cards/000002/files"
 
-python3 - <<PY
+python - <<PY
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -47,7 +47,7 @@ cat > "$out_dir/cards/000002/card2.html" <<'HTML'
 </body></html>
 HTML
 
-python3 "$repo_root/reports/aat-fidelity/build-upstream-xhtml-manifest.py" \
+python "$repo_root/reports/aat-fidelity/build-upstream-xhtml-manifest.py" \
   --card-url "$out_dir/cards/000001/card1.html" \
   --card-url "https://www.aozora.gr.jp/cards/000002/card2.html" \
   --aozora-root "$out_dir" \

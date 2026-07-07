@@ -43,7 +43,7 @@ are schema-unspecified, so `start=byte_start`, `end=byte_end`, `line=line_start`
 
 ```sh
 cd prototypes/aat-to-parser-ir-probe
-python3 map.py aat-sample.json          # prints parser-IR + ledger; writes parser-ir.probe.json + ledger.md
+python map.py aat-sample.json          # prints parser-IR + ledger; writes parser-ir.probe.json + ledger.md
 ```
 
 Sample output (first lines):

@@ -355,7 +355,7 @@ Status: Draft
 - `__MISSING_EVIDENCE__`
 - non-path parser lane evidence
 MD
-python3 - "$parser_acceptance_spec" "$out_dir/evidence/existing.json" "$out_dir/evidence/missing.json" <<'PY'
+python - "$parser_acceptance_spec" "$out_dir/evidence/existing.json" "$out_dir/evidence/missing.json" <<'PY'
 import pathlib
 import sys
 
@@ -366,7 +366,7 @@ text = text.replace("__MISSING_EVIDENCE__", sys.argv[3])
 path.write_text(text)
 PY
 
-python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+python "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \
   --coverage-summary "$coverage_summary" \
   --matrix-summary "$matrix_summary" \
@@ -433,7 +433,7 @@ cat > "$source_disposition_summary" <<'JSON'
 }
 JSON
 
-python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+python "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \
   --coverage-summary "$coverage_summary" \
   --matrix-summary "$matrix_summary" \
@@ -517,7 +517,7 @@ cat > "$complete_text_policy_summary" <<'JSON'
 }
 JSON
 
-python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+python "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \
   --coverage-summary "$coverage_summary" \
   --matrix-summary "$matrix_summary" \
@@ -576,7 +576,7 @@ cat > "$complete_adapter_worksets_summary" <<'JSON'
 }
 JSON
 
-python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+python "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \
   --coverage-summary "$coverage_summary" \
   --matrix-summary "$matrix_summary" \
@@ -606,7 +606,7 @@ Status: Accepted
 - non-path parser lane evidence
 MD
 
-python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+python "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \
   --coverage-summary "$coverage_summary" \
   --matrix-summary "$matrix_summary" \
@@ -626,7 +626,7 @@ jq -e '.verdict == "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE"' "$complete_all_summa
 jq -e '([.next_work_items[].status] | all(. == "complete"))' "$complete_all_summary_json" >/dev/null
 rg -n -F 'Verdict: `AOZORA_PUBLICATION_NEXT_WORK_COMPLETE`' "$out_dir/next-work.complete-all.md" >/dev/null
 
-python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+python "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \
   --coverage-summary "$coverage_summary" \
   --matrix-summary "$matrix_summary" \
@@ -644,7 +644,7 @@ python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
 
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_root_exists == false and .evidence.tei_p5_reference_file_count == 2 and (.evidence.unverified_tei_p5_references | length) == 2 and .evidence.missing_tei_p5_references == [])' "$missing_root_summary_json" >/dev/null
 
-AB_TEI_P5_ROOT="$tei_p5_root" python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+AB_TEI_P5_ROOT="$tei_p5_root" python "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \
   --coverage-summary "$coverage_summary" \
   --matrix-summary "$matrix_summary" \

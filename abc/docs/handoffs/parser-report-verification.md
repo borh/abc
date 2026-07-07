@@ -158,7 +158,7 @@ Concretely:
    Emphasis / Graphics / Other tables (promote them from 2-col to 3-col), using
    `chuki_tag.txt` + `annotation/*.html` as the source of the example strings.
    This turns the 72 `NO-MARKER` rows into CI-verifiable rows.
-3. **Re-run** this verifier in CI (`python3 prototypes/parser-report-verify/verify.py`)
+3. **Re-run** this verifier in CI (`python prototypes/parser-report-verify/verify.py`)
    as a non-blocking drift check so future edits to PARSER_REPORT.md or the
    canonical sources surface immediately.
 

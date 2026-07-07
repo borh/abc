@@ -171,7 +171,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-nix develop "${repo_root}#aozora2html" --command python3 - "${repo_root}" <<'PY'
+nix develop "${repo_root}#aozora2html" --command python - "${repo_root}" <<'PY'
 import json
 from pathlib import Path
 import sys
@@ -301,7 +301,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-nix develop "${repo_root}#aozora2html" --command python3 - "${repo_root}" <<'PY'
+nix develop "${repo_root}#aozora2html" --command python - "${repo_root}" <<'PY'
 import json
 from pathlib import Path
 import sys
@@ -1693,7 +1693,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 test -s "$repo_root/reports/aat-fidelity/fidelity_explorer.py"
 rg -n "aat-fidelity|oracle_status|upstream_status|mo\\.json" "$repo_root/reports/aat-fidelity/fidelity_explorer.py"
-python3 -m py_compile "$repo_root/reports/aat-fidelity/fidelity_explorer.py"
+python -m py_compile "$repo_root/reports/aat-fidelity/fidelity_explorer.py"
 ```
 
 Run:
@@ -1794,7 +1794,7 @@ CARGO_TARGET_DIR=/db/ab-validator/target-aozora2-all \
 
 nix develop .# --command cargo test --manifest-path adapters/aozora-rs/Cargo.toml -- --nocapture
 
-nix develop "${repo_root}#aozora2html" --command python3 -m pytest adapters/aozora2html/tests/ -v
+nix develop "${repo_root}#aozora2html" --command python -m pytest adapters/aozora2html/tests/ -v
 ```
 
 Expected: every command exits 0. Large generated outputs remain under `/db/ab-validator`.

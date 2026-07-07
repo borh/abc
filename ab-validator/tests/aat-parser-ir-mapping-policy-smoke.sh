@@ -133,7 +133,7 @@ jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer 
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "blocks[].content[].gaiji.raw_marker" and .aat_pointer != "blocks[].content[].gaiji.unicode")' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; (.aat_pointer // "") | contains("/") | not)' "$out_dir/mapping.json"
 
-python3 - <<PY
+python - <<PY
 import json
 from pathlib import Path
 import sys
@@ -172,7 +172,7 @@ for pointer in [
         raise AssertionError(f"invalid pointer accepted: {pointer}")
 PY
 
-python3 - <<PY
+python - <<PY
 import json
 from pathlib import Path
 import sys

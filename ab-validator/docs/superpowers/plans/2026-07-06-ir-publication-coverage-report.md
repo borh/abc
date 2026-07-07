@@ -179,7 +179,7 @@ cat > "$source_delta" <<'JSON'
 }
 JSON
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$mapping" \
   --source-summary "$source_summary" \
@@ -215,7 +215,7 @@ bash tests/parser-ir-publication-coverage-smoke.sh
 Expected:
 
 ```text
-python3: can't open file '.../reports/parser-ir/publication-coverage.py': [Errno 2] No such file or directory
+python: can't open file '.../reports/parser-ir/publication-coverage.py': [Errno 2] No such file or directory
 ```
 
 - [ ] **Step 3: Add the initial script skeleton and coverage constants**
@@ -223,7 +223,7 @@ python3: can't open file '.../reports/parser-ir/publication-coverage.py': [Errno
 Create `reports/parser-ir/publication-coverage.py` with executable permissions:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Report full Parser-IR publication coverage across TEI/custom/plaintext targets."""
 
 from __future__ import annotations
@@ -535,7 +535,7 @@ supported_report_md="$out_dir/coverage-supported.md"
 
 jq 'del(.transform_rule_descriptions[] | select(.category == "UNSUPPORTED"))' "$mapping" > "$supported_mapping"
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$supported_mapping" \
   --source-summary "$source_summary" \
@@ -865,7 +865,7 @@ parser-ir-publication-coverage-smoke:
 
 parser-ir-publication-coverage-report PARSER_IR_SCHEMA="data/abc-schemas/schemas/parser-ir.schema.json" MAPPING="data/aat-to-parser-ir-mapping-v1.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" SOURCE_DELTA_SUMMARY="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-ir-publication-coverage.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json" CUSTOM_CONTRACT_SCHEMA="":
 	@args=(); if [ -n "{{CUSTOM_CONTRACT_SCHEMA}}" ]; then args+=(--custom-contract-schema "{{repo_root}}/{{CUSTOM_CONTRACT_SCHEMA}}"); fi; \
-	python3 "{{repo_root}}/reports/parser-ir/publication-coverage.py" \
+	python "{{repo_root}}/reports/parser-ir/publication-coverage.py" \
 		--parser-ir-schema "{{repo_root}}/{{PARSER_IR_SCHEMA}}" \
 		--mapping "{{repo_root}}/{{MAPPING}}" \
 		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
@@ -980,7 +980,7 @@ Run:
 ```bash
 bash tests/parser-ir-publication-coverage-smoke.sh
 just parser-ir-publication-coverage-smoke
-python3 -m py_compile reports/parser-ir/publication-coverage.py
+python -m py_compile reports/parser-ir/publication-coverage.py
 git diff --check HEAD~4..HEAD
 ```
 

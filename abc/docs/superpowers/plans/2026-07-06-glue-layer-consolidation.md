@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Nix checks must remain fully offline-capable (no network in sandbox)
-- Python scripts remain runnable from repo root with `python3 reports/.../script.py --args`
+- Python scripts remain runnable from repo root with `python reports/.../script.py --args`
 - Both repos stay buildable independently until the monorepo merge (no cross-repo flake inputs, no sibling-directory assumptions)
 - Commit granularity: one commit per completed task, referencing this plan
 - Schemas already have `$id` URIs and `$schema` draft-2020-12; this plan only adds `version`
@@ -388,7 +388,7 @@ abAatToParserIrCheck = mkSmokeCheck {
 
 - [ ] **Step 9: Refactor aozora2htmlRustParityCheck — uses different source path pattern**
 
-This check uses a local `work_dir` copy but with a custom `cargo` config pointing at vendored deps. It doesn't run a bash smoke test — it runs `cargo build` + `python3 -m pytest`. This one does NOT fit the factory. Leave it as-is.
+This check uses a local `work_dir` copy but with a custom `cargo` config pointing at vendored deps. It doesn't run a bash smoke test — it runs `cargo build` + `python -m pytest`. This one does NOT fit the factory. Leave it as-is.
 
 - [ ] **Step 10: Refactor aozoraAdapterSmokeCheck — uses vendored cargo deps**
 
@@ -623,11 +623,11 @@ def write_json(path: Path, value: Any, *, indent: int = 2) -> None:
 
 - [ ] **Step 6: Add a test that imports the library from repo root**
 
-Scripts in `reports/` are invoked as `python3 reports/parser-ir/script.py`. Python puts the script's directory on `sys.path`, not the repo root. The import smoke must run the same way:
+Scripts in `reports/` are invoked as `python reports/parser-ir/script.py`. Python puts the script's directory on `sys.path`, not the repo root. The import smoke must run the same way:
 
 ```bash
 cd "$(git rev-parse --show-toplevel)"
-python3 -c "
+python -c "
 import sys
 sys.path.insert(0, '.')
 from reports.lib.paths import repo_root, schemas_dir, policy_dir
@@ -663,10 +663,10 @@ hashing, and JSON file I/O with parent-directory creation."
 
 - [ ] **Step 1: Migrate level3-admission.py**
 
-This script is invoked as `python3 reports/parser-ir/level3-admission.py`. To make `from reports.lib import ...` resolve, insert `sys.path` manipulation at the top (after the `from __future__` line):
+This script is invoked as `python reports/parser-ir/level3-admission.py`. To make `from reports.lib import ...` resolve, insert `sys.path` manipulation at the top (after the `from __future__` line):
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Classify profile-aware Level 3 TEI admission from measured reports."""
 
 from __future__ import annotations
@@ -675,7 +675,7 @@ import sys
 from pathlib import Path
 
 # Ensure repo root is on sys.path so `from reports.lib import ...` resolves
-# when this script is invoked as `python3 reports/parser-ir/level3-admission.py`.
+# when this script is invoked as `python reports/parser-ir/level3-admission.py`.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -771,9 +771,9 @@ Task A2 (cross-repo drift check) was deferred to monorepo because it requires si
 ### Python invocation path design
 
 The `sys.path.insert(0, str(_REPO_ROOT))` approach in migrated scripts works for all three invocation modes:
-- Direct: `python3 reports/parser-ir/script.py` from repo root
-- Smoke test: `python3 $repo_root/reports/parser-ir/script.py` (absolute path, Nix sandbox or local)
-- Arbitrary cwd: `python3 /absolute/path/to/repo/reports/parser-ir/script.py`
+- Direct: `python reports/parser-ir/script.py` from repo root
+- Smoke test: `python $repo_root/reports/parser-ir/script.py` (absolute path, Nix sandbox or local)
+- Arbitrary cwd: `python /absolute/path/to/repo/reports/parser-ir/script.py`
 
 Verified by tracing `tests/*.sh` — all smoke tests use `$repo_root` for Python invocation, not relative paths.
 

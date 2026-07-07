@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Canonical JSON helpers for ABC schema hashes.
 
 abc-legacy-json-c14n-v0:

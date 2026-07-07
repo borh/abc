@@ -62,7 +62,7 @@ fi
   --source-manifest examples/v0/example-work/source.manifest.json \
   --generated-at 2026-07-04T00:00:00Z)
 
-python3 - "$parser_ir" "$publication_dir/tei.xml" "$publication_dir/tei-validation-result.json" "$workset" "$tei_eaj_file" "$summary_json" "$report_md" <<'PY'
+python - "$parser_ir" "$publication_dir/tei.xml" "$publication_dir/tei-validation-result.json" "$workset" "$tei_eaj_file" "$summary_json" "$report_md" <<'PY'
 import json
 import pathlib
 import sys

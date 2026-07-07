@@ -257,7 +257,7 @@ cat > "$matrix_summary" <<'JSON'
 JSON
 
 set +e
-python3 "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
+python "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
   --admission-summary "$admission_summary" \
   --matrix-summary "$matrix_summary" \
   --structural-summary "$structural_missing_summary" \
@@ -272,7 +272,7 @@ set -e
 test "$strict_status" -ne 0
 rg -n "missing parser evidence" "$strict_stderr"
 
-python3 "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
+python "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
   --admission-summary "$admission_summary" \
   --matrix-summary "$matrix_summary" \
   --structural-summary "$structural_summary" \
@@ -281,7 +281,7 @@ python3 "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
   --summary-json "$strict_summary_json" \
   --report-md "$strict_report_md"
 
-python3 "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
+python "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
   --admission-summary "$admission_summary" \
   --matrix-summary "$matrix_summary" \
   --structural-summary "$structural_summary" \
@@ -319,7 +319,7 @@ jq -e '[.rows[] | select((.classifications | index("adapter_paragraph_bug")) and
 jq -e '[.rows[] | select(.adapter == "missing" and (.classifications == ["evidence_gap"]) and (.evidence.skip_reason == "no_materializable_aat") and (.title == "Skipped fixture row") and (.level == "Level 3") and (.state == "draft"))] | length == 1' "$summary_json"
 jq -e '[.rows[] | select(.adapter == "missing")] | length == 1' "$summary_json"
 
-python3 "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
+python "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
   --admission-summary "$admission_summary" \
   --matrix-summary "$matrix_summary" \
   --structural-summary "$structural_summary" \

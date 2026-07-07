@@ -6,7 +6,7 @@
 
 **Architecture:** `ab-ortho-detect` remains a near-leaf crate (per the ADR folded into `docs/superpowers/specs/2026-07-05-ortho-detect-design.md`). An ML classifier is added behind the existing `OrthoDetector` trait, fed by `CharFeatures` (character-only) and optionally `TokenFeatures` (ablation). A Clojure (`bb`) gold-data harness extracts candidate sentences from the Aozora fiction selection using the Python `is_katakana_sentence` heuristic as a bootstrap labeler (bias documented); real human annotation is the documented finishing input. `AatProjection` gains `ortho_normalizations`; full TEI `<choice>` rendering is scoped to a JSON-level `<choice>` projection (TEI XML renderer is a separate future sub-project — none exists today).
 
-**Tech Stack:** Rust (edition 2024), `linfa-logistic 0.8` + `ndarray 0.16` for ML, `serde`/`serde_json`, `clap`; `babashka` (`bb`) + `clojure` for the gold-data harness; `python3` to call the sibling `aozora-corpus-generator` heuristic for bootstrap labels.
+**Tech Stack:** Rust (edition 2024), `linfa-logistic 0.8` + `ndarray 0.16` for ML, `serde`/`serde_json`, `clap`; `babashka` (`bb`) + `clojure` for the gold-data harness; `python` to call the sibling `aozora-corpus-generator` heuristic for bootstrap labels.
 
 **Dependency graph (existing + new edges):**
 ```
@@ -91,7 +91,7 @@ Read `reports/ortho-detect/2026-07-05-sudachi-baseline.md` §"Post-implementatio
 
 ```bash
 ls /home/bor/Projects/aozora-corpus-generator/src/aozora_corpus_generator/aozora.py   # Python heuristic
-which bb clojure python3                                              # gold harness toolchain
+which bb clojure python                                              # gold harness toolchain
 ```
 
 Expected: the file path resolves; all three binaries are on `$PATH`.
@@ -435,7 +435,7 @@ Rewrite `candidates.clj` as orchestrator:
         :when (and (.isFile f) (str/ends-with? (.getName f) ".txt"))
         :let [work-id (str/replace-first (.getName f) #"\.txt$" "")]]
   (let [res (p/shell {:out :string :err :string}
-                     "python3" "scripts/ortho-gold/bootstrap_label.py"
+                     "python" "scripts/ortho-gold/bootstrap_label.py"
                      "--work-id" work-id
                      "--text-file" (.getPath f))]
     (when-not (zero? (:exit res))
@@ -451,7 +451,7 @@ Rewrite `candidates.clj` as orchestrator:
 `scripts/ortho-gold/bootstrap_label.py`:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Bootstrap-label candidate katakana sentences from one Aozora work.
 
 Uses the aozora-corpus-generator is_katakana_sentence heuristic (the same
@@ -589,7 +589,7 @@ cd /home/bor/Projects/ab-validator/.worktrees/ortho-detect-phase2
 mkdir -p data/ortho-gold
 bb scripts/ortho-gold/candidates.clj data/ortho-gold/candidates.jsonl 2>&1 | tail -5
 wc -l data/ortho-gold/candidates.jsonl
-head -1 data/ortho-gold/candidates.jsonl | python3 -m json.tool
+head -1 data/ortho-gold/candidates.jsonl | python -m json.tool
 ```
 Expected: produces N candidate JSONL lines (N varies with the fiction selection size; expect hundreds to low thousands). Each record has the fields above.
 
@@ -613,7 +613,7 @@ wc -l data/ortho-gold/sentences.jsonl
 git add scripts/ortho-gold/ data/ortho-gold/sentences.jsonl data/ortho-gold/candidates.jsonl
 git commit -m "feat(ortho-gold): candidate extraction + bootstrap labeler
 
-bb orchestrator walks the Aozora fiction selection; python3 calls the
+bb orchestrator walks the Aozora fiction selection; python calls the
 canonical aozora-corpus-generator is_katakana_sentence heuristic to assign
 bootstrap ACCEPT/REJECT labels. Bias is explicit (see plan + investigation
 report): seed labels, not ground truth. Stratified cap of ~500 across
@@ -1431,7 +1431,7 @@ cargo run -p ab-morph-run -- analyze-aat \
   --ortho-ml-model data/ortho-gold/models/model-v1.bin \
   --analyzer vibrato --aat data/ortho-pilot/sentences.aat.json \
   --analyses-output /tmp/ml-out.jsonl 2>&1 | tail -3
-python3 -c "
+python -c "
 import json
 a = json.loads(open('/tmp/ml-out.jsonl').readline())
 anns = a['analysis'].get('ortho_annotations') or []

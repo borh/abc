@@ -261,7 +261,7 @@ JSON
 
 (cd "$repo_root" && cargo build -p ab-aat-to-parser-ir >/dev/null)
 
-python3 "$repo_root/reports/parser-ir/tei-eaj-generated-compare.py" \
+python "$repo_root/reports/parser-ir/tei-eaj-generated-compare.py" \
   --workset "$out_dir/workset.json" \
   --structural-summary "$out_dir/structural-summary.json" \
   --mapping "$repo_root/data/aat-to-parser-ir-mapping-v1.json" \

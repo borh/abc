@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Classify aozora2html source-feature residuals into actionable candidate worksets."""
 
 from __future__ import annotations

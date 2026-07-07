@@ -260,14 +260,14 @@ uv run --isolated --no-project --with 'duckdb>=1.1' \
   --report-id policy-samples-smoke-retry \
   --out-dir "$retry/triage"
 
-python3 "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
+python "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
   --run-dir "$run" \
   --retry-run-dir "$retry" \
   --out-md "$audit/audit.md" \
   --summary-json "$audit/audit.summary.json" \
   --worksets-dir "$audit/worksets"
 
-python3 "$repo_root/reports/aat-fidelity/extract-aozora2html-policy-samples.py" \
+python "$repo_root/reports/aat-fidelity/extract-aozora2html-policy-samples.py" \
   --run-dir "$run" \
   --audit-md "$audit/audit.md" \
   --audit-summary-json "$audit/audit.summary.json" \

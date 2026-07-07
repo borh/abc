@@ -492,7 +492,7 @@ git commit -m "docs: refresh superpowers plan queue"
 cargo fmt --all -- --check
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
-python3 -m pytest adapters/aozora2html/tests
+python -m pytest adapters/aozora2html/tests
 bash adapters/aozora2html/run.sh --version
 bash benchmarks/run-aat-parity.sh --index /tmp/ab-index.json --work-ids /tmp/ab-work-ids.json --sample 25
 ```

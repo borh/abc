@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Compare vendored ABC schema contracts against an explicit ABC checkout.
 
 This is an operator-side pre-monorepo guard. It intentionally requires an

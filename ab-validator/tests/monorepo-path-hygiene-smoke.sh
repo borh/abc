@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$repo_root/tests/lib/smoke-env.sh"
 
-python3 - "$repo_root" <<'PY'
+python - "$repo_root" <<'PY'
 import json
 import pathlib
 import sys

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Generate a disposable AAT->parser-IR mapping document from measured rules."""
 import argparse
 import json

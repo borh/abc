@@ -231,7 +231,7 @@ Run:
 
 ```bash
 bash tests/parser-ir-publication-coverage-smoke.sh
-python3 -m py_compile reports/parser-ir/publication-coverage.py
+python -m py_compile reports/parser-ir/publication-coverage.py
 ```
 
 Expected: both exit 0.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Classify aozora2html parse_incomplete AATs by failure mode.
 
 Deterministic regex classification of meta.warnings[0].message for AAT files

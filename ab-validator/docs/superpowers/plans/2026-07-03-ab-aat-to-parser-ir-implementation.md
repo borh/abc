@@ -1724,7 +1724,7 @@ jq -e '.schema_id == "https://w3id.org/abc/schemas/parser-ir.schema.json"' "$out
 jq -e '.mapping.mapping_version == "0.1.1"' "$out_dir/divergence.json"
 jq -e 'all(.records[]; .rule_id != null and .message != null and .count >= 1)' "$out_dir/divergence.json"
 
-python3 - "$abc_root/schemas/parser-ir.schema.json" \
+python - "$abc_root/schemas/parser-ir.schema.json" \
   "$abc_root/schemas/aat-parser-ir-divergence.schema.json" \
   "$repo_root/data/aat-parser-ir-divergence-bundle-v1.schema.json" \
   "$out_dir/parser-ir.json" \

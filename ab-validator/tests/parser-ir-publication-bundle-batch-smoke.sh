@@ -182,7 +182,7 @@ JSON
 write_row_bundle "$out_dir/rows/row-a" "ねこ" "（古伝説と、シルレルの詩から。）" "吾輩猫"
 write_row_bundle "$out_dir/rows/row-b" "ねこ" "底本：「fixture」" "吾輩猫"
 
-python3 "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
+python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --batch-root "$out_dir" \
   --source-region-summary "$source_region" \
   --abc-commit "abc1234" \
@@ -200,7 +200,7 @@ rg -n "Publication Bundle Batch Validation" "$report_md" >/dev/null
 
 write_row_bundle "$out_dir/rows/row-c" "ねこ" "底本：「fixture」" "吾輩猫ねこ"
 
-python3 "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
+python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --batch-root "$out_dir" \
   --source-region-summary "$source_region" \
   --abc-commit "abc1234" \

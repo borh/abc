@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Compare upstream Aozora XHTML with locally generated aozora2html XHTML."""
 
 from __future__ import annotations

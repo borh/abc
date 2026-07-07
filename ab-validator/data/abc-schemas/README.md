@@ -26,13 +26,13 @@ Refresh procedure:
 2. Copy or regenerate the ABC `schema-contracts.json` snapshot:
 
    ```sh
-   python3 scripts/schema_contracts.py --write
+   python scripts/schema_contracts.py --write
    ```
 
 3. Run the drift check:
 
    ```sh
-   python3 scripts/schema_contracts.py
+   python scripts/schema_contracts.py
    ```
 
 4. From the monorepo root, run the drift gate:
@@ -45,7 +45,7 @@ For temporary two-repo operation, compare the snapshot against an explicit ABC
 checkout:
 
    ```sh
-   python3 scripts/compare_abc_schema_contracts.py --abc /path/to/abc
+   python scripts/compare_abc_schema_contracts.py --abc /path/to/abc
    ```
 
 Schema bytes, versions, and hashes must move together. Historical mapping or

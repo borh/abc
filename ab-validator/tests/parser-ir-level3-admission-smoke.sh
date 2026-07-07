@@ -242,7 +242,7 @@ cat > "$foreign_mapping_file" <<'JSON'
 }
 JSON
 
-python3 "$repo_root/reports/parser-ir/level3-admission.py" \
+python "$repo_root/reports/parser-ir/level3-admission.py" \
   --matrix-summary "$matrix_summary" \
   --source-summary "$source_summary" \
   --summary-json "$summary_json" \
@@ -294,7 +294,7 @@ rg -n 'LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY' "$report_md"
 rg -n 'Drama' "$report_md"
 rg -n 'Level 4 enrichment' "$report_md"
 
-python3 "$repo_root/reports/parser-ir/level3-admission.py" \
+python "$repo_root/reports/parser-ir/level3-admission.py" \
   --matrix-summary "$matrix_summary" \
   --source-summary "$failing_source_summary" \
   --summary-json "$failing_summary_json" \
@@ -332,7 +332,7 @@ cat > "$foreign_matrix_summary" <<JSON
 }
 JSON
 
-python3 "$repo_root/reports/parser-ir/level3-admission.py" \
+python "$repo_root/reports/parser-ir/level3-admission.py" \
   --matrix-summary "$foreign_matrix_summary" \
   --source-summary "$source_summary" \
   --summary-json "$foreign_summary_json" \
@@ -380,7 +380,7 @@ cat > "$unmapped_matrix_summary" <<JSON
 }
 JSON
 
-if python3 "$repo_root/reports/parser-ir/level3-admission.py" \
+if python "$repo_root/reports/parser-ir/level3-admission.py" \
   --matrix-summary "$unmapped_matrix_summary" \
   --source-summary "$source_summary" \
   --summary-json "$unmapped_summary_json" \
@@ -413,7 +413,7 @@ cat > "$invalid_matrix_summary" <<JSON
 }
 JSON
 
-if python3 "$repo_root/reports/parser-ir/level3-admission.py" \
+if python "$repo_root/reports/parser-ir/level3-admission.py" \
   --matrix-summary "$invalid_matrix_summary" \
   --source-summary "$source_summary" \
   --summary-json "$invalid_summary_json" \

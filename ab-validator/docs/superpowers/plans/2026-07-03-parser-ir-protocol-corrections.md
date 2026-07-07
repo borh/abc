@@ -58,7 +58,7 @@
 Create `reports/aat-fidelity/aat_parser_ir_mapping/c14n.py`:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Canonical JSON helpers for ABC schema hashes.
 
 abc-legacy-json-c14n-v0:
@@ -133,7 +133,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 abc_root="$repo_root/../abc"
 
-out="$(python3 "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/c14n.py" \
+out="$(python "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/c14n.py" \
   "$abc_root/schemas/aat-parser-ir-mapping.schema.json" \
   "$abc_root/schemas/parser-ir.schema.json")"
 
@@ -380,7 +380,7 @@ JSON
 
 jq '.records[0]' "$bundle" > "$record"
 
-uv run --isolated --no-project --with 'jsonschema>=4.0' python3 - <<PY
+uv run --isolated --no-project --with 'jsonschema>=4.0' python - <<PY
 import json
 from pathlib import Path
 from jsonschema import Draft202012Validator
@@ -903,7 +903,7 @@ jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .parser_
 jq -e 'any(.transform_rule_descriptions[]; .aat_pointer == "blocks[].content[].gaiji.description" and .parser_ir_pointer == "gaiji.raw_marker")' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "blocks[].content[].gaiji.raw_marker" and .aat_pointer != "blocks[].content[].gaiji.unicode")' "$out_dir/mapping.json"
 
-python3 - <<PY
+python - <<PY
 import json
 from pathlib import Path
 import sys
@@ -1095,7 +1095,7 @@ validate_contract.validate_mapping_contract(
 In `tests/aat-parser-ir-mapping-policy-smoke.sh`, add this assertion after the current `jq` checks:
 
 ```bash
-python3 - <<PY
+python - <<PY
 import json
 from pathlib import Path
 import sys
@@ -1351,7 +1351,7 @@ If it mentions `0.1.0` or "zero `UNSUPPORTED`" without clarifying that this was 
 Run:
 
 ```bash
-python3 -m compileall reports/aat-fidelity/aat_parser_ir_mapping
+python -m compileall reports/aat-fidelity/aat_parser_ir_mapping
 ```
 
 Expected: exits 0.

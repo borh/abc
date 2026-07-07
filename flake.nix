@@ -74,7 +74,7 @@
           split-import-parity-audit = pkgs.writeShellScript "soranoha-split-import-parity-audit" ''
             set -euo pipefail
             export PATH="${runtimePath}:$PATH"
-            exec python3 scripts/monorepo-parity-audit.py "$@"
+            exec python scripts/monorepo-parity-audit.py "$@"
           '';
 
           tei-version-coherence = pkgs.writeShellScript "soranoha-tei-version-coherence" ''
@@ -86,7 +86,7 @@
           flake-input-policy = pkgs.writeShellScript "soranoha-flake-input-policy" ''
             set -euo pipefail
             export PATH="${runtimePath}:$PATH"
-            exec python3 scripts/monorepo-flake-input-policy.py "$@"
+            exec python scripts/monorepo-flake-input-policy.py "$@"
           '';
 
           validate-migration = pkgs.writeShellScript "soranoha-validate-migration" ''
@@ -94,7 +94,7 @@
             export PATH="${runtimePath}:$PATH"
             bash scripts/monorepo-schema-drift.sh
             bash scripts/monorepo-tei-version-coherence.sh
-            python3 scripts/monorepo-flake-input-policy.py
+            python scripts/monorepo-flake-input-policy.py
             nix flake check --no-build "$@"
           '';
         };
@@ -181,7 +181,7 @@
               }
               ''
                 cd "$src"
-                python3 scripts/monorepo-flake-input-policy.py "$src"
+                python scripts/monorepo-flake-input-policy.py "$src"
                 touch "$out"
               '';
           monorepo-schema-drift =

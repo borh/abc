@@ -74,7 +74,7 @@ cat > "$tmp/manual/kijyunn.html" <<'HTML'
 <html><body>青空文庫注記例</body></html>
 HTML
 
-python3 "$repo_root/reports/source-references/reconcile-aozora-notation.py" \
+python "$repo_root/reports/source-references/reconcile-aozora-notation.py" \
   --syntax-coverage "$tmp/syntax.toml" \
   --source-summary "$tmp/source-summary.json" \
   --notation-summary "$tmp/notation-summary.json" \

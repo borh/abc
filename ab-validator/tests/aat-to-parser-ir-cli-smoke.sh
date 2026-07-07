@@ -66,13 +66,13 @@ jq -e 'all(.records[]; .aat_pointer != "meta.adapter" and .aat_pointer != "meta.
 jq -e 'any(.records[]; .aat_pointer == "meta.parse_complete")' "$out_dir/divergence.json"
 jq -e 'all(.records[]; .rule_id != null and .message != null and .count >= 1)' "$out_dir/divergence.json"
 
-python_jsonschema=(python3)
-if ! python3 - <<'PY' >/dev/null 2>&1
+python_jsonschema=(python)
+if ! python - <<'PY' >/dev/null 2>&1
 import jsonschema
 PY
 then
   if command -v uv >/dev/null 2>&1; then
-    python_jsonschema=(uv run --isolated --no-project --with 'jsonschema>=4.0' python3)
+    python_jsonschema=(uv run --isolated --no-project --with 'jsonschema>=4.0' python)
   else
     echo "python jsonschema module is required; install it or run through nix" >&2
     exit 1

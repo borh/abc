@@ -44,10 +44,10 @@ flake-cargo *ARGS:
 	@nix develop "{{repo_root}}#default" --command cargo {{ARGS}}
 
 flake-python *ARGS:
-	@nix develop "{{repo_root}}#default" --command python3 {{ARGS}}
+	@nix develop "{{repo_root}}#default" --command python {{ARGS}}
 
 flake-aozora2html-python *ARGS:
-	@nix develop "{{repo_root}}#aozora2html" --command python3 {{ARGS}}
+	@nix develop "{{repo_root}}#aozora2html" --command python {{ARGS}}
 
 quality-fix:
 	@just fmt
@@ -90,7 +90,7 @@ aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2
 	@vectors="{{VECTORS}}"; if [ -z "$vectors" ]; then vectors="$(nix build --no-link --print-out-paths '{{repo_root}}#reference-aozora-notation-spec')/conformance/vectors"; fi; \
 	aozora_bin="$(nix build --no-link --print-out-paths '{{repo_root}}#reference-aozora')/bin/aozora"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora/Cargo.toml" --release; \
-	python3 "{{repo_root}}/reports/parser-conformance/run-aozora-notation-spec.py" \
+	python "{{repo_root}}/reports/parser-conformance/run-aozora-notation-spec.py" \
 		--vectors-dir "$vectors" \
 		--adapter "aozora=inspect:$aozora_bin inspect" \
 		--adapter "ab-aozora=aat:{{repo_root}}/adapters/aozora/target/release/aozora-adapter --mode aat" \
@@ -166,15 +166,15 @@ parser-performance-all-parsers:
 	aozora2html_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora2html')"; \
 	epub3_jar="${AB_AOZORAEPUB3_JAR:-{{repo_root}}/references/parsers/AozoraEpub3-JDK21/build/libs/AozoraEpub3.jar}"; \
 	test -f "$epub3_jar" || { echo "AozoraEpub3.jar not found: $epub3_jar" >&2; echo "build it with: (cd {{repo_root}}/references/parsers/AozoraEpub3-JDK21 && ./gradlew jar), or set AB_AOZORAEPUB3_JAR" >&2; exit 2; }; \
-	aozora_pkg_q="$(python3 -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$aozora_pkg")"; \
-	epub3_jar_q="$(python3 -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$epub3_jar")"; \
+	aozora_pkg_q="$(python -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$aozora_pkg")"; \
+	epub3_jar_q="$(python -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$epub3_jar")"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora2/Cargo.toml" --release --jobs "$jobs"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora-rs/Cargo.toml" --release --jobs "$jobs"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora2html/Cargo.toml" --release --jobs "$jobs"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora-epub3/Cargo.toml" --release --jobs "$jobs"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora/Cargo.toml" --release --jobs "$jobs"; \
 	work_args=(); if [ -n "$work_ids" ]; then work_args=(--work-ids "$work_ids"); fi; \
-	python3 "{{repo_root}}/reports/aat-fidelity/measure-parser-performance.py" \
+	python "{{repo_root}}/reports/aat-fidelity/measure-parser-performance.py" \
 		--index "$index" \
 		--corpus "$corpus" \
 		--out-dir "$out_dir" \
@@ -203,7 +203,7 @@ source-reference-reconciliation-smoke:
 	@bash "{{repo_root}}/tests/source-reference-reconciliation-smoke.sh"
 
 source-reference-reconciliation-report SYNTAX_COVERAGE="data/aozora-syntax-coverage.toml" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" NOTATION_SUMMARY="docs/superpowers/reports/2026-07-05-aozora-notation-spec-comparison.summary.json" MANUAL_ROOT="/home/bor/Dependencies/aozorabunko/rules" REPORT_MD="docs/superpowers/reports/2026-07-06-source-reference-reconciliation.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json":
-	@python3 "{{repo_root}}/reports/source-references/reconcile-aozora-notation.py" \
+	@python "{{repo_root}}/reports/source-references/reconcile-aozora-notation.py" \
 		--syntax-coverage "{{repo_root}}/{{SYNTAX_COVERAGE}}" \
 		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
 		--notation-summary "{{repo_root}}/{{NOTATION_SUMMARY}}" \
@@ -263,7 +263,7 @@ parser-ir-level3-generated-workset-audit-smoke:
 parser-ir-level3-tei-eaj-generated-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json" JOBS="24":
 	@cargo build -p ab-aat-to-parser-ir --release
 	@out_dir="{{OUT_DIR}}"; if [ -z "$out_dir" ]; then out_dir="{{ab_db_root}}/parser-ir/tei-eaj-generated-comparison"; fi; \
-	python3 "{{repo_root}}/reports/parser-ir/tei-eaj-generated-compare.py" \
+	python "{{repo_root}}/reports/parser-ir/tei-eaj-generated-compare.py" \
 		--workset "{{tei_eaj_workset}}" \
 		--structural-summary "{{repo_root}}/{{STRUCTURAL_SUMMARY}}" \
 		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
@@ -277,7 +277,7 @@ parser-ir-level3-tei-eaj-generated-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMM
 parser-ir-level3-tei-eaj-generated-matrix-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json" JOBS="24":
 	@cargo build -p ab-aat-to-parser-ir --release
 	@out_dir="{{OUT_DIR}}"; if [ -z "$out_dir" ]; then out_dir="{{ab_db_root}}/parser-ir/tei-eaj-generated-matrix-comparison"; fi; \
-	python3 "{{repo_root}}/reports/parser-ir/tei-eaj-generated-compare.py" \
+	python "{{repo_root}}/reports/parser-ir/tei-eaj-generated-compare.py" \
 		--workset "{{tei_eaj_workset}}" \
 		--structural-summary "{{repo_root}}/{{STRUCTURAL_SUMMARY}}" \
 		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
@@ -293,7 +293,7 @@ parser-ir-level3-admission-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-level3-admission-smoke.sh"
 
 parser-ir-level3-admission-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.summary.json":
-	@python3 "{{repo_root}}/reports/parser-ir/level3-admission.py" \
+	@python "{{repo_root}}/reports/parser-ir/level3-admission.py" \
 		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
 		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
@@ -303,7 +303,7 @@ parser-ir-plain-prose-source-delta-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-plain-prose-source-delta-smoke.sh"
 
 parser-ir-plain-prose-source-delta-report ADMISSION_SUMMARY="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.summary.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" MAPPING="data/aat-to-parser-ir-mapping-v1.json" REPORT_MD="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json":
-	@python3 "{{repo_root}}/reports/parser-ir/plain-prose-source-delta.py" \
+	@python "{{repo_root}}/reports/parser-ir/plain-prose-source-delta.py" \
 		--admission-summary "{{repo_root}}/{{ADMISSION_SUMMARY}}" \
 		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
 		--structural-summary "{{repo_root}}/{{STRUCTURAL_SUMMARY}}" \
@@ -333,7 +333,7 @@ parser-ir-publication-next-work-report SOURCE_SUMMARY="docs/superpowers/reports/
 	if [ -z "$tei_p5_root" ]; then \
 		tei_p5_root="$(nix build --no-link --print-out-paths "{{workspace_root}}#tei-p5-reference")"; \
 	fi; \
-	python3 "{{repo_root}}/reports/parser-ir/publication-next-work.py" \
+	python "{{repo_root}}/reports/parser-ir/publication-next-work.py" \
 		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
 		--coverage-summary "{{repo_root}}/{{COVERAGE_SUMMARY}}" \
 		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
@@ -353,7 +353,7 @@ source-region-disposition-samples-smoke:
 	@bash "{{repo_root}}/tests/source-region-disposition-samples-smoke.sh"
 
 source-region-disposition-samples-report SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" SOURCE_REPORT_MD="docs/superpowers/reports/2026-07-04-source-authority-representability.md" POLICY="data/abc-schemas/data/source-region-publication-policy-v0.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-source-region-disposition-samples.md":
-	@python3 "{{repo_root}}/reports/source-regions/source-region-disposition-samples.py" \
+	@python "{{repo_root}}/reports/source-regions/source-region-disposition-samples.py" \
 		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
 		--source-report-md "{{repo_root}}/{{SOURCE_REPORT_MD}}" \
 		--policy "{{repo_root}}/{{POLICY}}" \
@@ -364,7 +364,7 @@ parser-ir-text-policy-delta-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-text-policy-delta-smoke.sh"
 
 parser-ir-text-policy-delta-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-text-policy-delta.md" WORKSETS_DIR="docs/superpowers/reports/2026-07-06-text-policy-worksets":
-	@python3 "{{repo_root}}/reports/parser-ir/text-policy-delta.py" \
+	@python "{{repo_root}}/reports/parser-ir/text-policy-delta.py" \
 		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}" \
@@ -374,7 +374,7 @@ parser-ir-adapter-fidelity-worksets-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-adapter-fidelity-worksets-smoke.sh"
 
 parser-ir-adapter-fidelity-worksets-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.md" WORKSETS_DIR="docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets":
-	@python3 "{{repo_root}}/reports/parser-ir/adapter-fidelity-worksets.py" \
+	@python "{{repo_root}}/reports/parser-ir/adapter-fidelity-worksets.py" \
 		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}" \
@@ -397,7 +397,7 @@ parser-ir-publication-bundle-validation ABC_ROOT=abc_repo_root OUT_DIR="scratch/
 		--generated-at 2026-07-03T00:00:00Z) \
 		>/dev/null; \
 	abc_commit="$(git -C "$abc_root" rev-parse --short HEAD)"; \
-	python3 "{{repo_root}}/reports/parser-ir/publication-bundle-validate.py" \
+	python "{{repo_root}}/reports/parser-ir/publication-bundle-validate.py" \
 		--parser-ir "$abc_root/examples/v0/example-work/parser-ir.json" \
 		--source-region-summary "{{repo_root}}/{{SOURCE_REGION_SUMMARY}}" \
 		--publication-dir "$out_dir" \
@@ -410,7 +410,7 @@ parser-ir-publication-bundle-batch-validation BATCH_ROOT="" SCOPE="representativ
 	@if [ -z "{{BATCH_ROOT}}" ]; then echo "BATCH_ROOT is required" >&2; exit 2; fi; \
 	abc_root="$(readlink -f "{{ABC_ROOT}}")"; \
 	abc_commit="$(git -C "$abc_root" rev-parse --short HEAD 2>/dev/null || true)"; \
-	python3 "{{repo_root}}/reports/parser-ir/publication-bundle-validate.py" \
+	python "{{repo_root}}/reports/parser-ir/publication-bundle-validate.py" \
 		--batch-root "{{BATCH_ROOT}}" \
 		--batch-scope "{{SCOPE}}" \
 		--source-region-summary "{{repo_root}}/{{SOURCE_REGION_SUMMARY}}" \
@@ -421,7 +421,7 @@ parser-ir-publication-bundle-batch-validation BATCH_ROOT="" SCOPE="representativ
 
 parser-ir-publication-coverage-report PARSER_IR_SCHEMA="data/abc-schemas/schemas/parser-ir.schema.json" MAPPING="data/aat-to-parser-ir-mapping-v1.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" SOURCE_DELTA_SUMMARY="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-ir-publication-coverage.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json" CUSTOM_CONTRACT_SCHEMA="data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json" BUNDLE_VALIDATION_SUMMARY="docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json" NEXT_WORK_SUMMARY="docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json":
 	@args=(); if [ -n "{{CUSTOM_CONTRACT_SCHEMA}}" ]; then args+=(--custom-contract-schema "{{repo_root}}/{{CUSTOM_CONTRACT_SCHEMA}}"); fi; if [ -n "{{BUNDLE_VALIDATION_SUMMARY}}" ]; then args+=(--bundle-validation-summary "{{repo_root}}/{{BUNDLE_VALIDATION_SUMMARY}}"); fi; if [ -n "{{NEXT_WORK_SUMMARY}}" ]; then args+=(--next-work-summary "{{repo_root}}/{{NEXT_WORK_SUMMARY}}"); fi; \
-	python3 "{{repo_root}}/reports/parser-ir/publication-coverage.py" \
+	python "{{repo_root}}/reports/parser-ir/publication-coverage.py" \
 		--parser-ir-schema "{{repo_root}}/{{PARSER_IR_SCHEMA}}" \
 		--mapping "{{repo_root}}/{{MAPPING}}" \
 		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \

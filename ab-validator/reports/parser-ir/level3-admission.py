@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Classify profile-aware Level 3 TEI admission from measured reports."""
 
 from __future__ import annotations

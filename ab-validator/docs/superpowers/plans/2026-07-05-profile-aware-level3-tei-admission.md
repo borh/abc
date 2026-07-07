@@ -72,7 +72,7 @@
     - `inputs.mapping`
     - `skipped[]`
 - Produces:
-  - CLI: `python3 reports/parser-ir/level3-admission.py --matrix-summary MATRIX --source-summary SOURCE --summary-json OUT.json --report-md OUT.md`
+  - CLI: `python reports/parser-ir/level3-admission.py --matrix-summary MATRIX --source-summary SOURCE --summary-json OUT.json --report-md OUT.md`
   - Function: `build_summary(matrix: dict[str, Any], source: dict[str, Any], mapping: dict[str, Any], mapping_hash: str) -> dict[str, Any]`
   - JSON top-level fields from the spec: `schema_version`, `source_authority_gate`, `parser_ir_infrastructure_verdict`, `plain_prose_admission`, `profile_lanes`, `evidence_gaps`, `mapping`, `inputs`.
   - `mapping` must include `mapping_id`, `mapping_version`, `mapping_hash`, `mapping_schema_hash`, `target_parser_ir_schema_id`, `target_parser_ir_schema_hash`, and `generated_mapping_rules`.
@@ -241,7 +241,7 @@ cat > "$matrix_summary" <<JSON
 }
 JSON
 
-python3 "$repo_root/reports/parser-ir/level3-admission.py" \
+python "$repo_root/reports/parser-ir/level3-admission.py" \
   --matrix-summary "$matrix_summary" \
   --source-summary "$source_summary" \
   --summary-json "$summary_json" \
@@ -275,7 +275,7 @@ rg -n 'LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY' "$report_md"
 rg -n 'Drama' "$report_md"
 rg -n 'Level 4 enrichment' "$report_md"
 
-python3 "$repo_root/reports/parser-ir/level3-admission.py" \
+python "$repo_root/reports/parser-ir/level3-admission.py" \
   --matrix-summary "$matrix_summary" \
   --source-summary "$failing_source_summary" \
   --summary-json "$failing_summary_json" \
@@ -307,7 +307,7 @@ tests/parser-ir-level3-admission-smoke.sh
 Expected: FAIL with:
 
 ```text
-python3: can't open file '.../reports/parser-ir/level3-admission.py'
+python: can't open file '.../reports/parser-ir/level3-admission.py'
 ```
 
 - [ ] **Step 3: Implement the classifier**
@@ -315,7 +315,7 @@ python3: can't open file '.../reports/parser-ir/level3-admission.py'
 Create `reports/parser-ir/level3-admission.py`:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Classify profile-aware Level 3 TEI admission from measured reports."""
 
 from __future__ import annotations
@@ -806,7 +806,7 @@ parser-ir-level3-admission-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-level3-admission-smoke.sh"
 
 parser-ir-level3-admission-report MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.summary.json":
-	@python3 "{{repo_root}}/reports/parser-ir/level3-admission.py" \
+	@python "{{repo_root}}/reports/parser-ir/level3-admission.py" \
 		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
 		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \

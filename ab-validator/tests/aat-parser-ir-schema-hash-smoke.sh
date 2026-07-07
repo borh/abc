@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 abc_root="${AB_ABC_ROOT:-$repo_root/data/abc-schemas}"
 
-out="$(python3 "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/c14n.py" \
+out="$(python "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/c14n.py" \
   "$abc_root/schemas/aat-parser-ir-mapping.schema.json" \
   "$abc_root/schemas/parser-ir.schema.json")"
 

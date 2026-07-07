@@ -26,8 +26,8 @@ if [[ ! -f "$JAR_PATH" ]]; then
   exit 1
 fi
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "python3 is required for package.opf parsing" >&2
+if ! command -v python >/dev/null 2>&1; then
+  echo "python is required for package.opf parsing" >&2
   exit 1
 fi
 if ! command -v unzip >/dev/null 2>&1; then
@@ -87,7 +87,7 @@ xhtml_colophon_args=()
 package_opf="${epub_dir}/OPS/package.opf"
 
 if [[ -f "$package_opf" ]]; then
-  python3 - "$package_opf" "$epub_dir" > "${tmpdir}/xhtml-list.txt" <<'PY'
+  python - "$package_opf" "$epub_dir" > "${tmpdir}/xhtml-list.txt" <<'PY'
 import sys
 import xml.etree.ElementTree as ET
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Classify plain-prose Level 3 source deltas from measured matrix evidence."""
 
 from __future__ import annotations

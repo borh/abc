@@ -167,7 +167,7 @@ Regenerate the representative batch evidence with:
 ```bash
 just parser-ir-level3-tei-eaj-generated-matrix-audit 5 /db/ab-validator/parser-ir/representative-publication-bundle-current-smoke docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json 24
 just parser-ir-publication-bundle-batch-validation /db/ab-validator/parser-ir/representative-publication-bundle-current-smoke representative docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.md docs/superpowers/reports/2026-07-06-publication-bundle-batch-validation.summary.json ../abc
-python3 reports/parser-ir/publication-coverage.py \
+python reports/parser-ir/publication-coverage.py \
   --parser-ir-schema data/abc-schemas/schemas/parser-ir.schema.json \
   --mapping data/aat-to-parser-ir-mapping-v1.json \
   --source-summary docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json \

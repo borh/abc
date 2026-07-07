@@ -19,7 +19,7 @@ A second-pass review surfaced implementation-level issues. The plan has been upd
 | Remove spurious `[workspace]` declaration | Strong suggestion | `[workspace]` removed from adapter `Cargo.toml` in Task 1. |
 | Add missing `regex` dependency | Strong suggestion | `regex = "1"` added in Task 1; used in Task 5. |
 | Empty `$enc_arg` passed as JAR argument | Blocker | Task 7 now uses a `java_args` array; only appends `-enc UTF-8` when non-empty. |
-| Unchecked `python3` dependency | Blocker | Task 7 now checks `command -v python3` at startup. |
+| Unchecked `python` dependency | Blocker | Task 7 now checks `command -v python` at startup. |
 | Fallback glob misses 5+ digit filenames | Strong suggestion | Task 7 fallback uses `find ... -name '[0-9]*.xhtml' | sort -V`. |
 | Task 4 mapper underspecified | Strong suggestion | Task 4 split into 4a–4e with concrete fixtures, helper code, and expected AAT for each mapping category. |
 | Exit code 2 never set | Question | Task 6 now calls `process::exit(2)` when `--parser-failed` is set in `--mode aat`. |
@@ -1052,8 +1052,8 @@ if [[ ! -f "$JAR_PATH" ]]; then
   exit 1
 fi
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "python3 is required for package.opf parsing" >&2
+if ! command -v python >/dev/null 2>&1; then
+  echo "python is required for package.opf parsing" >&2
   exit 1
 fi
 
@@ -1111,7 +1111,7 @@ package_opf="${epub_dir}/OPS/package.opf"
 if [[ -f "$package_opf" ]]; then
   # Parse manifest/spine with a small Python helper embedded in the wrapper.
   # The last non-auxiliary spine item is treated as the colophon.
-  python3 - "$package_opf" "$epub_dir" <<'PY' > "${tmpdir}/xhtml-list.txt"
+  python - "$package_opf" "$epub_dir" <<'PY' > "${tmpdir}/xhtml-list.txt"
 import sys, xml.etree.ElementTree as ET
 opf_path, epub_dir = sys.argv[1], sys.argv[2]
 ns = {'opf': 'http://www.idpf.org/2007/opf'}

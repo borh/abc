@@ -18,7 +18,7 @@ if [[ "$actual_schema_dir" != "$expected_schema_dir" ]]; then
   exit 1
 fi
 
-python3 "$repo_root/ab-validator/scripts/compare_abc_schema_contracts.py" \
+python "$repo_root/ab-validator/scripts/compare_abc_schema_contracts.py" \
   --local "$repo_root/ab-validator/data/abc-schemas/schema-contracts.json" \
   --abc "$repo_root/abc"
 

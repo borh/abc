@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Disposable verifier: cross-check PARSER_REPORT.md §0 feature taxonomy
 against the two canonical Aozora sources (chuki_tag.txt + annotation/*.html).
 

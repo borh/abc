@@ -10,7 +10,7 @@ out_dir="${AB_AOZORA2HTML_VTBO_OUT:-$run_dir/triage/outputs/vtbo}"
 sample="${AB_AOZORA2HTML_VTBO_SAMPLE:-0}"   # 0 = all 668
 mkdir -p "$out_dir"
 
-python3 - "$run_dir" "$corpus" > "$out_dir/failing_works.tsv" <<'PY'
+python - "$run_dir" "$corpus" > "$out_dir/failing_works.tsv" <<'PY'
 import json, os, sys
 run_dir, corpus = sys.argv[1], sys.argv[2]
 
@@ -46,7 +46,7 @@ while IFS=$'\t' read -r wid archive entry; do
   [[ -f "$aat" ]] || continue
   [[ -n "$archive" && -f "$archive" ]] || continue
   src="/tmp/vtbo_src.$$.txt"
-  python3 - "$archive" "$entry" "$src" <<'PY' || continue
+  python - "$archive" "$entry" "$src" <<'PY' || continue
 import zipfile, sys
 archive, entry, out = sys.argv[1], sys.argv[2], sys.argv[3]
 try:

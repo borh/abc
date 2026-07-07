@@ -54,7 +54,7 @@ Build a source-vs-AAT audit and sample extractor over the existing run. If the a
 
 **Interfaces:**
 - Input CLI:
-  `python3 reports/aat-fidelity/audit-aozora2html-measurement.py --run-dir "$RUN_DIR" --out-md "$REPORT_MD" --summary-json "$SUMMARY_JSON" --worksets-dir "$WORKSETS_DIR"`
+  `python reports/aat-fidelity/audit-aozora2html-measurement.py --run-dir "$RUN_DIR" --out-md "$REPORT_MD" --summary-json "$SUMMARY_JSON" --worksets-dir "$WORKSETS_DIR"`
 - Optional input:
   `--retry-run-dir "$RETRY_RUN_DIR"` lets the audit compare a targeted retry against the baseline.
 - Output Markdown sections:
@@ -115,8 +115,8 @@ Build a source-vs-AAT audit and sample extractor over the existing run. If the a
   - writes AAT JSON under `aat/fixture-adapter/`,
   - writes `metadata.json`,
   - writes an `index.json` whose `by_feature.kaeriten` and `by_feature.okurigana` overlap so the kunten union is tested,
-  - invokes `python3 reports/aat-fidelity/build-aat-batch-triage.py --reports-dir "$base/check-reports" --aat-dir "$base/aat" --db "$base/fidelity.duckdb" --report-id smoke-base --out-dir "$base/triage"`,
-  - invokes `python3 reports/aat-fidelity/audit-aozora2html-measurement.py --run-dir "$base" --out-md "$out/audit.md" --summary-json "$out/audit.summary.json" --worksets-dir "$out/worksets"`,
+  - invokes `python reports/aat-fidelity/build-aat-batch-triage.py --reports-dir "$base/check-reports" --aat-dir "$base/aat" --db "$base/fidelity.duckdb" --report-id smoke-base --out-dir "$base/triage"`,
+  - invokes `python reports/aat-fidelity/audit-aozora2html-measurement.py --run-dir "$base" --out-md "$out/audit.md" --summary-json "$out/audit.summary.json" --worksets-dir "$out/worksets"`,
   - asserts with `jq` that `source_counts.kunten` equals the deduplicated union size, not the sum of `kaeriten` and `okurigana`,
   - asserts with `jq -e 'type == "array" and all(.[]; type == "string")' "$out/worksets/policy-incomplete-union.json"`.
 
@@ -125,7 +125,7 @@ Build a source-vs-AAT audit and sample extractor over the existing run. If the a
 - [ ] **Step 5:** Run the audit on the current full run.
 
   ```bash
-  python3 reports/aat-fidelity/audit-aozora2html-measurement.py \
+  python reports/aat-fidelity/audit-aozora2html-measurement.py \
     --run-dir /db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z \
     --out-md docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.md \
     --summary-json docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.summary.json \
@@ -165,7 +165,7 @@ Build a source-vs-AAT audit and sample extractor over the existing run. If the a
 
 **Interfaces:**
 - Input CLI:
-  `python3 reports/aat-fidelity/extract-aozora2html-policy-samples.py --run-dir "$RUN_DIR" --audit-md "$AUDIT_MD" --audit-summary-json "$AUDIT_SUMMARY_JSON" --out-md "$REPORT_MD" --summary-json "$SUMMARY_JSON" --limit-per-bucket 10`
+  `python reports/aat-fidelity/extract-aozora2html-policy-samples.py --run-dir "$RUN_DIR" --audit-md "$AUDIT_MD" --audit-summary-json "$AUDIT_SUMMARY_JSON" --out-md "$REPORT_MD" --summary-json "$SUMMARY_JSON" --limit-per-bucket 10`
 - Output Markdown:
   deterministic samples for observed warigaki, source-warigaki-without-AAT-observation, observed kunten, source-kunten-without-AAT-observation, adapter-failed policy works, and parse-incomplete policy works.
 - Output summary JSON keys consumed by Task 4:
@@ -199,7 +199,7 @@ Build a source-vs-AAT audit and sample extractor over the existing run. If the a
 - [ ] **Step 4:** Run the extractor on the current full run.
 
   ```bash
-  python3 reports/aat-fidelity/extract-aozora2html-policy-samples.py \
+  python reports/aat-fidelity/extract-aozora2html-policy-samples.py \
     --run-dir /db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z \
     --audit-md docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.md \
     --audit-summary-json docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.summary.json \
@@ -282,7 +282,7 @@ Build a source-vs-AAT audit and sample extractor over the existing run. If the a
 
   ```bash
   retry_dir="$(cat /db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/worksets/policy-retry-dir.txt)"
-  python3 reports/aat-fidelity/audit-aozora2html-measurement.py \
+  python reports/aat-fidelity/audit-aozora2html-measurement.py \
     --run-dir /db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z \
     --retry-run-dir "$retry_dir" \
     --out-md docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.md \
@@ -293,7 +293,7 @@ Build a source-vs-AAT audit and sample extractor over the existing run. If the a
 - [ ] **Step 4:** Re-run the sample extractor against the updated audit.
 
   ```bash
-  python3 reports/aat-fidelity/extract-aozora2html-policy-samples.py \
+  python reports/aat-fidelity/extract-aozora2html-policy-samples.py \
     --run-dir /db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z \
     --audit-md docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.md \
     --audit-summary-json docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.summary.json \

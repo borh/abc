@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Bootstrap-label candidate katakana sentences from one Aozora work.
 
 Faithful Branch-B port of aozora-corpus-generator's is_katakana_sentence

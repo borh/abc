@@ -51,7 +51,7 @@ test -s "$db_path"
 
 rg -n 'fixture.xhtml.same-main-text,false,true,true,normalized_main_text_equal,main_text_equal,-1,,,\"吾輩猫ねこである。\",\"吾輩猫ねこである。\"' "$out_dir/query.csv"
 
-python3 - <<PY
+python - <<PY
 from pathlib import Path
 
 body = '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">

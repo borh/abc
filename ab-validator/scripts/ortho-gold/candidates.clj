@@ -23,7 +23,7 @@
         :when (str/ends-with? (.getName f) ".txt")
         :let [work-id (str/replace-first (.getName f) #"\.txt$" "")]]
   (let [res (p/shell {:out :string :err :string}
-                     "python3" (str script-dir "/bootstrap_label.py")
+                     "python" (str script-dir "/bootstrap_label.py")
                      "--work-id" work-id
                      "--text-file" (.getPath f))]
     (when-not (zero? (:exit res))

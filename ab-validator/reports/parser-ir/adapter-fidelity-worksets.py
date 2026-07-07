@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Generate adapter fidelity worksets from the TEI-EAJ matrix."""
 
 from __future__ import annotations

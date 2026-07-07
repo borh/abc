@@ -178,7 +178,7 @@ cat > "$performance_md" <<'MD'
 DNF is useful signal.
 MD
 
-python3 "$repo_root/reports/parser-ir/publication-next-work.py" \
+python "$repo_root/reports/parser-ir/publication-next-work.py" \
   --source-summary "$source_summary" \
   --coverage-summary "$coverage_summary" \
   --matrix-summary "$matrix_summary" \
@@ -272,7 +272,7 @@ parser-ir-publication-next-work-smoke:
     bash tests/parser-ir-publication-next-work-smoke.sh
 
 parser-ir-publication-next-work-report:
-    python3 reports/parser-ir/publication-next-work.py \
+    python reports/parser-ir/publication-next-work.py \
       --source-summary docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json \
       --coverage-summary docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json \
       --matrix-summary docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json \
@@ -306,7 +306,7 @@ Run:
 
 ```bash
 bash tests/parser-ir-publication-next-work-smoke.sh
-python3 -m py_compile reports/parser-ir/publication-next-work.py
+python -m py_compile reports/parser-ir/publication-next-work.py
 jq -e '.verdict == "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE"' docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json
 jq -e '([.parser_lanes[].adapter] | sort) == (["aozora", "aozora-epub3", "aozora-rs", "aozora2", "aozora2html"] | sort)' docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json
 git diff --check
@@ -401,7 +401,7 @@ Implement a report builder that:
 Run:
 
 ```bash
-python3 reports/source-regions/source-region-disposition-samples.py \
+python reports/source-regions/source-region-disposition-samples.py \
   --source-summary docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json \
   --source-report-md docs/superpowers/reports/2026-07-04-source-authority-representability.md \
   --policy data/abc-schemas/data/source-region-publication-policy-v0.json \
@@ -415,7 +415,7 @@ Run:
 
 ```bash
 bash tests/source-region-disposition-samples-smoke.sh
-python3 -m py_compile reports/source-regions/source-region-disposition-samples.py
+python -m py_compile reports/source-regions/source-region-disposition-samples.py
 git diff --check
 ```
 
@@ -490,12 +490,12 @@ jq -e '.total_different_rows == 9' "$summary_json"
 Run:
 
 ```bash
-python3 reports/parser-ir/text-policy-delta.py \
+python reports/parser-ir/text-policy-delta.py \
   --matrix-summary docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json \
   --summary-json docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json \
   --report-md docs/superpowers/reports/2026-07-06-text-policy-delta.md
 bash tests/parser-ir-text-policy-delta-smoke.sh
-python3 -m py_compile reports/parser-ir/text-policy-delta.py
+python -m py_compile reports/parser-ir/text-policy-delta.py
 jq -e -n \
   --slurpfile next docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json \
   --slurpfile text docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json \
@@ -568,12 +568,12 @@ the Task 1 adapter-fidelity evidence policy.
 Run:
 
 ```bash
-python3 reports/parser-ir/adapter-fidelity-worksets.py \
+python reports/parser-ir/adapter-fidelity-worksets.py \
   --matrix-summary docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json \
   --summary-json docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.summary.json \
   --report-md docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.md
 bash tests/parser-ir-adapter-fidelity-worksets-smoke.sh
-python3 -m py_compile reports/parser-ir/adapter-fidelity-worksets.py
+python -m py_compile reports/parser-ir/adapter-fidelity-worksets.py
 git diff --check
 ```
 
@@ -793,7 +793,7 @@ Run:
 
 ```bash
 bash tests/parser-ir-publication-coverage-smoke.sh
-python3 -m py_compile reports/parser-ir/publication-coverage.py
+python -m py_compile reports/parser-ir/publication-coverage.py
 just parser-ir-publication-coverage-report
 jq -e '.next_work_dashboard.verdict == "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE"' docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json
 git diff --check
@@ -826,7 +826,7 @@ just source-region-disposition-samples-report
 just parser-ir-text-policy-delta-report
 just parser-ir-adapter-fidelity-worksets-report
 just parser-ir-publication-coverage-report
-python3 -m py_compile \
+python -m py_compile \
   reports/parser-ir/publication-next-work.py \
   reports/source-regions/source-region-disposition-samples.py \
   reports/parser-ir/text-policy-delta.py \

@@ -79,7 +79,7 @@ printf '{"version":1,"meta":{"adapter":"fake-aat","parse_complete":true},"blocks
 SH
 chmod +x "$tmp/fake-aat-adapter"
 
-python3 "$repo_root/reports/parser-conformance/run-aozora-notation-spec.py" \
+python "$repo_root/reports/parser-conformance/run-aozora-notation-spec.py" \
   --vectors-dir "$tmp/vectors" \
   --adapter "fake=inspect:$tmp/fake-aozora inspect" \
   --adapter "fake-aat=aat:$tmp/fake-aat-adapter --mode aat" \

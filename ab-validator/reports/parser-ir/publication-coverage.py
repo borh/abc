@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Report full Parser-IR publication coverage across TEI/custom/plaintext targets."""
 
 from __future__ import annotations

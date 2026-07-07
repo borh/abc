@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Validate a materialized parser-IR publication bundle across artifacts.
 
 ABC owns full schema/profile validation. This checker records the ab-validator

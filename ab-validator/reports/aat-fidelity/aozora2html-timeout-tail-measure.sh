@@ -11,7 +11,7 @@ adapter="$repo_root/adapters/aozora2html/aozora2html-adapter"
 mkdir -p "$out_dir"
 
 # Build (work_id, archive, entry, size) rows for the $sample largest timed-out works.
-python3 - "$run_dir" "$corpus" "$sample" > "$out_dir/sample.tsv" <<'PY'
+python - "$run_dir" "$corpus" "$sample" > "$out_dir/sample.tsv" <<'PY'
 import json, os, sys, zipfile
 run_dir, corpus, sample = sys.argv[1], sys.argv[2], int(sys.argv[3])
 index = json.load(open(os.path.join(run_dir, "index.json")))
@@ -57,7 +57,7 @@ first=1
 while IFS=$'\t' read -r wid archive entry size; do
   [[ -z "$wid" ]] && continue
   tmp="$(mktemp --suffix=.txt)"
-  python3 - "$archive" "$entry" "$tmp" <<'PY'
+  python - "$archive" "$entry" "$tmp" <<'PY'
 import zipfile, sys
 archive, entry, out = sys.argv[1], sys.argv[2], sys.argv[3]
 with zipfile.ZipFile(archive) as z:
@@ -84,7 +84,7 @@ PY
 done < "$out_dir/sample.tsv"
 printf ']' >> "$results"
 echo "wrote $results"
-python3 - "$results" "$out_dir" <<'PY'
+python - "$results" "$out_dir" <<'PY'
 import json, sys, statistics
 results = json.load(open(sys.argv[1]))
 rows = [r for r in results if r["status"] == "ok"]

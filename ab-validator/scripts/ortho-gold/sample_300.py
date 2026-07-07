@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Corpus-representative sampler for the LLM-labeled evaluation set.
 
 Strategy (revised after data check rejected author-capping):

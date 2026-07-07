@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Synthesize the next-work ledger for Aozora publication completion."""
 
 from __future__ import annotations

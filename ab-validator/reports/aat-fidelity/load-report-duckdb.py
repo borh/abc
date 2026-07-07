@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Load an AAT fidelity report JSON into DuckDB tables."""
 
 from __future__ import annotations

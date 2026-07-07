@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Audit aozora2html full-corpus measurement trust for policy decisions."""
 
 from __future__ import annotations

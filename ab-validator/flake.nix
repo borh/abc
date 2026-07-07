@@ -744,7 +744,7 @@
               --config "source.crates-io.replace-with='vendored-sources'" \
               --config "source.vendored-sources.directory='${aozora2htmlCargoDeps}'" \
               build --manifest-path "$repo_root/adapters/aozora2html/Cargo.toml" --release --offline
-            python3 -m pytest "$repo_root/adapters/aozora2html/tests/test_mapper.py" -vv
+            python -m pytest "$repo_root/adapters/aozora2html/tests/test_mapper.py" -vv
           '';
         };
 
@@ -767,7 +767,7 @@
                 --config "source.crates-io.replace-with='vendored-sources'" \
                 --config "source.vendored-sources.directory='${aozora2htmlCargoDeps}'" \
                 build --manifest-path "$work_dir/source/adapters/aozora2html/Cargo.toml" --release --offline
-              python3 -m pytest "$work_dir/source/adapters/aozora2html/tests/test_mapper.py" -vv
+              python -m pytest "$work_dir/source/adapters/aozora2html/tests/test_mapper.py" -vv
               touch "$out"
             '';
 
@@ -953,7 +953,7 @@
               cp -R "${source}" source
               chmod -R +w source
               cd source
-              python3 scripts/schema_contracts.py
+              python scripts/schema_contracts.py
               touch "$out"
             '';
 
@@ -1108,7 +1108,7 @@
 
                             bin="$work_dir/source/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
                             printf 'test' > "$work_dir/src.txt"
-                            python3 - "$bin" "$work_dir/src.txt" "$work_dir/source/data/aat-schema.json" "$work_dir/source/adapters/aozora-epub3/tests/fixtures" <<'PY'
+                            python - "$bin" "$work_dir/src.txt" "$work_dir/source/data/aat-schema.json" "$work_dir/source/adapters/aozora-epub3/tests/fixtures" <<'PY'
               import json, subprocess, sys, glob
               from pathlib import Path
               bin_p, src, schema_p, fx_dir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]

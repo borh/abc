@@ -23,9 +23,9 @@ run_cargo() {
 
 run_py_in_aozora2html_flake() {
   if [[ "${AB_VALIDATOR_DIRECT_PYTHON:-0}" == "1" ]]; then
-    python3 "$@"
+    python "$@"
   else
-    run_just flake-aozora2html-python python3 "$@"
+    run_just flake-aozora2html-python python "$@"
   fi
 }
 

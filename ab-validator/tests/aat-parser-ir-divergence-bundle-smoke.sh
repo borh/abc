@@ -60,7 +60,7 @@ JSON
 
 jq '.records[0]' "$bundle" > "$record"
 
-uv run --isolated --no-project --with 'jsonschema>=4.0' python3 - <<PY
+uv run --isolated --no-project --with 'jsonschema>=4.0' python - <<PY
 import json
 from pathlib import Path
 from jsonschema import Draft202012Validator

@@ -94,10 +94,10 @@ aat = {
 json.dump(aat, sys.stdout, ensure_ascii=False, indent=2)
 print()
 PY
-    python3 "$script"
+    python "$script"
     ;;
   html)
-    python3 -c 'import html,sys; print("<p>" + html.escape(sys.stdin.read()) + "</p>")'
+    python -c 'import html,sys; print("<p>" + html.escape(sys.stdin.read()) + "</p>")'
     ;;
   *)
     echo "usage: test-adapter --mode aat|html < input.txt" >&2

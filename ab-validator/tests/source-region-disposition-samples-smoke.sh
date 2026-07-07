@@ -105,14 +105,14 @@ jq '.dispositions += [{
   "measurement_status": "measured"
 }]' "$policy" > "$policy_with_letter"
 
-python3 "$repo_root/reports/source-regions/source-region-disposition-samples.py" \
+python "$repo_root/reports/source-regions/source-region-disposition-samples.py" \
   --source-summary "$source_summary" \
   --source-report-md "$source_md" \
   --policy "$policy" \
   --summary-json "$summary_json" \
   --report-md "$report_md"
 
-python3 "$repo_root/reports/source-regions/source-region-disposition-samples.py" \
+python "$repo_root/reports/source-regions/source-region-disposition-samples.py" \
   --source-summary "$source_summary" \
   --source-report-md "$source_md" \
   --policy "$policy_with_letter" \
@@ -128,7 +128,7 @@ jq -e '.classes[] | select(.source_class == "letter_address_origin" and .status 
 jq -e '.classes[] | select(.source_class == "letter_address_origin" and .measured_counter == "letter_address_origin_occurrences" and .measured_occurrences == 2)' "$summary_json_with_letter" >/dev/null
 rg -n "Source-Region Disposition Samples" "$report_md" >/dev/null
 
-python3 "$repo_root/reports/source-regions/source-region-disposition-samples.py" \
+python "$repo_root/reports/source-regions/source-region-disposition-samples.py" \
   --source-summary "$repo_root/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" \
   --source-report-md "$repo_root/docs/superpowers/reports/2026-07-04-source-authority-representability.md" \
   --policy "$repo_root/data/abc-schemas/data/source-region-publication-policy-v0.json" \

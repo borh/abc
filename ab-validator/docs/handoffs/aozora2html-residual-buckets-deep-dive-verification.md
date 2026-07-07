@@ -38,7 +38,7 @@ All reproduction uses the current release build of the Rust mapper:
 
 ```bash
 # Extract source for work 000125_1317
-python3 - <<'PY'
+python - <<'PY'
 import zipfile
 z = zipfile.ZipFile('/home/bor/Dependencies/aozorabunko/cards/000125/files/1317_ruby_22263.zip')
 z.extract('kokushikan_satsujin_jiken.txt', '/tmp/aozora-debug/')
@@ -130,7 +130,7 @@ Representative work chosen: `000077_1323` (source path `cards/000077/files/1323_
 ### 2.2 Reproduction
 
 ```bash
-python3 - <<'PY'
+python - <<'PY'
 import zipfile
 z = zipfile.ZipFile('/home/bor/Dependencies/aozorabunko/cards/000077/files/1323_ruby_30726.zip')
 z.extract('05_kaitei_gunkan.txt', '/tmp/aozora-timeout/')

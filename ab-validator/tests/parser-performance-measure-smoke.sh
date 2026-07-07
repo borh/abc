@@ -8,7 +8,7 @@ trap 'rm -rf "$tmp"' EXIT
 corpus="$tmp/corpus"
 mkdir -p "$corpus/cards/000001/files"
 
-python3 - "$corpus/cards/000001/files/1_ruby.zip" <<'PY'
+python - "$corpus/cards/000001/files/1_ruby.zip" <<'PY'
 import sys
 import zipfile
 
@@ -92,7 +92,7 @@ SH
 chmod +x "$tmp/fake-mapper"
 
 out="$tmp/out"
-python3 "$repo_root/reports/aat-fidelity/measure-parser-performance.py" \
+python "$repo_root/reports/aat-fidelity/measure-parser-performance.py" \
   --index "$tmp/index.json" \
   --corpus "$corpus" \
   --out-dir "$out" \

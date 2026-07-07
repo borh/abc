@@ -281,7 +281,7 @@ Expected: `mapper.py` contains the ADR 0024/I-09/source-encoding policy: `ruby.d
 Create `reports/aat-fidelity/aat_parser_ir_mapping/generate.py` with this content:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Generate an ab-validator-owned AAT->parser-IR mapping from measured AATs."""
 
 from __future__ import annotations
@@ -744,7 +744,7 @@ uv run --isolated --no-project --with 'duckdb>=1.1' \
   --report-id "$report_id" \
   --out-dir "$triage_dir"
 
-python3 - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" <<'PY'
+python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" <<'PY'
 import json
 import pathlib
 import subprocess
@@ -822,7 +822,7 @@ work_ids="$out_dir/work-ids.json"
 rm -rf "$out_dir"
 mkdir -p "$corpus/cards/000250/files"
 
-python3 - "$repo_root" "$corpus" <<'PY'
+python - "$repo_root" "$corpus" <<'PY'
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 import sys
@@ -892,7 +892,7 @@ RUN_DIR=/db/ab-validator/aat-corpus/aozora2html-full-YYYYMMDDTHHMMSSZ
 jq '.works_count' "$RUN_DIR/index.json"
 find "$RUN_DIR/check-reports" -name '*.json' | wc -l
 find "$RUN_DIR/aat" -name '*.json' | wc -l
-python3 - "$RUN_DIR" <<'PY'
+python - "$RUN_DIR" <<'PY'
 import json
 import pathlib
 import sys
@@ -946,7 +946,7 @@ Generate `docs/superpowers/reports/2026-07-03-aozora2html-aat-full-current.md` f
 ```bash
 RUN_DIR=/db/ab-validator/aat-corpus/aozora2html-full-YYYYMMDDTHHMMSSZ
 
-python3 - "$RUN_DIR" docs/superpowers/reports/2026-07-03-aozora2html-aat-full-current.md <<'PY'
+python - "$RUN_DIR" docs/superpowers/reports/2026-07-03-aozora2html-aat-full-current.md <<'PY'
 import csv
 import json
 import pathlib
@@ -1181,7 +1181,7 @@ For morphology work, start with `ab-plaintext`, `ab-morph-diff`, and `ab-morph-r
 Run:
 
 ```bash
-python3 - <<'PY'
+python - <<'PY'
 from pathlib import Path
 readme = Path("crates/README.md").read_text()
 crates = [

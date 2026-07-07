@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Classify local aozora2html adapter-abort payloads in XHTML observations."""
 
 from __future__ import annotations

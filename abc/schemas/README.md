@@ -16,7 +16,7 @@ Any behaviorally relevant schema edit must update the schema `version` and
 regenerate `schema-contracts.json`:
 
 ```sh
-python3 tools/schema_contracts.py --write
+python tools/schema_contracts.py --write
 ```
 
 The manifest records the ABC schema hash for each contract using

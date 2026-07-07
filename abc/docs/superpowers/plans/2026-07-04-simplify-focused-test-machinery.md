@@ -70,7 +70,7 @@ Characterization first — the skill's PROTECT step. Pin the *current* "these te
 ```bash
 cd /home/bor/Projects/abc/.worktrees/simplify-focused-test
 mkdir -p docs/superpowers/notes
-python3 - <<'PY' > docs/superpowers/notes/2026-07-04-focused-test-baseline.txt
+python - <<'PY' > docs/superpowers/notes/2026-07-04-focused-test-baseline.txt
 import re, pathlib
 deps = pathlib.Path("nix/clj-nix-deps.edn").read_text()
 m = re.search(r"\(test/run-tests (.*?)\)\]", deps)
@@ -457,7 +457,7 @@ Expected: `deps-lock.json` rewritten (network required at lockfile-gen time — 
 - [ ] **Step 3: Verify the previously-absent libs are present; clj-mecab absent**
 
 ```bash
-python3 - <<'PY'
+python - <<'PY'
 import json
 d = json.load(open("deps-lock.json"))
 paths = [x["mvn-path"] for x in d["mvn-deps"]]

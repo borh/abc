@@ -476,7 +476,7 @@ JSON
 
 printf '%s\n' '{ invalid json' > "$invalid_custom_contract"
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$mapping" \
   --source-summary "$source_summary" \
@@ -549,7 +549,7 @@ rg -n "IR Publication Coverage" "$report_md" >/dev/null
 rg -n "Field Coverage" "$report_md" >/dev/null
 rg -n "Raw Unsupported-Derived Mapping Rows" "$report_md" >/dev/null
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$mapping" \
   --source-summary "$source_summary" \
@@ -564,7 +564,7 @@ jq -e '.next_work_dashboard.verdict == "NEXT_WORK_SUMMARY_SCHEMA_MISMATCH"' "$in
 
 jq 'del(.transform_rule_descriptions[] | select(.category == "UNSUPPORTED"))' "$mapping" > "$supported_mapping"
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$supported_mapping" \
   --source-summary "$source_summary" \
@@ -578,7 +578,7 @@ jq -e '.closure_gaps.classified_but_not_admitted.count == 7' "$supported_summary
 jq -e '.closure_gaps.true_unsupported_gaps.count == 0' "$supported_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$supported_summary_json" >/dev/null
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$supported_mapping" \
   --source-summary "$source_summary" \
@@ -593,7 +593,7 @@ jq -e '.custom_contract.schema_id == "https://example.org/abc/custom-contract-ca
 jq -e '.tei_profile_contract.verdict == "TEI_PROFILE_CONTRACT_MISSING"' "$candidate_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$supported_mapping" \
   --source-summary "$source_summary" \
@@ -610,7 +610,7 @@ jq -e '.closure_gaps.admitted_by_tei_profile.count == 0' "$candidate_summary_jso
 jq -e '.closure_gaps.classified_but_not_admitted.count == 7' "$candidate_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$supported_mapping" \
   --source-summary "$source_summary" \
@@ -642,7 +642,7 @@ jq -e '.unsupported_derived_closure_coverage.counts_by_status.classified_but_not
 jq -e '.unsupported_derived_closure_coverage.counts_by_status.true_unsupported_gap == 0' "$candidate_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$supported_mapping" \
   --source-summary "$source_summary" \
@@ -660,7 +660,7 @@ jq -e '.publication_bundle_contract.checks.plaintext_body_only == true' "$candid
 jq -e '.publication_bundle_contract.sample_validated_bundles | length == 2' "$candidate_summary_json" >/dev/null
 jq -e '.publication_bundle_contract.sample_validated_bundles[0].row_id == "row-a"' "$candidate_summary_json" >/dev/null
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$supported_mapping" \
   --source-summary "$source_summary" \
@@ -675,7 +675,7 @@ jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_INCO
 jq -e '.publication_bundle_contract.failed_checks == ["plaintext_body_only"]' "$candidate_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
 
-REPO_ROOT="$repo_root" python3 - <<'PY'
+REPO_ROOT="$repo_root" python - <<'PY'
 import importlib.util
 import os
 import pathlib
@@ -730,7 +730,7 @@ cat > "$unknown_mapping" <<'JSON'
 }
 JSON
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$unknown_mapping" \
   --source-summary "$source_summary" \
@@ -796,7 +796,7 @@ cat > "$owner_mapping" <<'JSON'
 }
 JSON
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$owner_mapping" \
   --source-summary "$source_summary" \
@@ -814,7 +814,7 @@ jq -e '.unsupported_gaps.items[] | select(.rule_id == "A-99") | .owner == "polic
 jq -e '.unsupported_gaps.items[] | select(.rule_id == "X-99") | .owner == "policy"' "$owner_summary_json" >/dev/null
 jq -e '([.unsupported_gaps.items[] | select(.owner == "evidence")] | length) == 0' "$owner_summary_json" >/dev/null
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$supported_mapping" \
   --source-summary "$source_summary" \
@@ -853,7 +853,7 @@ cat > "$incomplete_source_delta" <<'JSON'
 }
 JSON
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$supported_mapping" \
   --source-summary "$source_summary" \
@@ -884,7 +884,7 @@ cat > "$unknown_node_schema" <<'JSON'
 }
 JSON
 
-python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$unknown_node_schema" \
   --mapping "$supported_mapping" \
   --source-summary "$source_summary" \

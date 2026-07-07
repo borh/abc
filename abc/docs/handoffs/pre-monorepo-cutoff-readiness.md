@@ -40,8 +40,8 @@ ab-validator:
 cargo fmt --all --check
 CARGO_BUILD_JOBS=24 cargo check --workspace -j 24
 CARGO_BUILD_JOBS=24 cargo clippy --workspace --all-targets -j 24 -- -D warnings
-python3 scripts/schema_contracts.py
-python3 scripts/compare_abc_schema_contracts.py --abc ../abc
+python scripts/schema_contracts.py
+python scripts/compare_abc_schema_contracts.py --abc ../abc
 bash tests/abc-schema-contract-compare-smoke.sh
 bash tests/parser-ir-publication-next-work-smoke.sh
 nix flake check --no-build

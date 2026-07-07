@@ -206,7 +206,7 @@ mkdir -p "$worksets_dir"
 printf '[{"stale": true}]\n' > "$worksets_dir/ruby_or_parenthetical_policy.json"
 printf 'keep\n' > "$worksets_dir/unrelated.txt"
 
-python3 "$repo_root/reports/parser-ir/text-policy-delta.py" \
+python "$repo_root/reports/parser-ir/text-policy-delta.py" \
   --matrix-summary "$matrix_summary" \
   --summary-json "$summary_json" \
   --report-md "$report_md" \

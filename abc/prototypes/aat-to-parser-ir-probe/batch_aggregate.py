@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """DISPOSABLE batch probe: run the AAT->parser-IR mapper over the full real
 aozora-rs AAT corpus and aggregate divergence-ledger frequencies.
 

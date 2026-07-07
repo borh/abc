@@ -319,7 +319,7 @@ uv run --isolated --no-project --with 'duckdb>=1.1' \
   --report-id smoke-other-failure-only \
   --out-dir "$other/triage"
 
-python3 "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
+python "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
   --run-dir "$base" \
   --out-md "$audit_out/audit.md" \
   --summary-json "$audit_out/audit.summary.json" \
@@ -339,7 +339,7 @@ jq -e '.bucket_counts.warigaki.source_feature_without_aat_observation == 1' "$au
 jq -e 'type == "array" and all(.[]; type == "string")' "$audit_out/worksets/policy-incomplete-union.json"
 rg -n "source kunten works" "$audit_out/audit.md"
 
-python3 "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
+python "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
   --run-dir "$base" \
   --retry-run-dir "$retry" \
   --out-md "$audit_out/audit-retry.md" \
@@ -350,7 +350,7 @@ jq -e '.bucket_counts.kunten.observed_in_aat == 4' "$audit_out/audit-retry.summa
 jq -e '.bucket_counts.kunten.adapter_timeout_or_protocol_error == 0' "$audit_out/audit-retry.summary.json"
 rg -n "retry run" "$audit_out/audit-retry.md"
 
-python3 "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
+python "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
   --run-dir "$other" \
   --out-md "$audit_out/audit-other-failure-only.md" \
   --summary-json "$audit_out/audit-other-failure-only.summary.json" \

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Build actionable aozora2html policy residual worksets and samples."""
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Generate an ab-validator-owned AAT->parser-IR mapping from measured AATs."""
 
 from __future__ import annotations

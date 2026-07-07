@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Classify TEI-EAJ text-difference rows by policy cause."""
 
 from __future__ import annotations

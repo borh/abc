@@ -65,6 +65,6 @@ if [[ "$helper_abc" != "$workspace/abc" ]]; then
   exit 1
 fi
 
-python3 "$workspace/ab-validator/scripts/compare_abc_schema_contracts.py" --abc "$workspace/abc"
+python "$workspace/ab-validator/scripts/compare_abc_schema_contracts.py" --abc "$workspace/abc"
 
 echo "monorepo workspace layout smoke ok: $workspace"

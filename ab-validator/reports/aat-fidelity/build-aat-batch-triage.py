@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Load ab-check batch outputs into DuckDB and write a SQL-backed triage report."""
 
 from __future__ import annotations

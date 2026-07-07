@@ -11,7 +11,7 @@ work_ids="$out_dir/work-ids.json"
 rm -rf "$out_dir"
 mkdir -p "$corpus/cards/000001/files"
 
-python3 - "$corpus/cards/000001/files/1_ruby.zip" <<'PY'
+python - "$corpus/cards/000001/files/1_ruby.zip" <<'PY'
 import sys
 from zipfile import ZIP_DEFLATED, ZipFile
 

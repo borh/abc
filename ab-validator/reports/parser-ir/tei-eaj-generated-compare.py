@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Compare generated parser-IR TEI against TEI-EAJ rows.
 
 This is an operator audit. It intentionally invokes both ab-validator's

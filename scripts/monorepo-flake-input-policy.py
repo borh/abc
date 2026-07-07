@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Check release-critical flake inputs are explicitly pinned.
 
 The root flake.lock is the monorepo's canonical lock, but source-evidence

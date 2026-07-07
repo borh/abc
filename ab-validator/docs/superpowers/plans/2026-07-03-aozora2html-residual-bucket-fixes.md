@@ -218,7 +218,7 @@ Run:
 
 ```bash
 mkdir -p /tmp/aozora-panic-fix
-python3 - <<'PY'
+python - <<'PY'
 import zipfile
 z = zipfile.ZipFile('/home/bor/Dependencies/aozorabunko/cards/000125/files/1317_ruby_22263.zip')
 z.extract('kokushikan_satsujin_jiken.txt', '/tmp/aozora-panic-fix/')
@@ -282,7 +282,7 @@ mkdir -p "$out_dir"
 # A timed-out work is identified by results.adapter_timeout.pass == false in its
 # check-report; its source path comes from index.json.works[].txt_path (joined on
 # work_id), in the form "cards/NNN/files/X.zip::entry.txt".
-python3 - "$run_dir" "$corpus" "$sample" > "$out_dir/sample.tsv" <<'PY'
+python - "$run_dir" "$corpus" "$sample" > "$out_dir/sample.tsv" <<'PY'
 import json, os, sys, zipfile
 run_dir, corpus, sample = sys.argv[1], sys.argv[2], int(sys.argv[3])
 
@@ -330,7 +330,7 @@ first=1
 while IFS=$'\t' read -r wid archive entry size; do
   [[ -z "$wid" ]] && continue
   tmp="$(mktemp --suffix=.txt)"
-  python3 - "$archive" "$entry" "$tmp" <<'PY'
+  python - "$archive" "$entry" "$tmp" <<'PY'
 import zipfile, sys
 archive, entry, out = sys.argv[1], sys.argv[2], sys.argv[3]
 with zipfile.ZipFile(archive) as z:
@@ -353,7 +353,7 @@ PY
 done < "$out_dir/sample.tsv"
 printf ']' >> "$results"
 echo "wrote $results"
-python3 - "$results" "$out_dir" <<'PY'
+python - "$results" "$out_dir" <<'PY'
 import json, sys, statistics
 results = json.load(open(sys.argv[1]))
 rows = [r for r in results if r["status"] == "ok"]
@@ -469,7 +469,7 @@ git commit -m "report(aozora2html): measure timeout tail distribution and set de
 Create `reports/aat-fidelity/aozora2html-parse-incomplete-classifier.py`:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Classify aozora2html parse_incomplete AATs by failure mode.
 
 Deterministic regex classification of meta.warnings[0].message for AAT files
@@ -574,7 +574,7 @@ Run:
 
 ```bash
 aat_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter"
-python3 reports/aat-fidelity/aozora2html-parse-incomplete-classifier.py \
+python reports/aat-fidelity/aozora2html-parse-incomplete-classifier.py \
   "$aat_dir" \
   --report-md reports/aat-fidelity/aozora2html-parse-incomplete-report.md
 ```
@@ -607,7 +607,7 @@ cat > "$aat_dir/complete.json" <<'JSON'
 { "work_id": "wc", "version": 1, "meta": { "parse_complete": true, "warnings": [] }, "blocks": [] }
 JSON
 
-python3 "$repo_root/reports/aat-fidelity/aozora2html-parse-incomplete-classifier.py" \
+python "$repo_root/reports/aat-fidelity/aozora2html-parse-incomplete-classifier.py" \
   "$aat_dir" --report-md "$report"
 
 grep -F '| ruby_structural | 1 |' "$report"
@@ -819,7 +819,7 @@ entry=${TXT_PATH#*::}
 [[ "$entry" == "$TXT_PATH" ]] && entry=""   # no :: separator
 archive="$CORPUS/$archive_rel"
 
-python3 - "$archive" "$entry" "/tmp/vtbo_000081_4418_src.txt" <<'PY'
+python - "$archive" "$entry" "/tmp/vtbo_000081_4418_src.txt" <<'PY'
 import zipfile, sys
 archive, entry, out = sys.argv[1], sys.argv[2], sys.argv[3]
 with zipfile.ZipFile(archive) as z:
@@ -861,7 +861,7 @@ out_dir="${AB_AOZORA2HTML_VTBO_OUT:-$run_dir/triage/outputs/vtbo}"
 sample="${AB_AOZORA2HTML_VTBO_SAMPLE:-0}"   # 0 = all 668
 mkdir -p "$out_dir"
 
-python3 - "$run_dir" "$corpus" > "$out_dir/failing_works.tsv" <<'PY'
+python - "$run_dir" "$corpus" > "$out_dir/failing_works.tsv" <<'PY'
 import json, os, sys
 run_dir, corpus = sys.argv[1], sys.argv[2]
 
@@ -898,7 +898,7 @@ while IFS=$'\t' read -r wid archive entry; do
   [[ -f "$aat" ]] || continue
   [[ -n "$archive" && -f "$archive" ]] || continue
   src="/tmp/vtbo_src.$$.txt"
-  python3 - "$archive" "$entry" "$src" <<'PY' || continue
+  python - "$archive" "$entry" "$src" <<'PY' || continue
 import zipfile, sys
 archive, entry, out = sys.argv[1], sys.argv[2], sys.argv[3]
 try:

@@ -192,7 +192,7 @@ cat > "$triage/audit.summary.json" <<'JSON'
   }
 }
 JSON
-python3 - "$triage/audit.summary.json" "$retry" <<'PY'
+python - "$triage/audit.summary.json" "$retry" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -203,7 +203,7 @@ payload["retry"]["run_dir"] = sys.argv[2]
 path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
 PY
 
-python3 "$repo_root/reports/aat-fidelity/triage-aozora2html-policy-residuals.py" \
+python "$repo_root/reports/aat-fidelity/triage-aozora2html-policy-residuals.py" \
   --run-dir "$run" \
   --audit-summary-json "$triage/audit.summary.json" \
   --out-md "$triage/policy-residual-triage.md" \

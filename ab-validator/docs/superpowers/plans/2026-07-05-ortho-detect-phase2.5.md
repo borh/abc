@@ -94,7 +94,7 @@ Within each author, sampling is **shuffle-with-fixed-seed + take first n** (NOT 
 
 Create `scripts/ortho-gold/sample_300.py`:
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Corpus-representative sampler for the LLM-labeled evaluation set.
 
 Strategy (revised after data check rejected author-capping):
@@ -198,7 +198,7 @@ if __name__ == "__main__":
 - [ ] **Step 2: Run the sampler + verify distribution**
 
 ```bash
-python3 scripts/ortho-gold/sample_300.py
+python scripts/ortho-gold/sample_300.py
 ```
 Expected output:
 - `wrote 300 records`
@@ -211,7 +211,7 @@ If `assert len(out) == 300` fails, the candidate pool (1068) is the upper bound 
 - [ ] **Step 3: Spot-check coverage + verify Tanizaki accept class is preserved**
 
 ```bash
-python3 -c "
+python -c "
 import json
 from collections import Counter
 recs=[json.loads(l) for l in open('data/ortho-gold/sample-300-unlabeled.jsonl')]
@@ -269,7 +269,7 @@ The labeling is done as a batch — no interactive `label_review.py` harness (an
 **Step 1a: Dump the 300 unlabeled sentences to a review file the orchestrator reads.**
 
 ```bash
-python3 -c "
+python -c "
 import json
 recs=[json.loads(l) for l in open('data/ortho-gold/sample-300-unlabeled.jsonl')]
 for i,r in enumerate(recs):
@@ -284,7 +284,7 @@ The verdict list IS the orchestrator's actual labeling work — do NOT delegate 
 
 ```bash
 # Orchestrator fills VERDICTS below (300 chars, 'a' or 'r' each):
-python3 - <<'PY'
+python - <<'PY'
 import json
 recs=[json.loads(l) for l in open('data/ortho-gold/sample-300-unlabeled.jsonl')]
 VERDICTS = ""  # ← orchestrator fills this 300-char string of 'a'/'r'
@@ -316,7 +316,7 @@ Compute agreement: `agree = (count where spot-check label == first-pass label) /
 - [ ] **Step 3: Verify the labeled set**
 
 ```bash
-python3 -c "
+python -c "
 import json
 from collections import Counter
 recs=[json.loads(l) for l in open('data/ortho-gold/sentences-llm-300.jsonl')]

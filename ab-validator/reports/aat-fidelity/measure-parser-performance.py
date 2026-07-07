@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Measure parser adapter performance on a shared Aozora workset.
 
 The primary measurement is intentionally adapter-agnostic: every parser is

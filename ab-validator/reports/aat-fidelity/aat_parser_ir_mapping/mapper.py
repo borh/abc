@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """DISPOSABLE PROBE — AAT v1 -> ABC parser-IR mapper.
 
 Throwaway. Settles ONE question: are AAT/parser-IR divergences survivable in a
@@ -20,7 +20,7 @@ Structural transform rule (flat-nodes vs nested-blocks):
     byte length. This keeps synthesized spans monotonic and records the
     approximation as an AMBIGUITY entry.
 
-Run: python3 map.py aat-sample.json
+Run: python map.py aat-sample.json
 """
 import json, re, sys
 

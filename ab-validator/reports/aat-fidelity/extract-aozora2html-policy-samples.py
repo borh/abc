@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Extract compact aozora2html warigaki/kunten policy evidence samples."""
 
 from __future__ import annotations

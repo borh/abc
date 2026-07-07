@@ -11,7 +11,7 @@ work_ids="$out_dir/work-ids.json"
 rm -rf "$out_dir"
 mkdir -p "$corpus/cards/000250/files"
 
-python3 - "$repo_root" "$corpus" <<'PY'
+python - "$repo_root" "$corpus" <<'PY'
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 import sys

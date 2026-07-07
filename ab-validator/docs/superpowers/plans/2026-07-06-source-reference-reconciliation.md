@@ -78,7 +78,7 @@ Expected: prints `source reference reconciliation smoke ok`.
 Run:
 
 ```bash
-python3 reports/source-references/reconcile-aozora-notation.py \
+python reports/source-references/reconcile-aozora-notation.py \
   --syntax-coverage data/aozora-syntax-coverage.toml \
   --source-summary docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json \
   --notation-summary docs/superpowers/reports/2026-07-05-aozora-notation-spec-comparison.summary.json \
@@ -97,7 +97,7 @@ Run:
 
 ```bash
 bash tests/source-reference-reconciliation-smoke.sh
-python3 -m py_compile reports/source-references/reconcile-aozora-notation.py
+python -m py_compile reports/source-references/reconcile-aozora-notation.py
 jq -e '.schema_version == "aozora-source-reference-reconciliation-v1"' docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json
 jq -e '.verdict == "SOURCE_REFERENCE_RECONCILIATION_COMPLETE"' docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json
 git diff --check

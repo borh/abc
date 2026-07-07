@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Render a compact cross-adapter AAT oracle summary."""
 
 from __future__ import annotations

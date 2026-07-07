@@ -49,7 +49,7 @@ mkdir -p "$out_dir"
 echo "=== preparing work-id sample ==="
 trimmed_ids="$out_dir/work-ids.json"
 if [[ -n "$sample" ]]; then
-  python3 -c "
+  python -c "
 import json, sys
 ids = json.load(open('$work_ids'))[:int('$sample')]
 json.dump(ids, open('$trimmed_ids','w'))
@@ -106,7 +106,7 @@ done
 
 echo "=== aggregating summary.json ==="
 summary="$out_dir/summary.json"
-python3 - "$out_dir" "$summary" <<'PY'
+python - "$out_dir" "$summary" <<'PY'
 import glob, json, os, sys
 out_dir, summary_path = sys.argv[1], sys.argv[2]
 

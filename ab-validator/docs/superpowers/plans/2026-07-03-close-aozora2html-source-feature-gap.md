@@ -85,7 +85,7 @@ Chosen direction: classify the clean bucket first, then fix measured adapter/obs
   ```bash
   bash tests/aozora2html-measurement-audit-smoke.sh
   bash tests/aozora2html-policy-samples-smoke.sh
-  python3 -m compileall reports/aat-fidelity
+  python -m compileall reports/aat-fidelity
   ```
 
 - [ ] **Step 6:** Commit:
@@ -114,7 +114,7 @@ Chosen direction: classify the clean bucket first, then fix measured adapter/obs
 **CLI:**
 
 ```bash
-python3 reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py \
+python reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py \
   --run-dir /db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z \
   --residual-summary docs/superpowers/reports/2026-07-03-aozora2html-policy-residual-triage.summary.json \
   --out-md docs/superpowers/reports/2026-07-03-aozora2html-source-feature-gap-classification.md \
@@ -199,7 +199,7 @@ python3 reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py \
 
   ```bash
   bash tests/aozora2html-source-feature-gap-classifier-smoke.sh
-  python3 reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py \
+  python reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py \
     --run-dir /db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z \
     --residual-summary docs/superpowers/reports/2026-07-03-aozora2html-policy-residual-triage.summary.json \
     --out-md docs/superpowers/reports/2026-07-03-aozora2html-source-feature-gap-classification.md \
@@ -273,7 +273,7 @@ python3 reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py \
   ```bash
   cd adapters/aozora2html
   cargo test
-  python3 -m pytest tests/test_mapper.py
+  python -m pytest tests/test_mapper.py
   cd ../..
   ```
 
@@ -327,7 +327,7 @@ python3 reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py \
   Set `retry_dir` to the directory created in Step 2. If Step 2 was skipped because there was no non-empty targeted workset, set it to `/db/ab-validator/aat-corpus/aozora2html-policy-retry-20260703T055526Z`.
 
   ```bash
-  python3 reports/aat-fidelity/audit-aozora2html-measurement.py \
+  python reports/aat-fidelity/audit-aozora2html-measurement.py \
     --run-dir /db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z \
     --retry-run-dir "$retry_dir" \
     --out-md docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.md \
@@ -338,7 +338,7 @@ python3 reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py \
 - [ ] **Step 4:** Regenerate policy samples and residual triage.
 
   ```bash
-  python3 reports/aat-fidelity/extract-aozora2html-policy-samples.py \
+  python reports/aat-fidelity/extract-aozora2html-policy-samples.py \
     --run-dir /db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z \
     --audit-summary-json docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.summary.json \
     --out-md docs/superpowers/reports/2026-07-03-aozora2html-policy-samples.md \
@@ -346,7 +346,7 @@ python3 reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py \
     --worksets-dir /db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/worksets \
     --limit-per-bucket 10
 
-  python3 reports/aat-fidelity/triage-aozora2html-policy-residuals.py \
+  python reports/aat-fidelity/triage-aozora2html-policy-residuals.py \
     --run-dir /db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z \
     --audit-summary-json docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.summary.json \
     --out-md docs/superpowers/reports/2026-07-03-aozora2html-policy-residual-triage.md \
@@ -383,7 +383,7 @@ python3 reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py \
   bash tests/aozora2html-policy-samples-smoke.sh
   bash tests/aozora2html-policy-residual-triage-smoke.sh
   bash tests/aozora2html-source-feature-gap-classifier-smoke.sh
-  python3 -m compileall reports/aat-fidelity
+  python -m compileall reports/aat-fidelity
   jq '.bucket_counts.warigaki.source_feature_without_aat_observation, .bucket_counts.kunten.source_feature_without_aat_observation' \
     docs/superpowers/reports/2026-07-03-aozora2html-policy-residual-triage.summary.json
   rg -n "Verdict|source_feature_without_aat_observation|source-index-only|unknown clean gaps" \
@@ -416,7 +416,7 @@ python3 reports/aat-fidelity/classify-aozora2html-source-feature-gaps.py \
   bash tests/aozora2html-policy-samples-smoke.sh
   bash tests/aozora2html-policy-residual-triage-smoke.sh
   bash tests/aozora2html-source-feature-gap-classifier-smoke.sh
-  python3 -m compileall reports/aat-fidelity
+  python -m compileall reports/aat-fidelity
   nix build .#checks.$(nix eval --impure --raw --expr builtins.currentSystem).taxonomy-drift
   git diff --check
   ```

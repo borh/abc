@@ -146,7 +146,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-nix develop "${repo_root}#aozora2html" --command python3 - "${repo_root}" <<'PY'
+nix develop "${repo_root}#aozora2html" --command python - "${repo_root}" <<'PY'
 import json
 from pathlib import Path
 import sys
@@ -1520,7 +1520,7 @@ CARGO_TARGET_DIR=/db/ab-validator/target-aat-fidelity \
 
 nix develop .# --command cargo test --manifest-path adapters/aozora-rs/Cargo.toml -- --nocapture
 
-nix develop "${repo_root}#aozora2html" --command python3 -m pytest adapters/aozora2html/tests/ -v
+nix develop "${repo_root}#aozora2html" --command python -m pytest adapters/aozora2html/tests/ -v
 
 bash tests/aat-oracle-cases-schema-smoke.sh
 bash tests/adapter-fidelity-smoke.sh

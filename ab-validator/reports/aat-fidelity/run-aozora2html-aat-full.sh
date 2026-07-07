@@ -115,7 +115,7 @@ uv run --isolated --no-project --with 'duckdb>=1.1' \
   --report-id "$report_id" \
   --out-dir "$triage_dir"
 
-python3 - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" <<'PY'
+python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" <<'PY'
 import json
 import pathlib
 import subprocess

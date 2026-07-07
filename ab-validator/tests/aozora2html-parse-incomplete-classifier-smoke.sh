@@ -19,7 +19,7 @@ cat > "$aat_dir/complete.json" <<'JSON'
 { "work_id": "wc", "version": 1, "meta": { "parse_complete": true, "warnings": [] }, "blocks": [] }
 JSON
 
-python3 "$repo_root/reports/aat-fidelity/aozora2html-parse-incomplete-classifier.py" \
+python "$repo_root/reports/aat-fidelity/aozora2html-parse-incomplete-classifier.py" \
   "$aat_dir" --report-md "$report"
 
 grep -F '| ruby_structural | 1 |' "$report"

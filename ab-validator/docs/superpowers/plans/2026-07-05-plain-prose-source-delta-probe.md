@@ -82,7 +82,7 @@ default=",".join(REQUIRED_PARSERS),
 Run:
 
 ```bash
-python3 - <<'PY'
+python - <<'PY'
 import importlib.util
 import pathlib
 import sys
@@ -286,7 +286,7 @@ cat > "$matrix_summary" <<'JSON'
 JSON
 
 set +e
-python3 "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
+python "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
   --admission-summary "$admission_summary" \
   --matrix-summary "$matrix_summary" \
   --structural-summary "$structural_summary" \
@@ -301,7 +301,7 @@ set -e
 test "$strict_status" -ne 0
 rg -n "missing parser evidence" "$strict_stderr"
 
-python3 "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
+python "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
   --admission-summary "$admission_summary" \
   --matrix-summary "$matrix_summary" \
   --structural-summary "$structural_summary" \
@@ -378,7 +378,7 @@ git commit -m "test(parser-ir): add plain prose source delta smoke"
 Create `reports/parser-ir/plain-prose-source-delta.py` with this implementation structure:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Classify plain-prose Level 3 source deltas from measured matrix evidence."""
 
 from __future__ import annotations
@@ -698,7 +698,7 @@ Expected: PASS.
 Run:
 
 ```bash
-python3 -m py_compile reports/parser-ir/plain-prose-source-delta.py
+python -m py_compile reports/parser-ir/plain-prose-source-delta.py
 ```
 
 Expected: no output.
@@ -733,7 +733,7 @@ parser-ir-plain-prose-source-delta-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-plain-prose-source-delta-smoke.sh"
 
 parser-ir-plain-prose-source-delta-report ADMISSION_SUMMARY="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.summary.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" MAPPING="data/aat-to-parser-ir-mapping-v1.json" REPORT_MD="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json":
-	@python3 "{{repo_root}}/reports/parser-ir/plain-prose-source-delta.py" \
+	@python "{{repo_root}}/reports/parser-ir/plain-prose-source-delta.py" \
 		--admission-summary "{{repo_root}}/{{ADMISSION_SUMMARY}}" \
 		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
 		--structural-summary "{{repo_root}}/{{STRUCTURAL_SUMMARY}}" \
@@ -893,7 +893,7 @@ Expected: PASS.
 Run:
 
 ```bash
-python3 -m py_compile reports/parser-ir/plain-prose-source-delta.py reports/parser-ir/tei-eaj-generated-compare.py
+python -m py_compile reports/parser-ir/plain-prose-source-delta.py reports/parser-ir/tei-eaj-generated-compare.py
 git diff --check
 ```
 

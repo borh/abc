@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Report source-region publication disposition samples."""
 
 from __future__ import annotations

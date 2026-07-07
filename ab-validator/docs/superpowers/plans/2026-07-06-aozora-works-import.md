@@ -1380,7 +1380,7 @@ Expected: exits 0.
 Run:
 
 ```bash
-python3 - <<'EOF'
+python - <<'EOF'
 import json
 new = json.load(open('scratch/full-novel-interesting-workbasis.json'))
 old = json.load(open('scratch/full-novel-interesting.json'))

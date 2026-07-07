@@ -16,13 +16,13 @@ printf '耳朶を※［＃「口＋世」、U+546D］えて' | "$adapter" --mode
 jq -e '.blocks[0].content | map(.kind) == ["text", "gaiji", "text"]' "$out_dir/source-order.json" >/dev/null
 jq -e '.blocks[0].content[0].value == "耳朶を" and .blocks[0].content[2].value == "えて"' "$out_dir/source-order.json" >/dev/null
 
-python_jsonschema=(python3)
-if ! python3 - <<'PY' >/dev/null 2>&1
+python_jsonschema=(python)
+if ! python - <<'PY' >/dev/null 2>&1
 import jsonschema
 PY
 then
   if command -v uv >/dev/null 2>&1; then
-    python_jsonschema=(uv run --isolated --no-project --with 'jsonschema>=4.0' python3)
+    python_jsonschema=(uv run --isolated --no-project --with 'jsonschema>=4.0' python)
   else
     echo "python jsonschema module is required; install it or run through nix" >&2
     exit 1

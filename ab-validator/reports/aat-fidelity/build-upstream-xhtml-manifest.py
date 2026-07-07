@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Build a manifest of Aozora source ZIP and upstream XHTML pairs.
 
 The output manifest is intentionally compatible with

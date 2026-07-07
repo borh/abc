@@ -271,7 +271,7 @@ Run:
 ```bash
 bash tests/parser-ir-publication-coverage-smoke.sh
 just parser-ir-publication-coverage-report
-python3 -m py_compile reports/parser-ir/publication-coverage.py
+python -m py_compile reports/parser-ir/publication-coverage.py
 git diff --check
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_COMPLETE"
   and .custom_contract.trusted_schema_path_match == true
@@ -315,7 +315,7 @@ nix run .#validate-design-bundle
 cd /home/bor/Projects/ab-validator/.worktrees/tei-abc-namespace
 bash tests/parser-ir-publication-coverage-smoke.sh
 just parser-ir-publication-coverage-smoke
-python3 -m py_compile reports/parser-ir/publication-coverage.py
+python -m py_compile reports/parser-ir/publication-coverage.py
 git diff --check
 ```
 

@@ -96,7 +96,7 @@ else
   head -n "$max_cards" "$card_urls.all" > "$card_urls"
 fi
 
-python3 "$repo_root/reports/aat-fidelity/build-upstream-xhtml-manifest.py" \
+python "$repo_root/reports/aat-fidelity/build-upstream-xhtml-manifest.py" \
   --aozora-root "$aozora_root" \
   --card-url-file "$card_urls" \
   --sample-size 0 \
@@ -104,7 +104,7 @@ python3 "$repo_root/reports/aat-fidelity/build-upstream-xhtml-manifest.py" \
   --out-manifest "$manifest" \
   --out-metadata "$metadata"
 
-python3 - "$manifest" "$valid_manifest" "$invalid_manifest" <<'PY'
+python - "$manifest" "$valid_manifest" "$invalid_manifest" <<'PY'
 import csv
 import sys
 from pathlib import Path

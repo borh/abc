@@ -85,7 +85,7 @@ JSON
 mkdir -p "$worksets_dir/stale_bucket"
 printf '["stale"]\n' > "$worksets_dir/stale_bucket/stale-adapter.json"
 
-python3 "$repo_root/reports/parser-ir/adapter-fidelity-worksets.py" \
+python "$repo_root/reports/parser-ir/adapter-fidelity-worksets.py" \
   --matrix-summary "$matrix_summary" \
   --summary-json "$summary_json" \
   --report-md "$report_md" \

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """Check that the monorepo import matches the split repositories.
 
 This is a migration-time guard. It intentionally compares against sibling

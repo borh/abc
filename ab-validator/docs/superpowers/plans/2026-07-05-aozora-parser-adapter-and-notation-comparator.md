@@ -770,7 +770,7 @@ test -x "$adapter"
 printf '｜青梅《おうめ》\n' | "$adapter" --mode aat > "$out_dir/aat.json"
 jq -e '.meta.adapter == "aozora" and .meta.parse_complete == true and (.blocks | length >= 1)' "$out_dir/aat.json" >/dev/null
 
-python3 - "$repo_root/data/aat-schema.json" "$out_dir/aat.json" <<'PY'
+python - "$repo_root/data/aat-schema.json" "$out_dir/aat.json" <<'PY'
 import json
 import sys
 from jsonschema import Draft202012Validator
@@ -984,7 +984,7 @@ esac
 SH
 chmod +x "$tmp/fake-aozora"
 
-python3 "$repo_root/reports/parser-conformance/run-aozora-notation-spec.py" \
+python "$repo_root/reports/parser-conformance/run-aozora-notation-spec.py" \
   --vectors-dir "$tmp/vectors" \
   --adapter "fake=$tmp/fake-aozora inspect" \
   --summary-json "$tmp/summary.json" \
@@ -1016,7 +1016,7 @@ Expected: fails because `reports/parser-conformance/run-aozora-notation-spec.py`
 Create `reports/parser-conformance/run-aozora-notation-spec.py`:
 
 ```python
-#!/usr/bin/env python3
+#!/usr/bin/env python
 from __future__ import annotations
 
 import argparse
@@ -1213,7 +1213,7 @@ aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2
 	@vectors="{{VECTORS}}"; if [ -z "$vectors" ]; then vectors="$(nix build --no-link --print-out-paths '{{repo_root}}#reference-aozora-notation-spec')/conformance/vectors"; fi; \
 	aozora_bin="$(nix build --no-link --print-out-paths '{{repo_root}}#reference-aozora')/bin/aozora"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora/Cargo.toml" --release; \
-	python3 "{{repo_root}}/reports/parser-conformance/run-aozora-notation-spec.py" \
+	python "{{repo_root}}/reports/parser-conformance/run-aozora-notation-spec.py" \
 		--vectors-dir "$vectors" \
 		--adapter "aozora=$aozora_bin inspect" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
@@ -1269,7 +1269,7 @@ chmod +x "$tmp/fake-aat-adapter"
 Change the comparator invocation to:
 
 ```bash
-python3 "$repo_root/reports/parser-conformance/run-aozora-notation-spec.py" \
+python "$repo_root/reports/parser-conformance/run-aozora-notation-spec.py" \
   --vectors-dir "$tmp/vectors" \
   --adapter "fake=inspect:$tmp/fake-aozora inspect" \
   --adapter "fake-aat=aat:$tmp/fake-aat-adapter --mode aat" \

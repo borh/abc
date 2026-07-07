@@ -1,6 +1,6 @@
 {
   "determinism_tier": "exact",
-  "error_behavior": 
+  "error_behavior":
   {
     "metric_failure": "record-failed-metric",
     "missing_required_identity_field": "failed-manifest-or-none"
@@ -12,7 +12,7 @@
       "unit": "line",
       "value_type": "integer"
     }],
-  "normalization_policy": 
+  "normalization_policy":
   {
     "newline_policy": "parser-ir-plaintext-body-v1",
     "unicode_normalization": "producer-preserved"

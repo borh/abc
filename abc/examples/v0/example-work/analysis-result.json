@@ -1,6 +1,6 @@
 {
   "analysis_recipe_hash": "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b",
-  "input_view": 
+  "input_view":
   {
     "coordinate_system": "unicode-scalar-value",
     "input_view_kind": "parser-ir-plaintext-body-v1",
@@ -19,7 +19,7 @@
     }],
   "schema_hash": "sha256:d282e7fa9c726a86ffbd37dcc5f3ccf6f4c19cf7e490172638797907d1602c8a",
   "schema_id": "https:\/\/w3id.org\/abc\/schemas\/analysis-result.schema.json",
-  "subject": 
+  "subject":
   {
     "corpus_snapshot_hash": "sha256:f00000000000000000000000000000000000000000000000000000000000000f",
     "git_ref": "0e9ea3e586",

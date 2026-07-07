@@ -288,6 +288,7 @@
         parser-ir-publication-preservation-schema (files/read-json "schemas/parser-ir-publication-preservation.schema.json")
         analysis-recipe-schema (files/read-json "schemas/analysis-recipe.schema.json")
         analysis-result-schema (files/read-json "schemas/analysis-result.schema.json")
+        request-set-schema (files/read-json "schemas/request-set.schema.json")
         snapshot-index-schema (files/read-json "schemas/snapshot-index.schema.json")
         source-region-coverage-schema (files/read-json "schemas/source-region-coverage.schema.json")
         tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
@@ -306,6 +307,7 @@
                            ["schemas/parser-ir-publication-preservation.schema.json" parser-ir-publication-preservation-schema]
                            ["schemas/analysis-recipe.schema.json" analysis-recipe-schema]
                            ["schemas/analysis-result.schema.json" analysis-result-schema]
+                           ["schemas/request-set.schema.json" request-set-schema]
                            ["schemas/snapshot-index.schema.json" snapshot-index-schema]
                            ["schemas/source-region-coverage.schema.json" source-region-coverage-schema]
                            ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]
@@ -339,6 +341,13 @@
                     "data/analysis-recipes/literary-basic-ja-v1.json")
     (validate-json! analysis-result-schema
                     "examples/v0/example-work/analysis-result.json")
+    (doseq [label ["smoke-basic-ja"
+                   "demo-basic-ja"
+                   "full-corpus-publication-basic-ja"
+                   "full-corpus-analysis-basic-ja"
+                   "full-corpus-basic-ja"]]
+      (validate-json! request-set-schema
+                      (str "data/request-sets/" label ".json")))
     (validate-json! snapshot-index-schema
                     "examples/v0/snapshot/snapshot-index.json")
     (snapshot-index/validate-snapshot-index!

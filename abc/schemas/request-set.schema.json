@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/request-set.schema.json",
+  "title": "ABC Request Set",
+  "version": "0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "schema_hash",
+    "request_set_schema_version",
+    "label",
+    "request_set_id",
+    "request_set_identity_object",
+    "resolved_recipe_labels",
+    "resolved_tokenizer_profile_labels",
+    "resolution"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "https://w3id.org/abc/schemas/request-set.schema.json"
+    },
+    "schema_hash": { "$ref": "#/$defs/hash" },
+    "request_set_schema_version": { "const": "request-set-v1" },
+    "label": { "type": "string", "minLength": 1 },
+    "request_set_id": { "$ref": "#/$defs/hash" },
+    "request_set_identity_object": {
+      "$ref": "#/$defs/requestSetIdentityObject"
+    },
+    "resolved_recipe_labels": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/resolvedRecipeLabel" }
+    },
+    "resolved_tokenizer_profile_labels": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/resolvedTokenizerProfileLabel" }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_definition_path",
+        "resolved_at",
+        "resolver_id"
+      ],
+      "properties": {
+        "source_definition_path": { "type": "string", "minLength": 1 },
+        "resolved_at": { "type": "string", "minLength": 1 },
+        "resolver_id": { "const": "abc.tools.request-set-resolver/v1" }
+      }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "hashArray": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/hash" },
+      "uniqueItems": true
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "work_id",
+        "work_content_hash",
+        "metadata_record_hash"
+      ],
+      "properties": {
+        "source_id": { "type": "string", "minLength": 1 },
+        "work_id": { "type": "string", "minLength": 1 },
+        "work_content_hash": { "$ref": "#/$defs/hash" },
+        "metadata_record_hash": {
+          "anyOf": [
+            { "$ref": "#/$defs/hash" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "inputView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_view_kind", "policy_hash"],
+      "properties": {
+        "input_view_kind": { "enum": ["parser-ir-plaintext-body-v1"] },
+        "policy_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "requestSetIdentityObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_hash",
+        "corpus_snapshot_hash",
+        "subjects",
+        "input_views",
+        "tokenizer_profile_hashes",
+        "analysis_recipe_hashes",
+        "missing_policy",
+        "pack_policy_hash"
+      ],
+      "properties": {
+        "schema_hash": { "$ref": "#/$defs/hash" },
+        "corpus_snapshot_hash": { "$ref": "#/$defs/hash" },
+        "subjects": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/subject" }
+        },
+        "input_views": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/inputView" }
+        },
+        "tokenizer_profile_hashes": { "$ref": "#/$defs/hashArray" },
+        "analysis_recipe_hashes": { "$ref": "#/$defs/hashArray" },
+        "missing_policy": {
+          "enum": [
+            "require-existing",
+            "build-missing-only",
+            "record-missing-status"
+          ]
+        },
+        "pack_policy_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "resolvedRecipeLabel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recipe_id",
+        "analysis_recipe_hash",
+        "registry_entry_hash",
+        "resolved_at"
+      ],
+      "properties": {
+        "recipe_id": { "type": "string", "minLength": 1 },
+        "analysis_recipe_hash": { "$ref": "#/$defs/hash" },
+        "registry_entry_hash": { "$ref": "#/$defs/hash" },
+        "resolved_at": { "type": "string", "minLength": 1 }
+      }
+    },
+    "resolvedTokenizerProfileLabel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "tokenizer_profile_hash",
+        "registry_entry_hash",
+        "resolved_at"
+      ],
+      "properties": {
+        "profile_id": { "type": "string", "minLength": 1 },
+        "tokenizer_profile_hash": { "$ref": "#/$defs/hash" },
+        "registry_entry_hash": { "$ref": "#/$defs/hash" },
+        "resolved_at": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

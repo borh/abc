@@ -1,0 +1,33 @@
+{
+  "request_set_definition_version": "request-set-definition-v1",
+  "label": "demo-basic-ja",
+  "corpus_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "subjects": [
+    {
+      "source_id": "aozora:demo-fixture-a",
+      "work_id": "aozora:demo-fixture-a",
+      "work_content_hash": "sha256:2323232323232323232323232323232323232323232323232323232323232323",
+      "metadata_record_hash": null
+    },
+    {
+      "source_id": "aozora:demo-fixture-b",
+      "work_id": "aozora:demo-fixture-b",
+      "work_content_hash": "sha256:2424242424242424242424242424242424242424242424242424242424242424",
+      "metadata_record_hash": null
+    }
+  ],
+  "input_views": [
+    {
+      "input_view_kind": "parser-ir-plaintext-body-v1",
+      "policy_hash": "sha256:df21c590fd8d5b934fd426e632a3d8a09c2bd3fa299ca6b4c8fe4c797e1d1391"
+    }
+  ],
+  "analysis_recipe_ids": ["literary-basic-ja-v1"],
+  "tokenizer_profile_ids": [],
+  "missing_policy": "build-missing-only",
+  "pack_policy": {
+    "schema_id": "https://w3id.org/abc/policies/request-set-pack-policy-v1",
+    "policy_id": "no-pack-v1",
+    "pack_kind": "none"
+  }
+}

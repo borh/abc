@@ -1,37 +1,15 @@
 (ns abc.tools.soranoha
   (:refer-clojure :exclude [run!])
-  (:require [abc.tools.analysis-identity :as analysis-identity]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
+            [abc.tools.request-set-resolver :as request-set-resolver]
             [abc.tools.snapshot-index :as snapshot-index]
-            [clojure.java.io :as io]
             [clojure.string :as string]))
 
-(def request-sets-dir "data/request-sets")
-
-(defn- json-file? [file]
-  (and (.isFile file)
-       (string/ends-with? (.getName file) ".json")))
-
 (defn request-set-labels []
-  (let [dir (io/file request-sets-dir)]
-    (->> (file-seq dir)
-         (filter json-file?)
-         (map #(.getName %))
-         (map #(subs % 0 (- (count %) (count ".json"))))
-         sort
-         vec)))
-
-(defn request-set-path [label]
-  (str request-sets-dir "/" label ".json"))
+  (request-set-resolver/request-set-labels))
 
 (defn read-request-set [label]
-  (let [path (request-set-path label)
-        file (io/file path)]
-    (when-not (.isFile file)
-      (throw (ex-info "Unknown request set"
-                      {:label label
-                       :path path})))
-    (files/read-json path)))
+  (request-set-resolver/resolve-request-set label))
 
 (defn list-request-sets! []
   (doseq [label (request-set-labels)]
@@ -40,11 +18,12 @@
 
 (defn explain-request-set! [label]
   (let [request-set (read-request-set label)
-        computed-id (analysis-identity/request-set-id request-set)]
+        computed-id (get request-set "request_set_id")]
     (println "label:" (get request-set "label"))
     (println "request_set_id:" (get request-set "request_set_id"))
     (println "computed_request_set_id:" computed-id)
-    (println "fixture_role:" (get request-set "fixture_role"))
+    (println "source_definition_path:" (get-in request-set ["resolution"
+                                                            "source_definition_path"]))
     (if (= computed-id (get request-set "request_set_id"))
       0
       (do

@@ -1,53 +1,51 @@
 {
   "label": "demo-basic-ja",
-  "fixture_role": "request-set-shape-fixture",
-  "fixture_note": "Small shape fixture; not a full-corpus resolved request set.",
-  "scope": "demo",
-  "profile": "basic-ja",
-  "product": "all",
-  "request_set_id": "sha256:3babfb44f960fc1af58a87e9d7bc06ad7cc1ed85bcf294454db5227434629f2a",
+  "request_set_id": "sha256:8773b902e4302e134dffd1f001d49501a8fdecdc006454510cb9dd5a5044ef6a",
   "request_set_identity_object": {
-    "schema_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    "corpus_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-    "subjects": [
-      {
-        "source_id": "aozora:demo-fixture-a",
-        "work_id": "aozora:demo-fixture-a",
-        "work_content_hash": "sha256:2323232323232323232323232323232323232323232323232323232323232323",
-        "metadata_record_hash": null
-      },
-      {
-        "source_id": "aozora:demo-fixture-b",
-        "work_id": "aozora:demo-fixture-b",
-        "work_content_hash": "sha256:2424242424242424242424242424242424242424242424242424242424242424",
-        "metadata_record_hash": null
-      }
+    "analysis_recipe_hashes": [
+      "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b"
     ],
+    "corpus_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
     "input_views": [
       {
         "input_view_kind": "parser-ir-plaintext-body-v1",
         "policy_hash": "sha256:df21c590fd8d5b934fd426e632a3d8a09c2bd3fa299ca6b4c8fe4c797e1d1391"
       }
     ],
-    "tokenizer_profile_hashes": [],
-    "analysis_recipe_hashes": [
-      "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b"
-    ],
     "missing_policy": "build-missing-only",
-    "pack_policy_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-  },
-  "resolved_labels": {
-    "analysis_recipes": [
+    "pack_policy_hash": "sha256:b413f4838a9d32b8b9427453a4318b2f9538d818c6f5726e8e0c41740693fe93",
+    "schema_hash": "sha256:3b8703095321a59c7acf35e0e391cc46b0b7d7d10da9bb233cb78fb0e7747f6c",
+    "subjects": [
       {
-        "recipe_id": "literary-basic-ja-v1",
-        "analysis_recipe_hash": "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b",
-        "registry_entry_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        "resolved_at": "2026-07-07T00:00:00Z"
+        "metadata_record_hash": null,
+        "source_id": "aozora:demo-fixture-a",
+        "work_content_hash": "sha256:2323232323232323232323232323232323232323232323232323232323232323",
+        "work_id": "aozora:demo-fixture-a"
+      },
+      {
+        "metadata_record_hash": null,
+        "source_id": "aozora:demo-fixture-b",
+        "work_content_hash": "sha256:2424242424242424242424242424242424242424242424242424242424242424",
+        "work_id": "aozora:demo-fixture-b"
       }
     ],
-    "tokenizer_profiles": []
+    "tokenizer_profile_hashes": []
   },
-  "batch_policy": {
-    "kind": "shape-fixture"
-  }
+  "request_set_schema_version": "request-set-v1",
+  "resolution": {
+    "resolved_at": "2026-07-07T00:00:00Z",
+    "resolver_id": "abc.tools.request-set-resolver/v1",
+    "source_definition_path": "data/request-set-definitions/demo-basic-ja.json"
+  },
+  "resolved_recipe_labels": [
+    {
+      "analysis_recipe_hash": "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b",
+      "recipe_id": "literary-basic-ja-v1",
+      "registry_entry_hash": "sha256:ee609be205ee3a4c811c3baa060fe196c4f042b13d4475a07661ca978ee70abe",
+      "resolved_at": "2026-07-07T00:00:00Z"
+    }
+  ],
+  "resolved_tokenizer_profile_labels": [],
+  "schema_hash": "sha256:3b8703095321a59c7acf35e0e391cc46b0b7d7d10da9bb233cb78fb0e7747f6c",
+  "schema_id": "https://w3id.org/abc/schemas/request-set.schema.json"
 }

@@ -20,6 +20,7 @@ SCHEMA_FILES = (
     "manifest.schema.json",
     "parser-ir-publication-preservation.schema.json",
     "parser-ir.schema.json",
+    "request-set.schema.json",
     "source-region-coverage.schema.json",
     "snapshot-index.schema.json",
 )

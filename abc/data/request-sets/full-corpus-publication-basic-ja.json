@@ -1,38 +1,36 @@
 {
   "label": "full-corpus-publication-basic-ja",
-  "fixture_role": "request-set-shape-fixture",
-  "fixture_note": "Label shape fixture only; the resolved full corpus is generated outside source control.",
-  "scope": "full-corpus",
-  "profile": "basic-ja",
-  "product": "publication",
-  "request_set_id": "sha256:27b06deafe332844d63f9214097dd036600d5afae4da70de94c09da3badd530b",
+  "request_set_id": "sha256:6b0b493be2151f5d7b12e6b75662a4d1ae1d9bdfe809bd6879a3ef2dec4afd3d",
   "request_set_identity_object": {
-    "schema_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "analysis_recipe_hashes": [],
     "corpus_snapshot_hash": "sha256:3131313131313131313131313131313131313131313131313131313131313131",
-    "subjects": [
-      {
-        "source_id": "aozora:full-corpus-publication-shape-fixture",
-        "work_id": "aozora:full-corpus-publication-shape-fixture",
-        "work_content_hash": "sha256:3232323232323232323232323232323232323232323232323232323232323232",
-        "metadata_record_hash": null
-      }
-    ],
     "input_views": [
       {
         "input_view_kind": "parser-ir-plaintext-body-v1",
         "policy_hash": "sha256:df21c590fd8d5b934fd426e632a3d8a09c2bd3fa299ca6b4c8fe4c797e1d1391"
       }
     ],
-    "tokenizer_profile_hashes": [],
-    "analysis_recipe_hashes": [],
     "missing_policy": "build-missing-only",
-    "pack_policy_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    "pack_policy_hash": "sha256:b413f4838a9d32b8b9427453a4318b2f9538d818c6f5726e8e0c41740693fe93",
+    "schema_hash": "sha256:3b8703095321a59c7acf35e0e391cc46b0b7d7d10da9bb233cb78fb0e7747f6c",
+    "subjects": [
+      {
+        "metadata_record_hash": null,
+        "source_id": "aozora:full-corpus-publication-shape-fixture",
+        "work_content_hash": "sha256:3232323232323232323232323232323232323232323232323232323232323232",
+        "work_id": "aozora:full-corpus-publication-shape-fixture"
+      }
+    ],
+    "tokenizer_profile_hashes": []
   },
-  "resolved_labels": {
-    "analysis_recipes": [],
-    "tokenizer_profiles": []
+  "request_set_schema_version": "request-set-v1",
+  "resolution": {
+    "resolved_at": "2026-07-07T00:00:00Z",
+    "resolver_id": "abc.tools.request-set-resolver/v1",
+    "source_definition_path": "data/request-set-definitions/full-corpus-publication-basic-ja.json"
   },
-  "batch_policy": {
-    "kind": "shape-fixture"
-  }
+  "resolved_recipe_labels": [],
+  "resolved_tokenizer_profile_labels": [],
+  "schema_hash": "sha256:3b8703095321a59c7acf35e0e391cc46b0b7d7d10da9bb233cb78fb0e7747f6c",
+  "schema_id": "https://w3id.org/abc/schemas/request-set.schema.json"
 }

@@ -1,6 +1,7 @@
 (ns abc.tools.request-set-fixture-test
   (:require [abc.tools.analysis-identity :as analysis-identity]
             [abc.tools.files :as files]
+            [abc.tools.request-set-resolver :as resolver]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]))
 
@@ -19,8 +20,11 @@
     (testing label
       (let [request-set (files/read-json (str "data/request-sets/" label ".json"))]
         (is (= label (get request-set "label")))
-        (is (= "request-set-shape-fixture" (get request-set "fixture_role")))
+        (is (= "request-set-v1" (get request-set "request_set_schema_version")))
+        (is (nil? (get request-set "fixture_role")))
         (is (= (analysis-identity/request-set-id request-set)
                (get request-set "request_set_id")))
+        (is (= (resolver/resolve-request-set label)
+               request-set))
         (is (= [] (get-in request-set ["request_set_identity_object"
                                        "tokenizer_profile_hashes"])))))))

@@ -1,5 +1,6 @@
 (ns abc.tools.soranoha-test
   (:require [abc.tools.files :as files]
+            [abc.tools.request-set-resolver :as resolver]
             [abc.tools.soranoha :as soranoha]
             [clojure.string :as string]
             [clojure.test :refer [deftest is]]))
@@ -11,12 +12,13 @@
     (is (string/includes? out "full-corpus-basic-ja"))))
 
 (deftest explain-request-set-prints-request-set-id-test
-  (let [fixture (files/read-json "data/request-sets/smoke-basic-ja.json")
+  (let [resolved (resolver/resolve-request-set "smoke-basic-ja")
         out (with-out-str
               (is (zero? (soranoha/run! ["explain-request-set"
                                          "smoke-basic-ja"]))))]
     (is (string/includes? out "smoke-basic-ja"))
-    (is (string/includes? out (get fixture "request_set_id")))))
+    (is (string/includes? out (get resolved "request_set_id")))
+    (is (not (string/includes? out "fixture_role")))))
 
 (deftest snapshot-index-command-prints-fixture-identity-test
   (let [fixture (files/read-json "examples/v0/snapshot/snapshot-index.json")

@@ -60,27 +60,16 @@
                        :path path})))
     (files/read-json path)))
 
-(defn- analysis-recipe-path [recipe-id]
-  (str analysis-recipes-dir "/" recipe-id ".json"))
+(defn- registry-value-path [dir semantic-id]
+  (str dir "/" semantic-id ".json"))
 
-(defn- tokenizer-profile-path [profile-id]
-  (str tokenizer-profiles-dir "/" profile-id ".json"))
-
-(defn- read-analysis-recipe [recipe-id]
-  (let [path (analysis-recipe-path recipe-id)
+(defn- read-registry-value
+  [{:keys [dir value-kind semantic-key semantic-id]}]
+  (let [path (registry-value-path dir semantic-id)
         file (io/file path)]
     (when-not (.isFile file)
-      (throw (ex-info "Unknown analysis recipe"
-                      {:recipe_id recipe-id
-                       :path path})))
-    (files/read-json path)))
-
-(defn- read-tokenizer-profile [profile-id]
-  (let [path (tokenizer-profile-path profile-id)
-        file (io/file path)]
-    (when-not (.isFile file)
-      (throw (ex-info "Unknown tokenizer profile"
-                      {:profile_id profile-id
+      (throw (ex-info (str "Unknown " value-kind)
+                      {semantic-key semantic-id
                        :path path})))
     (files/read-json path)))
 
@@ -89,33 +78,50 @@
    "content_hash" content-hash
    "valid_from" resolved-at})
 
-(defn- resolve-analysis-recipe [recipe-id resolved-at]
-  (let [recipe (read-analysis-recipe recipe-id)
-        recipe-hash (analysis-identity/analysis-recipe-hash recipe)
+(defn- resolve-semantic-registry-value
+  [{:keys [semantic-id resolved-at hash-fn label-fn] :as opts}]
+  (let [value (read-registry-value opts)
+        value-hash (hash-fn value)
         registry-entry-hash (analysis-identity/hash-json-value
-                             (semantic-registry-entry recipe-id
-                                                      recipe-hash
+                             (semantic-registry-entry semantic-id
+                                                      value-hash
                                                       resolved-at))]
-    {:hash recipe-hash
-     :label (analysis-identity/resolved-recipe-label
-             {:recipe-id recipe-id
-              :analysis-recipe-hash recipe-hash
-              :registry-entry-hash registry-entry-hash
-              :resolved-at resolved-at})}))
+    {:hash value-hash
+     :label (label-fn (assoc opts
+                             :content-hash value-hash
+                             :registry-entry-hash registry-entry-hash))}))
+
+(defn- resolve-analysis-recipe [recipe-id resolved-at]
+  (resolve-semantic-registry-value
+   {:dir analysis-recipes-dir
+    :value-kind "analysis recipe"
+    :semantic-key :recipe_id
+    :semantic-id recipe-id
+    :resolved-at resolved-at
+    :hash-fn analysis-identity/analysis-recipe-hash
+    :label-fn (fn [{:keys [semantic-id content-hash
+                           registry-entry-hash resolved-at]}]
+                (analysis-identity/resolved-recipe-label
+                 {:recipe-id semantic-id
+                  :analysis-recipe-hash content-hash
+                  :registry-entry-hash registry-entry-hash
+                  :resolved-at resolved-at}))}))
 
 (defn- resolve-tokenizer-profile [profile-id resolved-at]
-  (let [profile (read-tokenizer-profile profile-id)
-        profile-hash (analysis-identity/tokenizer-profile-hash profile)
-        registry-entry-hash (analysis-identity/hash-json-value
-                             (semantic-registry-entry profile-id
-                                                      profile-hash
-                                                      resolved-at))]
-    {:hash profile-hash
-     :label (analysis-identity/resolved-tokenizer-profile-label
-             {:profile-id profile-id
-              :tokenizer-profile-hash profile-hash
-              :registry-entry-hash registry-entry-hash
-              :resolved-at resolved-at})}))
+  (resolve-semantic-registry-value
+   {:dir tokenizer-profiles-dir
+    :value-kind "tokenizer profile"
+    :semantic-key :profile_id
+    :semantic-id profile-id
+    :resolved-at resolved-at
+    :hash-fn analysis-identity/tokenizer-profile-hash
+    :label-fn (fn [{:keys [semantic-id content-hash
+                           registry-entry-hash resolved-at]}]
+                (analysis-identity/resolved-tokenizer-profile-label
+                 {:profile-id semantic-id
+                  :tokenizer-profile-hash content-hash
+                  :registry-entry-hash registry-entry-hash
+                  :resolved-at resolved-at}))}))
 
 (defn- resolved-tokenizer-profile-labels [definition resolved-at]
   (mapv #(resolve-tokenizer-profile % resolved-at)

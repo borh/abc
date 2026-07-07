@@ -21,6 +21,19 @@
        (remove string/blank?)
        (mapv json/read-json)))
 
+(defn delete-tree! [file]
+  (let [file (io/file file)]
+    (when (.exists file)
+      (doseq [entry (reverse (file-seq file))]
+        (.delete entry)))))
+
+(defn copy-file! [source target]
+  (let [target (io/file target)]
+    (when-let [parent (.getParentFile target)]
+      (.mkdirs parent))
+    (io/copy (io/file source) target)
+    target))
+
 (defn bytes->hex [bytes]
   (hash/bytes->hex bytes))
 

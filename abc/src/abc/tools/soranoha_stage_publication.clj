@@ -6,19 +6,6 @@
             [clojure.java.io :as io]
             [clojure.string :as string]))
 
-(defn- delete-tree! [file]
-  (let [file (io/file file)]
-    (when (.exists file)
-      (doseq [entry (reverse (file-seq file))]
-        (.delete entry)))))
-
-(defn- copy-file! [source target]
-  (let [target (io/file target)]
-    (when-let [parent (.getParentFile target)]
-      (.mkdirs parent))
-    (io/copy (io/file source) target)
-    target))
-
 (defn- staged-work-slug [locator-path]
   (or (second (re-find #"^artifacts/works/([^/]+)/" locator-path))
       "single"))
@@ -68,9 +55,9 @@
                                 "by-work"
                                 slug
                                 content-name)]
-    (copy-file! manifest-file manifest-target)
-    (copy-file! (manifest-content-file manifest-file manifest-value)
-                content-target)
+    (files/copy-file! manifest-file manifest-target)
+    (files/copy-file! (manifest-content-file manifest-file manifest-value)
+                      content-target)
     (assoc reference
            "locator" {"kind" "loose"
                       "path" (string/replace
@@ -137,7 +124,7 @@
         staged-root (io/file staged-root)
         layout-policy (get snapshot "layout_policy")
         references (get snapshot "artifact_references" [])]
-    (delete-tree! staged-root)
+    (files/delete-tree! staged-root)
     (.mkdirs staged-root)
     (let [staged (reduce (fn [{:keys [references batched]} reference]
                            (let [{staged-reference :reference
@@ -157,8 +144,8 @@
         (tar/write-tar! (io/file staged-root (batch-archive-path artifact-kind))
                         entries))
       (when (.isFile (io/file snapshot-root "run-summary.json"))
-        (copy-file! (io/file snapshot-root "run-summary.json")
-                    (io/file staged-root "run-summary.json")))
+        (files/copy-file! (io/file snapshot-root "run-summary.json")
+                          (io/file staged-root "run-summary.json")))
       (let [staged-snapshot (assoc snapshot
                                    "artifact_references"
                                    (snapshot-index/sort-artifact-references

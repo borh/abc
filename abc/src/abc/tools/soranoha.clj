@@ -202,19 +202,6 @@
 (defn default-snapshot-root [label]
   (io/file "target" "soranoha" label))
 
-(defn- delete-tree! [file]
-  (let [file (io/file file)]
-    (when (.exists file)
-      (doseq [entry (reverse (file-seq file))]
-        (.delete entry)))))
-
-(defn- copy-file! [source target]
-  (let [target (io/file target)]
-    (when-let [parent (.getParentFile target)]
-      (.mkdirs parent))
-    (io/copy (io/file source) target)
-    target))
-
 (defn- compact-hashes [& values]
   (vec (keep identity values)))
 
@@ -238,7 +225,7 @@
 (defn- write-parser-ir-file! [materialization target]
   (if (seq (get materialization "parser_ir_source"))
     (manifest/write-json-file! target (parser-ir-value materialization))
-    (copy-file! (get materialization "parser_ir_path") target)))
+    (files/copy-file! (get materialization "parser_ir_path") target)))
 
 (defn- parser-ir-manifest
   [{:keys [parser-ir-file warnings-file source-manifest parser-identity
@@ -303,8 +290,9 @@
                                                        "parser-ir.json"))
         warnings-source (get materialization "warnings_path")
         warnings-file (when warnings-source
-                        (copy-file! warnings-source
-                                    (io/file parser-dir "warnings.jsonl")))
+                        (files/copy-file!
+                         warnings-source
+                         (io/file parser-dir "warnings.jsonl")))
         source-manifest (files/read-json
                          (get materialization "source_manifest_path"))
         manifest-file (io/file parser-dir "parser-ir.manifest.json")]
@@ -333,19 +321,21 @@
                  :persons-dir (get materialization "persons_dir")
                  :output-dir build-dir
                  :generated-at generated-at})
-        plaintext-file (copy-file! (:plaintext result)
-                                   (io/file plaintext-dir "plain.txt"))
-        plaintext-manifest-file (copy-file! (:plaintext-manifest result)
-                                            (io/file plaintext-dir
-                                                     "plaintext.manifest.json"))
-        tei-file (copy-file! (:tei result) (io/file tei-dir "tei.xml"))
-        tei-manifest-file (copy-file! (:tei-manifest result)
-                                      (io/file tei-dir "tei.manifest.json"))]
-    (copy-file! (:tei-validation-result result)
-                (io/file tei-dir "tei-validation-result.json"))
-    (copy-file! (:preservation result)
-                (io/file tei-dir "preservation.json"))
-    (delete-tree! (io/file root ".build"))
+        plaintext-file (files/copy-file! (:plaintext result)
+                                         (io/file plaintext-dir "plain.txt"))
+        plaintext-manifest-file (files/copy-file!
+                                 (:plaintext-manifest result)
+                                 (io/file plaintext-dir
+                                          "plaintext.manifest.json"))
+        tei-file (files/copy-file! (:tei result) (io/file tei-dir "tei.xml"))
+        tei-manifest-file (files/copy-file!
+                           (:tei-manifest result)
+                           (io/file tei-dir "tei.manifest.json"))]
+    (files/copy-file! (:tei-validation-result result)
+                      (io/file tei-dir "tei-validation-result.json"))
+    (files/copy-file! (:preservation result)
+                      (io/file tei-dir "preservation.json"))
+    (files/delete-tree! (io/file root ".build"))
     {:plaintext-file plaintext-file
      :plaintext-manifest-file plaintext-manifest-file
      :tei-file tei-file
@@ -490,7 +480,7 @@
         label (get request-set "label")
         plan (snapshot-plan request-set)
         materializations (materialization-entries label plan)]
-    (delete-tree! root)
+    (files/delete-tree! root)
     (.mkdirs (io/file root))
     (let [generated-at (get plan "generated_at")
           manifest-files (mapcat

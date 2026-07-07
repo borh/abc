@@ -1,7 +1,7 @@
 # Orthographic Sentence Annotation Design
 
 **Date:** 2026-07-07
-**Status:** design (awaiting review)
+**Status:** superseded in part by the parser-IR sentence segmentation follow-up
 **Governs:** `ab-ortho-detect` (annotations), `ab-aat-to-parser-ir`
 (`orthographic_annotations` serialization), ABC parser-IR schema, downstream
 ABC TEI renderer.

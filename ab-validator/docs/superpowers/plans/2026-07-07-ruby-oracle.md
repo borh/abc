@@ -98,6 +98,16 @@ mod tests {
     }
 
     #[test]
+    fn yoon_long_vowels_expand_by_mora() {
+        // ー after a yōon expands the yōon's vowel, not the small kana literally.
+        assert_eq!(normalize("キョー"), normalize("きょう"));
+        assert_eq!(normalize("ショー"), normalize("しょう"));
+        assert_eq!(normalize("リュー"), normalize("りゅう"));
+        // long-e converges: pron センセー == kana せんせい
+        assert_eq!(normalize("センセー"), normalize("せんせい"));
+    }
+
+    #[test]
     fn bounded_lexical_table() {
         assert_eq!(normalize("てふ"), normalize("ちょう"));
         assert_eq!(normalize("けふ"), normalize("きょう"));
@@ -215,23 +225,63 @@ fn fold_digraphs_and_medial_ha(chars: &[char]) -> Vec<char> {
     out
 }
 
+#[derive(Clone, Copy)]
+enum Vowel {
+    A,
+    I,
+    U,
+    E,
+    O,
+}
+
+/// Vowel class of a hiragana mora kana, INCLUDING small yōon kana (ゃゅょ) so a
+/// prolongation mark after a yōon expands correctly (きょー → きょう, not きょょ).
+/// Returns None for non-vowel-bearing symbols (っ sokuon, ん, anything else).
+fn vowel_of(ch: char) -> Option<Vowel> {
+    use Vowel::{A, E, I, O, U};
+    Some(match ch {
+        'あ' | 'か' | 'が' | 'さ' | 'ざ' | 'た' | 'だ' | 'な' | 'は' | 'ば' | 'ぱ' | 'ま' | 'や'
+        | 'ら' | 'わ' | 'ぁ' | 'ゃ' => A,
+        'い' | 'き' | 'ぎ' | 'し' | 'じ' | 'ち' | 'ぢ' | 'に' | 'ひ' | 'び' | 'ぴ' | 'み' | 'り'
+        | 'ゐ' | 'ぃ' => I,
+        'う' | 'く' | 'ぐ' | 'す' | 'ず' | 'つ' | 'づ' | 'ぬ' | 'ふ' | 'ぶ' | 'ぷ' | 'む' | 'ゆ'
+        | 'る' | 'ぅ' | 'ゅ' => U,
+        'え' | 'け' | 'げ' | 'せ' | 'ぜ' | 'て' | 'で' | 'ね' | 'へ' | 'べ' | 'ぺ' | 'め' | 'れ'
+        | 'ゑ' | 'ぇ' => E,
+        'お' | 'こ' | 'ご' | 'そ' | 'ぞ' | 'と' | 'ど' | 'の' | 'ほ' | 'ぼ' | 'ぽ' | 'も' | 'よ'
+        | 'ろ' | 'を' | 'ぉ' | 'ょ' => O,
+        _ => return None,
+    })
+}
+
+/// The long-vowel kana for a vowel class, using modern long spellings:
+/// long-o as おう and long-e as えい, so the pron form (ー) converges with the
+/// kana form (which already uses う/い).
+fn long_vowel_kana(v: Vowel) -> char {
+    match v {
+        Vowel::A => 'あ',
+        Vowel::I => 'い',
+        Vowel::U => 'う',
+        Vowel::E => 'い',
+        Vowel::O => 'う',
+    }
+}
+
 fn long_vowel_canonicalize(chars: &[char]) -> String {
-    // Collapse long-vowel families to the canonical two-kana modern spelling's
-    // vowel: あ段+う/ー → おう family maps to a single marker. We canonicalize by
-    // rewriting a vowel + {う, ー, matching historical vowel} into vowel+'ー' then
-    // to the modern long form, so トーキョー, とうきょう, たうきやう converge.
+    // Expand each ー to the preceding mora's long-vowel kana (mora-aware via
+    // vowel_of, so yōon works), then fold historical あ段+う long-o spellings
+    // (あう/かう/…) to the modern おう family. So トーキョー, とうきょう, and
+    // たうきやう all converge to とうきょう.
     let mut out: Vec<char> = Vec::with_capacity(chars.len());
     for &ch in chars {
         if ch == 'ー' {
-            // extend previous vowel
-            if let Some(&prev) = out.last() {
-                out.push(long_vowel_partner(prev));
+            if let Some(v) = out.last().copied().and_then(vowel_of) {
+                out.push(long_vowel_kana(v));
             }
             continue;
         }
         out.push(ch);
     }
-    // Normalize the o/u long-vowel historical 'au/ou' → 'oo', 'ou' spellings to one form.
     let s: String = out.iter().collect();
     s.replace("あう", "おう")
         .replace("かう", "こう")
@@ -244,18 +294,6 @@ fn long_vowel_canonicalize(chars: &[char]) -> String {
         .replace("やう", "よう")
         .replace("らう", "ろう")
         .replace("わう", "おう")
-}
-
-/// The kana that a prolongation mark after `prev` expands to (long-vowel of that row).
-fn long_vowel_partner(prev: char) -> char {
-    match prev {
-        'こ' | 'と' | 'の' | 'ほ' | 'も' | 'よ' | 'ろ' | 'お' | 'ご' | 'ぞ' | 'ど' | 'ぼ' | 'ぽ' => 'う',
-        'き' | 'し' | 'ち' | 'に' | 'ひ' | 'み' | 'り' | 'い' | 'ぎ' | 'じ' | 'び' | 'ぴ' => 'う',
-        'か' | 'さ' | 'た' | 'な' | 'は' | 'ま' | 'や' | 'ら' | 'あ' | 'が' | 'ざ' | 'だ' | 'ば' | 'ぱ' => 'あ',
-        'け' | 'せ' | 'て' | 'ね' | 'へ' | 'め' | 'れ' | 'え' | 'げ' | 'ぜ' | 'で' | 'べ' | 'ぺ' => 'え',
-        'く' | 'す' | 'つ' | 'ぬ' | 'ふ' | 'む' | 'る' | 'う' | 'ぐ' | 'ず' | 'づ' | 'ぶ' | 'ぷ' => 'う',
-        other => other,
-    }
 }
 ```
 
@@ -684,6 +722,9 @@ mod tests {
         assert_eq!(morpheme_reading("vibrato:unidic-novel-202512", &vib).as_deref(), Some("トウキョウ"));
         let vib_pron_only = morph("x", 0..1, &[("pron", "トーキョー")]);
         assert_eq!(morpheme_reading("vibrato", &vib_pron_only).as_deref(), Some("トーキョー"));
+        // kana present but "*" → falls back to pron, not a false empty reading.
+        let vib_star = morph("x", 0..1, &[("kana", "*"), ("pron", "トーキョー")]);
+        assert_eq!(morpheme_reading("vibrato", &vib_star).as_deref(), Some("トーキョー"));
         let sud = morph("東京", 0..2, &[("reading_form", "トウキョウ")]);
         assert_eq!(morpheme_reading("sudachi-c", &sud).as_deref(), Some("トウキョウ"));
         let t = morph("x", 0..1, &[]);
@@ -747,6 +788,11 @@ pub(crate) fn morpheme_reading(analyzer_id: &str, morpheme: &Morpheme) -> Option
             .get(key)
             .and_then(|value| value.as_ref())
             .map(|value| value.to_string())
+            // A present-but-empty or "*" feature is absent, not a reading — else a
+            // kana="*" would normalize to "" and become a false non-match instead
+            // of falling back to pron. (Analyzers already map "*"→None at parse
+            // time, but the guard makes the contract robust to any caller.)
+            .filter(|value| !value.is_empty() && value != "*")
     };
     if analyzer_id.starts_with("vibrato") || analyzer_id.starts_with("vaporetto") {
         feat("kana").or_else(|| feat("pron"))
@@ -853,6 +899,23 @@ pub(crate) fn adjudicate(
         assert_eq!(rows[0].winning_analyzer.as_deref(), Some("vibrato"));
         assert!(rows[0].evidence_detail.contains("boundary-misalign"));
     }
+
+    #[test]
+    fn single_analyzer_emits_nothing() {
+        // ≥2-analyzer precondition: even a mismatching lone analyzer yields no rows.
+        let a = analysis("vibrato", vec![morph("東京", 0..2, &[("kana", "トウケイ")])]);
+        let rows = adjudicate("r", "s", "t", &[base(0, 2, "とうきょう")], &[a], &regions());
+        assert!(rows.is_empty());
+    }
+
+    #[test]
+    fn evidence_detail_keeps_raw_reading() {
+        let a = analysis("vibrato", vec![morph("東京", 0..2, &[("kana", "トウケイ")])]);
+        let b = analysis("sudachi-c", vec![morph("東京", 0..2, &[("reading_form", "トウキョウ")])]);
+        let rows = adjudicate("r", "s", "t", &[base(0, 2, "とうきょう")], &[a, b], &regions());
+        // raw (pre-normalization) reading is retained for manual review of norm bugs.
+        assert!(rows[0].evidence_detail.contains("トウケイ"));
+    }
 ```
 
 - [ ] **Step 2: Run to verify it fails**
@@ -886,11 +949,18 @@ fn region_index_for(regions: &[RegionSpan], base: &RubyBase) -> u64 {
         .unwrap_or(0)
 }
 
-/// The concatenated reading of one analyzer over a ruby base, plus alignment.
-/// Returns (Some(normalized_reading), "exact") when covered morphemes exactly
-/// tile the base; (None, "boundary-misalign") on a straddle; (None, "no-reading")
-/// when a covered morpheme has no reading.
-fn analyzer_reading(analysis: &Analysis, base: &RubyBase) -> (Option<String>, &'static str) {
+/// One analyzer's reading over a ruby base: the raw concatenated reading, its
+/// normalized form, and the alignment outcome. `align` ∈ `exact`,
+/// `boundary-misalign` (covered morphemes do not exactly tile the base),
+/// `no-reading` (a covered morpheme has no reading feature). raw/norm are None
+/// unless `align == "exact"`.
+struct Reading {
+    norm: Option<String>,
+    raw: Option<String>,
+    align: &'static str,
+}
+
+fn analyzer_reading(analysis: &Analysis, base: &RubyBase) -> Reading {
     let bs = base.char_start as usize;
     let be = base.char_end as usize;
     let covered: Vec<&Morpheme> = analysis
@@ -898,28 +968,27 @@ fn analyzer_reading(analysis: &Analysis, base: &RubyBase) -> (Option<String>, &'
         .iter()
         .filter(|m| m.char_span.start < be && bs < m.char_span.end)
         .collect();
-    if covered.is_empty() {
-        return (None, "boundary-misalign");
-    }
-    // exact tiling: contiguous, first.start == bs, last.end == be
-    let first = covered.first().unwrap();
-    let last = covered.last().unwrap();
-    if first.char_span.start != bs || last.char_span.end != be {
-        return (None, "boundary-misalign");
-    }
-    for w in covered.windows(2) {
-        if w[0].char_span.end != w[1].char_span.start {
-            return (None, "boundary-misalign");
-        }
+    // exact tiling: non-empty, contiguous, first.start == bs, last.end == be.
+    let tiles = covered.first().is_some_and(|m| m.char_span.start == bs)
+        && covered.last().is_some_and(|m| m.char_span.end == be)
+        && covered
+            .windows(2)
+            .all(|w| w[0].char_span.end == w[1].char_span.start);
+    if !tiles {
+        return Reading { norm: None, raw: None, align: "boundary-misalign" };
     }
     let mut concat = String::new();
     for m in &covered {
         match morpheme_reading(&analysis.analyzer, m) {
             Some(r) => concat.push_str(&r),
-            None => return (None, "no-reading"),
+            None => return Reading { norm: None, raw: None, align: "no-reading" },
         }
     }
-    (Some(super::reading_norm::normalize(&concat)), "exact")
+    Reading {
+        norm: Some(super::reading_norm::normalize(&concat)),
+        raw: Some(concat),
+        align: "exact",
+    }
 }
 
 pub(crate) fn adjudicate(
@@ -930,6 +999,12 @@ pub(crate) fn adjudicate(
     analyses: &[Analysis],
     regions: &[RegionSpan],
 ) -> Vec<NwayRegionOracleEvidenceRow> {
+    // ≥2-analyzer precondition (spec §Precondition): a single-analyzer run has no
+    // cross-analyzer disagreement to adjudicate, and region_index would not map to
+    // a real n-way region. Encode it in the pure contract, not just the caller.
+    if analyses.len() < 2 {
+        return Vec::new();
+    }
     let mut rows = Vec::new();
     for base in ruby_bases {
         let ruby_norm = super::reading_norm::normalize(&base.reading);
@@ -937,8 +1012,8 @@ pub(crate) fn adjudicate(
         let mut losers = Vec::new();
         let mut detail = serde_json::Map::new();
         for analysis in analyses {
-            let (reading, align) = analyzer_reading(analysis, base);
-            let is_match = reading.as_deref() == Some(ruby_norm.as_str());
+            let reading = analyzer_reading(analysis, base);
+            let is_match = reading.norm.as_deref() == Some(ruby_norm.as_str());
             if is_match {
                 winners.push(analysis.analyzer.clone());
             } else {
@@ -946,7 +1021,12 @@ pub(crate) fn adjudicate(
             }
             detail.insert(
                 analysis.analyzer.clone(),
-                json!({ "norm": reading, "match": is_match, "align": align }),
+                json!({
+                    "reading": reading.raw,
+                    "norm": reading.norm,
+                    "match": is_match,
+                    "align": reading.align,
+                }),
             );
         }
         // Emit iff ≥1 analyzer failed to match.
@@ -1041,8 +1121,9 @@ fn append_warehouse_nway_fact_rows(
     analyses: &[Analysis],
     ruby_bases: &[crate::oracle::ruby::RubyBase],
 ) -> Result<()> {
-    let want_oracle =
-        !ruby_bases.is_empty() && writer.writes_table(WarehouseTable::NwayRegionOracleEvidence);
+    let want_oracle = analyses.len() >= 2
+        && !ruby_bases.is_empty()
+        && writer.writes_table(WarehouseTable::NwayRegionOracleEvidence);
     let mut region_lookup: Vec<crate::oracle::ruby::RegionSpan> = Vec::new();
     let mut feature_pattern_counts = WarehouseFeaturePatternAccumulator::default();
     warehouse::rows::visit_nway_fact_row_batches(
@@ -1083,46 +1164,82 @@ fn append_warehouse_nway_fact_rows(
 }
 ```
 
-- [ ] **Step 2: Update the call site** in `crates/ab-morph-run/src/pipeline.rs` (~line 852). First, at the projection site (~line 794-812, inside the `if let Some(writer) = &mut warehouse_writer` block, where `projection_spans` and `aat` are in scope), build the ruby bases once, before `source_text` handles are cleared:
+**Critical:** the AAT is dropped at `pipeline.rs:658` (`drop(aat);`, the Phase 3 P1 memory fix) — long before the warehouse-write block (~line 852). So `ruby_bases` MUST be extracted at the projection site, before the drop, and the `Vec` carried down to the append call. This wiring is in the shared per-source loop used by both the serial run and each parallel shard; the merge (`merge_warehouse_shard_runs`) is table-list-driven and picks up the new table automatically.
+
+- [ ] **Step 2a: Widen span collection** at `crates/ab-morph-run/src/pipeline.rs:609-611` so spans are collected when EITHER table is requested (the oracle needs the ruby spans even if `projection_spans` itself is not written):
 
 ```rust
-            let ruby_bases = match &projection_spans {
-                Some(spans)
-                    if writer.writes_table(WarehouseTable::NwayRegionOracleEvidence) =>
-                {
-                    crate::oracle::ruby::ruby_bases(&aat, spans)
-                }
-                _ => Vec::new(),
-            };
+        let collect_projection_spans = warehouse_writer.as_ref().is_some_and(|writer| {
+            writer.writes_table(WarehouseTable::ProjectionSpans)
+                || writer.writes_table(WarehouseTable::NwayRegionOracleEvidence)
+        });
 ```
 
-Then pass `&ruby_bases` into the `append_warehouse_nway_fact_rows(...)` call (add it as the new final argument).
-
-- [ ] **Step 3: Write an end-to-end test.** Add to `crates/ab-morph-run` tests (a new `#[cfg(test)]` case in `pipeline.rs` or the crate's integration tests) that runs a Full-profile analyze over a tiny AAT with a ruby node and two `test` analyzers is not viable (test analyzers emit no reading). Instead, drive `adjudicate` through the pipeline path using the real analyzers is out of scope for a unit test; the end-to-end assertion is the full-corpus run in Task 7. For an in-repo automated guard, add a focused integration test that constructs a warehouse writer, calls `append_warehouse_nway_fact_rows` with a hand-built `analyses` (two `vibrato`/`sudachi`-id analyses over the same text) and a ruby base, then reads back the parquet row count:
+- [ ] **Step 2b: Extract `ruby_bases` before `drop(aat)`.** Insert immediately after the `let (document, projection_spans) = match projected { ... };` block ends (line 655) and BEFORE the `// P1:` comment + `drop(aat);` at lines 656-658:
 
 ```rust
-#[test]
-fn oracle_evidence_written_end_to_end() {
-    use ab_warehouse::schema::WarehouseTable;
-    use ab_warehouse::{WarehousePaths, WarehouseWriter};
-    // build two analyses disagreeing on a ruby reading, one matching the editor.
-    // (reuse the crate's Analysis/Morpheme test constructors)
-    // ... construct analyses `a` (vibrato, kana=トウケイ) and `b` (sudachi-c, reading_form=トウキョウ)
-    // ... ruby base reading とうきょう over chars 0..2
-    let root = std::env::temp_dir().join(format!("oracle-e2e-{}", std::process::id()));
-    let paths = WarehousePaths::new(&root, "run-a");
-    let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
-    let ruby = vec![/* RubyBase{0,2,"","とうきょう"} */];
-    append_warehouse_nway_fact_rows(&mut writer, "run-a", "src-a", "東京は", &[/*a,b*/], &ruby).unwrap();
-    writer.finalize().unwrap();
-    let count = ab_warehouse::parquet_table_row_count(
-        &paths.final_dir, WarehouseTable::NwayRegionOracleEvidence).unwrap();
-    assert_eq!(count, 1);
-    let _ = std::fs::remove_dir_all(root);
-}
+        // Ruby-oracle bases from the projected ruby spans + AAT node readings.
+        // MUST be built before `drop(aat)` below. Empty unless the oracle table is
+        // requested and the run has ≥2 analyzers (spec §Precondition).
+        let ruby_bases = match (&projection_spans, &warehouse_writer) {
+            (Some(spans), Some(writer))
+                if analyzer_ids.len() >= 2
+                    && writer.writes_table(WarehouseTable::NwayRegionOracleEvidence) =>
+            {
+                crate::oracle::ruby::ruby_bases(&aat, spans)
+            }
+            _ => Vec::new(),
+        };
 ```
 
-Fill in the `Analysis`/`Morpheme`/`RubyBase` construction using the same helpers as Task 5's tests (make them `pub(crate)` test helpers or inline them). If `append_warehouse_nway_fact_rows` is private and unreachable from an integration test, place this test in `lib.rs` under `#[cfg(test)]` where the fn is in scope.
+- [ ] **Step 2c: Thread `&ruby_bases`** into the `append_warehouse_nway_fact_rows(...)` call (~line 852) as the new final argument. The `ruby_bases` binding lives in the per-source loop body scope, so it is still in scope at that call.
+
+- [ ] **Step 3: Write a genuine AAT→parquet integration test.** Add to the `crates/ab-morph-run/src/oracle/ruby.rs` test module (the `analysis`/`morph`/`base` helpers are already there). Unlike a hand-built `RubyBase`, this starts from a real AAT `Value`, runs the actual `ab_plaintext` projection to get spans, extracts bases through `ruby_bases` (exercising `Value::pointer` reading resolution + span collection), adjudicates, and round-trips the parquet:
+
+```rust
+    #[test]
+    fn oracle_pipeline_from_aat_to_parquet() {
+        use ab_plaintext::visible_text_projection_with_spans;
+        use ab_warehouse::schema::WarehouseTable;
+        use ab_warehouse::{parquet_table_row_count, WarehousePaths, WarehouseWriter};
+        use serde_json::json;
+
+        let aat = json!({
+            "blocks": [ { "content": [
+                { "kind": "ruby", "base": "東京", "reading": "とうきょう" },
+                { "kind": "text", "value": "は" }
+            ] } ]
+        });
+        let (_text, spans) = visible_text_projection_with_spans(&aat);
+        let bases = ruby_bases(&aat, &spans);
+        assert_eq!(bases.len(), 1, "one ruby base extracted from real projection spans");
+        assert_eq!(bases[0].reading, "とうきょう");
+
+        // sudachi matches the editor ruby; vibrato does not.
+        let a = analysis("vibrato", vec![morph("東京", 0..2, &[("kana", "トウケイ")])]);
+        let b = analysis("sudachi-c", vec![morph("東京", 0..2, &[("reading_form", "トウキョウ")])]);
+        let regions = vec![RegionSpan {
+            region_index: 0, char_start: 0, char_end: 3, is_disagreement: true,
+        }];
+        let rows = adjudicate("run-a", "src-a", "work-a", &bases, &[a, b], &regions);
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].winning_analyzer.as_deref(), Some("sudachi-c"));
+
+        let root = std::env::temp_dir().join(format!("oracle-e2e-{}", std::process::id()));
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer.append_nway_region_oracle_evidence(&rows).unwrap();
+        writer.finalize().unwrap();
+        assert_eq!(
+            parquet_table_row_count(&paths.final_dir, WarehouseTable::NwayRegionOracleEvidence)
+                .unwrap(),
+            1
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+```
+
+This exercises the full extraction+adjudication+write chain. The AAT-lifetime correctness (Step 2b) is enforced at compile time — a use of `aat` after `drop(aat)` fails to build, so `cargo build` in Step 4 is the guard for that.
 
 - [ ] **Step 4: Run the full crate test suite**
 
@@ -1182,7 +1299,14 @@ git commit -m "docs: record ruby-oracle validation results and spec amendments"
 
 **Spec coverage (cycle spec §-by-§):** Goal → Tasks 4–6. Non-Goals (no Phase 5 RRF, no bump) → honored (Task 2 keeps v2; no ranking touched). Emission rule R2 → Task 5 `adjudicate` (`if losers.is_empty() { continue }`). Reading extraction R7 → Task 4 `morpheme_reading`. Normalization R3 → Task 1. Alignment R8 → Task 5 `analyzer_reading` exact-tiling. Adjudication R4 → Task 5 (`winners.len() == 1`). Table schema R1 (+2 columns) → Tasks 2 (Row/DDL) and 7 (spec amendment). Schema versioning R6 → Tasks 2–3 (stays 2, presence-probed view). Module structure → Tasks 1/4/5 (`oracle/reading_norm.rs`, `oracle/ruby.rs`). Testing → Tasks 1/4/5 unit+property, Task 6 e2e, Task 7 full-corpus. Precondition (≥2 analyzers) → naturally holds (a single analyzer over an exactly-tiled base always matches-or-not with no cross-analyzer disagreement; region_lookup still valid). 
 
-**Placeholder scan:** Task 6 Step 3's e2e test skeleton has `/* ... */` construction comments — this is the one spot needing the executor to inline the same `Analysis`/`Morpheme`/`RubyBase` helpers written verbatim in Task 5 Step 1; flagged explicitly rather than left vague. All other steps carry complete code.
+**Placeholder scan:** none. The former Task 6 Step 3 skeleton was replaced with a complete AAT→spans→bases→adjudicate→parquet test.
+
+**Static-review fixes applied (2026-07-07):**
+- *Blocker* — `aat` is dropped at `pipeline.rs:658`; `ruby_bases` is now extracted at Step 2b before the drop, and span collection widened (Step 2a) so the oracle gets ruby spans even when `projection_spans` is not written.
+- *Blocker* — `reading_norm` long-vowel expansion is now mora-aware via `vowel_of` (covers small ゃゅょ; long-o→う, long-e→い), fixing `トーキョー`→`とうきょう`; golden tests added for キョー/ショー/リュー/センセー.
+- `morpheme_reading` filters empty/`*` before the `kana`→`pron` fallback (+ test).
+- The ≥2-analyzer precondition is encoded in both the `want_oracle` gate and `adjudicate` (+ single-analyzer test).
+- `evidence_detail` retains the raw per-analyzer reading alongside `norm`/`match`/`align` (+ test).
 
 **Type consistency:** `NwayRegionOracleEvidenceRow` fields identical across schema.rs (Task 2), append method (Task 2), and `adjudicate` construction (Task 5). `RegionSpan`/`RubyBase` field names match between definition (Tasks 4–5) and use (Task 6). `morpheme_reading` signature identical in Task 4 def and Task 5 call. Column order identical across `column_names`, `nway_region_oracle_evidence_schema`, `schema.sql`, and the append vector.
 

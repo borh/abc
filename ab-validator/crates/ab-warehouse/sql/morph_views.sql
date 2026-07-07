@@ -15,6 +15,11 @@ CREATE OR REPLACE VIEW warehouse_projection_spans AS
 SELECT * FROM read_parquet('__RUN_DIR__/projection_spans.parquet');
 -- __PROJECTION_SPANS_END__
 
+-- __ORACLE_EVIDENCE_BEGIN__
+CREATE OR REPLACE VIEW warehouse_nway_region_oracle_evidence AS
+SELECT * FROM read_parquet('__RUN_DIR__/nway_region_oracle_evidence.parquet');
+-- __ORACLE_EVIDENCE_END__
+
 -- __RAW_FEATURE_DIFFS_BEGIN__
 CREATE OR REPLACE VIEW warehouse_nway_feature_diffs AS
 SELECT * FROM read_parquet('__RUN_DIR__/nway_feature_diffs.parquet');

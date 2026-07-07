@@ -56,11 +56,23 @@ pub fn write_run_views_sql(output_run_dir: &Path, final_run_dir: &Path) -> Resul
             "-- __PROJECTION_SPANS_END__",
         );
     }
+    if !output_run_dir
+        .join(WarehouseTable::NwayRegionOracleEvidence.file_name())
+        .exists()
+    {
+        views = remove_marked_sql_sections(
+            &views,
+            "-- __ORACLE_EVIDENCE_BEGIN__",
+            "-- __ORACLE_EVIDENCE_END__",
+        );
+    }
     views = views
         .replace("-- __RAW_FEATURE_DIFFS_BEGIN__\n", "")
         .replace("-- __RAW_FEATURE_DIFFS_END__\n", "")
         .replace("-- __PROJECTION_SPANS_BEGIN__\n", "")
-        .replace("-- __PROJECTION_SPANS_END__\n", "");
+        .replace("-- __PROJECTION_SPANS_END__\n", "")
+        .replace("-- __ORACLE_EVIDENCE_BEGIN__\n", "")
+        .replace("-- __ORACLE_EVIDENCE_END__\n", "");
     let path = output_run_dir.join("views.sql");
     fs::write(&path, views).with_context(|| format!("failed to write {}", path.display()))?;
     Ok(())
@@ -140,6 +152,27 @@ mod tests {
         let views = fs::read_to_string(dir.join("views.sql")).unwrap();
         assert!(views.contains("warehouse_projection_spans"));
         assert!(!views.contains("__PROJECTION_SPANS_BEGIN__"));
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn views_sql_drops_oracle_evidence_section_when_table_absent() {
+        let dir = std::env::temp_dir().join(format!("views-oracle-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        write_run_views_sql(&dir, &dir).unwrap();
+        let views = fs::read_to_string(dir.join("views.sql")).unwrap();
+        assert!(!views.contains("warehouse_nway_region_oracle_evidence"));
+        assert!(!views.contains("__ORACLE_EVIDENCE_BEGIN__"));
+
+        fs::write(
+            dir.join(WarehouseTable::NwayRegionOracleEvidence.file_name()),
+            b"stub",
+        )
+        .unwrap();
+        write_run_views_sql(&dir, &dir).unwrap();
+        let views = fs::read_to_string(dir.join("views.sql")).unwrap();
+        assert!(views.contains("warehouse_nway_region_oracle_evidence"));
+        assert!(!views.contains("__ORACLE_EVIDENCE_BEGIN__"));
         let _ = fs::remove_dir_all(dir);
     }
 

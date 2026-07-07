@@ -1449,8 +1449,7 @@ mod tests {
         use std::time::Duration;
         let root = temp_dir("write-time");
         let paths = WarehousePaths::new(&root, "wt-run");
-        let mut writer =
-            WarehouseWriter::create_for_tables(paths, WarehouseTable::ALL, 3).unwrap();
+        let mut writer = WarehouseWriter::create_for_tables(paths, WarehouseTable::ALL, 3).unwrap();
         assert_eq!(writer.write_time(), Duration::ZERO);
 
         // Append enough error rows to force at least one write() call.

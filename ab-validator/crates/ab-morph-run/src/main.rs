@@ -1582,8 +1582,7 @@ mod tests {
         .unwrap();
 
         let Command::AnalyzeAat {
-            parquet_zstd_level,
-            ..
+            parquet_zstd_level, ..
         } = args.command
         else {
             panic!("expected analyze-aat");
@@ -1609,8 +1608,7 @@ mod tests {
         .unwrap();
 
         let Command::AnalyzeAat {
-            parquet_zstd_level,
-            ..
+            parquet_zstd_level, ..
         } = args.command
         else {
             panic!("expected analyze-aat");

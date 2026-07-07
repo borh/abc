@@ -1,9 +1,6 @@
 schema-drift:
 	@bash scripts/monorepo-schema-drift.sh
 
-split-import-parity-audit:
-	@python scripts/monorepo-parity-audit.py
-
 tei-version-coherence:
 	@bash scripts/monorepo-tei-version-coherence.sh
 

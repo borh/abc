@@ -71,12 +71,6 @@
             exec bash scripts/monorepo-schema-drift.sh "$@"
           '';
 
-          split-import-parity-audit = pkgs.writeShellScript "soranoha-split-import-parity-audit" ''
-            set -euo pipefail
-            export PATH="${runtimePath}:$PATH"
-            exec python scripts/monorepo-parity-audit.py "$@"
-          '';
-
           tei-version-coherence = pkgs.writeShellScript "soranoha-tei-version-coherence" ''
             set -euo pipefail
             export PATH="${runtimePath}:$PATH"
@@ -130,7 +124,6 @@
         // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "apps" system)
         // {
           schema-drift = mkScriptApp scripts.schema-drift "Check monorepo ABC schema contract drift";
-          split-import-parity-audit = mkScriptApp scripts.split-import-parity-audit "Audit monorepo tracked-file parity against split repositories";
           tei-version-coherence = mkScriptApp scripts.tei-version-coherence "Check TEI P5 source/profile version coherence";
           flake-input-policy = mkScriptApp scripts.flake-input-policy "Check release-critical flake inputs are explicitly pinned";
           python-quality = mkScriptApp scripts.python-quality "Run monorepo Python ruff and mypy checks";

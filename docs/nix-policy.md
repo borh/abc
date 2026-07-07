@@ -26,13 +26,14 @@ This follows ABC ADRs 0003, 0005, 0008, 0012, 0023, and 0025.
 
 ## Lock Authority
 
-The root `flake.lock` is the canonical lock for monorepo work. Component locks
-under `abc/` and `ab-validator/` remain as standalone compatibility locks during
-the cutover.
+The root `flake.lock` is the canonical lock for Soranoha. The old split
+repositories are archived and no longer define active source identity.
 
-When changing a component flake input, update both the component lock and the
-root lock so root-prefixed outputs and direct component workflows see the same
-source identities.
+Component locks under `abc/` and `ab-validator/` may remain for direct component
+flake workflows, but they are compatibility surfaces inside the monorepo. When a
+component flake input changes, update the root lock and the relevant component
+lock in the same change so root-prefixed outputs and direct component workflows
+see the same source identities.
 
 ## Release-Critical Inputs
 

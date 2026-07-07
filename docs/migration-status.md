@@ -1,33 +1,36 @@
 # Monorepo Migration Status
 
-Date: 2026-07-06
+Date: 2026-07-07
 
 Soranoha is the integration monorepo for the former sibling repositories:
 
 - `abc/`
 - `ab-validator/`
 
-The split repositories still exist during the cutover, but the migration state is
-tracked and validated from this repository.
+The split repositories are archived. Soranoha is now the canonical repository;
+active development, validation, and source identity are tracked from this
+repository.
 
-## Imported Revisions
+## Imported Baseline
 
 | Component | Split-repo revision imported | Monorepo path |
 | --- | --- | --- |
 | ABC | `9d45a3f` | `abc/` |
 | ab-validator | `fda09f1` | `ab-validator/` |
 
+These revisions are historical migration provenance only. They are not active
+parity targets after the cutoff.
+
 ## Intentional Deltas
 
-The `abc/` component is a tracked-file exact import from the split ABC repo.
-
-The `ab-validator/` component is an exact tracked-file import except for the ABC
-schema contract layout:
+The monorepo intentionally replaces split-repo compatibility details with shared
+monorepo sources:
 
 - removed copied schema files under `ab-validator/data/abc-schemas/schemas/*.schema.json`
-- added `ab-validator/data/abc-schemas/schemas` as a symlink to `../../../abc/schemas`
+- added `ab-validator/data/abc-schemas/schemas` as a symlink to the monorepo
+  `abc/schemas`
 - replaced `ab-validator/data/abc-schemas/data/source-region-publication-policy-v0.json`
-  with a symlink to `../../../../abc/data/source-region-publication-policy-v0.json`
+  with a symlink to the monorepo ABC source-region policy
 - updated `ab-validator/data/abc-schemas/README.md` to document the monorepo
   source of truth
 
@@ -49,13 +52,22 @@ TEI profile validation basis. The `ab-validator` publication next-work report
 uses this flake output by default; `AB_TEI_P5_ROOT` is reserved for an explicit
 operator override.
 
+Additional delta (2026-07-07): split-repo parity auditing was retired. It was a
+cutover-only guard and is no longer meaningful once Soranoha is canonical.
+
+Additional delta (2026-07-07): ABC Clojure lint now checks all `abc/src` and
+`abc/test`; the old active-surface-only lint baseline was removed after legacy
+Clojure namespaces were deleted.
+
 ## Validation Commands
 
 Run from the monorepo root:
 
 ```sh
-just split-import-parity-audit
+just active-path-hygiene
 just schema-drift
+just python-quality
+just nix-format-check
 just root-flake-check-no-build
 just tei-version-coherence
 just flake-input-policy
@@ -65,15 +77,16 @@ nix build .#tei-p5-reference --no-link
 nix run .#tei-version-coherence
 nix run .#flake-input-policy
 nix run .#schema-drift
-nix run .#split-import-parity-audit
 ```
 
 What they prove:
 
-- `split-import-parity-audit`: optional tracked source parity against the split
-  repos, retained only as a cutover audit.
+- `active-path-hygiene`: active source/tooling does not depend on sibling
+  checkout paths or untracked `references/` parser paths.
 - `schema-drift`: `ab-validator` schema contracts still match `abc/schemas` and
   its source-region policy symlink still points at `abc/data`.
+- `python-quality`: tracked Python passes ruff format/check and mypy.
+- `nix-format-check`: tracked Nix files are formatted with `nixfmt`.
 - `root-flake-check-no-build`: the root flake evaluates monorepo checks and
   prefixed component checks without building large outputs.
 - `tei-version-coherence`: the root TEI P5 source reference and ABC TEI profile
@@ -83,9 +96,9 @@ What they prove:
 - `check-no-build`: both component flakes evaluate through their no-build
   checks from the monorepo layout. This is retained as a direct component
   fallback while the root flake settles.
-- `validate-migration`: runs monorepo schema/policy drift and root no-build
-  validation together. Split-repo parity is intentionally not part of this
-  default gate after the monorepo becomes the working source tree.
+- `validate-migration`: runs the cheap monorepo validation gate: runtime config,
+  active path hygiene, schema/policy drift, TEI version coherence, flake input
+  policy, Python quality, Nix formatting, and root no-build flake validation.
 - `nix build .#tei-p5-reference --no-link`: verifies the pinned TEI P5
   reference tree exposes the files cited by the publication mapping dossiers.
 
@@ -94,7 +107,7 @@ The root flake prefixes component outputs instead of renaming them:
 - `abc` flake outputs are exposed as `abc-*`.
 - `ab-validator` flake outputs are exposed as `ab-validator-*`.
 - Monorepo-local checks/apps use unprefixed names such as `schema-drift`,
-  `split-import-parity-audit`, and `validate-migration`.
+  `active-path-hygiene`, and `validate-migration`.
 
 ## Path Policy
 
@@ -109,13 +122,7 @@ Live transition code should resolve cross-component paths through explicit roots
 Historical reports and dated plans may still mention `/home/bor/Projects/...`,
 `../abc`, or `../ab-validator`; those are evidence records, not active defaults.
 
-Known active exceptions:
-
-- `ab-validator/reports/aat-fidelity/aat_parser_ir_mapping/generate.py` still
-  defaults `--abc-root` to `../abc` for split-repo operation. It is an operator
-  script and accepts an explicit `--abc-root`.
-- `ab-validator/crates/ab-morph-run` tests keep `../abc/out/corpus` as an
-  explicit CLI argument fixture. The command itself requires `--from`.
+The active-code path hygiene gate enforces this for runnable source and tooling.
 
 ## Naming Policy
 

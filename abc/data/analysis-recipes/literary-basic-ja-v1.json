@@ -1,0 +1,27 @@
+{
+  "determinism_tier": "exact",
+  "error_behavior": 
+  {
+    "metric_failure": "record-failed-metric",
+    "missing_required_identity_field": "failed-manifest-or-none"
+  },
+  "metrics": [
+    {
+      "formula_version": "fixture-input-v1",
+      "metric_id": "fixture-line-count",
+      "unit": "line",
+      "value_type": "integer"
+    }],
+  "normalization_policy": 
+  {
+    "newline_policy": "parser-ir-plaintext-body-v1",
+    "unicode_normalization": "producer-preserved"
+  },
+  "plaintext_policy_hash": "sha256:1000000000000000000000000000000000000000000000000000000000000001",
+  "recipe_id": "literary-basic-ja-v1",
+  "recipe_version": "0.1.0",
+  "required_output_schema_hash": "sha256:3071476a037fc46b17077ae351ece7c8d6677294cd23b1ca47393cf3702f8fc8",
+  "schema_id": "https:\/\/w3id.org\/abc\/schemas\/analysis-recipe.schema.json",
+  "supported_input_view_kinds": ["parser-ir-plaintext-body-v1"],
+  "tokenizer_required": false
+}

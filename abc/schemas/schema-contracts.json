@@ -3,6 +3,20 @@
   "canonicalization": "abc-legacy-json-c14n-v0",
   "schemas": [
     {
+      "path": "schemas/analysis-recipe.schema.json",
+      "id": "https://w3id.org/abc/schemas/analysis-recipe.schema.json",
+      "title": "ABC Analysis Recipe",
+      "version": "0.1.0",
+      "hash": "sha256:a6b6bb038c79efcf9c38a7cdde416ecd98f7c3528ed329fa9922eda8284e49de"
+    },
+    {
+      "path": "schemas/analysis-result.schema.json",
+      "id": "https://w3id.org/abc/schemas/analysis-result.schema.json",
+      "title": "ABC Analysis Result",
+      "version": "0.1.0",
+      "hash": "sha256:3071476a037fc46b17077ae351ece7c8d6677294cd23b1ca47393cf3702f8fc8"
+    },
+    {
       "path": "schemas/aat-parser-ir-divergence.schema.json",
       "id": "https://w3id.org/abc/schemas/aat-parser-ir-divergence.schema.json",
       "title": "AAT to Parser-IR Divergence Record",

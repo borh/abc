@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/analysis-result.schema.json",
+  "title": "ABC Analysis Result",
+  "version": "0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "schema_hash",
+    "subject",
+    "input_view",
+    "tokenizer_profile_hash",
+    "analysis_recipe_hash",
+    "metrics",
+    "warnings"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "https://w3id.org/abc/schemas/analysis-result.schema.json"
+    },
+    "schema_hash": { "$ref": "#/$defs/hash" },
+    "subject": { "$ref": "#/$defs/subject" },
+    "input_view": { "$ref": "#/$defs/inputView" },
+    "tokenizer_profile_hash": {
+      "anyOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }]
+    },
+    "analysis_recipe_hash": { "$ref": "#/$defs/hash" },
+    "metrics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/metricResult" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "work_id",
+        "corpus_snapshot_hash",
+        "work_content_hash",
+        "metadata_record_hash"
+      ],
+      "properties": {
+        "source_id": { "type": "string", "minLength": 1 },
+        "work_id": { "type": "string", "minLength": 1 },
+        "corpus_snapshot_hash": { "$ref": "#/$defs/hash" },
+        "work_content_hash": { "$ref": "#/$defs/hash" },
+        "metadata_record_hash": {
+          "anyOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }]
+        }
+      }
+    },
+    "inputView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_view_kind",
+        "producer_artifact_id",
+        "producer_content_hash",
+        "plaintext_policy_hash",
+        "coordinate_system"
+      ],
+      "properties": {
+        "input_view_kind": { "const": "parser-ir-plaintext-body-v1" },
+        "producer_artifact_id": { "$ref": "#/$defs/hash" },
+        "producer_content_hash": { "$ref": "#/$defs/hash" },
+        "plaintext_policy_hash": { "$ref": "#/$defs/hash" },
+        "coordinate_system": { "enum": ["unicode-scalar-value"] }
+      }
+    },
+    "metricResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_id",
+        "value",
+        "value_type",
+        "denominator",
+        "unit",
+        "status"
+      ],
+      "properties": {
+        "metric_id": { "type": "string", "minLength": 1 },
+        "value": {
+          "anyOf": [
+            { "type": "integer" },
+            { "type": "number" },
+            { "type": "string" },
+            { "type": "null" }
+          ]
+        },
+        "value_type": { "enum": ["integer", "float64", "string", "null"] },
+        "denominator": {
+          "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }]
+        },
+        "unit": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["passed", "failed", "missing"] }
+      }
+    }
+  }
+}

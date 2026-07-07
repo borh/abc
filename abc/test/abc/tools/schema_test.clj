@@ -1,5 +1,6 @@
 (ns abc.tools.schema-test
   (:require [abc.tools.files :as files]
+            [abc.tools.manifest :as manifest]
             [abc.tools.schema :as schema]
             [clojure.test :refer [deftest is testing]]))
 
@@ -7,6 +8,8 @@
   {"schemas/parser-ir.schema.json" "0.5.0"
    "schemas/aat-parser-ir-divergence.schema.json" "0.3.0"
    "schemas/aat-parser-ir-mapping.schema.json" "0.2.3"
+   "schemas/analysis-recipe.schema.json" "0.1.0"
+   "schemas/analysis-result.schema.json" "0.1.0"
    "schemas/manifest.schema.json" "0.4.0"
    "schemas/parser-ir-publication-preservation.schema.json" "0.2.0"
    "schemas/source-region-coverage.schema.json" "0.2.1"})
@@ -48,3 +51,19 @@
       (finally
         (doseq [file [schema-file value-file]]
           (.delete file))))))
+
+(deftest analysis-schema-fixtures-validate-test
+  (let [recipe-schema (schema/read-schema "schemas/analysis-recipe.schema.json")
+        result-schema (schema/read-schema "schemas/analysis-result.schema.json")
+        recipe (files/read-json "data/analysis-recipes/literary-basic-ja-v1.json")
+        result (files/read-json "examples/v0/example-work/analysis-result.json")]
+    (is (= "https://w3id.org/abc/schemas/analysis-recipe.schema.json"
+           (get recipe "schema_id")))
+    (is (= "https://w3id.org/abc/schemas/analysis-result.schema.json"
+           (get result "schema_id")))
+    (is (= (manifest/schema-hash "schemas/analysis-result.schema.json")
+           (get recipe "required_output_schema_hash")))
+    (is (= (manifest/schema-hash "schemas/analysis-result.schema.json")
+           (get result "schema_hash")))
+    (is (nil? (schema/validation-errors recipe-schema recipe)))
+    (is (nil? (schema/validation-errors result-schema result)))))

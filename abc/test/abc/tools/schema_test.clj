@@ -1,5 +1,6 @@
 (ns abc.tools.schema-test
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.analysis-identity :as analysis-identity]
+            [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [abc.tools.schema :as schema]
             [clojure.test :refer [deftest is testing]]))
@@ -69,5 +70,7 @@
            (get recipe "required_output_schema_hash")))
     (is (= (manifest/schema-hash "schemas/analysis-result.schema.json")
            (get result "schema_hash")))
+    (is (= (analysis-identity/analysis-recipe-hash recipe)
+           (get result "analysis_recipe_hash")))
     (is (nil? (schema/validation-errors recipe-schema recipe)))
     (is (nil? (schema/validation-errors result-schema result)))))

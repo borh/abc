@@ -203,6 +203,36 @@ The input view coordinate is part of the analysis recipe contract and should be
 recorded in result content even when current `manifest_identity_object` does not
 have a dedicated `input_view_hash` field.
 
+For any input view whose producer is an ABC artifact, the producer artifact id
+and producer content hash must also appear in manifest provenance:
+
+- `provenance.used`: producer artifact id and any policy/schema hashes consumed
+  by the analysis.
+- `provenance.was_derived_from`: at least the subject `work_content_hash`, plus
+  the producer artifact id when the analysis is materially derived from that
+  artifact's bytes.
+
+The result content repeats the input-view coordinate for query ergonomics; it
+is not the only lineage record.
+
+### Input View Identity Map
+
+The per-work-slice ADR must define an input-view identity map before any
+producer writes `analysis` manifests. Implementers must not decide transitive
+dependencies ad hoc. For current v0.4 manifests, the rule is:
+
+| `input_view_kind` | Manifest identity rule | Required result-content fields | Required provenance |
+|---|---|---|---|
+| `source-visible-text-v1` | Set `corpus_snapshot_hash` and `work_content_hash`; parser, mapping, TEI, and tokenizer fields are null unless the recipe explicitly depends on one. | `source_id`, `logical_path`, `work_content_hash`, `coordinate_system`, text projection policy hash. | Source manifest or source snapshot hash in `used`; `work_content_hash` in `was_derived_from`. |
+| `parser-ir-plaintext-body-v1` | Copy `parser_build_hash`, `parser_config_hash`, `aat_parser_ir_mapping_hash`, and `parser_ir_schema_hash` exactly from the producer parser-IR manifest, including nulls. `tei_profile_hash` is null. | Producer parser-IR artifact id, producer content hash, plaintext policy hash, `coordinate_system`. | Producer parser-IR artifact id in `used` and `was_derived_from`; plaintext policy hash in `used`. |
+| `parser-ir-plaintext-full-v1` | Same as `parser-ir-plaintext-body-v1`, with a distinct plaintext policy hash. | Same as body view, plus the full-text inclusion policy id. | Same as body view. |
+| `tei-body-text-v1` | Copy parser, mapping, parser-IR schema, and `tei_profile_hash` exactly from the producer TEI manifest, including nulls. Tokenizer fields are null unless the analysis consumes tokens. | Producer TEI artifact id, producer content hash, TEI text-extraction policy hash, `coordinate_system`. | Producer TEI artifact id in `used` and `was_derived_from`; text-extraction policy hash in `used`. |
+| `token-stream-v1` | Copy tokenizer build and dictionary hashes from the producer tokenized manifest. Copy parser/TEI fields from that tokenized manifest exactly. The analysis manifest's `analysis_recipe_hash` is the consuming analysis recipe, not the tokenization producer recipe. | Producer tokenized artifact id, tokenizer profile hash, token-output schema hash, token coordinate system. | Producer tokenized artifact id and tokenizer profile hash in `used`; producer tokenized artifact id in `was_derived_from`. |
+
+The first implementation slice should support only
+`parser-ir-plaintext-body-v1`. The ADR must still include the table row so
+conflict detection can be enforced from a deterministic identity rule.
+
 ### Tokenizer Coordinate
 
 The tokenizer coordinate should be modeled as a hash-addressed profile value:
@@ -232,8 +262,10 @@ Current manifest v0.4 has only `tokenizer_build_hash` and
 `tokenizer_dictionary_hash`. That is insufficient to distinguish every
 meaningful tokenizer coordinate. The first implementation may fold profile,
 normalization, and granularity into `analysis_recipe_hash` for analysis slices,
-but an ADR should add a dedicated tokenizer profile/config hash before ABC
-publishes tokenized artifacts as exact release artifacts.
+but a dedicated tokenizer profile/config hash is a blocker for publishing
+standalone `tokenized` artifacts as exact release artifacts. It is also a
+blocker for the second ADR that accepts tokenized-slice and analysis-pack
+release identity.
 
 ### Analysis Recipe
 
@@ -323,14 +355,27 @@ cannot be determined, produce a failed manifest or no release artifact.
 
 ### Sidecar Roles
 
-`manifest.schema.json` should add sidecar roles:
+Sidecar roles should be added in the same phase as the artifacts that need
+them.
+
+The per-work-slice ADR should add:
+
+- `analysis-result`
+
+It should add `token-table` only if that ADR also implements tokenized slices.
+
+The analysis-pack/tokenizer-profile ADR should add, if still needed:
 
 - `token-table`
-- `analysis-result`
 - `analysis-table`
 - `analysis-pack-index`
 - `analysis-request-set`
-- `recipe`
+
+Do not add a generic `recipe` sidecar role in the first slice. The recipe
+registry is the canonical home for recipe/profile JSON by content hash. If a
+future release package needs portable recipe copies, it should define a
+release-pack role whose content hash must equal the registry object hash being
+cited.
 
 These roles should be schema-controlled. If a sidecar affects the bytes of the
 primary artifact, its governing hash must also be represented in identity
@@ -347,14 +392,14 @@ A later manifest schema should add either:
 
 - `artifact_kind = "analysis-pack"` with a collection identity object, or
 - a variant identity subject where `work_content_hash` is nullable and
-  `request_set_hash` or `workset_hash` is required.
+  `request_set_id` or `workset_hash` is required.
 
 Recommended collection identity fields:
 
 ```text
 manifest_schema_hash
 corpus_snapshot_hash
-request_set_hash
+request_set_id
 analysis_recipe_hash
 tokenizer_profile_hash | null
 pack_layout_schema_hash
@@ -368,38 +413,73 @@ the canonical per-work records.
 ## Request Set Policy
 
 An analysis request set is a canonical JSON value that resolves dynamic
-selectors into a fixed list before any build starts.
+selectors into fixed content-addressed coordinates before any build starts.
+
+Like `artifact_id`, `request_set_id` is derived from an identity object and is
+not included in its own hash input.
 
 Example shape:
 
 ```json
 {
   "schema_id": "https://w3id.org/abc/schemas/analysis-request-set.schema.json",
+  "schema_hash": "sha256:...",
   "request_set_id": "sha256:...",
-  "corpus_snapshot_hash": "sha256:...",
-  "subjects": [
-    {
-      "source_id": "aozora:cards/.../files/....txt",
-      "work_id": "aozora:...",
-      "work_content_hash": "sha256:...",
-      "metadata_record_hash": "sha256:... or null"
-    }
-  ],
-  "input_views": ["parser-ir-plaintext-body-v1"],
-  "tokenizer_profiles": ["vibrato-unidic-suw-v1"],
-  "analysis_recipes": ["literary-basic-ja-v1"],
-  "missing_policy": "build-missing-only",
-  "batch_policy": "100-works-or-512mb",
-  "pack_policy": "parquet-metrics-v1"
+  "request_set_identity_object": {
+    "schema_hash": "sha256:...",
+    "corpus_snapshot_hash": "sha256:...",
+    "subjects": [
+      {
+        "source_id": "aozora:cards/.../files/....txt",
+        "work_id": "aozora:...",
+        "work_content_hash": "sha256:...",
+        "metadata_record_hash": "sha256:... or null"
+      }
+    ],
+    "input_views": [
+      {
+        "input_view_kind": "parser-ir-plaintext-body-v1",
+        "policy_hash": "sha256:..."
+      }
+    ],
+    "tokenizer_profile_hashes": [],
+    "analysis_recipe_hashes": ["sha256:..."],
+    "missing_policy": "build-missing-only",
+    "pack_policy_hash": "sha256:..."
+  },
+  "resolved_labels": {
+    "analysis_recipes": [
+      {
+        "recipe_id": "literary-basic-ja-v1",
+        "analysis_recipe_hash": "sha256:..."
+      }
+    ],
+    "tokenizer_profiles": []
+  },
+  "batch_policy": "100-works-or-512mb"
 }
 ```
 
 Rules:
 
-- The request set hash is over the resolved subject list, not an unresolved
-  query such as "all works by author X".
-- Ordering is canonical. Arrays are sorted by declared stable keys before JCS
-  hashing.
+- `request_set_id = sha256(RFC8785-JCS(request_set_identity_object))`.
+- `request_set_id`, `resolved_labels`, `batch_policy`, generated time,
+  operator, local paths, and run id are excluded from
+  `request_set_identity_object`.
+- `request_set_identity_object` includes every coordinate that can change pack
+  membership or pack bytes: resolved subjects, input view policy hashes,
+  tokenizer profile hashes, analysis recipe hashes, `missing_policy`, and
+  `pack_policy_hash`.
+- Semantic ids such as `literary-basic-ja-v1` and `vibrato-unidic-suw-v1` are
+  resolver inputs and human labels. At resolve time they must be normalized to
+  `analysis_recipe_hash` and `tokenizer_profile_hash`. Only content hashes
+  participate in request-set identity.
+- Ordering is canonical before JCS hashing:
+  - `subjects`: sort by `source_id`, then `work_content_hash`, then
+    `metadata_record_hash` with null treated as the empty string.
+  - `input_views`: sort by `input_view_kind`, then `policy_hash`.
+  - `tokenizer_profile_hashes`: sort lexicographically by full hash string.
+  - `analysis_recipe_hashes`: sort lexicographically by full hash string.
 - `missing_policy` is one of `require-existing`, `build-missing-only`, or
   `record-missing-status`.
 - `batch_policy` affects execution and failure grouping, not per-work slice
@@ -426,7 +506,7 @@ view. The planner must not become the source of artifact identity.
 The pack writer may use Parquet for corpus-scale metrics and token facts. It
 should include columns sufficient to rejoin every row to canonical manifests:
 
-- `request_set_hash`
+- `request_set_id`
 - `artifact_id`
 - `content_hash`
 - `source_id`
@@ -459,6 +539,10 @@ should include columns sufficient to rejoin every row to canonical manifests:
 - If two successful manifests share the same `artifact_id` and different
   `content.content_hash`, release validation fails as a reproducibility
   conflict.
+- The inverse is not a conflict: two different `artifact_id` values may point
+  at the same `content.content_hash` when two coordinates legitimately reuse
+  identical bytes. Request sets and pack indexes preserve the coordinate
+  mapping.
 - If a tokenizer is not classified `exact`, artifacts may still be useful as
   stable or bounded analysis, but release policy must not present them as exact
   reproducible results.
@@ -493,6 +577,9 @@ analysis is no longer merely an informational sidecar for that publication.
 - Recipes and tokenizer profiles are retained indefinitely once referenced by a
   release.
 - Per-work successful slice manifests are canonical and append-only.
+- For any release claiming exact reproducibility, every cited slice manifest and
+  every referenced recipe/profile object must be retained for the lifetime of
+  that release's cited artifacts.
 - Failed slice manifests are retained at least for the release/run that
   attempted them, so missing values are auditable.
 - Analysis packs are rebuildable and may be stored hot/warm/cold according to
@@ -505,16 +592,23 @@ analysis is no longer merely an informational sidecar for that publication.
 
 | Finding | Classification | Observation | Risk | Resolution |
 |---|---|---|---|---|
-| Tokenizer config is not fully represented in manifest v0.4 identity. | Strong suggestion | v0.4 has build and dictionary hashes but no profile/config hash. | Two token streams with different granularity or normalization could collide if only current fields are used. | Add a tokenizer profile/config hash in a future schema. Until then, fold profile/config into recipe hash for analysis slices and avoid exact release claims for standalone tokenized artifacts. |
+| Input view dependencies can drift across implementers. | Mitigated for first slice | Without a mapping, implementers could choose different parser/mapping fields for the same logical input view. | Same logical slice could produce different artifact ids. | Add the input-view identity map and require exact copying from producer manifests. First slice supports `parser-ir-plaintext-body-v1` only. |
+| Request-set identity can be circular or collision-prone. | Mitigated | A request set contains a derived id plus content coordinates. | Including the id creates circular hashing; hashing only subjects collides across recipes/profiles. | Define `request_set_identity_object`, exclude `request_set_id`, include recipe/profile hashes and pack policy hash, and fix array sort keys. |
+| Semantic ids can drift over time. | Mitigated | Recipe/profile ids may supersede older content. | Stable-looking request sets could resolve to different recipe/profile bytes later. | Resolver stores semantic ids for humans but hashes for identity; only content hashes participate in request-set identity. |
+| Tokenizer config is not fully represented in manifest v0.4 identity. | Blocking for exact standalone tokenized artifacts | v0.4 has build and dictionary hashes but no profile/config hash. | Two token streams with different granularity or normalization could collide if only current fields are used. | Add a tokenizer profile/config hash before accepting the tokenized-artifact release path. Until then, fold profile/config into recipe hash for analysis slices and avoid exact release claims for standalone tokenized artifacts. |
 | Collection packs do not fit work-centric identity. | Blocking for pack manifests | v0.4 requires singular `work_content_hash`. | Pack manifests would misuse work identity or lose the request-set coordinate. | Limit v0.4 to per-work slices; add collection identity schema before publishing canonical packs. |
-| Warehouse run ids are tempting citation targets. | Mitigated | The morph warehouse has immutable run dirs and useful Parquet facts. | A run path can mix operational execution scope with artifact identity. | Treat warehouse runs as producers or generated packs. Cite manifests, request-set hashes, and content hashes. |
+| Recipe sidecar could duplicate the registry. | Mitigated | Recipes already live in a content-addressed registry. | Two canonical homes for recipe JSON create drift and citation confusion. | Do not add a generic recipe sidecar in the first slice. Future portable release copies must assert byte equality with the registry object hash. |
+| Pack-only sidecar roles could leak into the first slice. | Mitigated | Some proposed roles exist only for collection packs. | v0.4 would expose half-supported roles. | Add only `analysis-result` first; defer pack/request roles to the pack ADR. Add `token-table` only with tokenized slices. |
+| Warehouse run ids are tempting citation targets. | Mitigated | The morph warehouse has immutable run dirs and useful Parquet facts. | A run path can mix operational execution scope with artifact identity. | Treat warehouse runs as producers or generated packs. Cite manifests, request-set ids, and content hashes. |
 | Publication sidecars can silently affect TEI if values are embedded later. | Mitigated | TEI currently does not consume analysis. | Future TEI headers could include metrics without rotating identity. | Rule: embedding analysis values makes analysis coordinates identity-bearing for that publication. |
 | Metrics can share names while differing in formulas. | Mitigated | STTR and Yule's K depend on token filters, denominators, and formulas. | Consumers compare incompatible values. | Metric ids are scoped by recipe hash; formula details live in canonical recipe JSON. |
 | Same content across source coordinates may share one slice. | Accepted tradeoff | Current manifest identity is content-oriented, not path-oriented. | A per-work query may need mapping rows even when artifact ids are shared. | Request sets and pack indexes carry `work_id`, `source_id`, and git/source coordinates. Promote source coordinate to identity only for recipes that depend on it. |
 
-No blocking design finding remains for per-work analysis slices. Collection
-analysis packs require a manifest schema follow-up before they become canonical
-release artifacts.
+No blocking design finding remains for the first token-independent per-work
+analysis slice. Collection analysis packs require a manifest schema follow-up
+before they become canonical release artifacts. Exact standalone tokenized
+artifacts require a tokenizer profile/config hash before their release path is
+accepted.
 
 ## First Implementation Slice
 
@@ -523,10 +617,13 @@ The first implementation slice should be deliberately small:
 1. Define `analysis-recipe.schema.json`, `analysis-result.schema.json`, and a
    single `literary-basic-ja-v1` recipe for token-independent parser-IR
    plaintext metrics.
-2. Add sidecar roles for analysis result and recipe references.
-3. Materialize one per-work `analysis` manifest from an existing parser-IR
+2. Define the `parser-ir-plaintext-body-v1` input-view identity map and require
+   exact copying of parser/mapping identity fields from the producer parser-IR
+   manifest.
+3. Add the `analysis-result` sidecar role only.
+4. Materialize one per-work `analysis` manifest from an existing parser-IR
    plaintext input, with tokenizer fields null.
-4. Extend the manifest index enough to include analysis artifact kind and
+5. Extend the manifest index enough to include analysis artifact kind and
    reproduce conflict detection.
 
 Token-dependent metrics, tokenizer profile schemas, and collection packs should
@@ -536,10 +633,13 @@ follow only after the per-work slice contract is validated.
 
 This spec should feed at least two ADRs:
 
-1. Analysis artifact identity ADR: accepts per-work analysis slices, recipe hash
-   rules, publication interaction rules, and failure behavior.
+1. Analysis artifact identity ADR: accepts per-work analysis slices, the
+   `parser-ir-plaintext-body-v1` input-view identity map, recipe hash rules,
+   request-set identity construction for bounded builds, publication
+   interaction rules, and failure behavior.
 2. Analysis pack and tokenizer profile ADR: accepts collection identity,
-   request-set hash, tokenizer profile/config hash, and Parquet pack layout.
+   request-set id reuse, tokenizer profile/config hash, and Parquet pack
+   layout.
 
 Keeping these separate prevents collection/query packaging from blocking the
 basic per-work analysis contract.

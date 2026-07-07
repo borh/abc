@@ -2,8 +2,9 @@
 
 **Date:** 2026-07-07
 **Status:** design (awaiting review)
-**Governs:** `ab-ortho-detect` (annotations), `ab-ir` (`AatProjection.ortho_normalizations`),
-downstream ABC TEI renderer.
+**Governs:** `ab-ortho-detect` (annotations), `ab-aat-to-parser-ir`
+(`orthographic_annotations` serialization), ABC parser-IR schema, downstream
+ABC TEI renderer.
 **Predecessors:** `2026-07-05-ortho-detect-design.md` (detector + ADR).
 
 ## Goal
@@ -101,11 +102,14 @@ consumes. Shape:
 ```json
 {
   "orthographic_annotations": {
+    "work_id": "000000",
+    "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "coordinate_system": "decoded_utf8",
     "detector_id": "HeuristicV1",
     "annotations": [
       {
-        "source_byte_range": { "start": 0, "end": 21 },
-        "normalized_text": "吾輩は猫である",
+        "source_byte_range": { "start": 0, "end": 24 },
+        "normalized_text": "吾輩は猫である。",
         "kind": "ScriptKatakanaToHiragana",
         "confidence": null
       }
@@ -118,21 +122,36 @@ Field breakdown:
 
 | Field | Type | Source |
 |---|---|---|
-| `detector_id` | `"HeuristicV1"` or `"MlLogisticRegression"` | `OrthoDetector::detector_id()` |
+| `work_id` | String | `AAT.work_id`; guards against attaching annotations to the wrong work |
+| `work_content_hash` | `sha256:<64 hex>` | `AAT.meta.source_hash`, also projected to `parser_ir.source.work_content_hash` |
+| `coordinate_system` | `"decoded_utf8"` | Same byte-offset coordinate system as parser-IR spans |
+| `detector_id` | `OrthoDetectorId` JSON | `OrthoDetector::detector_id()` |
 | `annotations` | `[OrthoAnnotation]` | `detector.detect()` output |
 | `annotations[].source_byte_range` | `{start, end}` (byte offsets in original doc) | `OrthoAnnotation.source_byte_range` |
 | `annotations[].normalized_text` | String (kata→hira) | `OrthoAnnotation.normalized_text` |
 | `annotations[].kind` | `"ScriptKatakanaToHiragana"` | `OrthoAnnotation.kind` |
 | `annotations[].confidence` | `u8` or `null` | `OrthoAnnotation.confidence` |
 
-`OrthoAnnotation` is reused as the annotation record shape. The wrapper
-adds `detector_id` (which `OrthoAnnotation` doesn't carry) so ABC
-consumers know which detector produced the annotations without inspecting
-individual records.
+`detector_id` uses the existing serde shape for `OrthoDetectorId`: the v1
+heuristic serializes as `"HeuristicV1"`; the ML detector serializes as
+`{"MlLogisticRegression": {"model_hash": "<sha256 hex>"}}`.
+
+`OrthoAnnotation` is reused as the annotation record shape. The wrapper adds
+detector provenance, source identity, and coordinate-system declaration, none
+of which `OrthoAnnotation` itself carries. The source identity is part of the
+contract because the annotation bundle is a standalone input to
+`ab-aat-to-parser-ir`; the converter must reject a bundle whose `work_id` or
+`work_content_hash` does not match the AAT being converted.
 
 ABC schema change: add `orthographic_annotations` to parser-IR
-`properties` and `$defs`. Schema version bump (0.5.0 → 0.6.0 or minor).
-Separate ABC task — not in ab-validator scope.
+`properties` and `$defs`. Schema version bump (0.5.0 → 0.6.0 or minor) plus
+the corresponding mapping artifact hash update. Separate ABC task — not in
+ab-validator scope.
+
+ab-validator must not emit parser-IR that claims the old schema hash while
+carrying `orthographic_annotations`. If the loaded parser-IR schema does not
+declare the field, the converter must fail with an explicit precondition error,
+not skip output validation.
 
 ### Why not `AatProjection.ortho_normalizations`
 
@@ -178,8 +197,9 @@ call.
 | Concern | Owner |
 |---|---|
 | Ortho detection + annotation byte ranges | ab-validator (`ab-ortho-detect`) |
-| Serialize annotations to parser-IR `orthographic_annotations` | ab-validator (`ab-morph-run` pipeline or converter) |
+| Serialize annotations to parser-IR `orthographic_annotations` | ab-validator (`ab-aat-to-parser-ir` converter) |
 | Parser-IR schema: add `orthographic_annotations` field | ABC (`abc/schemas/parser-ir.schema.json`) |
+| Mapping artifact target schema hash update | ab-validator mirror of ABC schema/mapping inputs |
 | Sentence splitting for TEI | ABC (`abc/src/abc/text.clj`) |
 | `<s>` wrapping + `@type` rendering | ABC (TEI renderer) |
 | `<normalization>` header declaration | ABC |
@@ -200,15 +220,16 @@ call.
 | # | Decision | Rationale |
 |---|---|---|
 | D1 | `type="orthographic-katakana"` only — no subtype | Detector does kata→hira, not historical kana normalization. Honest label. |
-| D2 | New parser-IR field `orthographic_annotations: {detector_id, annotations: [OrthoAnnotation]}` | ABC-facing contract. `AatProjection.ortho_normalizations` stays internal (reserved for `<choice>`). New field is versioned in parser-IR schema. |
+| D2 | New parser-IR field `orthographic_annotations: {work_id, work_content_hash, coordinate_system, detector_id, annotations: [OrthoAnnotation]}` | ABC-facing contract with enough identity to reject mismatched standalone bundles. `AatProjection.ortho_normalizations` stays internal (reserved for `<choice>`). New field is versioned in parser-IR schema. |
 | D3 | ABC owns sentence splitting | ABC has quote-aware splitter. Annotations are byte ranges; ABC determines `<s>` boundaries. |
 | D4 | `<s>` overlap: partial overlap = annotated | A sentence that partially overlaps an annotation gets `@type`. Avoids edge-case gaps. |
 | D5 | `<normalization>` under `<editorialDecl>` | Matches existing TEI profile structure. |
-| D6 | Detector ID explicit in wrapper | `OrthoAnnotation` doesn't carry detector ID; the wrapper bundle adds it so ABC consumers know provenance. |
+| D6 | Detector ID and source identity explicit in wrapper | `OrthoAnnotation` doesn't carry detector ID, coordinate-system, or source identity; the wrapper bundle adds them so ABC consumers know provenance and the converter can reject mismatches. |
+| D7 | No validation skip | Output with `orthographic_annotations` must validate against a parser-IR schema that declares the field. Until ABC updates the schema and mapping hash, the converter fails early instead of emitting invalid parser-IR. |
 
 ## Open questions
 
 1. **All-`<s>` wrapping?** Recommend yes (consistent shape). ABC decides.
 2. **Parser-IR schema version bump:** Adding `orthographic_annotations`
-   requires `additionalProperties: false` relaxation + new `$def`.
-   ABC owns this schema change. What version does it become?
+   requires a new schema property/`$def` and a mapping artifact target-hash
+   update. ABC owns the schema change. What version does it become?

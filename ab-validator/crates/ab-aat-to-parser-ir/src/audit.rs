@@ -391,6 +391,7 @@ fn audit_file(
                 ConversionOptions {
                     validate_input_aat: true,
                     validate_output_parser_ir: true,
+                    ..ConversionOptions::default()
                 },
             ) {
                 Ok(output) => {

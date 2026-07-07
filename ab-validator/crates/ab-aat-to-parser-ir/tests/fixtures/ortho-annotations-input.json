@@ -1,0 +1,20 @@
+{
+  "work_id": "000000",
+  "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "coordinate_system": "decoded_utf8",
+  "detector_id": "HeuristicV1",
+  "annotations": [
+    {
+      "source_byte_range": { "start": 0, "end": 24 },
+      "normalized_text": "吾輩は猫である。",
+      "kind": "ScriptKatakanaToHiragana",
+      "confidence": null
+    },
+    {
+      "source_byte_range": { "start": 24, "end": 48 },
+      "normalized_text": "名前はまだ無い。",
+      "kind": "ScriptKatakanaToHiragana",
+      "confidence": null
+    }
+  ]
+}

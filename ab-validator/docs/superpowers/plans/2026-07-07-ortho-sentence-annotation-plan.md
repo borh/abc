@@ -2,19 +2,20 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Serialize ortho-detect annotations into parser-IR output as an `orthographic_annotations` field, so ABC's TEI renderer can produce `<s type="orthographic-katakana">` elements.
+**Goal:** Serialize ortho-detect annotations into parser-IR output as an `orthographic_annotations` field, so ABC's TEI renderer can produce `<s type="orthographic-katakana">` elements after the ABC parser-IR schema accepts the field.
 
-**Architecture:** The `ab-aat-to-parser-ir` converter gains a `--ortho-annotations <path.json>` CLI flag. The converter reads a JSON file containing `{detector_id, annotations: [OrthoAnnotation]}`, validates it, and includes it in the parser-IR JSON output. No sentence splitting in ab-validator — ABC owns that. No `<s>` rendering in ab-validator — ABC owns that. The deliverable is serialized parser-IR evidence.
+**Architecture:** The `ab-aat-to-parser-ir` CLI gains a `--ortho-annotations <path.json>` flag. The CLI reads a JSON bundle containing `{work_id, work_content_hash, coordinate_system, detector_id, annotations}`, then passes the parsed value into conversion; conversion validates the bundle against the AAT identity, verifies the loaded parser-IR schema declares `orthographic_annotations`, injects the value, and keeps normal output validation enabled. No sentence splitting in ab-validator — ABC owns that. No `<s>` rendering in ab-validator — ABC owns that. The deliverable is validated parser-IR evidence.
 
-**Tech Stack:** Rust (edition 2024), `serde_json`, `ab-ortho-detect` types, `ab-aat-to-parser-ir` crate.
+**Tech Stack:** Rust (edition 2024), `serde_json`, `anyhow`, `ab-ortho-detect` types, `ab-aat-to-parser-ir` crate.
 
 ## Global Constraints
 
-- **PRECONDITION:** ABC must accept `orthographic_annotations` into `parser-ir.schema.json` (currently `additionalProperties: false`; the new field requires a schema version bump). This plan builds the ab-validator producer; ABC schema acceptance is the gate for production use.
+- **PRECONDITION:** ABC must accept `orthographic_annotations` into `parser-ir.schema.json` (currently `additionalProperties: false`) and ab-validator must mirror the matching parser-IR schema plus mapping artifact target hash. This plan builds the ab-validator producer; ABC schema acceptance is the gate for production use.
 - `<s>` rendering is ABC's concern. ab-validator does NOT produce TEI. The deliverable is parser-IR JSON with an `orthographic_annotations` field.
-- Reuse `OrthoAnnotation` and `OrthoDetectorId` from `ab-ortho-detect` — no new annotation types.
+- Reuse `OrthoAnnotation` and `OrthoDetectorId` from `ab-ortho-detect` — no new annotation record or detector-id serialization.
 - `AatProjection.ortho_normalizations` stays unchanged (reserved for future `<choice>` rendering).
-- The `orthographic_annotations` JSON file is a standalone input to the converter (not embedded in AAT). This decouples ortho detection (which runs in the morph pipeline) from AAT→parser-IR conversion.
+- The `orthographic_annotations` JSON file is a standalone input to the converter (not embedded in AAT). It must include `work_id`, `work_content_hash`, and `coordinate_system` so the converter can reject mismatches.
+- Do not skip parser-IR output validation. If the loaded schema does not declare `orthographic_annotations`, fail with a clear precondition error.
 - Rust edition 2024. All crate code in `crates/`.
 - Tests: `cargo test -p ab-aat-to-parser-ir`.
 
@@ -37,17 +38,20 @@ Create `crates/ab-aat-to-parser-ir/tests/fixtures/ortho-annotations-input.json`:
 
 ```json
 {
+  "work_id": "000000",
+  "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "coordinate_system": "decoded_utf8",
   "detector_id": "HeuristicV1",
   "annotations": [
     {
-      "source_byte_range": { "start": 0, "end": 21 },
-      "normalized_text": "吾輩は猫である",
+      "source_byte_range": { "start": 0, "end": 24 },
+      "normalized_text": "吾輩は猫である。",
       "kind": "ScriptKatakanaToHiragana",
       "confidence": null
     },
     {
-      "source_byte_range": { "start": 21, "end": 48 },
-      "normalized_text": "名前はまだ無い",
+      "source_byte_range": { "start": 24, "end": 48 },
+      "normalized_text": "名前はまだ無い。",
       "kind": "ScriptKatakanaToHiragana",
       "confidence": null
     }
@@ -56,7 +60,10 @@ Create `crates/ab-aat-to-parser-ir/tests/fixtures/ortho-annotations-input.json`:
 ```
 
 Key contract decisions captured here:
-- `detector_id` is a string matching `OrthoDetectorId` serialization: `"HeuristicV1"` or `"MlLogisticRegression"`.
+- `work_id` must equal the AAT `work_id`.
+- `work_content_hash` must equal AAT `meta.source_hash` and parser-IR `source.work_content_hash`.
+- `coordinate_system` is `"decoded_utf8"` — byte offsets in decoded UTF-8 visible text, aligned with parser-IR spans.
+- `detector_id` uses `OrthoDetectorId` serde: `"HeuristicV1"` for v1, or `{"MlLogisticRegression":{"model_hash":"..."}}` for the ML detector.
 - `source_byte_range` uses `{start, end}` — byte offsets in the original document text. Zero-based, half-open.
 - `normalized_text` is the kata→hira version (informational, not rendered in TEI).
 - `kind` is `"ScriptKatakanaToHiragana"` (v1). `"HistoricalToModern"` reserved for future.
@@ -68,17 +75,20 @@ Create `crates/ab-aat-to-parser-ir/tests/fixtures/ortho-annotations-expected.jso
 
 ```json
 {
+  "work_id": "000000",
+  "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "coordinate_system": "decoded_utf8",
   "detector_id": "HeuristicV1",
   "annotations": [
     {
-      "source_byte_range": { "start": 0, "end": 21 },
-      "normalized_text": "吾輩は猫である",
+      "source_byte_range": { "start": 0, "end": 24 },
+      "normalized_text": "吾輩は猫である。",
       "kind": "ScriptKatakanaToHiragana",
       "confidence": null
     },
     {
-      "source_byte_range": { "start": 21, "end": 48 },
-      "normalized_text": "名前はまだ無い",
+      "source_byte_range": { "start": 24, "end": 48 },
+      "normalized_text": "名前はまだ無い。",
       "kind": "ScriptKatakanaToHiragana",
       "confidence": null
     }
@@ -98,8 +108,9 @@ git add crates/ab-aat-to-parser-ir/tests/fixtures/ortho-annotations-input.json \
 git commit -m "test(parser-ir): add orthographic_annotations contract fixture
 
 Golden JSON defining the orthographic_annotations shape in parser-IR:
-{detector_id, annotations: [OrthoAnnotation]}. Serves as acceptance
-test for the --ortho-annotations converter flag."
+{work_id, work_content_hash, coordinate_system, detector_id,
+annotations: [OrthoAnnotation]}. Serves as acceptance test for the
+--ortho-annotations converter flag."
 ```
 
 ---
@@ -109,17 +120,27 @@ test for the --ortho-annotations converter flag."
 **Files:**
 - Create: `crates/ab-aat-to-parser-ir/src/ortho_annotations.rs`
 - Modify: `crates/ab-aat-to-parser-ir/src/lib.rs` (add `mod ortho_annotations;`)
+- Modify: `crates/ab-aat-to-parser-ir/Cargo.toml` (add `ab-ortho-detect`)
 
-**Why:** The `orthographic_annotations` field wraps `OrthoAnnotation` with a
-`detector_id`. A small Rust struct with `serde` derives handles the
-serialization/deserialization contract. This is separated into its own
-module because it's a self-contained serialization concern.
+**Why:** The `orthographic_annotations` field wraps `OrthoAnnotation` with
+detector provenance, source identity, and coordinate-system declaration. A
+small Rust module handles serde and identity validation. This stays separate
+from conversion so tests can exercise the contract without running the whole
+AAT converter.
 
 **Interfaces:**
-- Produces: `OrthoAnnotationsFile` struct (deserializable from JSON, serializable to JSON).
-- Consumed by: Task 3 (converter reads this from CLI flag).
+- Produces: `OrthoAnnotationsBundle` struct and `read_ortho_annotations_bundle(path)`.
+- Consumed by: Task 3 (`ConversionOptions.orthographic_annotations`).
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Add the crate dependency**
+
+In `crates/ab-aat-to-parser-ir/Cargo.toml`, add under `[dependencies]`:
+
+```toml
+ab-ortho-detect = { workspace = true }
+```
+
+- [ ] **Step 2: Write the failing tests**
 
 Add to the end of `crates/ab-aat-to-parser-ir/src/ortho_annotations.rs`:
 
@@ -131,57 +152,116 @@ mod tests {
     #[test]
     fn roundtrips_through_json() {
         let input = serde_json::json!({
+            "work_id": "000000",
+            "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "coordinate_system": "decoded_utf8",
             "detector_id": "HeuristicV1",
             "annotations": [
                 {
-                    "source_byte_range": { "start": 0, "end": 21 },
-                    "normalized_text": "吾輩は猫である",
+                    "source_byte_range": { "start": 0, "end": 24 },
+                    "normalized_text": "吾輩は猫である。",
                     "kind": "ScriptKatakanaToHiragana",
                     "confidence": null
                 }
             ]
         });
-        let parsed: OrthoAnnotationsFile = serde_json::from_value(input.clone()).unwrap();
-        assert_eq!(parsed.detector_id, "HeuristicV1");
+        let parsed: OrthoAnnotationsBundle = serde_json::from_value(input.clone()).unwrap();
+        assert_eq!(parsed.work_id, "000000");
+        assert_eq!(parsed.coordinate_system, OrthoCoordinateSystem::DecodedUtf8);
+        assert_eq!(parsed.detector_id, ab_ortho_detect::OrthoDetectorId::HeuristicV1);
         assert_eq!(parsed.annotations.len(), 1);
         assert_eq!(parsed.annotations[0].source_byte_range.start, 0);
-        assert_eq!(parsed.annotations[0].source_byte_range.end, 21);
-        assert_eq!(parsed.annotations[0].normalized_text, "吾輩は猫である");
+        assert_eq!(parsed.annotations[0].source_byte_range.end, 24);
+        assert_eq!(parsed.annotations[0].normalized_text, "吾輩は猫である。");
 
-        // Round-trip: serialize back and compare
         let output = serde_json::to_value(&parsed).unwrap();
         assert_eq!(output, input);
     }
 
     #[test]
-    fn rejects_missing_detector_id() {
+    fn roundtrips_ml_detector_id_shape() {
         let input = serde_json::json!({
+            "work_id": "000000",
+            "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "coordinate_system": "decoded_utf8",
+            "detector_id": {
+                "MlLogisticRegression": {
+                    "model_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+                }
+            },
             "annotations": []
         });
-        let err = serde_json::from_value::<OrthoAnnotationsFile>(input).unwrap_err();
-        assert!(err.to_string().contains("detector_id"));
+        let parsed: OrthoAnnotationsBundle = serde_json::from_value(input.clone()).unwrap();
+        assert!(matches!(
+            parsed.detector_id,
+            ab_ortho_detect::OrthoDetectorId::MlLogisticRegression { .. }
+        ));
+        assert_eq!(serde_json::to_value(&parsed).unwrap(), input);
     }
 
     #[test]
-    fn rejects_missing_annotations() {
+    fn rejects_missing_identity_fields() {
         let input = serde_json::json!({
-            "detector_id": "HeuristicV1"
+            "detector_id": "HeuristicV1",
+            "annotations": []
         });
-        let err = serde_json::from_value::<OrthoAnnotationsFile>(input).unwrap_err();
-        assert!(err.to_string().contains("annotations"));
+        let err = serde_json::from_value::<OrthoAnnotationsBundle>(input).unwrap_err();
+        let text = err.to_string();
+        assert!(text.contains("work_id") || text.contains("work_content_hash"));
+    }
+
+    #[test]
+    fn validates_identity_against_aat() {
+        let bundle: OrthoAnnotationsBundle = serde_json::from_value(serde_json::json!({
+            "work_id": "000000",
+            "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "coordinate_system": "decoded_utf8",
+            "detector_id": "HeuristicV1",
+            "annotations": []
+        }))
+        .unwrap();
+        let aat = serde_json::json!({
+            "work_id": "000000",
+            "meta": {
+                "source_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            }
+        });
+
+        bundle.validate_against_aat(&aat).unwrap();
+    }
+
+    #[test]
+    fn rejects_mismatched_aat_identity() {
+        let bundle: OrthoAnnotationsBundle = serde_json::from_value(serde_json::json!({
+            "work_id": "000000",
+            "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "coordinate_system": "decoded_utf8",
+            "detector_id": "HeuristicV1",
+            "annotations": []
+        }))
+        .unwrap();
+        let aat = serde_json::json!({
+            "work_id": "000001",
+            "meta": {
+                "source_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+            }
+        });
+
+        let err = bundle.validate_against_aat(&aat).unwrap_err().to_string();
+        assert!(err.contains("work_id mismatch"));
     }
 }
 ```
 
-- [ ] **Step 2: Verify test fails**
+- [ ] **Step 3: Verify tests fail**
 
 ```bash
 cd /home/bor/Projects/soranoha/ab-validator
 cargo test -p ab-aat-to-parser-ir -- ortho_annotations 2>&1 | tail -5
 ```
-Expected: FAIL — `OrthoAnnotationsFile` not defined.
+Expected: FAIL — `OrthoAnnotationsBundle` not defined.
 
-- [ ] **Step 3: Write the implementation**
+- [ ] **Step 4: Write the implementation**
 
 Create `crates/ab-aat-to-parser-ir/src/ortho_annotations.rs`:
 
@@ -189,33 +269,77 @@ Create `crates/ab-aat-to-parser-ir/src/ortho_annotations.rs`:
 //! Serialization contract for the `orthographic_annotations` parser-IR field.
 //! See `docs/superpowers/specs/2026-07-07-ortho-sentence-annotation-design.md`.
 
+use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum OrthoCoordinateSystem {
+    #[serde(rename = "decoded_utf8")]
+    DecodedUtf8,
+}
 
 /// The `orthographic_annotations` field as it appears in parser-IR JSON.
-/// Wraps a list of `OrthoAnnotation` with detector provenance.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct OrthoAnnotationsFile {
-    /// Detector that produced these annotations.
-    /// Serialized form of `ab_ortho_detect::OrthoDetectorId`.
-    pub detector_id: String,
+pub struct OrthoAnnotationsBundle {
+    /// AAT work_id for the text these annotations describe.
+    pub work_id: String,
+
+    /// AAT meta.source_hash / parser-IR source.work_content_hash.
+    pub work_content_hash: String,
+
+    /// Byte-offset coordinate system for annotation ranges.
+    pub coordinate_system: OrthoCoordinateSystem,
+
+    /// Detector that produced these annotations. Uses the existing
+    /// `OrthoDetectorId` serde shape.
+    pub detector_id: ab_ortho_detect::OrthoDetectorId,
 
     /// Sentence-level orthographic annotations.
     /// Byte ranges are in original-document coordinates.
     pub annotations: Vec<ab_ortho_detect::OrthoAnnotation>,
 }
 
-/// Load an `OrthoAnnotationsFile` from a JSON file path.
-///
-/// # Errors
-/// Returns an error on IO failure or invalid JSON.
-pub fn read_ortho_annotations(path: &std::path::Path) -> anyhow::Result<OrthoAnnotationsFile> {
+impl OrthoAnnotationsBundle {
+    /// Validate that this standalone bundle belongs to the AAT document being
+    /// converted.
+    pub fn validate_against_aat(&self, aat: &Value) -> Result<()> {
+        let aat_work_id = aat
+            .get("work_id")
+            .and_then(Value::as_str)
+            .context("AAT missing string work_id")?;
+        let aat_source_hash = aat
+            .pointer("/meta/source_hash")
+            .and_then(Value::as_str)
+            .context("AAT missing string meta.source_hash")?;
+
+        if self.work_id != aat_work_id {
+            bail!(
+                "orthographic_annotations work_id mismatch: bundle={} aat={}",
+                self.work_id,
+                aat_work_id
+            );
+        }
+        if self.work_content_hash != aat_source_hash {
+            bail!(
+                "orthographic_annotations work_content_hash mismatch: bundle={} aat={}",
+                self.work_content_hash,
+                aat_source_hash
+            );
+        }
+        Ok(())
+    }
+}
+
+/// Load an `OrthoAnnotationsBundle` from a JSON file path.
+pub fn read_ortho_annotations_bundle(path: &std::path::Path) -> Result<OrthoAnnotationsBundle> {
     let bytes = std::fs::read(path)?;
-    let file: OrthoAnnotationsFile = serde_json::from_slice(&bytes)?;
-    Ok(file)
+    let bundle: OrthoAnnotationsBundle = serde_json::from_slice(&bytes)?;
+    Ok(bundle)
 }
 ```
 
-- [ ] **Step 4: Register the module**
+- [ ] **Step 5: Register the module**
 
 In `crates/ab-aat-to-parser-ir/src/lib.rs`, add near the other `pub mod` lines:
 
@@ -223,24 +347,26 @@ In `crates/ab-aat-to-parser-ir/src/lib.rs`, add near the other `pub mod` lines:
 pub mod ortho_annotations;
 ```
 
-- [ ] **Step 5: Run tests**
+- [ ] **Step 6: Run tests**
 
 ```bash
 cd /home/bor/Projects/soranoha/ab-validator
 cargo test -p ab-aat-to-parser-ir -- ortho_annotations 2>&1 | tail -5
 ```
-Expected: 3 passed (roundtrip + two rejection tests).
+Expected: 5 passed.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add crates/ab-aat-to-parser-ir/src/ortho_annotations.rs \
-        crates/ab-aat-to-parser-ir/src/lib.rs
-git commit -m "feat(parser-ir): add OrthoAnnotationsFile serialization type
+        crates/ab-aat-to-parser-ir/src/lib.rs \
+        crates/ab-aat-to-parser-ir/Cargo.toml
+git commit -m "feat(parser-ir): add OrthoAnnotationsBundle serialization type
 
-{detector_id, annotations: [OrthoAnnotation]} — the contract shape for
-the orthographic_annotations parser-IR field. Includes JSON round-trip
-and rejection tests."
+{work_id, work_content_hash, coordinate_system, detector_id,
+annotations: [OrthoAnnotation]} — the contract shape for the
+orthographic_annotations parser-IR field. Includes JSON round-trip and
+AAT identity validation tests."
 ```
 
 ---
@@ -250,35 +376,34 @@ and rejection tests."
 **Files:**
 - Modify: `crates/ab-aat-to-parser-ir/src/main.rs` (add CLI flag)
 - Modify: `crates/ab-aat-to-parser-ir/src/convert.rs` (add field to parser_ir output)
-- Modify: `crates/ab-aat-to-parser-ir/src/schema.rs` (optional: load schema override)
+- Modify: `crates/ab-aat-to-parser-ir/tests/integration.rs` (schema-gated integration tests)
 
 **Why:** The converter needs a way to receive the ortho annotations file
-and include it in the parser-IR output. This task adds the CLI flag, wires
-it through `ConversionOptions` → `convert_preflighted`, and handles the
-schema validation conflict.
+and include it in parser-IR output. The CLI owns file I/O; conversion owns
+identity validation, schema precondition checking, field injection, and normal
+parser-IR validation.
 
 **Schema validation note:** The current parser-IR schema has
-`additionalProperties: false`, so `orthographic_annotations` would fail
-validation. When the flag is provided, skip output validation (the ABC
-schema bump is the precondition for re-enabling it). Emit a warning to
-stderr. When the flag is absent, behavior is unchanged.
+`additionalProperties: false`, so `orthographic_annotations` fails validation
+until ABC adds the field. Do not skip validation. When the loaded schema lacks
+the field, fail early with a message telling the caller to use an updated
+ABC schema/mapping bundle.
 
 **Interfaces:**
-- Consumes: `OrthoAnnotationsFile` from Task 2, fixture from Task 1.
+- Consumes: `OrthoAnnotationsBundle` from Task 2, fixture from Task 1.
 - Produces: parser-IR JSON with `orthographic_annotations` field.
 
-- [ ] **Step 1: Add `--ortho-annotations` to `ConversionOptions`**
+- [ ] **Step 1: Add `orthographic_annotations` to `ConversionOptions`**
 
 In `crates/ab-aat-to-parser-ir/src/convert.rs`, add to `ConversionOptions`:
 
 ```rust
-    /// Path to an orthographic annotations JSON file.
-    /// When provided, the output parser-IR includes an
-    /// `orthographic_annotations` field. Output validation is
-    /// skipped because the current parser-IR schema rejects
-    /// unknown fields (ABC schema bump is the precondition for
-    /// re-enabling).
-    pub ortho_annotations: Option<std::path::PathBuf>,
+    /// Orthographic annotations to serialize into parser-IR.
+    ///
+    /// When provided, the loaded parser-IR schema must declare the
+    /// `orthographic_annotations` field and normal output validation remains
+    /// enabled.
+    pub orthographic_annotations: Option<crate::ortho_annotations::OrthoAnnotationsBundle>,
 ```
 
 Update `Default` impl:
@@ -289,16 +414,33 @@ impl Default for ConversionOptions {
         Self {
             validate_input_aat: true,
             validate_output_parser_ir: true,
-            ortho_annotations: None,
+            orthographic_annotations: None,
         }
     }
 }
 ```
 
-- [ ] **Step 2: Read annotations and inject into parser_ir**
+- [ ] **Step 2: Add schema precondition helper and inject into parser_ir**
 
-In `crates/ab-aat-to-parser-ir/src/convert.rs`, in `convert_preflighted`,
-after the `json!({...})` block (around line 128), add conditional injection:
+In `crates/ab-aat-to-parser-ir/src/convert.rs`, add this helper near
+`convert_preflighted`:
+
+```rust
+fn ensure_schema_declares_orthographic_annotations(schema: &Value) -> Result<()> {
+    if schema.pointer("/properties/orthographic_annotations").is_some() {
+        Ok(())
+    } else {
+        bail!(
+            "loaded parser-IR schema does not declare orthographic_annotations; \
+             use an updated ABC schema/mapping bundle before passing \
+             --ortho-annotations"
+        )
+    }
+}
+```
+
+Then in `convert_preflighted`, change `let parser_ir = json!({...});` to
+`let mut parser_ir = json!({...});` and inject after the JSON block:
 
 ```rust
     let mut parser_ir = json!({
@@ -312,30 +454,18 @@ after the `json!({...})` block (around line 128), add conditional injection:
         "errors": [],
     });
 
-    // Inject orthographic annotations when provided.
-    let skip_validation = if let Some(ref path) = options.ortho_annotations {
-        let ortho = crate::ortho_annotations::read_ortho_annotations(path)?;
-        let value = serde_json::to_value(&ortho)?;
+    if let Some(orthographic_annotations) = options.orthographic_annotations {
+        ensure_schema_declares_orthographic_annotations(&schemas.parser_ir_schema)?;
+        orthographic_annotations.validate_against_aat(&aat)?;
+        let value = serde_json::to_value(&orthographic_annotations)?;
         parser_ir
             .as_object_mut()
             .expect("parser_ir is an object")
             .insert("orthographic_annotations".to_owned(), value);
-        true
-    } else {
-        false
-    };
+    }
 
     if options.validate_output_parser_ir {
-        if skip_validation {
-            eprintln!(
-                "warning: skipping parser-IR output validation because \
-                 orthographic_annotations is present; the current schema \
-                 has additionalProperties: false. Re-enable after ABC \
-                 schema bump."
-            );
-        } else {
-            validate_value(&schemas.parser_ir_schema, &parser_ir, "parser-IR")?;
-        }
+        validate_value(&schemas.parser_ir_schema, &parser_ir, "parser-IR")?;
     }
 ```
 
@@ -351,132 +481,156 @@ In `crates/ab-aat-to-parser-ir/src/main.rs`, add to the `Convert` command struct
 And pass it through to `ConversionOptions` in the convert block:
 
 ```rust
+            let orthographic_annotations = match ortho_annotations {
+                Some(path) => Some(
+                    ab_aat_to_parser_ir::ortho_annotations::read_ortho_annotations_bundle(&path)?,
+                ),
+                None => None,
+            };
             let options = ConversionOptions {
-                ortho_annotations,
+                orthographic_annotations,
                 ..Default::default()
             };
             let output = PreparedConverter::new(mapping, schemas)?
                 .convert(aat, options)?;
 ```
 
-- [ ] **Step 4: Write integration test**
+- [ ] **Step 4: Write integration tests**
 
 Add to `crates/ab-aat-to-parser-ir/tests/integration.rs`:
 
 ```rust
-    #[test]
-    fn ortho_annotations_flag_injects_field_into_parser_ir() {
-        let tmp = tempfile::tempdir().unwrap();
-        let aat_path = tmp.path().join("aat.json");
-        let mapping_path = tmp.path().join("mapping.json");
-        let ortho_path = tmp.path().join("ortho.json");
-        let out_path = tmp.path().join("out.json");
-        let divergence_path = tmp.path().join("divergence.json");
-
-        // Minimal valid AAT (one paragraph of visible body text).
-        let aat = serde_json::json!({
-            "version": 1,
-            "contents": {
-                "blocks": [{
-                    "inline": [{
-                        "kind": "paragraph",
-                        "children": [{
-                            "kind": "text",
-                            "text": "吾輩ハ猫デアル。名前ハマダ無イ。"
-                        }]
-                    }]
-                }]
+fn schemas_and_mapping_accepting_orthographic_annotations() -> (SchemaSet, MappingDocument) {
+    let (mut schemas, mut mapping) = schemas_and_mapping();
+    let props = schemas
+        .parser_ir_schema
+        .get_mut("properties")
+        .and_then(Value::as_object_mut)
+        .expect("parser-IR schema has properties object");
+    props.insert(
+        "orthographic_annotations".to_owned(),
+        json!({
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "work_id",
+                "work_content_hash",
+                "coordinate_system",
+                "detector_id",
+                "annotations"
+            ],
+            "properties": {
+                "work_id": { "type": "string" },
+                "work_content_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+                "coordinate_system": { "const": "decoded_utf8" },
+                "detector_id": {},
+                "annotations": { "type": "array" }
             }
-        });
-        std::fs::write(&aat_path, serde_json::to_string_pretty(&aat).unwrap()).unwrap();
+        }),
+    );
+    mapping.target_parser_ir_schema_hash = schema_hash(&schemas.parser_ir_schema).unwrap();
+    (schemas, mapping)
+}
 
-        // Ortho annotations fixture (matches the contract fixture from Task 1).
-        let ortho = serde_json::json!({
-            "detector_id": "HeuristicV1",
-            "annotations": [
-                {
-                    "source_byte_range": { "start": 0, "end": 24 },
-                    "normalized_text": "吾輩は猫である。",
-                    "kind": "ScriptKatakanaToHiragana",
-                    "confidence": null
-                },
-                {
-                    "source_byte_range": { "start": 24, "end": 48 },
-                    "normalized_text": "名前はまだ無い。",
-                    "kind": "ScriptKatakanaToHiragana",
-                    "confidence": null
-                }
-            ]
-        });
-        std::fs::write(&ortho_path, serde_json::to_string_pretty(&ortho).unwrap()).unwrap();
+fn ortho_fixture_bundle() -> ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle {
+    serde_json::from_value(json!({
+        "work_id": "000000",
+        "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "coordinate_system": "decoded_utf8",
+        "detector_id": "HeuristicV1",
+        "annotations": [
+            {
+                "source_byte_range": { "start": 0, "end": 24 },
+                "normalized_text": "吾輩は猫である。",
+                "kind": "ScriptKatakanaToHiragana",
+                "confidence": null
+            },
+            {
+                "source_byte_range": { "start": 24, "end": 48 },
+                "normalized_text": "名前はまだ無い。",
+                "kind": "ScriptKatakanaToHiragana",
+                "confidence": null
+            }
+        ]
+    }))
+    .unwrap()
+}
 
-        // Use the repo's standard mapping so schema resolution works.
-        let repo_root = std::env::current_dir().unwrap();
-        let mapping_path_src = repo_root
-            .join("data/mappings/aat-to-parser-ir/v1/mapping.json");
-        std::fs::copy(&mapping_path_src, &mapping_path).unwrap();
+fn ortho_fixture_aat() -> Value {
+    json!({
+            "version": 1,
+            "work_id": "000000",
+            "meta": {
+                "adapter": "fixture",
+                "adapter_version": "fixture 0.1.0",
+                "source_encoding": "utf-8",
+                "source_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+                "parse_complete": true,
+                "warnings": []
+            },
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [{
+                    "kind": "text",
+                    "value": "吾輩ハ猫デアル。名前ハマダ無イ。"
+                }]
+            }]
+    })
+}
 
-        // Run the converter with --ortho-annotations.
-        let output = std::process::Command::new(
-            std::env::current_exe()
-                .unwrap()
-                .parent()
-                .unwrap()
-                .join("ab-aat-to-parser-ir"),
-        )
-        .arg("convert")
-        .arg("--aat")
-        .arg(&aat_path)
-        .arg("--mapping")
-        .arg(&mapping_path)
-        .arg("--parser-ir-out")
-        .arg(&out_path)
-        .arg("--divergence-out")
-        .arg(&divergence_path)
-        .arg("--ortho-annotations")
-        .arg(&ortho_path)
-        .output()
-        .unwrap();
+#[test]
+fn orthographic_annotations_inject_into_schema_valid_parser_ir() {
+    let (schemas, mapping) = schemas_and_mapping_accepting_orthographic_annotations();
+    let bundle = ortho_fixture_bundle();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: ortho_fixture_aat(),
+        mapping,
+        schemas,
+        options: ConversionOptions {
+            orthographic_annotations: Some(bundle.clone()),
+            ..Default::default()
+        },
+    })
+    .unwrap();
 
-        // Converter should succeed (validation skipped with warning).
-        assert!(output.status.success(), "stderr: {}", String::from_utf8_lossy(&output.stderr));
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        assert!(
-            stderr.contains("skipping parser-IR output validation"),
-            "expected validation-skip warning, got: {stderr}"
-        );
+    assert_eq!(
+        output.parser_ir.get("orthographic_annotations"),
+        Some(&serde_json::to_value(bundle).unwrap())
+    );
+}
 
-        // Verify parser-IR output contains orthographic_annotations.
-        let parser_ir: serde_json::Value =
-            serde_json::from_str(&std::fs::read_to_string(&out_path).unwrap()).unwrap();
-        let ortho_field = parser_ir
-            .get("orthographic_annotations")
-            .expect("parser-IR must have orthographic_annotations field");
-        assert_eq!(ortho_field["detector_id"], "HeuristicV1");
-        assert_eq!(ortho_field["annotations"].as_array().unwrap().len(), 2);
+#[test]
+fn orthographic_annotations_require_schema_support() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: ortho_fixture_aat(),
+        mapping,
+        schemas,
+        options: ConversionOptions {
+            orthographic_annotations: Some(ortho_fixture_bundle()),
+            ..Default::default()
+        },
+    })
+    .unwrap_err()
+    .to_string();
 
-        // Verify annotations match input exactly.
-        let expected: serde_json::Value = serde_json::from_slice(
-            &std::fs::read(&ortho_path).unwrap(),
-        )
-        .unwrap();
-        assert_eq!(ortho_field, &expected);
-    }
+    assert!(error.contains("does not declare orthographic_annotations"));
+}
 ```
 
-- [ ] **Step 5: Verify the test fails**
+- [ ] **Step 5: Verify the tests fail**
 
 ```bash
 cd /home/bor/Projects/soranoha/ab-validator
-cargo test -p ab-aat-to-parser-ir -- ortho_annotations_flag 2>&1 | tail -10
+cargo test -p ab-aat-to-parser-ir -- orthographic_annotations 2>&1 | tail -10
 ```
-Expected: FAIL — the converter binary doesn't support `--ortho-annotations` yet.
+Expected: FAIL — `ConversionOptions` does not yet have `orthographic_annotations`.
 
-- [ ] **Step 6: Build and run the integration test**
+- [ ] **Step 6: Build and run the integration tests**
 
 ```bash
 cd /home/bor/Projects/soranoha/ab-validator
-cargo test -p ab-aat-to-parser-ir -- ortho_annotations_flag 2>&1 | tail -5
+cargo test -p ab-aat-to-parser-ir -- orthographic_annotations 2>&1 | tail -5
 ```
 Expected: PASS.
 
@@ -496,10 +650,9 @@ git add crates/ab-aat-to-parser-ir/src/convert.rs \
         crates/ab-aat-to-parser-ir/tests/integration.rs
 git commit -m "feat(parser-ir): add --ortho-annotations flag to converter
 
-Injects orthographic_annotations into parser-IR output when the flag is
-provided. Skips output validation (current schema rejects unknown fields;
-ABC schema bump is the precondition for re-enabling). Includes
-integration test proving the field round-trips through the converter."
+Injects orthographic_annotations into parser-IR output when the loaded
+schema declares the field. Keeps parser-IR validation enabled and fails
+early against the current schema until ABC lands the schema/mapping bump."
 ```
 
 ---
@@ -508,29 +661,41 @@ integration test proving the field round-trips through the converter."
 
 **Files:**
 - Modify: `crates/ab-aat-to-parser-ir/README.md` (add --ortho-annotations docs)
-- Verify: fixtures from Task 1 match the integration test output.
+- Modify: `crates/ab-aat-to-parser-ir/tests/integration.rs` (golden fixture assertion)
 
 **Why:** Close the loop — confirm the integration test produces the exact
 shape defined in Task 1's contract fixture. Document the ABC precondition.
 
 - [ ] **Step 1: Verify contract fixture match**
 
-The integration test from Task 3 uses the same annotation shape as the
-Task 1 fixture. Add an assertion that loads the golden fixture and
-compares:
+Add this test to `crates/ab-aat-to-parser-ir/tests/integration.rs`:
+
+```rust
+#[test]
+fn orthographic_annotations_bundle_matches_golden_fixture() {
+    let expected = read_json(
+        &Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/ortho-annotations-expected.json"),
+    )
+    .unwrap();
+
+    assert_eq!(serde_json::to_value(ortho_fixture_bundle()).unwrap(), expected);
+}
+```
+
+Run:
 
 ```bash
 cd /home/bor/Projects/soranoha/ab-validator
-cargo test -p ab-aat-to-parser-ir -- ortho_annotations_flag 2>&1 | grep "PASS"
+cargo test -p ab-aat-to-parser-ir -- orthographic_annotations_bundle_matches_golden_fixture 2>&1 | tail -5
 ```
-Expected: PASS. The test already asserts `ortho_field == &expected` against
-the input fixture. The golden fixture from Task 1 is identical in shape.
+Expected: PASS.
 
 - [ ] **Step 2: Add converter docs**
 
 Add to `crates/ab-aat-to-parser-ir/README.md` (or create if absent):
 
-```markdown
+````markdown
 ### `--ortho-annotations <PATH>`
 
 Optional path to an orthographic annotations JSON file produced by the
@@ -539,6 +704,9 @@ Optional path to an orthographic annotations JSON file produced by the
 
 ```json
 {
+  "work_id": "000000",
+  "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "coordinate_system": "decoded_utf8",
   "detector_id": "HeuristicV1",
   "annotations": [
     {
@@ -552,16 +720,18 @@ Optional path to an orthographic annotations JSON file produced by the
 ```
 
 **Precondition:** ABC must accept `orthographic_annotations` into the
-parser-IR JSON Schema (`abc/schemas/parser-ir.schema.json`). The current
-schema has `additionalProperties: false` and rejects unknown fields.
-Output validation is skipped when this flag is used; it will be
-re-enabled after the ABC schema bump.
-```
+parser-IR JSON Schema (`abc/schemas/parser-ir.schema.json`) and the loaded
+mapping artifact must target the updated schema hash. The current schema has
+`additionalProperties: false` and rejects unknown fields. Validation remains
+enabled; with the current schema, the flag fails with a precondition error
+instead of emitting invalid parser-IR.
+````
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add crates/ab-aat-to-parser-ir/README.md
+git add crates/ab-aat-to-parser-ir/README.md \
+        crates/ab-aat-to-parser-ir/tests/integration.rs
 git commit -m "docs(parser-ir): document --ortho-annotations flag and ABC precondition"
 ```
 
@@ -570,16 +740,17 @@ git commit -m "docs(parser-ir): document --ortho-annotations flag and ABC precon
 ## Self-Review
 
 **1. Spec coverage:**
-- D2 (new parser-IR field): Task 2 (OrthoAnnotationsFile) + Task 3 (converter injection) ✓
-- D6 (detector ID explicit): detector_id field in OrthoAnnotationsFile ✓
+- D2 (new parser-IR field): Task 2 (`OrthoAnnotationsBundle`) + Task 3 (converter injection) ✓
+- D6 (detector ID and source identity explicit): `detector_id`, `work_id`, `work_content_hash`, and `coordinate_system` fields in `OrthoAnnotationsBundle` ✓
+- D7 (no validation skip): Task 3 schema precondition check + validation-on integration test ✓
 - D3 (ABC owns sentence splitting): NOT in this plan (correct — out of scope) ✓
 - Precondition (ABC schema bump): documented in Task 4 README and Global Constraints ✓
 - `<s>` rendering: NOT in this plan (correct — out of scope) ✓
 
-**2. Placeholder scan:** No TBD/TODO/fill-in-later. All code is explicit.
+**2. Placeholder scan:** No unresolved placeholders. All code is explicit.
 
 **3. Type consistency:**
-- `OrthoAnnotationsFile` defined in Task 2, used in Task 3 converter ✓
+- `OrthoAnnotationsBundle` defined in Task 2, used in Task 3 converter ✓
 - `OrthoAnnotation` from `ab-ortho-detect` — existing type, unchanged ✓
 - JSON shape matches between fixture (Task 1), struct (Task 2), and conversion (Task 3) ✓
-- `ConversionOptions.ortho_annotations` is `Option<PathBuf>` in both `convert.rs` and `main.rs` ✓
+- `ConversionOptions.orthographic_annotations` is `Option<OrthoAnnotationsBundle>`; CLI flag remains `--ortho-annotations <PATH>` and reads the file before conversion ✓

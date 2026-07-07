@@ -260,4 +260,4 @@ Run `soranoha reproduce demo-basic-ja`, `soranoha validate target/soranoha/demo-
 
 - [x] Run focused materialize-analysis/materialize-publication/snapshot/Soranoha tests.
 - [x] Run `git diff --check`.
-- [ ] Run `nix flake check`.
+- [x] Run `nix flake check`.

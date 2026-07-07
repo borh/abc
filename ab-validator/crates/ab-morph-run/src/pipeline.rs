@@ -606,9 +606,10 @@ pub(crate) fn run_analyze_aat_serial(
                 return Err(error);
             }
         };
-        let collect_projection_spans = warehouse_writer
-            .as_ref()
-            .is_some_and(|writer| writer.writes_table(WarehouseTable::ProjectionSpans));
+        let collect_projection_spans = warehouse_writer.as_ref().is_some_and(|writer| {
+            writer.writes_table(WarehouseTable::ProjectionSpans)
+                || writer.writes_table(WarehouseTable::NwayRegionOracleEvidence)
+        });
         let projected = if collect_projection_spans {
             from_aat_value_with_spans(&aat).map(|(document, spans)| (document, Some(spans)))
         } else {
@@ -652,6 +653,18 @@ pub(crate) fn run_analyze_aat_serial(
                 }
                 return Err(error.into());
             }
+        };
+        // Ruby-oracle bases from the projected ruby spans + AAT node readings.
+        // MUST be built before `drop(aat)` below. Empty unless the oracle table is
+        // requested and the run has ≥2 analyzers (spec §Precondition).
+        let ruby_bases = match (&projection_spans, &warehouse_writer) {
+            (Some(spans), Some(writer))
+                if analyzers.len() >= 2
+                    && writer.writes_table(WarehouseTable::NwayRegionOracleEvidence) =>
+            {
+                crate::oracle::ruby::ruby_bases(&aat, spans)
+            }
+            _ => Vec::new(),
         };
         // P1: the parsed AAT DOM is unused past projection; drop it now so the
         // per-document peak excludes it (several× file size on the large tail).
@@ -855,6 +868,7 @@ pub(crate) fn run_analyze_aat_serial(
                 &source_id,
                 &document.text,
                 &analyses,
+                &ruby_bases,
             ) {
                 Ok(()) => {}
                 Err(error) if error.downcast_ref::<MorphDiffError>().is_some() => {

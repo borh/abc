@@ -477,4 +477,58 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn oracle_pipeline_from_aat_to_parquet() {
+        use ab_plaintext::visible_text_projection_with_spans;
+        use ab_warehouse::schema::{WarehousePaths, WarehouseTable};
+        use ab_warehouse::writer::{WarehouseWriter, parquet_table_row_count};
+        use serde_json::json;
+
+        let aat = json!({
+            "blocks": [ { "content": [
+                { "kind": "ruby", "base": "東京", "reading": "とうきょう" },
+                { "kind": "text", "value": "は" }
+            ] } ]
+        });
+        let (_text, spans) = visible_text_projection_with_spans(&aat);
+        let bases = ruby_bases(&aat, &spans);
+        assert_eq!(
+            bases.len(),
+            1,
+            "one ruby base extracted from real projection spans"
+        );
+        assert_eq!(bases[0].reading, "とうきょう");
+
+        // sudachi matches the editor ruby; vibrato does not.
+        let a = analysis(
+            "vibrato",
+            vec![morph("東京", 0..2, &[("kana", "トウケイ")])],
+        );
+        let b = analysis(
+            "sudachi-c",
+            vec![morph("東京", 0..2, &[("reading_form", "トウキョウ")])],
+        );
+        let regions = vec![RegionSpan {
+            region_index: 0,
+            char_start: 0,
+            char_end: 3,
+            is_disagreement: true,
+        }];
+        let rows = adjudicate("run-a", "src-a", "work-a", &bases, &[a, b], &regions);
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].winning_analyzer.as_deref(), Some("sudachi-c"));
+
+        let root = std::env::temp_dir().join(format!("oracle-e2e-{}", std::process::id()));
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer.append_nway_region_oracle_evidence(&rows).unwrap();
+        writer.finalize().unwrap();
+        assert_eq!(
+            parquet_table_row_count(&paths.final_dir, WarehouseTable::NwayRegionOracleEvidence)
+                .unwrap(),
+            1
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
 }

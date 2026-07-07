@@ -27,15 +27,179 @@
    {}
    project-namespaces))
 
+(def ^:private example-hash
+  "sha256:bf0910f5316efc2cd528f504c0cbd16816ca993e7ccb2b99122aab8a71359527")
+
+(def ^:private concrete-adapter-placeholders
+  #{"*" "all" "any" "<any>" "adapter-neutral"})
+
+(defn- nonblank-string? [value]
+  (and (string? value)
+       (not (string/blank? value))))
+
+(defn- concrete-adapter? [value]
+  (and (nonblank-string? value)
+       (not (contains? concrete-adapter-placeholders
+                       (string/lower-case value)))))
+
+(defn- workspace-logical-path? [value]
+  (and (nonblank-string? value)
+       (not (string/starts-with? value "../"))
+       (not (string/starts-with? value "/"))))
+
+(def ^:private parser-evidence-example
+  {:evidence_id "ab-validator/example"
+   :evidence_class :conversion-compatibility
+   :producer_component "ab-validator"
+   :logical_path "ab-validator/docs/example.md"
+   :current_external_path "../ab-validator/docs/example.md"
+   :sha256 example-hash
+   :status :citable
+   :summary "Example evidence."})
+
+(def ^:private compat-entry-example
+  {:aat_version 1
+   :aat_adapter "aozora2html"
+   :aat_adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1"
+   :mapping_id "https://w3id.org/abc/mappings/aat-to-parser-ir/v1"
+   :mapping_version "0.2.3"
+   :mapping_hash example-hash
+   :mapping_schema_hash example-hash
+   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   :parser_ir_schema_hash example-hash
+   :compatibility "lossy"
+   :evidence_scope {:adapter "aozora2html"
+                    :adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1"
+                    :corpus "fixture"
+                    :evidence_type :conversion-audit
+                    :files_scanned 2
+                    :files_succeeded 1
+                    :files_failed 1
+                    :parser_ir_nodes 10
+                    :divergence_records 3
+                    :divergence_occurrences 4
+                    :rules_total 5
+                    :rules_emitted 2
+                    :rules_missing 3
+                    :unsupported_occurrences 0}})
+
+(def contract-schemas
+  {::nonblank-string
+   [:fn {:error/message "must be a non-empty string"
+         :gen/elements ["abc"]}
+    nonblank-string?]
+
+   ::nullable-nonblank-string
+   [:maybe ::nonblank-string]
+
+   ::sha256-hash
+   [:re {:error/message "must be a sha256 hash"
+         :gen/elements [example-hash]}
+    #"^sha256:[0-9a-f]{64}$"]
+
+   ::semver
+   [:re {:error/message "must be semver"
+         :gen/elements ["0.2.3"]}
+    #"^[0-9]+\.[0-9]+\.[0-9]+$"]
+
+   ::positive-int
+   [:int {:error/message "must be a positive integer"
+          :min 1
+          :gen/elements [1]}]
+
+   ::nonnegative-int
+   [:int {:error/message "must be a non-negative integer"
+          :min 0
+          :gen/elements [0 1]}]
+
+   ::workspace-logical-path
+   [:fn {:error/message "must be workspace-relative and must not start with ../ or /"
+         :gen/elements ["ab-validator/docs/example.md"]}
+    workspace-logical-path?]
+
+   ::concrete-adapter
+   [:fn {:error/message "must name a concrete adapter"
+         :gen/elements ["aozora2html"]}
+    concrete-adapter?]
+
+   ::parser-evidence-entry
+   [:map {:gen/elements [parser-evidence-example]}
+    [:evidence_id ::nonblank-string]
+    [:evidence_class [:enum :conversion-compatibility :parser-selection :comparator-oracle]]
+    [:producer_component ::nonblank-string]
+    [:logical_path ::workspace-logical-path]
+    [:current_external_path {:optional true} ::nullable-nonblank-string]
+    [:sha256 ::sha256-hash]
+    [:status [:enum :citable :provisional :superseded]]
+    [:summary ::nonblank-string]]
+
+   ::aat-parser-ir-evidence-scope
+   [:multi {:dispatch :evidence_type}
+    [:mapping-generation
+     [:map
+      [:adapter ::concrete-adapter]
+      [:adapter_version {:optional true} ::nullable-nonblank-string]
+      [:corpus ::nonblank-string]
+      [:evidence_type [:= :mapping-generation]]
+      [:files_scanned ::positive-int]
+      [:files_with_unsupported ::nonnegative-int]
+      [:generated_rules ::positive-int]]]
+    [:conversion-audit
+     [:map
+      [:adapter ::concrete-adapter]
+      [:adapter_version {:optional true} ::nullable-nonblank-string]
+      [:corpus ::nonblank-string]
+      [:evidence_type [:= :conversion-audit]]
+      [:files_scanned ::positive-int]
+      [:files_succeeded ::nonnegative-int]
+      [:files_failed ::nonnegative-int]
+      [:parser_ir_nodes ::nonnegative-int]
+      [:divergence_records ::nonnegative-int]
+      [:divergence_occurrences ::nonnegative-int]
+      [:rules_total ::nonnegative-int]
+      [:rules_emitted ::nonnegative-int]
+      [:rules_missing ::nonnegative-int]
+      [:unsupported_occurrences ::nonnegative-int]]]]
+
+   ::aat-parser-ir-compat-entry
+   [:and {:gen/elements [compat-entry-example]}
+    [:map
+     [:aat_version ::positive-int]
+     [:aat_adapter ::concrete-adapter]
+     [:aat_adapter_version {:optional true} ::nullable-nonblank-string]
+     [:mapping_id ::nonblank-string]
+     [:mapping_version ::semver]
+     [:mapping_hash ::sha256-hash]
+     [:mapping_schema_hash ::sha256-hash]
+     [:parser_ir_schema_id ::nonblank-string]
+     [:parser_ir_schema_hash ::sha256-hash]
+     [:compatibility [:enum "lossy" "lossless"]]
+     [:evidence_scope ::aat-parser-ir-evidence-scope]]
+    [:fn {:error/message ":evidence_scope :adapter must equal :aat_adapter"}
+     (fn [entry] (= (:aat_adapter entry)
+                    (get-in entry [:evidence_scope :adapter])))]
+    [:fn {:error/message ":evidence_scope :adapter_version must equal :aat_adapter_version"}
+     (fn [entry] (= (:aat_adapter_version entry)
+                    (get-in entry [:evidence_scope :adapter_version])))]
+    [:fn {:error/message "files_scanned must equal files_succeeded plus files_failed"}
+     (fn [entry]
+       (let [scope (:evidence_scope entry)]
+         (or (not= :conversion-audit (:evidence_type scope))
+             (= (:files_scanned scope)
+                (+ (:files_succeeded scope) (:files_failed scope))))))]
+    [:fn {:error/message "rules_total must equal rules_emitted plus rules_missing"}
+     (fn [entry]
+       (let [scope (:evidence_scope entry)]
+         (or (not= :conversion-audit (:evidence_type scope))
+             (= (:rules_total scope)
+                (+ (:rules_emitted scope) (:rules_missing scope))))))]]})
+
 (def design-bundle-schemas
   "Cross-event invariants for the design-bundle artifacts that JSON
   Schema cannot express. Composed into the default registry by
   `install!` so any caller can drive validation through
   `explain-or-throw!`."
-  {::sha256-hash
-   [:re #"^sha256:[0-9a-f]{64}$"]
-
-   ::manifest-inputs
+  {::manifest-inputs
    [:and
     [:map-of :string :any]
     [:fn {:error/message "manifest inputs missing required keys"}
@@ -85,12 +249,14 @@
 
 (defn install!
   "Idempotent. Requires the project's registry-owning namespaces in
-  declared order, composes their `registry` values plus the
-  design-bundle :fn schemas, publishes the composite as malli's default
-  registry, then instruments every registered function schema. Returns
-  the composite map."
+  declared order, composes their `registry` values plus contract
+  schemas and design-bundle :fn schemas, publishes the composite as
+  malli's default registry, then instruments every registered function
+  schema. Returns the composite map."
   []
-  (let [composite (merge (compose-project-registry) design-bundle-schemas)]
+  (let [composite (merge (compose-project-registry)
+                         contract-schemas
+                         design-bundle-schemas)]
     (mr/set-default-registry!
      (mr/composite-registry (m/default-schemas) composite))
     (mi/instrument!)
@@ -142,6 +308,21 @@
                    message message
                    path path
                    :else (pr-str document-path)))))))
+
+(defn explanation-messages
+  "Return stable message strings from a Malli explanation. Prefer explicit
+  :error/message values from schemas; fall back to the path when a Malli
+  primitive emits no custom message."
+  [explanation]
+  (->> (:errors explanation)
+       (mapv (fn [{:keys [in message path properties schema]}]
+               (or message
+                   (:error/message properties)
+                   (some-> schema m/properties :error/message)
+                   (cond
+                     (seq in) (str (string/join " " (map str in)) " is invalid")
+                     (seq path) (str (string/join " " (map str path)) " is invalid")
+                     :else "value is invalid"))))))
 
 (defn explain-or-throw!
   "Validate `value` against `schema-key` using malli's default registry.

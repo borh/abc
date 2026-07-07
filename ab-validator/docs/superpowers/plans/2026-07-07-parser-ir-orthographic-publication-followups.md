@@ -991,7 +991,7 @@ Expected: PASS.
 ```bash
 git add abc/schemas/aat-parser-ir-mapping.schema.json \
         abc/schemas/schema-contracts.json \
-        ab-validator/data/abc-schemas/aat-parser-ir-mapping.schema.json \
+        ab-validator/data/abc-schemas/schemas/aat-parser-ir-mapping.schema.json \
         ab-validator/data/abc-schemas/schema-contracts.json \
         ab-validator/crates/ab-aat-to-parser-ir/src/mapping.rs \
         ab-validator/crates/ab-aat-to-parser-ir/tests/integration.rs \

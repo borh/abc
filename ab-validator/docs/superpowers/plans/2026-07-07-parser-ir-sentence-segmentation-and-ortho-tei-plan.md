@@ -2,6 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+**Follow-up:** Production hardening work is tracked in
+`2026-07-07-parser-ir-orthographic-publication-followups.md`.
+
 **Goal:** Move sentence segmentation into parser-IR evidence and propagate orthographic-katakana annotations through ABC TEI `<s>` rendering.
 
 **Architecture:** ABC first accepts the new parser-IR contract (`sentence_segmentation`, `sentences`, and `orthographic_annotations`). ab-validator then emits sentence rows with node-aligned ranges and joins orthographic annotation overlaps into sentence tags. ABC TEI rendering consumes those rows directly and does not split text during rendering.

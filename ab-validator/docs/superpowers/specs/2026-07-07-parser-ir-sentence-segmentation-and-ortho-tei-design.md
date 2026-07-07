@@ -30,6 +30,22 @@ the detector evidence, but ab-validator also joins them to sentence rows so ABC
 can render `<s type="orthographic-katakana">` without re-running splitting or
 range-overlap logic.
 
+## Follow-up Status
+
+Production follow-ups landed in
+`2026-07-07-parser-ir-orthographic-publication-followups.md`:
+
+- ab-validator produces orthographic annotation sidecars from parser-IR sentence
+  coordinates.
+- Corpus conversion audits summarize sentence projection failures.
+- ABC publication materialization requires sentence evidence before rendering.
+- Mapping documents describe synthetic parser-IR evidence outside divergence
+  rules.
+- Ruby reading evidence has a typed oracle contract and remains separate from
+  sentence splitting/tokenizer input replacement.
+- The orthographic publication smoke test proves detector -> parser-IR -> ABC
+  TEI propagation.
+
 ## Design
 
 ### Ownership

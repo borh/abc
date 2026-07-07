@@ -1,11 +1,14 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::Arc,
+};
 
 use anyhow::Result;
 use serde_json::{Value, json};
 
 use crate::{
     mapping::{MappingDocument, MappingIndex, MappingRule},
-    schema::{SchemaSet, validate_value},
+    schema::{SchemaValidators, validate_compiled},
 };
 
 #[derive(Debug, Clone)]
@@ -31,14 +34,14 @@ struct AggregatedRecord {
 
 #[derive(Debug, Clone)]
 pub struct DivergenceRecorder {
-    index: MappingIndex,
+    index: Arc<MappingIndex>,
     records: BTreeMap<String, AggregatedRecord>,
 }
 
 impl DivergenceRecorder {
-    pub fn new(index: MappingIndex) -> Self {
+    pub fn new(index: impl Into<Arc<MappingIndex>>) -> Self {
         Self {
-            index,
+            index: index.into(),
             records: BTreeMap::new(),
         }
     }
@@ -63,20 +66,42 @@ impl DivergenceRecorder {
     ) -> Result<()> {
         let rule = self
             .index
-            .require_rule(category, aat_pointer, parser_ir_pointer)?
-            .clone();
-        let entry = self
-            .records
-            .entry(rule.rule_id.clone())
-            .or_insert_with(|| AggregatedRecord {
-                rule,
-                count: 0,
-                first_path: aat_pointer.map(ToOwned::to_owned),
-                source_value: source_value.clone(),
-                target_value: target_value.clone(),
-            });
-        entry.count += 1;
+            .require_rule(category, aat_pointer, parser_ir_pointer)?;
+        aggregate_record(
+            &mut self.records,
+            rule,
+            aat_pointer,
+            source_value,
+            target_value,
+        );
         Ok(())
+    }
+
+    /// Records the divergence when a matching rule is measured; returns
+    /// whether a rule matched. Collapses the `has_rule` + `record` pattern
+    /// into a single index lookup.
+    pub fn record_if_measured(
+        &mut self,
+        category: &str,
+        aat_pointer: Option<&str>,
+        parser_ir_pointer: Option<&str>,
+        source_value: Option<Value>,
+        target_value: Option<Value>,
+    ) -> bool {
+        let Some(rule) = self
+            .index
+            .get_rule(category, aat_pointer, parser_ir_pointer)
+        else {
+            return false;
+        };
+        aggregate_record(
+            &mut self.records,
+            rule,
+            aat_pointer,
+            source_value,
+            target_value,
+        );
+        true
     }
 
     pub fn emitted_rule_ids(&self) -> BTreeSet<String> {
@@ -86,7 +111,7 @@ impl DivergenceRecorder {
     pub fn bundle(
         self,
         meta: AatMeta,
-        schemas: &SchemaSet,
+        validators: &SchemaValidators,
         mapping: &MappingDocument,
     ) -> Result<Value> {
         let mut summary = BTreeMap::from([
@@ -146,19 +171,42 @@ impl DivergenceRecorder {
             "records": records,
         });
 
-        validate_value(
-            &schemas.bundle_schema,
+        validate_compiled(
+            &validators.bundle,
             &bundle,
             "AAT parser-IR divergence bundle",
         )?;
         for record in bundle["records"].as_array().into_iter().flatten() {
-            validate_value(
-                &schemas.abc_divergence_record_schema,
+            validate_compiled(
+                &validators.abc_divergence_record,
                 record,
                 "ABC divergence record",
             )?;
         }
         Ok(bundle)
+    }
+}
+
+fn aggregate_record(
+    records: &mut BTreeMap<String, AggregatedRecord>,
+    rule: &MappingRule,
+    aat_pointer: Option<&str>,
+    source_value: Option<Value>,
+    target_value: Option<Value>,
+) {
+    if let Some(entry) = records.get_mut(rule.rule_id.as_str()) {
+        entry.count += 1;
+    } else {
+        records.insert(
+            rule.rule_id.clone(),
+            AggregatedRecord {
+                rule: rule.clone(),
+                count: 1,
+                first_path: aat_pointer.map(ToOwned::to_owned),
+                source_value,
+                target_value,
+            },
+        );
     }
 }
 

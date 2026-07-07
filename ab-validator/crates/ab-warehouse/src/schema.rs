@@ -14,6 +14,7 @@ pub enum WarehouseTable {
     MorphemeFeatures,
     NwayRegions,
     NwayRegionAnalyzers,
+    NwayRegionOracleEvidence,
     NwayFeatureDiffs,
     FeaturePatternCounts,
     Errors,
@@ -30,6 +31,7 @@ impl WarehouseTable {
         Self::MorphemeFeatures,
         Self::NwayRegions,
         Self::NwayRegionAnalyzers,
+        Self::NwayRegionOracleEvidence,
         Self::NwayFeatureDiffs,
         Self::FeaturePatternCounts,
         Self::Errors,
@@ -43,6 +45,7 @@ impl WarehouseTable {
         Self::MorphemeFeatures,
         Self::NwayRegions,
         Self::NwayRegionAnalyzers,
+        Self::NwayRegionOracleEvidence,
         Self::NwayFeatureDiffs,
         Self::FeaturePatternCounts,
         Self::Errors,
@@ -60,6 +63,7 @@ impl WarehouseTable {
             Self::MorphemeFeatures => "morpheme_features.parquet",
             Self::NwayRegions => "nway_regions.parquet",
             Self::NwayRegionAnalyzers => "nway_region_analyzers.parquet",
+            Self::NwayRegionOracleEvidence => "nway_region_oracle_evidence.parquet",
             Self::NwayFeatureDiffs => "nway_feature_diffs.parquet",
             Self::FeaturePatternCounts => "feature_pattern_counts.parquet",
             Self::Errors => "errors.parquet",
@@ -153,6 +157,18 @@ impl WarehouseTable {
                 "morpheme_start",
                 "morpheme_end",
                 "surfaces",
+            ],
+            Self::NwayRegionOracleEvidence => &[
+                "run_id",
+                "source_id",
+                "text_id",
+                "region_index",
+                "projected_char_start",
+                "projected_char_end",
+                "oracle_source",
+                "winning_analyzer",
+                "losing_analyzers",
+                "evidence_detail",
             ],
             Self::NwayFeatureDiffs => &[
                 "run_id",
@@ -337,6 +353,20 @@ pub struct NwayRegionAnalyzerRow {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NwayRegionOracleEvidenceRow {
+    pub run_id: String,
+    pub source_id: String,
+    pub text_id: String,
+    pub region_index: u64,
+    pub projected_char_start: u64,
+    pub projected_char_end: u64,
+    pub oracle_source: String,
+    pub winning_analyzer: Option<String>,
+    pub losing_analyzers: Vec<String>,
+    pub evidence_detail: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NwayFeatureDiffRow {
     pub run_id: String,
     pub source_id: String,
@@ -404,7 +434,7 @@ mod tests {
             .map(|table| table.file_name())
             .collect();
 
-        assert_eq!(names.len(), 12);
+        assert_eq!(names.len(), 13);
         assert!(names.iter().all(|name| name.ends_with(".parquet")));
         assert!(names.contains(&"nway_region_analyzers.parquet"));
         assert!(names.contains(&"projection_spans.parquet"));

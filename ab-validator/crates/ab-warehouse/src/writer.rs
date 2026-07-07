@@ -15,8 +15,8 @@ use parquet::file::properties::WriterProperties;
 
 use crate::schema::{
     AnalysisRow, ErrorRow, FeaturePatternCountRow, MorphemeFeatureRow, MorphemeRow,
-    NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionRow, ProjectionSpanRow, RunAnalyzerRow,
-    RunRow, SourceRow, WarehousePaths, WarehouseTable,
+    NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionOracleEvidenceRow, NwayRegionRow,
+    ProjectionSpanRow, RunAnalyzerRow, RunRow, SourceRow, WarehousePaths, WarehouseTable,
 };
 
 const WAREHOUSE_MAX_ROW_GROUP_SIZE: usize = 50_000;
@@ -39,6 +39,7 @@ pub struct WarehouseWriter {
     morpheme_features: Option<ArrowWriter<File>>,
     nway_regions: Option<ArrowWriter<File>>,
     nway_region_analyzers: Option<ArrowWriter<File>>,
+    nway_region_oracle_evidence: Option<ArrowWriter<File>>,
     nway_feature_diffs: Option<ArrowWriter<File>>,
     feature_pattern_counts: Option<ArrowWriter<File>>,
     errors: Option<ArrowWriter<File>>,
@@ -113,6 +114,12 @@ impl WarehouseWriter {
                 WarehouseTable::NwayRegionAnalyzers,
                 nway_region_analyzers_schema(),
             )?,
+            nway_region_oracle_evidence: open_optional_table_writer(
+                &paths,
+                tables,
+                WarehouseTable::NwayRegionOracleEvidence,
+                nway_region_oracle_evidence_schema(),
+            )?,
             nway_feature_diffs: open_optional_table_writer(
                 &paths,
                 tables,
@@ -147,6 +154,7 @@ impl WarehouseWriter {
             WarehouseTable::MorphemeFeatures => self.morpheme_features.is_some(),
             WarehouseTable::NwayRegions => self.nway_regions.is_some(),
             WarehouseTable::NwayRegionAnalyzers => self.nway_region_analyzers.is_some(),
+            WarehouseTable::NwayRegionOracleEvidence => self.nway_region_oracle_evidence.is_some(),
             WarehouseTable::NwayFeatureDiffs => self.nway_feature_diffs.is_some(),
             WarehouseTable::FeaturePatternCounts => self.feature_pattern_counts.is_some(),
             WarehouseTable::Errors => self.errors.is_some(),
@@ -346,6 +354,34 @@ impl WarehouseWriter {
         )
     }
 
+    pub fn append_nway_region_oracle_evidence(
+        &mut self,
+        rows: &[NwayRegionOracleEvidenceRow],
+    ) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        let Some(writer) = self.nway_region_oracle_evidence.as_mut() else {
+            return Ok(());
+        };
+        write_batch(
+            writer,
+            nway_region_oracle_evidence_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                string_array(rows.iter().map(|row| row.source_id.as_str())),
+                string_array(rows.iter().map(|row| row.text_id.as_str())),
+                u64_array(rows.iter().map(|row| row.region_index)),
+                u64_array(rows.iter().map(|row| row.projected_char_start)),
+                u64_array(rows.iter().map(|row| row.projected_char_end)),
+                string_array(rows.iter().map(|row| row.oracle_source.as_str())),
+                nullable_string_array(rows.iter().map(|row| row.winning_analyzer.as_deref())),
+                string_list_array(rows.iter().map(|row| row.losing_analyzers.as_slice())),
+                string_array(rows.iter().map(|row| row.evidence_detail.as_str())),
+            ],
+        )
+    }
+
     pub fn append_nway_feature_diffs(&mut self, rows: &[NwayFeatureDiffRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
@@ -474,6 +510,11 @@ impl WarehouseWriter {
                 .as_mut()
                 .expect("nway_region_analyzers writer open")
                 .write(&batch)?,
+            WarehouseTable::NwayRegionOracleEvidence => self
+                .nway_region_oracle_evidence
+                .as_mut()
+                .expect("nway_region_oracle_evidence writer open")
+                .write(&batch)?,
             WarehouseTable::NwayFeatureDiffs => self
                 .nway_feature_diffs
                 .as_mut()
@@ -503,6 +544,7 @@ impl WarehouseWriter {
         close_writer(self.morpheme_features.take())?;
         close_writer(self.nway_regions.take())?;
         close_writer(self.nway_region_analyzers.take())?;
+        close_writer(self.nway_region_oracle_evidence.take())?;
         close_writer(self.nway_feature_diffs.take())?;
         close_writer(self.feature_pattern_counts.take())?;
         close_writer(self.errors.take())?;
@@ -1027,6 +1069,21 @@ fn nway_region_analyzers_schema() -> Arc<Schema> {
     ])
 }
 
+fn nway_region_oracle_evidence_schema() -> Arc<Schema> {
+    schema(vec![
+        utf8("run_id", false),
+        utf8("source_id", false),
+        utf8("text_id", false),
+        u64_field("region_index", false),
+        u64_field("projected_char_start", false),
+        u64_field("projected_char_end", false),
+        utf8("oracle_source", false),
+        utf8("winning_analyzer", true),
+        utf8_list("losing_analyzers"),
+        utf8("evidence_detail", false),
+    ])
+}
+
 fn nway_feature_diffs_schema() -> Arc<Schema> {
     schema(vec![
         utf8("run_id", false),
@@ -1195,6 +1252,34 @@ mod tests {
 
         assert_eq!(
             parquet_table_row_count(&paths.final_dir, WarehouseTable::ProjectionSpans).unwrap(),
+            1
+        );
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn writes_nway_region_oracle_evidence_rows() {
+        let root = temp_dir("oracle-evidence");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_nway_region_oracle_evidence(&[NwayRegionOracleEvidenceRow {
+                run_id: "run-a".to_owned(),
+                source_id: "source-a".to_owned(),
+                text_id: "work-a".to_owned(),
+                region_index: 3,
+                projected_char_start: 10,
+                projected_char_end: 12,
+                oracle_source: "ruby".to_owned(),
+                winning_analyzer: Some("sudachi-c".to_owned()),
+                losing_analyzers: vec!["vibrato:unidic-novel-202512".to_owned()],
+                evidence_detail: r#"{"classification":"resolved"}"#.to_owned(),
+            }])
+            .unwrap();
+        writer.finalize().unwrap();
+        assert_eq!(
+            parquet_table_row_count(&paths.final_dir, WarehouseTable::NwayRegionOracleEvidence)
+                .unwrap(),
             1
         );
         let _ = fs::remove_dir_all(root);

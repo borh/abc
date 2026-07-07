@@ -22,6 +22,35 @@ python "$repo_root/ab-validator/scripts/compare_abc_schema_contracts.py" \
   --local "$repo_root/ab-validator/data/abc-schemas/schema-contracts.json" \
   --abc "$repo_root/abc"
 
+python - "$expected_schema_dir" "$repo_root/ab-validator/data/abc-schemas/nix-schemas" \
+  "$repo_root/abc/schemas/schema-contracts.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+abc_schema_dir = Path(sys.argv[1])
+mirror_dir = Path(sys.argv[2])
+manifest_path = Path(sys.argv[3])
+
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+expected_names = {Path(row["path"]).name for row in manifest["schemas"]}
+actual_names = {path.name for path in mirror_dir.glob("*.schema.json")}
+
+errors = []
+for name in sorted(expected_names - actual_names):
+    errors.append(f"missing isolated Nix schema mirror file: {name}")
+for name in sorted(actual_names - expected_names):
+    errors.append(f"extra isolated Nix schema mirror file: {name}")
+for name in sorted(expected_names & actual_names):
+    if (abc_schema_dir / name).read_bytes() != (mirror_dir / name).read_bytes():
+        errors.append(f"isolated Nix schema mirror drift: {name}")
+
+if errors:
+    for error in errors:
+        print(error, file=sys.stderr)
+    sys.exit(1)
+PY
+
 policy_link="$repo_root/ab-validator/data/abc-schemas/data/source-region-publication-policy-v0.json"
 expected_policy="$repo_root/abc/data/source-region-publication-policy-v0.json"
 

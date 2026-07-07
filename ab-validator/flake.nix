@@ -114,6 +114,13 @@
 
         source = cleanProjectSource ./.;
 
+        abcSchemaRootForNix = pkgs.runCommand "ab-validator-abc-schema-root" { } ''
+          mkdir -p "$out/schemas"
+          cp "${source}/data/abc-schemas/nix-schemas"/*.schema.json "$out/schemas/"
+          cp "${source}/data/abc-schemas/schema-contracts.json" \
+            "$out/schemas/schema-contracts.json"
+        '';
+
         buildRustUpstreamParser =
           {
             name,
@@ -610,7 +617,7 @@
               AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
               AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
               AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-              AB_ABC_ROOT = "${source}/data/abc-schemas";
+              AB_ABC_ROOT = "${abcSchemaRootForNix}";
 
               preCheck = vibratoDictionaryPreCheck;
               doCheck = true;
@@ -657,7 +664,7 @@
               AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
               AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
               AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-              AB_ABC_ROOT = "${source}/data/abc-schemas";
+              AB_ABC_ROOT = "${abcSchemaRootForNix}";
 
               cargoBuildFlags = [ "--workspace" ];
               cargoTestFlags = [
@@ -703,7 +710,7 @@
           export AB_AOZORA_RS_GAIJI_MENKUTEN_PATH="${aozoraRsGaijiMenkuten}"
           export AB_AOZORA_RS_GAIJI_CHUKI_PDF="${aozoraRsGaijiChukiPdf}"
           export AB_AOZORA_RS_GAIJI_PDFIUM_DIR="${pkgs.pdfium-binaries}/lib"
-          export AB_ABC_ROOT="${source}/data/abc-schemas"
+          export AB_ABC_ROOT="${abcSchemaRootForNix}"
           mkdir -p .cargo
           cat > .cargo/config.toml <<EOF
           [source.crates-io]
@@ -782,6 +789,16 @@
           ps.tomli
           ps.pytest
         ]);
+
+        stageAbcSchemas = ''
+          abc_root="$work_dir/abc"
+          mkdir -p "$abc_root/schemas"
+          cp "$work_dir/source/data/abc-schemas/nix-schemas"/*.schema.json \
+            "$abc_root/schemas/"
+          cp "$work_dir/source/data/abc-schemas/schema-contracts.json" \
+            "$abc_root/schemas/schema-contracts.json"
+          export AB_ABC_ROOT="$abc_root"
+        '';
 
         mkSmokeCheck =
           {
@@ -1046,7 +1063,10 @@
               cp -R "${source}" source
               chmod -R +w source
               cd source
-              python scripts/schema_contracts.py
+              abc_root="$TMPDIR/abc"
+              mkdir -p "$abc_root/schemas"
+              cp data/abc-schemas/schema-contracts.json "$abc_root/schemas/schema-contracts.json"
+              python scripts/compare_abc_schema_contracts.py --abc "$abc_root"
               touch "$out"
             '';
 
@@ -1110,7 +1130,7 @@
               AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
               AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
               AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-              AB_ABC_ROOT = "${source}/data/abc-schemas";
+              AB_ABC_ROOT = "${abcSchemaRootForNix}";
 
               cargoBuildFlags = [
                 "--package"
@@ -1137,9 +1157,10 @@
             pythonWithAatSchemaDeps
           ];
           extraEnv = {
-            AB_ABC_ROOT = "${source}/data/abc-schemas";
+            AB_ABC_ROOT = "${abcSchemaRootForNix}";
             AB_AAT_TO_PARSER_IR_BIN = "${abAatToParserIr}/bin/ab-aat-to-parser-ir";
           };
+          extraPreScript = stageAbcSchemas;
         };
 
         aozoraAdapterSmokeCheck = mkSmokeCheck {

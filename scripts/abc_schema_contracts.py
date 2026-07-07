@@ -16,6 +16,8 @@ CONTRACT_VERSION = "abc-schema-contracts-v1"
 CANONICALIZATION = "abc-legacy-json-c14n-v0"
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 SCHEMA_FILES = (
+    "analysis-recipe.schema.json",
+    "analysis-result.schema.json",
     "aat-parser-ir-divergence.schema.json",
     "aat-parser-ir-mapping.schema.json",
     "manifest.schema.json",

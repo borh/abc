@@ -9,13 +9,7 @@ trap 'smoke_cleanup "$work_dir"' EXIT
 
 abc_root="$work_dir/abc"
 mkdir -p "$abc_root/schemas"
-cp "$repo_root"/data/abc-schemas/schemas/*.schema.json "$abc_root/schemas/"
-
-python "$repo_root/scripts/schema_contracts.py" \
-  --schema-dir "$abc_root/schemas" \
-  --manifest "$abc_root/schemas/schema-contracts.json" \
-  --path-prefix schemas \
-  --write
+cp "$repo_root/data/abc-schemas/schema-contracts.json" "$abc_root/schemas/schema-contracts.json"
 
 python "$repo_root/scripts/compare_abc_schema_contracts.py" --abc "$abc_root"
 

@@ -8,6 +8,12 @@ so schema bytes have one source of truth. The source-region publication policy
 under `data/source-region-publication-policy-v0.json` is likewise a symlink to
 ABC's policy file, because ABC owns publication disposition policy.
 
+The `nix-schemas/` directory is a checked-in mirror of the same contract schemas
+for isolated ab-validator flake checks. Nix stores a source tree with the
+`schemas/` symlink intact but without its out-of-subproject target, so smoke
+checks that need schema bytes stage files from `nix-schemas/`. The monorepo
+schema drift gate byte-compares this mirror against `abc/schemas`.
+
 The `schema-contracts.json` manifest remains a producer-side snapshot used to
 compare schema ids, versions, titles, and hashes against ABC's authoritative
 `abc/schemas/schema-contracts.json`.
@@ -19,7 +25,9 @@ identity checks.
 
 Refresh procedure:
 
-1. Keep `schemas/` as a symlink to the monorepo `abc/schemas` directory and keep
+1. Keep `schemas/` as a symlink to the monorepo `abc/schemas` directory, keep
+   `nix-schemas/` byte-identical to the contract files listed in
+   `abc/schemas/schema-contracts.json`, and keep
    `data/source-region-publication-policy-v0.json` as a symlink to ABC's source
    region publication policy.
 2. Copy or regenerate the ABC `schema-contracts.json` snapshot:

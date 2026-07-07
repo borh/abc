@@ -989,7 +989,7 @@ pub(crate) fn run_analyze_aat_serial(
             analyzer_count: warehouse.analyzer_rows.len() as u64,
             error_count: warehouse_error_count,
         }])?;
-        writer.finalize()?;
+        let _warehouse_write_time = writer.finalize()?;
     }
     Ok(string_stats)
 }
@@ -1367,7 +1367,8 @@ pub(crate) fn merge_warehouse_shard_runs(
         analyzer_count: options.analyzer_rows.len() as u64,
         error_count,
     }])?;
-    writer.finalize()
+    let _ = writer.finalize()?;
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]

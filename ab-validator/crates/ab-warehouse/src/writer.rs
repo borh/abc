@@ -30,6 +30,7 @@ pub(crate) const COMPACTION_MAX_MEDIAN_PART_BYTES: u64 = 1_048_576; // 1 MiB
 
 pub struct WarehouseWriter {
     paths: WarehousePaths,
+    write_time: std::time::Duration,
     runs: Option<ArrowWriter<File>>,
     run_analyzers: Option<ArrowWriter<File>>,
     sources: Option<ArrowWriter<File>>,
@@ -65,6 +66,7 @@ impl WarehouseWriter {
         crate::sql::write_schema_sql(&paths.warehouse_dir)?;
 
         Ok(Self {
+            write_time: std::time::Duration::ZERO,
             runs: open_optional_table_writer(&paths, tables, WarehouseTable::Runs, runs_schema())?,
             run_analyzers: open_optional_table_writer(
                 &paths,
@@ -179,6 +181,7 @@ impl WarehouseWriter {
                 u64_array(rows.iter().map(|row| row.analyzer_count)),
                 u64_array(rows.iter().map(|row| row.error_count)),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -197,6 +200,7 @@ impl WarehouseWriter {
                 string_array(rows.iter().map(|row| row.analyzer_arg.as_str())),
                 string_array(rows.iter().map(|row| row.analyzer_family.as_str())),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -215,6 +219,7 @@ impl WarehouseWriter {
                 u64_array(rows.iter().map(|row| row.source_bytes)),
                 u64_array(rows.iter().map(|row| row.source_chars)),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -240,6 +245,7 @@ impl WarehouseWriter {
                 bool_array(rows.iter().map(|row| row.is_gaiji)),
                 bool_array(rows.iter().map(|row| row.is_note)),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -257,6 +263,7 @@ impl WarehouseWriter {
                 string_array(rows.iter().map(|row| row.analyzer_id.as_str())),
                 u64_array(rows.iter().map(|row| row.morpheme_count)),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -279,6 +286,7 @@ impl WarehouseWriter {
                 u64_array(rows.iter().map(|row| row.char_end)),
                 string_array(rows.iter().map(|row| row.surface.as_str())),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -301,6 +309,7 @@ impl WarehouseWriter {
                 string_array(rows.iter().map(|row| row.feature_key.as_str())),
                 nullable_string_array(rows.iter().map(|row| row.feature_value.as_deref())),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -328,6 +337,7 @@ impl WarehouseWriter {
                 bool_array(rows.iter().map(|row| row.has_segmentation_disagreement)),
                 bool_array(rows.iter().map(|row| row.has_feature_disagreement)),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -351,6 +361,7 @@ impl WarehouseWriter {
                 u64_array(rows.iter().map(|row| row.morpheme_end)),
                 string_list_array(rows.iter().map(|row| row.surfaces.as_slice())),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -380,6 +391,7 @@ impl WarehouseWriter {
                 string_list_array(rows.iter().map(|row| row.losing_analyzers.as_slice())),
                 string_array(rows.iter().map(|row| row.evidence_detail.as_str())),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -405,6 +417,7 @@ impl WarehouseWriter {
                 nullable_string_array(rows.iter().map(|row| row.feature_value.as_deref())),
                 string_array(rows.iter().map(|row| row.analyzer_id.as_str())),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -431,6 +444,7 @@ impl WarehouseWriter {
                 string_array(rows.iter().map(|row| row.sample_text_ids.as_str())),
                 string_array(rows.iter().map(|row| row.script_categories.as_str())),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -450,6 +464,7 @@ impl WarehouseWriter {
                 string_array(rows.iter().map(|row| row.error_code.as_str())),
                 string_array(rows.iter().map(|row| row.message.as_str())),
             ],
+            &mut self.write_time,
         )
     }
 
@@ -465,6 +480,7 @@ impl WarehouseWriter {
         table: WarehouseTable,
         batch: RecordBatch,
     ) -> Result<()> {
+        let start = std::time::Instant::now();
         match table {
             WarehouseTable::Runs => self
                 .runs
@@ -532,25 +548,31 @@ impl WarehouseWriter {
                 .expect("errors writer open")
                 .write(&batch)?,
         }
+        self.write_time += start.elapsed();
         Ok(())
     }
 
-    pub fn finalize(mut self) -> Result<()> {
-        close_writer(self.runs.take())?;
-        close_writer(self.run_analyzers.take())?;
-        close_writer(self.sources.take())?;
-        close_writer(self.projection_spans.take())?;
-        close_writer(self.analyses.take())?;
-        close_writer(self.morphemes.take())?;
-        close_writer(self.morpheme_features.take())?;
-        close_writer(self.nway_regions.take())?;
-        close_writer(self.nway_region_analyzers.take())?;
-        close_writer(self.nway_region_oracle_evidence.take())?;
-        close_writer(self.nway_feature_diffs.take())?;
-        close_writer(self.feature_pattern_counts.take())?;
-        close_writer(self.errors.take())?;
+    pub fn write_time(&self) -> std::time::Duration {
+        self.write_time
+    }
+
+    pub fn finalize(mut self) -> Result<std::time::Duration> {
+        self.write_time += close_writer(self.runs.take())?;
+        self.write_time += close_writer(self.run_analyzers.take())?;
+        self.write_time += close_writer(self.sources.take())?;
+        self.write_time += close_writer(self.projection_spans.take())?;
+        self.write_time += close_writer(self.analyses.take())?;
+        self.write_time += close_writer(self.morphemes.take())?;
+        self.write_time += close_writer(self.morpheme_features.take())?;
+        self.write_time += close_writer(self.nway_regions.take())?;
+        self.write_time += close_writer(self.nway_region_analyzers.take())?;
+        self.write_time += close_writer(self.nway_region_oracle_evidence.take())?;
+        self.write_time += close_writer(self.nway_feature_diffs.take())?;
+        self.write_time += close_writer(self.feature_pattern_counts.take())?;
+        self.write_time += close_writer(self.errors.take())?;
         crate::sql::write_run_views_sql(&self.paths.staging_dir, &self.paths.final_dir)?;
-        finalize_staging_run(&self.paths)
+        finalize_staging_run(&self.paths)?;
+        Ok(self.write_time)
     }
 }
 
@@ -652,7 +674,7 @@ pub fn compact_staged_table(paths: &WarehousePaths, table: WarehouseTable) -> Re
     for part in &part_paths {
         append_parquet_table_file(&mut writer, table, part)?;
     }
-    writer.finalize()?;
+    let _ = writer.finalize()?;
     // finalize moved compact_paths.staging_dir → compact_paths.final_dir;
     // the single coalesced parquet file is at final_dir/<table.file_name()>
     // (the writer writes one part file for one writer instance). views.sql
@@ -877,17 +899,22 @@ fn write_batch<W: std::io::Write + Send>(
     writer: &mut ArrowWriter<W>,
     schema: Arc<Schema>,
     columns: Vec<ArrayRef>,
+    write_time: &mut std::time::Duration,
 ) -> Result<()> {
     let batch = RecordBatch::try_new(schema, columns)?;
+    let start = std::time::Instant::now();
     writer.write(&batch)?;
+    *write_time += start.elapsed();
     Ok(())
 }
 
-fn close_writer(writer: Option<ArrowWriter<File>>) -> Result<()> {
+fn close_writer(writer: Option<ArrowWriter<File>>) -> Result<std::time::Duration> {
     if let Some(writer) = writer {
+        let start = std::time::Instant::now();
         writer.close()?;
+        return Ok(start.elapsed());
     }
-    Ok(())
+    Ok(std::time::Duration::ZERO)
 }
 
 fn string_array<'a>(values: impl Iterator<Item = &'a str>) -> ArrayRef {
@@ -1373,6 +1400,39 @@ mod tests {
     }
 
     #[test]
+    fn write_time_accumulates_across_appends() {
+        use std::time::Duration;
+        let root = temp_dir("write-time");
+        let paths = WarehousePaths::new(&root, "wt-run");
+        let mut writer = WarehouseWriter::create_for_tables(paths, WarehouseTable::ALL).unwrap();
+        assert_eq!(writer.write_time(), Duration::ZERO);
+
+        // Append enough error rows to force at least one write() call.
+        let rows: Vec<ErrorRow> = (0..1000)
+            .map(|i| ErrorRow {
+                run_id: "wt-run".to_owned(),
+                source_id: Some(format!("source-{i}")),
+                text_id: Some(format!("work-{i}")),
+                analyzer_id: Some("sudachi-c".to_owned()),
+                stage: "analysis".to_owned(),
+                error_code: "E_TEST".to_owned(),
+                message: format!("synthetic error {i}"),
+            })
+            .collect();
+        writer.append_errors(&rows).unwrap();
+        assert!(
+            writer.write_time() > Duration::ZERO,
+            "append must record write time"
+        );
+
+        let before_close = writer.write_time();
+        let total = writer.finalize().unwrap();
+        assert!(total >= before_close, "finalize folds in close() time");
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn append_parquet_table_file_coalesces_tiny_row_groups() {
         let root = temp_dir("coalesce-row-groups");
         fs::create_dir_all(&root).unwrap();
@@ -1397,6 +1457,7 @@ mod tests {
             ),
         )
         .unwrap();
+        let mut discard_write_time = std::time::Duration::ZERO;
         write_batch(
             &mut shard,
             sources_schema(),
@@ -1408,6 +1469,7 @@ mod tests {
                 u64_array(rows.iter().map(|row| row.source_bytes)),
                 u64_array(rows.iter().map(|row| row.source_chars)),
             ],
+            &mut discard_write_time,
         )
         .unwrap();
         shard.close().unwrap();
@@ -1466,6 +1528,7 @@ mod tests {
             Some(writer_properties()),
         )
         .unwrap();
+        let mut discard_write_time = std::time::Duration::ZERO;
         write_batch(
             &mut writer,
             sources_schema(),
@@ -1477,6 +1540,7 @@ mod tests {
                 u64_array(rows.iter().map(|row| row.source_bytes)),
                 u64_array(rows.iter().map(|row| row.source_chars)),
             ],
+            &mut discard_write_time,
         )
         .unwrap();
         writer.close().unwrap();

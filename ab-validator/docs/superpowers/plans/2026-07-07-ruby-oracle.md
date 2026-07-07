@@ -1311,3 +1311,50 @@ git commit -m "docs: record ruby-oracle validation results and spec amendments"
 **Type consistency:** `NwayRegionOracleEvidenceRow` fields identical across schema.rs (Task 2), append method (Task 2), and `adjudicate` construction (Task 5). `RegionSpan`/`RubyBase` field names match between definition (Tasks 4–5) and use (Task 6). `morpheme_reading` signature identical in Task 4 def and Task 5 call. Column order identical across `column_names`, `nway_region_oracle_evidence_schema`, `schema.sql`, and the append vector.
 
 **Verified before finalizing:** `FeatureMap::insert(FeatureKey, Option<FeatureValue>)` is public (`ab-morph-diff/src/model.rs:44`), so the cross-crate test helpers compile. `Analysis` has 7 public fields (`analyzer`, `text_id`, `source_text`, `morphemes`, `warnings`, `ortho_annotations`, `ortho_offset_map`) — the `analysis()` helper sets the trailing three to `Vec::new()`/`None`. `unicode-normalization` is already an `ab-morph-run` dependency; no `Cargo.toml` change. `Morpheme` and `ab-warehouse::schema` types are all public.
+
+## Validation Record
+
+**Full-corpus run (2026-07-07):** `full-2026-07-07_055139-jobs8` — run on hinoki
+(32 cores, 91 GB RAM), Full profile, 4 analyzers (`vibrato` cwj,
+`vibrato:unidic-novel-202512`, `sudachi-a`, `sudachi-c`), jobs=8,
+`schema_version = 2`, 43 GB. AAT input = the canonical 17,885-source
+`aozora2html-adapter` corpus.
+
+**Row-count parity (oracle is purely additive):** every prior data table matches
+the previous canonical run's documented figures exactly — `projection_spans`
+10,832,338 (ruby-base 3,524,294), `nway_regions` 161,142,784, `morphemes`
+662,984,226, `sources` 17,885. The new sidecar perturbed nothing.
+
+**`nway_region_oracle_evidence`: 2,337,428 rows over 13,994 sources.** Partition
+(sums exactly to the total):
+
+| Outcome | Rows | Notes |
+|---|---:|---|
+| resolved, unique winner | 176,397 | exactly one analyzer matches the editor ruby |
+| ambiguous (≥2 match, winner null) | 259,698 | `classification=resolved`, no unique winner |
+| nonstandard_ruby (0 match) | 1,901,333 | of which **942,149** had ≥1 analyzer *exactly tile but read differently* (genuine reading gap), **959,184** were all-structural (no analyzer tiles the base) |
+
+**Per-analyzer unique wins:** `vibrato:unidic-novel-202512` 140,138 ·
+`vibrato:unidic-cwj-202512` 32,007 · `sudachi-a` 4,252 · `sudachi-c` 0.
+(sudachi-c, mode C / long-unit, never *exactly* tiles a ruby base, so it never
+uniquely wins — expected.)
+
+**Spot-checks:** resolved cases are correct, including historical 旧仮名 folded
+correctly (`位《ぐらゐ》` matched via `ゐ→い`; `万朝報《まんちょうほう》`,
+`譚《ものがたり》`). Nonstandard is dominated by legitimate *gikun*/artistic
+readings analyzers cannot derive (`彼地《あちら》`, `混氣《まざりけ》`,
+`工手間《くでま》`) — correctly retained for review, matching the spec's
+`nonstandard_ruby` intent. The high nonstandard rate reflects why ruby is the
+single largest AAT-divergence category (ABC's ~1.76M).
+
+**Follow-up levers surfaced (not blockers):**
+1. Normalization gaps — iteration marks `ゝ/ヽ` are stripped rather than expanded
+   (`武士《ものゝふ》` → norm `ものう`, a false nonstandard). Expanding iteration
+   marks + growing the historical fold table would reclaim some of the 942,149
+   genuine-gap rows.
+2. Exact-tiling strictness (spec R8) makes ~959k nonstandard purely structural
+   (analyzer segmentation boundaries differ from the ruby base span). Relaxing to
+   a subset/overlap policy would raise coverage at some precision cost.
+3. Phase 5 wires `oracle_resolved_region_count` into the RRF (out of this cycle).
+4. Minor test polish (deferred): strengthen `empty_normalized_ruby_reading_is_skipped`
+   with a `kana:"ABC"`→`""` case (the literal false-match path).

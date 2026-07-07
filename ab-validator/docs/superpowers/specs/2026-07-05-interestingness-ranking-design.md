@@ -474,9 +474,14 @@ The same cycle landed warehouse memory fixes P1–P3; peak RSS at jobs=8 was
   `ab-morph-run`; `oracle/reading_norm.rs` canonicalizer + `oracle/ruby.rs`
   adjudicator; `SCHEMA_VERSION` stays 2 with a presence-probed view). Verified by
   unit/property tests and a real AAT→spans→adjudicate→parquet integration test.
-  **Full-corpus validation (new canonical run id + resolved/nonstandard split +
-  per-analyzer win counts) is still pending** — recorded in the plan's Validation
-  Record once the ~40-min Full regeneration is run.
+  **Canonical validation run: `full-2026-07-07_055139-jobs8`** (schema_version 2;
+  every prior data table row-count-identical to the previous canonical run, so
+  the oracle is purely additive). `nway_region_oracle_evidence`: 2,337,428 rows
+  over 13,994 sources — 176,397 resolved (unique winner), 259,698 ambiguous
+  (≥2 match), 1,901,333 nonstandard_ruby (~942k genuine reading gaps, ~959k
+  structural). Per-analyzer unique wins: unidic-novel 140,138 / unidic-cwj 32,007
+  / sudachi-a 4,252 / sudachi-c 0. Full breakdown + follow-up levers in the plan's
+  Validation Record.
 - `nway_region_causes.parquet`: lattice interrogation during analysis pass — **with an analyzer asymmetry (§Known Limitations: cause-classification analyzer asymmetry)**. Sudachi `StatefulTokenizer` exposes lattice today; Vibrato `vibrato-rkyv`'s `Lattice`/`LatticeNBest` are `pub(crate)` in the pinned vendor checkout, so the Vibrato path either (a) lands an upstream/fork API change exposing an `Worker::lattice()` accessor, or (b) ships Phase 4 with Vibrato regions' `cause_class = unknown` and degrades the cause-novelty signal accordingly. The choice is recorded in `cause_classification_profile` in the `score_version` block (`sudachi-only` vs `all-analyzers`).
 - `boundary_contexts.parquet`, `boundary_consensus.parquet`: boundary data during analysis pass; `literal_context_policy` set per-run (Aozora ⇒ literal; else ⇒ hash-only)
 - `aozora_works.parquet`: an *imported projection* of ABC's `metadata-record` (see §Cross-Repo Dependency on `abc`); populated by `ab-morph-run import-aozora-metadata`, not hand-edited

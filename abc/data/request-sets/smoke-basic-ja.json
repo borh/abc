@@ -1,6 +1,6 @@
 {
   "label": "smoke-basic-ja",
-  "request_set_id": "sha256:d0cffe6cfcac2b1ebe10c1dad89ccc669d02e68f54e389230075087915edba6b",
+  "request_set_id": "sha256:54e76d9f4093af087b53cb2a93a77438f0a42030ab6e2609eac435644776755b",
   "request_set_identity_object": {
     "analysis_recipe_hashes": [
       "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b"
@@ -19,7 +19,7 @@
       {
         "metadata_record_hash": null,
         "source_id": "aozora:smoke-fixture",
-        "work_content_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
         "work_id": "aozora:smoke-fixture"
       }
     ],

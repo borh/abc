@@ -1,0 +1,47 @@
+{
+  "request_set_label": "smoke-basic-ja",
+  "snapshot_label": "soranoha-snapshot-2026-07-07-01",
+  "generated_at": "2026-07-07T00:00:00Z",
+  "manifest_index_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+  "failure_policy": {
+    "allow_nonzero_failures": true,
+    "max_failure_rate": null,
+    "per_diagnostic_tolerances": {}
+  },
+  "layout_policy": {
+    "loose_artifact_kinds": [
+      "tei",
+      "plaintext"
+    ],
+    "batched_artifact_kinds": [
+      "analysis",
+      "tokenized"
+    ],
+    "batch_target_work_count": 250,
+    "archive_format": "tar.zst"
+  },
+  "schema_hash_paths": [
+    "schemas/manifest.schema.json",
+    "schemas/request-set.schema.json",
+    "schemas/snapshot-index.schema.json",
+    "schemas/analysis-result.schema.json"
+  ],
+  "schema_hashes": [],
+  "parser_evidence_hashes": [],
+  "manifest_references": [
+    {
+      "manifest_path": "examples/v0/example-work/source.manifest.json",
+      "locator": {
+        "kind": "loose",
+        "path": "manifests/source.manifest.json"
+      }
+    },
+    {
+      "manifest_path": "examples/v0/example-work/manifest.json",
+      "locator": {
+        "kind": "loose",
+        "path": "manifests/tei.manifest.json"
+      }
+    }
+  ]
+}

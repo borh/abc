@@ -175,6 +175,7 @@ pub fn run_analyze_aat_warehouse(
     run_id: &str,
     jobs: usize,
     warehouse_profile: WarehouseProfile,
+    zstd_level: i32,
 ) -> Result<()> {
     pipeline::run_analyze_aat_warehouse(
         aat,
@@ -184,6 +185,7 @@ pub fn run_analyze_aat_warehouse(
         run_id,
         jobs,
         warehouse_profile,
+        zstd_level,
     )
 }
 
@@ -1523,6 +1525,7 @@ mod tests {
             "run-a",
             1,
             WarehouseProfile::Full,
+            3,
         )
         .unwrap();
 
@@ -1563,6 +1566,7 @@ mod tests {
             "run-a",
             1,
             WarehouseProfile::Triage,
+            3,
         )
         .unwrap();
 
@@ -1617,6 +1621,7 @@ mod tests {
             "run-a",
             1,
             WarehouseProfile::Full,
+            3,
         )
         .unwrap();
 
@@ -1652,6 +1657,7 @@ mod tests {
             "run-a",
             1,
             WarehouseProfile::Triage,
+            3,
         )
         .unwrap();
 
@@ -1687,6 +1693,7 @@ mod tests {
             "run-a",
             2,
             WarehouseProfile::Full,
+            3,
         )
         .unwrap();
 
@@ -1728,6 +1735,7 @@ mod tests {
             "shards-run-a",
             1,
             WarehouseProfile::Full,
+            3,
         )
         .unwrap_err();
         assert!(
@@ -2161,6 +2169,7 @@ mod tests {
             input_path: "test".to_owned(),
             analyzer_rows: vec![],
             warehouse_profile: WarehouseProfile::Full,
+            zstd_level: 3,
         };
         merge_warehouse_shard_runs(&options, &shard_run_dirs).unwrap();
 

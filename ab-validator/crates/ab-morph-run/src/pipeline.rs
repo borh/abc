@@ -205,6 +205,7 @@ pub fn run_analyze_aat_warehouse(
     run_id: &str,
     jobs: usize,
     warehouse_profile: WarehouseProfile,
+    zstd_level: i32,
 ) -> Result<()> {
     run_analyze_aat_warehouse_impl(
         aat,
@@ -214,9 +215,11 @@ pub fn run_analyze_aat_warehouse(
         run_id,
         jobs,
         warehouse_profile,
+        zstd_level,
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn run_analyze_aat_warehouse_impl(
     aat: Option<&Path>,
     aat_dir: Option<&Path>,
@@ -225,6 +228,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
     run_id: &str,
     jobs: usize,
     warehouse_profile: WarehouseProfile,
+    zstd_level: i32,
 ) -> Result<()> {
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
@@ -268,6 +272,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
                     input_path,
                     analyzer_rows,
                     warehouse_profile,
+                    zstd_level,
                 }),
                 progress: Some(SerialProgress {
                     label: format!("warehouse:{run_id}"),
@@ -291,6 +296,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
                 input_path,
                 analyzer_rows,
                 warehouse_profile,
+                zstd_level,
             },
         )?;
     }
@@ -550,6 +556,7 @@ pub(crate) fn run_analyze_aat_serial(
         let mut writer = WarehouseWriter::create_for_tables(
             warehouse.paths.clone(),
             warehouse.warehouse_profile.tables(),
+            warehouse.zstd_level,
         )?;
         writer.append_run_analyzers(&warehouse.analyzer_rows)?;
         Some(writer)
@@ -1117,6 +1124,7 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
                                 input_path: input_path.clone(),
                                 analyzer_rows: analyzer_rows.clone(),
                                 warehouse_profile: options.warehouse_profile,
+                                zstd_level: options.zstd_level,
                             }),
                             progress: Some(SerialProgress {
                                 label: format!("warehouse-worker-{job_index}/shard-{shard_index}"),
@@ -1448,6 +1456,7 @@ pub(crate) fn merge_warehouse_shard_runs(
     let mut writer = WarehouseWriter::create_for_tables(
         paths.clone(),
         &[WarehouseTable::Runs, WarehouseTable::RunAnalyzers],
+        options.zstd_level,
     )?;
     writer.append_run_analyzers(&options.analyzer_rows)?;
     for table in options.warehouse_profile.merged_data_tables() {

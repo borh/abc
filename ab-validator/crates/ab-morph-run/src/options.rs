@@ -106,6 +106,7 @@ pub(crate) struct WarehouseRunOptions {
     pub(crate) input_path: String,
     pub(crate) analyzer_rows: Vec<RunAnalyzerRow>,
     pub(crate) warehouse_profile: WarehouseProfile,
+    pub(crate) zstd_level: i32,
 }
 
 #[derive(Debug, Clone)]
@@ -123,4 +124,5 @@ pub(crate) struct WarehouseParallelOptions {
     pub(crate) input_path: String,
     pub(crate) analyzer_rows: Vec<RunAnalyzerRow>,
     pub(crate) warehouse_profile: WarehouseProfile,
+    pub(crate) zstd_level: i32,
 }

@@ -49,10 +49,14 @@ pub struct WarehouseWriter {
 impl WarehouseWriter {
     #[allow(dead_code)]
     pub fn create(paths: WarehousePaths) -> Result<Self> {
-        Self::create_for_tables(paths, WarehouseTable::ALL)
+        Self::create_for_tables(paths, WarehouseTable::ALL, 3)
     }
 
-    pub fn create_for_tables(paths: WarehousePaths, tables: &[WarehouseTable]) -> Result<Self> {
+    pub fn create_for_tables(
+        paths: WarehousePaths,
+        tables: &[WarehouseTable],
+        zstd_level: i32,
+    ) -> Result<Self> {
         if paths.final_dir.exists() {
             bail!("warehouse run {} already exists", paths.run_id);
         }
@@ -67,78 +71,96 @@ impl WarehouseWriter {
 
         Ok(Self {
             write_time: std::time::Duration::ZERO,
-            runs: open_optional_table_writer(&paths, tables, WarehouseTable::Runs, runs_schema())?,
+            runs: open_optional_table_writer(
+                &paths,
+                tables,
+                WarehouseTable::Runs,
+                runs_schema(),
+                zstd_level,
+            )?,
             run_analyzers: open_optional_table_writer(
                 &paths,
                 tables,
                 WarehouseTable::RunAnalyzers,
                 run_analyzers_schema(),
+                zstd_level,
             )?,
             sources: open_optional_table_writer(
                 &paths,
                 tables,
                 WarehouseTable::Sources,
                 sources_schema(),
+                zstd_level,
             )?,
             projection_spans: open_optional_table_writer(
                 &paths,
                 tables,
                 WarehouseTable::ProjectionSpans,
                 projection_spans_schema(),
+                zstd_level,
             )?,
             analyses: open_optional_table_writer(
                 &paths,
                 tables,
                 WarehouseTable::Analyses,
                 analyses_schema(),
+                zstd_level,
             )?,
             morphemes: open_optional_table_writer(
                 &paths,
                 tables,
                 WarehouseTable::Morphemes,
                 morphemes_schema(),
+                zstd_level,
             )?,
             morpheme_features: open_optional_table_writer(
                 &paths,
                 tables,
                 WarehouseTable::MorphemeFeatures,
                 morpheme_features_schema(),
+                zstd_level,
             )?,
             nway_regions: open_optional_table_writer(
                 &paths,
                 tables,
                 WarehouseTable::NwayRegions,
                 nway_regions_schema(),
+                zstd_level,
             )?,
             nway_region_analyzers: open_optional_table_writer(
                 &paths,
                 tables,
                 WarehouseTable::NwayRegionAnalyzers,
                 nway_region_analyzers_schema(),
+                zstd_level,
             )?,
             nway_region_oracle_evidence: open_optional_table_writer(
                 &paths,
                 tables,
                 WarehouseTable::NwayRegionOracleEvidence,
                 nway_region_oracle_evidence_schema(),
+                zstd_level,
             )?,
             nway_feature_diffs: open_optional_table_writer(
                 &paths,
                 tables,
                 WarehouseTable::NwayFeatureDiffs,
                 nway_feature_diffs_schema(),
+                zstd_level,
             )?,
             feature_pattern_counts: open_optional_table_writer(
                 &paths,
                 tables,
                 WarehouseTable::FeaturePatternCounts,
                 feature_pattern_counts_schema(),
+                zstd_level,
             )?,
             errors: open_optional_table_writer(
                 &paths,
                 tables,
                 WarehouseTable::Errors,
                 errors_schema(),
+                zstd_level,
             )?,
             paths,
         })
@@ -670,7 +692,10 @@ pub fn compact_staged_table(paths: &WarehousePaths, table: WarehouseTable) -> Re
             .with_context(|| format!("remove stale {}", compact_dir.display()))?;
     }
     let compact_paths = WarehousePaths::new(&compact_dir, "compact");
-    let mut writer = WarehouseWriter::create_for_tables(compact_paths.clone(), &[table])?;
+    // Compaction rewrites already-staged small parts into one file; it is not
+    // part of the configurable-level knob's scope (§ perf task 3), so it keeps
+    // the fixed default level.
+    let mut writer = WarehouseWriter::create_for_tables(compact_paths.clone(), &[table], 3)?;
     for part in &part_paths {
         append_parquet_table_file(&mut writer, table, part)?;
     }
@@ -864,12 +889,13 @@ fn open_table_writer(
     paths: &WarehousePaths,
     table: WarehouseTable,
     schema: Arc<Schema>,
+    zstd_level: i32,
 ) -> Result<ArrowWriter<File>> {
     let file = File::create(paths.staging_table_path(table))?;
     Ok(ArrowWriter::try_new(
         file,
         schema,
-        Some(writer_properties()),
+        Some(writer_properties(zstd_level)),
     )?)
 }
 
@@ -878,19 +904,20 @@ fn open_optional_table_writer(
     tables: &[WarehouseTable],
     table: WarehouseTable,
     schema: Arc<Schema>,
+    zstd_level: i32,
 ) -> Result<Option<ArrowWriter<File>>> {
     if tables.contains(&table) {
-        open_table_writer(paths, table, schema).map(Some)
+        open_table_writer(paths, table, schema, zstd_level).map(Some)
     } else {
         Ok(None)
     }
 }
 
-fn writer_properties() -> WriterProperties {
+fn writer_properties(zstd_level: i32) -> WriterProperties {
     WriterProperties::builder()
         .set_max_row_group_size(WAREHOUSE_MAX_ROW_GROUP_SIZE)
         .set_compression(Compression::ZSTD(
-            ZstdLevel::try_new(3).expect("valid zstd level"),
+            ZstdLevel::try_new(zstd_level).expect("valid zstd level"),
         ))
         .build()
 }
@@ -1167,7 +1194,20 @@ mod tests {
 
     #[test]
     fn writer_properties_use_bounded_row_groups_for_large_string_tables() {
-        assert_eq!(writer_properties().max_row_group_size(), 50_000);
+        assert_eq!(writer_properties(3).max_row_group_size(), 50_000);
+    }
+
+    #[test]
+    fn writer_properties_honor_zstd_level() {
+        let props = writer_properties(1);
+        assert_eq!(props.max_row_group_size(), 50_000);
+        assert!(matches!(
+            props.compression(&"any".into()),
+            parquet::basic::Compression::ZSTD(_)
+        ));
+        // `writer_properties` should accept the full validated CLI range
+        // without panicking.
+        writer_properties(22);
     }
 
     #[test]
@@ -1404,7 +1444,8 @@ mod tests {
         use std::time::Duration;
         let root = temp_dir("write-time");
         let paths = WarehousePaths::new(&root, "wt-run");
-        let mut writer = WarehouseWriter::create_for_tables(paths, WarehouseTable::ALL).unwrap();
+        let mut writer =
+            WarehouseWriter::create_for_tables(paths, WarehouseTable::ALL, 3).unwrap();
         assert_eq!(writer.write_time(), Duration::ZERO);
 
         // Append enough error rows to force at least one write() call.
@@ -1525,7 +1566,7 @@ mod tests {
         let mut writer = ArrowWriter::try_new(
             File::create(path).unwrap(),
             sources_schema(),
-            Some(writer_properties()),
+            Some(writer_properties(3)),
         )
         .unwrap();
         let mut discard_write_time = std::time::Duration::ZERO;

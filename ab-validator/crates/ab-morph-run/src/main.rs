@@ -66,6 +66,9 @@ enum Command {
         resume: bool,
         #[arg(long, default_value_t = 1)]
         jobs: usize,
+        /// Parquet ZSTD compression level (1..=22). Higher = smaller files, slower encode.
+        #[arg(long, default_value_t = 3, value_parser = clap::value_parser!(i32).range(1..=22))]
+        parquet_zstd_level: i32,
         #[arg(long, value_enum, default_value_t = ab_morph_run::OutputProfile::Full)]
         output_profile: ab_morph_run::OutputProfile,
         #[arg(long, default_value_t = 10)]
@@ -400,6 +403,7 @@ fn main() -> Result<()> {
             max_nway_examples_per_text,
             resume,
             jobs,
+            parquet_zstd_level,
             output_profile,
             max_examples_per_comparison,
             progress,
@@ -422,6 +426,7 @@ fn main() -> Result<()> {
                         .expect("validate_warehouse_cli requires --run-id"),
                     jobs,
                     warehouse_profile,
+                    parquet_zstd_level,
                 );
             }
             let progress_enabled = progress || progress_interval_seconds.is_some();
@@ -1556,6 +1561,83 @@ mod tests {
         };
 
         assert_eq!(warehouse_profile, ab_morph_run::WarehouseProfile::Triage);
+    }
+
+    #[test]
+    fn parses_parquet_zstd_level() {
+        let args = Args::try_parse_from([
+            "ab-morph-run",
+            "analyze-aat",
+            "--aat-dir",
+            "scratch/aats",
+            "--analyzer",
+            "vibrato",
+            "--warehouse-dir",
+            "scratch/morph-warehouse",
+            "--run-id",
+            "zstd-2026-07-07",
+            "--parquet-zstd-level",
+            "7",
+        ])
+        .unwrap();
+
+        let Command::AnalyzeAat {
+            parquet_zstd_level,
+            ..
+        } = args.command
+        else {
+            panic!("expected analyze-aat");
+        };
+
+        assert_eq!(parquet_zstd_level, 7);
+    }
+
+    #[test]
+    fn parquet_zstd_level_defaults_to_three() {
+        let args = Args::try_parse_from([
+            "ab-morph-run",
+            "analyze-aat",
+            "--aat-dir",
+            "scratch/aats",
+            "--analyzer",
+            "vibrato",
+            "--warehouse-dir",
+            "scratch/morph-warehouse",
+            "--run-id",
+            "zstd-default-2026-07-07",
+        ])
+        .unwrap();
+
+        let Command::AnalyzeAat {
+            parquet_zstd_level,
+            ..
+        } = args.command
+        else {
+            panic!("expected analyze-aat");
+        };
+
+        assert_eq!(parquet_zstd_level, 3);
+    }
+
+    #[test]
+    fn rejects_out_of_range_parquet_zstd_level() {
+        let err = Args::try_parse_from([
+            "ab-morph-run",
+            "analyze-aat",
+            "--aat-dir",
+            "scratch/aats",
+            "--analyzer",
+            "vibrato",
+            "--warehouse-dir",
+            "scratch/morph-warehouse",
+            "--run-id",
+            "zstd-oob-2026-07-07",
+            "--parquet-zstd-level",
+            "99",
+        ])
+        .unwrap_err();
+
+        assert_eq!(err.kind(), clap::error::ErrorKind::ValueValidation);
     }
 
     #[test]

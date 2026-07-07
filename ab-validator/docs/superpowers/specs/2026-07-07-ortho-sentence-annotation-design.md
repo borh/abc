@@ -6,6 +6,10 @@
 (`orthographic_annotations` serialization), ABC parser-IR schema, downstream
 ABC TEI renderer.
 **Predecessors:** `2026-07-05-ortho-detect-design.md` (detector + ADR).
+**Follow-up correction:** Decision D3 ("ABC owns sentence splitting") is
+superseded by
+`2026-07-07-parser-ir-sentence-segmentation-and-ortho-tei-design.md`.
+ab-validator owns parser-IR sentence segmentation evidence; ABC renders it.
 
 ## Goal
 
@@ -144,9 +148,9 @@ contract because the annotation bundle is a standalone input to
 `work_content_hash` does not match the AAT being converted.
 
 ABC schema change: add `orthographic_annotations` to parser-IR
-`properties` and `$defs`. Schema version bump (0.5.0 → 0.6.0 or minor) plus
-the corresponding mapping artifact hash update. Separate ABC task — not in
-ab-validator scope.
+`properties` and `$defs`. The follow-up parser-IR sentence design sets the
+next schema version to `0.6.0` and includes the corresponding mapping artifact
+hash update. Separate ABC task — not in ab-validator scope.
 
 ab-validator must not emit parser-IR that claims the old schema hash while
 carrying `orthographic_annotations`. If the loaded parser-IR schema does not
@@ -165,12 +169,16 @@ not skip output validation.
 `<choice>` use. The new `orthographic_annotations` field in parser-IR
 is a separate versioned contract for `<s>` annotation.
 
-### Sentence splitting
+### Sentence splitting (superseded)
 
-**ABC owns sentence segmentation.** ABC's TEI renderer already has a
-quote-aware Japanese sentence splitter (`abc/src/abc/text.clj`).
-ab-validator's `sentence_split()` was used for detection, not for TEI
-output coordinates.
+This section is superseded by
+`2026-07-07-parser-ir-sentence-segmentation-and-ortho-tei-design.md`.
+The earlier decision assigned sentence segmentation to ABC. The follow-up
+design moves sentence segmentation evidence into parser-IR, produced by
+ab-validator during parsing/conversion. ABC renders the supplied sentence rows
+and does not split parser-IR text for TEI when `sentences[]` is present.
+
+Historical pre-follow-up design:
 
 ABC's renderer:
 1. Splits body text into sentences using ABC's splitter
@@ -179,18 +187,18 @@ ABC's renderer:
    `OrthoAnnotation.source_byte_range`
 4. If yes: sets `@type="orthographic-katakana"`
 
-Sentence boundaries are ABC's decision. ab-validator's annotations are
-byte ranges; ABC's splitter determines where `<s>` tags go. An `<s>`
-carries `@type` if it overlaps an annotation (partial overlap counts —
-a sentence that starts in normal orthography and ends in katakana-majiri
-still gets the annotation).
+In this historical design, sentence boundaries were ABC's decision.
+ab-validator's annotations were byte ranges; ABC's splitter determined where
+`<s>` tags went. An `<s>` carried `@type` if it overlapped an annotation
+(partial overlap counted — a sentence that started in normal orthography and
+ended in katakana-majiri still got the annotation).
 
 ### All-sentence wrapping
 
 Recommend all sentences get `<s>` wrappers (consistent structure), with
-`@type` only on annotated ones. Partial wrapping (only ortho sentences
-get `<s>`) creates two shapes for the same concept. ABC makes the final
-call.
+`@type` only on annotated ones. Partial wrapping (only ortho sentences get
+`<s>`) creates two shapes for the same concept. The follow-up spec makes
+all-sentence rows part of parser-IR evidence.
 
 ### Boundary
 
@@ -200,7 +208,7 @@ call.
 | Serialize annotations to parser-IR `orthographic_annotations` | ab-validator (`ab-aat-to-parser-ir` converter) |
 | Parser-IR schema: add `orthographic_annotations` field | ABC (`abc/schemas/parser-ir.schema.json`) |
 | Mapping artifact target schema hash update | ab-validator mirror of ABC schema/mapping inputs |
-| Sentence splitting for TEI | ABC (`abc/src/abc/text.clj`) |
+| Sentence segmentation evidence | Superseded: ab-validator parser-IR conversion |
 | `<s>` wrapping + `@type` rendering | ABC (TEI renderer) |
 | `<normalization>` header declaration | ABC |
 | TEI ODD profile update (allow `<s>` + `@type`) | ABC |
@@ -211,7 +219,8 @@ call.
   character-only detector lacks. The three-way gold labels evaluate
   recall; the output says `orthographic-katakana` regardless.
 - **`<choice>/<orig>/<reg>`:** Rejected. Annotation, not replacement.
-- **New sentence splitter in ab-validator:** ABC owns segmentation.
+- **New sentence splitter in ab-validator:** Superseded by follow-up design;
+  parser-IR sentence segmentation is now planned in ab-validator conversion.
 - **Paragraph-level aggregation:** Stay sentence-level. Consumers can
   aggregate from sentence annotations.
 
@@ -221,7 +230,7 @@ call.
 |---|---|---|
 | D1 | `type="orthographic-katakana"` only — no subtype | Detector does kata→hira, not historical kana normalization. Honest label. |
 | D2 | New parser-IR field `orthographic_annotations: {work_id, work_content_hash, coordinate_system, detector_id, annotations: [OrthoAnnotation]}` | ABC-facing contract with enough identity to reject mismatched standalone bundles. `AatProjection.ortho_normalizations` stays internal (reserved for `<choice>`). New field is versioned in parser-IR schema. |
-| D3 | ABC owns sentence splitting | ABC has quote-aware splitter. Annotations are byte ranges; ABC determines `<s>` boundaries. |
+| D3 | Superseded: parser-IR owns sentence segmentation evidence | Follow-up spec `2026-07-07-parser-ir-sentence-segmentation-and-ortho-tei-design.md` moves splitting to ab-validator parsing/conversion and leaves ABC responsible for `<s>` rendering. |
 | D4 | `<s>` overlap: partial overlap = annotated | A sentence that partially overlaps an annotation gets `@type`. Avoids edge-case gaps. |
 | D5 | `<normalization>` under `<editorialDecl>` | Matches existing TEI profile structure. |
 | D6 | Detector ID and source identity explicit in wrapper | `OrthoAnnotation` doesn't carry detector ID, coordinate-system, or source identity; the wrapper bundle adds them so ABC consumers know provenance and the converter can reject mismatches. |
@@ -229,7 +238,8 @@ call.
 
 ## Open questions
 
-1. **All-`<s>` wrapping?** Recommend yes (consistent shape). ABC decides.
-2. **Parser-IR schema version bump:** Adding `orthographic_annotations`
-   requires a new schema property/`$def` and a mapping artifact target-hash
-   update. ABC owns the schema change. What version does it become?
+The original open questions are superseded by
+`2026-07-07-parser-ir-sentence-segmentation-and-ortho-tei-design.md`:
+
+- All-sentence wrapping is represented as parser-IR `sentences[]` rows.
+- The parser-IR schema version becomes `0.6.0`.

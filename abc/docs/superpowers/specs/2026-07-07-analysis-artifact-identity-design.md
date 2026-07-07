@@ -157,6 +157,10 @@ Only the first five affect slice artifact identity. Run identity belongs in
 provenance. Pack identity belongs to a collection-level manifest or pack
 descriptor, not to a per-work slice.
 
+Not every coordinate is identity-bearing for every slice. The input-view
+identity map determines which coordinates must be populated and which must be
+null for a given `input_view_kind` and recipe class.
+
 ### Subject Coordinate
 
 A subject coordinate should carry at least:
@@ -237,6 +241,13 @@ The first implementation slice should support only
 `parser-ir-plaintext-body-v1`. The ADR must still include the table row so
 conflict detection can be enforced from a deterministic identity rule.
 
+Release validation must re-check copied identity fields. For any `analysis` or
+`tokenized` manifest whose identity map says a field is copied from a producer,
+the manifest index validator must load the producer manifest named in
+`provenance.used` / `provenance.was_derived_from` and compare the copied fields
+byte-for-byte, including nulls. Schema validation alone is not enough because a
+wrong copied hash can still have the right JSON type.
+
 ### Tokenizer Coordinate
 
 The tokenizer coordinate should be modeled as a hash-addressed profile value:
@@ -277,6 +288,20 @@ release identity.
 using the same RFC 8785 JCS discipline as manifest identity. It is not a human
 label.
 
+Recipe and tokenizer semantic ids are lookup labels, not identities. The
+registry stores immutable recipe/profile objects by content hash and an
+append-only semantic-binding log. A binding log entry records at least
+`semantic_id`, `content_hash`, `valid_from`, and optional
+`supersedes_entry_hash`; its own canonical JSON hash is the
+`registry_entry_hash`. A "current" semantic-id index is a generated view over
+that log. `valid_until` may be derived from later binding entries, but existing
+binding entries are not rewritten.
+
+The request-set resolver may accept semantic ids as input, but its output must
+record the selected `content_hash`, the `registry_entry_hash`, and the
+resolution time for audit. Only the selected content hash participates in
+artifact or request-set identity.
+
 The recipe value should include:
 
 - `schema_id` and recipe schema hash.
@@ -304,6 +329,12 @@ Recipe classes:
 | Morph-feature metrics | Yes | POS distribution, lemma richness | Tokenizer plus feature profile are identity-bearing. |
 | Comparative analyzer metrics | Yes, often multiple tokenizers/analyzers | boundary disagreement, coverage mismatch | Better represented in morph warehouse packs, with explicit analyzer-set coordinates. |
 | Model-derived metrics | Maybe | embeddings, classifier outputs | Must record model weights and stochastic policy; non-exact outputs are not releasable as exact artifacts. |
+
+Recipes that require corpus-level statistics, such as corpus-normalized
+denominators, must consume those statistics as a separate hash-addressed input
+artifact produced by a prior pass. They must not close over the source corpus
+snapshot directly from a per-work slice derivation. The corpus-statistics
+artifact is recorded in `provenance.used`.
 
 ### Output Contract
 
@@ -356,6 +387,8 @@ Current v0.4 manifests can represent per-work slices:
 
 Null means not applicable. It must not mean unknown. If a required coordinate
 cannot be determined, produce a failed manifest or no release artifact.
+For any field required by the input-view identity map, a builder must not emit a
+successful `analysis` manifest with null as a placeholder for unknown.
 
 ### Sidecar Roles
 
@@ -455,7 +488,9 @@ Example shape:
     "analysis_recipes": [
       {
         "recipe_id": "literary-basic-ja-v1",
-        "analysis_recipe_hash": "sha256:..."
+        "analysis_recipe_hash": "sha256:...",
+        "registry_entry_hash": "sha256:...",
+        "resolved_at": "2026-07-07T00:00:00Z"
       }
     ],
     "tokenizer_profiles": []
@@ -477,7 +512,10 @@ Rules:
 - Semantic ids such as `literary-basic-ja-v1` and `vibrato-unidic-suw-v1` are
   resolver inputs and human labels. At resolve time they must be normalized to
   `analysis_recipe_hash` and `tokenizer_profile_hash`. Only content hashes
-  participate in request-set identity.
+  participate in request-set identity. The resolver must also record the
+  semantic-binding `registry_entry_hash` and resolution time in non-identity
+  metadata so a human label in a paper can be audited back to the exact hash it
+  named at resolution time.
 - Ordering is canonical before JCS hashing:
   - `subjects`: sort by `source_id`, then `work_content_hash`, then
     `metadata_record_hash` with null treated as the empty string.
@@ -493,6 +531,11 @@ Rules:
 - The null-to-empty-string rule is comparator-only. JCS serialization retains
   JSON null for `metadata_record_hash`, matching `manifest_identity_object`'s
   nullable-hash convention.
+- Multiple subject entries may share `source_id` when they differ in
+  `work_content_hash` or `metadata_record_hash`, for example across editions or
+  metadata revisions. The three-key subject sort distinguishes them. Exact
+  duplicate subject entries after normalization must be coalesced before
+  hashing; a resolver may record a non-identity warning about the duplicate.
 
 ## Materialization Flow
 
@@ -557,7 +600,13 @@ writes the child manifest.
 
 ### Determinism Tier and Derivation Kind
 
-Determinism tier controls cache policy:
+Cache policy uses the effective output determinism tier, not only the recipe's
+declared tier. The effective tier is the lowest tier across the recipe, input
+view producer, tokenizer profile, model weights, and any auxiliary artifacts
+the recipe consumes. A stable recipe over a bounded tokenizer is bounded. An
+exact recipe over exact text-view input remains exact.
+
+The effective tier controls cache policy:
 
 | Tier | Nix realization | Substitution policy |
 |---|---|---|
@@ -647,6 +696,10 @@ should include columns sufficient to rejoin every row to canonical manifests:
 The pack column list is itself an output-format contract. Its schema or table
 layout hash is the pack's `output_format_spec_hash`.
 
+Columns that carry ABC hashes use the same `sha256:<hex>` UTF-8 string form as
+manifest identity fields. Nullable hash columns are nullable strings, not binary
+hash blobs or empty strings.
+
 ## Error Handling
 
 - If tokenization or analysis fails for one subject, write a failed manifest
@@ -684,7 +737,7 @@ analysis is no longer merely an informational sidecar for that publication.
 
 | Component | Purpose | Inputs | Outputs | State / Time / Identity |
 |---|---|---|---|---|
-| Recipe registry | Store canonical tokenizer profiles and analysis recipes | JSON recipe/profile files | Hashes, validation reports | Append-only by hash; semantic ids may supersede older versions. |
+| Recipe registry | Store canonical tokenizer profiles and analysis recipes | JSON recipe/profile files and semantic-binding log entries | Content hashes, binding-entry hashes, validation reports | Objects are append-only by hash; semantic-id "current" mappings are generated views over append-only binding events. |
 | Manifest index | Locate existing slices and conflicts | Manifest files | Coordinate lookup rows | Generated view; rebuildable; not identity-bearing. |
 | Request-set resolver | Turn selectors into fixed subject lists | Corpus snapshot, metadata, selector config | `analysis-request-set.json` | Request set is immutable by hash once resolved. |
 | Slice planner | Decide which slices are missing | Request set, manifest index | Build plan | Operational state only; no artifact identity. |
@@ -694,8 +747,8 @@ analysis is no longer merely an informational sidecar for that publication.
 
 ## Data Lifecycle
 
-- Recipes and tokenizer profiles are retained indefinitely once referenced by a
-  release.
+- Recipes, tokenizer profiles, and semantic-binding log entries are retained
+  indefinitely once referenced by a release.
 - Per-work successful slice manifests are canonical and append-only.
 - For any release claiming exact reproducibility, every cited slice manifest and
   every referenced recipe/profile object must be retained for the lifetime of
@@ -714,22 +767,28 @@ analysis is no longer merely an informational sidecar for that publication.
 |---|---|---|---|---|
 | ADR 0003 cost envelope is still Draft. | Follow-up | The materialization policy has synthetic evidence but no accepted smoke-corpus measurement. | Readers may treat bounded materialization as already proven. | State this dependency explicitly; request-set planners must respect the measured ADR 0003 envelope before release-scale adoption. |
 | Input view dependencies can drift across implementers. | Mitigated for first slice | Without a mapping, implementers could choose different parser/mapping fields for the same logical input view. | Same logical slice could produce different artifact ids. | Add the input-view identity map and require exact copying from producer manifests. First slice supports `parser-ir-plaintext-body-v1` only. |
-| Request-set identity can be circular or collision-prone. | Mitigated | A request set contains a derived id plus content coordinates. | Including the id creates circular hashing; hashing only subjects collides across recipes/profiles. | Define `request_set_identity_object`, exclude `request_set_id`, include recipe/profile hashes and pack policy hash, and fix array sort keys. |
-| Semantic ids can drift over time. | Mitigated | Recipe/profile ids may supersede older content. | Stable-looking request sets could resolve to different recipe/profile bytes later. | Resolver stores semantic ids for humans but hashes for identity; only content hashes participate in request-set identity. |
+| Copied producer identity fields can be wrong but schema-valid. | Mitigated for first slice | A builder can emit hashes with the right type but copied from the wrong producer or policy. | Single-builder pipelines may silently mint bad artifact ids until another implementation conflicts. | Release validation must compare copied fields against the producer manifest named in provenance. |
+| Request-set identity can be circular or collision-prone. | Mitigated | A request set contains a derived id plus content coordinates, and multiple editions may share a `source_id`. | Including the id creates circular hashing; hashing only subjects collides across recipes/profiles; duplicate handling could differ. | Define `request_set_identity_object`, exclude `request_set_id`, include recipe/profile hashes and pack policy hash, fix array sort keys, allow shared `source_id` when later sort keys differ, and coalesce exact duplicate subjects before hashing. |
+| Semantic ids can drift over time. | Mitigated | Recipe/profile labels may point at newer content over time. | A human citation to `literary-basic-ja-v1` is ambiguous without the selected binding. | Store recipe/profile objects by content hash and semantic-id bindings in an append-only log; resolver records content hash, binding-entry hash, and resolution time, while only content hashes affect identity. |
 | Request-set cardinality can exceed Nix evaluation budget. | Blocking for second ADR | Identity-bounded request sets can still produce many derivations. | A stable `request_set_id` could name an unbuildable release target under ADR 0003's envelope. | Planner must choose per-work, batch, or single-CAS realization based on measured evaluation budget; realization strategy is separate from identity. |
 | Producer identity copying can happen at the wrong time. | Mitigated | Copying producer fields could be done by evaluator or by builder. | Eval-time manifest parsing scales with slice count and harms cache behavior. | Require build-time copying by the analysis tool; Nix passes store paths and does not parse producer manifests during evaluation. |
-| Determinism tier lacks cache semantics. | Mitigated | Exact/stable/bounded/exploratory were semantic tiers only. | Exact outputs might miss content-addressed cache behavior; non-exact outputs might be forced into fixed-output builds. | Add tier-to-realization mapping: exact release replay verifies content hash; stable/bounded are input-addressed signed-cache; exploratory is local-only. |
+| Determinism tier lacks cache semantics. | Mitigated | Exact/stable/bounded/exploratory were semantic tiers only, and recipe tier can differ from tokenizer or producer tier. | Exact outputs might miss content-addressed cache behavior; non-exact outputs might be forced into fixed-output builds; bounded dependencies could be hidden by an exact recipe. | Compute an effective tier as the lowest tier across recipe and inputs. Exact release replay verifies content hash; stable/bounded are input-addressed signed-cache; exploratory is local-only. |
 | Per-work slices could close over full corpus snapshots. | Mitigated | `corpus_snapshot_hash` is identity-bearing, but the snapshot store path need not be a slice input. | Every slice closure could pull the full corpus into consumers' stores. | Per-work slice inputs are producer artifact paths; source snapshots are inputs only at source/parse tier. |
+| Corpus-normalized recipes need extra inputs. | Follow-up | Some metrics may require corpus-level denominators or reference distributions. | A per-work slice might reintroduce full-corpus closure bloat through the recipe path. | Such recipes must consume a separate hash-addressed corpus-statistics artifact from a prior pass and record it in provenance. |
 | Registry-as-directory can become a global cache-buster. | Blocking before Nix wiring | Append-only recipe/profile directories change when unrelated recipes are added. | Historical slice derivations would re-evaluate or rebuild when the registry grows. | Realize recipes/profiles as per-hash store paths and pass only the used hash paths to builders. |
 | Binary cache trust is content-layer, not artifact-id-layer. | Mitigated | Multiple artifact ids may cite the same content hash. | A bad cached content object affects every artifact id that accepts it. | Release review must audit shared `content_hash` provenance and signature policy. |
 | Batch derivation failure semantics are ambiguous. | Follow-up | Nix marks a failed derivation as failed, but ADR 0003 requires per-work failure attribution. | Batch builds could lose successful siblings or hide failures incorrectly. | Future batch builders should emit per-work success/failure manifests and fail only on batch-level contract failures. |
 | Request-set null sort wording can be misread. | Mitigated | Null was treated as empty string for sorting. | Implementers could serialize null as `""`, changing `request_set_id`. | Clarify null-to-empty-string is comparator-only; JCS retains JSON null. |
-| Pack column list needs an output-format hash. | Mitigated | The recommended Parquet columns define a layout. | Pack table layout could drift without identity rotation. | State that the pack layout schema/table hash is the pack `output_format_spec_hash`. |
+| Pack column list needs an output-format hash. | Mitigated | The recommended Parquet columns define a layout. | Pack table layout or hash column types could drift without identity rotation. | State that the pack layout schema/table hash is the pack `output_format_spec_hash`, and hash columns use the manifest `sha256:<hex>` string form. |
+| Required-null semantics can be misused. | Mitigated | Manifest schema permits nullable hash fields but cannot tell unknown from not applicable. | A partial successful manifest could hide an unknown required coordinate behind null. | The input-view identity map determines required fields; unknown required fields require a failed manifest or no successful manifest. |
 | Tokenizer config is not fully represented in manifest v0.4 identity. | Blocking for exact standalone tokenized artifacts | v0.4 has build and dictionary hashes but no profile/config hash. | Two token streams with different granularity or normalization could collide if only current fields are used. | Add a tokenizer profile/config hash before accepting the tokenized-artifact release path. Until then, fold profile/config into recipe hash for analysis slices and avoid exact release claims for standalone tokenized artifacts. |
 | Collection packs do not fit work-centric identity. | Blocking for pack manifests | v0.4 requires singular `work_content_hash`. | Pack manifests would misuse work identity or lose the request-set coordinate. | Limit v0.4 to per-work slices; add collection identity schema before publishing canonical packs. |
 | Recipe sidecar could duplicate the registry. | Mitigated | Recipes already live in a content-addressed registry. | Two canonical homes for recipe JSON create drift and citation confusion. | Do not add a generic recipe sidecar in the first slice. Future portable release copies must assert byte equality with the registry object hash. |
 | Pack-only sidecar roles could leak into the first slice. | Mitigated | Some proposed roles exist only for collection packs. | v0.4 would expose half-supported roles. | Add only `analysis-result` first; defer pack/request roles to the pack ADR. Add `token-table` only with tokenized slices. |
-| Warehouse run ids are tempting citation targets. | Mitigated | The morph warehouse has immutable run dirs and useful Parquet facts. | A run path can mix operational execution scope with artifact identity. | Treat warehouse runs as producers or generated packs. Cite manifests, request-set ids, and content hashes. |
+| Warehouse run ids are tempting citation targets. | Follow-up | The morph warehouse has immutable run dirs and useful Parquet facts, and existing users may already cite run ids. | Existing run citations can become orphaned if no bridge maps them to canonical artifact identity. | Treat warehouse runs as producers or generated packs; second ADR should define a run-provenance sidecar mapping run id to request-set id, slice artifact ids, and pack artifact ids. |
+| PROV-O export is useful but not first-slice identity. | Follow-up | Manifest provenance already uses PROV-like fields. | Paper authors may need machine-readable provenance export without changing artifact identity. | Consider a generated PROV-O JSON-LD view over manifests and analysis provenance after the core slice contract is stable. |
+| First-slice producer lookup is an implementation dependency. | Mitigated for first slice | The analysis builder needs the producer parser-IR manifest before it can copy fields. | The first slice could specify copying without providing a way to resolve the producer artifact. | Manifest index must support parser-IR lookup by `work_content_hash`, corpus snapshot, and relevant parser/input-view coordinates. |
+| Vocabulary is broad for a first slice. | Mitigated for first ADR | The design introduces slice, request set, pack, run, recipe, tokenizer profile, and batch terms. | Implementers may pull deferred pack or batch concepts into the first ADR. | The first-slice ADR must list which glossary terms are in scope and which are deferred. |
 | Publication sidecars can silently affect TEI if values are embedded later. | Mitigated | TEI currently does not consume analysis. | Future TEI headers could include metrics without rotating identity. | Rule: embedding analysis values makes analysis coordinates identity-bearing for that publication. |
 | Metrics can share names while differing in formulas. | Mitigated | STTR and Yule's K depend on token filters, denominators, and formulas. | Consumers compare incompatible values. | Metric ids are scoped by recipe hash; formula details live in canonical recipe JSON. |
 | Same content across source coordinates may share one slice. | Accepted tradeoff | Current manifest identity is content-oriented, not path-oriented. | A per-work query may need mapping rows even when artifact ids are shared. | Request sets and pack indexes carry `work_id`, `source_id`, and git/source coordinates. Promote source coordinate to identity only for recipes that depend on it. |
@@ -750,16 +809,23 @@ The first implementation slice should be deliberately small:
    plaintext metrics.
 2. Define the `parser-ir-plaintext-body-v1` input-view identity map and require
    exact copying of parser/mapping identity fields from the producer parser-IR
-   manifest.
+   manifest. Add a release validation check that compares those copied fields
+   against the producer manifest.
 3. Add the `analysis-result` sidecar role only.
 4. Materialize one per-work `analysis` manifest from an existing parser-IR
    plaintext input, with tokenizer fields null.
-5. Extend the manifest index enough to include analysis artifact kind and
-   reproduce conflict detection.
+5. Extend the manifest index enough to include analysis artifact kind,
+   reproduce conflict detection, and resolve producer `parser-ir` artifacts by
+   `work_content_hash`, corpus snapshot, and relevant parser/input-view
+   coordinates.
 6. If the prototype is exposed through Nix, pass the producer artifact and
    recipe as per-hash store-path inputs, copy producer identity fields at build
    time, avoid a registry-directory input, and keep the corpus snapshot out of
    the analysis-slice closure.
+7. In the first ADR, mark request sets as in scope for bounded build planning,
+   but mark collection packs, run-provenance bridges, batch realization,
+   tokenized slices, tokenizer profile identity, and PROV-O JSON-LD export as
+   deferred unless they are explicitly implemented.
 
 Token-dependent metrics, tokenizer profile schemas, and collection packs should
 follow only after the per-work slice contract is validated.
@@ -770,11 +836,15 @@ This spec should feed at least two ADRs:
 
 1. Analysis artifact identity ADR: accepts per-work analysis slices, the
    `parser-ir-plaintext-body-v1` input-view identity map, recipe hash rules,
-   request-set identity construction for bounded builds, Nix-safe first-slice
-   realization rules, publication interaction rules, and failure behavior.
+   semantic-binding log audit rules, request-set identity construction for
+   bounded builds, copied-field release validation, Nix-safe first-slice
+   realization rules, parser-IR producer lookup, publication interaction rules,
+   and failure behavior.
 2. Analysis pack and tokenizer profile ADR: accepts collection identity,
    request-set id reuse, tokenizer profile/config hash, Parquet pack layout,
-   batch/CAS realization policy, and exact cache/substitution policy.
+   corpus-statistics input artifacts, run-provenance bridges, batch/CAS
+   realization policy, exact cache/substitution policy, and optional PROV-O
+   JSON-LD export.
 
 Keeping these separate prevents collection/query packaging from blocking the
 basic per-work analysis contract.

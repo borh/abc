@@ -52,7 +52,7 @@
    :evidence_class :conversion-compatibility
    :producer_component "ab-validator"
    :logical_path "ab-validator/docs/example.md"
-   :current_external_path "../ab-validator/docs/example.md"
+   :current_external_path "docs/example.md"
    :sha256 example-hash
    :status :citable
    :summary "Example evidence."})

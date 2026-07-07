@@ -12,12 +12,10 @@ from typing import Any
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
-from reports.lib.hashing import file_sha256 as sha256_file
-from reports.lib.io import read_json, write_json
-from reports.lib.paths import repo_root
+from reports.lib.evidence import as_int, input_record, read_json_object
+from reports.lib.io import write_json
 
 SCHEMA_VERSION = "adapter-fidelity-worksets-v1"
-REPO_ROOT = repo_root()
 INCLUDED_BUCKETS = (
     "adapter_over_segmented",
     "adapter_collapsed",
@@ -28,41 +26,11 @@ INCLUDED_BUCKETS = (
 EXCLUDED_BUCKETS = ("aligned", "source_note_back_routing", "page_break_projection")
 
 
-def load_json(path: pathlib.Path) -> dict[str, Any]:
-    value = read_json(path)
-    if not isinstance(value, dict):
-        raise SystemExit(f"{path} must contain a JSON object")
-    return value
-
-
 def write_json_array(path: pathlib.Path, values: list[str]) -> dict[str, Any]:
     path.parent.mkdir(parents=True, exist_ok=True)
     unique_values = sorted(set(values))
     write_json(path, unique_values)
-    return {
-        "path": display_path(path),
-        "hash": sha256_file(path),
-        "count": len(unique_values),
-    }
-
-
-def display_path(path: pathlib.Path) -> str:
-    try:
-        return str(path.resolve().relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path)
-
-
-def as_int(value: Any) -> int:
-    if value is None:
-        return 0
-    if isinstance(value, bool):
-        return int(value)
-    if isinstance(value, int):
-        return value
-    if isinstance(value, float):
-        return int(value)
-    raise SystemExit(f"expected numeric value, got {value!r}")
+    return {**input_record(path), "count": len(unique_values)}
 
 
 def paragraph_origin(row: dict[str, Any]) -> str:
@@ -103,7 +71,7 @@ def workset_row(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_summary(args: argparse.Namespace) -> dict[str, Any]:
-    matrix = load_json(args.matrix_summary)
+    matrix = read_json_object(args.matrix_summary)
     rows = matrix.get("rows")
     if not isinstance(rows, list):
         rows = []
@@ -126,10 +94,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
     )
     return {
         "schema_version": SCHEMA_VERSION,
-        "matrix_summary": {
-            "path": display_path(args.matrix_summary),
-            "hash": sha256_file(args.matrix_summary),
-        },
+        "matrix_summary": input_record(args.matrix_summary),
         "included_buckets": list(INCLUDED_BUCKETS),
         "excluded_buckets": list(EXCLUDED_BUCKETS),
         "worksets": worksets,

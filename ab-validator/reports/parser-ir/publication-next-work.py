@@ -13,9 +13,9 @@ from typing import Any
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
-from reports.lib.hashing import file_sha256 as sha256_file
+from reports.lib.evidence import as_int, input_record, read_json_object
 from reports.lib.hashing import sha256_hex
-from reports.lib.io import read_json, write_json
+from reports.lib.io import write_json
 from reports.lib.paths import display_path, repo_root, tei_p5_root as configured_tei_p5_root
 
 SCHEMA_VERSION = "aozora-publication-next-work-v1"
@@ -48,13 +48,6 @@ REQUIRED_DOSSIER_SECTIONS = (
 TEI_P5_REFERENCE_RE = re.compile(r"`?(\$TEI_P5_ROOT/[^\s`)]+)`?")
 
 
-def load_json(path: pathlib.Path) -> dict[str, Any]:
-    value = read_json(path)
-    if not isinstance(value, dict):
-        raise SystemExit(f"{path} must contain a JSON object")
-    return value
-
-
 def document_hash(value: object) -> str:
     encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return sha256_hex(encoded)
@@ -67,27 +60,11 @@ def display_tei_p5_root(path: pathlib.Path) -> str:
     return display_path(path)
 
 
-def as_int(value: Any) -> int:
-    if value is None:
-        return 0
-    if isinstance(value, bool):
-        return int(value)
-    if isinstance(value, int):
-        return value
-    if isinstance(value, float):
-        return int(value)
-    raise SystemExit(f"expected numeric value, got {value!r}")
-
-
-def input_record(path: pathlib.Path) -> dict[str, str]:
-    return {"path": display_path(path), "hash": sha256_file(path)}
-
-
 def coverage_input_record(path: pathlib.Path, coverage: dict[str, Any]) -> dict[str, str]:
     stable_coverage = dict(coverage)
     stable_coverage.pop("next_work_dashboard", None)
     return {
-        "path": display_path(path),
+        "path": input_record(path)["path"],
         "hash": document_hash(stable_coverage),
         "hash_basis": "canonical_json_without_next_work_dashboard",
     }
@@ -477,8 +454,7 @@ def parser_acceptance_evidence(path: pathlib.Path) -> dict[str, Any]:
             missing_paths.append(display)
     title_match = re.search(r"^#\s+(.+?)\s*$", text, flags=re.MULTILINE)
     return {
-        "path": display_path(path),
-        "hash": sha256_file(path),
+        **input_record(path),
         "title": title_match.group(1) if title_match else path.name,
         "spec_status": parse_status(text),
         "required_evidence_inputs": len(required_inputs),
@@ -738,14 +714,14 @@ def render_item_evidence(item: dict[str, Any]) -> list[str]:
 
 
 def build_summary(args: argparse.Namespace) -> dict[str, Any]:
-    source = load_json(args.source_summary)
-    coverage = load_json(args.coverage_summary)
-    matrix = load_json(args.matrix_summary)
-    conversion = load_json(args.conversion_summary)
-    reference = load_json(args.source_reference_summary)
-    source_disposition = load_json(args.source_disposition_summary)
-    text_policy = load_json(args.text_policy_summary)
-    adapter_worksets = load_json(args.adapter_worksets_summary)
+    source = read_json_object(args.source_summary)
+    coverage = read_json_object(args.coverage_summary)
+    matrix = read_json_object(args.matrix_summary)
+    conversion = read_json_object(args.conversion_summary)
+    reference = read_json_object(args.source_reference_summary)
+    source_disposition = read_json_object(args.source_disposition_summary)
+    text_policy = read_json_object(args.text_policy_summary)
+    adapter_worksets = read_json_object(args.adapter_worksets_summary)
     performance_text = args.performance_report.read_text(encoding="utf-8")
     tei_p5_root = args.tei_p5_root.resolve() if args.tei_p5_root else default_tei_p5_root()
     lanes = parser_lanes(conversion)

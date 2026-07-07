@@ -1,5 +1,6 @@
 (ns abc.tools.aat-parser-ir-compat
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.edn-registry :as registry]
+            [abc.tools.files :as files]
             [abc.tools.malli :as am]
             [clojure.edn :as edn]
             [clojure.string :as string]
@@ -43,13 +44,6 @@
    :rules_missing
    :unsupported_occurrences])
 
-(defn- missing-key-errors
-  [idx entry]
-  (->> required-entry-keys
-       (remove #(contains? entry %))
-       (mapv #(str "AAT parser-IR compatibility registry entry " idx
-                   " is missing " %))))
-
 (defn- missing-evidence-scope-key-errors
   [idx entry]
   (let [scope (:evidence_scope entry)]
@@ -80,7 +74,11 @@
           " must be a map")]
     (vec
      (concat
-      (missing-key-errors idx entry)
+      (registry/missing-entry-key-errors
+       "AAT parser-IR compatibility registry entry"
+       idx
+       required-entry-keys
+       entry)
       (when (contains? entry :evidence_scope)
         (missing-evidence-scope-key-errors idx entry))
       (compatibility-malli-errors idx entry)))))
@@ -106,25 +104,11 @@
 
 (defn registry-errors
   [registry]
-  (vec
-   (cond
-     (not (map? registry))
-     ["AAT parser-IR compatibility registry must be an EDN map"]
-
-     (not (contains? registry :entries))
-     ["AAT parser-IR compatibility registry is missing :entries"]
-
-     (not (vector? (:entries registry)))
-     ["AAT parser-IR compatibility registry :entries must be a vector"]
-
-     (empty? (:entries registry))
-     ["AAT parser-IR compatibility registry :entries must not be empty"]
-
-     :else
-     (concat
-      (mapcat (fn [[idx entry]] (entry-errors idx entry))
-              (map-indexed vector (:entries registry)))
-      (duplicate-key-errors (:entries registry))))))
+  (registry/registry-errors
+   {:registry registry
+    :label "AAT parser-IR compatibility registry"
+    :entry-error-fn entry-errors
+    :duplicate-error-fn duplicate-key-errors}))
 
 (defn validate-registry!
   [registry]

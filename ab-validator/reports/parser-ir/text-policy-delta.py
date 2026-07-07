@@ -12,12 +12,10 @@ from typing import Any
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
-from reports.lib.hashing import file_sha256 as sha256_file
-from reports.lib.io import read_json, write_json
-from reports.lib.paths import repo_root
+from reports.lib.evidence import input_record, read_json_object
+from reports.lib.io import write_json
 
 SCHEMA_VERSION = "parser-ir-text-policy-delta-v1"
-REPO_ROOT = repo_root()
 CAUSES = (
     "ruby_or_parenthetical_policy",
     "front_back_source_region_policy",
@@ -44,20 +42,6 @@ SOURCE_MARKUP_BACKED_CAUSES = (
 )
 MANUAL_CLASSIFICATION_CAUSES = ("unknown_text_delta",)
 LETTER_REGION_MARKERS = ("宛先", "発信地")
-
-
-def load_json(path: pathlib.Path) -> dict[str, Any]:
-    value = read_json(path)
-    if not isinstance(value, dict):
-        raise SystemExit(f"{path} must contain a JSON object")
-    return value
-
-
-def display_path(path: pathlib.Path) -> str:
-    try:
-        return str(path.resolve().relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path)
 
 
 def row_id(row: dict[str, Any], index: int) -> str:
@@ -189,14 +173,13 @@ def write_worksets(
         if rows and worksets_dir is not None:
             path = worksets_dir / f"{cause}.json"
             write_json(path, rows)
-            record["path"] = display_path(path)
-            record["hash"] = sha256_file(path)
+            record.update(input_record(path))
         records[cause] = record
     return records
 
 
 def build_summary(args: argparse.Namespace) -> dict[str, Any]:
-    matrix = load_json(args.matrix_summary)
+    matrix = read_json_object(args.matrix_summary)
     rows = matrix.get("rows")
     if not isinstance(rows, list):
         rows = []
@@ -231,10 +214,7 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
     workset_files = write_worksets(args.worksets_dir, rows_by_cause)
     return {
         "schema_version": SCHEMA_VERSION,
-        "matrix_summary": {
-            "path": display_path(args.matrix_summary),
-            "hash": sha256_file(args.matrix_summary),
-        },
+        "matrix_summary": input_record(args.matrix_summary),
         "total_different_rows": total_different,
         "matrix_bucket_different_rows": bucket_different,
         "counts_by_cause": dict(counts),

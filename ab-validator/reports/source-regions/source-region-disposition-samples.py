@@ -11,9 +11,8 @@ from typing import Any
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(_REPO_ROOT))
 
-from reports.lib.hashing import file_sha256 as sha256_file
-from reports.lib.io import read_json, write_json
-from reports.lib.paths import display_path
+from reports.lib.evidence import as_int, input_record, read_json_object
+from reports.lib.io import write_json
 
 SCHEMA_VERSION = "source-region-disposition-samples-v1"
 VERDICT = "SOURCE_REGION_DISPOSITION_SAMPLES_READY"
@@ -27,25 +26,6 @@ SOURCE_COUNTERS = {
     LETTER_CLASS: "letter_address_origin_occurrences",
     "malformed_source": "malformed_source_occurrences",
 }
-
-
-def load_json(path: pathlib.Path) -> dict[str, Any]:
-    value = read_json(path)
-    if not isinstance(value, dict):
-        raise SystemExit(f"{path} must contain a JSON object")
-    return value
-
-
-def as_int(value: Any) -> int:
-    if value is None:
-        return 0
-    if isinstance(value, bool):
-        return int(value)
-    if isinstance(value, int):
-        return value
-    if isinstance(value, float):
-        return int(value)
-    raise SystemExit(f"expected numeric value, got {value!r}")
 
 
 def policy_dispositions(policy: dict[str, Any]) -> list[dict[str, Any]]:
@@ -85,8 +65,8 @@ def class_row(row: dict[str, Any], counters: dict[str, Any], present: bool) -> d
 
 
 def build_summary(args: argparse.Namespace) -> dict[str, Any]:
-    source = load_json(args.source_summary)
-    policy = load_json(args.policy)
+    source = read_json_object(args.source_summary)
+    policy = read_json_object(args.policy)
     counters = source.get("source_region_coverage")
     if not isinstance(counters, dict):
         raise SystemExit("source summary missing source_region_coverage")
@@ -114,19 +94,14 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
         "policy": {
             "policy_id": policy.get("policy_id"),
             "policy_version": policy.get("policy_version"),
-            "path": display_path(args.policy),
-            "hash": sha256_file(args.policy),
+            **input_record(args.policy),
         },
         "source_summary": {
-            "path": display_path(args.source_summary),
-            "hash": sha256_file(args.source_summary),
+            **input_record(args.source_summary),
             "works_scanned": source.get("works_scanned"),
             "gate_status": source.get("gate_status"),
         },
-        "source_report_md": {
-            "path": display_path(args.source_report_md),
-            "hash": sha256_file(args.source_report_md),
-        },
+        "source_report_md": input_record(args.source_report_md),
         "classes": classes,
     }
 

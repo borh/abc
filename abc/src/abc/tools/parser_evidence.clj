@@ -1,5 +1,6 @@
 (ns abc.tools.parser-evidence
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.edn-registry :as registry]
+            [abc.tools.files :as files]
             [abc.tools.malli :as am]
             [clojure.edn :as edn]
             [clojure.string :as string]))
@@ -16,12 +17,6 @@
    :status
    :summary])
 
-(defn- missing-key-errors
-  [idx entry]
-  (->> required-entry-keys
-       (remove #(contains? entry %))
-       (mapv #(str "Parser evidence index entry " idx " is missing " %))))
-
 (defn- parser-evidence-malli-errors
   [idx entry]
   (if-let [explanation (am/explain-contract ::am/parser-evidence-entry entry)]
@@ -35,7 +30,11 @@
     [(str "Parser evidence index entry " idx " must be a map")]
     (vec
      (concat
-      (missing-key-errors idx entry)
+      (registry/missing-entry-key-errors
+       "Parser evidence index entry"
+       idx
+       required-entry-keys
+       entry)
       (parser-evidence-malli-errors idx entry)))))
 
 (defn- duplicate-errors
@@ -56,25 +55,11 @@
 
 (defn index-errors
   [index]
-  (vec
-   (cond
-     (not (map? index))
-     ["Parser evidence index must be an EDN map"]
-
-     (not (contains? index :entries))
-     ["Parser evidence index is missing :entries"]
-
-     (not (vector? (:entries index)))
-     ["Parser evidence index :entries must be a vector"]
-
-     (empty? (:entries index))
-     ["Parser evidence index :entries must not be empty"]
-
-     :else
-     (concat
-      (mapcat (fn [[idx entry]] (entry-errors idx entry))
-              (map-indexed vector (:entries index)))
-      (duplicate-errors (:entries index))))))
+  (registry/registry-errors
+   {:registry index
+    :label "Parser evidence index"
+    :entry-error-fn entry-errors
+    :duplicate-error-fn duplicate-errors}))
 
 (defn validate-index!
   [index]

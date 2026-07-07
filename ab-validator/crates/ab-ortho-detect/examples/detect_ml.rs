@@ -29,6 +29,10 @@ struct GoldRecord {
     label: String,
 }
 
+fn is_positive(label: &str) -> bool {
+    label == "accept" || label == "normalize"
+}
+
 #[derive(Debug, Serialize)]
 struct OutRecord<'a> {
     sentence: &'a str,
@@ -56,12 +60,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // the borrows do not escape the loop body, so this is sound.
         let spans = sentence_split(&rec.sentence);
         let anns = det.detect(&spans);
+        let gold_pos = is_positive(&rec.label);
         let verdict = if anns.is_empty() { "reject" } else { "accept" };
+        let pred_pos = verdict == "accept";
         let out = OutRecord {
             sentence: &rec.sentence,
             gold: &rec.label,
             heuristic: verdict.to_string(),
-            agree: verdict == rec.label,
+            agree: gold_pos == pred_pos,
         };
         println!("{}", serde_json::to_string(&out)?);
     }

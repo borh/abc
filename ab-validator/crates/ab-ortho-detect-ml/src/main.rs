@@ -81,7 +81,7 @@ fn build_xy(recs: &[io::GoldRecord]) -> (Array2<f64>, Array1<i32>) {
         for (j, val) in v.iter().enumerate() {
             x[(i, j)] = *val;
         }
-        y[i] = if rec.label == "accept" { 1 } else { 0 };
+        y[i] = if rec.is_positive() { 1 } else { 0 };
     }
     (x, y)
 }

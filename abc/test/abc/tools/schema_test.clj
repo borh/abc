@@ -61,9 +61,9 @@
            (get recipe "schema_id")))
     (is (= "https://w3id.org/abc/schemas/analysis-result.schema.json"
            (get result "schema_id")))
-    (is (= "examples/v0/example-work/analysis-result.json"
+    (is (= "cards/000000/files/example.txt"
            (get-in result ["subject" "logical_path"])))
-    (is (= "refs/heads/example-work"
+    (is (= "0e9ea3e586"
            (get-in result ["subject" "git_ref"])))
     (is (= (manifest/schema-hash "schemas/analysis-result.schema.json")
            (get recipe "required_output_schema_hash")))

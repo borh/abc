@@ -7,8 +7,39 @@ use unicode_normalization::UnicodeNormalization;
 /// Layers: NFKC → strip non-kana → katakana→hiragana → discrete historical
 /// folds → long-vowel canonicalization → bounded lexical table. Idempotent.
 pub(crate) fn normalize(reading: &str) -> String {
-    // 1. NFKC, then katakana→hiragana, keeping only kana.
-    let mut chars: Vec<char> = reading.nfkc().filter_map(kana_to_hiragana).collect();
+    // 1. NFKC, then katakana→hiragana keeping only kana; expand iteration marks
+    //    (ゝ ゞ ヽ ヾ) against the last repeatable kana (never the prolongation mark
+    //    ー) so historical ruby like ものゝふ → もののふ instead of dropping the
+    //    mark (ものふ). ゝ/ヽ repeat the unvoiced base (classical); ゞ/ヾ the voiced
+    //    form. The pushed kana updates last_kana so chained marks (ゝゝ) work.
+    let mut chars: Vec<char> = Vec::new();
+    let mut last_kana: Option<char> = None;
+    for ch in reading.nfkc() {
+        match ch {
+            'ゝ' | 'ヽ' => {
+                if let Some(prev) = last_kana {
+                    let r = unvoiced_base(prev);
+                    chars.push(r);
+                    last_kana = Some(r);
+                }
+            }
+            'ゞ' | 'ヾ' => {
+                if let Some(prev) = last_kana {
+                    let r = voiced_form(unvoiced_base(prev));
+                    chars.push(r);
+                    last_kana = Some(r);
+                }
+            }
+            _ => {
+                if let Some(h) = kana_to_hiragana(ch) {
+                    chars.push(h);
+                    if h != 'ー' {
+                        last_kana = Some(h);
+                    }
+                }
+            }
+        }
+    }
 
     // 5. bounded lexical table (applied on the hiragana form, longest-match first).
     apply_lexical_table(&mut chars);
@@ -39,6 +70,60 @@ fn kana_to_hiragana(ch: char) -> Option<char> {
         'ー' => Some('ー'), // prolongation mark handled in long-vowel layer
         'ぁ'..='ん' => Some(ch),
         _ => None,
+    }
+}
+
+/// Strip dakuten/handakuten to the base hiragana (が→か, ぱ→は); identity otherwise.
+fn unvoiced_base(ch: char) -> char {
+    match ch {
+        'が' => 'か',
+        'ぎ' => 'き',
+        'ぐ' => 'く',
+        'げ' => 'け',
+        'ご' => 'こ',
+        'ざ' => 'さ',
+        'じ' => 'し',
+        'ず' => 'す',
+        'ぜ' => 'せ',
+        'ぞ' => 'そ',
+        'だ' => 'た',
+        'ぢ' => 'ち',
+        'づ' => 'つ',
+        'で' => 'て',
+        'ど' => 'と',
+        'ば' | 'ぱ' => 'は',
+        'び' | 'ぴ' => 'ひ',
+        'ぶ' | 'ぷ' => 'ふ',
+        'べ' | 'ぺ' => 'へ',
+        'ぼ' | 'ぽ' => 'ほ',
+        other => other,
+    }
+}
+
+/// Add dakuten to a base hiragana (か→が); identity when there is no voiced form.
+fn voiced_form(ch: char) -> char {
+    match ch {
+        'か' => 'が',
+        'き' => 'ぎ',
+        'く' => 'ぐ',
+        'け' => 'げ',
+        'こ' => 'ご',
+        'さ' => 'ざ',
+        'し' => 'じ',
+        'す' => 'ず',
+        'せ' => 'ぜ',
+        'そ' => 'ぞ',
+        'た' => 'だ',
+        'ち' => 'ぢ',
+        'つ' => 'づ',
+        'て' => 'で',
+        'と' => 'ど',
+        'は' => 'ば',
+        'ひ' => 'び',
+        'ふ' => 'ぶ',
+        'へ' => 'べ',
+        'ほ' => 'ぼ',
+        other => other,
     }
 }
 
@@ -237,5 +322,35 @@ mod tests {
             let n = normalize(s);
             assert_eq!(normalize(&n), n, "idempotent for {s}");
         }
+    }
+
+    #[test]
+    fn iteration_marks_expand_previous_kana() {
+        // 武士《ものゝふ》: ゝ repeats の → もののふ (was dropped → ものふ).
+        assert_eq!(normalize("ものゝふ"), normalize("もののふ"));
+        // 心《こゝろ》
+        assert_eq!(normalize("こゝろ"), normalize("こころ"));
+        // katakana mark
+        assert_eq!(normalize("スヽメ"), normalize("ススメ"));
+    }
+
+    #[test]
+    fn voiced_iteration_mark_adds_dakuten() {
+        // いすゞ: ゞ after す → ず → いすず.
+        assert_eq!(normalize("いすゞ"), normalize("いすず"));
+        // ゞ after a voiced kana repeats the voiced base: じゞ → じじ.
+        assert_eq!(normalize("じゞ"), normalize("じじ"));
+    }
+
+    #[test]
+    fn iteration_mark_edges() {
+        // chained marks follow the mark's own output
+        assert_eq!(normalize("たゝゝ"), normalize("たたた"));
+        // mark after ー repeats the pre-ー kana, not ー
+        assert_eq!(normalize("たーゝ"), normalize("たーた"));
+        // mark with no preceding kana is dropped
+        assert_eq!(normalize("ゝあ"), normalize("あ"));
+        // ゝ unvoices a preceding voiced kana (classical rule): がゝ → がか
+        assert_eq!(normalize("がゝ"), normalize("がか"));
     }
 }

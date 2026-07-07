@@ -654,7 +654,11 @@ pub fn parquet_table_row_count(run_dir: &Path, table: WarehouseTable) -> Result<
 ///
 /// Returns an error if staging can't be read, the coalesce writer fails, or
 /// the part replacement can't be completed.
-pub fn compact_staged_table(paths: &WarehousePaths, table: WarehouseTable) -> Result<bool> {
+pub fn compact_staged_table(
+    paths: &WarehousePaths,
+    table: WarehouseTable,
+    zstd_level: i32,
+) -> Result<bool> {
     let staged = paths.staging_dir.join(table.file_name());
     if !staged.is_dir() {
         return Ok(false);
@@ -692,10 +696,11 @@ pub fn compact_staged_table(paths: &WarehousePaths, table: WarehouseTable) -> Re
             .with_context(|| format!("remove stale {}", compact_dir.display()))?;
     }
     let compact_paths = WarehousePaths::new(&compact_dir, "compact");
-    // Compaction rewrites already-staged small parts into one file; it is not
-    // part of the configurable-level knob's scope (§ perf task 3), so it keeps
-    // the fixed default level.
-    let mut writer = WarehouseWriter::create_for_tables(compact_paths.clone(), &[table], 3)?;
+    // Compaction rewrites already-staged small parts into one file; it uses the
+    // caller's configured ZSTD level so recompacted tables honor
+    // `--parquet-zstd-level` the same as the per-worker write path.
+    let mut writer =
+        WarehouseWriter::create_for_tables(compact_paths.clone(), &[table], zstd_level)?;
     for part in &part_paths {
         append_parquet_table_file(&mut writer, table, part)?;
     }
@@ -1599,7 +1604,7 @@ mod tests {
             let path = sources_staged.join(format!("part-{i:05}.parquet"));
             write_sources_part(&path, &format!("s{i}"), 1); // tiny readable parquet
         }
-        let compacted = compact_staged_table(&paths, WarehouseTable::Sources).unwrap();
+        let compacted = compact_staged_table(&paths, WarehouseTable::Sources, 3).unwrap();
         assert!(compacted, "should compact (65 parts, median <1 MiB)");
         let remaining: Vec<_> = fs::read_dir(&sources_staged)
             .unwrap()
@@ -1626,7 +1631,7 @@ mod tests {
                 .unwrap();
             f.write_all(&vec![0u8; 1_100_000]).unwrap();
         }
-        let compacted = compact_staged_table(&paths, WarehouseTable::Sources).unwrap();
+        let compacted = compact_staged_table(&paths, WarehouseTable::Sources, 3).unwrap();
         assert!(!compacted, "should NOT compact (median ≥1 MiB)");
         let remaining: Vec<_> = fs::read_dir(&sources_staged)
             .unwrap()

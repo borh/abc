@@ -1473,7 +1473,7 @@ pub(crate) fn merge_warehouse_shard_runs(
     // on the full corpus) into a single file each. Large tables are skipped
     // inside compact_staged_table.
     for &table in options.warehouse_profile.merged_data_tables() {
-        warehouse::writer::compact_staged_table(&paths, table)?;
+        warehouse::writer::compact_staged_table(&paths, table, options.zstd_level)?;
     }
     writer.append_runs(&[RunRow {
         schema_version: warehouse::schema::SCHEMA_VERSION,

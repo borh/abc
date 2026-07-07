@@ -32,3 +32,7 @@ The fixture matrix above captures the known Rust/Clojure divergence from this
 design slice: punctuation immediately followed by a closing bracket or quote.
 That divergence is now covered by Rust and Clojure tests before parser-IR
 sentence emission is enabled.
+The fixture audit summary contains `sentence_projection_failures`; at this
+scope it reports zero atomic-boundary failures. Full-corpus runs must inspect
+that field before treating parser-IR sentence rows as publication-complete for
+a new adapter corpus.

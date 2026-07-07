@@ -420,23 +420,34 @@ fn audit_file(
 
 fn summarize_raw_nodes(aat: &Value) -> FileRawStats {
     let mut stats = FileRawStats::default();
-    collect_raw_nodes(aat, "$", &mut stats);
+    let mut pointer = String::from("$");
+    collect_raw_nodes(aat, &mut pointer, &mut stats);
     stats
 }
 
-fn collect_raw_nodes(value: &Value, pointer: &str, stats: &mut FileRawStats) {
+fn collect_raw_nodes(value: &Value, pointer: &mut String, stats: &mut FileRawStats) {
+    // The pointer is a shared push/truncate buffer so the full-document walk
+    // does not allocate a path string per visited node.
     match value {
         Value::Object(object) => {
             if object.get("kind").and_then(Value::as_str) == Some("raw") {
                 record_raw_node(value, pointer, stats);
             }
             for (key, child) in object {
-                collect_raw_nodes(child, &format!("{pointer}.{key}"), stats);
+                let length = pointer.len();
+                pointer.push('.');
+                pointer.push_str(key);
+                collect_raw_nodes(child, pointer, stats);
+                pointer.truncate(length);
             }
         }
         Value::Array(items) => {
+            use std::fmt::Write;
             for (index, child) in items.iter().enumerate() {
-                collect_raw_nodes(child, &format!("{pointer}[{index}]"), stats);
+                let length = pointer.len();
+                write!(pointer, "[{index}]").expect("pointer buffer write");
+                collect_raw_nodes(child, pointer, stats);
+                pointer.truncate(length);
             }
         }
         _ => {}
@@ -558,8 +569,8 @@ fn summarize_output(
         .divergence_bundle
         .pointer("/records")
         .and_then(Value::as_array)
-        .cloned()
-        .unwrap_or_default();
+        .map(Vec::as_slice)
+        .unwrap_or(&[]);
     let divergence_records = records.len() as u64;
     let mut divergence_occurrences = 0;
     let mut category_occurrences = BTreeMap::new();

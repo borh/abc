@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, sync::Arc};
 
 use anyhow::{Result, bail};
 use serde_json::{Value, json};
@@ -7,7 +7,7 @@ use crate::{
     divergence::{AatMeta, DivergenceRecorder},
     mapping::{MappingDocument, MappingIndex},
     ortho_annotations::OrthoAnnotationsBundle,
-    schema::{SchemaSet, validate_value},
+    schema::{SchemaSet, SchemaValidators, validate_compiled},
 };
 
 #[derive(Debug, Clone)]
@@ -46,15 +46,18 @@ pub struct ConversionOutput {
 pub struct PreparedConverter {
     mapping: MappingDocument,
     schemas: SchemaSet,
-    index: MappingIndex,
+    validators: Arc<SchemaValidators>,
+    index: Arc<MappingIndex>,
 }
 
 impl PreparedConverter {
     pub fn new(mapping: MappingDocument, schemas: SchemaSet) -> Result<Self> {
-        let index = mapping.preflight(&schemas)?;
+        let index = Arc::new(mapping.preflight(&schemas)?);
+        let validators = Arc::new(SchemaValidators::compile(&schemas)?);
         Ok(Self {
             mapping,
             schemas,
+            validators,
             index,
         })
     }
@@ -64,7 +67,8 @@ impl PreparedConverter {
             aat,
             &self.mapping,
             &self.schemas,
-            self.index.clone(),
+            &self.validators,
+            Arc::clone(&self.index),
             options,
         )
     }
@@ -75,10 +79,11 @@ pub fn convert(request: ConversionRequest) -> Result<ConversionOutput> {
 }
 
 fn convert_preflighted(
-    aat: Value,
+    mut aat: Value,
     mapping: &MappingDocument,
     schemas: &SchemaSet,
-    index: MappingIndex,
+    validators: &SchemaValidators,
+    index: Arc<MappingIndex>,
     options: ConversionOptions,
 ) -> Result<ConversionOutput> {
     if options.validate_input_aat {
@@ -98,14 +103,13 @@ fn convert_preflighted(
             synthetic_warnings: &mut synthetic_warnings,
         };
 
-        let blocks: Vec<&Value> = aat
+        let blocks = aat
             .pointer("/blocks")
             .and_then(Value::as_array)
-            .into_iter()
-            .flatten()
-            .collect();
+            .map(Vec::as_slice)
+            .unwrap_or(&[]);
         let top_level_block_count = blocks.len();
-        for (block_index, block) in blocks.into_iter().enumerate() {
+        for (block_index, block) in blocks.iter().enumerate() {
             offset = map_block(
                 block,
                 &mut block_outputs,
@@ -176,11 +180,11 @@ fn convert_preflighted(
     }
 
     if options.validate_output_parser_ir {
-        validate_value(&schemas.parser_ir_schema, &parser_ir, "parser-IR")?;
+        validate_compiled(&validators.parser_ir, &parser_ir, "parser-IR")?;
     }
 
     let emitted_rule_ids = recorder.emitted_rule_ids();
-    let divergence_bundle = recorder.bundle(aat_meta(&aat), schemas, mapping)?;
+    let divergence_bundle = recorder.bundle(aat_meta(&mut aat), validators, mapping)?;
     Ok(ConversionOutput {
         parser_ir,
         divergence_bundle,
@@ -456,15 +460,13 @@ fn map_block(
             }
         }
         "quote_block" | "caption_block" => {
-            if recorder.has_rule("STRUCTURAL", Some(structural_pointer.as_str()), None) {
-                recorder.record(
-                    "STRUCTURAL",
-                    Some(structural_pointer.as_str()),
-                    None,
-                    None,
-                    None,
-                )?;
-            }
+            recorder.record_if_measured(
+                "STRUCTURAL",
+                Some(structural_pointer.as_str()),
+                None,
+                None,
+                None,
+            );
             for (index, child) in block["children"]
                 .as_array()
                 .into_iter()
@@ -640,34 +642,46 @@ fn is_source_attribution_text(text: &str) -> bool {
 
 fn plain_visible_content_text(content: Option<&Value>) -> Result<String> {
     let mut text = String::new();
-    for child in content.and_then(Value::as_array).into_iter().flatten() {
-        text.push_str(&plain_visible_inline_text(child)?);
-    }
+    append_plain_visible_content_text(content, &mut text)?;
     Ok(text)
 }
 
+fn append_plain_visible_content_text(content: Option<&Value>, out: &mut String) -> Result<()> {
+    for child in content.and_then(Value::as_array).into_iter().flatten() {
+        append_plain_visible_inline_text(child, out)?;
+    }
+    Ok(())
+}
+
 fn plain_visible_inline_text(node: &Value) -> Result<String> {
+    let mut text = String::new();
+    append_plain_visible_inline_text(node, &mut text)?;
+    Ok(text)
+}
+
+fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()> {
     match node["kind"].as_str().unwrap_or("") {
-        "text" => Ok(node["value"].as_str().unwrap_or("").to_owned()),
-        "ruby" => Ok(node["base"].as_str().unwrap_or("").to_owned()),
-        "gaiji" => Ok(node["resolved"]
-            .as_str()
-            .or_else(|| node["description"].as_str())
-            .unwrap_or("")
-            .to_owned()),
-        "accent" => Ok(node["resolved"].as_str().unwrap_or("").to_owned()),
+        "text" => out.push_str(node["value"].as_str().unwrap_or("")),
+        "ruby" => out.push_str(node["base"].as_str().unwrap_or("")),
+        "gaiji" => out.push_str(
+            node["resolved"]
+                .as_str()
+                .or_else(|| node["description"].as_str())
+                .unwrap_or(""),
+        ),
+        "accent" => out.push_str(node["resolved"].as_str().unwrap_or("")),
         "style" | "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" => {
-            plain_visible_content_text(node.get("content"))
+            append_plain_visible_content_text(node.get("content"), out)?;
         }
         "warigaki" => {
-            let upper = plain_visible_content_text(node.get("upper"))?;
-            let lower = plain_visible_content_text(node.get("lower"))?;
-            Ok(format!("{upper}{lower}"))
+            append_plain_visible_content_text(node.get("upper"), out)?;
+            append_plain_visible_content_text(node.get("lower"), out)?;
         }
-        "raw" => Ok(String::new()),
-        "figure" => Ok(node["alt"].as_str().unwrap_or("").to_owned()),
+        "raw" => {}
+        "figure" => out.push_str(node["alt"].as_str().unwrap_or("")),
         other => bail!("unsupported inline kind in source attribution projection: {other}"),
     }
+    Ok(())
 }
 
 fn map_inline_content(
@@ -727,17 +741,15 @@ fn map_inline_to_nodes(
                 None,
                 Some(json!("explicit")),
             )?;
-            let base_content_pointer = format!("{path}.ruby.base_content");
-            if node.get("base_content").is_some()
-                && recorder.has_rule("LOSS", Some(base_content_pointer.as_str()), None)
-            {
-                recorder.record(
+            if node.get("base_content").is_some() {
+                let base_content_pointer = format!("{path}.ruby.base_content");
+                recorder.record_if_measured(
                     "LOSS",
                     Some(base_content_pointer.as_str()),
                     None,
                     None,
                     None,
-                )?;
+                );
             }
             nodes.push(json!({
                 "type": "ruby",
@@ -777,35 +789,28 @@ fn map_inline_to_nodes(
                     node.get("resolved").is_some_and(|value| !value.is_null())
                 )),
             )?;
-            let jis_pointer = format!("{path}.gaiji.jis_code");
-            if node.get("jis_code").is_some_and(|value| !value.is_null())
-                && recorder.has_rule(
-                    "AMBIGUITY",
-                    Some(jis_pointer.as_str()),
-                    Some("gaiji.reference"),
-                )
-            {
-                recorder.record(
+            if node.get("jis_code").is_some_and(|value| !value.is_null()) {
+                let jis_pointer = format!("{path}.gaiji.jis_code");
+                recorder.record_if_measured(
                     "AMBIGUITY",
                     Some(jis_pointer.as_str()),
                     Some("gaiji.reference"),
                     node.get("jis_code").cloned(),
                     node.get("jis_code").cloned(),
-                )?;
+                );
             }
-            let unresolved_pointer = format!("{path}.gaiji.unresolved_reason");
             if node
                 .get("unresolved_reason")
                 .is_some_and(|value| !value.is_null())
-                && recorder.has_rule("LOSS", Some(unresolved_pointer.as_str()), None)
             {
-                recorder.record(
+                let unresolved_pointer = format!("{path}.gaiji.unresolved_reason");
+                recorder.record_if_measured(
                     "LOSS",
                     Some(unresolved_pointer.as_str()),
                     None,
                     node.get("unresolved_reason").cloned(),
                     None,
-                )?;
+                );
             }
             if unicode.is_null() {
                 recorder.record("LOSS", None, Some("gaiji.unicode"), None, Some(Value::Null))?;
@@ -1240,34 +1245,26 @@ fn map_accent_to_node(
         None,
     )?;
 
-    let code_pointer = format!("{path}.accent.code");
-    if node.get("code").is_some_and(|value| !value.is_null())
-        && recorder.has_rule(
-            "INVENTION",
-            Some(code_pointer.as_str()),
-            Some("emphasis.style"),
-        )
-    {
-        recorder.record(
+    if node.get("code").is_some_and(|value| !value.is_null()) {
+        let code_pointer = format!("{path}.accent.code");
+        recorder.record_if_measured(
             "INVENTION",
             Some(code_pointer.as_str()),
             Some("emphasis.style"),
             node.get("code").cloned(),
             node.get("code").cloned(),
-        )?;
+        );
     }
 
-    let name_pointer = format!("{path}.accent.name");
-    if node.get("name").is_some_and(|value| !value.is_null())
-        && recorder.has_rule("LOSS", Some(name_pointer.as_str()), None)
-    {
-        recorder.record(
+    if node.get("name").is_some_and(|value| !value.is_null()) {
+        let name_pointer = format!("{path}.accent.name");
+        recorder.record_if_measured(
             "LOSS",
             Some(name_pointer.as_str()),
             None,
             node.get("name").cloned(),
             None,
-        )?;
+        );
     }
 
     let text = accent_text(node);
@@ -1298,16 +1295,15 @@ fn map_raw_to_nodes(
     path: &str,
 ) -> Result<u64> {
     let raw_pointer = format!("{path}.raw");
-    if !recorder.has_rule("UNSUPPORTED", Some(raw_pointer.as_str()), None) {
-        bail!("unmeasured raw divergence at {raw_pointer}");
-    }
-    recorder.record(
+    if !recorder.record_if_measured(
         "UNSUPPORTED",
         Some(raw_pointer.as_str()),
         None,
         node.get("source").cloned(),
         None,
-    )?;
+    ) {
+        bail!("unmeasured raw divergence at {raw_pointer}");
+    }
 
     let source = node.get("source").and_then(Value::as_str).unwrap_or("");
     match raw_recovery_class(node, source) {
@@ -1528,30 +1524,43 @@ fn visible_content_text(
     target_pointer: Option<&str>,
 ) -> Result<String> {
     let mut text = String::new();
+    append_visible_content_text(content, recorder, path, target_pointer, &mut text)?;
+    Ok(text)
+}
+
+fn append_visible_content_text(
+    content: Option<&Value>,
+    recorder: &mut DivergenceRecorder,
+    path: &str,
+    target_pointer: Option<&str>,
+    out: &mut String,
+) -> Result<()> {
     for (index, child) in content
         .and_then(Value::as_array)
         .into_iter()
         .flatten()
         .enumerate()
     {
-        text.push_str(&visible_inline_text(
+        append_visible_inline_text(
             child,
             recorder,
             &format!("{path}[{index}]"),
             target_pointer,
-        )?);
+            out,
+        )?;
     }
-    Ok(text)
+    Ok(())
 }
 
-fn visible_inline_text(
+fn append_visible_inline_text(
     node: &Value,
     recorder: &mut DivergenceRecorder,
     path: &str,
     target_pointer: Option<&str>,
-) -> Result<String> {
+    out: &mut String,
+) -> Result<()> {
     match node["kind"].as_str().unwrap_or("") {
-        "text" => Ok(node["value"].as_str().unwrap_or("").to_owned()),
+        "text" => out.push_str(node["value"].as_str().unwrap_or("")),
         "ruby" => {
             let container_pointer = format!("{path}.ruby");
             record_measured_loss(
@@ -1561,16 +1570,14 @@ fn visible_inline_text(
                 Some(json!("ruby")),
             )?;
             let reading_pointer = format!("{path}.ruby.reading");
-            if recorder.has_rule("LOSS", Some(reading_pointer.as_str()), target_pointer) {
-                recorder.record(
-                    "LOSS",
-                    Some(reading_pointer.as_str()),
-                    target_pointer,
-                    node.get("reading").cloned(),
-                    None,
-                )?;
-            }
-            Ok(node["base"].as_str().unwrap_or("").to_owned())
+            recorder.record_if_measured(
+                "LOSS",
+                Some(reading_pointer.as_str()),
+                target_pointer,
+                node.get("reading").cloned(),
+                None,
+            );
+            out.push_str(node["base"].as_str().unwrap_or(""));
         }
         "gaiji" => {
             let container_pointer = format!("{path}.gaiji");
@@ -1581,35 +1588,32 @@ fn visible_inline_text(
                 Some(json!("gaiji")),
             )?;
             let resolved_pointer = format!("{path}.gaiji.resolved");
-            if recorder.has_rule("AMBIGUITY", Some(resolved_pointer.as_str()), target_pointer) {
-                recorder.record(
-                    "AMBIGUITY",
-                    Some(resolved_pointer.as_str()),
-                    target_pointer,
-                    node.get("resolved").cloned(),
-                    node.get("resolved").cloned(),
-                )?;
-            }
-            Ok(node["resolved"]
-                .as_str()
-                .or_else(|| node["description"].as_str())
-                .unwrap_or("")
-                .to_owned())
+            recorder.record_if_measured(
+                "AMBIGUITY",
+                Some(resolved_pointer.as_str()),
+                target_pointer,
+                node.get("resolved").cloned(),
+                node.get("resolved").cloned(),
+            );
+            out.push_str(
+                node["resolved"]
+                    .as_str()
+                    .or_else(|| node["description"].as_str())
+                    .unwrap_or(""),
+            );
         }
         "accent" => {
-            let accent_pointer = format!("{path}.accent");
-            if let Some(target) = target_pointer
-                && recorder.has_rule("LOSS", Some(accent_pointer.as_str()), Some(target))
-            {
-                recorder.record(
+            if let Some(target) = target_pointer {
+                let accent_pointer = format!("{path}.accent");
+                recorder.record_if_measured(
                     "LOSS",
                     Some(accent_pointer.as_str()),
                     Some(target),
                     node.get("name").cloned(),
                     None,
-                )?;
+                );
             }
-            Ok(accent_text(node))
+            out.push_str(node["resolved"].as_str().unwrap_or(""));
         }
         "style" | "caption" => {
             let kind = node["kind"].as_str().unwrap_or("");
@@ -1620,19 +1624,21 @@ fn visible_inline_text(
                 None,
                 Some(json!(kind)),
             )?;
-            visible_content_text(
+            append_visible_content_text(
                 node.get("content"),
                 recorder,
                 &format!("{path}.content"),
                 target_pointer,
-            )
+                out,
+            )?;
         }
-        "font_size" | "tcy" | "keigakomi" | "yokogumi" => visible_content_text(
+        "font_size" | "tcy" | "keigakomi" | "yokogumi" => append_visible_content_text(
             node.get("content"),
             recorder,
             &format!("{path}.content"),
             target_pointer,
-        ),
+            out,
+        )?,
         "warigaki" => {
             let warigaki_pointer = format!("{path}.warigaki");
             let target = match warigaki_target(recorder, &warigaki_pointer) {
@@ -1646,19 +1652,20 @@ fn visible_inline_text(
                 None,
                 None,
             )?;
-            let upper = visible_content_text(
+            append_visible_content_text(
                 node.get("upper"),
                 recorder,
                 &format!("{path}.warigaki.upper"),
                 target_pointer,
+                out,
             )?;
-            let lower = visible_content_text(
+            append_visible_content_text(
                 node.get("lower"),
                 recorder,
                 &format!("{path}.warigaki.lower"),
                 target_pointer,
+                out,
             )?;
-            Ok(format!("{upper}{lower}"))
         }
         "raw" => {
             let raw_pointer = format!("{path}.raw");
@@ -1668,32 +1675,28 @@ fn visible_inline_text(
                 None,
                 node.get("source").cloned(),
             )?;
-            if recorder.has_rule("LOSS", Some(raw_pointer.as_str()), target_pointer) {
-                recorder.record(
-                    "LOSS",
-                    Some(raw_pointer.as_str()),
-                    target_pointer,
-                    None,
-                    None,
-                )?;
-            }
-            Ok(String::new())
+            recorder.record_if_measured(
+                "LOSS",
+                Some(raw_pointer.as_str()),
+                target_pointer,
+                None,
+                None,
+            );
         }
         "figure" => {
             let figure_pointer = format!("{path}.figure");
-            if recorder.has_rule("LOSS", Some(figure_pointer.as_str()), target_pointer) {
-                recorder.record(
-                    "LOSS",
-                    Some(figure_pointer.as_str()),
-                    target_pointer,
-                    None,
-                    None,
-                )?;
-            }
-            Ok(node["alt"].as_str().unwrap_or("").to_owned())
+            recorder.record_if_measured(
+                "LOSS",
+                Some(figure_pointer.as_str()),
+                target_pointer,
+                None,
+                None,
+            );
+            out.push_str(node["alt"].as_str().unwrap_or(""));
         }
         other => bail!("unsupported inline kind in visible projection: {other}"),
     }
+    Ok(())
 }
 
 fn record_measured_loss(
@@ -1702,15 +1705,13 @@ fn record_measured_loss(
     parser_ir_pointer: Option<&str>,
     source_value: Option<Value>,
 ) -> Result<()> {
-    if recorder.has_rule("LOSS", Some(aat_pointer), parser_ir_pointer) {
-        recorder.record(
-            "LOSS",
-            Some(aat_pointer),
-            parser_ir_pointer,
-            source_value,
-            None,
-        )?;
-    }
+    recorder.record_if_measured(
+        "LOSS",
+        Some(aat_pointer),
+        parser_ir_pointer,
+        source_value,
+        None,
+    );
     Ok(())
 }
 
@@ -1740,15 +1741,13 @@ fn map_span(
 ) -> Result<Value> {
     let Some(span) = aat_span else {
         let span_pointer = format!("{path}.span");
-        if recorder.has_rule("AMBIGUITY", Some(span_pointer.as_str()), Some("span")) {
-            recorder.record(
-                "AMBIGUITY",
-                Some(span_pointer.as_str()),
-                Some("span"),
-                None,
-                None,
-            )?;
-        }
+        recorder.record_if_measured(
+            "AMBIGUITY",
+            Some(span_pointer.as_str()),
+            Some("span"),
+            None,
+            None,
+        );
         return Ok(json!({
             "start": fallback_start,
             "end": fallback_end,
@@ -1880,23 +1879,42 @@ fn map_warnings(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value>
     Ok(Value::Array(warnings))
 }
 
-fn aat_meta(aat: &Value) -> AatMeta {
+fn aat_meta(aat: &mut Value) -> AatMeta {
     let meta = &aat["meta"];
+    let work_id = aat["work_id"].as_str().unwrap_or("unknown").to_owned();
+    let version = aat["version"].as_u64().unwrap_or(1);
+    let adapter = meta["adapter"].as_str().unwrap_or("unknown").to_owned();
+    let adapter_version = meta["adapter_version"]
+        .as_str()
+        .unwrap_or("unknown")
+        .to_owned();
+    let source_hash = meta["source_hash"]
+        .as_str()
+        .unwrap_or("sha256:0000000000000000000000000000000000000000000000000000000000000000")
+        .to_owned();
+    let parse_complete = meta["parse_complete"].as_bool().unwrap_or(false);
+    // The AAT is owned and dead after this call, so move the potentially
+    // large metrics/semantic_summary subtrees instead of cloning them.
+    let (metrics, semantic_summary) = match aat.get_mut("meta").and_then(Value::as_object_mut) {
+        Some(meta) => (
+            meta.get_mut("metrics")
+                .map(Value::take)
+                .unwrap_or(Value::Null),
+            meta.get_mut("semantic_summary")
+                .map(Value::take)
+                .unwrap_or(Value::Null),
+        ),
+        None => (Value::Null, Value::Null),
+    };
     AatMeta {
-        work_id: aat["work_id"].as_str().unwrap_or("unknown").to_owned(),
-        version: aat["version"].as_u64().unwrap_or(1),
-        adapter: meta["adapter"].as_str().unwrap_or("unknown").to_owned(),
-        adapter_version: meta["adapter_version"]
-            .as_str()
-            .unwrap_or("unknown")
-            .to_owned(),
-        source_hash: meta["source_hash"]
-            .as_str()
-            .unwrap_or("sha256:0000000000000000000000000000000000000000000000000000000000000000")
-            .to_owned(),
-        parse_complete: meta["parse_complete"].as_bool().unwrap_or(false),
-        metrics: meta.get("metrics").cloned().unwrap_or(Value::Null),
-        semantic_summary: meta.get("semantic_summary").cloned().unwrap_or(Value::Null),
+        work_id,
+        version,
+        adapter,
+        adapter_version,
+        source_hash,
+        parse_complete,
+        metrics,
+        semantic_summary,
     }
 }
 

@@ -152,6 +152,7 @@ impl<'a> InlineVisitor for SummaryCollector<'a> {
         placement: &crate::RubyPlacement,
         provenance: &crate::Provenance,
     ) {
+        let base_projection = inline_visible_text(base);
         push_node(
             self.summary,
             "ruby.basic",
@@ -159,7 +160,7 @@ impl<'a> InlineVisitor for SummaryCollector<'a> {
                 source_span: None,
                 kind: "ruby".to_owned(),
                 value: json!({
-                    "base_projection": inline_visible_text(base),
+                    "base_projection": &base_projection,
                     "reading": reading,
                     "placement": placement.as_str(),
                 }),
@@ -174,7 +175,7 @@ impl<'a> InlineVisitor for SummaryCollector<'a> {
                     source_span: None,
                     kind: "gaiji_ruby".to_owned(),
                     value: json!({
-                        "base_projection": inline_visible_text(base),
+                        "base_projection": base_projection,
                         "reading": reading,
                         "placement": placement.as_str(),
                     }),
@@ -226,11 +227,11 @@ fn collect_gaiji(gaiji: &GaijiRef, ruby_reading: Option<&str>, summary: &mut Sem
 }
 
 fn push_node(summary: &mut SemanticSummary, syntax_id: &str, node: SemanticSummaryNode) {
-    summary
-        .syntax
-        .entry(syntax_id.to_owned())
-        .or_default()
-        .push(node);
+    if let Some(nodes) = summary.syntax.get_mut(syntax_id) {
+        nodes.push(node);
+    } else {
+        summary.syntax.insert(syntax_id.to_owned(), vec![node]);
+    }
 }
 
 fn contains_gaiji(content: &[Inline]) -> bool {

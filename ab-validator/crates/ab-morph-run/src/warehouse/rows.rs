@@ -124,8 +124,8 @@ pub(crate) fn morpheme_feature_rows_for_range(
                     text_id: std::sync::Arc::clone(&text_id),
                     analyzer_id: std::sync::Arc::clone(&analyzer_id),
                     morpheme_index: index as u64,
-                    feature_key: key.to_string(),
-                    feature_value: value.as_ref().map(ToString::to_string),
+                    feature_key: std::sync::Arc::clone(key),
+                    feature_value: value.as_ref().map(std::sync::Arc::clone),
                 })
         })
         .collect()
@@ -382,11 +382,8 @@ mod tests {
 
         let features = morpheme_feature_rows("run-a", "source-a", &analysis);
         assert_eq!(features.len(), 2);
-        assert!(
-            features.iter().any(
-                |row| row.feature_key == "pos1" && row.feature_value.as_deref() == Some("名詞")
-            )
-        );
+        assert!(features.iter().any(|row| row.feature_key.as_ref() == "pos1"
+            && row.feature_value.as_deref() == Some("名詞")));
     }
 
     #[test]
@@ -415,7 +412,7 @@ mod tests {
         assert_eq!(
             features
                 .iter()
-                .map(|row| (row.morpheme_index, row.feature_key.as_str()))
+                .map(|row| (row.morpheme_index, row.feature_key.as_ref()))
                 .collect::<Vec<_>>(),
             vec![(1, "pos1"), (2, "pos1")]
         );

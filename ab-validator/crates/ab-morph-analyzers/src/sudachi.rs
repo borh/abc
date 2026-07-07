@@ -181,7 +181,9 @@ impl SudachiAnalyzer {
             &document.text_id,
             chunk.text,
             morphemes.iter().map(|morpheme| RawToken {
-                emitted_surface: morpheme.surface().to_string(),
+                // The reported span re-slices the surface from the source
+                // text, so no per-token surface String is needed.
+                emitted_surface: None,
                 byte_span: Some(morpheme.begin()..morpheme.end()),
                 features: sudachi_features(&morpheme),
             }),
@@ -245,36 +247,48 @@ fn prepare_dictionary_path(analyzer_id: &str, path: &Path) -> Result<PathBuf, An
     Ok(output_path)
 }
 
+// Interned key names shared across tokens: cloning an Arc<str> is a refcount
+// bump, while `&'static str -> Arc<str>` allocates per token.
+static SUDACHI_POS_KEY_ARCS: std::sync::LazyLock<[ab_morph_diff::FeatureKey; 6]> =
+    std::sync::LazyLock::new(|| {
+        [
+            "pos1".into(),
+            "pos2".into(),
+            "pos3".into(),
+            "pos4".into(),
+            "c_type".into(),
+            "c_form".into(),
+        ]
+    });
+static SUDACHI_FORM_KEY_ARCS: std::sync::LazyLock<[ab_morph_diff::FeatureKey; 3]> =
+    std::sync::LazyLock::new(|| {
+        [
+            "dictionary_form".into(),
+            "normalized_form".into(),
+            "reading_form".into(),
+        ]
+    });
+
 fn sudachi_features<T>(morpheme: &Morpheme<'_, T>) -> FeatureMap
 where
     T: DictionaryAccess,
 {
-    let mut features = FeatureMap::with_capacity(9);
-
-    for (index, key) in ["pos1", "pos2", "pos3", "pos4", "c_type", "c_form"]
-        .iter()
-        .enumerate()
-    {
-        let _ = features.insert(
-            (*key).into(),
+    let pos_entries = SUDACHI_POS_KEY_ARCS.iter().enumerate().map(|(index, key)| {
+        (
+            Arc::clone(key),
             morpheme.part_of_speech().get(index).and_then(feature_value),
-        );
-    }
-
-    let _ = features.insert(
-        "dictionary_form".into(),
+        )
+    });
+    let form_values = [
         feature_value(morpheme.dictionary_form()),
-    );
-    let _ = features.insert(
-        "normalized_form".into(),
         feature_value(morpheme.normalized_form()),
-    );
-    let _ = features.insert(
-        "reading_form".into(),
         feature_value(morpheme.reading_form()),
-    );
-
-    features
+    ];
+    let form_entries = SUDACHI_FORM_KEY_ARCS
+        .iter()
+        .map(Arc::clone)
+        .zip(form_values);
+    FeatureMap::from_entries(pos_entries.chain(form_entries))
 }
 
 #[cfg(test)]
@@ -342,7 +356,7 @@ mod tests {
             "work",
             "名前",
             vec![RawToken {
-                emitted_surface: "名前".to_owned(),
+                emitted_surface: None,
                 byte_span: Some(0..6),
                 features: FeatureMap::new(),
             }],

@@ -73,6 +73,7 @@
   :abc/materialize-publication {:main-opts ["-m" "abc.tools.materialize-publication"]}
   :abc/materialize-publications-batch {:main-opts ["-m" "abc.tools.materialize-publication"
                                                    "--batch"]}
+  :abc/source-snapshot-workset {:main-opts ["-m" "abc.tools.source-snapshot-workset"]}
   :abc/materialize-source-snapshot {:main-opts ["-m" "abc.tools.materialize-source-snapshot"]}
   :abc/manifest-to-rdf {:main-opts ["-m" "abc.tools.manifest-to-rdf"]}
   :abc/aozora-ingest {:main-opts ["-m" "abc.tools.aozora-ingest"]}

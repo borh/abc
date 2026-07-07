@@ -16,7 +16,7 @@
 - Semantic recipe labels resolve to content hash and registry-entry hash for audit.
 - `request_set_id`, generated time, operator, local paths, run id, resolved labels, and batch policy stay outside `request_set_identity_object`.
 - Tokenizer profile arrays remain empty for the current text-only snapshot slice.
-- Full-corpus scope definitions may still use shape-fixture subjects until the full corpus resolver is wired in a later followup.
+- Full-corpus scope definitions use source-snapshot subject sources; generated source snapshots are built from materialized ABC work directories, not inline subject shape fixtures.
 
 ---
 
@@ -290,6 +290,38 @@ Run `soranoha reproduce demo-basic-ja`, `soranoha validate target/soranoha/demo-
 - Consumes: completed source-snapshot subject-source resolver changes.
 - Produces: verified request-set identity path for source-snapshot backed full-corpus definitions.
 
+- [x] Run `git diff --check`.
+- [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
+- [x] Run `nix flake check`.
+
+### Task 12: Source-Snapshot Workset Generator
+
+**Files:**
+- Create: `abc/src/abc/tools/source_snapshot_workset.clj`
+- Create: `abc/test/abc/tools/source_snapshot_workset_test.clj`
+- Modify: `abc/src/abc/tools/materialize_source_snapshot.clj`
+- Modify: `abc/deps.edn`
+
+**Interfaces:**
+- Produces: `source-snapshot-workset` CLI and `workset-from-root` / `write-workset!` helpers.
+- Consumes: materialized ABC work directories containing `aat.json`, `parser-ir.json`, and `metadata-record.json`.
+
+- [x] Add failing tests for deterministic source-snapshot workset generation.
+- [x] Generate relative workset paths from materialized work directories.
+- [x] Resolve relative workset paths inside `materialize-source-snapshot` so generated descriptors are portable across working directories.
+- [x] Add a CLI alias: `clojure -M:abc/source-snapshot-workset`.
+- [x] Add an integration test showing generated worksets feed `materialize-source-snapshot`.
+
+### Task 13: Source-Snapshot Workset Slice Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed source-snapshot workset generator.
+- Produces: verified bridge from materialized corpus outputs to source-snapshot descriptors.
+
+- [x] Run focused source-snapshot workset and materializer tests.
 - [x] Run `git diff --check`.
 - [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
 - [x] Run `nix flake check`.

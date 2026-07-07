@@ -1,0 +1,158 @@
+(ns abc.tools.source-snapshot-workset
+  (:require [abc.tools.files :as files]
+            [clojure.edn :as edn]
+            [clojure.java.io :as io]
+            [clojure.string :as string]
+            [clojure.tools.cli :as cli]
+            [taoensso.telemere :as tel]))
+
+(def required-file-names
+  {:aat-path "aat.json"
+   :parser-ir-path "parser-ir.json"
+   :metadata-record-path "metadata-record.json"})
+
+(defn- map-value [m k]
+  (or (get m k)
+      (get m (name k))))
+
+(defn- required-value [m k context]
+  (or (map-value m k)
+      (throw (ex-info (str context " missing required key " k)
+                      {:key k :context context :value m}))))
+
+(defn- normalize-path [path]
+  (string/replace (str path) "\\" "/"))
+
+(defn- canonical-file [path]
+  (.getCanonicalFile (io/file path)))
+
+(defn- relative-path [from-dir to-file]
+  (normalize-path
+   (.relativize (.toPath (canonical-file from-dir))
+                (.toPath (canonical-file to-file)))))
+
+(defn- candidate-work-dir? [dir]
+  (some #(.exists (io/file dir %)) (vals required-file-names)))
+
+(defn- work-dirs [input-root]
+  (->> (file-seq (io/file input-root))
+       (filter #(.isDirectory %))
+       (filter candidate-work-dir?)
+       (sort-by #(normalize-path
+                  (.relativize (.toPath (canonical-file input-root))
+                               (.toPath (canonical-file %)))))
+       vec))
+
+(defn- required-file [work-dir file-name label]
+  (let [file (io/file work-dir file-name)]
+    (when-not (.isFile file)
+      (throw (ex-info (str "work directory " (normalize-path work-dir)
+                           " missing " file-name)
+                      {:work-dir (str work-dir)
+                       :file-name file-name
+                       :label label})))
+    file))
+
+(defn- author-person-id [metadata-record]
+  (or (some (fn [contributor]
+              (when (= "著者" (map-value contributor :relation_to_work))
+                (map-value contributor :person_id)))
+            (map-value metadata-record :contributors))
+      (map-value (first (map-value metadata-record :contributors)) :person_id)))
+
+(defn- work-entry [path-base work-dir]
+  (let [aat-file (required-file work-dir "aat.json" :aat-path)
+        parser-ir-file (required-file work-dir "parser-ir.json" :parser-ir-path)
+        metadata-record-file (required-file work-dir
+                                            "metadata-record.json"
+                                            :metadata-record-path)
+        metadata-record (files/read-json metadata-record-file)
+        work (required-value metadata-record :work "metadata record")
+        work-id (required-value work :work_id "metadata work")
+        title (required-value work :title "metadata work")
+        person-id (or (author-person-id metadata-record)
+                      (throw (ex-info "metadata record missing contributor person_id"
+                                      {:metadata-record-path
+                                       (str metadata-record-file)})))
+        slug (-> (relative-path path-base work-dir)
+                 (string/split #"/")
+                 last)]
+    {:slug slug
+     :title title
+     :work_id work-id
+     :person_id person-id
+     :card_url (map-value work :card_url)
+     :aat_path (relative-path path-base aat-file)
+     :parser_ir_path (relative-path path-base parser-ir-file)
+     :metadata_record_path (relative-path path-base metadata-record-file)
+     :source_manifest_path (relative-path path-base
+                                          (io/file work-dir
+                                                   "source.manifest.json"))}))
+
+(defn workset-from-root
+  [{:keys [input-root path-base snapshot-scope snapshot-date]}]
+  (let [input-root-file (canonical-file
+                         (or input-root
+                             (throw (ex-info "input-root is required" {}))))
+        path-base-file (canonical-file (or path-base input-root-file))
+        works (->> (work-dirs input-root-file)
+                   (map #(work-entry path-base-file %))
+                   (sort-by (juxt :work_id :slug))
+                   vec)]
+    (when-not (seq works)
+      (throw (ex-info "input root contains no materialized work directories"
+                      {:input-root (str input-root-file)})))
+    {:snapshot_scope (or snapshot-scope
+                         (throw (ex-info "snapshot-scope is required" {})))
+     :snapshot_date (or snapshot-date
+                        (throw (ex-info "snapshot-date is required" {})))
+     :works works}))
+
+(defn write-workset!
+  [{:keys [output-path] :as opts}]
+  (let [output-file (io/file (or output-path
+                                 (throw (ex-info "output-path is required" {}))))
+        output-parent (or (.getParentFile output-file) (io/file "."))
+        value (workset-from-root (assoc opts :path-base output-parent))]
+    (.mkdirs output-parent)
+    (spit output-file (str (pr-str value) "\n"))
+    {:output output-file
+     :works-count (count (:works value))}))
+
+(defn usage []
+  (tel/log! :warn
+            (str "Usage: clojure -M:abc/source-snapshot-workset "
+                 "--input-root ROOT --output workset.edn "
+                 "--snapshot-scope SCOPE --snapshot-date YYYY-MM-DD")))
+
+(def cli-options
+  [["-i" "--input-root DIR" "Materialized corpus root containing work directories."
+    :id :input-root]
+   ["-o" "--output FILE" "Output EDN workset path."
+    :id :output-path]
+   [nil "--snapshot-scope SCOPE" "Source snapshot scope string."
+    :id :snapshot-scope]
+   [nil "--snapshot-date DATE" "Source snapshot date, normally YYYY-MM-DD."
+    :id :snapshot-date]])
+
+(defn -main [& args]
+  (let [{:keys [options errors]} (cli/parse-opts args cli-options)
+        {:keys [input-root output-path snapshot-scope snapshot-date]} options]
+    (if (or (seq errors)
+            (nil? input-root)
+            (nil? output-path)
+            (nil? snapshot-scope)
+            (nil? snapshot-date))
+      (do
+        (doseq [error errors]
+          (tel/log! :error error))
+        (usage)
+        (System/exit 2))
+      (let [{:keys [output works-count]} (write-workset!
+                                          {:input-root input-root
+                                           :output-path output-path
+                                           :snapshot-scope snapshot-scope
+                                           :snapshot-date snapshot-date})]
+        (tel/log! :info (str "wrote " works-count
+                             " source snapshot work entries to "
+                             output))))))

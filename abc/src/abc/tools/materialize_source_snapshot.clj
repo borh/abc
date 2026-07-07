@@ -27,12 +27,46 @@
       (throw (ex-info (str "workset entry missing required key " k)
                       {:key k :work work}))))
 
+(def resolved-path-key
+  {:aat_path :resolved_aat_path
+   :parser_ir_path :resolved_parser_ir_path
+   :metadata_record_path :resolved_metadata_record_path
+   :source_manifest_path :resolved_source_manifest_path})
+
+(defn- work-file-path [work k]
+  (or (work-value work (resolved-path-key k))
+      (required-work-value work k)))
+
+(defn- absolute-path? [path]
+  (.isAbsolute (io/file path)))
+
+(defn- resolve-path [base-dir path]
+  (when path
+    (if (absolute-path? path)
+      path
+      (str (.getCanonicalFile (io/file base-dir path))))))
+
+(defn- resolve-work-paths [work base-dir]
+  (reduce (fn [resolved k]
+            (if-let [path (work-value resolved k)]
+              (assoc resolved (resolved-path-key k)
+                     (resolve-path base-dir path))
+              resolved))
+          work
+          [:aat_path
+           :parser_ir_path
+           :metadata_record_path
+           :source_manifest_path]))
+
 (defn- read-workset [path]
-  (let [value (edn/read-string (slurp (io/file path)))]
+  (let [workset-file (io/file path)
+        base-dir (.getParentFile (.getCanonicalFile workset-file))
+        value (edn/read-string (slurp workset-file))]
     (when-not (seq (map-value value :works))
       (throw (ex-info "workset must contain non-empty :works"
                       {:workset-path path})))
-    value))
+    (assoc value :works (mapv #(resolve-work-paths % base-dir)
+                              (map-value value :works)))))
 
 (defn- relative-path [from-file to-file]
   (let [from-parent (.getCanonicalFile (.getParentFile (io/file from-file)))
@@ -50,8 +84,8 @@
 
 (defn- snapshot-input [work]
   (let [aat-path (required-work-value work :aat_path)
-        parser-ir-path (required-work-value work :parser_ir_path)
-        metadata-record-path (required-work-value work :metadata_record_path)
+        parser-ir-path (work-file-path work :parser_ir_path)
+        metadata-record-path (work-file-path work :metadata_record_path)
         parser-ir (files/read-json parser-ir-path)
         metadata-record (files/read-json metadata-record-path)]
     {"slug" (required-work-value work :slug)
@@ -61,7 +95,7 @@
      "card_url" (or (work-value work :card_url)
                     (get-in metadata-record ["work" "card_url"]))
      "aat_path" aat-path
-     "aat_file_hash" (manifest/file-hash aat-path)
+     "aat_file_hash" (manifest/file-hash (work-file-path work :aat_path))
      "aat_adapter" (get-in parser-ir ["derived_from" "aat_adapter"])
      "aat_adapter_version" (get-in parser-ir ["derived_from" "aat_adapter_version"])
      "aat_version" (get-in parser-ir ["derived_from" "aat_version"])
@@ -99,9 +133,9 @@
    "metadata_record_hash" metadata-record-hash))
 
 (defn- source-manifest [work snapshot snapshot-file generated-at]
-  (let [source-manifest-path (required-work-value work :source_manifest_path)
-        parser-ir (files/read-json (required-work-value work :parser_ir_path))
-        metadata-record (files/read-json (required-work-value work :metadata_record_path))
+  (let [source-manifest-path (work-file-path work :source_manifest_path)
+        parser-ir (files/read-json (work-file-path work :parser_ir_path))
+        metadata-record (files/read-json (work-file-path work :metadata_record_path))
         title (required-work-value work :title)
         work-content-hash (get-in parser-ir ["source" "work_content_hash"])
         metadata-record-hash (metadata-record/record-hash metadata-record)
@@ -164,7 +198,7 @@
         output-file (io/file output-path)]
     (manifest/write-json-file! output-file snapshot)
     (let [works (mapv (fn [work]
-                        (let [manifest-path (required-work-value
+                        (let [manifest-path (work-file-path
                                              work :source_manifest_path)
                               manifest-value (source-manifest
                                               work snapshot output-file

@@ -92,7 +92,8 @@ What they prove:
 - `tei-version-coherence`: the root TEI P5 source reference and ABC TEI profile
   inputs all target TEI P5 4.11.0.
 - `flake-input-policy`: release-critical source-evidence inputs carry explicit
-  rev/tag pins in flake input URLs, not only in lockfiles.
+  rev/tag pins in flake input URLs, not only in lockfiles, and component
+  compatibility locks remain coherent with the root lock for shared inputs.
 - `check-no-build`: both component flakes evaluate through their no-build
   checks from the monorepo layout. This is retained as a direct component
   fallback while the root flake settles.

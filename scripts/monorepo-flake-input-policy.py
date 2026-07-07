@@ -71,6 +71,41 @@ def check_lock(lock_path: Path) -> list[str]:
     return errors + [f"warning: {message}" for message in warnings]
 
 
+def comparable_node(node: dict[str, object]) -> dict[str, object] | None:
+    original = node.get("original")
+    locked = node.get("locked")
+    if not isinstance(original, dict) or original.get("type") == "path":
+        return None
+    return {
+        "original": original,
+        "locked": locked if isinstance(locked, dict) else {},
+    }
+
+
+def check_component_lock_coherence(repo_root: Path) -> list[str]:
+    """Ensure component compatibility locks do not drift from the root lock."""
+    root_lock_path = repo_root / "flake.lock"
+    root_lock = json.loads(root_lock_path.read_text())
+    root_nodes = root_lock.get("nodes", {})
+    errors: list[str] = []
+
+    for component in ("abc", "ab-validator"):
+        component_lock_path = repo_root / component / "flake.lock"
+        if not component_lock_path.exists():
+            continue
+        component_lock = json.loads(component_lock_path.read_text())
+        for name, component_node in sorted(component_lock.get("nodes", {}).items()):
+            if name == "root" or name not in root_nodes:
+                continue
+            component_comparable = comparable_node(component_node)
+            root_comparable = comparable_node(root_nodes[name])
+            if component_comparable is None or root_comparable is None:
+                continue
+            if component_comparable != root_comparable:
+                errors.append(f"{component_lock_path}: input {name!r} differs from root flake.lock")
+    return errors
+
+
 def main() -> int:
     repo_root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path.cwd()
     lock_paths = [
@@ -83,6 +118,7 @@ def main() -> int:
     for lock_path in lock_paths:
         if lock_path.exists():
             messages.extend(check_lock(lock_path))
+    messages.extend(check_component_lock_coherence(repo_root))
 
     errors = [message for message in messages if not message.startswith("warning:")]
     for message in messages:

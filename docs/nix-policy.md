@@ -35,6 +35,10 @@ component flake input changes, update the root lock and the relevant component
 lock in the same change so root-prefixed outputs and direct component workflows
 see the same source identities.
 
+The `flake-input-policy` gate enforces this for shared non-path inputs: if a
+component lock and the root lock contain the same input name, their `original`
+and `locked` records must match.
+
 ## Release-Critical Inputs
 
 Release-critical inputs must be explicitly pinned in the flake URL by `rev` or

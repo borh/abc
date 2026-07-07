@@ -269,6 +269,9 @@ implementation work but prevents schema-valid identity drift.
   the producer manifest.
 - Release validation fails when two successful analysis manifests share the
   same `artifact_id` and differ in `content.content_hash`.
+- The first implementation is covered by
+  `test/abc/tools/analysis_artifact_identity_test.clj`, including the copied
+  producer-field and duplicate-`artifact_id` failure cases above.
 - A request-set fixture demonstrates non-circular hashing, canonical array
   sorting, JSON null preservation, semantic-id-to-hash resolution metadata, and
   duplicate subject coalescing before hashing.

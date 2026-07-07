@@ -1,0 +1,56 @@
+# Soranoha
+
+Soranoha is the canonical monorepo for the Aozora Bunko conversion and
+validation system. It contains:
+
+- `abc/`: Clojure/Nix publication, schema, TEI, manifest, and validation tools.
+- `ab-validator/`: Rust adapters, parser/IR validation, corpus measurement, and
+  report tooling.
+
+The old split repositories are archived. Use this repository for active
+development, source identity, validation, and release work.
+
+## Development
+
+Enter the root development shell:
+
+```sh
+nix develop
+```
+
+Inspect local runtime paths:
+
+```sh
+just runtime-config
+```
+
+Run the standard cheap validation gate:
+
+```sh
+just validate-migration
+```
+
+This checks runtime configuration, active path hygiene, schema/policy drift, TEI
+version coherence, release-critical flake input pins, Python quality, Nix
+formatting, and root flake evaluation.
+
+## Focused Checks
+
+```sh
+just python-quality
+just nix-format-check
+nix build .#checks.x86_64-linux.abc-clj-kondo
+nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests
+nix build .#checks.x86_64-linux.ab-validator-cargo-check
+nix build .#checks.x86_64-linux.ab-validator-cargo-clippy
+nix build .#checks.x86_64-linux.ab-validator-cargo-fmt
+```
+
+Heavy corpus measurements are operator-driven and require local data under the
+configured `AB_DB_ROOT`; they are not part of the ordinary validation gate.
+
+## Source Identity
+
+The root `flake.lock` is the canonical lock. Component locks under `abc/` and
+`ab-validator/` are compatibility locks for direct component workflows and must
+remain coherent with the root lock for shared non-path inputs.

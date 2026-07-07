@@ -61,6 +61,25 @@
                        :conflicts conflicts}))))
   true)
 
+(defn tokenized-release-guardrail-errors [entries]
+  (->> entries
+       (filter successful-entry?)
+       (filter #(= "tokenized" (get % "artifact_kind")))
+       (map (fn [entry]
+              {:artifact_id (get entry "artifact_id")
+               :manifest_path (get entry "manifest_path")
+               :validation_status (get entry "validation_status")}))
+       (sort-by (juxt :artifact_id :manifest_path))
+       vec))
+
+(defn validate-tokenized-release-guardrail! [entries]
+  (let [errors (tokenized-release-guardrail-errors entries)]
+    (when (seq errors)
+      (throw (ex-info "Successful tokenized manifests require tokenizer_profile_hash in manifest identity schema"
+                      {:type :abc/tokenized-release-before-profile-hash
+                       :errors errors}))))
+  true)
+
 (def parser-ir-copied-fields
   ["parser_build_hash"
    "parser_config_hash"

@@ -80,6 +80,29 @@
    "provenance" {"used" []
                  "was_derived_from" [(files/example-hash "03")]}})
 
+(defn tokenized-manifest
+  [artifact-id validation-status]
+  {"artifact_id" artifact-id
+   "artifact_kind" "tokenized"
+   "validation_status" validation-status
+   "manifest_identity_object" {"manifest_schema_hash" (files/example-hash "01")
+                               "corpus_snapshot_hash" (files/example-hash "02")
+                               "work_content_hash" (files/example-hash "03")
+                               "metadata_record_hash" nil
+                               "parser_build_hash" (files/example-hash "04")
+                               "parser_config_hash" (files/example-hash "05")
+                               "aat_parser_ir_mapping_hash" (files/example-hash "06")
+                               "parser_ir_schema_hash" (files/example-hash "07")
+                               "tei_profile_hash" nil
+                               "tokenizer_build_hash" (files/example-hash "08")
+                               "tokenizer_dictionary_hash" (files/example-hash "09")
+                               "analysis_recipe_hash" nil
+                               "output_format_spec_hash" (files/example-hash "10")}
+   "content" {"content_hash" (files/example-hash "11")
+              "media_type" "application/json"}
+   "provenance" {"used" []
+                 "was_derived_from" [(files/example-hash "03")]}})
+
 (deftest index-entries-test
   (is (= [{"manifest_path" "a.manifest.json"
            "artifact_id" "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -295,3 +318,22 @@
                               (files/example-hash "53")]
              :producer_value nil}]
            errors))))
+
+(deftest tokenized-release-guardrail-test
+  (let [passed-tokenized (tokenized-manifest (files/example-hash "61") "passed")
+        warning-tokenized (tokenized-manifest (files/example-hash "62") "warning")
+        failed-tokenized (tokenized-manifest (files/example-hash "63") "failed")
+        entries (manifest-index/index-entries
+                 {"passed-tokenized.manifest.json" passed-tokenized
+                  "warning-tokenized.manifest.json" warning-tokenized
+                  "failed-tokenized.manifest.json" failed-tokenized})]
+    (is (= [{:artifact_id (files/example-hash "61")
+             :manifest_path "passed-tokenized.manifest.json"
+             :validation_status "passed"}
+            {:artifact_id (files/example-hash "62")
+             :manifest_path "warning-tokenized.manifest.json"
+             :validation_status "warning"}]
+           (manifest-index/tokenized-release-guardrail-errors entries)))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"Successful tokenized manifests require tokenizer_profile_hash"
+                          (manifest-index/validate-tokenized-release-guardrail! entries)))))

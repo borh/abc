@@ -10,9 +10,11 @@ Source: `docs/superpowers/specs/2026-07-07-analysis-artifact-identity-design.md`
 
 Proposed. The first analysis-artifact identity slice is partially implemented:
 `analysis-recipe.schema.json`, `analysis-result.schema.json`, the
-`literary-basic-ja-v1` recipe fixture, analysis-result materialization, and
-manifest-index copied-field validation exist. Request-set fixtures and a
-request-set resolver are still pending.
+`literary-basic-ja-v1` recipe fixture, analysis-result materialization,
+manifest-index copied-field validation, request-set shape fixtures, the
+snapshot-index schema, and the Soranoha request-set inspection command exist.
+The request-set resolver/planner and Nix materialization strategy are still
+pending.
 
 This ADR accepts only the first token-independent per-work analysis slice:
 analysis over `parser-ir-plaintext-body-v1`. It does not accept standalone
@@ -272,9 +274,10 @@ implementation work but prevents schema-valid identity drift.
   the producer manifest.
 - Release validation fails when two successful analysis manifests share the
   same `artifact_id` and differ in `content.content_hash`.
-- The first implementation is covered by
-  `test/abc/tools/analysis_artifact_identity_test.clj`, including the copied
-  producer-field and duplicate-`artifact_id` failure cases above.
+- The first implementation is covered by `test/abc/tools/analysis_identity_test.clj`,
+  `test/abc/tools/materialize_analysis_test.clj`, and
+  `test/abc/tools/manifest_index_test.clj`, including the copied producer-field
+  and duplicate-`artifact_id` failure cases above.
 - A request-set fixture demonstrates non-circular hashing, canonical array
   sorting, JSON null preservation, semantic-id-to-hash resolution metadata, and
   duplicate subject coalescing before hashing.

@@ -911,6 +911,7 @@
                                [(:plaintext-manifest publication-output)
                                 (:tei-manifest publication-output)]))]
           (manifest-index/validate-no-reproducibility-conflicts! entries)
+          (manifest-index/validate-tokenized-release-guardrail! entries)
           (manifest-index/validate-analysis-copied-fields! entries))
         (tel/log! :info "materialized manifest index ok")
         (tel/log! :info "==> Checking materialized RDF views")

@@ -505,7 +505,11 @@ schema and validation work lands.
   `manifest_identity_object`.
 - Manifest sidecar roles include `token-stream`.
 - Until that manifest schema revision lands, release validation rejects any
-  successful `tokenized` manifest.
+  successful `tokenized` manifest; `test/abc/tools/manifest_index_test.clj`
+  covers this pre-schema guardrail.
+- Snapshot request-set fixtures remain token-independent until canonical
+  tokenizer profiles exist; `test/abc/tools/request_set_fixture_test.clj`
+  requires empty `tokenizer_profile_hashes` arrays in those fixtures.
 - An accepted token output schema exists before any canonical tokenized slice
   is accepted; its hash is used as the tokenized slice
   `output_format_spec_hash`.

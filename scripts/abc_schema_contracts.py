@@ -24,6 +24,7 @@ SCHEMA_FILES = (
     "parser-ir-publication-preservation.schema.json",
     "parser-ir.schema.json",
     "source-region-coverage.schema.json",
+    "snapshot-index.schema.json",
 )
 
 

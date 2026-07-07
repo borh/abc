@@ -58,9 +58,7 @@ def abc_all_work_inputs(context: ReportContext) -> list[str]:
     return extras
 
 
-def output_or_default(
-    value: str | None, report_dir: pathlib.Path, filename: str
-) -> pathlib.Path:
+def output_or_default(value: str | None, report_dir: pathlib.Path, filename: str) -> pathlib.Path:
     return pathlib.Path(value) if value else report_dir / filename
 
 
@@ -124,8 +122,7 @@ def command_workset(context: ReportContext, output: str | None) -> pathlib.Path:
 def command_all(context: ReportContext, outputs: list[str]) -> None:
     if len(outputs) not in (0, 3):
         raise SystemExit(
-            "all accepts either no output paths or exactly 3: "
-            "MELOS_MD ALL_WORK_MD WORKSET_JSON"
+            "all accepts either no output paths or exactly 3: MELOS_MD ALL_WORK_MD WORKSET_JSON"
         )
     melos_output = outputs[0] if outputs else None
     all_work_output = outputs[1] if outputs else None

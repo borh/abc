@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-run_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-corpus/aozora2html-full-20260703T020301Z"
+run_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-corpus/aozora2html-full-20260703T020301Z"
 aat_dir="$run_dir/aat/aozora2html-adapter"
 reports_dir="$run_dir/check-reports"
 corpus="$("$repo_root/scripts/resolve-aozorabunko-corpus.sh")"

@@ -169,9 +169,7 @@ def load_into_duckdb(
                     [report_id, row_index, failure_index, adapter, case_id, str(failure)]
                 )
             for syntax_row_id in syntax_row_ids:
-                syntax_values.append(
-                    [report_id, row_index, adapter, case_id, str(syntax_row_id)]
-                )
+                syntax_values.append([report_id, row_index, adapter, case_id, str(syntax_row_id)])
 
         conn.executemany(
             """

@@ -4,7 +4,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/aat-fidelity-env.sh"
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/aat-batch-triage-smoke"
+out_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/aat-batch-triage-smoke"
 db_path="$out_dir/fidelity.duckdb"
 reports_dir="$out_dir/check-reports/fixture-adapter"
 aat_dir="$out_dir/aat/fixture-adapter"

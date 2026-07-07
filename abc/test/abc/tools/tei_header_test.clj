@@ -5,19 +5,12 @@
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing use-fixtures]]))
 
-(def ^:private skip-flag-name "ABC_TEI_SCHEMA_SKIP")
 (def ^:private schema-path (atom nil))
 
 (defn require-schema-path [t]
-  (cond
-    (= "1" (System/getenv skip-flag-name))
-    (println "abc.tools.tei-header-test: skipping (" skip-flag-name "=1)")
-
-    (nil? (System/getenv "TEI_SCHEMA_PATH"))
-    (throw (ex-info "TEI_SCHEMA_PATH must be set." {:env-var "TEI_SCHEMA_PATH"}))
-
-    :else
-    (do (reset! schema-path (System/getenv "TEI_SCHEMA_PATH")) (t))))
+  (if-let [path (System/getenv "TEI_SCHEMA_PATH")]
+    (do (reset! schema-path path) (t))
+    (throw (ex-info "TEI_SCHEMA_PATH must be set." {:env-var "TEI_SCHEMA_PATH"}))))
 
 (use-fixtures :once require-schema-path)
 

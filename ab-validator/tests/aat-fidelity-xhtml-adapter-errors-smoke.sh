@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/xhtml-adapter-errors-smoke"
+out_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/xhtml-adapter-errors-smoke"
 db_path="$out_dir/fidelity.duckdb"
 
 rm -rf "$out_dir"
@@ -22,7 +22,7 @@ cat > "$out_dir/local-jisage.json" <<'JSON'
 JSON
 
 cat > "$out_dir/local-close-tag.json" <<'JSON'
-{"version":1,"blocks":[],"meta":{"parse_complete":false,"warnings":[{"message":"aozora2html parser aborted: /db/ab-validator/gems/aozora2html-3.0.1/lib/aozora2html.rb:846:in 'Aozora2Html#push_block_tag': undefined method 'close_tag' for nil (NoMethodError)"}]}}
+{"version":1,"blocks":[],"meta":{"parse_complete":false,"warnings":[{"message":"aozora2html parser aborted: /runtime/gems/aozora2html-3.0.1/lib/aozora2html.rb:846:in 'Aozora2Html#push_block_tag': undefined method 'close_tag' for nil (NoMethodError)"}]}}
 JSON
 
 for case_id in smoke.jisage smoke.close_tag; do

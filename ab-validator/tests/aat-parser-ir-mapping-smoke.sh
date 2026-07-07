@@ -2,7 +2,8 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/aat-parser-ir-mapping-smoke"
+source "$repo_root/tests/lib/smoke-env.sh"
+out_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/aat-parser-ir-mapping-smoke"
 git_common_dir="$(git -C "$repo_root" rev-parse --path-format=absolute --git-common-dir)"
 repo_storage_root="$(cd "$git_common_dir/.." && pwd)"
 aat_dir="${AB_AOZORA_RS_AAT_DIR:-$repo_storage_root/scratch/morph-full-corpus/aats/aozora-rs-adapter}"
@@ -25,10 +26,10 @@ uv run --isolated --no-project --with 'jsonschema>=4.0' \
 jq -e '.files_scanned == 17894' "$out_dir/aozora-rs-only.summary.json"
 jq -e '.files_with_unsupported == 0' "$out_dir/aozora-rs-only.summary.json"
 
-aozora2html_dir="${AB_AOZORA2HTML_AAT_DIR:-/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter}"
-aozora_epub3_dir="${AB_AOZORA_EPUB3_AAT_DIR:-/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter}"
-aozora2_dir="${AB_AOZORA2_AAT_DIR:-/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter}"
-aozora_dir="${AB_AOZORA_AAT_DIR:-/db/ab-validator/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter}"
+aozora2html_dir="${AB_AOZORA2HTML_AAT_DIR:-$repo_root/scratch/state/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter}"
+aozora_epub3_dir="${AB_AOZORA_EPUB3_AAT_DIR:-$repo_root/scratch/state/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter}"
+aozora2_dir="${AB_AOZORA2_AAT_DIR:-$repo_root/scratch/state/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter}"
+aozora_dir="${AB_AOZORA_AAT_DIR:-$repo_root/scratch/state/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter}"
 
 uv run --isolated --no-project --with 'jsonschema>=4.0' \
   "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/generate.py" \

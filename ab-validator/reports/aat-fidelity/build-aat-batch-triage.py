@@ -57,11 +57,7 @@ def walk_source_derived_nodes(value: Any, path: str = "$") -> Iterable[dict[str,
 
 
 def semantic_summary_rows(aat: dict[str, Any]) -> Iterable[dict[str, Any]]:
-    syntax = (
-        aat.get("meta", {})
-        .get("semantic_summary", {})
-        .get("syntax", {})
-    )
+    syntax = aat.get("meta", {}).get("semantic_summary", {}).get("syntax", {})
     if not isinstance(syntax, dict):
         return
     for syntax_id, observations in syntax.items():

@@ -4,7 +4,7 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/aat-fidelity-env.sh"
 
 repo_root="$AB_VALIDATOR_ROOT"
-out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/cross-summary-xhtml-smoke"
+out_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/cross-summary-xhtml-smoke"
 db_path="$out_dir/fidelity.duckdb"
 report_json="$out_dir/report.json"
 summary_md="$out_dir/summary.md"

@@ -16,8 +16,8 @@ from lxml import etree
 
 XHTML_NS = "http://www.w3.org/1999/xhtml"
 NS = {"x": XHTML_NS}
-HTML_CHARSET_RE = re.compile(br"charset\s*=\s*['\"]?([A-Za-z0-9._-]+)", re.IGNORECASE)
-XML_ENCODING_RE = re.compile(br"^\s*<\?xml[^>]*encoding\s*=", re.IGNORECASE)
+HTML_CHARSET_RE = re.compile(rb"charset\s*=\s*['\"]?([A-Za-z0-9._-]+)", re.IGNORECASE)
+XML_ENCODING_RE = re.compile(rb"^\s*<\?xml[^>]*encoding\s*=", re.IGNORECASE)
 NON_MAIN_TEXT_CLASSES = {
     "bibliographical_information",
     "notation_notes",
@@ -144,19 +144,16 @@ def create_tables(conn: duckdb.DuckDBPyConnection) -> None:
     for column in ("card_url", "source_url", "upstream_url", "feature_tags", "manifest_status"):
         if column not in existing_columns:
             conn.execute(
-                f"ALTER TABLE fidelity_xhtml_observations "
-                f"ADD COLUMN {column} TEXT DEFAULT ''"
+                f"ALTER TABLE fidelity_xhtml_observations ADD COLUMN {column} TEXT DEFAULT ''"
             )
     if "first_diff_index" not in existing_columns:
         conn.execute(
-            "ALTER TABLE fidelity_xhtml_observations "
-            "ADD COLUMN first_diff_index INTEGER DEFAULT -1"
+            "ALTER TABLE fidelity_xhtml_observations ADD COLUMN first_diff_index INTEGER DEFAULT -1"
         )
     for column in ("upstream_diff_context", "local_diff_context"):
         if column not in existing_columns:
             conn.execute(
-                f"ALTER TABLE fidelity_xhtml_observations "
-                f"ADD COLUMN {column} TEXT DEFAULT ''"
+                f"ALTER TABLE fidelity_xhtml_observations ADD COLUMN {column} TEXT DEFAULT ''"
             )
     if "rendered_body_proxy_eligible" not in existing_columns:
         conn.execute(
@@ -170,9 +167,7 @@ def create_tables(conn: duckdb.DuckDBPyConnection) -> None:
         )
 
 
-def first_diff(
-    upstream: str, local: str, *, context_chars: int = 24
-) -> tuple[int, str, str]:
+def first_diff(upstream: str, local: str, *, context_chars: int = 24) -> tuple[int, str, str]:
     if upstream == local:
         return -1, "", ""
     limit = min(len(upstream), len(local))
@@ -335,6 +330,7 @@ def load_observation_with_conn(
         ],
     )
 
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--db", type=Path, required=True)
@@ -361,9 +357,7 @@ def main() -> int:
         feature_tags=args.feature_tags,
         manifest_status=args.manifest_status,
     )
-    print(
-        f"loaded XHTML observation {args.case_id} into {args.db} as {args.report_id}"
-    )
+    print(f"loaded XHTML observation {args.case_id} into {args.db} as {args.report_id}")
     return 0
 
 

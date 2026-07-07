@@ -202,8 +202,8 @@
         (usage)
         (System/exit 2))
       (let [{:keys [snapshot snapshot-hash]} (materialize-source-snapshot!
-                                             {:workset-path workset-path
-                                              :output-path output-path
-                                              :generated-at generated-at})]
+                                              {:workset-path workset-path
+                                               :output-path output-path
+                                               :generated-at generated-at})]
         (tel/log! :info (str "materialized source snapshot " snapshot
                              " with hash " snapshot-hash))))))

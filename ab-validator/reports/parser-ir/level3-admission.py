@@ -132,9 +132,7 @@ def source_authority_gate(source: dict[str, Any]) -> dict[str, Any]:
     return {
         "gate_status": source.get("gate_status"),
         "works_scanned": source.get("works_scanned"),
-        "unallowlisted_unknown_markers_total": source.get(
-            "unallowlisted_unknown_markers_total"
-        ),
+        "unallowlisted_unknown_markers_total": source.get("unallowlisted_unknown_markers_total"),
     }
 
 
@@ -155,9 +153,7 @@ def require_non_empty_mapping_string(mapping: dict[str, Any], field: str) -> str
 def require_transform_rule_descriptions(mapping: dict[str, Any]) -> list[Any]:
     value = mapping.get("transform_rule_descriptions")
     if not isinstance(value, list) or not value:
-        raise SystemExit(
-            "mapping.transform_rule_descriptions must be a non-empty list"
-        )
+        raise SystemExit("mapping.transform_rule_descriptions must be a non-empty list")
     return value
 
 
@@ -167,9 +163,7 @@ def build_mapping_block(mapping: dict[str, Any], mapping_hash: str) -> dict[str,
         "mapping_id": require_non_empty_mapping_string(mapping, "mapping_id"),
         "mapping_version": require_non_empty_mapping_string(mapping, "mapping_version"),
         "mapping_hash": mapping_hash,
-        "mapping_schema_hash": require_non_empty_mapping_string(
-            mapping, "mapping_schema_hash"
-        ),
+        "mapping_schema_hash": require_non_empty_mapping_string(mapping, "mapping_schema_hash"),
         "target_parser_ir_schema_id": require_non_empty_mapping_string(
             mapping, "target_parser_ir_schema_id"
         ),
@@ -224,10 +218,7 @@ def generated_has_ruby_structure(row: dict[str, Any]) -> bool:
 def text_bucket_passes(row: dict[str, Any], text_bucket: str) -> bool:
     if text_bucket in PASSING_TEXT_BUCKETS:
         return True
-    return (
-        text_bucket in EXACT_RUBY_EQUIVALENCE_TEXT_BUCKETS
-        and generated_has_ruby_structure(row)
-    )
+    return text_bucket in EXACT_RUBY_EQUIVALENCE_TEXT_BUCKETS and generated_has_ruby_structure(row)
 
 
 def row_materialization_ok(row: dict[str, Any]) -> bool:
@@ -439,9 +430,7 @@ def build_plain_prose_workset_admission(
         "verdict": work_file_verdict(work_files_total, work_files_failed),
         "blocking_owners": sorted(failures_by_owner, key=owner_sort_key),
         "failures_by_owner": dict(sorted(failures_by_owner.items())),
-        "passing_candidates_by_adapter": dict(
-            sorted(passing_candidates_by_adapter.items())
-        ),
+        "passing_candidates_by_adapter": dict(sorted(passing_candidates_by_adapter.items())),
         "failed_work_files": failed_work_files,
     }
 

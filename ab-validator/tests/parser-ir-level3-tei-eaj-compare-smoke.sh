@@ -6,7 +6,8 @@ source "$repo_root/tests/lib/smoke-env.sh"
 
 abc_root="$(smoke_abc_root)"
 workset="${AB_TEI_EAJ_WORKSET:-"$abc_root/out/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json"}"
-aat_path="${AB_LEVEL3_AAT:-"/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000035_1567-32ff5a089d67.json"}"
+default_level3_aat="${AB_AOZORA2HTML_AAT_DIR:-$repo_root/scratch/state/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter}/000035_1567-32ff5a089d67.json"
+aat_path="${AB_LEVEL3_AAT:-$default_level3_aat}"
 tei_eaj_file="${AB_LEVEL3_TEI_EAJ_FILE:-"data/complete/tei_lib_lv4/1567_tei.xml"}"
 
 if [[ ! -d "$abc_root" ]]; then

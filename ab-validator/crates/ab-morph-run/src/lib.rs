@@ -1589,11 +1589,8 @@ mod tests {
 
         let run_dir = warehouse_dir.join("runs").join("run-a");
         assert_eq!(
-            warehouse::writer::parquet_table_row_count(
-                &run_dir,
-                WarehouseTable::ProjectionSpans
-            )
-            .unwrap(),
+            warehouse::writer::parquet_table_row_count(&run_dir, WarehouseTable::ProjectionSpans)
+                .unwrap(),
             1,
             "TINY_AAT has exactly one contributing text node"
         );

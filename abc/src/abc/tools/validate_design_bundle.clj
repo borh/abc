@@ -841,8 +841,8 @@
     ;; ABC profile below.
     (validate-tei! "schemas/tei-profile.rng" [tei-file])
     (let [{:keys [findings]} (schematron/validate! {:schema-path "schemas/tei-profile.sch"
-                                                     :xml-path (str tei-file)
-                                                     :label (str tei-file)})
+                                                    :xml-path (str tei-file)
+                                                    :label (str tei-file)})
           errors (filter schematron-error? findings)]
       (when (seq errors)
         (throw (ex-info "generated parser-IR publication TEI has Schematron errors"

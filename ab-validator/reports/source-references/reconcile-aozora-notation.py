@@ -178,7 +178,9 @@ def syntax_summary(row: dict[str, Any], source_rows: dict[str, Any]) -> dict[str
     }
 
 
-def manual_reference_files(manual_root: pathlib.Path | None, syntax_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def manual_reference_files(
+    manual_root: pathlib.Path | None, syntax_rows: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
     referenced: set[str] = set()
     for row in syntax_rows:
         for source in row.get("reference_sources", []):
@@ -255,9 +257,7 @@ def build_summary(
     official_rows = [row for row in syntax_rows if is_official_row(row)]
     syntax_by_id = {str(row.get("id")): row for row in syntax_rows}
     claimed_inventory_rows = {
-        row_id
-        for row in syntax_rows
-        if (row_id := source_inventory_row(row)) is not None
+        row_id for row in syntax_rows if (row_id := source_inventory_row(row)) is not None
     }
 
     documented_observed = []
@@ -273,7 +273,9 @@ def build_summary(
     for row_id, value in sorted(source_rows.items()):
         if not isinstance(value, dict):
             continue
-        occurrences = int(value.get("occurrences", 0)) if isinstance(value.get("occurrences", 0), int) else 0
+        occurrences = (
+            int(value.get("occurrences", 0)) if isinstance(value.get("occurrences", 0), int) else 0
+        )
         if occurrences > 0 and row_id not in claimed_inventory_rows:
             observed_without_syntax_row.append(
                 {
@@ -295,7 +297,11 @@ def build_summary(
             continue
 
         configured_rows = P4SUTA_FEATURE_TO_SOURCE_ROWS.get(feature, [])
-        existing_rows = [row_id for row_id in configured_rows if row_id in claimed_inventory_rows or row_id in syntax_by_id]
+        existing_rows = [
+            row_id
+            for row_id in configured_rows
+            if row_id in claimed_inventory_rows or row_id in syntax_by_id
+        ]
         if not existing_rows:
             p4suta_feature_unmapped.append(feature_entry)
             continue
@@ -357,7 +363,9 @@ def build_summary(
     }
 
 
-def table_rows(rows: list[dict[str, Any]], columns: list[tuple[str, str]], limit: int = 30) -> list[str]:
+def table_rows(
+    rows: list[dict[str, Any]], columns: list[tuple[str, str]], limit: int = 30
+) -> list[str]:
     out = [
         "| " + " | ".join(label for label, _key in columns) + " |",
         "| " + " | ".join("---" for _label, _key in columns) + " |",

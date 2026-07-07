@@ -139,7 +139,9 @@ def write_csvs(out_dir: Path, classified: list[dict[str, str]]) -> None:
                 writer.writerow(row)
 
 
-def write_markdown(out_dir: Path, db_path: Path, report_id: str, classified: list[dict[str, str]]) -> None:
+def write_markdown(
+    out_dir: Path, db_path: Path, report_id: str, classified: list[dict[str, str]]
+) -> None:
     counts = Counter(row["error_class"] for row in classified)
     lines = [
         "# XHTML Adapter Error Classification",

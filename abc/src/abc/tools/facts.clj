@@ -115,7 +115,7 @@
                                     pre-pids (for [s (get-in ev ["prov" "used"])]
                                                (get snap->pid s))
                                     post-pids (for [s (get-in ev ["prov" "was_generated_by"])]
-                                                 (get snap->pid s))
+                                                (get snap->pid s))
                                     pre (set (remove nil? pre-pids))
                                     post (set (remove nil? post-pids))]
                               succ post

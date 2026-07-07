@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-db_path="${AB_AAT_FIDELITY_DB:-/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb}"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+workspace_root="$(cd "$repo_root/.." && pwd)"
+if [[ -f "$workspace_root/scripts/soranoha-runtime-env.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$workspace_root/scripts/soranoha-runtime-env.sh"
+fi
+
+db_path="${AB_AAT_FIDELITY_DB:-${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/cross-adapter/fidelity.duckdb}"
 report_id="${AB_AAT_FIDELITY_REPORT_ID:-upstream-xhtml-full}"
-out_dir="${AB_AAT_FIDELITY_XHTML_TRIAGE_OUT_DIR:-/db/ab-validator/aat-fidelity/upstream-xhtml-full/triage-report}"
+out_dir="${AB_AAT_FIDELITY_XHTML_TRIAGE_OUT_DIR:-${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/upstream-xhtml-full/triage-report}"
 limit=50
 
 while [[ $# -gt 0 ]]; do

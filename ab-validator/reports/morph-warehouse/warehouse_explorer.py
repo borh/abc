@@ -22,7 +22,6 @@ def _():
 
     import duckdb
     import marimo as mo
-    import polars as pl
 
     return Path, duckdb, json, mo, os
 
@@ -40,7 +39,7 @@ def _(mo):
     reports/morph-warehouse/open-warehouse-explorer.sh
     ```
 
-    The default run directory is `/db/ab-validator/morph-warehouse/runs/triage-2026-05-03-jobs12`.
+    The default run directory is derived from `AB_MORPH_WAREHOUSE_DIR`.
     Override it with `AB_MORPH_WAREHOUSE_RUN_DIR=/path/to/run`.
     """)
     return
@@ -48,22 +47,23 @@ def _(mo):
 
 @app.cell
 def _(Path, duckdb, mo, os):
-    default_run_dir = "/db/ab-validator/morph-warehouse/runs/triage-2026-05-03-jobs12"
-    run_dir = Path(
-        os.environ.get("AB_MORPH_WAREHOUSE_RUN_DIR", default_run_dir)
-    ).expanduser()
+    ab_db_root = Path(os.environ.get("AB_DB_ROOT", "scratch/state"))
+    default_run_dir = (
+        Path(os.environ.get("AB_MORPH_WAREHOUSE_DIR", str(ab_db_root / "morph-warehouse")))
+        / "runs"
+        / "triage-2026-05-03-jobs12"
+    )
+    run_dir = Path(os.environ.get("AB_MORPH_WAREHOUSE_RUN_DIR", default_run_dir)).expanduser()
     temp_dir = Path(
         os.environ.get(
             "AB_MORPH_DUCKDB_TEMP_DIR",
-            "/db/ab-validator/tmp/marimo-morph-warehouse",
+            str(ab_db_root / "tmp/marimo-morph-warehouse"),
         )
     ).expanduser()
     temp_dir.mkdir(parents=True, exist_ok=True)
 
     conn = duckdb.connect()
-    conn.execute(
-        f"SET temp_directory='{str(temp_dir).replace(chr(39), chr(39) + chr(39))}'"
-    )
+    conn.execute(f"SET temp_directory='{str(temp_dir).replace(chr(39), chr(39) + chr(39))}'")
     conn.execute("SET preserve_insertion_order=false")
     conn.execute("SET threads=4")
     conn.execute("SET memory_limit='8GB'")
@@ -119,10 +119,7 @@ def _(Path, duckdb, mo, os):
     status = (
         mo.md(f"Connected to `{run_dir}` with DuckDB temp under `{temp_dir}`.")
         if not missing
-        else mo.md(
-            "Missing warehouse files:\n\n"
-            + "\n".join(f"- `{path}`" for path in missing)
-        )
+        else mo.md("Missing warehouse files:\n\n" + "\n".join(f"- `{path}`" for path in missing))
     )
     status
     return conn, missing, run_dir
@@ -212,9 +209,7 @@ def _():
         clauses = []
         value = source_filter_widget.value.strip()
         if value:
-            clauses.append(
-                f"{table_alias}.source_id LIKE {sql_literal('%' + value + '%')}"
-            )
+            clauses.append(f"{table_alias}.source_id LIKE {sql_literal('%' + value + '%')}")
 
         value = text_filter_widget.value.strip()
         if value:
@@ -574,9 +569,7 @@ def _(
         selected_source_ids = parse_ids(source_ids.value)
         selected_text_ids = parse_ids(text_ids.value)
         if not source_where and selected_source_ids:
-            source_where = (
-                "AND s.source_id = " + sql_literal(selected_source_ids[0])
-            )
+            source_where = "AND s.source_id = " + sql_literal(selected_source_ids[0])
         elif not source_where and selected_text_ids:
             source_where = "AND s.text_id = " + sql_literal(selected_text_ids[0])
 
@@ -636,6 +629,7 @@ def _(
                         block_rows.append(f"| {index} | `{type(block).__name__}` | 0 |")
                 if len(blocks) > 20:
                     block_rows.append(f"| ... | {len(blocks) - 20} more blocks |  |")
+                block_rows_text = "\n".join(block_rows)
 
                 result = mo.vstack(
                     [
@@ -659,7 +653,7 @@ def _(
 
                             Top-level blocks: `{len(blocks)}`
 
-                            {"\n".join(block_rows)}
+                            {block_rows_text}
                             """
                         ),
                         mo.json(aat, label="AAT JSON"),

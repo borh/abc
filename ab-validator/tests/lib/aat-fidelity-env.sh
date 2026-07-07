@@ -2,7 +2,12 @@
 set -euo pipefail
 
 export AB_VALIDATOR_ROOT="${AB_VALIDATOR_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-export AB_DB_ROOT="${AB_DB_ROOT:-/db/ab-validator}"
+workspace_root="$(cd "$AB_VALIDATOR_ROOT/.." && pwd)"
+if [[ -f "$workspace_root/scripts/soranoha-runtime-env.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$workspace_root/scripts/soranoha-runtime-env.sh"
+fi
+export AB_DB_ROOT="${AB_DB_ROOT:-$AB_VALIDATOR_ROOT/scratch/state}"
 export TMPDIR="${TMPDIR:-$AB_DB_ROOT/tmp}"
 export TMP="${TMP:-$TMPDIR}"
 export TEMP="${TEMP:-$TMPDIR}"

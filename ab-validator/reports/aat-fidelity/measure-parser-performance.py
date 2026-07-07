@@ -17,7 +17,6 @@ import re
 import shlex
 import statistics
 import subprocess
-import sys
 import tempfile
 import zipfile
 from dataclasses import dataclass
@@ -102,9 +101,7 @@ def main() -> int:
         "corpus": str(args.corpus),
         "limit_s": args.limit_s,
         "time_bin": str(args.time_bin),
-        "adapters": [
-            {"label": adapter.label, "command": adapter.command} for adapter in adapters
-        ],
+        "adapters": [{"label": adapter.label, "command": adapter.command} for adapter in adapters],
         "selected_works": [
             {
                 "work_id": work.work_id,
@@ -151,7 +148,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--aozora2html-gem-home",
         type=pathlib.Path,
-        default=pathlib.Path("/db/ab-validator/gems/aozora2html-3.0.1"),
+        default=pathlib.Path(
+            os.environ.get(
+                "AB_AOZORA2HTML_GEM_HOME",
+                str(
+                    pathlib.Path(os.environ.get("AB_DB_ROOT", "scratch/state"))
+                    / "gems"
+                    / "aozora2html-3.0.1"
+                ),
+            )
+        ),
     )
     parser.add_argument("--mapper-bin", type=pathlib.Path)
     parser.add_argument("--stage-split-sample", type=int, default=5)
@@ -469,7 +475,9 @@ def measure_aozora2html_stages(
         return rows
 
 
-def write_aozora2html_parser_input(source: bytes, parser_src: pathlib.Path, crlf_src: pathlib.Path) -> None:
+def write_aozora2html_parser_input(
+    source: bytes, parser_src: pathlib.Path, crlf_src: pathlib.Path
+) -> None:
     text = decode_source_for_cp932(source)
     encoded = text.encode("cp932", errors="replace")
     if b"--------------------" in encoded:

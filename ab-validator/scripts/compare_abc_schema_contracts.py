@@ -85,9 +85,7 @@ def compare_contracts(local_path: Path, abc_path: Path) -> list[str]:
         upstream_row = upstream_schemas[schema_id]
         for key in ("title", "version", "hash"):
             if local_row[key] != upstream_row[key]:
-                errors.append(
-                    f"{schema_id} {key}: local={local_row[key]} abc={upstream_row[key]}"
-                )
+                errors.append(f"{schema_id} {key}: local={local_row[key]} abc={upstream_row[key]}")
     return errors
 
 

@@ -1,0 +1,45 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [
+  "ab-validator/benchmarks/baselines",
+  "ab-validator/docs/superpowers/reports",
+  "ab-validator/scratch",
+  "abc/out",
+  "out",
+  "scratch",
+]
+
+[tool.ruff.lint]
+ignore = ["E402", "E501"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+scripts_are_modules = true
+explicit_package_bases = true
+allow_redefinition = true
+warn_unused_configs = true
+pretty = true
+disable_error_code = [
+  "arg-type",
+  "assignment",
+  "attr-defined",
+  "call-arg",
+  "call-overload",
+  "index",
+  "misc",
+  "operator",
+  "return-value",
+  "type-var",
+  "union-attr",
+  "var-annotated",
+]
+exclude = [
+  "ab-validator/benchmarks/baselines/",
+  "ab-validator/docs/superpowers/reports/",
+  "ab-validator/scratch/",
+  "abc/out/",
+  "out/",
+  "scratch/",
+]

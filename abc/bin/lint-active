@@ -3,6 +3,5 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-exec nix run nixpkgs#clj-kondo -- \
-  --lint src/abc/tools test/abc/tools \
-  --fail-level error
+system="$(nix eval --impure --raw --expr builtins.currentSystem)"
+exec nix build --no-link ".#checks.${system}.clj-kondo"

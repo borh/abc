@@ -123,7 +123,10 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
             "works_scanned": source.get("works_scanned"),
             "gate_status": source.get("gate_status"),
         },
-        "source_report_md": {"path": display_path(args.source_report_md), "hash": sha256_file(args.source_report_md)},
+        "source_report_md": {
+            "path": display_path(args.source_report_md),
+            "hash": sha256_file(args.source_report_md),
+        },
         "classes": classes,
     }
 

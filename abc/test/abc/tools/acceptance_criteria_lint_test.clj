@@ -27,7 +27,7 @@
             executable path fails the lint — tested against a TEMP ADR corpus
             so the real repo is untouched"
     (let [tmp (str (Files/createTempDirectory
-                     "abc-adr-lint" (make-array FileAttribute 0)))
+                    "abc-adr-lint" (make-array FileAttribute 0)))
           adr-tmp (io/file (str tmp "/adr"))]
       (.mkdirs adr-tmp)
       (doseq [f (ls-adr)
@@ -49,7 +49,7 @@
             Criteria passes the lint (positive control — distinguishes the
             failure above from a blanket-reject bug)"
     (let [tmp (str (Files/createTempDirectory
-                     "abc-adr-lint-pos" (make-array FileAttribute 0)))
+                    "abc-adr-lint-pos" (make-array FileAttribute 0)))
           adr-tmp (io/file (str tmp "/adr"))]
       (.mkdirs adr-tmp)
       (io/copy (io/file "docs/adr/.acceptance-legacy-allowlist")

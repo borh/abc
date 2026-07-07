@@ -52,12 +52,8 @@ def walk_nodes(value: Any, path: str = "$") -> list[tuple[str, dict[str, Any]]]:
 
 
 def is_kunten_node(node: dict[str, Any]) -> bool:
-    return (
-        node.get("style_type") in {"kaeriten", "okurigana"}
-        or (
-            node.get("kind") == "ruby"
-            and node.get("x-annotation-type") == "okurigana"
-        )
+    return node.get("style_type") in {"kaeriten", "okurigana"} or (
+        node.get("kind") == "ruby" and node.get("x-annotation-type") == "okurigana"
     )
 
 
@@ -156,11 +152,7 @@ def find_observed_sample(
                     "syntax_id": f"kunten.{syntax_suffix}",
                     "node_preview": preview_node(node),
                 }
-        syntax = (
-            aat.get("meta", {})
-            .get("semantic_summary", {})
-            .get("syntax", {})
-        )
+        syntax = aat.get("meta", {}).get("semantic_summary", {}).get("syntax", {})
         if family == "kunten" and isinstance(syntax, dict):
             for syntax_id, observations in sorted(syntax.items()):
                 if not str(syntax_id).startswith("kunten."):
@@ -214,13 +206,17 @@ def sample_evidence(
         evidence_label = "retry"
         evidence_dir = retry_run_dir
     paths = aat_paths_for_work(work_id, evidence_dir)
-    return evidence_label, evidence_dir, {
-        "aat_path": str(paths[0].relative_to(evidence_dir)) if paths else "",
-        "node_path": "",
-        "node_kind": "",
-        "syntax_id": "",
-        "node_preview": {},
-    }
+    return (
+        evidence_label,
+        evidence_dir,
+        {
+            "aat_path": str(paths[0].relative_to(evidence_dir)) if paths else "",
+            "node_path": "",
+            "node_kind": "",
+            "syntax_id": "",
+            "node_preview": {},
+        },
+    )
 
 
 def sample_row(
@@ -361,7 +357,9 @@ def main() -> int:
         "# Aozora2html Policy Samples",
         "",
         f"- run_dir: `{run_dir}`",
-        f"- retry_run_dir: `{retry_run_dir}`" if retry_run_dir is not None else "- retry_run_dir: null",
+        f"- retry_run_dir: `{retry_run_dir}`"
+        if retry_run_dir is not None
+        else "- retry_run_dir: null",
         f"- audit: `{args.audit_md}`",
         f"- limit_per_bucket: {args.limit_per_bucket}",
         "",
@@ -369,7 +367,10 @@ def main() -> int:
     for family in FAMILIES:
         for bucket in BUCKETS:
             rows = samples[family][bucket]
-            if not rows and bucket not in {"observed_in_aat", "source_feature_without_aat_observation"}:
+            if not rows and bucket not in {
+                "observed_in_aat",
+                "source_feature_without_aat_observation",
+            }:
                 continue
             lines.extend([f"## {section_title(family, bucket)}", ""])
             lines.extend(markdown_table(rows))

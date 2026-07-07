@@ -1487,26 +1487,16 @@
                                    :data-graph data
                                    :label "validate_design_bundle_test"}))))))
 
-(def ^:private tei-skip-flag "ABC_TEI_SCHEMA_SKIP")
-
-(defn- tei-schema-tests-skipped?
+(defn- tei-schema-path!
   []
-  (or (= "1" (System/getenv tei-skip-flag))
-      (nil? (System/getenv "TEI_SCHEMA_PATH"))))
-
-(defn- assert-tei-schema-test-skipped!
-  []
-  (is (tei-schema-tests-skipped?)
-      (str "TEI schema-backed test skipped because " tei-skip-flag
-           "=1 or TEI_SCHEMA_PATH is unset")))
+  (or (System/getenv "TEI_SCHEMA_PATH")
+      (throw (ex-info "TEI_SCHEMA_PATH must be set for TEI schema-backed tests."
+                      {:env-var "TEI_SCHEMA_PATH"}))))
 
 (deftest validate-tei-smoke-test
   (testing "validate-tei! returns nil for the example fixture when TEI_SCHEMA_PATH is set"
-    (if (tei-schema-tests-skipped?)
-      (assert-tei-schema-test-skipped!)
-      (let [schema-path (System/getenv "TEI_SCHEMA_PATH")]
-        (is (nil? (validate/validate-tei! schema-path
-                                          ["examples/v0/example-work/tei.xml"])))))))
+    (is (nil? (validate/validate-tei! (tei-schema-path!)
+                                      ["examples/v0/example-work/tei.xml"])))))
 
 (deftest validate-tei-loud-fail-when-env-unset-test
   (testing "validate-tei! throws ex-info naming the schema-path problem when called with nil"
@@ -1745,40 +1735,38 @@
 
 (deftest validate-tei-warning-partition-test
   (testing "validate-tei! does not throw when only warnings are present"
-    (if (tei-schema-tests-skipped?)
-      (assert-tei-schema-test-skipped!)
-      (let [schema-path (System/getenv "TEI_SCHEMA_PATH")
-            tmp (java.io.File/createTempFile "abc-tei-warn" ".xml")]
-        (try
-          (spit tmp (str "<?xml version=\"1.0\"?>"
-                         "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\">"
-                         "  <teiHeader><fileDesc>"
-                         "    <titleStmt><title>t</title></titleStmt>"
-                         "    <publicationStmt><p>p</p></publicationStmt>"
-                         "    <sourceDesc><p>s</p></sourceDesc>"
-                         "  </fileDesc></teiHeader>"
-                         "  <text><body>"
-                         "    <p>see <ref target=\"#missing\">link</ref></p>"
-                         "  </body></text>"
-                         "</TEI>"))
-          (require '[abc.tools.tei :as tei])
-          (let [{:keys [violations]} ((resolve 'abc.tools.tei/validate!)
-                                      {:schema-path schema-path
-                                       :xml-path (str tmp)
-                                       :label "warn"})
-                warnings (filter #(= :warning (:severity %)) violations)]
-            (is (empty? (filter #(#{:error :fatal} (:severity %)) violations))
-                "fixture must not contain TEI errors")
-            (is (nil? (validate/validate-tei! schema-path [(str tmp)]))
-                (if (seq warnings)
-                  "harness must not throw when only warnings are present"
-                  "harness must not throw when this fixture is clean under the current Jing version"))
-            (when-not (seq warnings)
-              (println "validate-tei-warning-partition-test: no warnings"
-                       "in this fixture under Jing 20241231; severities seen:"
-                       (vec (distinct (map :severity violations))))))
-          (finally
-            (.delete tmp)))))))
+    (let [schema-path (tei-schema-path!)
+          tmp (java.io.File/createTempFile "abc-tei-warn" ".xml")]
+      (try
+        (spit tmp (str "<?xml version=\"1.0\"?>"
+                       "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\">"
+                       "  <teiHeader><fileDesc>"
+                       "    <titleStmt><title>t</title></titleStmt>"
+                       "    <publicationStmt><p>p</p></publicationStmt>"
+                       "    <sourceDesc><p>s</p></sourceDesc>"
+                       "  </fileDesc></teiHeader>"
+                       "  <text><body>"
+                       "    <p>see <ref target=\"#missing\">link</ref></p>"
+                       "  </body></text>"
+                       "</TEI>"))
+        (require '[abc.tools.tei :as tei])
+        (let [{:keys [violations]} ((resolve 'abc.tools.tei/validate!)
+                                    {:schema-path schema-path
+                                     :xml-path (str tmp)
+                                     :label "warn"})
+              warnings (filter #(= :warning (:severity %)) violations)]
+          (is (empty? (filter #(#{:error :fatal} (:severity %)) violations))
+              "fixture must not contain TEI errors")
+          (is (nil? (validate/validate-tei! schema-path [(str tmp)]))
+              (if (seq warnings)
+                "harness must not throw when only warnings are present"
+                "harness must not throw when this fixture is clean under the current Jing version"))
+          (when-not (seq warnings)
+            (println "validate-tei-warning-partition-test: no warnings"
+                     "in this fixture under Jing 20241231; severities seen:"
+                     (vec (distinct (map :severity violations))))))
+        (finally
+          (.delete tmp))))))
 
 (deftest validate-drift-fixtures-smoke-test
   (testing "drift fixture runner returns nil when expected failures are observed"

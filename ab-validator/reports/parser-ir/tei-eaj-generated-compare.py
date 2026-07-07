@@ -154,11 +154,7 @@ def descendants(parent: ET.Element | None, local: str) -> list[ET.Element]:
     if parent is None:
         return []
     wanted = f"{TEI}{local}"
-    return [
-        node
-        for node in parent.iter()
-        if node.tag == wanted or local_name(node.tag) == local
-    ]
+    return [node for node in parent.iter() if node.tag == wanted or local_name(node.tag) == local]
 
 
 def tag_counts(parent: ET.Element | None) -> dict[str, int]:
@@ -191,10 +187,7 @@ def tei_structure_profiles(
         profiles.append("verse")
     elif line_break_dominant(body_counts):
         profiles.append("lineated_text")
-    if any(
-        body_counts.get(tag, 0)
-        for tag in ("said", "persName", "placeName", "roleName", "rs")
-    ):
+    if any(body_counts.get(tag, 0) for tag in ("said", "persName", "placeName", "roleName", "rs")):
         profiles.append("lv4_enrichment")
     if body_counts.get("note", 0) or back_source_note_count:
         profiles.append("notes")
@@ -326,9 +319,7 @@ def body_text_comparison(
     base = compare_text_surface(generated_base_text, tei_eaj_base_text)
     surfaces = {
         "base": surface_relation(generated_base_text, tei_eaj_base_text),
-        "ruby_expanded": surface_relation(
-            generated_ruby_expanded_text, tei_eaj_ruby_expanded_text
-        ),
+        "ruby_expanded": surface_relation(generated_ruby_expanded_text, tei_eaj_ruby_expanded_text),
         "ruby_expanded_parenless": surface_relation(
             strip_japanese_parentheses(generated_ruby_expanded_text),
             strip_japanese_parentheses(tei_eaj_ruby_expanded_text),
@@ -362,9 +353,7 @@ def tei_counts(path: pathlib.Path) -> dict[str, Any]:
     body_tag_counts = selected_tag_counts(tag_counts(body))
     body_paragraphs = descendants(body, "p")
     missing_body_gap_paragraphs = [
-        paragraph
-        for paragraph in body_paragraphs
-        if is_missing_body_gap_paragraph(paragraph)
+        paragraph for paragraph in body_paragraphs if is_missing_body_gap_paragraph(paragraph)
     ]
     body_notes = descendants(body, "note")
     back_notes = descendants(back, "note")
@@ -475,15 +464,9 @@ def paragraph_origin_bucket(
     if parser_ir_paragraphs is not None and generated_body_p != parser_ir_paragraphs:
         missing_generated = parser_ir_paragraphs - generated_body_p
         rendering = paragraph_rendering or {}
-        if (
-            missing_generated > 0
-            and rendering.get("source_note_back_ranges") == missing_generated
-        ):
+        if missing_generated > 0 and rendering.get("source_note_back_ranges") == missing_generated:
             return "source_note_back_routing"
-        if (
-            missing_generated > 0
-            and rendering.get("empty_body_ranges") == missing_generated
-        ):
+        if missing_generated > 0 and rendering.get("empty_body_ranges") == missing_generated:
             return "empty_body_paragraph_range"
         return "renderer_paragraph_mismatch"
     if (
@@ -500,8 +483,7 @@ def paragraph_origin_bucket(
         rendering = paragraph_rendering or {}
         if (
             aat_paragraph_blocks > parser_ir_paragraphs
-            and aat_paragraph_blocks - parser_ir_paragraphs
-            == rendering.get("page_break_nodes")
+            and aat_paragraph_blocks - parser_ir_paragraphs == rendering.get("page_break_nodes")
         ):
             return "page_break_projection"
         return "converter_paragraph_mismatch"
@@ -556,9 +538,7 @@ def paragraph_rendering_summary(parser_ir: dict[str, Any]) -> dict[str, Any]:
         if role == "source-note":
             summary["source_note_ranges"] += 1
             placements = {
-                node.get("placement")
-                for node in node_slice
-                if node.get("type") == "source-note"
+                node.get("placement") for node in node_slice if node.get("type") == "source-note"
             }
             if "back" in placements:
                 summary["source_note_back_ranges"] += 1
@@ -640,9 +620,7 @@ def aat_summary(candidate: dict[str, Any], aat_doc: dict[str, Any]) -> dict[str,
         "block_kinds": aat.get("block_kinds", {}),
         "paragraph_blocks": aat.get("paragraph_blocks"),
         "final_block_kind": aat.get("final_block_kind"),
-        "final_source_attribution_candidate": aat.get(
-            "final_source_attribution_candidate"
-        ),
+        "final_source_attribution_candidate": aat.get("final_source_attribution_candidate"),
         "hints_count": len(aat.get("hints", [])),
     } | raw_stats(aat_doc)
 
@@ -759,12 +737,8 @@ def build_materialized_row(
         if node.get("type") == "source-note"
     ]
     non_empty_source_notes = [text for text in source_note_texts if text]
-    source_note_in_body = any(
-        text in generated["body_text"] for text in non_empty_source_notes
-    )
-    source_note_in_back = any(
-        text in generated["back_text"] for text in non_empty_source_notes
-    )
+    source_note_in_body = any(text in generated["body_text"] for text in non_empty_source_notes)
+    source_note_in_back = any(text in generated["back_text"] for text in non_empty_source_notes)
     text = body_text_comparison(
         generated["body_base_text"],
         tei_eaj["body_base_text"],
@@ -849,14 +823,10 @@ def build_materialized_row(
         },
         "text": text,
         "classification": {
-            "paragraph_delta_bucket": paragraph_delta_bucket(
-                generated_body_p, tei_eaj_body_p
-            ),
+            "paragraph_delta_bucket": paragraph_delta_bucket(generated_body_p, tei_eaj_body_p),
             "paragraph_origin_bucket": paragraph_origin,
-            "source_note_body_excluded": bool(non_empty_source_notes)
-            and not source_note_in_body,
-            "source_note_back_present": bool(non_empty_source_notes)
-            and source_note_in_back,
+            "source_note_body_excluded": bool(non_empty_source_notes) and not source_note_in_body,
+            "source_note_back_present": bool(non_empty_source_notes) and source_note_in_back,
         },
     }
 
@@ -954,9 +924,7 @@ def run_batch_tasks(
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
             futures = [executor.submit(convert_task, args, task) for task in tasks]
-            converted = [
-                future.result() for future in concurrent.futures.as_completed(futures)
-            ]
+            converted = [future.result() for future in concurrent.futures.as_completed(futures)]
 
     rows = [task["failed_row"] for task in converted if task.get("conversion_failed")]
     materializable = [task for task in converted if not task.get("conversion_failed")]
@@ -1085,9 +1053,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "|---|---|---:|",
         ]
     )
-    for profile, buckets in sorted(
-        summary["paragraph_origin_by_tei_eaj_profile"].items()
-    ):
+    for profile, buckets in sorted(summary["paragraph_origin_by_tei_eaj_profile"].items()):
         for bucket, count in sorted(buckets.items()):
             lines.append(f"| {profile} | {bucket} | {count} |")
 
@@ -1143,9 +1109,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         source_note = "-"
         if row["parser_ir"]["source_note_count"]:
             source_note = (
-                "back"
-                if row["classification"]["source_note_back_present"]
-                else "not-back"
+                "back" if row["classification"]["source_note_back_present"] else "not-back"
             )
         lines.append(
             "| {work_id} | `{tei_eaj_file}` | {adapter} | {aat_p} | {parser_ir_p} | {generated} | {tei_eaj} | {delta} | {bucket} | {origin} | {body_text} | {body_text_match} | {source_note} |".format(
@@ -1185,9 +1149,7 @@ def main() -> int:
     preference = {
         adapter: index
         for index, adapter in enumerate(
-            item.strip()
-            for item in args.adapter_preference.split(",")
-            if item.strip()
+            item.strip() for item in args.adapter_preference.split(",") if item.strip()
         )
     }
     workset_files = {row["tei_eaj_file"]: row for row in workset.get("files", [])}
@@ -1211,9 +1173,7 @@ def main() -> int:
             continue
         candidates = materializable_candidates(row, preference)
         if not candidates:
-            skipped.append(
-                {"tei_eaj_file": tei_file, "reason": "no_materializable_aat"}
-            )
+            skipped.append({"tei_eaj_file": tei_file, "reason": "no_materializable_aat"})
             continue
         if args.max_rows and tei_eaj_rows_attempted >= args.max_rows:
             continue
@@ -1251,9 +1211,7 @@ def main() -> int:
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
             futures = [executor.submit(materialize_task, args, task) for task in tasks]
-            rows = [
-                future.result() for future in concurrent.futures.as_completed(futures)
-            ]
+            rows = [future.result() for future in concurrent.futures.as_completed(futures)]
     rows.sort(key=lambda row: row["_task_index"])
     for row in rows:
         row.pop("_task_index", None)
@@ -1267,23 +1225,17 @@ def main() -> int:
     adapter_body_text_match_buckets: dict[str, dict[str, int]] = {}
     tei_eaj_structure_profile_buckets: dict[str, int] = {}
     paragraph_origin_by_tei_eaj_profile: dict[str, dict[str, int]] = {}
-    adapter_paragraph_origin_by_tei_eaj_profile: dict[
-        str, dict[str, dict[str, int]]
-    ] = {}
+    adapter_paragraph_origin_by_tei_eaj_profile: dict[str, dict[str, dict[str, int]]] = {}
     materialized = 0
     for row in rows:
         adapter = row.get("selected_aat", {}).get("adapter") or "unknown"
         bucket = row.get("classification", {}).get("paragraph_delta_bucket", "unknown")
         increment_bucket(buckets, bucket)
         increment_nested_bucket(adapter_paragraph_delta_buckets, adapter, bucket)
-        origin_bucket = row.get("classification", {}).get(
-            "paragraph_origin_bucket", "unknown"
-        )
+        origin_bucket = row.get("classification", {}).get("paragraph_origin_bucket", "unknown")
         increment_bucket(paragraph_origin_buckets, origin_bucket)
         increment_nested_bucket(adapter_paragraph_origin_buckets, adapter, origin_bucket)
-        structure_profile = row.get("tei_eaj", {}).get(
-            "structure_profile", "unknown"
-        )
+        structure_profile = row.get("tei_eaj", {}).get("structure_profile", "unknown")
         increment_bucket(tei_eaj_structure_profile_buckets, structure_profile)
         increment_nested_bucket(
             paragraph_origin_by_tei_eaj_profile,

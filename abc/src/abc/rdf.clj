@@ -1,6 +1,6 @@
 (ns abc.rdf
   #_(:require #_[arachne.aristotle.registry :as reg]
-            #_[arachne.aristotle :as aa]))
+     #_[arachne.aristotle :as aa]))
 
 ;; In-memory graph for dataset creation.
 (comment

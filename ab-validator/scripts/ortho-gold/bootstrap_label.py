@@ -14,6 +14,7 @@ at best reproduce the heuristic. Real human annotation is Task 9.
 
 Emits JSONL to stdout, one record per candidate sentence.
 """
+
 from __future__ import annotations
 import argparse
 import json
@@ -24,21 +25,23 @@ from pathlib import Path
 TERMINALS = set("。！？!?")
 DICT_VERSION = "unidic-cwj-202512"
 
+
 def code_frequencies(text: str) -> tuple[dict, set]:
     """Port of aozora.py code_frequencies: returns (counts, unigram_types)."""
     cmap = {"katakana": 0, "hiragana": 0, "kanji": 0, "other": 0}
     unigram_types: set[str] = set()
     for ch in text:
         unigram_types.add(ch)
-        if "\u30A1" <= ch <= "\u30FA" or "\uFF65" <= ch <= "\uFF9F":
+        if "\u30a1" <= ch <= "\u30fa" or "\uff65" <= ch <= "\uff9f":
             cmap["katakana"] += 1
         elif "\u3041" <= ch <= "\u3096":
             cmap["hiragana"] += 1
-        elif "\u4E00" <= ch <= "\u9FFF" or "\u3400" <= ch <= "\u4DBF":
+        elif "\u4e00" <= ch <= "\u9fff" or "\u3400" <= ch <= "\u4dbf":
             cmap["kanji"] += 1
         else:
             cmap["other"] += 1
     return cmap, unigram_types
+
 
 def is_katakana_sentence_branch_b(text: str) -> bool:
     """Faithful Branch-B port (oov_count=0, proper_noun_chars=0)."""
@@ -55,14 +58,17 @@ def is_katakana_sentence_branch_b(text: str) -> bool:
     # Branch B: oov_count = 0, so the proper-noun branch (oov_count==0 AND ratio>0.3) never fires.
     # oov_ratio = 0/len(tokens) — but we stub tokens, so skip (0 > 0.2 is False).
     # Character cascade:
-    if (len(text) < 8
+    if (
+        len(text) < 8
         or (len(text) < 10 and re.search(r"ッ?.?[？！]」$", text[-3:]))
         or (len(text) < 100 and len(unigram_types) / len(text) < 0.5)
         or (max(bigram_types.values()) / len(text) > 0.5 if bigram_types else False)
         or len(re.findall(r"(.)\1+", text)) / len(text) > 0.1
-        or len(re.findall(r"(..)ッ?\1", text)) / len(text) > 0.1):
+        or len(re.findall(r"(..)ッ?\1", text)) / len(text) > 0.1
+    ):
         return False
     return True
+
 
 def sentence_split(text: str):
     """Port of ab-plaintext::sentence_split. Returns [(sentence, byte_offset, char_offset)]."""
@@ -90,6 +96,7 @@ def sentence_split(text: str):
             spans.append((slice_text, byte_offset, char_start))
     return spans
 
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--work-id", required=True)
@@ -100,7 +107,7 @@ def main() -> None:
         total = len(sentence)
         if total == 0:
             continue
-        kata = sum(1 for c in sentence if "\u30A1" <= c <= "\u30FA" or "\uFF65" <= c <= "\uFF9F")
+        kata = sum(1 for c in sentence if "\u30a1" <= c <= "\u30fa" or "\uff65" <= c <= "\uff9f")
         hira = sum(1 for c in sentence if "\u3041" <= c <= "\u3096")
         ratio = kata / total
         if not (ratio > 0.4 and hira == 0):
@@ -118,6 +125,7 @@ def main() -> None:
             "dict_version": DICT_VERSION,
         }
         print(json.dumps(rec, ensure_ascii=False))
+
 
 if __name__ == "__main__":
     main()

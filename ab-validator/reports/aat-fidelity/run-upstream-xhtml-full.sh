@@ -2,10 +2,15 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+workspace_root="$(cd "$repo_root/.." && pwd)"
+if [[ -f "$workspace_root/scripts/soranoha-runtime-env.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$workspace_root/scripts/soranoha-runtime-env.sh"
+fi
 
 aozora_root="$("$repo_root/scripts/resolve-aozorabunko-corpus.sh")"
-out_dir="${AB_AAT_FIDELITY_XHTML_FULL_OUT_DIR:-/db/ab-validator/aat-fidelity/upstream-xhtml-full}"
-db_path="${AB_AAT_FIDELITY_DB:-/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb}"
+out_dir="${AB_AAT_FIDELITY_XHTML_FULL_OUT_DIR:-${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/upstream-xhtml-full}"
+db_path="${AB_AAT_FIDELITY_DB:-${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/cross-adapter/fidelity.duckdb}"
 report_id="${AB_AAT_FIDELITY_REPORT_ID:-upstream-xhtml-full}"
 jobs="${AB_AAT_FIDELITY_XHTML_JOBS:-$(nproc)}"
 max_cards=0

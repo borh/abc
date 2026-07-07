@@ -478,11 +478,7 @@ fn boundary_counts(analyses: &[&Analysis], source_len: usize) -> (usize, usize) 
             offsets
         })
         .collect::<Vec<_>>();
-    let mut all_boundaries = boundary_sets
-        .iter()
-        .flatten()
-        .copied()
-        .collect::<Vec<_>>();
+    let mut all_boundaries = boundary_sets.iter().flatten().copied().collect::<Vec<_>>();
     all_boundaries.sort_unstable();
     all_boundaries.dedup();
     let unanimous_boundary_count = all_boundaries

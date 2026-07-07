@@ -23,9 +23,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 # Resolve project paths relative to the script location (prototypes/.. ).
 PROJECT = os.path.abspath(os.path.join(ROOT, "..", ".."))
 REPORT = os.path.join(PROJECT, "references", "PARSER_REPORT.md")
-CHUKI = os.path.join(
-    PROJECT, "references", "parsers", "AozoraEpub3-JDK21", "chuki_tag.txt"
-)
+CHUKI = os.path.join(PROJECT, "references", "parsers", "AozoraEpub3-JDK21", "chuki_tag.txt")
 ANNOT_DIR = os.path.join(PROJECT, "references", "aozorabunko", "annotation")
 
 MARKER_RE = re.compile(r"［＃([^］]*)］")
@@ -152,8 +150,8 @@ def main():
     manual_set = load_manual_set()
     features = parse_section0()
 
-    print(f"# PARSER_REPORT §0 verification\n")
-    print(f"Canonical sources loaded:")
+    print("# PARSER_REPORT §0 verification\n")
+    print("Canonical sources loaded:")
     print(f"  chuki_tag.txt:        {len(chuki_set)} distinct normalized markers")
     print(f"  annotation/*.html:    {len(manual_set)} distinct normalized markers")
     print(f"  PARSER_REPORT §0:     {len(features)} feature rows parsed\n")

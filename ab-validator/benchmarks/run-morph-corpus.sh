@@ -7,8 +7,13 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-aat_dir="${AB_MORPH_AAT_DIR:-/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter}"
-warehouse_dir="${AB_MORPH_WAREHOUSE_DIR:-/db/ab-validator/morph-warehouse-bench}"
+workspace_root="$(cd "$repo_root/.." && pwd)"
+if [[ -f "$workspace_root/scripts/soranoha-runtime-env.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$workspace_root/scripts/soranoha-runtime-env.sh"
+fi
+aat_dir="${AB_MORPH_AAT_DIR:-${AB_AOZORA2HTML_AAT_DIR:-$repo_root/scratch/state/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter}}"
+warehouse_dir="${AB_MORPH_WAREHOUSE_DIR:-$repo_root/scratch/state/morph-warehouse-bench}"
 jobs_list="${AB_MORPH_JOBS:-1 $(nproc)}"
 analyzers="${AB_MORPH_ANALYZERS:-vibrato sudachi-a sudachi-c}"
 out_dir="${AB_BENCH_OUT:-/tmp/ab-validator-morph-bench-$(date -u +%Y%m%dT%H%M%SZ)}"
@@ -38,7 +43,7 @@ sudachi_dict="${AB_SUDACHI_DICT:-}"
 if [[ -z "$sudachi_dict" ]]; then
   sudachi_dict="$(nix path-info .#sudachi-dictionary-full 2>/dev/null)/share/sudachi/system.dic"
 fi
-export TMPDIR="${AB_DB_ROOT:-/db/ab-validator}/tmp"
+export TMPDIR="${AB_DB_ROOT:-$repo_root/scratch/state}/tmp"
 export TMP="$TMPDIR"; export TEMP="$TMPDIR"
 
 # Parse GNU time's "Elapsed (wall clock) time (h:mm:ss or m:ss): 1:23.45" into

@@ -11,7 +11,9 @@ PROBE_DIR = pathlib.Path(__file__).resolve().parent
 
 
 def load_probe():
-    spec = importlib.util.spec_from_file_location("tei_eaj_compare", PROBE_DIR / "tei_eaj_compare.py")
+    spec = importlib.util.spec_from_file_location(
+        "tei_eaj_compare", PROBE_DIR / "tei_eaj_compare.py"
+    )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -48,7 +50,9 @@ class TeiEajCompareTest(unittest.TestCase):
     def test_discovers_finished_and_draft_tei_eaj_files_with_levels(self):
         with tempfile.TemporaryDirectory() as td:
             root = pathlib.Path(td)
-            self.write_xml(root, "data/complete/tei_lib_lv4/1567_tei.xml", "走れメロス", "<p>one</p>")
+            self.write_xml(
+                root, "data/complete/tei_lib_lv4/1567_tei.xml", "走れメロス", "<p>one</p>"
+            )
             self.write_xml(root, "data/draft/tei_lib_lv3/86_tei.xml", "羅生門", "<p>two</p>")
             self.write_xml(root, "data/etc/misc.xml", "Other", "<p>three</p>")
 
@@ -60,7 +64,10 @@ class TeiEajCompareTest(unittest.TestCase):
                 ("data/draft/tei_lib_lv3/86_tei.xml", "draft", "Level 3", "羅生門"),
                 ("data/etc/misc.xml", "etc", None, "Other"),
             ],
-            [(record["relpath"], record["state"], record["level"], record["title"]) for record in records],
+            [
+                (record["relpath"], record["state"], record["level"], record["title"])
+                for record in records
+            ],
         )
 
     def test_compares_abc_melos_against_all_melos_variants_and_flags_no_draft(self):
@@ -72,8 +79,18 @@ class TeiEajCompareTest(unittest.TestCase):
                 "走れメロス",
                 "<p>メロス<ruby><rb>邪智暴虐</rb><rt>じゃちぼうぎゃく</rt></ruby></p><note>source note</note>",
             )
-            self.write_xml(root, "data/complete/tei_lib_lv4/1567_tei.xml", "走れメロス", "<p>メロス邪智暴虐</p>")
-            self.write_xml(root, "data/complete/tei_lib_lv4/1567_header_updated.xml", "走れメロス", "<p>メロス邪智暴虐</p>")
+            self.write_xml(
+                root,
+                "data/complete/tei_lib_lv4/1567_tei.xml",
+                "走れメロス",
+                "<p>メロス邪智暴虐</p>",
+            )
+            self.write_xml(
+                root,
+                "data/complete/tei_lib_lv4/1567_header_updated.xml",
+                "走れメロス",
+                "<p>メロス邪智暴虐</p>",
+            )
             self.write_xml(root, "data/draft/tei_lib_lv3/86_tei.xml", "羅生門", "<p>羅生門</p>")
 
             report = probe.build_report(abc, root, source_rev="probe-rev")
@@ -118,7 +135,9 @@ class TeiEajCompareTest(unittest.TestCase):
 
     def test_extracts_aozora_work_ids_from_tei_eaj_file_names(self):
         self.assertEqual("1567", probe.tei_eaj_work_id("data/complete/tei_lib_lv4/1567_tei.xml"))
-        self.assertEqual("1567", probe.tei_eaj_work_id("data/complete/tei_lib_lv4/1567_header_updated.xml"))
+        self.assertEqual(
+            "1567", probe.tei_eaj_work_id("data/complete/tei_lib_lv4/1567_header_updated.xml")
+        )
         self.assertEqual("15099", probe.tei_eaj_work_id("data/complete/tei_lib_lv4/104_15099.xml"))
         self.assertEqual("4244", probe.tei_eaj_work_id("data/draft/tei_lib_lv4/4244-3_tei.xml"))
         self.assertIsNone(probe.tei_eaj_work_id("data/etc/Curriculum vitae.xml"))
@@ -127,9 +146,21 @@ class TeiEajCompareTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = pathlib.Path(td)
             abc = self.write_xml(root, "abc/001567.xml", "走れメロス", "<p>メロス邪智暴虐</p>")
-            self.write_xml(root, "data/complete/tei_lib_lv4/1567_tei.xml", "走れメロス", "<p>メロス邪智暴虐</p>")
-            self.write_xml(root, "data/draft/tei_lib_lv4/1567_header_updated.xml", "走れメロス", "<p>メロス別本文</p>")
-            self.write_xml(root, "data/complete/tei_lib_lv3/86_tei.xml", "二人小町", "<p>二人小町</p>")
+            self.write_xml(
+                root,
+                "data/complete/tei_lib_lv4/1567_tei.xml",
+                "走れメロス",
+                "<p>メロス邪智暴虐</p>",
+            )
+            self.write_xml(
+                root,
+                "data/draft/tei_lib_lv4/1567_header_updated.xml",
+                "走れメロス",
+                "<p>メロス別本文</p>",
+            )
+            self.write_xml(
+                root, "data/complete/tei_lib_lv3/86_tei.xml", "二人小町", "<p>二人小町</p>"
+            )
             self.write_xml(root, "data/draft/tei_lib_lv2/01.xml", "源氏物語 第1冊", "<p>桐壺</p>")
 
             report = probe.build_all_work_report([f"1567={abc}"], [], root, source_rev="probe-rev")
@@ -150,7 +181,10 @@ class TeiEajCompareTest(unittest.TestCase):
                 ("86", "data/complete/tei_lib_lv3/86_tei.xml", None),
                 (None, "data/draft/tei_lib_lv2/01.xml", None),
             ],
-            [(row["work_id"], row["relpath"], row["base_text_equal"]) for row in report["all_work_rows"]],
+            [
+                (row["work_id"], row["relpath"], row["base_text_equal"])
+                for row in report["all_work_rows"]
+            ],
         )
         self.assertIn("Compared TEI-EAJ files: 2", markdown)
         self.assertIn("Missing ABC counterparts: 1", markdown)
@@ -179,7 +213,9 @@ class TeiEajCompareTest(unittest.TestCase):
                 encoding="utf-8",
             )
             self.write_xml(root, "abc/no-work-id.xml", "No ID", "<p>ignored</p>")
-            self.write_xml(root, "data/complete/tei_lib_lv4/1567_tei.xml", "走れメロス", "<p>メロス</p>")
+            self.write_xml(
+                root, "data/complete/tei_lib_lv4/1567_tei.xml", "走れメロス", "<p>メロス</p>"
+            )
 
             report = probe.build_all_work_report([], [root / "abc"], root)
 
@@ -191,8 +227,15 @@ class TeiEajCompareTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = pathlib.Path(td)
             abc = self.write_xml(root, "abc/001567.xml", "走れメロス", "<p>メロス邪智暴虐</p>")
-            self.write_xml(root, "data/complete/tei_lib_lv4/1567_tei.xml", "走れメロス", "<p>メロス邪智暴虐</p>")
-            self.write_xml(root, "data/complete/tei_lib_lv3/86_tei.xml", "二人小町", "<p>二人小町</p>")
+            self.write_xml(
+                root,
+                "data/complete/tei_lib_lv4/1567_tei.xml",
+                "走れメロス",
+                "<p>メロス邪智暴虐</p>",
+            )
+            self.write_xml(
+                root, "data/complete/tei_lib_lv3/86_tei.xml", "二人小町", "<p>二人小町</p>"
+            )
             self.write_xml(root, "data/draft/tei_lib_lv2/01.xml", "源氏物語 第1冊", "<p>桐壺</p>")
 
             report = probe.build_all_work_report([f"1567={abc}"], [], root, source_rev="probe-rev")

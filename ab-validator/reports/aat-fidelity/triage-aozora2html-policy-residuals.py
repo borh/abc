@@ -89,11 +89,7 @@ def aat_payloads_for_work(work_id: str, run_dir: Path) -> list[tuple[Path, dict[
 def syntax_keys_for_work(work_id: str, run_dir: Path) -> list[str]:
     keys: set[str] = set()
     for _path, payload in aat_payloads_for_work(work_id, run_dir):
-        syntax = (
-            payload.get("meta", {})
-            .get("semantic_summary", {})
-            .get("syntax", {})
-        )
+        syntax = payload.get("meta", {}).get("semantic_summary", {}).get("syntax", {})
         if isinstance(syntax, dict):
             keys.update(str(key) for key in syntax.keys())
     return sorted(keys)
@@ -346,7 +342,9 @@ def main() -> int:
         "# Aozora2html Policy Residual Triage",
         "",
         f"- run_dir: `{run_dir}`",
-        f"- retry_run_dir: `{retry_run_dir}`" if retry_run_dir is not None else "- retry_run_dir: null",
+        f"- retry_run_dir: `{retry_run_dir}`"
+        if retry_run_dir is not None
+        else "- retry_run_dir: null",
         f"- audit_summary: `{args.audit_summary_json}`",
         f"- residual_union_count: {len(residual_union_list)}",
         "",
@@ -373,12 +371,10 @@ def main() -> int:
         for bucket in RESIDUAL_BUCKETS:
             evidence = bucket_evidence_summary[family][bucket]
             failures = ", ".join(
-                f"{prop}:{count}"
-                for prop, count in evidence["failed_properties"].items()
+                f"{prop}:{count}" for prop, count in evidence["failed_properties"].items()
             )
             runs = ", ".join(
-                f"{label}:{count}"
-                for label, count in evidence["evidence_runs"].items()
+                f"{label}:{count}" for label, count in evidence["evidence_runs"].items()
             )
             lines.append(
                 "| {family} | {bucket} | {works} | {reports} | {aat} | {clean} | {failures} | {runs} | {note} |".format(

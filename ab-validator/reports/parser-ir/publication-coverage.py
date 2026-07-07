@@ -22,7 +22,9 @@ from reports.lib.paths import display_path, policy_dir, schemas_dir
 
 SCHEMA_VERSION = "ir-publication-coverage-v1"
 REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora")
-ABC_PRESERVATION_SCHEMA_ID = "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+ABC_PRESERVATION_SCHEMA_ID = (
+    "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+)
 ABC_PRESERVATION_SCHEMA_VERSION = "0.2.0"
 TRUSTED_ABC_PRESERVATION_SCHEMA_PATH = (
     schemas_dir() / "parser-ir-publication-preservation.schema.json"
@@ -37,9 +39,7 @@ TRUSTED_ABC_SOURCE_REGION_SCHEMA_PATH = (
 TRUSTED_ABC_SOURCE_REGION_POLICY_PATH = (
     policy_dir() / "source-region-publication-policy-v0.json"
 ).resolve()
-TRUSTED_ABC_MANIFEST_SCHEMA_PATH = (
-    schemas_dir() / "manifest.schema.json"
-).resolve()
+TRUSTED_ABC_MANIFEST_SCHEMA_PATH = (schemas_dir() / "manifest.schema.json").resolve()
 SOURCE_REGION_REQUIRED_COUNTERS = {
     "body_typed_occurrences",
     "body_raw_preserved_occurrences",
@@ -432,18 +432,10 @@ def extract_node_types(schema: dict[str, Any]) -> list[str]:
             continue
         def_name = ref.rsplit("/", 1)[-1]
         node_def = defs.get(def_name, {})
-        const = (
-            node_def.get("properties", {})
-            .get("type", {})
-            .get("const")
-        )
+        const = node_def.get("properties", {}).get("type", {}).get("const")
         if const is None:
             for all_of in node_def.get("allOf", []):
-                const = (
-                    all_of.get("properties", {})
-                    .get("type", {})
-                    .get("const")
-                )
+                const = all_of.get("properties", {}).get("type", {}).get("const")
                 if const is not None:
                     break
         if isinstance(const, str):
@@ -544,12 +536,10 @@ def field_coverage_from_schema(schema: dict[str, Any]) -> dict[str, Any]:
         }
         if locators:
             entry["defined_in_schema"] = any(
-                schema_locator_exists(schema, def_name, segments)
-                for def_name, segments in locators
+                schema_locator_exists(schema, def_name, segments) for def_name, segments in locators
             )
             entry["schema_paths"] = [
-                format_schema_locator(def_name, segments)
-                for def_name, segments in locators
+                format_schema_locator(def_name, segments) for def_name, segments in locators
             ]
         by_field[field_name] = entry
         if spec["class"] == "unsupported_gap":
@@ -624,7 +614,9 @@ def diagnostic_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
 def construct_from_pointer(pointer: str | None) -> str:
     if not pointer:
         return "unknown"
-    segments = [segment[:-2] if segment.endswith("[]") else segment for segment in pointer.split(".")]
+    segments = [
+        segment[:-2] if segment.endswith("[]") else segment for segment in pointer.split(".")
+    ]
     for token in KNOWN_COMPOUND_CONSTRUCTS:
         parts = token.split(".")
         for start in range(len(segments) - len(parts) + 1):
@@ -660,7 +652,9 @@ def _more_conservative_class(current_class: str | None, candidate_class: str) ->
 
     # Lower rank is more conservative / higher priority.
     current_rank = CONSTRUCT_CLASS_PRIORITY.get(current_class, len(CONSTRUCT_CLASS_PRIORITY) + 1)
-    candidate_rank = CONSTRUCT_CLASS_PRIORITY.get(candidate_class, len(CONSTRUCT_CLASS_PRIORITY) + 1)
+    candidate_rank = CONSTRUCT_CLASS_PRIORITY.get(
+        candidate_class, len(CONSTRUCT_CLASS_PRIORITY) + 1
+    )
     return current_class if current_rank <= candidate_rank else candidate_class
 
 
@@ -812,14 +806,10 @@ def source_region_contract_block(
     representability_counters = set()
     if isinstance(schema_doc, dict):
         source_region_counters = set(
-            schema_doc.get("properties", {})
-            .get("source_region_coverage", {})
-            .get("required", [])
+            schema_doc.get("properties", {}).get("source_region_coverage", {}).get("required", [])
         )
         representability_counters = set(
-            schema_doc.get("properties", {})
-            .get("representability", {})
-            .get("required", [])
+            schema_doc.get("properties", {}).get("representability", {}).get("required", [])
         )
     dispositions = policy_doc.get("dispositions", []) if isinstance(policy_doc, dict) else []
     disposition_by_class = {
@@ -958,7 +948,9 @@ def source_region_contract_block(
     }
 
 
-def parser_evidence_coverage(matrix: dict[str, Any], source_delta: dict[str, Any]) -> dict[str, Any]:
+def parser_evidence_coverage(
+    matrix: dict[str, Any], source_delta: dict[str, Any]
+) -> dict[str, Any]:
     observed = Counter()
     qualified_rows = 0
     for row in matrix.get("rows", []):
@@ -1036,18 +1028,25 @@ def custom_contract_block(custom_contract_schema: pathlib.Path | None) -> dict[s
     contract_version = None
     if isinstance(contract, dict):
         contract_id = contract.get("schema_id") or contract.get("$id")
-        contract_version = (
-            contract.get("schema_version")
-            or contract.get("properties", {}).get("schema_version", {}).get("const")
-        )
-    record_classes = sorted(schema_enum_values(contract, ("$defs", "record", "properties", "class", "enum")))
-    coverage_classes = sorted(
-        schema_enum_values(contract, ("properties", "coverage", "properties", "classes", "items", "enum"))
+        contract_version = contract.get("schema_version") or contract.get("properties", {}).get(
+            "schema_version", {}
+        ).get("const")
+    record_classes = sorted(
+        schema_enum_values(contract, ("$defs", "record", "properties", "class", "enum"))
     )
-    constructs = sorted(schema_enum_values(contract, ("$defs", "record", "properties", "construct", "enum")))
+    coverage_classes = sorted(
+        schema_enum_values(
+            contract, ("properties", "coverage", "properties", "classes", "items", "enum")
+        )
+    )
+    constructs = sorted(
+        schema_enum_values(contract, ("$defs", "record", "properties", "construct", "enum"))
+    )
     contract_hash = document_hash(contract)
     trusted_schema_hash = trusted_custom_contract_hash()
-    trusted_schema_path_match = custom_contract_schema.resolve() == TRUSTED_ABC_PRESERVATION_SCHEMA_PATH
+    trusted_schema_path_match = (
+        custom_contract_schema.resolve() == TRUSTED_ABC_PRESERVATION_SCHEMA_PATH
+    )
     if (
         contract_id == ABC_PRESERVATION_SCHEMA_ID
         and contract_version == ABC_PRESERVATION_SCHEMA_VERSION
@@ -1236,14 +1235,10 @@ def publication_bundle_contract_block(bundle_summary_path: pathlib.Path | None) 
                 and not SHA256_PATTERN.fullmatch(artifact.get("hash"))
             )
         missing_checks = sorted(
-            check
-            for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS
-            if check not in checks
+            check for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS if check not in checks
         )
         failed_checks = sorted(
-            check
-            for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS
-            if checks.get(check) is not True
+            check for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS if checks.get(check) is not True
         )
         rows_validated = scope.get("rows_validated")
         rows_failed = scope.get("rows_failed")
@@ -1309,14 +1304,10 @@ def publication_bundle_contract_block(bundle_summary_path: pathlib.Path | None) 
         and not SHA256_PATTERN.fullmatch(artifact.get("hash"))
     )
     missing_checks = sorted(
-        check
-        for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS
-        if check not in checks
+        check for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS if check not in checks
     )
     failed_checks = sorted(
-        check
-        for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS
-        if checks.get(check) is not True
+        check for check in PUBLICATION_BUNDLE_REQUIRED_CHECKS if checks.get(check) is not True
     )
     confirmed = (
         isinstance(evidence, dict)
@@ -1409,10 +1400,9 @@ def next_work_dashboard_block(next_work_summary_path: pathlib.Path | None) -> di
 
 
 def parser_ir_schema_hash(parser_schema: dict[str, Any], mapping: dict[str, Any]) -> Any:
-    return (
-        mapping.get("target_parser_ir_schema_hash")
-        or parser_schema.get("properties", {}).get("schema_hash", {}).get("const")
-    )
+    return mapping.get("target_parser_ir_schema_hash") or parser_schema.get("properties", {}).get(
+        "schema_hash", {}
+    ).get("const")
 
 
 def summary_scope(
@@ -1543,14 +1533,18 @@ def closure_gaps(
     admitted_by_custom_contract: list[dict[str, Any]] = []
     admitted_by_tei_profile: list[dict[str, Any]] = []
     true_unsupported: list[dict[str, Any]] = []
-    custom_contract_confirmed = custom_contract.get("verdict") == "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"
+    custom_contract_confirmed = (
+        custom_contract.get("verdict") == "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"
+    )
     tei_profile_confirmed = (
         tei_profile_contract.get("verdict") == "TEI_PROFILE_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"
     )
     for item in gaps.get("items", []):
         closure_item = classify_closure_gap(item)
         if closure_item is None:
-            true_unsupported.append({**item, "closure_family": None, "closure_lane": "unsupported_gap"})
+            true_unsupported.append(
+                {**item, "closure_family": None, "closure_lane": "unsupported_gap"}
+            )
         elif custom_contract_confirmed and closure_item.get("closure_lane") == "custom_sidecar":
             admitted_by_custom_contract.append(
                 {**closure_item, "admitted_by": custom_contract.get("schema_id")}
@@ -1604,12 +1598,9 @@ def unsupported_derived_closure_coverage(closures: dict[str, Any]) -> dict[str, 
             "A row is a true unsupported gap only if it has no TEI/profile/custom closure family."
         ),
         "total": sum(len(items) for items in status_items.values()),
-        "counts_by_status": {
-            status: len(items) for status, items in status_items.items()
-        },
+        "counts_by_status": {status: len(items) for status, items in status_items.items()},
         "counts_by_family_by_status": {
-            status: count_values(items, "closure_family")
-            for status, items in status_items.items()
+            status: count_values(items, "closure_family") for status, items in status_items.items()
         },
     }
 
@@ -1805,28 +1796,32 @@ def render_markdown(summary: dict[str, Any]) -> str:
     lines.extend(["", "## Source Construct Coverage", "", "| Class | Constructs |", "|---|---:|"])
     for name, count in construct_counts.items():
         lines.append(f"| `{name}` | {count} |")
-    lines.extend([
-        "",
-        "## Unsupported-Derived Closure Coverage",
-        "",
-        adjusted_closure["description"],
-        "",
-        f"Total raw unsupported-derived rows: {adjusted_closure['total']}",
-        "",
-        "| Status | Rows |",
-        "|---|---:|",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Unsupported-Derived Closure Coverage",
+            "",
+            adjusted_closure["description"],
+            "",
+            f"Total raw unsupported-derived rows: {adjusted_closure['total']}",
+            "",
+            "| Status | Rows |",
+            "|---|---:|",
+        ]
+    )
     for status, count in adjusted_closure["counts_by_status"].items():
         lines.append(f"| `{status}` | {count} |")
-    lines.extend([
-        "",
-        "## Raw Unsupported-Derived Mapping Rows",
-        "",
-        gaps["description"],
-        "",
-        f"Count: {gaps['count']}",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Raw Unsupported-Derived Mapping Rows",
+            "",
+            gaps["description"],
+            "",
+            f"Count: {gaps['count']}",
+            "",
+        ]
+    )
     if gaps.get("counts_by_owner"):
         lines.extend(["| Owner | Count |", "|---|---:|"])
         for owner, count in gaps["counts_by_owner"].items():
@@ -1835,17 +1830,19 @@ def render_markdown(summary: dict[str, Any]) -> str:
     for item in gaps["items"][:20]:
         label = item.get("aat_pointer") or item.get("node_type")
         lines.append(f"- `{label}` owner `{item.get('owner')}`")
-    lines.extend([
-        "",
-        "## Closure Gaps",
-        "",
-        f"Admitted by custom contract: {closures['admitted_by_custom_contract']['count']}",
-        "",
-        f"Admitted by TEI profile: {closures['admitted_by_tei_profile']['count']}",
-        "",
-        f"Classified but not admitted: {closures['classified_but_not_admitted']['count']}",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "## Closure Gaps",
+            "",
+            f"Admitted by custom contract: {closures['admitted_by_custom_contract']['count']}",
+            "",
+            f"Admitted by TEI profile: {closures['admitted_by_tei_profile']['count']}",
+            "",
+            f"Classified but not admitted: {closures['classified_but_not_admitted']['count']}",
+            "",
+        ]
+    )
     if closures["admitted_by_custom_contract"].get("counts_by_family"):
         lines.extend(["| Admitted family | Count |", "|---|---:|"])
         for family, count in closures["admitted_by_custom_contract"]["counts_by_family"].items():
@@ -1861,18 +1858,20 @@ def render_markdown(summary: dict[str, Any]) -> str:
         for family, count in closures["classified_but_not_admitted"]["counts_by_family"].items():
             lines.append(f"| `{family}` | {count} |")
         lines.append("")
-    lines.extend([
-        f"True unsupported gaps: {closures['true_unsupported_gaps']['count']}",
-        "",
-        "## Plaintext Policy",
-        "",
-        f"`{summary['plaintext_policy']['metadata_policy']}`",
-        "",
-        "## TEI-EAJ Calibration",
-        "",
-        "TEI-EAJ rows are calibration evidence, not source authority.",
-        "",
-    ])
+    lines.extend(
+        [
+            f"True unsupported gaps: {closures['true_unsupported_gaps']['count']}",
+            "",
+            "## Plaintext Policy",
+            "",
+            f"`{summary['plaintext_policy']['metadata_policy']}`",
+            "",
+            "## TEI-EAJ Calibration",
+            "",
+            "TEI-EAJ rows are calibration evidence, not source authority.",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 
@@ -1912,7 +1911,9 @@ def write_text(path: pathlib.Path, value: str) -> None:
 
 
 def canonical_json(value: object) -> str:
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).replace("/", "\\/")
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).replace(
+        "/", "\\/"
+    )
 
 
 def document_hash(value: object) -> str:

@@ -5,13 +5,13 @@ Deterministic regex classification of meta.warnings[0].message for AAT files
 whose meta.parse_complete == false. Classes: ruby_structural, invalid_xhtml,
 ruby_internal_error, other.
 """
+
 from __future__ import annotations
 
 import argparse
 import glob
 import json
 import re
-import sys
 from collections import defaultdict
 from pathlib import Path
 

@@ -17,7 +17,7 @@ def _deref(schema: dict, node: dict) -> dict:
     prefix = "#/$defs/"
     if not ref.startswith(prefix):
         raise MappingContractError(f"unsupported ref: {ref}")
-    return schema["$defs"][ref[len(prefix):]]
+    return schema["$defs"][ref[len(prefix) :]]
 
 
 def _kind_values(node: dict) -> list[str]:

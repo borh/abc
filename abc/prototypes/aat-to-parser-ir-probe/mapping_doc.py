@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Generate a disposable AAT->parser-IR mapping document from measured rules."""
+
 import argparse
 import hashlib
 import json
@@ -61,7 +62,9 @@ def aat_pointer_bucket(pointer):
 
 def canonical_json(value):
     # Mirrors the repo's current Clojure JCS writer for this schema-only subset.
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).replace("/", "\\/")
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).replace(
+        "/", "\\/"
+    )
 
 
 def schema_hash(path):
@@ -93,7 +96,9 @@ def summarize_ledger(ledger_entries):
     return counts, first_path, first_note
 
 
-def build_mapping_document_from_counts(rule_counts, first_path_by_rule, first_note_by_rule, repo_root=REPO_ROOT):
+def build_mapping_document_from_counts(
+    rule_counts, first_path_by_rule, first_note_by_rule, repo_root=REPO_ROOT
+):
     rules = []
     for category in CATEGORY_ORDER:
         category_keys = sorted(key for key in rule_counts if key[0] == category)
@@ -101,25 +106,31 @@ def build_mapping_document_from_counts(rule_counts, first_path_by_rule, first_no
             _, aat, target = key
             count = rule_counts[key]
             occurrence_word = "occurrence" if count == 1 else "occurrences"
-            rules.append({
-                "rule_id": f"{CATEGORY_PREFIX[category]}-{index:02d}",
-                "category": category,
-                "aat_pointer": source_pointer(aat),
-                "parser_ir_pointer": parser_ir_pointer(target),
-                "action": ACTION_BY_CATEGORY[category],
-                "description": (
-                    f"Observed {count} {occurrence_word}; "
-                    f"first_path={first_path_by_rule[key]}. {first_note_by_rule[key]}"
-                ),
-            })
+            rules.append(
+                {
+                    "rule_id": f"{CATEGORY_PREFIX[category]}-{index:02d}",
+                    "category": category,
+                    "aat_pointer": source_pointer(aat),
+                    "parser_ir_pointer": parser_ir_pointer(target),
+                    "action": ACTION_BY_CATEGORY[category],
+                    "description": (
+                        f"Observed {count} {occurrence_word}; "
+                        f"first_path={first_path_by_rule[key]}. {first_note_by_rule[key]}"
+                    ),
+                }
+            )
 
     return {
         "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
         "mapping_version": "0.1.0",
-        "mapping_schema_hash": schema_hash(repo_root / "schemas" / "aat-parser-ir-mapping.schema.json"),
+        "mapping_schema_hash": schema_hash(
+            repo_root / "schemas" / "aat-parser-ir-mapping.schema.json"
+        ),
         "source_aat_version": 1,
         "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-        "target_parser_ir_schema_hash": schema_hash(repo_root / "schemas" / "parser-ir.schema.json"),
+        "target_parser_ir_schema_hash": schema_hash(
+            repo_root / "schemas" / "parser-ir.schema.json"
+        ),
         "transform_rule_descriptions": rules,
         "loss_taxonomy": LOSS_TAXONOMY,
     }

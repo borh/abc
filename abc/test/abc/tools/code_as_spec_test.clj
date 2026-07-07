@@ -7,7 +7,6 @@
   manifest-index/reproducibility-conflicts oracle (replaces R1)."
   (:require [abc.tools.files :as files]
             [abc.tools.schema :as schema]
-            [abc.tools.manifest :as manifest]
             [abc.tools.manifest-index :as manifest-index]
             [clojure.test :refer [deftest is testing]]
             [clojure.test.check :as tc]
@@ -32,7 +31,7 @@
     ;; field — otherwise the fixture passes for the wrong reason. m3 errors
     ;; are maps; str them and assert the path mentions the offending property.
     (is (some #(re-find #"(?i)manifest_identity_object|artifact_id|additionalProperties"
-                       (str %))
+                        (str %))
               (map str errors))
         (str "error path must target manifest_identity_object/artifact_id; got: "
              (pr-str errors)))))
@@ -76,35 +75,35 @@
    schemas/manifest.schema.json (not-run/passed/warning/failed) and success is
    decided by the REAL predicate (#{passed warning})."
   (gen/bind
-    (gen/tuple gen/string-alphanumeric                  ; artifact_id
-               gen/string-alphanumeric                  ; content_hash_1
-               gen/string-alphanumeric                  ; content_hash_2 (independent)
-               (gen/elements successful-statuses-vec)    ; m1 status (always successful)
-               (gen/elements schema-status-enum))        ; m2 status (any real enum value)
-    (fn [[id h1 h2 m1-status m2-status]]
-      (let [m1 {"validation_status" m1-status
-                "content_hash" h1
-                "artifact_id" id
-                "manifest_path" "/m1"}
-            m2 {"validation_status" m2-status
-                "content_hash" h2
-                "artifact_id" id
-                "manifest_path" "/m2"}
+   (gen/tuple gen/string-alphanumeric                  ; artifact_id
+              gen/string-alphanumeric                  ; content_hash_1
+              gen/string-alphanumeric                  ; content_hash_2 (independent)
+              (gen/elements successful-statuses-vec)    ; m1 status (always successful)
+              (gen/elements schema-status-enum))        ; m2 status (any real enum value)
+   (fn [[id h1 h2 m1-status m2-status]]
+     (let [m1 {"validation_status" m1-status
+               "content_hash" h1
+               "artifact_id" id
+               "manifest_path" "/m1"}
+           m2 {"validation_status" m2-status
+               "content_hash" h2
+               "artifact_id" id
+               "manifest_path" "/m2"}
             ;; expected? derived from the actual generated values, using the
             ;; REAL success predicate and REAL string equality on hashes.
-            expected? (and (successful? m1) (successful? m2)
-                           (not= h1 h2))]
-        (gen/return [m1 m2 expected?])))))
+           expected? (and (successful? m1) (successful? m2)
+                          (not= h1 h2))]
+       (gen/return [m1 m2 expected?])))))
 
 (def reproducibility-property
   (prop/for-all [[m1 m2 expected?] gen-conflict-tuple]
-    (let [entries [m1 m2]
-          conflicts (manifest-index/reproducibility-conflicts entries)
+                (let [entries [m1 m2]
+                      conflicts (manifest-index/reproducibility-conflicts entries)
           ;; boolean() — (seq conflicts) is a seq or nil, not a boolean, so
           ;; (= expected? (seq conflicts)) would compare true to a seq and be
           ;; wrong on the satisfying case. Coerce to boolean.
-          detected? (boolean (seq conflicts))]
-      (= expected? detected?))))
+                      detected? (boolean (seq conflicts))]
+                  (= expected? detected?))))
 
 (deftest r1-reproducibility-conflict-property-test
   (testing "real oracle detects conflict iff both success, same id, different hash"

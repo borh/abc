@@ -215,14 +215,15 @@ def classify_text(row: dict[str, Any]) -> tuple[list[str], set[str], list[str]]:
     reasons: list[str] = []
 
     if bucket in PASSING_TEXT_BUCKETS or (
-        bucket in EXACT_RUBY_EQUIVALENCE_TEXT_BUCKETS
-        and generated_has_ruby_structure(row)
+        bucket in EXACT_RUBY_EQUIVALENCE_TEXT_BUCKETS and generated_has_ruby_structure(row)
     ):
         return classifications, owners, reasons
     if source_note_excluded or bucket in SOURCE_NOTE_TEXT_BUCKETS:
         classifications.append("source_note_metadata_excluded")
         owners.add("policy")
-        reasons.append("source-note or parenthetical source attribution belongs outside body plaintext")
+        reasons.append(
+            "source-note or parenthetical source attribution belongs outside body plaintext"
+        )
     elif bucket in RUBY_TEXT_BUCKETS or bucket in EXACT_RUBY_EQUIVALENCE_TEXT_BUCKETS:
         classifications.append("ruby_metadata_not_plaintext")
         owners.add("policy")
@@ -293,7 +294,9 @@ def classify_skipped_row(
     skipped: dict[str, Any], structural_row: dict[str, Any] | None
 ) -> dict[str, Any]:
     tei = structural_row.get("tei") if isinstance(structural_row, dict) else {}
-    classification = structural_row.get("classification") if isinstance(structural_row, dict) else {}
+    classification = (
+        structural_row.get("classification") if isinstance(structural_row, dict) else {}
+    )
     notes = classification.get("notes") if isinstance(classification, dict) else None
     skip_reason = skipped.get("reason") or "unknown"
     reasons = [f"skipped matrix entry: {skip_reason}"]
@@ -406,10 +409,16 @@ def build_summary(
     plain_rows = [row for row in matrix.get("rows", []) if row_profile(row) == "plain_prose"]
     coverage, missing_by_row = parser_evidence_coverage(plain_rows, structural_by_file)
     if coverage["verdict"] != "FIVE_PARSER_EVIDENCE_COMPLETE" and not allow_missing_parser_evidence:
-        raise SystemExit("missing parser evidence; rerun with --allow-missing-parser-evidence for exploratory report")
-    classified_rows = [classify_row(row, missing_by_row.get(row_key(row), [])) for row in plain_rows]
+        raise SystemExit(
+            "missing parser evidence; rerun with --allow-missing-parser-evidence for exploratory report"
+        )
+    classified_rows = [
+        classify_row(row, missing_by_row.get(row_key(row), [])) for row in plain_rows
+    ]
     skipped_rows = [
-        classify_skipped_row(skipped, structural_by_file.get(str(skipped.get("tei_eaj_file") or "")))
+        classify_skipped_row(
+            skipped, structural_by_file.get(str(skipped.get("tei_eaj_file") or ""))
+        )
         for skipped in matrix.get("skipped", [])
         if isinstance(skipped, dict)
     ]
@@ -462,7 +471,15 @@ def render_markdown(summary: dict[str, Any]) -> str:
     lines.extend(["", "## Classification Counts", "", "| classification | rows |", "|---|---:|"])
     for name, count in summary["classification_counts"].items():
         lines.append(f"| {name} | {count} |")
-    lines.extend(["", "## Rows", "", "| work_id | adapter | classifications | owners | file |", "|---|---|---|---|---|"])
+    lines.extend(
+        [
+            "",
+            "## Rows",
+            "",
+            "| work_id | adapter | classifications | owners | file |",
+            "|---|---|---|---|---|",
+        ]
+    )
     for row in summary["rows"]:
         lines.append(
             "| {work_id} | {adapter} | {classes} | {owners} | `{file}` |".format(

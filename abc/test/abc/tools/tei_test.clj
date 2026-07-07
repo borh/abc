@@ -3,21 +3,14 @@
             [clojure.test :refer [deftest is testing use-fixtures]]))
 
 (def ^:private schema-path (atom nil))
-(def ^:private skip-flag-name "ABC_TEI_SCHEMA_SKIP")
 
 (defn require-schema-path [t]
-  (cond
-    (= "1" (System/getenv skip-flag-name))
-    (println "abc.tools.tei-test: skipping (" skip-flag-name "=1)")
-
-    (nil? (System/getenv "TEI_SCHEMA_PATH"))
-    (throw (ex-info "TEI_SCHEMA_PATH must be set to run abc.tools.tei-test. Run via `nix run .#validate-design-bundle` or export the path manually after `curl … tei_all.rng`."
-                    {:env-var "TEI_SCHEMA_PATH"}))
-
-    :else
+  (if-let [path (System/getenv "TEI_SCHEMA_PATH")]
     (do
-      (reset! schema-path (System/getenv "TEI_SCHEMA_PATH"))
-      (t))))
+      (reset! schema-path path)
+      (t))
+    (throw (ex-info "TEI_SCHEMA_PATH must be set to run abc.tools.tei-test. Run via `nix run .#validate-design-bundle` or export the path manually after `curl … tei_all.rng`."
+                    {:env-var "TEI_SCHEMA_PATH"}))))
 
 (use-fixtures :once require-schema-path)
 

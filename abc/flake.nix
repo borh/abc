@@ -281,6 +281,14 @@
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
           };
+          activeClojureLintPaths = [
+            "src/abc/tools"
+            "src/abc/text.clj"
+            "src/abc/annotation/schema.clj"
+            "test/abc/tools"
+            "test/abc/text_test.clj"
+            "test/abc/annotation_schema_test.clj"
+          ];
         in
         {
           clj-nix-focused-tests =
@@ -304,16 +312,36 @@
                 export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
                 export GITLIBS="$HOME/.gitlibs"
 
-                # The Nix sandbox has no network access; tests needing the upstream
-                # TEI RelaxNG schema (fetched at app build time, not test time) skip
-                # via this flag. End-to-end TEI validation runs via the
-                # `nix run .#validate-design-bundle` app, not here.
-                export ABC_TEI_SCHEMA_SKIP=1
+                # Keep TEI schema-backed tests active in the sandbox. The schema is
+                # a pinned fixed-output artifact, so tests do not need network access.
+                export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
 
                 clojure -M:test:kaocha -m kaocha.runner
 
                 mkdir -p "$out"
                 echo "ABC Clojure tests passed with clj-nix dependency cache (kaocha auto-discovery)." > "$out/result.txt"
+              '';
+
+          clj-kondo =
+            pkgs.runCommand "abc-clj-kondo"
+              {
+                nativeBuildInputs = [
+                  pkgs.cljfmt
+                  pkgs.clj-kondo
+                ];
+              }
+              ''
+                cp -R ${./.} source
+                chmod -R u+w source
+                cd source
+                # clj-kondo is intentionally scoped to the active lint baseline.
+                # Broad `src test` currently includes dormant legacy namespaces
+                # with unresolved symbols. cljfmt is broad because formatting is
+                # syntax-only and safe across the whole Clojure tree.
+                clj-kondo --fail-level error --lint ${pkgs.lib.escapeShellArgs activeClojureLintPaths}
+                cljfmt check src test
+                mkdir -p "$out"
+                echo "ABC focused Clojure lint and format checks passed." > "$out/result.txt"
               '';
 
           aat-parser-ir-probe-tests =
@@ -587,11 +615,17 @@
               localPkgsOverlay
             ];
           };
+          tei = import ./nix/tei-profile-artifacts.nix {
+            inherit pkgs;
+            odd = ./schemas/tei-profile.odd;
+          };
 
         in
         {
           default = pkgs.mkShell {
+            TEI_SCHEMA_PATH = "${tei.teiAllSchema}";
             packages = with pkgs; [
+              cljfmt
               clojure
               git
               git-cliff
@@ -602,6 +636,7 @@
           };
 
           validation = pkgs.mkShell {
+            TEI_SCHEMA_PATH = "${tei.teiAllSchema}";
             packages = [
               pkgs.git
               pkgs.git-cliff

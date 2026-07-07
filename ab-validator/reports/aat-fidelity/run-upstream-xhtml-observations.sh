@@ -2,11 +2,16 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+workspace_root="$(cd "$repo_root/.." && pwd)"
+if [[ -f "$workspace_root/scripts/soranoha-runtime-env.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$workspace_root/scripts/soranoha-runtime-env.sh"
+fi
 
 manifest=""
 metadata=""
-out_dir="${AB_AAT_FIDELITY_XHTML_OUT_DIR:-/db/ab-validator/aat-fidelity/upstream-xhtml}"
-db_path="${AB_AAT_FIDELITY_DB:-/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb}"
+out_dir="${AB_AAT_FIDELITY_XHTML_OUT_DIR:-${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/upstream-xhtml}"
+db_path="${AB_AAT_FIDELITY_DB:-${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/cross-adapter/fidelity.duckdb}"
 report_id="${AB_AAT_FIDELITY_REPORT_ID:-cross-adapter}"
 aozora_corpus=""
 
@@ -44,8 +49,8 @@ if [[ -z "$manifest" ]]; then
 usage: run-upstream-xhtml-observations.sh \
   --manifest manifest.tsv \
   [--metadata metadata.csv] \
-  [--out-dir /db/...] \
-  [--db /db/.../fidelity.duckdb] \
+  [--out-dir PATH] \
+  [--db PATH/fidelity.duckdb] \
   [--report-id cross-adapter]
 
 manifest columns: case_id<TAB>source_txt_or_zip<TAB>upstream_xhtml

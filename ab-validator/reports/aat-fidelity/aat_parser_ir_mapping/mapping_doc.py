@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Generate a disposable AAT->parser-IR mapping document from measured rules."""
+
 import argparse
 import json
 import re
@@ -98,25 +99,31 @@ def build_mapping_document_from_counts(
             _, aat, target = key
             count = rule_counts[key]
             occurrence_word = "occurrence" if count == 1 else "occurrences"
-            rules.append({
-                "rule_id": f"{CATEGORY_PREFIX[category]}-{index:02d}",
-                "category": category,
-                "aat_pointer": source_pointer(aat),
-                "parser_ir_pointer": parser_ir_pointer(target),
-                "action": ACTION_BY_CATEGORY[category],
-                "description": (
-                    f"Observed {count} {occurrence_word}; "
-                    f"first_path={first_path_by_rule[key]}. {first_note_by_rule[key]}"
-                ),
-            })
+            rules.append(
+                {
+                    "rule_id": f"{CATEGORY_PREFIX[category]}-{index:02d}",
+                    "category": category,
+                    "aat_pointer": source_pointer(aat),
+                    "parser_ir_pointer": parser_ir_pointer(target),
+                    "action": ACTION_BY_CATEGORY[category],
+                    "description": (
+                        f"Observed {count} {occurrence_word}; "
+                        f"first_path={first_path_by_rule[key]}. {first_note_by_rule[key]}"
+                    ),
+                }
+            )
 
     return {
         "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
         "mapping_version": mapping_version,
-        "mapping_schema_hash": c14n.schema_hash(repo_root / "schemas" / "aat-parser-ir-mapping.schema.json"),
+        "mapping_schema_hash": c14n.schema_hash(
+            repo_root / "schemas" / "aat-parser-ir-mapping.schema.json"
+        ),
         "source_aat_version": 1,
         "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-        "target_parser_ir_schema_hash": c14n.schema_hash(repo_root / "schemas" / "parser-ir.schema.json"),
+        "target_parser_ir_schema_hash": c14n.schema_hash(
+            repo_root / "schemas" / "parser-ir.schema.json"
+        ),
         "transform_rule_descriptions": rules,
         "loss_taxonomy": LOSS_TAXONOMY,
     }

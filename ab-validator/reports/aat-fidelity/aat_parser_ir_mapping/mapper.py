@@ -22,7 +22,10 @@ Structural transform rule (flat-nodes vs nested-blocks):
 
 Run: python map.py aat-sample.json
 """
-import json, re, sys
+
+import json
+import re
+import sys
 
 # Hardcoded ABC parser-IR target identity (INVENTION: producer must pinch
 # ABC's schema_hash; AAT carries no such identifier).
@@ -109,26 +112,52 @@ def text_projection(node, ledger_list, path):
     if kind == "text":
         return node.get("value", "")
     if kind == "ruby":
-        ledger_list.append(ledger("LOSS", f"{path}.ruby.reading",
-                                  "(emphasis.text)", "style text projection kept ruby base text only; reading not represented inside emphasis.text"))
+        ledger_list.append(
+            ledger(
+                "LOSS",
+                f"{path}.ruby.reading",
+                "(emphasis.text)",
+                "style text projection kept ruby base text only; reading not represented inside emphasis.text",
+            )
+        )
         return node.get("base", "")
     if kind == "gaiji":
-        ledger_list.append(ledger("AMBIGUITY", f"{path}.gaiji.resolved",
-                                  "(emphasis.text)", "style text projection used resolved gaiji string when available"))
+        ledger_list.append(
+            ledger(
+                "AMBIGUITY",
+                f"{path}.gaiji.resolved",
+                "(emphasis.text)",
+                "style text projection used resolved gaiji string when available",
+            )
+        )
         return node.get("resolved") or ""
     if kind in ("style", "font_size", "tcy", "keigakomi", "yokogumi", "caption"):
-        return "".join(text_projection(child, ledger_list, f"{path}.content[{i}]")
-                       for i, child in enumerate(node.get("content", [])))
+        return "".join(
+            text_projection(child, ledger_list, f"{path}.content[{i}]")
+            for i, child in enumerate(node.get("content", []))
+        )
     if kind == "warigaki":
-        ledger_list.append(ledger("UNSUPPORTED", f"{path}.warigaki",
-                                  "(emphasis.text)", "parser-IR has no warigaki node; style text projection flattened upper/lower visible text"))
+        ledger_list.append(
+            ledger(
+                "UNSUPPORTED",
+                f"{path}.warigaki",
+                "(emphasis.text)",
+                "parser-IR has no warigaki node; style text projection flattened upper/lower visible text",
+            )
+        )
         return "".join(
             text_projection(child, ledger_list, f"{path}.{group}[{i}]")
             for group in ("upper", "lower")
             for i, child in enumerate(node.get(group, []))
         )
-    ledger_list.append(ledger("LOSS", f"{path}.{kind}",
-                              "(emphasis.text)", f"style text projection dropped inline kind '{kind}'"))
+    ledger_list.append(
+        ledger(
+            "LOSS",
+            f"{path}.{kind}",
+            "(emphasis.text)",
+            f"style text projection dropped inline kind '{kind}'",
+        )
+    )
     return ""
 
 
@@ -193,7 +222,9 @@ def map_inline(node, offset, ledger_list, path):
         fallback_end = offset + utf8_len(value)
         pir_span = map_span(span, offset, fallback_end, ledger_list, path)
         return {
-            "type": "text", "span": pir_span, "text": value,
+            "type": "text",
+            "span": pir_span,
+            "text": value,
         }, span_end(span, fallback_end)
 
     if kind == "ruby":
@@ -202,20 +233,41 @@ def map_inline(node, offset, ledger_list, path):
         fallback_end = offset + utf8_len(base)
         pir_span = map_span(span, offset, fallback_end, ledger_list, path)
         scope = "explicit"  # INVENTION: AAT has no scope; default to explicit.
-        ledger_list.append(ledger("INVENTION", "(none)", "ruby.scope",
-                                  "AAT has no scope field; defaulted to 'explicit'"))
+        ledger_list.append(
+            ledger(
+                "INVENTION",
+                "(none)",
+                "ruby.scope",
+                "AAT has no scope field; defaulted to 'explicit'",
+            )
+        )
         if node.get("base_content"):
-            ledger_list.append(ledger("LOSS", f"{path}.ruby.base_content",
-                                      "(none)", "nested ruby base_content substructure flattened away"))
+            ledger_list.append(
+                ledger(
+                    "LOSS",
+                    f"{path}.ruby.base_content",
+                    "(none)",
+                    "nested ruby base_content substructure flattened away",
+                )
+            )
         if node.get("reading_content"):
-            ledger_list.append(ledger("LOSS", f"{path}.ruby.reading_content",
-                                      "(none)", "nested ruby reading_content substructure flattened away"))
+            ledger_list.append(
+                ledger(
+                    "LOSS",
+                    f"{path}.ruby.reading_content",
+                    "(none)",
+                    "nested ruby reading_content substructure flattened away",
+                )
+            )
         return {
-            "type": "ruby", "span": pir_span,
-            "ruby": {"base": base,
-                     "reading": node.get("reading", ""),
-                     "scope": scope,
-                     "direction": node.get("direction")},
+            "type": "ruby",
+            "span": pir_span,
+            "ruby": {
+                "base": base,
+                "reading": node.get("reading", ""),
+                "scope": scope,
+                "direction": node.get("direction"),
+            },
         }, span_end(span, fallback_end)
 
     if kind == "gaiji":
@@ -225,25 +277,55 @@ def map_inline(node, offset, ledger_list, path):
         # AAT resolved = string|null; parser-IR resolved = boolean
         resolved_str = node.get("resolved")
         resolved_bool = bool(resolved_str) if resolved_str is not None else False
-        mac = node.get("raw_marker")
         # raw_marker INVENTION: AAT gives description, not the source marker.
-        ledger_list.append(ledger("INVENTION", f"{path}.gaiji.description",
-                                  "gaiji.raw_marker", "AAT has no raw source marker; used description as raw_marker"))
+        ledger_list.append(
+            ledger(
+                "INVENTION",
+                f"{path}.gaiji.description",
+                "gaiji.raw_marker",
+                "AAT has no raw source marker; used description as raw_marker",
+            )
+        )
         # resolved semantic mismatch
-        ledger_list.append(ledger("AMBIGUITY", f"{path}.gaiji.resolved",
-                                  "gaiji.resolved", "AAT resolved is string (the chosen char); parser-IR resolved is boolean (was it resolved?)"))
+        ledger_list.append(
+            ledger(
+                "AMBIGUITY",
+                f"{path}.gaiji.resolved",
+                "gaiji.resolved",
+                "AAT resolved is string (the chosen char); parser-IR resolved is boolean (was it resolved?)",
+            )
+        )
         if node.get("unresolved_reason"):
-            ledger_list.append(ledger("LOSS", f"{path}.gaiji.unresolved_reason",
-                                      "(none)", f"unresolved_reason='{node['unresolved_reason']}' has no parser-IR field"))
+            ledger_list.append(
+                ledger(
+                    "LOSS",
+                    f"{path}.gaiji.unresolved_reason",
+                    "(none)",
+                    f"unresolved_reason='{node['unresolved_reason']}' has no parser-IR field",
+                )
+            )
         # unicode: AAT may embed in resolved string; cannot extract
-        ledger_list.append(ledger("LOSS", "(none)",
-                                  "gaiji.unicode", "AAT does not separate unicode codepoint from resolved string"))
+        ledger_list.append(
+            ledger(
+                "LOSS",
+                "(none)",
+                "gaiji.unicode",
+                "AAT does not separate unicode codepoint from resolved string",
+            )
+        )
         # jis_code -> reference (semantic stretch)
         if node.get("jis_code"):
-            ledger_list.append(ledger("AMBIGUITY", f"{path}.gaiji.jis_code",
-                                      "gaiji.reference", "jis_code mapped to reference; different identifier spaces"))
+            ledger_list.append(
+                ledger(
+                    "AMBIGUITY",
+                    f"{path}.gaiji.jis_code",
+                    "gaiji.reference",
+                    "jis_code mapped to reference; different identifier spaces",
+                )
+            )
         return {
-            "type": "gaiji", "span": pir_span,
+            "type": "gaiji",
+            "span": pir_span,
             "gaiji": {
                 "raw_marker": node.get("description", ""),
                 "reference": node.get("jis_code"),
@@ -259,16 +341,36 @@ def map_inline(node, offset, ledger_list, path):
         text = node.get("resolved") or node.get("name", "")
         fallback_end = offset + utf8_len(text)
         pir_span = map_span(span, offset, fallback_end, ledger_list, path)
-        ledger_list.append(ledger("AMBIGUITY", f"{path}.accent",
-                                  "emphasis", "accent mapped to emphasis; accent code/name semantics not preserved"))
-        ledger_list.append(ledger("INVENTION", f"{path}.accent.code",
-                                  "emphasis.style", f"used accent.code='{node.get('code')}' as free-form style string"))
+        ledger_list.append(
+            ledger(
+                "AMBIGUITY",
+                f"{path}.accent",
+                "emphasis",
+                "accent mapped to emphasis; accent code/name semantics not preserved",
+            )
+        )
+        ledger_list.append(
+            ledger(
+                "INVENTION",
+                f"{path}.accent.code",
+                "emphasis.style",
+                f"used accent.code='{node.get('code')}' as free-form style string",
+            )
+        )
         if node.get("name"):
-            ledger_list.append(ledger("LOSS", f"{path}.accent.name",
-                                      "(none)", f"accent.name='{node['name']}' has no parser-IR field"))
+            ledger_list.append(
+                ledger(
+                    "LOSS",
+                    f"{path}.accent.name",
+                    "(none)",
+                    f"accent.name='{node['name']}' has no parser-IR field",
+                )
+            )
         return {
-            "type": "emphasis", "span": pir_span,
-            "text": text, "style": node.get("code", ""),
+            "type": "emphasis",
+            "span": pir_span,
+            "text": text,
+            "style": node.get("code", ""),
         }, span_end(span, fallback_end)
 
     if kind == "figure":
@@ -276,39 +378,79 @@ def map_inline(node, offset, ledger_list, path):
         src = node.get("filename", "")
         fallback_end = offset + utf8_len(src)
         pir_span = map_span(span, offset, fallback_end, ledger_list, path)
-        ledger_list.append(ledger("INVENTION", f"{path}.figure.filename",
-                                  "image.src", "filename is not a resolved source path; used as src"))
+        ledger_list.append(
+            ledger(
+                "INVENTION",
+                f"{path}.figure.filename",
+                "image.src",
+                "filename is not a resolved source path; used as src",
+            )
+        )
         for f in ("css_class", "width", "height"):
             if node.get(f) is not None:
-                ledger_list.append(ledger("LOSS", f"{path}.figure.{f}",
-                                          "(none)", f"{f}={node[f]} dropped; parser-IR image has no such field"))
+                ledger_list.append(
+                    ledger(
+                        "LOSS",
+                        f"{path}.figure.{f}",
+                        "(none)",
+                        f"{f}={node[f]} dropped; parser-IR image has no such field",
+                    )
+                )
         if node.get("caption"):
-            ledger_list.append(ledger("LOSS", f"{path}.figure.caption",
-                                      "(none)", "nested figure caption[] dropped (could be emitted as caption node, scope target ambiguous)"))
+            ledger_list.append(
+                ledger(
+                    "LOSS",
+                    f"{path}.figure.caption",
+                    "(none)",
+                    "nested figure caption[] dropped (could be emitted as caption node, scope target ambiguous)",
+                )
+            )
         return {
-            "type": "image", "span": pir_span,
-            "src": src, "alt": node.get("alt"), "path_hint": None,
+            "type": "image",
+            "span": pir_span,
+            "src": src,
+            "alt": node.get("alt"),
+            "path_hint": None,
         }, span_end(span, fallback_end)
 
     if kind == "warigaki":
         # No parser-IR warigaki. Best-effort: flatten upper then lower as text nodes; structure lost.
-        ledger_list.append(ledger("UNSUPPORTED", f"{path}.warigaki",
-                                  "(none)", "parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"))
+        ledger_list.append(
+            ledger(
+                "UNSUPPORTED",
+                f"{path}.warigaki",
+                "(none)",
+                "parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost",
+            )
+        )
         return None, span_end(span, offset)  # caller emits child text nodes inline
 
     if kind == "raw":
-        ledger_list.append(ledger("UNSUPPORTED", f"{path}.raw",
-                                  "(none)", "parser-IR has no raw node; faithful escape hatch dropped"))
+        ledger_list.append(
+            ledger(
+                "UNSUPPORTED",
+                f"{path}.raw",
+                "(none)",
+                "parser-IR has no raw node; faithful escape hatch dropped",
+            )
+        )
         return None, span_end(span, offset + utf8_len(node.get("source", "")))
 
     if kind == "style":
         projected_text = text_projection(node, ledger_list, path)
         fallback_end = offset + utf8_len(projected_text)
         pir_span = map_span(span, offset, fallback_end, ledger_list, path)
-        ledger_list.append(ledger("AMBIGUITY", f"{path}.style",
-                                  "emphasis", "style inline_container mapped to emphasis; parser-IR does not preserve nested inline container identity"))
+        ledger_list.append(
+            ledger(
+                "AMBIGUITY",
+                f"{path}.style",
+                "emphasis",
+                "style inline_container mapped to emphasis; parser-IR does not preserve nested inline container identity",
+            )
+        )
         return {
-            "type": "emphasis", "span": pir_span,
+            "type": "emphasis",
+            "span": pir_span,
             "text": projected_text,
             "style": node.get("style_type", ""),
         }, span_end(span, fallback_end)
@@ -325,12 +467,24 @@ def map_inline(node, offset, ledger_list, path):
         }, span_end(span, fallback_end)
 
     if kind == "caption":
-        ledger_list.append(ledger("UNSUPPORTED", f"{path}.{kind}",
-                                  "emphasis(?)", f"inline_container kind '{kind}' has no first-class parser-IR node; only emphasis.text/style exist"))
+        ledger_list.append(
+            ledger(
+                "UNSUPPORTED",
+                f"{path}.{kind}",
+                "emphasis(?)",
+                f"inline_container kind '{kind}' has no first-class parser-IR node; only emphasis.text/style exist",
+            )
+        )
         return None, span_end(span, offset + utf8_len(text_projection(node, ledger_list, path)))
 
-    ledger_list.append(ledger("UNSUPPORTED", f"{path}.{kind}", "(none)",
-                              f"unknown inline kind '{kind}' has no parser-IR equivalent"))
+    ledger_list.append(
+        ledger(
+            "UNSUPPORTED",
+            f"{path}.{kind}",
+            "(none)",
+            f"unknown inline kind '{kind}' has no parser-IR equivalent",
+        )
+    )
     return None, span_end(span, offset)
 
 
@@ -361,8 +515,14 @@ def map_block(block, nodes, ledger_list, offset, path):
     if kind != "paragraph" and not paragraph_only_jisage_block(block):
         # Non-paragraph block boundaries are still not first-class parser-IR
         # structures. Paragraphs are represented by top-level paragraphs[].
-        ledger_list.append(ledger("STRUCTURAL", f"{path}.{kind}",
-                                  "(none)", f"block container of kind '{kind}' has no parser-IR node; boundary + span + style lost, only inlines emitted"))
+        ledger_list.append(
+            ledger(
+                "STRUCTURAL",
+                f"{path}.{kind}",
+                "(none)",
+                f"block container of kind '{kind}' has no parser-IR node; boundary + span + style lost, only inlines emitted",
+            )
+        )
 
     if kind == "heading":
         # parser-IR heading keeps a visible text projection and structured inline_children.
@@ -374,40 +534,64 @@ def map_block(block, nodes, ledger_list, offset, path):
                 parts.append(text_projection(child, ledger_list, f"{path}.heading.content[{i}]"))
             else:
                 parts.append(plain_text_projection(child))
-            mapped, child_offset = map_inline(child, child_offset, ledger_list, f"{path}.heading.content[{i}]")
+            mapped, child_offset = map_inline(
+                child, child_offset, ledger_list, f"{path}.heading.content[{i}]"
+            )
             if mapped is not None:
                 inline_children.append(mapped)
         level = block.get("level", 1)
         # AAT level max 3, parser-IR max 6 -> fits, but range divergence recorded.
-        ledger_list.append(ledger("AMBIGUITY", f"{path}.heading.level",
-                                  "heading.level", "AAT heading.level range 1-3 vs parser-IR 1-6; values fit but domain differs"))
+        ledger_list.append(
+            ledger(
+                "AMBIGUITY",
+                f"{path}.heading.level",
+                "heading.level",
+                "AAT heading.level range 1-3 vs parser-IR 1-6; values fit but domain differs",
+            )
+        )
         if block.get("style"):
-            ledger_list.append(ledger("LOSS", f"{path}.heading.style",
-                                      "(none)", f"heading.style='{block['style']}' dropped"))
+            ledger_list.append(
+                ledger(
+                    "LOSS",
+                    f"{path}.heading.style",
+                    "(none)",
+                    f"heading.style='{block['style']}' dropped",
+                )
+            )
         heading_text = "".join(parts)
         fallback_end = offset + utf8_len(heading_text)
-        nodes.append({
-            "type": "heading",
-            "span": map_span(block.get("span"), offset, fallback_end, ledger_list, path),
-            "text": heading_text,
-            "inline_children": inline_children,
-            "level": level,
-        })
+        nodes.append(
+            {
+                "type": "heading",
+                "span": map_span(block.get("span"), offset, fallback_end, ledger_list, path),
+                "text": heading_text,
+                "inline_children": inline_children,
+                "level": level,
+            }
+        )
         offset = span_end(block.get("span"), fallback_end)
 
     elif kind == "paragraph":
         content = block.get("content", [])
         path_prefix = f"{path}.content"
-        if (len(content) == 1
-                and isinstance(content[0], dict)
-                and is_paragraph_layout_style(content[0])):
+        if (
+            len(content) == 1
+            and isinstance(content[0], dict)
+            and is_paragraph_layout_style(content[0])
+        ):
             content = content[0].get("content", [])
             path_prefix = f"{path}.content[0].content"
         for i, child in enumerate(content):
             cpath = f"{path_prefix}[{i}]"
             if child.get("kind") == "warigaki":
-                ledger_list.append(ledger("UNSUPPORTED", f"{cpath}.warigaki",
-                                          "(none)", "parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"))
+                ledger_list.append(
+                    ledger(
+                        "UNSUPPORTED",
+                        f"{cpath}.warigaki",
+                        "(none)",
+                        "parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost",
+                    )
+                )
                 # flatten upper/lower
                 for grp in ("upper", "lower"):
                     for j, sub in enumerate(child.get(grp, [])):
@@ -424,37 +608,80 @@ def map_block(block, nodes, ledger_list, offset, path):
                 if n is not None:
                     nodes.append(n)
 
-    elif kind in ("jisage_block", "quote_block", "keigakomi_block",
-                  "yokogumi_block", "caption_block"):
+    elif kind in (
+        "jisage_block",
+        "quote_block",
+        "keigakomi_block",
+        "yokogumi_block",
+        "caption_block",
+    ):
         # Emit a best-effort parser-IR node for the block kind, then recurse children.
         if kind == "jisage_block" and paragraph_only_jisage_block(block):
             pass
         elif kind == "jisage_block":
-            ledger_list.append(ledger("INVENTION", f"{path}.jisage_block",
-                                      "indentation", "mapped to indentation node; depth unknown -> defaulted 1"))
+            ledger_list.append(
+                ledger(
+                    "INVENTION",
+                    f"{path}.jisage_block",
+                    "indentation",
+                    "mapped to indentation node; depth unknown -> defaulted 1",
+                )
+            )
             fallback_end = offset
-            nodes.append({"type": "indentation", "span": map_span(block.get("span"), offset, fallback_end, ledger_list, path),
-                          "depth": 1, "text": None})
+            nodes.append(
+                {
+                    "type": "indentation",
+                    "span": map_span(block.get("span"), offset, fallback_end, ledger_list, path),
+                    "depth": 1,
+                    "text": None,
+                }
+            )
             offset = span_end(block.get("span"), fallback_end)
         elif kind == "quote_block":
-            ledger_list.append(ledger("AMBIGUITY", f"{path}.quote_block",
-                                      "quote", "quote_block container vs quote open/close/inline marker node; nesting semantics differ"))
+            ledger_list.append(
+                ledger(
+                    "AMBIGUITY",
+                    f"{path}.quote_block",
+                    "quote",
+                    "quote_block container vs quote open/close/inline marker node; nesting semantics differ",
+                )
+            )
             fallback_end = offset
-            nodes.append({"type": "quote", "span": map_span(block.get("span"), offset, fallback_end, ledger_list, path),
-                          "marker_type": "unknown", "nesting_level": None, "text": None})
+            nodes.append(
+                {
+                    "type": "quote",
+                    "span": map_span(block.get("span"), offset, fallback_end, ledger_list, path),
+                    "marker_type": "unknown",
+                    "nesting_level": None,
+                    "text": None,
+                }
+            )
             offset = span_end(block.get("span"), fallback_end)
         elif kind == "caption_block":
-            ledger_list.append(ledger("AMBIGUITY", f"{path}.caption_block",
-                                      "caption", "caption_block vs caption node (text+target); target linkage lost"))
+            ledger_list.append(
+                ledger(
+                    "AMBIGUITY",
+                    f"{path}.caption_block",
+                    "caption",
+                    "caption_block vs caption node (text+target); target linkage lost",
+                )
+            )
         else:
-            ledger_list.append(ledger("UNSUPPORTED", f"{path}.{kind}",
-                                      "(none)", f"block_container kind '{kind}' has no parser-IR equivalent"))
+            ledger_list.append(
+                ledger(
+                    "UNSUPPORTED",
+                    f"{path}.{kind}",
+                    "(none)",
+                    f"block_container kind '{kind}' has no parser-IR equivalent",
+                )
+            )
         for i, child in enumerate(block.get("children", [])):
             offset = map_block(child, nodes, ledger_list, offset, f"{path}.children[{i}]")
 
     else:
-        ledger_list.append(ledger("UNSUPPORTED", f"{path}.{kind}",
-                                  "(none)", f"unknown block kind '{kind}'"))
+        ledger_list.append(
+            ledger("UNSUPPORTED", f"{path}.{kind}", "(none)", f"unknown block kind '{kind}'")
+        )
     return offset
 
 
@@ -464,39 +691,86 @@ def map_meta_source(aat, ledger_list):
     enc_in = meta.get("source_encoding", "utf-8")
     enc_out = ENC_MAP.get(enc_in)
     if enc_out is None:
-        ledger_list.append(ledger("UNSUPPORTED", f"meta.source_encoding={enc_in}",
-                                  "source.encoding", f"encoding '{enc_in}' has no parser-IR enum value"))
+        ledger_list.append(
+            ledger(
+                "UNSUPPORTED",
+                f"meta.source_encoding={enc_in}",
+                "source.encoding",
+                f"encoding '{enc_in}' has no parser-IR enum value",
+            )
+        )
         enc_out = "unknown"
     elif enc_in in ENC_DIVERGENCE:
-        ledger_list.append(ledger("AMBIGUITY", f"meta.source_encoding={enc_in}",
-                                  "source.encoding", ENC_DIVERGENCE[enc_in]))
+        ledger_list.append(
+            ledger(
+                "AMBIGUITY",
+                f"meta.source_encoding={enc_in}",
+                "source.encoding",
+                ENC_DIVERGENCE[enc_in],
+            )
+        )
     # work_content_hash vs source_hash: different semantics (content vs raw source bytes)
-    ledger_list.append(ledger("AMBIGUITY", "meta.source_hash",
-                              "source.work_content_hash",
-                              "AAT hashes raw source bytes; parser-IR work_content_hash is content hash; identifier semantics differ"))
+    ledger_list.append(
+        ledger(
+            "AMBIGUITY",
+            "meta.source_hash",
+            "source.work_content_hash",
+            "AAT hashes raw source bytes; parser-IR work_content_hash is content hash; identifier semantics differ",
+        )
+    )
     # normalization: parser-IR requires it; AAT has none
-    ledger_list.append(ledger("INVENTION", "(none)",
-                              "source.normalization", "parser-IR requires normalization enum; AAT has none -> defaulted 'source'"))
+    ledger_list.append(
+        ledger(
+            "INVENTION",
+            "(none)",
+            "source.normalization",
+            "parser-IR requires normalization enum; AAT has none -> defaulted 'source'",
+        )
+    )
     # source_path: AAT has none
-    ledger_list.append(ledger("INVENTION", "(none)",
-                              "source.source_path", "parser-IR source_path optional; AAT has none -> null"))
+    ledger_list.append(
+        ledger(
+            "INVENTION",
+            "(none)",
+            "source.source_path",
+            "parser-IR source_path optional; AAT has none -> null",
+        )
+    )
     src = {
-        "work_content_hash": meta.get("source_hash", "sha256:" + "0"*64),
+        "work_content_hash": meta.get("source_hash", "sha256:" + "0" * 64),
         "source_path": None,
         "encoding": enc_out,
         "normalization": "source",
     }
     # Producer identity now projects to parser-IR derived_from. parse_complete
     # remains adapter-fidelity metadata preserved in the divergence bundle.
-    ledger_list.append(ledger("LOSS", "meta.parse_complete", "(none)",
-                              f"parse_complete={meta.get('parse_complete')!r} preserved in divergence bundle; parser-IR derived_from does not model parse completeness"))
+    ledger_list.append(
+        ledger(
+            "LOSS",
+            "meta.parse_complete",
+            "(none)",
+            f"parse_complete={meta.get('parse_complete')!r} preserved in divergence bundle; parser-IR derived_from does not model parse completeness",
+        )
+    )
     # metrics: heavy fidelity block dropped entirely
     if meta.get("metrics"):
-        ledger_list.append(ledger("LOSS", "meta.metrics",
-                                  "(none)", "performance/fallback metrics dropped; adapter-fidelity concern not representable"))
+        ledger_list.append(
+            ledger(
+                "LOSS",
+                "meta.metrics",
+                "(none)",
+                "performance/fallback metrics dropped; adapter-fidelity concern not representable",
+            )
+        )
     if meta.get("semantic_summary"):
-        ledger_list.append(ledger("LOSS", "meta.semantic_summary",
-                                  "(none)", "semantic_summary provenance dropped; adapter-fidelity concern not representable"))
+        ledger_list.append(
+            ledger(
+                "LOSS",
+                "meta.semantic_summary",
+                "(none)",
+                "semantic_summary provenance dropped; adapter-fidelity concern not representable",
+            )
+        )
     return src
 
 
@@ -504,18 +778,41 @@ def map_warnings(aat, ledger_list):
     out = []
     for w in aat.get("meta", {}).get("warnings", []):
         # parser-IR diagnostic requires severity + code. AAT warning has only message(+line/path).
-        ledger_list.append(ledger("INVENTION", "(none)",
-                                  "warnings[].severity", "AAT warning has no severity -> defaulted 'warning'"))
-        ledger_list.append(ledger("INVENTION", "(none)",
-                                  "warnings[].code", "AAT warning has no code -> defaulted 'AAT_WARNING'"))
+        ledger_list.append(
+            ledger(
+                "INVENTION",
+                "(none)",
+                "warnings[].severity",
+                "AAT warning has no severity -> defaulted 'warning'",
+            )
+        )
+        ledger_list.append(
+            ledger(
+                "INVENTION",
+                "(none)",
+                "warnings[].code",
+                "AAT warning has no code -> defaulted 'AAT_WARNING'",
+            )
+        )
         if w.get("line"):
-            ledger_list.append(ledger("AMBIGUITY", "meta.warnings[].line",
-                                      "warnings[].span.line", "AAT warning.line vs parser-IR diagnostic.span; coordinate not assembled"))
-        out.append({
-            "severity": "warning", "code": "AAT_WARNING",
-            "message": w.get("message", ""), "span": None,
-            "construct": None, "recovery": None,
-        })
+            ledger_list.append(
+                ledger(
+                    "AMBIGUITY",
+                    "meta.warnings[].line",
+                    "warnings[].span.line",
+                    "AAT warning.line vs parser-IR diagnostic.span; coordinate not assembled",
+                )
+            )
+        out.append(
+            {
+                "severity": "warning",
+                "code": "AAT_WARNING",
+                "message": w.get("message", ""),
+                "span": None,
+                "construct": None,
+                "recovery": None,
+            }
+        )
     return out
 
 
@@ -532,13 +829,24 @@ def main():
 
     source = map_meta_source(aat, ledger_list)
     # Top-level identity: schema_id/schema_hash INVENTION (AAT has only version=1)
-    ledger_list.append(ledger("INVENTION", "(top-level)",
-                              "schema_id/schema_hash",
-                              "parser-IR requires schema_id+schema_hash; AAT supplies only version=1; producer must hardcode ABC's identifier"))
+    ledger_list.append(
+        ledger(
+            "INVENTION",
+            "(top-level)",
+            "schema_id/schema_hash",
+            "parser-IR requires schema_id+schema_hash; AAT supplies only version=1; producer must hardcode ABC's identifier",
+        )
+    )
     warnings = map_warnings(aat, ledger_list)
     # errors: AAT has none
-    ledger_list.append(ledger("INVENTION", "(none)",
-                              "errors[]", "parser-IR requires errors[]; AAT has no errors concept -> defaulted empty"))
+    ledger_list.append(
+        ledger(
+            "INVENTION",
+            "(none)",
+            "errors[]",
+            "parser-IR requires errors[]; AAT has no errors concept -> defaulted empty",
+        )
+    )
 
     pir = {
         "schema_id": PARSER_IR_SCHEMA_ID,
@@ -555,6 +863,7 @@ def main():
     print()
     print("=== DIVERGENCE LEDGER ===")
     from collections import Counter
+
     cats = Counter(e["category"] for e in ledger_list)
     print(f"Total entries: {len(ledger_list)}")
     for c in ("LOSS", "AMBIGUITY", "INVENTION", "UNSUPPORTED", "STRUCTURAL"):

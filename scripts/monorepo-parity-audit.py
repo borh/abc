@@ -120,9 +120,8 @@ def audit_ab_validator(source_root: Path, component_root: Path, abc_component: P
     link_ok = schema_link.is_symlink() and schema_link.resolve() == expected_target
 
     readme = component_root / "data/abc-schemas/README.md"
-    readme_ok = (
-        readme.exists()
-        and "symlink to `../../../abc/schemas`" in readme.read_text(encoding="utf-8")
+    readme_ok = readme.exists() and "symlink to `../../../abc/schemas`" in readme.read_text(
+        encoding="utf-8"
     )
 
     print(f"ab-validator: {len(source_files)} tracked source files")

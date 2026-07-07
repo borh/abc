@@ -30,7 +30,6 @@ MINIMAL_AOZORA = (
 FIXTURES = sorted(p.stem for p in FIXTURE_DIR.glob("*.txt"))
 
 
-
 def _run(stdin_bytes: bytes, *args: str) -> bytes:
     return subprocess.check_output(
         ["bash", str(RUN_SH), *args],
@@ -49,9 +48,7 @@ def _canonicalize(aat: dict) -> dict:
 
 
 def test_version_format() -> None:
-    out = subprocess.check_output(
-        ["bash", str(RUN_SH), "--version"], text=True
-    ).strip()
+    out = subprocess.check_output(["bash", str(RUN_SH), "--version"], text=True).strip()
     assert re.match(r"^aozora2html-adapter \d+\.\d+\.\d+ gem-\d+\.\d+\.\d+$", out), out
 
 
@@ -86,7 +83,10 @@ def test_fragment_stdin_is_wrapped_for_parser_without_changing_source_hash() -> 
     jsonschema.validate(aat, SCHEMA)
 
     assert aat["meta"]["parse_complete"] is True
-    assert aat["meta"]["source_hash"] == "sha256:ef709900663e4c7e77235b88422ceb252eb50283ff2872b3f93ed61133b45b6b"
+    assert (
+        aat["meta"]["source_hash"]
+        == "sha256:ef709900663e4c7e77235b88422ceb252eb50283ff2872b3f93ed61133b45b6b"
+    )
     assert any(
         inline.get("kind") == "ruby"
         and inline.get("base") == "吾輩"
@@ -299,7 +299,8 @@ def test_split_unresolved_gaiji_marker_is_source_derived() -> None:
     ],
 )
 def test_inline_decoration_classes_are_source_derived_to_aat_nodes(
-    source: str, expected_content: list[dict],
+    source: str,
+    expected_content: list[dict],
 ) -> None:
     raw = _run(source.encode("utf-8"), "--mode", "aat")
     aat = json.loads(raw)
@@ -343,7 +344,8 @@ def test_inline_decoration_classes_are_source_derived_to_aat_nodes(
     ],
 )
 def test_block_decoration_classes_are_source_derived_to_aat_nodes(
-    source: str, expected_content: list[dict],
+    source: str,
+    expected_content: list[dict],
 ) -> None:
     raw = _run(source.encode("utf-8"), "--mode", "aat")
     aat = json.loads(raw)
@@ -357,72 +359,93 @@ def test_block_decoration_classes_are_source_derived_to_aat_nodes(
     [
         (
             "字下げ行［＃この行2字下げ］",
-            [{
-                "kind": "paragraph",
-                "content": [{
-                    "kind": "style",
-                    "style_type": "jisage_line",
-                    "content": [{"kind": "text", "value": "字下げ行"}],
-                    "x-indent": 2,
-                    "x-provenance": "source-derived",
-                }],
-            }],
+            [
+                {
+                    "kind": "paragraph",
+                    "content": [
+                        {
+                            "kind": "style",
+                            "style_type": "jisage_line",
+                            "content": [{"kind": "text", "value": "字下げ行"}],
+                            "x-indent": 2,
+                            "x-provenance": "source-derived",
+                        }
+                    ],
+                }
+            ],
         ),
         (
             "右寄せ［＃この行地付き］",
-            [{
-                "kind": "paragraph",
-                "content": [{
-                    "kind": "style",
-                    "style_type": "chitsuki",
-                    "content": [{"kind": "text", "value": "右寄せ"}],
-                    "x-align": "right",
-                    "x-provenance": "source-derived",
-                }],
-            }],
+            [
+                {
+                    "kind": "paragraph",
+                    "content": [
+                        {
+                            "kind": "style",
+                            "style_type": "chitsuki",
+                            "content": [{"kind": "text", "value": "右寄せ"}],
+                            "x-align": "right",
+                            "x-provenance": "source-derived",
+                        }
+                    ],
+                }
+            ],
         ),
         (
             "［＃ここから字詰め4］\n本文\n［＃ここで字詰め終わり］",
-            [{
-                "kind": "paragraph",
-                "content": [{
-                    "kind": "style",
-                    "style_type": "jizume",
-                    "content": [{"kind": "text", "value": "本文"}],
-                    "x-width": 4,
-                    "x-provenance": "source-derived",
-                }],
-            }],
+            [
+                {
+                    "kind": "paragraph",
+                    "content": [
+                        {
+                            "kind": "style",
+                            "style_type": "jizume",
+                            "content": [{"kind": "text", "value": "本文"}],
+                            "x-width": 4,
+                            "x-provenance": "source-derived",
+                        }
+                    ],
+                }
+            ],
         ),
         (
             "［＃ここから2字下げ、折り返して4字下げ］\n本文\n［＃ここで字下げ終わり］",
-            [{
-                "kind": "paragraph",
-                "content": [{
-                    "kind": "style",
-                    "style_type": "burasage",
-                    "content": [{"kind": "text", "value": "本文"}],
-                    "x-indent-first": 2,
-                    "x-indent-rest": 4,
-                    "x-provenance": "source-derived",
-                }],
-            }],
+            [
+                {
+                    "kind": "paragraph",
+                    "content": [
+                        {
+                            "kind": "style",
+                            "style_type": "burasage",
+                            "content": [{"kind": "text", "value": "本文"}],
+                            "x-indent-first": 2,
+                            "x-indent-rest": 4,
+                            "x-provenance": "source-derived",
+                        }
+                    ],
+                }
+            ],
         ),
         (
             "［＃ここから２字下げ］\n字下げされた段落。\n［＃ここで字下げ終わり］",
-            [{
-                "kind": "jisage_block",
-                "children": [{
-                    "kind": "paragraph",
-                    "content": [{"kind": "text", "value": "字下げされた段落。"}],
-                }],
-                "x-indent": 2,
-            }],
+            [
+                {
+                    "kind": "jisage_block",
+                    "children": [
+                        {
+                            "kind": "paragraph",
+                            "content": [{"kind": "text", "value": "字下げされた段落。"}],
+                        }
+                    ],
+                    "x-indent": 2,
+                }
+            ],
         ),
     ],
 )
 def test_indentation_source_notes_are_source_derived(
-    source: str, expected_blocks: list[dict],
+    source: str,
+    expected_blocks: list[dict],
 ) -> None:
     raw = _run(source.encode("utf-8"), "--mode", "aat")
     aat = json.loads(raw)
@@ -451,14 +474,16 @@ def test_indentation_source_notes_are_source_derived(
         ),
         (
             "／＼",
-            [{
-                "kind": "gaiji",
-                "description": "くの字点",
-                "resolved": "〳〵",
-                "jis_code": None,
-                "unresolved_reason": None,
-                "x-provenance": "source-derived",
-            }],
+            [
+                {
+                    "kind": "gaiji",
+                    "description": "くの字点",
+                    "resolved": "〳〵",
+                    "jis_code": None,
+                    "unresolved_reason": None,
+                    "x-provenance": "source-derived",
+                }
+            ],
         ),
         (
             "繁雑な日本の 〔e'tiquette〕 も、",
@@ -499,7 +524,8 @@ def test_indentation_source_notes_are_source_derived(
     ],
 )
 def test_small_inline_source_markers_are_source_derived(
-    source: str, expected_content: list[dict],
+    source: str,
+    expected_content: list[dict],
 ) -> None:
     raw = _run(source.encode("utf-8"), "--mode", "aat")
     aat = json.loads(raw)
@@ -513,32 +539,39 @@ def test_small_inline_source_markers_are_source_derived(
     [
         (
             "ABC［＃「ABC」の横組み］",
-            [{
-                "kind": "yokogumi",
-                "content": [{"kind": "text", "value": "ABC"}],
-                "x-provenance": "source-derived",
-            }],
+            [
+                {
+                    "kind": "yokogumi",
+                    "content": [{"kind": "text", "value": "ABC"}],
+                    "x-provenance": "source-derived",
+                }
+            ],
         ),
         (
             "12［＃「12」の縦中横］",
-            [{
-                "kind": "tcy",
-                "content": [{"kind": "text", "value": "12"}],
-                "x-provenance": "source-derived",
-            }],
+            [
+                {
+                    "kind": "tcy",
+                    "content": [{"kind": "text", "value": "12"}],
+                    "x-provenance": "source-derived",
+                }
+            ],
         ),
         (
             "［＃ここから縦中横］\n12\n［＃ここで縦中横終わり］",
-            [{
-                "kind": "tcy",
-                "content": [{"kind": "text", "value": "12"}],
-                "x-provenance": "source-derived",
-            }],
+            [
+                {
+                    "kind": "tcy",
+                    "content": [{"kind": "text", "value": "12"}],
+                    "x-provenance": "source-derived",
+                }
+            ],
         ),
     ],
 )
 def test_layout_source_markers_are_source_derived(
-    source: str, expected_content: list[dict],
+    source: str,
+    expected_content: list[dict],
 ) -> None:
     raw = _run(source.encode("utf-8"), "--mode", "aat")
     aat = json.loads(raw)
@@ -552,120 +585,148 @@ def test_layout_source_markers_are_source_derived(
     [
         (
             "本文に［＃割書］注［＃割書終わり］が入る。",
-            [{
-                "kind": "paragraph",
-                "content": [
-                    {"kind": "text", "value": "本文に"},
-                    {
-                        "kind": "warigaki",
-                        "upper": [{"kind": "text", "value": "注"}],
-                        "lower": [],
-                        "x-provenance": "source-derived",
+            [
+                {
+                    "kind": "paragraph",
+                    "content": [
+                        {"kind": "text", "value": "本文に"},
+                        {
+                            "kind": "warigaki",
+                            "upper": [{"kind": "text", "value": "注"}],
+                            "lower": [],
+                            "x-provenance": "source-derived",
+                        },
+                        {"kind": "text", "value": "が入る。"},
+                    ],
+                }
+            ],
+            [
+                {
+                    "kind": "warigaki",
+                    "value": {
+                        "lower_projection": "",
+                        "upper_projection": "注",
                     },
-                    {"kind": "text", "value": "が入る。"},
-                ],
-            }],
-            [{
-                "kind": "warigaki",
-                "value": {
-                    "lower_projection": "",
-                    "upper_projection": "注",
-                },
-                "provenance": "source-derived",
-            }],
+                    "provenance": "source-derived",
+                }
+            ],
         ),
         (
             "米《べー》リンスキー［＃ここから割り注］魯国の批評家［＃ここで割り注終わり］",
-            [{
-                "kind": "paragraph",
-                "content": [
-                    {
-                        "kind": "ruby",
-                        "base": "米",
-                        "reading": "べー",
-                        "direction": "right",
+            [
+                {
+                    "kind": "paragraph",
+                    "content": [
+                        {
+                            "kind": "ruby",
+                            "base": "米",
+                            "reading": "べー",
+                            "direction": "right",
+                        },
+                        {"kind": "text", "value": "リンスキー"},
+                        {
+                            "kind": "warigaki",
+                            "upper": [{"kind": "text", "value": "魯国の批評家"}],
+                            "lower": [],
+                            "x-provenance": "source-derived",
+                        },
+                    ],
+                }
+            ],
+            [
+                {
+                    "kind": "warigaki",
+                    "value": {
+                        "lower_projection": "",
+                        "upper_projection": "魯国の批評家",
                     },
-                    {"kind": "text", "value": "リンスキー"},
-                    {
-                        "kind": "warigaki",
-                        "upper": [{"kind": "text", "value": "魯国の批評家"}],
-                        "lower": [],
-                        "x-provenance": "source-derived",
-                    },
-                ],
-            }],
-            [{
-                "kind": "warigaki",
-                "value": {
-                    "lower_projection": "",
-                    "upper_projection": "魯国の批評家",
-                },
-                "provenance": "source-derived",
-            }],
+                    "provenance": "source-derived",
+                }
+            ],
         ),
         (
             "［＃ここから割り注］上［＃改行］下［＃ここで割り注終わり］",
-            [{
-                "kind": "paragraph",
-                "content": [{
+            [
+                {
+                    "kind": "paragraph",
+                    "content": [
+                        {
+                            "kind": "warigaki",
+                            "upper": [{"kind": "text", "value": "上"}],
+                            "lower": [{"kind": "text", "value": "下"}],
+                            "x-provenance": "source-derived",
+                        }
+                    ],
+                }
+            ],
+            [
+                {
                     "kind": "warigaki",
-                    "upper": [{"kind": "text", "value": "上"}],
-                    "lower": [{"kind": "text", "value": "下"}],
-                    "x-provenance": "source-derived",
-                }],
-            }],
-            [{
-                "kind": "warigaki",
-                "value": {
-                    "lower_projection": "下",
-                    "upper_projection": "上",
-                },
-                "provenance": "source-derived",
-            }],
+                    "value": {
+                        "lower_projection": "下",
+                        "upper_projection": "上",
+                    },
+                    "provenance": "source-derived",
+                }
+            ],
         ),
         (
             "［＃割り注］注［＃割り注終わり］",
-            [{
-                "kind": "paragraph",
-                "content": [{
+            [
+                {
+                    "kind": "paragraph",
+                    "content": [
+                        {
+                            "kind": "warigaki",
+                            "upper": [{"kind": "text", "value": "注"}],
+                            "lower": [],
+                            "x-provenance": "source-derived",
+                        }
+                    ],
+                }
+            ],
+            [
+                {
                     "kind": "warigaki",
-                    "upper": [{"kind": "text", "value": "注"}],
-                    "lower": [],
-                    "x-provenance": "source-derived",
-                }],
-            }],
-            [{
-                "kind": "warigaki",
-                "value": {
-                    "lower_projection": "",
-                    "upper_projection": "注",
-                },
-                "provenance": "source-derived",
-            }],
+                    "value": {
+                        "lower_projection": "",
+                        "upper_projection": "注",
+                    },
+                    "provenance": "source-derived",
+                }
+            ],
         ),
         (
             "［＃ここからキャプション］\n猫の図\n［＃ここでキャプション終わり］",
-            [{
-                "kind": "caption_block",
-                "children": [{
-                    "kind": "paragraph",
-                    "content": [{"kind": "text", "value": "猫の図"}],
-                }],
-                "x-provenance": "source-derived",
-            }],
+            [
+                {
+                    "kind": "caption_block",
+                    "children": [
+                        {
+                            "kind": "paragraph",
+                            "content": [{"kind": "text", "value": "猫の図"}],
+                        }
+                    ],
+                    "x-provenance": "source-derived",
+                }
+            ],
             None,
         ),
     ],
 )
 def test_warigaki_and_caption_source_markers_are_source_derived(
-    source: str, expected_blocks: list[dict], expected_syntax: list[dict] | None,
+    source: str,
+    expected_blocks: list[dict],
+    expected_syntax: list[dict] | None,
 ) -> None:
     raw = _run(source.encode("utf-8"), "--mode", "aat")
     aat = json.loads(raw)
     jsonschema.validate(aat, SCHEMA)
 
     assert aat["blocks"] == expected_blocks
-    assert aat["meta"]["semantic_summary"]["syntax"].get("warigaki.parenthetical") == expected_syntax
+    assert (
+        aat["meta"]["semantic_summary"]["syntax"].get("warigaki.parenthetical") == expected_syntax
+    )
 
 
 @pytest.mark.parametrize(
@@ -673,24 +734,28 @@ def test_warigaki_and_caption_source_markers_are_source_derived(
     [
         (
             "青空文庫［＃「青空文庫」の左に「あおぞらぶんこ」のルビ］",
-            [{
-                "kind": "ruby",
-                "base": "青空文庫",
-                "reading": "あおぞらぶんこ",
-                "direction": "left",
-                "x-provenance": "source-derived",
-            }],
+            [
+                {
+                    "kind": "ruby",
+                    "base": "青空文庫",
+                    "reading": "あおぞらぶんこ",
+                    "direction": "left",
+                    "x-provenance": "source-derived",
+                }
+            ],
         ),
         (
             "青空文庫《あおぞらぶんこ》［＃「青空文庫」の左に「aozora bunko」のルビ］",
-            [{
-                "kind": "ruby",
-                "base": "青空文庫",
-                "reading": "あおぞらぶんこ",
-                "direction": "right",
-                "x-left-reading": "aozora bunko",
-                "x-provenance": "source-derived",
-            }],
+            [
+                {
+                    "kind": "ruby",
+                    "base": "青空文庫",
+                    "reading": "あおぞらぶんこ",
+                    "direction": "right",
+                    "x-left-reading": "aozora bunko",
+                    "x-provenance": "source-derived",
+                }
+            ],
         ),
         (
             "※［＃「口＋愛」、第3水準1-15-23］《おくび》が出た。",
@@ -700,14 +765,16 @@ def test_warigaki_and_caption_source_markers_are_source_derived(
                     "base": "噯",
                     "reading": "おくび",
                     "direction": "right",
-                    "base_content": [{
-                        "kind": "gaiji",
-                        "description": "「口＋愛」、第3水準1-15-23",
-                        "resolved": "噯",
-                        "jis_code": "1-15-23",
-                        "unresolved_reason": None,
-                        "x-provenance": "source-derived",
-                    }],
+                    "base_content": [
+                        {
+                            "kind": "gaiji",
+                            "description": "「口＋愛」、第3水準1-15-23",
+                            "resolved": "噯",
+                            "jis_code": "1-15-23",
+                            "unresolved_reason": None,
+                            "x-provenance": "source-derived",
+                        }
+                    ],
                     "x-provenance": "source-derived",
                 },
                 {"kind": "text", "value": "が出た。"},
@@ -759,13 +826,15 @@ def test_warigaki_and_caption_source_markers_are_source_derived(
         ),
         (
             "参照［＃「参照」に「強調」の傍点］",
-            [{
-                "kind": "style",
-                "style_type": "boten",
-                "content": [{"kind": "text", "value": "参照"}],
-                "x-frontref": "強調",
-                "x-provenance": "source-derived",
-            }],
+            [
+                {
+                    "kind": "style",
+                    "style_type": "boten",
+                    "content": [{"kind": "text", "value": "参照"}],
+                    "x-frontref": "強調",
+                    "x-provenance": "source-derived",
+                }
+            ],
         ),
         (
             "胡麻塩おやじ［＃「おやじ」に傍点］",
@@ -782,7 +851,8 @@ def test_warigaki_and_caption_source_markers_are_source_derived(
     ],
 )
 def test_ruby_and_reference_source_notes_are_source_derived(
-    source: str, expected_content: list[dict],
+    source: str,
+    expected_content: list[dict],
 ) -> None:
     raw = _run(source.encode("utf-8"), "--mode", "aat")
     aat = json.loads(raw)
@@ -792,14 +862,15 @@ def test_ruby_and_reference_source_notes_are_source_derived(
 
 
 def test_nested_ruby_note_is_preserved_as_source_derived_raw() -> None:
-    source = "青空文庫《あおぞらぶんこ》［＃「青空文庫《あおぞらぶんこ》」の左に「aozora bunko」のルビ］"
+    source = (
+        "青空文庫《あおぞらぶんこ》［＃「青空文庫《あおぞらぶんこ》」の左に「aozora bunko」のルビ］"
+    )
     raw = _run(source.encode("utf-8"), "--mode", "aat")
     aat = json.loads(raw)
     jsonschema.validate(aat, SCHEMA)
 
     assert any(
-        node.get("kind") == "raw"
-        and node.get("x-error-kind") == "nested_ruby_forbidden"
+        node.get("kind") == "raw" and node.get("x-error-kind") == "nested_ruby_forbidden"
         for block in aat["blocks"]
         for node in block.get("content", [])
     )
@@ -870,6 +941,8 @@ def test_unmatched_ruby_base_delimiter_is_not_visible() -> None:
             "content": [{"kind": "text", "value": "八ヶ月もの間空家になっていたんです。"}],
         }
     ]
+
+
 def test_source_note_image_maps_to_source_derived_figure() -> None:
     raw = _run((FIXTURE_DIR / "figure_image_caption.txt").read_bytes(), "--mode", "aat")
     aat = json.loads(raw)
@@ -987,9 +1060,7 @@ def test_source_heading_no_particle_note_maps_to_heading_block() -> None:
         ("窓見出し［＃「窓見出し」は窓小見出し］", 3, "mado"),
     ],
 )
-def test_source_heading_note_preserves_heading_style(
-    source: str, level: int, style: str
-) -> None:
+def test_source_heading_note_preserves_heading_style(source: str, level: int, style: str) -> None:
     raw = _run(source.encode("utf-8"), "--mode", "aat")
     aat = json.loads(raw)
     jsonschema.validate(aat, SCHEMA)

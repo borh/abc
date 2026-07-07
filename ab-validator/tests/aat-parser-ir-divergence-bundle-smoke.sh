@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 abc_root="${AB_ABC_ROOT:-$repo_root/data/abc-schemas}"
-out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/divergence-bundle-smoke"
+out_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/divergence-bundle-smoke"
 bundle="$out_dir/bundle.json"
 record="$out_dir/record.json"
 

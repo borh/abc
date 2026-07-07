@@ -114,10 +114,7 @@ def write_report(summary: dict, report_path: Path) -> None:
         "| Category | Count |",
         "|---|---:|",
     ]
-    lines.extend(
-        f"| {category} | {category_counts.get(category, 0)} |"
-        for category in CATEGORIES
-    )
+    lines.extend(f"| {category} | {category_counts.get(category, 0)} |" for category in CATEGORIES)
     lines.extend(
         [
             "",
@@ -187,9 +184,7 @@ def main() -> int:
             files_failed_to_parse += 1
             continue
 
-        ledger_list, nodes, block_kinds, inline_kinds, has_warigaki = map_aat_document(
-            aat
-        )
+        ledger_list, nodes, block_kinds, inline_kinds, has_warigaki = map_aat_document(aat)
         block_kind_counts.update(block_kinds)
         inline_kind_counts.update(inline_kinds)
         total_parser_ir_nodes += len(nodes)
@@ -237,19 +232,13 @@ def main() -> int:
         "total_inline_nodes_scanned": sum(inline_kind_counts.values()),
         "total_parser_ir_nodes_emitted": total_parser_ir_nodes,
         "total_ledger_entries": sum(category_counts.values()),
-        "category_counts": {
-            category: category_counts.get(category, 0) for category in CATEGORIES
-        },
+        "category_counts": {category: category_counts.get(category, 0) for category in CATEGORIES},
         "block_kind_counts": dict(block_kind_counts),
         "inline_kind_counts": dict(inline_kind_counts),
-        "generated_mapping_rules": len(
-            mapping_document["transform_rule_descriptions"]
-        ),
+        "generated_mapping_rules": len(mapping_document["transform_rule_descriptions"]),
         "mapping_version": mapping_document["mapping_version"],
         "mapping_schema_hash": mapping_document["mapping_schema_hash"],
-        "target_parser_ir_schema_hash": mapping_document[
-            "target_parser_ir_schema_hash"
-        ],
+        "target_parser_ir_schema_hash": mapping_document["target_parser_ir_schema_hash"],
         "identity_projection": {
             "parser_ir_pointer": "derived_from",
             "aat_pointers": ["version", "meta.adapter", "meta.adapter_version"],

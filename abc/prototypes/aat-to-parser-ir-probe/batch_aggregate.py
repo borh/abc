@@ -4,7 +4,11 @@ aozora-rs AAT corpus and aggregate divergence-ledger frequencies.
 
 Imports the mapper's functions in-process (no subprocess, no file clobber).
 Output: counts + a sample per-category + file-level breakdown."""
-import json, sys, os, glob
+
+import json
+import sys
+import os
+import glob
 from collections import Counter, defaultdict
 
 # import the probe mapper as a module
@@ -13,19 +17,20 @@ import map as mapper
 import mapping_doc
 
 AAT_DIR = "/home/bor/Projects/ab-validator/scratch/morph-full-corpus/aats/aozora-rs-adapter"
-MAPPING_OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                           "mapping.generated.aozora-rs.json")
+MAPPING_OUT = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "mapping.generated.aozora-rs.json"
+)
 
 files = sorted(glob.glob(os.path.join(AAT_DIR, "*.json")))
 print(f"scanning {len(files)} real AAT documents", file=sys.stderr)
 
-cat_counter = Counter()              # category -> total entries
-note_counter = Counter()             # (category, aat bucket, parser_ir, note) -> count
-mapping_rule_counter = Counter()     # (category, aat bucket, parser_ir) -> count
+cat_counter = Counter()  # category -> total entries
+note_counter = Counter()  # (category, aat bucket, parser_ir, note) -> count
+mapping_rule_counter = Counter()  # (category, aat bucket, parser_ir) -> count
 unsupported_bucket_counter = Counter()
 files_with_unsupported = 0
 files_with_any_ledger = 0
-per_file_entry_counts = Counter()    # bucketed entry-count per file
+per_file_entry_counts = Counter()  # bucketed entry-count per file
 unsupported_examples = []
 sample_per_cat = defaultdict(list)
 first_path_by_rule = {}
@@ -67,11 +72,23 @@ for i, path in enumerate(files):
         mapper.map_block(block, nodes, ledger_list, offset, f"blocks[{j}]")
     mapper.map_meta_source(aat, ledger_list)
     # the top-level INVENTION entries the main() adds:
-    ledger_list.append(mapper.ledger("INVENTION", "(top-level)", "schema_id/schema_hash",
-        "parser-IR requires schema_id+schema_hash; AAT supplies only version=1"))
+    ledger_list.append(
+        mapper.ledger(
+            "INVENTION",
+            "(top-level)",
+            "schema_id/schema_hash",
+            "parser-IR requires schema_id+schema_hash; AAT supplies only version=1",
+        )
+    )
     mapper.map_warnings(aat, ledger_list)
-    ledger_list.append(mapper.ledger("INVENTION", "(none)", "errors[]",
-        "parser-IR requires errors[]; AAT has no errors concept -> defaulted empty"))
+    ledger_list.append(
+        mapper.ledger(
+            "INVENTION",
+            "(none)",
+            "errors[]",
+            "parser-IR requires errors[]; AAT has no errors concept -> defaulted empty",
+        )
+    )
 
     total_nodes_emitted += len(nodes)
 
@@ -122,12 +139,14 @@ print("--- DIVERGENCE CATEGORY TOTALS (corpus-scale) ---")
 total = sum(cat_counter.values())
 print(f"total ledger entries across corpus: {total}")
 for c in ("LOSS", "AMBIGUITY", "INVENTION", "UNSUPPORTED", "STRUCTURAL"):
-    print(f"  {c}: {cat_counter.get(c, 0)}  ({100*cat_counter.get(c,0)/max(total,1):.1f}%)")
+    print(f"  {c}: {cat_counter.get(c, 0)}  ({100 * cat_counter.get(c, 0) / max(total, 1):.1f}%)")
 print()
 print("--- TOP DIVERGENCE RULES (by frequency, occurrence indices folded) ---")
 for (cat, aat, pir, note), c in note_counter.most_common(20):
     first_path = first_path_by_rule[(cat, aat, pir, note)]
-    print(f"  [{c:>7}] {cat:12} | {aat[:46]:46} | {pir[:30]:30} | first={first_path[:46]:46} | {note}")
+    print(
+        f"  [{c:>7}] {cat:12} | {aat[:46]:46} | {pir[:30]:30} | first={first_path[:46]:46} | {note}"
+    )
 print()
 print("--- per-file entry-count distribution ---")
 for cnt, files in sorted(per_file_entry_counts.items()):
@@ -150,7 +169,8 @@ for cat in ("LOSS", "AMBIGUITY", "INVENTION", "UNSUPPORTED", "STRUCTURAL"):
         print(f"  {cat}: {e}")
 
 mapping_document = mapping_doc.build_mapping_document_from_counts(
-    mapping_rule_counter, first_path_by_rule, first_note_by_mapping_rule)
+    mapping_rule_counter, first_path_by_rule, first_note_by_mapping_rule
+)
 mapping_doc.write_mapping_document(mapping_document, MAPPING_OUT)
 print()
 print("--- generated mapping document ---")

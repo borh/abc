@@ -28,21 +28,23 @@ def _():
 
 @app.cell
 def _(Path, os):
-    default_db = Path("/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb")
-    default_report = Path("/db/ab-validator/aat-fidelity/cross-adapter/report.json")
+    ab_db_root = Path(os.environ.get("AB_DB_ROOT", "scratch/state"))
+    default_db = ab_db_root / "aat-fidelity/cross-adapter/fidelity.duckdb"
+    default_report = ab_db_root / "aat-fidelity/cross-adapter/report.json"
     fixture_report = Path("reports/aat-fidelity/fixtures/report.json")
     db_path = Path(os.environ.get("AB_AAT_FIDELITY_DB", default_db)).expanduser()
     report_path = Path(os.environ.get("AB_AAT_FIDELITY_REPORT", default_report)).expanduser()
     if not report_path.exists():
         report_path = fixture_report
-    return db_path, report_path,
+    return (
+        db_path,
+        report_path,
+    )
 
 
 @app.cell
 def _(db_path, mo, report_path):
-    mo.md(
-        f"# AAT Fidelity Explorer\n\nDuckDB: `{db_path}`\n\nReport fallback: `{report_path}`"
-    )
+    mo.md(f"# AAT Fidelity Explorer\n\nDuckDB: `{db_path}`\n\nReport fallback: `{report_path}`")
     return
 
 
@@ -107,9 +109,9 @@ def _(db_path, duckdb, json, pl, report_path):
         if "fidelity_xhtml_observations" in table_names:
             xhtml_columns = {
                 row["name"]
-                for row in conn.sql(
-                    "PRAGMA table_info('fidelity_xhtml_observations')"
-                ).pl().to_dicts()
+                for row in conn.sql("PRAGMA table_info('fidelity_xhtml_observations')")
+                .pl()
+                .to_dicts()
             }
             optional_xhtml_columns = []
             for column in (
@@ -177,18 +179,12 @@ def _(mo, pl, rows):
             {
                 "adapter": adapter_name,
                 "cases": len(adapter_rows),
-                "schema_pass": sum(
-                    1 for row in adapter_rows if row.get("schema_status") == "pass"
-                ),
+                "schema_pass": sum(1 for row in adapter_rows if row.get("schema_status") == "pass"),
                 "upstream_faithful": sum(
                     1 for row in adapter_rows if row.get("upstream_status") == "faithful"
                 ),
-                "oracle_pass": sum(
-                    1 for row in adapter_rows if row.get("oracle_status") == "pass"
-                ),
-                "oracle_fail": sum(
-                    1 for row in adapter_rows if row.get("oracle_status") == "fail"
-                ),
+                "oracle_pass": sum(1 for row in adapter_rows if row.get("oracle_status") == "pass"),
+                "oracle_fail": sum(1 for row in adapter_rows if row.get("oracle_status") == "fail"),
             }
         )
     axis_summary = pl.DataFrame(axis_summary_rows) if axis_summary_rows else pl.DataFrame()
@@ -199,25 +195,34 @@ def _(mo, pl, rows):
             mo.ui.table(axis_summary) if axis_summary_rows else mo.md("No fidelity rows loaded."),
         ]
     )
-    return axis_summary,
+    return (axis_summary,)
 
 
 @app.cell
 def _(mo, rows, source_label):
     adapters = sorted({row.get("adapter", "") for row in rows if row.get("adapter")})
     categories = sorted({row.get("category", "") for row in rows if row.get("category")})
-    schema_statuses = sorted({row.get("schema_status", "") for row in rows if row.get("schema_status")})
-    upstream_statuses = sorted({row.get("upstream_status", "") for row in rows if row.get("upstream_status")})
-    oracle_statuses = sorted({row.get("oracle_status", "") for row in rows if row.get("oracle_status")})
-    review_statuses = sorted({row.get("oracle_review_status", "") for row in rows if row.get("oracle_review_status")})
-    evidence_strengths = sorted({row.get("oracle_evidence_strength", "") for row in rows if row.get("oracle_evidence_strength")})
-    syntax_rows = sorted(
+    schema_statuses = sorted(
+        {row.get("schema_status", "") for row in rows if row.get("schema_status")}
+    )
+    upstream_statuses = sorted(
+        {row.get("upstream_status", "") for row in rows if row.get("upstream_status")}
+    )
+    oracle_statuses = sorted(
+        {row.get("oracle_status", "") for row in rows if row.get("oracle_status")}
+    )
+    review_statuses = sorted(
+        {row.get("oracle_review_status", "") for row in rows if row.get("oracle_review_status")}
+    )
+    evidence_strengths = sorted(
         {
-            syntax_row
+            row.get("oracle_evidence_strength", "")
             for row in rows
-            for syntax_row in row.get("syntax_row_ids", [])
-            if syntax_row
+            if row.get("oracle_evidence_strength")
         }
+    )
+    syntax_rows = sorted(
+        {syntax_row for row in rows for syntax_row in row.get("syntax_row_ids", []) if syntax_row}
     )
 
     adapter = mo.ui.dropdown(options=[""] + adapters, value="", label="Adapter")
@@ -227,7 +232,9 @@ def _(mo, rows, source_label):
     upstream_status = mo.ui.dropdown(options=[""] + upstream_statuses, value="", label="Upstream")
     oracle_status = mo.ui.dropdown(options=[""] + oracle_statuses, value="", label="Oracle")
     review_status = mo.ui.dropdown(options=[""] + review_statuses, value="", label="Review")
-    evidence_strength = mo.ui.dropdown(options=[""] + evidence_strengths, value="", label="Evidence")
+    evidence_strength = mo.ui.dropdown(
+        options=[""] + evidence_strengths, value="", label="Evidence"
+    )
     case_filter = mo.ui.text(value="", label="Case contains")
     failure_filter = mo.ui.text(value="", label="Failure contains")
 
@@ -295,9 +302,7 @@ def _(
         ]
     if review_status.value:
         filtered_rows = [
-            row
-            for row in filtered_rows
-            if row.get("oracle_review_status") == review_status.value
+            row for row in filtered_rows if row.get("oracle_review_status") == review_status.value
         ]
     if evidence_strength.value:
         filtered_rows = [
@@ -310,17 +315,15 @@ def _(
         filtered_rows = [row for row in filtered_rows if needle in row.get("case_id", "")]
     if failure_filter.value.strip():
         needle = failure_filter.value.strip()
-        filtered_rows = [
-            row for row in filtered_rows if needle in row.get("failures_json", "")
-        ]
-    return filtered_rows,
+        filtered_rows = [row for row in filtered_rows if needle in row.get("failures_json", "")]
+    return (filtered_rows,)
 
 
 @app.cell
 def _(filtered_rows, mo, pl):
     filtered_table = pl.DataFrame(filtered_rows) if filtered_rows else pl.DataFrame()
     mo.ui.table(filtered_table)
-    return filtered_table,
+    return (filtered_table,)
 
 
 @app.cell
@@ -335,7 +338,7 @@ def _(filtered_rows, mo):
         label="Row detail",
     )
     selected_row
-    return selected_row,
+    return (selected_row,)
 
 
 @app.cell
@@ -368,12 +371,10 @@ def _(mo, xhtml_observations):
     mo.vstack(
         [
             mo.md("## XHTML Report"),
-            xhtml_report_id
-            if xhtml_report_ids
-            else mo.md("No XHTML observation reports loaded."),
+            xhtml_report_id if xhtml_report_ids else mo.md("No XHTML observation reports loaded."),
         ]
     )
-    return xhtml_report_id,
+    return (xhtml_report_id,)
 
 
 @app.cell
@@ -384,9 +385,7 @@ def _(pl, xhtml_observations, xhtml_report_id):
         if not xhtml_report_id.value or row.get("report_id") == xhtml_report_id.value
     ]
     active_xhtml_table = (
-        pl.DataFrame(active_xhtml_observations)
-        if active_xhtml_observations
-        else pl.DataFrame()
+        pl.DataFrame(active_xhtml_observations) if active_xhtml_observations else pl.DataFrame()
     )
     return active_xhtml_observations, active_xhtml_table
 
@@ -399,9 +398,7 @@ def _(active_xhtml_observations, active_xhtml_table, mo, pl, xhtml_report_id):
     )
     main_text_mismatch_count = len(active_xhtml_observations) - main_text_equal_count
     proxy_eligible_count = sum(
-        1
-        for row in active_xhtml_observations
-        if row.get("rendered_body_proxy_eligible")
+        1 for row in active_xhtml_observations if row.get("rendered_body_proxy_eligible")
     )
     local_missing_main_text_count = sum(
         1
@@ -427,11 +424,7 @@ def _(active_xhtml_observations, active_xhtml_table, mo, pl, xhtml_report_id):
     )
     feature_rows = []
     for row in active_xhtml_observations:
-        tags = [
-            tag.strip()
-            for tag in (row.get("feature_tags") or "").split(";")
-            if tag.strip()
-        ]
+        tags = [tag.strip() for tag in (row.get("feature_tags") or "").split(";") if tag.strip()]
         for tag in tags or ["unclassified"]:
             feature_rows.append(
                 {
@@ -482,9 +475,7 @@ def _(active_xhtml_observations, active_xhtml_table, mo, pl, xhtml_report_id):
                 "malformed XHTML source files."
             ),
             mo.md("### Status Summary"),
-            mo.ui.table(xhtml_status_summary)
-            if status_rows
-            else mo.md("No status rows loaded."),
+            mo.ui.table(xhtml_status_summary) if status_rows else mo.md("No status rows loaded."),
             mo.md("### Proxy Basis Summary"),
             mo.ui.table(xhtml_proxy_summary)
             if proxy_rows
@@ -525,9 +516,7 @@ def _():
         return "1001+"
 
     def xhtml_first_diff_family(row):
-        context = (row.get("upstream_diff_context") or "") + (
-            row.get("local_diff_context") or ""
-        )
+        context = (row.get("upstream_diff_context") or "") + (row.get("local_diff_context") or "")
         if "［＃" in context:
             return "aozora_note_marker"
         if "※" in context:
@@ -551,9 +540,7 @@ def _(
     xhtml_length_delta_bucket,
 ):
     candidate_rows = [
-        row
-        for row in active_xhtml_observations
-        if not row.get("rendered_body_proxy_eligible")
+        row for row in active_xhtml_observations if not row.get("rendered_body_proxy_eligible")
     ]
     status_options = sorted(
         {row.get("comparison_status", "") for row in candidate_rows if row.get("comparison_status")}

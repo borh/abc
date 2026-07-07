@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-out="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/aozora2html-source-feature-gap-classifier-smoke"
+out="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/aozora2html-source-feature-gap-classifier-smoke"
 run="$out/run"
 corpus="$out/corpus"
 residual="$run/residual-worksets"

@@ -16,6 +16,7 @@ import argparse
 import csv
 import hashlib
 import io
+import os
 import random
 import re
 import sys
@@ -26,7 +27,6 @@ from pathlib import Path
 from zipfile import ZipFile
 
 
-DEFAULT_AOZORA_ROOT = Path(__file__).resolve().parents[2] / "references" / "aozorabunko"
 AOZORA_HOSTS = {"www.aozora.gr.jp", "aozora.gr.jp"}
 FEATURE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("ruby", re.compile(r"《[^》]+》|｜[^《\n]+《[^》]+》")),
@@ -70,7 +70,10 @@ class LinkParser(HTMLParser):
 
 
 def read_text_resource(url_or_path: str) -> Page:
-    return read_text_resource_from_root(url_or_path, DEFAULT_AOZORA_ROOT)
+    value = os.environ.get("AB_AOZORA_CORPUS")
+    if not value:
+        raise RuntimeError("AB_AOZORA_CORPUS or --aozora-root is required")
+    return read_text_resource_from_root(url_or_path, Path(value))
 
 
 def read_text_resource_from_root(url_or_path: str, aozora_root: Path) -> Page:
@@ -94,7 +97,9 @@ def local_resource_path(value: str, aozora_root: Path) -> Path:
     if is_remote_url(value):
         parsed = urllib.parse.urlparse(value)
         if parsed.netloc not in AOZORA_HOSTS:
-            raise ValueError(f"remote inputs are not allowed outside the local Aozora mirror: {value}")
+            raise ValueError(
+                f"remote inputs are not allowed outside the local Aozora mirror: {value}"
+            )
         relative = urllib.parse.unquote(parsed.path.lstrip("/"))
         if not relative:
             raise ValueError(f"Aozora URL has no mirror path: {value}")
@@ -164,7 +169,11 @@ def pair_from_card(card_url: str, classify_source: bool, aozora_root: Path) -> P
         )
     ]
     if not source_candidates:
-        source_candidates = [href for href in links if not is_remote_url(href) and re.search(r"/?files/.*\.zip$", href)]
+        source_candidates = [
+            href
+            for href in links
+            if not is_remote_url(href) and re.search(r"/?files/.*\.zip$", href)
+        ]
     xhtml_candidates = [
         href
         for href in links
@@ -277,16 +286,20 @@ def write_metadata(path: Path, pairs: list[Pair]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, lineterminator="\n")
-        writer.writerow(["case_id", "feature_tags", "card_url", "source", "upstream_xhtml", "status"])
+        writer.writerow(
+            ["case_id", "feature_tags", "card_url", "source", "upstream_xhtml", "status"]
+        )
         for pair in pairs:
-            writer.writerow([
-                pair.case_id,
-                ";".join(pair.feature_tags),
-                pair.card_url,
-                pair.source,
-                pair.upstream_xhtml,
-                pair.status,
-            ])
+            writer.writerow(
+                [
+                    pair.case_id,
+                    ";".join(pair.feature_tags),
+                    pair.card_url,
+                    pair.source,
+                    pair.upstream_xhtml,
+                    pair.status,
+                ]
+            )
 
 
 def main() -> int:
@@ -299,11 +312,16 @@ def main() -> int:
     parser.add_argument("--sample-size", type=int, default=50)
     parser.add_argument("--seed", type=int, default=20260504)
     parser.add_argument("--classify-source", action="store_true")
-    parser.add_argument("--aozora-root", type=Path, default=DEFAULT_AOZORA_ROOT)
+    parser.add_argument("--aozora-root", type=Path, default=None)
     parser.add_argument("--out-manifest", type=Path, required=True)
     parser.add_argument("--out-metadata", type=Path, required=True)
     args = parser.parse_args()
-    aozora_root = args.aozora_root.absolute()
+    if args.aozora_root is not None:
+        aozora_root = args.aozora_root.absolute()
+    elif os.environ.get("AB_AOZORA_CORPUS"):
+        aozora_root = Path(os.environ["AB_AOZORA_CORPUS"]).absolute()
+    else:
+        raise SystemExit("set --aozora-root or AB_AOZORA_CORPUS")
 
     card_urls = list(args.card_url)
     for path in args.card_url_file:

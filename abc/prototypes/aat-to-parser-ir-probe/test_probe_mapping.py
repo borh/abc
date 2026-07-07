@@ -18,7 +18,9 @@ mapper = load_mapper()
 
 
 def load_mapping_doc():
-    spec = importlib.util.spec_from_file_location("aat_probe_mapping_doc", PROBE_DIR / "mapping_doc.py")
+    spec = importlib.util.spec_from_file_location(
+        "aat_probe_mapping_doc", PROBE_DIR / "mapping_doc.py"
+    )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -115,8 +117,18 @@ class ProbeMappingTest(unittest.TestCase):
         mapping_doc = load_mapping_doc()
         doc = mapping_doc.build_mapping_document(
             [
-                mapper.ledger("AMBIGUITY", "blocks[0].content[1].style", "emphasis", "style mapped to emphasis"),
-                mapper.ledger("AMBIGUITY", "blocks[2].content[3].style", "emphasis", "style mapped to emphasis"),
+                mapper.ledger(
+                    "AMBIGUITY",
+                    "blocks[0].content[1].style",
+                    "emphasis",
+                    "style mapped to emphasis",
+                ),
+                mapper.ledger(
+                    "AMBIGUITY",
+                    "blocks[2].content[3].style",
+                    "emphasis",
+                    "style mapped to emphasis",
+                ),
                 mapper.ledger("LOSS", "meta.adapter", "(none)", "adapter identity dropped"),
             ]
         )
@@ -125,8 +137,10 @@ class ProbeMappingTest(unittest.TestCase):
         self.assertEqual(2, len(rules))
         self.assertEqual(["A-01", "L-01"], [rule["rule_id"] for rule in rules])
         self.assertIn("Observed 2 occurrences", rules[0]["description"])
-        self.assertEqual("sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
-                         doc["target_parser_ir_schema_hash"])
+        self.assertEqual(
+            "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+            doc["target_parser_ir_schema_hash"],
+        )
         self.assertRegex(doc["mapping_schema_hash"], r"^sha256:[0-9a-f]{64}$")
 
 

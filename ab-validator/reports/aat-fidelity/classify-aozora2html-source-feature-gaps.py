@@ -8,7 +8,7 @@ import io
 import json
 import re
 import tomllib
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
@@ -246,7 +246,9 @@ def main() -> int:
     args = make_argument_parser().parse_args()
     run_dir = args.run_dir.resolve()
     residual_summary_path = args.residual_summary.resolve()
-    feature_patterns = load_feature_patterns(Path(__file__).resolve().parents[2] / "data" / "feature-patterns.toml")
+    feature_patterns = load_feature_patterns(
+        Path(__file__).resolve().parents[2] / "data" / "feature-patterns.toml"
+    )
     kaeriten_pattern = feature_patterns["kaeriten"]
     okurigana_pattern = feature_patterns["okurigana"]
 
@@ -304,7 +306,9 @@ def main() -> int:
             work_summary["family_membership"].append(family)
 
             try:
-                source_text, encoding_label = read_source_text(corpus_root, str(work.get("txt_path", "")))
+                source_text, encoding_label = read_source_text(
+                    corpus_root, str(work.get("txt_path", ""))
+                )
                 work_summary["source_encoding"] = encoding_label
                 lines = source_text.splitlines()
             except Exception as exc:
@@ -379,15 +383,28 @@ def main() -> int:
         source_index_only.add(work_id)
 
     worksets = {
-        "warigaki.adapter_obligation_candidates": str(args.worksets_dir / "warigaki-adapter-obligation-candidates.json"),
-        "kunten.adapter_obligation_candidates": str(args.worksets_dir / "kunten-adapter-obligation-candidates.json"),
-        "adapter_obligation_union": str(args.worksets_dir / "source-feature-gap-adapter-obligation-union.json"),
+        "warigaki.adapter_obligation_candidates": str(
+            args.worksets_dir / "warigaki-adapter-obligation-candidates.json"
+        ),
+        "kunten.adapter_obligation_candidates": str(
+            args.worksets_dir / "kunten-adapter-obligation-candidates.json"
+        ),
+        "adapter_obligation_union": str(
+            args.worksets_dir / "source-feature-gap-adapter-obligation-union.json"
+        ),
         "unknown_union": str(args.worksets_dir / "source-feature-gap-unknown-union.json"),
-        "source_index_only_candidates": str(args.worksets_dir / "source-feature-gap-source-index-only-candidates.json"),
+        "source_index_only_candidates": str(
+            args.worksets_dir / "source-feature-gap-source-index-only-candidates.json"
+        ),
     }
 
-    write_json(Path(worksets["warigaki.adapter_obligation_candidates"]), sorted(warigaki_adapter_obligation))
-    write_json(Path(worksets["kunten.adapter_obligation_candidates"]), sorted(kunten_adapter_obligation))
+    write_json(
+        Path(worksets["warigaki.adapter_obligation_candidates"]),
+        sorted(warigaki_adapter_obligation),
+    )
+    write_json(
+        Path(worksets["kunten.adapter_obligation_candidates"]), sorted(kunten_adapter_obligation)
+    )
     write_json(
         Path(worksets["adapter_obligation_union"]),
         sorted(warigaki_adapter_obligation | kunten_adapter_obligation),
@@ -451,14 +468,20 @@ def main() -> int:
     md_lines.extend(
         markdown_table(
             [["Marker class", "Count"]]
-            + [[key, str(summary["marker_class_counts"][key])] for key in sorted(summary["marker_class_counts"])]
+            + [
+                [key, str(summary["marker_class_counts"][key])]
+                for key in sorted(summary["marker_class_counts"])
+            ]
         )
     )
     md_lines.extend(["## Context Hint Counts", ""])
     md_lines.extend(
         markdown_table(
             [["Context hint", "Count"]]
-            + [[key, str(summary["context_hint_counts"][key])] for key in sorted(summary["context_hint_counts"])]
+            + [
+                [key, str(summary["context_hint_counts"][key])]
+                for key in sorted(summary["context_hint_counts"])
+            ]
         )
     )
     md_lines.extend(["## Candidate Worksets", ""])
@@ -493,7 +516,9 @@ def main() -> int:
         )
     )
     md_lines.extend(["## Family Summary", ""])
-    family_rows = [["Family", "Residual works", "Marker classes", "Context hints", "Adapter candidates"]]
+    family_rows = [
+        ["Family", "Residual works", "Marker classes", "Context hints", "Adapter candidates"]
+    ]
     for family in FAMILIES:
         family_summary = families[family]
         family_rows.append(

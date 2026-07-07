@@ -512,9 +512,33 @@ mod tests {
             (4, 5, "/blocks/0/content/5", "accent", false, false, false),
             (5, 13, "/blocks/0/content/6", "accent", false, false, false),
             (13, 14, "/blocks/0/content/7", "raw", false, false, false),
-            (14, 15, "/blocks/0/content/8/upper/0", "text", false, false, false),
-            (15, 16, "/blocks/0/content/8/lower/0", "text", false, false, false),
-            (16, 17, "/blocks/0/content/9/content/0", "text", false, false, false),
+            (
+                14,
+                15,
+                "/blocks/0/content/8/upper/0",
+                "text",
+                false,
+                false,
+                false,
+            ),
+            (
+                15,
+                16,
+                "/blocks/0/content/8/lower/0",
+                "text",
+                false,
+                false,
+                false,
+            ),
+            (
+                16,
+                17,
+                "/blocks/0/content/9/content/0",
+                "text",
+                false,
+                false,
+                false,
+            ),
         ];
         assert_eq!(spans.iter().map(span_tuple).collect::<Vec<_>>(), expected);
 
@@ -549,8 +573,24 @@ mod tests {
         assert_eq!(
             spans.iter().map(span_tuple).collect::<Vec<_>>(),
             vec![
-                (0, 1, "/blocks/0/content/0/caption/0", "text", false, false, false),
-                (1, 2, "/blocks/0/children/0/content/0", "text", false, false, false),
+                (
+                    0,
+                    1,
+                    "/blocks/0/content/0/caption/0",
+                    "text",
+                    false,
+                    false,
+                    false
+                ),
+                (
+                    1,
+                    2,
+                    "/blocks/0/children/0/content/0",
+                    "text",
+                    false,
+                    false,
+                    false
+                ),
             ]
         );
     }
@@ -637,16 +677,21 @@ mod tests {
         // strings include '\r' and '\n' so the remap path is exercised.
         fn arb_inline() -> impl Strategy<Value = serde_json::Value> {
             prop_oneof![
-                proptest::string::string_regex("[ab\r\nあ𩸽]{0,6}").unwrap().prop_map(|v| json!({"kind": "text", "value": v})),
-                proptest::string::string_regex("[ab\r\nあ𩸽]{0,6}").unwrap()
+                proptest::string::string_regex("[ab\r\nあ𩸽]{0,6}")
+                    .unwrap()
+                    .prop_map(|v| json!({"kind": "text", "value": v})),
+                proptest::string::string_regex("[ab\r\nあ𩸽]{0,6}")
+                    .unwrap()
                     .prop_map(|v| json!({"kind": "ruby", "base": v, "reading": "よみ"})),
-                proptest::string::string_regex("[ab\r\nあ𩸽]{0,6}").unwrap().prop_map(|v| json!({"kind": "gaiji", "description": v})),
+                proptest::string::string_regex("[ab\r\nあ𩸽]{0,6}")
+                    .unwrap()
+                    .prop_map(|v| json!({"kind": "gaiji", "description": v})),
             ]
         }
 
         fn arb_aat() -> impl Strategy<Value = serde_json::Value> {
-            proptest::collection::vec(proptest::collection::vec(arb_inline(), 0..5), 0..4)
-                .prop_map(|blocks| {
+            proptest::collection::vec(proptest::collection::vec(arb_inline(), 0..5), 0..4).prop_map(
+                |blocks| {
                     json!({
                         "work_id": "w",
                         "blocks": blocks
@@ -654,7 +699,8 @@ mod tests {
                             .map(|content| json!({"kind": "paragraph", "content": content}))
                             .collect::<Vec<_>>()
                     })
-                })
+                },
+            )
         }
 
         proptest! {

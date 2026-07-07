@@ -12,6 +12,7 @@ contains body-visible text only.
 from __future__ import annotations
 
 import argparse
+import json
 import pathlib
 import re
 import sys
@@ -143,17 +144,14 @@ def sidecar_hash_matches(
 ) -> bool:
     sidecar = sidecar_by_role(manifest, role)
     return bool(
-        sidecar
-        and sidecar.get("path_hint") == path_hint
-        and sidecar.get("hash") == file_hash(path)
+        sidecar and sidecar.get("path_hint") == path_hint and sidecar.get("hash") == file_hash(path)
     )
 
 
 def source_region_valid(source_region: dict[str, Any]) -> bool:
     region = source_region.get("source_region_coverage", {})
     required_counters_present = all(
-        isinstance(region.get(counter), int)
-        for counter in SOURCE_REGION_REQUIRED_COUNTERS
+        isinstance(region.get(counter), int) for counter in SOURCE_REGION_REQUIRED_COUNTERS
     )
     return bool(
         source_region.get("schema_version") == "aozora-source-region-coverage-v1"
@@ -233,9 +231,7 @@ def node_visible_body_text(node: dict[str, Any]) -> str:
         children = node.get("inline_children")
         if isinstance(children, list):
             return "".join(
-                node_visible_body_text(child)
-                for child in children
-                if isinstance(child, dict)
+                node_visible_body_text(child) for child in children if isinstance(child, dict)
             )
         text = node.get("text")
         return text if isinstance(text, str) else ""
@@ -243,9 +239,7 @@ def node_visible_body_text(node: dict[str, Any]) -> str:
         children = node.get("inline_children")
         if isinstance(children, list):
             child_text = "".join(
-                node_visible_body_text(child)
-                for child in children
-                if isinstance(child, dict)
+                node_visible_body_text(child) for child in children if isinstance(child, dict)
             )
             if child_text:
                 return child_text
@@ -317,9 +311,7 @@ def validate_bundle(args: argparse.Namespace) -> dict[str, Any]:
         "tei_validation_result": publication_dir / "tei-validation-result.json",
     }
     validated_bundle = {
-        key: artifact(path)
-        for key, path in paths.items()
-        if key != "tei_validation_result"
+        key: artifact(path) for key, path in paths.items() if key != "tei_validation_result"
     }
     failures: list[dict[str, Any]] = []
 
@@ -556,9 +548,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         if summary.get("failures"):
             lines.extend(["", "## Failures", ""])
             for failure in summary["failures"][:50]:
-                lines.append(
-                    f"- `{failure['row_id']}` `{failure['check']}`: {failure['message']}"
-                )
+                lines.append(f"- `{failure['row_id']}` `{failure['check']}`: {failure['message']}")
                 details = failure.get("details")
                 if isinstance(details, dict) and details.get("kind") == "plaintext_mismatch":
                     lines.append(
@@ -569,12 +559,8 @@ def render_markdown(summary: dict[str, Any]) -> str:
                         "actual_length: "
                         f"`{details.get('actual_length')}`"
                     )
-                    lines.append(
-                        f"  - expected_preview: `{details.get('expected_preview', '')}`"
-                    )
-                    lines.append(
-                        f"  - actual_preview: `{details.get('actual_preview', '')}`"
-                    )
+                    lines.append(f"  - expected_preview: `{details.get('expected_preview', '')}`")
+                    lines.append(f"  - actual_preview: `{details.get('actual_preview', '')}`")
         lines.append("")
         return "\n".join(lines)
 

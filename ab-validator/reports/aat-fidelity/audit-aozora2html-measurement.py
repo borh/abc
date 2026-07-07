@@ -7,7 +7,7 @@ import argparse
 import json
 import os
 import subprocess
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -57,9 +57,7 @@ def duckdb_json(db_path: Path, sql: str) -> list[dict[str, Any]]:
         check=False,
     )
     if completed.returncode != 0:
-        raise SystemExit(
-            f"duckdb query failed for {db_path}:\n{completed.stderr.strip()}"
-        )
+        raise SystemExit(f"duckdb query failed for {db_path}:\n{completed.stderr.strip()}")
     if not completed.stdout.strip():
         return []
     payload = json.loads(completed.stdout)
@@ -137,21 +135,13 @@ def walk_nodes(value: Any, path: str = "$") -> list[tuple[str, dict[str, Any]]]:
 
 
 def is_kunten_node(node: dict[str, Any]) -> bool:
-    return (
-        node.get("style_type") in {"kaeriten", "okurigana"}
-        or (
-            node.get("kind") == "ruby"
-            and node.get("x-annotation-type") == "okurigana"
-        )
+    return node.get("style_type") in {"kaeriten", "okurigana"} or (
+        node.get("kind") == "ruby" and node.get("x-annotation-type") == "okurigana"
     )
 
 
 def semantic_kunten_count(aat: dict[str, Any]) -> int:
-    syntax = (
-        aat.get("meta", {})
-        .get("semantic_summary", {})
-        .get("syntax", {})
-    )
+    syntax = aat.get("meta", {}).get("semantic_summary", {}).get("syntax", {})
     if not isinstance(syntax, dict):
         return 0
     count = 0
@@ -424,25 +414,19 @@ def summarize_observations(observations: dict[str, dict[str, Any]]) -> dict[str,
         "warigaki_works": sum(
             1 for item in observations.values() if int(item.get("warigaki_nodes", 0)) > 0
         ),
-        "warigaki_nodes": sum(
-            int(item.get("warigaki_nodes", 0)) for item in observations.values()
-        ),
+        "warigaki_nodes": sum(int(item.get("warigaki_nodes", 0)) for item in observations.values()),
         "kunten_works": sum(
             1
             for item in observations.values()
             if int(item.get("kunten_nodes", 0)) > 0
             or int(item.get("kunten_semantic_observations", 0)) > 0
         ),
-        "kunten_nodes": sum(
-            int(item.get("kunten_nodes", 0)) for item in observations.values()
-        ),
+        "kunten_nodes": sum(int(item.get("kunten_nodes", 0)) for item in observations.values()),
         "kunten_semantic_observations": sum(
-            int(item.get("kunten_semantic_observations", 0))
-            for item in observations.values()
+            int(item.get("kunten_semantic_observations", 0)) for item in observations.values()
         ),
         "kunten_observations": sum(
-            int(item.get("kunten_nodes", 0))
-            + int(item.get("kunten_semantic_observations", 0))
+            int(item.get("kunten_nodes", 0)) + int(item.get("kunten_semantic_observations", 0))
             for item in observations.values()
         ),
     }

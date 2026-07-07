@@ -42,9 +42,7 @@ SOURCE_MARKUP_BACKED_CAUSES = (
     "body_visible_layout_policy",
     "adapter_text_loss",
 )
-MANUAL_CLASSIFICATION_CAUSES = (
-    "unknown_text_delta",
-)
+MANUAL_CLASSIFICATION_CAUSES = ("unknown_text_delta",)
 LETTER_REGION_MARKERS = ("宛先", "発信地")
 
 
@@ -116,7 +114,8 @@ def generated_preview_starts_with_letter_region(row: dict[str, Any]) -> bool:
     generated_prefix = generated[:32]
     tei_eaj_prefix = tei_eaj[:32]
     has_generated_marker = any(
-        generated_prefix.startswith(marker) or f"］{marker}" in generated_prefix for marker in LETTER_REGION_MARKERS
+        generated_prefix.startswith(marker) or f"］{marker}" in generated_prefix
+        for marker in LETTER_REGION_MARKERS
     )
     has_tei_eaj_marker = any(marker in tei_eaj_prefix for marker in LETTER_REGION_MARKERS)
     return has_generated_marker and not has_tei_eaj_marker
@@ -133,9 +132,16 @@ def classify_different(row: dict[str, Any]) -> str:
     origin = paragraph_origin(row)
     if row_profiles & EDITORIAL_PROFILES:
         return "tei_eaj_editorial_or_enrichment"
-    if relation_at(row, "ruby_expanded_parenless") == "equal" or relation_at(row, "base_drop_parentheticals") == "equal":
+    if (
+        relation_at(row, "ruby_expanded_parenless") == "equal"
+        or relation_at(row, "base_drop_parentheticals") == "equal"
+    ):
         return "ruby_or_parenthetical_policy"
-    if classification.get("source_note_body_excluded") or origin == "source_note_back_routing" or row_profiles & FRONT_BACK_PROFILES:
+    if (
+        classification.get("source_note_body_excluded")
+        or origin == "source_note_back_routing"
+        or row_profiles & FRONT_BACK_PROFILES
+    ):
         return "front_back_source_region_policy"
     if origin == "page_break_projection" or row_profiles & LAYOUT_PROFILES:
         return "body_visible_layout_policy"
@@ -163,7 +169,9 @@ def compact_row(row: dict[str, Any], index: int, cause: str | None = None) -> di
     return result
 
 
-def write_worksets(worksets_dir: pathlib.Path | None, rows_by_cause: dict[str, list[dict[str, Any]]]) -> dict[str, dict[str, Any]]:
+def write_worksets(
+    worksets_dir: pathlib.Path | None, rows_by_cause: dict[str, list[dict[str, Any]]]
+) -> dict[str, dict[str, Any]]:
     records: dict[str, dict[str, Any]] = {}
     if worksets_dir is not None:
         worksets_dir.mkdir(parents=True, exist_ok=True)
@@ -223,7 +231,10 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
     workset_files = write_worksets(args.worksets_dir, rows_by_cause)
     return {
         "schema_version": SCHEMA_VERSION,
-        "matrix_summary": {"path": display_path(args.matrix_summary), "hash": sha256_file(args.matrix_summary)},
+        "matrix_summary": {
+            "path": display_path(args.matrix_summary),
+            "hash": sha256_file(args.matrix_summary),
+        },
         "total_different_rows": total_different,
         "matrix_bucket_different_rows": bucket_different,
         "counts_by_cause": dict(counts),

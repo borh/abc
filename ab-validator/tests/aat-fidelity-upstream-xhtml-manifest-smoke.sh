@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/upstream-xhtml-manifest-smoke"
+out_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/upstream-xhtml-manifest-smoke"
 manifest="$out_dir/manifest.tsv"
 metadata="$out_dir/metadata.csv"
 db_path="$out_dir/fidelity.duckdb"

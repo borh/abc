@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
 export AB_VALIDATOR_ROOT="${AB_VALIDATOR_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+workspace_root="$(cd "$AB_VALIDATOR_ROOT/.." && pwd)"
+if [[ -f "$workspace_root/scripts/soranoha-runtime-env.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$workspace_root/scripts/soranoha-runtime-env.sh"
+fi
 
 smoke_workspace_root() {
   if [[ -n "${AB_WORKSPACE_ROOT:-}" ]]; then

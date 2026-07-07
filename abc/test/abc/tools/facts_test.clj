@@ -18,7 +18,7 @@
 (use-fixtures :each
   (fn [f]
     (reset! tmp-dir (str (Files/createTempDirectory
-                            "abc-facts" (make-array FileAttribute 0))))
+                          "abc-facts" (make-array FileAttribute 0))))
     (f)
     (run! #(.delete (java.io.File. (str @tmp-dir "/" %)))
           ["manifest_identity.pl" "drift.pl" "person_records.pl"])
@@ -73,7 +73,7 @@
   ;; guards the byte-compare committed-facts check (Task 6 Step 3) against
   ;; .listFiles ordering nondeterminism.
   (let [tmp2 (str (Files/createTempDirectory
-                    "abc-facts-stab" (make-array FileAttribute 0)))]
+                   "abc-facts-stab" (make-array FileAttribute 0)))]
     (facts/emit-prolog! @tmp-dir)
     (facts/emit-prolog! tmp2)
     (doseq [f ["manifest_identity.pl" "drift.pl" "person_records.pl"]]
@@ -90,7 +90,7 @@
   ;; .pl files were not regenerated. Runs under clj-nix-focused-tests (which has
   ;; the offline Clojure deps); the SWI Nix gate (Task 6 Step 5) is swipl-only.
   (let [tmp (str (Files/createTempDirectory
-                    "abc-facts-committed" (make-array FileAttribute 0)))]
+                  "abc-facts-committed" (make-array FileAttribute 0)))]
     (facts/emit-prolog! tmp)
     (doseq [f ["manifest_identity.pl" "drift.pl" "person_records.pl"]]
       (is (= (slurp (str "fixtures/v0/facts/prolog/" f))

@@ -672,6 +672,83 @@
               touch "$out"
             '';
 
+        cargoQualityEnv = {
+          nativeBuildInputs = [
+            rustToolchain
+            pkgs.pkg-config
+            pkgs.python3
+            pkgs.zstd
+          ];
+
+          buildInputs = [
+            pkgs.pdfium-binaries
+          ]
+          ++ lib.optionals pkgs.stdenv.isDarwin [
+            pkgs.libiconv
+            pkgs.darwin.apple_sdk.frameworks.Security
+            pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+          ];
+
+          src = source;
+        };
+
+        cargoQualityPrelude = ''
+          set -euo pipefail
+          cp -R "$src" source
+          chmod -R u+w source
+          cd source
+          export HOME="$TMPDIR/home"
+          export CARGO_HOME="$TMPDIR/cargo-home"
+          mkdir -p "$HOME" "$CARGO_HOME"
+          export AB_AOZORA_RS_GAIJI_MENKUTEN_PATH="${aozoraRsGaijiMenkuten}"
+          export AB_AOZORA_RS_GAIJI_CHUKI_PDF="${aozoraRsGaijiChukiPdf}"
+          export AB_AOZORA_RS_GAIJI_PDFIUM_DIR="${pkgs.pdfium-binaries}/lib"
+          export AB_ABC_ROOT="${source}/data/abc-schemas"
+          mkdir -p .cargo
+          cat > .cargo/config.toml <<EOF
+          [source.crates-io]
+          replace-with = "vendored-sources"
+
+          [source."git+https://github.com/WorksApplications/sudachi.rs.git?rev=54e85e8f7e0a6c4b570cd7b103506b080dc60c92"]
+          git = "https://github.com/WorksApplications/sudachi.rs.git"
+          rev = "54e85e8f7e0a6c4b570cd7b103506b080dc60c92"
+          replace-with = "vendored-sources"
+
+          [source."git+https://github.com/o24s/vibrato-rkyv.git?rev=6467251cdb945f8f0ca0c6bfd8c96036ab9d4e12"]
+          git = "https://github.com/o24s/vibrato-rkyv.git"
+          rev = "6467251cdb945f8f0ca0c6bfd8c96036ab9d4e12"
+          replace-with = "vendored-sources"
+
+          [source.vendored-sources]
+          directory = "${abCargoDeps}"
+          EOF
+        '';
+
+        cargoFmtCheck = pkgs.runCommand "ab-validator-cargo-fmt-check" cargoQualityEnv ''
+          ${cargoQualityPrelude}
+          cargo fmt --all -- --check
+          touch "$out"
+        '';
+
+        cargoCheck = pkgs.runCommand "ab-validator-cargo-check" cargoQualityEnv ''
+          ${cargoQualityPrelude}
+          cargo check --workspace --all-targets --offline --locked
+          touch "$out"
+        '';
+
+        cargoClippyCheck = pkgs.runCommand "ab-validator-cargo-clippy-check" cargoQualityEnv ''
+          ${cargoQualityPrelude}
+          cargo clippy \
+            --workspace \
+            --all-targets \
+            --all-features \
+            --offline \
+            --locked \
+            -- \
+            -D warnings
+          touch "$out"
+        '';
+
         devTools = [
           rustToolchain
           pkgs.cargo-nextest
@@ -1217,6 +1294,10 @@
         checks = {
           default = workspaceCheck;
           ab-validator = workspaceCheck;
+          cargo-fmt = cargoFmtCheck;
+          cargo-check = cargoCheck;
+          cargo-clippy = cargoClippyCheck;
+          cargo-test = workspaceCheck;
           upstream-parser-aozora2 = upstreamParserAozora2;
           upstream-parser-aozora-rs = upstreamParserAozoraRs;
           upstream-parser-aozora = upstreamParserAozora;
@@ -1269,8 +1350,12 @@
               vibrato-dict-link() {
                 local name="''${1:-cwj}"
                 local pkg="vibrato-dict-$name"
-                echo "building .#$pkg ..." >&2
-                nix build ".#$pkg" --no-link --print-out-paths | while read -r out; do
+                local attr="$pkg"
+                if ! nix eval ".#packages.$(nix eval --impure --raw --expr builtins.currentSystem).$attr" >/dev/null 2>&1; then
+                  attr="ab-validator-$pkg"
+                fi
+                echo "building .#$attr ..." >&2
+                nix build ".#$attr" --no-link --print-out-paths | while read -r out; do
                   for dict in "$out"/share/vibrato/*.dic.zst; do
                     [ -f "$dict" ] || continue
                     ln -sf "$dict" "dictionary/compiled/$(basename "$dict")"
@@ -1283,7 +1368,8 @@
               # Bootstrap: if no vibrato dictionaries are linked, build the
               # default cwj dictionary automatically. This runs once per
               # checkout; subsequent shells see the existing symlink.
-              if ! compgen -G "dictionary/compiled/*.dic.zst" > /dev/null && \
+              if [ "''${AB_BOOTSTRAP_VIBRATO_DICT:-1}" != "0" ] && \
+                 ! compgen -G "dictionary/compiled/*.dic.zst" > /dev/null && \
                  ! compgen -G "dictionary/compiled/*.dic" > /dev/null; then
                 echo "" >&2
                 echo "No vibrato dictionaries found. Building default (unidic-cwj) …" >&2

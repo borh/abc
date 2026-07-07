@@ -18,6 +18,7 @@ Strategy (revised after data check rejected author-capping):
 
 Outputs JSONL with all original fields + bootstrap_label (copy of label).
 """
+
 from __future__ import annotations
 import json
 import math
@@ -31,12 +32,14 @@ TARGET_N = 300
 MIN_PER_AUTHOR = 4  # sparse-author coverage floor
 SEED = 20260705  # deterministic
 
+
 def author_prefix(work_id: str) -> str:
     parts = work_id.split("_")
     return "_".join(parts[:2])
 
+
 def main() -> None:
-    recs = [json.loads(l) for l in CANDIDATES.read_text().splitlines() if l.strip()]
+    recs = [json.loads(line) for line in CANDIDATES.read_text().splitlines() if line.strip()]
     by_author: dict[str, list] = defaultdict(list)
     for r in recs:
         by_author[author_prefix(r["work_id"])].append(r)
@@ -48,7 +51,6 @@ def main() -> None:
     remaining = TARGET_N - sum(alloc.values())
     # Step 2: distribute remaining proportionally to the candidate-pool share.
     if remaining > 0:
-        min_taken = sum(alloc.values())
         surplus_pool = {a: len(by_author[a]) - alloc[a] for a in authors}
         total_surplus = sum(surplus_pool.values())
         # Proportional floor.
@@ -92,8 +94,11 @@ def main() -> None:
     print(f"wrote {len(out)} records to {OUT}")
     print(f"by author (share of 300): {dict(Counter(author_prefix(r['work_id']) for r in out))}")
     print(f"by bootstrap label: {dict(Counter(r['label'] for r in out))}")
-    print(f"Tanizaki share: {sum(1 for r in out if r['work_id'].startswith('Tanizaki_J'))/len(out):.2f}")
+    print(
+        f"Tanizaki share: {sum(1 for r in out if r['work_id'].startswith('Tanizaki_J')) / len(out):.2f}"
+    )
     assert len(out) == TARGET_N, f"expected {TARGET_N}, got {len(out)} — pool may be too small"
+
 
 if __name__ == "__main__":
     main()

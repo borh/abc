@@ -89,6 +89,12 @@
             exec python scripts/monorepo-flake-input-policy.py "$@"
           '';
 
+          python-quality = pkgs.writeShellScript "soranoha-python-quality" ''
+            set -euo pipefail
+            export PATH="${runtimePath}:$PATH"
+            exec bash scripts/python-quality.sh "$@"
+          '';
+
           validate-migration = pkgs.writeShellScript "soranoha-validate-migration" ''
             set -euo pipefail
             export PATH="${runtimePath}:$PATH"
@@ -136,6 +142,11 @@
             type = "app";
             program = "${scripts.flake-input-policy}";
             meta.description = "Check release-critical flake inputs are explicitly pinned";
+          };
+          python-quality = {
+            type = "app";
+            program = "${scripts.python-quality}";
+            meta.description = "Run monorepo Python ruff and mypy checks";
           };
           validate-migration = {
             type = "app";
@@ -199,6 +210,59 @@
                 bash scripts/monorepo-schema-drift.sh
                 touch "$out"
               '';
+          monorepo-runtime-config =
+            pkgs.runCommand "soranoha-monorepo-runtime-config"
+              {
+                nativeBuildInputs = [
+                  pkgs.bash
+                  pkgs.coreutils
+                ];
+                src = self;
+              }
+              ''
+                cd "$src"
+                bash tests/runtime-config-smoke.sh
+                touch "$out"
+              '';
+          monorepo-python-quality =
+            pkgs.runCommand "soranoha-monorepo-python-quality"
+              {
+                nativeBuildInputs = [
+                  pkgs.findutils
+                  pkgs.git
+                  pkgs.gnused
+                  pkgs.mypy
+                  pkgs.python3
+                  pkgs.ruff
+                ];
+                src = self;
+              }
+              ''
+                cd "$src"
+                export RUFF_CACHE_DIR="$TMPDIR/ruff-cache"
+                export MYPY_CACHE_DIR="$TMPDIR/mypy-cache"
+                bash scripts/python-quality.sh
+                touch "$out"
+              '';
+          monorepo-nix-format =
+            pkgs.runCommand "soranoha-monorepo-nix-format"
+              {
+                nativeBuildInputs = [
+                  pkgs.findutils
+                  pkgs.nixfmt
+                ];
+                src = self;
+              }
+              ''
+                cd "$src"
+                find . \
+                  -path './.git' -prune -o \
+                  -path './.direnv' -prune -o \
+                  -path './result*' -prune -o \
+                  -name '*.nix' -print0 \
+                  | xargs -0 nixfmt --check
+                touch "$out"
+              '';
         }
       );
 
@@ -217,8 +281,40 @@
 
       devShells = forAllSystems (
         system:
-        prefixAttrs "abc-" (optionalOutputAttrs abc "devShells" system)
-        // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "devShells" system)
+        let
+          pkgs = import nixpkgs { inherit system; };
+          abcShells = optionalOutputAttrs abc "devShells" system;
+          abValidatorShells = optionalOutputAttrs ab-validator "devShells" system;
+          inherit (nixpkgs) lib;
+        in
+        prefixAttrs "abc-" abcShells
+        // prefixAttrs "ab-validator-" abValidatorShells
+        // {
+          default = pkgs.mkShell {
+            AB_BOOTSTRAP_VIBRATO_DICT = "0";
+            TEI_SCHEMA_PATH = abcShells.default.TEI_SCHEMA_PATH;
+            inputsFrom =
+              lib.optionals (builtins.hasAttr "default" abcShells) [ abcShells.default ]
+              ++ lib.optionals (builtins.hasAttr "default" abValidatorShells) [
+                abValidatorShells.default
+              ];
+            packages = [
+              pkgs.cljfmt
+              pkgs.clj-kondo
+              pkgs.git
+              pkgs.just
+              pkgs.jq
+              pkgs.mypy
+              pkgs.nixfmt
+              pkgs.ruff
+            ];
+            shellHook = ''
+              if [ -f scripts/soranoha-runtime-env.sh ]; then
+                source scripts/soranoha-runtime-env.sh
+              fi
+            '';
+          };
+        }
       );
     };
 }

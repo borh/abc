@@ -15,8 +15,8 @@ use parquet::file::properties::WriterProperties;
 
 use crate::schema::{
     AnalysisRow, ErrorRow, FeaturePatternCountRow, MorphemeFeatureRow, MorphemeRow,
-    NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionRow, ProjectionSpanRow,
-    RunAnalyzerRow, RunRow, SourceRow, WarehousePaths, WarehouseTable,
+    NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionRow, ProjectionSpanRow, RunAnalyzerRow,
+    RunRow, SourceRow, WarehousePaths, WarehouseTable,
 };
 
 const WAREHOUSE_MAX_ROW_GROUP_SIZE: usize = 50_000;

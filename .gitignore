@@ -1,0 +1,9 @@
+.direnv/
+.ruff_cache/
+.mypy_cache/
+.cargo/
+.soranoha/
+scratch/
+out/
+result
+result-*

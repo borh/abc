@@ -2,12 +2,17 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+workspace_root="$(cd "$repo_root/.." && pwd)"
+if [[ -f "$workspace_root/scripts/soranoha-runtime-env.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$workspace_root/scripts/soranoha-runtime-env.sh"
+fi
 
 case_id=""
 source_path=""
 upstream_xhtml=""
-out_dir="${AB_AAT_FIDELITY_XHTML_OUT_DIR:-/db/ab-validator/aat-fidelity/xhtml-observations}"
-db_path="${AB_AAT_FIDELITY_DB:-/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb}"
+out_dir="${AB_AAT_FIDELITY_XHTML_OUT_DIR:-${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/xhtml-observations}"
+db_path="${AB_AAT_FIDELITY_DB:-${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/cross-adapter/fidelity.duckdb}"
 report_id="${AB_AAT_FIDELITY_REPORT_ID:-cross-adapter}"
 card_url=""
 source_url=""
@@ -74,8 +79,8 @@ usage: compare-aozora-upstream-xhtml.sh \
   --case-id CASE \
   --source source.txt \
   --upstream-xhtml upstream.xhtml \
-  [--out-dir /db/...] \
-  [--db /db/.../fidelity.duckdb] \
+  [--out-dir PATH] \
+  [--db PATH/fidelity.duckdb] \
   [--report-id cross-adapter] \
   [--card-url URL] [--source-url URL] [--upstream-url URL] \
   [--feature-tags tag;tag] [--manifest-status paired]

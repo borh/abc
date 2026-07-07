@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$repo_root/tests/lib/aat-fidelity-env.sh"
 
-out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/aozora2html-aat-full-smoke"
+out_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/aozora2html-aat-full-smoke"
 corpus="$out_dir/corpus"
 work_ids="$out_dir/work-ids.json"
 

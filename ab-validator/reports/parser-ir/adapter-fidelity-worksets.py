@@ -122,13 +122,14 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
         elif bucket:
             unknown_bucket_counts[bucket] = unknown_bucket_counts.get(bucket, 0) + 1
     workset_files = (
-        write_workset_files(args.worksets_dir, worksets)
-        if args.worksets_dir is not None
-        else {}
+        write_workset_files(args.worksets_dir, worksets) if args.worksets_dir is not None else {}
     )
     return {
         "schema_version": SCHEMA_VERSION,
-        "matrix_summary": {"path": display_path(args.matrix_summary), "hash": sha256_file(args.matrix_summary)},
+        "matrix_summary": {
+            "path": display_path(args.matrix_summary),
+            "hash": sha256_file(args.matrix_summary),
+        },
         "included_buckets": list(INCLUDED_BUCKETS),
         "excluded_buckets": list(EXCLUDED_BUCKETS),
         "worksets": worksets,
@@ -138,7 +139,9 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-def write_workset_files(worksets_dir: pathlib.Path, worksets: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def write_workset_files(
+    worksets_dir: pathlib.Path, worksets: dict[str, dict[str, Any]]
+) -> dict[str, Any]:
     if worksets_dir.exists():
         if worksets_dir.is_dir():
             shutil.rmtree(worksets_dir)
@@ -179,13 +182,24 @@ def render_markdown(summary: dict[str, Any]) -> str:
     ]
     for bucket, workset in summary["worksets"].items():
         lines.append(f"| `{bucket}` | {workset['count']} |")
-    lines.extend(["", "Excluded buckets: " + ", ".join(f"`{bucket}`" for bucket in summary["excluded_buckets"]), ""])
+    lines.extend(
+        [
+            "",
+            "Excluded buckets: "
+            + ", ".join(f"`{bucket}`" for bucket in summary["excluded_buckets"]),
+            "",
+        ]
+    )
     if summary.get("workset_files"):
         lines.extend(["## Runnable Worksets", ""])
         for bucket, record in summary["workset_files"].items():
-            lines.append(f"- `{bucket}` all: `{record['all']['path']}` ({record['all']['count']} works)")
+            lines.append(
+                f"- `{bucket}` all: `{record['all']['path']}` ({record['all']['count']} works)"
+            )
             for adapter_name, adapter_record in record["by_adapter"].items():
-                lines.append(f"  - `{adapter_name}`: `{adapter_record['path']}` ({adapter_record['count']} works)")
+                lines.append(
+                    f"  - `{adapter_name}`: `{adapter_record['path']}` ({adapter_record['count']} works)"
+                )
         lines.append("")
     return "\n".join(lines)
 

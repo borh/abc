@@ -317,7 +317,9 @@ def group_counts(records):
     grouped = collections.Counter((record["state"], record["level"]) for record in records)
     return [
         {"state": state, "level": level, "count": count}
-        for (state, level), count in sorted(grouped.items(), key=lambda item: (item[0][0] or "", item[0][1] or ""))
+        for (state, level), count in sorted(
+            grouped.items(), key=lambda item: (item[0][0] or "", item[0][1] or "")
+        )
     ]
 
 
@@ -355,7 +357,9 @@ def build_all_work_report(abc_tei_specs, abc_tei_dirs, source_root, source_rev=N
     counterparts = discover_abc_counterparts(abc_tei_specs, abc_tei_dirs)
     rows = [all_work_comparison_row(counterparts, record) for record in records]
     compared_rows = [row for row in rows if row["abc_path"]]
-    missing_counterpart_rows = [row for row in rows if row["missing_reason"] == "missing_abc_counterpart"]
+    missing_counterpart_rows = [
+        row for row in rows if row["missing_reason"] == "missing_abc_counterpart"
+    ]
     no_work_id_rows = [row for row in rows if row["missing_reason"] == "no_tei_eaj_work_id"]
     return {
         "abc_tei_specs": [str(spec) for spec in abc_tei_specs],
@@ -368,7 +372,9 @@ def build_all_work_report(abc_tei_specs, abc_tei_dirs, source_root, source_rev=N
         "tei_eaj_root": pathlib.Path(source_root).as_posix(),
         "tei_eaj_source_rev": source_rev,
         "tei_eaj_file_count": len(records),
-        "tei_eaj_work_id_count": len({record["work_id"] for record in records if record.get("work_id")}),
+        "tei_eaj_work_id_count": len(
+            {record["work_id"] for record in records if record.get("work_id")}
+        ),
         "tei_eaj_groups": group_counts(records),
         "feature_prevalence": feature_prevalence(records),
         "corpus_rows": corpus_rows(records),
@@ -378,7 +384,9 @@ def build_all_work_report(abc_tei_specs, abc_tei_dirs, source_root, source_rev=N
         "no_work_id_count": len(no_work_id_rows),
         "uncompared_file_count": len(missing_counterpart_rows) + len(no_work_id_rows),
         "base_text_equal_count": sum(1 for row in compared_rows if row["base_text_equal"]),
-        "base_text_mismatch_count": sum(1 for row in compared_rows if row["base_text_equal"] is False),
+        "base_text_mismatch_count": sum(
+            1 for row in compared_rows if row["base_text_equal"] is False
+        ),
     }
 
 
@@ -408,7 +416,9 @@ def markdown_table(headers, rows):
         "| " + " | ".join("---" for _ in headers) + " |",
     ]
     for row in rows:
-        lines.append("| " + " | ".join(str(cell) if cell is not None else "" for cell in row) + " |")
+        lines.append(
+            "| " + " | ".join(str(cell) if cell is not None else "" for cell in row) + " |"
+        )
     return "\n".join(lines)
 
 
@@ -607,7 +617,9 @@ def render_all_work_markdown(report):
             "",
         ]
     )
-    counterpart_rows = [[work_id, compact_path(path)] for work_id, path in report["abc_counterparts"].items()]
+    counterpart_rows = [
+        [work_id, compact_path(path)] for work_id, path in report["abc_counterparts"].items()
+    ]
     if counterpart_rows:
         lines.append(markdown_table(["Work ID", "ABC TEI"], counterpart_rows))
     else:
@@ -633,7 +645,9 @@ def render_all_work_markdown(report):
                 row["level"],
                 row["title"],
                 compact_path(row["abc_path"]),
-                "" if row["base_text_equal"] is None else ("yes" if row["base_text_equal"] else "no"),
+                ""
+                if row["base_text_equal"] is None
+                else ("yes" if row["base_text_equal"] else "no"),
                 row["abc_body_base_text_length"],
                 row["tei_eaj_body_base_text_length"],
                 p_counts.get("abc"),
@@ -744,9 +758,15 @@ def workset_export(report):
             "base_text_equal_count": report["base_text_equal_count"],
             "base_text_mismatch_count": report["base_text_mismatch_count"],
         },
-        "candidate_work_ids": sorted({row["work_id"] for row in report["all_work_rows"] if row["work_id"]}, key=int),
+        "candidate_work_ids": sorted(
+            {row["work_id"] for row in report["all_work_rows"] if row["work_id"]}, key=int
+        ),
         "missing_abc_counterpart_work_ids": sorted(
-            {row["work_id"] for row in report["all_work_rows"] if row["missing_reason"] == "missing_abc_counterpart"},
+            {
+                row["work_id"]
+                for row in report["all_work_rows"]
+                if row["missing_reason"] == "missing_abc_counterpart"
+            },
             key=int,
         ),
         "no_work_id_files": [
@@ -763,14 +783,34 @@ def render_workset_json(report):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Compare ABC TEI with pinned TEI-EAJ/aozora_tei files.")
-    parser.add_argument("--report", choices=["melos", "all-work"], default="melos", help="Report to generate")
-    parser.add_argument("--abc", help="ABC-generated Melos TEI path, or one ABC TEI path for all-work indexing")
-    parser.add_argument("--abc-tei", action="append", default=[], help="ABC TEI counterpart path or WORK_ID=PATH mapping")
-    parser.add_argument("--abc-tei-dir", action="append", default=[], help="Directory to scan recursively for ABC TEI counterparts")
-    parser.add_argument("--tei-eaj-root", required=True, help="Pinned TEI-EAJ/aozora_tei checkout root")
+    parser = argparse.ArgumentParser(
+        description="Compare ABC TEI with pinned TEI-EAJ/aozora_tei files."
+    )
+    parser.add_argument(
+        "--report", choices=["melos", "all-work"], default="melos", help="Report to generate"
+    )
+    parser.add_argument(
+        "--abc", help="ABC-generated Melos TEI path, or one ABC TEI path for all-work indexing"
+    )
+    parser.add_argument(
+        "--abc-tei",
+        action="append",
+        default=[],
+        help="ABC TEI counterpart path or WORK_ID=PATH mapping",
+    )
+    parser.add_argument(
+        "--abc-tei-dir",
+        action="append",
+        default=[],
+        help="Directory to scan recursively for ABC TEI counterparts",
+    )
+    parser.add_argument(
+        "--tei-eaj-root", required=True, help="Pinned TEI-EAJ/aozora_tei checkout root"
+    )
     parser.add_argument("--source-rev", default=None, help="Pinned TEI-EAJ source revision")
-    parser.add_argument("--format", choices=["markdown", "json"], default="markdown", help="Output format")
+    parser.add_argument(
+        "--format", choices=["markdown", "json"], default="markdown", help="Output format"
+    )
     parser.add_argument("--output", default=None, help="Report output path; stdout when omitted")
     args = parser.parse_args(argv)
 
@@ -785,8 +825,14 @@ def main(argv=None):
         abc_tei_specs = list(args.abc_tei)
         if args.abc:
             abc_tei_specs.append(args.abc)
-        report = build_all_work_report(abc_tei_specs, args.abc_tei_dir, args.tei_eaj_root, args.source_rev)
-        output_text = render_workset_json(report) if args.format == "json" else render_all_work_markdown(report)
+        report = build_all_work_report(
+            abc_tei_specs, args.abc_tei_dir, args.tei_eaj_root, args.source_rev
+        )
+        output_text = (
+            render_workset_json(report)
+            if args.format == "json"
+            else render_all_work_markdown(report)
+        )
     if args.output:
         output = pathlib.Path(args.output)
         output.parent.mkdir(parents=True, exist_ok=True)

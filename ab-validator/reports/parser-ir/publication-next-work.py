@@ -45,9 +45,7 @@ REQUIRED_DOSSIER_SECTIONS = (
     "Current Evidence",
     "Open Decisions",
 )
-TEI_P5_REFERENCE_RE = re.compile(
-    r"`?(\$TEI_P5_ROOT/[^\s`)]+)`?"
-)
+TEI_P5_REFERENCE_RE = re.compile(r"`?(\$TEI_P5_ROOT/[^\s`)]+)`?")
 
 
 def load_json(path: pathlib.Path) -> dict[str, Any]:
@@ -165,7 +163,9 @@ def ir_publication_gate(coverage: dict[str, Any]) -> dict[str, Any]:
         status,
         {
             "verdict": coverage.get("verdict"),
-            "classified_but_not_admitted": closure.get("classified_but_not_admitted", {}).get("count"),
+            "classified_but_not_admitted": closure.get("classified_but_not_admitted", {}).get(
+                "count"
+            ),
             "true_unsupported_gaps": closure.get("true_unsupported_gaps", {}).get("count"),
         },
     )
@@ -179,7 +179,11 @@ def parser_lanes(conversion: dict[str, Any]) -> list[dict[str, Any]]:
             if not isinstance(candidate, dict):
                 continue
             adapter = candidate.get("aat_adapter") or candidate.get("adapter")
-            scope = candidate.get("evidence_scope") if isinstance(candidate.get("evidence_scope"), dict) else {}
+            scope = (
+                candidate.get("evidence_scope")
+                if isinstance(candidate.get("evidence_scope"), dict)
+                else {}
+            )
             if not adapter and isinstance(scope, dict):
                 adapter = scope.get("adapter")
             if not adapter:
@@ -191,7 +195,10 @@ def parser_lanes(conversion: dict[str, Any]) -> list[dict[str, Any]]:
                 "files_failed": as_int(scope.get("files_failed")),
                 "compatibility": candidate.get("compatibility"),
             }
-    return [lanes.get(adapter, {"adapter": adapter, "files_scanned": 0, "files_failed": None}) for adapter in REQUIRED_PARSERS]
+    return [
+        lanes.get(adapter, {"adapter": adapter, "files_scanned": 0, "files_failed": None})
+        for adapter in REQUIRED_PARSERS
+    ]
 
 
 def five_parser_gate(conversion: dict[str, Any], lanes: list[dict[str, Any]]) -> dict[str, Any]:
@@ -317,7 +324,9 @@ def workset_counts(value: Any) -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
-def adapter_worksets_evidence(summary: dict[str, Any], fallback_distortion_rows: int) -> dict[str, Any]:
+def adapter_worksets_evidence(
+    summary: dict[str, Any], fallback_distortion_rows: int
+) -> dict[str, Any]:
     worksets = workset_counts(summary.get("worksets"))
     excluded_counts = workset_counts(summary.get("excluded_counts"))
     total = sum(worksets.values()) if worksets else fallback_distortion_rows
@@ -343,7 +352,9 @@ def missing_dossier_sections(text: str) -> list[str]:
 
 
 def tei_p5_references(text: str) -> list[str]:
-    return sorted({logical_tei_reference(reference) for reference in TEI_P5_REFERENCE_RE.findall(text)})
+    return sorted(
+        {logical_tei_reference(reference) for reference in TEI_P5_REFERENCE_RE.findall(text)}
+    )
 
 
 def logical_tei_reference(reference: str) -> str:
@@ -511,7 +522,11 @@ def text_policy_status(evidence: dict[str, Any]) -> str:
             return "open"
     if isinstance(manual_workset_files, dict):
         for record in manual_workset_files.values():
-            if isinstance(record, dict) and record.get("requires_manual_classification") and as_int(record.get("count")) > 0:
+            if (
+                isinstance(record, dict)
+                and record.get("requires_manual_classification")
+                and as_int(record.get("count")) > 0
+            ):
                 return "open"
     return "complete"
 
@@ -555,7 +570,8 @@ def parser_acceptance_status(evidence: dict[str, Any]) -> str:
     return (
         "complete"
         if evidence.get("spec_status") in {"Accepted", "Admitted", "Complete"}
-        and as_int(evidence.get("required_evidence_paths_total")) == as_int(evidence.get("required_evidence_paths_existing"))
+        and as_int(evidence.get("required_evidence_paths_total"))
+        == as_int(evidence.get("required_evidence_paths_existing"))
         and not evidence.get("missing_required_evidence_paths")
         else "open"
     )
@@ -570,9 +586,19 @@ def next_work_items(
     dossiers: dict[str, Any],
     parser_acceptance: dict[str, Any],
 ) -> list[dict[str, Any]]:
-    text_buckets = matrix.get("body_text_relation_buckets") if isinstance(matrix.get("body_text_relation_buckets"), dict) else {}
-    paragraph_buckets = matrix.get("paragraph_origin_buckets") if isinstance(matrix.get("paragraph_origin_buckets"), dict) else {}
-    adapter_distortion_rows = sum(as_int(paragraph_buckets.get(bucket)) for bucket in ADAPTER_DISTORTION_INCLUDED_BUCKETS)
+    text_buckets = (
+        matrix.get("body_text_relation_buckets")
+        if isinstance(matrix.get("body_text_relation_buckets"), dict)
+        else {}
+    )
+    paragraph_buckets = (
+        matrix.get("paragraph_origin_buckets")
+        if isinstance(matrix.get("paragraph_origin_buckets"), dict)
+        else {}
+    )
+    adapter_distortion_rows = sum(
+        as_int(paragraph_buckets.get(bucket)) for bucket in ADAPTER_DISTORTION_INCLUDED_BUCKETS
+    )
     text_evidence = {
         "different_rows": as_int(text_buckets.get("different")),
         "generated_contains_tei_eaj_rows": as_int(text_buckets.get("generated_contains_tei_eaj")),
@@ -620,7 +646,11 @@ def next_work_items(
 
 
 def next_work_verdict(items: list[dict[str, Any]]) -> str:
-    return VERDICT_COMPLETE if items and all(item.get("status") == "complete" for item in items) else VERDICT_OPEN
+    return (
+        VERDICT_COMPLETE
+        if items and all(item.get("status") == "complete" for item in items)
+        else VERDICT_OPEN
+    )
 
 
 def render_markdown(summary: dict[str, Any]) -> str:
@@ -759,7 +789,10 @@ def build_summary(args: argparse.Namespace) -> dict[str, Any]:
             "text_policy_summary": input_record(args.text_policy_summary),
             "adapter_worksets_summary": input_record(args.adapter_worksets_summary),
             "dossier_dir": {"path": display_path(args.dossier_dir)},
-            "tei_p5_root": {"path": display_tei_p5_root(tei_p5_root), "exists": tei_p5_root.exists()},
+            "tei_p5_root": {
+                "path": display_tei_p5_root(tei_p5_root),
+                "exists": tei_p5_root.exists(),
+            },
             "parser_acceptance_spec": input_record(args.parser_acceptance_spec),
         },
     }

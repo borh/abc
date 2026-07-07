@@ -2,12 +2,13 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$repo_root/tests/lib/smoke-env.sh"
 duckdb_bin="${AB_DUCKDB_BIN:-${DUCKDB:-duckdb}}"
 if [[ -n "$duckdb_bin" ]] && ! command -v "$duckdb_bin" >/dev/null 2>&1; then
   duckdb_bin=duckdb
 fi
 
-root="${AB_REPORT_TEST_ROOT:-/db/ab-validator/tmp/morph-warehouse-report-test}"
+root="${AB_REPORT_TEST_ROOT:-${AB_DB_ROOT:-$repo_root/scratch/state}/tmp/morph-warehouse-report-test}"
 run_dir="$root/run"
 out_dir="$root/report"
 

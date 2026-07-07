@@ -229,12 +229,12 @@ fn paragraph_id(paragraph: &Value) -> String {
 fn paragraph_visible_text(nodes: &[Value]) -> Result<String> {
     let mut text = String::new();
     for node in nodes {
-        text.push_str(&visible_text(node)?);
+        text.push_str(&parser_ir_node_visible_text(node)?);
     }
     Ok(text)
 }
 
-fn visible_text(node: &Value) -> Result<String> {
+pub(crate) fn parser_ir_node_visible_text(node: &Value) -> Result<String> {
     let node_type = node_type(node);
     match node_type {
         "text" | "quote" | "emphasis" | "layout-span" | "heading" | "source-note" => Ok(node

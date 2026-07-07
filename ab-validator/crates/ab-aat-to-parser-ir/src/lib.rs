@@ -2,6 +2,7 @@ pub mod convert;
 pub mod divergence;
 pub mod mapping;
 pub mod ortho_annotations;
+pub mod ortho_detect;
 pub mod schema;
 pub mod sentences;
 pub mod structural_probe;

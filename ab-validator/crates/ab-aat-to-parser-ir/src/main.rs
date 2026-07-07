@@ -35,6 +35,16 @@ enum Command {
         #[arg(long)]
         abc_root: Option<PathBuf>,
     },
+    DetectOrthoAnnotations {
+        #[arg(long)]
+        aat: PathBuf,
+        #[arg(long)]
+        mapping: PathBuf,
+        #[arg(long)]
+        ortho_annotations_out: PathBuf,
+        #[arg(long)]
+        abc_root: Option<PathBuf>,
+    },
     AuditCorpus {
         #[arg(long = "aat-dir", required = true)]
         aat_dirs: Vec<PathBuf>,
@@ -117,6 +127,35 @@ fn main() -> Result<()> {
             std::fs::write(
                 divergence_out,
                 serde_json::to_string_pretty(&output.divergence_bundle)? + "\n",
+            )?;
+        }
+        Command::DetectOrthoAnnotations {
+            aat,
+            mapping,
+            ortho_annotations_out,
+            abc_root,
+        } => {
+            let repo_root = resolve_repo_root(&mapping)?;
+            let abc_root = abc_root
+                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
+            let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
+            let mapping = MappingDocument::from_path(&mapping)?;
+            let schemas = SchemaSet::load(&repo_root, &abc_root)?;
+            let vibrato = std::sync::Arc::new(
+                ab_morph_analyzers::VibratoAnalyzer::unidic_cwj_default()
+                    .context("detect-ortho-annotations requires AB_VIBRATO_DICT or the flake-provided Unidic CWJ dictionary")?,
+            );
+            let detector = ab_ortho_detect::heuristic::HeuristicV1::new(
+                vibrato,
+                ab_ortho_detect::heuristic::HeuristicConfig::default(),
+            );
+            let bundle = ab_aat_to_parser_ir::ortho_detect::detect_orthographic_annotations(
+                aat, mapping, schemas, &detector,
+            )?;
+            std::fs::write(
+                ortho_annotations_out,
+                serde_json::to_string_pretty(&bundle)? + "\n",
             )?;
         }
         Command::AuditCorpus {

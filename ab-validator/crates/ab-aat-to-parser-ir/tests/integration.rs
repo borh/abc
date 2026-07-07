@@ -84,6 +84,33 @@ fn ortho_fixture_aat() -> Value {
     })
 }
 
+struct AlwaysNormalizeDetector;
+
+impl ab_ortho_detect::OrthoDetector for AlwaysNormalizeDetector {
+    fn detector_id(&self) -> ab_ortho_detect::OrthoDetectorId {
+        ab_ortho_detect::OrthoDetectorId::HeuristicV1
+    }
+
+    fn detect(
+        &self,
+        sentences: &[ab_plaintext::SentenceSpan<'_>],
+    ) -> Vec<ab_ortho_detect::OrthoAnnotation> {
+        sentences
+            .iter()
+            .map(|sentence| ab_ortho_detect::OrthoAnnotation {
+                source_byte_range: sentence.byte_offset..sentence.byte_offset + sentence.text.len(),
+                normalized_text: sentence
+                    .text
+                    .replace('ハ', "は")
+                    .replace('デ', "で")
+                    .replace('ア', "あ"),
+                kind: ab_ortho_detect::OrthoNormalization::ScriptKatakanaToHiragana,
+                confidence: None,
+            })
+            .collect()
+    }
+}
+
 fn base_meta(source_encoding: &str, source_hash: &str) -> Value {
     json!({
         "adapter": "fixture",
@@ -265,6 +292,32 @@ fn orthographic_annotations_inject_into_schema_valid_parser_ir() {
         Some(&expected)
     );
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn detect_orthographic_annotations_uses_parser_ir_sentence_coordinates() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let bundle = ab_aat_to_parser_ir::ortho_detect::detect_orthographic_annotations(
+        include_fixture_json("sentence-segmentation-input.aat.json"),
+        mapping,
+        schemas,
+        &AlwaysNormalizeDetector,
+    )
+    .unwrap();
+
+    assert_eq!(bundle.work_id, "000000");
+    assert_eq!(
+        bundle.work_content_hash,
+        "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    );
+    assert_eq!(
+        bundle.coordinate_system,
+        ab_aat_to_parser_ir::ortho_annotations::OrthoCoordinateSystem::DecodedUtf8
+    );
+    assert_eq!(bundle.annotations.len(), 3);
+    assert_eq!(bundle.annotations[0].source_byte_range, 0..24);
+    assert_eq!(bundle.annotations[1].source_byte_range, 24..48);
+    assert_eq!(bundle.annotations[2].source_byte_range, 48..63);
 }
 
 #[test]

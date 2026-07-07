@@ -193,8 +193,12 @@ pub(crate) fn adjudicate(
         let mut winners = Vec::new();
         let mut losers = Vec::new();
         let mut detail = serde_json::Map::new();
+        let mut any_comparable = false;
         for analysis in analyses {
             let reading = analyzer_reading(analysis, base);
+            if reading.align == "exact" {
+                any_comparable = true;
+            }
             let is_match = reading.norm.as_deref() == Some(ruby_norm.as_str());
             if is_match {
                 winners.push(analysis.analyzer.clone());
@@ -215,10 +219,16 @@ pub(crate) fn adjudicate(
         if losers.is_empty() {
             continue;
         }
-        let classification = if winners.is_empty() {
+        // resolved: ≥1 winner. nonstandard_ruby: no winner but ≥1 analyzer produced a
+        // comparable (exact) reading — a genuine reading the dictionaries lack.
+        // no_comparable_reading: no analyzer produced a comparable reading (all
+        // boundary-misalign or no-reading) — not a dictionary signal.
+        let classification = if !winners.is_empty() {
+            "resolved"
+        } else if any_comparable {
             "nonstandard_ruby"
         } else {
-            "resolved"
+            "no_comparable_reading"
         };
         let winning_analyzer = if winners.len() == 1 {
             Some(winners[0].clone())
@@ -241,6 +251,7 @@ pub(crate) fn adjudicate(
             projected_char_start: base.char_start,
             projected_char_end: base.char_end,
             oracle_source: "ruby".to_owned(),
+            classification: classification.to_owned(),
             winning_analyzer,
             losing_analyzers: losers,
             evidence_detail,
@@ -421,6 +432,59 @@ mod tests {
         assert!(rows[0].winning_analyzer.is_none());
         assert_eq!(rows[0].losing_analyzers.len(), 2);
         assert!(rows[0].evidence_detail.contains("nonstandard_ruby"));
+    }
+
+    #[test]
+    fn nonstandard_ruby_when_exact_but_no_match() {
+        // both tile exactly & disagree with the editor → genuine reading gap.
+        let a = analysis("vibrato", vec![morph("本気", 0..2, &[("kana", "ホンキ")])]);
+        let b = analysis(
+            "sudachi-c",
+            vec![morph("本気", 0..2, &[("reading_form", "ホンキ")])],
+        );
+        let rows = adjudicate("r", "s", "t", &[base(0, 2, "マジ")], &[a, b], &regions());
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].classification, "nonstandard_ruby");
+    }
+
+    #[test]
+    fn all_boundary_misalign_is_no_comparable_reading() {
+        // every analyzer straddles the base end → boundary-misalign, zero winners.
+        let a = analysis(
+            "vibrato",
+            vec![morph("本気說", 0..3, &[("kana", "ホンキセツ")])],
+        );
+        let b = analysis(
+            "sudachi-c",
+            vec![morph("本気說", 0..3, &[("reading_form", "ホンキセツ")])],
+        );
+        let rows = adjudicate("r", "s", "t", &[base(0, 2, "ほんき")], &[a, b], &regions());
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].classification, "no_comparable_reading");
+    }
+
+    #[test]
+    fn all_no_reading_is_no_comparable_reading() {
+        // exact tiling but every covered morpheme lacks a reading feature → no-reading.
+        let a = analysis("vibrato", vec![morph("本気", 0..2, &[])]);
+        let b = analysis("sudachi-c", vec![morph("本気", 0..2, &[])]);
+        let rows = adjudicate("r", "s", "t", &[base(0, 2, "ほんき")], &[a, b], &regions());
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].classification, "no_comparable_reading");
+    }
+
+    #[test]
+    fn resolved_row_classification() {
+        let a = analysis("vibrato", vec![morph("東京", 0..2, &[("kana", "トウケイ")])]);
+        let b = analysis(
+            "sudachi-c",
+            vec![morph("東京", 0..2, &[("reading_form", "トウキョウ")])],
+        );
+        let rows = adjudicate(
+            "r", "s", "t", &[base(0, 2, "とうきょう")], &[a, b], &regions(),
+        );
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].classification, "resolved");
     }
 
     #[test]

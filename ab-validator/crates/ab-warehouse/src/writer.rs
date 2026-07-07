@@ -375,6 +375,7 @@ impl WarehouseWriter {
                 u64_array(rows.iter().map(|row| row.projected_char_start)),
                 u64_array(rows.iter().map(|row| row.projected_char_end)),
                 string_array(rows.iter().map(|row| row.oracle_source.as_str())),
+                string_array(rows.iter().map(|row| row.classification.as_str())),
                 nullable_string_array(rows.iter().map(|row| row.winning_analyzer.as_deref())),
                 string_list_array(rows.iter().map(|row| row.losing_analyzers.as_slice())),
                 string_array(rows.iter().map(|row| row.evidence_detail.as_str())),
@@ -1078,6 +1079,7 @@ fn nway_region_oracle_evidence_schema() -> Arc<Schema> {
         u64_field("projected_char_start", false),
         u64_field("projected_char_end", false),
         utf8("oracle_source", false),
+        utf8("classification", false),
         utf8("winning_analyzer", true),
         utf8_list("losing_analyzers"),
         utf8("evidence_detail", false),
@@ -1271,6 +1273,7 @@ mod tests {
                 projected_char_start: 10,
                 projected_char_end: 12,
                 oracle_source: "ruby".to_owned(),
+                classification: "resolved".to_owned(),
                 winning_analyzer: Some("sudachi-c".to_owned()),
                 losing_analyzers: vec!["vibrato:unidic-novel-202512".to_owned()],
                 evidence_detail: r#"{"classification":"resolved"}"#.to_owned(),
@@ -1282,6 +1285,49 @@ mod tests {
                 .unwrap(),
             1
         );
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn oracle_classification_column_round_trips() {
+        let root = temp_dir("oracle-cls");
+        let paths = WarehousePaths::new(&root, "run-cls");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_nway_region_oracle_evidence(&[NwayRegionOracleEvidenceRow {
+                run_id: "run-cls".into(),
+                source_id: "s".into(),
+                text_id: "t".into(),
+                region_index: 0,
+                projected_char_start: 0,
+                projected_char_end: 2,
+                oracle_source: "ruby".into(),
+                classification: "no_comparable_reading".into(),
+                winning_analyzer: None,
+                losing_analyzers: vec!["vibrato".into(), "sudachi-c".into()],
+                evidence_detail: "{}".into(),
+            }])
+            .unwrap();
+        writer.finalize().unwrap();
+
+        let file = File::open(
+            paths
+                .final_dir
+                .join(WarehouseTable::NwayRegionOracleEvidence.file_name()),
+        )
+        .unwrap();
+        let mut reader = ParquetRecordBatchReaderBuilder::try_new(file)
+            .unwrap()
+            .build()
+            .unwrap();
+        let batch = reader.next().unwrap().unwrap();
+        let col = batch
+            .column_by_name("classification")
+            .unwrap()
+            .as_any()
+            .downcast_ref::<StringArray>()
+            .unwrap();
+        assert_eq!(col.value(0), "no_comparable_reading");
         let _ = fs::remove_dir_all(root);
     }
 

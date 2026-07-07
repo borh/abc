@@ -1,6 +1,5 @@
 (ns abc.tools.source-snapshot-workset
   (:require [abc.tools.files :as files]
-            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.tools.cli :as cli]

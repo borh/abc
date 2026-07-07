@@ -8,7 +8,9 @@
             [abc.tools.schema :as schema]
             [abc.tools.shacl :as shacl]
             [abc.tools.validate-design-bundle :as validate]
-            [clojure.test :refer [deftest is testing use-fixtures]]))
+            [clojure.test :refer [deftest is testing use-fixtures]]
+            [malli.core :as m]
+            [malli.generator :as mg]))
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
 
@@ -1257,6 +1259,19 @@
                                 (assoc-in old-registry-entry
                                           [:evidence_scope :corpus]
                                           "duplicate corpus note")]})))))
+
+(deftest aat-parser-ir-registry-generator-backed-validation-test
+  (am/install!)
+  (testing "generated compatibility entries pass the public validator"
+    (let [entry (mg/generate ::am/aat-parser-ir-compat-entry)]
+      (is (m/validate ::am/aat-parser-ir-compat-entry entry))
+      (is (empty? (compat/registry-errors {:entries [entry]})))))
+  (testing "mutating a generated entry to violate conversion file counts is rejected"
+    (let [entry (mg/generate ::am/aat-parser-ir-compat-entry)
+          invalid-entry (assoc-in entry [:evidence_scope :files_succeeded] 99)]
+      (is (has-error? #"files_scanned must equal files_succeeded plus files_failed"
+                      (compat/registry-errors
+                       {:entries [invalid-entry]}))))))
 
 (deftest aat-parser-ir-compatibility-test
   (let [registry (compat/load-registry)]

@@ -325,9 +325,9 @@ pub struct MorphemeFeatureRow {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NwayRegionRow {
-    pub run_id: String,
-    pub source_id: String,
-    pub text_id: String,
+    pub run_id: Arc<str>,
+    pub source_id: Arc<str>,
+    pub text_id: Arc<str>,
     pub region_index: u64,
     pub byte_start: u64,
     pub byte_end: u64,
@@ -342,11 +342,11 @@ pub struct NwayRegionRow {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NwayRegionAnalyzerRow {
-    pub run_id: String,
-    pub source_id: String,
-    pub text_id: String,
+    pub run_id: Arc<str>,
+    pub source_id: Arc<str>,
+    pub text_id: Arc<str>,
     pub region_index: u64,
-    pub analyzer_id: String,
+    pub analyzer_id: Arc<str>,
     pub covers_exactly: bool,
     pub morpheme_start: u64,
     pub morpheme_end: u64,
@@ -370,16 +370,16 @@ pub struct NwayRegionOracleEvidenceRow {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NwayFeatureDiffRow {
-    pub run_id: String,
-    pub source_id: String,
-    pub text_id: String,
+    pub run_id: Arc<str>,
+    pub source_id: Arc<str>,
+    pub text_id: Arc<str>,
     pub region_index: u64,
-    pub feature_key: String,
-    pub scope_type: String,
+    pub feature_key: Arc<str>,
+    pub scope_type: Arc<str>,
     pub scope_position: Option<u64>,
-    pub scope_surface: Option<String>,
-    pub feature_value: Option<String>,
-    pub analyzer_id: String,
+    pub scope_surface: Option<Arc<str>>,
+    pub feature_value: Option<Arc<str>>,
+    pub analyzer_id: Arc<str>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

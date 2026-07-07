@@ -285,6 +285,8 @@
         aat-parser-ir-divergence-schema (files/read-json "schemas/aat-parser-ir-divergence.schema.json")
         aat-parser-ir-divergence-bundle-schema (files/read-json "schemas/aat-parser-ir-divergence-bundle.schema.json")
         parser-ir-publication-preservation-schema (files/read-json "schemas/parser-ir-publication-preservation.schema.json")
+        analysis-recipe-schema (files/read-json "schemas/analysis-recipe.schema.json")
+        analysis-result-schema (files/read-json "schemas/analysis-result.schema.json")
         source-region-coverage-schema (files/read-json "schemas/source-region-coverage.schema.json")
         tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
         iiif-applicability-schema (files/read-json "schemas/iiif-applicability.schema.json")
@@ -300,6 +302,8 @@
                            ["schemas/aat-parser-ir-divergence.schema.json" aat-parser-ir-divergence-schema]
                            ["schemas/aat-parser-ir-divergence-bundle.schema.json" aat-parser-ir-divergence-bundle-schema]
                            ["schemas/parser-ir-publication-preservation.schema.json" parser-ir-publication-preservation-schema]
+                           ["schemas/analysis-recipe.schema.json" analysis-recipe-schema]
+                           ["schemas/analysis-result.schema.json" analysis-result-schema]
                            ["schemas/source-region-coverage.schema.json" source-region-coverage-schema]
                            ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]
                            ["schemas/iiif-applicability.schema.json" iiif-applicability-schema]
@@ -328,6 +332,10 @@
                     "examples/ab-validator-output/source-region-coverage.json")
     (validate-json! aat-parser-ir-divergence-bundle-schema
                     "examples/ab-validator-output/divergence.json")
+    (validate-json! analysis-recipe-schema
+                    "data/analysis-recipes/literary-basic-ja-v1.json")
+    (validate-json! analysis-result-schema
+                    "examples/v0/example-work/analysis-result.json")
     (doseq [record (get (files/read-json "examples/ab-validator-output/divergence.json") "records")]
       (check-errors! (validation-errors aat-parser-ir-divergence-schema record)))
     (validate-json! tei-validation-result-schema
@@ -891,11 +899,12 @@
         (validate-publication-output! publication-output)
         (tel/log! :info "parser-IR publication output ok")
         (tel/log! :info "==> Checking materialized manifest index")
-        (manifest-index/validate-no-reproducibility-conflicts!
-         (manifest-index/index-manifest-files
-          (concat (vals materialized)
-                  [(:plaintext-manifest publication-output)
-                   (:tei-manifest publication-output)])))
+        (let [entries (manifest-index/index-manifest-files
+                       (concat (vals materialized)
+                               [(:plaintext-manifest publication-output)
+                                (:tei-manifest publication-output)]))]
+          (manifest-index/validate-no-reproducibility-conflicts! entries)
+          (manifest-index/validate-analysis-copied-fields! entries))
         (tel/log! :info "materialized manifest index ok")
         (tel/log! :info "==> Checking materialized RDF views")
         (doseq [manifest-path (concat (vals materialized)

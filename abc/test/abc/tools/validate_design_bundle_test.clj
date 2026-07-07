@@ -3,6 +3,7 @@
             [abc.tools.files :as files]
             [abc.tools.malli :as am]
             [abc.tools.manifest :as manifest]
+            [abc.tools.manifest-index :as manifest-index]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.parser-ir-plaintext :as plaintext]
@@ -334,6 +335,62 @@
         (validate/validate-json-schemas! [])
         (is (some #{"schemas/source-region-coverage.schema.json"}
                   @checked-paths))))))
+
+(deftest validate-json-schemas-includes-analysis-fixtures-test
+  (testing "design-bundle schema pass validates analysis recipe and result contracts"
+    (let [checked-schemas (atom [])
+          checked-json (atom [])]
+      (with-redefs [validate/schema-valid! (fn [_schema path]
+                                             (swap! checked-schemas conj path)
+                                             nil)
+                    validate/validate-json! (fn [_schema path]
+                                              (swap! checked-json conj path)
+                                              nil)
+                    validate/validate-json-lines! (fn [& _args] nil)
+                    validate/validation-errors (fn [_schema value]
+                                                 (if (and (map? value)
+                                                          (contains? value "rule_id"))
+                                                   nil
+                                                   [:expected-error]))
+                    compat/load-registry (fn [] {:entries []})
+                    compat/validate-registry! (fn [_registry] :ok)
+                    parser-evidence/load-index (fn [] {:entries []})
+                    parser-evidence/validate-index! (fn [_index] :ok)]
+        (validate/validate-json-schemas! [])
+        (is (every? (set @checked-schemas)
+                    ["schemas/analysis-recipe.schema.json"
+                     "schemas/analysis-result.schema.json"]))
+        (is (every? (set @checked-json)
+                    ["data/analysis-recipes/literary-basic-ja-v1.json"
+                     "examples/v0/example-work/analysis-result.json"]))))))
+
+(deftest validate-analysis-copied-fields-gate-test
+  (let [producer-id (files/example-hash "31")
+        producer {"artifact_id" producer-id
+                  "artifact_kind" "parser-ir"
+                  "validation_status" "passed"
+                  "manifest_identity_object" {"parser_build_hash" (files/example-hash "01")
+                                              "parser_config_hash" (files/example-hash "02")
+                                              "aat_parser_ir_mapping_hash" (files/example-hash "03")
+                                              "parser_ir_schema_hash" (files/example-hash "04")}
+                  "content" {"content_hash" (files/example-hash "05")
+                             "media_type" "application/json"}
+                  "provenance" {"used" []
+                                "was_derived_from" []}}
+        analysis (assoc producer
+                        "artifact_id" (files/example-hash "32")
+                        "artifact_kind" "analysis"
+                        "manifest_identity_object" {"parser_build_hash" (files/example-hash "99")
+                                                    "parser_config_hash" (files/example-hash "02")
+                                                    "aat_parser_ir_mapping_hash" (files/example-hash "03")
+                                                    "parser_ir_schema_hash" (files/example-hash "04")}
+                        "provenance" {"used" [producer-id]
+                                      "was_derived_from" [producer-id]})
+        entries (manifest-index/index-entries {"parser.manifest.json" producer
+                                               "analysis.manifest.json" analysis})]
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"Analysis manifest copied identity fields differ from producer"
+                          (manifest-index/validate-analysis-copied-fields! entries)))))
 
 (deftest source-region-coverage-errors-test
   (testing "accepts the current ab-validator source-region coverage contract"

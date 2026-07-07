@@ -255,6 +255,59 @@
       (is (= {"text" 2} (:node_counts result)))
       (is (empty? (:omitted result))))))
 
+(deftest sentence-rows-render-as-tei-s-test
+  (testing "parser-IR sentence rows drive TEI s wrappers and orthographic type"
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "text"
+                             "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                             "text" "吾輩ハ猫デアル。"}
+                            {"type" "ruby"
+                             "span" {"start" 24 "end" 30 "coordinate_system" "decoded_utf8"}
+                             "ruby" {"base" "名前"
+                                     "reading" "なまえ"
+                                     "scope" "explicit"}}
+                            {"type" "text"
+                             "span" {"start" 30 "end" 45 "coordinate_system" "decoded_utf8"}
+                             "text" "はまだ無い。"}]
+                   "paragraphs" [{"id" "p000000"
+                                  "span" {"start" 0 "end" 45 "coordinate_system" "decoded_utf8"}
+                                  "span_source" "direct"
+                                  "node_range" {"start" 0 "end" 3}
+                                  "role" "body"
+                                  "source_pointer" "blocks[0]"
+                                  "classification" "direct"
+                                  "layout" {"kind" "jisage"
+                                            "indent" 2}}]
+                   "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
+                                            "splitter_id" "ab-plaintext-japanese-v1"
+                                            "coordinate_system" "decoded_utf8"
+                                            "coverage" "body-paragraphs"}
+                   "sentences" [{"id" "s000000"
+                                 "paragraph_id" "p000000"
+                                 "span" {"start" 0 "end" 24 "coordinate_system" "decoded_utf8"}
+                                 "node_range" {"start" 0 "end" 1}
+                                 "tags" ["orthographic-katakana"]
+                                 "orthographic_annotation_indices" [0]}
+                                {"id" "s000001"
+                                 "paragraph_id" "p000000"
+                                 "span" {"start" 24 "end" 45 "coordinate_system" "decoded_utf8"}
+                                 "node_range" {"start" 1 "end" 3}
+                                 "tags" []
+                                 "orthographic_annotation_indices" []}]})
+          paragraph (some #(when (= :p (first %)) %) (hiccup-nodes (:body result)))]
+      (is (= [:p {:rend "jisage indent(2)"
+                  :abc/layout-kind "jisage"
+                  :abc/layout-params "indent=2"}
+              [:s {:type "orthographic-katakana"} "吾輩ハ猫デアル。"]
+              [:s
+               [:ruby {:type "furigana"}
+                [:rb "名前"]
+                [:rt "なまえ"]]
+               "はまだ無い。"]]
+             paragraph))
+      (is (= {"text" 2 "ruby" 1} (:node_counts result)))
+      (is (empty? (:omitted result))))))
+
 (deftest paragraph-layout-renders-every-supported-rend-token-test
   (testing "each supported paragraph layout kind has a deterministic TEI rend token"
     (let [parser-ir {"nodes" [{"type" "text" "span" {"start" 0 "end" 1} "text" "一"}

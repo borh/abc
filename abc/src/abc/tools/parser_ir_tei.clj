@@ -423,12 +423,48 @@
           (render-node-seq node-slice)
           flush-paragraph))))
 
-(defn- render-with-paragraphs [nodes paragraphs]
+(defn- sentence-attrs [sentence]
+  (when (some #{"orthographic-katakana"} (get sentence "tags" []))
+    {:type "orthographic-katakana"}))
+
+(defn- sentence-node [sentence fragment]
+  (if-let [attrs (sentence-attrs sentence)]
+    (into [:s attrs] fragment)
+    (into [:s] fragment)))
+
+(defn- render-sentence-row [nodes acc sentence]
+  (let [{start "start" end "end"} (get sentence "node_range")
+        before-count (count (:current-paragraph acc))
+        rendered (render-node-seq acc (subvec nodes start end))
+        rendered-paragraph (vec (:current-paragraph rendered))
+        prefix (subvec rendered-paragraph 0 before-count)
+        fragment (subvec rendered-paragraph before-count)]
+    (assoc rendered
+           :current-paragraph
+           (conj prefix (sentence-node sentence fragment)))))
+
+(defn- sentences-by-paragraph [sentences]
+  (group-by #(get % "paragraph_id") sentences))
+
+(defn- render-paragraph-row-with-sentences [nodes sentences-by-pid acc paragraph]
+  (let [paragraph-sentences (get sentences-by-pid (get paragraph "id"))]
+    (if (and (= "body" (get paragraph "role"))
+             (seq paragraph-sentences))
+      (-> (assoc acc :current-paragraph-attrs (paragraph-attrs paragraph))
+          (as-> state
+                (reduce (partial render-sentence-row nodes)
+                        state
+                        paragraph-sentences))
+          flush-paragraph)
+      (render-paragraph-row nodes acc paragraph))))
+
+(defn- render-with-paragraphs [nodes paragraphs sentences]
   (validate-paragraph-ranges! nodes paragraphs)
-  (finalize-result
-   (reduce (partial render-paragraph-row nodes)
-           (initial-acc)
-           paragraphs)))
+  (let [sentences-by-pid (sentences-by-paragraph sentences)]
+    (finalize-result
+     (reduce (partial render-paragraph-row-with-sentences nodes sentences-by-pid)
+             (initial-acc)
+             paragraphs))))
 
 (defn- render-flat [nodes]
   (finalize-result
@@ -436,9 +472,10 @@
 
 (defn render [parser-ir]
   (let [nodes (vec (get parser-ir "nodes"))
-        paragraphs (seq (get parser-ir "paragraphs"))]
+        paragraphs (seq (get parser-ir "paragraphs"))
+        sentences (vec (get parser-ir "sentences" []))]
     (if paragraphs
-      (render-with-paragraphs nodes (vec paragraphs))
+      (render-with-paragraphs nodes (vec paragraphs) sentences)
       (render-flat nodes))))
 
 (def covered-node-types

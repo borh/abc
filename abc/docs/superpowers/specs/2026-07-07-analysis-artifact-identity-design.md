@@ -44,6 +44,7 @@ and bounded materialization.
 | Current manifests can represent `artifact_kind = "tokenized"` and `"analysis"`, but sidecar roles do not yet include token or analysis tables. | Observation | `abc/schemas/manifest.schema.json` | High | Schema change scope would differ. |
 | Current v0.4 identity requires one `work_content_hash`; it cannot cleanly identify a collection-wide analysis pack. | Observation | `abc/schemas/manifest.schema.json` | High | Pack design could be simpler if collection identities were already supported. |
 | Nix materialization must not evaluate the full works x parsers x profiles x tokenizers x analyses matrix. | Decision | `abc/docs/adr/0003-nix-materialization.md` | High | Eager matrix designs would be acceptable. |
+| ADR 0003's bounded-materialization cost envelope is not yet accepted. | Observation | `abc/docs/adr/0003-nix-materialization.md` | High | This spec's materialization claims would need stronger wording if the envelope were already proven. |
 | Canonical identity should remain in files and hashes; query runtimes are generated views. | Proposed direction | `abc/docs/handoffs/query-runtime-and-history-index.md` | Medium-high | A database-first design would become viable. |
 | The Rust morph warehouse is strong prior art for Parquet analytical facts and DuckDB scans. | Observation | `ab-validator/crates/ab-warehouse/src/schema.rs`, `ab-validator/docs/morph-corpus-workflow.md` | High | Pack format recommendation would change. |
 | Tokenizer exactness requires pinned build, dictionary, locale/config, normalization, and fixtures. | Draft decision | `abc/docs/v0-design-bundle/tokenizer-determinism.md` | Medium-high | Exact-release policy would be too strict. |
@@ -69,6 +70,9 @@ Prior art used for shape, not as binding ABC contracts:
   bytes actually embed analysis values.
 - Do not solve long-term public package formats such as RO-Crate in this first
   slice, though the design should not block them.
+- Do not claim that bounded Nix materialization is already proven. This design
+  depends on ADR 0003's still-Draft cost envelope, and realization strategies
+  must be measured before release-scale adoption.
 
 ## Glossary
 
@@ -486,6 +490,9 @@ Rules:
   identity.
 - Changing the request set can change the pack identity. It must not change the
   identity of already-realized per-work slices.
+- The null-to-empty-string rule is comparator-only. JCS serialization retains
+  JSON null for `metadata_record_hash`, matching `manifest_identity_object`'s
+  nullable-hash convention.
 
 ## Materialization Flow
 
@@ -502,6 +509,116 @@ source snapshot + manifests
 
 The planner is allowed to use SQLite, DuckDB, or a file index as a generated
 view. The planner must not become the source of artifact identity.
+
+## Nix Materialization Constraints
+
+These constraints keep the identity design compatible with ADR 0003's Nix
+cache, closure, and evaluation goals. They do not replace ADR 0003; they state
+which builder shapes this analysis design requires if Nix is used.
+
+### Evaluation Envelope
+
+The request set is identity-bearing; the realization strategy is a separate
+operational axis. A resolver or planner must estimate the realized slice
+cardinality before emitting Nix targets:
+
+```text
+realized_slice_count =
+  |subjects| x |input_views| x |analysis_recipe_hashes| x max(1, |tokenizer_profile_hashes|)
+```
+
+If that count exceeds the measured ADR 0003 evaluation envelope for per-work
+derivations, the planner must not emit one derivation per slice. It must choose
+one of the bounded-workset alternatives:
+
+- batch derivations with a recorded batch rule, or
+- a single requested-set/CAS realization derivation that writes a populated
+  content-addressed output tree.
+
+The chosen realization strategy and batch rule are run/materialization metadata.
+They are excluded from per-work slice identity and from
+`request_set_identity_object` unless they change pack bytes.
+
+### Build-Time Manifest Reading
+
+Producer identity fields are copied by the analysis tool at build time, not by
+Nix evaluation. A slice derivation takes named input store paths for:
+
+- the producer artifact or tokenized artifact,
+- the exact analysis recipe object,
+- the exact tokenizer profile object when applicable,
+- schemas and policy files required by the recipe.
+
+The Nix expression must not parse producer manifests during evaluation to
+construct child `manifest_identity_object` values. Evaluation should assemble
+store paths and builder arguments; the builder reads manifests, copies required
+identity fields according to the input-view map, computes output bytes, and
+writes the child manifest.
+
+### Determinism Tier and Derivation Kind
+
+Determinism tier controls cache policy:
+
+| Tier | Nix realization | Substitution policy |
+|---|---|---|
+| `exact` | Fixed-output or content-addressed release replay once `content_hash` is known. Initial discovery builds may be input-addressed until the output hash is recorded. | Content-addressed cache or trusted signed cache; release replay must verify the declared `content_hash`. |
+| `stable` / `bounded` | Input-addressed derivation. | Trusted signed binary cache only; output remains useful but is not claimed as exact. |
+| `exploratory` | Input-addressed or local script realization. | Local only; not published to release binary caches. |
+
+Do not make non-exact analysis slices fixed-output release artifacts. Do not
+publish exact claims for input-addressed outputs unless a later replay verifies
+the manifest `content.content_hash` under the exact recipe and input
+coordinates.
+
+### Closure Boundary
+
+Per-work analysis slice derivations must not take the corpus snapshot store path
+as a direct input. Their named text input is the producer artifact store path
+for the per-work parser-IR, plaintext, TEI, or tokenized artifact. The
+`corpus_snapshot_hash` remains in manifest identity and provenance for citation
+and audit.
+
+The source snapshot is a Nix input at the source/parse tier only, where
+per-work or per-batch producer artifacts are created. This prevents every
+analysis slice closure from pulling the full corpus snapshot into consumers'
+stores.
+
+### Registry Realization
+
+Recipe and tokenizer-profile registries must be realized as per-hash store
+paths, not as a directory whose whole contents are an input to every slice.
+Adding a new recipe/profile must not rotate the store path for historical
+recipe/profile objects.
+
+Acceptable shapes:
+
+- a resolver outside Nix maps each `analysis_recipe_hash` or
+  `tokenizer_profile_hash` to an exact file/store path and passes only those
+  paths to the builder, or
+- Nix exposes one file value per recipe/profile hash, and slice derivations
+  reference only the specific hashes used by the request set.
+
+Avoid `builtins.readDir` or `builtins.readFile` over a mutable registry
+directory during evaluation for slice construction.
+
+### Binary Cache Trust Boundary
+
+ABC artifact identity and Nix cache identity are not the same coordinate.
+Manifests distinguish `artifact_id` from `content.content_hash`; binary caches
+and substituters operate at the store-path/content layer. Intentional reuse of
+the same content under multiple artifact ids is allowed, but release review
+must audit the shared `content_hash` provenance and signature policy because a
+bad cached content object affects every artifact id that cites it.
+
+### Batch Failure Model
+
+If a future planner uses batch derivations, a per-work analysis failure is data
+inside the batch output, not necessarily a Nix derivation failure. A batch
+builder must run every member it can, emit per-work success or failed manifests,
+and fail the derivation only when the batch-level contract is broken, such as a
+malformed output tree, missing required indexes, or a tool/runtime failure that
+prevents reliable per-work attribution. This preserves ADR 0003's requirement
+that failures remain attributable to individual works.
 
 The pack writer may use Parquet for corpus-scale metrics and token facts. It
 should include columns sufficient to rejoin every row to canonical manifests:
@@ -526,6 +643,9 @@ should include columns sufficient to rejoin every row to canonical manifests:
 - `unit`
 - `status`
 - `warning_count`
+
+The pack column list is itself an output-format contract. Its schema or table
+layout hash is the pack's `output_format_spec_hash`.
 
 ## Error Handling
 
@@ -592,9 +712,19 @@ analysis is no longer merely an informational sidecar for that publication.
 
 | Finding | Classification | Observation | Risk | Resolution |
 |---|---|---|---|---|
+| ADR 0003 cost envelope is still Draft. | Follow-up | The materialization policy has synthetic evidence but no accepted smoke-corpus measurement. | Readers may treat bounded materialization as already proven. | State this dependency explicitly; request-set planners must respect the measured ADR 0003 envelope before release-scale adoption. |
 | Input view dependencies can drift across implementers. | Mitigated for first slice | Without a mapping, implementers could choose different parser/mapping fields for the same logical input view. | Same logical slice could produce different artifact ids. | Add the input-view identity map and require exact copying from producer manifests. First slice supports `parser-ir-plaintext-body-v1` only. |
 | Request-set identity can be circular or collision-prone. | Mitigated | A request set contains a derived id plus content coordinates. | Including the id creates circular hashing; hashing only subjects collides across recipes/profiles. | Define `request_set_identity_object`, exclude `request_set_id`, include recipe/profile hashes and pack policy hash, and fix array sort keys. |
 | Semantic ids can drift over time. | Mitigated | Recipe/profile ids may supersede older content. | Stable-looking request sets could resolve to different recipe/profile bytes later. | Resolver stores semantic ids for humans but hashes for identity; only content hashes participate in request-set identity. |
+| Request-set cardinality can exceed Nix evaluation budget. | Blocking for second ADR | Identity-bounded request sets can still produce many derivations. | A stable `request_set_id` could name an unbuildable release target under ADR 0003's envelope. | Planner must choose per-work, batch, or single-CAS realization based on measured evaluation budget; realization strategy is separate from identity. |
+| Producer identity copying can happen at the wrong time. | Mitigated | Copying producer fields could be done by evaluator or by builder. | Eval-time manifest parsing scales with slice count and harms cache behavior. | Require build-time copying by the analysis tool; Nix passes store paths and does not parse producer manifests during evaluation. |
+| Determinism tier lacks cache semantics. | Mitigated | Exact/stable/bounded/exploratory were semantic tiers only. | Exact outputs might miss content-addressed cache behavior; non-exact outputs might be forced into fixed-output builds. | Add tier-to-realization mapping: exact release replay verifies content hash; stable/bounded are input-addressed signed-cache; exploratory is local-only. |
+| Per-work slices could close over full corpus snapshots. | Mitigated | `corpus_snapshot_hash` is identity-bearing, but the snapshot store path need not be a slice input. | Every slice closure could pull the full corpus into consumers' stores. | Per-work slice inputs are producer artifact paths; source snapshots are inputs only at source/parse tier. |
+| Registry-as-directory can become a global cache-buster. | Blocking before Nix wiring | Append-only recipe/profile directories change when unrelated recipes are added. | Historical slice derivations would re-evaluate or rebuild when the registry grows. | Realize recipes/profiles as per-hash store paths and pass only the used hash paths to builders. |
+| Binary cache trust is content-layer, not artifact-id-layer. | Mitigated | Multiple artifact ids may cite the same content hash. | A bad cached content object affects every artifact id that accepts it. | Release review must audit shared `content_hash` provenance and signature policy. |
+| Batch derivation failure semantics are ambiguous. | Follow-up | Nix marks a failed derivation as failed, but ADR 0003 requires per-work failure attribution. | Batch builds could lose successful siblings or hide failures incorrectly. | Future batch builders should emit per-work success/failure manifests and fail only on batch-level contract failures. |
+| Request-set null sort wording can be misread. | Mitigated | Null was treated as empty string for sorting. | Implementers could serialize null as `""`, changing `request_set_id`. | Clarify null-to-empty-string is comparator-only; JCS retains JSON null. |
+| Pack column list needs an output-format hash. | Mitigated | The recommended Parquet columns define a layout. | Pack table layout could drift without identity rotation. | State that the pack layout schema/table hash is the pack `output_format_spec_hash`. |
 | Tokenizer config is not fully represented in manifest v0.4 identity. | Blocking for exact standalone tokenized artifacts | v0.4 has build and dictionary hashes but no profile/config hash. | Two token streams with different granularity or normalization could collide if only current fields are used. | Add a tokenizer profile/config hash before accepting the tokenized-artifact release path. Until then, fold profile/config into recipe hash for analysis slices and avoid exact release claims for standalone tokenized artifacts. |
 | Collection packs do not fit work-centric identity. | Blocking for pack manifests | v0.4 requires singular `work_content_hash`. | Pack manifests would misuse work identity or lose the request-set coordinate. | Limit v0.4 to per-work slices; add collection identity schema before publishing canonical packs. |
 | Recipe sidecar could duplicate the registry. | Mitigated | Recipes already live in a content-addressed registry. | Two canonical homes for recipe JSON create drift and citation confusion. | Do not add a generic recipe sidecar in the first slice. Future portable release copies must assert byte equality with the registry object hash. |
@@ -605,10 +735,11 @@ analysis is no longer merely an informational sidecar for that publication.
 | Same content across source coordinates may share one slice. | Accepted tradeoff | Current manifest identity is content-oriented, not path-oriented. | A per-work query may need mapping rows even when artifact ids are shared. | Request sets and pack indexes carry `work_id`, `source_id`, and git/source coordinates. Promote source coordinate to identity only for recipes that depend on it. |
 
 No blocking design finding remains for the first token-independent per-work
-analysis slice. Collection analysis packs require a manifest schema follow-up
-before they become canonical release artifacts. Exact standalone tokenized
-artifacts require a tokenizer profile/config hash before their release path is
-accepted.
+analysis slice as a prototype. If that slice is wired into Nix, it must use the
+build-time producer-copy rule and per-hash recipe store paths from this spec.
+Collection analysis packs require a manifest schema follow-up before they
+become canonical release artifacts. Exact standalone tokenized artifacts
+require a tokenizer profile/config hash before their release path is accepted.
 
 ## First Implementation Slice
 
@@ -625,6 +756,10 @@ The first implementation slice should be deliberately small:
    plaintext input, with tokenizer fields null.
 5. Extend the manifest index enough to include analysis artifact kind and
    reproduce conflict detection.
+6. If the prototype is exposed through Nix, pass the producer artifact and
+   recipe as per-hash store-path inputs, copy producer identity fields at build
+   time, avoid a registry-directory input, and keep the corpus snapshot out of
+   the analysis-slice closure.
 
 Token-dependent metrics, tokenizer profile schemas, and collection packs should
 follow only after the per-work slice contract is validated.
@@ -635,11 +770,11 @@ This spec should feed at least two ADRs:
 
 1. Analysis artifact identity ADR: accepts per-work analysis slices, the
    `parser-ir-plaintext-body-v1` input-view identity map, recipe hash rules,
-   request-set identity construction for bounded builds, publication
-   interaction rules, and failure behavior.
+   request-set identity construction for bounded builds, Nix-safe first-slice
+   realization rules, publication interaction rules, and failure behavior.
 2. Analysis pack and tokenizer profile ADR: accepts collection identity,
-   request-set id reuse, tokenizer profile/config hash, and Parquet pack
-   layout.
+   request-set id reuse, tokenizer profile/config hash, Parquet pack layout,
+   batch/CAS realization policy, and exact cache/substitution policy.
 
 Keeping these separate prevents collection/query packaging from blocking the
 basic per-work analysis contract.

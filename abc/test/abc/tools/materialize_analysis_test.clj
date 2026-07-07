@@ -1,5 +1,6 @@
 (ns abc.tools.materialize-analysis-test
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.analysis-identity :as analysis-identity]
+            [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-analysis :as materialize-analysis]
             [abc.tools.schema :as schema]
@@ -67,18 +68,34 @@
             analysis-manifest (files/read-json manifest-file)
             analysis-result (files/read-json result-file)
             manifest-schema (files/read-json "schemas/manifest.schema.json")
-            result-schema (files/read-json "schemas/analysis-result.schema.json")]
+            result-schema (files/read-json "schemas/analysis-result.schema.json")
+            identity-object (get analysis-manifest "manifest_identity_object")
+            recipe-hash (analysis-identity/analysis-recipe-hash recipe)
+            result-schema-hash (manifest/schema-hash "schemas/analysis-result.schema.json")]
         (is (nil? (schema/validation-errors manifest-schema analysis-manifest)))
         (is (nil? (schema/validation-errors result-schema analysis-result)))
         (is (= "analysis" (get analysis-manifest "artifact_kind")))
         (is (= "analysis-result"
                (get-in analysis-manifest ["sidecars" 0 "role"])))
         (is (= (files/example-hash "03")
-               (get-in analysis-manifest ["manifest_identity_object" "parser_build_hash"])))
+               (get identity-object "parser_build_hash")))
+        (is (= (files/example-hash "04")
+               (get identity-object "parser_config_hash")))
         (is (= (files/example-hash "05")
-               (get-in analysis-manifest ["manifest_identity_object" "aat_parser_ir_mapping_hash"])))
-        (is (nil? (get-in analysis-manifest ["manifest_identity_object" "tokenizer_build_hash"])))
-        (is (nil? (get-in analysis-manifest ["manifest_identity_object" "tokenizer_dictionary_hash"])))
+               (get identity-object "aat_parser_ir_mapping_hash")))
+        (is (= (files/example-hash "06")
+               (get identity-object "parser_ir_schema_hash")))
+        (is (nil? (get identity-object "tokenizer_build_hash")))
+        (is (nil? (get identity-object "tokenizer_dictionary_hash")))
+        (is (= recipe-hash
+               (get identity-object "analysis_recipe_hash")))
+        (is (= result-schema-hash
+               (get identity-object "output_format_spec_hash")))
+        (is (= result-schema-hash
+               (get analysis-result "schema_hash")))
+        (is (= recipe-hash
+               (get analysis-result "analysis_recipe_hash")))
+        (is (nil? (get analysis-result "tokenizer_profile_hash")))
         (is (some #{(files/example-hash "31")}
                   (get-in analysis-manifest ["provenance" "used"])))
         (is (some #{(files/example-hash "31")}

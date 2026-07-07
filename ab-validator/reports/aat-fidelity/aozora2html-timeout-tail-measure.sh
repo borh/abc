@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-corpus="${AB_AOZORA_CORPUS:-$repo_root/references/aozorabunko}"
+corpus="$("$repo_root/scripts/resolve-aozorabunko-corpus.sh")"
 run_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-corpus/aozora2html-full-20260703T020301Z"
 out_dir="${AB_AOZORA2HTML_TIMEOUT_TAIL_OUT:-$run_dir/triage/outputs/timeout-tail}"
 sample="${AB_AOZORA2HTML_TIMEOUT_TAIL_SAMPLE:-10}"

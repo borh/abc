@@ -21,7 +21,7 @@ out_dir="${AB_TEST_OUT_DIR:-/tmp/ab-validator/aozora-epub3-smoke}"
 mkdir -p "$out_dir"
 
 if [[ -z "${AB_AOZORAEPUB3_JAR:-}" ]]; then
-  epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths "$repo_root#reference-aozora-epub3")"
+  epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths "$repo_root#upstream-parser-aozora-epub3")"
   export AB_AOZORAEPUB3_JAR="$epub3_pkg/lib/AozoraEpub3.jar"
 fi
 

@@ -10,7 +10,7 @@
 # data/aozora-syntax-coverage.toml.
 #
 # Env knobs:
-#   AB_CORPUS         corpus root (default: $repo/references/aozorabunko)
+#   AB_CORPUS         corpus root override (default: flake-pinned corpus)
 #   AB_COV_PARSERS    comma-separated parser ids (default: aozora2,aozora-rs,aozora2html)
 #   AB_COV_JOBS       rayon thread count (default: nproc)
 #   AB_COV_TIMEOUT    per-work adapter timeout in seconds (default: 180)
@@ -23,7 +23,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-corpus="${AB_CORPUS:-$repo_root/references/aozorabunko}"
+corpus="$("$repo_root/scripts/resolve-aozorabunko-corpus.sh")"
 parsers="${AB_COV_PARSERS:-aozora2,aozora-rs,aozora2html}"
 jobs="${AB_COV_JOBS:-$(nproc)}"
 timeout="${AB_COV_TIMEOUT:-180}"

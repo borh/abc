@@ -5,7 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$repo_root/tests/lib/smoke-env.sh"
 
 abc_root="$(smoke_abc_root)"
-workset="${AB_TEI_EAJ_WORKSET:-"$abc_root/docs/handoffs/tei-eaj-aozora-workset-export.json"}"
+workset="${AB_TEI_EAJ_WORKSET:-"$abc_root/out/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json"}"
 aat_path="${AB_LEVEL3_AAT:-"/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000035_1567-32ff5a089d67.json"}"
 tei_eaj_file="${AB_LEVEL3_TEI_EAJ_FILE:-"data/complete/tei_lib_lv4/1567_tei.xml"}"
 
@@ -15,7 +15,7 @@ if [[ ! -d "$abc_root" ]]; then
 fi
 
 if [[ ! -f "$workset" ]]; then
-  echo "missing TEI-EAJ workset export at $workset; set AB_TEI_EAJ_WORKSET=/path/to/workset.json" >&2
+  echo "missing TEI-EAJ workset export at $workset; run nix run .#abc-tei-eaj-aozora-workset-json or set AB_TEI_EAJ_WORKSET=/path/to/workset.json" >&2
   exit 2
 fi
 

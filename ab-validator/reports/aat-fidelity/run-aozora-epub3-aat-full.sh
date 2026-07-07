@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$repo_root/tests/lib/aat-fidelity-env.sh"
 
-corpus="$repo_root/references/aozorabunko"
+corpus="$(aat_aozorabunko_corpus)"
 out_dir="${AB_AOZORA_EPUB3_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-epub3-full-$(date -u +%Y%m%dT%H%M%SZ)}"
 jobs="${AB_AOZORA_EPUB3_AAT_FULL_JOBS:-$(nproc)}"
 timeout="${AB_AOZORA_EPUB3_AAT_FULL_TIMEOUT:-300s}"
@@ -81,7 +81,7 @@ adapter="$repo_root/adapters/aozora-epub3/aozora-epub3-adapter"
 run_just aozora-epub3-build
 
 if [[ -z "${AB_AOZORAEPUB3_JAR:-}" ]]; then
-  epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths "$repo_root#reference-aozora-epub3")"
+  epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths "$repo_root#upstream-parser-aozora-epub3")"
   export AB_AOZORAEPUB3_JAR="$epub3_pkg/lib/AozoraEpub3.jar"
 fi
 

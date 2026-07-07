@@ -13,7 +13,7 @@ aozora2_full_aat_dir := env_var_or_default("AB_AOZORA2_AAT_DIR", ab_db_root + "/
 aozora2html_full_aat_dir := env_var_or_default("AB_AOZORA2HTML_AAT_DIR", ab_db_root + "/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter")
 aozora_epub3_full_aat_dir := env_var_or_default("AB_AOZORA_EPUB3_AAT_DIR", ab_db_root + "/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter")
 aozora_full_aat_dir := env_var_or_default("AB_AOZORA_AAT_DIR", ab_db_root + "/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter")
-tei_eaj_workset := env_var_or_default("AB_TEI_EAJ_WORKSET", abc_repo_root + "/docs/handoffs/tei-eaj-aozora-workset-export.json")
+tei_eaj_workset := env_var_or_default("AB_TEI_EAJ_WORKSET", abc_repo_root + "/out/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json")
 aozora2html_flake := repo_root + "#aozora2html"
 vibrato_dictionary_root := repo_root + "/dictionary"
 vibrato_unidic_sources := vibrato_dictionary_root + "/unidic-sources"
@@ -87,8 +87,8 @@ aozora-notation-spec-comparator-flake-smoke:
 	nix build "{{repo_root}}#checks.$system.aozora-notation-spec-comparator-smoke" --print-build-logs
 
 aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2026-07-05-aozora-notation-spec-comparison.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-05-aozora-notation-spec-comparison.summary.json":
-	@vectors="{{VECTORS}}"; if [ -z "$vectors" ]; then vectors="$(nix build --no-link --print-out-paths '{{repo_root}}#reference-aozora-notation-spec')/conformance/vectors"; fi; \
-	aozora_bin="$(nix build --no-link --print-out-paths '{{repo_root}}#reference-aozora')/bin/aozora"; \
+	@vectors="{{VECTORS}}"; if [ -z "$vectors" ]; then vectors="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-aozora-notation-spec')/conformance/vectors"; fi; \
+	aozora_bin="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora')/bin/aozora"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora/Cargo.toml" --release; \
 	python "{{repo_root}}/reports/parser-conformance/run-aozora-notation-spec.py" \
 		--vectors-dir "$vectors" \
@@ -154,7 +154,8 @@ parser-performance-smoke:
 
 parser-performance-all-parsers:
 	@index="${INDEX:-}"; \
-	corpus="${CORPUS:-{{repo_root}}/references/aozorabunko}"; \
+	corpus="${CORPUS:-${AB_AOZORA_CORPUS:-}}"; \
+	if [ -z "$corpus" ]; then corpus="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#aozorabunko-corpus')"; fi; \
 	out_dir="${OUT_DIR:-{{ab_db_root}}/parser-performance/all-parsers-$(date -u +%Y%m%dT%H%M%SZ)}"; \
 	work_ids="${WORK_IDS:-}"; \
 	sample="${SAMPLE:-20}"; \
@@ -162,11 +163,11 @@ parser-performance-all-parsers:
 	stage_split_sample="${STAGE_SPLIT_SAMPLE:-5}"; \
 	jobs="${JOBS:-24}"; \
 	test -n "$index" || { echo "INDEX=/path/to/index.json is required" >&2; exit 2; }; \
-	aozora_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora')"; \
-	aozora2html_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora2html')"; \
-	epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora-epub3')"; \
+	aozora_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora')"; \
+	aozora2html_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora2html')"; \
+	epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora-epub3')"; \
 	epub3_jar="${AB_AOZORAEPUB3_JAR:-$epub3_pkg/lib/AozoraEpub3.jar}"; \
-	test -f "$epub3_jar" || { echo "AozoraEpub3.jar not found: $epub3_jar" >&2; echo "set AB_AOZORAEPUB3_JAR or rebuild {{repo_root}}#reference-aozora-epub3" >&2; exit 2; }; \
+	test -f "$epub3_jar" || { echo "AozoraEpub3.jar not found: $epub3_jar" >&2; echo "set AB_AOZORAEPUB3_JAR or rebuild {{repo_root}}#upstream-parser-aozora-epub3" >&2; exit 2; }; \
 	aozora_pkg_q="$(python -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$aozora_pkg")"; \
 	epub3_jar_q="$(python -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$epub3_jar")"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora2/Cargo.toml" --release --jobs "$jobs"; \
@@ -472,7 +473,7 @@ fidelity-cross-adapter-full-for-case CASE_ID:
 
 upstream-xhtml-full JOBS="0" MAX_CARDS="0" TRIAGE_LIMIT="100":
 	@jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
-	"{{repo_root}}/reports/aat-fidelity/run-upstream-xhtml-full.sh" --aozora-root "{{repo_root}}/references/aozorabunko" --out-dir "{{ab_db_root}}/aat-fidelity/upstream-xhtml-full" --db "{{ab_db_root}}/aat-fidelity/cross-adapter/fidelity.duckdb" --report-id upstream-xhtml-full --jobs "$jobs" --max-cards "{{MAX_CARDS}}" --triage-limit "{{TRIAGE_LIMIT}}"
+	"{{repo_root}}/reports/aat-fidelity/run-upstream-xhtml-full.sh" --out-dir "{{ab_db_root}}/aat-fidelity/upstream-xhtml-full" --db "{{ab_db_root}}/aat-fidelity/cross-adapter/fidelity.duckdb" --report-id upstream-xhtml-full --jobs "$jobs" --max-cards "{{MAX_CARDS}}" --triage-limit "{{TRIAGE_LIMIT}}"
 
 aozora2html-aat-full DIR="" JOBS="0" TIMEOUT="180s" REPORT_ID="" WORK_IDS="" FEATURES="":
 	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-corpus/aozora2html-full-$(date -u +%Y%m%dT%H%M%SZ)"; fi; \
@@ -513,7 +514,6 @@ fidelity-full-run DIR="" JOBS="0" MAX_CARDS="0" TRIAGE_LIMIT="100":
 	AB_AAT_FIDELITY_DB="$run_dir/cross-adapter/fidelity.duckdb" \
 	"{{repo_root}}/reports/aat-fidelity/run-cross-adapter-report.sh"; \
 	"{{repo_root}}/reports/aat-fidelity/run-upstream-xhtml-full.sh" \
-		--aozora-root "{{repo_root}}/references/aozorabunko" \
 		--out-dir "$run_dir/upstream-xhtml-full" \
 		--db "$run_dir/cross-adapter/fidelity.duckdb" \
 		--report-id upstream-xhtml-full \
@@ -1018,7 +1018,7 @@ morph-vaporetto-dictionary-audit:
 # ---- aozora-epub3 adapter ---------------------------------------------------
 
 aozora-epub3-jar:
-	@out="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora-epub3')"; printf '%s/lib/AozoraEpub3.jar\n' "$out"
+	@out="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora-epub3')"; printf '%s/lib/AozoraEpub3.jar\n' "$out"
 
 aozora-epub3-build PROFILE="release":
 	@cargo build --manifest-path "{{repo_root}}/adapters/aozora-epub3/Cargo.toml" --{{PROFILE}}
@@ -1027,7 +1027,7 @@ aozora-epub3-test:
 	@cargo test --manifest-path "{{repo_root}}/adapters/aozora-epub3/Cargo.toml"
 
 aozora-epub3-smoke: aozora-epub3-build
-	@epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora-epub3')"; \
+	@epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora-epub3')"; \
 	printf 'テスト作品\nテスト著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n\n吾輩《わがはい》は猫である。\n\n底本：テスト出版\n' \
 	  | AB_AOZORAEPUB3_JAR="$epub3_pkg/lib/AozoraEpub3.jar" "{{repo_root}}/adapters/aozora-epub3/aozora-epub3-adapter" --mode aat \
 	  | jq -e '.meta.adapter == "aozora-epub3" and .meta.parse_complete == true and (.blocks | length >= 1)' >/dev/null

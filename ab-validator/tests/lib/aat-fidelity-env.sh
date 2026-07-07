@@ -29,6 +29,10 @@ run_py_in_aozora2html_flake() {
   fi
 }
 
+aat_aozorabunko_corpus() {
+  "$AB_VALIDATOR_ROOT/scripts/resolve-aozorabunko-corpus.sh"
+}
+
 aat_duckdb_bin() {
   if [[ -n "${AB_DUCKDB_BIN:-}" && -x "${AB_DUCKDB_BIN}" ]]; then
     echo "${AB_DUCKDB_BIN}"

@@ -16,15 +16,14 @@ from pathlib import Path
 RELEASE_CRITICAL_INPUTS = {
     "aozorabunko-src",
     "mecab-dic-converter-src",
-    "reference-aozora-epub3-src",
-    "reference-aozora-notation-spec-src",
-    "reference-aozora-parser-js-src",
-    "reference-aozora-rs-src",
-    "reference-aozora-src",
-    "reference-aozora2-src",
-    "reference-aozorabunko-extractor-src",
     "tei-eaj-aozora-tei",
     "tei-p5",
+    "upstream-aozora-notation-spec-src",
+    "upstream-aozora-parser-js-src",
+    "upstream-aozora-rs-src",
+    "upstream-aozora-src",
+    "upstream-aozora2-src",
+    "upstream-aozorabunko-extractor-src",
 }
 
 INFRASTRUCTURE_INPUTS = {

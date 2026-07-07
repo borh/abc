@@ -27,7 +27,7 @@ struct Cli {
     matrix: PathBuf,
     #[arg(long)]
     index: PathBuf,
-    #[arg(long, default_value = "references/aozorabunko")]
+    #[arg(long)]
     corpus: PathBuf,
     #[arg(long)]
     work_ids: Option<PathBuf>,

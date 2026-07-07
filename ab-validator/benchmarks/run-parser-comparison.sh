@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-corpus="${AB_CORPUS:-$repo_root/references/aozorabunko}"
+corpus="$("$repo_root/scripts/resolve-aozorabunko-corpus.sh")"
 jobs="${AB_BENCH_JOBS:-$(nproc)}"
 timeout="${AB_BENCH_TIMEOUT:-600s}"
 aat_diff_limit="${AB_AAT_DIFF_LIMIT:-50}"

@@ -8,6 +8,7 @@ metadata=""
 out_dir="${AB_AAT_FIDELITY_XHTML_OUT_DIR:-/db/ab-validator/aat-fidelity/upstream-xhtml}"
 db_path="${AB_AAT_FIDELITY_DB:-/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb}"
 report_id="${AB_AAT_FIDELITY_REPORT_ID:-cross-adapter}"
+aozora_corpus=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -82,8 +83,9 @@ fi
 fetch_input() {
   local value="$1"
   local dest="$2"
+  value="$(expand_input_path "$value")"
   if [[ "$value" =~ ^https?:// ]]; then
-    printf 'remote inputs are not allowed; use local references/aozorabunko paths: %s\n' "$value" >&2
+    printf 'remote inputs are not allowed; use local Aozora corpus paths: %s\n' "$value" >&2
     return 2
   fi
   cp "$value" "$dest"
@@ -91,10 +93,30 @@ fetch_input() {
 
 reject_remote_input() {
   local value="$1"
+  value="$(expand_input_path "$value")"
   if [[ "$value" =~ ^https?:// ]]; then
-    printf 'remote inputs are not allowed; use local references/aozorabunko paths: %s\n' "$value" >&2
+    printf 'remote inputs are not allowed; use local Aozora corpus paths: %s\n' "$value" >&2
     return 2
   fi
+}
+
+resolve_aozora_corpus() {
+  if [[ -z "$aozora_corpus" ]]; then
+    aozora_corpus="$("$repo_root/scripts/resolve-aozorabunko-corpus.sh")"
+  fi
+  printf '%s\n' "$aozora_corpus"
+}
+
+expand_input_path() {
+  local value="$1"
+  case "$value" in
+    '$AOZORABUNKO_CORPUS/'*)
+      printf '%s/%s\n' "$(resolve_aozora_corpus)" "${value#\$AOZORABUNKO_CORPUS/}"
+      ;;
+    *)
+      printf '%s\n' "$value"
+      ;;
+  esac
 }
 
 prepare_source() {

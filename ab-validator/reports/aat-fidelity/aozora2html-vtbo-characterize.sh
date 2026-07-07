@@ -5,7 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 run_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-corpus/aozora2html-full-20260703T020301Z"
 aat_dir="$run_dir/aat/aozora2html-adapter"
 reports_dir="$run_dir/check-reports"
-corpus="${AB_AOZORA_CORPUS:-$repo_root/references/aozorabunko}"
+corpus="$("$repo_root/scripts/resolve-aozorabunko-corpus.sh")"
 out_dir="${AB_AOZORA2HTML_VTBO_OUT:-$run_dir/triage/outputs/vtbo}"
 sample="${AB_AOZORA2HTML_VTBO_SAMPLE:-0}"   # 0 = all 668
 mkdir -p "$out_dir"

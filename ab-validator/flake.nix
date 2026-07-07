@@ -11,32 +11,32 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    reference-aozora2-src = {
+    upstream-aozora2-src = {
       url = "github:takahashim/aozora2/93420b53c7d52579a0ca3fde466cef8ce6d89879";
       flake = false;
     };
 
-    reference-aozora-rs-src = {
+    upstream-aozora-rs-src = {
       url = "github:kinoko0518/aozora-rs/2b2b8f641aee9fd92ed282f03ab060c18542700c";
       flake = false;
     };
 
-    reference-aozora-src = {
+    upstream-aozora-src = {
       url = "github:P4suta/aozora/5df2cfa55a96da3ac74943ab56611b0134ec8076";
       flake = false;
     };
 
-    reference-aozora-notation-spec-src = {
+    upstream-aozora-notation-spec-src = {
       url = "github:P4suta/aozora-notation-spec/b60665fd50b596c967254f99b61f418495656fef";
       flake = false;
     };
 
-    reference-aozora-parser-js-src = {
+    upstream-aozora-parser-js-src = {
       url = "github:cognitom/aozora-parser.js/abaf45422051f418905d9d269f1d2db28ebeed05";
       flake = false;
     };
 
-    reference-aozorabunko-extractor-src = {
+    upstream-aozorabunko-extractor-src = {
       url = "github:globis-org/aozorabunko-extractor/ce439c2b43a4ec0312d12bb89d49e8b186ff0c27";
       flake = false;
     };
@@ -57,12 +57,12 @@
     {
       self,
       nixpkgs,
-      reference-aozora-notation-spec-src,
-      reference-aozora-parser-js-src,
-      reference-aozora-rs-src,
-      reference-aozora-src,
-      reference-aozora2-src,
-      reference-aozorabunko-extractor-src,
+      upstream-aozora-notation-spec-src,
+      upstream-aozora-parser-js-src,
+      upstream-aozora-rs-src,
+      upstream-aozora-src,
+      upstream-aozora2-src,
+      upstream-aozorabunko-extractor-src,
       aozorabunko-src,
       mecab-dic-converter-src,
       flake-utils,
@@ -114,7 +114,7 @@
 
         source = cleanProjectSource ./.;
 
-        buildRustReference =
+        buildRustUpstreamParser =
           {
             name,
             src,
@@ -137,16 +137,16 @@
               ;
           };
 
-        referenceAozora2 = buildRustReference {
-          name = "reference-aozora2";
-          src = reference-aozora2-src;
-          lockFile = reference-aozora2-src + "/Cargo.lock";
+        upstreamParserAozora2 = buildRustUpstreamParser {
+          name = "upstream-parser-aozora2";
+          src = upstream-aozora2-src;
+          lockFile = upstream-aozora2-src + "/Cargo.lock";
         };
 
-        referenceAozoraRs = buildRustReference {
-          name = "reference-aozora-rs";
-          src = reference-aozora-rs-src;
-          lockFile = reference-aozora-rs-src + "/Cargo.lock";
+        upstreamParserAozoraRs = buildRustUpstreamParser {
+          name = "upstream-parser-aozora-rs";
+          src = upstream-aozora-rs-src;
+          lockFile = upstream-aozora-rs-src + "/Cargo.lock";
           cargoBuildFlags = [
             "--package"
             "aozora-rs-core"
@@ -166,10 +166,10 @@
           doCheck = false;
         };
 
-        referenceAozora = buildRustReference {
-          name = "reference-aozora";
-          src = reference-aozora-src;
-          lockFile = reference-aozora-src + "/Cargo.lock";
+        upstreamParserAozora = buildRustUpstreamParser {
+          name = "upstream-parser-aozora";
+          src = upstream-aozora-src;
+          lockFile = upstream-aozora-src + "/Cargo.lock";
           cargoBuildFlags = [
             "--package"
             "aozora-cli"
@@ -183,10 +183,10 @@
           doCheck = false;
         };
 
-        referenceAozoraNotationSpec =
-          pkgs.runCommand "reference-aozora-notation-spec"
+        upstreamAozoraNotationSpec =
+          pkgs.runCommand "upstream-aozora-notation-spec"
             {
-              src = cleanProjectSource reference-aozora-notation-spec-src;
+              src = cleanProjectSource upstream-aozora-notation-spec-src;
             }
             ''
               mkdir -p "$out"
@@ -197,11 +197,11 @@
               test -f "$out/src/grammar/aozora.abnf"
             '';
 
-        referenceAozoraParserJs = pkgs.stdenvNoCC.mkDerivation {
-          pname = "reference-aozora-parser-js";
+        upstreamParserAozoraParserJs = pkgs.stdenvNoCC.mkDerivation {
+          pname = "upstream-parser-aozora-parser-js";
           version = "0.0.0";
 
-          src = cleanProjectSource reference-aozora-parser-js-src;
+          src = cleanProjectSource upstream-aozora-parser-js-src;
 
           installPhase = ''
             runHook preInstall
@@ -223,11 +223,11 @@
           gems."ruby-progressbar"
         ]);
 
-        referenceAozorabunkoExtractor =
-          pkgs.runCommand "reference-aozorabunko-extractor"
+        upstreamToolAozorabunkoExtractor =
+          pkgs.runCommand "upstream-tool-aozorabunko-extractor"
             {
               nativeBuildInputs = [ pkgs.makeWrapper ];
-              src = cleanProjectSource reference-aozorabunko-extractor-src;
+              src = cleanProjectSource upstream-aozorabunko-extractor-src;
               rubyPath = lib.makeBinPath [ rubyWithExtractorGems ];
             }
             ''
@@ -240,15 +240,15 @@
               done
             '';
 
-        referenceAozoraEpub3Version = "1.3.6-jdk21";
+        upstreamParserAozoraEpub3Version = "1.3.6-jdk21";
 
-        referenceAozoraEpub3Release = pkgs.fetchurl {
-          url = "https://github.com/AozoraEpub3-JDK21/AozoraEpub3-JDK21/releases/download/v${referenceAozoraEpub3Version}/AozoraEpub3-${referenceAozoraEpub3Version}.tar.gz";
+        upstreamParserAozoraEpub3Release = pkgs.fetchurl {
+          url = "https://github.com/AozoraEpub3-JDK21/AozoraEpub3-JDK21/releases/download/v${upstreamParserAozoraEpub3Version}/AozoraEpub3-${upstreamParserAozoraEpub3Version}.tar.gz";
           hash = "sha256-iqrnh9ALiNrAmQSmGgHszkl2+tVP2YC0Ebq62NT6JVo=";
         };
 
-        referenceAozoraEpub3 =
-          pkgs.runCommand "reference-aozora-epub3-${referenceAozoraEpub3Version}"
+        upstreamParserAozoraEpub3 =
+          pkgs.runCommand "upstream-parser-aozora-epub3-${upstreamParserAozoraEpub3Version}"
             {
               nativeBuildInputs = [
                 pkgs.gnutar
@@ -257,35 +257,40 @@
             }
             ''
               mkdir -p "$out/bin" "$out/lib/aozora-epub3" "$out/share/licenses/aozora-epub3"
-              tar -xzf ${referenceAozoraEpub3Release} -C "$out/lib/aozora-epub3"
+              tar -xzf ${upstreamParserAozoraEpub3Release} -C "$out/lib/aozora-epub3"
 
               ln -s "$out/lib/aozora-epub3/AozoraEpub3.jar" "$out/lib/AozoraEpub3.jar"
 
-              cat > "$out/bin/reference-aozora-epub3" <<'SH'
+              cat > "$out/bin/upstream-parser-aozora-epub3" <<'SH'
               #!/usr/bin/env bash
               set -euo pipefail
               cd "__AOZORA_EPUB3_HOME__"
               exec "__JAVA__" -jar "__AOZORA_EPUB3_HOME__/AozoraEpub3.jar" "$@"
               SH
-              substituteInPlace "$out/bin/reference-aozora-epub3" \
+              substituteInPlace "$out/bin/upstream-parser-aozora-epub3" \
                 --replace-fail "__AOZORA_EPUB3_HOME__" "$out/lib/aozora-epub3" \
                 --replace-fail "__JAVA__" "${pkgs.jdk21}/bin/java"
-              chmod +x "$out/bin/reference-aozora-epub3"
+              chmod +x "$out/bin/upstream-parser-aozora-epub3"
 
               cp "$out/lib/aozora-epub3/gpl.txt" "$out/share/licenses/aozora-epub3/"
               cp "$out/lib/aozora-epub3/LICENSE.txt" "$out/share/licenses/aozora-epub3/"
               cp "$out/lib/aozora-epub3/THIRD-PARTY-NOTICES.txt" "$out/share/licenses/aozora-epub3/"
             '';
 
-        referenceParsers = pkgs.symlinkJoin {
-          name = "reference-parsers";
+        upstreamParsers = pkgs.symlinkJoin {
+          name = "upstream-parsers";
           paths = [
-            referenceAozora2
-            referenceAozoraRs
-            referenceAozoraEpub3
-            referenceAozoraParserJs
-            referenceAozorabunkoExtractor
+            upstreamParserAozora2
+            upstreamParserAozoraRs
+            upstreamParserAozoraEpub3
+            upstreamParserAozoraParserJs
+            upstreamToolAozorabunkoExtractor
           ];
+        };
+
+        aozorabunkoCorpus = pkgs.symlinkJoin {
+          name = "aozorabunko-corpus";
+          paths = [ aozorabunko-src ];
         };
 
         sudachiDictionaryFullZip = pkgs.fetchurl {
@@ -547,17 +552,17 @@
           mkdir -p "$XDG_CACHE_HOME"
         '';
 
-        nonRustReferenceMetadata = pkgs.runCommand "reference-parser-metadata-check" { } ''
-          test -f ${reference-aozora-parser-js-src}/package.json
-          test -f ${referenceAozoraEpub3}/lib/AozoraEpub3.jar
-          test -f ${referenceAozoraEpub3}/share/licenses/aozora-epub3/gpl.txt
-          test -f ${referenceAozoraEpub3}/share/licenses/aozora-epub3/THIRD-PARTY-NOTICES.txt
-          test -f ${reference-aozorabunko-extractor-src}/Gemfile.lock
+        upstreamNonRustMetadata = pkgs.runCommand "upstream-parser-metadata-check" { } ''
+          test -f ${upstream-aozora-parser-js-src}/package.json
+          test -f ${upstreamParserAozoraEpub3}/lib/AozoraEpub3.jar
+          test -f ${upstreamParserAozoraEpub3}/share/licenses/aozora-epub3/gpl.txt
+          test -f ${upstreamParserAozoraEpub3}/share/licenses/aozora-epub3/THIRD-PARTY-NOTICES.txt
+          test -f ${upstream-aozorabunko-extractor-src}/Gemfile.lock
           touch "$out"
         '';
 
-        referenceAozoraMetadataCheck =
-          pkgs.runCommand "reference-aozora-metadata-check"
+        upstreamAozoraMetadataCheck =
+          pkgs.runCommand "upstream-aozora-metadata-check"
             {
               nativeBuildInputs = [
                 pkgs.bash
@@ -565,13 +570,13 @@
               ];
             }
             ''
-              export AB_REFERENCE_AOZORA="${referenceAozora}"
-              export AB_REFERENCE_AOZORA_NOTATION_SPEC="${referenceAozoraNotationSpec}"
-              bash "${source}/tests/reference-aozora-metadata-smoke.sh"
+              export AB_UPSTREAM_AOZORA="${upstreamParserAozora}"
+              export AB_UPSTREAM_AOZORA_NOTATION_SPEC="${upstreamAozoraNotationSpec}"
+              bash "${source}/tests/upstream-aozora-metadata-smoke.sh"
               touch "$out"
             '';
 
-        referenceParserShell = pkgs.mkShell {
+        upstreamParserShell = pkgs.mkShell {
           packages = devTools ++ [
             rubyWithExtractorGems
             pkgs.bundler
@@ -1071,7 +1076,7 @@
             pkgs.python3Packages.jsonschema
           ];
           extraEnv = {
-            AB_AOZORA_BIN = "${referenceAozora}/bin/aozora";
+            AB_AOZORA_BIN = "${upstreamParserAozora}/bin/aozora";
           };
           extraPreScript = ''
             cargo --config "source.crates-io.replace-with='vendored-sources'" \
@@ -1093,7 +1098,7 @@
         # Reproducible adapter check: build the mapper fully offline from the
         # vendored cargo deps, validate fixture-driven AAT against
         # data/aat-schema.json, and smoke the full wrapper+JAR path against
-        # the pinned AozoraEpub3 release JAR exposed by referenceAozoraEpub3.
+        # the pinned AozoraEpub3 release JAR exposed by upstreamParserAozoraEpub3.
         aozoraEpub3SmokeCheck =
           pkgs.runCommand "aozora-epub3-smoke-check"
             {
@@ -1137,7 +1142,7 @@
               print(f"aozora-epub3 smoke: {len(fixtures)} fixtures schema-valid")
               PY
 
-                            export AB_AOZORAEPUB3_JAR="${referenceAozoraEpub3}/lib/AozoraEpub3.jar"
+                            export AB_AOZORAEPUB3_JAR="${upstreamParserAozoraEpub3}/lib/AozoraEpub3.jar"
                             printf 'テスト作品\nテスト著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n\n吾輩《わがはい》は猫である。\n\n底本：テスト出版\n' \
                               | ${pkgs.bash}/bin/bash "$work_dir/source/adapters/aozora-epub3/aozora-epub3-adapter" --mode aat \
                               | jq -e '.meta.adapter == "aozora-epub3" and .meta.parse_complete == true and (.blocks | length >= 1)' >/dev/null
@@ -1149,15 +1154,16 @@
           default = abValidator;
           ab-validator = abValidator;
           ab-aat-to-parser-ir = abAatToParserIr;
-          reference-aozora2 = referenceAozora2;
-          reference-aozora-rs = referenceAozoraRs;
-          reference-aozora2html = aozora2htmlParser;
-          reference-aozora = referenceAozora;
-          reference-aozora-notation-spec = referenceAozoraNotationSpec;
-          reference-aozora-parser-js = referenceAozoraParserJs;
-          reference-aozorabunko-extractor = referenceAozorabunkoExtractor;
-          reference-aozora-epub3 = referenceAozoraEpub3;
-          reference-parsers = referenceParsers;
+          aozorabunko-corpus = aozorabunkoCorpus;
+          upstream-parser-aozora2 = upstreamParserAozora2;
+          upstream-parser-aozora-rs = upstreamParserAozoraRs;
+          upstream-parser-aozora2html = aozora2htmlParser;
+          upstream-parser-aozora = upstreamParserAozora;
+          upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
+          upstream-parser-aozora-parser-js = upstreamParserAozoraParserJs;
+          upstream-tool-aozorabunko-extractor = upstreamToolAozorabunkoExtractor;
+          upstream-parser-aozora-epub3 = upstreamParserAozoraEpub3;
+          upstream-parsers = upstreamParsers;
           sudachi-dictionary-full = sudachiDictionaryFull;
           mecab-dic-converter = mecabDicConverter;
           vibrato-dict-cwj = vibratoDictCwj;
@@ -1211,12 +1217,12 @@
         checks = {
           default = workspaceCheck;
           ab-validator = workspaceCheck;
-          reference-aozora2 = referenceAozora2;
-          reference-aozora-rs = referenceAozoraRs;
-          reference-aozora = referenceAozora;
-          reference-aozora-notation-spec = referenceAozoraNotationSpec;
-          reference-aozora-metadata = referenceAozoraMetadataCheck;
-          reference-parser-metadata = nonRustReferenceMetadata;
+          upstream-parser-aozora2 = upstreamParserAozora2;
+          upstream-parser-aozora-rs = upstreamParserAozoraRs;
+          upstream-parser-aozora = upstreamParserAozora;
+          upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
+          upstream-aozora-metadata = upstreamAozoraMetadataCheck;
+          upstream-parser-metadata = upstreamNonRustMetadata;
           aat-oracle-data-schema-smoke = aatOracleDataSchemaSmokeCheck;
           aozora2html-rust-parity = aozora2htmlRustParityCheck;
           aozora-smoke = aozoraAdapterSmokeCheck;
@@ -1304,7 +1310,7 @@
             RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
           };
 
-          reference-parsers = referenceParserShell;
+          upstream-parsers = upstreamParserShell;
         };
 
         formatter = pkgs.nixfmt;

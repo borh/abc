@@ -3,7 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-aozora_root="$repo_root/references/aozorabunko"
+aozora_root="$("$repo_root/scripts/resolve-aozorabunko-corpus.sh")"
 out_dir="${AB_AAT_FIDELITY_XHTML_FULL_OUT_DIR:-/db/ab-validator/aat-fidelity/upstream-xhtml-full}"
 db_path="${AB_AAT_FIDELITY_DB:-/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb}"
 report_id="${AB_AAT_FIDELITY_REPORT_ID:-upstream-xhtml-full}"
@@ -66,7 +66,7 @@ if [[ ! "$triage_limit" =~ ^[0-9]+$ || "$triage_limit" == "0" ]]; then
   exit 2
 fi
 if [[ "$aozora_root" =~ ^https?:// ]]; then
-  echo "--aozora-root must be a local references/aozorabunko path" >&2
+  echo "--aozora-root must be a local Aozora corpus path" >&2
   exit 2
 fi
 if [[ ! -d "$aozora_root/cards" ]]; then

@@ -9,7 +9,7 @@ trap 'smoke_cleanup "$tmp"' EXIT
 cat > "$tmp/syntax.toml" <<'TOML'
 [[syntax]]
 id = "ruby.basic"
-reference_sources = ["references/aozorabunko/rules/kijyunn.html"]
+reference_sources = ["aozorabunko/rules/kijyunn.html"]
 source_patterns = ['《[^》]+》']
 
 [syntax.representability]
@@ -18,7 +18,7 @@ status = "typed"
 
 [[syntax]]
 id = "fraction.basic"
-reference_sources = ["references/aozorabunko/rules/comments.html"]
+reference_sources = ["aozorabunko/rules/comments.html"]
 source_patterns = ['分数']
 
 [syntax.representability]

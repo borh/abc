@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$repo_root/tests/lib/aat-fidelity-env.sh"
 
-corpus="$repo_root/references/aozorabunko"
+corpus="$(aat_aozorabunko_corpus)"
 out_dir="${AB_AOZORA_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-full-$(date -u +%Y%m%dT%H%M%SZ)}"
 jobs="${AB_AOZORA_AAT_FULL_JOBS:-$(nproc)}"
 timeout="${AB_AOZORA_AAT_FULL_TIMEOUT:-300s}"

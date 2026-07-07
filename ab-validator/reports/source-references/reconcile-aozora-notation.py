@@ -18,7 +18,7 @@ SCHEMA_VERSION = "aozora-source-reference-reconciliation-v1"
 COMPLETE_VERDICT = "SOURCE_REFERENCE_RECONCILIATION_COMPLETE"
 REVIEW_VERDICT = "SOURCE_REFERENCE_RECONCILIATION_REVIEW_REQUIRED"
 
-OFFICIAL_REFERENCE_FRAGMENT = "references/aozorabunko/rules/"
+OFFICIAL_REFERENCE_FRAGMENT = "aozorabunko/rules/"
 
 P4SUTA_FEATURE_TO_SOURCE_ROWS: dict[str, list[str]] = {
     "accent": ["accent.dotted_letter"],

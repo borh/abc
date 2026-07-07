@@ -4,7 +4,7 @@
 //!   --matrix    path to data/aozora-syntax-coverage.toml
 //!   --index     path to ab-index JSON output (uses .works[] entries to
 //!               resolve work_id -> indexed source path)
-//!   --corpus    corpus root (default: references/aozorabunko)
+//!   --corpus    corpus root
 //!   --work-ids  optional JSON file with a list of work_id strings; default
 //!               is "all works in --index"
 //!   --parsers   comma-separated parser ids
@@ -37,7 +37,7 @@ struct Cli {
     matrix: PathBuf,
     #[arg(long)]
     index: PathBuf,
-    #[arg(long, default_value = "references/aozorabunko")]
+    #[arg(long)]
     corpus: PathBuf,
     #[arg(long)]
     work_ids: Option<PathBuf>,

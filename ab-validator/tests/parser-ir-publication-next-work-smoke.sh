@@ -257,7 +257,7 @@ Parser-IR carries ruby nodes.
 
 ## TEI P5 Target
 
-Use TEI ruby policy. See `abc/references/TEI/P5/Source/Specs/ruby.xml`.
+Use TEI ruby policy. See `$TEI_P5_ROOT/Source/Specs/ruby.xml`.
 
 ## ABC Extension Or Sidecar
 
@@ -323,7 +323,7 @@ Parser-IR carries layout facts.
 
 ## TEI P5 Target
 
-Use TEI rendition policy. See `abc/references/TEI/P5/Source/Specs/hi.xml`.
+Use TEI rendition policy. See `$TEI_P5_ROOT/Source/Specs/hi.xml`.
 
 ## ABC Extension Or Sidecar
 
@@ -405,7 +405,7 @@ jq -e '.next_work_items[] | select(.id == "adapter_fidelity_worksets" and (.evid
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.dossier_count == 3 and .evidence.status_counts."schema-needed" == 1)' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .status == "complete")' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.complete_section_count == 3 and .evidence.incomplete_section_dossiers == [])' "$summary_json" >/dev/null
-jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_count == 2 and (.evidence.dossiers[] | select(.name == "ruby" and .tei_p5_references == ["abc/references/TEI/P5/Source/Specs/ruby.xml"])))' "$summary_json" >/dev/null
+jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_count == 2 and (.evidence.dossiers[] | select(.name == "ruby" and .tei_p5_references == ["$TEI_P5_ROOT/Source/Specs/ruby.xml"])))' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_file_count == 2 and .evidence.tei_p5_reference_directory_count == 0 and .evidence.missing_tei_p5_references == [])' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "tei_p5_mapping_dossiers" and .evidence.tei_p5_reference_root_exists == true and .evidence.unverified_tei_p5_references == [])' "$summary_json" >/dev/null
 jq -e '.next_work_items[] | select(.id == "parser_acceptance_criteria" and .evidence.spec_status == "Draft" and .evidence.required_evidence_inputs == 3)' "$summary_json" >/dev/null

@@ -8,13 +8,13 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "reference-aozora-notation-spec-src": "reference-aozora-notation-spec-src",
-        "reference-aozora-parser-js-src": "reference-aozora-parser-js-src",
-        "reference-aozora-rs-src": "reference-aozora-rs-src",
-        "reference-aozora-src": "reference-aozora-src",
-        "reference-aozora2-src": "reference-aozora2-src",
-        "reference-aozorabunko-extractor-src": "reference-aozorabunko-extractor-src",
-        "rust-overlay": "rust-overlay"
+        "rust-overlay": "rust-overlay",
+        "upstream-aozora-notation-spec-src": "upstream-aozora-notation-spec-src",
+        "upstream-aozora-parser-js-src": "upstream-aozora-parser-js-src",
+        "upstream-aozora-rs-src": "upstream-aozora-rs-src",
+        "upstream-aozora-src": "upstream-aozora-src",
+        "upstream-aozora2-src": "upstream-aozora2-src",
+        "upstream-aozorabunko-extractor-src": "upstream-aozorabunko-extractor-src"
       },
       "locked": {
         "path": "./ab-validator",
@@ -242,108 +242,6 @@
         "url": "https://github.com/NixOS/nixpkgs/archive/eb9ceca17df2ea50a250b6b27f7bf6ab0186f198.tar.gz"
       }
     },
-    "reference-aozora-notation-spec-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1782996881,
-        "narHash": "sha256-/Zs3OqKkyw+cUQDldW+tMBs26F6GZZ0yfPAszyvXz50=",
-        "owner": "P4suta",
-        "repo": "aozora-notation-spec",
-        "rev": "b60665fd50b596c967254f99b61f418495656fef",
-        "type": "github"
-      },
-      "original": {
-        "owner": "P4suta",
-        "repo": "aozora-notation-spec",
-        "rev": "b60665fd50b596c967254f99b61f418495656fef",
-        "type": "github"
-      }
-    },
-    "reference-aozora-parser-js-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1550938107,
-        "narHash": "sha256-561YlmRQon4yC9RMQgVet3DudLk01UuOrSTIc7JCfZo=",
-        "owner": "cognitom",
-        "repo": "aozora-parser.js",
-        "rev": "abaf45422051f418905d9d269f1d2db28ebeed05",
-        "type": "github"
-      },
-      "original": {
-        "owner": "cognitom",
-        "repo": "aozora-parser.js",
-        "rev": "abaf45422051f418905d9d269f1d2db28ebeed05",
-        "type": "github"
-      }
-    },
-    "reference-aozora-rs-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1778117994,
-        "narHash": "sha256-bBPtWKURMmyCeym8dsvfzvwAlY5096uK6xZL2w7XwYs=",
-        "owner": "kinoko0518",
-        "repo": "aozora-rs",
-        "rev": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
-        "type": "github"
-      },
-      "original": {
-        "owner": "kinoko0518",
-        "repo": "aozora-rs",
-        "rev": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
-        "type": "github"
-      }
-    },
-    "reference-aozora-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1783113030,
-        "narHash": "sha256-361j+iuMv9Ep5P2XMQ90qTh5M5S8jqPImy2qGn8GXtE=",
-        "owner": "P4suta",
-        "repo": "aozora",
-        "rev": "5df2cfa55a96da3ac74943ab56611b0134ec8076",
-        "type": "github"
-      },
-      "original": {
-        "owner": "P4suta",
-        "repo": "aozora",
-        "rev": "5df2cfa55a96da3ac74943ab56611b0134ec8076",
-        "type": "github"
-      }
-    },
-    "reference-aozora2-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1767543435,
-        "narHash": "sha256-nrtxilPBk6Xu+XWMih4NhKvKwiq9damCIS8zIUalDkI=",
-        "owner": "takahashim",
-        "repo": "aozora2",
-        "rev": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
-        "type": "github"
-      },
-      "original": {
-        "owner": "takahashim",
-        "repo": "aozora2",
-        "rev": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
-        "type": "github"
-      }
-    },
-    "reference-aozorabunko-extractor-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1698412426,
-        "narHash": "sha256-DqNVhnY9IlTbFLCtPBx9AvwBNM8+u4s2v7JcXYVf7cw=",
-        "owner": "globis-org",
-        "repo": "aozorabunko-extractor",
-        "rev": "ce439c2b43a4ec0312d12bb89d49e8b186ff0c27",
-        "type": "github"
-      },
-      "original": {
-        "owner": "globis-org",
-        "repo": "aozorabunko-extractor",
-        "rev": "ce439c2b43a4ec0312d12bb89d49e8b186ff0c27",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "ab-validator": "ab-validator",
@@ -419,6 +317,108 @@
         "owner": "TEIC",
         "ref": "P5_Release_4.11.0",
         "repo": "TEI",
+        "type": "github"
+      }
+    },
+    "upstream-aozora-notation-spec-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782996881,
+        "narHash": "sha256-/Zs3OqKkyw+cUQDldW+tMBs26F6GZZ0yfPAszyvXz50=",
+        "owner": "P4suta",
+        "repo": "aozora-notation-spec",
+        "rev": "b60665fd50b596c967254f99b61f418495656fef",
+        "type": "github"
+      },
+      "original": {
+        "owner": "P4suta",
+        "repo": "aozora-notation-spec",
+        "rev": "b60665fd50b596c967254f99b61f418495656fef",
+        "type": "github"
+      }
+    },
+    "upstream-aozora-parser-js-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1550938107,
+        "narHash": "sha256-561YlmRQon4yC9RMQgVet3DudLk01UuOrSTIc7JCfZo=",
+        "owner": "cognitom",
+        "repo": "aozora-parser.js",
+        "rev": "abaf45422051f418905d9d269f1d2db28ebeed05",
+        "type": "github"
+      },
+      "original": {
+        "owner": "cognitom",
+        "repo": "aozora-parser.js",
+        "rev": "abaf45422051f418905d9d269f1d2db28ebeed05",
+        "type": "github"
+      }
+    },
+    "upstream-aozora-rs-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1778117994,
+        "narHash": "sha256-bBPtWKURMmyCeym8dsvfzvwAlY5096uK6xZL2w7XwYs=",
+        "owner": "kinoko0518",
+        "repo": "aozora-rs",
+        "rev": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kinoko0518",
+        "repo": "aozora-rs",
+        "rev": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+        "type": "github"
+      }
+    },
+    "upstream-aozora-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1783113030,
+        "narHash": "sha256-361j+iuMv9Ep5P2XMQ90qTh5M5S8jqPImy2qGn8GXtE=",
+        "owner": "P4suta",
+        "repo": "aozora",
+        "rev": "5df2cfa55a96da3ac74943ab56611b0134ec8076",
+        "type": "github"
+      },
+      "original": {
+        "owner": "P4suta",
+        "repo": "aozora",
+        "rev": "5df2cfa55a96da3ac74943ab56611b0134ec8076",
+        "type": "github"
+      }
+    },
+    "upstream-aozora2-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1767543435,
+        "narHash": "sha256-nrtxilPBk6Xu+XWMih4NhKvKwiq9damCIS8zIUalDkI=",
+        "owner": "takahashim",
+        "repo": "aozora2",
+        "rev": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+        "type": "github"
+      },
+      "original": {
+        "owner": "takahashim",
+        "repo": "aozora2",
+        "rev": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+        "type": "github"
+      }
+    },
+    "upstream-aozorabunko-extractor-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1698412426,
+        "narHash": "sha256-DqNVhnY9IlTbFLCtPBx9AvwBNM8+u4s2v7JcXYVf7cw=",
+        "owner": "globis-org",
+        "repo": "aozorabunko-extractor",
+        "rev": "ce439c2b43a4ec0312d12bb89d49e8b186ff0c27",
+        "type": "github"
+      },
+      "original": {
+        "owner": "globis-org",
+        "repo": "aozorabunko-extractor",
+        "rev": "ce439c2b43a4ec0312d12bb89d49e8b186ff0c27",
         "type": "github"
       }
     }

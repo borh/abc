@@ -46,7 +46,7 @@ REQUIRED_DOSSIER_SECTIONS = (
     "Open Decisions",
 )
 TEI_P5_REFERENCE_RE = re.compile(
-    r"`?(\$TEI_P5_ROOT/[^\s`)]+|(?:\.\./)?abc/references/TEI/P5/[^\s`)]+)`?"
+    r"`?(\$TEI_P5_ROOT/[^\s`)]+)`?"
 )
 
 
@@ -64,9 +64,6 @@ def document_hash(value: object) -> str:
 
 def display_tei_p5_root(path: pathlib.Path) -> str:
     resolved = path.resolve()
-    parts = resolved.parts
-    if len(parts) >= 4 and parts[-4:] == ("abc", "references", "TEI", "P5"):
-        return "abc/references/TEI/P5"
     if (resolved / "Source" / "Specs").is_dir():
         return "$TEI_P5_ROOT"
     return display_path(path)
@@ -346,11 +343,11 @@ def missing_dossier_sections(text: str) -> list[str]:
 
 
 def tei_p5_references(text: str) -> list[str]:
-    return sorted({logical_abc_reference(reference) for reference in TEI_P5_REFERENCE_RE.findall(text)})
+    return sorted({logical_tei_reference(reference) for reference in TEI_P5_REFERENCE_RE.findall(text)})
 
 
-def logical_abc_reference(reference: str) -> str:
-    return reference.removeprefix("../")
+def logical_tei_reference(reference: str) -> str:
+    return reference
 
 
 def default_tei_p5_root() -> pathlib.Path:
@@ -361,25 +358,7 @@ def resolve_tei_reference(reference: str, tei_p5_root: pathlib.Path) -> pathlib.
     tei_root_prefix = "$TEI_P5_ROOT/"
     if reference.startswith(tei_root_prefix):
         return (tei_p5_root / reference.removeprefix(tei_root_prefix)).resolve()
-    prefix = "abc/references/TEI/P5/"
-    if reference.startswith(prefix):
-        return (tei_p5_root / reference.removeprefix(prefix)).resolve()
-    legacy_prefix = "../abc/references/TEI/P5/"
-    if reference.startswith(legacy_prefix):
-        return (tei_p5_root / reference.removeprefix(legacy_prefix)).resolve()
-    if not reference.startswith("../abc/"):
-        return (REPO_ROOT / reference).resolve()
-    suffix = reference.removeprefix("../abc/")
-    candidates = [
-        (REPO_ROOT / reference).resolve(),
-        (REPO_ROOT.parent / "abc" / suffix).resolve(),
-    ]
-    if REPO_ROOT.parent.name == ".worktrees":
-        candidates.append((REPO_ROOT.parents[2] / "abc" / suffix).resolve())
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    return candidates[0]
+    return (REPO_ROOT / reference).resolve()
 
 
 def tei_reference_audit(references: list[str], tei_p5_root: pathlib.Path) -> dict[str, Any]:

@@ -610,7 +610,7 @@ pub fn render_markdown(summary: &StructuralProbeSummary) -> String {
     out.push_str("## Interpretation\n\n");
     out.push_str("AAT paragraph segmentation is adapter evidence. Current parser-IR representation is a separate question. A false parser-IR paragraph/source-attribution flag means Level 3 structure is not yet represented by parser-IR, even when visible text is preserved.\n");
     out.push_str("\n## Next Expansion\n\n");
-    out.push_str("Use ABC's machine-readable `../abc/docs/handoffs/tei-eaj-aozora-workset-export.json` for the TEI-EAJ missing-counterpart expansion. The expansion should materialize structural evidence for those rows; it should not turn conversion compatibility evidence into a parser-selection claim.\n");
+    out.push_str("Use ABC's machine-readable generated workset export (`../abc/out/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json`, or an explicit `AB_TEI_EAJ_WORKSET`) for the TEI-EAJ missing-counterpart expansion. The expansion should materialize structural evidence for those rows; it should not turn conversion compatibility evidence into a parser-selection claim.\n");
     out
 }
 

@@ -582,11 +582,8 @@ struct Args {
     #[arg(long, default_value = "0")]
     corpus_limit: usize,
 
-    #[arg(
-        long,
-        default_value = "/home/bor/Projects/abc/references/PARSER_REPORT.md"
-    )]
-    reference: PathBuf,
+    #[arg(long)]
+    reference: Option<PathBuf>,
 
     #[arg(long)]
     write: Option<PathBuf>,
@@ -781,15 +778,17 @@ fn main() -> Result<()> {
         println!("{}", markdown);
     }
 
-    if args.reference.exists() {
-        let observed_set: HashSet<String> = observed.into_iter().collect();
-        let refs = parse_section0(&args.reference)?;
-        verify_section0(&refs, &manual_set, &observed_set);
-    } else {
-        eprintln!(
-            "Skipping PARSER_REPORT §0 verification ({} not found)",
-            args.reference.display()
-        );
+    if let Some(reference) = args.reference {
+        if reference.exists() {
+            let observed_set: HashSet<String> = observed.into_iter().collect();
+            let refs = parse_section0(&reference)?;
+            verify_section0(&refs, &manual_set, &observed_set);
+        } else {
+            eprintln!(
+                "Skipping PARSER_REPORT §0 verification ({} not found)",
+                reference.display()
+            );
+        }
     }
 
     Ok(())

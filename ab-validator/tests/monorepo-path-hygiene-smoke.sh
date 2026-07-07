@@ -14,6 +14,7 @@ summary_path = repo_root / "docs/superpowers/reports/2026-07-06-aozora-publicati
 summary = json.loads(summary_path.read_text(encoding="utf-8"))
 
 bad_values: list[str] = []
+legacy_tei_prefix = "../abc/" + "references/TEI/P5/"
 
 
 def walk(value: object, key_path: tuple[str, ...] = ()) -> None:
@@ -30,7 +31,7 @@ def walk(value: object, key_path: tuple[str, ...] = ()) -> None:
 
     field = key_path[-1] if key_path else ""
     dotted = ".".join(key_path)
-    if value.startswith("../abc/references/TEI/P5/"):
+    if value.startswith(legacy_tei_prefix):
         bad_values.append(f"{dotted}: legacy TEI reference {value}")
     if value.startswith("/home/bor/Projects/"):
         bad_values.append(f"{dotted}: physical checkout path {value}")

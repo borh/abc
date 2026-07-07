@@ -66,6 +66,25 @@
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
           };
+          teiEajAozoraReports =
+            subcommand:
+            pkgs.writeShellScript "abc-tei-eaj-aozora-${subcommand}-launcher" ''
+              exec ${pkgs.python3}/bin/python ${./tools/tei_eaj_aozora_reports.py} \
+                --compare-script ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                --tei-eaj-root ${tei-eaj-aozora-tei} \
+                --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
+                ${subcommand} "$@"
+            '';
+          mkTeiEajAozoraReportApp =
+            {
+              subcommand,
+              description,
+            }:
+            {
+              type = "app";
+              program = toString (teiEajAozoraReports subcommand);
+              meta.description = description;
+            };
         in
         {
           validate-design-bundle = {
@@ -223,90 +242,24 @@
             meta.description = "Print the pinned TEI-EAJ/aozora_tei comparison source path";
           };
 
-          tei-eaj-aozora-melos-report = {
-            type = "app";
-            program = toString (
-              pkgs.writeShellScript "abc-tei-eaj-aozora-melos-report" ''
-                set -euo pipefail
-                output="''${1:-docs/handoffs/tei-eaj-aozora-melos-comparison-report.md}"
-                exec ${pkgs.python3}/bin/python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
-                  --report melos \
-                  --abc paper/demo-melos-real/tei.xml \
-                  --tei-eaj-root ${tei-eaj-aozora-tei} \
-                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
-                  --output "$output"
-              ''
-            );
-            meta.description = "Regenerate the ABC vs TEI-EAJ Melos comparison report";
+          tei-eaj-aozora-melos-report = mkTeiEajAozoraReportApp {
+            subcommand = "melos";
+            description = "Regenerate the ABC vs TEI-EAJ Melos comparison report";
           };
 
-          tei-eaj-aozora-all-work-report = {
-            type = "app";
-            program = toString (
-              pkgs.writeShellScript "abc-tei-eaj-aozora-all-work-report" ''
-                set -euo pipefail
-                output="''${1:-docs/handoffs/tei-eaj-aozora-all-work-comparison-report.md}"
-                exec ${pkgs.python3}/bin/python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
-                  --report all-work \
-                  --abc-tei-dir paper \
-                  --tei-eaj-root ${tei-eaj-aozora-tei} \
-                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
-                  --output "$output"
-              ''
-            );
-            meta.description = "Regenerate the all-work ABC vs TEI-EAJ comparison report";
+          tei-eaj-aozora-all-work-report = mkTeiEajAozoraReportApp {
+            subcommand = "all-work";
+            description = "Regenerate the all-work ABC vs TEI-EAJ comparison report";
           };
 
-          tei-eaj-aozora-workset-json = {
-            type = "app";
-            program = toString (
-              pkgs.writeShellScript "abc-tei-eaj-aozora-workset-json" ''
-                set -euo pipefail
-                output="''${1:-docs/handoffs/tei-eaj-aozora-workset-export.json}"
-                exec ${pkgs.python3}/bin/python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
-                  --report all-work \
-                  --format json \
-                  --abc-tei-dir paper \
-                  --tei-eaj-root ${tei-eaj-aozora-tei} \
-                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
-                  --output "$output"
-              ''
-            );
-            meta.description = "Regenerate the machine-readable TEI-EAJ workset export";
+          tei-eaj-aozora-workset-json = mkTeiEajAozoraReportApp {
+            subcommand = "workset-json";
+            description = "Regenerate the machine-readable TEI-EAJ workset export";
           };
 
-          tei-eaj-aozora-reports = {
-            type = "app";
-            program = toString (
-              pkgs.writeShellScript "abc-tei-eaj-aozora-reports" ''
-                set -euo pipefail
-                melos_output="''${1:-docs/handoffs/tei-eaj-aozora-melos-comparison-report.md}"
-                all_work_output="''${2:-docs/handoffs/tei-eaj-aozora-all-work-comparison-report.md}"
-                workset_json_output="''${3:-docs/handoffs/tei-eaj-aozora-workset-export.json}"
-                ${pkgs.python3}/bin/python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
-                  --report melos \
-                  --abc paper/demo-melos-real/tei.xml \
-                  --tei-eaj-root ${tei-eaj-aozora-tei} \
-                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
-                  --output "$melos_output"
-                ${pkgs.python3}/bin/python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
-                  --report all-work \
-                  --abc-tei-dir paper \
-                  --tei-eaj-root ${tei-eaj-aozora-tei} \
-                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
-                  --output "$all_work_output"
-                ${pkgs.python3}/bin/python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
-                  --report all-work \
-                  --format json \
-                  --abc-tei-dir paper \
-                  --tei-eaj-root ${tei-eaj-aozora-tei} \
-                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
-                  --output "$workset_json_output"
-                printf 'Updated %s\nUpdated %s\nUpdated %s\n' \
-                  "$melos_output" "$all_work_output" "$workset_json_output"
-              ''
-            );
-            meta.description = "Regenerate TEI-EAJ comparison Markdown and JSON reports";
+          tei-eaj-aozora-reports = mkTeiEajAozoraReportApp {
+            subcommand = "all";
+            description = "Regenerate TEI-EAJ comparison Markdown and JSON reports";
           };
         }
       );
@@ -397,6 +350,7 @@
             test -f ${./src/abc/git.clj}
             test -f ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py}
             test -f ${./prototypes/tei-eaj-comparison/test_tei_eaj_compare.py}
+            test -f ${./tools/tei_eaj_aozora_reports.py}
             test -f ${./src/abc/tools/manifest_index.clj}
             test -f ${./src/abc/tools/logging.clj}
             test -f ${./src/abc/tools/manifest_to_rdf.clj}
@@ -502,6 +456,25 @@
                 echo "TEI-EAJ comparison probe tests passed." > "$out/result.txt"
               '';
 
+          tei-eaj-report-python-quality =
+            pkgs.runCommand "abc-tei-eaj-report-python-quality"
+              {
+                nativeBuildInputs = [
+                  pkgs.mypy
+                  pkgs.python3
+                  pkgs.ruff
+                ];
+              }
+              ''
+                set -euo pipefail
+                cp ${./tools/tei_eaj_aozora_reports.py} tei_eaj_aozora_reports.py
+                ruff format --check tei_eaj_aozora_reports.py
+                ruff check tei_eaj_aozora_reports.py
+                mypy --cache-dir "$TMPDIR/mypy-cache" tei_eaj_aozora_reports.py
+                mkdir -p "$out"
+                echo "TEI-EAJ report launcher passes ruff format/check and mypy." > "$out/result.txt"
+              '';
+
           tei-eaj-aozora-report-generation =
             pkgs.runCommand "abc-tei-eaj-aozora-report-generation" { nativeBuildInputs = [ pkgs.python3 ]; }
               ''
@@ -520,25 +493,13 @@
                   <text><body><p>メロス</p></body></text>
                 </TEI>
                 XML
-                python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
-                  --report melos \
-                  --abc abc/melos.xml \
+                python ${./tools/tei_eaj_aozora_reports.py} \
+                  --compare-script ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
                   --tei-eaj-root ${tei-eaj-aozora-tei} \
                   --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
-                  --output melos.md
-                python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
-                  --report all-work \
+                  --abc-melos abc/melos.xml \
                   --abc-tei 1567=abc/melos.xml \
-                  --tei-eaj-root ${tei-eaj-aozora-tei} \
-                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
-                  --output all-work.md
-                python ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
-                  --report all-work \
-                  --format json \
-                  --abc-tei 1567=abc/melos.xml \
-                  --tei-eaj-root ${tei-eaj-aozora-tei} \
-                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
-                  --output workset.json
+                  all melos.md all-work.md workset.json
                 grep -q "TEI-EAJ Melos files found: 2" melos.md
                 grep -q "TEI-EAJ XML files scanned: 62" all-work.md
                 grep -q "Compared TEI-EAJ files: 2" all-work.md

@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/snapshot-index.schema.json",
+  "title": "ABC Snapshot Index",
+  "version": "0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "schema_hash",
+    "snapshot_label",
+    "snapshot_identity_hash",
+    "snapshot_index_identity_object",
+    "request_set_label",
+    "generated_at",
+    "failure_policy",
+    "layout_policy",
+    "artifact_references",
+    "summary"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "https://w3id.org/abc/schemas/snapshot-index.schema.json"
+    },
+    "schema_hash": { "$ref": "#/$defs/hash" },
+    "snapshot_label": {
+      "type": "string",
+      "pattern": "^soranoha-snapshot-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}$"
+    },
+    "snapshot_identity_hash": { "$ref": "#/$defs/hash" },
+    "snapshot_index_identity_object": {
+      "$ref": "#/$defs/snapshotIndexIdentityObject"
+    },
+    "request_set_label": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "failure_policy": { "$ref": "#/$defs/failurePolicy" },
+    "layout_policy": { "$ref": "#/$defs/layoutPolicy" },
+    "artifact_references": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifactReference" }
+    },
+    "summary": { "$ref": "#/$defs/summary" }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "hashArray": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/hash" },
+      "uniqueItems": true
+    },
+    "snapshotIndexIdentityObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_index_schema_hash",
+        "request_set_id",
+        "source_snapshot_hash",
+        "manifest_index_hash",
+        "artifact_set_hash",
+        "failure_policy_hash",
+        "layout_policy_hash",
+        "schema_hashes",
+        "parser_evidence_hashes",
+        "tokenizer_profile_hashes",
+        "analysis_recipe_hashes"
+      ],
+      "properties": {
+        "snapshot_index_schema_hash": { "$ref": "#/$defs/hash" },
+        "request_set_id": { "$ref": "#/$defs/hash" },
+        "source_snapshot_hash": { "$ref": "#/$defs/hash" },
+        "manifest_index_hash": { "$ref": "#/$defs/hash" },
+        "artifact_set_hash": { "$ref": "#/$defs/hash" },
+        "failure_policy_hash": { "$ref": "#/$defs/hash" },
+        "layout_policy_hash": { "$ref": "#/$defs/hash" },
+        "schema_hashes": { "$ref": "#/$defs/hashArray" },
+        "parser_evidence_hashes": { "$ref": "#/$defs/hashArray" },
+        "tokenizer_profile_hashes": { "$ref": "#/$defs/hashArray" },
+        "analysis_recipe_hashes": { "$ref": "#/$defs/hashArray" }
+      }
+    },
+    "failurePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allow_nonzero_failures",
+        "max_failure_rate",
+        "per_diagnostic_tolerances"
+      ],
+      "properties": {
+        "allow_nonzero_failures": { "type": "boolean" },
+        "max_failure_rate": {
+          "anyOf": [
+            { "type": "number", "minimum": 0, "maximum": 1 },
+            { "type": "null" }
+          ]
+        },
+        "per_diagnostic_tolerances": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "layoutPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "loose_artifact_kinds",
+        "batched_artifact_kinds",
+        "batch_target_work_count",
+        "archive_format"
+      ],
+      "properties": {
+        "loose_artifact_kinds": {
+          "type": "array",
+          "items": { "enum": ["tei", "plaintext"] },
+          "uniqueItems": true
+        },
+        "batched_artifact_kinds": {
+          "type": "array",
+          "items": { "enum": ["analysis", "tokenized"] },
+          "uniqueItems": true
+        },
+        "batch_target_work_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "archive_format": {
+          "enum": ["tar.zst", "tar.gz", "zip"]
+        }
+      }
+    },
+    "artifactReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "artifact_kind",
+        "sidecar_role",
+        "validation_status",
+        "manifest_content_hash",
+        "content_hash",
+        "locator"
+      ],
+      "properties": {
+        "artifact_id": { "$ref": "#/$defs/hash" },
+        "artifact_kind": {
+          "enum": [
+            "source",
+            "parser-ir",
+            "warnings",
+            "plaintext",
+            "tei",
+            "rdf-view",
+            "tokenized",
+            "analysis",
+            "failure"
+          ]
+        },
+        "sidecar_role": {
+          "anyOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "validation_status": {
+          "enum": ["passed", "warning", "failed"]
+        },
+        "manifest_content_hash": { "$ref": "#/$defs/hash" },
+        "content_hash": {
+          "anyOf": [
+            { "$ref": "#/$defs/hash" },
+            { "type": "null" }
+          ]
+        },
+        "locator": { "$ref": "#/$defs/artifactLocator" }
+      }
+    },
+    "artifactLocator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["loose", "archive-member"] },
+        "path": { "type": "string", "minLength": 1 },
+        "archive_path": { "type": "string", "minLength": 1 },
+        "member_path": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "loose" } },
+            "required": ["kind"]
+          },
+          "then": { "required": ["path"] }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "archive-member" } },
+            "required": ["kind"]
+          },
+          "then": { "required": ["archive_path", "member_path"] }
+        }
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_artifacts",
+        "success_count",
+        "failure_count",
+        "failure_rate"
+      ],
+      "properties": {
+        "total_artifacts": { "type": "integer", "minimum": 0 },
+        "success_count": { "type": "integer", "minimum": 0 },
+        "failure_count": { "type": "integer", "minimum": 0 },
+        "failure_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

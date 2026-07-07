@@ -1,0 +1,53 @@
+{
+  "label": "demo-basic-ja",
+  "fixture_role": "request-set-shape-fixture",
+  "fixture_note": "Small shape fixture; not a full-corpus resolved request set.",
+  "scope": "demo",
+  "profile": "basic-ja",
+  "product": "all",
+  "request_set_id": "sha256:3babfb44f960fc1af58a87e9d7bc06ad7cc1ed85bcf294454db5227434629f2a",
+  "request_set_identity_object": {
+    "schema_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "corpus_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "subjects": [
+      {
+        "source_id": "aozora:demo-fixture-a",
+        "work_id": "aozora:demo-fixture-a",
+        "work_content_hash": "sha256:2323232323232323232323232323232323232323232323232323232323232323",
+        "metadata_record_hash": null
+      },
+      {
+        "source_id": "aozora:demo-fixture-b",
+        "work_id": "aozora:demo-fixture-b",
+        "work_content_hash": "sha256:2424242424242424242424242424242424242424242424242424242424242424",
+        "metadata_record_hash": null
+      }
+    ],
+    "input_views": [
+      {
+        "input_view_kind": "parser-ir-plaintext-body-v1",
+        "policy_hash": "sha256:df21c590fd8d5b934fd426e632a3d8a09c2bd3fa299ca6b4c8fe4c797e1d1391"
+      }
+    ],
+    "tokenizer_profile_hashes": [],
+    "analysis_recipe_hashes": [
+      "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b"
+    ],
+    "missing_policy": "build-missing-only",
+    "pack_policy_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "resolved_labels": {
+    "analysis_recipes": [
+      {
+        "recipe_id": "literary-basic-ja-v1",
+        "analysis_recipe_hash": "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b",
+        "registry_entry_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "resolved_at": "2026-07-07T00:00:00Z"
+      }
+    ],
+    "tokenizer_profiles": []
+  },
+  "batch_policy": {
+    "kind": "shape-fixture"
+  }
+}

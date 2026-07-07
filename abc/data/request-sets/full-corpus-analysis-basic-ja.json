@@ -1,0 +1,47 @@
+{
+  "label": "full-corpus-analysis-basic-ja",
+  "fixture_role": "request-set-shape-fixture",
+  "fixture_note": "Label shape fixture only; the resolved full corpus is generated outside source control.",
+  "scope": "full-corpus",
+  "profile": "basic-ja",
+  "product": "analysis",
+  "request_set_id": "sha256:b3de345d4d5fe444be8287679af38115433fe0b52b8d6d47a0076a60f2a7f846",
+  "request_set_identity_object": {
+    "schema_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "corpus_snapshot_hash": "sha256:3131313131313131313131313131313131313131313131313131313131313131",
+    "subjects": [
+      {
+        "source_id": "aozora:full-corpus-analysis-shape-fixture",
+        "work_id": "aozora:full-corpus-analysis-shape-fixture",
+        "work_content_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "metadata_record_hash": null
+      }
+    ],
+    "input_views": [
+      {
+        "input_view_kind": "parser-ir-plaintext-body-v1",
+        "policy_hash": "sha256:df21c590fd8d5b934fd426e632a3d8a09c2bd3fa299ca6b4c8fe4c797e1d1391"
+      }
+    ],
+    "tokenizer_profile_hashes": [],
+    "analysis_recipe_hashes": [
+      "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b"
+    ],
+    "missing_policy": "build-missing-only",
+    "pack_policy_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "resolved_labels": {
+    "analysis_recipes": [
+      {
+        "recipe_id": "literary-basic-ja-v1",
+        "analysis_recipe_hash": "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b",
+        "registry_entry_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "resolved_at": "2026-07-07T00:00:00Z"
+      }
+    ],
+    "tokenizer_profiles": []
+  },
+  "batch_policy": {
+    "kind": "shape-fixture"
+  }
+}

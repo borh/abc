@@ -104,6 +104,17 @@
             meta.description = "Validate ABC v0 design-bundle schemas and fixtures";
           };
 
+          soranoha = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "soranoha" ''
+                cd ${./.}
+                exec ${pkgs.clojure}/bin/clojure -M:abc/soranoha "$@"
+              ''
+            );
+            meta.description = "Soranoha snapshot publication command dispatcher";
+          };
+
           materialize-import = {
             type = "app";
             program = toString (

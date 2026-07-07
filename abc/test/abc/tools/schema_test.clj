@@ -13,7 +13,8 @@
    "schemas/analysis-result.schema.json" "0.1.0"
    "schemas/manifest.schema.json" "0.4.1"
    "schemas/parser-ir-publication-preservation.schema.json" "0.2.0"
-   "schemas/source-region-coverage.schema.json" "0.2.1"})
+   "schemas/source-region-coverage.schema.json" "0.2.1"
+   "schemas/snapshot-index.schema.json" "0.1.0"})
 
 (deftest cross-project-schemas-carry-explicit-versions-test
   (doseq [[path expected-version] cross-project-schema-versions]

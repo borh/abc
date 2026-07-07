@@ -14,6 +14,7 @@
    [abc.tools.materialize-import :as materialize]
    [abc.tools.materialize-publication :as publication]
    [abc.tools.schema :as schema]
+   [abc.tools.snapshot-index :as snapshot-index]
    [abc.tools.metadata-record :as metadata-record]
    [abc.tools.parser-evidence :as parser-evidence]
    [abc.tools.person-drift :as person-drift]
@@ -287,6 +288,7 @@
         parser-ir-publication-preservation-schema (files/read-json "schemas/parser-ir-publication-preservation.schema.json")
         analysis-recipe-schema (files/read-json "schemas/analysis-recipe.schema.json")
         analysis-result-schema (files/read-json "schemas/analysis-result.schema.json")
+        snapshot-index-schema (files/read-json "schemas/snapshot-index.schema.json")
         source-region-coverage-schema (files/read-json "schemas/source-region-coverage.schema.json")
         tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
         iiif-applicability-schema (files/read-json "schemas/iiif-applicability.schema.json")
@@ -304,6 +306,7 @@
                            ["schemas/parser-ir-publication-preservation.schema.json" parser-ir-publication-preservation-schema]
                            ["schemas/analysis-recipe.schema.json" analysis-recipe-schema]
                            ["schemas/analysis-result.schema.json" analysis-result-schema]
+                           ["schemas/snapshot-index.schema.json" snapshot-index-schema]
                            ["schemas/source-region-coverage.schema.json" source-region-coverage-schema]
                            ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]
                            ["schemas/iiif-applicability.schema.json" iiif-applicability-schema]
@@ -336,6 +339,10 @@
                     "data/analysis-recipes/literary-basic-ja-v1.json")
     (validate-json! analysis-result-schema
                     "examples/v0/example-work/analysis-result.json")
+    (validate-json! snapshot-index-schema
+                    "examples/v0/snapshot/snapshot-index.json")
+    (snapshot-index/validate-snapshot-index!
+     (files/read-json "examples/v0/snapshot/snapshot-index.json"))
     (doseq [record (get (files/read-json "examples/ab-validator-output/divergence.json") "records")]
       (check-errors! (validation-errors aat-parser-ir-divergence-schema record)))
     (validate-json! tei-validation-result-schema

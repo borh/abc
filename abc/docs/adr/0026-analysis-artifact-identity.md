@@ -8,8 +8,11 @@ Source: `docs/superpowers/specs/2026-07-07-analysis-artifact-identity-design.md`
 
 ## Implementation Status
 
-Proposed. No analysis slice schema, recipe registry, request-set resolver, or
-analysis-result sidecar is implemented yet.
+Proposed. The first analysis-artifact identity slice is partially implemented:
+`analysis-recipe.schema.json`, `analysis-result.schema.json`, the
+`literary-basic-ja-v1` recipe fixture, analysis-result materialization, and
+manifest-index copied-field validation exist. Request-set fixtures and a
+request-set resolver are still pending.
 
 This ADR accepts only the first token-independent per-work analysis slice:
 analysis over `parser-ir-plaintext-body-v1`. It does not accept standalone

@@ -68,6 +68,7 @@
                      "--namespace" "metav.meta"
                      "--formats" "clj"]}
   :abc/validate-design-bundle {:main-opts ["-m" "abc.tools.validate-design-bundle"]}
+  :abc/soranoha {:main-opts ["-m" "abc.tools.soranoha"]}
   :abc/materialize-import {:main-opts ["-m" "abc.tools.materialize-import"]}
   :abc/materialize-publication {:main-opts ["-m" "abc.tools.materialize-publication"]}
   :abc/materialize-publications-batch {:main-opts ["-m" "abc.tools.materialize-publication"

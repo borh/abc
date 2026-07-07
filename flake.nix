@@ -114,14 +114,16 @@
         let
           pkgs = import nixpkgs { inherit system; };
           scripts = monorepoScripts pkgs;
+          abcApps = optionalOutputAttrs abc "apps" system;
           mkScriptApp = program: description: {
             type = "app";
             program = "${program}";
             meta.description = description;
           };
         in
-        prefixAttrs "abc-" (optionalOutputAttrs abc "apps" system)
+        prefixAttrs "abc-" abcApps
         // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "apps" system)
+        // (if builtins.hasAttr "soranoha" abcApps then { soranoha = abcApps.soranoha; } else { })
         // {
           schema-drift = mkScriptApp scripts.schema-drift "Check monorepo ABC schema contract drift";
           tei-version-coherence = mkScriptApp scripts.tei-version-coherence "Check TEI P5 source/profile version coherence";

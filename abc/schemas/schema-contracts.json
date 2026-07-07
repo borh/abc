@@ -57,6 +57,13 @@
       "title": "ABC Source Region Coverage Report",
       "version": "0.2.1",
       "hash": "sha256:953c31f967c192852b0ed000ce073e272306c3468dd34e37f760fb3f4f138863"
+    },
+    {
+      "path": "schemas/snapshot-index.schema.json",
+      "id": "https://w3id.org/abc/schemas/snapshot-index.schema.json",
+      "title": "ABC Snapshot Index",
+      "version": "0.1.0",
+      "hash": "sha256:ef0aaccd2d5d86204bb22c5d94e3c3d4dab2a6cfe4b82c353873317c77a3c31f"
     }
   ]
 }

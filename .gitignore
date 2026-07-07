@@ -4,6 +4,7 @@
 .cargo/
 .soranoha/
 .worktrees/
+.claude/
 scratch/
 out/
 result

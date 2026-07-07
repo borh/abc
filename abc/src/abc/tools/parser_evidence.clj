@@ -1,20 +1,11 @@
 (ns abc.tools.parser-evidence
   (:require [abc.tools.files :as files]
+            [abc.tools.malli :as am]
             [clojure.edn :as edn]
             [clojure.string :as string]))
 
 (def index-path
   (files/path "data" "parser-evidence-citations.edn"))
-
-(def evidence-classes
-  #{:conversion-compatibility
-    :parser-selection
-    :comparator-oracle})
-
-(def statuses
-  #{:citable
-    :provisional
-    :superseded})
 
 (def required-entry-keys
   [:evidence_id
@@ -25,27 +16,18 @@
    :status
    :summary])
 
-(defn- sha256-hash?
-  [value]
-  (and (string? value)
-       (boolean (re-matches #"^sha256:[0-9a-f]{64}$" value))))
-
-(defn- nonblank-string?
-  [value]
-  (and (string? value)
-       (not (string/blank? value))))
-
-(defn- logical-path?
-  [value]
-  (and (nonblank-string? value)
-       (not (string/starts-with? value "../"))
-       (not (string/starts-with? value "/"))))
-
 (defn- missing-key-errors
   [idx entry]
   (->> required-entry-keys
        (remove #(contains? entry %))
        (mapv #(str "Parser evidence index entry " idx " is missing " %))))
+
+(defn- parser-evidence-malli-errors
+  [idx entry]
+  (if-let [explanation (am/explain-contract ::am/parser-evidence-entry entry)]
+    (mapv #(str "Parser evidence index entry " idx " " %)
+          (am/explanation-messages explanation))
+    []))
 
 (defn- entry-errors
   [idx entry]
@@ -54,32 +36,7 @@
     (vec
      (concat
       (missing-key-errors idx entry)
-      (for [k [:evidence_id :producer_component :summary]
-            :when (and (contains? entry k)
-                       (not (nonblank-string? (get entry k))))]
-        (str "Parser evidence index entry " idx " " k
-             " must be a non-empty string"))
-      (when (and (contains? entry :evidence_class)
-                 (not (contains? evidence-classes (:evidence_class entry))))
-        [(str "Parser evidence index entry " idx
-              " :evidence_class must be conversion-compatibility, parser-selection, or comparator-oracle")])
-      (when (and (contains? entry :status)
-                 (not (contains? statuses (:status entry))))
-        [(str "Parser evidence index entry " idx
-              " :status must be citable, provisional, or superseded")])
-      (when (and (contains? entry :logical_path)
-                 (not (logical-path? (:logical_path entry))))
-        [(str "Parser evidence index entry " idx
-              " :logical_path must be workspace-relative and must not start with ../ or /")])
-      (when (and (contains? entry :current_external_path)
-                 (some? (:current_external_path entry))
-                 (not (nonblank-string? (:current_external_path entry))))
-        [(str "Parser evidence index entry " idx
-              " :current_external_path must be null or a non-empty string")])
-      (when (and (contains? entry :sha256)
-                 (not (sha256-hash? (:sha256 entry))))
-        [(str "Parser evidence index entry " idx
-              " :sha256 must be a sha256 hash")])))))
+      (parser-evidence-malli-errors idx entry)))))
 
 (defn- duplicate-errors
   [entries]

@@ -1,6 +1,9 @@
 (ns abc.tools.parser-evidence-test
-  (:require [abc.tools.parser-evidence :as parser-evidence]
-            [clojure.test :refer [deftest is testing]]))
+  (:require [abc.tools.malli :as am]
+            [abc.tools.parser-evidence :as parser-evidence]
+            [clojure.test :refer [deftest is testing]]
+            [malli.core :as m]
+            [malli.generator :as mg]))
 
 (def valid-entry
   {:evidence_id "ab-validator/example"
@@ -43,3 +46,26 @@
                                 (assoc valid-entry
                                        :logical_path
                                        "ab-validator/docs/other.md")]})))))
+
+(deftest parser-evidence-nullable-external-path-test
+  (testing "current_external_path may be absent or nil but not blank"
+    (is (empty? (parser-evidence/index-errors
+                 {:entries [(dissoc valid-entry :current_external_path)]})))
+    (is (empty? (parser-evidence/index-errors
+                 {:entries [(assoc valid-entry :current_external_path nil)]})))
+    (is (has-error? #":current_external_path must be null or a non-empty string"
+                    (parser-evidence/index-errors
+                     {:entries [(assoc valid-entry :current_external_path "")]})))))
+
+(deftest parser-evidence-generator-backed-validation-test
+  (am/install!)
+  (testing "generated parser evidence entries pass the public validator"
+    (let [entry (mg/generate ::am/parser-evidence-entry)]
+      (is (m/validate ::am/parser-evidence-entry entry))
+      (is (empty? (parser-evidence/index-errors {:entries [entry]})))))
+  (testing "mutating a generated entry to violate a scalar contract is rejected"
+    (let [entry (mg/generate ::am/parser-evidence-entry)
+          invalid-entry (assoc entry :sha256 "sha256:not-real")]
+      (is (has-error? #":sha256 must be a sha256 hash"
+                      (parser-evidence/index-errors
+                       {:entries [invalid-entry]}))))))

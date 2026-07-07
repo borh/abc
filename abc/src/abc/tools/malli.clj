@@ -90,7 +90,10 @@
     nonblank-string?]
 
    ::nullable-nonblank-string
-   [:maybe ::nonblank-string]
+   [:fn {:error/message "must be null or a non-empty string"
+         :gen/elements [nil "abc"]}
+    (fn [value]
+      (or (nil? value) (nonblank-string? value)))]
 
    ::sha256-hash
    [:re {:error/message "must be a sha256 hash"
@@ -125,12 +128,14 @@
    ::parser-evidence-entry
    [:map {:gen/elements [parser-evidence-example]}
     [:evidence_id ::nonblank-string]
-    [:evidence_class [:enum :conversion-compatibility :parser-selection :comparator-oracle]]
+    [:evidence_class [:enum {:error/message "must be conversion-compatibility, parser-selection, or comparator-oracle"}
+                      :conversion-compatibility :parser-selection :comparator-oracle]]
     [:producer_component ::nonblank-string]
     [:logical_path ::workspace-logical-path]
     [:current_external_path {:optional true} ::nullable-nonblank-string]
     [:sha256 ::sha256-hash]
-    [:status [:enum :citable :provisional :superseded]]
+    [:status [:enum {:error/message "must be citable, provisional, or superseded"}
+              :citable :provisional :superseded]]
     [:summary ::nonblank-string]]
 
    ::aat-parser-ir-evidence-scope
@@ -140,7 +145,8 @@
       [:adapter ::concrete-adapter]
       [:adapter_version {:optional true} ::nullable-nonblank-string]
       [:corpus ::nonblank-string]
-      [:evidence_type [:= :mapping-generation]]
+      [:evidence_type [:= {:error/message "must be mapping-generation or conversion-audit"}
+                       :mapping-generation]]
       [:files_scanned ::positive-int]
       [:files_with_unsupported ::nonnegative-int]
       [:generated_rules ::positive-int]]]
@@ -149,7 +155,8 @@
       [:adapter ::concrete-adapter]
       [:adapter_version {:optional true} ::nullable-nonblank-string]
       [:corpus ::nonblank-string]
-      [:evidence_type [:= :conversion-audit]]
+      [:evidence_type [:= {:error/message "must be mapping-generation or conversion-audit"}
+                       :conversion-audit]]
       [:files_scanned ::positive-int]
       [:files_succeeded ::nonnegative-int]
       [:files_failed ::nonnegative-int]
@@ -173,7 +180,8 @@
      [:mapping_schema_hash ::sha256-hash]
      [:parser_ir_schema_id ::nonblank-string]
      [:parser_ir_schema_hash ::sha256-hash]
-     [:compatibility [:enum "lossy" "lossless"]]
+     [:compatibility [:enum {:error/message "must be lossy or lossless"}
+                      "lossy" "lossless"]]
      [:evidence_scope ::aat-parser-ir-evidence-scope]]
     [:fn {:error/message ":evidence_scope :adapter must equal :aat_adapter"}
      (fn [entry] (= (:aat_adapter entry)
@@ -262,6 +270,15 @@
     (mi/instrument!)
     composite))
 
+(defn explain-contract
+  "Explain `value` against a schema owned by `contract-schemas` without
+  requiring callers to install the global Malli registry."
+  [schema-key value]
+  (m/explain schema-key
+             value
+             {:registry (mr/composite-registry (m/default-schemas)
+                                               contract-schemas)}))
+
 (let [cache (atom {})]
   (defn cached-schema
     "Read and parse the JSON Schema at `path` exactly once per JVM.
@@ -316,13 +333,24 @@
   [explanation]
   (->> (:errors explanation)
        (mapv (fn [{:keys [in message path properties schema]}]
-               (or message
-                   (:error/message properties)
-                   (some-> schema m/properties :error/message)
-                   (cond
-                     (seq in) (str (string/join " " (map str in)) " is invalid")
-                     (seq path) (str (string/join " " (map str path)) " is invalid")
-                     :else "value is invalid"))))))
+               (let [schema-message (or message
+                                        (:error/message properties)
+                                        (some-> schema m/properties :error/message))
+                     location (seq (or in path))
+                     location-label (when location
+                                      (string/join " " (map str location)))]
+                 (cond
+                   (and location-label schema-message)
+                   (str location-label " " schema-message)
+
+                   schema-message
+                   schema-message
+
+                   location-label
+                   (str location-label " is invalid")
+
+                   :else
+                   "value is invalid"))))))
 
 (defn explain-or-throw!
   "Validate `value` against `schema-key` using malli's default registry.

@@ -325,3 +325,32 @@ Run `soranoha reproduce demo-basic-ja`, `soranoha validate target/soranoha/demo-
 - [x] Run `git diff --check`.
 - [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
 - [x] Run `nix flake check`.
+
+### Task 14: Soranoha Source-Snapshot Command
+
+**Files:**
+- Modify: `abc/src/abc/tools/soranoha.clj`
+- Modify: `abc/test/abc/tools/soranoha_test.clj`
+
+**Interfaces:**
+- Produces: `soranoha source-snapshot <materialized-root> <output-root> <snapshot-scope> <snapshot-date>`.
+- Consumes: `abc.tools.source-snapshot-workset/write-workset!` and `abc.tools.materialize-source-snapshot/materialize-source-snapshot!`.
+
+- [x] Add a failing CLI test for generating a source-snapshot workset, descriptor, and per-work source manifest.
+- [x] Implement the Soranoha wrapper command.
+- [x] Print source-snapshot workset path, descriptor path, source snapshot hash, and work count.
+- [x] Run focused Soranoha tests.
+
+### Task 15: Soranoha Source-Snapshot Command Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed Soranoha source-snapshot command.
+- Produces: verified public CLI bridge from materialized corpus outputs to source-snapshot descriptors.
+
+- [x] Run focused Soranoha and source-snapshot tests.
+- [x] Run `git diff --check`.
+- [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
+- [x] Run `nix flake check`.

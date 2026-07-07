@@ -4,8 +4,10 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-analysis :as materialize-analysis]
             [abc.tools.materialize-publication :as materialize-publication]
+            [abc.tools.materialize-source-snapshot :as materialize-source-snapshot]
             [abc.tools.request-set-resolver :as request-set-resolver]
             [abc.tools.schema :as schema]
+            [abc.tools.source-snapshot-workset :as source-snapshot-workset]
             [abc.tools.snapshot-index :as snapshot-index]
             [clojure.java.io :as io]
             [clojure.string :as string]))
@@ -429,6 +431,30 @@
     (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))
     0))
 
+(defn- generated-at-from-date [snapshot-date]
+  (str snapshot-date "T00:00:00Z"))
+
+(defn source-snapshot!
+  [input-root output-root snapshot-scope snapshot-date]
+  (let [output-root-file (io/file output-root)
+        workset-file (io/file output-root-file "source-snapshot.workset.edn")
+        snapshot-file (io/file output-root-file "source-snapshot.json")
+        {:keys [works-count]} (source-snapshot-workset/write-workset!
+                               {:input-root input-root
+                                :output-path (str workset-file)
+                                :snapshot-scope snapshot-scope
+                                :snapshot-date snapshot-date})
+        {:keys [snapshot-hash]} (materialize-source-snapshot/materialize-source-snapshot!
+                                 {:workset-path (str workset-file)
+                                  :output-path (str snapshot-file)
+                                  :generated-at (generated-at-from-date
+                                                 snapshot-date)})]
+    (println "source_snapshot_workset:" (str workset-file))
+    (println "source_snapshot:" (str snapshot-file))
+    (println "source_snapshot_hash:" snapshot-hash)
+    (println "works_count:" works-count)
+    0))
+
 (defn usage []
   (string/join
    "\n"
@@ -440,7 +466,8 @@
     "  snapshot-index <request-set-label> <output-path>"
     "  reproduce <request-set-label>"
     "  validate <snapshot-root-or-index>"
-    "  explain-snapshot <snapshot-index>"]))
+    "  explain-snapshot <snapshot-index>"
+    "  source-snapshot <materialized-root> <output-root> <snapshot-scope> <snapshot-date>"]))
 
 (def commands
   {"list-request-sets" {:args 0
@@ -454,7 +481,9 @@
    "validate" {:args 1
                :run validate!}
    "explain-snapshot" {:args 1
-                       :run explain-snapshot!}})
+                       :run explain-snapshot!}
+   "source-snapshot" {:args 4
+                      :run source-snapshot!}})
 
 (defn run! [args]
   (let [[command & rest-args] args]

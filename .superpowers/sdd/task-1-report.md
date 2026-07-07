@@ -90,3 +90,87 @@ test result: ok. 1 passed; 0 failed
 ## Concerns
 
 - Adding `ab-morph-analyzers` to this crate’s manifest causes Cargo to rewrite `ab-validator/Cargo.lock` when tests run. That file was outside the requested write-ownership list, so I did not include it in the code changes themselves. If the branch requires a clean worktree or a `--locked` workflow, this lockfile update will need an explicit decision.
+
+---
+
+# Task 1 Follow-up Report: Review Findings Fixes
+
+## Review Findings Addressed
+
+1. Important: `ab_aat_to_parser_ir::ortho_detect::detect_orthographic_annotations` now populates per-sentence `SentenceSpan::char_offset` using cumulative visible-text character offsets derived from parser-IR sentence text.
+2. Minor: added a deterministic CLI smoke test for `detect-ortho-annotations` that exercises subcommand dispatch without requiring a real dictionary by forcing `AB_VIBRATO_DICT` to a nonexistent path and asserting the expected failure message.
+
+## RED/GREEN Evidence for `char_offset`
+
+### Red
+
+Added `detect_orthographic_annotations_populates_sentence_char_offsets` to:
+
+- `ab-validator/crates/ab-aat-to-parser-ir/tests/integration.rs`
+
+Ran:
+
+```bash
+cargo test --manifest-path /home/bor/Projects/soranoha/.worktrees/feat-parser-ir-followups-plan/ab-validator/Cargo.toml -p ab-aat-to-parser-ir --test integration detect_orthographic_annotations_populates_sentence_char_offsets
+```
+
+Observed failure:
+
+```text
+test detect_orthographic_annotations_populates_sentence_char_offsets ... FAILED
+assertion `left == right` failed
+  left: [0, 0, 0]
+ right: [0, 8, 16]
+```
+
+### Green
+
+Updated `ab-validator/crates/ab-aat-to-parser-ir/src/ortho_detect.rs` to track cumulative character offsets while building sentence spans.
+
+Re-ran:
+
+```bash
+cargo test --manifest-path /home/bor/Projects/soranoha/.worktrees/feat-parser-ir-followups-plan/ab-validator/Cargo.toml -p ab-aat-to-parser-ir --test integration detect_orthographic_annotations_populates_sentence_char_offsets
+```
+
+Observed:
+
+```text
+test detect_orthographic_annotations_populates_sentence_char_offsets ... ok
+test result: ok. 1 passed; 0 failed
+```
+
+## Tests Run and Outputs
+
+```bash
+cargo test --manifest-path /home/bor/Projects/soranoha/.worktrees/feat-parser-ir-followups-plan/ab-validator/Cargo.toml -p ab-aat-to-parser-ir --test integration detect_orthographic_annotations_populates_sentence_char_offsets
+```
+
+```text
+test detect_orthographic_annotations_populates_sentence_char_offsets ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out
+```
+
+```bash
+cargo test --manifest-path /home/bor/Projects/soranoha/.worktrees/feat-parser-ir-followups-plan/ab-validator/Cargo.toml -p ab-aat-to-parser-ir --test integration detect_orthographic_annotations_uses_parser_ir_sentence_coordinates
+```
+
+```text
+test detect_orthographic_annotations_uses_parser_ir_sentence_coordinates ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out
+```
+
+```bash
+cargo test --manifest-path /home/bor/Projects/soranoha/.worktrees/feat-parser-ir-followups-plan/ab-validator/Cargo.toml -p ab-aat-to-parser-ir --test integration cli_detect_ortho_annotations_reports_missing_dictionary
+```
+
+```text
+test cli_detect_ortho_annotations_reports_missing_dictionary ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 44 filtered out
+```
+
+## Files Changed
+
+- `ab-validator/crates/ab-aat-to-parser-ir/src/ortho_detect.rs`
+- `ab-validator/crates/ab-aat-to-parser-ir/tests/integration.rs`
+- `.superpowers/sdd/task-1-report.md`

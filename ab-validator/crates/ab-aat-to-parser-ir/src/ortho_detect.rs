@@ -41,6 +41,8 @@ pub fn detect_orthographic_annotations(
 
     let mut owned_sentence_text = Vec::with_capacity(sentences.len());
     let mut sentence_offsets = Vec::with_capacity(sentences.len());
+    let mut sentence_char_offsets = Vec::with_capacity(sentences.len());
+    let mut next_char_offset = 0usize;
     for sentence in sentences {
         let start = sentence
             .pointer("/node_range/start")
@@ -68,16 +70,18 @@ pub fn detect_orthographic_annotations(
             .collect::<Result<Vec<_>>>()?
             .concat();
         sentence_offsets.push(byte_offset);
+        sentence_char_offsets.push(next_char_offset);
+        next_char_offset += text.chars().count();
         owned_sentence_text.push(text);
     }
 
     let spans = owned_sentence_text
         .iter()
-        .zip(sentence_offsets.iter())
-        .map(|(text, byte_offset)| SentenceSpan {
+        .zip(sentence_offsets.iter().zip(sentence_char_offsets.iter()))
+        .map(|(text, (byte_offset, char_offset))| SentenceSpan {
             text,
             byte_offset: *byte_offset,
-            char_offset: 0,
+            char_offset: *char_offset,
         })
         .collect::<Vec<_>>();
 

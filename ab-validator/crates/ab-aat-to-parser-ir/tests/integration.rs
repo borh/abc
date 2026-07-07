@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use ab_aat_to_parser_ir::{
     ConversionOptions, ConversionRequest, MappingDocument, SchemaSet,
@@ -86,6 +87,10 @@ fn ortho_fixture_aat() -> Value {
 
 struct AlwaysNormalizeDetector;
 
+struct RecordingDetector {
+    observed_char_offsets: Mutex<Vec<usize>>,
+}
+
 impl ab_ortho_detect::OrthoDetector for AlwaysNormalizeDetector {
     fn detector_id(&self) -> ab_ortho_detect::OrthoDetectorId {
         ab_ortho_detect::OrthoDetectorId::HeuristicV1
@@ -108,6 +113,23 @@ impl ab_ortho_detect::OrthoDetector for AlwaysNormalizeDetector {
                 confidence: None,
             })
             .collect()
+    }
+}
+
+impl ab_ortho_detect::OrthoDetector for RecordingDetector {
+    fn detector_id(&self) -> ab_ortho_detect::OrthoDetectorId {
+        ab_ortho_detect::OrthoDetectorId::HeuristicV1
+    }
+
+    fn detect(
+        &self,
+        sentences: &[ab_plaintext::SentenceSpan<'_>],
+    ) -> Vec<ab_ortho_detect::OrthoAnnotation> {
+        *self.observed_char_offsets.lock().unwrap() = sentences
+            .iter()
+            .map(|sentence| sentence.char_offset)
+            .collect();
+        Vec::new()
     }
 }
 
@@ -318,6 +340,27 @@ fn detect_orthographic_annotations_uses_parser_ir_sentence_coordinates() {
     assert_eq!(bundle.annotations[0].source_byte_range, 0..24);
     assert_eq!(bundle.annotations[1].source_byte_range, 24..48);
     assert_eq!(bundle.annotations[2].source_byte_range, 48..63);
+}
+
+#[test]
+fn detect_orthographic_annotations_populates_sentence_char_offsets() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let detector = RecordingDetector {
+        observed_char_offsets: Mutex::new(Vec::new()),
+    };
+
+    ab_aat_to_parser_ir::ortho_detect::detect_orthographic_annotations(
+        include_fixture_json("sentence-segmentation-input.aat.json"),
+        mapping,
+        schemas,
+        &detector,
+    )
+    .unwrap();
+
+    assert_eq!(
+        *detector.observed_char_offsets.lock().unwrap(),
+        vec![0, 8, 16]
+    );
 }
 
 #[test]
@@ -2497,6 +2540,41 @@ fn cli_convert_with_ortho_annotations_emits_sentence_tags() {
     );
     assert!(parser_ir_json.get("orthographic_annotations").is_some());
     assert!(divergence.exists());
+}
+
+#[test]
+fn cli_detect_ortho_annotations_reports_missing_dictionary() {
+    let repo = repo_root();
+    let abc = abc_root(&repo);
+    let temp = tempfile::tempdir().unwrap();
+    let aat = temp.path().join("input.aat.json");
+    let ortho = temp.path().join("ortho.json");
+    let missing_dict = temp.path().join("missing-vibrato.dic");
+    std::fs::write(
+        &aat,
+        serde_json::to_string_pretty(&ortho_fixture_aat()).unwrap(),
+    )
+    .unwrap();
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_ab-aat-to-parser-ir"))
+        .arg("detect-ortho-annotations")
+        .arg("--aat")
+        .arg(&aat)
+        .arg("--mapping")
+        .arg(repo.join("data/aat-to-parser-ir-mapping-v1.json"))
+        .arg("--ortho-annotations-out")
+        .arg(&ortho)
+        .arg("--abc-root")
+        .arg(abc)
+        .env("AB_VIBRATO_DICT", &missing_dict)
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    assert!(!ortho.exists());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("detect-ortho-annotations requires AB_VIBRATO_DICT"));
+    assert!(stderr.contains("No such file or directory"));
 }
 
 #[test]

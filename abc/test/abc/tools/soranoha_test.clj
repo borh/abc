@@ -51,6 +51,28 @@
       (finally
         (.delete (io/file output-path))))))
 
+(deftest snapshot-index-command-accepts-resolved-request-set-file-test
+  (let [root (fixture/temp-dir "abc-soranoha-request-set-file-index")
+        request-set-file (io/file root "request-set.json")
+        output-path (io/file root "snapshot-index.json")
+        request-set (resolver/resolve-request-set "smoke-basic-ja")]
+    (try
+      (manifest/write-json-file! request-set-file request-set)
+      (let [out (with-out-str
+                  (is (zero? (soranoha/run! ["snapshot-index"
+                                             (str request-set-file)
+                                             (str output-path)]))))
+            snapshot (files/read-json output-path)]
+        (is (string/includes? out (str output-path)))
+        (is (= (get request-set "request_set_id")
+               (get-in snapshot ["snapshot_index_identity_object"
+                                 "request_set_id"])))
+        (is (= (get request-set "label")
+               (get snapshot "request_set_label")))
+        (is (true? (snapshot-index/validate-snapshot-index! snapshot))))
+      (finally
+        (delete-tree! root)))))
+
 (deftest explain-snapshot-command-validates-and-prints-identity-test
   (let [output-path (temp-json-path "abc-soranoha-explain-snapshot")]
     (try
@@ -127,6 +149,28 @@
           (is (contains? locators "artifacts/analysis/analysis.manifest.json"))))
       (finally
         (delete-tree! root)))))
+
+(deftest reproduce-command-accepts-resolved-request-set-file-test
+  (let [request-set-root (fixture/temp-dir "abc-soranoha-request-set-file-reproduce")
+        request-set-file (io/file request-set-root "request-set.json")
+        snapshot-root (io/file "target/soranoha/smoke-basic-ja")]
+    (try
+      (delete-tree! snapshot-root)
+      (manifest/write-json-file! request-set-file
+                                 (resolver/resolve-request-set "smoke-basic-ja"))
+      (let [out (with-out-str
+                  (is (zero? (soranoha/run! ["reproduce"
+                                             (str request-set-file)]))))
+            output-path (io/file snapshot-root "snapshot-index.json")]
+        (is (.exists output-path))
+        (is (string/includes? out (str output-path)))
+        (is (= "smoke-basic-ja"
+               (get (files/read-json output-path) "request_set_label")))
+        (with-out-str
+          (is (zero? (soranoha/run! ["validate" (str snapshot-root)])))))
+      (finally
+        (delete-tree! snapshot-root)
+        (delete-tree! request-set-root)))))
 
 (deftest reproduce-command-materializes-demo-request-set-test
   (let [root (io/file "target/soranoha/demo-basic-ja")

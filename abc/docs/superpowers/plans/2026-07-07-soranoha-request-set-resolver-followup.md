@@ -386,3 +386,34 @@ Run `soranoha reproduce demo-basic-ja`, `soranoha validate target/soranoha/demo-
 - [x] Run `git diff --check`.
 - [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
 - [x] Run `nix flake check`.
+
+### Task 18: Resolved Request-Set JSON Inputs
+
+**Files:**
+- Modify: `abc/src/abc/tools/soranoha.clj`
+- Modify: `abc/test/abc/tools/soranoha_test.clj`
+
+**Interfaces:**
+- Produces: `soranoha snapshot-index <label-or-request-set-json> <output-path>`.
+- Produces: `soranoha reproduce <label-or-request-set-json>`.
+- Produces: `soranoha explain-request-set <label-or-request-set-json>`.
+- Consumes: canonical request-set JSON produced by `soranoha resolve-request-set`.
+
+- [x] Add failing Soranoha tests showing `snapshot-index` and `reproduce` must accept a resolved request-set JSON file, not only a checked-in label.
+- [x] Implement one request-set reference boundary: labels resolve through `abc.tools.request-set-resolver`; JSON files are read and identity-checked before use.
+- [x] Use the embedded request-set label from JSON files to select snapshot plans and default output roots.
+- [x] Run focused Soranoha tests.
+
+### Task 19: Resolved Request-Set JSON Input Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed request-set JSON input support.
+- Produces: verified bridge from generated request-set JSON into downstream snapshot-index and reproduce commands.
+
+- [x] Run focused request-set/Soranoha/snapshot tests.
+- [x] Run `git diff --check`.
+- [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
+- [x] Run `nix flake check`.

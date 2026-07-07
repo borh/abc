@@ -1,6 +1,7 @@
 (ns abc.tools.soranoha
   (:refer-clojure :exclude [run!])
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.analysis-identity :as analysis-identity]
+            [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-analysis :as materialize-analysis]
             [abc.tools.materialize-publication :as materialize-publication]
@@ -15,8 +16,26 @@
 (defn request-set-labels []
   (request-set-resolver/request-set-labels))
 
-(defn read-request-set [label]
-  (request-set-resolver/resolve-request-set label))
+(defn- read-resolved-request-set-file [path]
+  (let [request-set (files/read-json path)
+        request-set-schema (files/read-json "schemas/request-set.schema.json")
+        computed-id (analysis-identity/request-set-id request-set)]
+    (when-let [errors (schema/validation-errors request-set-schema request-set)]
+      (throw (ex-info "Request set schema validation failed"
+                      {:path (str path)
+                       :errors errors})))
+    (when-not (= computed-id (get request-set "request_set_id"))
+      (throw (ex-info "request_set_id does not match request_set_identity_object"
+                      {:path (str path)
+                       :expected computed-id
+                       :actual (get request-set "request_set_id")})))
+    request-set))
+
+(defn read-request-set [label-or-path]
+  (let [file (io/file label-or-path)]
+    (if (.isFile file)
+      (read-resolved-request-set-file file)
+      (request-set-resolver/resolve-request-set label-or-path))))
 
 (defn list-request-sets! []
   (doseq [label (request-set-labels)]
@@ -25,7 +44,7 @@
 
 (defn explain-request-set! [label]
   (let [request-set (read-request-set label)
-        computed-id (get request-set "request_set_id")]
+        computed-id (analysis-identity/request-set-id request-set)]
     (println "label:" (get request-set "label"))
     (println "request_set_id:" (get request-set "request_set_id"))
     (println "computed_request_set_id:" computed-id)
@@ -54,8 +73,9 @@
     (println "subjects_count:" subjects-count)
     0))
 
-(defn build-snapshot-index [label]
-  (let [request-set (read-request-set label)
+(defn build-snapshot-index [label-or-path]
+  (let [request-set (read-request-set label-or-path)
+        label (get request-set "label")
         plan (snapshot-index/read-snapshot-plan label)]
     (snapshot-index/build-snapshot-index-from-plan request-set plan)))
 
@@ -319,8 +339,9 @@
      (:tei-manifest-file publication-result)
      (:analysis-manifest-file analysis-result)]))
 
-(defn- materialize-snapshot-root! [label root]
-  (let [request-set (read-request-set label)
+(defn- materialize-snapshot-root! [label-or-path root]
+  (let [request-set (read-request-set label-or-path)
+        label (get request-set "label")
         plan (snapshot-index/read-snapshot-plan label)
         materializations (materialization-entries label plan)]
     (delete-tree! root)
@@ -347,9 +368,11 @@
        :snapshot snapshot
        :snapshot-index-file output-file})))
 
-(defn reproduce! [label]
-  (let [{:keys [snapshot snapshot-index-file]} (materialize-snapshot-root!
-                                                label
+(defn reproduce! [label-or-path]
+  (let [request-set (read-request-set label-or-path)
+        label (get request-set "label")
+        {:keys [snapshot snapshot-index-file]} (materialize-snapshot-root!
+                                                label-or-path
                                                 (default-snapshot-root label))]
     (println "snapshot_index:" (str snapshot-index-file))
     (println "snapshot_label:" (get snapshot "snapshot_label"))
@@ -478,10 +501,10 @@
     ""
     "commands:"
     "  list-request-sets"
-    "  explain-request-set <label>"
+    "  explain-request-set <label-or-request-set-json>"
     "  resolve-request-set <label> <output-path> <source-snapshot-path>"
-    "  snapshot-index <request-set-label> <output-path>"
-    "  reproduce <request-set-label>"
+    "  snapshot-index <label-or-request-set-json> <output-path>"
+    "  reproduce <label-or-request-set-json>"
     "  validate <snapshot-root-or-index>"
     "  explain-snapshot <snapshot-index>"
     "  source-snapshot <materialized-root> <output-root> <snapshot-scope> <snapshot-date>"]))

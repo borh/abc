@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/request-set.schema.json",
   "title": "ABC Request Set",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -46,7 +46,9 @@
       "properties": {
         "source_definition_path": { "type": "string", "minLength": 1 },
         "resolved_at": { "type": "string", "minLength": 1 },
-        "resolver_id": { "const": "abc.tools.request-set-resolver/v1" }
+        "resolver_id": { "const": "abc.tools.request-set-resolver/v1" },
+        "subject_source_path": { "type": "string", "minLength": 1 },
+        "source_snapshot_workset_path": { "type": "string", "minLength": 1 }
       }
     }
   },

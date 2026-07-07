@@ -29,6 +29,9 @@
 (def source-snapshot-kind
   "source-corpus-snapshot-v0")
 
+(def source-snapshot-workset-file-name
+  "source-snapshot.workset.edn")
+
 (defn- json-file? [file]
   (and (.isFile file)
        (string/ends-with? (.getName file) ".json")))
@@ -156,6 +159,10 @@
                        :subject_source_path subject-source-path})))
     definition))
 
+(defn- sibling-workset-path [subject-source-path]
+  (when-let [parent (some-> subject-source-path io/file .getParentFile)]
+    (str (io/file parent source-snapshot-workset-file-name))))
+
 (defn- resolve-subject-coordinate [definition]
   (let [inline-subjects (get definition "subjects")
         subject-source (get definition "subject_source")]
@@ -210,6 +217,7 @@
                            :missing-policy (get definition "missing_policy")
                            :pack-policy-hash (analysis-identity/hash-json-value
                                               (get definition "pack_policy"))})
+         source-workset-path (sibling-workset-path subject-source-path)
          request-set {"schema_id" request-set-schema-id
                       "schema_hash" (manifest/schema-hash request-set-schema-path)
                       "request_set_schema_version" request-set-schema-version
@@ -222,7 +230,11 @@
                                             "resolver_id" resolver-id}
                                      subject-source-path
                                      (assoc "subject_source_path"
-                                            subject-source-path))}]
+                                            subject-source-path)
+
+                                     source-workset-path
+                                     (assoc "source_snapshot_workset_path"
+                                            source-workset-path))}]
      (when-not (= label definition-label)
        (throw (ex-info "Request-set definition label does not match path label"
                        {:path_label label

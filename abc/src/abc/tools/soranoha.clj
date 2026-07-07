@@ -73,10 +73,114 @@
     (println "subjects_count:" subjects-count)
     0))
 
+(def generated-snapshot-layout-policy
+  {"loose_artifact_kinds" ["tei" "plaintext"]
+   "batched_artifact_kinds" ["analysis" "tokenized"]
+   "batch_target_work_count" 250
+   "archive_format" "tar.zst"})
+
+(def generated-snapshot-failure-policy
+  {"allow_nonzero_failures" true
+   "max_failure_rate" nil
+   "per_diagnostic_tolerances" {}})
+
+(def generated-snapshot-schema-hash-paths
+  ["schemas/manifest.schema.json"
+   "schemas/request-set.schema.json"
+   "schemas/snapshot-index.schema.json"
+   "schemas/analysis-result.schema.json"])
+
+(defn- snapshot-plan-if-present [label]
+  (let [path (snapshot-index/snapshot-plan-path label)]
+    (when (.isFile (io/file path))
+      (snapshot-index/read-snapshot-plan label))))
+
+(defn- source-snapshot-workset-path [request-set]
+  (or (get-in request-set ["resolution" "source_snapshot_workset_path"])
+      (when-let [source-snapshot-path (get-in request-set
+                                              ["resolution"
+                                               "subject_source_path"])]
+        (when-let [parent (.getParentFile (io/file source-snapshot-path))]
+          (str (io/file parent
+                        request-set-resolver/source-snapshot-workset-file-name))))))
+
+(defn- work-value [work k]
+  (or (get work k)
+      (get work (name k))))
+
+(defn- work-file-path [work k]
+  (or (work-value work (source-snapshot-workset/resolved-path-key k))
+      (work-value work k)))
+
+(defn- parser-ir-work-content-hash [work]
+  (get-in (files/read-json (work-file-path work :parser_ir_path))
+          ["source" "work_content_hash"]))
+
+(defn- generated-analysis-metrics []
+  [{"metric_id" "fixture-line-count"
+    "value" 0
+    "value_type" "integer"
+    "denominator" nil
+    "unit" "line"
+    "status" "passed"}])
+
+(defn- generated-materialization [request-set work]
+  (let [snapshot-hash (get-in request-set ["request_set_identity_object"
+                                           "corpus_snapshot_hash"])
+        slug (work-value work :slug)
+        work-content-hash (parser-ir-work-content-hash work)]
+    {"artifact_subdir" slug
+     "work_content_hash" work-content-hash
+     "parser_ir_path" (work-file-path work :parser_ir_path)
+     "source_manifest_path" (work-file-path work :source_manifest_path)
+     "metadata_record_path" (work-file-path work :metadata_record_path)
+     "persons_dir" "examples/v0/example-persons"
+     "parser_identity" {"parser_build_hash" nil
+                        "parser_config_hash" nil
+                        "aat_parser_ir_mapping_hash" nil}
+     "analysis_subject" {"logical_path" (work-file-path work :aat_path)
+                         "git_ref" snapshot-hash}
+     "analysis_metrics" (generated-analysis-metrics)}))
+
+(defn- source-snapshot-date [request-set]
+  (when-let [path (get-in request-set ["resolution" "subject_source_path"])]
+    (get-in (files/read-json path)
+            ["snapshot_identity_object" "snapshot_date"])))
+
+(defn- generated-snapshot-plan [request-set]
+  (let [label (get request-set "label")
+        workset-path (source-snapshot-workset-path request-set)]
+    (when-not workset-path
+      (throw (ex-info "No snapshot plan or generated source-snapshot workset is available"
+                      {:request_set_label label
+                       :snapshot_plan_path (snapshot-index/snapshot-plan-path
+                                            label)})))
+    (let [workset (source-snapshot-workset/read-workset workset-path)
+          snapshot-date (or (source-snapshot-date request-set)
+                            "2026-07-07")]
+      {"request_set_label" label
+       "snapshot_label" (str "soranoha-snapshot-" snapshot-date "-00")
+       "generated_at" (str snapshot-date "T00:00:00Z")
+       "manifest_index_hash" (analysis-identity/hash-json-value
+                              {"kind" "generated-loose-manifest-index-v1"
+                               "request_set_id" (get request-set
+                                                     "request_set_id")})
+       "failure_policy" generated-snapshot-failure-policy
+       "layout_policy" generated-snapshot-layout-policy
+       "schema_hash_paths" generated-snapshot-schema-hash-paths
+       "schema_hashes" []
+       "parser_evidence_hashes" []
+       "materializations" (mapv #(generated-materialization request-set %)
+                                (work-value workset :works))
+       "manifest_references" []})))
+
+(defn- snapshot-plan [request-set]
+  (or (snapshot-plan-if-present (get request-set "label"))
+      (generated-snapshot-plan request-set)))
+
 (defn build-snapshot-index [label-or-path]
   (let [request-set (read-request-set label-or-path)
-        label (get request-set "label")
-        plan (snapshot-index/read-snapshot-plan label)]
+        plan (snapshot-plan request-set)]
     (snapshot-index/build-snapshot-index-from-plan request-set plan)))
 
 (defn snapshot-index! [label output-path]
@@ -327,22 +431,25 @@
                              :materialization materialization
                              :parser-ir-file (:parser-ir-file parser-result)
                              :generated-at generated-at})
-        analysis-result (write-analysis-artifacts!
-                         {:artifact-base artifact-base
-                          :materialization materialization
-                          :request-set request-set
-                          :producer-manifest-file (:manifest-file
-                                                   parser-result)
-                          :generated-at generated-at})]
-    [(:manifest-file parser-result)
-     (:plaintext-manifest-file publication-result)
-     (:tei-manifest-file publication-result)
-     (:analysis-manifest-file analysis-result)]))
+        analysis-result (when (seq (get request-set
+                                        "resolved_recipe_labels"))
+                          (write-analysis-artifacts!
+                           {:artifact-base artifact-base
+                            :materialization materialization
+                            :request-set request-set
+                            :producer-manifest-file (:manifest-file
+                                                     parser-result)
+                            :generated-at generated-at}))]
+    (cond-> [(:manifest-file parser-result)
+             (:plaintext-manifest-file publication-result)
+             (:tei-manifest-file publication-result)]
+      analysis-result
+      (conj (:analysis-manifest-file analysis-result)))))
 
 (defn- materialize-snapshot-root! [label-or-path root]
   (let [request-set (read-request-set label-or-path)
         label (get request-set "label")
-        plan (snapshot-index/read-snapshot-plan label)
+        plan (snapshot-plan request-set)
         materializations (materialization-entries label plan)]
     (delete-tree! root)
     (.mkdirs (io/file root))

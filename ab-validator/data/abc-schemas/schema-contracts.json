@@ -55,8 +55,8 @@
       "path": "data/abc-schemas/schemas/request-set.schema.json",
       "id": "https://w3id.org/abc/schemas/request-set.schema.json",
       "title": "ABC Request Set",
-      "version": "0.1.0",
-      "hash": "sha256:3b8703095321a59c7acf35e0e391cc46b0b7d7d10da9bb233cb78fb0e7747f6c"
+      "version": "0.1.1",
+      "hash": "sha256:0e94d9c4a4d1378401f73f30577e19b1c3a97d607e88d08d6ddd0f98af80d6c4"
     },
     {
       "path": "data/abc-schemas/schemas/source-region-coverage.schema.json",

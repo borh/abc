@@ -17,6 +17,33 @@
 (defn- delete-tree! [file]
   (fixture/delete-tree! file))
 
+(defn- write-generated-source-request-set!
+  [root label]
+  (let [input-root (io/file root "materialized")
+        source-snapshot-root (io/file root "source-snapshot")
+        request-set-file (io/file root (str label ".json"))]
+    (fixture/materialized-work! input-root
+                                {:slug "alpha"
+                                 :title "一"
+                                 :work-id "000001"
+                                 :person-id "000879"
+                                 :work-hash (fixture/example-hash "a1")})
+    (with-out-str
+      (is (zero? (soranoha/run!
+                  ["source-snapshot"
+                   (str input-root)
+                   (str source-snapshot-root)
+                   "unit-test-source-snapshot"
+                   "2026-07-07"]))))
+    (with-out-str
+      (is (zero? (soranoha/run!
+                  ["resolve-request-set"
+                   label
+                   (str request-set-file)
+                   (str (io/file source-snapshot-root
+                                 "source-snapshot.json"))]))))
+    request-set-file))
+
 (deftest list-request-sets-prints-checked-in-labels-test
   (let [out (with-out-str
               (is (zero? (soranoha/run! ["list-request-sets"]))))]
@@ -294,6 +321,60 @@
         (is (string/includes? out (get resolved "request_set_id")))
         (is (string/includes? out "subjects_count: 1")))
       (finally
+        (delete-tree! root)))))
+
+(deftest reproduce-command-uses-generated-full-corpus-request-set-test
+  (let [root (fixture/temp-dir "abc-soranoha-reproduce-source-snapshot")
+        snapshot-root (io/file "target/soranoha/full-corpus-basic-ja")]
+    (try
+      (delete-tree! snapshot-root)
+      (let [request-set-file (write-generated-source-request-set!
+                              root
+                              "full-corpus-basic-ja")
+            out (with-out-str
+                  (is (zero? (soranoha/run!
+                              ["reproduce" (str request-set-file)]))))
+            snapshot-file (io/file snapshot-root "snapshot-index.json")
+            parser-manifest (io/file snapshot-root
+                                     "artifacts/works/alpha/parser-ir/parser-ir.manifest.json")]
+        (is (string/includes? out (str snapshot-file)))
+        (is (.exists parser-manifest))
+        (is (.exists snapshot-file))
+        (let [snapshot (files/read-json snapshot-file)]
+          (is (= "full-corpus-basic-ja" (get snapshot "request_set_label")))
+          (is (= 4 (get-in snapshot ["summary" "total_artifacts"])))
+          (is (true? (snapshot-index/validate-snapshot-index! snapshot)))
+          (with-out-str
+            (is (zero? (soranoha/run! ["validate" (str snapshot-root)]))))))
+      (finally
+        (delete-tree! snapshot-root)
+        (delete-tree! root)))))
+
+(deftest reproduce-command-skips-analysis-for-generated-publication-request-set-test
+  (let [root (fixture/temp-dir "abc-soranoha-reproduce-publication-source")
+        snapshot-root (io/file "target/soranoha/full-corpus-publication-basic-ja")]
+    (try
+      (delete-tree! snapshot-root)
+      (let [request-set-file (write-generated-source-request-set!
+                              root
+                              "full-corpus-publication-basic-ja")
+            out (with-out-str
+                  (is (zero? (soranoha/run!
+                              ["reproduce" (str request-set-file)]))))
+            snapshot-file (io/file snapshot-root "snapshot-index.json")
+            analysis-manifest (io/file snapshot-root
+                                       "artifacts/works/alpha/analysis/analysis.manifest.json")]
+        (is (string/includes? out (str snapshot-file)))
+        (is (not (.exists analysis-manifest)))
+        (let [snapshot (files/read-json snapshot-file)]
+          (is (= "full-corpus-publication-basic-ja"
+                 (get snapshot "request_set_label")))
+          (is (= 3 (get-in snapshot ["summary" "total_artifacts"])))
+          (is (true? (snapshot-index/validate-snapshot-index! snapshot)))
+          (with-out-str
+            (is (zero? (soranoha/run! ["validate" (str snapshot-root)]))))))
+      (finally
+        (delete-tree! snapshot-root)
         (delete-tree! root)))))
 
 (deftest unknown-command-returns-nonzero-test

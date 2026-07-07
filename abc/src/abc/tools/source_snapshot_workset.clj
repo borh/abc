@@ -1,5 +1,6 @@
 (ns abc.tools.source-snapshot-workset
   (:require [abc.tools.files :as files]
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.tools.cli :as cli]
@@ -9,6 +10,12 @@
   {:aat-path "aat.json"
    :parser-ir-path "parser-ir.json"
    :metadata-record-path "metadata-record.json"})
+
+(def resolved-path-key
+  {:aat_path :resolved_aat_path
+   :parser_ir_path :resolved_parser_ir_path
+   :metadata_record_path :resolved_metadata_record_path
+   :source_manifest_path :resolved_source_manifest_path})
 
 (defn- map-value [m k]
   (or (get m k)
@@ -24,6 +31,24 @@
 
 (defn- canonical-file [path]
   (.getCanonicalFile (io/file path)))
+
+(defn- absolute-path? [path]
+  (.isAbsolute (io/file path)))
+
+(defn- resolve-path [base-dir path]
+  (when path
+    (if (absolute-path? path)
+      path
+      (str (.getCanonicalFile (io/file base-dir path))))))
+
+(defn- resolve-work-paths [work base-dir]
+  (reduce (fn [resolved k]
+            (if-let [path (map-value resolved k)]
+              (assoc resolved (resolved-path-key k)
+                     (resolve-path base-dir path))
+              resolved))
+          work
+          (keys resolved-path-key)))
 
 (defn- relative-path [from-dir to-file]
   (normalize-path
@@ -117,6 +142,16 @@
     (spit output-file (str (pr-str value) "\n"))
     {:output output-file
      :works-count (count (:works value))}))
+
+(defn read-workset [path]
+  (let [workset-file (io/file path)
+        base-dir (.getParentFile (.getCanonicalFile workset-file))
+        value (edn/read-string (slurp workset-file))]
+    (when-not (seq (map-value value :works))
+      (throw (ex-info "workset must contain non-empty :works"
+                      {:workset-path path})))
+    (assoc value :works (mapv #(resolve-work-paths % base-dir)
+                              (map-value value :works)))))
 
 (defn usage []
   (tel/log! :warn

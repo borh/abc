@@ -1,18 +1,18 @@
 {
   "label": "full-corpus-publication-basic-ja",
-  "request_set_id": "sha256:60213d87214f023625fa796f539e81c2fcd86e1a720879f1b5e04964303ab05c",
-  "request_set_identity_object": {
+  "request_set_id": "sha256:8bbbc51a669250afa6a95ca999c16f4d7f530916e6d110a024804cdd8c61b2a2",
+  "request_set_identity_object":
+  {
     "analysis_recipe_hashes": [],
     "corpus_snapshot_hash": "sha256:110f2a83f5a43728af28b8f34daff5a1eebc30d6ca4142be245d89296f661544",
     "input_views": [
       {
         "input_view_kind": "parser-ir-plaintext-body-v1",
         "policy_hash": "sha256:df21c590fd8d5b934fd426e632a3d8a09c2bd3fa299ca6b4c8fe4c797e1d1391"
-      }
-    ],
+      }],
     "missing_policy": "build-missing-only",
     "pack_policy_hash": "sha256:b413f4838a9d32b8b9427453a4318b2f9538d818c6f5726e8e0c41740693fe93",
-    "schema_hash": "sha256:3b8703095321a59c7acf35e0e391cc46b0b7d7d10da9bb233cb78fb0e7747f6c",
+    "schema_hash": "sha256:0e94d9c4a4d1378401f73f30577e19b1c3a97d607e88d08d6ddd0f98af80d6c4",
     "subjects": [
       {
         "metadata_record_hash": "sha256:c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
@@ -25,18 +25,18 @@
         "source_id": "aozora:000002",
         "work_content_hash": "sha256:2424242424242424242424242424242424242424242424242424242424242424",
         "work_id": "aozora:000002"
-      }
-    ],
+      }],
     "tokenizer_profile_hashes": []
   },
   "request_set_schema_version": "request-set-v1",
-  "resolution": {
+  "resolution":
+  {
     "resolved_at": "2026-07-07T00:00:00Z",
-    "resolver_id": "abc.tools.request-set-resolver/v1",
-    "source_definition_path": "data/request-set-definitions/full-corpus-publication-basic-ja.json"
+    "resolver_id": "abc.tools.request-set-resolver\/v1",
+    "source_definition_path": "data\/request-set-definitions\/full-corpus-publication-basic-ja.json"
   },
   "resolved_recipe_labels": [],
   "resolved_tokenizer_profile_labels": [],
-  "schema_hash": "sha256:3b8703095321a59c7acf35e0e391cc46b0b7d7d10da9bb233cb78fb0e7747f6c",
-  "schema_id": "https://w3id.org/abc/schemas/request-set.schema.json"
+  "schema_hash": "sha256:0e94d9c4a4d1378401f73f30577e19b1c3a97d607e88d08d6ddd0f98af80d6c4",
+  "schema_id": "https:\/\/w3id.org\/abc\/schemas\/request-set.schema.json"
 }

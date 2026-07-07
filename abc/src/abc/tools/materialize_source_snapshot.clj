@@ -5,7 +5,7 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.schema :as schema]
-            [clojure.edn :as edn]
+            [abc.tools.source-snapshot-workset :as source-snapshot-workset]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.tools.cli :as cli]
@@ -27,46 +27,9 @@
       (throw (ex-info (str "workset entry missing required key " k)
                       {:key k :work work}))))
 
-(def resolved-path-key
-  {:aat_path :resolved_aat_path
-   :parser_ir_path :resolved_parser_ir_path
-   :metadata_record_path :resolved_metadata_record_path
-   :source_manifest_path :resolved_source_manifest_path})
-
 (defn- work-file-path [work k]
-  (or (work-value work (resolved-path-key k))
+  (or (work-value work (source-snapshot-workset/resolved-path-key k))
       (required-work-value work k)))
-
-(defn- absolute-path? [path]
-  (.isAbsolute (io/file path)))
-
-(defn- resolve-path [base-dir path]
-  (when path
-    (if (absolute-path? path)
-      path
-      (str (.getCanonicalFile (io/file base-dir path))))))
-
-(defn- resolve-work-paths [work base-dir]
-  (reduce (fn [resolved k]
-            (if-let [path (work-value resolved k)]
-              (assoc resolved (resolved-path-key k)
-                     (resolve-path base-dir path))
-              resolved))
-          work
-          [:aat_path
-           :parser_ir_path
-           :metadata_record_path
-           :source_manifest_path]))
-
-(defn- read-workset [path]
-  (let [workset-file (io/file path)
-        base-dir (.getParentFile (.getCanonicalFile workset-file))
-        value (edn/read-string (slurp workset-file))]
-    (when-not (seq (map-value value :works))
-      (throw (ex-info "workset must contain non-empty :works"
-                      {:workset-path path})))
-    (assoc value :works (mapv #(resolve-work-paths % base-dir)
-                              (map-value value :works)))))
 
 (defn- relative-path [from-file to-file]
   (let [from-parent (.getCanonicalFile (.getParentFile (io/file from-file)))
@@ -186,7 +149,7 @@
 (defn materialize-source-snapshot!
   [{:keys [workset-path output-path generated-at]
     :or {generated-at default-generated-at}}]
-  (let [workset (read-workset workset-path)
+  (let [workset (source-snapshot-workset/read-workset workset-path)
         identity-object (snapshot-identity-object workset)
         snapshot-hash (hash/format-sha256
                        (hash/sha256-json-jcs identity-object))

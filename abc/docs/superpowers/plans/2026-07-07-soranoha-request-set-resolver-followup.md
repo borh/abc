@@ -417,3 +417,39 @@ Run `soranoha reproduce demo-basic-ja`, `soranoha validate target/soranoha/demo-
 - [x] Run `git diff --check`.
 - [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
 - [x] Run `nix flake check`.
+
+### Task 20: Generated Full-Corpus Request-Set Reproduction
+
+**Files:**
+- Modify: `abc/schemas/request-set.schema.json`
+- Modify: `abc/src/abc/tools/request_set_resolver.clj`
+- Modify: `abc/src/abc/tools/source_snapshot_workset.clj`
+- Modify: `abc/src/abc/tools/materialize_source_snapshot.clj`
+- Modify: `abc/src/abc/tools/soranoha.clj`
+- Modify: `abc/test/abc/tools/soranoha_test.clj`
+- Modify: request-set goldens and schema contract mirrors.
+
+**Interfaces:**
+- Produces: `soranoha reproduce <generated-full-corpus-request-set.json>` for request sets resolved from `soranoha source-snapshot`.
+- Consumes: `resolution.subject_source_path` and `resolution.source_snapshot_workset_path` as non-identity request-set provenance fields.
+
+- [x] Add failing Soranoha test for generated `full-corpus-basic-ja` request-set JSON feeding `reproduce`.
+- [x] Allow request-set resolution metadata to carry source snapshot and workset paths outside identity.
+- [x] Share source-snapshot workset relative-path resolution between source-snapshot materialization and Soranoha reproduction.
+- [x] Derive a snapshot plan from generated source-snapshot worksets when no checked-in snapshot plan exists.
+- [x] Add regression coverage for generated publication-only request sets skipping analysis artifacts.
+
+### Task 21: Generated Full-Corpus Reproduction Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed generated full-corpus request-set reproduction path.
+- Produces: verified bridge from generated source snapshots and request-set JSON into snapshot root reproduction.
+
+- [x] Run focused Soranoha/request-set/source-snapshot/schema tests.
+- [x] Run `git diff --check`.
+- [x] Run `bash scripts/monorepo-schema-drift.sh`.
+- [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
+- [x] Run `nix flake check`.

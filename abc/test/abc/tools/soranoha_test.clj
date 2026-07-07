@@ -136,6 +136,50 @@
       (finally
         (delete-tree! root)))))
 
+(deftest reproduce-command-materializes-demo-request-set-test
+  (let [root (io/file "target/soranoha/demo-basic-ja")
+        output-path (io/file root "snapshot-index.json")
+        expected-work-hashes #{"sha256:2323232323232323232323232323232323232323232323232323232323232323"
+                               "sha256:2424242424242424242424242424242424242424242424242424242424242424"}
+        expected-files ["artifacts/works/demo-fixture-a/parser-ir/parser-ir.manifest.json"
+                        "artifacts/works/demo-fixture-a/plaintext/plaintext.manifest.json"
+                        "artifacts/works/demo-fixture-a/tei/tei.manifest.json"
+                        "artifacts/works/demo-fixture-a/analysis/analysis.manifest.json"
+                        "artifacts/works/demo-fixture-b/parser-ir/parser-ir.manifest.json"
+                        "artifacts/works/demo-fixture-b/plaintext/plaintext.manifest.json"
+                        "artifacts/works/demo-fixture-b/tei/tei.manifest.json"
+                        "artifacts/works/demo-fixture-b/analysis/analysis.manifest.json"]]
+    (try
+      (delete-tree! root)
+      (with-out-str
+        (is (zero? (soranoha/run! ["reproduce" "demo-basic-ja"]))))
+      (is (.exists output-path))
+      (doseq [path expected-files]
+        (is (.exists (io/file root path))
+            (str path " should be materialized into the demo snapshot root")))
+      (when (.exists output-path)
+        (let [snapshot (files/read-json output-path)
+              references (get snapshot "artifact_references")
+              reference-kinds (frequencies (map #(get % "artifact_kind")
+                                                references))
+              manifest-work-hashes (set
+                                    (for [path expected-files]
+                                      (get-in (files/read-json
+                                               (io/file root path))
+                                              ["manifest_identity_object"
+                                               "work_content_hash"])))]
+          (is (true? (snapshot-index/validate-snapshot-index! snapshot)))
+          (is (= {"parser-ir" 2
+                  "plaintext" 2
+                  "tei" 2
+                  "analysis" 2}
+                 reference-kinds))
+          (is (= expected-work-hashes manifest-work-hashes))
+          (with-out-str
+            (is (zero? (soranoha/run! ["validate" (str root)]))))))
+      (finally
+        (delete-tree! root)))))
+
 (deftest unknown-command-returns-nonzero-test
   (let [err (java.io.StringWriter.)]
     (binding [*err* err]

@@ -81,6 +81,16 @@
 (defn- copied-parser-identity [materialization]
   (get materialization "parser_identity" {}))
 
+(defn- parser-ir-value [materialization]
+  (cond-> (files/read-json (get materialization "parser_ir_path"))
+    (seq (get materialization "parser_ir_source"))
+    (update "source" merge (get materialization "parser_ir_source"))))
+
+(defn- write-parser-ir-file! [materialization target]
+  (if (seq (get materialization "parser_ir_source"))
+    (manifest/write-json-file! target (parser-ir-value materialization))
+    (copy-file! (get materialization "parser_ir_path") target)))
+
 (defn- parser-ir-manifest
   [{:keys [parser-ir-file warnings-file source-manifest parser-identity
            generated-at]}]
@@ -137,10 +147,11 @@
       :notes "Generated as the parser-IR producer manifest for a Soranoha smoke snapshot."})))
 
 (defn- write-parser-ir-artifacts!
-  [{:keys [root materialization generated-at]}]
-  (let [parser-dir (io/file root "artifacts" "parser-ir")
-        parser-ir-file (copy-file! (get materialization "parser_ir_path")
-                                   (io/file parser-dir "parser-ir.json"))
+  [{:keys [artifact-base materialization generated-at]}]
+  (let [parser-dir (io/file artifact-base "parser-ir")
+        parser-ir-file (write-parser-ir-file! materialization
+                                              (io/file parser-dir
+                                                       "parser-ir.json"))
         warnings-source (get materialization "warnings_path")
         warnings-file (when warnings-source
                         (copy-file! warnings-source
@@ -160,12 +171,12 @@
      :manifest-file manifest-file}))
 
 (defn- write-publication-artifacts!
-  [{:keys [root materialization generated-at]}]
+  [{:keys [root artifact-base materialization parser-ir-file generated-at]}]
   (let [build-dir (io/file root ".build" "publication")
-        plaintext-dir (io/file root "artifacts" "plaintext")
-        tei-dir (io/file root "artifacts" "tei")
+        plaintext-dir (io/file artifact-base "plaintext")
+        tei-dir (io/file artifact-base "tei")
         result (materialize-publication/materialize-publication!
-                {:parser-ir-path (get materialization "parser_ir_path")
+                {:parser-ir-path parser-ir-file
                  :source-manifest-path (get materialization
                                             "source_manifest_path")
                  :metadata-record-path (get materialization
@@ -199,14 +210,45 @@
     (files/read-json (str "data/analysis-recipes/" recipe-id ".json"))))
 
 (defn- analysis-subject [request-set materialization]
-  (merge (first (get-in request-set ["request_set_identity_object"
-                                     "subjects"]))
-         (get materialization "analysis_subject" {})))
+  (let [subjects (get-in request-set ["request_set_identity_object"
+                                      "subjects"])
+        selector {"source_id" (or (get materialization "source_id")
+                                  (get-in materialization
+                                          ["analysis_subject" "source_id"]))
+                  "work_id" (or (get materialization "work_id")
+                                (get-in materialization
+                                        ["analysis_subject" "work_id"]))
+                  "work_content_hash" (or (get materialization
+                                               "work_content_hash")
+                                          (get-in materialization
+                                                  ["parser_ir_source"
+                                                   "work_content_hash"]))}
+        selected (cond
+                   (integer? (get materialization "subject_index"))
+                   (nth subjects (get materialization "subject_index") nil)
+
+                   (some val selector)
+                   (some (fn [subject]
+                           (when (every? (fn [[k v]]
+                                           (or (nil? v)
+                                               (= v (get subject k))))
+                                         selector)
+                             subject))
+                         subjects)
+
+                   :else
+                   (first subjects))]
+    (when-not selected
+      (throw (ex-info "Materialization entry does not match a request-set subject"
+                      {:request_set_label (get request-set "label")
+                       :selector selector
+                       :subject_index (get materialization "subject_index")})))
+    (merge selected (get materialization "analysis_subject" {}))))
 
 (defn- write-analysis-artifacts!
-  [{:keys [root materialization request-set producer-manifest-file
+  [{:keys [artifact-base materialization request-set producer-manifest-file
            generated-at]}]
-  (let [analysis-dir (io/file root "artifacts" "analysis")
+  (let [analysis-dir (io/file artifact-base "analysis")
         result (materialize-analysis/materialize-analysis!
                 {:producer-manifest (files/read-json producer-manifest-file)
                  :recipe (analysis-recipe request-set)
@@ -217,35 +259,63 @@
     {:analysis-result-file (:analysis-result result)
      :analysis-manifest-file (:manifest result)}))
 
+(defn- materialization-entries [label plan]
+  (cond
+    (seq (get plan "materializations"))
+    (get plan "materializations")
+
+    (get plan "materialization")
+    [(get plan "materialization")]
+
+    :else
+    (throw (ex-info "Snapshot plan has no materialization section"
+                    {:request_set_label label}))))
+
+(defn- artifact-base [root materialization]
+  (if-let [subdir (get materialization "artifact_subdir")]
+    (io/file root "artifacts" "works" subdir)
+    (io/file root "artifacts")))
+
+(defn- materialize-entry!
+  [{:keys [root materialization request-set generated-at]}]
+  (let [artifact-base (artifact-base root materialization)
+        parser-result (write-parser-ir-artifacts!
+                       {:artifact-base artifact-base
+                        :materialization materialization
+                        :generated-at generated-at})
+        publication-result (write-publication-artifacts!
+                            {:root root
+                             :artifact-base artifact-base
+                             :materialization materialization
+                             :parser-ir-file (:parser-ir-file parser-result)
+                             :generated-at generated-at})
+        analysis-result (write-analysis-artifacts!
+                         {:artifact-base artifact-base
+                          :materialization materialization
+                          :request-set request-set
+                          :producer-manifest-file (:manifest-file
+                                                   parser-result)
+                          :generated-at generated-at})]
+    [(:manifest-file parser-result)
+     (:plaintext-manifest-file publication-result)
+     (:tei-manifest-file publication-result)
+     (:analysis-manifest-file analysis-result)]))
+
 (defn- materialize-snapshot-root! [label root]
   (let [request-set (read-request-set label)
         plan (snapshot-index/read-snapshot-plan label)
-        materialization (get plan "materialization")]
-    (when-not materialization
-      (throw (ex-info "Snapshot plan has no materialization section"
-                      {:request_set_label label})))
+        materializations (materialization-entries label plan)]
     (delete-tree! root)
     (.mkdirs (io/file root))
     (let [generated-at (get plan "generated_at")
-          parser-result (write-parser-ir-artifacts!
-                         {:root root
-                          :materialization materialization
-                          :generated-at generated-at})
-          publication-result (write-publication-artifacts!
-                              {:root root
-                               :materialization materialization
-                               :generated-at generated-at})
-          analysis-result (write-analysis-artifacts!
-                           {:root root
-                            :materialization materialization
-                            :request-set request-set
-                            :producer-manifest-file (:manifest-file
-                                                     parser-result)
-                            :generated-at generated-at})
-          manifest-files [(:manifest-file parser-result)
-                          (:plaintext-manifest-file publication-result)
-                          (:tei-manifest-file publication-result)
-                          (:analysis-manifest-file analysis-result)]
+          manifest-files (mapcat
+                          (fn [materialization]
+                            (materialize-entry!
+                             {:root root
+                              :materialization materialization
+                              :request-set request-set
+                              :generated-at generated-at}))
+                          materializations)
           generated-plan (assoc plan
                                 "manifest_references"
                                 (mapv #(loose-manifest-reference root %)

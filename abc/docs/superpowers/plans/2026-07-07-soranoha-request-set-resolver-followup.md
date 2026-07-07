@@ -221,3 +221,43 @@ Run `soranoha reproduce smoke-basic-ja`, `soranoha validate target/soranoha/smok
 - [x] Run focused materialize-analysis/materialize-publication/snapshot/Soranoha tests.
 - [x] Run `git diff --check`.
 - [x] Run `nix flake check`.
+
+### Task 8: End-to-End Demo Snapshot Root
+
+**Files:**
+- Create: `abc/data/snapshot-plans/demo-basic-ja.json`
+- Modify: `abc/src/abc/tools/soranoha.clj`
+- Modify: `abc/test/abc/tools/soranoha_test.clj`
+
+**Interfaces:**
+- Produces: `soranoha reproduce demo-basic-ja` materializes two request-set subjects under work-scoped artifact directories, then builds and validates a snapshot index with parser-IR, plaintext, TEI, and token-independent analysis artifacts for each subject.
+- Consumes: the existing `demo-basic-ja` request-set definition and the smoke-root materialization helpers.
+
+- [x] **Step 1: Add failing demo reproduce-root test**
+
+Test that `reproduce demo-basic-ja` writes two work-scoped artifact roots, generates eight manifest references, preserves the two demo work content hashes, and validates the generated snapshot root.
+
+- [x] **Step 2: Implement plural materializations**
+
+Allow snapshot plans to define either one `materialization` or multiple `materializations`. Keep the existing smoke output layout unchanged, and write multi-work artifacts under `artifacts/works/<artifact_subdir>/`.
+
+- [x] **Step 3: Add a demo snapshot plan**
+
+Add `data/snapshot-plans/demo-basic-ja.json` with two work entries bound to the existing demo request-set subjects.
+
+- [x] **Step 4: Run demo reproduce/validate/explain**
+
+Run `soranoha reproduce demo-basic-ja`, `soranoha validate target/soranoha/demo-basic-ja`, and `soranoha explain-snapshot target/soranoha/demo-basic-ja/snapshot-index.json`.
+
+### Task 9: Demo-Root Slice Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed demo-root materialization and validation changes.
+- Produces: verified two-work demo snapshot slice.
+
+- [x] Run focused materialize-analysis/materialize-publication/snapshot/Soranoha tests.
+- [x] Run `git diff --check`.
+- [ ] Run `nix flake check`.

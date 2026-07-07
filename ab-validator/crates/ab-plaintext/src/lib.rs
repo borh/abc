@@ -34,8 +34,12 @@ pub struct SentenceSpan<'a> {
 }
 
 /// Split text into sentences on terminal punctuation.
-/// Boundaries: `。`, `！`, `？`, `!`, `?`.
+/// Boundaries: `。`, `！`, `？`, `!`, `?`, `.`, `．`.
 /// Adjacent terminals are kept together (e.g. `本当！？` is one sentence).
+/// ASCII and fullwidth periods are not boundaries inside alphanumeric runs
+/// (e.g. `3.14`).
+/// Terminals followed by a closing quote/bracket do not split until the next
+/// terminal boundary.
 /// Newlines are NOT sentence boundaries (they are paragraph breaks).
 pub fn sentence_split(text: &str) -> Vec<SentenceSpan<'_>> {
     let mut spans = Vec::new();
@@ -45,6 +49,13 @@ pub fn sentence_split(text: &str) -> Vec<SentenceSpan<'_>> {
 
     for (i, &(_byte_pos, ch)) in chars.iter().enumerate() {
         if is_sentence_terminal(ch) {
+            let previous = (i > 0).then_some(chars[i - 1].1);
+            let next = chars.get(i + 1).map(|(_, ch)| *ch);
+            if is_decimal_or_alphanumeric_period(previous, ch, next)
+                || next.is_some_and(is_closing_quote_or_bracket)
+            {
+                continue;
+            }
             // Consume adjacent terminals
             let mut end_idx = i + 1;
             while end_idx < chars.len() && is_sentence_terminal(chars[end_idx].1) {
@@ -84,7 +95,24 @@ pub fn sentence_split(text: &str) -> Vec<SentenceSpan<'_>> {
 }
 
 fn is_sentence_terminal(ch: char) -> bool {
-    matches!(ch, '。' | '！' | '？' | '!' | '?')
+    matches!(ch, '。' | '！' | '？' | '!' | '?' | '.' | '．')
+}
+
+fn is_decimal_or_alphanumeric_period(previous: Option<char>, ch: char, next: Option<char>) -> bool {
+    matches!(ch, '.' | '．')
+        && previous.is_some_and(is_period_non_boundary_neighbor)
+        && next.is_some_and(is_period_non_boundary_neighbor)
+}
+
+fn is_period_non_boundary_neighbor(ch: char) -> bool {
+    ch.is_ascii_alphanumeric() || matches!(ch, '０'..='９' | 'Ａ'..='Ｚ' | 'ａ'..='ｚ')
+}
+
+fn is_closing_quote_or_bracket(ch: char) -> bool {
+    matches!(
+        ch,
+        ')' | '）' | '」' | '』' | '】' | '］' | '〕' | '〉' | '》' | ']'
+    )
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -153,6 +181,24 @@ mod sentence_split_tests {
     }
 
     #[test]
+    fn does_not_split_decimal_points() {
+        let spans = sentence_split("これは3.14です。終わり。");
+        assert_eq!(
+            spans.iter().map(|span| span.text).collect::<Vec<_>>(),
+            vec!["これは3.14です。", "終わり。"]
+        );
+    }
+
+    #[test]
+    fn does_not_split_before_closing_quote_or_bracket() {
+        let spans = sentence_split("彼は言った。）次。");
+        assert_eq!(
+            spans.iter().map(|span| span.text).collect::<Vec<_>>(),
+            vec!["彼は言った。）次。"]
+        );
+    }
+
+    #[test]
     fn newlines_are_not_sentence_boundaries() {
         let spans = sentence_split("一行目\n二行目。");
         assert_eq!(spans.len(), 1);
@@ -178,5 +224,30 @@ mod sentence_split_tests {
         let spans = sentence_split("AB。CD。");
         assert_eq!(spans[0].char_offset, 0);
         assert_eq!(spans[1].char_offset, 3); // "AB。" is 3 chars
+    }
+
+    #[test]
+    fn fixture_matrix_matches_abc_legacy_cases() {
+        let cases = [
+            (
+                "吾輩は猫である。名前はまだ無い。",
+                vec!["吾輩は猫である。", "名前はまだ無い。"],
+            ),
+            ("え！？本当。", vec!["え！？", "本当。"]),
+            (
+                "これは3.14です。終わり。",
+                vec!["これは3.14です。", "終わり。"],
+            ),
+            ("彼は言った。）次。", vec!["彼は言った。）次。"]),
+            ("一行目\n二行目。", vec!["一行目\n二行目。"]),
+        ];
+
+        for (input, expected) in cases {
+            let actual = sentence_split(input)
+                .iter()
+                .map(|span| span.text)
+                .collect::<Vec<_>>();
+            assert_eq!(actual, expected, "input: {input}");
+        }
     }
 }

@@ -116,6 +116,10 @@ Field rules:
 | `sentences[].tags` | Closed set for v1: currently only `"orthographic-katakana"`. Empty array when untagged. |
 | `sentences[].orthographic_annotation_indices` | Indices into `orthographic_annotations.annotations` that overlap this sentence. Empty when no overlap. |
 
+Body paragraphs with an explicitly empty decoded span may produce no sentence
+row. Non-empty body paragraphs must be covered by contiguous sentence rows with
+no byte-span or node-range gaps.
+
 `orthographic_annotations` from the prior commit remains the detector evidence
 bundle:
 
@@ -182,7 +186,7 @@ node is split, the converter must produce a new node vector and rewrite every
 affected `paragraphs[].node_range` and every `sentences[].node_range` against
 the new indices. Body-paragraph sentence rows must tile the paragraph node range
 and decoded UTF-8 span with no gaps or overlaps, except for explicitly empty
-body paragraphs, which produce no sentence row.
+visible spans, which produce no sentence row.
 
 ### ABC TEI rendering
 
@@ -197,7 +201,8 @@ ABC consumes `sentences[]` when present:
 5. If `sentence.tags` contains `"orthographic-katakana"`, set
    `type="orthographic-katakana"`.
 6. If a body paragraph has no `sentences[]` rows, fall back to the current
-   paragraph renderer and record an omitted/preservation note.
+   paragraph renderer. This is valid for zero-span body paragraphs and remains a
+   migration fallback for older parser-IR without sentence rows.
 
 Example:
 
@@ -220,11 +225,10 @@ ABC adds an encoding declaration:
 <encodingDesc>
   <editorialDecl>
     <normalization method="markup">
-      <p>Sentences annotated with <gi>s</gi>
-      <att>type</att>="orthographic-katakana" indicate text where the
-      ab-validator ortho-detect layer identified katakana-dominant prose for
-      tokenizer-facing katakana-to-hiragana normalization. The original text is
-      not replaced.</p>
+      <p>Parser-IR sentence elements with type="orthographic-katakana" mark
+      spans where the ab-validator orthographic detector identified
+      katakana-dominant prose for tokenizer-facing normalization. The source
+      text is preserved in the TEI body.</p>
     </normalization>
   </editorialDecl>
 </encodingDesc>
@@ -277,6 +281,20 @@ Required migration steps:
 6. ab-validator emits `sentences[]` for body paragraphs.
 7. ab-validator joins `orthographic_annotations` to `sentences[].tags`.
 8. ABC TEI renderer consumes `sentences[]` and emits `<s>`.
+
+Implementation evidence checked in with this follow-up:
+
+- `ab-validator/docs/reports/2026-07-07-sentence-splitter-compatibility.md`
+  records the shared Rust/Clojure splitter fixture decision.
+- `ab-validator/docs/reports/2026-07-07-parser-ir-synthetic-evidence.md`
+  records why `sentence_segmentation`, `sentences[]`, sentence tags, and
+  `orthographic_annotations` stay out of the generated-probe divergence rules.
+- `ab-validator/crates/ab-aat-to-parser-ir/tests/integration.rs` contains the
+  end-to-end converter tests for checked-in schema validation, orthographic
+  sentence tags, and ruby-base sentence spans.
+- `abc/test/abc/tools/parser_ir_tei_test.clj` and
+  `abc/test/abc/tools/materialize_publication_test.clj` cover TEI `<s>`
+  rendering and the header normalization declaration.
 
 ## Decisions
 

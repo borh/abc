@@ -127,6 +127,26 @@ fn convert_preflighted(
         .append(&mut synthetic_warnings);
     recorder.record("INVENTION", None, Some("errors[]"), None, None)?;
 
+    let orthographic_annotations = options.orthographic_annotations;
+    if let Some(orthographic_annotations) = orthographic_annotations.as_ref() {
+        ensure_schema_declares_orthographic_annotations(&schemas.parser_ir_schema)?;
+        orthographic_annotations.validate_against_aat(&aat)?;
+    }
+
+    let mut sentence_segmentation = None;
+    let mut sentences = None;
+    if schema_declares_sentence_segmentation(&schemas.parser_ir_schema) {
+        let sentence_projection = crate::sentences::project_sentences(
+            nodes,
+            paragraphs,
+            orthographic_annotations.as_ref(),
+        )?;
+        nodes = sentence_projection.nodes;
+        paragraphs = sentence_projection.paragraphs;
+        sentence_segmentation = Some(sentence_projection.segmentation);
+        sentences = Some(sentence_projection.sentences);
+    }
+
     let mut parser_ir = json!({
         "schema_id": mapping.target_parser_ir_schema_id,
         "schema_hash": mapping.target_parser_ir_schema_hash,
@@ -138,16 +158,21 @@ fn convert_preflighted(
         "errors": [],
     });
 
-    if let Some(orthographic_annotations) = options.orthographic_annotations {
-        ensure_schema_declares_orthographic_annotations(&schemas.parser_ir_schema)?;
-        orthographic_annotations.validate_against_aat(&aat)?;
-        parser_ir
-            .as_object_mut()
-            .expect("parser_ir is an object")
-            .insert(
-                "orthographic_annotations".to_owned(),
-                serde_json::to_value(&orthographic_annotations)?,
-            );
+    let parser_ir_object = parser_ir.as_object_mut().expect("parser_ir is an object");
+    if let Some(sentence_segmentation) = sentence_segmentation {
+        parser_ir_object.insert(
+            "sentence_segmentation".to_owned(),
+            serde_json::to_value(sentence_segmentation)?,
+        );
+    }
+    if let Some(sentences) = sentences {
+        parser_ir_object.insert("sentences".to_owned(), serde_json::to_value(sentences)?);
+    }
+    if let Some(orthographic_annotations) = orthographic_annotations {
+        parser_ir_object.insert(
+            "orthographic_annotations".to_owned(),
+            serde_json::to_value(&orthographic_annotations)?,
+        );
     }
 
     if options.validate_output_parser_ir {
@@ -174,6 +199,13 @@ fn ensure_schema_declares_orthographic_annotations(schema: &Value) -> Result<()>
             "loaded parser-IR schema does not declare orthographic_annotations; use an updated ABC schema/mapping bundle before passing --ortho-annotations"
         )
     }
+}
+
+fn schema_declares_sentence_segmentation(schema: &Value) -> bool {
+    schema
+        .pointer("/properties/sentence_segmentation")
+        .is_some()
+        && schema.pointer("/properties/sentences").is_some()
 }
 
 struct BlockOutputs<'a> {

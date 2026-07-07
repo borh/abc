@@ -8,6 +8,14 @@
 
 **Tech Stack:** Rust 2024 (`ab-aat-to-parser-ir`, `ab-ortho-detect`, `ab-plaintext`, `serde_json`, `jsonschema`), Clojure (`abc.tools.parser-ir-tei`, `abc.tools.validate-design-bundle`, JSON Schema, TEI profile validation).
 
+**Implementation status:** Completed in the
+`feat/parser-ir-sentence-propagation` branch. The implementation uses the real
+Rust splitter and node projection path from the start, keeps synthetic
+sentence evidence out of generated-probe mapping rules, allows zero-span body
+paragraphs to have no sentence rows, renders TEI `<s>` through the existing
+accumulator, and declares orthographic sentence markup in the TEI header when
+parser-IR carries sentence evidence.
+
 ## Global Constraints
 
 - Parser-IR schema version becomes `0.6.0`.

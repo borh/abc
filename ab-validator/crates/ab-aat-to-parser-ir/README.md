@@ -25,8 +25,16 @@ cargo run -p ab-aat-to-parser-ir -- convert \
 ### `--ortho-annotations <PATH>`
 
 Optional path to an orthographic annotations JSON file produced by the
-`ab-ortho-detect` layer. When provided, the output parser-IR includes an
-`orthographic_annotations` field:
+`ab-ortho-detect` layer. When used with parser-IR schema 0.6.0 or newer,
+`--ortho-annotations` emits both:
+
+- `orthographic_annotations`: detector provenance and byte ranges
+- `sentences[].tags`: renderer-facing sentence tags, including
+  `orthographic-katakana`
+
+The annotation file must describe the same source as the AAT input:
+`work_id` must equal `AAT.work_id`, and `work_content_hash` must equal
+`AAT.meta.source_hash`.
 
 ```json
 {
@@ -44,13 +52,6 @@ Optional path to an orthographic annotations JSON file produced by the
   ]
 }
 ```
-
-Precondition: ABC must accept `orthographic_annotations` into the parser-IR
-JSON Schema (`abc/schemas/parser-ir.schema.json`) and the loaded mapping
-artifact must target the updated schema hash. The current schema has
-`additionalProperties: false` and rejects unknown fields. Validation remains
-enabled; with the current schema, the flag fails with a precondition error
-instead of emitting invalid parser-IR.
 
 Audit a corpus:
 
@@ -71,13 +72,13 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 
 ## Current Evidence
 
-- Mapping version: `0.2.4`
+- Mapping version: `0.2.5`
 - Mapping hash:
-  `sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf`
+  `sha256:20a3b9a7079b727918ccc5ef20924bc0cef5e0359a9a9647535c1a173c8781f4`
 - Mapping schema hash:
   `sha256:23a2822cbae88533168121e8a09648441276d8af6484269ae666b90030eb1e06`
 - Parser-IR schema hash:
-  `sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2`
+  `sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340`
 - Latest full-corpus conversion audit:
   `docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md`
 

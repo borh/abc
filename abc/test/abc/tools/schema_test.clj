@@ -6,7 +6,7 @@
             [clojure.test :refer [deftest is testing]]))
 
 (def ^:private cross-project-schema-versions
-  {"schemas/parser-ir.schema.json" "0.5.0"
+  {"schemas/parser-ir.schema.json" "0.6.0"
    "schemas/aat-parser-ir-divergence.schema.json" "0.3.0"
    "schemas/aat-parser-ir-mapping.schema.json" "0.2.3"
    "schemas/analysis-recipe.schema.json" "0.1.0"

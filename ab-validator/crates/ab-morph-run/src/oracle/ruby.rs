@@ -448,6 +448,43 @@ mod tests {
     }
 
     #[test]
+    fn ruby_reading_does_not_change_base_span_alignment() {
+        // The editor reading is longer than the base. Token alignment still uses
+        // the projected base span, so exact base-token tiling remains comparable.
+        let a = analysis("vibrato", vec![morph("名前", 0..2, &[("kana", "ナマエ")])]);
+        let b = analysis(
+            "sudachi-c",
+            vec![morph("名前", 0..2, &[("reading_form", "ナマエ")])],
+        );
+        let rows = adjudicate(
+            "r",
+            "s",
+            "t",
+            &[RubyBase {
+                char_start: 0,
+                char_end: 2,
+                base: "名前".to_owned(),
+                reading: "めいしょう".to_owned(),
+            }],
+            &[a, b],
+            &regions(),
+        );
+
+        assert_eq!(rows.len(), 1);
+        let detail: Value = serde_json::from_str(&rows[0].evidence_detail).unwrap();
+        assert_eq!(rows[0].classification, "nonstandard_ruby");
+        assert_eq!(rows[0].projected_char_end, 2);
+        assert_eq!(
+            detail.pointer("/per_analyzer/vibrato/align"),
+            Some(&json!("exact"))
+        );
+        assert_eq!(
+            detail.pointer("/per_analyzer/sudachi-c/align"),
+            Some(&json!("exact"))
+        );
+    }
+
+    #[test]
     fn all_boundary_misalign_is_no_comparable_reading() {
         // every analyzer straddles the base end → boundary-misalign, zero winners.
         let a = analysis(

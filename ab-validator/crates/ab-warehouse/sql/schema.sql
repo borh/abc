@@ -114,6 +114,23 @@ CREATE TABLE nway_region_analyzers (
   surfaces VARCHAR[]
 );
 
+-- nway_region_oracle_evidence (schema v2 sidecar): ruby-oracle adjudication per
+-- ruby base. One row per ruby base where ≥1 analyzer reading disagrees with the
+-- editor ruby. winning_analyzer is set only on a unique match; losing_analyzers
+-- lists the disagreeing analyzers; evidence_detail is per-analyzer JSON.
+CREATE TABLE nway_region_oracle_evidence (
+  run_id VARCHAR,
+  source_id VARCHAR,
+  text_id VARCHAR,
+  region_index UBIGINT,
+  projected_char_start UBIGINT,
+  projected_char_end UBIGINT,
+  oracle_source VARCHAR,
+  winning_analyzer VARCHAR,
+  losing_analyzers VARCHAR[],
+  evidence_detail VARCHAR
+);
+
 CREATE TABLE nway_feature_diffs (
   run_id VARCHAR,
   source_id VARCHAR,

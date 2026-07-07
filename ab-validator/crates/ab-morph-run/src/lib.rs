@@ -4,6 +4,7 @@ mod compact;
 mod import_aozora;
 mod nway;
 mod options;
+mod oracle;
 mod output;
 mod pipeline;
 mod script;
@@ -453,7 +454,12 @@ fn append_warehouse_nway_fact_rows(
     source_id: &str,
     source_text: &str,
     analyses: &[Analysis],
+    ruby_bases: &[crate::oracle::ruby::RubyBase],
 ) -> Result<()> {
+    let want_oracle = analyses.len() >= 2
+        && !ruby_bases.is_empty()
+        && writer.writes_table(WarehouseTable::NwayRegionOracleEvidence);
+    let mut region_lookup: Vec<crate::oracle::ruby::RegionSpan> = Vec::new();
     let mut feature_pattern_counts = WarehouseFeaturePatternAccumulator::default();
     warehouse::rows::visit_nway_fact_row_batches(
         run_id,
@@ -463,6 +469,16 @@ fn append_warehouse_nway_fact_rows(
         10_000,
         |facts| {
             feature_pattern_counts.record(&facts.regions, &facts.feature_diffs);
+            if want_oracle {
+                region_lookup.extend(facts.regions.iter().map(|r| {
+                    crate::oracle::ruby::RegionSpan {
+                        region_index: r.region_index,
+                        char_start: r.char_start,
+                        char_end: r.char_end,
+                        is_disagreement: !r.is_agreement,
+                    }
+                }));
+            }
             writer.append_nway_regions(&facts.regions)?;
             writer.append_nway_region_analyzers(&facts.region_analyzers)?;
             writer.append_nway_feature_diffs(&facts.feature_diffs)?;
@@ -470,6 +486,23 @@ fn append_warehouse_nway_fact_rows(
         },
     )?;
     writer.append_feature_pattern_counts(&feature_pattern_counts.into_rows())?;
+    if want_oracle {
+        let text_id = analyses
+            .first()
+            .map(|a| a.text_id.clone())
+            .unwrap_or_default();
+        let rows = crate::oracle::ruby::adjudicate(
+            run_id,
+            source_id,
+            &text_id,
+            ruby_bases,
+            analyses,
+            &region_lookup,
+        );
+        for chunk in rows.chunks(10_000) {
+            writer.append_nway_region_oracle_evidence(chunk)?;
+        }
+    }
     Ok(())
 }
 

@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "ab-check",
  "ab-ortho-detect",
+ "ab-plaintext",
  "anyhow",
  "clap",
  "jsonschema",

@@ -62,6 +62,90 @@ fn schemas_and_mapping_accepting_orthographic_annotations() -> (SchemaSet, Mappi
     (schemas, mapping)
 }
 
+fn schemas_and_mapping_accepting_sentences_and_orthographic_annotations()
+-> (SchemaSet, MappingDocument) {
+    let (mut schemas, mut mapping) = schemas_and_mapping_accepting_orthographic_annotations();
+    let props = schemas
+        .parser_ir_schema
+        .get_mut("properties")
+        .and_then(Value::as_object_mut)
+        .expect("parser-IR schema has properties object");
+    props.insert(
+        "sentence_segmentation".to_owned(),
+        json!({
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["schema_version", "splitter_id", "coordinate_system", "coverage"],
+            "properties": {
+                "schema_version": { "const": "sentence-segmentation-v1" },
+                "splitter_id": { "const": "ab-plaintext-japanese-v1" },
+                "coordinate_system": { "const": "decoded_utf8" },
+                "coverage": { "const": "body-paragraphs" }
+            }
+        }),
+    );
+    props.insert(
+        "sentences".to_owned(),
+        json!({
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                    "id",
+                    "paragraph_id",
+                    "span",
+                    "node_range",
+                    "tags",
+                    "orthographic_annotation_indices"
+                ],
+                "properties": {
+                    "id": { "type": "string" },
+                    "paragraph_id": { "type": "string" },
+                    "span": {
+                        "type": "object",
+                        "required": ["start", "end", "coordinate_system"],
+                        "properties": {
+                            "start": { "type": "integer" },
+                            "end": { "type": "integer" },
+                            "coordinate_system": { "const": "decoded_utf8" }
+                        }
+                    },
+                    "node_range": {
+                        "type": "object",
+                        "required": ["start", "end"],
+                        "properties": {
+                            "start": { "type": "integer" },
+                            "end": { "type": "integer" }
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": { "enum": ["orthographic-katakana"] }
+                    },
+                    "orthographic_annotation_indices": {
+                        "type": "array",
+                        "items": { "type": "integer" }
+                    }
+                }
+            }
+        }),
+    );
+    mapping.target_parser_ir_schema_hash = schema_hash(&schemas.parser_ir_schema).unwrap();
+    (schemas, mapping)
+}
+
+fn include_fixture_json(name: &str) -> serde_json::Value {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("fixtures")
+        .join(name);
+    let bytes = std::fs::read(&path)
+        .unwrap_or_else(|err| panic!("failed to read fixture {}: {err}", path.display()));
+    serde_json::from_slice(&bytes)
+        .unwrap_or_else(|err| panic!("failed to parse fixture {}: {err}", path.display()))
+}
+
 fn ortho_fixture_bundle() -> ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle {
     serde_json::from_value(json!({
         "work_id": "000000",
@@ -153,7 +237,7 @@ fn legacy_schema_hashes_match_mapping_artifact() {
     );
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2"
+        "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340"
     );
 }
 
@@ -208,8 +292,18 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.2.4");
+    assert_eq!(mapping.mapping_version, "0.2.5");
+    assert_eq!(
+        mapping.target_parser_ir_schema_hash,
+        schema_hash(&schemas.parser_ir_schema).unwrap()
+    );
     assert_eq!(mapping.transform_rule_descriptions.len(), 680);
+    assert!(mapping.transform_rule_descriptions.iter().all(|rule| {
+        !matches!(
+            rule.parser_ir_pointer.as_deref(),
+            Some("sentence_segmentation" | "sentences" | "orthographic_annotations")
+        )
+    }));
     assert!(
         !mapping
             .transform_rule_descriptions
@@ -282,21 +376,85 @@ fn orthographic_annotations_inject_into_schema_valid_parser_ir() {
 }
 
 #[test]
-fn orthographic_annotations_require_schema_support() {
+fn parser_ir_emits_split_sentence_rows_and_ortho_tags() {
+    let (schemas, mapping) = schemas_and_mapping_accepting_sentences_and_orthographic_annotations();
+    let bundle = ortho_fixture_bundle();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: include_fixture_json("sentence-segmentation-input.aat.json"),
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions {
+            orthographic_annotations: Some(bundle),
+            ..ConversionOptions::default()
+        },
+    })
+    .unwrap();
+
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/sentence_segmentation/splitter_id"),
+        Some(&json!("ab-plaintext-japanese-v1"))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/paragraphs/0/node_range"),
+        Some(&json!({"start":0,"end":2}))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/paragraphs/1/node_range"),
+        Some(&json!({"start":2,"end":3}))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/span"),
+        Some(&json!({"start":0,"end":24,"coordinate_system":"decoded_utf8"}))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/1/span"),
+        Some(&json!({"start":24,"end":48,"coordinate_system":"decoded_utf8"}))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/2/span"),
+        Some(&json!({"start":48,"end":63,"coordinate_system":"decoded_utf8"}))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/tags"),
+        Some(&json!(["orthographic-katakana"]))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/sentences/0/orthographic_annotation_indices"),
+        Some(&json!([0]))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/1/tags"),
+        Some(&json!(["orthographic-katakana"]))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/sentences/1/orthographic_annotation_indices"),
+        Some(&json!([1]))
+    );
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn checked_in_schema_accepts_orthographic_annotations() {
     let (schemas, mapping) = schemas_and_mapping();
-    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat: ortho_fixture_aat(),
         mapping,
-        schemas,
+        schemas: schemas.clone(),
         options: ConversionOptions {
             orthographic_annotations: Some(ortho_fixture_bundle()),
             ..ConversionOptions::default()
         },
     })
-    .unwrap_err()
-    .to_string();
+    .unwrap();
 
-    assert!(error.contains("does not declare orthographic_annotations"));
+    assert!(output.parser_ir.get("orthographic_annotations").is_some());
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 
 #[test]
@@ -2288,7 +2446,7 @@ fn cli_convert_writes_parser_ir_and_divergence_bundle() {
 }
 
 #[test]
-fn cli_convert_ortho_annotations_reports_schema_precondition() {
+fn cli_convert_with_ortho_annotations_emits_sentence_tags() {
     let repo = repo_root();
     let abc = abc_root(&repo);
     let temp = tempfile::tempdir().unwrap();
@@ -2307,7 +2465,7 @@ fn cli_convert_ortho_annotations_reports_schema_precondition() {
     )
     .unwrap();
 
-    let output = std::process::Command::new(env!("CARGO_BIN_EXE_ab-aat-to-parser-ir"))
+    let status = std::process::Command::new(env!("CARGO_BIN_EXE_ab-aat-to-parser-ir"))
         .arg("convert")
         .arg("--aat")
         .arg(&aat)
@@ -2321,14 +2479,17 @@ fn cli_convert_ortho_annotations_reports_schema_precondition() {
         .arg(&divergence)
         .arg("--abc-root")
         .arg(abc)
-        .output()
+        .status()
         .unwrap();
 
-    assert!(!output.status.success());
-    assert!(!parser_ir.exists());
-    assert!(!divergence.exists());
-    let stderr = String::from_utf8(output.stderr).unwrap();
-    assert!(stderr.contains("does not declare orthographic_annotations"));
+    assert!(status.success());
+    let parser_ir_json = read_json(&parser_ir).unwrap();
+    assert_eq!(
+        parser_ir_json.pointer("/sentences/0/tags/0"),
+        Some(&json!("orthographic-katakana"))
+    );
+    assert!(parser_ir_json.get("orthographic_annotations").is_some());
+    assert!(divergence.exists());
 }
 
 #[test]

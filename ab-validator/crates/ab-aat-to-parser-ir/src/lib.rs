@@ -3,6 +3,7 @@ pub mod divergence;
 pub mod mapping;
 pub mod ortho_annotations;
 pub mod schema;
+pub mod sentences;
 pub mod structural_probe;
 
 pub use convert::{

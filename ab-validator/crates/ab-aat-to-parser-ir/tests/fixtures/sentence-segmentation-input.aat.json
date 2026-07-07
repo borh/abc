@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "work_id": "000000",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "content": [
+        { "kind": "text", "value": "吾輩ハ猫デアル。名前はまだ無い。" }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "content": [
+        { "kind": "text", "value": "後続段落。" }
+      ]
+    }
+  ]
+}

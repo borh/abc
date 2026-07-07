@@ -7,6 +7,7 @@ name = "ab-aat-to-parser-ir"
 version = "0.1.0"
 dependencies = [
  "ab-check",
+ "ab-morph-analyzers",
  "ab-ortho-detect",
  "ab-plaintext",
  "anyhow",

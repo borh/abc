@@ -1128,6 +1128,27 @@
                     #(vec (remove (fn [sentence]
                                     (= "p000001" (get sentence "paragraph_id")))
                                   %)))))))
+  (testing "accepts zero-span body paragraph with no sentence rows"
+    (is (empty?
+         (validate/parser-ir-sentence-coherence-errors
+          (-> sentence-parser-ir-fixture
+              (update "nodes"
+                      conj
+                      {"type" "page-break"
+                       "span" {"start" 63
+                               "end" 63
+                               "coordinate_system" "decoded_utf8"}})
+              (update "paragraphs"
+                      conj
+                      {"id" "p000002"
+                       "span" {"start" 63
+                               "end" 63
+                               "coordinate_system" "decoded_utf8"}
+                       "span_source" "direct"
+                       "node_range" {"start" 3 "end" 4}
+                       "role" "body"
+                       "source_pointer" "blocks[2]"
+                       "classification" "direct"}))))))
   (testing "rejects byte-span gaps"
     (is (= ["parser IR sentence s000001 span starts at 30 but expected 24"]
            (validate/parser-ir-sentence-coherence-errors

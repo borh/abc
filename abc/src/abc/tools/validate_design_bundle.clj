@@ -135,8 +135,10 @@
   (let [pid (get paragraph "id")
         paragraph-node-range (get paragraph "node_range")
         paragraph-span (get paragraph "span")
-        paragraph-empty? (= (get paragraph-node-range "start")
-                            (get paragraph-node-range "end"))
+        paragraph-empty? (or (= (get paragraph-node-range "start")
+                                (get paragraph-node-range "end"))
+                             (= (get paragraph-span "start")
+                                (get paragraph-span "end")))
         ordered (sort-by (juxt #(get-in % ["node_range" "start"])
                                #(get-in % ["span" "start"]))
                          sentences)]

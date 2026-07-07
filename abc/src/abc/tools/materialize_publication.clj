@@ -163,6 +163,14 @@
                       (adjacent-source-manifest-path parser-ir-path))]
     (files/read-json path)))
 
+(defn- orthographic-sentence-normalization? [parser-ir]
+  (or (contains? parser-ir "sentence_segmentation")
+      (boolean
+       (some (fn [sentence]
+               (some #{"orthographic-katakana"}
+                     (get sentence "tags" [])))
+             (get parser-ir "sentences" [])))))
+
 (defn- corpus-snapshot-hash [source-manifest]
   (or (get-in source-manifest ["manifest_identity_object" "corpus_snapshot_hash"])
       (throw (ex-info "Publication materialization requires a source manifest with corpus_snapshot_hash"
@@ -519,7 +527,9 @@
         tei-result (parser-ir-tei/render parser-ir)
         header (tei-header/build
                 (assoc (resolve-header-input metadata-record persons-dir)
-                       :char-declarations (:char_declarations tei-result)))
+                       :char-declarations (:char_declarations tei-result)
+                       :orthographic-sentence-normalization?
+                       (orthographic-sentence-normalization? parser-ir)))
         plain-file (io/file output-dir "plain.txt")
         tei-file (io/file output-dir "tei.xml")
         preservation-file (io/file output-dir "preservation.json")

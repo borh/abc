@@ -70,10 +70,13 @@
 (defn- identity-value [entry field]
   (get-in entry ["manifest_identity_object" field]))
 
+(defn- successful-parser-ir-entry? [entry]
+  (and (successful-entry? entry)
+       (= "parser-ir" (get entry "artifact_kind"))))
+
 (defn parser-ir-producer-candidates [entries coordinate]
   (->> entries
-       (filter successful-entry?)
-       (filter #(= "parser-ir" (get % "artifact_kind")))
+       (filter successful-parser-ir-entry?)
        (filter (fn [entry]
                  (every? (fn [[field expected]]
                            (= expected (identity-value entry field)))
@@ -87,7 +90,10 @@
         entries))
 
 (defn- find-producer-entry [by-artifact-id analysis-entry]
-  (some #(get by-artifact-id %)
+  (some (fn [artifact-id]
+          (let [entry (get by-artifact-id artifact-id)]
+            (when (successful-parser-ir-entry? entry)
+              entry)))
         (concat (get analysis-entry "provenance_was_derived_from")
                 (get analysis-entry "provenance_used"))))
 
@@ -110,15 +116,14 @@
          (filter successful-entry?)
          (filter #(= "analysis" (get % "artifact_kind")))
          (mapcat (fn [analysis-entry]
-                   (let [producer-entry (find-producer-entry by-artifact-id analysis-entry)]
-                     (if producer-entry
-                       (copied-field-errors analysis-entry producer-entry)
-                       [{:analysis_artifact_id (get analysis-entry "artifact_id")
-                         :producer_artifact_id nil
-                         :field "__producer__"
-                         :analysis_value (concat (get analysis-entry "provenance_was_derived_from")
-                                                 (get analysis-entry "provenance_used"))
-                         :producer_value nil}]))))
+                   (if-let [producer-entry (find-producer-entry by-artifact-id analysis-entry)]
+                     (copied-field-errors analysis-entry producer-entry)
+                     [{:analysis_artifact_id (get analysis-entry "artifact_id")
+                       :producer_artifact_id nil
+                       :field "__producer__"
+                       :analysis_value (vec (concat (get analysis-entry "provenance_was_derived_from")
+                                                     (get analysis-entry "provenance_used")))
+                       :producer_value nil}])))
          vec)))
 
 (defn validate-analysis-copied-fields! [entries]

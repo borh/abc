@@ -1,6 +1,6 @@
 (ns abc.tools.manifest-index-test
-  (:require [abc.tools.manifest-index :as manifest-index]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
+            [abc.tools.manifest-index :as manifest-index]
             [clojure.test :refer [deftest is testing]]))
 
 (defn manifest
@@ -33,6 +33,29 @@
               "media_type" "application/json"}
    "provenance" {"used" [producer-artifact-id (files/example-hash "20")]
                  "was_derived_from" [producer-artifact-id]}})
+
+(defn analysis-manifest-with-provenance
+  [artifact-id provenance-used provenance-was-derived-from parser-build-hash]
+  {"artifact_id" artifact-id
+   "artifact_kind" "analysis"
+   "validation_status" "passed"
+   "manifest_identity_object" {"manifest_schema_hash" (files/example-hash "01")
+                               "corpus_snapshot_hash" (files/example-hash "02")
+                               "work_content_hash" (files/example-hash "03")
+                               "metadata_record_hash" nil
+                               "parser_build_hash" parser-build-hash
+                               "parser_config_hash" (files/example-hash "05")
+                               "aat_parser_ir_mapping_hash" (files/example-hash "06")
+                               "parser_ir_schema_hash" (files/example-hash "07")
+                               "tei_profile_hash" nil
+                               "tokenizer_build_hash" nil
+                               "tokenizer_dictionary_hash" nil
+                               "analysis_recipe_hash" (files/example-hash "08")
+                               "output_format_spec_hash" (files/example-hash "09")}
+   "content" {"content_hash" (files/example-hash "10")
+              "media_type" "application/json"}
+   "provenance" {"used" provenance-used
+                 "was_derived_from" provenance-was-derived-from}})
 
 (defn parser-ir-manifest
   [artifact-id parser-build-hash]
@@ -125,7 +148,7 @@
     (is (= [producer-id]
            (mapv #(get % "artifact_id")
                  (manifest-index/parser-ir-producer-candidates
-                 entries
+                  entries
                   {"work_content_hash" (files/example-hash "03")
                    "corpus_snapshot_hash" (files/example-hash "02")
                    "parser_build_hash" (files/example-hash "04")
@@ -153,3 +176,122 @@
            (manifest-index/analysis-copied-field-errors
             (manifest-index/index-entries {"parser.manifest.json" producer
                                            "analysis.manifest.json" bad-analysis}))))))
+
+(deftest analysis-copied-field-validation-uses-successful-parser-ir-producer-test
+  (let [producer-id (files/example-hash "41")
+        fallback-id (files/example-hash "42")
+        analysis-id (files/example-hash "43")
+        producer (parser-ir-manifest producer-id (files/example-hash "04"))
+        failed-parser-ir {"artifact_id" fallback-id
+                          "artifact_kind" "parser-ir"
+                          "validation_status" "failed"
+                          "manifest_identity_object" {"manifest_schema_hash" (files/example-hash "01")
+                                                      "corpus_snapshot_hash" (files/example-hash "02")
+                                                      "work_content_hash" (files/example-hash "03")
+                                                      "metadata_record_hash" nil
+                                                      "parser_build_hash" (files/example-hash "99")
+                                                      "parser_config_hash" (files/example-hash "05")
+                                                      "aat_parser_ir_mapping_hash" (files/example-hash "06")
+                                                      "parser_ir_schema_hash" (files/example-hash "07")
+                                                      "tei_profile_hash" nil
+                                                      "tokenizer_build_hash" nil
+                                                      "tokenizer_dictionary_hash" nil
+                                                      "analysis_recipe_hash" nil
+                                                      "output_format_spec_hash" (files/example-hash "07")}
+                          "content" {"content_hash" (files/example-hash "12")
+                                     "media_type" "application/json"}
+                          "provenance" {"used" []
+                                        "was_derived_from" []}}
+        non-parser-entry {"artifact_id" (files/example-hash "44")
+                          "artifact_kind" "analysis"
+                          "validation_status" "failed"
+                          "manifest_identity_object" {"manifest_schema_hash" (files/example-hash "01")
+                                                      "corpus_snapshot_hash" (files/example-hash "02")
+                                                      "work_content_hash" (files/example-hash "03")
+                                                      "metadata_record_hash" nil
+                                                      "parser_build_hash" (files/example-hash "98")
+                                                      "parser_config_hash" (files/example-hash "05")
+                                                      "aat_parser_ir_mapping_hash" (files/example-hash "06")
+                                                      "parser_ir_schema_hash" (files/example-hash "07")
+                                                      "tei_profile_hash" nil
+                                                      "tokenizer_build_hash" nil
+                                                      "tokenizer_dictionary_hash" nil
+                                                      "analysis_recipe_hash" (files/example-hash "08")
+                                                      "output_format_spec_hash" (files/example-hash "09")}
+                          "content" {"content_hash" (files/example-hash "13")
+                                     "media_type" "application/json"}
+                          "provenance" {"used" []
+                                        "was_derived_from" []}}
+        analysis (analysis-manifest-with-provenance analysis-id
+                                                    [(get failed-parser-ir "artifact_id")
+                                                     (get non-parser-entry "artifact_id")
+                                                     producer-id]
+                                                    [(get failed-parser-ir "artifact_id")
+                                                     (get non-parser-entry "artifact_id")
+                                                     producer-id]
+                                                    (files/example-hash "04"))
+        entries (manifest-index/index-entries
+                 {"analysis.manifest.json" analysis
+                  "fallback-parser.manifest.json" failed-parser-ir
+                  "non-parser.manifest.json" non-parser-entry
+                  "parser.manifest.json" producer})]
+    (is (empty? (manifest-index/analysis-copied-field-errors entries)))))
+
+(deftest analysis-copied-field-validation-missing-producer-test
+  (let [analysis-id (files/example-hash "51")
+        failed-parser-ir {"artifact_id" (files/example-hash "52")
+                          "artifact_kind" "parser-ir"
+                          "validation_status" "failed"
+                          "manifest_identity_object" {"manifest_schema_hash" (files/example-hash "01")
+                                                      "corpus_snapshot_hash" (files/example-hash "02")
+                                                      "work_content_hash" (files/example-hash "03")
+                                                      "metadata_record_hash" nil
+                                                      "parser_build_hash" (files/example-hash "04")
+                                                      "parser_config_hash" (files/example-hash "05")
+                                                      "aat_parser_ir_mapping_hash" (files/example-hash "06")
+                                                      "parser_ir_schema_hash" (files/example-hash "07")
+                                                      "tei_profile_hash" nil
+                                                      "tokenizer_build_hash" nil
+                                                      "tokenizer_dictionary_hash" nil
+                                                      "analysis_recipe_hash" nil
+                                                      "output_format_spec_hash" (files/example-hash "07")}
+                          "content" {"content_hash" (files/example-hash "14")
+                                     "media_type" "application/json"}
+                          "provenance" {"used" []
+                                        "was_derived_from" []}}
+        non-parser-entry {"artifact_id" (files/example-hash "53")
+                          "artifact_kind" "analysis"
+                          "validation_status" "failed"
+                          "manifest_identity_object" {"manifest_schema_hash" (files/example-hash "01")
+                                                      "corpus_snapshot_hash" (files/example-hash "02")
+                                                      "work_content_hash" (files/example-hash "03")
+                                                      "metadata_record_hash" nil
+                                                      "parser_build_hash" (files/example-hash "04")
+                                                      "parser_config_hash" (files/example-hash "05")
+                                                      "aat_parser_ir_mapping_hash" (files/example-hash "06")
+                                                      "parser_ir_schema_hash" (files/example-hash "07")
+                                                      "tei_profile_hash" nil
+                                                      "tokenizer_build_hash" nil
+                                                      "tokenizer_dictionary_hash" nil
+                                                      "analysis_recipe_hash" (files/example-hash "08")
+                                                      "output_format_spec_hash" (files/example-hash "09")}
+                          "content" {"content_hash" (files/example-hash "15")
+                                     "media_type" "application/json"}
+                          "provenance" {"used" []
+                                        "was_derived_from" []}}
+        analysis (analysis-manifest-with-provenance analysis-id
+                                                    [(get non-parser-entry "artifact_id")]
+                                                    [(get failed-parser-ir "artifact_id")]
+                                                    (files/example-hash "04"))
+        errors (manifest-index/analysis-copied-field-errors
+                (manifest-index/index-entries
+                 {"analysis.manifest.json" analysis
+                  "fallback-parser.manifest.json" failed-parser-ir
+                  "non-parser.manifest.json" non-parser-entry}))]
+    (is (= [{:analysis_artifact_id analysis-id
+             :producer_artifact_id nil
+             :field "__producer__"
+             :analysis_value [(files/example-hash "52")
+                              (files/example-hash "53")]
+             :producer_value nil}]
+           errors))))

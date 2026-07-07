@@ -6,6 +6,7 @@ use serde_json::{Value, json};
 use crate::{
     divergence::{AatMeta, DivergenceRecorder},
     mapping::{MappingDocument, MappingIndex},
+    ortho_annotations::OrthoAnnotationsBundle,
     schema::{SchemaSet, validate_value},
 };
 
@@ -21,6 +22,7 @@ pub struct ConversionRequest {
 pub struct ConversionOptions {
     pub validate_input_aat: bool,
     pub validate_output_parser_ir: bool,
+    pub orthographic_annotations: Option<OrthoAnnotationsBundle>,
 }
 
 impl Default for ConversionOptions {
@@ -28,6 +30,7 @@ impl Default for ConversionOptions {
         Self {
             validate_input_aat: true,
             validate_output_parser_ir: true,
+            orthographic_annotations: None,
         }
     }
 }
@@ -124,7 +127,7 @@ fn convert_preflighted(
         .append(&mut synthetic_warnings);
     recorder.record("INVENTION", None, Some("errors[]"), None, None)?;
 
-    let parser_ir = json!({
+    let mut parser_ir = json!({
         "schema_id": mapping.target_parser_ir_schema_id,
         "schema_hash": mapping.target_parser_ir_schema_hash,
         "derived_from": derived_from(&aat, mapping)?,
@@ -134,6 +137,18 @@ fn convert_preflighted(
         "warnings": warnings,
         "errors": [],
     });
+
+    if let Some(orthographic_annotations) = options.orthographic_annotations {
+        ensure_schema_declares_orthographic_annotations(&schemas.parser_ir_schema)?;
+        orthographic_annotations.validate_against_aat(&aat)?;
+        parser_ir
+            .as_object_mut()
+            .expect("parser_ir is an object")
+            .insert(
+                "orthographic_annotations".to_owned(),
+                serde_json::to_value(&orthographic_annotations)?,
+            );
+    }
 
     if options.validate_output_parser_ir {
         validate_value(&schemas.parser_ir_schema, &parser_ir, "parser-IR")?;
@@ -146,6 +161,19 @@ fn convert_preflighted(
         divergence_bundle,
         emitted_rule_ids,
     })
+}
+
+fn ensure_schema_declares_orthographic_annotations(schema: &Value) -> Result<()> {
+    if schema
+        .pointer("/properties/orthographic_annotations")
+        .is_some()
+    {
+        Ok(())
+    } else {
+        bail!(
+            "loaded parser-IR schema does not declare orthographic_annotations; use an updated ABC schema/mapping bundle before passing --ortho-annotations"
+        )
+    }
 }
 
 struct BlockOutputs<'a> {

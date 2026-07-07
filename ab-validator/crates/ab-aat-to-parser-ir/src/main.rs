@@ -25,6 +25,8 @@ enum Command {
         #[arg(long)]
         aat: PathBuf,
         #[arg(long)]
+        ortho_annotations: Option<PathBuf>,
+        #[arg(long)]
         mapping: PathBuf,
         #[arg(long)]
         parser_ir_out: PathBuf,
@@ -82,6 +84,7 @@ fn main() -> Result<()> {
     match args.command {
         Command::Convert {
             aat,
+            ortho_annotations,
             mapping,
             parser_ir_out,
             divergence_out,
@@ -94,8 +97,19 @@ fn main() -> Result<()> {
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
             let schemas = SchemaSet::load(&repo_root, &abc_root)?;
-            let output = PreparedConverter::new(mapping, schemas)?
-                .convert(aat, ConversionOptions::default())?;
+            let orthographic_annotations = match ortho_annotations {
+                Some(path) => Some(
+                    ab_aat_to_parser_ir::ortho_annotations::read_ortho_annotations_bundle(&path)?,
+                ),
+                None => None,
+            };
+            let output = PreparedConverter::new(mapping, schemas)?.convert(
+                aat,
+                ConversionOptions {
+                    orthographic_annotations,
+                    ..ConversionOptions::default()
+                },
+            )?;
             std::fs::write(
                 parser_ir_out,
                 serde_json::to_string_pretty(&output.parser_ir)? + "\n",

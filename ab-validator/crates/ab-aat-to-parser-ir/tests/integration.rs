@@ -27,6 +27,87 @@ fn schemas_and_mapping() -> (SchemaSet, MappingDocument) {
     (schemas, mapping)
 }
 
+fn schemas_and_mapping_accepting_orthographic_annotations() -> (SchemaSet, MappingDocument) {
+    let (mut schemas, mut mapping) = schemas_and_mapping();
+    let props = schemas
+        .parser_ir_schema
+        .get_mut("properties")
+        .and_then(Value::as_object_mut)
+        .expect("parser-IR schema has properties object");
+    props.insert(
+        "orthographic_annotations".to_owned(),
+        json!({
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+                "work_id",
+                "work_content_hash",
+                "coordinate_system",
+                "detector_id",
+                "annotations"
+            ],
+            "properties": {
+                "work_id": { "type": "string" },
+                "work_content_hash": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "coordinate_system": { "const": "decoded_utf8" },
+                "detector_id": {},
+                "annotations": { "type": "array" }
+            }
+        }),
+    );
+    mapping.target_parser_ir_schema_hash = schema_hash(&schemas.parser_ir_schema).unwrap();
+    (schemas, mapping)
+}
+
+fn ortho_fixture_bundle() -> ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle {
+    serde_json::from_value(json!({
+        "work_id": "000000",
+        "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "coordinate_system": "decoded_utf8",
+        "detector_id": "HeuristicV1",
+        "annotations": [
+            {
+                "source_byte_range": { "start": 0, "end": 24 },
+                "normalized_text": "吾輩は猫である。",
+                "kind": "ScriptKatakanaToHiragana",
+                "confidence": null
+            },
+            {
+                "source_byte_range": { "start": 24, "end": 48 },
+                "normalized_text": "名前はまだ無い。",
+                "kind": "ScriptKatakanaToHiragana",
+                "confidence": null
+            }
+        ]
+    }))
+    .unwrap()
+}
+
+fn ortho_fixture_aat() -> Value {
+    json!({
+        "version": 1,
+        "work_id": "000000",
+        "meta": {
+            "adapter": "fixture",
+            "adapter_version": "fixture 0.1.0",
+            "source_encoding": "utf-8",
+            "source_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "parse_complete": true,
+            "warnings": []
+        },
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [{
+                "kind": "text",
+                "value": "吾輩ハ猫デアル。名前ハマダ無イ。"
+            }]
+        }]
+    })
+}
+
 fn base_meta(source_encoding: &str, source_hash: &str) -> Value {
     json!({
         "adapter": "fixture",
@@ -175,6 +256,61 @@ fn mapping_preflight_rejects_stale_gaiji_pointers() {
 
     assert!(error.contains("A-99"));
     assert!(error.contains("gaiji.raw_marker"));
+}
+
+#[test]
+fn orthographic_annotations_inject_into_schema_valid_parser_ir() {
+    let (schemas, mapping) = schemas_and_mapping_accepting_orthographic_annotations();
+    let bundle = ortho_fixture_bundle();
+    let expected = serde_json::to_value(&bundle).unwrap();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: ortho_fixture_aat(),
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions {
+            orthographic_annotations: Some(bundle),
+            ..ConversionOptions::default()
+        },
+    })
+    .unwrap();
+
+    assert_eq!(
+        output.parser_ir.get("orthographic_annotations"),
+        Some(&expected)
+    );
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn orthographic_annotations_require_schema_support() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: ortho_fixture_aat(),
+        mapping,
+        schemas,
+        options: ConversionOptions {
+            orthographic_annotations: Some(ortho_fixture_bundle()),
+            ..ConversionOptions::default()
+        },
+    })
+    .unwrap_err()
+    .to_string();
+
+    assert!(error.contains("does not declare orthographic_annotations"));
+}
+
+#[test]
+fn orthographic_annotations_bundle_matches_golden_fixture() {
+    let expected = read_json(
+        &Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/ortho-annotations-expected.json"),
+    )
+    .unwrap();
+
+    assert_eq!(
+        serde_json::to_value(ortho_fixture_bundle()).unwrap(),
+        expected
+    );
 }
 
 #[test]
@@ -2149,6 +2285,50 @@ fn cli_convert_writes_parser_ir_and_divergence_bundle() {
     assert!(status.success());
     assert!(parser_ir.exists());
     assert!(divergence.exists());
+}
+
+#[test]
+fn cli_convert_ortho_annotations_reports_schema_precondition() {
+    let repo = repo_root();
+    let abc = abc_root(&repo);
+    let temp = tempfile::tempdir().unwrap();
+    let aat = temp.path().join("input.aat.json");
+    let ortho = temp.path().join("ortho.json");
+    let parser_ir = temp.path().join("parser-ir.json");
+    let divergence = temp.path().join("divergence.json");
+    std::fs::write(
+        &aat,
+        serde_json::to_string_pretty(&ortho_fixture_aat()).unwrap(),
+    )
+    .unwrap();
+    std::fs::write(
+        &ortho,
+        serde_json::to_string_pretty(&ortho_fixture_bundle()).unwrap(),
+    )
+    .unwrap();
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_ab-aat-to-parser-ir"))
+        .arg("convert")
+        .arg("--aat")
+        .arg(&aat)
+        .arg("--ortho-annotations")
+        .arg(&ortho)
+        .arg("--mapping")
+        .arg(repo.join("data/aat-to-parser-ir-mapping-v1.json"))
+        .arg("--parser-ir-out")
+        .arg(&parser_ir)
+        .arg("--divergence-out")
+        .arg(&divergence)
+        .arg("--abc-root")
+        .arg(abc)
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    assert!(!parser_ir.exists());
+    assert!(!divergence.exists());
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(stderr.contains("does not declare orthographic_annotations"));
 }
 
 #[test]

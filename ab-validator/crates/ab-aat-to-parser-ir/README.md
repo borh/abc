@@ -22,6 +22,36 @@ cargo run -p ab-aat-to-parser-ir -- convert \
   --abc-root data/abc-schemas
 ```
 
+### `--ortho-annotations <PATH>`
+
+Optional path to an orthographic annotations JSON file produced by the
+`ab-ortho-detect` layer. When provided, the output parser-IR includes an
+`orthographic_annotations` field:
+
+```json
+{
+  "work_id": "000000",
+  "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "coordinate_system": "decoded_utf8",
+  "detector_id": "HeuristicV1",
+  "annotations": [
+    {
+      "source_byte_range": { "start": 0, "end": 24 },
+      "normalized_text": "吾輩は猫である。",
+      "kind": "ScriptKatakanaToHiragana",
+      "confidence": null
+    }
+  ]
+}
+```
+
+Precondition: ABC must accept `orthographic_annotations` into the parser-IR
+JSON Schema (`abc/schemas/parser-ir.schema.json`) and the loaded mapping
+artifact must target the updated schema hash. The current schema has
+`additionalProperties: false` and rejects unknown fields. Validation remains
+enabled; with the current schema, the flag fails with a precondition error
+instead of emitting invalid parser-IR.
+
 Audit a corpus:
 
 ```sh

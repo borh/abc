@@ -73,7 +73,7 @@ jq -e 'all(.sentences[]; .span.coordinate_system == "decoded_utf8")' "$parser_ir
 
 jq -e '.status == "passed" and (.findings | length) == 0' "$publication_dir/tei-validation-result.json" >/dev/null
 rg -n '<[A-Za-z0-9_-]+:normalization method="markup"' "$publication_dir/tei.xml" >/dev/null
-rg -n '<[A-Za-z0-9_-]+:s type="orthographic-katakana"' "$publication_dir/tei.xml" >/dev/null
+rg -n '<[A-Za-z0-9_-]+:s[^>]* type="orthographic-katakana"' "$publication_dir/tei.xml" >/dev/null
 rg -n '<[A-Za-z0-9_-]+:ruby type="furigana"' "$publication_dir/tei.xml" >/dev/null
 rg -n '<[A-Za-z0-9_-]+:rt>めいしょう</[A-Za-z0-9_-]+:rt>' "$publication_dir/tei.xml" >/dev/null
 

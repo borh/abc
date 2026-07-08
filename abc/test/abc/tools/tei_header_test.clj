@@ -31,6 +31,24 @@
                             :person (get persons-by-id (get c "person_id"))})
                          (get @example-record "contributors"))}))
 
+(defn- wrapped-header-doc [header-xml]
+  (let [header-fragment (string/replace header-xml #"^<\?xml[^?]*\?>" "")]
+    (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+         "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\">"
+         header-fragment
+         "<text><body><p>placeholder</p></body></text>"
+         "</TEI>")))
+
+(defn- validation-failures [xml-string]
+  (let [tmp (java.io.File/createTempFile "abc-tei-header" ".xml")]
+    (try
+      (spit tmp xml-string)
+      (let [{:keys [violations]} (tei/validate! {:schema-path @schema-path
+                                                 :xml-path (str tmp)
+                                                 :label "header"})]
+        (filter #(#{:error :fatal} (:severity %)) violations))
+      (finally (.delete tmp)))))
+
 (deftest build-returns-hiccup-test
   (testing "build returns a hiccup-style nested vector"
     (let [hdr (th/build (resolved-input))]
@@ -46,27 +64,34 @@
 (deftest header-validates-against-tei-rng-test
   (testing "the generated header, wrapped in a minimal TEI document, validates"
     (let [hdr-xml (th/emit-xml (th/build (resolved-input)))
-          ;; emit-xml puts the TEI namespace on the root element it
-          ;; produces (the teiHeader). To validate as a TEI document
-          ;; we need a TEI root with text/body. Strip the XML decl
-          ;; from the header fragment and wrap it.
-          hdr-no-decl (string/replace hdr-xml #"^<\?xml[^?]*\?>" "")
-          doc (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                   "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\">"
-                   hdr-no-decl
-                   "<text><body><p>placeholder</p></body></text>"
-                   "</TEI>")
-          tmp (java.io.File/createTempFile "abc-tei-header" ".xml")]
-      (try
-        (spit tmp doc)
-        (let [{:keys [violations]} (tei/validate! {:schema-path @schema-path
-                                                   :xml-path (str tmp)
-                                                   :label "header"})
-              failures (filter #(#{:error :fatal} (:severity %)) violations)]
-          (is (empty? failures)
-              (str "generated TEI header must validate; violations: "
-                   (pr-str failures))))
-        (finally (.delete tmp))))))
+          failures (validation-failures (wrapped-header-doc hdr-xml))]
+      (is (empty? failures)
+          (str "generated TEI header must validate; violations: "
+               (pr-str failures))))))
+
+(deftest header-without-source-editions-validates-test
+  (testing "sparse official metadata still emits a non-empty sourceDesc"
+    (let [input (update (resolved-input)
+                        :work assoc
+                        "source_editions" []
+                        "card_url" "https://www.aozora.gr.jp/cards/000009/card8.html")
+          hdr-xml (th/emit-xml (th/build input))
+          failures (validation-failures (wrapped-header-doc hdr-xml))]
+      (is (not (string/includes? hdr-xml "<sourceDesc/>")))
+      (is (string/includes? hdr-xml "aozora-card-url"))
+      (is (empty? failures)
+          (str "generated TEI header must validate; violations: "
+               (pr-str failures))))))
+
+(deftest header-without-ndc-validates-test
+  (testing "official metadata without NDC omits textClass instead of crashing"
+    (let [input (update (resolved-input) :work assoc "ndc" nil)
+          hdr-xml (th/emit-xml (th/build input))
+          failures (validation-failures (wrapped-header-doc hdr-xml))]
+      (is (not (string/includes? hdr-xml "classCode")))
+      (is (empty? failures)
+          (str "generated TEI header must validate; violations: "
+               (pr-str failures))))))
 
 (deftest persname-triplet-test
   (testing "TEI-EAJ persName triplet (kanji + hiragana + romaji) is present"

@@ -104,9 +104,20 @@
     (get edition "proof_edition")
     (conj [:note {:type "proof-edition"} (get edition "proof_edition")])))
 
+(defn- fallback-source-bibl [work]
+  (if-let [card-url (get work "card_url")]
+    (cond-> [:bibl]
+      (get work "title")
+      (conj [:title (get work "title")])
+      true
+      (conj [:idno {:type "aozora-card-url"} card-url]))
+    [:p "Aozora Bunko source edition metadata is not available."]))
+
 (defn- source-desc [work]
   (let [editions (get work "source_editions")]
-    (into [:sourceDesc] (mapv bibl-edition editions))))
+    (if (seq editions)
+      (into [:sourceDesc] (mapv bibl-edition editions))
+      [:sourceDesc (fallback-source-bibl work)])))
 
 (defn- file-desc [work contributors]
   [:fileDesc
@@ -153,12 +164,18 @@
     (when (seq children)
       (into [:encodingDesc] children))))
 
+(defn- text-class [work]
+  (when-let [ndc (get work "ndc")]
+    [:textClass
+     [:classCode {:scheme "NDC"}
+      (string/replace ndc #"^NDC " "")]]))
+
 (defn- profile-desc [work]
-  [:profileDesc
-   [:langUsage [:language {:ident "ja"} "日本語"]]
-   [:textClass
-    [:classCode {:scheme "NDC"}
-     (string/replace (get work "ndc") #"^NDC " "")]]])
+  (let [classification (text-class work)]
+    (cond-> [:profileDesc
+             [:langUsage [:language {:ident "ja"} "日本語"]]]
+      classification
+      (conj classification))))
 
 (defn build
   "Return a TEI <teiHeader> as hiccup-style nested vectors. Pure;

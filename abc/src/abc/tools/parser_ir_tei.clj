@@ -4,6 +4,10 @@
 (defn- present-text? [text]
   (seq text))
 
+(defn- present-ruby-text? [text]
+  (and (string? text)
+       (not (string/blank? text))))
+
 (defn- mark-omitted [acc node-type]
   (update acc :omitted conj {:type node-type :policy "omitted"}))
 
@@ -176,8 +180,8 @@
   ([acc node] (render-ruby-node acc node 0))
   ([acc node _depth]
    (let [ruby (get node "ruby")]
-     (if (and (present-text? (get ruby "base"))
-              (present-text? (get ruby "reading")))
+     (if (and (present-ruby-text? (get ruby "base"))
+              (present-ruby-text? (get ruby "reading")))
        (let [attrs (cond-> {:type "furigana"}
                      (get ruby "direction")
                      (assoc :rend (get ruby "direction")))]

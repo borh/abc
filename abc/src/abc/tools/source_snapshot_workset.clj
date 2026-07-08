@@ -9,13 +9,21 @@
 (def required-file-names
   {:aat-path "aat.json"
    :parser-ir-path "parser-ir.json"
-   :metadata-record-path "metadata-record.json"})
+   :metadata-record-path "metadata-record.json"
+   :official-source-path "official-source.json"})
 
 (def resolved-path-key
   {:aat_path :resolved_aat_path
    :parser_ir_path :resolved_parser_ir_path
    :metadata_record_path :resolved_metadata_record_path
+   :official_source_path :resolved_official_source_path
    :source_manifest_path :resolved_source_manifest_path})
+
+(def official-text-zip-relpath-pattern
+  #"^cards/[0-9]{6}/files/[^/]+\.zip$")
+
+(def hash-pattern
+  #"^sha256:[0-9a-f]{64}$")
 
 (defn- map-value [m k]
   (or (get m k)
@@ -84,6 +92,28 @@
             (map-value metadata-record :contributors))
       (map-value (first (map-value metadata-record :contributors)) :person_id)))
 
+(defn- valid-official-source? [official-source work-id]
+  (and (= work-id (map-value official-source :work_id))
+       (re-matches official-text-zip-relpath-pattern
+                   (or (map-value official-source :text_zip_relpath)
+                       ""))
+       (re-matches hash-pattern
+                   (or (map-value official-source :source_hash)
+                       ""))))
+
+(defn- official-source [work-dir work-id]
+  (let [official-source-file (required-file work-dir
+                                            "official-source.json"
+                                            :official-source-path)
+        official-source (files/read-json official-source-file)]
+    (when-not (valid-official-source? official-source work-id)
+      (throw (ex-info "official-source.json is not an Aozora card/files work source"
+                      {:work-dir (str work-dir)
+                       :work-id work-id
+                       :official-source-path (str official-source-file)
+                       :official-source official-source})))
+    official-source-file))
+
 (defn- work-entry [path-base work-dir]
   (let [aat-file (required-file work-dir "aat.json" :aat-path)
         parser-ir-file (required-file work-dir "parser-ir.json" :parser-ir-path)
@@ -94,6 +124,7 @@
         work (required-value metadata-record :work "metadata record")
         work-id (required-value work :work_id "metadata work")
         title (required-value work :title "metadata work")
+        official-source-file (official-source work-dir work-id)
         person-id (or (author-person-id metadata-record)
                       (throw (ex-info "metadata record missing contributor person_id"
                                       {:metadata-record-path
@@ -109,6 +140,7 @@
      :aat_path (relative-path path-base aat-file)
      :parser_ir_path (relative-path path-base parser-ir-file)
      :metadata_record_path (relative-path path-base metadata-record-file)
+     :official_source_path (relative-path path-base official-source-file)
      :source_manifest_path (relative-path path-base
                                           (io/file work-dir
                                                    "source.manifest.json"))}))

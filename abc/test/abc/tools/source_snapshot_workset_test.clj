@@ -47,6 +47,7 @@
                    :aat_path "works/alpha/aat.json"
                    :parser_ir_path "works/alpha/parser-ir.json"
                    :metadata_record_path "works/alpha/metadata-record.json"
+                   :official_source_path "works/alpha/official-source.json"
                    :source_manifest_path "works/alpha/source.manifest.json"}
                   {:slug "zeta"
                    :title "二"
@@ -56,6 +57,7 @@
                    :aat_path "works/zeta/aat.json"
                    :parser_ir_path "works/zeta/parser-ir.json"
                    :metadata_record_path "works/zeta/metadata-record.json"
+                   :official_source_path "works/zeta/official-source.json"
                    :source_manifest_path "works/zeta/source.manifest.json"}]
                  (:works generated)))))
       (finally
@@ -74,6 +76,50 @@
         (is (thrown-with-msg?
              clojure.lang.ExceptionInfo
              #"missing parser-ir.json"
+             (workset/workset-from-root
+              {:input-root (str root)
+               :snapshot-scope "unit-test"
+               :snapshot-date "2026-07-07"}))))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest missing-official-source-is-rejected-test
+  (let [root (fixture/temp-dir "abc-source-snapshot-workset-non-work")]
+    (try
+      (let [work-dir (io/file root "works" "support-like")]
+        (fixture/write-work-files! work-dir {:slug "support-like"
+                                             :title "支援ファイル"
+                                             :work-id "000001"
+                                             :person-id "000101"
+                                             :work-hash (fixture/example-hash "a1")})
+        (.delete (io/file work-dir "official-source.json"))
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"missing official-source.json"
+             (workset/workset-from-root
+              {:input-root (str root)
+               :snapshot-scope "unit-test"
+               :snapshot-date "2026-07-07"}))))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest non-card-official-source-is-rejected-test
+  (let [root (fixture/temp-dir "abc-source-snapshot-workset-support")]
+    (try
+      (let [work-dir (io/file root "works" "support-like")]
+        (fixture/write-work-files! work-dir {:slug "support-like"
+                                             :title "支援ファイル"
+                                             :work-id "000001"
+                                             :person-id "000101"
+                                             :work-hash (fixture/example-hash "a1")})
+        (abc-json/write-deterministic-json-file!
+         (io/file work-dir "official-source.json")
+         {"work_id" "000001"
+          "text_zip_relpath" "tools/JISTABLE.zip"
+          "source_hash" (fixture/example-hash "a1")})
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"not an Aozora card/files work source"
              (workset/workset-from-root
               {:input-root (str root)
                :snapshot-scope "unit-test"
@@ -107,6 +153,16 @@
                                  "snapshot_inputs"
                                  0
                                  "aat_path"])))
+        (is (= "works/alpha/official-source.json"
+               (get-in snapshot ["snapshot_identity_object"
+                                 "snapshot_inputs"
+                                 0
+                                 "official_source_path"])))
+        (is (= "cards/000101/files/000001_ruby_fixture.zip"
+               (get-in snapshot ["snapshot_identity_object"
+                                 "snapshot_inputs"
+                                 0
+                                 "official_text_zip_relpath"])))
         (is (.exists source-manifest))
         (is (= "source"
                (get (files/read-json source-manifest)

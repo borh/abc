@@ -173,6 +173,26 @@
           "type": "array",
           "items": { "type": "integer", "minimum": 0 },
           "uniqueItems": true
+        },
+        "part": {
+          "type": "string",
+          "enum": ["I", "M", "F"],
+          "description": "Fragment position for TEI Chapter 21 fragmented sentences. Absent for complete sentences."
+        },
+        "fragment_group": {
+          "type": "string",
+          "pattern": "^fg[0-9]{6}$",
+          "description": "Parser-IR-internal grouping key linking fragments of one logical sentence. Not rendered in TEI."
+        },
+        "next_id": {
+          "type": "string",
+          "pattern": "^s[0-9]{6}$",
+          "description": "ID of the next fragment in the group (parser-IR-internal; rendered as TEI @next)."
+        },
+        "prev_id": {
+          "type": "string",
+          "pattern": "^s[0-9]{6}$",
+          "description": "ID of the previous fragment in the group (parser-IR-internal; rendered as TEI @prev)."
         }
       }
     },

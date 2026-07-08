@@ -298,8 +298,8 @@
       (is (= [:p {:rend "jisage indent(2)"
                   :abc/layout-kind "jisage"
                   :abc/layout-params "indent=2"}
-              [:s {:type "orthographic-katakana"} "吾輩ハ猫デアル。"]
-              [:s
+              [:s {:xml:id "s000000" :type "orthographic-katakana"} "吾輩ハ猫デアル。"]
+              [:s {:xml:id "s000001"}
                [:ruby {:type "furigana"}
                 [:rb "名前"]
                 [:rt "なまえ"]]
@@ -347,15 +347,60 @@
                                  "orthographic_annotation_indices" []}]})
           paragraph (some #(when (= :p (first %)) %) (hiccup-nodes (:body result)))]
       (is (= [:p
-              [:s
+              [:s {:xml:id "s000000"}
                [:ruby {:type "furigana"}
                 [:rb "名前"]
                 [:rt "めいしょう"]]
                "はまだ無い。"]
-              [:s "ここは次。"]]
+              [:s {:xml:id "s000001"} "ここは次。"]]
              paragraph))
       (is (= {"ruby" 1 "text" 2} (:node_counts result)))
       (is (empty? (:omitted result))))))
+
+(deftest fragment-attributes-test
+  (testing "fragmented sentences render part/xml:id/next/prev; every <s> gets xml:id"
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "text"
+                             "span" {"start" 0 "end" 15 "coordinate_system" "decoded_utf8"}
+                             "text" "先生は言った。"}
+                            {"type" "text"
+                             "span" {"start" 15 "end" 30 "coordinate_system" "decoded_utf8"}
+                             "text" "「綺麗だ」"}
+                            {"type" "text"
+                             "span" {"start" 30 "end" 45 "coordinate_system" "decoded_utf8"}
+                             "text" "といった。"}]
+                   "paragraphs" [{"id" "p000000"
+                                  "span" {"start" 0 "end" 45 "coordinate_system" "decoded_utf8"}
+                                  "span_source" "direct"
+                                  "node_range" {"start" 0 "end" 3}
+                                  "role" "body"
+                                  "source_pointer" "blocks[0]"
+                                  "classification" "direct"}]
+                   "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
+                                            "splitter_id" "ab-plaintext-japanese-v2"
+                                            "coordinate_system" "decoded_utf8"
+                                            "coverage" "body-paragraphs"}
+                   "sentences" [{"id" "s000000" "paragraph_id" "p000000"
+                                 "span" {"start" 0 "end" 15 "coordinate_system" "decoded_utf8"}
+                                 "node_range" {"start" 0 "end" 1}
+                                 "tags" [] "orthographic_annotation_indices" []
+                                 "part" "I" "fragment_group" "fg000000" "next_id" "s000002"}
+                                {"id" "s000001" "paragraph_id" "p000000"
+                                 "span" {"start" 15 "end" 30 "coordinate_system" "decoded_utf8"}
+                                 "node_range" {"start" 1 "end" 2}
+                                 "tags" [] "orthographic_annotation_indices" []}
+                                {"id" "s000002" "paragraph_id" "p000000"
+                                 "span" {"start" 30 "end" 45 "coordinate_system" "decoded_utf8"}
+                                 "node_range" {"start" 2 "end" 3}
+                                 "tags" [] "orthographic_annotation_indices" []
+                                 "part" "F" "fragment_group" "fg000000" "prev_id" "s000000"}]})
+          paragraph (some #(when (= :p (first %)) %) (hiccup-nodes (:body result)))
+          s1 (get paragraph 1)
+          s2 (get paragraph 2)
+          s3 (get paragraph 3)]
+      (is (= [:s {:xml:id "s000000" :part "I" :next "#s000002"} "先生は言った。"] s1))
+      (is (= [:s {:xml:id "s000001"} "「綺麗だ」"] s2))
+      (is (= [:s {:xml:id "s000002" :part "F" :prev "#s000000"} "といった。"] s3)))))
 
 (deftest heading-paragraph-with-sentence-rows-renders-only-head-test
   (testing "sentence rows do not force heading-only body paragraphs into TEI p wrappers"

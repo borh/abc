@@ -137,6 +137,6 @@
              :tokens (fixture-tokens)
              :output-dir out-dir
              :generated-at "2026-07-08T00:00:00Z"}))
-       "profile declares identity; applied differs → hard error")
+          "profile declares identity; applied differs → hard error")
       (finally
         (doseq [f (reverse (file-seq out-dir))] (.delete f))))))

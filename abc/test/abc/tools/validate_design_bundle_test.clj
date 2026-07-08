@@ -162,8 +162,11 @@
 (def ^:private v5-parser-ir-schema-hash
   "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712")
 
-(def ^:private current-parser-ir-schema-hash
+(def ^:private v6-parser-ir-schema-hash
   "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340")
+
+(def ^:private current-parser-ir-schema-hash
+  "sha256:40d7ff6683a395e8727de55574c3af1fd70475cfa325ae5b67cc19fdb3eb32b6")
 
 (def ^:private parser-ir-schema-hash
   legacy-parser-ir-schema-hash)
@@ -1728,7 +1731,7 @@
                      :mapping_hash v6-mapping-hash
                      :mapping_schema_hash current-mapping-schema-hash
                      :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-                     :parser_ir_schema_hash current-parser-ir-schema-hash}))))
+                     :parser_ir_schema_hash v6-parser-ir-schema-hash}))))
       (let [entry-for (fn [adapter adapter-version]
                         (->> (:entries registry)
                              (filter #(and (= adapter (:aat_adapter %))

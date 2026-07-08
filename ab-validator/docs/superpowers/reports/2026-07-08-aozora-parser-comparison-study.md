@@ -169,7 +169,26 @@ it reuses the shared kind vocabulary for expected labels (independent cases, sha
 scale). Report: `2026-07-08-official-docs-seed-comparison.md`.
 
 ### 4.6 Performance
-_(Populated from `parser-performance-all-parsers` over a corpus sample; see §7.)_
+`full_adapter` wall-time and peak RSS over a 6-work sample of the real corpus
+(`aozorabunko-corpus`), 90 s per-work limit
+(`2026-07-08-parser-performance-sample.{md,json}`):
+
+| parser | median wall | max wall | timeouts | peak RSS |
+| --- | ---: | ---: | ---: | ---: |
+| `aozora-rs` | **0.19 s** | 0.75 s | 0/6 | 630 MB |
+| `aozora-epub3` | 0.96 s | 1.40 s | 0/6 | 351 MB |
+| `aozora` (pipeline) | 1.25 s | 3.18 s | 0/6 | 503 MB |
+| `aozora2html` | 6.77 s | 28.6 s | 0/6 | 540 MB |
+| `aozora-core` (aozora2) | **16.9 s** | **77.0 s** | **2/6** | 152 MB |
+
+**This flips the fork economics.** `aozora-rs-core` is fastest by ~7× over the next
+Rust parser and ~90× over `aozora-core` — confirming speed as its real advantage.
+`aozora-core`, the "trivially forkable, ~95%-capable" candidate, is **catastrophically
+slow: 16.9 s median and 2/6 timeouts on real works.** At corpus scale that is close
+to disqualifying unless the pathology is fixable. `aozora-pipeline` is both the most
+capable *and* ~14× faster than `aozora-core`, with no timeouts — it now leads on
+both axes. (Memory trades inversely with speed: `aozora-rs` is fastest but heaviest;
+`aozora-core` lightest but slowest.)
 
 ## 5. Threats to validity / limitations
 
@@ -185,8 +204,11 @@ _(Populated from `parser-performance-all-parsers` over a corpus sample; see §7.
    (resolved in a separate `aozora-rs-gaiji` layer, ≈7 vectors under-counted), and
    a valid full-document wrapper was not confirmed (its body-selection keys off
    separator lines), so document context might lift recognition somewhat.
-5. **Performance is unmeasured here** — `aozora-rs`'s one advantage. A separate
-   `parser-performance-all-parsers` recipe exists; folding it in is future work.
+5. **Performance sample is small** (§4.6): 6 works, one machine, 90 s limit. The
+   ranking is stark enough to be directionally trustworthy, but `aozora-core`'s
+   2/6 timeouts suggest *work-specific* pathology (some inputs blow up) rather than
+   a uniform constant — a larger sample would separate "slow everywhere" from
+   "occasionally catastrophic." Memory figures are peak RSS, not steady-state.
 6. **Conformance ≠ admission.** The 2026-07-06 acceptance criteria gate on measured
    publication accounting, valid parser-IR, zero unknown-markup counters, and perf —
    conformance is one input.
@@ -194,14 +216,22 @@ _(Populated from `parser-performance-all-parsers` over a corpus sample; see §7.
 ## 6. Conclusions
 
 A new or forked Rust parser is empirically warranted: no existing parser is green
-across the 25 `must` vectors, and coverage is complementary, not nested. The
-faithful comparison narrows the fork base to a two-way call — `aozora-pipeline`
-(most-proven, active; multi-crate fork) vs `aozora-core` (nearly as capable,
-trivially forkable; abandoned upstream) — with build-fresh on `ab-source-syntax`
-(a production-grade in-house lexer) as the long play; `aozora-rs-core` is out
-unless per-work speed dominates coverage. Because parser fidelity governs loss
-through the whole pipeline (§2), the acceptance target doubles as a pipeline-quality
-target: precise AAT ⇒ fewer AMBIGUITY sidecars ⇒ higher-fidelity TEI.
+across the 25 `must` vectors, and coverage is complementary, not nested. With
+performance folded in (§4.6), the two-way fork call **resolves toward
+`aozora-pipeline`**: it leads on *both* capability (22/25 must) and speed (~14×
+faster than `aozora-core`, no timeouts), and is actively maintained. `aozora-core`'s
+trivially-forkable appeal is undercut by catastrophic performance (16.9 s median,
+2/6 timeouts) — viable only if that pathology proves cheaply fixable.
+`aozora-rs-core` remains a speed outlier (~90× faster) but weakest on coverage —
+a candidate only if per-work throughput dominates. Build-fresh on `ab-source-syntax`
+stays the long play. Because parser fidelity governs loss through the whole pipeline
+(§2), the acceptance target doubles as a pipeline-quality target: precise AAT ⇒
+fewer AMBIGUITY sidecars ⇒ higher-fidelity TEI.
+
+**Recommendation:** base the new parser on `aozora-pipeline` (contribute the 3
+`diagnostics` must-fixes upstream where possible; fork for the rest), unless a
+quick profiling spike shows `aozora-core`'s slowdown is a trivial fix — in which
+case its self-contained forkability re-enters contention.
 
 ## 7. Reproducibility
 
@@ -220,7 +250,8 @@ Backing data: `2026-07-08-aozora-notation-spec-comparison.summary.json`,
 
 ## 8. Open work toward publication
 
-- Fold in the performance dimension (uniform corpus, wall/CPU/mem).
+- Expand the performance sample (§4.6) beyond 6 works and pinpoint `aozora-core`'s
+  timeout pathology (which inputs, and whether it is a cheap fix).
 - Resolve the `aozora-rs-core` gaiji blind spot and confirm a valid document
   wrapper (or repair its adapter's typed projection — deferred).
 - Expand the official-docs seed (§4.5) from 11 clean cases toward edge-case

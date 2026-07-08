@@ -1,7 +1,12 @@
 # Ortho Phase-3 Lane B — Historical→Modern Surface Normalizer — Design
 
 **Date:** 2026-07-08
-**Status:** DESIGN (mechanism fork open for the human partner before implementation).
+**Status:** DESIGN → DECIDED (2026-07-08, human partner): **mechanism M2**
+(`kindai-bungo` segmentation oracle + rule-based kana rewrite, `pron` as digraph
+oracle), and **probe coverage first** before locking the rule set / writing the
+normalizer. The M2 cross-tokenizer oracle coupling (sudachi's input derived via a
+vibrato dict) is accepted for the sake of identical modernized input across
+analyzers. M1/M3 recorded below as the considered alternatives.
 **Parent:** `2026-07-08-ortho-phase3-historical-lane-investigation.md` (direction:
 Both A and B). Lane A (dictionary selection) is landed; this designs Lane B.
 **Governing contract:** `2026-07-08-ortho-historical-scope-and-determinism-tier-design.md`

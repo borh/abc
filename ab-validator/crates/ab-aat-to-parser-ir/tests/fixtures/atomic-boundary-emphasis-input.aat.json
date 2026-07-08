@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "work_id": "000000",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "content": [
+        {
+          "kind": "style",
+          "style_type": "sesame_dot",
+          "content": [
+            { "kind": "text", "value": "甲。乙" },
+            { "kind": "ruby", "base": "丙", "reading": "へい", "direction": "right" }
+          ]
+        }
+      ]
+    }
+  ]
+}

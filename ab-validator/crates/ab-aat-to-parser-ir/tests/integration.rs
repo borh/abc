@@ -531,6 +531,155 @@ fn orthographic_annotations_bundle_matches_golden_fixture() {
 }
 
 #[test]
+fn ortho_indices_cover_multiple_annotations_in_one_sentence() {
+    // Regression matrix (6b): a single sentence whose byte span overlaps two
+    // orthographic annotations records both indices and a single katakana tag.
+    let (schemas, mapping) = schemas_and_mapping();
+    let hash = "sha256:3333333333333333333333333333333333333333333333333333333333333333";
+    let aat = json!({
+        "version": 1,
+        "work_id": "000000",
+        "meta": base_meta("utf-8", hash),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [{ "kind": "text", "value": "吾輩ハ猫デアル。" }]
+        }]
+    });
+    let bundle: ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle =
+        serde_json::from_value(json!({
+            "work_id": "000000",
+            "work_content_hash": hash,
+            "coordinate_system": "decoded_utf8",
+            "detector_id": "HeuristicV1",
+            "annotations": [
+                {"source_byte_range":{"start":0,"end":12},"normalized_text":"吾輩は猫","kind":"ScriptKatakanaToHiragana","confidence":null},
+                {"source_byte_range":{"start":12,"end":24},"normalized_text":"であある。","kind":"ScriptKatakanaToHiragana","confidence":null}
+            ]
+        }))
+        .unwrap();
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions {
+            orthographic_annotations: Some(bundle),
+            ..ConversionOptions::default()
+        },
+    })
+    .unwrap();
+
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/span"),
+        Some(&json!({"start":0,"end":24,"coordinate_system":"decoded_utf8"}))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/sentences/0/orthographic_annotation_indices"),
+        Some(&json!([0, 1]))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/tags"),
+        Some(&json!(["orthographic-katakana"]))
+    );
+    // Exactly one sentence row: both annotations land in it.
+    assert_eq!(output.parser_ir.pointer("/sentences/1"), None);
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn ortho_annotation_spanning_two_sentences_tags_both() {
+    // Regression matrix (6c): a single annotation whose byte range crosses a
+    // sentence boundary is recorded (and tagged) on both sentences; it must not
+    // be snapped to one side.
+    let (schemas, mapping) = schemas_and_mapping();
+    let hash = "sha256:3333333333333333333333333333333333333333333333333333333333333333";
+    let aat = json!({
+        "version": 1,
+        "work_id": "000000",
+        "meta": base_meta("utf-8", hash),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [{ "kind": "text", "value": "吾輩ハ猫。名前ハ無イ。" }]
+        }]
+    });
+    let bundle: ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle =
+        serde_json::from_value(json!({
+            "work_id": "000000",
+            "work_content_hash": hash,
+            "coordinate_system": "decoded_utf8",
+            "detector_id": "HeuristicV1",
+            "annotations": [
+                {"source_byte_range":{"start":6,"end":21},"normalized_text":"猫。名前ハ","kind":"ScriptKatakanaToHiragana","confidence":null}
+            ]
+        }))
+        .unwrap();
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions {
+            orthographic_annotations: Some(bundle),
+            ..ConversionOptions::default()
+        },
+    })
+    .unwrap();
+
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/span"),
+        Some(&json!({"start":0,"end":15,"coordinate_system":"decoded_utf8"}))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/1/span"),
+        Some(&json!({"start":15,"end":33,"coordinate_system":"decoded_utf8"}))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/sentences/0/orthographic_annotation_indices"),
+        Some(&json!([0]))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/sentences/1/orthographic_annotation_indices"),
+        Some(&json!([0]))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/tags"),
+        Some(&json!(["orthographic-katakana"]))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/1/tags"),
+        Some(&json!(["orthographic-katakana"]))
+    );
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn rejects_sentence_boundary_inside_atomic_emphasis_from_aat() {
+    // Regression matrix (6e): shared AAT fixture reproducing the dominant real-corpus
+    // sentence-projection failure — a sentence terminal inside an emphasis node that
+    // carries inline_children (here, mixed text + ruby). Conversion must fail rather
+    // than snap the boundary.
+    let (schemas, mapping) = schemas_and_mapping();
+    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: include_fixture_json("atomic-boundary-emphasis-input.aat.json"),
+        mapping,
+        schemas,
+        options: ConversionOptions::default(),
+    })
+    .unwrap_err()
+    .to_string();
+    assert!(
+        error.contains("sentence boundary falls inside atomic node emphasis"),
+        "unexpected error: {error}"
+    );
+}
+
+#[test]
 fn folded_pointer_protocol_matches_generator_examples() {
     use ab_aat_to_parser_ir::mapping::fold_aat_pointer;
 

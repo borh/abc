@@ -473,7 +473,7 @@ fn append_warehouse_nway_fact_rows(
         analyses,
         10_000,
         |facts| {
-            feature_pattern_counts.record(&facts.regions, &facts.feature_diffs);
+            feature_pattern_counts.record(&facts.regions, &facts.feature_diffs)?;
             if want_oracle {
                 region_lookup.extend(facts.regions.iter().map(|r| {
                     crate::oracle::ruby::RegionSpan {
@@ -518,8 +518,12 @@ struct WarehouseFeaturePatternKey {
     pattern: String,
 }
 
+// `pub` (beyond `pub(crate)`) solely so the
+// `warehouse_feature_pattern_accumulator` criterion bench (benches/ compile as
+// an external crate) can construct and drive it directly; not part of the
+// CLI's stable surface.
 #[derive(Debug, Default)]
-struct WarehouseFeaturePatternAccumulator {
+pub struct WarehouseFeaturePatternAccumulator {
     patterns: BTreeMap<WarehouseFeaturePatternKey, WarehouseFeaturePatternEntry>,
 }
 
@@ -530,7 +534,7 @@ struct WarehouseFeaturePatternEntry {
     text_ids: BTreeSet<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct WarehouseFeatureGroupKey {
     source_id: Arc<str>,
     text_id: Arc<str>,
@@ -542,8 +546,56 @@ struct WarehouseFeatureGroupKey {
 }
 
 impl WarehouseFeaturePatternAccumulator {
-    fn record(&mut self, regions: &[NwayRegionRow], feature_diffs: &[NwayFeatureDiffRow]) {
-        let region_whitespace = regions
+    /// Aggregates warehouse `feature_pattern_counts` from one batch of n-way
+    /// region / feature-diff facts (see `visit_nway_fact_row_batches`).
+    ///
+    /// `feature_diffs` is filtered to `WAREHOUSE_CORE_FEATURE_KEYS` and then
+    /// scanned linearly for `WarehouseFeatureGroupKey` run boundaries, instead
+    /// of being bucketed through a `BTreeMap`. This is only correct because
+    /// `push_region_rows` (`warehouse::rows`) emits `feature_diffs` as
+    /// *maximal contiguous runs* per group key: `region_index` is monotone
+    /// non-decreasing and each region's `feature_groups` is emitted once as a
+    /// block — see the producer-invariant test
+    /// `push_region_rows_emits_maximal_contiguous_feature_diff_runs`. If a
+    /// future change to the producer ever breaks that guarantee, the
+    /// monotonicity guard below returns an error rather than silently
+    /// under-merging groups (a debug-only assertion would not be safe here,
+    /// since release builds must not silently miscount).
+    pub fn record(
+        &mut self,
+        regions: &[NwayRegionRow],
+        feature_diffs: &[NwayFeatureDiffRow],
+    ) -> Result<()> {
+        let region_whitespace = Self::region_whitespace_lookup(regions);
+        let keyed = Self::keyed_core_diffs(feature_diffs)?;
+
+        #[cfg(debug_assertions)]
+        let mut seen_group_keys = std::collections::HashSet::new();
+
+        for run in keyed.chunk_by(|a, b| a.0 == b.0) {
+            let group = &run[0].0;
+            // Dev tripwire: chunk_by only guarantees adjacent runs differ, so
+            // a group key reappearing in a *later*, non-adjacent run means
+            // `keyed` was not in maximal contiguous runs. Release builds rely
+            // solely on the region_index monotonicity guard above (checked in
+            // `keyed_core_diffs`); this is a debug-only early warning of a
+            // deeper producer change (e.g. a region's `feature_groups`
+            // repeating a key without changing `region_index`).
+            #[cfg(debug_assertions)]
+            debug_assert!(
+                seen_group_keys.insert(group.clone()),
+                "WarehouseFeatureGroupKey {group:?} recurred in a non-adjacent \
+                 run of feature_diffs; push_region_rows must emit maximal \
+                 contiguous runs per group key",
+            );
+            let facts = run.iter().map(|(_, diff)| *diff).collect::<Vec<_>>();
+            self.apply_group(&region_whitespace, group, &facts);
+        }
+        Ok(())
+    }
+
+    fn region_whitespace_lookup(regions: &[NwayRegionRow]) -> BTreeMap<(&str, &str, u64), bool> {
+        regions
             .iter()
             .map(|region| {
                 (
@@ -555,7 +607,93 @@ impl WarehouseFeaturePatternAccumulator {
                     region.is_nonempty_whitespace,
                 )
             })
-            .collect::<BTreeMap<_, _>>();
+            .collect()
+    }
+
+    /// Filters `feature_diffs` to `WAREHOUSE_CORE_FEATURE_KEYS`, computes each
+    /// surviving diff's `WarehouseFeatureGroupKey`, and asserts `region_index`
+    /// is monotone non-decreasing across the filtered sequence — the
+    /// release-safe half of the contiguity guard `record` depends on (see its
+    /// doc comment). Bails instead of silently miscounting if violated.
+    fn keyed_core_diffs(
+        feature_diffs: &[NwayFeatureDiffRow],
+    ) -> Result<Vec<(WarehouseFeatureGroupKey, &NwayFeatureDiffRow)>> {
+        let mut keyed = Vec::with_capacity(feature_diffs.len());
+        let mut last_region_index: Option<u64> = None;
+        for diff in feature_diffs {
+            if !WAREHOUSE_CORE_FEATURE_KEYS.contains(&diff.feature_key.as_ref()) {
+                continue;
+            }
+            if let Some(last) = last_region_index
+                && diff.region_index < last
+            {
+                bail!(
+                    "feature_diffs region_index regressed from {last} to {} \
+                     while grouping feature-pattern diffs; push_region_rows \
+                     must emit monotone non-decreasing region_index for the \
+                     linear group-key scan in `record` to assume maximal \
+                     contiguous runs",
+                    diff.region_index
+                );
+            }
+            last_region_index = Some(diff.region_index);
+            keyed.push((
+                WarehouseFeatureGroupKey {
+                    source_id: diff.source_id.clone(),
+                    text_id: diff.text_id.clone(),
+                    region_index: diff.region_index,
+                    feature_key: diff.feature_key.clone(),
+                    scope_type: diff.scope_type.clone(),
+                    scope_position: diff.scope_position,
+                    scope_surface: diff.scope_surface.clone(),
+                },
+                diff,
+            ));
+        }
+        Ok(keyed)
+    }
+
+    fn apply_group(
+        &mut self,
+        region_whitespace: &BTreeMap<(&str, &str, u64), bool>,
+        group: &WarehouseFeatureGroupKey,
+        facts: &[&NwayFeatureDiffRow],
+    ) {
+        let Some(is_nonempty_whitespace) = region_whitespace
+            .get(&(
+                group.source_id.as_ref(),
+                group.text_id.as_ref(),
+                group.region_index,
+            ))
+            .copied()
+        else {
+            return;
+        };
+        let Some(pattern) = warehouse_feature_pattern_from_rows(group, facts) else {
+            return;
+        };
+        let entry = self
+            .patterns
+            .entry(WarehouseFeaturePatternKey {
+                feature_key: group.feature_key.as_ref().to_owned(),
+                is_nonempty_whitespace,
+                pattern,
+            })
+            .or_default();
+        entry.examples += 1;
+        entry.source_ids.insert(group.source_id.as_ref().to_owned());
+        entry.text_ids.insert(group.text_id.as_ref().to_owned());
+    }
+
+    /// Reference grouping kept as the differential-test oracle for the linear
+    /// scan in `record` (see
+    /// `feature_pattern_accumulator_linear_scan_matches_reference_grouping`).
+    /// This is the original `BTreeMap`-based bucketing `record` used before
+    /// the linear-scan refactor.
+    #[cfg(test)]
+    fn group_feature_diffs_reference(
+        feature_diffs: &[NwayFeatureDiffRow],
+    ) -> Vec<(WarehouseFeatureGroupKey, Vec<&NwayFeatureDiffRow>)> {
         let mut groups = BTreeMap::<WarehouseFeatureGroupKey, Vec<&NwayFeatureDiffRow>>::new();
         for diff in feature_diffs {
             if !WAREHOUSE_CORE_FEATURE_KEYS.contains(&diff.feature_key.as_ref()) {
@@ -574,35 +712,22 @@ impl WarehouseFeaturePatternAccumulator {
                 .or_default()
                 .push(diff);
         }
-        for (group, facts) in groups {
-            let Some(is_nonempty_whitespace) = region_whitespace
-                .get(&(
-                    group.source_id.as_ref(),
-                    group.text_id.as_ref(),
-                    group.region_index,
-                ))
-                .copied()
-            else {
-                continue;
-            };
-            let Some(pattern) = warehouse_feature_pattern_from_rows(&group, &facts) else {
-                continue;
-            };
-            let entry = self
-                .patterns
-                .entry(WarehouseFeaturePatternKey {
-                    feature_key: group.feature_key.as_ref().to_owned(),
-                    is_nonempty_whitespace,
-                    pattern,
-                })
-                .or_default();
-            entry.examples += 1;
-            entry.source_ids.insert(group.source_id.as_ref().to_owned());
-            entry.text_ids.insert(group.text_id.as_ref().to_owned());
+        groups.into_iter().collect()
+    }
+
+    #[cfg(test)]
+    fn record_via_reference_grouping(
+        &mut self,
+        regions: &[NwayRegionRow],
+        feature_diffs: &[NwayFeatureDiffRow],
+    ) {
+        let region_whitespace = Self::region_whitespace_lookup(regions);
+        for (group, facts) in Self::group_feature_diffs_reference(feature_diffs) {
+            self.apply_group(&region_whitespace, &group, &facts);
         }
     }
 
-    fn into_rows(self) -> Vec<FeaturePatternCountRow> {
+    pub fn into_rows(self) -> Vec<FeaturePatternCountRow> {
         self.patterns
             .into_iter()
             .map(|(key, entry)| FeaturePatternCountRow {
@@ -2254,5 +2379,248 @@ mod tests {
             "ab-morph-run-{label}-{}-{unique}",
             std::process::id()
         ))
+    }
+
+    // --- WarehouseFeaturePatternAccumulator: BTreeMap -> linear scan (Task 2) ---
+
+    fn warehouse_test_diff_row(
+        region_index: u64,
+        feature_key: &str,
+        scope_type: &str,
+        scope_position: Option<u64>,
+        scope_surface: Option<&str>,
+        feature_value: Option<&str>,
+        analyzer_id: &str,
+    ) -> NwayFeatureDiffRow {
+        NwayFeatureDiffRow {
+            run_id: Arc::from("run-a"),
+            source_id: Arc::from("source-a"),
+            text_id: Arc::from("text-a"),
+            region_index,
+            feature_key: Arc::from(feature_key),
+            scope_type: Arc::from(scope_type),
+            scope_position,
+            scope_surface: scope_surface.map(Arc::from),
+            feature_value: feature_value.map(Arc::from),
+            analyzer_id: Arc::from(analyzer_id),
+        }
+    }
+
+    fn warehouse_test_region_row(region_index: u64, is_nonempty_whitespace: bool) -> NwayRegionRow {
+        NwayRegionRow {
+            run_id: Arc::from("run-a"),
+            source_id: Arc::from("source-a"),
+            text_id: Arc::from("text-a"),
+            region_index,
+            byte_start: 0,
+            byte_end: 0,
+            char_start: 0,
+            char_end: 0,
+            is_nonempty_whitespace,
+            is_agreement: false,
+            has_coverage_mismatch: false,
+            has_segmentation_disagreement: false,
+            has_feature_disagreement: true,
+        }
+    }
+
+    /// Shared invariant check used both by the hand-crafted differential test
+    /// (as a fixture sanity check) and by the producer-invariant CI guard
+    /// (against the real `push_region_rows` output): `region_index` must be
+    /// monotone non-decreasing, and no `WarehouseFeatureGroupKey` may recur
+    /// in a non-adjacent run.
+    fn assert_feature_diffs_form_maximal_contiguous_runs(feature_diffs: &[NwayFeatureDiffRow]) {
+        let mut seen_group_keys = std::collections::HashSet::new();
+        let mut previous_key: Option<WarehouseFeatureGroupKey> = None;
+        let mut previous_region_index: Option<u64> = None;
+        for diff in feature_diffs {
+            if let Some(previous) = previous_region_index {
+                assert!(
+                    diff.region_index >= previous,
+                    "region_index regressed from {previous} to {}",
+                    diff.region_index
+                );
+            }
+            previous_region_index = Some(diff.region_index);
+
+            let key = WarehouseFeatureGroupKey {
+                source_id: diff.source_id.clone(),
+                text_id: diff.text_id.clone(),
+                region_index: diff.region_index,
+                feature_key: diff.feature_key.clone(),
+                scope_type: diff.scope_type.clone(),
+                scope_position: diff.scope_position,
+                scope_surface: diff.scope_surface.clone(),
+            };
+            if previous_key.as_ref() != Some(&key) {
+                assert!(
+                    seen_group_keys.insert(key.clone()),
+                    "WarehouseFeatureGroupKey {key:?} recurred in a non-adjacent run"
+                );
+            }
+            previous_key = Some(key);
+        }
+    }
+
+    #[test]
+    fn feature_pattern_accumulator_linear_scan_matches_reference_grouping() {
+        // Hand-crafted input: a non-core feature key (must be dropped by both
+        // paths), two regions, multiple scopes (whole_region, surface,
+        // token_position), and -- within region 0 -- groups emitted in
+        // non-alphabetical ("interleaved") order (pos2 before pos1) so the
+        // test does not accidentally pass just because the input happens to
+        // already be sorted like the reference `BTreeMap`. The fixture itself
+        // still satisfies the maximal-contiguous-runs invariant (asserted
+        // below), matching what the real producer guarantees.
+        let regions = vec![
+            warehouse_test_region_row(0, false),
+            warehouse_test_region_row(1, true),
+        ];
+        let feature_diffs = vec![
+            warehouse_test_diff_row(0, "reading", "whole_region", None, None, Some("キョウ"), "vibrato"),
+            warehouse_test_diff_row(0, "pos2", "whole_region", None, None, Some("B"), "vibrato"),
+            warehouse_test_diff_row(0, "pos2", "whole_region", None, None, Some("C"), "sudachi-a"),
+            warehouse_test_diff_row(0, "pos1", "whole_region", None, None, Some("A"), "vibrato"),
+            warehouse_test_diff_row(0, "pos1", "whole_region", None, None, Some("D"), "sudachi-a"),
+            warehouse_test_diff_row(1, "pos3", "surface", None, Some("東京"), Some("E"), "vibrato"),
+            warehouse_test_diff_row(1, "pos3", "surface", None, Some("東京"), None, "sudachi-a"),
+            warehouse_test_diff_row(1, "pos1", "token_position", Some(0), None, Some("F"), "vibrato"),
+            warehouse_test_diff_row(1, "pos1", "token_position", Some(0), None, Some("G"), "sudachi-a"),
+        ];
+
+        assert_feature_diffs_form_maximal_contiguous_runs(&feature_diffs);
+
+        let mut linear = WarehouseFeaturePatternAccumulator::default();
+        linear.record(&regions, &feature_diffs).unwrap();
+
+        let mut reference = WarehouseFeaturePatternAccumulator::default();
+        reference.record_via_reference_grouping(&regions, &feature_diffs);
+
+        assert_eq!(linear.into_rows(), reference.into_rows());
+    }
+
+    #[test]
+    fn feature_pattern_accumulator_rejects_regressing_region_index() {
+        // A release-safe guard, not a debug-only assert: if a future producer
+        // change ever regresses `region_index` mid-batch, `record` must bail
+        // rather than silently under-merge groups.
+        let regions = vec![warehouse_test_region_row(0, false)];
+        let feature_diffs = vec![
+            warehouse_test_diff_row(1, "pos1", "whole_region", None, None, Some("A"), "vibrato"),
+            warehouse_test_diff_row(0, "pos1", "whole_region", None, None, Some("B"), "sudachi-a"),
+        ];
+
+        let mut accumulator = WarehouseFeaturePatternAccumulator::default();
+        let error = accumulator.record(&regions, &feature_diffs).unwrap_err();
+        assert!(error.to_string().contains("region_index regressed"));
+    }
+
+    fn nway_test_morpheme(
+        surface: &str,
+        byte_span: std::ops::Range<usize>,
+        char_span: std::ops::Range<usize>,
+        features: &[(&str, Option<&str>)],
+    ) -> Morpheme {
+        let mut map = FeatureMap::new();
+        for (key, value) in features {
+            let _ = map.insert((*key).into(), value.map(Into::into));
+        }
+        Morpheme {
+            surface: surface.to_owned(),
+            byte_span,
+            char_span,
+            features: map,
+        }
+    }
+
+    #[test]
+    fn push_region_rows_emits_maximal_contiguous_feature_diff_runs() {
+        // Producer-invariant CI guard (Step 3b): runs the REAL producer
+        // (`warehouse::rows::nway_fact_rows`, which drives `push_region_rows`)
+        // over representative multi-region, multi-scope input and asserts the
+        // emitted `feature_diffs` form maximal contiguous
+        // `WarehouseFeatureGroupKey` runs. `WarehouseFeaturePatternAccumulator
+        // ::record`'s linear scan depends on this; if a future change to the
+        // producer breaks it, this test (not a silent miscount in release)
+        // is what should fail.
+        let source_text = "今日は晴れ";
+        let vibrato = Analysis {
+            analyzer: "vibrato".to_owned(),
+            text_id: "text-a".to_owned(),
+            source_text: Arc::from(source_text),
+            morphemes: vec![
+                nway_test_morpheme(
+                    "今日",
+                    0..6,
+                    0..2,
+                    &[("pos1", Some("名詞")), ("pos2", Some("A"))],
+                ),
+                nway_test_morpheme("は", 6..9, 2..3, &[("pos2", Some("X"))]),
+                nway_test_morpheme("晴れ", 9..15, 3..5, &[("pos1", Some("動詞"))]),
+            ],
+            warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
+        };
+        let sudachi_a = Analysis {
+            analyzer: "sudachi-a".to_owned(),
+            text_id: "text-a".to_owned(),
+            source_text: Arc::from(source_text),
+            morphemes: vec![
+                nway_test_morpheme(
+                    "今日",
+                    0..6,
+                    0..2,
+                    &[("pos1", Some("固有名詞")), ("pos2", Some("A"))],
+                ),
+                nway_test_morpheme("は", 6..9, 2..3, &[("pos2", Some("Y"))]),
+                nway_test_morpheme("晴れ", 9..15, 3..5, &[("pos1", Some("名詞"))]),
+            ],
+            warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
+        };
+        let sudachi_c = Analysis {
+            analyzer: "sudachi-c".to_owned(),
+            text_id: "text-a".to_owned(),
+            source_text: Arc::from(source_text),
+            morphemes: vec![
+                nway_test_morpheme("今日は", 0..9, 0..3, &[("pos1", Some("感動詞"))]),
+                nway_test_morpheme("晴れ", 9..15, 3..5, &[("pos1", Some("名詞"))]),
+            ],
+            warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
+        };
+        let analyses = vec![vibrato, sudachi_a, sudachi_c];
+
+        let facts =
+            crate::warehouse::rows::nway_fact_rows("run-a", "source-a", source_text, &analyses)
+                .unwrap();
+
+        // Sanity: the fixture is not vacuous -- it actually spans multiple
+        // regions and multiple scope types.
+        assert!(
+            facts
+                .feature_diffs
+                .iter()
+                .map(|diff| diff.region_index)
+                .collect::<BTreeSet<_>>()
+                .len()
+                >= 2,
+            "fixture must span multiple regions"
+        );
+        assert!(
+            facts
+                .feature_diffs
+                .iter()
+                .map(|diff| diff.scope_type.as_ref())
+                .collect::<BTreeSet<_>>()
+                .len()
+                >= 2,
+            "fixture must exercise multiple scope types"
+        );
+
+        assert_feature_diffs_form_maximal_contiguous_runs(&facts.feature_diffs);
     }
 }

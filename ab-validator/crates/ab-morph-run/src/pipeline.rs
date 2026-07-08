@@ -956,13 +956,15 @@ pub(crate) fn run_analyze_aat_serial(
                     );
                     writer.append_morphemes(&morphemes)?;
                     if writer.writes_table(WarehouseTable::MorphemeFeatures) {
-                        let features = warehouse::rows::morpheme_feature_rows_for_range(
+                        let mut morpheme_feature_columns = MorphemeFeaturesColumns::new();
+                        warehouse::rows::push_morpheme_features_for_range(
                             run_id,
                             &source_id,
                             analysis,
                             start..end,
+                            &mut morpheme_feature_columns,
                         );
-                        writer.append_morpheme_features(&features)?;
+                        writer.append_morpheme_feature_columns(morpheme_feature_columns)?;
                     }
                 }
             }

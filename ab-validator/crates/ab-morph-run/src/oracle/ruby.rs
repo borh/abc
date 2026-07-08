@@ -9,7 +9,7 @@ use ab_plaintext::ProjectionSpan;
 use ab_warehouse::schema::NwayRegionOracleEvidenceRow;
 use serde_json::Value;
 
-pub(crate) struct RubyBase {
+pub struct RubyBase {
     pub char_start: u64,
     pub char_end: u64,
     pub base: String,
@@ -67,7 +67,7 @@ pub(crate) fn morpheme_reading(analyzer_id: &str, morpheme: &Morpheme) -> Option
     }
 }
 
-pub(crate) struct RegionSpan {
+pub struct RegionSpan {
     pub region_index: u64,
     pub char_start: u64,
     pub char_end: u64,
@@ -180,7 +180,16 @@ fn analyzer_reading(analysis: &Analysis, base: &RubyBase) -> Reading {
     }
 }
 
-pub(crate) fn adjudicate(
+/// One analyzer's outcome for a base, retained (without name clones or
+/// evidence-map entries) until the emit gate decides the base is worth
+/// materializing.
+struct AnalyzerOutcome<'a> {
+    analyzer: &'a str,
+    reading: Reading,
+    is_match: bool,
+}
+
+pub fn adjudicate(
     run_id: &str,
     source_id: &str,
     text_id: &str,
@@ -195,12 +204,131 @@ pub(crate) fn adjudicate(
         return Vec::new();
     }
     let mut rows = Vec::new();
+    // Reused across bases: the ~34%-fully-matching common case never grows
+    // this beyond `analyses.len()`, so it settles into a single allocation.
+    let mut outcomes: Vec<AnalyzerOutcome> = Vec::with_capacity(analyses.len());
     for base in ruby_bases {
         let ruby_norm = super::reading_norm::normalize(&base.reading);
         if ruby_norm.is_empty() {
             // An all-non-kana/interpunct-only ruby reading normalizes to "" — skip
             // it, else an all-non-kana analyzer reading would falsely "match" on
             // "" == "" instead of being correctly judged unadjudicable.
+            continue;
+        }
+        outcomes.clear();
+        let mut any_comparable = false;
+        let mut any_loser = false;
+        for analysis in analyses {
+            let reading = analyzer_reading(analysis, base);
+            if reading.align == "exact" {
+                any_comparable = true;
+            }
+            let is_match = reading.norm.as_deref() == Some(ruby_norm.as_str());
+            if !is_match {
+                any_loser = true;
+            }
+            // Deferred: no name clone, no evidence-map entry yet — built only
+            // if the emit gate below decides this base is worth a row.
+            outcomes.push(AnalyzerOutcome {
+                analyzer: analysis.analyzer.as_str(),
+                reading,
+                is_match,
+            });
+        }
+        // Emit iff ≥1 analyzer failed to match.
+        if !any_loser {
+            continue;
+        }
+        // Rebuild winners/losers/detail now, in the same per-analyzer order as
+        // the loop above, deferred from it purely to skip this allocation work
+        // on the fully-matching (no-emit) path above.
+        let mut winners = Vec::new();
+        let mut losers = Vec::new();
+        let mut detail = std::collections::BTreeMap::new();
+        for outcome in outcomes.drain(..) {
+            if outcome.is_match {
+                winners.push(outcome.analyzer.to_owned());
+            } else {
+                losers.push(outcome.analyzer.to_owned());
+            }
+            detail.insert(
+                outcome.analyzer.to_owned(),
+                AnalyzerRubyReadingEvidence {
+                    reading: outcome.reading.raw,
+                    norm: outcome.reading.norm,
+                    matches: outcome.is_match,
+                    align: reading_alignment(outcome.reading.align),
+                },
+            );
+        }
+        // resolved: ≥1 winner. nonstandard_ruby: no winner but ≥1 analyzer produced a
+        // comparable (exact) reading — a genuine reading the dictionaries lack.
+        // no_comparable_reading: no analyzer produced a comparable reading (all
+        // boundary-misalign or no-reading) — not a dictionary signal.
+        let classification = if !winners.is_empty() {
+            "resolved"
+        } else if any_comparable {
+            "nonstandard_ruby"
+        } else {
+            "no_comparable_reading"
+        };
+        let winning_analyzer = if winners.len() == 1 {
+            Some(winners[0].clone())
+        } else {
+            None
+        };
+        let classification_enum = match classification {
+            "resolved" => RubyOracleClassification::Resolved,
+            "nonstandard_ruby" => RubyOracleClassification::NonstandardRuby,
+            "no_comparable_reading" => RubyOracleClassification::NoComparableReading,
+            other => panic!("unknown ruby oracle classification {other}"),
+        };
+        let evidence_detail = serde_json::to_string(&RubyReadingEvidenceDetail {
+            ruby_base: base.base.clone(),
+            ruby_reading: base.reading.clone(),
+            ruby_reading_norm: ruby_norm.clone(),
+            classification: classification_enum,
+            per_analyzer: detail,
+        })
+        .expect("ruby reading evidence detail serializes");
+        rows.push(NwayRegionOracleEvidenceRow {
+            run_id: run_id.to_owned(),
+            source_id: source_id.to_owned(),
+            text_id: text_id.to_owned(),
+            region_index: region_index_for(regions, base),
+            projected_char_start: base.char_start,
+            projected_char_end: base.char_end,
+            oracle_source: "ruby".to_owned(),
+            classification: classification.to_owned(),
+            winning_analyzer,
+            losing_analyzers: losers,
+            evidence_detail,
+        });
+    }
+    rows
+}
+
+/// Verbatim copy of the pre-refactor `adjudicate` body (builds the evidence
+/// `detail` map and clones winner/loser names inside the per-analyzer loop,
+/// before the emit gate). Retained as the differential oracle for
+/// `adjudicate_matches_reference_*` tests below — never called from
+/// production code.
+#[cfg(test)]
+fn adjudicate_reference(
+    run_id: &str,
+    source_id: &str,
+    text_id: &str,
+    ruby_bases: &[RubyBase],
+    analyses: &[Analysis],
+    regions: &[RegionSpan],
+) -> Vec<NwayRegionOracleEvidenceRow> {
+    if analyses.len() < 2 {
+        return Vec::new();
+    }
+    let mut rows = Vec::new();
+    for base in ruby_bases {
+        let ruby_norm = super::reading_norm::normalize(&base.reading);
+        if ruby_norm.is_empty() {
             continue;
         }
         let mut winners = Vec::new();
@@ -228,14 +356,9 @@ pub(crate) fn adjudicate(
                 },
             );
         }
-        // Emit iff ≥1 analyzer failed to match.
         if losers.is_empty() {
             continue;
         }
-        // resolved: ≥1 winner. nonstandard_ruby: no winner but ≥1 analyzer produced a
-        // comparable (exact) reading — a genuine reading the dictionaries lack.
-        // no_comparable_reading: no analyzer produced a comparable reading (all
-        // boundary-misalign or no-reading) — not a dictionary signal.
         let classification = if !winners.is_empty() {
             "resolved"
         } else if any_comparable {
@@ -391,6 +514,67 @@ mod tests {
             char_end: 10,
             is_disagreement: true,
         }]
+    }
+
+    #[test]
+    fn adjudicate_matches_reference_across_match_single_and_multi_loser_bases() {
+        // Differential oracle test (Lever 3, task 1): `adjudicate` defers the
+        // evidence-map build and name clones to after the emit gate;
+        // `adjudicate_reference` is the verbatim pre-refactor implementation.
+        // The two must return byte-for-byte identical rows for every base
+        // shape the refactor touches: fully-matching (no row), single-loser,
+        // and multi-loser (order-sensitive `losing_analyzers`/`detail`).
+        let vibrato = analysis(
+            "vibrato",
+            vec![
+                morph("東京", 0..2, &[("kana", "トウキョウ")]), // base A: matches
+                morph("東京", 2..4, &[("kana", "トウキョウ")]), // base B: matches
+                morph("東京", 4..6, &[("kana", "トウケイ")]),   // base C: loses
+            ],
+        );
+        let sudachi = analysis(
+            "sudachi-c",
+            vec![
+                morph("東京", 0..2, &[("reading_form", "トウキョウ")]), // A: matches
+                morph("東京", 2..4, &[("reading_form", "トウキョウ")]), // B: matches
+                morph("東京", 4..6, &[("reading_form", "トウキョウ")]), // C: matches
+            ],
+        );
+        let vaporetto = analysis(
+            "vaporetto",
+            vec![
+                morph("東京", 0..2, &[("kana", "トウキョウ")]), // A: matches
+                morph("東京", 2..4, &[("kana", "トウケイ")]),   // B: loses
+                morph("東京", 4..6, &[("kana", "トウケイ")]),   // C: loses
+            ],
+        );
+        let bases = vec![
+            base(0, 2, "とうきょう"), // A: fully matching -> no row
+            base(2, 4, "とうきょう"), // B: single loser (vaporetto)
+            base(4, 6, "とうきょう"), // C: multiple losers (vibrato, vaporetto)
+        ];
+        let analyses = vec![vibrato, sudachi, vaporetto];
+        let regions = regions();
+
+        let current = adjudicate("r", "s", "t", &bases, &analyses, &regions);
+        let reference = adjudicate_reference("r", "s", "t", &bases, &analyses, &regions);
+
+        assert_eq!(
+            current, reference,
+            "refactored adjudicate must byte-for-byte match the pre-refactor reference"
+        );
+
+        // Sanity on the fixture itself, so a broken fixture can't make the
+        // differential comparison above vacuously trivial.
+        assert_eq!(reference.len(), 2, "base A fully matches and emits nothing");
+        assert_eq!(reference[0].losing_analyzers, vec!["vaporetto".to_owned()]);
+        assert_eq!(
+            reference[1].losing_analyzers,
+            vec!["vibrato".to_owned(), "vaporetto".to_owned()],
+            "losing_analyzers preserves per-analyzer (analyses-slice) order"
+        );
+        assert!(reference[1].evidence_detail.contains("vibrato"));
+        assert!(reference[1].evidence_detail.contains("vaporetto"));
     }
 
     #[test]

@@ -248,6 +248,7 @@ dependencies = [
  "anyhow",
  "arrow-array",
  "arrow-schema",
+ "criterion",
  "parquet",
  "serde",
  "serde_json",

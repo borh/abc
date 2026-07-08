@@ -5,7 +5,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
-use arrow_array::builder::{ListBuilder, StringBuilder};
+use arrow_array::builder::{ArrayBuilder, ListBuilder, StringBuilder, UInt64Builder};
 use arrow_array::{ArrayRef, BooleanArray, RecordBatch, StringArray, UInt32Array, UInt64Array};
 use arrow_schema::{DataType, Field, Schema};
 use parquet::arrow::ArrowWriter;
@@ -14,10 +14,15 @@ use parquet::basic::{Compression, ZstdLevel};
 use parquet::file::properties::WriterProperties;
 
 use crate::schema::{
-    AnalysisRow, ErrorRow, FeaturePatternCountRow, MorphemeFeatureRow, MorphemeRow,
-    NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionOracleEvidenceRow, NwayRegionRow,
-    ProjectionSpanRow, RunAnalyzerRow, RunRow, SourceRow, WarehousePaths, WarehouseTable,
+    AnalysisRow, ErrorRow, FeaturePatternCountRow, MorphemeRow, NwayFeatureDiffRow,
+    NwayRegionAnalyzerRow, NwayRegionOracleEvidenceRow, NwayRegionRow, ProjectionSpanRow,
+    RunAnalyzerRow, RunRow, SourceRow, WarehousePaths, WarehouseTable,
 };
+// `MorphemeFeatureRow` (the `Vec<Row>` intermediate) is retained only for the
+// `#[cfg(test)]` reference-transposition path -- see
+// `append_morpheme_features_reference` and `MorphemeFeaturesColumns`.
+#[cfg(test)]
+use crate::schema::MorphemeFeatureRow;
 
 const WAREHOUSE_MAX_ROW_GROUP_SIZE: usize = 50_000;
 
@@ -312,7 +317,14 @@ impl WarehouseWriter {
         )
     }
 
-    pub fn append_morpheme_features(&mut self, rows: &[MorphemeFeatureRow]) -> Result<()> {
+    /// Reference `Vec<Row>` -> transposed-arrays implementation, retained only
+    /// to characterize byte-identity against the direct-builder path (see
+    /// [`append_morpheme_feature_columns`](Self::append_morpheme_feature_columns)).
+    /// Production code no longer allocates a `Vec<MorphemeFeatureRow>` for
+    /// this table -- the producer appends straight into a
+    /// [`MorphemeFeaturesColumns`] builder instead.
+    #[cfg(test)]
+    fn append_morpheme_features_reference(&mut self, rows: &[MorphemeFeatureRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -333,6 +345,28 @@ impl WarehouseWriter {
             ],
             &mut self.write_time,
         )
+    }
+
+    /// Write a finished [`MorphemeFeaturesColumns`] builder as a single
+    /// `RecordBatch`. Producers (see `ab-morph-run`'s
+    /// `push_morpheme_features_for_range`) append each morpheme-feature
+    /// directly into the builder's Arrow buffers, so this table never
+    /// materializes a `Vec<MorphemeFeatureRow>` on the production path -- the
+    /// highest-row-volume warehouse table, where the per-row `Arc::clone`
+    /// bumps that entailed mattered at billions-of-rows scale.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the underlying writer fails to write the batch.
+    pub fn append_morpheme_feature_columns(
+        &mut self,
+        mut columns: MorphemeFeaturesColumns,
+    ) -> Result<()> {
+        if columns.is_empty() || self.morpheme_features.is_none() {
+            return Ok(());
+        }
+        let batch = columns.finish();
+        self.append_record_batch(WarehouseTable::MorphemeFeatures, batch)
     }
 
     pub fn append_nway_regions(&mut self, rows: &[NwayRegionRow]) -> Result<()> {
@@ -417,6 +451,20 @@ impl WarehouseWriter {
         )
     }
 
+    /// Row-based `Vec<Row>` -> transposed-arrays implementation. `nway_feature_diffs`
+    /// production writes no longer go through this path (see
+    /// [`append_nway_feature_diff_columns`](Self::append_nway_feature_diff_columns) --
+    /// `ab-morph-run`'s n-way batch driver appends straight into a
+    /// [`NwayFeatureDiffsColumns`] builder instead, since this is the
+    /// highest-row-volume warehouse table). Unlike `morpheme_features`'s
+    /// equivalent reference path, this method stays a regular (non-
+    /// `#[cfg(test)]`) `pub fn`: several `ab-morph-run` test fixtures
+    /// (`summary/summary_body.rs`, `summary/interesting.rs`) construct
+    /// `NwayFeatureDiffRow` literals and call this method across the crate
+    /// boundary, where a `#[cfg(test)]` item in this crate would not be
+    /// visible -- `#[cfg(test)]` gates compilation per-crate, not
+    /// per-workspace. It also still serves as this crate's own byte-identity
+    /// reference (see `nway_feature_diffs_direct_builder_matches_reference_bytes`).
     pub fn append_nway_feature_diffs(&mut self, rows: &[NwayFeatureDiffRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
@@ -441,6 +489,28 @@ impl WarehouseWriter {
             ],
             &mut self.write_time,
         )
+    }
+
+    /// Write a finished [`NwayFeatureDiffsColumns`] builder as a single
+    /// `RecordBatch`. Producers (see `ab-morph-run`'s `push_region_rows`)
+    /// append each n-way feature-diff directly into the builder's Arrow
+    /// buffers, so this table never materializes a `Vec<NwayFeatureDiffRow>`
+    /// on the production path -- `nway_feature_diffs` is the
+    /// highest-row-volume warehouse table (~23.4B rows), where the per-row
+    /// `Arc::clone` bumps this refactor eliminates mattered most.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the underlying writer fails to write the batch.
+    pub fn append_nway_feature_diff_columns(
+        &mut self,
+        mut columns: NwayFeatureDiffsColumns,
+    ) -> Result<()> {
+        if columns.is_empty() || self.nway_feature_diffs.is_none() {
+            return Ok(());
+        }
+        let batch = columns.finish();
+        self.append_record_batch(WarehouseTable::NwayFeatureDiffs, batch)
     }
 
     pub fn append_feature_pattern_counts(&mut self, rows: &[FeaturePatternCountRow]) -> Result<()> {
@@ -595,6 +665,206 @@ impl WarehouseWriter {
         crate::sql::write_run_views_sql(&self.paths.staging_dir, &self.paths.final_dir)?;
         finalize_staging_run(&self.paths)?;
         Ok(self.write_time)
+    }
+}
+
+/// Column-oriented builder for the `morpheme_features` table (7 columns, in
+/// `morpheme_features_schema()` order). Producers append each
+/// morpheme-feature directly into this builder's Arrow buffers via
+/// [`push_row`](Self::push_row) instead of collecting a
+/// `Vec<MorphemeFeatureRow>` first -- `morpheme_features` is the
+/// highest-row-volume warehouse table, so skipping the per-row `Arc::clone`
+/// bumps (previously ~5 per row: 4 id columns + the feature key) and the
+/// intermediate `Vec` allocation matters at billions-of-rows scale.
+pub struct MorphemeFeaturesColumns {
+    run_id: StringBuilder,
+    source_id: StringBuilder,
+    text_id: StringBuilder,
+    analyzer_id: StringBuilder,
+    morpheme_index: UInt64Builder,
+    feature_key: StringBuilder,
+    feature_value: StringBuilder,
+}
+
+impl MorphemeFeaturesColumns {
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            run_id: StringBuilder::new(),
+            source_id: StringBuilder::new(),
+            text_id: StringBuilder::new(),
+            analyzer_id: StringBuilder::new(),
+            morpheme_index: UInt64Builder::new(),
+            feature_key: StringBuilder::new(),
+            feature_value: StringBuilder::new(),
+        }
+    }
+
+    /// Append one `morpheme_features` row directly into the column builders.
+    #[allow(clippy::too_many_arguments)]
+    pub fn push_row(
+        &mut self,
+        run_id: &str,
+        source_id: &str,
+        text_id: &str,
+        analyzer_id: &str,
+        morpheme_index: u64,
+        feature_key: &str,
+        feature_value: Option<&str>,
+    ) {
+        self.run_id.append_value(run_id);
+        self.source_id.append_value(source_id);
+        self.text_id.append_value(text_id);
+        self.analyzer_id.append_value(analyzer_id);
+        self.morpheme_index.append_value(morpheme_index);
+        self.feature_key.append_value(feature_key);
+        self.feature_value.append_option(feature_value);
+    }
+
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.morpheme_index.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// Finish every column builder into a single `RecordBatch` matching
+    /// `morpheme_features_schema()`'s exact field order and types (`Utf8` /
+    /// `UInt64`, no dictionary encoding) so output stays byte-identical to
+    /// the retained `Vec<Row>` reference path.
+    #[must_use]
+    pub fn finish(&mut self) -> RecordBatch {
+        RecordBatch::try_new(
+            morpheme_features_schema(),
+            vec![
+                Arc::new(self.run_id.finish()),
+                Arc::new(self.source_id.finish()),
+                Arc::new(self.text_id.finish()),
+                Arc::new(self.analyzer_id.finish()),
+                Arc::new(self.morpheme_index.finish()),
+                Arc::new(self.feature_key.finish()),
+                Arc::new(self.feature_value.finish()),
+            ],
+        )
+        .expect("MorphemeFeaturesColumns builders match the documented schema")
+    }
+}
+
+impl Default for MorphemeFeaturesColumns {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Column-oriented builder for the `nway_feature_diffs` table (10 columns, in
+/// `nway_feature_diffs_schema()` order). `nway_feature_diffs` is the
+/// highest-row-volume warehouse table (~23.4B rows), so -- as with
+/// [`MorphemeFeaturesColumns`] -- producers append each feature-diff directly
+/// into this builder's Arrow buffers via [`push_row`](Self::push_row) instead
+/// of collecting a `Vec<NwayFeatureDiffRow>` first, skipping the per-row
+/// `Arc::clone` bumps that Vec would otherwise require (6 `Arc<str>`/
+/// `Option<Arc<str>>` fields per row). `analyzer_id` stays a scalar column
+/// this round (per-analyzer row-collapse is a deferred, separate schema
+/// change).
+pub struct NwayFeatureDiffsColumns {
+    run_id: StringBuilder,
+    source_id: StringBuilder,
+    text_id: StringBuilder,
+    region_index: UInt64Builder,
+    feature_key: StringBuilder,
+    scope_type: StringBuilder,
+    scope_position: UInt64Builder,
+    scope_surface: StringBuilder,
+    feature_value: StringBuilder,
+    analyzer_id: StringBuilder,
+}
+
+impl NwayFeatureDiffsColumns {
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            run_id: StringBuilder::new(),
+            source_id: StringBuilder::new(),
+            text_id: StringBuilder::new(),
+            region_index: UInt64Builder::new(),
+            feature_key: StringBuilder::new(),
+            scope_type: StringBuilder::new(),
+            scope_position: UInt64Builder::new(),
+            scope_surface: StringBuilder::new(),
+            feature_value: StringBuilder::new(),
+            analyzer_id: StringBuilder::new(),
+        }
+    }
+
+    /// Append one `nway_feature_diffs` row directly into the column builders.
+    #[allow(clippy::too_many_arguments)]
+    pub fn push_row(
+        &mut self,
+        run_id: &str,
+        source_id: &str,
+        text_id: &str,
+        region_index: u64,
+        feature_key: &str,
+        scope_type: &str,
+        scope_position: Option<u64>,
+        scope_surface: Option<&str>,
+        feature_value: Option<&str>,
+        analyzer_id: &str,
+    ) {
+        self.run_id.append_value(run_id);
+        self.source_id.append_value(source_id);
+        self.text_id.append_value(text_id);
+        self.region_index.append_value(region_index);
+        self.feature_key.append_value(feature_key);
+        self.scope_type.append_value(scope_type);
+        self.scope_position.append_option(scope_position);
+        self.scope_surface.append_option(scope_surface);
+        self.feature_value.append_option(feature_value);
+        self.analyzer_id.append_value(analyzer_id);
+    }
+
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.region_index.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// Finish every column builder into a single `RecordBatch` matching
+    /// `nway_feature_diffs_schema()`'s exact field order and types (`Utf8` /
+    /// `UInt64`, no dictionary encoding) so output stays byte-identical to
+    /// the row-based reference path (see
+    /// `append_nway_feature_diffs`/`nway_feature_diffs_direct_builder_matches_reference_bytes`).
+    #[must_use]
+    pub fn finish(&mut self) -> RecordBatch {
+        RecordBatch::try_new(
+            nway_feature_diffs_schema(),
+            vec![
+                Arc::new(self.run_id.finish()),
+                Arc::new(self.source_id.finish()),
+                Arc::new(self.text_id.finish()),
+                Arc::new(self.region_index.finish()),
+                Arc::new(self.feature_key.finish()),
+                Arc::new(self.scope_type.finish()),
+                Arc::new(self.scope_position.finish()),
+                Arc::new(self.scope_surface.finish()),
+                Arc::new(self.feature_value.finish()),
+                Arc::new(self.analyzer_id.finish()),
+            ],
+        )
+        .expect("NwayFeatureDiffsColumns builders match the documented schema")
+    }
+}
+
+impl Default for NwayFeatureDiffsColumns {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -1473,6 +1743,260 @@ mod tests {
         let before_close = writer.write_time();
         let total = writer.finalize().unwrap();
         assert!(total >= before_close, "finalize folds in close() time");
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn morpheme_features_direct_builder_matches_reference_bytes() {
+        // Covers: repeated ids across rows, a `None` feature_value, and
+        // multiple analyzers/morphemes -- exercising the byte layout the
+        // 7-column schema must preserve.
+        let run_id: Arc<str> = Arc::from("run-a");
+        let source_id: Arc<str> = Arc::from("source-a");
+        let text_id: Arc<str> = Arc::from("work-a");
+        let analyzer_a: Arc<str> = Arc::from("vibrato:unidic");
+        let analyzer_b: Arc<str> = Arc::from("sudachi-c");
+        let rows = vec![
+            MorphemeFeatureRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                analyzer_id: Arc::clone(&analyzer_a),
+                morpheme_index: 0,
+                feature_key: Arc::from("pos1"),
+                feature_value: Some(Arc::from("名詞")),
+            },
+            MorphemeFeatureRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                analyzer_id: Arc::clone(&analyzer_a),
+                morpheme_index: 0,
+                feature_key: Arc::from("lemma"),
+                feature_value: None,
+            },
+            MorphemeFeatureRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                analyzer_id: Arc::clone(&analyzer_a),
+                morpheme_index: 1,
+                feature_key: Arc::from("pos1"),
+                feature_value: Some(Arc::from("助詞")),
+            },
+            MorphemeFeatureRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                analyzer_id: Arc::clone(&analyzer_b),
+                morpheme_index: 0,
+                feature_key: Arc::from("pos1"),
+                feature_value: Some(Arc::from("名詞")),
+            },
+        ];
+
+        let root = temp_dir("mf-byte-identity");
+
+        let reference_paths = WarehousePaths::new(root.join("reference"), "run-a");
+        let mut reference_writer = WarehouseWriter::create_for_tables(
+            reference_paths.clone(),
+            &[WarehouseTable::MorphemeFeatures],
+            3,
+        )
+        .unwrap();
+        reference_writer
+            .append_morpheme_features_reference(&rows)
+            .unwrap();
+        reference_writer.finalize().unwrap();
+
+        let direct_paths = WarehousePaths::new(root.join("direct"), "run-a");
+        let mut direct_writer = WarehouseWriter::create_for_tables(
+            direct_paths.clone(),
+            &[WarehouseTable::MorphemeFeatures],
+            3,
+        )
+        .unwrap();
+        let mut columns = MorphemeFeaturesColumns::new();
+        for row in &rows {
+            columns.push_row(
+                row.run_id.as_ref(),
+                row.source_id.as_ref(),
+                row.text_id.as_ref(),
+                row.analyzer_id.as_ref(),
+                row.morpheme_index,
+                row.feature_key.as_ref(),
+                row.feature_value.as_deref(),
+            );
+        }
+        direct_writer
+            .append_morpheme_feature_columns(columns)
+            .unwrap();
+        direct_writer.finalize().unwrap();
+
+        let reference_bytes =
+            fs::read(reference_paths.final_table_path(WarehouseTable::MorphemeFeatures)).unwrap();
+        let direct_bytes =
+            fs::read(direct_paths.final_table_path(WarehouseTable::MorphemeFeatures)).unwrap();
+        assert_eq!(
+            reference_bytes, direct_bytes,
+            "direct-builder parquet bytes must match the reference transposition exactly"
+        );
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn nway_feature_diffs_direct_builder_matches_reference_bytes() {
+        // Covers: `None` scope_position (whole_region scope), `None`
+        // scope_surface (whole_region/token_position scopes), `None`
+        // feature_value, and multiple analyzers per value-group -- exercising
+        // the null handling and byte layout the 10-column schema must
+        // preserve.
+        let run_id: Arc<str> = Arc::from("run-a");
+        let source_id: Arc<str> = Arc::from("source-a");
+        let text_id: Arc<str> = Arc::from("work-a");
+        let rows = vec![
+            // whole_region scope: scope_position and scope_surface both None.
+            NwayFeatureDiffRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                region_index: 0,
+                feature_key: Arc::from("pos1"),
+                scope_type: Arc::from("whole_region"),
+                scope_position: None,
+                scope_surface: None,
+                feature_value: Some(Arc::from("名詞")),
+                analyzer_id: Arc::from("vibrato"),
+            },
+            // Same group, second analyzer, and a `None` feature_value.
+            NwayFeatureDiffRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                region_index: 0,
+                feature_key: Arc::from("pos1"),
+                scope_type: Arc::from("whole_region"),
+                scope_position: None,
+                scope_surface: None,
+                feature_value: None,
+                analyzer_id: Arc::from("sudachi-a"),
+            },
+            // token_position scope: scope_position set, scope_surface still None.
+            NwayFeatureDiffRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                region_index: 1,
+                feature_key: Arc::from("pos2"),
+                scope_type: Arc::from("token_position"),
+                scope_position: Some(0),
+                scope_surface: None,
+                feature_value: Some(Arc::from("A")),
+                analyzer_id: Arc::from("vibrato"),
+            },
+            NwayFeatureDiffRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                region_index: 1,
+                feature_key: Arc::from("pos2"),
+                scope_type: Arc::from("token_position"),
+                scope_position: Some(0),
+                scope_surface: None,
+                feature_value: Some(Arc::from("B")),
+                analyzer_id: Arc::from("sudachi-c"),
+            },
+            // surface scope: scope_surface set, scope_position None, plus a
+            // third analyzer sharing this value group.
+            NwayFeatureDiffRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                region_index: 1,
+                feature_key: Arc::from("pos3"),
+                scope_type: Arc::from("surface"),
+                scope_position: None,
+                scope_surface: Some(Arc::from("東京")),
+                feature_value: Some(Arc::from("E")),
+                analyzer_id: Arc::from("vibrato"),
+            },
+            NwayFeatureDiffRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                region_index: 1,
+                feature_key: Arc::from("pos3"),
+                scope_type: Arc::from("surface"),
+                scope_position: None,
+                scope_surface: Some(Arc::from("東京")),
+                feature_value: Some(Arc::from("E")),
+                analyzer_id: Arc::from("sudachi-a"),
+            },
+            NwayFeatureDiffRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                region_index: 1,
+                feature_key: Arc::from("pos3"),
+                scope_type: Arc::from("surface"),
+                scope_position: None,
+                scope_surface: Some(Arc::from("東京")),
+                feature_value: None,
+                analyzer_id: Arc::from("sudachi-c"),
+            },
+        ];
+
+        let root = temp_dir("nfd-byte-identity");
+
+        let reference_paths = WarehousePaths::new(root.join("reference"), "run-a");
+        let mut reference_writer = WarehouseWriter::create_for_tables(
+            reference_paths.clone(),
+            &[WarehouseTable::NwayFeatureDiffs],
+            3,
+        )
+        .unwrap();
+        reference_writer
+            .append_nway_feature_diffs(&rows)
+            .unwrap();
+        reference_writer.finalize().unwrap();
+
+        let direct_paths = WarehousePaths::new(root.join("direct"), "run-a");
+        let mut direct_writer = WarehouseWriter::create_for_tables(
+            direct_paths.clone(),
+            &[WarehouseTable::NwayFeatureDiffs],
+            3,
+        )
+        .unwrap();
+        let mut columns = NwayFeatureDiffsColumns::new();
+        for row in &rows {
+            columns.push_row(
+                row.run_id.as_ref(),
+                row.source_id.as_ref(),
+                row.text_id.as_ref(),
+                row.region_index,
+                row.feature_key.as_ref(),
+                row.scope_type.as_ref(),
+                row.scope_position,
+                row.scope_surface.as_deref(),
+                row.feature_value.as_deref(),
+                row.analyzer_id.as_ref(),
+            );
+        }
+        direct_writer
+            .append_nway_feature_diff_columns(columns)
+            .unwrap();
+        direct_writer.finalize().unwrap();
+
+        let reference_bytes =
+            fs::read(reference_paths.final_table_path(WarehouseTable::NwayFeatureDiffs)).unwrap();
+        let direct_bytes =
+            fs::read(direct_paths.final_table_path(WarehouseTable::NwayFeatureDiffs)).unwrap();
+        assert_eq!(
+            reference_bytes, direct_bytes,
+            "direct-builder parquet bytes must match the reference transposition exactly"
+        );
 
         let _ = fs::remove_dir_all(root);
     }

@@ -40,3 +40,11 @@ test-analyzer = []
 [[bench]]
 name = "analyze_aat"
 harness = false
+
+[[bench]]
+name = "oracle_adjudicate"
+harness = false
+
+[[bench]]
+name = "warehouse_feature_pattern_accumulator"
+harness = false

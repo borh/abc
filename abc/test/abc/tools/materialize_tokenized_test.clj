@@ -119,3 +119,24 @@
       (finally
         (doseq [file (reverse (file-seq out-dir))]
           (.delete file))))))
+
+(deftest materialize-tokenized-rejects-normalization-mismatch-test
+  (let [dir (Files/createTempDirectory "abc-tokenized-mismatch" (make-array FileAttribute 0))
+        out-dir (.toFile dir)
+        profile (files/read-json "data/tokenizer-profiles/fixture-tokenizer-ja-v1.json")]
+    (try
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo
+           #"input-normalization policy mismatch"
+           (materialize-tokenized/materialize-tokenized!
+            {:producer-manifest (producer-manifest)
+             :tokenizer-profile profile
+             :input-plaintext-policy-hash (files/example-hash "aa")
+             ;; A run that applied a different normalization than the profile declares.
+             :applied-normalization-policy-hash (files/example-hash "77")
+             :tokens (fixture-tokens)
+             :output-dir out-dir
+             :generated-at "2026-07-08T00:00:00Z"}))
+       "profile declares identity; applied differs → hard error")
+      (finally
+        (doseq [f (reverse (file-seq out-dir))] (.delete f))))))

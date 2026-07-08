@@ -38,6 +38,20 @@
    (required-string "work_content_hash" (get subject "work_content_hash"))
    (or (get subject "metadata_record_hash") "")])
 
+(defn assert-input-normalization-agreement!
+  "Enforce the F1 agreement: the tokenizer profile *declares* the input
+  normalization it expects (`declared`), and the run *applied* (`applied`, from
+  the Rust run-provenance / recorded on the input view) must match it. A
+  mismatch means the run normalized its analyzer input differently than the
+  profile promised — a hard error. Returns `applied` on success."
+  [{:keys [declared applied context]}]
+  (when-not (= declared applied)
+    (throw (ex-info "input-normalization policy mismatch: the run applied a different normalization than the tokenizer profile declared"
+                    {:declared_input_normalization_policy_hash declared
+                     :applied_input_normalization_policy_hash applied
+                     :context context})))
+  applied)
+
 (defn- normalize-subject [subject]
   (assoc subject "metadata_record_hash" (get subject "metadata_record_hash")))
 

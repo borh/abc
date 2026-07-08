@@ -99,3 +99,17 @@
            :analysis-recipe-hash (files/example-hash "21")
            :registry-entry-hash (files/example-hash "22")
            :resolved-at "2026-07-07T00:00:00Z"}))))
+
+(deftest assert-input-normalization-agreement-passes-on-match-test
+  (is (= "sha256:530c59689dd909c171790036cddc7916f8685897b6342bfa794d4611816d3813"
+         (analysis-identity/assert-input-normalization-agreement!
+          {:declared "sha256:530c59689dd909c171790036cddc7916f8685897b6342bfa794d4611816d3813"
+           :applied "sha256:530c59689dd909c171790036cddc7916f8685897b6342bfa794d4611816d3813"}))))
+
+(deftest assert-input-normalization-agreement-throws-on-mismatch-test
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"input-normalization policy mismatch"
+       (analysis-identity/assert-input-normalization-agreement!
+        {:declared "sha256:530c59689dd909c171790036cddc7916f8685897b6342bfa794d4611816d3813"
+         :applied (files/example-hash "77")}))))

@@ -90,7 +90,17 @@
 
 (defn materialize-tokenized!
   [{:keys [producer-manifest tokenizer-profile input-plaintext-policy-hash
-           tokens warnings output-dir generated-at]}]
+           applied-normalization-policy-hash tokens warnings output-dir generated-at]}]
+  ;; F1 agreement: the run must have applied the normalization the profile
+  ;; declares. `applied-normalization-policy-hash` is the Rust run-provenance
+  ;; value (T1); when absent (pure source-identity fixtures with no run), it
+  ;; defaults to the profile's declared hash and the check is a no-op.
+  (analysis-identity/assert-input-normalization-agreement!
+   {:declared (get tokenizer-profile "input_normalization_policy_hash")
+    :applied (or applied-normalization-policy-hash
+                 (get tokenizer-profile "input_normalization_policy_hash"))
+    :context {:activity activity-id
+              :producer-artifact-id (get producer-manifest "artifact_id")}})
   (let [output-dir (io/file output-dir)
         token-stream-file (io/file output-dir "token-stream.json")
         manifest-file (io/file output-dir "tokenized.manifest.json")

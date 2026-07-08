@@ -140,6 +140,7 @@ dependencies = [
  "ab-plaintext",
  "rkyv",
  "serde",
+ "serde_json",
  "sudachi",
  "vaporetto",
  "vibrato-rkyv",

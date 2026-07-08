@@ -42,9 +42,9 @@
     "loose_artifact_kinds": ["tei","plaintext"]
   },
   "request_set_label": "smoke-basic-ja",
-  "schema_hash": "sha256:ef0aaccd2d5d86204bb22c5d94e3c3d4dab2a6cfe4b82c353873317c77a3c31f",
+  "schema_hash": "sha256:9be8e22d8d7f7b246c3bb3bf43e7ded7b099a179e95e47fe6d073f062bd0ef2e",
   "schema_id": "https:\/\/w3id.org\/abc\/schemas\/snapshot-index.schema.json",
-  "snapshot_identity_hash": "sha256:9a7e0d494a9a341f2802f4d1e07c705405613887dd01f4ba6c472bedfba1150f",
+  "snapshot_identity_hash": "sha256:56c278301e62d7f5d192f89b2f7624746b2837bd94ce3e2fd5184d81f3382ace",
   "snapshot_index_identity_object":
   {
     "analysis_recipe_hashes": ["sha256:1e2bb82410039a7f8d465e82f29f15472f451ae6d99eeca35292819ec2f24c1e"],
@@ -54,8 +54,8 @@
     "manifest_index_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
     "parser_evidence_hashes": [],
     "request_set_id": "sha256:307144cf18911c2d2ac198c8b05f602ee4511111019b88b08b6134549b601ca9",
-    "schema_hashes": ["sha256:075e48811964f439ceb82643bb485138add8764cb17546f554422849a2918f9c","sha256:3097d32f05a04daddab540548fb30846fa8b6a4cb1400e3af1ba7606e195f0b1","sha256:52d420dd985849cfb7cbd2bfb0f28bb04100c901e105506f972204157a1b0fa6","sha256:ef0aaccd2d5d86204bb22c5d94e3c3d4dab2a6cfe4b82c353873317c77a3c31f"],
-    "snapshot_index_schema_hash": "sha256:ef0aaccd2d5d86204bb22c5d94e3c3d4dab2a6cfe4b82c353873317c77a3c31f",
+    "schema_hashes": ["sha256:075e48811964f439ceb82643bb485138add8764cb17546f554422849a2918f9c","sha256:3097d32f05a04daddab540548fb30846fa8b6a4cb1400e3af1ba7606e195f0b1","sha256:52d420dd985849cfb7cbd2bfb0f28bb04100c901e105506f972204157a1b0fa6","sha256:9be8e22d8d7f7b246c3bb3bf43e7ded7b099a179e95e47fe6d073f062bd0ef2e"],
+    "snapshot_index_schema_hash": "sha256:9be8e22d8d7f7b246c3bb3bf43e7ded7b099a179e95e47fe6d073f062bd0ef2e",
     "source_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
     "tokenizer_profile_hashes": []
   },

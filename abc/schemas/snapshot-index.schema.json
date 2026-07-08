@@ -131,7 +131,7 @@
           "minimum": 1
         },
         "archive_format": {
-          "enum": ["tar.zst", "tar.gz", "zip"]
+          "const": "tar.zst"
         }
       }
     },

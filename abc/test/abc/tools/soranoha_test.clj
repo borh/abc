@@ -503,7 +503,7 @@
                       ["reproduce" (str request-set-file)]))))
         (let [staged-index-file (io/file staged-root "index.json")
               analysis-archive-file (io/file staged-root
-                                             "artifacts/analysis/batches/analysis-batch-0001.tar")
+                                             "artifacts/analysis/batches/analysis-batch-0001.tar.zst")
               out (with-out-str
                     (is (zero? (soranoha/run!
                                 ["stage-publication"
@@ -538,7 +538,9 @@
                                     "artifacts/tei/by-work/alpha/tei.xml")))
               (is (= "archive-member" (get-in analysis-ref ["locator"
                                                             "kind"])))
-              (is (= "artifacts/analysis/batches/analysis-batch-0001.tar"
+              (is (= "tar.zst" (get-in staged-index ["layout_policy"
+                                                     "archive_format"])))
+              (is (= "artifacts/analysis/batches/analysis-batch-0001.tar.zst"
                      (get-in analysis-ref ["locator" "archive_path"])))
               (is (= "alpha/analysis.manifest.json"
                      (get-in analysis-ref ["locator" "member_path"])))

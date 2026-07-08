@@ -659,11 +659,10 @@ fn ortho_annotation_spanning_two_sentences_tags_both() {
 }
 
 #[test]
-fn rejects_sentence_boundary_inside_atomic_emphasis_from_aat() {
-    // Regression matrix (6e): shared AAT fixture reproducing the dominant real-corpus
-    // sentence-projection failure — a sentence terminal inside an emphasis node that
-    // carries inline_children (here, mixed text + ruby). Conversion must fail rather
-    // than snap the boundary.
+fn rejects_sentence_boundary_inside_atomic_ruby_child_from_aat() {
+    // Regression matrix (6e): the residual atomic-boundary failure under Phase B —
+    // a sentence terminal inside a `ruby` base nested in an emphasis. `ruby` stays
+    // atomic (B-D2), so conversion must fail rather than snap the boundary.
     let (schemas, mapping) = schemas_and_mapping();
     let error = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat: include_fixture_json("atomic-boundary-emphasis-input.aat.json"),
@@ -674,9 +673,73 @@ fn rejects_sentence_boundary_inside_atomic_emphasis_from_aat() {
     .unwrap_err()
     .to_string();
     assert!(
-        error.contains("sentence boundary falls inside atomic node emphasis"),
+        error.contains("sentence boundary falls inside atomic node ruby"),
         "unexpected error: {error}"
     );
+}
+
+#[test]
+fn splits_emphasis_container_at_sentence_boundary_keeping_ruby_whole() {
+    // Phase B (B1): an emphasis carrying inline_children with an interior terminal
+    // in a splittable text child splits into two sibling emphases; a ruby sibling
+    // is kept whole. This is the case the old hard-fail regressed.
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "000000",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+        ),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [{
+                "kind": "style",
+                "style_type": "sesame_dot",
+                "content": [
+                    { "kind": "text", "value": "甲。乙" },
+                    { "kind": "ruby", "base": "丙", "reading": "へい", "direction": "right" }
+                ]
+            }]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    // Two emphasis siblings; the ruby stays a single whole child in the second.
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/type"),
+        Some(&json!("emphasis"))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/text"),
+        Some(&json!("甲。"))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/1/type"),
+        Some(&json!("emphasis"))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/1/inline_children/1/ruby/base"),
+        Some(&json!("丙"))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/span/end"),
+        Some(&json!(6))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/1/span/start"),
+        Some(&json!(6))
+    );
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 
 #[test]

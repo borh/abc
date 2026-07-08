@@ -118,13 +118,32 @@ fn project_body_paragraph(
     let paragraph_start = value_usize(paragraph, "/span/start", "paragraph span.start")?;
     let paragraph_end = value_usize(paragraph, "/span/end", "paragraph span.end")?;
     let paragraph_text = paragraph_visible_text(original_nodes)?;
-    let bounds: Vec<SentenceBounds> = ab_plaintext::sentence_split(&paragraph_text)
+    let mut bounds: Vec<SentenceBounds> = ab_plaintext::sentence_split(&paragraph_text)
         .into_iter()
         .map(|span| SentenceBounds {
             start: paragraph_start + span.byte_offset,
             end: paragraph_start + span.byte_offset + span.text.len(),
         })
         .collect();
+
+    // Whitespace handling (B2): the splitter drops leading/trailing whitespace-only
+    // runs and returns nothing for whitespace-only visible text. Absorb those into
+    // the sentence rows so a non-empty body paragraph tiles with no gaps.
+    if bounds.is_empty() {
+        if paragraph_start != paragraph_end {
+            // Whitespace-only (or atomic-only) visible text with a non-empty byte
+            // span: one sentence covers the whole paragraph.
+            bounds.push(SentenceBounds {
+                start: paragraph_start,
+                end: paragraph_end,
+            });
+        }
+    } else {
+        // Extend the first/last rows to the paragraph bounds so dropped leading /
+        // trailing whitespace is covered. Interior boundaries are unchanged.
+        bounds.first_mut().unwrap().start = paragraph_start;
+        bounds.last_mut().unwrap().end = paragraph_end;
+    }
 
     let split_boundaries: Vec<usize> = bounds
         .iter()
@@ -231,34 +250,52 @@ fn paragraph_id(paragraph: &Value) -> String {
 fn paragraph_visible_text(nodes: &[Value]) -> Result<String> {
     let mut text = String::new();
     for node in nodes {
-        text.push_str(parser_ir_node_visible_text_ref(node)?);
+        text.push_str(&parser_ir_node_visible_text(node)?);
     }
     Ok(text)
 }
 
+/// Authoritative visible-text projection for a parser-IR node.
+///
+/// For inline containers (`emphasis` / `layout-span` / `heading`) the projection
+/// is derived from `inline_children`, not the flat `text`: the schema permits an
+/// `emphasis` carrying `inline_children` with no `text`, so the children are the
+/// source of truth. When a flat `text` is also present the split path guards that
+/// it equals this projection.
 pub(crate) fn parser_ir_node_visible_text(node: &Value) -> Result<String> {
-    Ok(parser_ir_node_visible_text_ref(node)?.to_owned())
-}
-
-fn parser_ir_node_visible_text_ref(node: &Value) -> Result<&str> {
-    let node_type = node_type(node);
-    match node_type {
-        "text" | "quote" | "emphasis" | "layout-span" | "heading" | "source-note" => {
-            Ok(node.get("text").and_then(Value::as_str).unwrap_or(""))
+    if let Some(children) = inline_children(node) {
+        let mut text = String::new();
+        for child in children {
+            text.push_str(&parser_ir_node_visible_text(child)?);
         }
-        "ruby" => Ok(node
+        return Ok(text);
+    }
+    let node_type = node_type(node);
+    let text = match node_type {
+        "text" | "quote" | "emphasis" | "layout-span" | "heading" | "source-note" => {
+            node.get("text").and_then(Value::as_str).unwrap_or("")
+        }
+        "ruby" => node
             .pointer("/ruby/base")
             .and_then(Value::as_str)
-            .unwrap_or("")),
-        "gaiji" => Ok(node
+            .unwrap_or(""),
+        "gaiji" => node
             .pointer("/gaiji/unicode")
             .and_then(Value::as_str)
             .or_else(|| node.pointer("/gaiji/raw_marker").and_then(Value::as_str))
-            .unwrap_or("")),
-        "line-break" => Ok("\n"),
-        "page-break" | "image" | "editor-note" | "indentation" => Ok(""),
+            .unwrap_or(""),
+        "line-break" => "\n",
+        "page-break" | "image" | "editor-note" | "indentation" => "",
         other => bail!("unsupported parser-IR node type for sentence projection: {other}"),
-    }
+    };
+    Ok(text.to_owned())
+}
+
+/// The non-empty `inline_children` array of an inline container, if present.
+fn inline_children(node: &Value) -> Option<&Vec<Value>> {
+    node.get("inline_children")
+        .and_then(Value::as_array)
+        .filter(|children| !children.is_empty())
 }
 
 fn node_type(node: &Value) -> &str {
@@ -283,6 +320,10 @@ fn split_node_at_boundaries(
     if interior.is_empty() {
         out.push(std::mem::take(node));
         return Ok(());
+    }
+
+    if is_splittable_container(node) {
+        return split_container_at_boundaries(node, &interior, out);
     }
 
     if !is_splittable_text_node(node) {
@@ -340,6 +381,106 @@ fn is_splittable_text_node(node: &Value) -> bool {
         node_type(node),
         "text" | "quote" | "emphasis" | "layout-span"
     ) && node.get("inline_children").is_none()
+}
+
+/// An `emphasis` / `layout-span` carrying `inline_children` — splittable by
+/// recursing into its children rather than slicing a flat string.
+fn is_splittable_container(node: &Value) -> bool {
+    matches!(node_type(node), "emphasis" | "layout-span") && inline_children(node).is_some()
+}
+
+/// Split an inline container at sentence boundaries into N+1 sibling containers of
+/// the same type/style, each carrying its partition of `inline_children`.
+///
+/// Children are first split recursively at the interior boundaries: a straddling
+/// `text` child is sliced, a nested `emphasis`/`layout-span` recurses, and a
+/// straddling atomic child (`ruby`/`gaiji`) fails via `split_node_at_boundaries`
+/// with the atomic-node diagnostic. Zero-width / boundary children are owned by
+/// the left sibling, matching top-level `node_belongs_to_sentence` grouping.
+fn split_container_at_boundaries(
+    node: &mut Value,
+    interior: &[usize],
+    out: &mut Vec<Value>,
+) -> Result<()> {
+    let start = value_usize(node, "/span/start", "container span.start")?;
+    let end = value_usize(node, "/span/end", "container span.end")?;
+
+    let children = node
+        .get_mut("inline_children")
+        .and_then(Value::as_array_mut)
+        .context("container inline_children is not an array")?;
+    let mut split_children: Vec<Value> = Vec::with_capacity(children.len());
+    for child in children.iter_mut() {
+        split_node_at_boundaries(child, interior, &mut split_children)?;
+    }
+
+    // Consistency guard (B-D5): a present flat `text` must equal the child
+    // projection, so a split can never silently diverge from the flat form.
+    if let Some(flat) = node.get("text").and_then(Value::as_str) {
+        let mut projected = String::new();
+        for child in &split_children {
+            projected.push_str(&parser_ir_node_visible_text(child)?);
+        }
+        if flat != projected {
+            bail!(
+                "container {} flat text disagrees with inline_children projection",
+                node_type(node)
+            );
+        }
+    }
+
+    // Sibling shell: type/style/layout minus the per-segment span/text/children.
+    let mut shell = std::mem::take(node);
+    if let Some(object) = shell.as_object_mut() {
+        object.remove("inline_children");
+        object.remove("text");
+    }
+
+    let mut segment_starts = Vec::with_capacity(interior.len() + 1);
+    let mut segment_ends = Vec::with_capacity(interior.len() + 1);
+    segment_starts.push(start);
+    segment_starts.extend(interior.iter().copied());
+    segment_ends.extend(interior.iter().copied());
+    segment_ends.push(end);
+
+    let mut cursor = 0usize;
+    for (segment_start, segment_end) in segment_starts.into_iter().zip(segment_ends) {
+        let bounds = SentenceBounds {
+            start: segment_start,
+            end: segment_end,
+        };
+        let mut segment_children: Vec<Value> = Vec::new();
+        while cursor < split_children.len()
+            && node_belongs_to_sentence(&split_children[cursor], bounds)?
+        {
+            segment_children.push(std::mem::take(&mut split_children[cursor]));
+            cursor += 1;
+        }
+
+        let mut text = String::new();
+        for child in &segment_children {
+            text.push_str(&parser_ir_node_visible_text(child)?);
+        }
+
+        let mut sibling = shell.clone();
+        set_span(&mut sibling, segment_start, segment_end)?;
+        let object = sibling
+            .as_object_mut()
+            .context("container node is not an object")?;
+        object.insert("text".to_owned(), json!(text));
+        object.insert("inline_children".to_owned(), Value::Array(segment_children));
+        out.push(sibling);
+    }
+
+    if cursor != split_children.len() {
+        bail!(
+            "container {} split left {} child node(s) unassigned to a segment",
+            node_type(&shell),
+            split_children.len() - cursor
+        );
+    }
+
+    Ok(())
 }
 
 fn set_span(node: &mut Value, start: usize, end: usize) -> Result<()> {
@@ -610,25 +751,6 @@ mod tests {
     }
 
     #[test]
-    fn rejects_boundary_inside_atomic_inline_children_node() {
-        let nodes = vec![json!({
-            "type":"emphasis",
-            "span":span(0,12),
-            "text":"甲。乙。",
-            "style":"bold",
-            "inline_children":[{"type":"text","span":span(0,12),"text":"甲。乙。"}]
-        })];
-        let paragraphs = vec![
-            json!({"id":"p000000","span":span(0,12),"span_source":"direct","node_range":{"start":0,"end":1},"role":"body","source_pointer":"blocks[0]","classification":"direct"}),
-        ];
-
-        let error = project_sentences(nodes, paragraphs, None)
-            .unwrap_err()
-            .to_string();
-        assert!(error.contains("sentence boundary falls inside atomic node emphasis at byte 6"));
-    }
-
-    #[test]
     fn rejects_boundary_inside_atomic_ruby_node() {
         let nodes = vec![json!({
             "type":"ruby",
@@ -643,6 +765,142 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(error.contains("sentence boundary falls inside atomic node ruby at byte 24"));
+    }
+
+    #[test]
+    fn splits_emphasis_container_into_sibling_emphases() {
+        // B1: an emphasis carrying inline_children with an interior terminal splits
+        // into two sibling emphases, each with its own text and child slice.
+        let nodes = vec![json!({
+            "type":"emphasis",
+            "span":span(0,12),
+            "style":"bold",
+            "text":"甲。乙。",
+            "inline_children":[{"type":"text","span":span(0,12),"text":"甲。乙。"}]
+        })];
+        let paragraphs = vec![json!({
+            "id":"p000000","span":span(0,12),"span_source":"direct",
+            "node_range":{"start":0,"end":1},"role":"body",
+            "source_pointer":"blocks[0]","classification":"direct"
+        })];
+
+        let projection = project_sentences(nodes, paragraphs, None).unwrap();
+
+        assert_eq!(projection.nodes.len(), 2);
+        assert_eq!(projection.nodes[0]["type"], "emphasis");
+        assert_eq!(projection.nodes[0]["style"], "bold");
+        assert_eq!(projection.nodes[0]["text"], "甲。");
+        assert_eq!(projection.nodes[0]["span"], span(0, 6));
+        assert_eq!(projection.nodes[0]["inline_children"][0]["text"], "甲。");
+        assert_eq!(projection.nodes[1]["text"], "乙。");
+        assert_eq!(projection.nodes[1]["span"], span(6, 12));
+        assert_eq!(projection.sentences.len(), 2);
+        assert_eq!(
+            projection.paragraphs[0]["node_range"],
+            json!({"start":0,"end":2})
+        );
+    }
+
+    #[test]
+    fn keeps_ruby_child_whole_when_boundary_falls_between_children() {
+        // A boundary exactly between an emphasis's text child and its ruby child is
+        // a clean partition — the ruby stays whole.
+        let nodes = vec![json!({
+            "type":"emphasis",
+            "span":span(0,9),
+            "style":"bold",
+            "text":"甲。乙",
+            "inline_children":[
+                {"type":"text","span":span(0,6),"text":"甲。"},
+                {"type":"ruby","span":span(6,9),"ruby":{"base":"乙","reading":"おつ","scope":"explicit"}}
+            ]
+        })];
+        let paragraphs = vec![json!({
+            "id":"p000000","span":span(0,9),"span_source":"direct",
+            "node_range":{"start":0,"end":1},"role":"body",
+            "source_pointer":"blocks[0]","classification":"direct"
+        })];
+
+        let projection = project_sentences(nodes, paragraphs, None).unwrap();
+
+        assert_eq!(projection.nodes.len(), 2);
+        assert_eq!(projection.nodes[0]["text"], "甲。");
+        assert_eq!(projection.nodes[1]["inline_children"][0]["type"], "ruby");
+        assert_eq!(
+            projection.nodes[1]["inline_children"][0]["ruby"]["base"],
+            "乙"
+        );
+        assert_eq!(projection.sentences.len(), 2);
+    }
+
+    #[test]
+    fn rejects_boundary_inside_ruby_child_of_emphasis() {
+        // A terminal inside a ruby base nested in an emphasis is still a hard fail —
+        // recursion reaches the atomic ruby and refuses to snap.
+        let nodes = vec![json!({
+            "type":"emphasis",
+            "span":span(0,9),
+            "style":"bold",
+            "text":"甲。乙",
+            "inline_children":[
+                {"type":"ruby","span":span(0,9),"ruby":{"base":"甲。乙","reading":"こう","scope":"explicit"}}
+            ]
+        })];
+        let paragraphs = vec![json!({
+            "id":"p000000","span":span(0,9),"span_source":"direct",
+            "node_range":{"start":0,"end":1},"role":"body",
+            "source_pointer":"blocks[0]","classification":"direct"
+        })];
+
+        let error = project_sentences(nodes, paragraphs, None)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            error.contains("sentence boundary falls inside atomic node ruby at byte 6"),
+            "unexpected error: {error}"
+        );
+    }
+
+    #[test]
+    fn whitespace_only_paragraph_yields_single_sentence() {
+        // B2: a body paragraph whose visible text is whitespace-only but whose byte
+        // span is non-empty yields one covering sentence instead of failing.
+        let nodes = vec![json!({
+            "type":"text","span":span(0,4),"text":"　\n"
+        })];
+        let paragraphs = vec![json!({
+            "id":"p000000","span":span(0,4),"span_source":"direct",
+            "node_range":{"start":0,"end":1},"role":"body",
+            "source_pointer":"blocks[0]","classification":"direct"
+        })];
+
+        let projection = project_sentences(nodes, paragraphs, None).unwrap();
+
+        assert_eq!(projection.sentences.len(), 1);
+        assert_eq!(projection.sentences[0].span, span(0, 4));
+        assert_eq!(
+            projection.sentences[0].node_range,
+            json!({"start":0,"end":1})
+        );
+    }
+
+    #[test]
+    fn trailing_whitespace_absorbed_into_last_sentence() {
+        // B2: a trailing newline the splitter drops is absorbed into the last
+        // sentence so the paragraph tiles to its end.
+        let nodes = vec![json!({
+            "type":"text","span":span(0,7),"text":"文。\n"
+        })];
+        let paragraphs = vec![json!({
+            "id":"p000000","span":span(0,7),"span_source":"direct",
+            "node_range":{"start":0,"end":1},"role":"body",
+            "source_pointer":"blocks[0]","classification":"direct"
+        })];
+
+        let projection = project_sentences(nodes, paragraphs, None).unwrap();
+
+        assert_eq!(projection.sentences.len(), 1);
+        assert_eq!(projection.sentences[0].span, span(0, 7));
     }
 
     #[test]

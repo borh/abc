@@ -829,6 +829,11 @@ impl NwayFeatureDiffsColumns {
             "nway_feature_diffs analyzers list must be non-empty; an empty list \
              vanishes under the readers' UNNEST",
         );
+        debug_assert!(
+            analyzers.windows(2).all(|w| w[0].as_ref() <= w[1].as_ref()),
+            "nway_feature_diffs analyzers list must be sorted ascending; the \
+             producer guarantees sorted input and readers rely on it",
+        );
         for analyzer in analyzers {
             self.analyzers.values().append_value(analyzer.as_ref());
         }
@@ -2058,6 +2063,45 @@ mod tests {
             got,
             vec!["sudachi-c", "vibrato"],
             "elements preserved in ascending order, non-empty"
+        );
+    }
+
+    #[cfg(debug_assertions)]
+    #[test]
+    #[should_panic(expected = "non-empty")]
+    fn push_row_rejects_empty_analyzers() {
+        let mut columns = NwayFeatureDiffsColumns::new();
+        let empty: &[&str] = &[];
+        columns.push_row(
+            "r",
+            "s",
+            "t",
+            0,
+            "pos",
+            "whole_region",
+            None,
+            None,
+            Some("名詞"),
+            empty,
+        );
+    }
+
+    #[cfg(debug_assertions)]
+    #[test]
+    #[should_panic(expected = "sorted ascending")]
+    fn push_row_rejects_unsorted_analyzers() {
+        let mut columns = NwayFeatureDiffsColumns::new();
+        columns.push_row(
+            "r",
+            "s",
+            "t",
+            0,
+            "pos",
+            "whole_region",
+            None,
+            None,
+            Some("名詞"),
+            &["vibrato", "sudachi-c"],
         );
     }
 

@@ -1,9 +1,11 @@
 pub mod features;
 pub mod heuristic;
 pub mod ml;
+pub mod policy;
 pub mod script;
 pub mod types;
 
+pub use policy::NormalizationPolicy;
 pub use types::{OffsetMap, OrthoAnnotation, OrthoDetectorId, OrthoMapError, OrthoNormalization};
 
 use ab_plaintext::SentenceSpan;

@@ -8,15 +8,19 @@ admission (which is a separate measured gate).
 
 ## Abstract
 
-We compare five Aozora-bunko parsers against a fixed conformance suite of 127
-canonical vectors, then re-measure them *faithfully* — each at its own native
-granularity rather than through a lossy common serialization — and attribute every
-divergence to a cause (parser-capability vs adapter-serialization). We show that
-the naive common-format ranking is misleading, that parser fidelity governs
-information loss through the entire `parser → AAT → parser-IR → TEI` pipeline (not
-just conformance), and that among Rust fork candidates the capability order is
-`aozora-pipeline ≥ aozora-core ≫ aozora-rs-core`, with `aozora-rs-core`'s appeal
-being speed rather than coverage.
+We compare five Aozora-bunko parsers three ways: **conformance** to a 127-vector
+suite (breadth), **faithful capability** (each measured at native granularity with
+divergences attributed to parser vs adapter), and — most decision-relevant —
+**frequency-weighted corpus coverage** (how much of the markup that *actually
+occurs* across ~17,800 real works each parser represents). The three views
+disagree in instructive ways: conformance favors edge-case breadth; corpus
+coverage is dominated by ruby (~90% of all markup mass). Normalizing AAT
+representation variants (a fix that belongs in the AAT contract) is required to
+measure coverage at all. The consistent result across breadth **and** mass **and**
+speed is that **`aozora-pipeline` leads** (corpus coverage 0.972, 22/25 must,
+1.25 s median); `aozora-rs` is a strong second on corpus coverage (0.937) and
+fastest (~90×), its low conformance being a headerless-vector artifact; `aozora2`
+(0.840) and `aozora2html` (0.700) trail on real texts.
 
 > **Authority caveat (load-bearing).** The conformance suite is the third-party
 > P4suta `upstream-aozora-notation-spec`. By standing project decision it is
@@ -190,6 +194,56 @@ capable *and* ~14× faster than `aozora-core`, with no timeouts — it now leads
 both axes. (Memory trades inversely with speed: `aozora-rs` is fastest but heaviest;
 `aozora-core` lightest but slowest.)
 
+### 4.7 Corpus coverage — how much of *real* markup each parser represents
+Conformance (§4.1–4.6) measures **breadth** on curated construct sets weighted
+toward edge cases. The decision-relevant question is **mass**: across the real
+corpus, weighted by how often each construct actually occurs, what fraction can
+each parser represent? Measured over each parser's full-corpus AAT (~17,800 works)
+with **normalized recognition** — canonical `style_type` spellings collapsed
+(`boten≡bouten`, `bousen≡bosen`) and a construct counted whether emitted as a typed
+`kind` node **or** a `raw` node with `x-source-marker-kind`
+(`reports/aat-fidelity/normalized-corpus-coverage.py`):
+
+| construct | corpus freq | aozora | aozora2 | aozora-rs | aozora2html | aozora-epub3 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| ruby | 3,607,926 | 0.99 | 0.85 | 0.99 | 0.74 | 0.96 |
+| boten | 129,086 | ~1.0 | 0.97 | 0.95 | **0.00** | 0.98 |
+| jisage_block | 94,993 | 0.97 | 0.38 | 0.46 | ~1.0 | ~1.0 |
+| heading | 80,592 | 0.84 | 0.91 | **0.24** | **0.10** | 0.84 |
+| font_size | 51,508 | **0.00** | 0.33 | **0.00** | 0.25 | **0.00** |
+| tcy | 19,794 | 0.95 | 0.86 | **0.00** | **0.00** | 0.69 |
+| bousen | 18,127 | **0.00**† | 0.95 | 0.18 | 0.13 | 0.81 |
+| figure | 5,877 | 0.99 | 0.88 | 0.91 | 0.70 | 0.05 |
+| **freq-weighted coverage** | **4.0 M** | **0.972** | **0.840** | **0.937** | **0.700** | **0.940** |
+
+**Why the naive predicate would have lied:** `ab-aozora` emits ruby ~99% as
+`raw`+`x-source-marker-kind`, only ~1% as typed nodes; counting only `kind=="ruby"`
+would report the *reference* parser near-zero on ruby. Normalization (a fix that
+belongs in the AAT contract — a canonical `style_type` enum and typed-node ≡
+marker-kind equivalence) is what makes cross-parser coverage measurable, and it
+would also shrink downstream IR `AMBIGUITY` sidecars (§2).
+
+**Findings (robust despite caveats below):**
+- **`aozora-pipeline` leads corpus coverage (0.972)** — best on *both* mass and
+  breadth, and fast. The fork base is confirmed, not a toss-up.
+- **`aozora-rs` (0.937) is near the top on real texts** — its §4.3 "27%" was a
+  headerless-vector artifact; with real document structure it nearly matches the
+  leader. Corpus context, not curated vectors, is where it shows its strength.
+- **`aozora2` (0.840) trails `aozora-rs`** despite leading AAT *conformance* —
+  because ruby is ~90% of all markup mass and aozora2's ruby (0.85) lags.
+- The ranking is **ruby-dominated** (ruby = 90% of weighted occurrences); read the
+  weighted number as "ruby coverage, adjusted by the long tail," and the
+  per-construct row for where parsers genuinely diverge (heading, tcy, bousen,
+  font_size are the real differentiators).
+
+Caveats: a few rates exceed 1.0 (over-counting when a parser emits multiple nodes
+per occurrence, e.g. `containerOpen` per line) — **capped at 1.0** in the weighted
+sum, so coverage is not inflated. †`aozora` bousen 0.00 is almost certainly a
+normalization predicate-miss for that adapter's bousen encoding, not a real gap
+(0.45% of mass; negligible to the weighted score). `aozora-epub3` ran under a 300 s
+per-work cap, so its numbers reflect completed works. Fine gaiji sub-constructs are
+excluded (adapter-dropped fields — the residual granularity wall).
+
 ## 5. Threats to validity / limitations
 
 1. **Instrument authority.** P4suta is corroborating, not authoritative; a
@@ -228,10 +282,17 @@ stays the long play. Because parser fidelity governs loss through the whole pipe
 (§2), the acceptance target doubles as a pipeline-quality target: precise AAT ⇒
 fewer AMBIGUITY sidecars ⇒ higher-fidelity TEI.
 
-**Recommendation:** base the new parser on `aozora-pipeline` (contribute the 3
-`diagnostics` must-fixes upstream where possible; fork for the rest), unless a
-quick profiling spike shows `aozora-core`'s slowdown is a trivial fix — in which
-case its self-contained forkability re-enters contention.
+**Recommendation:** base the new parser on `aozora-pipeline`. It is now the clear
+choice on *every* axis measured — corpus coverage (0.972, highest), conformance
+breadth (22/25 must), and speed (1.25 s, no timeouts) — while being actively
+maintained and permissively licensed. `aozora-core`'s earlier "trivially forkable"
+appeal is undercut on two independent axes (mediocre corpus coverage 0.840 *and*
+catastrophic speed with 2/6 timeouts). `aozora-rs` is the credible alternative
+*only* if raw throughput dominates and its heading/tcy/bousen gaps are acceptable
+or cheaply closable. Concrete first steps: contribute the 3 `diagnostics`
+must-fixes upstream where possible and fork for the rest; and normalize the AAT
+`style_type`/marker representation (§4.7) to sharpen both measurement and the
+downstream IR mapping.
 
 ## 7. Reproducibility
 

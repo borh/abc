@@ -94,6 +94,10 @@
   (and (successful-entry? entry)
        (= "parser-ir" (get entry "artifact_kind"))))
 
+(defn- successful-tokenized-entry? [entry]
+  (and (successful-entry? entry)
+       (= "tokenized" (get entry "artifact_kind"))))
+
 (defn parser-ir-producer-candidates [entries coordinate]
   (->> entries
        (filter successful-parser-ir-entry?)
@@ -117,8 +121,17 @@
         (concat (get entry "provenance_was_derived_from")
                 (get entry "provenance_used"))))
 
-(defn- copied-field-errors [analysis-entry producer-entry]
-  (->> parser-ir-copied-fields
+(defn- find-tokenized-producer-entry [by-artifact-id entry]
+  (some (fn [artifact-id]
+          (let [candidate (get by-artifact-id artifact-id)]
+            (when (successful-tokenized-entry? candidate)
+              candidate)))
+        (concat (get entry "provenance_was_derived_from")
+                (get entry "provenance_used"))))
+
+(defn- analysis-copied-field-errors-for
+  [fields analysis-entry producer-entry]
+  (->> fields
        (keep (fn [field]
                (let [analysis-value (identity-value analysis-entry field)
                      producer-value (identity-value producer-entry field)]
@@ -130,21 +143,58 @@
                     :producer_value producer-value}))))
        vec))
 
+(defn- copied-field-errors [analysis-entry producer-entry]
+  (analysis-copied-field-errors-for parser-ir-copied-fields
+                                    analysis-entry
+                                    producer-entry))
+
+(def ^:private tokenized-analysis-copied-fields
+  (conj parser-ir-copied-fields
+        "tei_profile_hash"
+        "tokenizer_build_hash"
+        "tokenizer_dictionary_hash"
+        "tokenizer_profile_hash"))
+
+(defn- tokenized-analysis-copied-field-errors [analysis-entry producer-entry]
+  (analysis-copied-field-errors-for tokenized-analysis-copied-fields
+                                    analysis-entry
+                                    producer-entry))
+
+(defn- token-backed-analysis-entry? [entry]
+  (some? (identity-value entry "tokenizer_profile_hash")))
+
 (defn analysis-copied-field-errors [entries]
   (let [by-artifact-id (entry-by-artifact-id entries)]
     (->> entries
          (filter successful-entry?)
          (filter #(= "analysis" (get % "artifact_kind")))
          (mapcat (fn [analysis-entry]
-                   (if-let [producer-entry (find-parser-ir-producer-entry by-artifact-id
-                                                                          analysis-entry)]
-                     (copied-field-errors analysis-entry producer-entry)
-                     [{:analysis_artifact_id (get analysis-entry "artifact_id")
-                       :producer_artifact_id nil
-                       :field "__producer__"
-                       :analysis_value (vec (concat (get analysis-entry "provenance_was_derived_from")
-                                                    (get analysis-entry "provenance_used")))
-                       :producer_value nil}])))
+                   (if (token-backed-analysis-entry? analysis-entry)
+                     (if-let [producer-entry (find-tokenized-producer-entry
+                                              by-artifact-id
+                                              analysis-entry)]
+                       (tokenized-analysis-copied-field-errors analysis-entry
+                                                               producer-entry)
+                       [{:analysis_artifact_id (get analysis-entry "artifact_id")
+                         :producer_artifact_id nil
+                         :field "__producer__"
+                         :analysis_value (vec (concat (get analysis-entry
+                                                           "provenance_was_derived_from")
+                                                      (get analysis-entry
+                                                           "provenance_used")))
+                         :producer_value :successful-tokenized}])
+                     (if-let [producer-entry (find-parser-ir-producer-entry
+                                              by-artifact-id
+                                              analysis-entry)]
+                       (copied-field-errors analysis-entry producer-entry)
+                       [{:analysis_artifact_id (get analysis-entry "artifact_id")
+                         :producer_artifact_id nil
+                         :field "__producer__"
+                         :analysis_value (vec (concat (get analysis-entry
+                                                           "provenance_was_derived_from")
+                                                      (get analysis-entry
+                                                           "provenance_used")))
+                         :producer_value nil}]))))
          vec)))
 
 (defn validate-analysis-copied-fields! [entries]

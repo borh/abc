@@ -9,8 +9,8 @@
   {"schemas/parser-ir.schema.json" "0.6.0"
    "schemas/aat-parser-ir-divergence.schema.json" "0.3.0"
    "schemas/aat-parser-ir-mapping.schema.json" "0.2.4"
-   "schemas/analysis-recipe.schema.json" "0.1.0"
-   "schemas/analysis-result.schema.json" "0.1.0"
+   "schemas/analysis-recipe.schema.json" "0.1.1"
+   "schemas/analysis-result.schema.json" "0.1.1"
    "schemas/manifest.schema.json" "0.4.3"
    "schemas/parser-ir-publication-preservation.schema.json" "0.2.0"
    "schemas/request-set.schema.json" "0.1.1"
@@ -121,6 +121,54 @@
            (get result "schema_hash")))
     (is (= (analysis-identity/analysis-recipe-hash recipe)
            (get result "analysis_recipe_hash")))
+    (is (nil? (schema/validation-errors recipe-schema recipe)))
+    (is (nil? (schema/validation-errors result-schema result)))))
+
+(deftest analysis-schemas-accept-token-stream-input-view-test
+  (let [recipe-schema (schema/read-schema "schemas/analysis-recipe.schema.json")
+        result-schema (schema/read-schema "schemas/analysis-result.schema.json")
+        recipe {"schema_id" "https://w3id.org/abc/schemas/analysis-recipe.schema.json"
+                "recipe_id" "token-basic-ja-v1"
+                "recipe_version" "0.1.0"
+                "supported_input_view_kinds" ["token-stream-v1"]
+                "tokenizer_required" true
+                "plaintext_policy_hash" nil
+                "normalization_policy" {"unicode_normalization" "producer-preserved"
+                                        "newline_policy" "token-stream-v1"}
+                "metrics" [{"metric_id" "fixture-token-count"
+                            "formula_version" "fixture-token-input-v1"
+                            "unit" "token"
+                            "value_type" "integer"}]
+                "required_output_schema_hash" (manifest/schema-hash
+                                               "schemas/analysis-result.schema.json")
+                "determinism_tier" "exact"
+                "error_behavior" {"missing_required_identity_field" "failed-manifest-or-none"
+                                  "metric_failure" "record-failed-metric"}}
+        result {"schema_id" "https://w3id.org/abc/schemas/analysis-result.schema.json"
+                "schema_hash" (manifest/schema-hash
+                               "schemas/analysis-result.schema.json")
+                "subject" {"source_id" "aozora:example-work"
+                           "logical_path" "cards/000000/files/example.txt"
+                           "git_ref" "refs/heads/fixture"
+                           "work_id" "aozora:example-work"
+                           "corpus_snapshot_hash" (files/example-hash "01")
+                           "work_content_hash" (files/example-hash "02")
+                           "metadata_record_hash" nil}
+                "input_view" {"input_view_kind" "token-stream-v1"
+                              "producer_artifact_id" (files/example-hash "03")
+                              "producer_content_hash" (files/example-hash "04")
+                              "token_output_schema_hash" (manifest/schema-hash
+                                                          "schemas/token-output.schema.json")
+                              "coordinate_system" "token-index-v1+unicode-scalar-value-input-spans"}
+                "tokenizer_profile_hash" (files/example-hash "05")
+                "analysis_recipe_hash" (analysis-identity/analysis-recipe-hash recipe)
+                "metrics" [{"metric_id" "fixture-token-count"
+                            "value" 2
+                            "value_type" "integer"
+                            "denominator" nil
+                            "unit" "token"
+                            "status" "passed"}]
+                "warnings" []}]
     (is (nil? (schema/validation-errors recipe-schema recipe)))
     (is (nil? (schema/validation-errors result-schema result)))))
 

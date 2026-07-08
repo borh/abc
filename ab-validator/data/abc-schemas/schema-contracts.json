@@ -6,15 +6,15 @@
       "path": "data/abc-schemas/schemas/analysis-recipe.schema.json",
       "id": "https://w3id.org/abc/schemas/analysis-recipe.schema.json",
       "title": "ABC Analysis Recipe",
-      "version": "0.1.0",
-      "hash": "sha256:a6b6bb038c79efcf9c38a7cdde416ecd98f7c3528ed329fa9922eda8284e49de"
+      "version": "0.1.1",
+      "hash": "sha256:efcd15101a12864febc88208c17059e254c81f3e9225670a18e74acb3ef31a0c"
     },
     {
       "path": "data/abc-schemas/schemas/analysis-result.schema.json",
       "id": "https://w3id.org/abc/schemas/analysis-result.schema.json",
       "title": "ABC Analysis Result",
-      "version": "0.1.0",
-      "hash": "sha256:d282e7fa9c726a86ffbd37dcc5f3ccf6f4c19cf7e490172638797907d1602c8a"
+      "version": "0.1.1",
+      "hash": "sha256:52d420dd985849cfb7cbd2bfb0f28bb04100c901e105506f972204157a1b0fa6"
     },
     {
       "path": "data/abc-schemas/schemas/aat-parser-ir-divergence.schema.json",

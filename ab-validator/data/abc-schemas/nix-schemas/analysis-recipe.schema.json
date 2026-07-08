@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/analysis-recipe.schema.json",
   "title": "ABC Analysis Recipe",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -32,18 +32,20 @@
       "minItems": 1,
       "uniqueItems": true,
       "items": {
-        "enum": ["parser-ir-plaintext-body-v1"]
+        "enum": ["parser-ir-plaintext-body-v1", "token-stream-v1"]
       }
     },
-    "tokenizer_required": { "const": false },
-    "plaintext_policy_hash": { "$ref": "#/$defs/hash" },
+    "tokenizer_required": { "type": "boolean" },
+    "plaintext_policy_hash": {
+      "anyOf": [{ "$ref": "#/$defs/hash" }, { "type": "null" }]
+    },
     "normalization_policy": {
       "type": "object",
       "additionalProperties": false,
       "required": ["unicode_normalization", "newline_policy"],
       "properties": {
         "unicode_normalization": { "enum": ["producer-preserved"] },
-        "newline_policy": { "enum": ["parser-ir-plaintext-body-v1"] }
+        "newline_policy": { "enum": ["parser-ir-plaintext-body-v1", "token-stream-v1"] }
       }
     },
     "metrics": {
@@ -65,6 +67,38 @@
       }
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "tokenizer_required": { "const": true } },
+        "required": ["tokenizer_required"]
+      },
+      "then": {
+        "properties": {
+          "supported_input_view_kinds": { "contains": { "const": "token-stream-v1" } },
+          "plaintext_policy_hash": { "type": "null" },
+          "normalization_policy": {
+            "properties": { "newline_policy": { "const": "token-stream-v1" } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "tokenizer_required": { "const": false } },
+        "required": ["tokenizer_required"]
+      },
+      "then": {
+        "properties": {
+          "supported_input_view_kinds": { "contains": { "const": "parser-ir-plaintext-body-v1" } },
+          "plaintext_policy_hash": { "$ref": "#/$defs/hash" },
+          "normalization_policy": {
+            "properties": { "newline_policy": { "const": "parser-ir-plaintext-body-v1" } }
+          }
+        }
+      }
+    }
+  ],
   "$defs": {
     "hash": {
       "type": "string",

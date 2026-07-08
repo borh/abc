@@ -30,10 +30,13 @@ fields differ from their producer parser-IR manifest or whose tokenizer
 build/dictionary fields differ from the cited tokenizer profile. ABC still
 cannot publish tokenized slices, tokenizer-backed stylometric analysis, or
 collection analysis packs as canonical snapshot artifacts until tokenizer-backed
-analysis, pack, and release publication acceptance criteria below are
-implemented. Prototype tokenized fixture materialization is implemented by
-`abc.tools.materialize-tokenized` and exercised by
-`test/abc/tools/materialize_tokenized_test.clj` plus the design-bundle
+pack, and release publication acceptance criteria below are implemented.
+Prototype tokenized fixture materialization is implemented by
+`abc.tools.materialize-tokenized`, and prototype tokenizer-backed analysis
+fixture materialization is implemented by
+`abc.tools.materialize-analysis/materialize-token-backed-analysis!`. They are
+exercised by `test/abc/tools/materialize_tokenized_test.clj`,
+`test/abc/tools/materialize_analysis_test.clj`, and the design-bundle
 validation path.
 
 Snapshot-publication work may proceed with TEI, plaintext, token-independent
@@ -550,7 +553,10 @@ remaining materialization and validation work lands.
   not match the tokenizer profile content;
   `test/abc/tools/manifest_index_test.clj` covers this guardrail.
 - A tokenizer-backed analysis fixture consumes a tokenized producer manifest
-  via `token-stream-v1`.
+  via `token-stream-v1`; `test/abc/tools/materialize_analysis_test.clj`
+  covers copied tokenizer identity and manifest-index validation, and
+  `abc.tools.validate-design-bundle` materializes the fixture during
+  acceptance validation.
 - Request-set resolver tests cover semantic profile label resolution to
   content hash and registry-entry hash.
 - Request-set planning estimates realized coordinate count and records whether

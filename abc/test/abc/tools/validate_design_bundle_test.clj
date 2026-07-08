@@ -410,6 +410,7 @@
                      "schemas/analysis-result.schema.json"]))
         (is (every? (set @checked-json)
                     ["data/analysis-recipes/literary-basic-ja-v1.json"
+                     "data/analysis-recipes/token-basic-ja-v1.json"
                      "examples/v0/example-work/analysis-result.json"]))))))
 
 (deftest validate-json-schemas-includes-snapshot-index-fixture-test

@@ -23,39 +23,17 @@ distinctly.
 import collections
 import glob
 import json
-import os
+from pathlib import Path
 import sys
 
-
-DB_ROOT = os.environ.get("AB_DB_ROOT", "/db/ab-validator")
-
-
-def json_glob(env_name, default_dir):
-    return os.path.join(os.environ.get(env_name, default_dir), "*.json")
+REPORTS_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPORTS_ROOT / "lib"))
+from aat_runs import adapter_aat_globs, load_run_set  # noqa: E402
 
 
-AAT_GLOBS = {
-    "aozora": json_glob(
-        "AB_AOZORA_AAT_DIR",
-        f"{DB_ROOT}/aat-corpus/aozora-full-repin-1a4f864/aat/aozora-adapter",
-    ),
-    "aozora2": json_glob(
-        "AB_AOZORA2_AAT_DIR",
-        f"{DB_ROOT}/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter",
-    ),
-    "aozora-rs": json_glob(
-        "AB_AOZORA_RS_AAT_DIR",
-        f"{DB_ROOT}/fidelity-corpus/aozora-rs/aat/aozora-rs-adapter",
-    ),
-    "aozora2html": json_glob(
-        "AB_AOZORA2HTML_AAT_DIR",
-        f"{DB_ROOT}/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter",
-    ),
-    "aozora-epub3": json_glob(
-        "AB_AOZORA_EPUB3_AAT_DIR",
-        f"{DB_ROOT}/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter",
-    ),
-}
+ORDER = ["aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3"]
+RUN_SET = load_run_set()
+AAT_GLOBS = adapter_aat_globs(RUN_SET, order=ORDER)
 
 # construct -> {"kinds":set, "styles":set(style_type), "markers":set(x-source-marker-kind)}
 # derived from the full-corpus vocabulary audit (2026-07-08).
@@ -158,6 +136,8 @@ def main():
 
     out = {
         "schema_version": 2,
+        "aat_run_set_id": RUN_SET.get("run_set_id"),
+        "aat_globs": AAT_GLOBS,
         "note": "fair union-signature normalization; see script docstring",
         "denominators": {s: denom[s] for s in scored},
         "total_weighted_occurrences": total,

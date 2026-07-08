@@ -244,6 +244,16 @@
               ''
                 bash tests/workflow-run-lib-smoke.sh
               '';
+          monorepo-aat-run-set =
+            mkMonorepoCheck "soranoha-monorepo-aat-run-set"
+              [
+                pkgs.bash
+                pkgs.coreutils
+                pkgs.python3
+              ]
+              ''
+                bash tests/aat-run-set-smoke.sh
+              '';
           monorepo-python-quality =
             mkMonorepoCheck "soranoha-monorepo-python-quality"
               [

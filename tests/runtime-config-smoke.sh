@@ -20,6 +20,7 @@ unset AB_AOZORA2_AAT_DIR
 unset AB_AOZORA2HTML_AAT_DIR
 unset AB_AOZORA_EPUB3_AAT_DIR
 unset AB_AOZORA_AAT_DIR
+unset AB_AAT_RUN_SET
 unset AB_TEI_EAJ_WORKSET
 unset ABC_OUTPUT_ROOT
 unset ABC_REPORT_DIR
@@ -52,6 +53,7 @@ bash -c '
   test "$SORANOHA_STATE_ROOT" = "/machine/state"
   test "$AB_DB_ROOT" = "/config/ab-validator"
   test "$AB_MORPH_WAREHOUSE_DIR" = "/config/ab-validator/morph-warehouse"
+  test "$AB_AAT_RUN_SET" = "$SORANOHA_WORKSPACE_ROOT/ab-validator/reports/aat-fidelity/run-sets/current.json"
   test "$AB_AOZORA2HTML_AAT_DIR" = "/config/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter"
   test "$ABC_REPORT_DIR" = "/config/abc/reports"
   test "$AB_TEI_EAJ_WORKSET" = "/config/abc/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json"

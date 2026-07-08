@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "run_set_id": "current-aat-fidelity-2026-07-09",
+  "adapters": {
+    "aozora": {
+      "aat_dir": "${AB_DB_ROOT}/aat-corpus/aozora-full-repin-1a4f864/aat/aozora-adapter",
+      "aat_dir_env": "AB_AOZORA_AAT_DIR",
+      "run_descriptor": "${AB_DB_ROOT}/aat-corpus/aozora-full-repin-1a4f864/metadata.json",
+      "run_descriptor_env": "AB_AOZORA_RUN_DESCRIPTOR",
+      "expected": {
+        "adapter_id": "aozora",
+        "adapter_version_contains": "aozora-adapter",
+        "source": {
+          "flake_input": "upstream-aozora-src",
+          "owner": "P4suta",
+          "repo": "aozora",
+          "rev": "1a4f864603970983719655aa4af4525958ac2d38",
+          "narHash": "sha256-XS7BdCpcbfJoTRYcrHWwcCErmQFRfFF7U7FUQU2Ezsg="
+        }
+      }
+    },
+    "aozora2": {
+      "aat_dir": "${AB_DB_ROOT}/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter",
+      "aat_dir_env": "AB_AOZORA2_AAT_DIR",
+      "run_descriptor": "${AB_DB_ROOT}/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/metadata.json",
+      "run_descriptor_env": "AB_AOZORA2_RUN_DESCRIPTOR",
+      "expected": {
+        "adapter_id": "aozora2",
+        "adapter_version_contains": "aozora2-adapter",
+        "source": {
+          "flake_input": "upstream-aozora2-src",
+          "owner": "takahashim",
+          "repo": "aozora2",
+          "rev": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
+          "narHash": "sha256-nrtxilPBk6Xu+XWMih4NhKvKwiq9damCIS8zIUalDkI="
+        }
+      }
+    },
+    "aozora-rs": {
+      "aat_dir": "${AB_DB_ROOT}/fidelity-corpus/aozora-rs/aat/aozora-rs-adapter",
+      "aat_dir_env": "AB_AOZORA_RS_AAT_DIR",
+      "run_descriptor": "${AB_DB_ROOT}/fidelity-corpus/aozora-rs/metadata.json",
+      "run_descriptor_env": "AB_AOZORA_RS_RUN_DESCRIPTOR",
+      "expected": {
+        "adapter_id": "aozora-rs",
+        "adapter_version_contains": "aozora-rs-adapter",
+        "source": {
+          "flake_input": "upstream-aozora-rs-src",
+          "owner": "kinoko0518",
+          "repo": "aozora-rs",
+          "rev": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
+          "narHash": "sha256-bBPtWKURMmyCeym8dsvfzvwAlY5096uK6xZL2w7XwYs="
+        }
+      }
+    },
+    "aozora2html": {
+      "aat_dir": "${AB_DB_ROOT}/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter",
+      "aat_dir_env": "AB_AOZORA2HTML_AAT_DIR",
+      "run_descriptor": "${AB_DB_ROOT}/aat-corpus/aozora2html-full-20260703T020301Z/metadata.json",
+      "run_descriptor_env": "AB_AOZORA2HTML_RUN_DESCRIPTOR",
+      "expected": {
+        "adapter_id": "aozora2html",
+        "adapter_version_contains": "aozora2html-adapter"
+      }
+    },
+    "aozora-epub3": {
+      "aat_dir": "${AB_DB_ROOT}/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter",
+      "aat_dir_env": "AB_AOZORA_EPUB3_AAT_DIR",
+      "run_descriptor": "${AB_DB_ROOT}/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/metadata.json",
+      "run_descriptor_env": "AB_AOZORA_EPUB3_RUN_DESCRIPTOR",
+      "expected": {
+        "adapter_id": "aozora-epub3",
+        "adapter_version_contains": "aozora-epub3-adapter"
+      }
+    }
+  }
+}

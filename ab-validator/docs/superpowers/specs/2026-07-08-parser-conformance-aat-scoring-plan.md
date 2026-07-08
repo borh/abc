@@ -70,39 +70,86 @@ Each `vector.json` top-level keys: `name`, `meta`, `source`, `expected`.
 - `expected` projections: `nodes`, `pairs`, `diagnostics`, `serialize`, `html`.
   - **`nodes` is the key comparable** and present on **122/127** vectors. Format:
     `[{"kind":"bouten","span":{"start":0,"end":6}}, …]` — an ordered sequence of
-    `{kind, span}`. `span` uses the spec's §3 **byte** model.
+    `{kind, span}`. `span` uses the spec's §3 **byte** model. NB: AAT adapter output
+    carries **no spans** (Spike finding 1), so only the ordered `kind` sequence is
+    comparable — drop `span` from both sides. (AAT schema spans, when present, use
+    `byte_start/byte_end` + `line_start/line_end`, not `line/char`.)
   - The 5 without `nodes` (e.g. `accent_decomposition_applied`) carry only
     diagnostics/html/pairs/serialize — handle as a documented skip, not a fail.
 
+## Spike findings (2026-07-08, verified empirically) — read before coding
+
+Ran the built native AAT adapters (`aozora`, `aozora2`, `aozora-rs`) on
+representative vectors from the pinned spec store copy. Results **overturn two of
+the plan's original assumptions**; the corrected Approach A below reflects them.
+
+1. **AAT output carries NO spans.** Real adapter output is e.g.
+   `{"kind":"style","style_type":"boten","content":[…]}` — there is no `span`
+   field at all. The AAT *schema* defines spans, but production adapters omit them
+   (confirmed: `docs/aat-contract.md:210-212`, `docs/aat-span-audit.md`). ⇒ **Span
+   reconciliation is impossible.** The comparison is a **kind-sequence** diff only
+   (strip spans from `expected.nodes` too). What was the plan's "fallback tier" is
+   the *only* tier. (Silver lining: it is far less brittle than byte-span matching.)
+2. **The AAT→spec map is PER-ADAPTER, because adapters represent the same
+   construct differently.** For the same container source, `aozora2` emits flat
+   `{"kind":"raw","source":"BlockStart(Chitsuki)"}` / `BlockEnd(...)` marker nodes,
+   while `aozora-rs` emits typed nodes (or drops the construct). For a directive,
+   `aozora2` emits `{"kind":"raw","source":"<directive text>"}`; `aozora-rs` drops
+   it. So the projection must walk the tree and handle **both** typed AAT nodes and
+   `raw` marker nodes, with per-adapter branches. There is no single universal map.
+3. **Spec `emphasis` is a GENERIC decoration wrapper.** bold, italic, box-enclosure,
+   accent-dot, and font-size referents **all** project to spec `emphasis` (41 in the
+   suite); only 傍点 → `bouten` (13). AAT distinguishes these
+   (`style_type=bold`/`italic`, `font_size`, …) and the projection must collapse
+   them to `emphasis`. `style_type=boten` → `bouten` is the one clean 1:1. Note the
+   spec `nodes` vocabulary has **no `bousen` kind** — decide where AAT `bousen` maps
+   (likely `emphasis`) and document it.
+4. **Adapters visibly DROP constructs** (aozora-rs emits bare text for box/accent;
+   both drop some containers). Post-projection these become genuine sequence
+   divergences — real conformance signal, exactly what we want.
+5. **Distinct spec `kind`s across the 122 nodes vectors** (count): `emphasis` 41,
+   `containerOpen` 25, `containerClose` 24, `directive` 17, `bouten` 13, `ruby` 9,
+   `gaiji` 9, `headingHint` 4, `pageBreak` 3, `illustration` 3, `kaeriten` 2,
+   `heading` 2, `lineFontSize` 2, `combineUpright` 2, `marginNote` 2, and singletons
+   (`angleQuote`, `bodyEnd`, `alignEnd`, `center`, `forcedBreak`, `indent`,
+   `lineBold`, `sectionBreak`). Map the high-frequency structural kinds first.
+6. **`ab-aozora` (adapters/aozora, `--mode aat`) shells out to the upstream
+   `aozora` binary** and needs `AB_AOZORA_BIN` set (the recipe provides it; a bare
+   invocation errors `spawn aozora … No such file or directory`). Not a bug.
+7. **Level distribution:** must 25 / should 99 / may 3. The harness already
+   downgrades non-`must` failures to warnings (`evaluate()`, lines 110-115) — keep
+   that severity logic untouched: must sequence-mismatch → `fail`, should/may → `warning`.
+
 ## The engineering — make AAT adapters scorable
 
-**Recommended: Approach A — AAT → `nodes` projection.** For an AAT-mode adapter,
-run it (`--mode aat`) on `vector.source`, flatten its AAT `blocks` into an ordered
-`[{kind, span}]` sequence in the spec's node vocabulary, and compare to
-`expected.nodes`. Reuses the existing 122 `expected.nodes` with no new fixture
-authoring. Two sub-problems, both tractable:
+**Approach A (corrected) — AAT → spec-`kind` *sequence* projection.** For an
+AAT-mode adapter, run it (`--mode aat`) on `vector.source`, walk its `blocks` tree
+in document order, map each node to its spec-`kind` (or nothing), and produce an
+ordered `[kind, …]` list. Compare that to the `kind` sequence of `expected.nodes`
+(spans dropped from both sides). Reuses the existing 122 `expected.nodes` with no
+new fixture authoring. Two sub-problems:
 
-1. **Vocabulary map: AAT node → spec node `kind`.** Much of this is already known
-   from `reports/aat-fidelity/corpus-adapter-fidelity-classifier.py` (this
-   session): AAT `style` with `style_type=boten` → spec `bouten`; `style_type=bousen`
-   → `bousen`; AAT `ruby` → `ruby`; `gaiji` → `gaiji`; `tcy` → `tcy`; `heading` →
-   `heading`; `jisage_block`/style indents → the layout/container kinds; etc.
-   Build the map by enumerating the distinct spec `kind` values across all 122
-   `expected.nodes` and pairing each to its AAT signature. Where an AAT node has no
-   spec-kind counterpart (or vice-versa), that is itself a finding to record, not a
-   crash.
-2. **Span reconciliation.** `expected.nodes` spans are **byte** offsets in the
-   source (§3 model). AAT nodes carry `span` (`byte_start/byte_end` and
-   `line/char` — see `data/aat-schema.json` and `docs/aat-contract.md`). Compare on
-   byte spans. Expect off-by-model mismatches; decide a tolerance/normalization and
-   document it. If exact span match proves too brittle initially, fall back to
-   comparing the `kind` **sequence** first (order-preserving), and layer span
-   matching in as a stricter tier.
+1. **Vocabulary map: AAT node → spec `kind`, per adapter as needed.** The existing
+   `reports/aat-fidelity/corpus-adapter-fidelity-classifier.py` maps AAT nodes to
+   internal *construct IDs* (`decoration.boten`), **not** spec `kind`s — useful as a
+   signature reference but it is NOT the map; the AAT→spec-`kind` map is new work.
+   Build it by enumerating the distinct spec `kind`s (finding 5) and pairing each to
+   its AAT signature(s), handling typed nodes AND `raw` markers (finding 2), and the
+   `emphasis` collapse (finding 3). Where an AAT node has no spec counterpart (or
+   vice-versa), record it as a finding, don't crash.
+2. **Ordering & tree flatten.** AAT `blocks` are nested (`paragraph` → `content` →
+   nested `style`/`ruby`/…). Flatten depth-first in source order to a flat kind
+   sequence. `text` nodes → nothing. Decide container handling: spec emits paired
+   `containerOpen`/`containerClose`; emit those from `raw BlockStart/BlockEnd` (or
+   typed block open/close) at the right positions.
 
 Implement A inside (a copy/extension of) `run-aozora-notation-spec.py`: replace the
 `adapter.mode == "aat"` skip with an `aat_nodes_projection(adapter, source)` that
-produces the comparable sequence, then run the existing diff. Keep the reference
-`aozora` inspect path unchanged so both are scored side by side.
+produces the comparable kind sequence, then diff against the spans-stripped
+`expected.nodes`. Keep the reference `aozora` inspect path unchanged so both are
+scored side by side. **Bonus oracle:** `ab-aozora` (the reference parser in AAT
+mode) should reproduce `aozora`-inspect's `nodes` sequence once the projection is
+right — use it as a self-check that the projection is faithful.
 
 **Alternatives (record why not chosen if you deviate):**
 - **B — author `expected.aat` per vector.** Cleanest long-term but requires
@@ -140,14 +187,14 @@ Pick A first; fall back to C+B if the `nodes` projection can't be made faithful.
 
 ## Task breakdown (ordered)
 
-1. **Spike (½ day):** dump the distinct `kind` values across all 122
-   `expected.nodes`; run each AAT adapter on ~5 representative vectors
-   (bouten/ruby/gaiji/tcy/heading); hand-diff to design the AAT→spec vocabulary
-   map and see how spans line up. Decide A vs C from what you see.
-2. Build `aat_nodes_projection()` + the vocabulary map; wire it into the harness
-   replacing the mode==aat skip.
-3. Run full 127 × N; iterate the map until unmapped-kind noise is only genuine
-   divergences.
+1. ~~**Spike**~~ **DONE 2026-07-08** — see "Spike findings" above. Decision: **A
+   (kind-sequence, spans dropped)**, not C. Distinct kinds dumped; adapters run;
+   per-adapter `raw`-vs-typed representation and the `emphasis` collapse identified.
+2. Build `aat_nodes_projection()` + the vocabulary map (typed nodes + `raw`
+   markers + `emphasis` collapse); wire it into the harness replacing the
+   `mode==aat` skip. Compare kind sequences (strip spans from `expected.nodes`).
+3. Run full 127 × 6; iterate the map until unmapped-kind noise is only genuine
+   divergences. Cross-check `ab-aozora`(aat) against `aozora`(inspect).
 4. Regenerate summary + write the findings report.
 5. Commit under `docs/superpowers/reports/`; keep the harness change minimal and
    reviewed.

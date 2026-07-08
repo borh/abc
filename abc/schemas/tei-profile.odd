@@ -37,7 +37,6 @@
 
         <!-- Schematron constraint declarations -->
         <constraintDecl scheme="schematron" queryBinding="xslt2">
-          <sch:ns prefix="tei" uri="http://www.tei-c.org/ns/1.0"/>
           <sch:ns prefix="abc" uri="https://w3id.org/abc/ns/tei"/>
         </constraintDecl>
 

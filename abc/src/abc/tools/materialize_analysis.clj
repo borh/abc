@@ -61,7 +61,7 @@
    "metadata_record_hash" metadata-record-hash})
 
 (defn analysis-result-value
-  [{:keys [producer-manifest recipe subject metrics]}]
+  [{:keys [producer-manifest recipe subject metrics input-normalization-policy-hash]}]
   (let [producer-identity (get producer-manifest "manifest_identity_object")
         output-schema-hash (manifest/schema-hash "schemas/analysis-result.schema.json")]
     {"schema_id" "https://w3id.org/abc/schemas/analysis-result.schema.json"
@@ -71,6 +71,12 @@
                    "producer_artifact_id" (get producer-manifest "artifact_id")
                    "producer_content_hash" (get-in producer-manifest ["content" "content_hash"])
                    "plaintext_policy_hash" (get recipe "plaintext_policy_hash")
+                   ;; Records the applied ortho-normalization policy (P3/P4).
+                   ;; Source-identity flows record the identity sentinel; a real
+                   ;; ortho run passes the Rust-produced hash (T1 provenance).
+                   "input_normalization_policy_hash"
+                   (or input-normalization-policy-hash
+                       analysis-identity/identity-normalization-policy-hash)
                    "coordinate_system" "unicode-scalar-value"}
      "tokenizer_profile_hash" nil
      "analysis_recipe_hash" (analysis-identity/analysis-recipe-hash recipe)

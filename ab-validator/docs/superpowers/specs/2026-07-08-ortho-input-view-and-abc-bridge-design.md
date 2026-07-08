@@ -155,4 +155,4 @@ agreement check passes end-to-end in `validate_design_bundle`.
 | I2-D11 | The applied-normalization field is **required**, identity sentinel for off | schema_hash re-identifies every artifact on any edit anyway, so explicit-required costs nothing over optional and removes hash ambiguity (Q2). |
 | I2-D12 | The "off" sentinel is the Rust-produced identity hash `sha256:530c5968…`, used verbatim by ABC | Single producer (U1); ABC never recomputes it. |
 | I2-D13 | P3 and P4 land as one cascade | Both edit hashed identity; splitting re-identifies artifacts twice. |
-| I2-D14 (proposed) | Transport is T1 — Rust emits a run-provenance JSON sidecar ABC reads | Keeps parquet out of ABC; hands ABC an ABC-shaped value; compute stays in Rust. Pending confirmation. |
+| I2-D14 | Transport is T1 — Rust emits a run-provenance JSON sidecar ABC reads | Keeps parquet out of ABC; hands ABC an ABC-shaped value; compute stays in Rust. Confirmed (user, 2026-07-08). |

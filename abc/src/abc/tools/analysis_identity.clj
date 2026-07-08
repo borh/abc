@@ -9,6 +9,14 @@
 (def allowed-input-view-kinds
   #{"parser-ir-plaintext-body-v1"})
 
+;; The identity (no-op) input-normalization policy hash — produced by Rust
+;; (ab_ortho_detect::NormalizationPolicy::identity, spec Issue 2 P1) and used
+;; verbatim here (U1: compute stays in Rust, ABC reads/records the hash). This
+;; is the value the input view records when no ortho normalization was applied
+;; (the default for every source-identity flow).
+(def identity-normalization-policy-hash
+  "sha256:530c59689dd909c171790036cddc7916f8685897b6342bfa794d4611816d3813")
+
 (defn hash-json-value [value]
   (hash/format-sha256 (hash/sha256-json-jcs value)))
 
@@ -50,7 +58,8 @@
                                    :allowed_input_view_kinds allowed-input-view-kinds})))
                 input-view)))
        (sort-by (juxt #(get % "input_view_kind")
-                      #(get % "policy_hash")))
+                      #(get % "policy_hash")
+                      #(get % "input_normalization_policy_hash")))
        distinct
        vec))
 

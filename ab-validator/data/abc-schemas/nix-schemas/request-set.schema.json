@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/request-set.schema.json",
   "title": "ABC Request Set",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -90,10 +90,11 @@
     "inputView": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["input_view_kind", "policy_hash"],
+      "required": ["input_view_kind", "policy_hash", "input_normalization_policy_hash"],
       "properties": {
         "input_view_kind": { "enum": ["parser-ir-plaintext-body-v1"] },
-        "policy_hash": { "$ref": "#/$defs/hash" }
+        "policy_hash": { "$ref": "#/$defs/hash" },
+        "input_normalization_policy_hash": { "$ref": "#/$defs/hash" }
       }
     },
     "requestSetIdentityObject": {

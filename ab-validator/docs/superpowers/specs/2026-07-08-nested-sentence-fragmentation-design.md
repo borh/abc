@@ -33,7 +33,7 @@ Implement TEI Chapter 21 fragmentation (Strategy A) for nested sentences. The ou
 | D5 | Fragment fields on sentence rows | Add `part`, `fragment_group`, `next_id`, `prev_id` to existing `sentences[]`. No new top-level arrays. Backward compatible. |
 | D6 | Recursive nesting | Real literary texts have 2-3 levels of quote nesting. Max depth limit (default 5) prevents runaway recursion. |
 | D7 | Emit quote nodes from converter | Schema already supports `quoteNode`. AAT `quote_block` and inline markers → parser-IR `quote` nodes with `marker_type`. `nesting_level` is stored as `null` (derivable from ordered marker sequence). |
-| D8 | Converter-driven nesting | Splitter stays simple (flat sentences). Converter detects nesting using quote nodes + heuristics. Best separation of concerns. |
+| D8 | Converter-driven nesting | Splitter stays simple (flat sentences). Converter detects nesting using synthesized quote nodes. Best separation of concerns. |
 
 ## Architecture
 
@@ -51,7 +51,7 @@ Implement TEI Chapter 21 fragmentation (Strategy A) for nested sentences. The ou
 │ ab-validator/crates/ab-aat-to-parser-ir/src/                    │
 │   convert.rs  — emit quote nodes from AAT markers               │
 │   sentences.rs — nesting detection + fragment assembly           │
-│ - Detect quoted/parenthetical regions (quote nodes + heuristics) │
+│ - Detect quoted regions (synthesized quote nodes from 「」/『』)    │
 │ - Re-split inner regions with suppress_closing_bracket_check     │
 │ - Emit sentence rows with part/group_id/next_id/prev_id         │
 └─────────────────────────────────────────────────────────────────┘
@@ -103,6 +103,11 @@ pub fn split_sentences_with_options(
 ) -> Vec<SentenceSpan<'_>> {
     // When opts.suppress_closing_bracket_check is true,
     // skip the closing_bracket_ahead() call in the should_split logic
+}
+
+/// Convenience wrapper with default options.
+pub fn split_sentences(input: &str) -> Vec<SentenceSpan<'_>> {
+    split_sentences_with_options(input, &SplitOptions::default())
 }
 ```
 
@@ -160,6 +165,8 @@ Quote nodes are the sole nesting signal. The converter synthesizes quote nodes f
 4. For nested quotes (quote inside quote), recurse. Max depth: 5 (configurable).
 
 **No heuristic fallback.** If `「` appears without a matching `」` in the same sentence, no fragmentation occurs for that pair. The unmatched marker stays as text.
+
+**v1 limitation:** Only `「」`/`『』` produce quote nodes. Other closing-quote characters (`"`, `"`, `'`) suppress flat-splitting via `closing_bracket_ahead` but do not trigger fragmentation. European-quote prose stays as flat sentences in v1.
 
 **AAT `quote_block` handling:** AAT structural `quote_block` markers also produce parser-IR `quote` nodes. These are consistent with the inline synthesis — both paths produce the same node type.
 
@@ -249,24 +256,24 @@ Modified function: `render-paragraph-row-with-sentences`
 
 ```clojure
 (defn- sentence-attrs [sentence]
-  (let [base-attrs (when (some #{"orthographic-katakana"} (get sentence "tags" []))
-                     {:type "orthographic-katakana"})
+  (let [base-attrs (cond-> {:xml:id (get sentence "id")}
+                     (some #{"orthographic-katakana"} (get sentence "tags" []))
+                     (assoc :type "orthographic-katakana"))
         part (get sentence "part")
         next-id (get sentence "next_id")
         prev-id (get sentence "prev_id")]
     (cond-> base-attrs
       part
-      (assoc :part part
-             :xml:id (str "s" (subs (get sentence "id") 1)))
+      (assoc :part part)
 
       next-id
-      (assoc :next (str "#s" (subs next-id 1)))
+      (assoc :next (str "#" next-id))
 
       prev-id
-      (assoc :prev (str "#s" (subs prev-id 1))))))
+      (assoc :prev (str "#" prev-id)))))
 ```
 
-Note: `fragment_group` is parser-IR-internal bookkeeping only. It is NOT rendered as `@corresp` in TEI because no anchor element carries the group ID. `@part` + `@next` + `@prev` is the standard TEI fragmentation representation and is sufficient.
+Note: Every `<s>` gets `@xml:id` (not just fragments). This gives stable identity to inner sentences too, which simplifies future `<q>` migration (F1). The sentence `id` is already `"s000000"` format, so no subs/rebuild is needed. `fragment_group` is parser-IR-internal bookkeeping only — not rendered as `@corresp`.
 
 ### 3b: TEI Profile Schema Update
 
@@ -290,7 +297,7 @@ Schema already defines `quoteNode`. No schema change needed — just converter w
   "type": "quote",
   "span": { "start": 12, "end": 36, "coordinate_system": "decoded_utf8" },
   "marker_type": "open",
-  "nesting_level": 0,
+  "nesting_level": null,
   "text": "「"
 }
 ```
@@ -346,10 +353,9 @@ The fragment field constraints (`part` ↔ `next_id`/`prev_id`/`fragment_group`)
 
 | Case | Handling |
 |---|---|
-| Unmatched `「` without `」` | No fragmentation. Treat as text. Log warning. |
+| Unmatched `「` without `」` | No fragmentation. Marker stays as text. Log warning. |
 | Recursive nesting > max depth (5) | Treat inner region as text. Log warning. |
 | Atomic node (ruby/gaiji) straddles boundary | Hard fail with diagnostic. Same as existing atomic-boundary behavior. |
-| AAT quote marker mismatch | Use quote nodes as signals, fall back to heuristics. Log warning. |
 | Tiling assertion failure | Hard fail with diagnostic. Fragments must tile original sentence. |
 
 ## Testing Strategy

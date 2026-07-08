@@ -1413,8 +1413,16 @@
               export CARGO_HOME="''${CARGO_HOME:-$PWD/.cargo}"
               export RUST_BACKTRACE="1"
 
-              # Create dictionary directories so the analyzer can discover
-              # symlinked dictionaries at runtime.
+              # All five nix-built vibrato UniDic dictionaries, joined into one
+              # store path. Exporting its share/vibrato dir means the analyzer
+              # resolves every dictionary by name (unidic-cwj-202512,
+              # unidic-kindai-bungo-202512, …) with NO symlinking into the repo
+              # and no per-dictionary `just dictionary-build-*` step. GC-safe:
+              # the dev shell holds the store path.
+              export AB_VIBRATO_DICT_DIR="${vibratoDictionaries}/share/vibrato"
+
+              # Legacy dictionary/compiled/ dirs are still created + honored as a
+              # fallback for tooling that predates AB_VIBRATO_DICT_DIR.
               mkdir -p dictionary/compiled dictionary/optimized
 
               # Build a vibrato dictionary from NINJAL and symlink it into
@@ -1439,10 +1447,12 @@
               }
               export -f vibrato-dict-link
 
-              # Bootstrap: if no vibrato dictionaries are linked, build the
-              # default cwj dictionary automatically. This runs once per
-              # checkout; subsequent shells see the existing symlink.
+              # Bootstrap: only needed when AB_VIBRATO_DICT_DIR is disabled AND
+              # no dictionaries are linked — build the default cwj dictionary so
+              # the fallback path still works. With AB_VIBRATO_DICT_DIR set (the
+              # default above) every dictionary is already resolvable.
               if [ "''${AB_BOOTSTRAP_VIBRATO_DICT:-1}" != "0" ] && \
+                 [ -z "''${AB_VIBRATO_DICT_DIR:-}" ] && \
                  ! compgen -G "dictionary/compiled/*.dic.zst" > /dev/null && \
                  ! compgen -G "dictionary/compiled/*.dic" > /dev/null; then
                 echo "" >&2

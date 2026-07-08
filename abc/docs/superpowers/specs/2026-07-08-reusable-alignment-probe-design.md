@@ -74,6 +74,7 @@ that can say, consistently:
 | CollateX-style full variant graphs are more than the first TEI-EAJ diagnostic slice needs. | Inference | Current comparison is mostly pairwise work rows | Medium | A richer multi-witness design might be warranted earlier. |
 | `ab-morph-diff` already models split/merge/resegment/coverage mismatch, but requires analyses over the same source text/span coordinate system. | Observation | `ab-validator/crates/ab-morph-diff/src/{lib.rs,align.rs,nway.rs,model.rs}` | High | We could reuse it directly instead of factoring a generic layer. |
 | `ab-compare` already compares visible/normalized-visible text and semantic hashes, but its text diagnosis stops at first difference. | Observation | `ab-validator/crates/ab-compare/src/aat_diff.rs` | High | A reusable alignment probe may be unnecessary. |
+| Current Melos comparison exposes the final source attribution only as a first-difference window at normalized offset 9790. | Observation | `abc/docs/handoffs/tei-eaj-aozora-melos-comparison-report.md`, `abc/docs/handoffs/tei-eaj-aozora-workset-export.json` | High | The first TEI-EAJ probe target would be ungrounded. |
 | The reusable layer belongs below TEI-EAJ-specific code and below AAT/schema-version comparison adapters. | Design inference | Multiple consumers need the same aligned-region vocabulary | Medium-high | The first implementation could remain TEI-only, but would be harder to reuse later. |
 
 ## Non-Goals
@@ -126,9 +127,9 @@ Soranoha prior art:
 | Alignment kernel | A generic library function that aligns two token sequences and emits aligned regions. It knows nothing about TEI, AAT, parser-IR, or morphology. |
 | Comparison adapter | Domain-specific code that extracts tokens from a source artifact and interprets aligned regions for that domain. |
 | Witness | One side of a comparison. The name follows collation terminology but is only local vocabulary here. |
-| Token | A comparison unit with raw text, normalized text, ordinal position, optional source/path context, and optional feature tags. |
+| Token | A minimal comparison unit with ordinal position, raw text, and normalized text. Domain context belongs to adapter-owned side data. |
 | Anchor | A high-confidence matching token or n-gram used to divide a large alignment into smaller windows. |
-| Region | A contiguous aligned span: equal, insertion, deletion, substitution, segmentation difference, likely move, or unclassified mismatch. |
+| Region | A contiguous aligned span: equal, insertion, deletion, substitution, likely move, or unclassified mismatch. |
 | Probe | A bounded, diagnostic output attached to a comparison row. It is informational, not canonical identity. |
 
 ## Use Cases
@@ -174,11 +175,19 @@ Both strategies should emit report shapes that share names for counts, bounded
 examples, truncation, and region classes where the concepts are actually the
 same. They should not pretend to have the same evidentiary strength.
 
+There is intentionally no shared Rust type between `ab-morph-diff`'s
+same-source span model and the new spanless sequence model in the first slice.
+The shared surface is naming, bounded-example discipline, and a common evidence
+vocabulary. Trying to force a common model would weaken the existing
+span-aware machinery.
+
 The first implementation should be small:
 
 1. Define the generic model and deterministic pairwise alignment.
-2. Add TEI-EAJ `alignment_probe_v1` for mismatched compared rows.
-3. Extend the TEI-EAJ comparison schema and Clojure schema tests.
+2. Add a Rust TEI-EAJ probe adapter that can characterize the current Melos
+   first-difference row as a source-attribution tail addition.
+3. Add a standalone `alignment-probe-v1` schema, reference it from the TEI-EAJ
+   comparison schema, and add Clojure schema tests.
 4. Leave AAT/schema-version adapters as follow-ups, but design the model so
    they do not require a rewrite.
 
@@ -232,20 +241,26 @@ State / time / identity:
 - deterministic order;
 - no mutable global state;
 - `algorithm_id = "abc-pairwise-token-align-v1"` appears in probe output;
-- config is a value and must be serializable for report reproducibility.
+- config is a serializable value;
+- report output must include an `algorithm_config` object and
+  `algorithm_config_hash`, where the hash is over the JCS canonical form of the
+  config.
 
-Candidate token shape:
+Minimal token shape:
 
 ```text
 ComparisonToken {
   ordinal: usize,
   text: String,
-  normalized: String,
-  char_span: Option<Range<usize>>,
-  path: Option<String>,
-  features: BTreeSet<String>
+  normalized: String
 }
 ```
+
+The kernel must not require `char_span`, XML path, feature tags, source region,
+or schema-node metadata. Adapters may carry those values in a parallel
+side-structure and copy bounded snippets into the probe's adapter context. Those
+adapter fields are not part of the v1 kernel type and may be re-typed before a
+second real consumer lands.
 
 Candidate region shape:
 
@@ -256,21 +271,24 @@ AlignmentRegion {
     insertion
     deletion
     substitution
-    segmentation
     likely_moved_block
     unclassified_mismatch,
   left_range: Range<usize>,
   right_range: Range<usize>,
   left_text_sample: String,
   right_text_sample: String,
-  feature_hints: BTreeSet<String>
+  truncated: bool
 }
 ```
 
 The model deliberately does not use `from`/`to` names. Some consumers compare
 old/new versions; others compare ABC/reference. The adapter owns the naming.
+The model also does not include `segmentation`: "same text, different
+boundaries" is a domain diagnosis because the meaning of a token boundary
+comes from the adapter.
 
-Evidence level should be explicit:
+Evidence level should be explicit and live in shared `ab-diff-utils`
+vocabulary, not in the spanless alignment kernel alone:
 
 ```text
 ComparisonEvidence {
@@ -295,7 +313,7 @@ The first kernel should combine anchors with bounded dynamic programming.
 4. For gaps between anchors, run Needleman-Wunsch-style dynamic programming
    when the window is below configured token/character limits.
 5. For oversized windows, emit an `unclassified_mismatch` region with
-   truncation metadata rather than doing unbounded work.
+   per-region truncation metadata rather than doing unbounded work.
 6. After ordinary alignment, run a cheap move detector over unmatched regions:
    if one side's deleted normalized token sequence appears as an inserted
    sequence elsewhere, mark both as a `likely_moved_block` pair or add a
@@ -314,8 +332,14 @@ Default scoring:
 | Substitution | Negative, but preferred over insertion+deletion for one-token differences |
 | Crossing anchors | Rejected; preserve sequence order first |
 
-Near matching may be added later, but must be explicit in the algorithm/config
-id because it can change diagnosis.
+Near matching may be added later, but must be explicit in `algorithm_id` or
+`algorithm_config_hash` because it can change diagnosis.
+
+Rotation rule: any change to scoring weights, anchor selection, window
+partitioning, move detection, or near-match behavior that can change emitted
+regions rotates `algorithm_id` or the `algorithm_config_hash`. Any change to
+token extraction rotates `tokenization_id`. Any change to text normalization
+rotates `normalization_id`. Any JSON shape change rotates `schema_version`.
 
 ### 3. TEI-EAJ Adapter
 
@@ -331,8 +355,8 @@ Inputs:
 
 Outputs:
 
-- same existing row fields;
-- optional `alignment_probe`.
+- a probe fragment that can be attached to existing comparison rows;
+- no replacement for the current Python row generator in the first slice.
 
 Token extraction:
 
@@ -345,8 +369,8 @@ Token extraction:
   used by base-text comparison.
 - Token `normalized` uses the same whitespace-removal policy as current
   `body_base_text_no_ws` unless the adapter declares a new normalization id.
-- Token `features` records path hints such as `p`, `head`, `note`,
-  `source-attribution`, `ruby-base`, or `body-text`.
+- Adapter context, not the kernel token, records path hints such as `p`,
+  `head`, `note`, `source-attribution`, `ruby-base`, or `body-text`.
 
 Interpretation rules:
 
@@ -354,10 +378,13 @@ Interpretation rules:
 - insertion/deletion adjacent to `note` or source-attribution context becomes
   `metadata_materialized_as_text` when the text appears to come from apparatus
   rather than body prose;
-- equal text with different paragraph token boundaries becomes
+- equal text with different paragraph token boundaries may become
   `segmentation_only`;
 - repeated matching blocks outside expected order become `likely_moved_block`;
 - all other non-equal windows remain `substitution` or `unclassified_mismatch`.
+
+`segmentation_only` is never a kernel region kind. It is a TEI-EAJ adapter
+diagnosis over the tokenization/context it chose.
 
 The TEI-EAJ adapter is diagnostic. It must not alter `base_text_equal`,
 `base_text_relation`, or missing-counterpart status.
@@ -406,7 +433,7 @@ Rules:
 - If both token streams are validated against the same source text and expose
   spans, keep using `ab-morph-diff`.
 - If only rendered/normalized token strings are available, use the generic
-  alignment kernel and mark the result as `spanless_token_sequence_alignment`.
+  alignment kernel and mark the result as `token_sequence_aligned`.
 - Do not collapse these two result types. Same-source span alignment is
   stronger evidence than string-sequence alignment.
 - Prefer extracting shared report summaries from `ab-morph-diff` rather than
@@ -418,28 +445,50 @@ Rules:
 
 `alignment_probe_v1` should be optional and bounded.
 
+The reusable contract must be a standalone schema:
+
+- file: `abc/schemas/alignment-probe-v1.schema.json`;
+- stable `$id` under the existing ABC schema namespace;
+- referenced from `abc/schemas/tei-eaj-comparison.schema.json` with `$ref`;
+- reusable by later AAT/schema-version and release-diff wrappers without
+  redeclaring the shape.
+
 Candidate JSON shape:
 
 ```json
 {
   "schema_version": "alignment-probe-v1",
+  "evidence_level": "token_sequence_aligned",
   "algorithm_id": "abc-pairwise-token-align-v1",
+  "algorithm_config_hash": "sha256:1d05a5ac38086965f8e995448b98f160a42ff03ed2fdfe7b09dbed9124be6d2c",
+  "algorithm_config": {
+    "anchor_ngram_size": 3,
+    "max_tokens_per_window": 512,
+    "max_chars_per_window": 8192,
+    "near_match": "disabled",
+    "move_detection": "exact-normalized-sequence-v1",
+    "scoring": {
+      "match": 2,
+      "gap": -1,
+      "substitution": -1
+    }
+  },
   "tokenization_id": "tei-body-structural-text-v1",
   "normalization_id": "tei-eaj-base-text-no-ws-v1",
   "left_witness": "abc",
   "right_witness": "tei_eaj",
   "summary": {
+    "total_regions": 13,
     "equal_regions": 12,
     "insertion_regions": 1,
     "deletion_regions": 0,
     "substitution_regions": 0,
-    "segmentation_regions": 3,
     "likely_moved_block_regions": 0,
     "unclassified_mismatch_regions": 0
   },
+  "diagnosis_event_count": 1,
   "diagnosis_counts": {
-    "tail_addition": 1,
-    "segmentation_only": 3
+    "tail_addition": 1
   },
   "samples": [
     {
@@ -449,8 +498,13 @@ Candidate JSON shape:
       "right_range": [18, 18],
       "left_text": "（古伝説と、シルレルの詩から。）",
       "right_text": "",
-      "left_path": "/TEI/text/body/p[1]",
-      "right_path": null
+      "truncated": false,
+      "adapter_context": {
+        "left_path": "/TEI/text/body/p[1]",
+        "right_path": null,
+        "left_features": ["source-attribution"],
+        "right_features": []
+      }
     }
   ],
   "truncated": false,
@@ -462,9 +516,30 @@ Candidate JSON shape:
 }
 ```
 
-The TEI-EAJ comparison schema should embed this as an optional property on
-compared file rows. Other consumers may define their own wrapper schemas while
-reusing the same probe schema.
+Summary counts are exhaustive over the alignment regions produced by the
+kernel. `diagnosis_counts` is adapter-defined and open-ended; schema validation
+must allow arbitrary diagnosis labels with non-negative integer counts.
+`diagnosis_event_count` is the number of adapter-diagnosed events. It may differ
+from `summary.total_regions` because adapters can diagnose only non-equal
+regions, or can add adapter-only events such as `segmentation_only`. The schema
+`$comment` must state this invariant:
+
+- the sum of `diagnosis_counts` equals `diagnosis_event_count`;
+- every diagnosis event receives exactly one diagnosis label;
+- a diagnosable event the adapter cannot explain receives
+  `unclassified_mismatch`;
+- absent diagnosis keys mean zero under that adapter/version, not "unknown."
+
+Top-level `truncated` means at least one region or sample was truncated.
+Per-sample `truncated` identifies the bounded window that hit a limit.
+`adapter_context` is adapter-owned, optional, and open-ended. The shared schema
+should require it to be a bounded JSON object when present, but must not assign
+generic semantics to fields such as XML paths, feature tags, source spans, or
+schema-node ids.
+
+The TEI-EAJ comparison schema should reference this as an optional property on
+compared file rows. Future consumers should reuse the same schema and wrap it
+with their own row/report schemas.
 
 ## Data Lifecycle
 
@@ -496,21 +571,40 @@ reusing the same probe schema.
 | Risk | Mitigation |
 |---|---|
 | A generic kernel becomes too abstract for the first need. | Keep first API pairwise and token-sequence-only. No graph API in v1. |
-| TEI-specific classification leaks into shared code. | Shared regions use generic kinds; TEI diagnoses live in the TEI-EAJ adapter. |
+| TEI-specific classification leaks into shared code. | Shared regions use generic sequence kinds only; TEI diagnoses such as `segmentation_only` live in the TEI-EAJ adapter. |
 | Same-source tokenization comparison gets weakened by string alignment. | Keep `ab-morph-diff` as the preferred span-aware path; string alignment is a lower-evidence fallback. |
 | A second comparison vocabulary grows beside `ab-morph-diff`. | Share count/example naming where semantics match and record evidence level explicitly. |
 | Alignment cost explodes on long works. | Anchor first, DP only inside bounded windows, emit truncated unclassified regions when limits are exceeded. |
 | Output becomes too noisy for regular CI reports. | Store counts and bounded samples only. Full debug output is opt-in and local. |
 
+## Melos Baseline
+
+The first characterization target is the existing Melos Level 4 comparison row.
+Current reports show:
+
+- `abc/docs/handoffs/tei-eaj-aozora-melos-comparison-report.md` records both
+  `data/complete/tei_lib_lv4/1567_header_updated.xml` and
+  `data/complete/tei_lib_lv4/1567_tei.xml` as `base_text_equal = no`;
+- both rows have ABC base text length `9806`, TEI-EAJ base text length `9790`,
+  and first difference at normalized offset `9790`;
+- the ABC first-difference window ends with
+  `（古伝説と、シルレルの詩から。）`, while the TEI-EAJ window ends before
+  that attribution;
+- `abc/docs/handoffs/tei-eaj-aozora-comparison.md` already identifies this as
+  final Melos source attribution emitted as unmapped structure.
+
+The first TEI-EAJ probe should turn that baseline from "first difference at
+offset 9790" into a bounded `tail_addition` diagnosis with adapter context
+showing source-attribution evidence.
+
 ## First Implementation Slice
 
 1. Add a small reusable alignment model and pairwise alignment implementation
-   under `ab-validator`, likely as a new `ab-diff-align` crate or an
-   `ab-diff-utils::align` module.
-   - Prefer `ab-diff-utils::align` if the first slice can stay small and avoid a
-     new crate.
+   under `ab-validator`, initially as `ab-diff-utils::align`.
+   - Do not create a new crate in the first slice.
    - Split to `ab-diff-align` only when multiple binaries/crates need the model
      directly.
+   - Keep the v1 kernel token shape to `ordinal`, `text`, and `normalized`.
 2. Add unit/property tests for:
    - equal sequences;
    - insertion/deletion;
@@ -518,13 +612,22 @@ reusing the same probe schema.
    - repeated tokens with stable ordering;
    - anchor-split windows;
    - bounded/truncated oversized windows.
-3. Add a TEI-EAJ adapter in `abc/tools/tei_eaj_compare.py` or migrate the
-   comparator to call a Rust CLI if the crate boundary is ready.
-4. Extend `tei-eaj-comparison.schema.json` with optional
-   `alignment_probe`.
-5. Add Clojure schema tests for valid and invalid probe fixtures.
-6. Regenerate the TEI-EAJ handoff JSON/report and show Melos as a tail-addition
-   diagnosis rather than only a first-difference snippet.
+3. Add a Rust TEI-EAJ probe adapter around the kernel. The existing Python
+   `abc/tools/tei_eaj_compare.py` remains unchanged in this first slice.
+   - No PyO3.
+   - No Python subprocess protocol.
+   - No full migration of the TEI-EAJ comparator.
+4. Add `abc/schemas/alignment-probe-v1.schema.json` and make
+   `tei-eaj-comparison.schema.json` reference it as an optional property.
+5. Add Clojure schema tests for valid and invalid probe fixtures, including
+   open-ended diagnosis labels and the summary/diagnosis invariant.
+6. Add a Melos characterization fixture/report generated by the Rust adapter
+   that shows the final source attribution as `tail_addition` rather than only
+   a first-difference snippet.
+
+Verification for this slice must include Rust unit/property tests, schema
+fixtures, the Melos characterization fixture, and the regular flake checks.
+Passing `nix flake check` alone is not proof that the probe design is exercised.
 
 ## Follow-Ups
 
@@ -532,7 +635,10 @@ reusing the same probe schema.
   normalized-visible differences across AAT/parser-IR/schema-version outputs.
 - Add a release-diff command that compares two schema or renderer versions and
   reports minimal changed regions using the same evidence-level vocabulary.
-- Add optional near-match scoring with explicit algorithm/config id rotation.
+- Wire the Python TEI-EAJ comparison report to include Rust-generated probes
+  once the Rust adapter contract is characterized.
+- Add optional near-match scoring with explicit `algorithm_id` or
+  `algorithm_config_hash` rotation.
 - Add move-group ids once repeated-block detection is characterized.
 - Consider a true multi-witness variant-table/graph only when comparing three
   or more versions of the same work becomes a regular workflow.
@@ -542,6 +648,8 @@ reusing the same probe schema.
 | Decision | Status | Date | Reversibility | Evidence / alternatives rejected | Revisit trigger |
 |---|---|---|---|---|---|
 | Do not integrate CollateX as a dependency. | Accepted | 2026-07-08 | Reversible | User preference; GPL dependency and runtime integration are unnecessary for the local need. | If a future editorial workflow needs full multi-witness apparatus generation. |
-| Add a reusable token-sequence alignment kernel rather than TEI-only Python logic. | Proposed | 2026-07-08 | Reversible before implementation | TEI-EAJ, schema-version diffs, and token stream diffs all need minimal aligned regions. | If implementation proves too broad for the first slice. |
+| Add a reusable token-sequence alignment kernel rather than TEI-only Python logic. | Proposed | 2026-07-08 | Reversible before implementation | TEI-EAJ, schema-version diffs, and token stream diffs all need minimal aligned regions. | If implementation proves too broad for the first Rust slice. |
 | Keep `ab-morph-diff` as the authoritative same-source span comparison path. | Proposed | 2026-07-08 | Low-risk | It already models spans, segmentation, coverage, stats, and compact examples. | If generic alignment can preserve source-span evidence without loss. |
+| Keep the first consumption surface Rust-only. | Proposed | 2026-07-08 | Reversible | Avoids freezing a Python subprocess or FFI protocol before the library API is characterized. | If regular TEI-EAJ reports need probes before the Rust adapter has a stable CLI. |
+| Publish `alignment-probe-v1` as a standalone schema. | Proposed | 2026-07-08 | Reversible before implementation | Inline TEI-only schema would create another comparison dialect. | If only one consumer ever uses probes. |
 | Make alignment probes informational, not identity-bearing. | Proposed | 2026-07-08 | Reversible only with schema/ADR work | Probe algorithm changes should not rotate ABC artifact identity. | If probes are later published as canonical analysis artifacts. |

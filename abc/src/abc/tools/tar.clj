@@ -1,7 +1,25 @@
 (ns abc.tools.tar
   (:require [clojure.java.io :as io]
             [clojure.string :as string])
-  (:import [java.nio.charset StandardCharsets]))
+  (:import [java.nio.charset StandardCharsets]
+           [org.apache.commons.compress.compressors.zstandard
+            ZstdCompressorInputStream
+            ZstdCompressorOutputStream]))
+
+(defn- zstd-tar? [archive-file]
+  (string/ends-with? (str archive-file) ".tar.zst"))
+
+(defn- tar-output-stream [archive-file]
+  (let [out (io/output-stream archive-file)]
+    (if (zstd-tar? archive-file)
+      (ZstdCompressorOutputStream. out)
+      out)))
+
+(defn- tar-input-stream [archive-file]
+  (let [in (io/input-stream archive-file)]
+    (if (zstd-tar? archive-file)
+      (ZstdCompressorInputStream. in)
+      in)))
 
 (defn- padding-size [size]
   (mod (- 512 (mod size 512)) 512))
@@ -39,7 +57,7 @@
   (let [output-file (io/file output-file)]
     (when-let [parent (.getParentFile output-file)]
       (.mkdirs parent))
-    (with-open [out (io/output-stream output-file)]
+    (with-open [out (tar-output-stream output-file)]
       (doseq [{:keys [member-path source-file]} entries
               :let [source-file (io/file source-file)
                     size (.length source-file)]]
@@ -120,7 +138,7 @@
           (recur (dec remaining)))))))
 
 (defn member-bytes [archive-file member-path]
-  (with-open [in (io/input-stream archive-file)]
+  (with-open [in (tar-input-stream archive-file)]
     (loop []
       (let [header (read-block! in archive-file)]
         (cond

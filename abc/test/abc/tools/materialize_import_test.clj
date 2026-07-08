@@ -59,7 +59,7 @@
       (manifest/write-json-file! file-a value-a)
       (manifest/write-json-file! file-b value-b)
       (is (= (slurp file-a) (slurp file-b)))
-      (is (= "{\n  \"a\": \n  {\n    \"c\": \"3\",\n    \"d\": \"4\"\n  },\n  \"z\": [\n    {\n      \"a\": \"1\",\n      \"b\": \"2\"\n    }]\n}\n"
+      (is (= "{\n  \"a\":\n  {\n    \"c\": \"3\",\n    \"d\": \"4\"\n  },\n  \"z\": [\n    {\n      \"a\": \"1\",\n      \"b\": \"2\"\n    }]\n}\n"
              (slurp file-a)))
       (finally
         (doseq [file (reverse (file-seq (.toFile dir)))]

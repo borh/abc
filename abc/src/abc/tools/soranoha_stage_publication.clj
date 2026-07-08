@@ -65,18 +65,31 @@
                                                 (.toPath manifest-target)))
                               "\\" "/")})))
 
-(defn- batch-archive-path [artifact-kind]
-  (str "artifacts/" artifact-kind "/batches/" artifact-kind "-batch-0001.tar"))
+(defn- archive-extension [archive-format]
+  (case archive-format
+    "tar.zst" ".tar.zst"
+    (throw (ex-info "Unsupported publication archive format"
+                    {:archive_format archive-format
+                     :supported_archive_formats ["tar.zst"]}))))
+
+(defn- batch-archive-path [layout-policy artifact-kind]
+  (str "artifacts/"
+       artifact-kind
+       "/batches/"
+       artifact-kind
+       "-batch-0001"
+       (archive-extension (get layout-policy "archive_format"))))
 
 (defn- batch-member-path [slug artifact-kind]
   (str slug "/" (staged-manifest-name artifact-kind)))
 
-(defn- batched-reference-entry [slug reference manifest-file manifest-value]
+(defn- batched-reference-entry [layout-policy slug reference manifest-file manifest-value]
   (let [artifact-kind (get reference "artifact_kind")
         content-file (manifest-content-file manifest-file manifest-value)]
     {:reference (assoc reference
                        "locator" {"kind" "archive-member"
                                   "archive_path" (batch-archive-path
+                                                  layout-policy
                                                   artifact-kind)
                                   "member_path" (batch-member-path
                                                  slug
@@ -103,6 +116,7 @@
     (cond
       (batched-kind? layout-policy artifact-kind)
       (let [{:keys [reference entries]} (batched-reference-entry
+                                         layout-policy
                                          slug
                                          reference
                                          manifest-file
@@ -141,7 +155,9 @@
                           :batched {}}
                          references)]
       (doseq [[artifact-kind entries] (:batched staged)]
-        (tar/write-tar! (io/file staged-root (batch-archive-path artifact-kind))
+        (tar/write-tar! (io/file staged-root
+                                 (batch-archive-path layout-policy
+                                                     artifact-kind))
                         entries))
       (when (.isFile (io/file snapshot-root "run-summary.json"))
         (files/copy-file! (io/file snapshot-root "run-summary.json")

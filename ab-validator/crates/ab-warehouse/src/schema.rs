@@ -170,6 +170,7 @@ impl WarehouseTable {
                 "winning_analyzer",
                 "losing_analyzers",
                 "evidence_detail",
+                "adjudicated_reading",
             ],
             Self::NwayFeatureDiffs => &[
                 "run_id",
@@ -366,6 +367,11 @@ pub struct NwayRegionOracleEvidenceRow {
     pub winning_analyzer: Option<String>,
     pub losing_analyzers: Vec<String>,
     pub evidence_detail: String,
+    /// The adjudicated authoritative reading (normalized editor ruby) when the
+    /// base is `resolved` — i.e. at least one exact-tiling analyzer matched the
+    /// editor ruby. `None` for `nonstandard_ruby` / `no_comparable_reading`.
+    /// Never alters tokenization or spans; it is the resolved reading only.
+    pub adjudicated_reading: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

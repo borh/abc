@@ -446,6 +446,7 @@ impl WarehouseWriter {
                 nullable_string_array(rows.iter().map(|row| row.winning_analyzer.as_deref())),
                 string_list_array(rows.iter().map(|row| row.losing_analyzers.as_slice())),
                 string_array(rows.iter().map(|row| row.evidence_detail.as_str())),
+                nullable_string_array(rows.iter().map(|row| row.adjudicated_reading.as_deref())),
             ],
             &mut self.write_time,
         )
@@ -1412,6 +1413,7 @@ fn nway_region_oracle_evidence_schema() -> Arc<Schema> {
         utf8("winning_analyzer", true),
         utf8_list("losing_analyzers"),
         utf8("evidence_detail", false),
+        utf8("adjudicated_reading", true),
     ])
 }
 
@@ -1619,6 +1621,7 @@ mod tests {
                 winning_analyzer: Some("sudachi-c".to_owned()),
                 losing_analyzers: vec!["vibrato:unidic-novel-202512".to_owned()],
                 evidence_detail: r#"{"classification":"resolved"}"#.to_owned(),
+                adjudicated_reading: Some("とうきょう".to_owned()),
             }])
             .unwrap();
         writer.finalize().unwrap();
@@ -1648,6 +1651,7 @@ mod tests {
                 winning_analyzer: None,
                 losing_analyzers: vec!["vibrato".into(), "sudachi-c".into()],
                 evidence_detail: "{}".into(),
+                adjudicated_reading: None,
             }])
             .unwrap();
         writer.finalize().unwrap();

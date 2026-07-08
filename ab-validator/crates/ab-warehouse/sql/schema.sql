@@ -120,6 +120,8 @@ CREATE TABLE nway_region_analyzers (
 -- no_comparable_reading (see ab-morph-run oracle::ruby::adjudicate).
 -- winning_analyzer is set only on a unique match; losing_analyzers
 -- lists the disagreeing analyzers; evidence_detail is per-analyzer JSON.
+-- adjudicated_reading is the resolved authoritative reading (normalized editor
+-- ruby) on resolved bases, NULL otherwise; it never changes tokenization/spans.
 CREATE TABLE nway_region_oracle_evidence (
   run_id VARCHAR,
   source_id VARCHAR,
@@ -131,7 +133,8 @@ CREATE TABLE nway_region_oracle_evidence (
   classification VARCHAR,
   winning_analyzer VARCHAR,
   losing_analyzers VARCHAR[],
-  evidence_detail VARCHAR
+  evidence_detail VARCHAR,
+  adjudicated_reading VARCHAR
 );
 
 CREATE TABLE nway_feature_diffs (

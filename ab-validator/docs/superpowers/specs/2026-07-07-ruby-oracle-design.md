@@ -282,3 +282,16 @@ the view. No `READER_MAX_SCHEMA_VERSION` change.
 | R6 | `SCHEMA_VERSION` stays 2; presence-probed views | Decision 3 bumped at the first analysis-pass sidecar; additive sidecars ship under v2 with presence-probing, as `projection_spans`/`aozora_works` already do. |
 | R7 | UniDic `kana` (fallback `pron`) as the reading field | `kana` is the modern-kana surface reading and aligns to editor ruby without long-vowel handling; `pron` requires the long-vowel layer and is the fallback. |
 | R8 | Reading comparable only on exact base↔morpheme tiling | A partial-overlap reading would include kana outside the ruby span and produce false matches; misalignment is a scoped, reasoned non-match. |
+| R9 | Surface the adjudicated reading as a first-class column (`adjudicated_reading`), 2026-07-08 followup | The adjudication signal was previously only inside `evidence_detail` JSON. `adjudicated_reading` = normalized editor reading on `resolved` bases (≥1 exact-tiling analyzer matched), `NULL` on `nonstandard_ruby`/`no_comparable_reading`. Additive nullable column; the `SELECT *` view tolerates it so no `SCHEMA_VERSION` bump and pre-followup runs still read. It never changes tokenization or spans — a resolved reading, not a token edit. |
+
+## Followup (2026-07-08): using ruby readings to adjudicate analyzer readings
+
+Investigation confirmed the "adjudicate only when analyzer token spans exactly
+tile the ruby base" invariant was **already** enforced: `analyzer_reading`
+returns no reading for `boundary-misalign`/`no-reading`, so a winner is always an
+exact-tiling match and misalignment already stays evidence (never altering
+tokenization). The only gap was that the adjudication outcome lived solely in the
+`evidence_detail` JSON. R9 surfaces it as the `adjudicated_reading` column so a
+downstream consumer can read the resolved authoritative reading directly. This
+honors the ruby-reading-evidence contract: the reading adjudicates, it does not
+replace source text, sentence spans, parser-IR node spans, or tokenizer input.

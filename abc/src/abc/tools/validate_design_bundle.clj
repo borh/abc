@@ -14,6 +14,7 @@
    [abc.tools.manifest :as manifest]
    [abc.tools.materialize-import :as materialize]
    [abc.tools.materialize-publication :as publication]
+   [abc.tools.materialize-tokenized :as tokenized]
    [abc.tools.schema :as schema]
    [abc.tools.snapshot-index :as snapshot-index]
    [abc.tools.metadata-record :as metadata-record]
@@ -50,6 +51,16 @@
        (map (fn [profile]
               [(analysis-identity/tokenizer-profile-hash profile) profile]))
        (into {})))
+
+(def ^:private fixture-tokenized-tokens
+  [{"token_index" 0
+    "input_span" {"start" 0
+                  "end" 2}
+    "text" "吾輩"}
+   {"token_index" 1
+    "input_span" {"start" 2
+                  "end" 3}
+    "text" "猫"}])
 
 (defn- parser-ir-schema-hash-accepted? [value]
   (contains? (accepted-parser-ir-schema-hashes) value))
@@ -910,7 +921,8 @@
                            "abc-design-bundle"
                            (make-array java.nio.file.attribute.FileAttribute 0)))
         materialized-dir (io/file temp-dir "materialized-import")
-        publication-dir (io/file temp-dir "publication")]
+        publication-dir (io/file temp-dir "publication")
+        tokenized-dir (io/file temp-dir "tokenized")]
     (try
       (tel/log! :info "==> Materializing imported ab-validator output")
       (let [materialized (materialize/materialize-import!
@@ -923,22 +935,33 @@
                                  :metadata-record-path "examples/v0/example-work/metadata-record.json"
                                  :persons-dir "examples/v0/example-persons"
                                  :output-dir publication-dir
-                                 :generated-at publication/default-generated-at})]
+                                 :generated-at publication/default-generated-at})
+            tokenized-output (tokenized/materialize-tokenized!
+                              {:producer-manifest (files/read-json
+                                                   (:parser-ir materialized))
+                               :tokenizer-profile (files/read-json
+                                                   "data/tokenizer-profiles/fixture-tokenizer-ja-v1.json")
+                               :input-plaintext-policy-hash (files/example-hash "13")
+                               :tokens fixture-tokenized-tokens
+                               :output-dir tokenized-dir
+                               :generated-at materialize/default-generated-at})
+            manifest-paths (concat (vals materialized)
+                                   [(:plaintext-manifest publication-output)
+                                    (:tei-manifest publication-output)
+                                    (:manifest tokenized-output)])]
         (tel/log! :info "materialized import ok")
         (tel/log! :info "parser-IR publication materialization ok")
+        (tel/log! :info "tokenized fixture materialization ok")
         (tel/log! :info "==> Validating JSON schemas and examples")
-        (validate-json-schemas! (concat (vals materialized)
-                                        [(:plaintext-manifest publication-output)
-                                         (:tei-manifest publication-output)]))
+        (validate-json-schemas! manifest-paths)
+        (validate-json! (files/read-json "schemas/token-output.schema.json")
+                        (:token-stream tokenized-output))
         (tel/log! :info "json schema validation ok")
         (tel/log! :info "==> Checking parser-IR publication output")
         (validate-publication-output! publication-output)
         (tel/log! :info "parser-IR publication output ok")
         (tel/log! :info "==> Checking materialized manifest index")
-        (let [entries (manifest-index/index-manifest-files
-                       (concat (vals materialized)
-                               [(:plaintext-manifest publication-output)
-                                (:tei-manifest publication-output)]))
+        (let [entries (manifest-index/index-manifest-files manifest-paths)
               tokenizer-profiles (tokenizer-profiles-by-hash)]
           (manifest-index/validate-no-reproducibility-conflicts! entries)
           (manifest-index/validate-tokenized-release-guardrail! entries)
@@ -947,16 +970,12 @@
           (manifest-index/validate-analysis-copied-fields! entries))
         (tel/log! :info "materialized manifest index ok")
         (tel/log! :info "==> Checking materialized RDF views")
-        (doseq [manifest-path (concat (vals materialized)
-                                      [(:plaintext-manifest publication-output)
-                                       (:tei-manifest publication-output)])]
+        (doseq [manifest-path manifest-paths]
           (manifest-to-rdf/manifest->ttl (files/read-json manifest-path)))
         (tel/log! :info "materialized RDF views ok")
         (tel/log! :info "==> Validating SHACL shapes")
         (let [shapes (shacl/load-shapes-graph)
-              targets (concat (vals materialized)
-                              [(:plaintext-manifest publication-output)
-                               (:tei-manifest publication-output)]
+              targets (concat manifest-paths
                               ["examples/v0/example-work/manifest.json"
                                "examples/v0/example-work/failure-manifest.example.json"])]
           (validate-shacl! shapes targets))

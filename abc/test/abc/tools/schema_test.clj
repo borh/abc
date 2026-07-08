@@ -131,6 +131,8 @@
            (get profile "schema_id")))
     (is (= (manifest/schema-hash "schemas/tokenizer-profile.schema.json")
            (get profile "schema_hash")))
+    (is (= (manifest/schema-hash "schemas/token-output.schema.json")
+           (get profile "token_output_schema_hash")))
     (is (re-matches files/hash-pattern
                     (analysis-identity/tokenizer-profile-hash profile)))
     (is (nil? (schema/validation-errors profile-schema profile)))))

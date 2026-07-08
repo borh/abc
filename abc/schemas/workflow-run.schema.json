@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/workflow-run.schema.json",
+  "title": "Soranoha workflow run report",
+  "version": "0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "schema_version",
+    "workflow_id",
+    "run_id",
+    "status",
+    "started_at",
+    "ended_at",
+    "duration_ms",
+    "step_count",
+    "steps_passed",
+    "steps_failed",
+    "steps"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "https://w3id.org/abc/schemas/workflow-run.schema.json"
+    },
+    "schema_version": {"const": "soranoha-workflow-run-v1"},
+    "workflow_id": {"type": "string", "minLength": 1},
+    "run_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["passed", "failed", "partial", "skipped"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "ended_at": {"type": "string", "format": "date-time"},
+    "duration_ms": {"type": "integer", "minimum": 0},
+    "step_count": {"type": "integer", "minimum": 0},
+    "steps_passed": {"type": "integer", "minimum": 0},
+    "steps_failed": {"type": "integer", "minimum": 0},
+    "steps": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/step"}
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "pathRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role"],
+      "properties": {
+        "role": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "content_hash": {"$ref": "#/$defs/hash"},
+        "artifact_id": {"$ref": "#/$defs/hash"},
+        "request_set_id": {"$ref": "#/$defs/hash"},
+        "snapshot_identity_hash": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "message": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level", "message"],
+      "properties": {
+        "level": {"enum": ["info", "warn", "error"]},
+        "message": {"type": "string", "minLength": 1},
+        "data": {"type": "object"}
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["error_class", "message"],
+      "properties": {
+        "error_class": {"type": "string", "minLength": 1},
+        "message": {"type": "string", "minLength": 1},
+        "data": {"type": "object"}
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "status",
+        "started_at",
+        "ended_at",
+        "duration_ms",
+        "requires",
+        "produces",
+        "inputs",
+        "outputs",
+        "messages"
+      ],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["passed", "failed", "partial", "skipped"]},
+        "started_at": {"type": "string", "format": "date-time"},
+        "ended_at": {"type": "string", "format": "date-time"},
+        "duration_ms": {"type": "integer", "minimum": 0},
+        "requires": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "produces": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "inputs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/pathRecord"}
+        },
+        "outputs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/pathRecord"}
+        },
+        "messages": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/message"}
+        },
+        "error": {"$ref": "#/$defs/error"}
+      }
+    }
+  }
+}

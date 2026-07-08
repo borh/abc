@@ -16,6 +16,7 @@
             [abc.tools.soranoha-layout-report :as layout-report]
             [abc.tools.soranoha-stage-publication :as stage-publication]
             [abc.tools.tar :as tar]
+            [abc.tools.workflow :as workflow]
             [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.string :as string])
@@ -910,6 +911,102 @@
                         "input" "publication/index.json"}]
      "notes" "End-to-end publication rehearsal report. Use it to record a full-corpus dry run; publication identity remains snapshot_identity_hash plus request_set_id and artifact hashes."}))
 
+(defn- publication-rehearsal-steps []
+  [{:id :source-snapshot
+    :requires [:input-root :source-snapshot-root :snapshot-scope :snapshot-date]
+    :produces [:source-snapshot-result]
+    :run (fn [{:keys [input-root source-snapshot-root snapshot-scope
+                      snapshot-date]}]
+           (let [result (write-source-snapshot-root!
+                         input-root
+                         source-snapshot-root
+                         snapshot-scope
+                         snapshot-date)]
+             {:state-updates {:source-snapshot-result result}
+              :outputs [{:role "source-snapshot"
+                         :path "source-snapshot/source-snapshot.json"
+                         :content_hash (:snapshot-hash result)}]}))}
+   {:id :resolve-request-set
+    :requires [:request-set-label :source-snapshot-result :request-set-file]
+    :produces [:request-set]
+    :run (fn [{:keys [request-set-label source-snapshot-result
+                      request-set-file]}]
+           (let [request-set (request-set-resolver/resolve-request-set
+                              request-set-label
+                              {:subject-source-path
+                               (str (:snapshot-file
+                                     source-snapshot-result))})]
+             (manifest/write-json-file! request-set-file request-set)
+             {:state-updates {:request-set request-set}
+              :outputs [{:role "request-set"
+                         :path (str request-set-file)
+                         :request_set_id (get request-set
+                                              "request_set_id")}]}))}
+   {:id :materialize-snapshot-root
+    :requires [:request-set :request-set-file :snapshot-root]
+    :produces [:snapshot]
+    :run (fn [{:keys [request-set-file snapshot-root]}]
+           (materialize-snapshot-root! (str request-set-file) snapshot-root)
+           (let [snapshot (read-valid-snapshot-index snapshot-root)]
+             {:state-updates {:snapshot snapshot}
+              :outputs [{:role "snapshot-index"
+                         :path "snapshot-root/snapshot-index.json"
+                         :snapshot_identity_hash
+                         (get snapshot "snapshot_identity_hash")}]}))}
+   {:id :validate-snapshot-root
+    :requires [:snapshot-root :snapshot]
+    :produces [:snapshot-root-validation]
+    :run (fn [{:keys [snapshot-root snapshot]}]
+           (validate-snapshot-root-references! snapshot-root snapshot)
+           (validate-run-summary! snapshot-root snapshot)
+           {:state-updates {:snapshot-root-validation true}})}
+   {:id :publication-report
+    :requires [:snapshot-root :snapshot :publication-report-file]
+    :produces [:publication-report-value]
+    :run (fn [{:keys [snapshot-root snapshot publication-report-file]}]
+           (let [{value :report}
+                 (write-publication-report-file! snapshot-root
+                                                 snapshot
+                                                 publication-report-file)]
+             {:state-updates {:publication-report-value value}
+              :outputs [{:role "publication-report"
+                         :path (str publication-report-file)
+                         :content_hash
+                         (manifest/file-hash publication-report-file)}]}))}
+   {:id :layout-report
+    :requires [:snapshot-root :snapshot :layout-report-file]
+    :produces [:layout-report-value]
+    :run (fn [{:keys [snapshot-root snapshot layout-report-file]}]
+           (let [{value :report}
+                 (write-layout-report-file! snapshot-root
+                                            snapshot
+                                            layout-report-file)]
+             {:state-updates {:layout-report-value value}
+              :outputs [{:role "layout-report"
+                         :path (str layout-report-file)
+                         :content_hash
+                         (manifest/file-hash layout-report-file)}]}))}
+   {:id :stage-publication
+    :requires [:snapshot-root :staged-root :snapshot]
+    :produces [:staged-result]
+    :run (fn [{:keys [snapshot-root staged-root snapshot]}]
+           (let [result (stage-publication/stage-publication!
+                         {:snapshot-root snapshot-root
+                          :staged-root staged-root
+                          :snapshot snapshot})]
+             {:state-updates {:staged-result result}
+              :outputs [{:role "staged-index"
+                         :path (str (:index-file result))}]}))}
+   {:id :validate-staged-publication
+    :requires [:staged-root :staged-result]
+    :produces [:staged-snapshot]
+    :run (fn [{:keys [staged-root staged-result]}]
+           (let [staged-snapshot (validate-staged-root! staged-root)]
+             {:state-updates {:staged-snapshot staged-snapshot
+                              :staged-result (assoc staged-result
+                                                    :snapshot
+                                                    staged-snapshot)}}))}])
+
 (defn publication-rehearsal!
   [input-root output-root request-set-label snapshot-scope snapshot-date]
   (let [output-root-file (io/file output-root)
@@ -926,34 +1023,32 @@
                                        "rehearsal-report.json")]
     (files/delete-tree! output-root-file)
     (.mkdirs output-root-file)
-    (let [source-snapshot-result (write-source-snapshot-root!
-                                  input-root
-                                  source-snapshot-root
-                                  snapshot-scope
-                                  snapshot-date)
-          request-set (request-set-resolver/resolve-request-set
-                       request-set-label
-                       {:subject-source-path
-                        (str (:snapshot-file source-snapshot-result))})
-          _ (manifest/write-json-file! request-set-file request-set)
-          _ (materialize-snapshot-root! (str request-set-file) snapshot-root)
-          snapshot (read-valid-snapshot-index snapshot-root)
-          _ (validate-snapshot-root-references! snapshot-root snapshot)
-          _ (validate-run-summary! snapshot-root snapshot)
-          {publication-report-value :report}
-          (write-publication-report-file! snapshot-root
-                                          snapshot
-                                          publication-report-file)
-          {layout-report-value :report}
-          (write-layout-report-file! snapshot-root
-                                     snapshot
-                                     layout-report-file)
-          staged-result (stage-publication/stage-publication!
-                         {:snapshot-root snapshot-root
-                          :staged-root staged-root
-                          :snapshot snapshot})
-          staged-snapshot (validate-staged-root! staged-root)
-          staged-result (assoc staged-result :snapshot staged-snapshot)
+    (let [{:keys [state]}
+          (workflow/run-workflow!
+           {:workflow-id "soranoha.publication-rehearsal.v1"
+            :run-id (str "publication-rehearsal:"
+                         request-set-label
+                         ":"
+                         snapshot-date)
+            :output-root output-root-file
+            :initial-state {:input-root input-root
+                            :output-root output-root-file
+                            :source-snapshot-root source-snapshot-root
+                            :snapshot-scope snapshot-scope
+                            :snapshot-date snapshot-date
+                            :request-set-label request-set-label
+                            :request-set-file request-set-file
+                            :snapshot-root snapshot-root
+                            :publication-report-file publication-report-file
+                            :layout-report-file layout-report-file
+                            :staged-root staged-root}
+            :steps (publication-rehearsal-steps)})
+          source-snapshot-result (:source-snapshot-result state)
+          request-set (:request-set state)
+          snapshot (:snapshot state)
+          staged-result (:staged-result state)
+          publication-report-value (:publication-report-value state)
+          layout-report-value (:layout-report-value state)
           report (publication-rehearsal-report
                   {:input-root input-root
                    :output-root output-root-file

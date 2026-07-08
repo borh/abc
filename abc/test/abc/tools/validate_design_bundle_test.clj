@@ -497,6 +497,32 @@
         (is (some #{"data/request-sets/smoke-basic-ja.json"}
                   @checked-json))))))
 
+(deftest validate-json-schemas-includes-workflow-run-fixture-test
+  (testing "design-bundle schema pass validates the workflow-run report contract"
+    (let [checked-schemas (atom [])
+          checked-json (atom [])]
+      (with-redefs [validate/schema-valid! (fn [_schema path]
+                                             (swap! checked-schemas conj path)
+                                             nil)
+                    validate/validate-json! (fn [_schema path]
+                                              (swap! checked-json conj path)
+                                              nil)
+                    validate/validate-json-lines! (fn [& _args] nil)
+                    validate/validation-errors (fn [_schema value]
+                                                 (if (and (map? value)
+                                                          (contains? value "rule_id"))
+                                                   nil
+                                                   [:expected-error]))
+                    compat/load-registry (fn [] {:entries []})
+                    compat/validate-registry! (fn [_registry] :ok)
+                    parser-evidence/load-index (fn [] {:entries []})
+                    parser-evidence/validate-index! (fn [_index] :ok)]
+        (validate/validate-json-schemas! [])
+        (is (some #{"schemas/workflow-run.schema.json"}
+                  @checked-schemas))
+        (is (some #{"examples/workflow/passed.workflow-run.json"}
+                  @checked-json))))))
+
 (deftest validate-analysis-copied-fields-gate-test
   (let [producer-id (files/example-hash "31")
         producer {"artifact_id" producer-id

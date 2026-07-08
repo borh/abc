@@ -234,6 +234,16 @@
               ''
                 bash tests/monorepo-active-path-hygiene-smoke.sh
               '';
+          monorepo-workflow-run-lib =
+            mkMonorepoCheck "soranoha-monorepo-workflow-run-lib"
+              [
+                pkgs.bash
+                pkgs.coreutils
+                pkgs.python3
+              ]
+              ''
+                bash tests/workflow-run-lib-smoke.sh
+              '';
           monorepo-python-quality =
             mkMonorepoCheck "soranoha-monorepo-python-quality"
               [

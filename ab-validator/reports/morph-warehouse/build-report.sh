@@ -43,6 +43,20 @@ tmp_dir="$out_dir/tmp"
 rm -rf "$out_dir"
 mkdir -p "$outputs_dir" "$snapshots_dir" "$tmp_dir"
 
+workflow_lib="$script_dir/../../../scripts/workflow-run-lib.sh"
+if [[ -f "$workflow_lib" ]]; then
+  # shellcheck source=/dev/null
+  source "$workflow_lib"
+  workflow_init "$out_dir/workflow-run.json" "morph-warehouse.build-report.v1" "local"
+  workflow_finished=false
+  trap 'status=$?; if [[ $status -ne 0 && "${workflow_finished:-false}" == "false" ]]; then workflow_step_fail "script" "script failed with exit $status"; workflow_finish "failed"; fi' EXIT
+else
+  workflow_init() { :; }
+  workflow_step_pass() { :; }
+  workflow_step_fail() { :; }
+  workflow_finish() { :; }
+fi
+
 sql_quote() {
   printf "%s" "$1" | sed "s/'/''/g"
 }
@@ -98,6 +112,7 @@ for template in "$query_dir"/*.sql; do
   } > "$statement"
 
   "$duckdb_bin" < "$statement"
+  workflow_step_pass "$name" "outputs/$name.tsv"
   printf '| %s | [`%s`](queries/%s.sql) | [`%s`](outputs/%s.tsv) |\n' \
     "$title" "$name.sql" "$name" "$name.tsv" "$name" >> "$index"
 done
@@ -110,5 +125,8 @@ cat >> "$index" <<'EOF'
 
 This report is generated from triage-safe tables. Lemma, reading, normalization, and conjugation drill-downs require a full-profile warehouse or targeted full reruns.
 EOF
+
+workflow_finished=true
+workflow_finish "passed"
 
 echo "wrote morph warehouse report to $out_dir"

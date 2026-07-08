@@ -323,6 +323,7 @@
         parser-ir-schema (files/read-json "schemas/parser-ir.schema.json")
         diagnostic-schema (files/read-json "schemas/diagnostic.schema.json")
         run-summary-schema (files/read-json "schemas/run-summary.schema.json")
+        workflow-run-schema (files/read-json "schemas/workflow-run.schema.json")
         manifest-inputs-schema (files/read-json "schemas/manifest-inputs.schema.json")
         comparison-report-schema (files/read-json "schemas/comparison-report.schema.json")
         aat-parser-ir-mapping-schema (files/read-json "schemas/aat-parser-ir-mapping.schema.json")
@@ -345,6 +346,7 @@
                            ["schemas/parser-ir.schema.json" parser-ir-schema]
                            ["schemas/diagnostic.schema.json" diagnostic-schema]
                            ["schemas/run-summary.schema.json" run-summary-schema]
+                           ["schemas/workflow-run.schema.json" workflow-run-schema]
                            ["schemas/manifest-inputs.schema.json" manifest-inputs-schema]
                            ["schemas/comparison-report.schema.json" comparison-report-schema]
                            ["schemas/aat-parser-ir-mapping.schema.json" aat-parser-ir-mapping-schema]
@@ -378,6 +380,8 @@
     (validate-json-lines! run-summary-schema
                           "examples/ab-validator-output/run-summary.jsonl"
                           {:require-nonempty false})
+    (validate-json! workflow-run-schema
+                    "examples/workflow/passed.workflow-run.json")
     (validate-json! manifest-inputs-schema
                     "examples/ab-validator-output/manifest-inputs.json")
     (validate-json! comparison-report-schema

@@ -642,18 +642,36 @@
                                              "publication-report.json")
             layout-report-file (io/file output-root
                                         "reports"
-                                        "layout-report.json")]
+                                        "layout-report.json")
+            workflow-plan-file (io/file output-root "workflow-plan.json")
+            workflow-run-file (io/file output-root "workflow-run.json")]
         (is (string/includes? out (str report-file)))
         (is (.exists request-set-file))
         (is (.exists (io/file snapshot-root "snapshot-index.json")))
         (is (.exists (io/file staged-root "index.json")))
         (is (.exists publication-report-file))
         (is (.exists layout-report-file))
+        (is (.exists workflow-plan-file))
+        (is (.exists workflow-run-file))
         (with-out-str
           (is (zero? (soranoha/run! ["validate" (str staged-root)]))))
-        (let [report (files/read-json report-file)
+        (let [workflow-run (files/read-json workflow-run-file)
+              report (files/read-json report-file)
               staged-index (files/read-json (io/file staged-root "index.json"))
               request-set (files/read-json request-set-file)]
+          (is (= "soranoha.publication-rehearsal.v1"
+                 (get workflow-run "workflow_id")))
+          (is (= "passed" (get workflow-run "status")))
+          (is (= 8 (get workflow-run "step_count")))
+          (is (= ["source-snapshot"
+                  "resolve-request-set"
+                  "materialize-snapshot-root"
+                  "validate-snapshot-root"
+                  "publication-report"
+                  "layout-report"
+                  "stage-publication"
+                  "validate-staged-publication"]
+                 (mapv #(get % "id") (get workflow-run "steps"))))
           (is (= "https://w3id.org/abc/soranoha-publication-rehearsal-report-v0.json"
                  (get report "schema_id")))
           (is (= "0.1.0" (get report "report_version")))
@@ -705,6 +723,9 @@
             rehearsal-report-file (io/file output-root
                                            "rehearsal"
                                            "rehearsal-report.json")
+            workflow-run-file (io/file output-root
+                                       "rehearsal"
+                                       "workflow-run.json")
             tei-file (io/file output-root
                               "rehearsal"
                               "snapshot-root"
@@ -717,6 +738,7 @@
         (is (.exists official-source-file))
         (is (.exists source-selection-report-file))
         (is (.exists rehearsal-report-file))
+        (is (.exists workflow-run-file))
         (is (.exists tei-file))
         (let [report (files/read-json source-selection-report-file)
               official-source (files/read-json official-source-file)]

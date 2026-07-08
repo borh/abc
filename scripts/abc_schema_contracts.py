@@ -30,6 +30,7 @@ SCHEMA_FILES = (
     "pack-policy.schema.json",
     "tokenizer-profile.schema.json",
     "token-output.schema.json",
+    "workflow-run.schema.json",
 )
 
 

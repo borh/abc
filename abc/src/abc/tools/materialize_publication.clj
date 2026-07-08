@@ -671,6 +671,59 @@
         (finally
           (.shutdown executor))))))
 
+(def workflow-run-schema-id
+  "https://w3id.org/abc/schemas/workflow-run.schema.json")
+
+(defn- now-utc []
+  (str (java.time.Instant/now)))
+
+(defn- batch-step-status [result]
+  (case (get result "status")
+    "passed" "passed"
+    "partial" "partial"
+    "skipped" "skipped"
+    "failed"))
+
+(defn- batch-step-record [started-at ended-at result]
+  {"id" (str (get result "id"))
+   "status" (batch-step-status result)
+   "started_at" started-at
+   "ended_at" ended-at
+   "duration_ms" 0
+   "requires" []
+   "produces" ["publication-output"]
+   "inputs" []
+   "outputs" (cond-> []
+               (get result "tei")
+               (conj {"role" "tei"
+                      "path" (get result "tei")})
+               (get result "plain_text")
+               (conj {"role" "plain-text"
+                      "path" (get result "plain_text")}))
+   "messages" []})
+
+(defn- batch-workflow-run [results]
+  (let [started-at (now-utc)
+        ended-at started-at
+        failed (count (filter #(= "failed" (batch-step-status %)) results))
+        partial (count (filter #(= "partial" (batch-step-status %)) results))
+        passed (count (filter #(= "passed" (batch-step-status %)) results))]
+    {"schema_id" workflow-run-schema-id
+     "schema_version" "soranoha-workflow-run-v1"
+     "workflow_id" "soranoha.materialize-publications-batch.v1"
+     "run_id" "local-batch"
+     "status" (cond
+                (pos? failed) "failed"
+                (pos? partial) "partial"
+                :else "passed")
+     "started_at" started-at
+     "ended_at" ended-at
+     "duration_ms" 0
+     "step_count" (count results)
+     "steps_passed" passed
+     "steps_failed" failed
+     "steps" (mapv #(batch-step-record started-at ended-at %) results)}))
+
 (defn materialize-publications-batch!
   [{:keys [batch-path summary-path jobs]}]
   (let [batch (files/read-json batch-path)
@@ -678,12 +731,22 @@
         concurrency (batch-concurrency jobs (count batch-jobs))
         results (materialize-batch-jobs! batch-jobs concurrency)
         passed (count (filter #(= "passed" (get % "status")) results))
-        summary {"schema_version" "abc-materialize-publications-batch-v1"
-                 "jobs_total" (count results)
-                 "jobs_concurrency" concurrency
-                 "jobs_succeeded" passed
-                 "jobs_failed" (- (count results) passed)
-                 "jobs" results}]
+        summary-file (some-> summary-path io/file)
+        summary-dir (some-> summary-file .getParentFile)
+        summary-dir (or summary-dir (some-> summary-file .getAbsoluteFile .getParentFile))
+        workflow-run-file (some-> summary-dir (io/file "workflow-run.json"))
+        summary (cond-> {"schema_version" "abc-materialize-publications-batch-v1"
+                         "jobs_total" (count results)
+                         "jobs_concurrency" concurrency
+                         "jobs_succeeded" passed
+                         "jobs_failed" (- (count results) passed)
+                         "jobs" results}
+                  workflow-run-file
+                  (assoc "workflow_run_path" "workflow-run.json"))]
+    (when workflow-run-file
+      (abc-json/write-deterministic-json-file!
+       workflow-run-file
+       (batch-workflow-run results)))
     (when summary-path
       (abc-json/write-deterministic-json-file! summary-path summary))
     summary))

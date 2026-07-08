@@ -1,0 +1,35 @@
+{
+  "schema_id": "https://w3id.org/abc/schemas/workflow-run.schema.json",
+  "schema_version": "soranoha-workflow-run-v1",
+  "workflow_id": "fixture.workflow.v1",
+  "run_id": "fixture-run",
+  "status": "not-a-status",
+  "started_at": "2026-07-08T00:00:00Z",
+  "ended_at": "2026-07-08T00:00:01Z",
+  "duration_ms": 1000,
+  "step_count": 1,
+  "steps_passed": 1,
+  "steps_failed": 0,
+  "steps": [
+    {
+      "id": "source-snapshot",
+      "status": "passed",
+      "started_at": "2026-07-08T00:00:00Z",
+      "ended_at": "2026-07-08T00:00:01Z",
+      "duration_ms": 1000,
+      "requires": ["input-root"],
+      "produces": ["source-snapshot"],
+      "inputs": [
+        {"role": "input-root", "path": "materialized-root"}
+      ],
+      "outputs": [
+        {
+          "role": "source-snapshot",
+          "path": "source-snapshot/source-snapshot.json",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ],
+      "messages": []
+    }
+  ]
+}

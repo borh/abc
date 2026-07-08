@@ -180,6 +180,22 @@
                (select-keys summary ["jobs_total" "jobs_succeeded" "jobs_failed" "jobs_concurrency"])))
         (is (= ["a" "b"] (mapv #(get % "id") (get summary "jobs"))))
         (is (= ["passed" "passed"] (mapv #(get % "status") (get summary "jobs"))))
+        (is (= "workflow-run.json" (get summary "workflow_run_path")))
+        (let [workflow-run-file (io/file (.getParentFile summary-file)
+                                         "workflow-run.json")
+              workflow-run (files/read-json workflow-run-file)
+              workflow-run-schema (files/read-json
+                                   "schemas/workflow-run.schema.json")]
+          (is (.isFile workflow-run-file))
+          (is (nil? (schema/validation-errors workflow-run-schema workflow-run)))
+          (is (= "soranoha.materialize-publications-batch.v1"
+                 (get workflow-run "workflow_id")))
+          (is (= (get summary "jobs_total")
+                 (get workflow-run "step_count")))
+          (is (= (get summary "jobs_failed")
+                 (get workflow-run "steps_failed")))
+          (is (every? #{"passed" "partial" "failed" "skipped"}
+                      (map #(get % "status") (get workflow-run "steps")))))
         (is (= summary (files/read-json summary-file)))
         (doseq [dir [out-a out-b]]
           (is (.exists (io/file dir "plain.txt")))

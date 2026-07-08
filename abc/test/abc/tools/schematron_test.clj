@@ -1,8 +1,27 @@
 (ns abc.tools.schematron-test
   (:require [abc.tools.schematron :as schematron]
+            [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]))
 
+(def ^:private schematron-ns "http://purl.oclc.org/dsdl/schematron")
+
 (def schema-path "schemas/tei-profile.sch")
+
+(defn- namespace-declarations [path]
+  (let [factory (doto (javax.xml.parsers.DocumentBuilderFactory/newInstance)
+                  (.setNamespaceAware true))
+        document (.. factory newDocumentBuilder (parse (io/file path)))
+        nodes (.getElementsByTagNameNS document schematron-ns "ns")]
+    (for [i (range (.getLength nodes))
+          :let [node (.item nodes i)]]
+      [(.getAttribute node "prefix") (.getAttribute node "uri")])))
+
+(deftest schema-namespace-declarations-are-unique-test
+  (testing "generated Schematron artifacts do not duplicate identical namespace declarations"
+    (doseq [path ["schemas/tei-profile.sch" "schemas/tei-profile.rng"]
+            :let [declarations (namespace-declarations path)]]
+      (is (= (count declarations) (count (set declarations)))
+          path))))
 
 (deftest valid-fixture-has-no-schematron-findings-test
   (testing "valid TEI fixtures have no Schematron findings"

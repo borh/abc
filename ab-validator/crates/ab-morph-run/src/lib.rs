@@ -48,6 +48,9 @@ pub use calibration::{
 };
 pub use import_aozora::{ImportSummary, run_import_aozora_metadata};
 pub use nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
+// Re-exported for the `oracle_adjudicate` criterion bench (benches/ compile as
+// an external crate), not part of the CLI's stable surface.
+pub use oracle::ruby::{RegionSpan, RubyBase, adjudicate};
 pub use script::ScriptCategory;
 pub use select::resolve_source_id_aat_paths;
 pub(crate) use summary::WAREHOUSE_CORE_FEATURE_KEYS;

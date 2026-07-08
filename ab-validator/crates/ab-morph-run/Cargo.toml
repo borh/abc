@@ -40,3 +40,7 @@ test-analyzer = []
 [[bench]]
 name = "analyze_aat"
 harness = false
+
+[[bench]]
+name = "oracle_adjudicate"
+harness = false

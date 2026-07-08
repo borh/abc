@@ -109,6 +109,44 @@ the `kindai-bungo` `archive_hash` + this rule table's hash (U3 I2-D17).
 - **Coverage of the 7% "other"** beyond yotsugana/gemination — small; inspect the
   residual when implementing.
 
+## Ground-truth accuracy — 25 parallel editions (2026-07-08)
+
+Using 25 of the 244 parallel 旧仮名/新仮名 pairs (Akutagawa 河童/藪の中/歯車/杜子春, …),
+plain honbun extracted from both editions. Metric: tokenize the NEW
+(human-modernized) edition under `kindai-bungo` into a modern-vocabulary set;
+modernize each historical token of the OLD edition; count how many land on a form
+the human editor actually used (membership — robust to the structural edits that
+make positional alignment noisy). 10,444 historical old tokens.
+
+| modernizer | in modern vocab |
+|---|---|
+| baseline (surface unchanged) | 14.8% |
+| draft: surface-rewrite rules + `pron` only for long vowels | 64.6% |
+| **`pron`-reconstruction for ALL all-kana historical tokens** | **94.8%** (regular 95.9%, digraph 92.7%) |
+
+**Key refinement to the M2 design:** the primary mechanism is
+**`pron`-reconstruction** — render the token's modern reading (`pron`) as
+hiragana, spell long vowels per 現代仮名遣い — not the class-by-class surface
+rewrites. `pron` already carries sokuon (ッ→っ), yōon (ャ→ゃ), ゐ→い, etc.; the
+hand rules were doing *less* than reading `pron`. Surface-rewrite rules remain
+only as a fallback for **kanji-mixed okurigana** (where `pron` covers the whole
+token including the kanji reading, so it can't be used verbatim).
+
+**Residual ~5%, two causes:**
+1. **False misses from segmentation differences** — e.g. ちゃんと, こりゃ, せい are
+   *correct* modernizations that simply aren't isolated tokens in the new
+   edition's vocab (the editions segment/word differently). True accuracy is
+   higher than 94.8%; a token-aligned metric would recover these.
+2. **Genuine exceptions** (small): 現代仮名遣い **retains** づ/ぢ in some words
+   (続く→つづく, though `pron`=ツズク says zu); え-row long vowels spelled ええ not
+   えい (ねえ). These need a short exception table on top of `pron`-reconstruction.
+
+**Conclusion:** M2 with `pron`-reconstruction reaches ~95% (likely higher, given
+false misses) on real ground truth — the mechanism is validated. The shipped
+normalizer should: (1) `pron`-reconstruct all-kana tokens; (2) rewrite only the
+kana runs of kanji-mixed tokens by rule; (3) carry a small 現代仮名遣い exception
+table (づ/ぢ-retention, え-row 長音); (4) keep the POS particle guard.
+
 ## Note — canonical metadata provenance (for Lane A selection)
 
 Lane A selects old-kana works by `orthographic_style`, which comes from the aozora

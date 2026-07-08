@@ -152,8 +152,21 @@ genuinely historical (11,059), and the decisive finding is that **particle
 protection via POS is mandatory** (the naive surface≠reading test is ~80% false
 positives from modern particle readings は→わ/を→お). The digraph/long-vowel class
 dominates (82%) and **requires `pron`** as the target-sound oracle — confirming
-M2 over M1. The report gives the data-grounded rule set (guard; ゐゑ + づぢ swaps;
-つ→っ gemination; medial h-row; pron-guided long-vowel spelling; katakana loan ー).
+M2 over M1.
+
+**Ground-truth accuracy (25 parallel 旧仮名/新仮名 editions, 10,444 historical
+tokens):** a refined M2 that **`pron`-reconstructs all-kana historical tokens
+uniformly** (render the modern reading as hiragana, spell long vowels per
+現代仮名遣い) lands on the human-modernized form **94.8%** of the time (regular
+95.9%, digraph 92.7%), vs 64.6% for class-by-class surface rewrites and 14.8%
+baseline. **This refines the mechanism:** `pron`-reconstruction is the *primary*
+path (it carries sokuon ッ→っ, yōon ャ→ゃ, ゐ→い for free); surface-rewrite rules
+are only a fallback for **kanji-mixed okurigana** (where `pron` covers the kanji
+reading too, so it can't be used verbatim). Residual ~5% = mostly false misses
+from segmentation differences + a small 現代仮名遣い exception set (づ/ぢ-retention
+in 続く; え-row 長音 ええ). Shipped normalizer: (1) `pron`-reconstruct all-kana
+tokens; (2) rewrite only the kana runs of kanji-mixed tokens; (3) small exception
+table; (4) POS particle guard. See the report for numbers and samples.
 
 ## Open sub-questions (settle during implementation, not blocking this design)
 

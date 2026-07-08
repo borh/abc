@@ -22,7 +22,7 @@
   org.eclipse.jgit/org.eclipse.jgit          {:mvn/version "7.7.0.202606012155-r"}
   org.eclipse.jgit/org.eclipse.jgit.ssh.apache {:mvn/version "7.7.0.202606012155-r"}
 
-  com.networknt/json-schema-validator         {:mvn/version "2.0.4"}
+  com.networknt/json-schema-validator         {:mvn/version "3.0.6"}
 
   org.arachne-framework/aristotle {:git/url "https://github.com/arachne-framework/aristotle.git"
                                    :git/sha "d7ee879945e0060dc5fcd0b8eac2e0e476d066d7"

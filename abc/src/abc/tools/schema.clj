@@ -3,6 +3,7 @@
             [abc.tools.json :as abc-json]
             [abc.tools.malli :as am]
             [charred.api :as json]
+            [clojure.java.io :as io]
             [clojure.string :as str])
   (:import [com.networknt.schema SchemaRegistry InputFormat SpecificationVersion]))
 
@@ -32,9 +33,26 @@
 ;; Schema objects keyed by $id / content. Draft 2020-12 is the default dialect
 ;; when $schema is absent from the schema data.
 ;; ---------------------------------------------------------------------------
+(defn- checked-in-schema-resources []
+  (let [schema-dir (io/file "schemas")]
+    (if-not (.isDirectory schema-dir)
+      {}
+      (into {}
+            (keep (fn [^java.io.File file]
+                    (when (and (.isFile file) (str/ends-with? (.getName file) ".schema.json"))
+                      (let [path (.getPath file)
+                            content (slurp file)
+                            schema (abc-json/read-json-file path)]
+                        (when-let [schema-id (get schema "$id")]
+                          [schema-id content])))))
+            (file-seq schema-dir)))))
+
 (def ^:private schema-registry
   (SchemaRegistry/withDefaultDialect
-   SpecificationVersion/DRAFT_2020_12))
+   SpecificationVersion/DRAFT_2020_12
+   (reify java.util.function.Consumer
+     (accept [_ builder]
+       (.schemas builder (checked-in-schema-resources))))))
 
 (defn- ^:private instance-location->path-segments
   "Convert a networknt instance-location JSON Pointer string (e.g.

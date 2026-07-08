@@ -4,6 +4,7 @@ use ab_source_syntax::SourceEvent;
 use anyhow::{Result, bail};
 use serde_json::json;
 mod aat;
+mod dump;
 mod metrics;
 mod parser;
 mod projection;
@@ -11,6 +12,7 @@ mod source;
 
 use metrics::{AdapterMetrics, AdapterMetricsParts, FallbackDecision, FallbackReason};
 use parser::ParsedSource;
+pub use dump::retokenized_dump_json;
 pub use source::{DecodedSource, decode_source_bytes};
 
 const LARGE_BODY_BYTES: usize = 500_000;

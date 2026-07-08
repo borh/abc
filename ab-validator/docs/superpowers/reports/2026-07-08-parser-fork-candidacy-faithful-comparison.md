@@ -62,17 +62,35 @@ The genuine `aozora-core` capability gaps (only 6, 3 of them `must`):
 `bracketed_kaeriten_no_pair`, `kaeriten_outside_kanbun`,
 `break_in_single_line_container`.
 
-**2. `aozora-rs` was measured through a broken adapter that bypasses the parser.**
-The `aozora-rs` adapter is flagged **"not building (2026-07-03), intentionally
-left in a broken state"** (`adapters/aozora-rs/README.md`). It *does* invoke
-`aozora-rs-core` (`parser.rs:41` `tokenize/retokenize/scopenize`), but its AAT is
-built from the **source-lexer fallback** (`aat.rs` `build_fallback_from_events`
-over `ab_source_syntax::source_events`) because the typed projection from the
-parser's tree is the part that fails to compile. So its conformance
-(20 pass, 69% dropped-to-text) reflects a **lexer-level fallback shim, not
-`aozora-rs-core`**. The parser is effectively **unmeasured** here; its 69% "drop"
-must not be read as parser incapability. (Usefully, that fallback ≈ "the
-`ab-source-syntax` lexer, naively projected" — see build-fresh below.)
+**2. `aozora-rs`'s adapter measures a lexer fallback — but the parser, measured
+directly, is genuinely weak on this corpus anyway.**
+The `aozora-rs` adapter projects its AAT from the **source-lexer fallback**
+(`aat.rs` `build_fallback_from_events`) whenever its typed projection does not
+round-trip — which, on the conformance vectors, is nearly always
+(`fallback=True` on every vector probed). So its raw conformance (20 pass) does
+*not* reflect `aozora-rs-core`.
+
+To measure the parser directly, a `--mode retokenized` dump was added
+(`adapters/aozora-rs/src/dump.rs`) that emits `aozora-rs-core`'s own token stream,
+bypassing the fidelity gate; `reports/parser-conformance/measure-aozora-rs-core.py`
+projects it to spec kinds. **Result (faithful): 21/122 pass; the parser recognizes
+*any* construct in only 34/122 (27%); it produces empty/text streams for the other
+88 (72%).** So the fallback's ~20 was, coincidentally, about right — not because it
+faithfully projects the parser, but because `aozora-rs-core` genuinely does not
+recognize most of these constructs. Its rich 23-variant `Deco` enum
+(Bold/Italic/Ruby/Boten/Bosen/Indent/Hanging/Grounded/LowFlying/A|B|C-Head/
+HinV/Mama/Smaller/Bigger/VHCentre/Warichu/HorizontalLayout/Kerning/Sub/Sup) *is*
+exercised for the constructs it covers (bouten, bold/italic w/ referent, ruby,
+indent, headings, tcy, figure), but accent-dots, box-enclosure, angle-quote,
+page/forced-break, most annotations, and "no-referent" decoration forms are simply
+outside what it recognizes here.
+
+Caveats on this measurement: gaiji is resolved in a separate `aozora-rs-gaiji`
+layer *not* present in the `Retokenized` stream, so the dump is blind to gaiji
+(≈7 vectors under-counted); and a valid full-document wrapper was not confirmed
+(the parser keys body-selection off separator lines), so document context might
+lift recognition somewhat. Even generously, `aozora-rs-core` is the **weakest of
+the three Rust parsers on notation coverage** — its appeal is speed, not coverage.
 
 ## Faithful per-candidate assessment
 
@@ -80,7 +98,7 @@ must not be read as parser incapability. (Usefully, that fallback ≈ "the
 | --- | --- | --- | --- | --- |
 | **aozora-pipeline** | **22/25 must** via its own `inspect` (3 fails are `diagnostics`-only; nodes conformant) — the only parser measured at native granularity | best (active, June 2026) | higher (multi-crate umbrella) | **strongest, most-proven base** |
 | **aozora-core** | parses ~95% of constructs; only 6 true gaps (3 `must`); AAT score is a mapper artifact | red flag (stalled since Jan 2026) | lowest (small, MIT, self-contained) | **capable + cheapest to fork, but maintenance-stalled** |
-| **aozora-rs-core** | **unmeasured** (broken adapter); fast, actively maintained | active | medium (gaiji/pdfium build friction) | **can't be judged without repairing the adapter first** |
+| **aozora-rs-core** | **21/122** faithfully (via `retokenized` dump); recognizes only 27% of constructs on this corpus | active | medium (gaiji/pdfium build friction) | **weakest on notation coverage; appeal is speed, not coverage** |
 | build-fresh | lexer covers ruby/gaiji/commands/accent/notes w/ spans; needs block-assembly + semantics + SJIS/gaiji-codepoint tiers | n/a | highest (write parser tiers) | **viable long game; most control, most work** |
 
 ## Build-fresh option (`crates/ab-source-syntax`)
@@ -98,21 +116,26 @@ as the lexing tier and add block-assembly + semantic + encoding layers. The
 ## Synthesis (for the fork decision — not yet a commitment)
 
 - The raw conformance ranking (aozora2 "12/25") is **not** the capability ranking.
-  Faithfully, **aozora-pipeline** is the most-proven parser and **aozora-core** is
-  far more capable than its adapter showed; **aozora-rs-core** is a genuine
-  unknown behind a broken adapter.
+  Faithfully: **aozora-pipeline** is the most-proven parser; **aozora-core** is far
+  more capable than its adapter showed (~95% reachable); **aozora-rs-core**,
+  measured directly, is the **weakest on notation** (27% recognition) — its draw is
+  speed. The faithful capability order is **aozora-pipeline ≥ aozora-core ≫
+  aozora-rs-core**.
 - The real trade-off is **aozora-pipeline (most capable + active, multi-crate fork
-  cost)** vs **aozora-core (nearly as reachable + trivially forkable, but
-  upstream looks abandoned)** — with **repair-then-measure aozora-rs** and
-  **build-fresh-on-ab-source-syntax** as the two longer plays.
+  cost)** vs **aozora-core (nearly as reachable + trivially forkable, but upstream
+  looks abandoned)** — with **build-fresh-on-`ab-source-syntax`** as the long play.
+  `aozora-rs-core` is not a fork base unless per-work speed dominates coverage.
 - No candidate is conformant out of the box: even the best (aozora-pipeline)
   misses 3 `must` (diagnostics), and aozora-core misses 3 `must` (angleQuote,
   forcedBreak, pageBreak) at the parser level.
 
 ## What is still unmeasured (honest gaps)
 
-1. **aozora-rs-core's true capability** — needs the adapter's typed projection
-   repaired (or the parser measured directly) before it can be ranked.
+1. **aozora-rs-core, gaiji + document-context** — measured directly here (21/122,
+   27% recognition), but the `retokenized` dump is blind to gaiji (separate layer)
+   and a valid full-document wrapper was not confirmed. Repairing the adapter's
+   typed projection (scheduled follow-up) would let the *production* artifact
+   reflect the parser and settle these residuals.
 2. **Performance** — not compared here; there is a separate
    `parser-performance-all-parsers` recipe. aozora-rs advertises speed; that may
    matter for the corpus-scale acceptance gate.

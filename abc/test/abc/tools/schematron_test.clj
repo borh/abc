@@ -7,6 +7,10 @@
 
 (def schema-path "schemas/tei-profile.sch")
 
+(deftest saxon-runtime-version-is-pinned-stable-line-test
+  (testing "Clojure Schematron runtime stays aligned with the Saxon production-line pin"
+    (is (= "12.9" (net.sf.saxon.Version/getProductVersion)))))
+
 (defn- namespace-declarations [path]
   (let [factory (doto (javax.xml.parsers.DocumentBuilderFactory/newInstance)
                   (.setNamespaceAware true))
@@ -22,6 +26,18 @@
             :let [declarations (namespace-declarations path)]]
       (is (= (count declarations) (count (set declarations)))
           path))))
+
+(deftest committed-schema-patterns-are-abc-policy-surface-test
+  (testing "committed Schematron keeps inherited TEI diagnostics out of the v0 policy surface"
+    (let [pattern-ids (schematron/pattern-ids schema-path)]
+      (is (= 16 (count pattern-ids)))
+      (is (every? #(re-matches #"abc-[a-z0-9-]+" %) pattern-ids))
+      (is (not-any? #(re-find #"^schematron-constraint-" %) pattern-ids)))))
+
+(deftest committed-schema-is-valid-for-xslt-and-pure-backends-test
+  (testing "the committed artifact stays compatible with both ph-schematron schema models"
+    (is (schematron/schema-valid? :xslt schema-path))
+    (is (schematron/schema-valid? :pure schema-path))))
 
 (deftest valid-fixture-has-no-schematron-findings-test
   (testing "valid TEI fixtures have no Schematron findings"

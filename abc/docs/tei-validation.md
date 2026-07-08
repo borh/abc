@@ -103,12 +103,19 @@ that the business-rule layer catches constraints the structural schema cannot.
 `schemas/tei-profile.odd` is the canonical contract. `schemas/tei-profile.rng`
 and `schemas/tei-profile.sch` are reproducibly generated from the ODD by the
 Nix derivation `tei-profile-artifacts` (TEI Stylesheets v7.60.0 + p5subset
-4.11.0 + Saxon-HE 12.9). Build-artifact canonicalization strips generation
+4.11.0 + Saxon-HE 12.9). Saxon 12.9 is the pinned production-line SaxonJ
+release used by both the Nix artifact generator and the Clojure Schematron
+classpath; SaxonJ 13 exists, but Saxonica still identifies Saxon 12 as the
+stable production line. Build-artifact canonicalization strips generation
 timestamps, rewrites the sixteen ABC `constraintSpec` pattern IDs back to their
 declared idents, and drops inherited TEI built-in patterns so the committed
 Schematron artifact remains the ABC profile policy surface. The validation
 harness keeps TEI fixture paths in a single catalog that derives the XML
 well-formedness list, project Relax NG list, and Schematron fixture partition.
+`abc.tools.schematron` executes validation through ph-schematron's XSLT backend;
+the test suite also checks the committed artifact against ph-schematron's pure
+model. The pure model is useful as a stricter schema-shape diagnostic, not as the
+publication runtime.
 To regenerate after an ODD edit:
 
 ```

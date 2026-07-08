@@ -7,6 +7,7 @@
             [clojure.string :as string])
   (:import [javax.xml.parsers DocumentBuilderFactory]
            [javax.xml.transform.stream StreamSource]
+           [com.helger.schematron.pure SchematronResourcePure]
            [com.helger.schematron.sch SchematronResourceSCH]
            [com.helger.schematron.svrl SVRLFailedAssert SVRLSuccessfulReport]
            [com.helger.schematron.svrl.jaxb ActivePattern FailedAssert FiredRule SuccessfulReport]))
@@ -18,64 +19,13 @@
     (.setNamespaceAware factory true)
     (.. factory newDocumentBuilder (parse (io/file path)))))
 
-(defn- element-children [^org.w3c.dom.Element element local-name]
-  (let [nodes (.getChildNodes element)]
-    (->> (range (.getLength nodes))
-         (map #(.item nodes %))
-         (filter #(instance? org.w3c.dom.Element %))
-         (filter #(and (= schematron-ns (.getNamespaceURI ^org.w3c.dom.Element %))
-                       (= local-name (.getLocalName ^org.w3c.dom.Element %)))))))
-
-(defn- attr [^org.w3c.dom.Element element attr-name]
-  (let [v (.getAttribute element attr-name)]
-    (when-not (string/blank? v) v)))
-
-(defn- trim-text [^org.w3c.dom.Element element]
-  (string/trim (.getTextContent element)))
-
-(defn- parse-namespaces [^org.w3c.dom.Document document]
-  (let [nodes (.getElementsByTagNameNS document schematron-ns "ns")]
-    (into {}
-          (for [i (range (.getLength nodes))
-                :let [node (.item nodes i)
-                      prefix (attr node "prefix")
-                      uri (attr node "uri")]
-                :when (and prefix uri)]
-            [prefix uri]))))
-
-(defn- parse-check [pattern-id rule-context kind ^org.w3c.dom.Element element]
-  {:rule-id pattern-id
-   :context rule-context
-   :kind kind
-   :severity (keyword (or (attr element "role")
-                          (if (= kind :report) "warning" "error")))
-   :test (or (attr element "test")
-             (throw (ex-info "Schematron check is missing @test"
-                             {:rule-id pattern-id
-                              :context rule-context})))
-   :message (trim-text element)})
-
-(defn parse-schema [schema-path]
+(defn pattern-ids
+  "Return Schematron pattern IDs in document order."
+  [schema-path]
   (let [document (namespace-aware-document schema-path)
         patterns (.getElementsByTagNameNS document schematron-ns "pattern")]
-    {:namespaces (parse-namespaces document)
-     :checks
-     (vec
-      (mapcat
-       (fn [pattern-index]
-         (let [pattern (.item patterns pattern-index)
-               pattern-id (attr pattern "id")
-               rules (vec (element-children pattern "rule"))]
-           (mapcat
-            (fn [rule]
-              (let [context (or (attr rule "context")
-                                (throw (ex-info "Schematron rule is missing @context"
-                                                {:pattern-id pattern-id})))]
-                (concat
-                 (map #(parse-check pattern-id context :assert %) (element-children rule "assert"))
-                 (map #(parse-check pattern-id context :report %) (element-children rule "report")))))
-            rules)))
-       (range (.getLength patterns))))}))
+    (mapv #(.getAttribute ^org.w3c.dom.Element (.item patterns %) "id")
+          (range (.getLength patterns)))))
 
 (defn- severity [kind role]
   (keyword (or (when-not (string/blank? role) role)
@@ -97,6 +47,19 @@
       (throw (ex-info "Invalid Schematron schema"
                       {:schema-path schema-path})))
     resource))
+
+(defn schema-valid?
+  "Return whether ph-schematron accepts schema-path for the selected backend.
+
+  :xslt is the runtime backend used by validate!. :pure is a stricter
+  in-memory diagnostic model used by artifact-boundary tests."
+  [backend schema-path]
+  (case backend
+    :xslt (.isValidSchematron (SchematronResourceSCH/fromFile (io/file schema-path)))
+    :pure (.isValidSchematron (SchematronResourcePure/fromFile (io/file schema-path)))
+    (throw (ex-info "Unsupported Schematron backend"
+                    {:backend backend
+                     :supported #{:xslt :pure}}))))
 
 (defn- svrl-findings [label svrl]
   (loop [items (seq (.getActivePatternAndFiredRuleAndFailedAssert svrl))

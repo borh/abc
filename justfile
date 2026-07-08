@@ -1,6 +1,9 @@
 schema-drift:
 	@bash scripts/monorepo-schema-drift.sh
 
+sync-schema-mirror:
+	@bash scripts/sync-schema-mirror.sh
+
 tei-version-coherence:
 	@bash scripts/monorepo-tei-version-coherence.sh
 

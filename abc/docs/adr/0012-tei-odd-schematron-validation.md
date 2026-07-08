@@ -102,10 +102,11 @@ step before emitting `tei-profile.rng` / `tei-profile.sch`:
 3. Drop inherited TEI built-in patterns. The ODD's ABC
    `constraintSpec` rules are the committed contract surface; inherited
    TEI diagnostics are not part of the v0 ABC profile policy. The
-   ph-schematron XSLT path can execute the inherited patterns, but the
-   stricter ph-schematron pure ISO model rejects inherited constructs
-   such as `<sch:let>` and `role="nonfatal"`, so the committed artifact
-   keeps that compatibility boundary explicit.
+   ph-schematron XSLT path is the runtime validator and can execute the
+   inherited patterns, but the stricter ph-schematron pure model is useful as
+   a schema-shape diagnostic and rejects inherited constructs such as
+   `<sch:let>` and `role="nonfatal"`. The committed artifact therefore keeps
+   that compatibility boundary explicit and executable in tests.
 
 This canonicalization is purely artifact-shape: the ODD remains the
 single source of truth, and a future ADR can swap the toolchain or

@@ -45,6 +45,7 @@
   ;; with the ODD artifact generator and current Schematron tooling.
   net.sf.saxon/Saxon-HE            {:mvn/version "12.9"}
   com.helger.schematron/ph-schematron-xslt {:mvn/version "9.2.0"}
+  com.helger.schematron/ph-schematron-pure {:mvn/version "9.2.0"}
   org.glassfish.jaxb/jaxb-runtime  {:mvn/version "4.0.6"}
 
   ;; Linked Art / JSON-LD publication-view harness (ADR 0013). Jena pulls in

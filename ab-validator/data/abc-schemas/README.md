@@ -42,7 +42,13 @@ Refresh procedure:
    python scripts/schema_contracts.py
    ```
 
-4. From the monorepo root, run the drift gate:
+4. From the monorepo root, sync the isolated Nix mirror and run the drift gate:
+
+   ```sh
+   just sync-schema-mirror
+   ```
+
+5. From the monorepo root, run the drift gate:
 
    ```sh
    just schema-drift

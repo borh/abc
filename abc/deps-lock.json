@@ -746,6 +746,16 @@
       "hash": "sha256-mLVA7HwOTRxeFsHcL9Iw4doK2JVSG1JKjcnUa6uvug8="
     },
     {
+      "mvn-path": "com/helger/schematron/ph-schematron-pure/9.2.0/ph-schematron-pure-9.2.0.jar",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-inrNHylkb+htxOvrs5B6g6XQmi87Ri208V5bRLdbQAk="
+    },
+    {
+      "mvn-path": "com/helger/schematron/ph-schematron-pure/9.2.0/ph-schematron-pure-9.2.0.pom",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-+7+Z1FttJjL03ktR40nLMv9VOymOO4iapKC9oJ2B9bE="
+    },
+    {
       "mvn-path": "com/helger/schematron/ph-schematron-xslt/9.2.0/ph-schematron-xslt-9.2.0.jar",
       "mvn-repo": "https://repo1.maven.org/maven2/",
       "hash": "sha256-g+raGsJ19LZCnLF6ksrReUhzf68bQYVPXgvE/IMB2jI="

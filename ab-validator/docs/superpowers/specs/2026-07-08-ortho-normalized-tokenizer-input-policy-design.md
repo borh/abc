@@ -255,8 +255,11 @@ independently identified.
   **reserved as a documented Phase-3 lane** (not removed, not designed now).
   `kinds` stays an OPEN set within `ortho-input-normalization-v1`; v1 emits only
   `ScriptKatakanaToHiragana` (structural). A future historical detector must add
-  an `OrthoDetectorId` variant binding a `dictionary_hash`, gate on
-  `orthographic_style` (旧仮名) metadata, and accept whole-span-only remap. See
+  an `OrthoDetectorId` variant binding a `dictionary_hash` (with a
+  validation/type coupling rejecting the kind otherwise), pre-select works by
+  `orthographic_style` (`新字旧仮名`/`旧字旧仮名`) as a run-eligibility filter
+  *outside* normalization so the derived input stays a function of
+  `(source, policy)`, and accept whole-span-only remap. See
   `2026-07-08-ortho-historical-scope-and-determinism-tier-design.md`.
 - **U4 — `determinism_tier` interaction. RESOLVED (2026-07-08):** orthogonal to
   the normalization policy — a deterministic (mechanical kata→hira or

@@ -108,13 +108,32 @@ What this spec pins so the future lane starts designed, not blank:
    `ortho_remap_crosses_boundary` error row — Issue 2 Invariant 4), so the
    failure is diagnostic, not a crash — but a Phase-3 detector should expect it
    and either annotate at token granularity or accept whole-span-only remap.
-4. **Gate detection on `orthographic_style` metadata.** The corpus already
-   classifies each work's orthography — `metadata-record.schema.json:70-72`
-   enumerates `新字新仮名 / 新字旧仮名 / 旧字新仮名 / 旧字旧仮名 / その他`, validated at
-   `import_aozora.rs:133`. A future `HistoricalToModern` detector should fire
-   only on works whose `orthographic_style` is a 旧仮名 (old-kana) variant,
-   rather than detecting historical orthography blind. This narrows the recall
-   problem and reuses an existing, hash-bound identity coordinate.
+4. **Select works for historical normalization by `orthographic_style` — as a
+   pre-selection rule *outside* normalization, never a per-document input to
+   it.** The governing invariant must hold: the derived input is a pure function
+   of `(source text, normalization policy)`. Metadata must **not** become a
+   hidden behavioral input — otherwise the same source text plus the same
+   `input_normalization_policy_hash` could normalize differently after a
+   metadata correction while the policy hash and the tier claim stay unchanged,
+   breaking reproducibility-by-hash. So the gate is a **run-eligibility
+   filter**, not a detector input: a run applies historical mode to the *slice*
+   of works whose `orthographic_style` is an old-**kana** value — exactly
+   `新字旧仮名` or `旧字旧仮名` (`metadata-record.schema.json:70-72`, validated at
+   `import_aozora.rs:133`). It explicitly **excludes** `旧字新仮名` (old *kanji*
+   but already-modern kana — a different, out-of-scope axis) and `その他`. Within
+   any selected work the detector/normalizer is a function of the document text
+   (+ the pinned dictionary) alone. Slice membership is already carried by the
+   run/request-set identity via the manifest's `metadata_record_hash`, so a
+   mis-tag is a **selection** error (wrong works included), not a
+   normalization-identity error: the derived input for any included work stays
+   reproducible from `(source, policy)`, and U4's effective-tier input list
+   (detector/model/dictionary) stays complete — metadata is a selection
+   coordinate, not a normalization input. *If* a future design genuinely needs
+   per-document metadata-dependent normalization, it must instead take the
+   heavier path — add `metadata_record_hash` to the policy contract and to the
+   invariant/effective-tier inputs, require it non-null for metadata-gated
+   normalization — rather than leaving metadata unpinned. This spec chooses
+   pre-selection.
 
 ### U3 non-goals
 
@@ -200,9 +219,19 @@ We **defer** building any gate: nothing consumes `determinism_tier` today and no
 recipe accepts a non-exact tier, so a profile/recipe agreement check or an
 effective-tier computation would be enforcement with no caller (YAGNI). The
 "pinned-detector guardrail" (asserting non-identity normalization requires a
-pinned detector id) is **already structurally true** — `HeuristicV1` is
-deterministic by construction and `MlLogisticRegression` cannot exist without a
-loaded, hashed model — so it needs no new code.
+pinned detector id) holds today only for the policies v1 **emits**:
+`resolve_run_normalization` (`ab-morph-run/src/lib.rs`) builds only
+`ScriptKatakanaToHiragana` with `HeuristicV1` (deterministic by construction) or
+`MlLogisticRegression` (which cannot exist without a loaded, hashed model). The
+*constructor* `NormalizationPolicy::ortho_normalize_v1` accepts **arbitrary**
+`(detector_id, kinds)` — the unit test `policy.rs:239-257` already builds
+`HistoricalToModern` paired with `HeuristicV1`, which carries no dictionary hash.
+So the guardrail is **not** structurally true for what the type permits, only for
+what v1 emits. Enabling `HistoricalToModern` therefore requires an explicit
+validation/type coupling (per I2-D17) that **rejects that kind unless the
+detector id carries a `dictionary_hash`** — this is the code that must land with
+the Phase-3 lane, not before it. Until then no new code is needed, because no
+emitter produces such a policy.
 
 ### U4 non-goals
 
@@ -219,7 +248,8 @@ loaded, hashed model — so it needs no new code.
 |---|---|---|
 | I2-D15 | Keep `HistoricalToModern` reserved as a documented Phase-3 lane; do not remove, do not design the dictionary detector now | It has no implementation and an unresolved dictionary; removal churns the parser-IR enum twice, and reports advise against building Phase 3 on the current detector's recall. |
 | I2-D16 | `kinds` stays an OPEN set within `ortho-input-normalization-v1`; v1 emits only `ScriptKatakanaToHiragana` (structural, not asserted) | Adding a kind changes only the hash of policies that use it; no schema-version bump or re-identification of existing artifacts is forced. |
-| I2-D17 | A future `HistoricalToModern` detector must add an `OrthoDetectorId` variant binding a `dictionary_hash`, and should gate on `orthographic_style` (旧仮名) metadata | Pins the policy identity (needed for the U4 determinism claim) and reuses an existing hash-bound coordinate to narrow recall; whole-span-only remap is an accepted, already-honest constraint. |
+| I2-D17 | A future `HistoricalToModern` detector must add an `OrthoDetectorId` variant binding a `dictionary_hash`; enabling the kind requires a validation/type coupling that rejects it unless the detector id carries that hash | Pins the policy identity so the derived input stays a function of `(source, policy)` and the U4 determinism claim is well-defined; the `ortho_normalize_v1` constructor accepts arbitrary kinds today (`policy.rs:239-257`), so the coupling is real code the Phase-3 lane must land. |
+| I2-D17b | Metadata gating is a **pre-selection / run-eligibility filter outside normalization** (old-*kana* works `新字旧仮名`/`旧字旧仮名` only; excludes `旧字新仮名`/`その他`), never a per-document normalization input | Keeps the derived input a pure function of `(source, policy)`; slice membership is already carried by the manifest `metadata_record_hash`, so a mis-tag is a selection error, not a normalization-identity error. Per-document metadata-dependent normalization would instead require adding `metadata_record_hash` to the policy contract. |
 | I2-D18 | `determinism_tier` and `input_normalization_policy_hash` are orthogonal; a deterministic (mechanical or pinned-ML) normalization preserves the tier | The normalization policy is already a required pin for Exact classification; every implemented kind is deterministic and pinned into the policy hash. |
 | I2-D19 | Document the effective-tier rule for normalization; defer building any tier gate | Nothing consumes `determinism_tier` today and no recipe accepts non-exact; a gate would be enforcement with no caller. The rule is recorded for when the effective-tier machinery is built. |
 

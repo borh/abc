@@ -82,7 +82,10 @@ impl NormalizationPolicy {
     /// [`OrthoNormalization::ScriptKatakanaToHiragana`]); they are recorded in
     /// the given order.
     #[must_use]
-    pub fn ortho_normalize_v1(detector_id: OrthoDetectorId, kinds: Vec<OrthoNormalization>) -> Self {
+    pub fn ortho_normalize_v1(
+        detector_id: OrthoDetectorId,
+        kinds: Vec<OrthoNormalization>,
+    ) -> Self {
         Self {
             policy_schema_version: POLICY_SCHEMA_VERSION,
             algorithm: ALGORITHM_ORTHO_NORMALIZE_V1,

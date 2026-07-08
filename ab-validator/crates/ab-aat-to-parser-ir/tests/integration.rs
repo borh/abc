@@ -39,6 +39,29 @@ fn include_fixture_json(name: &str) -> serde_json::Value {
         .unwrap_or_else(|err| panic!("failed to parse fixture {}: {err}", path.display()))
 }
 
+/// Reconstruct the visible text of a parser-IR sentence from its node_range,
+/// for fragment-attribution assertions. Handles the inline node types emitted
+/// by the quote-synthesis converter (text, quote). Other types fall back to
+/// their `text` field.
+fn visible_text_for_sentence(nodes: &[Value], sentence: &Value) -> String {
+    let start = sentence["node_range"]["start"].as_u64().unwrap() as usize;
+    let end = sentence["node_range"]["end"].as_u64().unwrap() as usize;
+    let mut out = String::new();
+    for node in &nodes[start..end] {
+        match node["type"].as_str() {
+            Some("text") | Some("quote") => {
+                out.push_str(node["text"].as_str().unwrap_or(""));
+            }
+            Some("ruby") => {
+                out.push_str(node["ruby"]["base"].as_str().unwrap_or(""));
+            }
+            Some("line-break") => out.push('\n'),
+            _ => out.push_str(node["text"].as_str().unwrap_or("")),
+        }
+    }
+    out
+}
+
 fn ortho_fixture_bundle() -> ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle {
     serde_json::from_value(json!({
         "work_id": "000000",
@@ -3200,4 +3223,102 @@ fn quote_node_emission_from_text() {
         vec!["先生は", "綺麗だ", "といった。"],
         "text node should be split at 「」 markers"
     );
+}
+
+
+
+#[test]
+fn fragment_assembly_single_inner_sentence() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: include_fixture_json("nested-sentence-basic.aat.json"),
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+    let sentences = output.parser_ir["sentences"].as_array().unwrap();
+    // Outer-I, one inner sentence, outer-F.
+    assert_eq!(sentences.len(), 3);
+    assert_eq!(sentences[0]["part"], "I");
+    assert!(sentences[1].get("part").is_none(), "inner sentence has no part");
+    assert_eq!(sentences[2]["part"], "F");
+    // I <-> F linking (skips the inner sentence).
+    assert_eq!(sentences[0]["next_id"], sentences[2]["id"]);
+    assert_eq!(sentences[2]["prev_id"], sentences[0]["id"]);
+    assert_eq!(sentences[0]["fragment_group"], "fg000000");
+    assert_eq!(sentences[2]["fragment_group"], "fg000000");
+    // Framing-punctuation redistribution: the 「 belongs to the inner sentence,
+    // not the outer-I fragment.
+    let nodes = output.parser_ir["nodes"].as_array().unwrap();
+    let i_text = visible_text_for_sentence(nodes, &sentences[0]);
+    let inner_text = visible_text_for_sentence(nodes, &sentences[1]);
+    assert_eq!(i_text, "先生は梢を見上げて、");
+    assert!(inner_text.starts_with('「'), "inner sentence keeps the open marker: {inner_text}");
+    assert!(inner_text.ends_with('」'), "inner sentence keeps the close marker: {inner_text}");
+}
+
+#[test]
+fn fragment_assembly_multiple_inner_sentences() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: include_fixture_json("nested-sentence-multiple.aat.json"),
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+    let sentences = output.parser_ir["sentences"].as_array().unwrap();
+    // Outer-I, two inner sentences, outer-F.
+    assert_eq!(sentences.len(), 4);
+    assert_eq!(sentences[0]["part"], "I");
+    assert!(sentences[1].get("part").is_none(), "inner sentence 1 has no part");
+    assert!(sentences[2].get("part").is_none(), "inner sentence 2 has no part");
+    assert_eq!(sentences[3]["part"], "F");
+    assert_eq!(sentences[0]["next_id"], sentences[3]["id"]);
+    assert_eq!(sentences[3]["prev_id"], sentences[0]["id"]);
+    // Spans tile the paragraph with no gaps.
+    for w in sentences.windows(2) {
+        let prev_end = w[0]["span"]["end"].as_u64().unwrap();
+        let next_start = w[1]["span"]["start"].as_u64().unwrap();
+        assert_eq!(prev_end, next_start, "sentence spans must be contiguous");
+    }
+}
+
+#[test]
+fn fragment_field_coherence_holds() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: include_fixture_json("nested-sentence-multiple.aat.json"),
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+    let sentences = output.parser_ir["sentences"].as_array().unwrap();
+    for s in sentences {
+        let part = s.get("part").and_then(|v| v.as_str());
+        let next = s.get("next_id");
+        let prev = s.get("prev_id");
+        let group = s.get("fragment_group");
+        let present = |v: &serde_json::Value| !(v.is_null());
+        match part {
+            Some("I") => {
+                assert!(next.is_some() && present(next.unwrap()));
+                assert!(prev.is_none() || !present(prev.unwrap()));
+                assert!(group.is_some() && present(group.unwrap()));
+            }
+            Some("F") => {
+                assert!(prev.is_some() && present(prev.unwrap()));
+                assert!(next.is_none() || !present(next.unwrap()));
+                assert!(group.is_some() && present(group.unwrap()));
+            }
+            None => {
+                assert!(group.is_none() || !present(group.unwrap()));
+                assert!(next.is_none() || !present(next.unwrap()));
+                assert!(prev.is_none() || !present(prev.unwrap()));
+            }
+            other => panic!("unexpected part: {other:?}"),
+        }
+    }
 }

@@ -10,13 +10,18 @@ const MAX_NESTING_DEPTH: usize = 5;
 /// A region of text enclosed by a matching pair of synthesized `quote` nodes
 /// (an `open` marker followed by its matching `close`).
 ///
-/// Byte offsets are absolute (in the parser-IR `decoded_utf8` coordinate
-/// system): `inner_byte_start` is the end of the opening marker, `inner_byte_end`
-/// is the start of the closing marker.
+/// `inner_byte_start`/`inner_byte_end` bound the text strictly between the
+/// markers (exclusive of the marker glyphs). `outer_byte_start`/`outer_byte_end`
+/// bound the markers themselves so that framing-punctuation redistribution can
+/// attach the open marker to the first inner sentence and the close marker to
+/// the last inner sentence. All offsets are absolute `decoded_utf8` byte
+/// offsets.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct NestedRegion {
     pub inner_byte_start: usize,
     pub inner_byte_end: usize,
+    pub outer_byte_start: usize,
+    pub outer_byte_end: usize,
     pub opening_marker_node: usize,
     pub closing_marker_node: usize,
     pub nesting_level: usize,
@@ -105,6 +110,8 @@ fn detect_nested_regions_inner(
             continue;
         }
 
+        let open_byte_start =
+            value_usize(node, "/span/start", "quote span.start").unwrap_or(0);
         let open_byte_end =
             value_usize(node, "/span/end", "quote span.end").unwrap_or(0);
         let open_node = i;
@@ -122,11 +129,15 @@ fn detect_nested_regions_inner(
                         if inner_depth == 0 {
                             let close_byte_start = value_usize(next, "/span/start", "quote span.start")
                                 .unwrap_or(0);
+                            let close_byte_end = value_usize(next, "/span/end", "quote span.end")
+                                .unwrap_or(0);
                             let close_node = j;
 
                             regions.push(NestedRegion {
                                 inner_byte_start: open_byte_end,
                                 inner_byte_end: close_byte_start,
+                                outer_byte_start: open_byte_start,
+                                outer_byte_end: close_byte_end,
                                 opening_marker_node: open_node,
                                 closing_marker_node: close_node,
                                 nesting_level: depth,
@@ -236,7 +247,15 @@ fn project_body_paragraph(
     let paragraph_start = value_usize(paragraph, "/span/start", "paragraph span.start")?;
     let paragraph_end = value_usize(paragraph, "/span/end", "paragraph span.end")?;
     let paragraph_text = paragraph_visible_text(original_nodes)?;
-    let mut bounds: Vec<SentenceBounds> = ab_plaintext::sentence_split(&paragraph_text)
+
+    debug_assert_eq!(
+        paragraph_text.len(),
+        (paragraph_end - paragraph_start) as usize,
+        "visible text length must equal byte span length"
+    );
+
+    // --- Phase 0: flat sentence split (default rules; quotes suppress splits). ---
+    let mut flat_bounds: Vec<SentenceBounds> = ab_plaintext::split_sentences(&paragraph_text)
         .into_iter()
         .map(|span| SentenceBounds {
             start: paragraph_start + span.byte_offset,
@@ -245,76 +264,244 @@ fn project_body_paragraph(
         .collect();
 
     // Whitespace handling (B2): the splitter drops leading/trailing whitespace-only
-    // runs and returns nothing for whitespace-only visible text. Absorb those into
-    // the sentence rows so a non-empty body paragraph tiles with no gaps.
-    if bounds.is_empty() {
+    // runs. Absorb those so a non-empty body paragraph tiles with no gaps.
+    if flat_bounds.is_empty() {
         if paragraph_start != paragraph_end {
-            // Whitespace-only (or atomic-only) visible text with a non-empty byte
-            // span: one sentence covers the whole paragraph.
-            bounds.push(SentenceBounds {
+            flat_bounds.push(SentenceBounds {
                 start: paragraph_start,
                 end: paragraph_end,
             });
         }
     } else {
-        // Extend the first/last rows to the paragraph bounds so dropped leading /
-        // trailing whitespace is covered. Interior boundaries are unchanged.
-        bounds.first_mut().unwrap().start = paragraph_start;
-        bounds.last_mut().unwrap().end = paragraph_end;
+        flat_bounds.first_mut().unwrap().start = paragraph_start;
+        flat_bounds.last_mut().unwrap().end = paragraph_end;
     }
 
-    let split_boundaries: Vec<usize> = bounds
-        .iter()
-        .take(bounds.len().saturating_sub(1))
-        .map(|sentence| sentence.end)
-        .collect();
+    // --- Phase 1: nesting detection over the whole paragraph's nodes. ---
+    // Quotes never cross flat-sentence boundaries (the flat splitter suppresses
+    // splits before a closing bracket), so each level-0 region lies inside one
+    // flat sentence. Only level-0 regions drive fragmentation in v1; deeper
+    // nesting is left as inner-sentence text (future <q> work).
+    let regions = detect_nested_regions(original_nodes, 0, original_nodes.len());
+    let top_regions: Vec<&NestedRegion> = regions.iter().filter(|r| r.nesting_level == 0).collect();
 
+    // Assign each region to its containing flat sentence; allocate ONE fragment
+    // group per flat sentence that owns >=1 region.
+    let mut flat_group: Vec<Option<usize>> = vec![None; flat_bounds.len()];
+    let mut group_count = 0usize;
+    for region in &top_regions {
+        let fi = flat_bounds
+            .iter()
+            .position(|f| f.start <= region.outer_byte_start && region.outer_byte_end <= f.end)
+            .with_context(|| {
+                format!(
+                    "nested region {}..{} is not contained in any flat sentence",
+                    region.outer_byte_start, region.outer_byte_end
+                )
+            })?;
+        if flat_group[fi].is_none() {
+            flat_group[fi] = Some(group_count);
+            group_count += 1;
+        }
+    }
+
+    // --- Phase 2: build fine-grained bounds tiling the paragraph. ---
+    // Framing-punctuation redistribution: the open marker is attached to the
+    // first inner sentence, the close marker to the last inner sentence (so
+    // `<s>「...」</s>` keeps its brackets). Outer fragments are the prose before
+    // the open marker and after the close marker.
+    struct FineBound {
+        bounds: SentenceBounds,
+        group: Option<usize>,
+        outer_pos: Option<usize>,
+    }
+    let mut fine: Vec<FineBound> = Vec::new();
+    let mut outer_count_by_group: Vec<usize> = vec![0; group_count];
+
+    for (fi, flat) in flat_bounds.iter().enumerate() {
+        let group = flat_group[fi];
+        let sentence_regions: Vec<&NestedRegion> = top_regions
+            .iter()
+            .copied()
+            .filter(|r| flat.start <= r.outer_byte_start && r.outer_byte_end <= flat.end)
+            .collect();
+
+        if group.is_none() || sentence_regions.is_empty() {
+            fine.push(FineBound {
+                bounds: *flat,
+                group: None,
+                outer_pos: None,
+            });
+            continue;
+        }
+
+        let group = group.unwrap();
+        let mut cursor = flat.start;
+        for region in &sentence_regions {
+            // Outer fragment before the opening marker (part I / M).
+            if cursor < region.outer_byte_start {
+                let pos = outer_count_by_group[group];
+                outer_count_by_group[group] += 1;
+                fine.push(FineBound {
+                    bounds: SentenceBounds {
+                        start: cursor,
+                        end: region.outer_byte_start,
+                    },
+                    group: Some(group),
+                    outer_pos: Some(pos),
+                });
+            }
+
+            // Inner sentences: re-split the between-marker text with bracket
+            // suppression off, then extend the first span to the open marker and
+            // the last span to the close marker so the brackets are enclosed.
+            let inner_start_local = region.inner_byte_start - paragraph_start;
+            let inner_end_local = region.inner_byte_end - paragraph_start;
+            let inner_text = &paragraph_text[inner_start_local..inner_end_local];
+            let inner_spans = ab_plaintext::split_sentences_with_options(
+                inner_text,
+                &ab_plaintext::SplitOptions {
+                    suppress_closing_bracket_check: true,
+                },
+            );
+            let n = inner_spans.len();
+            let mut prev_end_abs = region.outer_byte_start;
+            for (k, span) in inner_spans.iter().enumerate() {
+                let end_abs = if k + 1 == n {
+                    region.outer_byte_end
+                } else {
+                    region.inner_byte_start + span.byte_offset + span.text.len()
+                };
+                fine.push(FineBound {
+                    bounds: SentenceBounds {
+                        start: prev_end_abs,
+                        end: end_abs,
+                    },
+                    group: None,
+                    outer_pos: None,
+                });
+                prev_end_abs = end_abs;
+            }
+            // No inner spans (e.g. `「」`): one inner sentence covers the markers.
+            if inner_spans.is_empty() {
+                fine.push(FineBound {
+                    bounds: SentenceBounds {
+                        start: region.outer_byte_start,
+                        end: region.outer_byte_end,
+                    },
+                    group: None,
+                    outer_pos: None,
+                });
+            }
+            cursor = region.outer_byte_end;
+        }
+        // Outer fragment after the last region (part F / M).
+        if cursor < flat.end {
+            let pos = outer_count_by_group[group];
+            outer_count_by_group[group] += 1;
+            fine.push(FineBound {
+                bounds: SentenceBounds {
+                    start: cursor,
+                    end: flat.end,
+                },
+                group: Some(group),
+                outer_pos: Some(pos),
+            });
+        }
+    }
+
+    // --- Phase 3: split nodes at every interior fine boundary in one pass. ---
+    let split_boundaries: Vec<usize> = fine
+        .iter()
+        .take(fine.len().saturating_sub(1))
+        .map(|fb| fb.bounds.end)
+        .collect();
     for node in original_nodes.iter_mut() {
         split_node_at_boundaries(node, &split_boundaries, rewritten_nodes)?;
     }
-
     let paragraph_rewritten_end = rewritten_nodes.len();
-    if bounds.is_empty() && paragraph_start == paragraph_end {
+
+    if fine.is_empty() && paragraph_start == paragraph_end {
         return Ok(Vec::new());
     }
 
-    assert_sentence_span_tiling(paragraph_start, paragraph_end, &bounds)?;
+    let fine_bounds_for_tiling: Vec<SentenceBounds> = fine.iter().map(|fb| fb.bounds).collect();
+    assert_sentence_span_tiling(paragraph_start, paragraph_end, &fine_bounds_for_tiling)?;
 
-    let mut rows = Vec::with_capacity(bounds.len());
+    // --- Phase 4: resolve fragment fields. Outer fragments in a group form a ---
+    // chain I -> M... -> F, each linking to the adjacent outer fragment.
+    let mut group_outer_fi: Vec<Vec<usize>> = vec![Vec::new(); group_count];
+    for (gi, fb) in fine.iter().enumerate() {
+        if let (Some(g), Some(_pos)) = (fb.group, fb.outer_pos) {
+            group_outer_fi[g].push(gi);
+        }
+    }
+
+    // --- Phase 5: walk rewritten nodes and build sentence rows. ---
+    let mut rows = Vec::with_capacity(fine.len());
     let mut node_cursor = paragraph_rewritten_start;
-    for (local_index, bounds) in bounds.iter().enumerate() {
+    for (gi, fb) in fine.iter().enumerate() {
         let sentence_node_start = node_cursor;
         while node_cursor < paragraph_rewritten_end
-            && node_belongs_to_sentence(&rewritten_nodes[node_cursor], *bounds)?
+            && node_belongs_to_sentence(&rewritten_nodes[node_cursor], fb.bounds)?
         {
             node_cursor += 1;
         }
         let sentence_node_end = node_cursor;
-        let annotation_indices = overlapping_ortho_indices(bounds.start, bounds.end, ortho);
+        let annotation_indices = overlapping_ortho_indices(fb.bounds.start, fb.bounds.end, ortho);
         let tags = if annotation_indices.is_empty() {
             Vec::new()
         } else {
             vec!["orthographic-katakana".to_owned()]
         };
 
+        let (part, fragment_group, next_id, prev_id): (
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+        ) = if let (Some(g), Some(pos)) = (fb.group, fb.outer_pos) {
+            let count = group_outer_fi[g].len();
+            let part = if pos == 0 {
+                "I"
+            } else if pos + 1 == count {
+                "F"
+            } else {
+                "M"
+            };
+            let next_id = (pos + 1 < count)
+                .then(|| format!("s{:06}", sentence_index_start + group_outer_fi[g][pos + 1]));
+            let prev_id = (pos > 0)
+                .then(|| format!("s{:06}", sentence_index_start + group_outer_fi[g][pos - 1]));
+            (
+                Some(part.to_owned()),
+                Some(format!("fg{:06}", g)),
+                next_id,
+                prev_id,
+            )
+        } else {
+            (None, None, None, None)
+        };
+
         rows.push(ParserIrSentence {
-            id: format!("s{:06}", sentence_index_start + local_index),
+            id: format!("s{:06}", sentence_index_start + gi),
             paragraph_id: paragraph_id(paragraph),
-            span: decoded_span(bounds.start, bounds.end),
+            span: decoded_span(fb.bounds.start, fb.bounds.end),
             node_range: json!({
                 "start": sentence_node_start,
                 "end": sentence_node_end,
             }),
             tags,
             orthographic_annotation_indices: annotation_indices,
-            part: None,
-            fragment_group: None,
-            next_id: None,
-            prev_id: None,
+            part,
+            fragment_group,
+            next_id,
+            prev_id,
         });
     }
 
     assert_sentence_node_tiling(paragraph_rewritten_start, paragraph_rewritten_end, &rows)?;
+    assert_fragment_field_coherence(&rows)?;
 
     Ok(rows)
 }
@@ -702,6 +889,69 @@ fn assert_sentence_node_tiling(
             expected_start,
             paragraph_end
         );
+    }
+    Ok(())
+}
+
+/// Assert the combinatorial coherence of sentence fragment fields:
+/// - `part` present iff `fragment_group` present.
+/// - `part=I` requires `next_id`, forbids `prev_id`.
+/// - `part=M` requires both `next_id` and `prev_id`.
+/// - `part=F` requires `prev_id`, forbids `next_id`.
+/// - complete sentences (no `part`) have none of the fragment fields.
+fn assert_fragment_field_coherence(rows: &[ParserIrSentence]) -> Result<()> {
+    for row in rows {
+        let has_part = row.part.is_some();
+        let has_group = row.fragment_group.is_some();
+        let has_next = row.next_id.is_some();
+        let has_prev = row.prev_id.is_some();
+
+        if has_part != has_group {
+            bail!(
+                "sentence {} has part but no fragment_group (or vice versa)",
+                row.id
+            );
+        }
+        match row.part.as_deref() {
+            Some("I") => {
+                if !has_next {
+                    bail!("sentence {} part=I but no next_id", row.id);
+                }
+                if has_prev {
+                    bail!("sentence {} part=I but has prev_id", row.id);
+                }
+            }
+            Some("M") => {
+                if !has_next {
+                    bail!("sentence {} part=M but no next_id", row.id);
+                }
+                if !has_prev {
+                    bail!("sentence {} part=M but no prev_id", row.id);
+                }
+            }
+            Some("F") => {
+                if has_next {
+                    bail!("sentence {} part=F but has next_id", row.id);
+                }
+                if !has_prev {
+                    bail!("sentence {} part=F but no prev_id", row.id);
+                }
+            }
+            None => {
+                if has_group {
+                    bail!("sentence {} has fragment_group but no part", row.id);
+                }
+                if has_next {
+                    bail!("sentence {} has next_id but no part", row.id);
+                }
+                if has_prev {
+                    bail!("sentence {} has prev_id but no part", row.id);
+                }
+            }
+            Some(other) => {
+                bail!("sentence {} has invalid part: {}", row.id, other);
+            }
+        }
     }
     Ok(())
 }

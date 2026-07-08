@@ -34,7 +34,7 @@ pub struct SentenceSpan<'a> {
 }
 
 /// Options controlling sentence-splitting behavior.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct SplitOptions {
     /// When true, suppress all bracket/quote-based split suppression.
     /// Used when re-splitting text inside a known quote region so inner
@@ -42,28 +42,19 @@ pub struct SplitOptions {
     pub suppress_closing_bracket_check: bool,
 }
 
-impl Default for SplitOptions {
-    fn default() -> Self {
-        Self {
-            suppress_closing_bracket_check: false,
-        }
-    }
-}
-
 /// Split text into sentences on terminal punctuation with explicit options.
 ///
 /// Boundaries: `。`, `！`, `？`, `!`, `?`, `.`, `．`.
+///
 /// Adjacent terminals are kept together (e.g. `本当！？` is one sentence).
-/// Improved rules over the legacy splitter:
-/// - CJK numbered lists (`１．`) do not split.
-/// - `！`/`？` followed by Japanese continuation marks (`笑`, `…`, small kana)
-///   do not split.
-/// - `closing_bracket_ahead` scans with bracket-depth tracking so a terminal
-///   before a closing bracket suppresses only when a bracket actually follows
-///   (not infinitely ahead).
-/// - Western closing quotes (`"`, `”`, `’`) also suppress the split.
-/// - `。` at end-of-input always splits; other terminals at end-of-input do
-///   not, so trailing `?`/`!` stays attached.
+/// Improved rules over the legacy splitter: CJK numbered lists (`１．`) do not
+/// split; `！`/`？` followed by Japanese continuation marks (`笑`, small kana)
+/// stay together; `closing_bracket_ahead` scans with bracket-depth tracking so
+/// a terminal before a closing bracket suppresses only when a bracket actually
+/// follows (not infinitely ahead); Western closing quotes also suppress; `。`
+/// at end-of-input always splits while other terminals at end-of-input stay
+/// attached.
+///
 /// Newlines are NOT sentence boundaries (they are paragraph breaks).
 pub fn split_sentences_with_options<'a>(
     input: &'a str,
@@ -81,50 +72,27 @@ pub fn split_sentences_with_options<'a>(
 
         let prev = (i > 0).then_some(chars[i - 1].1);
         let next = chars.get(i + 1).map(|(_, ch)| *ch);
+        let suppress = opts.suppress_closing_bracket_check;
 
         let should_split = match (prev, next) {
             (Some(prev_ch), Some(next_ch)) => {
-                // Repeated delimiters consume together (do not split between them).
-                if is_sentence_terminal(next_ch) {
-                    false
-                }
-                // A closing quotation/bracket directly after a delimiter suppresses
-                // the split (the real boundary comes after the bracket), unless
-                // we are explicitly re-splitting inside a known quote region.
-                else if !opts.suppress_closing_bracket_check
-                    && is_closing_quote_or_bracket(next_ch)
-                {
-                    false
-                }
-                // `。` suppresses when a bracket actually follows ahead on the line.
-                else if ch == '。'
-                    && !opts.suppress_closing_bracket_check
-                    && closing_bracket_ahead(input, chars[i].0 + ch.len_utf8())
-                {
-                    false
-                }
-                // CJK / ASCII numbered lists (`１．`, `2.`) do not split.
-                else if (ch == '.' || ch == '．') && is_cjk_digit(prev_ch) {
-                    false
-                }
-                // `！`/`？` + Japanese continuation mark (`！笑`, `？って`) stay together.
-                else if (ch == '！' || ch == '？') && is_japanese_continuation(next_ch) {
-                    false
-                }
-                // ASCII/fullwidth period inside an alphanumeric run (`3.14`).
-                else if is_period_non_boundary_neighbor(prev_ch)
-                    && is_period_non_boundary_neighbor(next_ch)
-                    && ch != '。'
-                {
-                    false
-                } else {
-                    true
-                }
+                // Suppress when any of these hold; split otherwise.
+                !(
+                    is_sentence_terminal(next_ch)
+                        || (!suppress && is_closing_quote_or_bracket(next_ch))
+                        || (ch == '。'
+                            && !suppress
+                            && closing_bracket_ahead(input, chars[i].0 + ch.len_utf8()))
+                        || ((ch == '.' || ch == '．') && is_cjk_digit(prev_ch))
+                        || ((ch == '！' || ch == '？') && is_japanese_continuation(next_ch))
+                        || (is_period_non_boundary_neighbor(prev_ch)
+                            && is_period_non_boundary_neighbor(next_ch)
+                            && ch != '。')
+                )
             }
-            (Some(_prev_ch), None) => {
-                // End of input: split only on `。` so a trailing `?`/`!` stays attached.
-                ch == '。'
-            }
+            // End of input: split only on `。` so a trailing `?`/`!` stays attached.
+            (Some(_), None) =>
+                ch == '。',
             _ => true,
         };
 

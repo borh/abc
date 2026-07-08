@@ -389,6 +389,26 @@ downstream IR mapping.
 
 ## 7. Reproducibility
 
+**Measured versions (pinned in `ab-validator/flake.lock`).** The parsers are
+fast-moving; every number here is a snapshot of these exact revisions:
+
+| parser | source | rev | locked |
+| --- | --- | --- | --- |
+| aozora-pipeline (reference / recommended base) | `P4suta/aozora` | `5df2cfa5` | 2026-07-03 |
+| aozora-core (aozora2) | `takahashim/aozora2` | `93420b53` | 2026-01-04 |
+| aozora-rs | `kinoko0518/aozora-rs` | `2b2b8f64` | 2026-05-07 |
+| conformance vectors | `P4suta/aozora-notation-spec` | `b60665fd` | 2026-07-02 |
+| corpus | `aozorabunko/aozorabunko` | `0e9ea3e5` | 2026-04-24 |
+
+> **Staleness note (load-bearing for the fork decision).** `P4suta/aozora` is under
+> heavy active development — as of 2026-07-08 upstream HEAD is already ~14+ commits
+> ahead of the measured pin (mostly dependency bumps, but including #434 which moves
+> lossy notation forms Tier1→Tier2, *changing default render output*, and later
+> notation-hygiene/diagnostics-unification work). The recommendation is robust to this
+> (it leads on every axis by margins larger than a few-day drift), but before
+> committing to the fork, **re-pin to a current `P4suta/aozora` and re-run §4.7/§4.8** —
+> the harmonized signatures + reconciliation assertion make that a ~5-minute recompute.
+
 ```
 just aozora-notation-spec-comparison            # matrix + summary
 python reports/parser-conformance/attribute-divergences.py  "$VECTORS"  # cause attribution

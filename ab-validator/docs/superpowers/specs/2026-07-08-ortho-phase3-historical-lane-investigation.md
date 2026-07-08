@@ -135,14 +135,27 @@ the surface normalizer so every analyzer (incl. sudachi) can be compared on the
 same modernized input. Build order and open items:
 
 **Lane A (build first — no unresolved unknowns):**
-- Corpus measurement: count `新字旧仮名`/`旧字旧仮名` works (needs an importer run —
-  metadata is not committed) and score `kindai-bungo` vs `qkana` segmentation on
-  them; decide the default historical dictionary per sub-genre.
-- Wire `orthographic_style` pre-selection into run configuration (I2-D17b:
-  eligibility filter outside normalization).
-- Confirm the selected dictionary `archive_hash` flows into the tokenized /
-  input-view identity for old-kana works (it is already a `dictionary`
-  coordinate).
+- **DONE (2026-07-08): orthographic_style pre-selection wired as a
+  run-eligibility filter (I2-D17b).** `analyze-aat` gained `--works-parquet`
+  (an `aozora_works.parquet` sidecar) + `--orthographic-style` (defaulting to the
+  old-kana set `新字旧仮名`/`旧字旧仮名`). It reads the sidecar, resolves the eligible
+  `source_id`s, and drops non-eligible works *before* analysis — outside
+  normalization, so derived input stays a function of `(source, policy)`. Module
+  `orthographic_select.rs` (unit-tested); e2e warehouse test
+  `warehouse_eligibility_filter_narrows_run_to_selected_source_ids`; convenience
+  recipe `just morph-warehouse-run-historical <works_parquet>` runs
+  `vibrato:unidic-kindai-bungo-202512` over the old-kana slice.
+- **Remaining — corpus measurement:** count `新字旧仮名`/`旧字旧仮名` works (needs an
+  importer run — metadata is not committed) and score `kindai-bungo` vs `qkana`
+  segmentation on them; decide the default historical dictionary per sub-genre.
+  Operational (a run + `import-aozora-metadata`), not code.
+- **Remaining — dictionary identity granularity (deferred, YAGNI):** the
+  dictionary is recorded today only as the `analyzer_id` string
+  (`vibrato:unidic-kindai-bungo-202512`) in `run_analyzers.parquet` — the name
+  pins the specific nix-built dict (whose `archive_hash` is in `flake.nix`), so
+  reproducibility holds. `VibratoAnalyzer` does not surface the archive_hash;
+  plumbing it as an explicit warehouse column is a separate enhancement, only
+  worth doing if a consumer needs the hash without the flake.
 - Test coverage across the dictionary matrix (enabled by the resolution fix).
 
 **Lane B (build after a short design step):**

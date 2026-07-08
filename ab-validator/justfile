@@ -694,6 +694,24 @@ morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_di
 		--warehouse-profile "{{profile}}" \
 		--jobs "$jobs"
 
+# Lane A (historical-kana): analyze only old-kana works (新字旧仮名/旧字旧仮名) under a
+# historical UniDic. `works_parquet` is an aozora_works.parquet sidecar produced by
+# `import-aozora-metadata` from a prior baseline run (it carries orthographic_style
+# per source_id). The eligibility filter runs OUTSIDE normalization.
+morph-warehouse-run-historical works_parquet dict="unidic-kindai-bungo-202512" profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
+	@jobs="{{jobs}}"; \
+	run_id="{{run_id}}"; \
+	if [ -z "$run_id" ]; then run_id="historical-{{dict}}-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
+	AB_VIBRATO_DICT_DIR="$(nix build .#vibrato-dictionaries --no-link --print-out-paths)/share/vibrato" \
+	cargo run --release -p ab-morph-run -- analyze-aat \
+		--aat-dir "{{aat_dir}}" \
+		--analyzer "vibrato:{{dict}}" \
+		--warehouse-dir "{{morph_warehouse_dir}}" \
+		--run-id "$run_id" \
+		--warehouse-profile "{{profile}}" \
+		--works-parquet "{{works_parquet}}" \
+		--jobs "$jobs"
+
 morph-warehouse-run-full aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
 	@just morph-warehouse-run full "{{aat_dir}}" "{{run_id}}" "{{jobs}}"
 

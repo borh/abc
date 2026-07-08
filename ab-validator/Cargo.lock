@@ -86,6 +86,7 @@ name = "ab-diff-utils"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "proptest",
  "serde",
  "serde_json",
  "sha2 0.10.9",

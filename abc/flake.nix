@@ -439,8 +439,9 @@
             pkgs.runCommand "abc-tei-eaj-comparison-tests" { nativeBuildInputs = [ pkgs.python3 ]; }
               ''
                 cp ${./tools/tei_eaj_compare.py} tei_eaj_compare.py
+                cp ${./tools/tei_eaj_aozora_reports.py} tei_eaj_aozora_reports.py
                 cp ${./tools/test_tei_eaj_compare.py} test_tei_eaj_compare.py
-                chmod u+w tei_eaj_compare.py test_tei_eaj_compare.py
+                chmod u+w tei_eaj_compare.py tei_eaj_aozora_reports.py test_tei_eaj_compare.py
                 python -m unittest discover -s . -p 'test_*.py'
                 mkdir -p "$out"
                 echo "TEI-EAJ comparison tests passed." > "$out/result.txt"

@@ -5,9 +5,10 @@ use std::{
 };
 
 use anyhow::{Context, Result, bail};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::Value;
 
+use crate::tei_eaj_workset::{TeiEajFileExport, TeiEajWorksetExport, read_tei_eaj_workset};
 use crate::{ConversionOptions, MappingDocument, PreparedConverter, SchemaSet, schema::read_json};
 
 #[derive(Debug, Clone)]
@@ -191,57 +192,6 @@ pub struct StructuralProbeVerdict {
     pub notes: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
-struct TeiEajWorksetExport {
-    schema_version: String,
-    summary: TeiEajExportSummary,
-    #[serde(default)]
-    tei_eaj_source: Option<TeiEajSourceExport>,
-    #[serde(default)]
-    candidate_work_ids: Vec<String>,
-    #[serde(default)]
-    missing_abc_counterpart_work_ids: Vec<String>,
-    #[serde(default)]
-    no_work_id_files: Vec<String>,
-    #[serde(default)]
-    files: Vec<TeiEajFileExport>,
-}
-
-#[derive(Debug, Default, Deserialize)]
-struct TeiEajExportSummary {
-    #[serde(default)]
-    tei_eaj_file_count: u64,
-    #[serde(default)]
-    tei_eaj_work_id_count: u64,
-    #[serde(default)]
-    compared_file_count: u64,
-    #[serde(default)]
-    missing_counterpart_count: u64,
-    #[serde(default)]
-    no_work_id_count: u64,
-}
-
-#[derive(Debug, Deserialize)]
-struct TeiEajSourceExport {
-    revision: Option<String>,
-    root: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct TeiEajFileExport {
-    work_id: Option<String>,
-    title: Option<String>,
-    tei_eaj_file: String,
-    level: Option<String>,
-    state: Option<String>,
-    comparison_status: String,
-    tei_eaj_p_count: Option<u64>,
-    tei_eaj_note_count: Option<u64>,
-    abc_p_count: Option<u64>,
-    abc_note_count: Option<u64>,
-    base_text_equal: Option<bool>,
-}
-
 pub fn parse_input_spec(spec: &str) -> Result<StructuralProbeInput> {
     let Some((label, path)) = spec.split_once('=') else {
         bail!("--aat must be label=/path/to/input.aat.json, got {spec:?}");
@@ -289,19 +239,7 @@ pub fn run_structural_probe(config: StructuralProbeConfig) -> Result<StructuralP
 pub fn run_tei_eaj_structural_expansion(
     config: TeiEajStructuralExpansionConfig,
 ) -> Result<TeiEajStructuralExpansionSummary> {
-    let workset_value = read_json(&config.workset_path).with_context(|| {
-        format!(
-            "failed to read TEI-EAJ workset {}",
-            config.workset_path.display()
-        )
-    })?;
-    let workset: TeiEajWorksetExport =
-        serde_json::from_value(workset_value).with_context(|| {
-            format!(
-                "failed to parse TEI-EAJ workset {}",
-                config.workset_path.display()
-            )
-        })?;
+    let workset = read_tei_eaj_workset(&config.workset_path)?;
     let mapping_summary = mapping_summary(&config.mapping);
     let converter = PreparedConverter::new(config.mapping, config.schemas)?;
     let work_id_aliases = tei_eaj_work_id_aliases(&workset);

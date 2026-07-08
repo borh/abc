@@ -6,6 +6,8 @@ pub mod ortho_detect;
 pub mod schema;
 pub mod sentences;
 pub mod structural_probe;
+pub mod tei_eaj_alignment_probe;
+pub(crate) mod tei_eaj_workset;
 
 pub use convert::{
     ConversionOptions, ConversionOutput, ConversionRequest, PreparedConverter, convert,

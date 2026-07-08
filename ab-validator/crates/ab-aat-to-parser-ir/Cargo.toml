@@ -11,6 +11,7 @@ categories = ["text-processing"]
 
 [dependencies]
 ab-check = { workspace = true }
+ab-diff-utils = { workspace = true }
 ab-morph-analyzers = { workspace = true }
 ab-plaintext = { workspace = true }
 ab-ortho-detect = { workspace = true }
@@ -19,6 +20,7 @@ clap = { workspace = true }
 jsonschema = { workspace = true }
 rayon = { workspace = true }
 regex = { workspace = true }
+roxmltree = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_stacker = { workspace = true }

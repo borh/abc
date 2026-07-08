@@ -108,6 +108,111 @@ fn ortho_fixture_aat() -> Value {
     })
 }
 
+#[test]
+fn tei_eaj_alignment_probe_classifies_melos_tail_addition() {
+    let temp = tempfile::tempdir().unwrap();
+    let workset_path = temp.path().join("workset.json");
+    let abc_tei = temp.path().join("abc-melos.xml");
+    let tei_eaj_root = temp.path().join("tei-eaj");
+    let tei_eaj_file = tei_eaj_root.join("data/complete/tei_lib_lv4/1567_tei.xml");
+    std::fs::create_dir_all(tei_eaj_file.parent().unwrap()).unwrap();
+
+    std::fs::write(
+        &abc_tei,
+        r#"<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>メロスは激怒した。勇者は、ひどく<ruby><rb>赤面した</rb><rt>せきめんした</rt></ruby>。<note>底本注</note>（古伝説と、シルレルの詩から。）</p></body></text></TEI>"#,
+    )
+    .unwrap();
+    std::fs::write(
+        &tei_eaj_file,
+        r#"<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>メロスは激怒した。</p><p>勇者は、ひどく赤面した。</p></body></text></TEI>"#,
+    )
+    .unwrap();
+    std::fs::write(
+        &workset_path,
+        format!(
+            r#"{{
+  "schema_version": "tei-eaj-aozora-workset-export-v1",
+  "tei_eaj_source": {{"revision": "fixture", "root": "{}"}},
+  "abc_inputs": {{"counterparts": [{{"path": "{}", "work_id": "1567"}}], "tei_dirs": [], "tei_specs": []}},
+  "summary": {{
+    "tei_eaj_file_count": 1,
+    "tei_eaj_work_id_count": 1,
+    "abc_counterpart_count": 1,
+    "compared_file_count": 1,
+    "missing_counterpart_count": 0,
+    "no_work_id_count": 0,
+    "uncompared_file_count": 0,
+    "base_text_equal_count": 0,
+    "base_text_mismatch_count": 1,
+    "base_text_relation_counts": {{"tei_eaj_subset_of_abc": 1}}
+  }},
+  "candidate_work_ids": ["1567"],
+  "missing_abc_counterpart_work_ids": [],
+  "no_work_id_files": [],
+  "files": [{{
+    "work_id": "1567",
+    "work_id_method": "filename_work_id",
+    "tei_eaj_file": "data/complete/tei_lib_lv4/1567_tei.xml",
+    "state": "complete",
+    "level": "Level 4",
+    "title": "走れメロス",
+    "abc_tei": "{}",
+    "comparison_status": "compared",
+    "base_text_equal": false,
+    "base_text_relation": "tei_eaj_subset_of_abc",
+    "base_text_length_delta": 16,
+    "abc_body_base_text_length": 40,
+    "tei_eaj_body_base_text_length": 24,
+    "abc_p_count": 1,
+    "tei_eaj_p_count": 2,
+    "abc_note_count": 1,
+    "tei_eaj_note_count": 0,
+    "first_difference": {{
+      "index": 24,
+      "abc": "メロスは激怒した。勇者は、ひどく赤面した。（古伝説と、シルレルの詩から。）",
+      "tei_eaj": "メロスは激怒した。勇者は、ひどく赤面した。"
+    }}
+  }}]
+}}"#,
+            tei_eaj_root.display(),
+            abc_tei.display(),
+            abc_tei.display()
+        ),
+    )
+    .unwrap();
+
+    let report = ab_aat_to_parser_ir::tei_eaj_alignment_probe::run_tei_eaj_alignment_probe(
+        ab_aat_to_parser_ir::tei_eaj_alignment_probe::TeiEajAlignmentProbeConfig {
+            workset_path,
+            max_rows: None,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(report.rows.len(), 1);
+    let probe = report.rows[0].alignment_probe.as_ref().unwrap();
+    assert_eq!(probe.diagnosis_counts.get("tail_addition"), Some(&1));
+    assert_eq!(
+        probe.diagnosis_event_count,
+        probe.diagnosis_counts.values().sum::<usize>()
+    );
+    assert_eq!(probe.samples[0].diagnosis, "tail_addition");
+    assert_eq!(
+        probe.samples[0].left_text,
+        "（古伝説と、シルレルの詩から。）"
+    );
+    assert!(!probe.samples[0].left_text.contains("せきめん"));
+    assert!(!probe.samples[0].left_text.contains("底本注"));
+    assert_eq!(
+        probe.samples[0]
+            .adapter_context
+            .get("left_features")
+            .and_then(|value| value.as_array())
+            .unwrap()[0],
+        serde_json::json!("source-attribution")
+    );
+}
+
 struct AlwaysNormalizeDetector;
 
 struct RecordingDetector {

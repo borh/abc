@@ -350,19 +350,6 @@ fn diagnose_region(region: &AlignmentRegion, left: &[TeiToken], _right: &[TeiTok
     {
         return "tail_addition".to_owned();
     }
-    if region.kind == AlignmentKind::Substitution
-        && left[region.left_range[0]..region.left_range[1]]
-            .iter()
-            .any(|token| {
-                token
-                    .context
-                    .features
-                    .iter()
-                    .any(|feature| feature == "source-attribution")
-            })
-    {
-        return "tail_addition".to_owned();
-    }
     match region.kind {
         AlignmentKind::Insertion => "insertion".to_owned(),
         AlignmentKind::Deletion => "deletion".to_owned(),

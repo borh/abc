@@ -183,21 +183,52 @@ fn cli_tei_eaj_alignment_probe_writes_reports() {
     assert!(report_text.contains("tail_addition"));
 }
 
+#[test]
+fn tei_eaj_alignment_probe_does_not_call_source_attribution_substitution_tail_addition() {
+    let temp = tempfile::tempdir().unwrap();
+    let workset_path = temp.path().join("workset.json");
+    std::fs::write(
+        &workset_path,
+        melos_alignment_workset_with_xml(
+            temp.path(),
+            r#"<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>（古伝説と、シルレルの詩から。）</p></body></text></TEI>"#,
+            r#"<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>別の本文。</p></body></text></TEI>"#,
+        ),
+    )
+    .unwrap();
+
+    let report = ab_aat_to_parser_ir::tei_eaj_alignment_probe::run_tei_eaj_alignment_probe(
+        ab_aat_to_parser_ir::tei_eaj_alignment_probe::TeiEajAlignmentProbeConfig {
+            workset_path,
+            max_rows: None,
+        },
+    )
+    .unwrap();
+
+    let probe = report.rows[0].alignment_probe.as_ref().unwrap();
+    assert_eq!(probe.diagnosis_counts.get("tail_addition"), None);
+    assert_eq!(probe.diagnosis_counts.get("substitution"), Some(&1));
+}
+
 fn minimal_melos_alignment_workset(root: &std::path::Path) -> String {
+    melos_alignment_workset_with_xml(
+        root,
+        r#"<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>メロスは激怒した。勇者は、ひどく<ruby><rb>赤面した</rb><rt>せきめんした</rt></ruby>。<note>底本注</note>（古伝説と、シルレルの詩から。）</p></body></text></TEI>"#,
+        r#"<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>メロスは激怒した。</p><p>勇者は、ひどく赤面した。</p></body></text></TEI>"#,
+    )
+}
+
+fn melos_alignment_workset_with_xml(
+    root: &std::path::Path,
+    abc_xml: &str,
+    tei_eaj_xml: &str,
+) -> String {
     let abc_tei = root.join("abc-melos.xml");
     let tei_eaj_root = root.join("tei-eaj");
     let tei_eaj_file = tei_eaj_root.join("data/complete/tei_lib_lv4/1567_tei.xml");
     std::fs::create_dir_all(tei_eaj_file.parent().unwrap()).unwrap();
-    std::fs::write(
-        &abc_tei,
-        r#"<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>メロスは激怒した。勇者は、ひどく<ruby><rb>赤面した</rb><rt>せきめんした</rt></ruby>。<note>底本注</note>（古伝説と、シルレルの詩から。）</p></body></text></TEI>"#,
-    )
-    .unwrap();
-    std::fs::write(
-        &tei_eaj_file,
-        r#"<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>メロスは激怒した。</p><p>勇者は、ひどく赤面した。</p></body></text></TEI>"#,
-    )
-    .unwrap();
+    std::fs::write(&abc_tei, abc_xml).unwrap();
+    std::fs::write(&tei_eaj_file, tei_eaj_xml).unwrap();
     format!(
         r#"{{
   "schema_version": "tei-eaj-aozora-workset-export-v1",

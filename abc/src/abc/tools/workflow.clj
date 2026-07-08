@@ -17,6 +17,14 @@
         e (java.time.Instant/parse end)]
     (.toMillis (java.time.Duration/between s e))))
 
+(defn- duration-ms-or-nil [start end]
+  (try
+    (duration-ms start end)
+    (catch java.time.format.DateTimeParseException _
+      nil)
+    (catch NullPointerException _
+      nil)))
+
 (defn- duplicate-values [xs]
   (->> xs
        frequencies
@@ -98,6 +106,92 @@
 
 (defn- write-run! [output-root run]
   (manifest/write-json-file! (io/file output-root "workflow-run.json") run))
+
+(defn- semantic-error [path message expected actual]
+  (cond-> {:path path
+           :message message}
+    (some? expected) (assoc :expected expected)
+    (some? actual) (assoc :actual actual)))
+
+(defn- expected-run-status [steps]
+  (let [statuses (map #(get % "status") steps)]
+    (cond
+      (some #{"failed"} statuses) "failed"
+      (some #{"partial"} statuses) "partial"
+      (and (seq statuses) (every? #{"skipped"} statuses)) "skipped"
+      :else "passed")))
+
+(defn- duration-errors [path value message]
+  (let [expected (duration-ms-or-nil (get value "started_at")
+                                     (get value "ended_at"))
+        actual (get value "duration_ms")]
+    (when (and (some? expected) (not= expected actual))
+      [(semantic-error path message expected actual)])))
+
+(defn- step-order-errors [steps]
+  (let [produced-by-step
+        (reduce-kv (fn [m idx step]
+                     (reduce (fn [m' produced]
+                               (assoc m' produced idx))
+                             m
+                             (get step "produces")))
+                   {}
+                   (vec steps))]
+    (->> steps
+         (map-indexed
+          (fn [idx step]
+            (keep (fn [required]
+                    (let [producer-idx (get produced-by-step required)]
+                      (when (and (some? producer-idx)
+                                 (>= producer-idx idx))
+                        (semantic-error ["steps" idx "requires"]
+                                        "step requires a value before it is produced"
+                                        (str "producer step before " idx)
+                                        required))))
+                  (get step "requires"))))
+         (apply concat)
+         vec)))
+
+(defn validate-run
+  "Return semantic workflow-run invariant violations. JSON Schema validation
+  remains the shape contract; this checks counters, status, durations, and
+  dependency order among produced keys."
+  [run]
+  (let [steps (vec (get run "steps" []))
+        passed (count (filter #(= "passed" (get % "status")) steps))
+        failed (count (filter #(= "failed" (get % "status")) steps))
+        expected-status (expected-run-status steps)
+        errors (concat
+                (when (not= (count steps) (get run "step_count"))
+                  [(semantic-error ["step_count"]
+                                   "step_count must equal number of steps"
+                                   (count steps)
+                                   (get run "step_count"))])
+                (when (not= passed (get run "steps_passed"))
+                  [(semantic-error ["steps_passed"]
+                                   "steps_passed must equal passed step count"
+                                   passed
+                                   (get run "steps_passed"))])
+                (when (not= failed (get run "steps_failed"))
+                  [(semantic-error ["steps_failed"]
+                                   "steps_failed must equal failed step count"
+                                   failed
+                                   (get run "steps_failed"))])
+                (when (not= expected-status (get run "status"))
+                  [(semantic-error ["status"]
+                                   "status must match step statuses"
+                                   expected-status
+                                   (get run "status"))])
+                (duration-errors ["duration_ms"]
+                                 run
+                                 "duration_ms must match started_at and ended_at")
+                (mapcat (fn [[idx step]]
+                          (duration-errors ["steps" idx "duration_ms"]
+                                           step
+                                           "step duration_ms must match started_at and ended_at"))
+                        (map-indexed vector steps))
+                (step-order-errors steps))]
+    (vec errors)))
 
 (defn- step-record [{:keys [step status started-at ended-at result error]}]
   (cond-> {"id" (key-name (:id step))

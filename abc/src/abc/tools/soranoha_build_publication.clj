@@ -7,6 +7,7 @@
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.schema :as schema]
+            [abc.tools.workflow :as workflow]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]
             [clojure.string :as string]
@@ -325,6 +326,60 @@
                             [StandardCopyOption/ATOMIC_MOVE]))
     target))
 
+(defn- build-publication-steps [publication-rehearsal-fn]
+  [{:id :materialize-source-selection
+    :requires [:aozora-root :output-root]
+    :produces [:materialization-result]
+    :run (fn [{:keys [aozora-root output-root]}]
+           (let [result (materialize-selected-sources!
+                         {:aozora-root aozora-root
+                          :output-root output-root})
+                 selection-report-file (io/file output-root
+                                                "source-selection-report.json")]
+             {:state-updates {:materialization-result result}
+              :outputs [{:role "source-selection-report"
+                         :path (str selection-report-file)
+                         :content_hash
+                         (manifest/file-hash selection-report-file)}]}))}
+   {:id :write-build-records
+    :requires [:opts :config-value :materialization-result :output-root]
+    :produces [:build-plan]
+    :run (fn [{:keys [opts config-value materialization-result output-root]}]
+           (let [plan (build-plan opts config-value materialization-result)
+                 config-file (io/file output-root "build-config.json")
+                 plan-file (io/file output-root "build-plan.json")]
+             (abc-json/write-deterministic-json-file! config-file config-value)
+             (abc-json/write-deterministic-json-file! plan-file plan)
+             {:state-updates {:build-plan plan}
+              :outputs [{:role "build-config"
+                         :path (str config-file)
+                         :content_hash (manifest/file-hash config-file)}
+                        {:role "build-plan"
+                         :path (str plan-file)
+                         :content_hash (manifest/file-hash plan-file)}]}))}
+   {:id :publication-rehearsal
+    :requires [:build-plan :config-value :materialization-result :output-root
+               :snapshot-date]
+    :produces [:rehearsal-result]
+    :run (fn [{:keys [config-value materialization-result output-root
+                      snapshot-date]}]
+           (let [rehearsal-root (io/file output-root "rehearsal")
+                 exit-code (publication-rehearsal-fn
+                            (str (:materialized-root materialization-result))
+                            (str rehearsal-root)
+                            (get config-value "request_set_label")
+                            (get config-value "snapshot_scope")
+                            snapshot-date)]
+             (when-not (zero? exit-code)
+               (throw (ex-info "publication rehearsal failed"
+                               {:exit_code exit-code
+                                :rehearsal_root (str rehearsal-root)})))
+             {:state-updates {:rehearsal-result {:exit-code exit-code
+                                                 :rehearsal-root rehearsal-root}}
+              :outputs [{:role "rehearsal-workflow-run"
+                         :path (str (io/file rehearsal-root
+                                             "workflow-run.json"))}]}))}])
+
 (defn build-publication!
   [publication-rehearsal-fn args]
   (let [{:keys [aozora-root config snapshot-date output-root replace]
@@ -336,26 +391,20 @@
     (let [tmp-root (prepare-output-root! output-root replace)]
       (.mkdirs tmp-root)
       (let [opts (assoc opts :output-root tmp-root)
-            materialization-result (materialize-selected-sources!
-                                    {:aozora-root aozora-root
-                                     :output-root tmp-root})
-            plan (build-plan opts config-value materialization-result)
-            rehearsal-root (io/file tmp-root "rehearsal")]
-        (abc-json/write-deterministic-json-file!
-         (io/file tmp-root "build-config.json")
-         config-value)
-        (abc-json/write-deterministic-json-file!
-         (io/file tmp-root "build-plan.json")
-         plan)
-        (publication-rehearsal-fn (str (:materialized-root materialization-result))
-                                  (str rehearsal-root)
-                                  (get config-value "request_set_label")
-                                  (get config-value "snapshot_scope")
-                                  snapshot-date)
-        (let [final-root (promote-output-root! tmp-root output-root replace)]
-          (println "build_publication_root:" (str final-root))
-          (println "materialized_root:" (str (io/file final-root
-                                                      "materialized-root")))
-          (println "rehearsal_root:" (str (io/file final-root
-                                                   "rehearsal")))
-          0)))))
+            _ (workflow/run-workflow!
+               {:workflow-id "soranoha.build-publication.v1"
+                :run-id (str "build-publication:" snapshot-date)
+                :output-root tmp-root
+                :initial-state {:aozora-root aozora-root
+                                :config-value config-value
+                                :snapshot-date snapshot-date
+                                :output-root tmp-root
+                                :opts opts}
+                :steps (build-publication-steps publication-rehearsal-fn)})
+            final-root (promote-output-root! tmp-root output-root replace)]
+        (println "build_publication_root:" (str final-root))
+        (println "materialized_root:" (str (io/file final-root
+                                                    "materialized-root")))
+        (println "rehearsal_root:" (str (io/file final-root
+                                                 "rehearsal")))
+        0))))

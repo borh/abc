@@ -782,6 +782,24 @@
     (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))
     0))
 
+(defn validate-workflow! [workflow-run-path]
+  (let [workflow-run (files/read-json workflow-run-path)
+        workflow-run-schema (files/read-json "schemas/workflow-run.schema.json")]
+    (when-let [errors (schema/validation-errors workflow-run-schema
+                                                workflow-run)]
+      (throw (ex-info "workflow-run schema validation failed"
+                      {:path (str workflow-run-path)
+                       :errors errors})))
+    (let [errors (workflow/validate-run workflow-run)]
+      (when (seq errors)
+        (throw (ex-info "workflow-run semantic validation failed"
+                        {:path (str workflow-run-path)
+                         :errors errors}))))
+    (println "workflow_valid: true")
+    (println "workflow_id:" (get workflow-run "workflow_id"))
+    (println "run_id:" (get workflow-run "run_id"))
+    0))
+
 (defn- generated-at-from-date [snapshot-date]
   (str snapshot-date "T00:00:00Z"))
 
@@ -1087,6 +1105,7 @@
     "  snapshot-index <label-or-request-set-json> <output-path>"
     "  reproduce <label-or-request-set-json>"
     "  validate <snapshot-root-or-index>"
+    "  validate-workflow <workflow-run-json>"
     "  explain-snapshot <snapshot-index>"
     "  publication-report <snapshot-root> <output-path>"
     "  layout-report <snapshot-root> <output-path>"
@@ -1108,6 +1127,8 @@
                 :run reproduce!}
    "validate" {:args 1
                :run validate!}
+   "validate-workflow" {:args 1
+                        :run validate-workflow!}
    "explain-snapshot" {:args 1
                        :run explain-snapshot!}
    "publication-report" {:args 2

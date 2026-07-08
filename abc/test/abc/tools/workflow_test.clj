@@ -82,6 +82,33 @@
       (is (= "sha256:2222222222222222222222222222222222222222222222222222222222222222"
              (get-in run ["steps" 0 "outputs" 0 "request_set_id"]))))))
 
+(deftest validate-run-reports-semantic-invariants-test
+  (let [valid-run (files/read-json "examples/workflow/passed.workflow-run.json")]
+    (is (= [] (workflow/validate-run valid-run)))
+    (let [future-producing-step {"id" "future"
+                                 "status" "passed"
+                                 "started_at" "2026-07-08T00:00:01Z"
+                                 "ended_at" "2026-07-08T00:00:02Z"
+                                 "duration_ms" 1000
+                                 "requires" ["not-yet-produced"]
+                                 "produces" ["not-yet-produced"]
+                                 "inputs" []
+                                 "outputs" []
+                                 "messages" []}
+          invalid-run (-> valid-run
+                          (update "steps" conj future-producing-step)
+                          (assoc "step_count" 99
+                                 "steps_passed" 0
+                                 "duration_ms" 0)
+                          (assoc-in ["steps" 0 "duration_ms"] 999))
+          errors (workflow/validate-run invalid-run)
+          messages (set (map :message errors))]
+      (is (contains? messages "step_count must equal number of steps"))
+      (is (contains? messages "steps_passed must equal passed step count"))
+      (is (contains? messages "duration_ms must match started_at and ended_at"))
+      (is (contains? messages "step duration_ms must match started_at and ended_at"))
+      (is (contains? messages "step requires a value before it is produced")))))
+
 (deftest validate-plan-rejects-missing-dependency-before-running-test
   (let [calls (atom [])]
     (is (thrown-with-msg?

@@ -726,6 +726,7 @@
             workflow-run-file (io/file output-root
                                        "rehearsal"
                                        "workflow-run.json")
+            build-workflow-run-file (io/file output-root "workflow-run.json")
             tei-file (io/file output-root
                               "rehearsal"
                               "snapshot-root"
@@ -739,6 +740,7 @@
         (is (.exists source-selection-report-file))
         (is (.exists rehearsal-report-file))
         (is (.exists workflow-run-file))
+        (is (.exists build-workflow-run-file))
         (is (.exists tei-file))
         (let [report (files/read-json source-selection-report-file)
               official-source (files/read-json official-source-file)]
@@ -749,6 +751,18 @@
                        (get report "selected_sources"))))
           (is (= "cards/000879/files/000001_ruby_fixture.zip"
                  (get official-source "text_zip_relpath"))))
+        (let [workflow-run (files/read-json build-workflow-run-file)]
+          (is (= "soranoha.build-publication.v1"
+                 (get workflow-run "workflow_id")))
+          (is (= "passed" (get workflow-run "status")))
+          (is (= ["materialize-source-selection"
+                  "write-build-records"
+                  "publication-rehearsal"]
+                 (mapv #(get % "id") (get workflow-run "steps"))))
+          (with-out-str
+            (is (zero? (soranoha/run!
+                        ["validate-workflow"
+                         (str build-workflow-run-file)])))))
         (with-out-str
           (is (zero? (soranoha/run!
                       ["validate"

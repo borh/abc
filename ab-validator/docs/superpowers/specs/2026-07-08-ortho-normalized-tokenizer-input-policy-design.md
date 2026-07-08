@@ -92,12 +92,24 @@ input.
 
 ### F2 — New `input_view_kind` vs. reuse
 
-**Reuse `parser-ir-plaintext-body-v1`; distinguish by `policy_hash`.** An
+> **CORRECTION (2026-07-08, during P3 investigation).** The original phrasing
+> below ("distinguish by `policy_hash`") conflated two *orthogonal* policies.
+> The existing `policy_hash` (request-set `inputView`) / `plaintext_policy_hash`
+> (analysis-result `plaintextInputView`) is the **plaintext projection** policy
+> (parser-IR body → plaintext, `coordinate_system: unicode-scalar-value`) — it is
+> NOT the ortho-normalization policy. The normalization policy is a separate field
+> the tokenizer profile already declares (`input_normalization_policy_hash`, read
+> at `materialize_tokenized.clj:83`). So reusing `parser-ir-plaintext-body-v1`
+> stands (the view kind is unchanged), but the ortho identity is a **new field on
+> the input view** (`input_normalization_policy_hash`, recording what was
+> applied), NOT an overload of the projection `policy_hash`. See the revised P3.
+
+**Reuse `parser-ir-plaintext-body-v1`; add a distinct normalization field.** An
 ortho-normalized run still emits plaintext-body morphemes in **source**
-coordinates — same *kind* of view, different input normalization. The existing
-`{input_view_kind, policy_hash}` pair already models this. Define a canonical
-**identity policy** (`policy_hash` = hash of the no-op policy) as today's default
-and an **ortho-normalized-v1 policy** as the new option. (Alternative — a new
+coordinates — same *kind* of view, different input normalization. The
+`input_view_kind` is unchanged; the applied normalization is recorded by a new
+`input_normalization_policy_hash` field on the input view (identity sentinel =
+today's default). (Alternative — a new
 `…-ortho-normalized-v1` kind — is more explicit but adds enum churn and wrongly
 implies different output coordinates; rejected.)
 

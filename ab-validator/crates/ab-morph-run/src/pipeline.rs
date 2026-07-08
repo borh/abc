@@ -682,6 +682,42 @@ pub(crate) fn run_analyze_aat_serial(
             })?;
             Some(Arc::new(model))
         }
+        OrthoDetectMode::Historical => {
+            // Lane B (M2): load the kindai-bungo oracle and build the historical
+            // surface modernizer. The detector binds the analyzer's own archive
+            // hash, matching the runs-row policy from `resolve_run_normalization`.
+            // The oracle is a distinct dictionary from the run's target analyzers
+            // (it may not be in `analyzers`), so it is always loaded here.
+            let oracle = match ab_morph_analyzers::VibratoAnalyzer::from_dictionary_name(
+                crate::M2_ORACLE_DICTIONARY,
+            ) {
+                Ok(v) => Arc::new(v),
+                Err(error) => {
+                    if let Some(writer) = &mut errors_writer {
+                        write_error_row(
+                            &mut **writer,
+                            &RunErrorRow {
+                                input_path: String::new(),
+                                source_id: None,
+                                text_id: None,
+                                analyzer: None,
+                                stage: "ortho_detect_load".to_owned(),
+                                error: error.to_string(),
+                            },
+                        )?;
+                    } else {
+                        eprintln!(
+                            "ab-morph-run: failed to load {} for M2 historical normalization: {error}",
+                            crate::M2_ORACLE_DICTIONARY
+                        );
+                    }
+                    return Err(error.into());
+                }
+            };
+            let detector = ab_morph_analyzers::historical_rewrite_detector(oracle)
+                .context("failed to build M2 historical detector")?;
+            Some(Arc::new(detector))
+        }
     };
 
     for (input_index, input) in inputs.into_iter().enumerate() {

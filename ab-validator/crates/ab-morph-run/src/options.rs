@@ -13,6 +13,12 @@ pub enum OrthoDetectMode {
     Off,
     Heuristic,
     Ml,
+    /// Phase-3 Lane B (M2): historical→modern surface modernization. Tokenizes
+    /// each sentence with the `kindai-bungo` oracle and rewrites historical kana
+    /// to modern kana in the input, so every analyzer receives the same
+    /// modernized text (comparability). Meant to be paired with the old-kana
+    /// eligibility slice (`--works-parquet`/`--orthographic-style`).
+    Historical,
 }
 
 /// Controls how analysis and comparison output rows are serialized.

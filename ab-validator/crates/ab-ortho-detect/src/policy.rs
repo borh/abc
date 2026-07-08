@@ -23,6 +23,20 @@ use sha2::{Digest, Sha256};
 
 use crate::types::{OrthoDetectorId, OrthoNormalization};
 
+/// Why a [`NormalizationPolicy`] is not admissible for a run (I2-D17 coupling).
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum PolicyError {
+    /// A `HistoricalToModern` kind is present but the detector binds no
+    /// dictionary hash, so the modernized input would not be pinned into policy
+    /// identity. Enable it only with a detector carrying a `dictionary_hash`
+    /// (e.g. [`OrthoDetectorId::HistoricalRewriteV1`]).
+    #[error(
+        "policy declares HistoricalToModern but its detector ({detector}) carries no dictionary_hash; \
+         a dictionary-backed detector is required (I2-D17)"
+    )]
+    HistoricalWithoutDictionary { detector: String },
+}
+
 /// Version tag for the descriptor shape. Bump only on a breaking shape change
 /// (which changes every hash) — new detectors/kinds do not bump it.
 pub const POLICY_SCHEMA_VERSION: &str = "ortho-input-normalization-v1";
@@ -99,6 +113,36 @@ impl NormalizationPolicy {
     #[must_use]
     pub fn is_identity(&self) -> bool {
         self.algorithm == ALGORITHM_IDENTITY
+    }
+
+    /// Reject policies whose derived input would not be a pure function of
+    /// `(source, policy_hash)`. Currently enforces I2-D17: a `HistoricalToModern`
+    /// kind requires a detector that binds a `dictionary_hash`, otherwise the
+    /// modernizing dictionary is unpinned and two runs under the "same" policy
+    /// could differ. The pipeline must call this before applying a policy; the
+    /// infallible constructors stay infallible so hash-ordering tests can build
+    /// deliberately-invalid combinations.
+    ///
+    /// # Errors
+    ///
+    /// [`PolicyError::HistoricalWithoutDictionary`] when the coupling is violated.
+    pub fn validate(&self) -> Result<(), PolicyError> {
+        if self.kinds.contains(&OrthoNormalization::HistoricalToModern) {
+            let has_dict = self
+                .detector
+                .as_ref()
+                .and_then(|d| d.detector_id.dictionary_hash())
+                .is_some_and(|h| !h.is_empty());
+            if !has_dict {
+                return Err(PolicyError::HistoricalWithoutDictionary {
+                    detector: match &self.detector {
+                        Some(d) => format!("{:?}", d.detector_id),
+                        None => "none".to_owned(),
+                    },
+                });
+            }
+        }
+        Ok(())
     }
 
     /// The descriptor as a JSON value (for provenance persistence / audit).
@@ -233,6 +277,84 @@ mod tests {
         assert!(a.canonical_json().contains(
             r#""detector":{"detector_id":{"MlLogisticRegression":{"model_hash":"sha256:aaaa"}}}"#
         ));
+    }
+
+    #[test]
+    fn identity_and_katakana_policies_validate() {
+        assert!(NormalizationPolicy::identity().validate().is_ok());
+        assert!(
+            NormalizationPolicy::ortho_normalize_v1(
+                OrthoDetectorId::HeuristicV1,
+                vec![OrthoNormalization::ScriptKatakanaToHiragana],
+            )
+            .validate()
+            .is_ok()
+        );
+    }
+
+    #[test]
+    fn historical_kind_without_dictionary_is_rejected() {
+        // I2-D17: HistoricalToModern paired with a dictionary-less detector.
+        let heuristic = NormalizationPolicy::ortho_normalize_v1(
+            OrthoDetectorId::HeuristicV1,
+            vec![OrthoNormalization::HistoricalToModern],
+        );
+        assert!(matches!(
+            heuristic.validate(),
+            Err(PolicyError::HistoricalWithoutDictionary { .. })
+        ));
+        // The ML kata→hira detector carries a model_hash, not a dictionary_hash.
+        let ml = NormalizationPolicy::ortho_normalize_v1(
+            OrthoDetectorId::MlLogisticRegression {
+                model_hash: "sha256:aaaa".to_owned(),
+            },
+            vec![OrthoNormalization::HistoricalToModern],
+        );
+        assert!(ml.validate().is_err());
+    }
+
+    #[test]
+    fn historical_detector_canonical_form_is_pinned() {
+        // Golden: pin the JCS canonical descriptor + hash for the M2 detector
+        // shape, using a FIXED dictionary_hash/rules_hash so the value is stable
+        // regardless of the real archive. A change to key order or field names
+        // here is a breaking change to every historical run's recorded policy.
+        let policy = NormalizationPolicy::ortho_normalize_v1(
+            OrthoDetectorId::HistoricalRewriteV1 {
+                dictionary_hash: "sha256:aaaa".to_owned(),
+                rules_hash: "sha256:bbbb".to_owned(),
+            },
+            vec![OrthoNormalization::HistoricalToModern],
+        );
+        assert_eq!(
+            policy.canonical_json(),
+            r#"{"algorithm":"ortho-normalize-v1","coordinate_system":"source-preserving-remap","detector":{"detector_id":{"HistoricalRewriteV1":{"dictionary_hash":"sha256:aaaa","rules_hash":"sha256:bbbb"}}},"kinds":["HistoricalToModern"],"policy_schema_version":"ortho-input-normalization-v1"}"#
+        );
+        assert_eq!(
+            policy.policy_hash(),
+            "sha256:80c652c634ddd6735a4c4b6145ac1da799d338097aeedb8ab8b87bc13a34d24d"
+        );
+    }
+
+    #[test]
+    fn historical_kind_with_dictionary_backed_detector_validates() {
+        let policy = NormalizationPolicy::ortho_normalize_v1(
+            OrthoDetectorId::HistoricalRewriteV1 {
+                dictionary_hash: "sha256:kindaidict".to_owned(),
+                rules_hash: crate::historical::rules_hash(),
+            },
+            vec![OrthoNormalization::HistoricalToModern],
+        );
+        assert!(policy.validate().is_ok());
+        // Different dictionary → different identity (the oracle is pinned).
+        let other = NormalizationPolicy::ortho_normalize_v1(
+            OrthoDetectorId::HistoricalRewriteV1 {
+                dictionary_hash: "sha256:otherdict".to_owned(),
+                rules_hash: crate::historical::rules_hash(),
+            },
+            vec![OrthoNormalization::HistoricalToModern],
+        );
+        assert_ne!(policy.policy_hash(), other.policy_hash());
     }
 
     #[test]

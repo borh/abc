@@ -130,6 +130,10 @@ fn derived_bundle(source: &str) -> serde_json::Value {
         OrthoDetectorId::MlLogisticRegression { model_hash } => {
             format!("MlLogisticRegression:{model_hash}")
         }
+        OrthoDetectorId::HistoricalRewriteV1 {
+            dictionary_hash,
+            rules_hash,
+        } => format!("HistoricalRewriteV1:{dictionary_hash}:{rules_hash}"),
     };
     serde_json::json!({
         "source_text": source,

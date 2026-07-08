@@ -48,6 +48,7 @@ CORPUS_TABLE_FEATURES = [
     "said",
     "listPerson",
 ]
+MELOS_WORK_ID = "1567"
 
 
 def canonical_work_id(value):
@@ -510,12 +511,26 @@ def build_all_work_report(abc_tei_specs, abc_tei_dirs, source_root, source_rev=N
     }
 
 
-def build_report(abc_tei, source_root, source_rev=None):
-    abc_features = analyze_file(abc_tei)
+def resolve_melos_abc_path(abc_tei=None, abc_tei_specs=(), abc_tei_dirs=()):
+    if abc_tei:
+        return pathlib.Path(abc_tei).as_posix()
+    counterparts = discover_abc_counterparts(abc_tei_specs, abc_tei_dirs)
+    counterpart = counterparts.get(MELOS_WORK_ID)
+    if counterpart:
+        return counterpart["path"]
+    raise SystemExit(
+        "Melos comparison requires an ABC TEI counterpart for work id 1567; "
+        "pass --abc, --abc-tei 1567=PATH, or --abc-tei-dir GENERATED_TEI_ROOT"
+    )
+
+
+def build_report(abc_tei, source_root, source_rev=None, abc_tei_specs=(), abc_tei_dirs=()):
+    abc_path = resolve_melos_abc_path(abc_tei, abc_tei_specs, abc_tei_dirs)
+    abc_features = analyze_file(abc_path)
     records = discover_tei_eaj_files(source_root)
     melos = melos_records(records)
     return {
-        "abc_path": pathlib.Path(abc_tei).as_posix(),
+        "abc_path": pathlib.Path(abc_path).as_posix(),
         "tei_eaj_root": pathlib.Path(source_root).as_posix(),
         "tei_eaj_source_rev": source_rev,
         "abc_features": abc_features,
@@ -952,9 +967,13 @@ def main(argv=None):
     if args.report == "melos":
         if args.format != "markdown":
             parser.error("--format json is only supported for --report all-work")
-        if not args.abc:
-            parser.error("--abc is required for --report melos")
-        report = build_report(args.abc, args.tei_eaj_root, args.source_rev)
+        report = build_report(
+            args.abc,
+            args.tei_eaj_root,
+            args.source_rev,
+            abc_tei_specs=args.abc_tei,
+            abc_tei_dirs=args.abc_tei_dir,
+        )
         output_text = render_markdown(report)
     else:
         abc_tei_specs = list(args.abc_tei)

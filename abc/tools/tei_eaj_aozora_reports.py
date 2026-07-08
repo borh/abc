@@ -18,7 +18,7 @@ class ReportContext:
     compare_script: pathlib.Path
     tei_eaj_root: pathlib.Path
     source_rev: str
-    abc_melos: str
+    abc_melos: str | None
     abc_tei: Sequence[str]
     abc_tei_dir: Sequence[str]
 
@@ -31,6 +31,20 @@ def default_report_dir(cwd: pathlib.Path) -> pathlib.Path:
     if (cwd / "abc").is_dir() and (cwd / "ab-validator").is_dir():
         return cwd / "abc" / DEFAULT_REPORT_SUBDIR
     return cwd / DEFAULT_REPORT_SUBDIR
+
+
+def default_abc_tei_dirs(cwd: pathlib.Path) -> list[str]:
+    env_value = os.environ.get("ABC_TEI_EAJ_ABC_TEI_DIRS")
+    if env_value:
+        return [path for path in env_value.split(os.pathsep) if path]
+    candidates = [
+        cwd
+        / "target"
+        / "soranoha"
+        / "full-corpus-publication-basic-ja"
+        / "artifacts",
+    ]
+    return [candidate.as_posix() for candidate in candidates if candidate.exists()]
 
 
 def run_compare(context: ReportContext, extra: list[str], output: pathlib.Path) -> None:
@@ -53,8 +67,7 @@ def abc_all_work_inputs(context: ReportContext) -> list[str]:
     extras: list[str] = []
     for spec in context.abc_tei:
         extras.extend(["--abc-tei", spec])
-    dirs = context.abc_tei_dir if context.abc_tei or context.abc_tei_dir else ["paper"]
-    for path in dirs:
+    for path in context.abc_tei_dir:
         extras.extend(["--abc-tei-dir", path])
     return extras
 
@@ -74,8 +87,8 @@ def command_melos(context: ReportContext, output: str | None) -> pathlib.Path:
         [
             "--report",
             "melos",
-            "--abc",
-            context.abc_melos,
+            *(["--abc", context.abc_melos] if context.abc_melos else []),
+            *abc_all_work_inputs(context),
         ],
         target,
     )
@@ -140,7 +153,9 @@ def context_from_args(args: argparse.Namespace) -> ReportContext:
         source_rev=args.source_rev,
         abc_melos=args.abc_melos,
         abc_tei=args.abc_tei,
-        abc_tei_dir=args.abc_tei_dir,
+        abc_tei_dir=args.abc_tei_dir
+        if args.abc_tei or args.abc_tei_dir
+        else default_abc_tei_dirs(pathlib.Path.cwd()),
     )
 
 
@@ -151,7 +166,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--compare-script", default=DEFAULT_COMPARE_SCRIPT, type=pathlib.Path)
     parser.add_argument("--tei-eaj-root", required=True, type=pathlib.Path)
     parser.add_argument("--source-rev", default=DEFAULT_SOURCE_REV)
-    parser.add_argument("--abc-melos", default="paper/demo-melos-real/tei.xml")
+    parser.add_argument("--abc-melos", default=None)
     parser.add_argument(
         "--abc-tei",
         action="append",

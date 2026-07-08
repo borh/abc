@@ -19,7 +19,17 @@ def load_probe():
     return module
 
 
+def load_reports():
+    spec = importlib.util.spec_from_file_location(
+        "tei_eaj_aozora_reports", TOOL_DIR / "tei_eaj_aozora_reports.py"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 probe = load_probe()
+reports = load_reports()
 
 
 TEI_TEMPLATE = """\
@@ -36,6 +46,20 @@ TEI_TEMPLATE = """\
   <text>
     <body>{body}</body>
   </text>
+</TEI>
+"""
+
+TEI_WITH_WORK_ID_1567 = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt><title>走れメロス</title></titleStmt>
+      <publicationStmt><idno type="aozora-work-id">001567</idno></publicationStmt>
+      <sourceDesc><p>source</p></sourceDesc>
+    </fileDesc>
+  </teiHeader>
+  <text><body><p>メロス</p></body></text>
 </TEI>
 """
 
@@ -108,6 +132,43 @@ class TeiEajCompareTest(unittest.TestCase):
             ],
             [comparison["relpath"] for comparison in report["melos_comparisons"]],
         )
+
+    def test_melos_report_resolves_abc_from_counterpart_directory_when_abc_omitted(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            abc_dir = root / "generated" / "artifacts"
+            abc = abc_dir / "works" / "melos" / "tei" / "tei.xml"
+            abc.parent.mkdir(parents=True)
+            abc.write_text(TEI_WITH_WORK_ID_1567, encoding="utf-8")
+            self.write_xml(
+                root,
+                "data/complete/tei_lib_lv4/1567_tei.xml",
+                "走れメロス",
+                "<p>メロス</p>",
+            )
+
+            report = probe.build_report(
+                None,
+                root,
+                source_rev="probe-rev",
+                abc_tei_dirs=[abc_dir],
+            )
+
+        self.assertEqual(abc.as_posix(), report["abc_path"])
+        self.assertEqual(1, report["melos_file_count"])
+        self.assertEqual(1, len(report["melos_comparisons"]))
+
+    def test_report_wrapper_does_not_default_to_paper_directory(self):
+        context = reports.ReportContext(
+            compare_script=pathlib.Path("tei_eaj_compare.py"),
+            tei_eaj_root=pathlib.Path("tei-eaj"),
+            source_rev="rev",
+            abc_melos=None,
+            abc_tei=[],
+            abc_tei_dir=[],
+        )
+
+        self.assertEqual([], reports.abc_all_work_inputs(context))
 
     def test_body_base_text_ignores_ruby_readings_and_parentheses(self):
         with tempfile.TemporaryDirectory() as td:

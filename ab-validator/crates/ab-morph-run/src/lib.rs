@@ -519,6 +519,37 @@ fn resolve_run_normalization(
     })
 }
 
+/// File name of the run-normalization provenance sidecar (T1 transport, spec
+/// Issue 2 P4). ABC reads this JSON to learn the applied normalization policy
+/// without depending on a parquet reader.
+pub const RUN_NORMALIZATION_PROVENANCE_FILE: &str = "run-normalization-provenance.json";
+
+/// Emit the run-level normalization provenance as a JSON sidecar in the final
+/// run directory (T1). Mirrors the `runs` warehouse columns; the value ABC
+/// reads is `input_normalization_policy_hash`.
+///
+/// # Errors
+///
+/// Returns an error if the JSON cannot be serialized or written.
+fn write_run_normalization_provenance(
+    final_dir: &Path,
+    run_id: &str,
+    normalization: &RunNormalizationProvenance,
+) -> Result<()> {
+    let value = serde_json::json!({
+        "run_id": run_id,
+        "ortho_detect_mode": normalization.mode,
+        "input_normalization_detector_id": normalization.detector_id,
+        "input_normalization_policy_hash": normalization.policy_hash,
+    });
+    let path = final_dir.join(RUN_NORMALIZATION_PROVENANCE_FILE);
+    let text = serde_json::to_string_pretty(&value)
+        .context("failed to serialize run-normalization provenance")?;
+    std::fs::write(&path, text)
+        .with_context(|| format!("failed to write {}", path.display()))?;
+    Ok(())
+}
+
 fn append_warehouse_nway_fact_rows(
     writer: &mut WarehouseWriter,
     run_id: &str,
@@ -1894,6 +1925,20 @@ mod tests {
         assert!(run_dir.join("nway_regions.parquet").is_file());
         assert!(!run_dir.join("analyses.jsonl").exists());
         assert!(!run_dir.join("comparisons.jsonl").exists());
+
+        // T1 run-normalization provenance sidecar: source-identity run records
+        // the identity policy hash for ABC to read.
+        let provenance: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(run_dir.join(RUN_NORMALIZATION_PROVENANCE_FILE)).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(provenance["run_id"], "run-a");
+        assert_eq!(provenance["ortho_detect_mode"], "off");
+        assert!(provenance["input_normalization_detector_id"].is_null());
+        assert_eq!(
+            provenance["input_normalization_policy_hash"],
+            ab_ortho_detect::NormalizationPolicy::identity().policy_hash()
+        );
 
         let staging = warehouse_dir.join(".staging");
         if staging.exists() {

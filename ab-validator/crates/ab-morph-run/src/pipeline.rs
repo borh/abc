@@ -1148,7 +1148,13 @@ pub(crate) fn run_analyze_aat_serial(
             input_normalization_detector_id: warehouse.normalization.detector_id.clone(),
             input_normalization_policy_hash: warehouse.normalization.policy_hash.clone(),
         }])?;
-        writer.finalize()?
+        let dur = writer.finalize()?;
+        write_run_normalization_provenance(
+            &warehouse.paths.final_dir,
+            &warehouse.paths.run_id,
+            &warehouse.normalization,
+        )?;
+        dur
     } else {
         std::time::Duration::ZERO
     };
@@ -1593,6 +1599,7 @@ pub(crate) fn merge_warehouse_shard_runs(
         input_normalization_policy_hash: options.normalization.policy_hash.clone(),
     }])?;
     let _ = writer.finalize()?;
+    write_run_normalization_provenance(&paths.final_dir, &options.run_id, &options.normalization)?;
     Ok(())
 }
 

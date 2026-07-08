@@ -1,10 +1,12 @@
 # Ortho Input-View Identity + ABC Bridge — Combined Design (P3+P4)
 
 **Date:** 2026-07-08
-**Status:** provisional design, no implementation. Combines Issue 2 phases P3
-(input-view records the applied normalization) and P4 (ABC reads the Rust-produced
-provenance and enforces the profile ⇄ input-view agreement). Written per the
-decision to design P3+P4 together before touching hashed artifact identity.
+**Status:** IMPLEMENTED (2026-07-08). P3 (input-view records the applied
+normalization) and P4 (ABC agreement check + Rust T1 provenance emitter) are
+landed and green (both suites). One deliberate gap remains: the *live* ABC
+publication path does not yet consume the T1 sidecar (ABC has no
+warehouse-consumption seam at all yet) — the check is exercised via fixtures.
+See "Landed vs. remaining" below.
 **Decisions carried in:** field is **required, identity sentinel for off**
 (user, 2026-07-08); compute stays in **Rust**, ABC reads (U1/I2-D8); descriptor
 is a Rust-owned struct, hash trusted opaquely (U2/I2-D9).
@@ -126,6 +128,29 @@ agreement check passes end-to-end in `validate_design_bundle`.
    fixture rewire (tokenizer-profile hash).
 8. `scripts/monorepo-schema-drift.sh` green; `clojure -M:test` green; Rust
    `cargo test` green.
+
+## Landed vs. remaining
+
+**Landed (2026-07-08):**
+- P3: required `input_normalization_policy_hash` on both input views; schemas +
+  versions + both contracts + nix mirrors + fixtures regenerated; drift green.
+- P4 producer: `materialize-analysis` emits the field (identity sentinel default).
+- P4 check: `analysis-identity/assert-input-normalization-agreement!` wired into
+  `materialize-tokenized!` (declared ⇄ applied); tokenizer-profile fixture rewired
+  to the real identity hash.
+- P4 transport (T1): the Rust runner writes `run-normalization-provenance.json`
+  (`RUN_NORMALIZATION_PROVENANCE_FILE`) into the final run dir on both the serial
+  and merge paths, carrying `input_normalization_policy_hash` for ABC to read.
+
+**Remaining (deliberate, not speculative):**
+- The live ABC publication path does not yet *read* the T1 sidecar — ABC has no
+  warehouse/run consumption seam today (the whole materialize flow is
+  fixture-driven). When that seam is built, `materialize-tokenized!` should be
+  passed `:applied-normalization-policy-hash` from the sidecar instead of
+  defaulting to the profile's declared value. Building that seam speculatively
+  now would be YAGNI; the mechanism (emitter + reader-shaped JSON + check) is in
+  place for it.
+- P5 (reproducibility golden) still follows.
 
 ## Open questions
 

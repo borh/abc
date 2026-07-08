@@ -24,7 +24,7 @@
 (def tei-schematron-path "schemas/tei-profile.sch")
 (def preservation-schema-path "schemas/parser-ir-publication-preservation.schema.json")
 (def preservation-schema-id "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json")
-(def preservation-schema-version "0.2.0")
+(def preservation-schema-version "0.3.0")
 
 (defn- write-string-file! [file value]
   (io/make-parents file)
@@ -389,6 +389,49 @@
           :value (pr-str figure-value)})))
    (get parser-ir "nodes" [])))
 
+(defn- sentence-segmentation-records [parser-ir]
+  (when-let [segmentation (get parser-ir "sentence_segmentation")]
+    [{:ir-pointer (json-pointer ["sentence_segmentation"])
+      :tei-pointer nil
+      :construct "sentence_segmentation"
+      :source-pointer nil
+      :source-inventory-row nil
+      :message (str "Sentence <s> boundaries and node/paragraph ranges were rewritten "
+                    "for segmentation by splitter " (get segmentation "splitter_id")
+                    " over " (get segmentation "coverage")
+                    "; source text is preserved in the TEI body.")
+      :value (get segmentation "splitter_id")}]))
+
+(defn- orthographic-annotation-records [parser-ir]
+  (let [ortho (get parser-ir "orthographic_annotations")
+        detector-id (get ortho "detector_id")
+        detector-label (if (string? detector-id) detector-id (pr-str detector-id))
+        sentences (get parser-ir "sentences" [])
+        tagging-sentence-ids
+        (fn [annotation-index]
+          (->> sentences
+               (filter #(some #{annotation-index}
+                              (get % "orthographic_annotation_indices")))
+               (mapv #(get % "id"))))]
+    (map-indexed
+     (fn [index annotation]
+       (let [ids (tagging-sentence-ids index)]
+         {:ir-pointer (json-pointer ["orthographic_annotations" "annotations" index])
+          :tei-pointer nil
+          :construct "orthographic_annotation"
+          :source-pointer nil
+          :source-inventory-row nil
+          :message (str "Orthographic detector " detector-label " flagged "
+                        (get annotation "kind") " over source bytes "
+                        (get-in annotation ["source_byte_range" "start"]) "-"
+                        (get-in annotation ["source_byte_range" "end"])
+                        (if (seq ids)
+                          (str "; tags sentence(s) " (string/join ", " ids))
+                          "; tags no sentence")
+                        ". Source text is preserved in the TEI body.")
+          :value (get annotation "kind")}))
+     (get ortho "annotations" []))))
+
 (defn- preservation-records [parser-ir]
   (let [raw-records (vec
                      (concat
@@ -402,7 +445,9 @@
                       (style-projection-records parser-ir)
                       (layout-projection-records parser-ir)
                       (heading-projection-records parser-ir)
-                      (figure-projection-records parser-ir)))]
+                      (figure-projection-records parser-ir)
+                      (sentence-segmentation-records parser-ir)
+                      (orthographic-annotation-records parser-ir)))]
     (mapv preservation-record (range) raw-records)))
 
 (defn- coverage-classes [records]

@@ -1,9 +1,11 @@
 # Parser-IR Inline-Container Lossless Split Design
 
 **Date:** 2026-07-08
-**Status:** B1 + B2 implemented and corpus-validated (U2 satisfied: 999/1000 on
-calib-triage-1000, only the accepted `gaiji` residual remains); U3 open; B3/B4
-pending. See the Phase B validation section of the audit report.
+**Status:** B1–B4 implemented; U2 + U3 resolved. B1/B2 corpus-validated
+(999/1000 on calib-triage-1000, only the accepted `gaiji` residual). B3 adds
+sentence/orthographic preservation provenance (Issue 5); B4 retires the dead
+sentence splitter (Issue 4). See the Phase B validation section of the audit
+report.
 **Owner:** ab-validator
 **Revises:** decisions D4/D5 and the "Node-boundary invariant" of
 `2026-07-07-parser-ir-sentence-segmentation-and-ortho-tei-design.md`. That design
@@ -170,22 +172,30 @@ join and ruby-base logic are unaffected by the split.
     yields no sentence rows without erroring (fixes the no-span bail — decide:
     emit no rows and relax the tiling assert for whitespace-only paragraphs, or
     emit a single whitespace-covering row). Reproducer: `"　\n"` paragraph.
-- **B3 — Split provenance (Issue 5).** Record that a container was split for
-  segmentation. Blocked on U3 (record shape).
-- **B4 — Re-audit + conditional fallback retirement (Issue 4).** Re-run
-  `audit-corpus` at scale; confirm the only residuals are the accepted `gaiji`
-  hard-fails (B-D7) and no new classes. Then narrow/remove the ABC
-  sentence-evidence fallback — publication-grade parser-IR is "clean" once the
-  sole remaining failures are the accepted `gaiji` cases.
+- **B3 — Preservation provenance (Issue 5). DONE.** Two new preservation-sidecar
+  record constructs (schema `0.2.0`→`0.3.0`): `sentence_segmentation` (splitter
+  identity + that node/paragraph ranges were rewritten for `<s>` emission — this
+  subsumes container-split provenance, closing U3) and `orthographic_annotation`
+  (one per detector annotation: detector id, kind, source byte range, and the
+  sentence ids it tags). Both `custom_sidecar` class; no new coverage class.
+- **B4 — Retire the sentence fallback (Issue 4). DONE.** Deleted the dead
+  `abc.text` namespace (its `split-japanese-sentence` was the last legacy splitter,
+  referenced only by its own test). The publication gate already rejects non-empty
+  body paragraphs without sentence rows, so no renderer change was needed; the
+  renderer's non-`<s>` path stays for legitimately non-wrappable content (headings)
+  and zero-span paragraphs. Full-adapter-scale re-audit still worth running before
+  declaring corpus-wide readiness.
 
 ## Open unknowns (incubate)
 
 - **U2 (measure):** RESOLVED. Re-audit of `calib-triage-1000` after B1+B2 →
   999/1000 succeed; the only failure is the accepted `gaiji` hard-fail (B-D7); no
   new classes. Full-adapter-scale re-audit still worth running as part of B4.
-- **U3 (decide):** split-provenance record shape — preservation record vs.
-  divergence note vs. nothing. Until U3 closes, provenance is **not** a firm
-  decision (see Decisions).
+- **U3 (decide):** RESOLVED. No bespoke per-split record; instead a single
+  `sentence_segmentation` preservation record documents that node/paragraph ranges
+  were rewritten for `<s>` emission by the named splitter — which covers container
+  splits without marking individual siblings. Detector provenance is carried by
+  the `orthographic_annotation` records (B3, B-D8).
 
 ## Non-goals
 
@@ -204,5 +214,4 @@ join and ruby-base logic are unaffected by the split.
 | B-D5 | Container visible text is derived from children; `text` must equal that projection | One source of truth; guards the schema gap where `text`/`inline_children` could disagree. |
 | B-D6 | Zero-width / edge children owned by the left sibling | Deterministic partition; matches existing top-level ownership. |
 | B-D7 | Accept the `gaiji` atomic-boundary as a rare hard-fail | A single glyph has no lossless split; the work does not publish until edited. Audit classifies it separately so it never masks new regressions. |
-
-*(Split-provenance is intentionally NOT a decision here — it is pending U3.)*
+| B-D8 | Provenance via `sentence_segmentation` + `orthographic_annotation` preservation records, not per-split markers | Segmentation record covers container splits at the aggregate; detector records carry ortho tag/index/detector linkage. Avoids a Rust converter change and per-node markers. |

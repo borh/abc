@@ -124,12 +124,13 @@ The five-scenario regression matrix is now covered:
 | (b) multiple ortho annotations in one sentence | **added** — `integration.rs::ortho_indices_cover_multiple_annotations_in_one_sentence` |
 | (c) one annotation spanning two sentences | **added** — `integration.rs::ortho_annotation_spanning_two_sentences_tags_both` |
 | (d) ruby inside tagged sentences | pre-existing |
-| (e) atomic boundary failure | **added** — shared fixture `tests/fixtures/atomic-boundary-emphasis-input.aat.json` + `integration.rs::rejects_sentence_boundary_inside_atomic_emphasis_from_aat` |
+| (e) atomic boundary failure | **added** — shared fixture `tests/fixtures/atomic-boundary-emphasis-input.aat.json` + `integration.rs::rejects_sentence_boundary_inside_atomic_ruby_child_from_aat` |
 
-The (e) fixture reproduces the dominant real-corpus failure end-to-end
-(AAT → parser-IR): an `emphasis` node with mixed inline `inline_children` and an
-interior terminal, failing with `sentence boundary falls inside atomic node
-emphasis at byte 6`.
+After Phase B the (e) fixture is a genuine residual atomic case: a `ruby` base
+carrying an interior terminal nested in an emphasis, failing with `sentence
+boundary falls inside atomic node ruby at byte 6` (a boundary inside a splittable
+text child now splits instead — see
+`integration.rs::splits_emphasis_container_at_sentence_boundary_keeping_ruby_whole`).
 
 ## Recommended next steps
 

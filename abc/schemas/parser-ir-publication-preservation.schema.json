@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
   "title": "ABC Parser-IR Publication Preservation Sidecar",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "object",
   "required": [
     "schema_id",
@@ -22,7 +22,7 @@
       "const": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
     },
     "schema_version": {
-      "const": "0.2.0"
+      "const": "0.3.0"
     },
     "schema_hash": {
       "$ref": "#/$defs/hash"
@@ -143,9 +143,11 @@
             "gaiji_resolution",
             "heading_jisage_structure",
             "mapping_identity",
+            "orthographic_annotation",
             "paragraph.node_range",
             "paragraph.source_pointer",
             "producer_metrics",
+            "sentence_segmentation",
             "source_identity",
             "source_note.classification",
             "span_coordinates",

@@ -41,8 +41,8 @@
       "path": "data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json",
       "id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
       "title": "ABC Parser-IR Publication Preservation Sidecar",
-      "version": "0.2.0",
-      "hash": "sha256:8ad6d80cd434f4540b3a95bd1e1953eda72f4e5fe4c0e65f090077c70699beb8"
+      "version": "0.3.0",
+      "hash": "sha256:d521fe8c249ef9b25655e4d0ef4fbcb6006564ac4584271985459a57999d3869"
     },
     {
       "path": "data/abc-schemas/schemas/parser-ir.schema.json",

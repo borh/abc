@@ -106,7 +106,7 @@
                    tei-validation-result)))
         (is (= "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
                (get preservation "schema_id")))
-        (is (= "0.2.0" (get preservation "schema_version")))
+        (is (= "0.3.0" (get preservation "schema_version")))
         (is (= source-corpus-hash
                (get-in preservation ["source" "corpus_snapshot_hash"])))
         (is (pos? (get-in preservation ["coverage" "record_count"])))
@@ -120,6 +120,10 @@
                   (get preservation "records")))
         (is (some #(and (= "tei_profile_projection" (get % "class"))
                         (= "heading_jisage_structure" (get % "construct")))
+                  (get preservation "records")))
+        ;; B3: sentence-segmentation provenance is recorded in the sidecar.
+        (is (some #(and (= "sentence_segmentation" (get % "construct"))
+                        (= "/sentence_segmentation" (get % "ir_pointer")))
                   (get preservation "records")))
         (is (= "plaintext" (get plaintext-manifest "artifact_kind")))
         (is (= "tei" (get tei-manifest "artifact_kind")))
@@ -249,6 +253,15 @@
         (is (= "passed"
                (get (files/read-json (io/file out-dir "tei-validation-result.json"))
                     "status"))))
+      ;; B3: orthographic detector provenance is recorded in the sidecar, linking
+      ;; the annotation to the sentence(s) it tags.
+      (let [preservation (files/read-json (io/file out-dir "preservation.json"))
+            ortho-record (some #(when (= "orthographic_annotation" (get % "construct")) %)
+                               (get preservation "records"))]
+        (is (some? ortho-record))
+        (is (= "ScriptKatakanaToHiragana" (get ortho-record "value")))
+        (is (string/includes? (get ortho-record "message") "HeuristicV1"))
+        (is (string/includes? (get ortho-record "message") "s000000")))
       (finally
         (delete-tree! work-dir)))))
 

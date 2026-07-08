@@ -12,7 +12,7 @@
    "schemas/analysis-recipe.schema.json" "0.1.1"
    "schemas/analysis-result.schema.json" "0.1.1"
    "schemas/manifest.schema.json" "0.4.3"
-   "schemas/parser-ir-publication-preservation.schema.json" "0.2.0"
+   "schemas/parser-ir-publication-preservation.schema.json" "0.3.0"
    "schemas/request-set.schema.json" "0.1.2"
    "schemas/source-region-coverage.schema.json" "0.2.1"
    "schemas/snapshot-index.schema.json" "0.1.0"

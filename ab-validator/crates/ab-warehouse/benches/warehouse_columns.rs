@@ -37,7 +37,11 @@ fn bench_direct_build_and_append(c: &mut Criterion) {
                 let feature_key = FEATURE_KEYS[index % FEATURE_KEYS.len()];
                 // ~1 in 17 features is unset, mirroring optional features
                 // like `lemma` on some analyzers.
-                let feature_value = if index % 17 == 0 { None } else { Some("名詞") };
+                let feature_value = if index % 17 == 0 {
+                    None
+                } else {
+                    Some("名詞")
+                };
                 columns.push_row(
                     "run-bench",
                     "source-bench",
@@ -80,7 +84,8 @@ fn bench_direct_build_and_append_nway_feature_diffs(c: &mut Criterion) {
 
             let mut columns = NwayFeatureDiffsColumns::new();
             for index in 0..NWAY_ROW_COUNT {
-                let region_index = (index / (NWAY_FEATURE_KEYS.len() * NWAY_ANALYZERS.len())) as u64;
+                let region_index =
+                    (index / (NWAY_FEATURE_KEYS.len() * NWAY_ANALYZERS.len())) as u64;
                 let feature_key = NWAY_FEATURE_KEYS[index % NWAY_FEATURE_KEYS.len()];
                 let analyzer_id = NWAY_ANALYZERS[index % NWAY_ANALYZERS.len()];
                 // Cycle whole_region / token_position / surface scopes.
@@ -91,7 +96,11 @@ fn bench_direct_build_and_append_nway_feature_diffs(c: &mut Criterion) {
                 };
                 // ~1 in 17 feature values is unset, mirroring an analyzer
                 // that didn't emit that feature for this scope.
-                let feature_value = if index % 17 == 0 { None } else { Some("名詞") };
+                let feature_value = if index % 17 == 0 {
+                    None
+                } else {
+                    Some("名詞")
+                };
                 columns.push_row(
                     "run-bench",
                     "source-bench",

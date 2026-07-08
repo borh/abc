@@ -3,11 +3,11 @@ use std::ops::Range;
 #[cfg(test)]
 use ab_morph_diff::MorphDiffError;
 use ab_morph_diff::{Analysis, NwayFeatureScope, NwayRegion, visit_nway_regions_with_source_text};
-#[cfg(test)]
-use ab_warehouse::schema::{MorphemeFeatureRow, NwayFeatureDiffRow};
 use ab_warehouse::schema::{
     AnalysisRow, MorphemeRow, NwayRegionAnalyzerRow, NwayRegionRow, ProjectionSpanRow, SourceRow,
 };
+#[cfg(test)]
+use ab_warehouse::schema::{MorphemeFeatureRow, NwayFeatureDiffRow};
 use ab_warehouse::writer::{MorphemeFeaturesColumns, NwayFeatureDiffsColumns};
 use anyhow::Result as AnyhowResult;
 #[cfg(test)]
@@ -321,7 +321,14 @@ where
         if flush_error.is_some() {
             return;
         }
-        push_region_rows(&ids, source_text, &char_map, region, &mut batch, pattern_counts);
+        push_region_rows(
+            &ids,
+            source_text,
+            &char_map,
+            region,
+            &mut batch,
+            pattern_counts,
+        );
         if batch.regions.len() >= batch_region_limit {
             if let Err(error) = on_batch(&mut batch) {
                 flush_error = Some(error);

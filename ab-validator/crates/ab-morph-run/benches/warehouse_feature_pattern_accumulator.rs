@@ -65,18 +65,15 @@ fn fixture() -> (Vec<NwayRegionRow>, Vec<NwayFeatureDiffRow>) {
 
 fn bench_record_and_into_rows(c: &mut Criterion) {
     let (regions, feature_diffs) = fixture();
-    c.bench_function(
-        "warehouse_feature_pattern_accumulator_20k_regions",
-        |b| {
-            b.iter(|| {
-                let mut accumulator = WarehouseFeaturePatternAccumulator::default();
-                accumulator
-                    .record(black_box(&regions), black_box(&feature_diffs))
-                    .unwrap();
-                black_box(accumulator.into_rows())
-            })
-        },
-    );
+    c.bench_function("warehouse_feature_pattern_accumulator_20k_regions", |b| {
+        b.iter(|| {
+            let mut accumulator = WarehouseFeaturePatternAccumulator::default();
+            accumulator
+                .record(black_box(&regions), black_box(&feature_diffs))
+                .unwrap();
+            black_box(accumulator.into_rows())
+        })
+    });
 }
 
 criterion_group!(benches, bench_record_and_into_rows);

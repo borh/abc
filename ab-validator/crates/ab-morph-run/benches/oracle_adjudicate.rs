@@ -54,7 +54,11 @@ fn fixture() -> (Vec<RubyBase>, Vec<Analysis>, Vec<RegionSpan>) {
         });
         // ~34% of bases: every analyzer agrees -> no emitted row.
         let full_match = i % 3 == 0;
-        let vibrato_kana = if full_match { "トウキョウ" } else { "トウケイ" };
+        let vibrato_kana = if full_match {
+            "トウキョウ"
+        } else {
+            "トウケイ"
+        };
         vibrato_morphs.push(morph(cs as usize..ce as usize, &[("kana", vibrato_kana)]));
         sudachi_morphs.push(morph(
             cs as usize..ce as usize,

@@ -1957,9 +1957,7 @@ mod tests {
             3,
         )
         .unwrap();
-        reference_writer
-            .append_nway_feature_diffs(&rows)
-            .unwrap();
+        reference_writer.append_nway_feature_diffs(&rows).unwrap();
         reference_writer.finalize().unwrap();
 
         let direct_paths = WarehousePaths::new(root.join("direct"), "run-a");

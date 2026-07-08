@@ -2593,15 +2593,63 @@ mod tests {
             warehouse_test_region_row(1, true),
         ];
         let feature_diffs = vec![
-            warehouse_test_diff_row(0, "reading", "whole_region", None, None, Some("キョウ"), "vibrato"),
+            warehouse_test_diff_row(
+                0,
+                "reading",
+                "whole_region",
+                None,
+                None,
+                Some("キョウ"),
+                "vibrato",
+            ),
             warehouse_test_diff_row(0, "pos2", "whole_region", None, None, Some("B"), "vibrato"),
-            warehouse_test_diff_row(0, "pos2", "whole_region", None, None, Some("C"), "sudachi-a"),
+            warehouse_test_diff_row(
+                0,
+                "pos2",
+                "whole_region",
+                None,
+                None,
+                Some("C"),
+                "sudachi-a",
+            ),
             warehouse_test_diff_row(0, "pos1", "whole_region", None, None, Some("A"), "vibrato"),
-            warehouse_test_diff_row(0, "pos1", "whole_region", None, None, Some("D"), "sudachi-a"),
-            warehouse_test_diff_row(1, "pos3", "surface", None, Some("東京"), Some("E"), "vibrato"),
+            warehouse_test_diff_row(
+                0,
+                "pos1",
+                "whole_region",
+                None,
+                None,
+                Some("D"),
+                "sudachi-a",
+            ),
+            warehouse_test_diff_row(
+                1,
+                "pos3",
+                "surface",
+                None,
+                Some("東京"),
+                Some("E"),
+                "vibrato",
+            ),
             warehouse_test_diff_row(1, "pos3", "surface", None, Some("東京"), None, "sudachi-a"),
-            warehouse_test_diff_row(1, "pos1", "token_position", Some(0), None, Some("F"), "vibrato"),
-            warehouse_test_diff_row(1, "pos1", "token_position", Some(0), None, Some("G"), "sudachi-a"),
+            warehouse_test_diff_row(
+                1,
+                "pos1",
+                "token_position",
+                Some(0),
+                None,
+                Some("F"),
+                "vibrato",
+            ),
+            warehouse_test_diff_row(
+                1,
+                "pos1",
+                "token_position",
+                Some(0),
+                None,
+                Some("G"),
+                "sudachi-a",
+            ),
         ];
 
         assert_feature_diffs_form_maximal_contiguous_runs(&feature_diffs);
@@ -2623,7 +2671,15 @@ mod tests {
         let regions = vec![warehouse_test_region_row(0, false)];
         let feature_diffs = vec![
             warehouse_test_diff_row(1, "pos1", "whole_region", None, None, Some("A"), "vibrato"),
-            warehouse_test_diff_row(0, "pos1", "whole_region", None, None, Some("B"), "sudachi-a"),
+            warehouse_test_diff_row(
+                0,
+                "pos1",
+                "whole_region",
+                None,
+                None,
+                Some("B"),
+                "sudachi-a",
+            ),
         ];
 
         let mut accumulator = WarehouseFeaturePatternAccumulator::default();

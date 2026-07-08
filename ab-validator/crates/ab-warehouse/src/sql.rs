@@ -106,7 +106,7 @@ mod tests {
             crate::schema::SCHEMA_VERSION
         )));
         assert!(SCHEMA_SQL.contains(
-            "Readers must reject runs.schema_version values greater than the reader's supported maximum (2)."
+            "Readers must reject runs.schema_version values greater than the reader's supported maximum (3)."
         ));
         assert!(MORPH_VIEWS_SQL_TEMPLATE.contains(&format!(
             "WHERE schema_version <= {}",

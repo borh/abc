@@ -2,7 +2,7 @@
 
 CREATE OR REPLACE VIEW warehouse_runs AS
 SELECT * FROM read_parquet('__RUN_DIR__/runs.parquet')
-WHERE schema_version <= 2;
+WHERE schema_version <= 3;
 
 CREATE OR REPLACE VIEW warehouse_nway_regions AS
 SELECT * FROM read_parquet('__RUN_DIR__/nway_regions.parquet');

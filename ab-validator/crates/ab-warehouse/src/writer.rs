@@ -486,7 +486,7 @@ impl WarehouseWriter {
                 nullable_u64_array(rows.iter().map(|row| row.scope_position)),
                 nullable_string_array(rows.iter().map(|row| row.scope_surface.as_deref())),
                 nullable_string_array(rows.iter().map(|row| row.feature_value.as_deref())),
-                string_array(rows.iter().map(|row| row.analyzer_id.as_ref())),
+                string_list_array(rows.iter().map(|row| row.analyzers.as_slice())),
             ],
             &mut self.write_time,
         )
@@ -767,9 +767,9 @@ impl Default for MorphemeFeaturesColumns {
 /// into this builder's Arrow buffers via [`push_row`](Self::push_row) instead
 /// of collecting a `Vec<NwayFeatureDiffRow>` first, skipping the per-row
 /// `Arc::clone` bumps that Vec would otherwise require (6 `Arc<str>`/
-/// `Option<Arc<str>>` fields per row). `analyzer_id` stays a scalar column
-/// this round (per-analyzer row-collapse is a deferred, separate schema
-/// change).
+/// `Option<Arc<str>>` fields per row). `analyzers` is a non-null, non-empty
+/// `List<Utf8>` column: one row per distinct value-group, carrying every
+/// analyzer that agreed on it (schema v3; see `SCHEMA_VERSION`).
 pub struct NwayFeatureDiffsColumns {
     run_id: StringBuilder,
     source_id: StringBuilder,
@@ -780,7 +780,7 @@ pub struct NwayFeatureDiffsColumns {
     scope_position: UInt64Builder,
     scope_surface: StringBuilder,
     feature_value: StringBuilder,
-    analyzer_id: StringBuilder,
+    analyzers: ListBuilder<StringBuilder>,
 }
 
 impl NwayFeatureDiffsColumns {
@@ -796,7 +796,7 @@ impl NwayFeatureDiffsColumns {
             scope_position: UInt64Builder::new(),
             scope_surface: StringBuilder::new(),
             feature_value: StringBuilder::new(),
-            analyzer_id: StringBuilder::new(),
+            analyzers: ListBuilder::new(StringBuilder::new()),
         }
     }
 
@@ -813,7 +813,7 @@ impl NwayFeatureDiffsColumns {
         scope_position: Option<u64>,
         scope_surface: Option<&str>,
         feature_value: Option<&str>,
-        analyzer_id: &str,
+        analyzers: &[impl AsRef<str>],
     ) {
         self.run_id.append_value(run_id);
         self.source_id.append_value(source_id);
@@ -824,7 +824,15 @@ impl NwayFeatureDiffsColumns {
         self.scope_position.append_option(scope_position);
         self.scope_surface.append_option(scope_surface);
         self.feature_value.append_option(feature_value);
-        self.analyzer_id.append_value(analyzer_id);
+        debug_assert!(
+            !analyzers.is_empty(),
+            "nway_feature_diffs analyzers list must be non-empty; an empty list \
+             vanishes under the readers' UNNEST",
+        );
+        for analyzer in analyzers {
+            self.analyzers.values().append_value(analyzer.as_ref());
+        }
+        self.analyzers.append(true);
     }
 
     #[must_use]
@@ -856,7 +864,7 @@ impl NwayFeatureDiffsColumns {
                 Arc::new(self.scope_position.finish()),
                 Arc::new(self.scope_surface.finish()),
                 Arc::new(self.feature_value.finish()),
-                Arc::new(self.analyzer_id.finish()),
+                Arc::new(self.analyzers.finish()),
             ],
         )
         .expect("NwayFeatureDiffsColumns builders match the documented schema")
@@ -1244,11 +1252,11 @@ fn bool_array(values: impl Iterator<Item = bool>) -> ArrayRef {
     Arc::new(BooleanArray::from_iter(values.map(Some)))
 }
 
-fn string_list_array<'a>(values: impl Iterator<Item = &'a [String]>) -> ArrayRef {
+fn string_list_array<'a, S: AsRef<str> + 'a>(values: impl Iterator<Item = &'a [S]>) -> ArrayRef {
     let mut builder = ListBuilder::new(StringBuilder::new());
     for list in values {
         for value in list {
-            builder.values().append_value(value);
+            builder.values().append_value(value.as_ref());
         }
         builder.append(true);
     }
@@ -1428,7 +1436,7 @@ fn nway_feature_diffs_schema() -> Arc<Schema> {
         u64_field("scope_position", true),
         utf8("scope_surface", true),
         utf8("feature_value", true),
-        utf8("analyzer_id", false),
+        utf8_list("analyzers"),
     ])
 }
 
@@ -1872,7 +1880,7 @@ mod tests {
                 scope_position: None,
                 scope_surface: None,
                 feature_value: Some(Arc::from("名詞")),
-                analyzer_id: Arc::from("vibrato"),
+                analyzers: vec![Arc::from("vibrato")],
             },
             // Same group, second analyzer, and a `None` feature_value.
             NwayFeatureDiffRow {
@@ -1885,7 +1893,7 @@ mod tests {
                 scope_position: None,
                 scope_surface: None,
                 feature_value: None,
-                analyzer_id: Arc::from("sudachi-a"),
+                analyzers: vec![Arc::from("sudachi-a")],
             },
             // token_position scope: scope_position set, scope_surface still None.
             NwayFeatureDiffRow {
@@ -1898,7 +1906,7 @@ mod tests {
                 scope_position: Some(0),
                 scope_surface: None,
                 feature_value: Some(Arc::from("A")),
-                analyzer_id: Arc::from("vibrato"),
+                analyzers: vec![Arc::from("vibrato")],
             },
             NwayFeatureDiffRow {
                 run_id: Arc::clone(&run_id),
@@ -1910,7 +1918,7 @@ mod tests {
                 scope_position: Some(0),
                 scope_surface: None,
                 feature_value: Some(Arc::from("B")),
-                analyzer_id: Arc::from("sudachi-c"),
+                analyzers: vec![Arc::from("sudachi-c")],
             },
             // surface scope: scope_surface set, scope_position None, plus a
             // third analyzer sharing this value group.
@@ -1924,7 +1932,7 @@ mod tests {
                 scope_position: None,
                 scope_surface: Some(Arc::from("東京")),
                 feature_value: Some(Arc::from("E")),
-                analyzer_id: Arc::from("vibrato"),
+                analyzers: vec![Arc::from("vibrato")],
             },
             NwayFeatureDiffRow {
                 run_id: Arc::clone(&run_id),
@@ -1936,7 +1944,7 @@ mod tests {
                 scope_position: None,
                 scope_surface: Some(Arc::from("東京")),
                 feature_value: Some(Arc::from("E")),
-                analyzer_id: Arc::from("sudachi-a"),
+                analyzers: vec![Arc::from("sudachi-a")],
             },
             NwayFeatureDiffRow {
                 run_id: Arc::clone(&run_id),
@@ -1948,7 +1956,21 @@ mod tests {
                 scope_position: None,
                 scope_surface: Some(Arc::from("東京")),
                 feature_value: None,
-                analyzer_id: Arc::from("sudachi-c"),
+                analyzers: vec![Arc::from("sudachi-c")],
+            },
+            // A value group shared by two analyzers in one row (sorted
+            // ascending), exercising the new list column's multi-element case.
+            NwayFeatureDiffRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                region_index: 0,
+                feature_key: Arc::from("pos"),
+                scope_type: Arc::from("whole_region"),
+                scope_position: None,
+                scope_surface: None,
+                feature_value: Some(Arc::from("名詞")),
+                analyzers: vec![Arc::from("sudachi-c"), Arc::from("vibrato")],
             },
         ];
 
@@ -1983,7 +2005,7 @@ mod tests {
                 row.scope_position,
                 row.scope_surface.as_deref(),
                 row.feature_value.as_deref(),
-                row.analyzer_id.as_ref(),
+                row.analyzers.as_slice(),
             );
         }
         direct_writer
@@ -2001,6 +2023,42 @@ mod tests {
         );
 
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn nway_feature_diffs_analyzers_is_non_null_sorted_list() {
+        use arrow_array::{Array, ListArray};
+        let mut columns = NwayFeatureDiffsColumns::new();
+        columns.push_row(
+            "r",
+            "s",
+            "t",
+            0,
+            "pos",
+            "whole_region",
+            None,
+            None,
+            Some("名詞"),
+            &["sudachi-c", "vibrato"],
+        );
+        let batch = columns.finish();
+        // Field: List<Utf8>, list itself non-null.
+        let field = batch.schema().field(9).clone();
+        assert_eq!(field.name(), "analyzers");
+        assert!(!field.is_nullable(), "analyzers list column must be non-null");
+        let list = batch.column(9).as_any().downcast_ref::<ListArray>().unwrap();
+        assert!(!list.is_null(0), "no null list entries");
+        let values = list.value(0);
+        let strs = values
+            .as_any()
+            .downcast_ref::<arrow_array::StringArray>()
+            .unwrap();
+        let got: Vec<&str> = (0..strs.len()).map(|i| strs.value(i)).collect();
+        assert_eq!(
+            got,
+            vec!["sudachi-c", "vibrato"],
+            "elements preserved in ascending order, non-empty"
+        );
     }
 
     #[test]

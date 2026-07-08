@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-pub const SCHEMA_VERSION: u32 = 2;
+pub const SCHEMA_VERSION: u32 = 3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WarehouseTable {
@@ -182,7 +182,7 @@ impl WarehouseTable {
                 "scope_position",
                 "scope_surface",
                 "feature_value",
-                "analyzer_id",
+                "analyzers",
             ],
             Self::FeaturePatternCounts => &[
                 "kind",
@@ -385,7 +385,7 @@ pub struct NwayFeatureDiffRow {
     pub scope_position: Option<u64>,
     pub scope_surface: Option<Arc<str>>,
     pub feature_value: Option<Arc<str>>,
-    pub analyzer_id: Arc<str>,
+    pub analyzers: Vec<Arc<str>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

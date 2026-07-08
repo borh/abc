@@ -1,5 +1,5 @@
--- Morph warehouse schema version 2.
--- Readers must reject runs.schema_version values greater than the reader's supported maximum (2).
+-- Morph warehouse schema version 3.
+-- Readers must reject runs.schema_version values greater than the reader's supported maximum (3).
 -- source_id is one AAT source record/file within a run.
 -- text_id is the logical work id; many source_id values may share one text_id.
 -- analyzer_family is closed in v1: vibrato | vaporetto | sudachi.
@@ -147,7 +147,7 @@ CREATE TABLE nway_feature_diffs (
   scope_position UBIGINT,
   scope_surface VARCHAR,
   feature_value VARCHAR,
-  analyzer_id VARCHAR
+  analyzers VARCHAR[]
 );
 
 CREATE TABLE feature_pattern_counts (

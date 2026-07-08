@@ -111,7 +111,7 @@ fn bench_direct_build_and_append_nway_feature_diffs(c: &mut Criterion) {
                     scope_position,
                     scope_surface,
                     feature_value,
-                    analyzer_id,
+                    &[analyzer_id],
                 );
             }
 

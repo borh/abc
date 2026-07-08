@@ -27,12 +27,12 @@ Implement TEI Chapter 21 fragmentation (Strategy A) for nested sentences. The ou
 | # | Decision | Rationale |
 |---|---|---|
 | D1 | TEI fragmentation strategy (`part`/`next`/`prev`) | Most common TEI practice. Keeps sentence markup inline. Compatible with existing schematron rule (no nested `<s>`). |
-| D2 | Both AAT quote markers and punctuation heuristics | AAT markers are authoritative when available. Heuristics cover patterns without AAT markers (parenthetical `（）`). |
+| D2 | Quote nodes synthesized from `「」`/`『』` + AAT `quote_block` | AAT structural markers and inline `「」`/`『』` both produce quote nodes. Parenthetical `（）` is NOT fragmented in v1 — it's an inline aside, not a separate narrative level. Restriction to `（）` can be added later with corpus evidence.
 | D3 | Replace `sentence_split` with user's `split_sentences` | Improved rules: `…` only at EOL, CJK numbered lists, `！`/`？` continuation, `closing_bracket_ahead` with depth tracking. |
 | D4 | Two-pass splitting | Pass 1: flat split (splitter). Pass 2: nesting detection + re-split (converter). Keeps splitter simple, validated independently. |
 | D5 | Fragment fields on sentence rows | Add `part`, `fragment_group`, `next_id`, `prev_id` to existing `sentences[]`. No new top-level arrays. Backward compatible. |
 | D6 | Recursive nesting | Real literary texts have 2-3 levels of quote nesting. Max depth limit (default 5) prevents runaway recursion. |
-| D7 | Emit quote nodes from converter | Schema already supports `quoteNode`. AAT `quote_block` and inline markers → parser-IR `quote` nodes with `marker_type` and `nesting_level`. |
+| D7 | Emit quote nodes from converter | Schema already supports `quoteNode`. AAT `quote_block` and inline markers → parser-IR `quote` nodes with `marker_type`. `nesting_level` is stored as `null` (derivable from ordered marker sequence). |
 | D8 | Converter-driven nesting | Splitter stays simple (flat sentences). Converter detects nesting using quote nodes + heuristics. Best separation of concerns. |
 
 ## Architecture
@@ -75,12 +75,18 @@ Replace `sentence_split` with the user's `split_sentences` logic, adapted to pre
 
 | Behavior | Current `sentence_split` | New `split_sentences` |
 |---|---|---|
-| Newlines | NOT boundaries | ARE boundaries |
+| Newlines | NOT boundaries | NOT boundaries (preserved) |
 | `…` | Always splits | Only at end-of-line |
 | CJK numbered lists (`１．`) | No special handling | Recognized, no split |
 | `！`/`？` + continuation | No special handling | `！笑`, `？って` stay together |
 | `closing_bracket_ahead` | Simple next-char check | Scans ahead with depth tracking |
 | Closing quotations | `）」』】］〕〉》]` | Adds `"`, `"`, `’` |
+
+### Newline Behavior (S2 resolution)
+
+The user's `split_sentences` treats newlines as sentence boundaries. This is NOT adopted for paragraph-internal splitting — inside a paragraph, the only newlines in visible text come from `<line-break>` nodes. Making newlines boundaries would force a sentence split at every `<lb>`, over-splitting prose with forced line breaks (very common in Aozora formatting: poetic insets, indented lines, dialog wrapping).
+
+**Resolution:** Preserve the existing behavior — newlines are NOT sentence boundaries when called from `project_body_paragraph`. The `newlines_are_not_sentence_boundaries` test remains unchanged.
 
 ### SplitOptions
 
@@ -108,6 +114,7 @@ Per existing design (`2026-07-07-parser-ir-sentence-segmentation-and-ortho-tei-d
 2. Run over representative corpus sample
 3. Check in the divergence report
 4. Update `splitter_id` from `"ab-plaintext-japanese-v1"` to `"ab-plaintext-japanese-v2"`
+5. `sentence_segmentation.schema_version` stays at `"sentence-segmentation-v1"` — fragment fields are additive optional fields, same contract
 
 ## Layer 2: Converter Changes
 
@@ -117,12 +124,12 @@ Per existing design (`2026-07-07-parser-ir-sentence-segmentation-and-ortho-tei-d
 
 | AAT kind | Parser-IR node | Fields |
 |---|---|---|
-| `quote_block` (open marker) | `quote` | `marker_type: "open"`, `nesting_level` from context |
-| `quote_block` (close marker) | `quote` | `marker_type: "close"`, `nesting_level` from context |
+| `quote_block` (open marker) | `quote` | `marker_type: "open"`, `nesting_level: null` |
+| `quote_block` (close marker) | `quote` | `marker_type: "close"`, `nesting_level: null` |
 | Inline quote marker (e.g., `「`) | `quote` | `marker_type: "open"` or `"close"` |
 | Inline quote with text | `quote` | `marker_type: "inline"`, `text: "quoted content"` |
 
-`nesting_level` tracking: converter maintains a counter incremented on open markers, decremented on close markers.
+`nesting_level` is stored as `null` — it is derivable from the ordered sequence of `marker_type` values (count opens minus closes at any point). No stored state to go stale.
 
 Quote nodes are inline nodes — they participate in sentence projection like `text`, `ruby`, etc. Their visible text is the marker character itself (`「`, `」`, etc.) or empty.
 
@@ -141,13 +148,20 @@ struct NestedRegion {
 }
 ```
 
-**Detection strategy (two signals):**
+**Detection strategy — single signal:**
 
-1. **Quote nodes (primary):** Scan the node slice for the sentence. Find `quote` nodes with `marker_type: "open"` and their matching `"close"`. Track depth. Each open→close pair at depth 0 is a candidate nested region.
+Quote nodes are the sole nesting signal. The converter synthesizes quote nodes for inline `「」`/`『』` by splitting text nodes at these characters (just as it splits text nodes at sentence boundaries). This makes D7 load-bearing: every `「` becomes an `open` quote node, every `」` becomes a `close` quote node.
 
-2. **Punctuation heuristics (fallback):** For sentences without quote nodes, scan the visible text for `「...」` patterns. Treat each `「...」` span as a nested region.
+**Detection algorithm:**
 
-**Recursive handling:** For nested quotes (quote inside quote), the detector recurses. Each nesting level produces its own `NestedRegion`. Max depth: 5 (configurable).
+1. Scan the node slice for the sentence.
+2. Find `quote` nodes with `marker_type: "open"` and their matching `"close"`.
+3. Track depth. Each open→close pair at depth 0 is a candidate nested region.
+4. For nested quotes (quote inside quote), recurse. Max depth: 5 (configurable).
+
+**No heuristic fallback.** If `「` appears without a matching `」` in the same sentence, no fragmentation occurs for that pair. The unmatched marker stays as text.
+
+**AAT `quote_block` handling:** AAT structural `quote_block` markers also produce parser-IR `quote` nodes. These are consistent with the inline synthesis — both paths produce the same node type.
 
 ### 2c: Fragment Assembly (`sentences.rs`)
 
@@ -163,7 +177,13 @@ struct NestedRegion {
    c. If nested regions found:
       i.   Extract inner text from nested regions
       ii.  Re-split inner text with suppress_closing_bracket_check: true
-      iii. Split parser-IR nodes at these finer boundaries
+      iii. Split parser-IR nodes at these finer boundaries:
+           - Inner re-split produces substring-relative byte offsets
+           - Map to absolute coordinates: `absolute = inner_byte_start + relative`
+           - Feed through the same `split_node_at_boundaries` machinery
+           - The inner region may straddle multiple pre-existing text nodes
+             (e.g., the example fixture has three separate text nodes)
+           - Each straddling text node is split at the inner boundaries
       iv.  Create fragment rows:
            - Before first nested region: part="I", next_id = first inner or next fragment
            - Each nested region: no part (complete inner sentences)
@@ -209,6 +229,18 @@ Update `assert_sentence_span_tiling` and `assert_sentence_node_tiling`:
 - Non-fragmented sentences must tile the paragraph as before
 - The overall paragraph must still tile with no gaps
 
+Two distinct assertions:
+1. **Paragraph-contiguity:** all sentence rows (fragments + complete) tile the paragraph with no gaps. Same as existing.
+2. **Group-coverage:** all fragments in a group tile the original sentence's byte/node range. New assertion.
+
+### 2e: Orthographic Annotation Redistribution (S4)
+
+Fragment rows inherit `tags` and `orthographic_annotation_indices` by the same byte-overlap rule as complete sentences. An orthographic annotation is NOT propagated to fragments whose byte range it doesn't overlap.
+
+Example: if an annotation spans bytes [0, 50) and the outer sentence fragments into [0, 20) and [40, 50), the annotation overlaps both fragments → both get the `orthographic-katakana` tag. If the annotation spans bytes [25, 35) which falls entirely inside an inner sentence, only that inner sentence gets the tag.
+
+**Test:** `ortho_overlap_fragmented` — verifies correct tag/index distribution across fragments and inner sentences.
+
 ## Layer 3: ABC TEI Renderer Changes
 
 ### 3a: Fragment Rendering
@@ -220,16 +252,12 @@ Modified function: `render-paragraph-row-with-sentences`
   (let [base-attrs (when (some #{"orthographic-katakana"} (get sentence "tags" []))
                      {:type "orthographic-katakana"})
         part (get sentence "part")
-        fragment-group (get sentence "fragment_group")
         next-id (get sentence "next_id")
         prev-id (get sentence "prev_id")]
     (cond-> base-attrs
       part
-      (assoc :part part)
-
-      fragment-group
-      (assoc :xml:id (str "s" (subs (get sentence "id") 1))
-             :corresp (str "#" fragment-group))
+      (assoc :part part
+             :xml:id (str "s" (subs (get sentence "id") 1)))
 
       next-id
       (assoc :next (str "#s" (subs next-id 1)))
@@ -238,16 +266,18 @@ Modified function: `render-paragraph-row-with-sentences`
       (assoc :prev (str "#s" (subs prev-id 1))))))
 ```
 
+Note: `fragment_group` is parser-IR-internal bookkeeping only. It is NOT rendered as `@corresp` in TEI because no anchor element carries the group ID. `@part` + `@next` + `@prev` is the standard TEI fragmentation representation and is sufficient.
+
 ### 3b: TEI Profile Schema Update
 
-Add to `abc/schemas/tei-profile.rng`:
+Verified against `abc/schemas/tei-profile.rng`:
 
-1. Allow `@part` on `<s>` with values `"I"`, `"M"`, `"F"`
-2. Allow `@corresp` on `<s>` (from `att.pointing`)
-3. Allow `@next` and `@prev` on `<s>` (from `att.linking`)
-4. Allow `@xml:id` on `<s>` (from `att.global`)
+1. `@part` is already allowed on `<s>` via `att.segLike` → `att.fragmentable` (values: Y|N|I|M|F). No change needed.
+2. `@xml:id` is already allowed on `<s>` via `att.global`. No change needed.
+3. `@next` and `@prev` are NOT currently allowed — `att.linking` is not referenced by `<s>`. Add a reference to `att.linking.attributes` on `<s>` (or selectively define `@next`/`@prev` attributes).
+4. `@corresp` is NOT rendered — see B2 resolution below.
 
-These are standard TEI attributes — no custom extension needed.
+The schema change is limited to adding linking attributes (`@next`, `@prev`) to `<s>`.
 
 ## Parser-IR Schema Changes
 
@@ -302,6 +332,16 @@ Add optional fields to existing sentence row schema:
 
 **Backward compatibility:** Non-fragmented sentences have no `part`, no `fragment_group`, no linking fields. Existing parser-IR consumers are unaffected.
 
+## Cross-Field Fragment Constraints (S3 resolution)
+
+The fragment field constraints (`part` ↔ `next_id`/`prev_id`/`fragment_group`) are cross-field coherence rules that JSON Schema cannot express. Two enforcers:
+
+1. **ab-validator (fail-fast):** `sentences.rs` asserts fragment-field combinatorial constraints at conversion time. If a fragment row violates the constraints, conversion fails with a diagnostic.
+
+2. **ABC (publication gate):** `parser_ir_sentence_policy.clj` extends `sentence-coherence-errors` with fragment-field checks. This catches any parser-IR that arrives with invalid fragment fields.
+
+**Tests:** Add `fragment_field_coherence` to the converter test table — verifies all combinatorial constraints (part↔next_id, part↔prev_id, part↔fragment_group).
+
 ## Error Handling
 
 | Case | Handling |
@@ -335,6 +375,8 @@ Add optional fields to existing sentence row schema:
 | `fragment_tiling_assertion` | Fragments tile original sentence |
 | `unmatched_quote_no_fragment` | Unmatched `「` → no fragmentation |
 | `atomic_boundary_in_nested` | Ruby inside nested region → hard fail |
+| `fragment_field_coherence` | All combinatorial constraints (part↔next_id, part↔prev_id, part↔fragment_group) |
+| `ortho_overlap_fragmented` | Correct tag/index distribution across fragments and inner sentences |
 
 ### Renderer Tests (`parser_ir_tei_test.clj`)
 
@@ -366,12 +408,14 @@ Expected TEI:
 
 ```xml
 <p>
-  <s part="I" xml:id="s000000" corresp="#fg000000" next="#s000003">先生は高い梢を見上げて、</s>
+  <s part="I" xml:id="s000000" next="#s000003">先生は高い梢を見上げて、</s>
   <s xml:id="s000001">「もう少しすると、綺麗ですよ。</s>
   <s xml:id="s000002">この木がすっかり黄葉して、ここいらの地面は金色の落葉で埋まるようになります」</s>
-  <s part="F" xml:id="s000003" corresp="#fg000000" prev="#s000000">といった。</s>
+  <s part="F" xml:id="s000003" prev="#s000000">といった。</s>
 </p>
 ```
+
+Note: The closing `」` is attached to inner sentence 2 (not the outer fragment) so that visible text tiles contiguously. This is a "framing-punctuation redistribution" — the bracket stays with the text it encloses, preserving byte/node tiling.
 
 ## Non-Goals
 
@@ -380,11 +424,14 @@ Expected TEI:
 - Ruby-driven sentence splitting
 - Fragmentation across paragraph boundaries
 - Nested `<s>` elements (prohibited by schematron rule 41)
+- Fragmentation of parenthetical `（）` (v1 restriction; no corpus evidence yet)
+
+## Migration Note (F1)
+
+Fragmentation is the chosen representation while nested `<s>` is prohibited (schematron rule 41) and `<q>` wrapping is not emitted. A future `<q>`-based representation could supersede the `@part`/`@next`/`@prev` chain. Fragment rows and the linking IDs are designed so that migration is a renderer concern — drop links, wrap inner `<s>` in `<q>` — without re-running the converter.
 
 ## Open Questions
 
 1. **Full-adapter corpus validation:** After implementation, run `audit-corpus` at full scale to measure fragmentation frequency and catch edge cases.
 
-2. **Quote node emission scope:** Should ALL AAT quote markers produce parser-IR quote nodes, or only those inside body paragraphs? Current design: all markers, but nesting detection only runs on body paragraphs.
-
-3. **Fragment group ID format:** Current design uses `fg000000` sequential IDs. Should these be stable across re-conversion, or are ephemeral IDs acceptable?
+2. **Fragment group ID format:** Current design uses `fg000000` sequential IDs. Ephemeral IDs are acceptable since `fragment_group` is parser-IR-internal only (not rendered in TEI).

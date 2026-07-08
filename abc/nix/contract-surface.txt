@@ -12,7 +12,8 @@ src/abc/tools/aozora_history_audit.clj
 src/abc/tools/aozora_ingest.clj
 src/abc/git.clj
 prototypes/tei-eaj-comparison/tei_eaj_compare.py
-prototypes/tei-eaj-comparison/test_tei_eaj_compare.py
+tools/tei_eaj_compare.py
+tools/test_tei_eaj_compare.py
 tools/tei_eaj_aozora_reports.py
 src/abc/tools/manifest_index.clj
 src/abc/tools/logging.clj

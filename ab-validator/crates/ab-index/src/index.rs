@@ -179,7 +179,18 @@ fn collect_source_files(corpus_root: &Path) -> Result<Vec<SourceFile>> {
         .filter_entry(|entry| !is_hidden(entry.path()))
     {
         let entry = entry?;
-        if !entry.file_type().is_file() {
+        // The pinned nix `aozorabunko-corpus` derivation presents every leaf work
+        // file as a symlink into the `-source` store path. WalkDir (follow_links
+        // false, to avoid descending symlinked directories) reports these as
+        // symlinks, not files, so resolve symlink targets here rather than skipping
+        // them — otherwise the entire corpus indexes as zero works.
+        let file_type = entry.file_type();
+        let is_regular_file = if file_type.is_symlink() {
+            fs::metadata(entry.path()).is_ok_and(|meta| meta.is_file())
+        } else {
+            file_type.is_file()
+        };
+        if !is_regular_file {
             continue;
         }
         let path = entry.path();
@@ -544,5 +555,33 @@ mod tests {
             Path::new("/corpus/reference/ruby_reference.txt"),
             root
         ));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn collects_symlinked_work_files() {
+        // The pinned nix `aozorabunko-corpus` presents every leaf work file as a
+        // symlink into the `-source` store path. WalkDir reports those as symlinks,
+        // not files; collect_source_files must still index them (regression: the
+        // whole corpus otherwise indexes as zero works).
+        use std::os::unix::fs::symlink;
+
+        let root = std::env::temp_dir().join(format!("ab-index-symlink-{}", std::process::id()));
+        let files = root.join("cards/000001/files");
+        let targets = root.join("targets");
+        fs::create_dir_all(&files).unwrap();
+        fs::create_dir_all(&targets).unwrap();
+        let real = targets.join("1.txt");
+        fs::write(&real, "本文《ほんぶん》\n").unwrap();
+        symlink(&real, files.join("1.txt")).unwrap();
+
+        let sources = collect_source_files(&root).unwrap();
+        fs::remove_dir_all(&root).ok();
+
+        assert_eq!(sources.len(), 1, "symlinked work file must be collected");
+        match &sources[0] {
+            SourceFile::Plain(path) => assert!(path.ends_with("cards/000001/files/1.txt")),
+            other => panic!("expected a plain source, got {other:?}"),
+        }
     }
 }

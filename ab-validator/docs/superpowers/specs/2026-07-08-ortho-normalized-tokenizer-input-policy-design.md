@@ -1,9 +1,10 @@
 # Ortho-Normalized Tokenizer-Input Policy — Design (provisional)
 
 **Date:** 2026-07-08
-**Status:** design + P0 landed (2026-07-08). Recommendation set on the load-bearing
-forks; U1 (bridge direction) resolved — compute-heavy work stays in Rust. P0
-(thread `--ortho-detect` through all run paths) is implemented; P1–P5 remain.
+**Status:** design + P0 + P1 landed (2026-07-08). Load-bearing forks resolved;
+U1 (bridge direction → Rust) and U2 (opaque hash boundary) resolved. P0 (thread
+`--ortho-detect` through all run paths) and P1 (structured policy identity) are
+implemented; P2–P5 remain.
 **Owner:** ab-validator (producer) + abc (identity/manifest)
 **Related:**
 `2026-07-07-parser-ir-sentence-segmentation-and-ortho-tei-design.md` (the
@@ -151,9 +152,26 @@ independently identified.
   vibrato analyzer in the run's analyzer set, each batch reloads UniDic. When
   vibrato IS in the set (the common corpus case) the loaded dictionary is reused.
   Hoisting the detector to once-per-worker is a later optimization.
-- **P1 — Structured normalization-policy identity.** Define the policy descriptor
-  (F3) and a shared JCS-SHA256 hash; define the identity sentinel. One
-  definition, agreed by Rust and ABC.
+- **P1 — Structured normalization-policy identity. DONE (2026-07-08).** Added
+  `ab_ortho_detect::policy::NormalizationPolicy` — the structured descriptor
+  (`policy_schema_version` + `algorithm` + `detector` + `kinds` +
+  `coordinate_system`), its JCS-SHA256 `policy_hash()`, and the `identity()`
+  sentinel. Canonicalization mirrors `abc.tools.jcs` (sorted keys, compact,
+  UTF-8); the descriptor uses only slash-free ASCII strings/arrays so the
+  escaping-sensitive corners of RFC 8785 never fire and ABC would agree
+  byte-for-byte if it ever verified. **Agreed constants (Rust is the sole
+  producer; ABC reads these opaquely):**
+  - identity sentinel:
+    `sha256:530c59689dd909c171790036cddc7916f8685897b6342bfa794d4611816d3813`
+    (canonical: `{"algorithm":"identity","coordinate_system":"source-preserving-remap","detector":null,"kinds":[],"policy_schema_version":"ortho-input-normalization-v1"}`)
+  - heuristic-v1 kata→hira:
+    `sha256:1670ff1d5ff27575dc63ffd448cb140b3d497247bb7b36e1b4e2f1623aa0fa2c`
+    (`detector.detector_id = "HeuristicV1"`, `kinds = ["ScriptKatakanaToHiragana"]`)
+  - ML runs bind the model bytes: `detector.detector_id =
+    {"MlLogisticRegression":{"model_hash":"sha256:…"}}`, so each model is a
+    distinct policy identity.
+  Both hashes are pinned by unit tests; a change to canonicalization breaks them
+  loudly. Not yet wired into any manifest (that is P2).
 - **P2 — Persist ortho provenance in the Rust world.** Record per analysis:
   ortho mode, `detector_id`, `input_normalization_policy_hash`, remap status, and
   whether the offset map was non-identity — in `RunManifest` and/or a warehouse
@@ -178,9 +196,15 @@ independently identified.
   producer of the policy identity, ABC is the consumer/recorder. The remaining P4
   question is narrowed to the *transport* (which warehouse row/manifest field ABC
   reads), not who computes.
-- **U2 — Structured vs. opaque hash boundary.** Does the policy descriptor (F3)
-  get its own checked-in schema (like tokenizer-profile), or stay a Rust-side
-  struct whose JCS hash ABC trusts opaquely? Affects schema governance surface.
+- **U2 — Structured vs. opaque hash boundary. RESOLVED (2026-07-08):** the
+  descriptor stays a **Rust-owned struct**; ABC trusts the `policy_hash` opaquely
+  and gets **no** separate checked-in JSON schema for the descriptor. This follows
+  from U1 (I2-D8): ABC never validates or recomputes the descriptor, so a
+  checked-in schema would be governance surface with no consumer. The canonical
+  form + agreed hashes are documented here for auditability, and the Rust unit
+  tests are the guard. If a future consumer needs to *construct* (not just read) a
+  policy hash outside Rust, revisit and promote the descriptor to a checked-in
+  schema then.
 - **U3 — `HistoricalToModern` scope.** The reserved kind is out of the v1 policy;
   confirm before pinning `kinds` as a closed set in the descriptor.
 - **U4 — `determinism_tier` interaction.** How the tokenizer-profile
@@ -206,3 +230,4 @@ independently identified.
 | I2-D6 | Thread `--ortho-detect` through warehouse/parallel/selected paths (P0) | Publication runs on the warehouse path; without this the feature can't ship. |
 | I2-D7 | Keep source preservation + honest-remap-failure as hard invariants | Matches the ruby-evidence contract's "evidence never replaces source." |
 | I2-D8 | Bridge direction (U1): compute-heavy work stays in Rust — Rust produces the policy identity + provenance, ABC reads it | Single producer of the normalization policy hash; ABC never recomputes normalization. |
+| I2-D9 | Hash boundary (U2): policy descriptor is a Rust-owned struct; ABC trusts `policy_hash` opaquely, no checked-in descriptor schema | ABC never validates/recomputes the descriptor, so a schema would add governance surface with no consumer. |

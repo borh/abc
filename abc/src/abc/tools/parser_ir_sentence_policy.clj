@@ -1,5 +1,42 @@
 (ns abc.tools.parser-ir-sentence-policy)
 
+(defn- fragment-field-errors [sentence]
+  (let [part (get sentence "part")
+        fragment-group (get sentence "fragment_group")
+        next-id (get sentence "next_id")
+        prev-id (get sentence "prev_id")
+        sid (get sentence "id")]
+    (cond-> []
+      (and part (nil? fragment-group))
+      (conj (str "parser IR sentence " sid " has part but no fragment_group"))
+
+      (and (nil? part) fragment-group)
+      (conj (str "parser IR sentence " sid " has fragment_group but no part"))
+
+      (and (= part "I") (nil? next-id))
+      (conj (str "parser IR sentence " sid " part=I but no next_id"))
+
+      (and (= part "I") prev-id)
+      (conj (str "parser IR sentence " sid " part=I but has prev_id"))
+
+      (and (= part "M") (nil? next-id))
+      (conj (str "parser IR sentence " sid " part=M but no next_id"))
+
+      (and (= part "M") (nil? prev-id))
+      (conj (str "parser IR sentence " sid " part=M but no prev_id"))
+
+      (and (= part "F") next-id)
+      (conj (str "parser IR sentence " sid " part=F but has next_id"))
+
+      (and (= part "F") (nil? prev-id))
+      (conj (str "parser IR sentence " sid " part=F but no prev_id"))
+
+      (and (nil? part) next-id)
+      (conj (str "parser IR sentence " sid " has next_id but no part"))
+
+      (and (nil? part) prev-id)
+      (conj (str "parser IR sentence " sid " has prev_id but no part")))))
+
 (defn- sentence-row-error-prefix [sentence]
   (str "parser IR sentence " (get sentence "id")))
 
@@ -177,10 +214,11 @@
               invalid-annotation-index?
               (conj (str "parser IR sentence " sid
                          " has orthographic annotation index outside annotations[]")))
-            (when tagged?
-              (annotation-span-errors sentence
-                                      annotations
-                                      annotation-indices)))))
+            (concat (when tagged?
+                      (annotation-span-errors sentence
+                                              annotations
+                                              annotation-indices))
+                    (fragment-field-errors sentence)))))
        (map-indexed vector sentences))
       (mapcat
        (fn [paragraph]

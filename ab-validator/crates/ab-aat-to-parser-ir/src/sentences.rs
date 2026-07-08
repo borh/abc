@@ -2,6 +2,35 @@ use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
+/// Maximum quote-nesting depth the detector will recurse into. Real literary
+/// text rarely exceeds 2-3 levels; the cap guards against runaway recursion on
+/// malformed marker sequences.
+const MAX_NESTING_DEPTH: usize = 5;
+
+/// A region of text enclosed by a matching pair of synthesized `quote` nodes
+/// (an `open` marker followed by its matching `close`).
+///
+/// `inner_byte_start`/`inner_byte_end` bound the text strictly between the
+/// markers (exclusive of the marker glyphs). `outer_byte_start`/`outer_byte_end`
+/// bound the markers themselves so that framing-punctuation redistribution can
+/// attach the open marker to the first inner sentence and the close marker to
+/// the last inner sentence. All offsets are absolute `decoded_utf8` byte
+/// offsets.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct NestedRegion {
+    pub inner_byte_start: usize,
+    pub inner_byte_end: usize,
+    pub outer_byte_start: usize,
+    pub outer_byte_end: usize,
+    pub opening_marker_node: usize,
+    pub closing_marker_node: usize,
+    pub nesting_level: usize,
+}
+
+/// Detect all quote-enclosed regions in `nodes[range_start..range_end]`,
+/// recursing into each matched pair so nested quotes are reported at their own
+/// (deeper) nesting level. Unmatched `open` markers produce no region.
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SentenceSegmentation {
     pub schema_version: String,
@@ -18,6 +47,14 @@ pub struct ParserIrSentence {
     pub node_range: Value,
     pub tags: Vec<String>,
     pub orthographic_annotation_indices: Vec<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub part: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fragment_group: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prev_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -34,13 +71,114 @@ struct SentenceBounds {
     end: usize,
 }
 
+struct FineBound {
+    bounds: SentenceBounds,
+    group: Option<usize>,
+    outer_pos: Option<usize>,
+}
+
+struct AtomicSpan {
+    start: usize,
+    end: usize,
+}
+
 pub fn segmentation_meta() -> SentenceSegmentation {
     SentenceSegmentation {
         schema_version: "sentence-segmentation-v1".to_owned(),
-        splitter_id: "ab-plaintext-japanese-v1".to_owned(),
+        splitter_id: "ab-plaintext-japanese-v2".to_owned(),
         coordinate_system: "decoded_utf8".to_owned(),
         coverage: "body-paragraphs".to_owned(),
     }
+}
+
+pub(crate) fn detect_nested_regions(
+    nodes: &[Value],
+    node_start: usize,
+    node_end: usize,
+) -> Vec<NestedRegion> {
+    detect_nested_regions_inner(nodes, node_start, node_end, 0)
+}
+
+fn detect_nested_regions_inner(
+    nodes: &[Value],
+    range_start: usize,
+    range_end: usize,
+    depth: usize,
+) -> Vec<NestedRegion> {
+    if depth >= MAX_NESTING_DEPTH {
+        return Vec::new();
+    }
+
+    let mut regions = Vec::new();
+    let mut i = range_start;
+
+    while i < range_end {
+        let node = &nodes[i];
+        if node.get("type").and_then(Value::as_str) != Some("quote")
+            || node.get("marker_type").and_then(Value::as_str) != Some("open")
+        {
+            i += 1;
+            continue;
+        }
+
+        let open_byte_start = value_usize(node, "/span/start", "quote span.start").unwrap_or(0);
+        let open_byte_end = value_usize(node, "/span/end", "quote span.end").unwrap_or(0);
+        let open_node = i;
+
+        // Find the matching close at the same depth: count intervening opens.
+        let mut j = i + 1;
+        let mut inner_depth = 0usize;
+        let mut matched = false;
+        while j < range_end {
+            let next = &nodes[j];
+            if next.get("type").and_then(Value::as_str) == Some("quote") {
+                match next.get("marker_type").and_then(Value::as_str) {
+                    Some("open") => inner_depth += 1,
+                    Some("close") => {
+                        if inner_depth == 0 {
+                            let close_byte_start =
+                                value_usize(next, "/span/start", "quote span.start").unwrap_or(0);
+                            let close_byte_end =
+                                value_usize(next, "/span/end", "quote span.end").unwrap_or(0);
+                            let close_node = j;
+
+                            regions.push(NestedRegion {
+                                inner_byte_start: open_byte_end,
+                                inner_byte_end: close_byte_start,
+                                outer_byte_start: open_byte_start,
+                                outer_byte_end: close_byte_end,
+                                opening_marker_node: open_node,
+                                closing_marker_node: close_node,
+                                nesting_level: depth,
+                            });
+
+                            // Recurse on the inner node slice for nested quotes.
+                            regions.extend(detect_nested_regions_inner(
+                                nodes,
+                                open_node + 1,
+                                close_node,
+                                depth + 1,
+                            ));
+
+                            i = close_node + 1;
+                            matched = true;
+                            break;
+                        }
+                        inner_depth -= 1;
+                    }
+                    _ => {}
+                }
+            }
+            j += 1;
+        }
+
+        if !matched {
+            // Unmatched open marker — skip it, no region emitted.
+            i += 1;
+        }
+    }
+
+    regions
 }
 
 pub fn project_sentences(
@@ -118,7 +256,15 @@ fn project_body_paragraph(
     let paragraph_start = value_usize(paragraph, "/span/start", "paragraph span.start")?;
     let paragraph_end = value_usize(paragraph, "/span/end", "paragraph span.end")?;
     let paragraph_text = paragraph_visible_text(original_nodes)?;
-    let mut bounds: Vec<SentenceBounds> = ab_plaintext::sentence_split(&paragraph_text)
+
+    debug_assert_eq!(
+        paragraph_text.len(),
+        (paragraph_end - paragraph_start) as usize,
+        "visible text length must equal byte span length"
+    );
+
+    // --- Phase 0: flat sentence split (default rules; quotes suppress splits). ---
+    let mut flat_bounds: Vec<SentenceBounds> = ab_plaintext::split_sentences(&paragraph_text)
         .into_iter()
         .map(|span| SentenceBounds {
             start: paragraph_start + span.byte_offset,
@@ -127,74 +273,323 @@ fn project_body_paragraph(
         .collect();
 
     // Whitespace handling (B2): the splitter drops leading/trailing whitespace-only
-    // runs and returns nothing for whitespace-only visible text. Absorb those into
-    // the sentence rows so a non-empty body paragraph tiles with no gaps.
-    if bounds.is_empty() {
+    // runs. Absorb those so a non-empty body paragraph tiles with no gaps.
+    if flat_bounds.is_empty() {
         if paragraph_start != paragraph_end {
-            // Whitespace-only (or atomic-only) visible text with a non-empty byte
-            // span: one sentence covers the whole paragraph.
-            bounds.push(SentenceBounds {
+            flat_bounds.push(SentenceBounds {
                 start: paragraph_start,
                 end: paragraph_end,
             });
         }
     } else {
-        // Extend the first/last rows to the paragraph bounds so dropped leading /
-        // trailing whitespace is covered. Interior boundaries are unchanged.
-        bounds.first_mut().unwrap().start = paragraph_start;
-        bounds.last_mut().unwrap().end = paragraph_end;
+        flat_bounds.first_mut().unwrap().start = paragraph_start;
+        flat_bounds.last_mut().unwrap().end = paragraph_end;
     }
 
-    let split_boundaries: Vec<usize> = bounds
-        .iter()
-        .take(bounds.len().saturating_sub(1))
-        .map(|sentence| sentence.end)
-        .collect();
+    // --- Phase 1: nesting detection over the whole paragraph's nodes. ---
+    // A quote region may cross a flat splitter boundary when its closing marker
+    // appears after a newline. Coalesce those flat bounds before assigning
+    // regions to fragment groups. Only level-0 regions drive fragmentation in
+    // v1; deeper nesting is left as inner-sentence text (future <q> work).
+    let regions = detect_nested_regions(original_nodes, 0, original_nodes.len());
+    let top_regions: Vec<&NestedRegion> = regions.iter().filter(|r| r.nesting_level == 0).collect();
+    coalesce_flat_bounds_around_regions(&mut flat_bounds, &top_regions)?;
 
+    // Assign each region to its containing flat sentence; allocate ONE fragment
+    // group per flat sentence that owns >=1 region.
+    let mut flat_group: Vec<Option<usize>> = vec![None; flat_bounds.len()];
+    let mut group_count = 0usize;
+    for region in &top_regions {
+        let fi = flat_bounds
+            .iter()
+            .position(|f| f.start <= region.outer_byte_start && region.outer_byte_end <= f.end)
+            .with_context(|| {
+                format!(
+                    "nested region {}..{} is not contained in any flat sentence",
+                    region.outer_byte_start, region.outer_byte_end
+                )
+            })?;
+        if flat_group[fi].is_none() {
+            flat_group[fi] = Some(group_count);
+            group_count += 1;
+        }
+    }
+
+    // --- Phase 2: build fine-grained bounds tiling the paragraph. ---
+    // Framing-punctuation redistribution: the open marker is attached to the
+    // first inner sentence, the close marker to the last inner sentence (so
+    // `<s>「...」</s>` keeps its brackets). Outer fragments are the prose before
+    // the open marker and after the close marker.
+    let mut fine: Vec<FineBound> = Vec::new();
+    let mut outer_count_by_group: Vec<usize> = vec![0; group_count];
+
+    for (fi, flat) in flat_bounds.iter().enumerate() {
+        let group = flat_group[fi];
+        let sentence_regions: Vec<&NestedRegion> = top_regions
+            .iter()
+            .copied()
+            .filter(|r| flat.start <= r.outer_byte_start && r.outer_byte_end <= flat.end)
+            .collect();
+
+        if group.is_none() || sentence_regions.is_empty() {
+            fine.push(FineBound {
+                bounds: *flat,
+                group: None,
+                outer_pos: None,
+            });
+            continue;
+        }
+
+        let group = group.unwrap();
+        let mut cursor = flat.start;
+        for region in &sentence_regions {
+            // Outer fragment before the opening marker (part I / M).
+            if cursor < region.outer_byte_start {
+                let pos = outer_count_by_group[group];
+                outer_count_by_group[group] += 1;
+                fine.push(FineBound {
+                    bounds: SentenceBounds {
+                        start: cursor,
+                        end: region.outer_byte_start,
+                    },
+                    group: Some(group),
+                    outer_pos: Some(pos),
+                });
+            }
+
+            // Inner sentences: re-split the between-marker text with bracket
+            // suppression off, then extend the first span to the open marker and
+            // the last span to the close marker so the brackets are enclosed.
+            let inner_start_local = region.inner_byte_start - paragraph_start;
+            let inner_end_local = region.inner_byte_end - paragraph_start;
+            let inner_text = &paragraph_text[inner_start_local..inner_end_local];
+            let inner_spans = ab_plaintext::split_sentences_with_options(
+                inner_text,
+                &ab_plaintext::SplitOptions {
+                    suppress_closing_bracket_check: true,
+                },
+            );
+            let n = inner_spans.len();
+            let mut prev_end_abs = region.outer_byte_start;
+            for (k, span) in inner_spans.iter().enumerate() {
+                let end_abs = if k + 1 == n {
+                    region.outer_byte_end
+                } else {
+                    region.inner_byte_start + span.byte_offset + span.text.len()
+                };
+                fine.push(FineBound {
+                    bounds: SentenceBounds {
+                        start: prev_end_abs,
+                        end: end_abs,
+                    },
+                    group: None,
+                    outer_pos: None,
+                });
+                prev_end_abs = end_abs;
+            }
+            // No inner spans (e.g. `「」`): one inner sentence covers the markers.
+            if inner_spans.is_empty() {
+                fine.push(FineBound {
+                    bounds: SentenceBounds {
+                        start: region.outer_byte_start,
+                        end: region.outer_byte_end,
+                    },
+                    group: None,
+                    outer_pos: None,
+                });
+            }
+            cursor = region.outer_byte_end;
+        }
+        // Outer fragment after the last region (part F / M).
+        if cursor < flat.end {
+            let pos = outer_count_by_group[group];
+            outer_count_by_group[group] += 1;
+            fine.push(FineBound {
+                bounds: SentenceBounds {
+                    start: cursor,
+                    end: flat.end,
+                },
+                group: Some(group),
+                outer_pos: Some(pos),
+            });
+        }
+    }
+
+    coalesce_fine_bounds_around_atomic_nodes(original_nodes, &mut fine)?;
+
+    // --- Phase 3: split nodes at every interior fine boundary in one pass. ---
+    let split_boundaries: Vec<usize> = fine
+        .iter()
+        .take(fine.len().saturating_sub(1))
+        .map(|fb| fb.bounds.end)
+        .collect();
     for node in original_nodes.iter_mut() {
         split_node_at_boundaries(node, &split_boundaries, rewritten_nodes)?;
     }
-
     let paragraph_rewritten_end = rewritten_nodes.len();
-    if bounds.is_empty() && paragraph_start == paragraph_end {
+
+    if fine.is_empty() && paragraph_start == paragraph_end {
         return Ok(Vec::new());
     }
 
-    assert_sentence_span_tiling(paragraph_start, paragraph_end, &bounds)?;
+    let fine_bounds_for_tiling: Vec<SentenceBounds> = fine.iter().map(|fb| fb.bounds).collect();
+    assert_sentence_span_tiling(paragraph_start, paragraph_end, &fine_bounds_for_tiling)?;
 
-    let mut rows = Vec::with_capacity(bounds.len());
+    // --- Phase 4: resolve fragment fields. Outer fragments in a group form a ---
+    // chain I -> M... -> F, each linking to the adjacent outer fragment.
+    let mut group_outer_fi: Vec<Vec<usize>> = vec![Vec::new(); group_count];
+    for (gi, fb) in fine.iter().enumerate() {
+        if let (Some(g), Some(_pos)) = (fb.group, fb.outer_pos) {
+            group_outer_fi[g].push(gi);
+        }
+    }
+
+    // --- Phase 5: walk rewritten nodes and build sentence rows. ---
+    let mut rows = Vec::with_capacity(fine.len());
     let mut node_cursor = paragraph_rewritten_start;
-    for (local_index, bounds) in bounds.iter().enumerate() {
+    for (gi, fb) in fine.iter().enumerate() {
         let sentence_node_start = node_cursor;
         while node_cursor < paragraph_rewritten_end
-            && node_belongs_to_sentence(&rewritten_nodes[node_cursor], *bounds)?
+            && node_belongs_to_sentence(&rewritten_nodes[node_cursor], fb.bounds)?
         {
             node_cursor += 1;
         }
         let sentence_node_end = node_cursor;
-        let annotation_indices = overlapping_ortho_indices(bounds.start, bounds.end, ortho);
+        let annotation_indices = overlapping_ortho_indices(fb.bounds.start, fb.bounds.end, ortho);
         let tags = if annotation_indices.is_empty() {
             Vec::new()
         } else {
             vec!["orthographic-katakana".to_owned()]
         };
 
+        let (part, fragment_group, next_id, prev_id): (
+            Option<String>,
+            Option<String>,
+            Option<String>,
+            Option<String>,
+        ) = if let (Some(g), Some(pos)) = (fb.group, fb.outer_pos) {
+            let count = group_outer_fi[g].len();
+            if count < 2 {
+                (None, None, None, None)
+            } else {
+                let part = if pos == 0 {
+                    "I"
+                } else if pos + 1 == count {
+                    "F"
+                } else {
+                    "M"
+                };
+                let next_id = (pos + 1 < count)
+                    .then(|| format!("s{:06}", sentence_index_start + group_outer_fi[g][pos + 1]));
+                let prev_id = (pos > 0)
+                    .then(|| format!("s{:06}", sentence_index_start + group_outer_fi[g][pos - 1]));
+                (
+                    Some(part.to_owned()),
+                    Some(format!("fg{:06}", g)),
+                    next_id,
+                    prev_id,
+                )
+            }
+        } else {
+            (None, None, None, None)
+        };
+
         rows.push(ParserIrSentence {
-            id: format!("s{:06}", sentence_index_start + local_index),
+            id: format!("s{:06}", sentence_index_start + gi),
             paragraph_id: paragraph_id(paragraph),
-            span: decoded_span(bounds.start, bounds.end),
+            span: decoded_span(fb.bounds.start, fb.bounds.end),
             node_range: json!({
                 "start": sentence_node_start,
                 "end": sentence_node_end,
             }),
             tags,
             orthographic_annotation_indices: annotation_indices,
+            part,
+            fragment_group,
+            next_id,
+            prev_id,
         });
     }
 
     assert_sentence_node_tiling(paragraph_rewritten_start, paragraph_rewritten_end, &rows)?;
+    assert_fragment_field_coherence(&rows)?;
 
     Ok(rows)
+}
+
+fn coalesce_flat_bounds_around_regions(
+    flat_bounds: &mut Vec<SentenceBounds>,
+    regions: &[&NestedRegion],
+) -> Result<()> {
+    for region in regions {
+        let first = flat_bounds
+            .iter()
+            .position(|f| f.end > region.outer_byte_start && f.start < region.outer_byte_end)
+            .with_context(|| {
+                format!(
+                    "nested region {}..{} does not overlap any flat sentence",
+                    region.outer_byte_start, region.outer_byte_end
+                )
+            })?;
+        let last = flat_bounds
+            .iter()
+            .rposition(|f| f.end > region.outer_byte_start && f.start < region.outer_byte_end)
+            .expect("first overlap implies last overlap");
+
+        if first == last {
+            continue;
+        }
+
+        let merged = SentenceBounds {
+            start: flat_bounds[first].start,
+            end: flat_bounds[last].end,
+        };
+        flat_bounds.splice(first..=last, [merged]);
+    }
+    Ok(())
+}
+
+fn coalesce_fine_bounds_around_atomic_nodes(
+    nodes: &[Value],
+    fine: &mut Vec<FineBound>,
+) -> Result<()> {
+    let mut atomic_spans = Vec::new();
+    collect_atomic_spans(nodes, &mut atomic_spans)?;
+
+    let mut i = 0usize;
+    while i + 1 < fine.len() {
+        let boundary = fine[i].bounds.end;
+        if atomic_spans
+            .iter()
+            .any(|span| span.start < boundary && boundary < span.end)
+        {
+            fine[i].bounds.end = fine[i + 1].bounds.end;
+            fine[i].group = None;
+            fine[i].outer_pos = None;
+            fine.remove(i + 1);
+        } else {
+            i += 1;
+        }
+    }
+    Ok(())
+}
+
+fn collect_atomic_spans(nodes: &[Value], out: &mut Vec<AtomicSpan>) -> Result<()> {
+    for node in nodes {
+        if let Some(children) = inline_children(node) {
+            collect_atomic_spans(children, out)?;
+            continue;
+        }
+        if is_splittable_text_node(node) || is_splittable_container(node) {
+            continue;
+        }
+        let start = value_usize(node, "/span/start", "node span.start")?;
+        let end = value_usize(node, "/span/end", "node span.end")?;
+        if start < end {
+            out.push(AtomicSpan { start, end });
+        }
+    }
+    Ok(())
 }
 
 fn move_nodes(nodes: &mut [Value], start: usize, end: usize, out: &mut Vec<Value>) {
@@ -584,6 +979,69 @@ fn assert_sentence_node_tiling(
     Ok(())
 }
 
+/// Assert the combinatorial coherence of sentence fragment fields:
+/// - `part` present iff `fragment_group` present.
+/// - `part=I` requires `next_id`, forbids `prev_id`.
+/// - `part=M` requires both `next_id` and `prev_id`.
+/// - `part=F` requires `prev_id`, forbids `next_id`.
+/// - complete sentences (no `part`) have none of the fragment fields.
+fn assert_fragment_field_coherence(rows: &[ParserIrSentence]) -> Result<()> {
+    for row in rows {
+        let has_part = row.part.is_some();
+        let has_group = row.fragment_group.is_some();
+        let has_next = row.next_id.is_some();
+        let has_prev = row.prev_id.is_some();
+
+        if has_part != has_group {
+            bail!(
+                "sentence {} has part but no fragment_group (or vice versa)",
+                row.id
+            );
+        }
+        match row.part.as_deref() {
+            Some("I") => {
+                if !has_next {
+                    bail!("sentence {} part=I but no next_id", row.id);
+                }
+                if has_prev {
+                    bail!("sentence {} part=I but has prev_id", row.id);
+                }
+            }
+            Some("M") => {
+                if !has_next {
+                    bail!("sentence {} part=M but no next_id", row.id);
+                }
+                if !has_prev {
+                    bail!("sentence {} part=M but no prev_id", row.id);
+                }
+            }
+            Some("F") => {
+                if has_next {
+                    bail!("sentence {} part=F but has next_id", row.id);
+                }
+                if !has_prev {
+                    bail!("sentence {} part=F but no prev_id", row.id);
+                }
+            }
+            None => {
+                if has_group {
+                    bail!("sentence {} has fragment_group but no part", row.id);
+                }
+                if has_next {
+                    bail!("sentence {} has next_id but no part", row.id);
+                }
+                if has_prev {
+                    bail!("sentence {} has prev_id but no part", row.id);
+                }
+            }
+            Some(other) => {
+                bail!("sentence {} has invalid part: {}", row.id, other);
+            }
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -751,7 +1209,7 @@ mod tests {
     }
 
     #[test]
-    fn rejects_boundary_inside_atomic_ruby_node() {
+    fn keeps_atomic_ruby_whole_when_boundary_falls_inside_base() {
         let nodes = vec![json!({
             "type":"ruby",
             "span":span(0,48),
@@ -761,10 +1219,15 @@ mod tests {
             json!({"id":"p000000","span":span(0,48),"span_source":"direct","node_range":{"start":0,"end":1},"role":"body","source_pointer":"blocks[0]","classification":"direct"}),
         ];
 
-        let error = project_sentences(nodes, paragraphs, None)
-            .unwrap_err()
-            .to_string();
-        assert!(error.contains("sentence boundary falls inside atomic node ruby at byte 24"));
+        let projection = project_sentences(nodes, paragraphs, None).unwrap();
+
+        assert_eq!(projection.nodes.len(), 1);
+        assert_eq!(projection.sentences.len(), 1);
+        assert_eq!(projection.sentences[0].span, span(0, 48));
+        assert_eq!(
+            projection.sentences[0].node_range,
+            json!({"start":0,"end":1})
+        );
     }
 
     #[test]
@@ -802,6 +1265,67 @@ mod tests {
     }
 
     #[test]
+    fn multiline_quote_region_crossing_flat_split_still_fragments() {
+        // The flat splitter deliberately does not scan for closing brackets past a
+        // newline. A top-level quote may still span that newline, so sentence
+        // projection must coalesce the flat bounds around the quote region before
+        // fragment assembly.
+        let nodes = vec![
+            json!({"type":"text","span":span(0,6),"text":"彼は"}),
+            json!({"type":"quote","span":span(6,9),"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":span(9,28),"text":"第一。\n第二。"}),
+            json!({"type":"quote","span":span(28,31),"marker_type":"close","text":"」"}),
+            json!({"type":"text","span":span(31,46),"text":"と言った。"}),
+        ];
+        let paragraphs = vec![json!({
+            "id":"p000000","span":span(0,46),"span_source":"direct",
+            "node_range":{"start":0,"end":5},"role":"body",
+            "source_pointer":"blocks[0]","classification":"direct"
+        })];
+
+        let projection = project_sentences(nodes, paragraphs, None).unwrap();
+
+        assert_eq!(projection.sentences.len(), 4);
+        assert_eq!(projection.sentences[0].part.as_deref(), Some("I"));
+        assert_eq!(projection.sentences[3].part.as_deref(), Some("F"));
+        assert_eq!(
+            projection.sentences[0].next_id.as_deref(),
+            Some(projection.sentences[3].id.as_str())
+        );
+        assert_eq!(
+            projection.sentences[3].prev_id.as_deref(),
+            Some(projection.sentences[0].id.as_str())
+        );
+        assert_eq!(projection.sentences[0].span, span(0, 6));
+        assert_eq!(projection.sentences[1].span, span(6, 18));
+        assert_eq!(projection.sentences[2].span, span(18, 31));
+        assert_eq!(projection.sentences[3].span, span(31, 46));
+    }
+
+    #[test]
+    fn singleton_outer_fragment_has_no_fragment_fields() {
+        let nodes = vec![
+            json!({"type":"quote","span":span(0,3),"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":span(3,9),"text":"否。"}),
+            json!({"type":"quote","span":span(9,12),"marker_type":"close","text":"」"}),
+            json!({"type":"text","span":span(12,27),"text":"と言った。"}),
+        ];
+        let paragraphs = vec![json!({
+            "id":"p000000","span":span(0,27),"span_source":"direct",
+            "node_range":{"start":0,"end":4},"role":"body",
+            "source_pointer":"blocks[0]","classification":"direct"
+        })];
+
+        let projection = project_sentences(nodes, paragraphs, None).unwrap();
+
+        assert_eq!(projection.sentences.len(), 2);
+        assert!(projection.sentences[1].part.is_none());
+        assert!(projection.sentences[1].fragment_group.is_none());
+        assert!(projection.sentences[1].next_id.is_none());
+        assert!(projection.sentences[1].prev_id.is_none());
+    }
+
+    #[test]
     fn keeps_ruby_child_whole_when_boundary_falls_between_children() {
         // A boundary exactly between an emphasis's text child and its ruby child is
         // a clean partition — the ruby stays whole.
@@ -834,9 +1358,7 @@ mod tests {
     }
 
     #[test]
-    fn rejects_boundary_inside_ruby_child_of_emphasis() {
-        // A terminal inside a ruby base nested in an emphasis is still a hard fail —
-        // recursion reaches the atomic ruby and refuses to snap.
+    fn keeps_nested_ruby_child_whole_when_boundary_falls_inside_base() {
         let nodes = vec![json!({
             "type":"emphasis",
             "span":span(0,9),
@@ -852,12 +1374,14 @@ mod tests {
             "source_pointer":"blocks[0]","classification":"direct"
         })];
 
-        let error = project_sentences(nodes, paragraphs, None)
-            .unwrap_err()
-            .to_string();
-        assert!(
-            error.contains("sentence boundary falls inside atomic node ruby at byte 6"),
-            "unexpected error: {error}"
+        let projection = project_sentences(nodes, paragraphs, None).unwrap();
+
+        assert_eq!(projection.nodes.len(), 1);
+        assert_eq!(projection.sentences.len(), 1);
+        assert_eq!(projection.sentences[0].span, span(0, 9));
+        assert_eq!(
+            projection.sentences[0].node_range,
+            json!({"start":0,"end":1})
         );
     }
 
@@ -929,5 +1453,50 @@ mod tests {
             projection.paragraphs[0]["node_range"],
             json!({"start":0,"end":1})
         );
+    }
+
+    #[test]
+    fn detect_nested_regions_basic() {
+        let nodes = vec![
+            json!({"type":"text","span":{"start":0,"end":6},"text":"先生は"}),
+            json!({"type":"quote","span":{"start":6,"end":9},"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":{"start":9,"end":15},"text":"綺麗だ"}),
+            json!({"type":"quote","span":{"start":15,"end":18},"marker_type":"close","text":"」"}),
+            json!({"type":"text","span":{"start":18,"end":24},"text":"といった"}),
+        ];
+        let regions = detect_nested_regions(&nodes, 0, nodes.len());
+        assert_eq!(regions.len(), 1);
+        assert_eq!(regions[0].inner_byte_start, 9);
+        assert_eq!(regions[0].inner_byte_end, 15);
+        assert_eq!(regions[0].opening_marker_node, 1);
+        assert_eq!(regions[0].closing_marker_node, 3);
+        assert_eq!(regions[0].nesting_level, 0);
+    }
+
+    #[test]
+    fn detect_nested_regions_recursive() {
+        let nodes = vec![
+            json!({"type":"quote","span":{"start":0,"end":3},"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":{"start":3,"end":9},"text":"outer "}),
+            json!({"type":"quote","span":{"start":9,"end":12},"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":{"start":12,"end":17},"text":"inner"}),
+            json!({"type":"quote","span":{"start":17,"end":21},"marker_type":"close","text":"」"}),
+            json!({"type":"text","span":{"start":21,"end":27},"text":" text"}),
+            json!({"type":"quote","span":{"start":27,"end":30},"marker_type":"close","text":"」"}),
+        ];
+        let regions = detect_nested_regions(&nodes, 0, nodes.len());
+        assert_eq!(regions.len(), 2);
+        assert_eq!(regions[0].nesting_level, 0);
+        assert_eq!(regions[1].nesting_level, 1);
+    }
+
+    #[test]
+    fn detect_nested_regions_unmatched_open_emits_nothing() {
+        let nodes = vec![
+            json!({"type":"quote","span":{"start":0,"end":3},"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":{"start":3,"end":9},"text":"閉じない"}),
+        ];
+        let regions = detect_nested_regions(&nodes, 0, nodes.len());
+        assert!(regions.is_empty());
     }
 }

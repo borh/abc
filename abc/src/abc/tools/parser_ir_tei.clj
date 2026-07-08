@@ -4,6 +4,10 @@
 (defn- present-text? [text]
   (seq text))
 
+(defn- present-ruby-text? [text]
+  (and (string? text)
+       (not (string/blank? text))))
+
 (defn- mark-omitted [acc node-type]
   (update acc :omitted conj {:type node-type :policy "omitted"}))
 
@@ -176,8 +180,8 @@
   ([acc node] (render-ruby-node acc node 0))
   ([acc node _depth]
    (let [ruby (get node "ruby")]
-     (if (and (present-text? (get ruby "base"))
-              (present-text? (get ruby "reading")))
+     (if (and (present-ruby-text? (get ruby "base"))
+              (present-ruby-text? (get ruby "reading")))
        (let [attrs (cond-> {:type "furigana"}
                      (get ruby "direction")
                      (assoc :rend (get ruby "direction")))]
@@ -424,13 +428,25 @@
           flush-paragraph))))
 
 (defn- sentence-attrs [sentence]
-  (when (some #{"orthographic-katakana"} (get sentence "tags" []))
-    {:type "orthographic-katakana"}))
+  (let [tags (get sentence "tags" [])
+        base-attrs (cond-> {:xml:id (get sentence "id")}
+                     (some #{"orthographic-katakana"} tags)
+                     (assoc :type "orthographic-katakana"))
+        part (get sentence "part")
+        next-id (get sentence "next_id")
+        prev-id (get sentence "prev_id")]
+    (cond-> base-attrs
+      part
+      (assoc :part part)
+
+      next-id
+      (assoc :next (str "#" next-id))
+
+      prev-id
+      (assoc :prev (str "#" prev-id)))))
 
 (defn- sentence-node [sentence fragment]
-  (if-let [attrs (sentence-attrs sentence)]
-    (into [:s attrs] fragment)
-    (into [:s] fragment)))
+  (into [:s (sentence-attrs sentence)] fragment))
 
 (defn- render-sentence-row [nodes acc sentence]
   (let [{start "start" end "end"} (get sentence "node_range")

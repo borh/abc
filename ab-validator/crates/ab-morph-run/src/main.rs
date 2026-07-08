@@ -92,7 +92,13 @@ See reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md.
 --ortho-ml-model. CAVEAT: the validation set is LLM-labeled (single-annotator,
 not human ground truth); real-world recall on unseen authors/eras is unverified.
 model_hash proves byte identity only, not training provenance. Do not promote
-to default or delete the heuristic path without a human-annotated gold set."
+to default or delete the heuristic path without a human-annotated gold set.
+[historical] Lane B (M2) historical→modern surface modernizer. Tokenizes with the
+kindai-bungo oracle and rewrites historical kana to modern kana in the input, so
+every analyzer receives the same modernized text (comparability). Pair with the
+old-kana slice (--works-parquet --orthographic-style 新字旧仮名,旧字旧仮名).
+Ground-truth membership accuracy ~94.8% (25 parallel 旧仮名/新仮名 editions); see
+reports/ortho-detect/2026-07-08-lane-b-coverage-probe.md."
         )]
         ortho_detect: ab_morph_run::OrthoDetectMode,
         #[arg(
@@ -102,6 +108,26 @@ to default or delete the heuristic path without a human-annotated gold set."
 The model carries no training-provenance metadata; verify its source before trusting output."
         )]
         ortho_ml_model: Option<PathBuf>,
+        #[arg(
+            long = "works-parquet",
+            value_name = "PATH",
+            requires = "warehouse_dir",
+            help = "Lane A (historical-kana): an aozora_works.parquet sidecar (from \
+`import-aozora-metadata`). When set, only works whose orthographic_style is in \
+--orthographic-style are analyzed — a run-eligibility filter for running old-kana \
+works under a historical UniDic (e.g. --analyzer vibrato:unidic-kindai-bungo-202512). \
+Does not change normalization."
+        )]
+        works_parquet: Option<PathBuf>,
+        #[arg(
+            long = "orthographic-style",
+            value_name = "STYLE",
+            value_delimiter = ',',
+            requires = "works_parquet",
+            help = "orthographic_style values eligible for this run (comma-separated). \
+Defaults to the old-kana set 新字旧仮名,旧字旧仮名 when --works-parquet is set without it."
+        )]
+        orthographic_style: Vec<String>,
     },
     SummarizeWarehouseNway {
         #[arg(long)]
@@ -416,12 +442,20 @@ fn main() -> Result<()> {
             progress_interval_seconds,
             ortho_detect,
             ortho_ml_model,
+            works_parquet,
+            orthographic_style,
         } => {
             validate_warehouse_cli(warehouse_dir.as_ref(), run_id.as_deref(), resume, jobs)?;
             if ortho_detect == ab_morph_run::OrthoDetectMode::Ml && ortho_ml_model.is_none() {
                 bail!("--ortho-ml-model PATH is required when --ortho-detect=ml");
             }
             if let Some(warehouse_dir) = warehouse_dir {
+                let eligible = works_parquet
+                    .as_deref()
+                    .map(|path| {
+                        ab_morph_run::resolve_orthographic_eligibility(path, &orthographic_style)
+                    })
+                    .transpose()?;
                 return ab_morph_run::run_analyze_aat_warehouse(
                     aat.as_deref(),
                     aat_dir.as_deref(),
@@ -435,6 +469,7 @@ fn main() -> Result<()> {
                     parquet_zstd_level,
                     ortho_detect,
                     ortho_ml_model,
+                    eligible.as_ref(),
                 );
             }
             let progress_enabled = progress || progress_interval_seconds.is_some();

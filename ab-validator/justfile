@@ -672,9 +672,11 @@ morph-warehouse-run profile="full" aat_dir=morph_warehouse_aat_dir run_id="" job
 morph-warehouse-run-suw profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
 	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato vibrato:unidic-novel-202512 sudachi-a" "{{run_id}}" "{{jobs}}"
 
-# Dictionaries are nix-only: rebuild/relink flake outputs first (no-op when the
-# store paths are alive; self-heals dictionary/compiled/ symlinks after nix GC).
-morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_dir analyzers="vibrato sudachi-a sudachi-c" run_id="" jobs="0": dictionary-build-all
+# Dictionaries are nix-only. No symlinking needed: point AB_VIBRATO_DICT_DIR at
+# the combined `vibrato-dictionaries` flake output so every vibrato dictionary
+# resolves by name, and AB_SUDACHI_DICT at the sudachi dict. GC-safe (nix build
+# realizes the store paths); no `dictionary/compiled/` linking step.
+morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_dir analyzers="vibrato sudachi-a sudachi-c" run_id="" jobs="0":
 	@jobs="{{jobs}}"; \
 	run_id="{{run_id}}"; \
 	if [ -z "$run_id" ]; then run_id="{{profile}}-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
@@ -682,6 +684,7 @@ morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_di
 	for analyzer in {{analyzers}}; do \
 	  args+=(--analyzer "$analyzer"); \
 	done; \
+	AB_VIBRATO_DICT_DIR="$(nix build .#vibrato-dictionaries --no-link --print-out-paths)/share/vibrato" \
 	AB_SUDACHI_DICT="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic" \
 	cargo run --release -p ab-morph-run -- analyze-aat \
 		--aat-dir "{{aat_dir}}" \
@@ -689,6 +692,50 @@ morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_di
 		--warehouse-dir "{{morph_warehouse_dir}}" \
 		--run-id "$run_id" \
 		--warehouse-profile "{{profile}}" \
+		--jobs "$jobs"
+
+# Lane A (historical-kana): analyze only old-kana works (新字旧仮名/旧字旧仮名) under a
+# historical UniDic. `works_parquet` is an aozora_works.parquet sidecar produced by
+# `import-aozora-metadata` from a prior baseline run (it carries orthographic_style
+# per source_id). The eligibility filter runs OUTSIDE normalization.
+morph-warehouse-run-historical works_parquet dict="unidic-kindai-bungo-202512" profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
+	@jobs="{{jobs}}"; \
+	run_id="{{run_id}}"; \
+	if [ -z "$run_id" ]; then run_id="historical-{{dict}}-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
+	AB_VIBRATO_DICT_DIR="$(nix build .#vibrato-dictionaries --no-link --print-out-paths)/share/vibrato" \
+	cargo run --release -p ab-morph-run -- analyze-aat \
+		--aat-dir "{{aat_dir}}" \
+		--analyzer "vibrato:{{dict}}" \
+		--warehouse-dir "{{morph_warehouse_dir}}" \
+		--run-id "$run_id" \
+		--warehouse-profile "{{profile}}" \
+		--works-parquet "{{works_parquet}}" \
+		--jobs "$jobs"
+
+# Lane B (M2, historical→modern surface): modernize old-kana input, then feed the
+# SAME modernized text to every analyzer (comparability). Runs the standard
+# comparability set over the old-kana slice with --ortho-detect=historical; the
+# kindai-bungo oracle segments/reads the historical text and the input is rewritten
+# to 現代仮名遣い before tokenization. `works_parquet` restricts to 新字旧仮名/旧字旧仮名
+# (the eligibility slice, OUTSIDE normalization). ~94.8% ground-truth accuracy.
+morph-warehouse-run-lane-b works_parquet analyzers="vibrato sudachi-a sudachi-c" profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
+	@jobs="{{jobs}}"; \
+	run_id="{{run_id}}"; \
+	if [ -z "$run_id" ]; then run_id="lane-b-m2-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
+	args=() ; \
+	for analyzer in {{analyzers}}; do \
+	  args+=(--analyzer "$analyzer"); \
+	done; \
+	AB_VIBRATO_DICT_DIR="$(nix build .#vibrato-dictionaries --no-link --print-out-paths)/share/vibrato" \
+	AB_SUDACHI_DICT="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic" \
+	cargo run --release -p ab-morph-run -- analyze-aat \
+		--aat-dir "{{aat_dir}}" \
+		"${args[@]}" \
+		--warehouse-dir "{{morph_warehouse_dir}}" \
+		--run-id "$run_id" \
+		--warehouse-profile "{{profile}}" \
+		--ortho-detect historical \
+		--works-parquet "{{works_parquet}}" \
 		--jobs "$jobs"
 
 morph-warehouse-run-full aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
@@ -902,8 +949,17 @@ dictionary-build-kindai-bungo:
 	done
 
 # Build all available vibrato dictionaries and link them.
+# NOTE: linking is the LEGACY fallback. Prefer AB_VIBRATO_DICT_DIR (see
+# `just dictionary-env`) — the dev shell exports it automatically, and it needs
+# no per-dictionary symlink into the repo.
 dictionary-build-all: dictionary-build-cwj dictionary-build-csj dictionary-build-novel dictionary-build-qkana dictionary-build-kindai-bungo
 	@echo "All vibrato dictionaries built and linked."
+
+# Print the env exports that make every nix-built vibrato dictionary resolvable
+# by name with no symlinking: `eval "$(just dictionary-env)"`. This is what the
+# dev shell sets for you; use it for ad-hoc `cargo run` outside `nix develop`.
+dictionary-env:
+	@printf 'export AB_VIBRATO_DICT_DIR=%s/share/vibrato\n' "$(nix build .#vibrato-dictionaries --no-link --print-out-paths)"
 
 morph-vaporetto-dictionary-build-source-ready VERSION="202512":
 	@set -euo pipefail

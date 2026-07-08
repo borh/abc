@@ -228,6 +228,7 @@ pub fn run_analyze_aat_warehouse(
     zstd_level: i32,
     ortho_detect: OrthoDetectMode,
     ortho_ml_model: Option<PathBuf>,
+    eligible_source_ids: Option<&BTreeSet<String>>,
 ) -> Result<()> {
     run_analyze_aat_warehouse_impl(
         aat,
@@ -240,6 +241,7 @@ pub fn run_analyze_aat_warehouse(
         zstd_level,
         ortho_detect,
         ortho_ml_model,
+        eligible_source_ids,
     )
 }
 
@@ -255,6 +257,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
     zstd_level: i32,
     ortho_detect: OrthoDetectMode,
     ortho_ml_model: Option<PathBuf>,
+    eligible_source_ids: Option<&BTreeSet<String>>,
 ) -> Result<()> {
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
@@ -267,6 +270,23 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
     }
     let jobs = crate::auto_jobs::resolve_jobs(jobs, analyzer_ids.len());
     let inputs = discover_aat_inputs(aat, aat_dir)?;
+    // Lane A: run-eligibility filter by orthographic_style (outside
+    // normalization, I2-D17b). Drops works not in the eligible set before any
+    // analysis; logged so the narrowing is never silent.
+    let inputs = match eligible_source_ids {
+        Some(eligible) => {
+            let discovered = inputs.len();
+            let kept = crate::orthographic_select::filter_inputs_by_source_ids(inputs, eligible);
+            eprintln!(
+                "ab-morph-run: orthographic_style eligibility filter kept {}/{} works ({} eligible source_ids)",
+                kept.len(),
+                discovered,
+                eligible.len()
+            );
+            kept
+        }
+        None => inputs,
+    };
     let input_mode = if aat.is_some() { "aat" } else { "aat_dir" };
     let input_path = aat
         .or(aat_dir)
@@ -275,6 +295,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
     let specs = parse_analyzer_specs(analyzer_ids)?;
     let analyzers = load_analyzers(&specs)?;
     let analyzer_rows = warehouse_analyzer_rows(run_id, &specs, &analyzers)?;
+    let normalization = resolve_run_normalization(ortho_detect, ortho_ml_model.as_deref())?;
     if jobs == 1 {
         let input_count = inputs.len();
         let (_string_stats, timings) = run_analyze_aat_serial(
@@ -299,6 +320,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
                     analyzer_rows,
                     warehouse_profile,
                     zstd_level,
+                    normalization,
                 }),
                 progress: Some(SerialProgress {
                     label: format!("warehouse:{run_id}"),
@@ -324,6 +346,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
                 zstd_level,
                 ortho_detect,
                 ortho_ml_model,
+                normalization,
             },
         )?;
     }
@@ -659,6 +682,42 @@ pub(crate) fn run_analyze_aat_serial(
             })?;
             Some(Arc::new(model))
         }
+        OrthoDetectMode::Historical => {
+            // Lane B (M2): load the kindai-bungo oracle and build the historical
+            // surface modernizer. The detector binds the analyzer's own archive
+            // hash, matching the runs-row policy from `resolve_run_normalization`.
+            // The oracle is a distinct dictionary from the run's target analyzers
+            // (it may not be in `analyzers`), so it is always loaded here.
+            let oracle = match ab_morph_analyzers::VibratoAnalyzer::from_dictionary_name(
+                crate::M2_ORACLE_DICTIONARY,
+            ) {
+                Ok(v) => Arc::new(v),
+                Err(error) => {
+                    if let Some(writer) = &mut errors_writer {
+                        write_error_row(
+                            &mut **writer,
+                            &RunErrorRow {
+                                input_path: String::new(),
+                                source_id: None,
+                                text_id: None,
+                                analyzer: None,
+                                stage: "ortho_detect_load".to_owned(),
+                                error: error.to_string(),
+                            },
+                        )?;
+                    } else {
+                        eprintln!(
+                            "ab-morph-run: failed to load {} for M2 historical normalization: {error}",
+                            crate::M2_ORACLE_DICTIONARY
+                        );
+                    }
+                    return Err(error.into());
+                }
+            };
+            let detector = ab_morph_analyzers::historical_rewrite_detector(oracle)
+                .context("failed to build M2 historical detector")?;
+            Some(Arc::new(detector))
+        }
     };
 
     for (input_index, input) in inputs.into_iter().enumerate() {
@@ -887,9 +946,39 @@ pub(crate) fn run_analyze_aat_serial(
                     Err(e) => {
                         // Morphemes remain in normalized coords. Leave source_text as
                         // the normalized text the analyzer produced (consistent with
-                        // the morphemes). Route the error to errors_writer for
-                        // diagnosis.
-                        if let Some(writer) = &mut errors_writer {
+                        // the morphemes). Record the failure so it is never silently
+                        // dropped (Invariant 4) — including on the warehouse path,
+                        // which publication uses and which has no errors_writer.
+                        let (code, message) = match &e {
+                            ab_ortho_detect::OrthoMapError::CrossesBoundary { range, boundary } => {
+                                (
+                                    "ortho_remap_crosses_boundary",
+                                    format!("range {range:?} crosses boundary at byte {boundary}"),
+                                )
+                            }
+                            ab_ortho_detect::OrthoMapError::UncoveredOffset { offset } => (
+                                "ortho_remap_uncovered_offset",
+                                format!("offset {offset} not covered"),
+                            ),
+                        };
+                        if let Some(writer) = &mut warehouse_writer {
+                            warehouse_error_count += 1;
+                            writer.append_errors(&[warehouse_error_row(
+                                options
+                                    .warehouse
+                                    .as_ref()
+                                    .expect("warehouse options")
+                                    .paths
+                                    .run_id
+                                    .as_str(),
+                                Some(source_id.clone()),
+                                Some(document.text_id.clone()),
+                                Some(analyzer.analyzer_id().to_owned()),
+                                "ortho_remap",
+                                code,
+                                &message,
+                            )])?;
+                        } else if let Some(writer) = &mut errors_writer {
                             write_ortho_remap_error(&mut **writer, &source_id, &e)?;
                         } else {
                             eprintln!("ortho_remap error for {source_id}: {e}");
@@ -1113,8 +1202,17 @@ pub(crate) fn run_analyze_aat_serial(
             source_count: input_count,
             analyzer_count: warehouse.analyzer_rows.len() as u64,
             error_count: warehouse_error_count,
+            ortho_detect_mode: warehouse.normalization.mode.clone(),
+            input_normalization_detector_id: warehouse.normalization.detector_id.clone(),
+            input_normalization_policy_hash: warehouse.normalization.policy_hash.clone(),
         }])?;
-        writer.finalize()?
+        let dur = writer.finalize()?;
+        write_run_normalization_provenance(
+            &warehouse.paths.final_dir,
+            &warehouse.paths.run_id,
+            &warehouse.normalization,
+        )?;
+        dur
     } else {
         std::time::Duration::ZERO
     };
@@ -1153,6 +1251,7 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
             let analyzer_rows = options.analyzer_rows.clone();
             let ortho_detect = options.ortho_detect;
             let ortho_ml_model = options.ortho_ml_model.clone();
+            let normalization = options.normalization.clone();
             let queue = Arc::clone(&queue);
             handles.push(scope.spawn(move || -> Result<WarehouseShardOutput> {
                 let mut shard_run_dirs = Vec::new();
@@ -1188,6 +1287,7 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
                                 analyzer_rows: analyzer_rows.clone(),
                                 warehouse_profile: options.warehouse_profile,
                                 zstd_level: options.zstd_level,
+                                normalization: normalization.clone(),
                             }),
                             progress: Some(SerialProgress {
                                 label: format!("warehouse-worker-{job_index}/shard-{shard_index}"),
@@ -1552,8 +1652,12 @@ pub(crate) fn merge_warehouse_shard_runs(
         source_count,
         analyzer_count: options.analyzer_rows.len() as u64,
         error_count,
+        ortho_detect_mode: options.normalization.mode.clone(),
+        input_normalization_detector_id: options.normalization.detector_id.clone(),
+        input_normalization_policy_hash: options.normalization.policy_hash.clone(),
     }])?;
     let _ = writer.finalize()?;
+    write_run_normalization_provenance(&paths.final_dir, &options.run_id, &options.normalization)?;
     Ok(())
 }
 

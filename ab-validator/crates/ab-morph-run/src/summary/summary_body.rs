@@ -4499,6 +4499,9 @@ mod tests {
                 source_count: 1,
                 analyzer_count: 2,
                 error_count: 0,
+                ortho_detect_mode: "off".to_owned(),
+                input_normalization_detector_id: None,
+                input_normalization_policy_hash: "sha256:identity".to_owned(),
             }])
             .unwrap();
         writer
@@ -4685,6 +4688,9 @@ mod tests {
                 source_count: 1,
                 analyzer_count: 2,
                 error_count: 0,
+                ortho_detect_mode: "off".to_owned(),
+                input_normalization_detector_id: None,
+                input_normalization_policy_hash: "sha256:identity".to_owned(),
             }])
             .unwrap();
         writer
@@ -4851,6 +4857,9 @@ mod tests {
                 source_count: 1,
                 analyzer_count: 2,
                 error_count: 0,
+                ortho_detect_mode: "off".to_owned(),
+                input_normalization_detector_id: None,
+                input_normalization_policy_hash: "sha256:identity".to_owned(),
             }])
             .unwrap();
         writer
@@ -5166,6 +5175,9 @@ mod tests {
                 source_count: 1,
                 analyzer_count: 2,
                 error_count: 0,
+                ortho_detect_mode: "off".to_owned(),
+                input_normalization_detector_id: None,
+                input_normalization_policy_hash: "sha256:identity".to_owned(),
             }])
             .unwrap();
         writer
@@ -5311,6 +5323,9 @@ mod tests {
                 source_count: 1,
                 analyzer_count: 2,
                 error_count: 0,
+                ortho_detect_mode: "off".to_owned(),
+                input_normalization_detector_id: None,
+                input_normalization_policy_hash: "sha256:identity".to_owned(),
             }])
             .unwrap();
         writer
@@ -5446,6 +5461,9 @@ mod tests {
                 source_count: 1,
                 analyzer_count: 2,
                 error_count: 0,
+                ortho_detect_mode: "off".to_owned(),
+                input_normalization_detector_id: None,
+                input_normalization_policy_hash: "sha256:identity".to_owned(),
             }])
             .unwrap();
         writer
@@ -5674,6 +5692,9 @@ mod tests {
                 source_count: 1,
                 analyzer_count: 2,
                 error_count: 0,
+                ortho_detect_mode: "off".to_owned(),
+                input_normalization_detector_id: None,
+                input_normalization_policy_hash: "sha256:identity".to_owned(),
             }])
             .unwrap();
         writer

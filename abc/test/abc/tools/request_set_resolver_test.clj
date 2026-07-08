@@ -17,7 +17,8 @@
                      "source_id_prefix" "aozora:"
                      "work_id_prefix" "aozora:"}
    "input_views" [{"input_view_kind" "parser-ir-plaintext-body-v1"
-                   "policy_hash" "sha256:df21c590fd8d5b934fd426e632a3d8a09c2bd3fa299ca6b4c8fe4c797e1d1391"}]
+                   "policy_hash" "sha256:df21c590fd8d5b934fd426e632a3d8a09c2bd3fa299ca6b4c8fe4c797e1d1391"
+                   "input_normalization_policy_hash" "sha256:530c59689dd909c171790036cddc7916f8685897b6342bfa794d4611816d3813"}]
    "analysis_recipe_ids" ["literary-basic-ja-v1"]
    "tokenizer_profile_ids" []
    "missing_policy" "build-missing-only"

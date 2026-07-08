@@ -162,8 +162,11 @@
 (def ^:private v5-parser-ir-schema-hash
   "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712")
 
-(def ^:private current-parser-ir-schema-hash
+(def ^:private v6-parser-ir-schema-hash
   "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340")
+
+(def ^:private current-parser-ir-schema-hash
+  "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2")
 
 (def ^:private parser-ir-schema-hash
   legacy-parser-ir-schema-hash)
@@ -1228,7 +1231,38 @@
            (validate/parser-ir-sentence-coherence-errors
             (assoc-in sentence-parser-ir-fixture
                       ["sentences" 1 "node_range"]
-                      {"start" 2 "end" 2}))))))
+                      {"start" 2 "end" 2})))))
+  (testing "accepts coherent fragment I→F chain"
+    (is (empty?
+         (validate/parser-ir-sentence-coherence-errors
+          (-> sentence-parser-ir-fixture
+              (assoc-in ["sentences" 0 "part"] "I")
+              (assoc-in ["sentences" 0 "fragment_group"] "fg000000")
+              (assoc-in ["sentences" 0 "next_id"] "s000001")
+              (assoc-in ["sentences" 1 "part"] "F")
+              (assoc-in ["sentences" 1 "fragment_group"] "fg000000")
+              (assoc-in ["sentences" 1 "prev_id"] "s000000"))))))
+  (testing "rejects part without fragment_group"
+    (is (= ["parser IR sentence s000000 has part but no fragment_group"
+            "parser IR sentence s000000 part=I but no next_id"]
+           (validate/parser-ir-sentence-coherence-errors
+            (assoc-in sentence-parser-ir-fixture ["sentences" 0 "part"] "I")))))
+  (testing "rejects fragment_group without part"
+    (is (= ["parser IR sentence s000000 has fragment_group but no part"]
+           (validate/parser-ir-sentence-coherence-errors
+            (assoc-in sentence-parser-ir-fixture ["sentences" 0 "fragment_group"] "fg000000")))))
+  (testing "rejects part=I without next_id"
+    (is (= ["parser IR sentence s000000 part=I but no next_id"]
+           (validate/parser-ir-sentence-coherence-errors
+            (-> sentence-parser-ir-fixture
+                (assoc-in ["sentences" 0 "part"] "I")
+                (assoc-in ["sentences" 0 "fragment_group"] "fg000000"))))))
+  (testing "rejects part=F without prev_id"
+    (is (= ["parser IR sentence s000001 part=F but no prev_id"]
+           (validate/parser-ir-sentence-coherence-errors
+            (-> sentence-parser-ir-fixture
+                (assoc-in ["sentences" 1 "part"] "F")
+                (assoc-in ["sentences" 1 "fragment_group"] "fg000000")))))))
 
 (deftest parser-ir-publication-sentence-evidence-errors-test
   (is (= ["parser IR publication requires sentence_segmentation"]
@@ -1728,7 +1762,7 @@
                      :mapping_hash v6-mapping-hash
                      :mapping_schema_hash current-mapping-schema-hash
                      :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-                     :parser_ir_schema_hash current-parser-ir-schema-hash}))))
+                     :parser_ir_schema_hash v6-parser-ir-schema-hash}))))
       (let [entry-for (fn [adapter adapter-version]
                         (->> (:entries registry)
                              (filter #(and (= adapter (:aat_adapter %))

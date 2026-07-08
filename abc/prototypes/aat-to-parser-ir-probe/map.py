@@ -30,7 +30,7 @@ import sys
 # Hardcoded ABC parser-IR target identity (INVENTION: producer must pinch
 # ABC's schema_hash; AAT carries no such identifier).
 PARSER_IR_SCHEMA_ID = "https://w3id.org/abc/schemas/parser-ir.schema.json"
-PARSER_IR_SCHEMA_HASH = "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340"
+PARSER_IR_SCHEMA_HASH = "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2"
 
 ENC_MAP = {
     "utf-8": "UTF-8",

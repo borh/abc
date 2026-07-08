@@ -11,6 +11,12 @@
 
 -- This file documents the Parquet fact schema. It is not used to create the Parquet files.
 
+-- ortho_detect_mode / input_normalization_* (schema v2 additive columns):
+-- the orthographic-normalization policy applied to analyzer input for the run.
+-- input_normalization_policy_hash is the sha256 identity of the applied policy
+-- (identity sentinel when off); input_normalization_detector_id is the
+-- serialized OrthoDetectorId, NULL when off. Source text and output spans stay
+-- in source coordinates regardless (normalization is analyzer-input only).
 CREATE TABLE runs (
   schema_version UINTEGER,
   run_id VARCHAR,
@@ -19,7 +25,10 @@ CREATE TABLE runs (
   input_path VARCHAR,
   source_count UBIGINT,
   analyzer_count UBIGINT,
-  error_count UBIGINT
+  error_count UBIGINT,
+  ortho_detect_mode VARCHAR,
+  input_normalization_detector_id VARCHAR,
+  input_normalization_policy_hash VARCHAR
 );
 
 CREATE TABLE run_analyzers (

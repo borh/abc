@@ -13269,6 +13269,18 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
          <ref name="att.notated.attributes"/>
          <ref name="att.segLike.attributes"/>
          <ref name="att.typed.attributes"/>
+         <optional>
+            <attribute name="next">
+               <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">Pointer to the next fragment of a fragmented sentence.</a:documentation>
+               <data type="anyURI"/>
+            </attribute>
+         </optional>
+         <optional>
+            <attribute name="prev">
+               <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">Pointer to the previous fragment of a fragmented sentence.</a:documentation>
+               <data type="anyURI"/>
+            </attribute>
+         </optional>
          <empty/>
       </element>
    </define>

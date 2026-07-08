@@ -78,6 +78,17 @@
                     "person_record_hash" (example-hash "35")
                     "relation_to_work" "著者"}]})
 
+(defn official-source [work-id person-id work-hash]
+  {"work_id" work-id
+   "card_person_id" person-id
+   "text_url" (str "https://www.aozora.gr.jp/cards/" person-id
+                   "/files/" work-id "_ruby_fixture.zip")
+   "text_zip_relpath" (str "cards/" person-id "/files/"
+                           work-id "_ruby_fixture.zip")
+   "zip_member" (str work-id ".txt")
+   "source_hash" work-hash
+   "source_bytes" 1})
+
 (defn write-work-files!
   [work-dir {:keys [title work-id person-id work-hash]}]
   (abc-json/write-deterministic-json-file! (io/file work-dir "aat.json")
@@ -89,6 +100,9 @@
   (abc-json/write-deterministic-json-file!
    (io/file work-dir "metadata-record.json")
    (metadata-record work-id title person-id))
+  (abc-json/write-deterministic-json-file!
+   (io/file work-dir "official-source.json")
+   (official-source work-id person-id work-hash))
   work-dir)
 
 (defn materialized-work!
@@ -106,4 +120,5 @@
      :aat_path (str (io/file work-dir "aat.json"))
      :parser_ir_path (str (io/file work-dir "parser-ir.json"))
      :metadata_record_path (str (io/file work-dir "metadata-record.json"))
+     :official_source_path (str (io/file work-dir "official-source.json"))
      :source_manifest_path (str (io/file work-dir "source.manifest.json"))}))

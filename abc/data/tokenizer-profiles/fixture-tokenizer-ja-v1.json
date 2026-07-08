@@ -9,7 +9,7 @@
   "encoding": "UTF-8",
   "determinism_tier": "exact",
   "fixture_evidence_hash": "sha256:4000000000000000000000000000000000000000000000000000000000000001",
-  "input_normalization_policy_hash": "sha256:1000000000000000000000000000000000000000000000000000000000000001",
+  "input_normalization_policy_hash": "sha256:530c59689dd909c171790036cddc7916f8685897b6342bfa794d4611816d3813",
   "locale": "ja-JP",
   "profile_id": "fixture-tokenizer-ja-v1",
   "profile_version": "0.1.0",

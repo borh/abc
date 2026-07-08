@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/analysis-result.schema.json",
   "title": "ABC Analysis Result",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -78,6 +78,7 @@
         "producer_artifact_id",
         "producer_content_hash",
         "plaintext_policy_hash",
+        "input_normalization_policy_hash",
         "coordinate_system"
       ],
       "properties": {
@@ -85,6 +86,7 @@
         "producer_artifact_id": { "$ref": "#/$defs/hash" },
         "producer_content_hash": { "$ref": "#/$defs/hash" },
         "plaintext_policy_hash": { "$ref": "#/$defs/hash" },
+        "input_normalization_policy_hash": { "$ref": "#/$defs/hash" },
         "coordinate_system": { "enum": ["unicode-scalar-value"] }
       }
     },

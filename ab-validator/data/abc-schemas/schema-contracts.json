@@ -13,8 +13,8 @@
       "path": "data/abc-schemas/schemas/analysis-result.schema.json",
       "id": "https://w3id.org/abc/schemas/analysis-result.schema.json",
       "title": "ABC Analysis Result",
-      "version": "0.1.1",
-      "hash": "sha256:52d420dd985849cfb7cbd2bfb0f28bb04100c901e105506f972204157a1b0fa6"
+      "version": "0.1.2",
+      "hash": "sha256:2c06bb91898e1101b27a8c01707e7e7d5de4ae0929c4b628d85249996c7f59f3"
     },
     {
       "path": "data/abc-schemas/schemas/aat-parser-ir-divergence.schema.json",
@@ -49,14 +49,14 @@
       "id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
       "title": "ABC Parser IR",
       "version": "0.6.0",
-      "hash": "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340"
+      "hash": "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2"
     },
     {
       "path": "data/abc-schemas/schemas/request-set.schema.json",
       "id": "https://w3id.org/abc/schemas/request-set.schema.json",
       "title": "ABC Request Set",
-      "version": "0.1.2",
-      "hash": "sha256:075e48811964f439ceb82643bb485138add8764cb17546f554422849a2918f9c"
+      "version": "0.1.3",
+      "hash": "sha256:b396f3a408a6c49865cde1a667b811051990fa6bc1116a96ad4b93c1863b2a5e"
     },
     {
       "path": "data/abc-schemas/schemas/source-region-coverage.schema.json",

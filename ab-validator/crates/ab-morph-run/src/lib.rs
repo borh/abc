@@ -5,6 +5,7 @@ mod import_aozora;
 mod nway;
 mod options;
 mod oracle;
+mod orthographic_select;
 mod output;
 mod pipeline;
 mod script;
@@ -29,7 +30,10 @@ use ab_ortho_detect::OrthoDetector;
 use ab_plaintext::{PlainTextDocument, from_aat_value, from_aat_value_with_spans};
 use anyhow::{Context, Result, bail};
 pub use options::{OrthoDetectMode, OutputProfile, WarehouseProfile};
-use options::{SerialProgress, SerialRunOptions, WarehouseParallelOptions, WarehouseRunOptions};
+use options::{
+    RunNormalizationProvenance, SerialProgress, SerialRunOptions, WarehouseParallelOptions,
+    WarehouseRunOptions,
+};
 use output::{open_output_writer, read_jsonl_or_zst_to_string};
 use serde::Serialize;
 use serde_json::Value;
@@ -184,6 +188,7 @@ pub fn run_analyze_aat_warehouse(
     zstd_level: i32,
     ortho_detect: OrthoDetectMode,
     ortho_ml_model: Option<PathBuf>,
+    eligible_source_ids: Option<&std::collections::BTreeSet<String>>,
 ) -> Result<()> {
     pipeline::run_analyze_aat_warehouse(
         aat,
@@ -196,7 +201,29 @@ pub fn run_analyze_aat_warehouse(
         zstd_level,
         ortho_detect,
         ortho_ml_model,
+        eligible_source_ids,
     )
+}
+
+/// Lane A (historical-kana): resolve the set of eligible `source_id`s for a run
+/// from an `aozora_works.parquet` sidecar, keeping works whose
+/// `orthographic_style` is in `styles`. When `styles` is empty, defaults to the
+/// old-kana set (`新字旧仮名`, `旧字旧仮名`). Pass the result to
+/// [`run_analyze_aat_warehouse`]'s `eligible_source_ids`.
+///
+/// # Errors
+///
+/// Returns an error if the sidecar cannot be read or lacks the required columns.
+pub fn resolve_orthographic_eligibility(
+    works_parquet: &Path,
+    styles: &[String],
+) -> Result<std::collections::BTreeSet<String>> {
+    let allowed: std::collections::BTreeSet<String> = if styles.is_empty() {
+        orthographic_select::old_kana_styles()
+    } else {
+        styles.iter().cloned().collect()
+    };
+    orthographic_select::eligible_source_ids(works_parquet, &allowed)
 }
 
 /// Run over an explicit list of AAT inputs.
@@ -462,6 +489,123 @@ fn warehouse_analyzer_rows(
             analyzer_family: spec.family().to_owned(),
         })
         .collect())
+}
+
+/// Resolve the run-level normalization provenance persisted on the `runs` row.
+///
+/// The policy is uniform per run (one `--ortho-detect` mode applied to every
+/// document before every analyzer). For `Ml` the model file is loaded once here
+/// to bind its `model_hash` into the policy identity; the per-document detector
+/// is still constructed downstream (see the P0 per-batch note).
+///
+/// # Errors
+///
+/// Returns an error when `--ortho-detect=ml` is requested without a model path
+/// or the model file cannot be loaded, or when the detector id fails to
+/// serialize.
+/// The historical UniDic that backs the Lane B (M2) segmentation/reading oracle.
+/// Its archive hash is bound into the `HistoricalRewriteV1` detector identity.
+pub const M2_ORACLE_DICTIONARY: &str = "unidic-kindai-bungo-202512";
+
+fn resolve_run_normalization(
+    ortho_detect: OrthoDetectMode,
+    ortho_ml_model: Option<&Path>,
+) -> Result<RunNormalizationProvenance> {
+    use ab_ortho_detect::{
+        NormalizationPolicy, OrthoDetector, OrthoDetectorId, OrthoNormalization,
+    };
+    let (mode, detector_id, policy) = match ortho_detect {
+        OrthoDetectMode::Off => ("off", None, NormalizationPolicy::identity()),
+        OrthoDetectMode::Heuristic => {
+            let id = OrthoDetectorId::HeuristicV1;
+            // v1 kata→hira path applies only ScriptKatakanaToHiragana.
+            let policy = NormalizationPolicy::ortho_normalize_v1(
+                id.clone(),
+                vec![OrthoNormalization::ScriptKatakanaToHiragana],
+            );
+            ("heuristic", Some(id), policy)
+        }
+        OrthoDetectMode::Ml => {
+            let path = ortho_ml_model.ok_or_else(|| {
+                anyhow::anyhow!("--ortho-ml-model is required for --ortho-detect=ml")
+            })?;
+            let model = ab_ortho_detect::ml::MlLogisticRegression::load(path).map_err(|e| {
+                anyhow::anyhow!("failed to load ML model from {}: {e}", path.display())
+            })?;
+            let id = model.detector_id();
+            let policy = NormalizationPolicy::ortho_normalize_v1(
+                id.clone(),
+                vec![OrthoNormalization::ScriptKatakanaToHiragana],
+            );
+            ("ml", Some(id), policy)
+        }
+        OrthoDetectMode::Historical => {
+            // Lane B (M2): bind the kindai-bungo oracle archive + rule-set into
+            // identity (I2-D17). The hash is read cheaply (no dictionary load);
+            // the pipeline's detector recomputes the same value from the loaded
+            // analyzer, so the runs-row policy and the applied detector agree.
+            let dictionary_hash = ab_morph_analyzers::dictionary_archive_hash(M2_ORACLE_DICTIONARY)
+                .with_context(|| {
+                    format!(
+                        "failed to hash M2 oracle dictionary {M2_ORACLE_DICTIONARY} for policy identity"
+                    )
+                })?;
+            let id = OrthoDetectorId::HistoricalRewriteV1 {
+                dictionary_hash,
+                rules_hash: ab_ortho_detect::historical::rules_hash(),
+            };
+            let policy = NormalizationPolicy::ortho_normalize_v1(
+                id.clone(),
+                vec![OrthoNormalization::HistoricalToModern],
+            );
+            // I2-D17 coupling: a HistoricalToModern policy is only admissible
+            // with a dictionary-backed detector. This is the guard the spec
+            // requires to land with the Phase-3 lane.
+            policy
+                .validate()
+                .context("M2 historical normalization policy failed validation")?;
+            ("historical", Some(id), policy)
+        }
+    };
+    let detector_id = detector_id
+        .map(|id| serde_json::to_string(&id))
+        .transpose()
+        .context("failed to serialize ortho detector id")?;
+    Ok(RunNormalizationProvenance {
+        mode: mode.to_owned(),
+        detector_id,
+        policy_hash: policy.policy_hash(),
+    })
+}
+
+/// File name of the run-normalization provenance sidecar (T1 transport, spec
+/// Issue 2 P4). ABC reads this JSON to learn the applied normalization policy
+/// without depending on a parquet reader.
+pub const RUN_NORMALIZATION_PROVENANCE_FILE: &str = "run-normalization-provenance.json";
+
+/// Emit the run-level normalization provenance as a JSON sidecar in the final
+/// run directory (T1). Mirrors the `runs` warehouse columns; the value ABC
+/// reads is `input_normalization_policy_hash`.
+///
+/// # Errors
+///
+/// Returns an error if the JSON cannot be serialized or written.
+fn write_run_normalization_provenance(
+    final_dir: &Path,
+    run_id: &str,
+    normalization: &RunNormalizationProvenance,
+) -> Result<()> {
+    let value = serde_json::json!({
+        "run_id": run_id,
+        "ortho_detect_mode": normalization.mode,
+        "input_normalization_detector_id": normalization.detector_id,
+        "input_normalization_policy_hash": normalization.policy_hash,
+    });
+    let path = final_dir.join(RUN_NORMALIZATION_PROVENANCE_FILE);
+    let text = serde_json::to_string_pretty(&value)
+        .context("failed to serialize run-normalization provenance")?;
+    std::fs::write(&path, text).with_context(|| format!("failed to write {}", path.display()))?;
+    Ok(())
 }
 
 fn append_warehouse_nway_fact_rows(
@@ -1427,6 +1571,67 @@ mod tests {
     const TINY_AAT: &str = r#"{"version":1,"work_id":"source-a","blocks":[{"kind":"paragraph","content":[{"kind":"text","value":"吾輩は猫である。"}]}],"meta":{"adapter":"fixture","adapter_version":"fixture","source_encoding":"utf-8","source_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","parse_complete":true,"warnings":[]}}"#;
 
     #[test]
+    fn resolve_run_normalization_off_is_identity_policy() {
+        let prov = resolve_run_normalization(OrthoDetectMode::Off, None).unwrap();
+        assert_eq!(prov.mode, "off");
+        assert_eq!(prov.detector_id, None);
+        // The persisted hash is the policy module's identity sentinel.
+        assert_eq!(
+            prov.policy_hash,
+            ab_ortho_detect::NormalizationPolicy::identity().policy_hash()
+        );
+    }
+
+    #[test]
+    fn resolve_run_normalization_heuristic_matches_policy_hash() {
+        let prov = resolve_run_normalization(OrthoDetectMode::Heuristic, None).unwrap();
+        assert_eq!(prov.mode, "heuristic");
+        // Serialized OrthoDetectorId::HeuristicV1.
+        assert_eq!(prov.detector_id.as_deref(), Some("\"HeuristicV1\""));
+        let expected = ab_ortho_detect::NormalizationPolicy::ortho_normalize_v1(
+            ab_ortho_detect::OrthoDetectorId::HeuristicV1,
+            vec![ab_ortho_detect::OrthoNormalization::ScriptKatakanaToHiragana],
+        )
+        .policy_hash();
+        assert_eq!(prov.policy_hash, expected);
+        assert_ne!(
+            prov.policy_hash,
+            ab_ortho_detect::NormalizationPolicy::identity().policy_hash()
+        );
+    }
+
+    #[test]
+    fn resolve_run_normalization_ml_requires_model() {
+        let err = resolve_run_normalization(OrthoDetectMode::Ml, None).unwrap_err();
+        assert!(err.to_string().contains("--ortho-ml-model"), "{err}");
+    }
+
+    #[test]
+    #[ignore = "requires the kindai-bungo dictionary (AB_VIBRATO_DICT_DIR)"]
+    fn resolve_run_normalization_historical_binds_oracle_and_validates() {
+        // Exercises the real archive-hash path and the I2-D17 validation.
+        let prov = resolve_run_normalization(OrthoDetectMode::Historical, None).unwrap();
+        assert_eq!(prov.mode, "historical");
+        let id = prov.detector_id.expect("historical detector id");
+        assert!(id.contains("HistoricalRewriteV1"), "{id}");
+        assert!(id.contains("dictionary_hash"), "{id}");
+        assert!(id.contains("rules_hash"), "{id}");
+        // The runs-row policy hash must equal the policy built from the same
+        // oracle archive hash — i.e. resolve and the pipeline detector agree.
+        let dict_hash =
+            ab_morph_analyzers::dictionary_archive_hash(M2_ORACLE_DICTIONARY).unwrap();
+        let expected = ab_ortho_detect::NormalizationPolicy::ortho_normalize_v1(
+            ab_ortho_detect::OrthoDetectorId::HistoricalRewriteV1 {
+                dictionary_hash: dict_hash,
+                rules_hash: ab_ortho_detect::historical::rules_hash(),
+            },
+            vec![ab_ortho_detect::OrthoNormalization::HistoricalToModern],
+        )
+        .policy_hash();
+        assert_eq!(prov.policy_hash, expected);
+    }
+
+    #[test]
     fn rejects_missing_input() {
         let err = run_default(None, None, &["vibrato".to_owned()]).unwrap_err();
         assert!(err.to_string().contains("exactly one"));
@@ -1792,6 +1997,7 @@ mod tests {
             3,
             OrthoDetectMode::Off,
             None,
+            None,
         )
         .unwrap();
 
@@ -1804,10 +2010,86 @@ mod tests {
         assert!(!run_dir.join("analyses.jsonl").exists());
         assert!(!run_dir.join("comparisons.jsonl").exists());
 
+        // T1 run-normalization provenance sidecar: source-identity run records
+        // the identity policy hash for ABC to read.
+        let provenance: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string(run_dir.join(RUN_NORMALIZATION_PROVENANCE_FILE)).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(provenance["run_id"], "run-a");
+        assert_eq!(provenance["ortho_detect_mode"], "off");
+        assert!(provenance["input_normalization_detector_id"].is_null());
+        assert_eq!(
+            provenance["input_normalization_policy_hash"],
+            ab_ortho_detect::NormalizationPolicy::identity().policy_hash()
+        );
+
         let staging = warehouse_dir.join(".staging");
         if staging.exists() {
             assert!(fs::read_dir(&staging).unwrap().next().is_none());
         }
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn warehouse_eligibility_filter_narrows_run_to_selected_source_ids() {
+        // Lane A: only works in the eligible set are analyzed; the rest are
+        // dropped before analysis (run-eligibility filter, outside normalization).
+        let dir = temp_dir("warehouse-eligibility");
+        let aat_dir = dir.join("aats");
+        let warehouse_dir = dir.join("warehouse");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::write(
+            aat_dir.join("source-old.json"),
+            tiny_aat("work-old").replace("吾輩は猫である。", "今日"),
+        )
+        .unwrap();
+        fs::write(
+            aat_dir.join("source-modern.json"),
+            tiny_aat("work-modern").replace("吾輩は猫である。", "今日"),
+        )
+        .unwrap();
+
+        let eligible: BTreeSet<String> = ["source-old".to_owned()].into_iter().collect();
+        run_analyze_aat_warehouse(
+            None,
+            Some(&aat_dir),
+            &["test:single".to_owned()],
+            &warehouse_dir,
+            "run-a",
+            1,
+            WarehouseProfile::Full,
+            3,
+            OrthoDetectMode::Off,
+            None,
+            Some(&eligible),
+        )
+        .unwrap();
+
+        let run_dir = warehouse_dir.join("runs").join("run-a");
+        let file = fs::File::open(run_dir.join("sources.parquet")).unwrap();
+        let reader = parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder::try_new(file)
+            .unwrap()
+            .build()
+            .unwrap();
+        let mut source_ids = BTreeSet::new();
+        for batch in reader {
+            let batch = batch.unwrap();
+            let idx = batch.schema().index_of("source_id").unwrap();
+            let values = batch
+                .column(idx)
+                .as_any()
+                .downcast_ref::<arrow_array::StringArray>()
+                .unwrap();
+            for row in 0..batch.num_rows() {
+                source_ids.insert(values.value(row).to_owned());
+            }
+        }
+        assert_eq!(
+            source_ids, eligible,
+            "only the eligible work should be analyzed"
+        );
 
         let _ = fs::remove_dir_all(dir);
     }
@@ -1834,6 +2116,7 @@ mod tests {
             WarehouseProfile::Triage,
             3,
             OrthoDetectMode::Off,
+            None,
             None,
         )
         .unwrap();
@@ -1892,6 +2175,7 @@ mod tests {
             3,
             OrthoDetectMode::Off,
             None,
+            None,
         )
         .unwrap();
 
@@ -1930,6 +2214,7 @@ mod tests {
             3,
             OrthoDetectMode::Off,
             None,
+            None,
         )
         .unwrap();
 
@@ -1967,6 +2252,7 @@ mod tests {
             WarehouseProfile::Full,
             3,
             OrthoDetectMode::Off,
+            None,
             None,
         )
         .unwrap();
@@ -2011,6 +2297,7 @@ mod tests {
             WarehouseProfile::Full,
             3,
             OrthoDetectMode::Off,
+            None,
             None,
         )
         .unwrap_err();
@@ -2448,6 +2735,11 @@ mod tests {
             zstd_level: 3,
             ortho_detect: OrthoDetectMode::Off,
             ortho_ml_model: None,
+            normalization: RunNormalizationProvenance {
+                mode: "off".to_owned(),
+                detector_id: None,
+                policy_hash: "sha256:identity".to_owned(),
+            },
         };
         merge_warehouse_shard_runs(&options, &shard_run_dirs).unwrap();
 

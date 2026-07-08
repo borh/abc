@@ -1,10 +1,11 @@
 # Ortho-Normalized Tokenizer-Input Policy — Design (provisional)
 
 **Date:** 2026-07-08
-**Status:** design + P0 + P1 landed (2026-07-08). Load-bearing forks resolved;
-U1 (bridge direction → Rust) and U2 (opaque hash boundary) resolved. P0 (thread
-`--ortho-detect` through all run paths) and P1 (structured policy identity) are
-implemented; P2–P5 remain.
+**Status:** design + P0 + P1 + P2 landed (2026-07-08). Load-bearing forks
+resolved; U1 (bridge direction → Rust) and U2 (opaque hash boundary) resolved.
+P0 (thread `--ortho-detect`), P1 (structured policy identity), and P2 (persist
+run-level provenance on the `runs` warehouse table + honest-failure fix) are
+implemented; P3–P5 remain.
 **Owner:** ab-validator (producer) + abc (identity/manifest)
 **Related:**
 `2026-07-07-parser-ir-sentence-segmentation-and-ortho-tei-design.md` (the
@@ -91,12 +92,24 @@ input.
 
 ### F2 — New `input_view_kind` vs. reuse
 
-**Reuse `parser-ir-plaintext-body-v1`; distinguish by `policy_hash`.** An
+> **CORRECTION (2026-07-08, during P3 investigation).** The original phrasing
+> below ("distinguish by `policy_hash`") conflated two *orthogonal* policies.
+> The existing `policy_hash` (request-set `inputView`) / `plaintext_policy_hash`
+> (analysis-result `plaintextInputView`) is the **plaintext projection** policy
+> (parser-IR body → plaintext, `coordinate_system: unicode-scalar-value`) — it is
+> NOT the ortho-normalization policy. The normalization policy is a separate field
+> the tokenizer profile already declares (`input_normalization_policy_hash`, read
+> at `materialize_tokenized.clj:83`). So reusing `parser-ir-plaintext-body-v1`
+> stands (the view kind is unchanged), but the ortho identity is a **new field on
+> the input view** (`input_normalization_policy_hash`, recording what was
+> applied), NOT an overload of the projection `policy_hash`. See the revised P3.
+
+**Reuse `parser-ir-plaintext-body-v1`; add a distinct normalization field.** An
 ortho-normalized run still emits plaintext-body morphemes in **source**
-coordinates — same *kind* of view, different input normalization. The existing
-`{input_view_kind, policy_hash}` pair already models this. Define a canonical
-**identity policy** (`policy_hash` = hash of the no-op policy) as today's default
-and an **ortho-normalized-v1 policy** as the new option. (Alternative — a new
+coordinates — same *kind* of view, different input normalization. The
+`input_view_kind` is unchanged; the applied normalization is recorded by a new
+`input_normalization_policy_hash` field on the input view (identity sentinel =
+today's default). (Alternative — a new
 `…-ortho-normalized-v1` kind — is more explicit but adds enum churn and wrongly
 implies different output coordinates; rejected.)
 
@@ -172,19 +185,52 @@ independently identified.
     distinct policy identity.
   Both hashes are pinned by unit tests; a change to canonicalization breaks them
   loudly. Not yet wired into any manifest (that is P2).
-- **P2 — Persist ortho provenance in the Rust world.** Record per analysis:
-  ortho mode, `detector_id`, `input_normalization_policy_hash`, remap status, and
-  whether the offset map was non-identity — in `RunManifest` and/or a warehouse
-  row. This is the data the ABC bridge consumes.
-- **P3 — Input-view identity.** Allow a non-identity `policy_hash` on
-  `parser-ir-plaintext-body-v1` input views (request-set + analysis-result);
-  keep Invariant 1. No new enum value (F2).
-- **P4 — ABC bridge.** Populate `tokenizer-profile.input_normalization_policy_hash`
-  from the real policy; record the applied policy in request-set `input_views`;
-  add the profile ⇄ input-view agreement check (F1).
-- **P5 — Reproducibility test.** A run + its recorded policy hash regenerate the
-  identical derived input from source; a golden fixture pins detector →
-  normalized-text → remapped spans end-to-end on the warehouse path.
+- **P2 — Persist ortho provenance in the Rust world. DONE (2026-07-08).** The
+  policy is uniform per run, so it is persisted at run grain on the `runs`
+  warehouse table (additive columns, no `SCHEMA_VERSION` bump — same discipline
+  as Issue 3's oracle column): `ortho_detect_mode` (`off`|`heuristic`|`ml`),
+  `input_normalization_detector_id` (serialized `OrthoDetectorId`, NULL for off),
+  and `input_normalization_policy_hash` (the identity ABC reads; identity
+  sentinel hash when off). `resolve_run_normalization` computes these once at the
+  warehouse top-level (loading the ML model once to bind its `model_hash`),
+  threaded through both the serial and parallel/merge runs-row writes.
+  **Honest-failure fix (Invariant 4):** P0 exposed a latent hole — an ortho
+  remap failure on the **warehouse** path (which has no `errors_writer`) was only
+  `eprintln!`'d, never persisted. It now writes an `ortho_remap` error row
+  (`ortho_remap_crosses_boundary` / `ortho_remap_uncovered_offset`) to the
+  warehouse errors table, mirroring the analyze-failure arm. *Scope note:* the
+  per-source "did normalization fire / offset-map non-identity" flags from the
+  original P2 sketch are **deferred** — the run-level hash is what the P4 bridge
+  consumes; per-source enrichment can be added if P4 shows a need (YAGNI). Not
+  persisted on the JSONL `RunManifest` path (warehouse is the ABC-consumed path).
+- **P3 — Input-view identity. DONE (2026-07-08).** Added the required
+  `input_normalization_policy_hash` field (identity sentinel for off) on both
+  `parser-ir-plaintext-body-v1` input views; regenerated the full cross-project
+  cascade. See `2026-07-08-ortho-input-view-and-abc-bridge-design.md`.
+- **P4 — ABC bridge. DONE (2026-07-08), one deliberate gap.** Agreement check
+  (`assert-input-normalization-agreement!`) wired into `materialize-tokenized!`;
+  tokenizer-profile fixture rewired to the real identity hash; Rust emits the T1
+  `run-normalization-provenance.json` sidecar. The live ABC path does not yet
+  read the sidecar (ABC has no warehouse-consumption seam yet) — mechanism in
+  place, wiring deferred as YAGNI. T1 transport confirmed.
+- **P5 — Reproducibility test. DONE (2026-07-08).** A golden fixture pins the
+  detector-driven derivation chain the warehouse run path executes
+  (`sentence_split` → `HeuristicV1::detect` → `ortho_normalize` → `remap_spans`)
+  end-to-end from a fixed source: the derived (normalized) text, the remapped
+  morpheme spans/surfaces in original-doc coordinates, and the recorded
+  heuristic-v1 `policy_hash` — the same hash the warehouse run records
+  (`resolve_run_normalization`) and the tokenizer profile declares (abc).
+  Reproducibility is asserted by re-running the chain and comparing byte-for-byte.
+  Test: `ab-morph-analyzers/tests/ortho_reproducibility_golden.rs` +
+  `tests/fixtures/ortho-reproducibility-golden.json`. Pins the length-PRESERVING
+  kata→hira path (byte spans unchanged, surfaces rebuilt from the original
+  katakana); complements `remap_vu.rs`, which pins the length-CHANGING ヴ→う゛
+  case. Driven with the character-level cascade + an empty first-pass token
+  stream, so it needs no analyzer dictionary and stays a fast unit test. The
+  literal pipeline plumbing (AAT read → parquet write) and the on-warehouse hash
+  recording are already covered by `warehouse_mode_writes_sealed_parquet_*` and
+  `resolve_run_normalization_heuristic_matches_policy_hash`; a heavy real-dictionary
+  warehouse run for P5 would duplicate those without adding coverage (YAGNI).
 
 ## Open questions (incubate before committing P2/P4)
 
@@ -205,11 +251,23 @@ independently identified.
   tests are the guard. If a future consumer needs to *construct* (not just read) a
   policy hash outside Rust, revisit and promote the descriptor to a checked-in
   schema then.
-- **U3 — `HistoricalToModern` scope.** The reserved kind is out of the v1 policy;
-  confirm before pinning `kinds` as a closed set in the descriptor.
-- **U4 — `determinism_tier` interaction.** How the tokenizer-profile
-  `determinism_tier` composes with a normalization policy (does normalization
-  change the tier?). Likely orthogonal, but confirm.
+- **U3 — `HistoricalToModern` scope. RESOLVED (2026-07-08):** keep the variant
+  **reserved as a documented Phase-3 lane** (not removed, not designed now).
+  `kinds` stays an OPEN set within `ortho-input-normalization-v1`; v1 emits only
+  `ScriptKatakanaToHiragana` (structural). A future historical detector must add
+  an `OrthoDetectorId` variant binding a `dictionary_hash` (with a
+  validation/type coupling rejecting the kind otherwise), pre-select works by
+  `orthographic_style` (`新字旧仮名`/`旧字旧仮名`) as a run-eligibility filter
+  *outside* normalization so the derived input stays a function of
+  `(source, policy)`, and accept whole-span-only remap. See
+  `2026-07-08-ortho-historical-scope-and-determinism-tier-design.md`.
+- **U4 — `determinism_tier` interaction. RESOLVED (2026-07-08):** orthogonal to
+  the normalization policy — a deterministic (mechanical kata→hira or
+  pinned-model ML) normalization preserves the tier, because the normalization
+  policy is already a required pin for the Exact classification. Documented the
+  effective-tier rule (tier = min across inputs; normalization is one input);
+  **deferred** building any gate (nothing consumes `determinism_tier` yet). See
+  `2026-07-08-ortho-historical-scope-and-determinism-tier-design.md`.
 
 ## Non-goals
 

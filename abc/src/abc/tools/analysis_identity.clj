@@ -9,6 +9,14 @@
 (def allowed-input-view-kinds
   #{"parser-ir-plaintext-body-v1"})
 
+;; The identity (no-op) input-normalization policy hash — produced by Rust
+;; (ab_ortho_detect::NormalizationPolicy::identity, spec Issue 2 P1) and used
+;; verbatim here (U1: compute stays in Rust, ABC reads/records the hash). This
+;; is the value the input view records when no ortho normalization was applied
+;; (the default for every source-identity flow).
+(def identity-normalization-policy-hash
+  "sha256:530c59689dd909c171790036cddc7916f8685897b6342bfa794d4611816d3813")
+
 (defn hash-json-value [value]
   (hash/format-sha256 (hash/sha256-json-jcs value)))
 
@@ -30,6 +38,20 @@
    (required-string "work_content_hash" (get subject "work_content_hash"))
    (or (get subject "metadata_record_hash") "")])
 
+(defn assert-input-normalization-agreement!
+  "Enforce the F1 agreement: the tokenizer profile *declares* the input
+  normalization it expects (`declared`), and the run *applied* (`applied`, from
+  the Rust run-provenance / recorded on the input view) must match it. A
+  mismatch means the run normalized its analyzer input differently than the
+  profile promised — a hard error. Returns `applied` on success."
+  [{:keys [declared applied context]}]
+  (when-not (= declared applied)
+    (throw (ex-info "input-normalization policy mismatch: the run applied a different normalization than the tokenizer profile declared"
+                    {:declared_input_normalization_policy_hash declared
+                     :applied_input_normalization_policy_hash applied
+                     :context context})))
+  applied)
+
 (defn- normalize-subject [subject]
   (assoc subject "metadata_record_hash" (get subject "metadata_record_hash")))
 
@@ -50,7 +72,8 @@
                                    :allowed_input_view_kinds allowed-input-view-kinds})))
                 input-view)))
        (sort-by (juxt #(get % "input_view_kind")
-                      #(get % "policy_hash")))
+                      #(get % "policy_hash")
+                      #(get % "input_normalization_policy_hash")))
        distinct
        vec))
 

@@ -71,6 +71,17 @@ struct SentenceBounds {
     end: usize,
 }
 
+struct FineBound {
+    bounds: SentenceBounds,
+    group: Option<usize>,
+    outer_pos: Option<usize>,
+}
+
+struct AtomicSpan {
+    start: usize,
+    end: usize,
+}
+
 pub fn segmentation_meta() -> SentenceSegmentation {
     SentenceSegmentation {
         schema_version: "sentence-segmentation-v1".to_owned(),
@@ -276,12 +287,13 @@ fn project_body_paragraph(
     }
 
     // --- Phase 1: nesting detection over the whole paragraph's nodes. ---
-    // Quotes never cross flat-sentence boundaries (the flat splitter suppresses
-    // splits before a closing bracket), so each level-0 region lies inside one
-    // flat sentence. Only level-0 regions drive fragmentation in v1; deeper
-    // nesting is left as inner-sentence text (future <q> work).
+    // A quote region may cross a flat splitter boundary when its closing marker
+    // appears after a newline. Coalesce those flat bounds before assigning
+    // regions to fragment groups. Only level-0 regions drive fragmentation in
+    // v1; deeper nesting is left as inner-sentence text (future <q> work).
     let regions = detect_nested_regions(original_nodes, 0, original_nodes.len());
     let top_regions: Vec<&NestedRegion> = regions.iter().filter(|r| r.nesting_level == 0).collect();
+    coalesce_flat_bounds_around_regions(&mut flat_bounds, &top_regions)?;
 
     // Assign each region to its containing flat sentence; allocate ONE fragment
     // group per flat sentence that owns >=1 region.
@@ -308,11 +320,6 @@ fn project_body_paragraph(
     // first inner sentence, the close marker to the last inner sentence (so
     // `<s>「...」</s>` keeps its brackets). Outer fragments are the prose before
     // the open marker and after the close marker.
-    struct FineBound {
-        bounds: SentenceBounds,
-        group: Option<usize>,
-        outer_pos: Option<usize>,
-    }
     let mut fine: Vec<FineBound> = Vec::new();
     let mut outer_count_by_group: Vec<usize> = vec![0; group_count];
 
@@ -408,6 +415,8 @@ fn project_body_paragraph(
         }
     }
 
+    coalesce_fine_bounds_around_atomic_nodes(original_nodes, &mut fine)?;
+
     // --- Phase 3: split nodes at every interior fine boundary in one pass. ---
     let split_boundaries: Vec<usize> = fine
         .iter()
@@ -460,23 +469,27 @@ fn project_body_paragraph(
             Option<String>,
         ) = if let (Some(g), Some(pos)) = (fb.group, fb.outer_pos) {
             let count = group_outer_fi[g].len();
-            let part = if pos == 0 {
-                "I"
-            } else if pos + 1 == count {
-                "F"
+            if count < 2 {
+                (None, None, None, None)
             } else {
-                "M"
-            };
-            let next_id = (pos + 1 < count)
-                .then(|| format!("s{:06}", sentence_index_start + group_outer_fi[g][pos + 1]));
-            let prev_id = (pos > 0)
-                .then(|| format!("s{:06}", sentence_index_start + group_outer_fi[g][pos - 1]));
-            (
-                Some(part.to_owned()),
-                Some(format!("fg{:06}", g)),
-                next_id,
-                prev_id,
-            )
+                let part = if pos == 0 {
+                    "I"
+                } else if pos + 1 == count {
+                    "F"
+                } else {
+                    "M"
+                };
+                let next_id = (pos + 1 < count)
+                    .then(|| format!("s{:06}", sentence_index_start + group_outer_fi[g][pos + 1]));
+                let prev_id = (pos > 0)
+                    .then(|| format!("s{:06}", sentence_index_start + group_outer_fi[g][pos - 1]));
+                (
+                    Some(part.to_owned()),
+                    Some(format!("fg{:06}", g)),
+                    next_id,
+                    prev_id,
+                )
+            }
         } else {
             (None, None, None, None)
         };
@@ -502,6 +515,81 @@ fn project_body_paragraph(
     assert_fragment_field_coherence(&rows)?;
 
     Ok(rows)
+}
+
+fn coalesce_flat_bounds_around_regions(
+    flat_bounds: &mut Vec<SentenceBounds>,
+    regions: &[&NestedRegion],
+) -> Result<()> {
+    for region in regions {
+        let first = flat_bounds
+            .iter()
+            .position(|f| f.end > region.outer_byte_start && f.start < region.outer_byte_end)
+            .with_context(|| {
+                format!(
+                    "nested region {}..{} does not overlap any flat sentence",
+                    region.outer_byte_start, region.outer_byte_end
+                )
+            })?;
+        let last = flat_bounds
+            .iter()
+            .rposition(|f| f.end > region.outer_byte_start && f.start < region.outer_byte_end)
+            .expect("first overlap implies last overlap");
+
+        if first == last {
+            continue;
+        }
+
+        let merged = SentenceBounds {
+            start: flat_bounds[first].start,
+            end: flat_bounds[last].end,
+        };
+        flat_bounds.splice(first..=last, [merged]);
+    }
+    Ok(())
+}
+
+fn coalesce_fine_bounds_around_atomic_nodes(
+    nodes: &[Value],
+    fine: &mut Vec<FineBound>,
+) -> Result<()> {
+    let mut atomic_spans = Vec::new();
+    collect_atomic_spans(nodes, &mut atomic_spans)?;
+
+    let mut i = 0usize;
+    while i + 1 < fine.len() {
+        let boundary = fine[i].bounds.end;
+        if atomic_spans
+            .iter()
+            .any(|span| span.start < boundary && boundary < span.end)
+        {
+            fine[i].bounds.end = fine[i + 1].bounds.end;
+            fine[i].group = None;
+            fine[i].outer_pos = None;
+            fine.remove(i + 1);
+        } else {
+            i += 1;
+        }
+    }
+    Ok(())
+}
+
+fn collect_atomic_spans(nodes: &[Value], out: &mut Vec<AtomicSpan>) -> Result<()> {
+    for node in nodes {
+        if let Some(children) = inline_children(node) {
+            collect_atomic_spans(children, out)?;
+            continue;
+        }
+        if is_splittable_text_node(node) || is_splittable_container(node) {
+            continue;
+        }
+        let start = value_usize(node, "/span/start", "node span.start")?;
+        let end = value_usize(node, "/span/end", "node span.end")?;
+        if start < end {
+            out.push(AtomicSpan { start, end });
+        }
+    }
+    Ok(())
 }
 
 fn move_nodes(nodes: &mut [Value], start: usize, end: usize, out: &mut Vec<Value>) {
@@ -1121,7 +1209,7 @@ mod tests {
     }
 
     #[test]
-    fn rejects_boundary_inside_atomic_ruby_node() {
+    fn keeps_atomic_ruby_whole_when_boundary_falls_inside_base() {
         let nodes = vec![json!({
             "type":"ruby",
             "span":span(0,48),
@@ -1131,10 +1219,15 @@ mod tests {
             json!({"id":"p000000","span":span(0,48),"span_source":"direct","node_range":{"start":0,"end":1},"role":"body","source_pointer":"blocks[0]","classification":"direct"}),
         ];
 
-        let error = project_sentences(nodes, paragraphs, None)
-            .unwrap_err()
-            .to_string();
-        assert!(error.contains("sentence boundary falls inside atomic node ruby at byte 24"));
+        let projection = project_sentences(nodes, paragraphs, None).unwrap();
+
+        assert_eq!(projection.nodes.len(), 1);
+        assert_eq!(projection.sentences.len(), 1);
+        assert_eq!(projection.sentences[0].span, span(0, 48));
+        assert_eq!(
+            projection.sentences[0].node_range,
+            json!({"start":0,"end":1})
+        );
     }
 
     #[test]
@@ -1172,6 +1265,67 @@ mod tests {
     }
 
     #[test]
+    fn multiline_quote_region_crossing_flat_split_still_fragments() {
+        // The flat splitter deliberately does not scan for closing brackets past a
+        // newline. A top-level quote may still span that newline, so sentence
+        // projection must coalesce the flat bounds around the quote region before
+        // fragment assembly.
+        let nodes = vec![
+            json!({"type":"text","span":span(0,6),"text":"彼は"}),
+            json!({"type":"quote","span":span(6,9),"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":span(9,28),"text":"第一。\n第二。"}),
+            json!({"type":"quote","span":span(28,31),"marker_type":"close","text":"」"}),
+            json!({"type":"text","span":span(31,46),"text":"と言った。"}),
+        ];
+        let paragraphs = vec![json!({
+            "id":"p000000","span":span(0,46),"span_source":"direct",
+            "node_range":{"start":0,"end":5},"role":"body",
+            "source_pointer":"blocks[0]","classification":"direct"
+        })];
+
+        let projection = project_sentences(nodes, paragraphs, None).unwrap();
+
+        assert_eq!(projection.sentences.len(), 4);
+        assert_eq!(projection.sentences[0].part.as_deref(), Some("I"));
+        assert_eq!(projection.sentences[3].part.as_deref(), Some("F"));
+        assert_eq!(
+            projection.sentences[0].next_id.as_deref(),
+            Some(projection.sentences[3].id.as_str())
+        );
+        assert_eq!(
+            projection.sentences[3].prev_id.as_deref(),
+            Some(projection.sentences[0].id.as_str())
+        );
+        assert_eq!(projection.sentences[0].span, span(0, 6));
+        assert_eq!(projection.sentences[1].span, span(6, 18));
+        assert_eq!(projection.sentences[2].span, span(18, 31));
+        assert_eq!(projection.sentences[3].span, span(31, 46));
+    }
+
+    #[test]
+    fn singleton_outer_fragment_has_no_fragment_fields() {
+        let nodes = vec![
+            json!({"type":"quote","span":span(0,3),"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":span(3,9),"text":"否。"}),
+            json!({"type":"quote","span":span(9,12),"marker_type":"close","text":"」"}),
+            json!({"type":"text","span":span(12,27),"text":"と言った。"}),
+        ];
+        let paragraphs = vec![json!({
+            "id":"p000000","span":span(0,27),"span_source":"direct",
+            "node_range":{"start":0,"end":4},"role":"body",
+            "source_pointer":"blocks[0]","classification":"direct"
+        })];
+
+        let projection = project_sentences(nodes, paragraphs, None).unwrap();
+
+        assert_eq!(projection.sentences.len(), 2);
+        assert!(projection.sentences[1].part.is_none());
+        assert!(projection.sentences[1].fragment_group.is_none());
+        assert!(projection.sentences[1].next_id.is_none());
+        assert!(projection.sentences[1].prev_id.is_none());
+    }
+
+    #[test]
     fn keeps_ruby_child_whole_when_boundary_falls_between_children() {
         // A boundary exactly between an emphasis's text child and its ruby child is
         // a clean partition — the ruby stays whole.
@@ -1204,9 +1358,7 @@ mod tests {
     }
 
     #[test]
-    fn rejects_boundary_inside_ruby_child_of_emphasis() {
-        // A terminal inside a ruby base nested in an emphasis is still a hard fail —
-        // recursion reaches the atomic ruby and refuses to snap.
+    fn keeps_nested_ruby_child_whole_when_boundary_falls_inside_base() {
         let nodes = vec![json!({
             "type":"emphasis",
             "span":span(0,9),
@@ -1222,12 +1374,14 @@ mod tests {
             "source_pointer":"blocks[0]","classification":"direct"
         })];
 
-        let error = project_sentences(nodes, paragraphs, None)
-            .unwrap_err()
-            .to_string();
-        assert!(
-            error.contains("sentence boundary falls inside atomic node ruby at byte 6"),
-            "unexpected error: {error}"
+        let projection = project_sentences(nodes, paragraphs, None).unwrap();
+
+        assert_eq!(projection.nodes.len(), 1);
+        assert_eq!(projection.sentences.len(), 1);
+        assert_eq!(projection.sentences[0].span, span(0, 9));
+        assert_eq!(
+            projection.sentences[0].node_range,
+            json!({"start":0,"end":1})
         );
     }
 

@@ -49,8 +49,20 @@
   (let [aat-path (required-work-value work :aat_path)
         parser-ir-path (work-file-path work :parser_ir_path)
         metadata-record-path (work-file-path work :metadata_record_path)
+        official-source-path (required-work-value work :official_source_path)
+        official-source-file (work-file-path work :official_source_path)
         parser-ir (files/read-json parser-ir-path)
-        metadata-record (files/read-json metadata-record-path)]
+        metadata-record (files/read-json metadata-record-path)
+        official-source (files/read-json official-source-file)
+        work-content-hash (get-in parser-ir ["source" "work_content_hash"])
+        official-source-hash (get official-source "source_hash")]
+    (when-not (= work-content-hash official-source-hash)
+      (throw (ex-info "official-source source_hash differs from parser-IR work_content_hash"
+                      {:work (required-work-value work :slug)
+                       :parser-ir-path parser-ir-path
+                       :official-source-path official-source-path
+                       :work-content-hash work-content-hash
+                       :official-source-hash official-source-hash})))
     {"slug" (required-work-value work :slug)
      "title" (required-work-value work :title)
      "work_id" (required-work-value work :work_id)
@@ -59,6 +71,10 @@
                     (get-in metadata-record ["work" "card_url"]))
      "aat_path" aat-path
      "aat_file_hash" (manifest/file-hash (work-file-path work :aat_path))
+     "official_source_path" official-source-path
+     "official_source_file_hash" (manifest/file-hash official-source-file)
+     "official_text_zip_relpath" (get official-source "text_zip_relpath")
+     "official_text_zip_member" (get official-source "zip_member")
      "aat_adapter" (get-in parser-ir ["derived_from" "aat_adapter"])
      "aat_adapter_version" (get-in parser-ir ["derived_from" "aat_adapter_version"])
      "aat_version" (get-in parser-ir ["derived_from" "aat_version"])
@@ -66,7 +82,7 @@
      "mapping_schema_hash" (get-in parser-ir ["derived_from" "mapping_schema_hash"])
      "mapping_version" (get-in parser-ir ["derived_from" "mapping_version"])
      "parser_ir_schema_hash" (get parser-ir "schema_hash")
-     "work_content_hash" (get-in parser-ir ["source" "work_content_hash"])
+     "work_content_hash" work-content-hash
      "source_encoding" (get-in parser-ir ["source" "encoding"])
      "source_normalization" (get-in parser-ir ["source" "normalization"])
      "metadata_record_hash" (metadata-record/record-hash metadata-record)}))

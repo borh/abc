@@ -682,23 +682,32 @@ fn ortho_annotation_spanning_two_sentences_tags_both() {
 }
 
 #[test]
-fn rejects_sentence_boundary_inside_atomic_ruby_child_from_aat() {
-    // Regression matrix (6e): the residual atomic-boundary failure under Phase B —
-    // a sentence terminal inside a `ruby` base nested in an emphasis. `ruby` stays
-    // atomic (B-D2), so conversion must fail rather than snap the boundary.
+fn coalesces_sentence_boundary_inside_atomic_ruby_child_from_aat() {
+    // Regression matrix (6e): a sentence terminal inside a `ruby` base nested in
+    // an emphasis. `ruby` stays atomic (B-D2), so conversion coalesces the
+    // sentence bounds around the ruby child instead of slicing the node.
     let (schemas, mapping) = schemas_and_mapping();
-    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat: include_fixture_json("atomic-boundary-emphasis-input.aat.json"),
         mapping,
-        schemas,
+        schemas: schemas.clone(),
         options: ConversionOptions::default(),
     })
-    .unwrap_err()
-    .to_string();
-    assert!(
-        error.contains("sentence boundary falls inside atomic node ruby"),
-        "unexpected error: {error}"
+    .unwrap();
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/span/start"),
+        Some(&json!(0))
     );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/span/end"),
+        Some(&json!(9))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/sentences/0/node_range"),
+        Some(&json!({"start":0,"end":1}))
+    );
+    assert_eq!(output.parser_ir.pointer("/sentences/1"), None);
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 
 #[test]

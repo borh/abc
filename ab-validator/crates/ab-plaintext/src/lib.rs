@@ -70,7 +70,7 @@ pub fn split_sentences_with_options<'a>(
             continue;
         }
 
-        let prev = (i > 0).then_some(chars[i - 1].1);
+        let prev = i.checked_sub(1).map(|prev_i| chars[prev_i].1);
         let next = chars.get(i + 1).map(|(_, ch)| *ch);
         let suppress = opts.suppress_closing_bracket_check;
 
@@ -387,6 +387,19 @@ mod sentence_split_tests {
         assert_eq!(spans.len(), 2);
         assert_eq!(spans[0].text, "本当！？");
         assert_eq!(spans[1].text, "そう！！！");
+    }
+
+    #[test]
+    fn split_sentences_terminal_at_start_does_not_panic() {
+        let spans = split_sentences("。始まり。");
+        assert_eq!(
+            spans.iter().map(|span| span.text).collect::<Vec<_>>(),
+            vec!["。", "始まり。"]
+        );
+        assert_eq!(spans[0].byte_offset, 0);
+        assert_eq!(spans[0].char_offset, 0);
+        assert_eq!(spans[1].byte_offset, "。".len());
+        assert_eq!(spans[1].char_offset, 1);
     }
 
     #[test]

@@ -524,6 +524,19 @@
       (is (= [{:type "ruby" :policy "omitted"}]
              (:omitted result))))))
 
+(deftest whitespace-only-ruby-base-is-omitted-test
+  (testing "ruby with only source whitespace does not emit Schematron-invalid rb"
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "ruby"
+                             "span" {"start" 6 "end" 7}
+                             "ruby" {"base" "\r"
+                                     "reading" "ラルュウ"
+                                     "direction" "right"}}]})]
+      (is (not-any? #(= :ruby (first %))
+                    (hiccup-nodes (:body result))))
+      (is (= [{:type "ruby" :policy "omitted"}]
+             (:omitted result))))))
+
 (deftest trailing-heading-starts-a-new-division-test
   (testing "headings after paragraph content keep source order by starting a later div"
     (let [result (parser-ir-tei/render

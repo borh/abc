@@ -948,11 +948,30 @@ dictionary-build-kindai-bungo:
 		done; \
 	done
 
+# 近世 (Edo-period) editions for the ~2% of Aozora by pre-Meiji authors.
+dictionary-build-kinsei-edo:
+	@nix build .#vibrato-dict-kinsei-edo --no-link --print-out-paths | while read -r out; do \
+		for dict in "$out"/share/vibrato/*.dic.zst; do \
+			[ -f "$dict" ] || continue; \
+			ln -sf "$dict" "{{vibrato_compiled_dir}}/$(basename "$dict")"; \
+			echo "  linked $(basename "$dict")"; \
+		done; \
+	done
+
+dictionary-build-kinsei-bungo:
+	@nix build .#vibrato-dict-kinsei-bungo --no-link --print-out-paths | while read -r out; do \
+		for dict in "$out"/share/vibrato/*.dic.zst; do \
+			[ -f "$dict" ] || continue; \
+			ln -sf "$dict" "{{vibrato_compiled_dir}}/$(basename "$dict")"; \
+			echo "  linked $(basename "$dict")"; \
+		done; \
+	done
+
 # Build all available vibrato dictionaries and link them.
 # NOTE: linking is the LEGACY fallback. Prefer AB_VIBRATO_DICT_DIR (see
 # `just dictionary-env`) — the dev shell exports it automatically, and it needs
 # no per-dictionary symlink into the repo.
-dictionary-build-all: dictionary-build-cwj dictionary-build-csj dictionary-build-novel dictionary-build-qkana dictionary-build-kindai-bungo
+dictionary-build-all: dictionary-build-cwj dictionary-build-csj dictionary-build-novel dictionary-build-qkana dictionary-build-kindai-bungo dictionary-build-kinsei-edo dictionary-build-kinsei-bungo
 	@echo "All vibrato dictionaries built and linked."
 
 # Print the env exports that make every nix-built vibrato dictionary resolvable

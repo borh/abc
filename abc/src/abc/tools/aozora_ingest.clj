@@ -326,9 +326,28 @@
                        "  Corpus mode:      clojure -M:abc/aozora-ingest "
                        "--zip <path-to-zip> --all --output-dir <DIR> [--overwrite]")))
 
+(defn merge-catalog-defaults
+  "Pure: fill `:zip-path`/`:source-url` from catalog fallbacks (the env values
+  the `aozora-ingest` flake app injects) only when the CLI omitted them. An
+  explicit CLI value always wins; a blank/absent fallback is treated as nil."
+  [options {:keys [zip source-url]}]
+  (let [present (fn [v] (when-not (string/blank? v) v))]
+    (cond-> options
+      (nil? (:zip-path options)) (assoc :zip-path (present zip))
+      (nil? (:source-url options)) (assoc :source-url (present source-url)))))
+
+(defn- with-catalog-env-defaults
+  "Fill --zip / --source-url from the canonical-catalog env vars set by the
+  `aozora-ingest` flake app when the flags are omitted."
+  [options]
+  (merge-catalog-defaults options
+                          {:zip (System/getenv "ABC_AOZORA_CATALOG_ZIP")
+                           :source-url (System/getenv "ABC_AOZORA_CATALOG_URL")}))
+
 (defn -main [& args]
   (logging/install-cli-handler!)
   (let [{:keys [options errors]} (cli/parse-opts args cli-options)
+        options (with-catalog-env-defaults options)
         {:keys [zip-path all? output-dir work-id output]} options
         corpus? (boolean all?)
         invalid? (or (seq errors)

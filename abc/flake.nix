@@ -11,6 +11,14 @@
       url = "github:TEI-EAJ/aozora_tei/77a675fc2771936f9544505d922d4cd45075338c";
       flake = false;
     };
+    # Canonical Aozora Bunko source tree, pinned to the same revision as
+    # ab-validator's `aozorabunko-src`. Supplies the authoritative work/person
+    # catalog ZIP that `aozora-ingest` reads, so the ingester no longer depends
+    # on a manually-located (and often stale) local CSV.
+    aozorabunko-src = {
+      url = "github:aozorabunko/aozorabunko/0e9ea3e586eb0aa34039fabfc85a407d2f98b165";
+      flake = false;
+    };
     clj-nix = {
       url = "github:jlesquembre/clj-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -25,6 +33,7 @@
       nixpkgs,
       local-pkgs,
       tei-eaj-aozora-tei,
+      aozorabunko-src,
       clj-nix,
       crane,
       ...
@@ -169,10 +178,15 @@
             type = "app";
             program = toString (
               pkgs.writeShellScript "abc-aozora-ingest" ''
+                # Default the catalog to the pinned canonical Aozora source, so
+                # `--zip`/`--source-url` may be omitted (the tool falls back to
+                # these env vars). An explicit --zip on the command line wins.
+                export ABC_AOZORA_CATALOG_ZIP="${aozorabunko-src}/index_pages/list_person_all_extended_utf8.zip"
+                export ABC_AOZORA_CATALOG_URL="github:aozorabunko/aozorabunko/0e9ea3e586eb0aa34039fabfc85a407d2f98b165"
                 exec ${pkgs.clojure}/bin/clojure -M:abc/aozora-ingest "$@"
               ''
             );
-            meta.description = "Build a metadata-record JSON from an Aozora list_person_all_extended ZIP slice";
+            meta.description = "Build a metadata-record JSON from the canonical (pinned) Aozora catalog, or a --zip slice";
           };
 
           validate-corpus = {

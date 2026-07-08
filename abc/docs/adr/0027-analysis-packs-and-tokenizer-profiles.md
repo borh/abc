@@ -29,8 +29,12 @@ missing or null, and rejects tokenized manifests whose parser/mapping identity
 fields differ from their producer parser-IR manifest or whose tokenizer
 build/dictionary fields differ from the cited tokenizer profile. ABC still
 cannot publish tokenized slices, tokenizer-backed stylometric analysis, or
-collection analysis packs as canonical snapshot artifacts until tokenized
-materialization and pack acceptance criteria below are implemented.
+collection analysis packs as canonical snapshot artifacts until tokenizer-backed
+analysis, pack, and release publication acceptance criteria below are
+implemented. Prototype tokenized fixture materialization is implemented by
+`abc.tools.materialize-tokenized` and exercised by
+`test/abc/tools/materialize_tokenized_test.clj` plus the design-bundle
+validation path.
 
 Snapshot-publication work may proceed with TEI, plaintext, token-independent
 analysis, request-set fixtures, and snapshot indexes. It must not claim
@@ -535,7 +539,10 @@ remaining materialization and validation work lands.
   hash is used as the tokenized slice `output_format_spec_hash`.
 - A tokenized fixture demonstrates `parser-ir-plaintext-body-v1` input,
   tokenizer profile hash, token output schema hash, and token index/input span
-  coordinates.
+  coordinates; `abc.tools.materialize-tokenized` produces the fixture shape,
+  `test/abc/tools/materialize_tokenized_test.clj` covers the copied-identity
+  contract, and `abc.tools.validate-design-bundle` materializes the fixture
+  during acceptance validation.
 - Release validation fails when copied parser/mapping identity fields in a
   tokenized manifest differ from the producer manifest;
   `test/abc/tools/manifest_index_test.clj` covers this guardrail.

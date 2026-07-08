@@ -258,10 +258,24 @@ so coverage is not inflated; and ab-aozora's `jisage_block` is approximated by
 `containerOpen`, which slightly over-attributes (it covers all block containers).
 Adapters completed different work counts (aozora2html 17,689 of 17,886), so
 numerators over completed works are lightly (~1%) under the corpus-wide denominator.
-`aozora2html`'s ruby 0.74 is a *real* node-count ratio (verified recursive), the one
-cell most worth a targeted follow-up since ruby dominates the weighted score. Fine
-gaiji sub-constructs remain excluded (adapter-dropped fields — the residual
+Fine gaiji sub-constructs remain excluded (adapter-dropped fields — the residual
 granularity wall).
+
+**Closure on `aozora2html` ruby 0.74 (coverage conflates *fidelity* and
+*robustness*).** A per-work diagnostic (`/tmp` script, method in commit) shows the
+0.74 is **not** ruby lossiness: on the works aozora2html actually processes, its
+per-work ruby ratio vs aozora-rs is **median 1.000 / mean 0.998** — near-perfect
+fidelity. The gap is that aozora2html **fails entirely on ~193 works** (plus 82 it
+emits empty), and those are **ruby-heavy large works holding 27.5% of all ruby
+mass**. So corpus coverage as computed here mixes two distinct axes:
+*fidelity* (markup captured *given the adapter ran*) and *robustness* (whether it
+completes the work). aozora2html's fidelity is ~1.0 on ruby; its low coverage is a
+**robustness** problem (a different, more fixable failure than dropping constructs).
+The other adapters completed different work counts too (aozora/aozora-rs ~17,600–17,900,
+epub3 17,844, aozora2 17,856), so each carries a smaller version of this. **A pure
+fidelity comparison should be recomputed over the intersection of works *all*
+adapters completed** (see §8); the numbers above are honest "total-mass" coverage,
+not isolated fidelity.
 
 ## 5. Threats to validity / limitations
 
@@ -334,6 +348,10 @@ Backing data: `2026-07-08-aozora-notation-spec-comparison.summary.json`,
   timeout pathology (which inputs, and whether it is a cheap fix).
 - Resolve the `aozora-rs-core` gaiji blind spot and confirm a valid document
   wrapper (or repair its adapter's typed projection — deferred).
+- Split coverage into **fidelity** (over the intersection of works all adapters
+  completed) and **robustness** (per-adapter work-completion rate), per the §4.7
+  closure — so aozora2html's ruby ~1.0 fidelity isn't hidden behind its work-failure
+  rate. Also verify each adapter's *own* completed-work denominator.
 - Expand the official-docs seed (§4.5) from 11 clean cases toward edge-case
   coverage and precise spans, so it reproduces absolute rates, not just relative
   family weakness — a full independent instrument, not a seed.

@@ -298,6 +298,12 @@ The model carries no training-provenance metadata; verify its source before trus
         max_examples_per_comparison: usize,
         #[arg(long, value_enum, default_value_t = RerunDetailArg::Full)]
         detail: RerunDetailArg,
+        /// Orthographic-detection layer; must match the original run to reproduce
+        /// its tokenization. See the `analyze`/warehouse `--ortho-detect` help.
+        #[arg(long, value_enum, default_value_t = ab_morph_run::OrthoDetectMode::Off)]
+        ortho_detect: ab_morph_run::OrthoDetectMode,
+        #[arg(long = "ortho-ml-model", value_name = "PATH")]
+        ortho_ml_model: Option<PathBuf>,
     },
     ImportAozoraMetadata {
         #[arg(long)]
@@ -427,6 +433,8 @@ fn main() -> Result<()> {
                     jobs,
                     warehouse_profile,
                     parquet_zstd_level,
+                    ortho_detect,
+                    ortho_ml_model,
                 );
             }
             let progress_enabled = progress || progress_interval_seconds.is_some();
@@ -768,16 +776,25 @@ fn main() -> Result<()> {
             examples_output,
             max_examples_per_comparison,
             detail,
-        } => run_rerun_full(
-            &aat_dir,
-            &source_id,
-            &analyzer,
-            &output_dir,
-            jobs,
-            examples_output.as_deref(),
-            max_examples_per_comparison,
-            detail,
-        ),
+            ortho_detect,
+            ortho_ml_model,
+        } => {
+            if ortho_detect == ab_morph_run::OrthoDetectMode::Ml && ortho_ml_model.is_none() {
+                bail!("--ortho-ml-model PATH is required when --ortho-detect=ml");
+            }
+            run_rerun_full(
+                &aat_dir,
+                &source_id,
+                &analyzer,
+                &output_dir,
+                jobs,
+                examples_output.as_deref(),
+                max_examples_per_comparison,
+                detail,
+                ortho_detect,
+                ortho_ml_model,
+            )
+        }
         Command::ImportAozoraMetadata {
             run_dir,
             from,
@@ -1050,6 +1067,8 @@ fn run_rerun_full(
     examples_output: Option<&Path>,
     max_examples_per_comparison: usize,
     detail: RerunDetailArg,
+    ortho_detect: ab_morph_run::OrthoDetectMode,
+    ortho_ml_model: Option<PathBuf>,
 ) -> Result<()> {
     let inputs = ab_morph_run::resolve_source_id_aat_paths(aat_dir, source_ids)?;
     let output_profile = match detail {
@@ -1079,6 +1098,8 @@ fn run_rerun_full(
         examples_output,
         max_examples_per_comparison,
         Some(&output_dir.join("manifest.json")),
+        ortho_detect,
+        ortho_ml_model,
     )
 }
 
@@ -1379,6 +1400,7 @@ mod tests {
             examples_output,
             max_examples_per_comparison,
             detail,
+            ..
         } = args.command
         else {
             panic!("expected rerun-full command");
@@ -2459,6 +2481,8 @@ mod tests {
             None,
             10,
             RerunDetailArg::Full,
+            ab_morph_run::OrthoDetectMode::Off,
+            None,
         )
         .unwrap();
 
@@ -2488,6 +2512,8 @@ mod tests {
             None,
             10,
             RerunDetailArg::ExamplesOnly,
+            ab_morph_run::OrthoDetectMode::Off,
+            None,
         )
         .unwrap();
 

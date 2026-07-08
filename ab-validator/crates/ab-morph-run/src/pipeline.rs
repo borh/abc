@@ -226,6 +226,8 @@ pub fn run_analyze_aat_warehouse(
     jobs: usize,
     warehouse_profile: WarehouseProfile,
     zstd_level: i32,
+    ortho_detect: OrthoDetectMode,
+    ortho_ml_model: Option<PathBuf>,
 ) -> Result<()> {
     run_analyze_aat_warehouse_impl(
         aat,
@@ -236,6 +238,8 @@ pub fn run_analyze_aat_warehouse(
         jobs,
         warehouse_profile,
         zstd_level,
+        ortho_detect,
+        ortho_ml_model,
     )
 }
 
@@ -249,6 +253,8 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
     jobs: usize,
     warehouse_profile: WarehouseProfile,
     zstd_level: i32,
+    ortho_detect: OrthoDetectMode,
+    ortho_ml_model: Option<PathBuf>,
 ) -> Result<()> {
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
@@ -298,9 +304,8 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
                     label: format!("warehouse:{run_id}"),
                     total: input_count,
                 }),
-                // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
-                ortho_detect: OrthoDetectMode::Off,
-                ortho_ml_model: None,
+                ortho_detect,
+                ortho_ml_model,
             },
         )?;
         log_phase_timings(1, &timings);
@@ -317,6 +322,8 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
                 analyzer_rows,
                 warehouse_profile,
                 zstd_level,
+                ortho_detect,
+                ortho_ml_model,
             },
         )?;
     }
@@ -344,6 +351,8 @@ pub fn run_analyze_aat_selected(
     examples_output: Option<&Path>,
     max_examples_per_comparison: usize,
     manifest_output: Option<&Path>,
+    ortho_detect: OrthoDetectMode,
+    ortho_ml_model: Option<PathBuf>,
 ) -> Result<()> {
     run_analyze_aat_selected_impl(
         inputs,
@@ -359,6 +368,8 @@ pub fn run_analyze_aat_selected(
         examples_output,
         max_examples_per_comparison,
         manifest_output,
+        ortho_detect,
+        ortho_ml_model,
     )
 }
 
@@ -377,6 +388,8 @@ pub(crate) fn run_analyze_aat_selected_impl(
     examples_output: Option<&Path>,
     max_examples_per_comparison: usize,
     manifest_output: Option<&Path>,
+    ortho_detect: OrthoDetectMode,
+    ortho_ml_model: Option<PathBuf>,
 ) -> Result<()> {
     if inputs.is_empty() {
         bail!("provide at least one AAT input");
@@ -399,9 +412,8 @@ pub(crate) fn run_analyze_aat_selected_impl(
         None,
         None,
         None,
-        // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
-        OrthoDetectMode::Off,
-        None,
+        ortho_detect,
+        ortho_ml_model,
     )
 }
 
@@ -1139,6 +1151,8 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
             let input_mode = options.input_mode;
             let input_path = options.input_path.clone();
             let analyzer_rows = options.analyzer_rows.clone();
+            let ortho_detect = options.ortho_detect;
+            let ortho_ml_model = options.ortho_ml_model.clone();
             let queue = Arc::clone(&queue);
             handles.push(scope.spawn(move || -> Result<WarehouseShardOutput> {
                 let mut shard_run_dirs = Vec::new();
@@ -1179,9 +1193,10 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
                                 label: format!("warehouse-worker-{job_index}/shard-{shard_index}"),
                                 total: batch_len,
                             }),
-                            // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
-                            ortho_detect: OrthoDetectMode::Off,
-                            ortho_ml_model: None,
+                            ortho_detect,
+                            // Rebuilt per batch; the model file is re-read once per
+                            // batch when ortho_detect == Ml (heuristic has no file).
+                            ortho_ml_model: ortho_ml_model.clone(),
                         },
                     );
                     complete_warehouse_work_batch(&queue, batch_is_large);

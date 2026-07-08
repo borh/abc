@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use ab_morph_diff::{Analysis, AnalyzerWarning};
 use ab_plaintext::PlainTextDocument;
-use vibrato_rkyv::{CacheStrategy, Dictionary, LoadMode, Tokenizer};
+use vibrato_rkyv::{Dictionary, LoadMode, Tokenizer};
 
 use crate::chunking::semantic_chunks;
 use crate::features::parse_vibrato_feature_string;
@@ -51,8 +51,9 @@ impl VibratoAnalyzer {
                         message: format!("zstd dictionary load lock poisoned: {err}"),
                     }
                 })?;
-                let _cache_guard = ZstdCacheLock::acquire(&analyzer_id, dictionary_path)?;
-                Dictionary::from_zstd(dictionary_path, CacheStrategy::Local)
+                let cache_dir = zstd_cache_dir();
+                let _cache_guard = ZstdCacheLock::acquire(&analyzer_id, &cache_dir)?;
+                Dictionary::from_zstd_with_options(dictionary_path, &cache_dir, true)
             } else {
                 Dictionary::from_path(dictionary_path, LoadMode::TrustCache)
             }
@@ -138,6 +139,22 @@ fn resolve_dictionary_path(dictionary_name: &str) -> Result<PathBuf, AnalyzerErr
 }
 
 fn resolve_dictionary_path_from_basename(name: &str) -> Result<PathBuf, AnalyzerError> {
+    // 1. `AB_VIBRATO_DICT_DIR`: one or more `:`-separated directories that each
+    //    hold `<name>.dic.zst` files. Point this at the flake's combined
+    //    `vibrato-dictionaries` output (`<store>/share/vibrato`) and every dict
+    //    resolves by name with no symlinking into the repo — this is what the
+    //    dev shell exports, so `dictionary/compiled/` linking is not required.
+    for dir in vibrato_dict_search_dirs() {
+        for extension in [".dic.zst", ".dic"] {
+            let candidate = dir.join(format!("{name}{extension}"));
+            if candidate.is_file() {
+                return Ok(candidate);
+            }
+        }
+    }
+
+    // 2. Fallback: `dictionary/compiled/` under the workspace, where
+    //    `just dictionary-build-*` symlinks flake outputs for non-shell use.
     for dict_dir in VIBRATO_DICTIONARY_SEARCH_PATHS {
         for extension in [".dic.zst", ".dic"] {
             let candidate = workspace_path(format!("dictionary/{dict_dir}/{name}{extension}",));
@@ -150,11 +167,50 @@ fn resolve_dictionary_path_from_basename(name: &str) -> Result<PathBuf, Analyzer
     Err(AnalyzerError::DictionaryLoad {
         analyzer: format!("vibrato:{name}"),
         message: format!(
-            "could not resolve Vibrato dictionary `{name}` in the dictionary/{}/ directory \
-             (nix-built; run `just dictionary-build-all` to (re)link the flake outputs)",
+            "could not resolve Vibrato dictionary `{name}`: not found under any \
+             AB_VIBRATO_DICT_DIR directory nor in dictionary/{}/ \
+             (nix-built; enter `nix develop` or run `just dictionary-build-all`)",
             VIBRATO_DICTIONARY_SEARCH_PATHS[0],
         ),
     })
+}
+
+/// Where the decompressed-dictionary cache (and its load lock) live. This is
+/// decoupled from the source `.dic.zst` location so the source can be a
+/// read-only nix store path (via `AB_VIBRATO_DICT_DIR`) while the multi-GB
+/// decompressed cache lands on a writable, roomy filesystem.
+///
+/// Order: `AB_VIBRATO_CACHE_DIR` if set, else the workspace-local
+/// `dictionary/compiled/.cache/` (the historical location, on the project
+/// filesystem — not the potentially small `$HOME`). The cache is content-hash
+/// keyed by vibrato-rkyv, so pointing store-path and symlink loads at the same
+/// dir reuses one decompressed artifact per dictionary.
+fn zstd_cache_dir() -> PathBuf {
+    zstd_cache_dir_from(std::env::var_os("AB_VIBRATO_CACHE_DIR"))
+}
+
+fn zstd_cache_dir_from(override_dir: Option<std::ffi::OsString>) -> PathBuf {
+    override_dir
+        .map(PathBuf::from)
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| workspace_path("dictionary/compiled/.cache"))
+}
+
+/// Directories to search for named vibrato dictionaries, highest precedence
+/// first, taken from the `:`-separated `AB_VIBRATO_DICT_DIR` env var. Empty
+/// entries are skipped. Returns an empty vec when the var is unset.
+fn vibrato_dict_search_dirs() -> Vec<PathBuf> {
+    dict_search_dirs_from(std::env::var_os("AB_VIBRATO_DICT_DIR"))
+}
+
+fn dict_search_dirs_from(value: Option<std::ffi::OsString>) -> Vec<PathBuf> {
+    value
+        .map(|value| {
+            std::env::split_paths(&value)
+                .filter(|p| !p.as_os_str().is_empty())
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 struct ZstdCacheLock {
@@ -162,18 +218,8 @@ struct ZstdCacheLock {
 }
 
 impl ZstdCacheLock {
-    fn acquire(analyzer_id: &str, dictionary_path: &Path) -> Result<Self, AnalyzerError> {
-        let parent = dictionary_path
-            .parent()
-            .ok_or_else(|| AnalyzerError::DictionaryLoad {
-                analyzer: analyzer_id.to_owned(),
-                message: format!(
-                    "cannot derive zstd dictionary cache directory from {}",
-                    dictionary_path.display()
-                ),
-            })?;
-        let cache_dir = parent.join(".cache");
-        fs::create_dir_all(&cache_dir).map_err(|err| AnalyzerError::DictionaryLoad {
+    fn acquire(analyzer_id: &str, cache_dir: &Path) -> Result<Self, AnalyzerError> {
+        fs::create_dir_all(cache_dir).map_err(|err| AnalyzerError::DictionaryLoad {
             analyzer: analyzer_id.to_owned(),
             message: err.to_string(),
         })?;
@@ -295,6 +341,34 @@ mod tests {
         assert_eq!(
             default_dictionary_path_from_env(Some(override_path.clone().into_os_string())).unwrap(),
             override_path
+        );
+    }
+
+    #[test]
+    fn dict_search_dirs_parses_path_list_and_skips_empties() {
+        // Unset → no extra search roots (falls back to dictionary/compiled/).
+        assert!(dict_search_dirs_from(None).is_empty());
+        // `:`-separated list, empty entries skipped.
+        let dirs = dict_search_dirs_from(Some("/a/share/vibrato::/b".into()));
+        assert_eq!(dirs, vec![PathBuf::from("/a/share/vibrato"), PathBuf::from("/b")]);
+    }
+
+    #[test]
+    fn zstd_cache_dir_honors_env_override_else_workspace_local() {
+        // Override wins.
+        assert_eq!(
+            zstd_cache_dir_from(Some("/big/fs/cache".into())),
+            PathBuf::from("/big/fs/cache")
+        );
+        // Empty override is ignored; falls back to the workspace-local cache
+        // (on the project filesystem, not a potentially small $HOME).
+        assert_eq!(
+            zstd_cache_dir_from(Some(std::ffi::OsString::new())),
+            workspace_path("dictionary/compiled/.cache")
+        );
+        assert_eq!(
+            zstd_cache_dir_from(None),
+            workspace_path("dictionary/compiled/.cache")
         );
     }
 }

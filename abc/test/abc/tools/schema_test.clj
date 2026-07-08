@@ -1,6 +1,7 @@
 (ns abc.tools.schema-test
   (:require [abc.tools.analysis-identity :as analysis-identity]
             [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.manifest :as manifest]
             [abc.tools.schema :as schema]
             [clojure.test :refer [deftest is testing]]))
@@ -9,6 +10,7 @@
   {"schemas/parser-ir.schema.json" "0.6.0"
    "schemas/aat-parser-ir-divergence.schema.json" "0.3.0"
    "schemas/aat-parser-ir-mapping.schema.json" "0.2.4"
+   "schemas/alignment-probe-v1.schema.json" "0.1.0"
    "schemas/analysis-recipe.schema.json" "0.1.1"
    "schemas/analysis-result.schema.json" "0.1.2"
    "schemas/manifest.schema.json" "0.4.3"
@@ -217,3 +219,24 @@
     (is (= "token-index-v1+unicode-scalar-value-input-spans"
            (get token-stream "coordinate_system")))
     (is (nil? (schema/validation-errors token-output-schema token-stream)))))
+
+(defn- diagnosis-count-sum [probe]
+  (reduce + (vals (get probe "diagnosis_counts"))))
+
+(deftest alignment-probe-schema-fixtures-validate-test
+  (let [probe-schema (schema/read-schema "schemas/alignment-probe-v1.schema.json")
+        valid (files/read-json "fixtures/alignment-probe/tail-addition.valid.json")
+        bad-count (files/read-json
+                   "fixtures/alignment-probe/bad-diagnosis-count.invariant-violation.json")
+        bad-kind (files/read-json
+                  "fixtures/alignment-probe/generic-segmentation-kind.invalid.json")]
+    (is (= "alignment-probe-v1" (get valid "schema_version")))
+    (is (nil? (schema/validation-errors probe-schema valid)))
+    (is (seq (schema/validation-errors probe-schema bad-kind)))
+    (is (= (get valid "algorithm_config_hash")
+           (hash/format-sha256
+            (hash/sha256-json-jcs (get valid "algorithm_config")))))
+    (is (= (get valid "diagnosis_event_count")
+           (diagnosis-count-sum valid)))
+    (is (not= (get bad-count "diagnosis_event_count")
+              (diagnosis-count-sum bad-count)))))

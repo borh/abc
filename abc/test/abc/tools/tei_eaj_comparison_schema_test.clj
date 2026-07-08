@@ -33,3 +33,10 @@
                                     ["summary" "base_text_relation_counts" "almost_equal"]
                                     1)]
       (is (seq (schema/validation-errors comparison-schema invalid-fixture))))))
+
+(deftest tei-eaj-comparison-export-accepts-optional-alignment-probe-test
+  (let [comparison-schema (schema/read-schema comparison-schema-path)
+        fixture (files/read-json comparison-fixture-path)
+        probe (files/read-json "fixtures/alignment-probe/tail-addition.valid.json")
+        fixture-with-probe (assoc-in fixture ["files" 0 "alignment_probe"] probe)]
+    (is (nil? (schema/validation-errors comparison-schema fixture-with-probe)))))

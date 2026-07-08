@@ -234,7 +234,7 @@ cat > "$tei_workset" <<'JSON'
     "abc_body_base_text_length": 9806,
     "abc_note_count": 1,
     "abc_p_count": 1,
-    "abc_tei": "paper/demo-melos-real/tei.xml",
+    "abc_tei": "crates/ab-aat-to-parser-ir/tests/fixtures/tei-eaj-alignment-probe/abc-melos-single-p.xml",
     "base_text_equal": false,
     "comparison_status": "compared",
     "first_difference": null,

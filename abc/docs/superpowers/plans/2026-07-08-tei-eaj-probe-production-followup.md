@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Promote alignment probes from a fixture-only characterization into regular TEI-EAJ comparison output, remove stale `paper/demo-melos-real/tei.xml` assumptions, and add the first non-TEI-EAJ consumer of the reusable alignment kernel.
+**Goal:** Promote alignment probes from a fixture-only characterization into regular TEI-EAJ comparison output, remove stale ignored-paper Melos assumptions, and add the first non-TEI-EAJ consumer of the reusable alignment kernel.
 
 **Architecture:** Keep Python as the TEI-EAJ report orchestrator and Rust as the alignment probe producer. The Python workset export remains the join point: it discovers ABC TEI counterparts from explicit files or generated publication directories, and the Rust CLI attaches bounded alignment probes to mismatched compared rows. Add the second consumer in `ab-diff-utils`/`ab-validator` as a normalized-visible comparison CLI so schema or renderer version diffs reuse the same probe vocabulary without TEI-specific code.
 
@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Do not reference or use `paper/demo-melos-real/tei.xml`.
+- Do not reference or use the ignored paper-demo Melos TEI path.
 - Do not restore `paper` as a default ABC TEI input directory.
 - Generated ABC TEI inputs must come from explicit `--abc-tei`, explicit `--abc-tei-dir`, `ABC_TEI_EAJ_ABC_TEI_DIRS`, or an existing generated publication root under `target/soranoha/full-corpus-publication-basic-ja/artifacts`.
 - The Rust alignment probe remains token-sequence evidence, not source-span evidence.
@@ -50,7 +50,7 @@ def test_melos_report_resolves_abc_from_counterpart_directory_when_abc_omitted(s
     self.assertEqual(abc.as_posix(), report["abc_path"])
 ```
 
-Add a wrapper test that parses defaults and asserts `"paper/demo-melos-real/tei.xml"` is not present in `abc/tools/tei_eaj_aozora_reports.py`.
+Add a wrapper test that parses defaults and asserts no ignored paper-demo TEI path is present in `abc/tools/tei_eaj_aozora_reports.py`.
 
 - [ ] **Step 2: Verify tests fail**
 
@@ -68,7 +68,7 @@ Change `build_report` to accept `abc_tei=None`, `abc_tei_specs=()`, `abc_tei_dir
 
 - [ ] **Step 4: Remove stale wrapper defaults**
 
-Change `--abc-melos` default from `paper/demo-melos-real/tei.xml` to `None`. Change `abc_all_work_inputs` so no input means `ABC_TEI_EAJ_ABC_TEI_DIRS` or an existing `target/soranoha/full-corpus-publication-basic-ja/artifacts`; otherwise no ABC counterpart directory is supplied.
+Change `--abc-melos` default from the ignored paper-demo TEI path to `None`. Change `abc_all_work_inputs` so no input means `ABC_TEI_EAJ_ABC_TEI_DIRS` or an existing `target/soranoha/full-corpus-publication-basic-ja/artifacts`; otherwise no ABC counterpart directory is supplied.
 
 - [ ] **Step 5: Verify and commit**
 
@@ -107,7 +107,7 @@ def test_alignment_probe_command_consumes_generated_workset_without_paper_defaul
     commands = []
     context = reports.ReportContext(..., abc_melos=None, abc_tei=[], abc_tei_dir=[abc_dir], alignment_probe_bin="probe-bin")
     reports.command_alignment_probe(context, workset_json, summary_json, report_md, run=commands.append)
-    self.assertNotIn("paper/demo-melos-real/tei.xml", " ".join(commands[0]))
+    self.assertNotIn("paper", " ".join(commands[0]))
     self.assertEqual("probe-bin", commands[0][0])
 ```
 
@@ -191,14 +191,14 @@ Add `alignment-probe` and `all-with-probes` launchers to the ABC flake. Pass `${
 
 - [ ] **Step 4: Regenerate handoff reports without stale paths**
 
-Run the bounded generation path. Checked-in handoffs must not contain `paper/demo-melos-real/tei.xml`.
+Run the bounded generation path. Checked-in handoffs must not contain the ignored paper-demo TEI path.
 
 - [ ] **Step 5: Verify and commit**
 
 Run:
 
 ```bash
-rg "paper/demo-melos-real" abc/tools abc/docs/handoffs ab-validator/crates/ab-aat-to-parser-ir/tests
+rg "ignored paper-demo TEI path literal" abc/tools abc/docs/handoffs ab-validator/crates/ab-aat-to-parser-ir/tests
 nix build .#checks.x86_64-linux.abc-tei-eaj-aozora-report-generation --print-build-logs
 nix build .#checks.x86_64-linux.abc-tei-eaj-aozora-alignment-probe-generation --print-build-logs
 ```

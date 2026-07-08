@@ -2374,8 +2374,8 @@ fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
             "root": tei_root.display().to_string()
         },
         "abc_inputs": {
-            "counterparts": [{"path": "paper/demo-melos-real/tei.xml", "work_id": "1567"}],
-            "tei_dirs": ["paper"],
+            "counterparts": [{"path": "tests/fixtures/tei-eaj-alignment-probe/abc-melos-single-p.xml", "work_id": "1567"}],
+            "tei_dirs": [],
             "tei_specs": []
         },
         "candidate_work_ids": ["1567", "236"],
@@ -2386,7 +2386,7 @@ fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
                 "abc_body_base_text_length": 9806,
                 "abc_note_count": 1,
                 "abc_p_count": 1,
-                "abc_tei": "paper/demo-melos-real/tei.xml",
+                "abc_tei": "tests/fixtures/tei-eaj-alignment-probe/abc-melos-single-p.xml",
                 "base_text_equal": false,
                 "comparison_status": "compared",
                 "first_difference": {
@@ -3313,7 +3313,7 @@ fn cli_tei_eaj_structural_expansion_writes_reports() {
     "abc_body_base_text_length": 9806,
     "abc_note_count": 1,
     "abc_p_count": 1,
-    "abc_tei": "paper/demo-melos-real/tei.xml",
+    "abc_tei": "tests/fixtures/tei-eaj-alignment-probe/abc-melos-single-p.xml",
     "base_text_equal": false,
     "comparison_status": "compared",
     "first_difference": null,

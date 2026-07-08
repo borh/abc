@@ -4,7 +4,7 @@
     {
       "work_id": "1567",
       "title": "走れメロス",
-      "tei_eaj_file": "tei-eaj-melos-split-p.xml",
+      "tei_eaj_file": "data/complete/tei_lib_lv4/1567_header_updated.xml",
       "alignment_probe": {
         "schema_version": "alignment-probe-v1",
         "evidence_level": "token_sequence_aligned",
@@ -28,43 +28,114 @@
         "right_witness": "tei_eaj",
         "summary": {
           "deletion_regions": 0,
-          "equal_regions": 1,
-          "insertion_regions": 1,
+          "equal_regions": 0,
+          "insertion_regions": 0,
           "likely_moved_block_regions": 0,
           "substitution_regions": 0,
-          "total_regions": 2,
-          "unclassified_mismatch_regions": 0
+          "total_regions": 1,
+          "unclassified_mismatch_regions": 1
         },
         "diagnosis_event_count": 1,
         "diagnosis_counts": {
-          "tail_addition": 1
+          "unclassified_mismatch": 1
         },
         "samples": [
           {
-            "kind": "insertion",
-            "diagnosis": "tail_addition",
+            "kind": "unclassified_mismatch",
+            "diagnosis": "unclassified_mismatch",
             "left_range": [
-              2,
+              0,
               3
             ],
             "right_range": [
-              2,
-              2
+              0,
+              472
             ],
-            "left_text": "（古伝説と、シルレルの詩から。）",
-            "right_text": "",
-            "truncated": false,
+            "left_text": "メロスは激怒した。勇者は、ひどく赤面した。（古伝説と、シルレルの詩から。）",
+            "right_text": "\n                        メロスは激怒した。必ず、かの邪智暴虐\n                              の王を除かなければならぬと決意した。メロスには政治がわからぬ。メロスは、村の牧人である。\n                        笛を吹き、羊と遊んで暮して来た。け",
+            "truncated": true,
             "adapter_context": {
               "left_features": [
                 "source-attribution"
               ],
-              "left_path": "/TEI[1]/text[1]/body[1]/p[1]#run2",
+              "left_path": "/TEI[1]/text[1]/body[1]/p[1]#run0",
               "right_features": [],
-              "right_path": null
+              "right_path": "/TEI[1]/text[1]/body[1]/p[1]#run0"
             }
           }
         ],
-        "truncated": false,
+        "truncated": true,
+        "limits": {
+          "max_sample_chars": 160,
+          "max_samples": 8,
+          "max_tokens_per_window": 512
+        }
+      }
+    },
+    {
+      "work_id": "1567",
+      "title": "走れメロス",
+      "tei_eaj_file": "data/complete/tei_lib_lv4/1567_tei.xml",
+      "alignment_probe": {
+        "schema_version": "alignment-probe-v1",
+        "evidence_level": "token_sequence_aligned",
+        "algorithm_id": "abc-pairwise-token-align-v1",
+        "algorithm_config_hash": "sha256:1d05a5ac38086965f8e995448b98f160a42ff03ed2fdfe7b09dbed9124be6d2c",
+        "algorithm_config": {
+          "anchor_ngram_size": 3,
+          "max_chars_per_window": 8192,
+          "max_tokens_per_window": 512,
+          "move_detection": "exact-normalized-sequence-v1",
+          "near_match": "disabled",
+          "scoring": {
+            "gap": -1,
+            "match": 2,
+            "substitution": -1
+          }
+        },
+        "tokenization_id": "tei-body-sentence-like-text-run-v1",
+        "normalization_id": "tei-eaj-base-text-no-ws-v1",
+        "left_witness": "abc",
+        "right_witness": "tei_eaj",
+        "summary": {
+          "deletion_regions": 0,
+          "equal_regions": 0,
+          "insertion_regions": 0,
+          "likely_moved_block_regions": 0,
+          "substitution_regions": 0,
+          "total_regions": 1,
+          "unclassified_mismatch_regions": 1
+        },
+        "diagnosis_event_count": 1,
+        "diagnosis_counts": {
+          "unclassified_mismatch": 1
+        },
+        "samples": [
+          {
+            "kind": "unclassified_mismatch",
+            "diagnosis": "unclassified_mismatch",
+            "left_range": [
+              0,
+              3
+            ],
+            "right_range": [
+              0,
+              472
+            ],
+            "left_text": "メロスは激怒した。勇者は、ひどく赤面した。（古伝説と、シルレルの詩から。）",
+            "right_text": "\n                        メロスは激怒した。必ず、かの\n                                    邪智暴虐\n                                    \n                               の王を除かなければなら",
+            "truncated": true,
+            "adapter_context": {
+              "left_features": [
+                "source-attribution"
+              ],
+              "left_path": "/TEI[1]/text[1]/body[1]/p[1]#run0",
+              "right_features": [],
+              "right_path": "/TEI[1]/text[1]/body[1]/p[1]#run0"
+            }
+          }
+        ],
+        "truncated": true,
         "limits": {
           "max_sample_chars": 160,
           "max_samples": 8,

@@ -168,7 +168,7 @@ Paper demo inputs:
 
 - `paper/demo-source-corpus-snapshot.json`
 - `paper/demo-rashomon-real/*.manifest.json`
-- `paper/demo-melos-real/*.manifest.json`
+- generated Melos manifests under the current Soranoha snapshot root
 
 ### Generated Tables
 

@@ -2009,7 +2009,7 @@ Expected:
 
 Do not run this checked-in report step against
 `abc/docs/handoffs/tei-eaj-aozora-workset-export.json`: that handoff currently
-references `paper/demo-melos-real/tei.xml`, which is not checked into the repo.
+references an ignored paper-demo TEI path, which is not checked into the repo.
 A local diagnostic run against the real workset is allowed only after the ABC
 TEI path exists.
 
@@ -2116,7 +2116,7 @@ Expected: `main` advances to the implementation branch and `origin/main` receive
 
 **Known follow-ups after this plan:**
 - Wire Rust-generated probes into the regular Python TEI-EAJ report path.
-- Run against `abc/docs/handoffs/tei-eaj-aozora-workset-export.json` after `paper/demo-melos-real/tei.xml` or its successor is generated and checked in.
+- Run against `abc/docs/handoffs/tei-eaj-aozora-workset-export.json` after the ABC Melos TEI counterpart is generated through the current publication pipeline.
 - Add `ab-compare` normalized-visible adapter for schema/version diffs.
 - Add optional near-match scoring with `algorithm_id` or `algorithm_config_hash` rotation.
 - Add move group ids if exact move examples need pairing in reports.

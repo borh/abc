@@ -131,16 +131,27 @@
           pkgs = import nixpkgs { inherit system; };
           scripts = monorepoScripts pkgs;
           abcApps = optionalOutputAttrs abc "apps" system;
+          abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
           mkScriptApp = program: description: {
             type = "app";
             program = "${program}";
             meta.description = description;
           };
+          mkProbeAwareAbcApp =
+            name:
+            pkgs.writeShellScript "soranoha-abc-${name}" ''
+              export ABC_TEI_EAJ_ALIGNMENT_PROBE_BIN="${
+                abValidatorPackages."ab-aat-to-parser-ir"
+              }/bin/ab-aat-to-parser-ir"
+              exec ${abcApps.${name}.program} "$@"
+            '';
         in
         prefixAttrs "abc-" abcApps
         // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "apps" system)
         // (if builtins.hasAttr "soranoha" abcApps then { soranoha = abcApps.soranoha; } else { })
         // {
+          abc-tei-eaj-aozora-alignment-probe = mkScriptApp (mkProbeAwareAbcApp "tei-eaj-aozora-alignment-probe") "Regenerate TEI-EAJ alignment probes with the Nix-built Rust probe binary";
+          abc-tei-eaj-aozora-reports-with-probes = mkScriptApp (mkProbeAwareAbcApp "tei-eaj-aozora-reports-with-probes") "Regenerate TEI-EAJ comparison reports and attach Rust alignment probes";
           schema-drift = mkScriptApp scripts.schema-drift "Check monorepo ABC schema contract drift";
           tei-version-coherence = mkScriptApp scripts.tei-version-coherence "Check TEI P5 source/profile version coherence";
           flake-input-policy = mkScriptApp scripts.flake-input-policy "Check release-critical flake inputs are explicitly pinned";
@@ -154,6 +165,8 @@
         let
           pkgs = import nixpkgs { inherit system; };
           tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
+          abcApps = optionalOutputAttrs abc "apps" system;
+          abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
           abValidatorChecks = optionalOutputAttrs ab-validator "checks" system;
           mkMonorepoCheck =
             name: nativeBuildInputs: script:
@@ -249,6 +262,69 @@
                   -path './result*' -prune -o \
                   -name '*.nix' -print0 \
                   | xargs -0 nixfmt --check
+              '';
+          tei-eaj-aozora-alignment-probe-generation =
+            mkMonorepoCheck "soranoha-tei-eaj-aozora-alignment-probe-generation"
+              [
+                pkgs.coreutils
+                pkgs.gnugrep
+                pkgs.python3
+              ]
+              ''
+                work="$TMPDIR/tei-eaj-alignment-probe"
+                mkdir -p "$work/abc"
+                cd "$work"
+
+                tei_root="$(${abcApps."tei-eaj-aozora-tei-source".program})"
+                cp "$tei_root/data/complete/tei_lib_lv4/1567_tei.xml" abc/melos.xml
+                chmod u+w abc/melos.xml
+                python - <<'PY'
+                from pathlib import Path
+
+                path = Path("abc/melos.xml")
+                text = path.read_text(encoding="utf-8")
+                text = text.replace(
+                    "</body>",
+                    "<p>（古伝説と、シルレルの詩から。）</p></body>",
+                )
+                path.write_text(text, encoding="utf-8")
+                PY
+
+                export ABC_TEI_EAJ_ALIGNMENT_PROBE_BIN="${
+                  abValidatorPackages."ab-aat-to-parser-ir"
+                }/bin/ab-aat-to-parser-ir"
+                python "$src/abc/tools/tei_eaj_aozora_reports.py" \
+                  --compare-script "$src/abc/tools/tei_eaj_compare.py" \
+                  --tei-eaj-root "$tei_root" \
+                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
+                  --abc-melos abc/melos.xml \
+                  --abc-tei 1567=abc/melos.xml \
+                  all-with-probes \
+                  --max-probe-rows 4 \
+                  melos.md all-work.md workset.json alignment-probe.json alignment-probe.md
+
+                grep -q "tail_addition" alignment-probe.md
+                python - <<'PY'
+                import json
+
+                with open("alignment-probe.json", encoding="utf-8") as fh:
+                    probe_report = json.load(fh)
+                with open("workset.json", encoding="utf-8") as fh:
+                    workset = json.load(fh)
+
+                assert probe_report["schema_version"] == "tei-eaj-alignment-probe-report-v1"
+                assert probe_report["rows"]
+                attached = [
+                    row
+                    for row in workset["files"]
+                    if row.get("alignment_probe")
+                ]
+                assert attached
+                assert any(
+                    row["alignment_probe"]["diagnosis_counts"].get("tail_addition") == 1
+                    for row in attached
+                )
+                PY
               '';
         }
       );

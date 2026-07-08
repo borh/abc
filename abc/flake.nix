@@ -286,6 +286,16 @@
             subcommand = "all";
             description = "Regenerate TEI-EAJ comparison Markdown and JSON reports";
           };
+
+          tei-eaj-aozora-alignment-probe = mkTeiEajAozoraReportApp {
+            subcommand = "alignment-probe";
+            description = "Regenerate TEI-EAJ alignment probes for a workset export";
+          };
+
+          tei-eaj-aozora-reports-with-probes = mkTeiEajAozoraReportApp {
+            subcommand = "all-with-probes";
+            description = "Regenerate TEI-EAJ comparison reports and attach alignment probes to the workset export";
+          };
         }
       );
 

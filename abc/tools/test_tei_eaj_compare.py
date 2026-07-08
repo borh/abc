@@ -194,7 +194,7 @@ class TeiEajCompareTest(unittest.TestCase):
         self.assertIn("tei-eaj-alignment-probe", command)
         self.assertIn("--workset", command)
         self.assertIn("--max-rows", command)
-        self.assertNotIn("paper/demo-melos-real/tei.xml", command_text)
+        self.assertNotIn("paper", command_text)
 
     def test_attaches_alignment_probes_to_workset_export(self):
         with tempfile.TemporaryDirectory() as td:

@@ -1,8 +1,9 @@
 # Ortho-Normalized Tokenizer-Input Policy — Design (provisional)
 
 **Date:** 2026-07-08
-**Status:** provisional design (Issue 2). Recommendation set on the load-bearing
-forks; three architectural questions flagged for incubation. No implementation.
+**Status:** design + P0 landed (2026-07-08). Recommendation set on the load-bearing
+forks; U1 (bridge direction) resolved — compute-heavy work stays in Rust. P0
+(thread `--ortho-detect` through all run paths) is implemented; P1–P5 remain.
 **Owner:** ab-validator (producer) + abc (identity/manifest)
 **Related:**
 `2026-07-07-parser-ir-sentence-segmentation-and-ortho-tei-design.md` (the
@@ -136,9 +137,20 @@ independently identified.
 
 ## Decomposition (phases)
 
-- **P0 — Thread `--ortho-detect` through all run paths.** Remove the
-  `TODO(phase2-followup)` so the warehouse / parallel / selected paths honor the
-  detector (publication uses the warehouse path). Prereq for everything else.
+- **P0 — Thread `--ortho-detect` through all run paths. DONE (2026-07-08).** The
+  three `TODO(phase2-followup)` hardcodes are removed: the warehouse serial branch,
+  the warehouse parallel worker, and the `selected`/`rerun-full` path now honor the
+  detector. `run_analyze_aat_warehouse` and `run_analyze_aat_selected` gained
+  trailing `(ortho_detect, ortho_ml_model)` params; `WarehouseParallelOptions`
+  carries them to each worker; the `rerun-full` CLI gained `--ortho-detect` /
+  `--ortho-ml-model` (with the same `ml`-requires-model guard as `analyze`) so a
+  rerun can reproduce the original run's tokenization. Behavior at the `Off`
+  default is unchanged (243 existing tests green). *Known follow-up (perf, not
+  correctness):* in the parallel path the detector is rebuilt per batch inside
+  `run_analyze_aat_serial`; when `Heuristic` is requested **without** the default
+  vibrato analyzer in the run's analyzer set, each batch reloads UniDic. When
+  vibrato IS in the set (the common corpus case) the loaded dictionary is reused.
+  Hoisting the detector to once-per-worker is a later optimization.
 - **P1 — Structured normalization-policy identity.** Define the policy descriptor
   (F3) and a shared JCS-SHA256 hash; define the identity sentinel. One
   definition, agreed by Rust and ABC.
@@ -158,10 +170,14 @@ independently identified.
 
 ## Open questions (incubate before committing P2/P4)
 
-- **U1 — Bridge direction (architectural).** Does ABC *read* the Rust warehouse
-  provenance to build identities, or does the Rust runner *emit* ABC-shaped
-  analysis-result / tokenizer-profile identity directly? This decides who owns the
-  profile and is the biggest unknown; it wants its own decision before P4.
+- **U1 — Bridge direction (architectural). RESOLVED (2026-07-08):** all
+  compute-heavy work stays in **Rust**. The Rust runner computes the normalization
+  policy descriptor + hash and persists the provenance (P2); **ABC reads** that
+  Rust-produced provenance to populate identities — ABC does not recompute
+  normalization or re-derive the policy hash. This fixes the ownership: Rust is the
+  producer of the policy identity, ABC is the consumer/recorder. The remaining P4
+  question is narrowed to the *transport* (which warehouse row/manifest field ABC
+  reads), not who computes.
 - **U2 — Structured vs. opaque hash boundary.** Does the policy descriptor (F3)
   get its own checked-in schema (like tokenizer-profile), or stay a Rust-side
   struct whose JCS hash ABC trusts opaquely? Affects schema governance surface.
@@ -189,3 +205,4 @@ independently identified.
 | I2-D5 | Ortho-normalization stays opt-in; source-identity is the default policy | Corpus can carry both, each independently identified. |
 | I2-D6 | Thread `--ortho-detect` through warehouse/parallel/selected paths (P0) | Publication runs on the warehouse path; without this the feature can't ship. |
 | I2-D7 | Keep source preservation + honest-remap-failure as hard invariants | Matches the ruby-evidence contract's "evidence never replaces source." |
+| I2-D8 | Bridge direction (U1): compute-heavy work stays in Rust — Rust produces the policy identity + provenance, ABC reads it | Single producer of the normalization policy hash; ABC never recomputes normalization. |

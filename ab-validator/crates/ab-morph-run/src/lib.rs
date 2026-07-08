@@ -182,6 +182,8 @@ pub fn run_analyze_aat_warehouse(
     jobs: usize,
     warehouse_profile: WarehouseProfile,
     zstd_level: i32,
+    ortho_detect: OrthoDetectMode,
+    ortho_ml_model: Option<PathBuf>,
 ) -> Result<()> {
     pipeline::run_analyze_aat_warehouse(
         aat,
@@ -192,6 +194,8 @@ pub fn run_analyze_aat_warehouse(
         jobs,
         warehouse_profile,
         zstd_level,
+        ortho_detect,
+        ortho_ml_model,
     )
 }
 
@@ -216,6 +220,8 @@ pub fn run_analyze_aat_selected(
     examples_output: Option<&Path>,
     max_examples_per_comparison: usize,
     manifest_output: Option<&Path>,
+    ortho_detect: OrthoDetectMode,
+    ortho_ml_model: Option<PathBuf>,
 ) -> Result<()> {
     pipeline::run_analyze_aat_selected(
         inputs,
@@ -231,6 +237,8 @@ pub fn run_analyze_aat_selected(
         examples_output,
         max_examples_per_comparison,
         manifest_output,
+        ortho_detect,
+        ortho_ml_model,
     )
 }
 
@@ -1749,6 +1757,8 @@ mod tests {
             None,
             10,
             Some(&out.join("manifest.json")),
+            OrthoDetectMode::Off,
+            None,
         )
         .unwrap();
 
@@ -1780,6 +1790,8 @@ mod tests {
             1,
             WarehouseProfile::Full,
             3,
+            OrthoDetectMode::Off,
+            None,
         )
         .unwrap();
 
@@ -1821,6 +1833,8 @@ mod tests {
             1,
             WarehouseProfile::Triage,
             3,
+            OrthoDetectMode::Off,
+            None,
         )
         .unwrap();
 
@@ -1876,6 +1890,8 @@ mod tests {
             1,
             WarehouseProfile::Full,
             3,
+            OrthoDetectMode::Off,
+            None,
         )
         .unwrap();
 
@@ -1912,6 +1928,8 @@ mod tests {
             1,
             WarehouseProfile::Triage,
             3,
+            OrthoDetectMode::Off,
+            None,
         )
         .unwrap();
 
@@ -1948,6 +1966,8 @@ mod tests {
             2,
             WarehouseProfile::Full,
             3,
+            OrthoDetectMode::Off,
+            None,
         )
         .unwrap();
 
@@ -1990,6 +2010,8 @@ mod tests {
             1,
             WarehouseProfile::Full,
             3,
+            OrthoDetectMode::Off,
+            None,
         )
         .unwrap_err();
         assert!(
@@ -2424,6 +2446,8 @@ mod tests {
             analyzer_rows: vec![],
             warehouse_profile: WarehouseProfile::Full,
             zstd_level: 3,
+            ortho_detect: OrthoDetectMode::Off,
+            ortho_ml_model: None,
         };
         merge_warehouse_shard_runs(&options, &shard_run_dirs).unwrap();
 

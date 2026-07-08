@@ -125,4 +125,7 @@ pub(crate) struct WarehouseParallelOptions {
     pub(crate) analyzer_rows: Vec<RunAnalyzerRow>,
     pub(crate) warehouse_profile: WarehouseProfile,
     pub(crate) zstd_level: i32,
+    pub(crate) ortho_detect: OrthoDetectMode,
+    /// Path to a trained ML model file (bincode). Required when `ortho_detect == Ml`.
+    pub(crate) ortho_ml_model: Option<PathBuf>,
 }

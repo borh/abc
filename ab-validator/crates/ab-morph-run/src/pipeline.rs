@@ -576,7 +576,6 @@ pub(crate) fn run_analyze_aat_serial(
         BTreeSet::new()
     };
     let inputs = filter_resume_inputs(inputs, &resume_ids, options.output_profile)?;
-    let input_count = inputs.len() as u64;
 
     let mut analyses_writer = if let Some(path) = options.analyses_output {
         Some(open_output_writer(path, options.resume)?)
@@ -620,6 +619,10 @@ pub(crate) fn run_analyze_aat_serial(
         None
     };
     let mut warehouse_error_count = 0u64;
+    // Count sources for which a Sources row is actually written, so runs.source_count
+    // excludes ingest-time rejections (parse_incomplete / read / project failures).
+    // Mirrors the sharded merge, which derives source_count from the Sources table.
+    let mut written_source_count = 0u64;
     let mut string_stats = StringStatsReport::default();
     let progress = options.progress.clone();
 
@@ -774,6 +777,63 @@ pub(crate) fn run_analyze_aat_serial(
                 return Err(error);
             }
         };
+        // Honor the adapter's parse-completeness signal. An AAT with
+        // meta.parse_complete == false is a failed/aborted parse (e.g. the
+        // aozora2html gem crashing mid-document) that leaves empty or truncated
+        // blocks. Route it to the errors lane instead of analyzing it as a
+        // normal source, which would launder an ingest failure into a
+        // valid-but-empty source row and inflate source_count. A missing flag
+        // (older adapters that never emit it) is treated as complete.
+        let parse_incomplete = aat
+            .get("meta")
+            .and_then(|meta| meta.get("parse_complete"))
+            .and_then(serde_json::Value::as_bool)
+            == Some(false);
+        if parse_incomplete {
+            let message = aat
+                .get("meta")
+                .and_then(|meta| meta.get("warnings"))
+                .and_then(|warnings| warnings.as_array())
+                .and_then(|warnings| warnings.first())
+                .and_then(|warning| warning.get("message"))
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("adapter reported parse_complete=false")
+                .to_owned();
+            if let Some(writer) = &mut warehouse_writer {
+                warehouse_error_count += 1;
+                writer.append_errors(&[warehouse_error_row(
+                    options
+                        .warehouse
+                        .as_ref()
+                        .expect("warehouse options")
+                        .paths
+                        .run_id
+                        .as_str(),
+                    Some(source_id.clone()),
+                    None,
+                    None,
+                    "read_aat",
+                    "parse_incomplete",
+                    &message,
+                )])?;
+                continue;
+            }
+            if let Some(writer) = &mut errors_writer {
+                write_error_row(
+                    &mut **writer,
+                    &RunErrorRow {
+                        input_path,
+                        source_id: Some(source_id),
+                        text_id: None,
+                        analyzer: None,
+                        stage: "parse_incomplete".to_owned(),
+                        error: message,
+                    },
+                )?;
+                continue;
+            }
+            continue;
+        }
         let collect_projection_spans = warehouse_writer.as_ref().is_some_and(|writer| {
             writer.writes_table(WarehouseTable::ProjectionSpans)
                 || writer.writes_table(WarehouseTable::NwayRegionOracleEvidence)
@@ -1004,6 +1064,15 @@ pub(crate) fn run_analyze_aat_serial(
         }
         analysis_time += analysis_start.elapsed();
 
+        // Cross-analyzer (n-way / pairwise) comparison requires every analysis
+        // to byte-match the source. A single analyzer whose surfaces diverge —
+        // e.g. a dictionary that lexicalizes a decorative run and sweeps leading
+        // full-width spaces into a token — must not poison the whole work's
+        // comparison for the other analyzers. Validate each analysis here and
+        // drop only the offending analyzers from the comparison set below; their
+        // raw per-analyzer morphemes are still written unchanged.
+        let invalid_for_compare = invalid_analyzers_for_compare(&analyses, &document.text);
+
         let adj_start = std::time::Instant::now();
         let write_before = warehouse_writer
             .as_ref()
@@ -1022,6 +1091,7 @@ pub(crate) fn run_analyze_aat_serial(
             let source =
                 warehouse::rows::source_row(run_id, &source_id, &input_path, first_analysis);
             writer.append_sources(&[source])?;
+            written_source_count += 1;
             if let Some(spans) = &projection_spans {
                 for chunk in spans.chunks(WAREHOUSE_MORPHEME_ROW_BATCH_SIZE) {
                     let rows = warehouse::rows::projection_span_rows(
@@ -1069,6 +1139,26 @@ pub(crate) fn run_analyze_aat_serial(
                     }
                 }
             }
+            // Record each dropped analyzer, then retain only the valid ones for
+            // the n-way comparison so one analyzer's surface mismatch does not
+            // fail compare_nway for the whole work (all analyzers).
+            for (analyzer, message) in &invalid_for_compare {
+                warehouse_error_count += 1;
+                writer.append_errors(&[warehouse_error_row(
+                    run_id,
+                    Some(source_id.clone()),
+                    Some(document.text_id.clone()),
+                    Some(analyzer.clone()),
+                    "validate_analysis",
+                    "analysis_invalid",
+                    message,
+                )])?;
+            }
+            analyses.retain(|analysis| {
+                !invalid_for_compare
+                    .iter()
+                    .any(|(id, _)| id == &analysis.analyzer)
+            });
             match append_warehouse_nway_fact_rows(
                 writer,
                 run_id,
@@ -1101,6 +1191,32 @@ pub(crate) fn run_analyze_aat_serial(
             .elapsed()
             .saturating_sub(write_after.saturating_sub(write_before));
 
+        // Non-warehouse runs: the warehouse branch above never ran, so drop the
+        // invalid analyzers here (and record them) before the JSONL comparison
+        // consumers. When the warehouse branch did run, `analyses` was already
+        // retained and this is a no-op.
+        if warehouse_writer.is_none() && !invalid_for_compare.is_empty() {
+            if let Some(error_writer) = &mut errors_writer {
+                for (analyzer, message) in &invalid_for_compare {
+                    write_error_row(
+                        &mut **error_writer,
+                        &RunErrorRow {
+                            input_path: input_path.clone(),
+                            source_id: Some(source_id.clone()),
+                            text_id: Some(document.text_id.clone()),
+                            analyzer: Some(analyzer.clone()),
+                            stage: "validate_analysis".to_owned(),
+                            error: message.clone(),
+                        },
+                    )?;
+                }
+            }
+            analyses.retain(|analysis| {
+                !invalid_for_compare
+                    .iter()
+                    .any(|(id, _)| id == &analysis.analyzer)
+            });
+        }
         let comparison_result = if comparisons_writer.is_some() || examples_writer.is_some() {
             write_comparison_rows(
                 comparisons_writer
@@ -1199,7 +1315,7 @@ pub(crate) fn run_analyze_aat_serial(
             created_at_utc: chrono::Utc::now().to_rfc3339(),
             input_mode: warehouse.input_mode.to_owned(),
             input_path: warehouse.input_path.clone(),
-            source_count: input_count,
+            source_count: written_source_count,
             analyzer_count: warehouse.analyzer_rows.len() as u64,
             error_count: warehouse_error_count,
             ortho_detect_mode: warehouse.normalization.mode.clone(),
@@ -1606,6 +1722,28 @@ pub(crate) fn complete_warehouse_work_batch(
 
 pub(crate) fn bounded_large_lane_count(jobs: usize) -> usize {
     (jobs / 4).max(1)
+}
+
+/// Identifies analyzers whose analysis does not byte-match `source_text`,
+/// returning each offending analyzer id with its validation error message.
+///
+/// Cross-analyzer comparison (n-way and pairwise) requires every analysis to be
+/// consistent with the source. Rather than let one analyzer's surface mismatch
+/// fail the comparison for the whole work, the caller drops only the analyzers
+/// returned here and compares the rest.
+fn invalid_analyzers_for_compare(
+    analyses: &[ab_morph_diff::Analysis],
+    source_text: &str,
+) -> Vec<(String, String)> {
+    analyses
+        .iter()
+        .filter_map(|analysis| {
+            match ab_morph_diff::validate_analysis_against_source(analysis, source_text) {
+                Ok(()) => None,
+                Err(error) => Some((analysis.analyzer.clone(), error.to_string())),
+            }
+        })
+        .collect()
 }
 
 pub(crate) fn merge_warehouse_shard_runs(
@@ -2178,5 +2316,93 @@ mod staging_guard_tests {
         let err = claim_shard_staging_with_needle(&shard_root, &needle).unwrap_err();
         assert!(err.to_string().contains("already in progress"), "{err}");
         std::fs::remove_dir_all(&root).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod compare_isolation_tests {
+    use std::sync::Arc;
+
+    use ab_morph_diff::{Analysis, FeatureMap, Morpheme};
+
+    use super::invalid_analyzers_for_compare;
+
+    fn morpheme(source: &str, byte_start: usize, byte_end: usize, surface: &str) -> Morpheme {
+        Morpheme {
+            surface: surface.to_owned(),
+            byte_span: byte_start..byte_end,
+            char_span: source[..byte_start].chars().count()..source[..byte_end].chars().count(),
+            features: FeatureMap::new(),
+        }
+    }
+
+    fn analysis(analyzer: &str, source: &str, morphemes: Vec<Morpheme>) -> Analysis {
+        Analysis {
+            analyzer: analyzer.to_owned(),
+            text_id: "t".to_owned(),
+            source_text: Arc::from(source),
+            morphemes,
+            warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
+        }
+    }
+
+    #[test]
+    fn drops_only_the_surface_mismatched_analyzer() {
+        let source = "犬と猫";
+        // Two analyzers segment the source consistently (surfaces byte-match).
+        let fine = analysis(
+            "fine",
+            source,
+            vec![
+                morpheme(source, 0, 3, "犬"),
+                morpheme(source, 3, 6, "と"),
+                morpheme(source, 6, 9, "猫"),
+            ],
+        );
+        let whole = analysis("whole", source, vec![morpheme(source, 0, 9, "犬と猫")]);
+        // This analyzer's surface does not match the source bytes at its span
+        // (as when a dictionary lexicalizes a decorative run): it must be the
+        // only one flagged, so the other two still get compared.
+        let mismatch = analysis("mismatch", source, vec![morpheme(source, 0, 3, "X")]);
+
+        let mut analyses = vec![fine, whole, mismatch];
+        let invalid = invalid_analyzers_for_compare(&analyses, source);
+
+        assert_eq!(
+            invalid
+                .iter()
+                .map(|(id, _)| id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["mismatch"],
+            "only the surface-mismatched analyzer should be dropped"
+        );
+
+        analyses.retain(|a| !invalid.iter().any(|(id, _)| id == &a.analyzer));
+        assert_eq!(
+            analyses
+                .iter()
+                .map(|a| a.analyzer.as_str())
+                .collect::<Vec<_>>(),
+            vec!["fine", "whole"],
+            "the two valid analyzers survive for n-way comparison"
+        );
+        // The retained set is >= 2 and every survivor validates cleanly, so
+        // n-way comparison over it will not fail.
+        assert!(analyses.len() >= 2);
+        assert!(invalid_analyzers_for_compare(&analyses, source).is_empty());
+    }
+
+    #[test]
+    fn all_valid_analyzers_are_kept() {
+        let source = "犬と猫";
+        let a = analysis("a", source, vec![morpheme(source, 0, 9, "犬と猫")]);
+        let b = analysis(
+            "b",
+            source,
+            vec![morpheme(source, 0, 3, "犬"), morpheme(source, 3, 9, "と猫")],
+        );
+        assert!(invalid_analyzers_for_compare(&[a, b], source).is_empty());
     }
 }

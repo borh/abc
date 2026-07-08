@@ -2565,6 +2565,53 @@ mod tests {
         let _ = fs::remove_dir_all(dir);
     }
 
+    #[test]
+    fn parse_incomplete_aat_is_routed_to_errors_not_analyzed() {
+        // A well-formed but parse-incomplete AAT (adapter aborted mid-parse) must
+        // be routed to the errors lane instead of analyzed as a valid-but-empty
+        // source; a complete sibling in the same run is analyzed normally.
+        const GOOD_AAT: &str = r#"{"version":1,"work_id":"source-good","blocks":[{"kind":"paragraph","content":[{"kind":"text","value":"吾輩は猫である。"}]}],"meta":{"adapter":"fixture","adapter_version":"fixture","source_encoding":"utf-8","source_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","parse_complete":true,"warnings":[]}}"#;
+        const BAD_AAT: &str = r#"{"version":1,"work_id":"source-bad","blocks":[],"meta":{"adapter":"fixture","adapter_version":"fixture","source_encoding":"utf-8","source_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","parse_complete":false,"warnings":[{"message":"adapter parser aborted mid-document"}]}}"#;
+        let dir = temp_dir("parse-incomplete");
+        let aat_dir = dir.join("aats");
+        let out = dir.join("out");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::create_dir_all(&out).unwrap();
+        fs::write(aat_dir.join("source-good.json"), GOOD_AAT).unwrap();
+        fs::write(aat_dir.join("source-bad.json"), BAD_AAT).unwrap();
+
+        run_rerun_full(
+            &aat_dir,
+            &["source-good".to_owned(), "source-bad".to_owned()],
+            &["test:single".to_owned()],
+            &out,
+            1,
+            None,
+            10,
+            RerunDetailArg::Full,
+            ab_morph_run::OrthoDetectMode::Off,
+            None,
+        )
+        .unwrap();
+
+        let analyses = fs::read_to_string(out.join("analyses.jsonl")).unwrap();
+        assert!(
+            analyses.contains("source-good"),
+            "the complete source must be analyzed"
+        );
+        assert!(
+            !analyses.contains("source-bad"),
+            "the parse-incomplete source must not be analyzed"
+        );
+
+        let errors = fs::read_to_string(out.join("errors.jsonl")).unwrap();
+        assert!(
+            errors.contains("parse_incomplete") && errors.contains("source-bad"),
+            "the parse-incomplete source must be routed to the errors lane: {errors}"
+        );
+        let _ = fs::remove_dir_all(dir);
+    }
+
     fn temp_dir(label: &str) -> PathBuf {
         let unique = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)

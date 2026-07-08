@@ -1,0 +1,62 @@
+{
+  "schema_version": "tei-eaj-aozora-workset-export-v1",
+  "tei_eaj_source": {
+    "revision": "fixture",
+    "root": "ab-validator/crates/ab-aat-to-parser-ir/tests/fixtures/tei-eaj-alignment-probe"
+  },
+  "abc_inputs": {
+    "counterparts": [
+      {
+        "path": "ab-validator/crates/ab-aat-to-parser-ir/tests/fixtures/tei-eaj-alignment-probe/abc-melos-single-p.xml",
+        "work_id": "1567"
+      }
+    ],
+    "tei_dirs": [],
+    "tei_specs": []
+  },
+  "summary": {
+    "tei_eaj_file_count": 1,
+    "tei_eaj_work_id_count": 1,
+    "abc_counterpart_count": 1,
+    "compared_file_count": 1,
+    "missing_counterpart_count": 0,
+    "no_work_id_count": 0,
+    "uncompared_file_count": 0,
+    "base_text_equal_count": 0,
+    "base_text_mismatch_count": 1,
+    "base_text_relation_counts": {
+      "tei_eaj_subset_of_abc": 1
+    }
+  },
+  "candidate_work_ids": [
+    "1567"
+  ],
+  "missing_abc_counterpart_work_ids": [],
+  "no_work_id_files": [],
+  "files": [
+    {
+      "work_id": "1567",
+      "work_id_method": "filename_work_id",
+      "tei_eaj_file": "tei-eaj-melos-split-p.xml",
+      "state": "complete",
+      "level": "Level 4",
+      "title": "走れメロス",
+      "abc_tei": "ab-validator/crates/ab-aat-to-parser-ir/tests/fixtures/tei-eaj-alignment-probe/abc-melos-single-p.xml",
+      "comparison_status": "compared",
+      "base_text_equal": false,
+      "base_text_relation": "tei_eaj_subset_of_abc",
+      "base_text_length_delta": 16,
+      "abc_body_base_text_length": 40,
+      "tei_eaj_body_base_text_length": 24,
+      "abc_p_count": 1,
+      "tei_eaj_p_count": 2,
+      "abc_note_count": 1,
+      "tei_eaj_note_count": 0,
+      "first_difference": {
+        "index": 24,
+        "abc": "メロスは激怒した。勇者は、ひどく赤面した。（古伝説と、シルレルの詩から。）",
+        "tei_eaj": "メロスは激怒した。勇者は、ひどく赤面した。"
+      }
+    }
+  ]
+}

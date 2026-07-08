@@ -7,6 +7,10 @@ use ab_aat_to_parser_ir::{
         run_structural_probe, run_tei_eaj_structural_expansion, write_structural_probe_reports,
         write_tei_eaj_expansion_reports,
     },
+    tei_eaj_alignment_probe::{
+        TeiEajAlignmentProbeConfig, run_tei_eaj_alignment_probe,
+        write_tei_eaj_alignment_probe_reports,
+    },
 };
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
@@ -86,6 +90,16 @@ enum Command {
         report_md: PathBuf,
         #[arg(long)]
         abc_root: Option<PathBuf>,
+    },
+    TeiEajAlignmentProbe {
+        #[arg(long)]
+        workset: PathBuf,
+        #[arg(long)]
+        summary_json: PathBuf,
+        #[arg(long)]
+        report_md: PathBuf,
+        #[arg(long)]
+        max_rows: Option<usize>,
     },
 }
 
@@ -247,6 +261,19 @@ fn main() -> Result<()> {
                 summary.totals.parser_ir_gap_rows,
                 summary.totals.evidence_gap_rows
             );
+        }
+        Command::TeiEajAlignmentProbe {
+            workset,
+            summary_json,
+            report_md,
+            max_rows,
+        } => {
+            let report = run_tei_eaj_alignment_probe(TeiEajAlignmentProbeConfig {
+                workset_path: workset,
+                max_rows,
+            })?;
+            write_tei_eaj_alignment_probe_reports(&report, &summary_json, &report_md)?;
+            eprintln!("wrote {} TEI-EAJ alignment probe row(s)", report.rows.len());
         }
     }
     Ok(())

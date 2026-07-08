@@ -112,11 +112,82 @@ fn ortho_fixture_aat() -> Value {
 fn tei_eaj_alignment_probe_classifies_melos_tail_addition() {
     let temp = tempfile::tempdir().unwrap();
     let workset_path = temp.path().join("workset.json");
-    let abc_tei = temp.path().join("abc-melos.xml");
-    let tei_eaj_root = temp.path().join("tei-eaj");
+    std::fs::write(&workset_path, minimal_melos_alignment_workset(temp.path())).unwrap();
+
+    let report = ab_aat_to_parser_ir::tei_eaj_alignment_probe::run_tei_eaj_alignment_probe(
+        ab_aat_to_parser_ir::tei_eaj_alignment_probe::TeiEajAlignmentProbeConfig {
+            workset_path,
+            max_rows: None,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(report.rows.len(), 1);
+    let probe = report.rows[0].alignment_probe.as_ref().unwrap();
+    assert_eq!(probe.diagnosis_counts.get("tail_addition"), Some(&1));
+    assert_eq!(
+        probe.diagnosis_event_count,
+        probe.diagnosis_counts.values().sum::<usize>()
+    );
+    assert_eq!(probe.samples[0].diagnosis, "tail_addition");
+    assert_eq!(
+        probe.samples[0].left_text,
+        "（古伝説と、シルレルの詩から。）"
+    );
+    assert!(!probe.samples[0].left_text.contains("せきめん"));
+    assert!(!probe.samples[0].left_text.contains("底本注"));
+    assert_eq!(
+        probe.samples[0]
+            .adapter_context
+            .get("left_path")
+            .and_then(|value| value.as_str()),
+        Some("/TEI[1]/text[1]/body[1]/p[1]#run2")
+    );
+    assert_eq!(
+        probe.samples[0]
+            .adapter_context
+            .get("left_features")
+            .and_then(|value| value.as_array())
+            .unwrap()[0],
+        serde_json::json!("source-attribution")
+    );
+}
+
+#[test]
+fn cli_tei_eaj_alignment_probe_writes_reports() {
+    let temp = tempfile::tempdir().unwrap();
+    let workset = temp.path().join("workset.json");
+    let summary = temp.path().join("alignment-summary.json");
+    let report = temp.path().join("alignment-report.md");
+    std::fs::write(&workset, minimal_melos_alignment_workset(temp.path())).unwrap();
+
+    let status = std::process::Command::new(env!("CARGO_BIN_EXE_ab-aat-to-parser-ir"))
+        .arg("tei-eaj-alignment-probe")
+        .arg("--workset")
+        .arg(&workset)
+        .arg("--summary-json")
+        .arg(&summary)
+        .arg("--report-md")
+        .arg(&report)
+        .status()
+        .unwrap();
+
+    assert!(status.success());
+    let summary_json: serde_json::Value = ab_aat_to_parser_ir::schema::read_json(&summary).unwrap();
+    assert_eq!(
+        summary_json.pointer("/rows/0/alignment_probe/diagnosis_counts/tail_addition"),
+        Some(&serde_json::json!(1))
+    );
+    let report_text = std::fs::read_to_string(report).unwrap();
+    assert!(report_text.contains("TEI-EAJ Alignment Probe"));
+    assert!(report_text.contains("tail_addition"));
+}
+
+fn minimal_melos_alignment_workset(root: &std::path::Path) -> String {
+    let abc_tei = root.join("abc-melos.xml");
+    let tei_eaj_root = root.join("tei-eaj");
     let tei_eaj_file = tei_eaj_root.join("data/complete/tei_lib_lv4/1567_tei.xml");
     std::fs::create_dir_all(tei_eaj_file.parent().unwrap()).unwrap();
-
     std::fs::write(
         &abc_tei,
         r#"<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>メロスは激怒した。勇者は、ひどく<ruby><rb>赤面した</rb><rt>せきめんした</rt></ruby>。<note>底本注</note>（古伝説と、シルレルの詩から。）</p></body></text></TEI>"#,
@@ -127,10 +198,8 @@ fn tei_eaj_alignment_probe_classifies_melos_tail_addition() {
         r#"<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>メロスは激怒した。</p><p>勇者は、ひどく赤面した。</p></body></text></TEI>"#,
     )
     .unwrap();
-    std::fs::write(
-        &workset_path,
-        format!(
-            r#"{{
+    format!(
+        r#"{{
   "schema_version": "tei-eaj-aozora-workset-export-v1",
   "tei_eaj_source": {{"revision": "fixture", "root": "{}"}},
   "abc_inputs": {{"counterparts": [{{"path": "{}", "work_id": "1567"}}], "tei_dirs": [], "tei_specs": []}},
@@ -174,43 +243,10 @@ fn tei_eaj_alignment_probe_classifies_melos_tail_addition() {
     }}
   }}]
 }}"#,
-            tei_eaj_root.display(),
-            abc_tei.display(),
-            abc_tei.display()
-        ),
+        tei_eaj_root.display(),
+        abc_tei.display(),
+        abc_tei.display()
     )
-    .unwrap();
-
-    let report = ab_aat_to_parser_ir::tei_eaj_alignment_probe::run_tei_eaj_alignment_probe(
-        ab_aat_to_parser_ir::tei_eaj_alignment_probe::TeiEajAlignmentProbeConfig {
-            workset_path,
-            max_rows: None,
-        },
-    )
-    .unwrap();
-
-    assert_eq!(report.rows.len(), 1);
-    let probe = report.rows[0].alignment_probe.as_ref().unwrap();
-    assert_eq!(probe.diagnosis_counts.get("tail_addition"), Some(&1));
-    assert_eq!(
-        probe.diagnosis_event_count,
-        probe.diagnosis_counts.values().sum::<usize>()
-    );
-    assert_eq!(probe.samples[0].diagnosis, "tail_addition");
-    assert_eq!(
-        probe.samples[0].left_text,
-        "（古伝説と、シルレルの詩から。）"
-    );
-    assert!(!probe.samples[0].left_text.contains("せきめん"));
-    assert!(!probe.samples[0].left_text.contains("底本注"));
-    assert_eq!(
-        probe.samples[0]
-            .adapter_context
-            .get("left_features")
-            .and_then(|value| value.as_array())
-            .unwrap()[0],
-        serde_json::json!("source-attribution")
-    );
 }
 
 struct AlwaysNormalizeDetector;

@@ -114,6 +114,59 @@ pub fn run_tei_eaj_alignment_probe(
     })
 }
 
+pub fn write_tei_eaj_alignment_probe_reports(
+    report: &TeiEajAlignmentProbeReport,
+    summary_json: &std::path::Path,
+    report_md: &std::path::Path,
+) -> Result<()> {
+    write_parent(summary_json)?;
+    write_parent(report_md)?;
+    std::fs::write(summary_json, serde_json::to_string_pretty(report)? + "\n")
+        .with_context(|| format!("failed to write {}", summary_json.display()))?;
+    std::fs::write(report_md, render_tei_eaj_alignment_probe_markdown(report))
+        .with_context(|| format!("failed to write {}", report_md.display()))?;
+    Ok(())
+}
+
+pub fn render_tei_eaj_alignment_probe_markdown(report: &TeiEajAlignmentProbeReport) -> String {
+    let mut out = String::from("# TEI-EAJ Alignment Probe\n\n");
+    out.push_str("| work_id | title | tei_eaj_file | diagnosis_counts |\n");
+    out.push_str("| --- | --- | --- | --- |\n");
+    for row in &report.rows {
+        let counts = row
+            .alignment_probe
+            .as_ref()
+            .map(|probe| serde_json::to_string(&probe.diagnosis_counts).unwrap_or_default())
+            .unwrap_or_else(|| "{}".to_owned());
+        out.push_str(&format!(
+            "| {} | {} | `{}` | `{}` |\n",
+            md_cell(row.work_id.as_deref().unwrap_or("")),
+            md_cell(row.title.as_deref().unwrap_or("")),
+            md_code(&row.tei_eaj_file),
+            md_code(&counts)
+        ));
+    }
+    out
+}
+
+fn write_parent(path: &std::path::Path) -> Result<()> {
+    if let Some(parent) = path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("failed to create {}", parent.display()))?;
+    }
+    Ok(())
+}
+
+fn md_cell(value: &str) -> String {
+    value.replace('|', "\\|")
+}
+
+fn md_code(value: &str) -> String {
+    value.replace('`', "\\`")
+}
+
 fn build_probe(left: &[TeiToken], right: &[TeiToken]) -> Result<AlignmentProbe> {
     let config = AlignmentConfig::default();
     let left_tokens = comparison_tokens(left);
@@ -263,11 +316,14 @@ fn element_path(node: Node<'_, '_>) -> String {
     let mut parts = Vec::new();
     for ancestor in node.ancestors().filter(|candidate| candidate.is_element()) {
         let name = ancestor.tag_name().name();
-        let index = ancestor
-            .prev_siblings()
-            .filter(|sibling| sibling.is_element() && sibling.tag_name().name() == name)
-            .count()
-            + 1;
+        let mut index = 1;
+        let mut previous = ancestor.prev_sibling();
+        while let Some(sibling) = previous {
+            if sibling.is_element() && sibling.tag_name().name() == name {
+                index += 1;
+            }
+            previous = sibling.prev_sibling();
+        }
         parts.push(format!("{name}[{index}]"));
     }
     parts.reverse();

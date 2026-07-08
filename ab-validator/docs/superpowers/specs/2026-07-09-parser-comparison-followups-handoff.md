@@ -55,19 +55,31 @@ pointed at `aozora-full-repin-1a4f864`. Expect only the `gaiji`/`jisage` rows to
 (num and denom together); rankings unchanged.
 **Effort.** ~1 session; the heavy parts (index, parse) are now ~5–10 min each.
 
-### 2. Close `aozora-pipeline`'s construct gaps — *for the fork backlog* (small-medium)
-From §4.9, the recommended parser **drops `jizume` (字詰め) and `yokogumi` (横組)
-entirely**, and the source-authority summary has **no `keigakomi` (罫囲み) denominator**
-to score it at all (a gap in the instrument, not just the parsers). These are concrete,
-named items for the fork's to-do or an upstream contribution. Low corpus mass (~0.2%)
-but real. Verify each against official 青空文庫 docs before filing.
+### 2. Close `aozora-pipeline`'s construct gaps — ✅ DONE 2026-07-09
+**Report:** `docs/superpowers/reports/2026-07-09-aozora-pipeline-construct-gap-backlog.md`
+(commit `472021dd`). Verified all three (`jizume`/`yokogumi`/`keigakomi`) are **true
+drops** in the HEAD parser (`1a4f864`) via a fresh full-corpus vocabulary scan; notation
+verified against official `aozora.gr.jp/annotation/etc.html`; real corpus counts measured.
+**Key finding:** the parser already *tokenizes* all three as generic
+`containerOpen`/`containerClose` `raw` nodes **with the exact source string + span
+preserved** — it just never *classifies* them (cf `jisage_block`). So closing the gaps
+is a **classification task, not tokenization** → low-risk, upstream-able. Filed 6
+prioritized backlog items (3 parser, 3 instrument). *Instrument gaps surfaced:*
+keigakomi has no source-authority denominator (first empirical figure: 106 works / 200
+starts, exactly matching aozora-rs's 200 nodes); yokogumi denominator (3690) is ~20×
+observed starts — resolve with item §1.
 
-### 3. Expand the performance sample — *pinpoint aozora-core's pathology* (medium)
-§4.6 perf is 6 works, one machine. §4.8 already showed aozora2's 30 missing works hold
-13.6% of ruby and **are the timeout giants** — so the robustness gap and the perf
-pathology are the same defect. Confirm on a larger sample: which inputs blow up, and
-is it a cheap fix (if so, aozora-core re-enters contention). Recipe:
-`just parser-performance-all-parsers` (needs INDEX, CORPUS; SAMPLE/LIMIT_S envs).
+### 3. Expand the performance sample — ✅ DONE 2026-07-09
+**Report:** `docs/superpowers/reports/2026-07-09-aozora-core-perf-pathology.{md,json,workset.json}`
+(commit `c3dfa8fc`; study §4.6/§5 threat #5 updated). Controlled contrast — aozora-core on
+the 30 works it fails at corpus scale vs 30 *larger* works it completes (controls' median
+845KB > giants' 537KB), 180s limit. **Verdict: work-specific + ruby-density driven, NOT
+size-driven.** Controls all complete (median 1.25s, max 16s, 0 timeouts); ruby-dense
+giants blow up (median 34.7s, max 173s, 12/30 timeouts, **0 crashes**); giants carry ~9×
+the ruby density (21.4 vs 2.4 ruby/KB). Confirms §4.8 (same defect). All-timeouts-no-crashes
+⇒ a superlinear ruby-handling algorithm; a cheap fix is *plausible* but unproven (would
+need a profiling pass on e.g. `001562_56145`). Verdict unchanged (aozora-core still trails
+coverage 0.855). Tooling: `analyze-aozora2-giants-perf.py`.
 
 ### 4. `aozora-rs-core` gaiji blind spot / adapter typed projection — *deferred*
 The `retokenized` dump is blind to gaiji (§5 threat #4); and the production aozora-rs
@@ -131,6 +143,11 @@ parser-IR validity, publication accounting, zero unknown-markup, perf. Or contri
 
 ## Immediate next decision
 
-Either **do §1 (full-nix denominators)** to make the study fully reproducible on the
-pinned corpus, or **start the parser design** on the aozora-pipeline base. The research
-arm is otherwise publication-adjacent; §2–6 are polish that doesn't change the verdict.
+**Done 2026-07-09:** §2 (construct-gap backlog) and §3 (aozora-core perf pathology) —
+see above. Neither changes the verdict.
+
+Remaining: either **do §1 (full-nix denominators)** to make the study fully reproducible
+on the pinned corpus (and resolve the yokogumi/keigakomi denominator gaps §2 surfaced),
+finish the smaller §4–6 polish, or **start the parser design** on the aozora-pipeline
+base. The research arm is publication-adjacent; §1/§4–6 are polish that doesn't change
+the verdict.

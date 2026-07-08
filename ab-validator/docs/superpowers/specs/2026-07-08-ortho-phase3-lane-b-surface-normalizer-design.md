@@ -143,6 +143,18 @@ oracle with an external lexicon.)
   `kindai-bungo`), so a Lane-B policy contributes `exact` per the U4 effective-tier
   rule — provided the oracle dict + rules are bound into the policy hash.
 
+## Coverage probe (2026-07-08) — done
+
+The probe-first step ran: see
+`reports/ortho-detect/2026-07-08-lane-b-coverage-probe.md`. On 697k tokens of
+real old-kana aozora text under `kindai-bungo`, ~3.2% of all-kana tokens are
+genuinely historical (11,059), and the decisive finding is that **particle
+protection via POS is mandatory** (the naive surface≠reading test is ~80% false
+positives from modern particle readings は→わ/を→お). The digraph/long-vowel class
+dominates (82%) and **requires `pron`** as the target-sound oracle — confirming
+M2 over M1. The report gives the data-grounded rule set (guard; ゐゑ + づぢ swaps;
+つ→っ gemination; medial h-row; pron-guided long-vowel spelling; katakana loan ー).
+
 ## Open sub-questions (settle during implementation, not blocking this design)
 
 1. **Surface↔reading alignment (M2).** For okurigana (使ひ→使い), how to map which

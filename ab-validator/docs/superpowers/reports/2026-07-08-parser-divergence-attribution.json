@@ -1,0 +1,2930 @@
+{
+  "schema_version": 1,
+  "candidates": {
+    "aozora2": {
+      "categories": {
+        "raw-preserved": 46,
+        "pass": 48,
+        "dropped-to-text": 6,
+        "typed-mismatch": 22
+      },
+      "parser_capable_or_recoverable": 116,
+      "capability_gap_dropped_to_text": 6,
+      "family_gap_dropped": {
+        "angle_quote": 1,
+        "kunten": 2,
+        "break": 2,
+        "structural-marker": 1
+      },
+      "rows": [
+        {
+          "vector": "accent_dot_above",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "accent_dot_below",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "accent_dot_cluster",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "accent_dot_dangyou_unknown",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "directive"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "accent_dot_former_latter",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "accent_dot_multi_clause",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "accent_dot_ordinal",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "accent_dot_ruby_base_unknown",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "ruby",
+            "directive"
+          ],
+          "projected": [
+            "ruby",
+            "directive"
+          ]
+        },
+        {
+          "vector": "accent_dot_tortoise",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "accent_dot_uppercase",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "align_end_container",
+          "family": "container",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "angle_quote",
+          "family": "angle_quote",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "angleQuote"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "annotation",
+          "family": "annotation",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "directive"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "body_end",
+          "family": "structural-marker",
+          "level": "must",
+          "category": "raw-preserved",
+          "expected": [
+            "bodyEnd"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "boki",
+          "family": "kunten",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "marginNote"
+          ],
+          "projected": [
+            "ruby"
+          ]
+        },
+        {
+          "vector": "bold_block",
+          "family": "emphasis",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "bold_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "bold_forward_gothic_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "bold_forward_interior",
+          "family": "emphasis",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "emphasis",
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "bold_forward_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "bold_inline",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "bouten",
+          "family": "bouten",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "bouten"
+          ],
+          "projected": [
+            "bouten"
+          ]
+        },
+        {
+          "vector": "bouten_black_triangle",
+          "family": "bouten",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "bouten"
+          ],
+          "projected": [
+            "bouten"
+          ]
+        },
+        {
+          "vector": "bouten_chain_line",
+          "family": "bouten",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "bouten"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "bouten_forward_interior",
+          "family": "bouten",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "bouten",
+            "bouten"
+          ],
+          "projected": [
+            "bouten"
+          ]
+        },
+        {
+          "vector": "bouten_forward_no_referent",
+          "family": "bouten",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "bouten"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "bouten_range",
+          "family": "bouten",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "bouten",
+            "bouten",
+            "bouten"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose",
+            "containerOpen",
+            "containerClose",
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "bouten_range_chain_line",
+          "family": "bouten",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "bouten"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "bouten_target_ambiguous",
+          "family": "bouten",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "bouten"
+          ],
+          "projected": [
+            "bouten"
+          ]
+        },
+        {
+          "vector": "box_enclosure",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "box_enclosure_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "bracketed_kaeriten_no_pair",
+          "family": "kunten",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "kaeriten"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "break_in_single_line_container",
+          "family": "break",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "alignEnd",
+            "pageBreak"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "center_page",
+          "family": "container",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "center"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "columns_container",
+          "family": "tables_columns",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "directive",
+            "directive"
+          ]
+        },
+        {
+          "vector": "correction_sic",
+          "family": "annotation",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "directive"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "correction_textual_note",
+          "family": "annotation",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "directive"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "editor_note",
+          "family": "annotation",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "directive"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "emphasis_mixed",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis",
+            "emphasis",
+            "bouten"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose",
+            "containerOpen",
+            "containerClose",
+            "bouten"
+          ]
+        },
+        {
+          "vector": "font_size_absolute_small_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "font_size_bare_range",
+          "family": "container",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "font_size_block",
+          "family": "emphasis",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "font_size_larger_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "font_size_larger_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "font_size_smaller_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "forced_break",
+          "family": "structural-marker",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "forcedBreak"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "fraction_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "fraction_forward_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "gaiji",
+          "family": "gaiji",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "gaiji"
+          ],
+          "projected": [
+            "gaiji"
+          ]
+        },
+        {
+          "vector": "gaiji_composed_glyph",
+          "family": "gaiji",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "gaiji"
+          ],
+          "projected": [
+            "gaiji"
+          ]
+        },
+        {
+          "vector": "gaiji_composed_seiji",
+          "family": "gaiji",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "gaiji"
+          ],
+          "projected": [
+            "gaiji"
+          ]
+        },
+        {
+          "vector": "gaiji_double_paren",
+          "family": "gaiji",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "gaiji",
+            "gaiji"
+          ],
+          "projected": [
+            "gaiji",
+            "gaiji"
+          ]
+        },
+        {
+          "vector": "head_flush_single",
+          "family": "container",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen"
+          ],
+          "projected": [
+            "indent"
+          ]
+        },
+        {
+          "vector": "head_flush_wrap_indent",
+          "family": "container",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "indent"
+          ]
+        },
+        {
+          "vector": "heading",
+          "family": "heading",
+          "level": "must",
+          "category": "raw-preserved",
+          "expected": [
+            "directive",
+            "directive"
+          ],
+          "projected": [
+            "directive",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "heading_block",
+          "family": "heading",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "heading",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "heading_forward_no_referent",
+          "family": "heading",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "headingHint"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "heading_hint",
+          "family": "heading",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "headingHint"
+          ],
+          "projected": [
+            "heading"
+          ]
+        },
+        {
+          "vector": "heading_paired_window",
+          "family": "heading",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "heading_promoted",
+          "family": "heading",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "heading"
+          ],
+          "projected": [
+            "heading"
+          ]
+        },
+        {
+          "vector": "heading_ruby_hint",
+          "family": "heading",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "ruby",
+            "ruby",
+            "headingHint"
+          ],
+          "projected": [
+            "heading",
+            "ruby",
+            "ruby"
+          ]
+        },
+        {
+          "vector": "heading_same_line",
+          "family": "heading",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "headingHint"
+          ],
+          "projected": [
+            "heading"
+          ]
+        },
+        {
+          "vector": "heading_window",
+          "family": "heading",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "heading"
+          ],
+          "projected": [
+            "heading"
+          ]
+        },
+        {
+          "vector": "horizontal_container",
+          "family": "horizontal",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "horizontal_inline_forward",
+          "family": "horizontal",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "horizontal_inline_forward_no_referent",
+          "family": "horizontal",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "indent_center",
+          "family": "container",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "indent_compound_styled",
+          "family": "layout",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "indent_container",
+          "family": "container",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "indent_from_top",
+          "family": "container",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "indent"
+          ],
+          "projected": [
+            "indent"
+          ]
+        },
+        {
+          "vector": "indent_line_kumi",
+          "family": "container",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "indent_line_width_compound",
+          "family": "container",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "italic_block",
+          "family": "emphasis",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "italic_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "italic_forward_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "italic_inline",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "kaeriten",
+          "family": "kaeriten",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "directive"
+          ],
+          "projected": [
+            "kaeriten"
+          ]
+        },
+        {
+          "vector": "kaeriten_outside_kanbun",
+          "family": "kunten",
+          "level": "may",
+          "category": "dropped-to-text",
+          "expected": [
+            "kaeriten"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "keigakomi_container",
+          "family": "container",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "keigakomi_inline_forward",
+          "family": "keigakomi",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "keigakomi_inline_framed",
+          "family": "keigakomi",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "left_ruby",
+          "family": "kunten",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "ruby"
+          ],
+          "projected": [
+            "ruby"
+          ]
+        },
+        {
+          "vector": "left_ruby_pair",
+          "family": "annotation",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "directive",
+            "directive"
+          ],
+          "projected": [
+            "directive",
+            "directive"
+          ]
+        },
+        {
+          "vector": "line_bold_single",
+          "family": "layout",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "lineBold"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "line_font_size_bold_single",
+          "family": "layout",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "lineFontSize"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "line_font_size_single",
+          "family": "layout",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "lineFontSize"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "line_width_container",
+          "family": "container",
+          "level": "must",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "indent"
+          ]
+        },
+        {
+          "vector": "mismatched_bouten_container",
+          "family": "bouten",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "mismatched_container_close",
+          "family": "container",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerClose",
+            "containerOpen"
+          ]
+        },
+        {
+          "vector": "mixed_ruby_bouten",
+          "family": "composite",
+          "level": "must",
+          "category": "typed-mismatch",
+          "expected": [
+            "ruby",
+            "bouten"
+          ],
+          "projected": [
+            "bouten",
+            "ruby"
+          ]
+        },
+        {
+          "vector": "nested_containers",
+          "family": "composite",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerOpen",
+            "containerClose",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "nested_ruby",
+          "family": "ruby",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "ruby"
+          ],
+          "projected": [
+            "ruby"
+          ]
+        },
+        {
+          "vector": "page_break",
+          "family": "break",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "pageBreak"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "pageful",
+          "family": "composite",
+          "level": "may",
+          "category": "typed-mismatch",
+          "expected": [
+            "ruby",
+            "gaiji",
+            "containerOpen",
+            "containerClose",
+            "pageBreak"
+          ],
+          "projected": [
+            "ruby",
+            "gaiji",
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "roman_numeral",
+          "family": "gaiji",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "gaiji"
+          ],
+          "projected": [
+            "gaiji"
+          ]
+        },
+        {
+          "vector": "ruby_attached",
+          "family": "annotation",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "directive"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "ruby_explicit",
+          "family": "ruby",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "ruby"
+          ],
+          "projected": [
+            "ruby"
+          ]
+        },
+        {
+          "vector": "ruby_implicit",
+          "family": "ruby",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "ruby"
+          ],
+          "projected": [
+            "ruby"
+          ]
+        },
+        {
+          "vector": "ruby_retarget",
+          "family": "annotation",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "directive"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "sashie",
+          "family": "sashie",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "illustration"
+          ],
+          "projected": [
+            "illustration"
+          ]
+        },
+        {
+          "vector": "sashie_caption",
+          "family": "sashie",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "illustration"
+          ],
+          "projected": [
+            "illustration"
+          ]
+        },
+        {
+          "vector": "sashie_dimensions",
+          "family": "sashie",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "illustration"
+          ],
+          "projected": [
+            "illustration"
+          ]
+        },
+        {
+          "vector": "section_break",
+          "family": "break",
+          "level": "must",
+          "category": "raw-preserved",
+          "expected": [
+            "sectionBreak"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "side_glyph_left",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "side_glyph_left_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "side_glyph_left_range",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "side_glyph_right",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "side_glyph_right_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "side_glyph_right_range",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "side_note_left",
+          "family": "kunten",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "marginNote"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "standalone_gaiji",
+          "family": "gaiji",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "gaiji"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "subscript_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "subscript_forward_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "superscript_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "superscript_forward_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "table_container",
+          "family": "tables_columns",
+          "level": "should",
+          "category": "raw-preserved",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "directive",
+            "directive"
+          ]
+        },
+        {
+          "vector": "tate_chu_yoko",
+          "family": "tcy",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "directive"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "tate_chu_yoko_found",
+          "family": "tate_chu_yoko",
+          "level": "must",
+          "category": "typed-mismatch",
+          "expected": [
+            "combineUpright",
+            "combineUpright"
+          ],
+          "projected": [
+            "combineUpright"
+          ]
+        },
+        {
+          "vector": "unrecognised_container_directive",
+          "family": "container",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "directive"
+          ],
+          "projected": [
+            "directive"
+          ]
+        },
+        {
+          "vector": "unresolved_gaiji",
+          "family": "gaiji",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "gaiji"
+          ],
+          "projected": [
+            "gaiji"
+          ]
+        },
+        {
+          "vector": "warichu_inline",
+          "family": "warichu",
+          "level": "must",
+          "category": "typed-mismatch",
+          "expected": [
+            "directive",
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "wrap_indent",
+          "family": "container",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "indent"
+          ]
+        }
+      ]
+    },
+    "aozora-rs": {
+      "categories": {
+        "dropped-to-text": 85,
+        "typed-mismatch": 17,
+        "pass": 20
+      },
+      "parser_capable_or_recoverable": 37,
+      "capability_gap_dropped_to_text": 85,
+      "family_gap_dropped": {
+        "emphasis": 31,
+        "container": 12,
+        "angle_quote": 1,
+        "annotation": 7,
+        "structural-marker": 2,
+        "bouten": 6,
+        "kunten": 3,
+        "break": 3,
+        "tables_columns": 2,
+        "heading": 5,
+        "horizontal": 3,
+        "layout": 4,
+        "keigakomi": 1,
+        "sashie": 2,
+        "gaiji": 1,
+        "tcy": 1,
+        "tate_chu_yoko": 1
+      },
+      "rows": [
+        {
+          "vector": "accent_dot_above",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "accent_dot_below",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "accent_dot_cluster",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "accent_dot_dangyou_unknown",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "accent_dot_former_latter",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "accent_dot_multi_clause",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "accent_dot_ordinal",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "accent_dot_ruby_base_unknown",
+          "family": "emphasis",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "ruby",
+            "directive"
+          ],
+          "projected": [
+            "ruby"
+          ]
+        },
+        {
+          "vector": "accent_dot_tortoise",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "accent_dot_uppercase",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "align_end_container",
+          "family": "container",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "angle_quote",
+          "family": "angle_quote",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "angleQuote"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "annotation",
+          "family": "annotation",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "body_end",
+          "family": "structural-marker",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "bodyEnd"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "boki",
+          "family": "kunten",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "marginNote"
+          ],
+          "projected": [
+            "ruby"
+          ]
+        },
+        {
+          "vector": "bold_block",
+          "family": "emphasis",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "bold_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "bold_forward_gothic_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "bold_forward_interior",
+          "family": "emphasis",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "emphasis",
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "bold_forward_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "bold_inline",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "bouten",
+          "family": "bouten",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "bouten"
+          ],
+          "projected": [
+            "bouten"
+          ]
+        },
+        {
+          "vector": "bouten_black_triangle",
+          "family": "bouten",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "bouten"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "bouten_chain_line",
+          "family": "bouten",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "bouten"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "bouten_forward_interior",
+          "family": "bouten",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "bouten",
+            "bouten"
+          ],
+          "projected": [
+            "bouten"
+          ]
+        },
+        {
+          "vector": "bouten_forward_no_referent",
+          "family": "bouten",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "bouten"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "bouten_range",
+          "family": "bouten",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "bouten",
+            "bouten",
+            "bouten"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "bouten_range_chain_line",
+          "family": "bouten",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "bouten"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "bouten_target_ambiguous",
+          "family": "bouten",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "bouten"
+          ],
+          "projected": [
+            "bouten"
+          ]
+        },
+        {
+          "vector": "box_enclosure",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "box_enclosure_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "bracketed_kaeriten_no_pair",
+          "family": "kunten",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "kaeriten"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "break_in_single_line_container",
+          "family": "break",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "alignEnd",
+            "pageBreak"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "center_page",
+          "family": "container",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "center"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "columns_container",
+          "family": "tables_columns",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "correction_sic",
+          "family": "annotation",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "correction_textual_note",
+          "family": "annotation",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "editor_note",
+          "family": "annotation",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "emphasis_mixed",
+          "family": "emphasis",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "emphasis",
+            "emphasis",
+            "bouten"
+          ],
+          "projected": [
+            "bouten"
+          ]
+        },
+        {
+          "vector": "font_size_absolute_small_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "font_size_bare_range",
+          "family": "container",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "font_size_block",
+          "family": "emphasis",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "font_size_larger_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "font_size_larger_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "font_size_smaller_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "forced_break",
+          "family": "structural-marker",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "forcedBreak"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "fraction_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "fraction_forward_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "gaiji",
+          "family": "gaiji",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "gaiji"
+          ],
+          "projected": [
+            "gaiji"
+          ]
+        },
+        {
+          "vector": "gaiji_composed_glyph",
+          "family": "gaiji",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "gaiji"
+          ],
+          "projected": [
+            "gaiji"
+          ]
+        },
+        {
+          "vector": "gaiji_composed_seiji",
+          "family": "gaiji",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "gaiji"
+          ],
+          "projected": [
+            "gaiji"
+          ]
+        },
+        {
+          "vector": "gaiji_double_paren",
+          "family": "gaiji",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "gaiji",
+            "gaiji"
+          ],
+          "projected": [
+            "gaiji",
+            "gaiji"
+          ]
+        },
+        {
+          "vector": "head_flush_single",
+          "family": "container",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "head_flush_wrap_indent",
+          "family": "container",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "heading",
+          "family": "heading",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "directive",
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "heading_block",
+          "family": "heading",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "heading_forward_no_referent",
+          "family": "heading",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "headingHint"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "heading_hint",
+          "family": "heading",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "headingHint"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "heading_paired_window",
+          "family": "heading",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "heading",
+            "heading"
+          ]
+        },
+        {
+          "vector": "heading_promoted",
+          "family": "heading",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "heading"
+          ],
+          "projected": [
+            "heading"
+          ]
+        },
+        {
+          "vector": "heading_ruby_hint",
+          "family": "heading",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "ruby",
+            "ruby",
+            "headingHint"
+          ],
+          "projected": [
+            "ruby",
+            "ruby"
+          ]
+        },
+        {
+          "vector": "heading_same_line",
+          "family": "heading",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "headingHint"
+          ],
+          "projected": [
+            "heading"
+          ]
+        },
+        {
+          "vector": "heading_window",
+          "family": "heading",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "heading"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "horizontal_container",
+          "family": "horizontal",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "horizontal_inline_forward",
+          "family": "horizontal",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "horizontal_inline_forward_no_referent",
+          "family": "horizontal",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "indent_center",
+          "family": "container",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "indent_compound_styled",
+          "family": "layout",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "indent_container",
+          "family": "container",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "indent_from_top",
+          "family": "container",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "indent"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "indent_line_kumi",
+          "family": "container",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "indent_line_width_compound",
+          "family": "container",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "italic_block",
+          "family": "emphasis",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "italic_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "italic_forward_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "italic_inline",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "kaeriten",
+          "family": "kaeriten",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "directive"
+          ],
+          "projected": [
+            "kaeriten"
+          ]
+        },
+        {
+          "vector": "kaeriten_outside_kanbun",
+          "family": "kunten",
+          "level": "may",
+          "category": "dropped-to-text",
+          "expected": [
+            "kaeriten"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "keigakomi_container",
+          "family": "container",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "keigakomi_inline_forward",
+          "family": "keigakomi",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": [
+            "emphasis"
+          ]
+        },
+        {
+          "vector": "keigakomi_inline_framed",
+          "family": "keigakomi",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "left_ruby",
+          "family": "kunten",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "ruby"
+          ],
+          "projected": [
+            "ruby"
+          ]
+        },
+        {
+          "vector": "left_ruby_pair",
+          "family": "annotation",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "directive",
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "line_bold_single",
+          "family": "layout",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "lineBold"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "line_font_size_bold_single",
+          "family": "layout",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "lineFontSize"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "line_font_size_single",
+          "family": "layout",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "lineFontSize"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "line_width_container",
+          "family": "container",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "mismatched_bouten_container",
+          "family": "bouten",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "mismatched_container_close",
+          "family": "container",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "mixed_ruby_bouten",
+          "family": "composite",
+          "level": "must",
+          "category": "typed-mismatch",
+          "expected": [
+            "ruby",
+            "bouten"
+          ],
+          "projected": [
+            "ruby"
+          ]
+        },
+        {
+          "vector": "nested_containers",
+          "family": "composite",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerOpen",
+            "containerClose",
+            "containerClose"
+          ],
+          "projected": [
+            "containerOpen",
+            "containerClose",
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "nested_ruby",
+          "family": "ruby",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "ruby"
+          ],
+          "projected": [
+            "ruby"
+          ]
+        },
+        {
+          "vector": "page_break",
+          "family": "break",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "pageBreak"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "pageful",
+          "family": "composite",
+          "level": "may",
+          "category": "typed-mismatch",
+          "expected": [
+            "ruby",
+            "gaiji",
+            "containerOpen",
+            "containerClose",
+            "pageBreak"
+          ],
+          "projected": [
+            "ruby",
+            "gaiji",
+            "containerOpen",
+            "containerClose"
+          ]
+        },
+        {
+          "vector": "roman_numeral",
+          "family": "gaiji",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "gaiji"
+          ],
+          "projected": [
+            "gaiji"
+          ]
+        },
+        {
+          "vector": "ruby_attached",
+          "family": "annotation",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "ruby_explicit",
+          "family": "ruby",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "ruby"
+          ],
+          "projected": [
+            "ruby"
+          ]
+        },
+        {
+          "vector": "ruby_implicit",
+          "family": "ruby",
+          "level": "must",
+          "category": "pass",
+          "expected": [
+            "ruby"
+          ],
+          "projected": [
+            "ruby"
+          ]
+        },
+        {
+          "vector": "ruby_retarget",
+          "family": "annotation",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "sashie",
+          "family": "sashie",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "illustration"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "sashie_caption",
+          "family": "sashie",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "illustration"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "sashie_dimensions",
+          "family": "sashie",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "illustration"
+          ],
+          "projected": [
+            "illustration"
+          ]
+        },
+        {
+          "vector": "section_break",
+          "family": "break",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "sectionBreak"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "side_glyph_left",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "side_glyph_left_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "side_glyph_left_range",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "side_glyph_right",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "side_glyph_right_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "side_glyph_right_range",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "side_note_left",
+          "family": "kunten",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "marginNote"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "standalone_gaiji",
+          "family": "gaiji",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "gaiji"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "subscript_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "subscript_forward_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "superscript_forward",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "superscript_forward_no_referent",
+          "family": "emphasis",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "emphasis"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "table_container",
+          "family": "tables_columns",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "tate_chu_yoko",
+          "family": "tcy",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "tate_chu_yoko_found",
+          "family": "tate_chu_yoko",
+          "level": "must",
+          "category": "dropped-to-text",
+          "expected": [
+            "combineUpright",
+            "combineUpright"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "unrecognised_container_directive",
+          "family": "container",
+          "level": "should",
+          "category": "dropped-to-text",
+          "expected": [
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "unresolved_gaiji",
+          "family": "gaiji",
+          "level": "should",
+          "category": "pass",
+          "expected": [
+            "gaiji"
+          ],
+          "projected": [
+            "gaiji"
+          ]
+        },
+        {
+          "vector": "warichu_inline",
+          "family": "warichu",
+          "level": "must",
+          "category": "typed-mismatch",
+          "expected": [
+            "directive",
+            "directive"
+          ],
+          "projected": []
+        },
+        {
+          "vector": "wrap_indent",
+          "family": "container",
+          "level": "should",
+          "category": "typed-mismatch",
+          "expected": [
+            "containerOpen",
+            "containerClose"
+          ],
+          "projected": [
+            "indent"
+          ]
+        }
+      ]
+    }
+  }
+}

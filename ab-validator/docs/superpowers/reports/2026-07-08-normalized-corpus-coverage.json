@@ -1,0 +1,247 @@
+{
+ "schema_version": 2,
+ "note": "fair union-signature normalization; see script docstring",
+ "denominators": {
+  "ruby.basic": 3607926,
+  "decoration.boten": 129086,
+  "decoration.bousen": 18127,
+  "heading.basic": 80592,
+  "decoration.font_size": 51508,
+  "layout.tcy": 19794,
+  "figure.image_inline": 5877,
+  "indentation.jisage_block": 94993
+ },
+ "total_weighted_occurrences": 4007903,
+ "adapters": {
+  "aozora": {
+   "files": 17886,
+   "per_construct": {
+    "ruby.basic": {
+     "num": 3584114,
+     "rate": 0.993,
+     "folded": null
+    },
+    "decoration.boten": {
+     "num": 153165,
+     "rate": 1.187,
+     "folded": null
+    },
+    "decoration.bousen": {
+     "num": 0,
+     "rate": 0.0,
+     "folded": "folded into generic `emphasis` marker"
+    },
+    "heading.basic": {
+     "num": 67801,
+     "rate": 0.841,
+     "folded": null
+    },
+    "decoration.font_size": {
+     "num": 46,
+     "rate": 0.001,
+     "folded": null
+    },
+    "layout.tcy": {
+     "num": 18836,
+     "rate": 0.952,
+     "folded": null
+    },
+    "figure.image_inline": {
+     "num": 5814,
+     "rate": 0.989,
+     "folded": null
+    },
+    "indentation.jisage_block": {
+     "num": 91690,
+     "rate": 0.965,
+     "folded": null
+    }
+   },
+   "frequency_weighted_coverage": 0.972
+  },
+  "aozora2": {
+   "files": 17856,
+   "per_construct": {
+    "ruby.basic": {
+     "num": 3077027,
+     "rate": 0.853,
+     "folded": null
+    },
+    "decoration.boten": {
+     "num": 125232,
+     "rate": 0.97,
+     "folded": null
+    },
+    "decoration.bousen": {
+     "num": 17185,
+     "rate": 0.948,
+     "folded": null
+    },
+    "heading.basic": {
+     "num": 73695,
+     "rate": 0.914,
+     "folded": null
+    },
+    "decoration.font_size": {
+     "num": 16944,
+     "rate": 0.329,
+     "folded": null
+    },
+    "layout.tcy": {
+     "num": 17076,
+     "rate": 0.863,
+     "folded": null
+    },
+    "figure.image_inline": {
+     "num": 5188,
+     "rate": 0.883,
+     "folded": null
+    },
+    "indentation.jisage_block": {
+     "num": 36105,
+     "rate": 0.38,
+     "folded": null
+    }
+   },
+   "frequency_weighted_coverage": 0.84
+  },
+  "aozora-rs": {
+   "files": 17886,
+   "per_construct": {
+    "ruby.basic": {
+     "num": 3558717,
+     "rate": 0.986,
+     "folded": null
+    },
+    "decoration.boten": {
+     "num": 122734,
+     "rate": 0.951,
+     "folded": null
+    },
+    "decoration.bousen": {
+     "num": 3217,
+     "rate": 0.177,
+     "folded": null
+    },
+    "heading.basic": {
+     "num": 19640,
+     "rate": 0.244,
+     "folded": null
+    },
+    "decoration.font_size": {
+     "num": 135,
+     "rate": 0.003,
+     "folded": null
+    },
+    "layout.tcy": {
+     "num": 1,
+     "rate": 0.0,
+     "folded": null
+    },
+    "figure.image_inline": {
+     "num": 5344,
+     "rate": 0.909,
+     "folded": null
+    },
+    "indentation.jisage_block": {
+     "num": 44063,
+     "rate": 0.464,
+     "folded": null
+    }
+   },
+   "frequency_weighted_coverage": 0.937
+  },
+  "aozora2html": {
+   "files": 17689,
+   "per_construct": {
+    "ruby.basic": {
+     "num": 2683275,
+     "rate": 0.744,
+     "folded": null
+    },
+    "decoration.boten": {
+     "num": 114982,
+     "rate": 0.891,
+     "folded": null
+    },
+    "decoration.bousen": {
+     "num": 14389,
+     "rate": 0.794,
+     "folded": null
+    },
+    "heading.basic": {
+     "num": 62280,
+     "rate": 0.773,
+     "folded": null
+    },
+    "decoration.font_size": {
+     "num": 12796,
+     "rate": 0.248,
+     "folded": null
+    },
+    "layout.tcy": {
+     "num": 0,
+     "rate": 0.0,
+     "folded": null
+    },
+    "figure.image_inline": {
+     "num": 4111,
+     "rate": 0.7,
+     "folded": null
+    },
+    "indentation.jisage_block": {
+     "num": 96347,
+     "rate": 1.014,
+     "folded": null
+    }
+   },
+   "frequency_weighted_coverage": 0.745
+  },
+  "aozora-epub3": {
+   "files": 17844,
+   "per_construct": {
+    "ruby.basic": {
+     "num": 3448867,
+     "rate": 0.956,
+     "folded": null
+    },
+    "decoration.boten": {
+     "num": 126904,
+     "rate": 0.983,
+     "folded": null
+    },
+    "decoration.bousen": {
+     "num": 14647,
+     "rate": 0.808,
+     "folded": null
+    },
+    "heading.basic": {
+     "num": 68033,
+     "rate": 0.844,
+     "folded": null
+    },
+    "decoration.font_size": {
+     "num": 0,
+     "rate": 0.0,
+     "folded": null
+    },
+    "layout.tcy": {
+     "num": 13605,
+     "rate": 0.687,
+     "folded": null
+    },
+    "figure.image_inline": {
+     "num": 305,
+     "rate": 0.052,
+     "folded": null
+    },
+    "indentation.jisage_block": {
+     "num": 134260,
+     "rate": 1.413,
+     "folded": null
+    }
+   },
+   "frequency_weighted_coverage": 0.94
+  }
+ }
+}

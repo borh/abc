@@ -2652,6 +2652,17 @@ mod tests {
     /// Representative multi-region, multi-scope, multi-analyzer fixture
     /// shared by `push_region_rows_emits_maximal_contiguous_feature_diff_runs`
     /// and `feature_pattern_accumulator_region_group_path_matches_reference_row_path`.
+    ///
+    /// The "晴れ" morpheme (aligned across all three analyzers, so
+    /// whole-region-eligible) also carries a `reading` feature -- a
+    /// NON-core key (`WAREHOUSE_CORE_FEATURE_KEYS` is only
+    /// `pos1`/`pos2`/`pos3`/`pos4`) with two distinct values across
+    /// analyzers, so it forms a real `NwayFeatureGroup` that appears in
+    /// `feature_diffs` but must be excluded from `feature_pattern_counts`.
+    /// This exercises the core-key filter
+    /// (`record_region_feature_group`/`keyed_core_diffs`) on both the
+    /// production and reference paths, which the `pos1`/`pos2`-only fixture
+    /// alone never did.
     fn nway_test_fixture_analyses(source_text: &str) -> Vec<Analysis> {
         let vibrato = Analysis {
             analyzer: "vibrato".to_owned(),
@@ -2665,7 +2676,12 @@ mod tests {
                     &[("pos1", Some("名詞")), ("pos2", Some("A"))],
                 ),
                 nway_test_morpheme("は", 6..9, 2..3, &[("pos2", Some("X"))]),
-                nway_test_morpheme("晴れ", 9..15, 3..5, &[("pos1", Some("動詞"))]),
+                nway_test_morpheme(
+                    "晴れ",
+                    9..15,
+                    3..5,
+                    &[("pos1", Some("動詞")), ("reading", Some("ハレ"))],
+                ),
             ],
             warnings: Vec::new(),
             ortho_annotations: None,
@@ -2683,7 +2699,12 @@ mod tests {
                     &[("pos1", Some("固有名詞")), ("pos2", Some("A"))],
                 ),
                 nway_test_morpheme("は", 6..9, 2..3, &[("pos2", Some("Y"))]),
-                nway_test_morpheme("晴れ", 9..15, 3..5, &[("pos1", Some("名詞"))]),
+                nway_test_morpheme(
+                    "晴れ",
+                    9..15,
+                    3..5,
+                    &[("pos1", Some("名詞")), ("reading", Some("ハレ"))],
+                ),
             ],
             warnings: Vec::new(),
             ortho_annotations: None,
@@ -2695,7 +2716,12 @@ mod tests {
             source_text: Arc::from(source_text),
             morphemes: vec![
                 nway_test_morpheme("今日は", 0..9, 0..3, &[("pos1", Some("感動詞"))]),
-                nway_test_morpheme("晴れ", 9..15, 3..5, &[("pos1", Some("名詞"))]),
+                nway_test_morpheme(
+                    "晴れ",
+                    9..15,
+                    3..5,
+                    &[("pos1", Some("名詞")), ("reading", Some("ハレル"))],
+                ),
             ],
             warnings: Vec::new(),
             ortho_annotations: None,
@@ -2706,14 +2732,18 @@ mod tests {
 
     #[test]
     fn push_region_rows_emits_maximal_contiguous_feature_diff_runs() {
-        // Producer-invariant CI guard (Step 3b): runs the REAL producer
-        // (`warehouse::rows::nway_fact_rows`, which drives `push_region_rows`)
-        // over representative multi-region, multi-scope input and asserts the
-        // emitted `feature_diffs` form maximal contiguous
-        // `WarehouseFeatureGroupKey` runs. `WarehouseFeaturePatternAccumulator
-        // ::record`'s linear scan depends on this; if a future change to the
-        // producer breaks it, this test (not a silent miscount in release)
-        // is what should fail.
+        // Producer-invariant CI guard (Step 3b): runs the row-based
+        // REFERENCE producer (`warehouse::rows::nway_fact_rows`, which
+        // drives `push_region_rows_reference` -- post-Task-4, production
+        // calls `push_region_rows` directly against a `NwayFeatureDiffsColumns`
+        // Arrow builder instead) over representative multi-region,
+        // multi-scope input and asserts the emitted `feature_diffs` form
+        // maximal contiguous `WarehouseFeatureGroupKey` runs.
+        // `WarehouseFeaturePatternAccumulator::record`'s linear scan depends
+        // on this; if a future change to the producer breaks it, this test
+        // (not a silent miscount in release) is what should fail. The
+        // production path is characterized against the same invariant below,
+        // via `decode_feature_diff_rows`.
         let source_text = "今日は晴れ";
         let analyses = nway_test_fixture_analyses(source_text);
 
@@ -2745,6 +2775,30 @@ mod tests {
         );
 
         assert_feature_diffs_form_maximal_contiguous_runs(&facts.feature_diffs);
+
+        // Production path: `push_region_rows` (driven by
+        // `visit_nway_fact_row_batches`, appending straight into a
+        // `NwayFeatureDiffsColumns` Arrow builder) must emit the identical
+        // maximal-contiguous order, not just the reference producer above.
+        let mut production_feature_diffs = Vec::new();
+        let mut pattern_counts = WarehouseFeaturePatternAccumulator::default();
+        warehouse::rows::visit_nway_fact_row_batches(
+            "run-a",
+            "source-a",
+            source_text,
+            &analyses,
+            10_000,
+            &mut pattern_counts,
+            |batch| {
+                production_feature_diffs.extend(warehouse::rows::decode_feature_diff_rows(
+                    &batch.feature_diffs.finish(),
+                ));
+                Ok(())
+            },
+        )
+        .unwrap();
+        assert_eq!(production_feature_diffs, facts.feature_diffs);
+        assert_feature_diffs_form_maximal_contiguous_runs(&production_feature_diffs);
     }
 
     #[test]
@@ -2762,12 +2816,29 @@ mod tests {
         // oracle. Both must aggregate identical `feature_pattern_counts`
         // rows -- see `record_region_feature_group`'s doc comment for why
         // `NwayFeatureGroup::values`'s pre-sorted ordering guarantees this.
+        //
+        // The fixture also carries a NON-core `reading` feature key (see
+        // `nway_test_fixture_analyses`'s doc comment), so this test also
+        // exercises the `WAREHOUSE_CORE_FEATURE_KEYS` filter
+        // (`record_region_feature_group` vs. `record`/`keyed_core_diffs`) on
+        // both paths, not just the core `pos1`/`pos2` keys.
         let source_text = "今日は晴れ";
         let analyses = nway_test_fixture_analyses(source_text);
 
         let facts =
             crate::warehouse::rows::nway_fact_rows("run-a", "source-a", source_text, &analyses)
                 .unwrap();
+        // Sanity: the fixture's non-core key actually reaches `feature_diffs`
+        // (i.e. it forms a real >=2-value `NwayFeatureGroup`), so the
+        // core-key filter below is exercised on a real row, not a no-op.
+        assert!(
+            facts
+                .feature_diffs
+                .iter()
+                .any(|diff| diff.feature_key.as_ref() == "reading"),
+            "fixture must include a non-core feature key that reaches feature_diffs"
+        );
+
         let mut reference = WarehouseFeaturePatternAccumulator::default();
         reference
             .record(&facts.regions, &facts.feature_diffs)
@@ -2785,6 +2856,24 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(region_group.into_rows(), reference.into_rows());
+        let reference_rows = reference.into_rows();
+        let region_group_rows = region_group.into_rows();
+        // The non-core `reading` key must be excluded from
+        // `feature_pattern_counts` on both paths -- the core-key filter
+        // behaves identically whether fed row-by-row (`record`) or
+        // group-by-group (`record_region_feature_group`).
+        assert!(
+            reference_rows
+                .iter()
+                .all(|row| row.feature_key != "reading"),
+            "non-core feature key must be excluded from the reference path's feature_pattern_counts"
+        );
+        assert!(
+            region_group_rows
+                .iter()
+                .all(|row| row.feature_key != "reading"),
+            "non-core feature key must be excluded from the production path's feature_pattern_counts"
+        );
+        assert_eq!(region_group_rows, reference_rows);
     }
 }

@@ -10,6 +10,8 @@ use ab_warehouse::schema::{
 };
 use ab_warehouse::writer::{MorphemeFeaturesColumns, NwayFeatureDiffsColumns};
 use anyhow::Result as AnyhowResult;
+#[cfg(test)]
+use arrow_array::{Array, RecordBatch, StringArray, UInt64Array};
 
 use crate::WarehouseFeaturePatternAccumulator;
 
@@ -498,6 +500,60 @@ fn push_region_rows_reference(
     }
 }
 
+/// Test-only: decodes a finished [`NwayFeatureDiffsColumns`] `RecordBatch`
+/// (`nway_feature_diffs_schema()`'s 10-column order) back into
+/// `Vec<NwayFeatureDiffRow>`, honoring nulls in `scope_position`/
+/// `scope_surface`/`feature_value`. Exists solely so the production
+/// direct-to-Arrow path ([`push_region_rows`]) can be asserted equal, row by
+/// row, to the retained `Vec<Row>` reference path
+/// ([`push_region_rows_reference`]) even though `NwayFeatureDiffsColumns`
+/// itself is not `Clone`/`PartialEq` -- see
+/// `batched_nway_fact_rows_match_collected_rows` (this module) and
+/// `push_region_rows_emits_maximal_contiguous_feature_diff_runs` (`lib.rs`).
+#[cfg(test)]
+pub(crate) fn decode_feature_diff_rows(batch: &RecordBatch) -> Vec<NwayFeatureDiffRow> {
+    fn strings(batch: &RecordBatch, index: usize) -> &StringArray {
+        batch
+            .column(index)
+            .as_any()
+            .downcast_ref::<StringArray>()
+            .expect("nway_feature_diffs column is a StringArray")
+    }
+    fn u64s(batch: &RecordBatch, index: usize) -> &UInt64Array {
+        batch
+            .column(index)
+            .as_any()
+            .downcast_ref::<UInt64Array>()
+            .expect("nway_feature_diffs column is a UInt64Array")
+    }
+
+    let run_id = strings(batch, 0);
+    let source_id = strings(batch, 1);
+    let text_id = strings(batch, 2);
+    let region_index = u64s(batch, 3);
+    let feature_key = strings(batch, 4);
+    let scope_type = strings(batch, 5);
+    let scope_position = u64s(batch, 6);
+    let scope_surface = strings(batch, 7);
+    let feature_value = strings(batch, 8);
+    let analyzer_id = strings(batch, 9);
+
+    (0..batch.num_rows())
+        .map(|row| NwayFeatureDiffRow {
+            run_id: run_id.value(row).into(),
+            source_id: source_id.value(row).into(),
+            text_id: text_id.value(row).into(),
+            region_index: region_index.value(row),
+            feature_key: feature_key.value(row).into(),
+            scope_type: scope_type.value(row).into(),
+            scope_position: (!scope_position.is_null(row)).then(|| scope_position.value(row)),
+            scope_surface: (!scope_surface.is_null(row)).then(|| scope_surface.value(row).into()),
+            feature_value: (!feature_value.is_null(row)).then(|| feature_value.value(row).into()),
+            analyzer_id: analyzer_id.value(row).into(),
+        })
+        .collect()
+}
+
 fn feature_scope_parts(
     scope: &NwayFeatureScope,
 ) -> (
@@ -688,13 +744,15 @@ mod tests {
         let collected = nway_fact_rows("run-a", "source-a", "今日は晴れ", &analyses).unwrap();
         let mut batched_regions = Vec::new();
         let mut batched_region_analyzers = Vec::new();
-        let mut batched_feature_diff_count = 0usize;
+        let mut batched_feature_diffs = Vec::new();
         let mut pattern_counts = crate::WarehouseFeaturePatternAccumulator::default();
 
-        // `feature_diffs` is now a `NwayFeatureDiffsColumns` arrow builder
-        // (not `Clone`/`PartialEq`), so compare row counts instead of the
-        // full struct -- `regions`/`region_analyzers` still get an exact
-        // equality check.
+        // `feature_diffs` is a `NwayFeatureDiffsColumns` arrow builder (not
+        // `Clone`/`PartialEq`), so decode each flushed batch's builder back
+        // into `Vec<NwayFeatureDiffRow>` via `decode_feature_diff_rows` and
+        // compare full row VALUES (not just counts) against the row-based
+        // reference collector -- proving the direct-to-Arrow production
+        // producer is content-identical, not merely count-identical.
         visit_nway_fact_row_batches(
             "run-a",
             "source-a",
@@ -705,7 +763,8 @@ mod tests {
             |batch| {
                 batched_regions.extend(batch.regions.clone());
                 batched_region_analyzers.extend(batch.region_analyzers.clone());
-                batched_feature_diff_count += batch.feature_diffs.len();
+                batched_feature_diffs
+                    .extend(decode_feature_diff_rows(&batch.feature_diffs.finish()));
                 Ok(())
             },
         )
@@ -713,7 +772,7 @@ mod tests {
 
         assert_eq!(batched_regions, collected.regions);
         assert_eq!(batched_region_analyzers, collected.region_analyzers);
-        assert_eq!(batched_feature_diff_count, collected.feature_diffs.len());
+        assert_eq!(batched_feature_diffs, collected.feature_diffs);
     }
 
     #[test]

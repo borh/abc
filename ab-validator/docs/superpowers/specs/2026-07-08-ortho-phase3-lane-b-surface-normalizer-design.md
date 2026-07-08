@@ -1,7 +1,21 @@
 # Ortho Phase-3 Lane B — Historical→Modern Surface Normalizer — Design
 
 **Date:** 2026-07-08
-**Status:** DESIGN → DECIDED (2026-07-08, human partner): **mechanism M2**
+**Status:** DESIGN → DECIDED → **IMPLEMENTED** (2026-07-08). Shipped in
+`ab-ortho-detect::historical` (pure modernizer + `HistoricalRewriteV1` detector),
+`ab-morph-analyzers::historical_oracle` (kindai-bungo `HistoricalOracle` adapter +
+`archive_content_hash` provenance), and `ab-morph-run` `--ortho-detect=historical`
+(new `OrthoDetectMode::Historical`, feeds the modernized input to **every**
+analyzer for comparability, reuses the Lane A `--works-parquet`/`--orthographic-style`
+eligibility slice; `just morph-warehouse-run-lane-b`). I2-D17 is enforced in
+`resolve_run_normalization` via `NormalizationPolicy::validate`. Two decisions the
+human partner settled at wiring time: **(scope)** all analyzers consume the M2
+input; **(activation)** reuse Lane A's eligibility slice. One correctness fix the
+end-to-end probe caught: the `pron`-reconstruction path is gated on **all-kana**
+tokens — applying it to a kanji-bearing token (日曜, pron ニチヨー) would replace the
+kanji with its reading. The measured 94.8% harness only ran on all-kana tokens, so
+it never exercised this; the shipped code adds the gate. No lexical exception table
+shipped (the 94.8% used none). Original decision: **mechanism M2**
 (`kindai-bungo` segmentation oracle + rule-based kana rewrite, `pron` as digraph
 oracle), and **probe coverage first** before locking the rule set / writing the
 normalizer. The M2 cross-tokenizer oracle coupling (sudachi's input derived via a

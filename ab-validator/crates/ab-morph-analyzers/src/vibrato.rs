@@ -29,6 +29,10 @@ static ZSTD_DICTIONARY_LOAD_LOCK: Mutex<()> = Mutex::new(());
 pub struct VibratoAnalyzer {
     analyzer_id: String,
     tokenizer: Tokenizer,
+    /// The dictionary archive this analyzer was loaded from, retained so its
+    /// content can be hashed on demand for policy provenance
+    /// ([`archive_content_hash`](Self::archive_content_hash)).
+    source_path: PathBuf,
 }
 
 impl VibratoAnalyzer {
@@ -65,7 +69,23 @@ impl VibratoAnalyzer {
         Ok(Self {
             analyzer_id,
             tokenizer: Tokenizer::new(dictionary),
+            source_path: dictionary_path.to_path_buf(),
         })
+    }
+
+    /// SHA-256 (`sha256:<hex>`) of the dictionary archive this analyzer loaded.
+    ///
+    /// Hashes the on-disk archive bytes (the `.dic.zst`/`.dic` file), so it pins
+    /// the exact dictionary content — the value bound as the `dictionary_hash`
+    /// of the M2 historical detector (I2-D17) and mirrored by the manifest's
+    /// `tokenizer_dictionary_hash`. Read on demand rather than at load so the
+    /// common analyze path pays no hashing cost.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AnalyzerError::DictionaryLoad`] if the archive cannot be read.
+    pub fn archive_content_hash(&self) -> Result<String, AnalyzerError> {
+        hash_archive_file(&self.source_path, &self.analyzer_id)
     }
 
     /// Load a Vibrato dictionary from an explicit dictionary identifier.
@@ -102,6 +122,38 @@ impl VibratoAnalyzer {
     ) -> Result<Self, AnalyzerError> {
         Self::from_dictionary_path(analyzer_id, dictionary_path)
     }
+}
+
+/// SHA-256 (`sha256:<hex>`) of a named dictionary archive **without loading it**.
+///
+/// Resolves the archive by the same name logic as
+/// [`VibratoAnalyzer::from_dictionary_name`], reads the compressed bytes, and
+/// hashes them — cheap (no zstd decompression, no tokenizer build). Lets a
+/// caller bind the M2 oracle dictionary into policy identity before the full
+/// analyzer is constructed; the value equals the loaded analyzer's
+/// [`archive_content_hash`](VibratoAnalyzer::archive_content_hash).
+///
+/// # Errors
+///
+/// Returns [`AnalyzerError::DictionaryLoad`] if the archive cannot be resolved
+/// or read.
+pub fn dictionary_archive_hash(dictionary_name: &str) -> Result<String, AnalyzerError> {
+    let path = resolve_dictionary_path(dictionary_name)?;
+    hash_archive_file(&path, dictionary_name)
+}
+
+fn hash_archive_file(path: &Path, analyzer_id: &str) -> Result<String, AnalyzerError> {
+    use sha2::{Digest, Sha256};
+    let bytes = fs::read(path).map_err(|err| AnalyzerError::DictionaryLoad {
+        analyzer: analyzer_id.to_owned(),
+        message: format!(
+            "cannot read dictionary archive {} for content hash: {err}",
+            path.display()
+        ),
+    })?;
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    Ok(format!("sha256:{:x}", hasher.finalize()))
 }
 
 fn default_dictionary_path() -> Result<PathBuf, AnalyzerError> {

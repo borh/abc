@@ -51,6 +51,35 @@ pub enum OrthoDetectorId {
         /// SHA-256 hex digest of serialized model weight bytes (little-endian f32).
         model_hash: String,
     },
+    /// The Phase-3 Lane B historical→modern surface modernizer (M2). Binds both
+    /// the segmentation-oracle dictionary (`kindai-bungo`) and the rewrite rule
+    /// set into identity, per I2-D17: a `HistoricalToModern` policy is only valid
+    /// when its detector carries a `dictionary_hash`.
+    HistoricalRewriteV1 {
+        /// SHA-256 of the `kindai-bungo` UniDic archive that segments the
+        /// historical text and supplies the modern `pron`/POS oracle.
+        dictionary_hash: String,
+        /// SHA-256 of the checked-in kana-rewrite rule set
+        /// ([`historical::rules_hash`](crate::historical::rules_hash)).
+        rules_hash: String,
+    },
+}
+
+impl OrthoDetectorId {
+    /// The dictionary this detector binds into identity, if any. Only detectors
+    /// backed by a segmentation/normalization dictionary return `Some`; the
+    /// heuristic and the ML kata→hira detector return `None`. Used by
+    /// [`NormalizationPolicy::validate`](crate::policy::NormalizationPolicy::validate)
+    /// to enforce I2-D17.
+    #[must_use]
+    pub fn dictionary_hash(&self) -> Option<&str> {
+        match self {
+            OrthoDetectorId::HistoricalRewriteV1 {
+                dictionary_hash, ..
+            } => Some(dictionary_hash.as_str()),
+            OrthoDetectorId::HeuristicV1 | OrthoDetectorId::MlLogisticRegression { .. } => None,
+        }
+    }
 }
 
 /// Maps byte ranges from normalized text coordinates to original text

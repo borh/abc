@@ -1,11 +1,15 @@
 pub mod features;
 pub mod heuristic;
+pub mod historical;
 pub mod ml;
 pub mod policy;
 pub mod script;
 pub mod types;
 
-pub use policy::NormalizationPolicy;
+pub use historical::{
+    HistOracleToken, HistToken, HistoricalOracle, HistoricalRewriteV1, modernize_token,
+};
+pub use policy::{NormalizationPolicy, PolicyError};
 pub use types::{OffsetMap, OrthoAnnotation, OrthoDetectorId, OrthoMapError, OrthoNormalization};
 
 use ab_plaintext::SentenceSpan;

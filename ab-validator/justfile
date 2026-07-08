@@ -712,6 +712,32 @@ morph-warehouse-run-historical works_parquet dict="unidic-kindai-bungo-202512" p
 		--works-parquet "{{works_parquet}}" \
 		--jobs "$jobs"
 
+# Lane B (M2, historical→modern surface): modernize old-kana input, then feed the
+# SAME modernized text to every analyzer (comparability). Runs the standard
+# comparability set over the old-kana slice with --ortho-detect=historical; the
+# kindai-bungo oracle segments/reads the historical text and the input is rewritten
+# to 現代仮名遣い before tokenization. `works_parquet` restricts to 新字旧仮名/旧字旧仮名
+# (the eligibility slice, OUTSIDE normalization). ~94.8% ground-truth accuracy.
+morph-warehouse-run-lane-b works_parquet analyzers="vibrato sudachi-a sudachi-c" profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
+	@jobs="{{jobs}}"; \
+	run_id="{{run_id}}"; \
+	if [ -z "$run_id" ]; then run_id="lane-b-m2-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
+	args=() ; \
+	for analyzer in {{analyzers}}; do \
+	  args+=(--analyzer "$analyzer"); \
+	done; \
+	AB_VIBRATO_DICT_DIR="$(nix build .#vibrato-dictionaries --no-link --print-out-paths)/share/vibrato" \
+	AB_SUDACHI_DICT="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic" \
+	cargo run --release -p ab-morph-run -- analyze-aat \
+		--aat-dir "{{aat_dir}}" \
+		"${args[@]}" \
+		--warehouse-dir "{{morph_warehouse_dir}}" \
+		--run-id "$run_id" \
+		--warehouse-profile "{{profile}}" \
+		--ortho-detect historical \
+		--works-parquet "{{works_parquet}}" \
+		--jobs "$jobs"
+
 morph-warehouse-run-full aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
 	@just morph-warehouse-run full "{{aat_dir}}" "{{run_id}}" "{{jobs}}"
 

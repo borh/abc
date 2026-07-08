@@ -503,6 +503,10 @@ fn warehouse_analyzer_rows(
 /// Returns an error when `--ortho-detect=ml` is requested without a model path
 /// or the model file cannot be loaded, or when the detector id fails to
 /// serialize.
+/// The historical UniDic that backs the Lane B (M2) segmentation/reading oracle.
+/// Its archive hash is bound into the `HistoricalRewriteV1` detector identity.
+pub const M2_ORACLE_DICTIONARY: &str = "unidic-kindai-bungo-202512";
+
 fn resolve_run_normalization(
     ortho_detect: OrthoDetectMode,
     ortho_ml_model: Option<&Path>,
@@ -510,14 +514,15 @@ fn resolve_run_normalization(
     use ab_ortho_detect::{
         NormalizationPolicy, OrthoDetector, OrthoDetectorId, OrthoNormalization,
     };
-    // v1 applies only kata→hira; kept single-sourced here (see spec U3 — the
-    // kinds set is not yet pinned closed).
-    let kinds = vec![OrthoNormalization::ScriptKatakanaToHiragana];
     let (mode, detector_id, policy) = match ortho_detect {
         OrthoDetectMode::Off => ("off", None, NormalizationPolicy::identity()),
         OrthoDetectMode::Heuristic => {
             let id = OrthoDetectorId::HeuristicV1;
-            let policy = NormalizationPolicy::ortho_normalize_v1(id.clone(), kinds);
+            // v1 kata→hira path applies only ScriptKatakanaToHiragana.
+            let policy = NormalizationPolicy::ortho_normalize_v1(
+                id.clone(),
+                vec![OrthoNormalization::ScriptKatakanaToHiragana],
+            );
             ("heuristic", Some(id), policy)
         }
         OrthoDetectMode::Ml => {
@@ -528,8 +533,38 @@ fn resolve_run_normalization(
                 anyhow::anyhow!("failed to load ML model from {}: {e}", path.display())
             })?;
             let id = model.detector_id();
-            let policy = NormalizationPolicy::ortho_normalize_v1(id.clone(), kinds);
+            let policy = NormalizationPolicy::ortho_normalize_v1(
+                id.clone(),
+                vec![OrthoNormalization::ScriptKatakanaToHiragana],
+            );
             ("ml", Some(id), policy)
+        }
+        OrthoDetectMode::Historical => {
+            // Lane B (M2): bind the kindai-bungo oracle archive + rule-set into
+            // identity (I2-D17). The hash is read cheaply (no dictionary load);
+            // the pipeline's detector recomputes the same value from the loaded
+            // analyzer, so the runs-row policy and the applied detector agree.
+            let dictionary_hash = ab_morph_analyzers::dictionary_archive_hash(M2_ORACLE_DICTIONARY)
+                .with_context(|| {
+                    format!(
+                        "failed to hash M2 oracle dictionary {M2_ORACLE_DICTIONARY} for policy identity"
+                    )
+                })?;
+            let id = OrthoDetectorId::HistoricalRewriteV1 {
+                dictionary_hash,
+                rules_hash: ab_ortho_detect::historical::rules_hash(),
+            };
+            let policy = NormalizationPolicy::ortho_normalize_v1(
+                id.clone(),
+                vec![OrthoNormalization::HistoricalToModern],
+            );
+            // I2-D17 coupling: a HistoricalToModern policy is only admissible
+            // with a dictionary-backed detector. This is the guard the spec
+            // requires to land with the Phase-3 lane.
+            policy
+                .validate()
+                .context("M2 historical normalization policy failed validation")?;
+            ("historical", Some(id), policy)
         }
     };
     let detector_id = detector_id
@@ -1569,6 +1604,31 @@ mod tests {
     fn resolve_run_normalization_ml_requires_model() {
         let err = resolve_run_normalization(OrthoDetectMode::Ml, None).unwrap_err();
         assert!(err.to_string().contains("--ortho-ml-model"), "{err}");
+    }
+
+    #[test]
+    #[ignore = "requires the kindai-bungo dictionary (AB_VIBRATO_DICT_DIR)"]
+    fn resolve_run_normalization_historical_binds_oracle_and_validates() {
+        // Exercises the real archive-hash path and the I2-D17 validation.
+        let prov = resolve_run_normalization(OrthoDetectMode::Historical, None).unwrap();
+        assert_eq!(prov.mode, "historical");
+        let id = prov.detector_id.expect("historical detector id");
+        assert!(id.contains("HistoricalRewriteV1"), "{id}");
+        assert!(id.contains("dictionary_hash"), "{id}");
+        assert!(id.contains("rules_hash"), "{id}");
+        // The runs-row policy hash must equal the policy built from the same
+        // oracle archive hash — i.e. resolve and the pipeline detector agree.
+        let dict_hash =
+            ab_morph_analyzers::dictionary_archive_hash(M2_ORACLE_DICTIONARY).unwrap();
+        let expected = ab_ortho_detect::NormalizationPolicy::ortho_normalize_v1(
+            ab_ortho_detect::OrthoDetectorId::HistoricalRewriteV1 {
+                dictionary_hash: dict_hash,
+                rules_hash: ab_ortho_detect::historical::rules_hash(),
+            },
+            vec![ab_ortho_detect::OrthoNormalization::HistoricalToModern],
+        )
+        .policy_hash();
+        assert_eq!(prov.policy_hash, expected);
     }
 
     #[test]

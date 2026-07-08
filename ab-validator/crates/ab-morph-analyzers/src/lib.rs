@@ -1,6 +1,7 @@
 mod chunking;
 mod error;
 mod features;
+mod historical_oracle;
 mod ortho_compat;
 pub mod span_builder;
 pub mod sudachi;
@@ -8,9 +9,10 @@ pub mod vaporetto;
 pub mod vibrato;
 
 pub use error::AnalyzerError;
+pub use historical_oracle::historical_rewrite_detector;
 pub use sudachi::{SudachiAnalyzer, SudachiMode};
 pub use vaporetto::VaporettoAnalyzer;
-pub use vibrato::{DEFAULT_VIBRATO_ANALYZER_ID, VibratoAnalyzer};
+pub use vibrato::{DEFAULT_VIBRATO_ANALYZER_ID, VibratoAnalyzer, dictionary_archive_hash};
 
 use ab_morph_diff::Analysis;
 use ab_plaintext::PlainTextDocument;

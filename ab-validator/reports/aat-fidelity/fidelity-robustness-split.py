@@ -41,18 +41,42 @@ failure, not a completion, so it is excluded from I.
 Usage: python3 fidelity-robustness-split.py <full-corpus-coverage.json> > out.json
   (the coverage JSON is used only for the reconciliation assertion.)
 """
+
 import collections
 import glob
 import json
 import os
 import sys
 
+
+DB_ROOT = os.environ.get("AB_DB_ROOT", "/db/ab-validator")
+
+
+def json_glob(env_name, default_dir):
+    return os.path.join(os.environ.get(env_name, default_dir), "*.json")
+
+
 AAT_GLOBS = {
-    "aozora": "/db/ab-validator/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter/*.json",
-    "aozora2": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/*.json",
-    "aozora-rs": "/db/ab-validator/fidelity-corpus/aozora-rs/aat/aozora-rs-adapter/*.json",
-    "aozora2html": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/*.json",
-    "aozora-epub3": "/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter/*.json",
+    "aozora": json_glob(
+        "AB_AOZORA_AAT_DIR",
+        f"{DB_ROOT}/aat-corpus/aozora-full-repin-1a4f864/aat/aozora-adapter",
+    ),
+    "aozora2": json_glob(
+        "AB_AOZORA2_AAT_DIR",
+        f"{DB_ROOT}/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter",
+    ),
+    "aozora-rs": json_glob(
+        "AB_AOZORA_RS_AAT_DIR",
+        f"{DB_ROOT}/fidelity-corpus/aozora-rs/aat/aozora-rs-adapter",
+    ),
+    "aozora2html": json_glob(
+        "AB_AOZORA2HTML_AAT_DIR",
+        f"{DB_ROOT}/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter",
+    ),
+    "aozora-epub3": json_glob(
+        "AB_AOZORA_EPUB3_AAT_DIR",
+        f"{DB_ROOT}/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter",
+    ),
 }
 ORDER = ["aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3"]
 
@@ -61,9 +85,18 @@ SIG = {
     "ruby.basic": {"kinds": {"ruby"}, "styles": set(), "markers": {"ruby"}},
     "decoration.boten": {
         "kinds": set(),
-        "styles": {"boten", "bouten", "sesame_dot", "white_circle", "black_circle",
-                   "white_up-pointing_triangle", "black_up-pointing_triangle",
-                   "bullseye", "saltire", "white_circle_after"},
+        "styles": {
+            "boten",
+            "bouten",
+            "sesame_dot",
+            "white_circle",
+            "black_circle",
+            "white_up-pointing_triangle",
+            "black_up-pointing_triangle",
+            "bullseye",
+            "saltire",
+            "white_circle_after",
+        },
         "markers": {"boten", "bouten"},
     },
     "decoration.bousen": {
@@ -78,14 +111,26 @@ SIG = {
     },
     # gaiji (外字): kept in sync with normalized-corpus-coverage.py SIG (see there).
     "gaiji.marker": {"kinds": {"gaiji"}, "styles": set(), "markers": {"gaiji"}},
-    "decoration.font_size": {"kinds": {"font_size"}, "styles": set(), "markers": {"font_size", "lineFontSize"}},
+    "decoration.font_size": {
+        "kinds": {"font_size"},
+        "styles": set(),
+        "markers": {"font_size", "lineFontSize"},
+    },
     "layout.tcy": {"kinds": {"tcy"}, "styles": set(), "markers": {"tcy", "combineUpright"}},
-    "figure.image_inline": {"kinds": {"figure"}, "styles": set(), "markers": {"figure", "illustration"}},
+    "figure.image_inline": {
+        "kinds": {"figure"},
+        "styles": set(),
+        "markers": {"figure", "illustration"},
+    },
     # jisage (字下げ) harmonised: block + aozora2 per-line `jisage_line` form. See
     # normalized-corpus-coverage.py SIG for rationale. Best-attested denominator can be
     # inflated by per-line emission, so the reference denominator is authoritative for
     # this row (it caps at aozora's per-block count); reported and flagged accordingly.
-    "indentation.jisage_block": {"kinds": {"jisage_block"}, "styles": {"jisage_line"}, "markers": {"containerOpen"}},
+    "indentation.jisage_block": {
+        "kinds": {"jisage_block"},
+        "styles": {"jisage_line"},
+        "markers": {"containerOpen"},
+    },
 }
 # Constructs the aozora reference parser does not distinctly emit -> undefined under
 # the reference denominator (folded/dropped, not a fidelity signal about others).
@@ -164,13 +209,18 @@ def main():
         if mism:
             print(f"RECONCILE MISMATCH {a}: {mism}", file=sys.stderr)
     all_ok = all(recon[a]["ok"] for a in ORDER)
-    print(f"reconciliation vs full-corpus num: {'OK' if all_ok else 'MISMATCH (see above)'}", file=sys.stderr)
+    print(
+        f"reconciliation vs full-corpus num: {'OK' if all_ok else 'MISMATCH (see above)'}",
+        file=sys.stderr,
+    )
 
     # ---- robustness --------------------------------------------------------------
     union = set().union(*(set(per[a]) for a in ORDER))
     # ruby mass per work = max attested ruby across adapters (best estimate of the
     # work's real ruby load, so a work missed by adapter X is weighted by what it holds)
-    work_ruby = {w: max(per[a][w].get("ruby.basic", 0) for a in ORDER if w in per[a]) for w in union}
+    work_ruby = {
+        w: max(per[a][w].get("ruby.basic", 0) for a in ORDER if w in per[a]) for w in union
+    }
     total_ruby_mass = sum(work_ruby.values())
     robustness = {}
     for a in ORDER:
@@ -209,16 +259,25 @@ def main():
                 den[c] += d
                 for a in ORDER:
                     num[a][c] += min(vals[a], d)  # cap per work at the denominator
-        active = [c for c in constructs
-                  if den[c] > 0 and not (denom_kind == "reference" and c in REF_UNDEFINED)]
+        active = [
+            c
+            for c in constructs
+            if den[c] > 0 and not (denom_kind == "reference" and c in REF_UNDEFINED)
+        ]
         total_den = sum(den[c] for c in active)
-        result = {"denominator": denom_kind, "constructs": active,
-                  "weights": {c: den[c] for c in active}, "adapters": {}}
+        result = {
+            "denominator": denom_kind,
+            "constructs": active,
+            "weights": {c: den[c] for c in active},
+            "adapters": {},
+        }
         for a in ORDER:
             rows = {c: {"num": num[a][c], "rate": round(num[a][c] / den[c], 4)} for c in active}
             wsum = sum(num[a][c] for c in active)
-            result["adapters"][a] = {"per_construct": rows,
-                                     "weighted_fidelity": round(wsum / total_den, 4)}
+            result["adapters"][a] = {
+                "per_construct": rows,
+                "weighted_fidelity": round(wsum / total_den, 4),
+            }
         return result
 
     best = fidelity("best_attested")

@@ -77,7 +77,7 @@ export AB_AOZORA_RS_AAT_DIR="${AB_AOZORA_RS_AAT_DIR:-$SORANOHA_WORKSPACE_ROOT/sc
 export AB_AOZORA2_AAT_DIR="${AB_AOZORA2_AAT_DIR:-$AB_DB_ROOT/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter}"
 export AB_AOZORA2HTML_AAT_DIR="${AB_AOZORA2HTML_AAT_DIR:-$AB_DB_ROOT/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter}"
 export AB_AOZORA_EPUB3_AAT_DIR="${AB_AOZORA_EPUB3_AAT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter}"
-export AB_AOZORA_AAT_DIR="${AB_AOZORA_AAT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter}"
+export AB_AOZORA_AAT_DIR="${AB_AOZORA_AAT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-full-repin-1a4f864/aat/aozora-adapter}"
 
 export ABC_OUTPUT_ROOT="${ABC_OUTPUT_ROOT:-$SORANOHA_WORKSPACE_ROOT/abc/out}"
 export ABC_REPORT_DIR="${ABC_REPORT_DIR:-$ABC_OUTPUT_ROOT/reports}"

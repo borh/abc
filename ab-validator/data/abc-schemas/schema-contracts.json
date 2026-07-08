@@ -73,6 +73,13 @@
       "hash": "sha256:9be8e22d8d7f7b246c3bb3bf43e7ded7b099a179e95e47fe6d073f062bd0ef2e"
     },
     {
+      "path": "data/abc-schemas/schemas/tei-eaj-comparison.schema.json",
+      "id": "https://w3id.org/abc/schemas/tei-eaj-comparison.schema.json",
+      "title": "ABC TEI-EAJ Aozora Comparison Export",
+      "version": "0.1.0",
+      "hash": "sha256:100124fa38abdb7764bdb5a2f21b82f87ad9de4fbf49f36980cf9fef3830a874"
+    },
+    {
       "path": "data/abc-schemas/schemas/pack-policy.schema.json",
       "id": "https://w3id.org/abc/schemas/pack-policy.schema.json",
       "title": "ABC Pack Policy",

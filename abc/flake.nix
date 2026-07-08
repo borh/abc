@@ -79,7 +79,7 @@
             subcommand:
             pkgs.writeShellScript "abc-tei-eaj-aozora-${subcommand}-launcher" ''
               exec ${pkgs.python3}/bin/python ${./tools/tei_eaj_aozora_reports.py} \
-                --compare-script ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                --compare-script ${./tools/tei_eaj_compare.py} \
                 --tei-eaj-root ${tei-eaj-aozora-tei} \
                 --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
                 ${subcommand} "$@"
@@ -425,14 +425,15 @@
             echo "Pinned TEI-EAJ/aozora_tei comparison source includes the Melos Level 4 fixtures." > "$out/result.txt"
           '';
 
-          tei-eaj-comparison-probe-tests =
-            pkgs.runCommand "abc-tei-eaj-comparison-probe-tests" { nativeBuildInputs = [ pkgs.python3 ]; }
+          tei-eaj-comparison-tests =
+            pkgs.runCommand "abc-tei-eaj-comparison-tests" { nativeBuildInputs = [ pkgs.python3 ]; }
               ''
-                cp -R ${./prototypes/tei-eaj-comparison} probe
-                chmod -R u+w probe
-                python -m unittest discover -s probe -p 'test_*.py'
+                cp ${./tools/tei_eaj_compare.py} tei_eaj_compare.py
+                cp ${./tools/test_tei_eaj_compare.py} test_tei_eaj_compare.py
+                chmod u+w tei_eaj_compare.py test_tei_eaj_compare.py
+                python -m unittest discover -s . -p 'test_*.py'
                 mkdir -p "$out"
-                echo "TEI-EAJ comparison probe tests passed." > "$out/result.txt"
+                echo "TEI-EAJ comparison tests passed." > "$out/result.txt"
               '';
 
           tei-eaj-report-python-quality =
@@ -447,11 +448,14 @@
               ''
                 set -euo pipefail
                 cp ${./tools/tei_eaj_aozora_reports.py} tei_eaj_aozora_reports.py
+                cp ${./tools/tei_eaj_compare.py} tei_eaj_compare.py
                 ruff format --check --line-length 100 tei_eaj_aozora_reports.py
-                ruff check --line-length 100 --ignore E501 tei_eaj_aozora_reports.py
+                ruff format --check --line-length 100 tei_eaj_compare.py
+                ruff check --line-length 100 --ignore E501 tei_eaj_aozora_reports.py tei_eaj_compare.py
                 mypy --cache-dir "$TMPDIR/mypy-cache" tei_eaj_aozora_reports.py
+                mypy --cache-dir "$TMPDIR/mypy-cache" tei_eaj_compare.py
                 mkdir -p "$out"
-                echo "TEI-EAJ report launcher passes ruff format/check and mypy." > "$out/result.txt"
+                echo "TEI-EAJ report tools pass ruff format/check and mypy." > "$out/result.txt"
               '';
 
           tei-eaj-aozora-report-generation =
@@ -473,7 +477,7 @@
                 </TEI>
                 XML
                 python ${./tools/tei_eaj_aozora_reports.py} \
-                  --compare-script ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                  --compare-script ${./tools/tei_eaj_compare.py} \
                   --tei-eaj-root ${tei-eaj-aozora-tei} \
                   --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
                   --abc-melos abc/melos.xml \
@@ -492,7 +496,7 @@
 
                 assert export["schema_version"] == "tei-eaj-aozora-workset-export-v1"
                 assert export["summary"]["tei_eaj_file_count"] == 62
-                assert export["summary"]["tei_eaj_work_id_count"] == 50
+                assert export["summary"]["tei_eaj_work_id_count"] == 51
                 assert export["summary"]["compared_file_count"] == 2
                 assert export["summary"]["missing_counterpart_count"] == 55
                 assert export["summary"]["no_work_id_count"] == 5

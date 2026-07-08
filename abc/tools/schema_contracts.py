@@ -23,6 +23,7 @@ SCHEMA_FILES = (
     "request-set.schema.json",
     "source-region-coverage.schema.json",
     "snapshot-index.schema.json",
+    "tei-eaj-comparison.schema.json",
     "pack-policy.schema.json",
     "tokenizer-profile.schema.json",
     "token-output.schema.json",

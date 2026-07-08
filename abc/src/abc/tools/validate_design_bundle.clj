@@ -335,6 +335,7 @@
         snapshot-index-schema (files/read-json "schemas/snapshot-index.schema.json")
         pack-policy-schema (files/read-json "schemas/pack-policy.schema.json")
         source-region-coverage-schema (files/read-json "schemas/source-region-coverage.schema.json")
+        tei-eaj-comparison-schema (files/read-json "schemas/tei-eaj-comparison.schema.json")
         token-output-schema (files/read-json "schemas/token-output.schema.json")
         tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
         iiif-applicability-schema (files/read-json "schemas/iiif-applicability.schema.json")
@@ -356,6 +357,7 @@
                            ["schemas/snapshot-index.schema.json" snapshot-index-schema]
                            ["schemas/pack-policy.schema.json" pack-policy-schema]
                            ["schemas/source-region-coverage.schema.json" source-region-coverage-schema]
+                           ["schemas/tei-eaj-comparison.schema.json" tei-eaj-comparison-schema]
                            ["schemas/token-output.schema.json" token-output-schema]
                            ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]
                            ["schemas/iiif-applicability.schema.json" iiif-applicability-schema]
@@ -382,6 +384,8 @@
                     "examples/ab-validator-output/comparison-report.json")
     (validate-json! source-region-coverage-schema
                     "examples/ab-validator-output/source-region-coverage.json")
+    (validate-json! tei-eaj-comparison-schema
+                    "fixtures/tei-eaj-comparison/workset-export.json")
     (validate-json! aat-parser-ir-divergence-bundle-schema
                     "examples/ab-validator-output/divergence.json")
     (doseq [path ["data/analysis-recipes/literary-basic-ja-v1.json"

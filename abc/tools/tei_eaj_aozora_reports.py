@@ -10,6 +10,7 @@ from collections.abc import Sequence
 
 DEFAULT_SOURCE_REV = "77a675fc2771936f9544505d922d4cd45075338c"
 DEFAULT_REPORT_SUBDIR = pathlib.Path("out/reports/tei-eaj-aozora")
+DEFAULT_COMPARE_SCRIPT = pathlib.Path(__file__).resolve().with_name("tei_eaj_compare.py")
 
 
 @dataclasses.dataclass(frozen=True)
@@ -147,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Generate ABC vs TEI-EAJ/Aozora comparison reports."
     )
-    parser.add_argument("--compare-script", required=True, type=pathlib.Path)
+    parser.add_argument("--compare-script", default=DEFAULT_COMPARE_SCRIPT, type=pathlib.Path)
     parser.add_argument("--tei-eaj-root", required=True, type=pathlib.Path)
     parser.add_argument("--source-rev", default=DEFAULT_SOURCE_REV)
     parser.add_argument("--abc-melos", default="paper/demo-melos-real/tei.xml")

@@ -1,0 +1,105 @@
+{
+  "schema_version": "tei-eaj-aozora-workset-export-v1",
+  "tei_eaj_source": {
+    "root": "/fixtures/tei-eaj/aozora_tei",
+    "revision": "fixture-revision"
+  },
+  "abc_inputs": {
+    "tei_specs": [],
+    "tei_dirs": [
+      "/fixtures/abc/tei-by-work-id"
+    ],
+    "counterparts": [
+      {
+        "work_id": "1567",
+        "path": "/fixtures/abc/tei-by-work-id/001567.xml"
+      }
+    ]
+  },
+  "summary": {
+    "tei_eaj_file_count": 3,
+    "tei_eaj_work_id_count": 2,
+    "abc_counterpart_count": 1,
+    "compared_file_count": 1,
+    "missing_counterpart_count": 1,
+    "no_work_id_count": 1,
+    "uncompared_file_count": 2,
+    "base_text_equal_count": 1,
+    "base_text_mismatch_count": 0,
+    "base_text_relation_counts": {
+      "equal": 1
+    }
+  },
+  "candidate_work_ids": [
+    "1567",
+    "9999"
+  ],
+  "missing_abc_counterpart_work_ids": [
+    "9999"
+  ],
+  "no_work_id_files": [
+    "data/draft/tei_lib_lv3/unknown.xml"
+  ],
+  "files": [
+    {
+      "work_id": "1567",
+      "work_id_method": "filename_work_id",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/1567_tei.xml",
+      "state": "complete",
+      "level": "Level 3",
+      "title": "走れメロス",
+      "abc_tei": "/fixtures/abc/tei-by-work-id/001567.xml",
+      "comparison_status": "compared",
+      "base_text_equal": true,
+      "base_text_relation": "equal",
+      "base_text_length_delta": 0,
+      "abc_body_base_text_length": 100,
+      "tei_eaj_body_base_text_length": 100,
+      "abc_p_count": 2,
+      "tei_eaj_p_count": 2,
+      "abc_note_count": 0,
+      "tei_eaj_note_count": 0,
+      "first_difference": null
+    },
+    {
+      "work_id": "9999",
+      "work_id_method": "filename_work_id_file_id",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/9999_12345.xml",
+      "state": "complete",
+      "level": "Level 3",
+      "title": "未生成作品",
+      "abc_tei": null,
+      "comparison_status": "missing_abc_counterpart",
+      "base_text_equal": null,
+      "base_text_relation": "missing_abc_counterpart",
+      "base_text_length_delta": null,
+      "abc_body_base_text_length": null,
+      "tei_eaj_body_base_text_length": 80,
+      "abc_p_count": null,
+      "tei_eaj_p_count": null,
+      "abc_note_count": null,
+      "tei_eaj_note_count": null,
+      "first_difference": null
+    },
+    {
+      "work_id": null,
+      "work_id_method": "no_work_id",
+      "tei_eaj_file": "data/draft/tei_lib_lv3/unknown.xml",
+      "state": "draft",
+      "level": "Level 3",
+      "title": "識別不能作品",
+      "abc_tei": null,
+      "comparison_status": "no_tei_eaj_work_id",
+      "base_text_equal": null,
+      "base_text_relation": null,
+      "base_text_length_delta": null,
+      "abc_body_base_text_length": null,
+      "tei_eaj_body_base_text_length": 42,
+      "abc_p_count": null,
+      "tei_eaj_p_count": null,
+      "abc_note_count": null,
+      "tei_eaj_note_count": null,
+      "first_difference": null
+    }
+  ]
+}

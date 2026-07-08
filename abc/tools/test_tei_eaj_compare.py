@@ -7,12 +7,12 @@ import textwrap
 import unittest
 
 
-PROBE_DIR = pathlib.Path(__file__).resolve().parent
+TOOL_DIR = pathlib.Path(__file__).resolve().parent
 
 
 def load_probe():
     spec = importlib.util.spec_from_file_location(
-        "tei_eaj_compare", PROBE_DIR / "tei_eaj_compare.py"
+        "tei_eaj_compare", TOOL_DIR / "tei_eaj_compare.py"
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -133,14 +133,89 @@ class TeiEajCompareTest(unittest.TestCase):
         self.assertEqual(1, features["counts"]["rt"])
         self.assertEqual(2, features["counts"]["rp"])
 
+    def test_body_base_text_ignores_tei_eaj_span_ruby_and_notes(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            path = root / "sample.xml"
+            path.write_text(
+                textwrap.dedent(
+                    """\
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <TEI xmlns="http://www.tei-c.org/ns/1.0">
+                      <text><body><p>高瀬舟<span type="rp">（</span><span type="rt">たかせぶね</span><span type="rp">）</span><span rend="notes">［＃校訂注］</span>は小舟である<note>source note</note></p></body></text>
+                    </TEI>
+                    """
+                ),
+                encoding="utf-8",
+            )
+
+            features = probe.analyze_file(path)
+
+        self.assertEqual(
+            "高瀬舟（たかせぶね）［＃校訂注］は小舟であるsourcenote",
+            features["body_text_no_ws"],
+        )
+        self.assertEqual("高瀬舟は小舟である", features["body_base_text_no_ws"])
+        self.assertEqual(1, features["counts"]["rt"])
+        self.assertEqual(2, features["counts"]["rp"])
+
     def test_extracts_aozora_work_ids_from_tei_eaj_file_names(self):
         self.assertEqual("1567", probe.tei_eaj_work_id("data/complete/tei_lib_lv4/1567_tei.xml"))
         self.assertEqual(
             "1567", probe.tei_eaj_work_id("data/complete/tei_lib_lv4/1567_header_updated.xml")
         )
-        self.assertEqual("15099", probe.tei_eaj_work_id("data/complete/tei_lib_lv4/104_15099.xml"))
+        self.assertEqual("104", probe.tei_eaj_work_id("data/complete/tei_lib_lv4/104_15099.xml"))
         self.assertEqual("4244", probe.tei_eaj_work_id("data/draft/tei_lib_lv4/4244-3_tei.xml"))
         self.assertIsNone(probe.tei_eaj_work_id("data/etc/Curriculum vitae.xml"))
+
+    def test_corrects_file_id_named_tei_eaj_files_with_abc_index_titles(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            abc_dir = root / "publication" / "tei-by-work-id"
+            abc_dir.mkdir(parents=True)
+            (root / "publication" / "inspection-index.tsv").write_text(
+                "\n".join(
+                    [
+                        "work_id\tsource_slug\ttitle\treading\tstatus\ttei_path",
+                        "000104\tslug\t長崎小品\tながさきしょうひん\tpassed\tignored",
+                        "002575\tslug\t鈴木三重吉宛書簡―明治三十九年\tすずき\tpassed\tignored",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            self.write_xml(abc_dir, "000104.xml", "長崎小品", "<p>薄暗き硝子戸棚の中。</p>")
+            self.write_xml(
+                abc_dir,
+                "002575.xml",
+                "鈴木三重吉宛書簡―明治三十九年",
+                "<p>明治三十九年一月一日午前零時。</p>",
+            )
+            self.write_xml(
+                root,
+                "data/complete/tei_lib_lv3/15099_tei.xml",
+                "長崎小品",
+                "<p>薄暗き<span type='rp'>（</span><span type='rt'>うすぐらき</span><span type='rp'>）</span>硝子戸棚の中。</p>",
+            )
+            self.write_xml(
+                root,
+                "data/draft/tei_lib_lv4/2571_tei.xml",
+                "鈴木三重吉宛書簡―明治三十九年",
+                "<p>明治三十九年一月一日午前零時。</p>",
+            )
+
+            report = probe.build_all_work_report([], [abc_dir], root, source_rev="probe-rev")
+            export = probe.workset_export(report)
+
+        rows = {row["tei_eaj_file"]: row for row in export["files"]}
+        self.assertEqual("104", rows["data/complete/tei_lib_lv3/15099_tei.xml"]["work_id"])
+        self.assertEqual("2575", rows["data/draft/tei_lib_lv4/2571_tei.xml"]["work_id"])
+        self.assertEqual(
+            "title_unique_index_correction",
+            rows["data/complete/tei_lib_lv3/15099_tei.xml"]["work_id_method"],
+        )
+        self.assertEqual(2, export["summary"]["compared_file_count"])
+        self.assertEqual(2, export["summary"]["base_text_equal_count"])
 
     def test_all_work_report_compares_each_matching_tei_eaj_variant(self):
         with tempfile.TemporaryDirectory() as td:
@@ -176,13 +251,13 @@ class TeiEajCompareTest(unittest.TestCase):
         self.assertEqual(1, report["base_text_mismatch_count"])
         self.assertCountEqual(
             [
-                ("1567", "data/complete/tei_lib_lv4/1567_tei.xml", True),
-                ("1567", "data/draft/tei_lib_lv4/1567_header_updated.xml", False),
+                ("1567", "data/complete/tei_lib_lv4/1567_tei.xml", "equal"),
+                ("1567", "data/draft/tei_lib_lv4/1567_header_updated.xml", "mismatch"),
                 ("86", "data/complete/tei_lib_lv3/86_tei.xml", None),
                 (None, "data/draft/tei_lib_lv2/01.xml", None),
             ],
             [
-                (row["work_id"], row["relpath"], row["base_text_equal"])
+                (row["work_id"], row["relpath"], row["base_text_relation"])
                 for row in report["all_work_rows"]
             ],
         )
@@ -223,6 +298,50 @@ class TeiEajCompareTest(unittest.TestCase):
         self.assertEqual("1567", report["all_work_rows"][0]["work_id"])
         self.assertTrue(report["all_work_rows"][0]["base_text_equal"])
 
+    def test_classifies_base_text_subset_relations(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            abc = self.write_xml(
+                root, "abc/001567.xml", "走れメロス", "<p>メロス邪智暴虐（古伝説）</p>"
+            )
+            self.write_xml(
+                root,
+                "data/complete/tei_lib_lv4/1567_tei.xml",
+                "走れメロス",
+                "<p>メロス邪智暴虐</p>",
+            )
+
+            report = probe.build_all_work_report([f"1567={abc}"], [], root)
+            row = report["all_work_rows"][0]
+
+        self.assertFalse(row["base_text_equal"])
+        self.assertEqual("tei_eaj_subset_of_abc", row["base_text_relation"])
+        self.assertEqual({"tei_eaj_subset_of_abc": 1}, report["base_text_relation_counts"])
+
+    def test_markdown_summarizes_counterparts_instead_of_listing_thousands(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            abc_dir = root / "publication" / "tei-by-work-id"
+            abc_dir.mkdir(parents=True)
+            index_rows = ["work_id\tsource_slug\ttitle\treading\tstatus\ttei_path"]
+            for work_id in range(1, 151):
+                padded = f"{work_id:06d}"
+                title = f"作品{work_id}"
+                index_rows.append(f"{padded}\tslug\t{title}\treading\tpassed\tignored")
+                self.write_xml(abc_dir, f"{padded}.xml", title, f"<p>{title}</p>")
+            (root / "publication" / "inspection-index.tsv").write_text(
+                "\n".join(index_rows) + "\n",
+                encoding="utf-8",
+            )
+            self.write_xml(root, "data/complete/tei_lib_lv3/1_tei.xml", "作品1", "<p>作品1</p>")
+
+            report = probe.build_all_work_report([], [abc_dir], root)
+            markdown = probe.render_all_work_markdown(report)
+
+        self.assertIn("ABC counterpart works discovered: 150", markdown)
+        self.assertIn("ABC counterpart table omitted", markdown)
+        self.assertNotIn("000150.xml", markdown)
+
     def test_renders_machine_readable_workset_export(self):
         with tempfile.TemporaryDirectory() as td:
             root = pathlib.Path(td)
@@ -255,6 +374,7 @@ class TeiEajCompareTest(unittest.TestCase):
                 "uncompared_file_count": 2,
                 "base_text_equal_count": 1,
                 "base_text_mismatch_count": 0,
+                "base_text_relation_counts": {"equal": 1},
             },
             export["summary"],
         )
@@ -264,6 +384,10 @@ class TeiEajCompareTest(unittest.TestCase):
         self.assertEqual(
             ["missing_abc_counterpart", "compared", "no_tei_eaj_work_id"],
             [row["comparison_status"] for row in export["files"]],
+        )
+        self.assertEqual(
+            ["missing_abc_counterpart", "equal", None],
+            [row["base_text_relation"] for row in export["files"]],
         )
 
 

@@ -2,7 +2,9 @@
   (:require [abc.tools.hash :as hash]
             [abc.tools.json :as abc-json]
             [abc.tools.malli :as am]
-            [m3.json-schema :as m3]))
+            [charred.api :as json]
+            [clojure.string :as str])
+  (:import [com.networknt.schema SchemaRegistry InputFormat SpecificationVersion]))
 
 (defn read-schema [file]
   (abc-json/read-json-file file))
@@ -25,10 +27,40 @@
                [k (schema-hash path)]))
         checked-in-schema-paths))
 
+;; ---------------------------------------------------------------------------
+;; SchemaRegistry — created once at namespace load; thread-safe and caches
+;; Schema objects keyed by $id / content. Draft 2020-12 is the default dialect
+;; when $schema is absent from the schema data.
+;; ---------------------------------------------------------------------------
+(def ^:private schema-registry
+  (SchemaRegistry/withDefaultDialect
+   SpecificationVersion/DRAFT_2020_12))
+
+(defn- ^:private instance-location->path-segments
+  "Convert a networknt instance-location JSON Pointer string (e.g.
+  \"/properties/foo/bar\") into a seq of path segments (e.g.
+  [\"foo\" \"bar\"]), matching the m3 :document-path convention.
+  Returns an empty vector for the root location."
+  [^String location]
+  (if (or (nil? location) (= location ""))
+    []
+    (into [] (remove empty?) (str/split location #"/"))))
+
+(defn- ^:private error->map
+  "Convert a single com.networknt.schema.Error into the Clojure map
+  shape expected by abc.tools.malli/humanize-validation-errors."
+  [^com.networknt.schema.Error e]
+  {:document-path (instance-location->path-segments (str (.getInstanceLocation e)))
+   :schema-path   (str (.getSchemaLocation e))
+   :message       (.getMessage e)})
+
 (defn validation-errors [schema value]
-  (let [result (m3/validate schema value {:draft :draft2020-12})]
-    (when-not (:valid? result)
-      (:errors result))))
+  (let [schema-json (json/write-json-str schema)
+        value-json  (json/write-json-str value)
+        schema-obj  (.getSchema schema-registry schema-json)
+        errors      (.validate schema-obj value-json InputFormat/JSON)]
+    (when (seq errors)
+      (mapv error->map errors))))
 
 (defn validation-errors-humanized
   "Return [errors humanized-strings] for `value` against `schema`.

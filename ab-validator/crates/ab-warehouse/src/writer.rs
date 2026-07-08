@@ -207,6 +207,12 @@ impl WarehouseWriter {
                 u64_array(rows.iter().map(|row| row.source_count)),
                 u64_array(rows.iter().map(|row| row.analyzer_count)),
                 u64_array(rows.iter().map(|row| row.error_count)),
+                string_array(rows.iter().map(|row| row.ortho_detect_mode.as_str())),
+                nullable_string_array(
+                    rows.iter()
+                        .map(|row| row.input_normalization_detector_id.as_deref()),
+                ),
+                string_array(rows.iter().map(|row| row.input_normalization_policy_hash.as_str())),
             ],
             &mut self.write_time,
         )
@@ -1293,6 +1299,9 @@ fn runs_schema() -> Arc<Schema> {
         u64_field("source_count", false),
         u64_field("analyzer_count", false),
         u64_field("error_count", false),
+        utf8("ortho_detect_mode", false),
+        utf8("input_normalization_detector_id", true),
+        utf8("input_normalization_policy_hash", false),
     ])
 }
 
@@ -1692,6 +1701,9 @@ mod tests {
                 source_count: 1,
                 analyzer_count: 1,
                 error_count: 0,
+                ortho_detect_mode: "off".to_owned(),
+                input_normalization_detector_id: None,
+                input_normalization_policy_hash: "sha256:identity".to_owned(),
             }])
             .unwrap();
         writer

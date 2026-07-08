@@ -1638,6 +1638,9 @@ mod tests {
             source_count,
             analyzer_count,
             error_count: 0,
+            ortho_detect_mode: "off".to_owned(),
+            input_normalization_detector_id: None,
+            input_normalization_policy_hash: "sha256:identity".to_owned(),
         }
     }
 

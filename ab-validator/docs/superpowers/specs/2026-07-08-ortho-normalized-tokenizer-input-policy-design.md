@@ -1,10 +1,11 @@
 # Ortho-Normalized Tokenizer-Input Policy — Design (provisional)
 
 **Date:** 2026-07-08
-**Status:** design + P0 + P1 landed (2026-07-08). Load-bearing forks resolved;
-U1 (bridge direction → Rust) and U2 (opaque hash boundary) resolved. P0 (thread
-`--ortho-detect` through all run paths) and P1 (structured policy identity) are
-implemented; P2–P5 remain.
+**Status:** design + P0 + P1 + P2 landed (2026-07-08). Load-bearing forks
+resolved; U1 (bridge direction → Rust) and U2 (opaque hash boundary) resolved.
+P0 (thread `--ortho-detect`), P1 (structured policy identity), and P2 (persist
+run-level provenance on the `runs` warehouse table + honest-failure fix) are
+implemented; P3–P5 remain.
 **Owner:** ab-validator (producer) + abc (identity/manifest)
 **Related:**
 `2026-07-07-parser-ir-sentence-segmentation-and-ortho-tei-design.md` (the
@@ -172,10 +173,24 @@ independently identified.
     distinct policy identity.
   Both hashes are pinned by unit tests; a change to canonicalization breaks them
   loudly. Not yet wired into any manifest (that is P2).
-- **P2 — Persist ortho provenance in the Rust world.** Record per analysis:
-  ortho mode, `detector_id`, `input_normalization_policy_hash`, remap status, and
-  whether the offset map was non-identity — in `RunManifest` and/or a warehouse
-  row. This is the data the ABC bridge consumes.
+- **P2 — Persist ortho provenance in the Rust world. DONE (2026-07-08).** The
+  policy is uniform per run, so it is persisted at run grain on the `runs`
+  warehouse table (additive columns, no `SCHEMA_VERSION` bump — same discipline
+  as Issue 3's oracle column): `ortho_detect_mode` (`off`|`heuristic`|`ml`),
+  `input_normalization_detector_id` (serialized `OrthoDetectorId`, NULL for off),
+  and `input_normalization_policy_hash` (the identity ABC reads; identity
+  sentinel hash when off). `resolve_run_normalization` computes these once at the
+  warehouse top-level (loading the ML model once to bind its `model_hash`),
+  threaded through both the serial and parallel/merge runs-row writes.
+  **Honest-failure fix (Invariant 4):** P0 exposed a latent hole — an ortho
+  remap failure on the **warehouse** path (which has no `errors_writer`) was only
+  `eprintln!`'d, never persisted. It now writes an `ortho_remap` error row
+  (`ortho_remap_crosses_boundary` / `ortho_remap_uncovered_offset`) to the
+  warehouse errors table, mirroring the analyze-failure arm. *Scope note:* the
+  per-source "did normalization fire / offset-map non-identity" flags from the
+  original P2 sketch are **deferred** — the run-level hash is what the P4 bridge
+  consumes; per-source enrichment can be added if P4 shows a need (YAGNI). Not
+  persisted on the JSONL `RunManifest` path (warehouse is the ABC-consumed path).
 - **P3 — Input-view identity.** Allow a non-identity `policy_hash` on
   `parser-ir-plaintext-body-v1` input views (request-set + analysis-result);
   keep Invariant 1. No new enum value (F2).

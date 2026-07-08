@@ -29,7 +29,10 @@ use ab_ortho_detect::OrthoDetector;
 use ab_plaintext::{PlainTextDocument, from_aat_value, from_aat_value_with_spans};
 use anyhow::{Context, Result, bail};
 pub use options::{OrthoDetectMode, OutputProfile, WarehouseProfile};
-use options::{SerialProgress, SerialRunOptions, WarehouseParallelOptions, WarehouseRunOptions};
+use options::{
+    RunNormalizationProvenance, SerialProgress, SerialRunOptions, WarehouseParallelOptions,
+    WarehouseRunOptions,
+};
 use output::{open_output_writer, read_jsonl_or_zst_to_string};
 use serde::Serialize;
 use serde_json::Value;
@@ -462,6 +465,58 @@ fn warehouse_analyzer_rows(
             analyzer_family: spec.family().to_owned(),
         })
         .collect())
+}
+
+/// Resolve the run-level normalization provenance persisted on the `runs` row.
+///
+/// The policy is uniform per run (one `--ortho-detect` mode applied to every
+/// document before every analyzer). For `Ml` the model file is loaded once here
+/// to bind its `model_hash` into the policy identity; the per-document detector
+/// is still constructed downstream (see the P0 per-batch note).
+///
+/// # Errors
+///
+/// Returns an error when `--ortho-detect=ml` is requested without a model path
+/// or the model file cannot be loaded, or when the detector id fails to
+/// serialize.
+fn resolve_run_normalization(
+    ortho_detect: OrthoDetectMode,
+    ortho_ml_model: Option<&Path>,
+) -> Result<RunNormalizationProvenance> {
+    use ab_ortho_detect::{
+        NormalizationPolicy, OrthoDetector, OrthoDetectorId, OrthoNormalization,
+    };
+    // v1 applies only kata→hira; kept single-sourced here (see spec U3 — the
+    // kinds set is not yet pinned closed).
+    let kinds = vec![OrthoNormalization::ScriptKatakanaToHiragana];
+    let (mode, detector_id, policy) = match ortho_detect {
+        OrthoDetectMode::Off => ("off", None, NormalizationPolicy::identity()),
+        OrthoDetectMode::Heuristic => {
+            let id = OrthoDetectorId::HeuristicV1;
+            let policy = NormalizationPolicy::ortho_normalize_v1(id.clone(), kinds);
+            ("heuristic", Some(id), policy)
+        }
+        OrthoDetectMode::Ml => {
+            let path = ortho_ml_model.ok_or_else(|| {
+                anyhow::anyhow!("--ortho-ml-model is required for --ortho-detect=ml")
+            })?;
+            let model = ab_ortho_detect::ml::MlLogisticRegression::load(path).map_err(|e| {
+                anyhow::anyhow!("failed to load ML model from {}: {e}", path.display())
+            })?;
+            let id = model.detector_id();
+            let policy = NormalizationPolicy::ortho_normalize_v1(id.clone(), kinds);
+            ("ml", Some(id), policy)
+        }
+    };
+    let detector_id = detector_id
+        .map(|id| serde_json::to_string(&id))
+        .transpose()
+        .context("failed to serialize ortho detector id")?;
+    Ok(RunNormalizationProvenance {
+        mode: mode.to_owned(),
+        detector_id,
+        policy_hash: policy.policy_hash(),
+    })
 }
 
 fn append_warehouse_nway_fact_rows(
@@ -1425,6 +1480,42 @@ mod tests {
     use super::*;
 
     const TINY_AAT: &str = r#"{"version":1,"work_id":"source-a","blocks":[{"kind":"paragraph","content":[{"kind":"text","value":"吾輩は猫である。"}]}],"meta":{"adapter":"fixture","adapter_version":"fixture","source_encoding":"utf-8","source_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","parse_complete":true,"warnings":[]}}"#;
+
+    #[test]
+    fn resolve_run_normalization_off_is_identity_policy() {
+        let prov = resolve_run_normalization(OrthoDetectMode::Off, None).unwrap();
+        assert_eq!(prov.mode, "off");
+        assert_eq!(prov.detector_id, None);
+        // The persisted hash is the policy module's identity sentinel.
+        assert_eq!(
+            prov.policy_hash,
+            ab_ortho_detect::NormalizationPolicy::identity().policy_hash()
+        );
+    }
+
+    #[test]
+    fn resolve_run_normalization_heuristic_matches_policy_hash() {
+        let prov = resolve_run_normalization(OrthoDetectMode::Heuristic, None).unwrap();
+        assert_eq!(prov.mode, "heuristic");
+        // Serialized OrthoDetectorId::HeuristicV1.
+        assert_eq!(prov.detector_id.as_deref(), Some("\"HeuristicV1\""));
+        let expected = ab_ortho_detect::NormalizationPolicy::ortho_normalize_v1(
+            ab_ortho_detect::OrthoDetectorId::HeuristicV1,
+            vec![ab_ortho_detect::OrthoNormalization::ScriptKatakanaToHiragana],
+        )
+        .policy_hash();
+        assert_eq!(prov.policy_hash, expected);
+        assert_ne!(
+            prov.policy_hash,
+            ab_ortho_detect::NormalizationPolicy::identity().policy_hash()
+        );
+    }
+
+    #[test]
+    fn resolve_run_normalization_ml_requires_model() {
+        let err = resolve_run_normalization(OrthoDetectMode::Ml, None).unwrap_err();
+        assert!(err.to_string().contains("--ortho-ml-model"), "{err}");
+    }
 
     #[test]
     fn rejects_missing_input() {
@@ -2448,6 +2539,11 @@ mod tests {
             zstd_level: 3,
             ortho_detect: OrthoDetectMode::Off,
             ortho_ml_model: None,
+            normalization: RunNormalizationProvenance {
+                mode: "off".to_owned(),
+                detector_id: None,
+                policy_hash: "sha256:identity".to_owned(),
+            },
         };
         merge_warehouse_shard_runs(&options, &shard_run_dirs).unwrap();
 

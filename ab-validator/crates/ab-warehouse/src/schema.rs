@@ -82,6 +82,9 @@ impl WarehouseTable {
                 "source_count",
                 "analyzer_count",
                 "error_count",
+                "ortho_detect_mode",
+                "input_normalization_detector_id",
+                "input_normalization_policy_hash",
             ],
             Self::RunAnalyzers => &["run_id", "analyzer_id", "analyzer_arg", "analyzer_family"],
             Self::Sources => &[
@@ -256,6 +259,16 @@ pub struct RunRow {
     pub source_count: u64,
     pub analyzer_count: u64,
     pub error_count: u64,
+    /// Orthographic-normalization mode applied to analyzer input for this run:
+    /// `off` | `heuristic` | `ml`. Additive (schema v2 sidecar column).
+    pub ortho_detect_mode: String,
+    /// Serialized `OrthoDetectorId` that produced the normalization spans, or
+    /// `None` when `ortho_detect_mode == off`.
+    pub input_normalization_detector_id: Option<String>,
+    /// `sha256:…` identity of the applied normalization policy (the identity
+    /// sentinel hash when `off`). ABC reads this to populate/verify the
+    /// tokenizer-profile / input-view policy hash.
+    pub input_normalization_policy_hash: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

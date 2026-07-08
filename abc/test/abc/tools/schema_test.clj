@@ -13,9 +13,10 @@
    "schemas/analysis-result.schema.json" "0.1.1"
    "schemas/manifest.schema.json" "0.4.3"
    "schemas/parser-ir-publication-preservation.schema.json" "0.2.0"
-   "schemas/request-set.schema.json" "0.1.1"
+   "schemas/request-set.schema.json" "0.1.2"
    "schemas/source-region-coverage.schema.json" "0.2.1"
    "schemas/snapshot-index.schema.json" "0.1.0"
+   "schemas/pack-policy.schema.json" "0.1.0"
    "schemas/tokenizer-profile.schema.json" "0.1.0"
    "schemas/token-output.schema.json" "0.1.0"})
 
@@ -184,6 +185,26 @@
     (is (re-matches files/hash-pattern
                     (analysis-identity/tokenizer-profile-hash profile)))
     (is (nil? (schema/validation-errors profile-schema profile)))))
+
+(deftest pack-policy-schema-fixtures-validate-test
+  (let [policy-schema (schema/read-schema "schemas/pack-policy.schema.json")
+        no-pack (files/read-json "data/pack-policies/no-pack-v1.json")
+        parquet-pack (files/read-json "data/pack-policies/parquet-basic-v1.json")]
+    (is (= "https://w3id.org/abc/schemas/pack-policy.schema.json"
+           (get no-pack "schema_id")))
+    (is (= (manifest/schema-hash "schemas/pack-policy.schema.json")
+           (get no-pack "schema_hash")))
+    (is (= "none" (get no-pack "pack_kind")))
+    (is (= [] (get no-pack "included_artifact_kinds")))
+    (is (= [] (get no-pack "included_sidecar_roles")))
+    (is (nil? (get no-pack "pack_index_output_format_spec_hash")))
+    (is (re-matches files/hash-pattern
+                    (analysis-identity/pack-policy-hash no-pack)))
+    (is (= "parquet-pack-v1" (get parquet-pack "pack_kind")))
+    (is (seq (get parquet-pack "included_artifact_kinds")))
+    (is (seq (get parquet-pack "metric_table_output_format_spec_hashes")))
+    (is (nil? (schema/validation-errors policy-schema no-pack)))
+    (is (nil? (schema/validation-errors policy-schema parquet-pack)))))
 
 (deftest token-output-schema-fixture-validates-test
   (let [token-output-schema (schema/read-schema "schemas/token-output.schema.json")

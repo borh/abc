@@ -23,6 +23,9 @@
 (def tokenizer-profiles-dir
   "data/tokenizer-profiles")
 
+(def pack-policies-dir
+  "data/pack-policies")
+
 (def resolver-id
   "abc.tools.request-set-resolver/v1")
 
@@ -120,6 +123,22 @@
                 (analysis-identity/resolved-tokenizer-profile-label
                  {:profile-id semantic-id
                   :tokenizer-profile-hash content-hash
+                  :registry-entry-hash registry-entry-hash
+                  :resolved-at resolved-at}))}))
+
+(defn- resolve-pack-policy [policy-id resolved-at]
+  (resolve-semantic-registry-value
+   {:dir pack-policies-dir
+    :value-kind "pack policy"
+    :semantic-key :policy_id
+    :semantic-id policy-id
+    :resolved-at resolved-at
+    :hash-fn analysis-identity/pack-policy-hash
+    :label-fn (fn [{:keys [semantic-id content-hash
+                           registry-entry-hash resolved-at]}]
+                (analysis-identity/resolved-pack-policy-label
+                 {:policy-id semantic-id
+                  :pack-policy-hash content-hash
                   :registry-entry-hash registry-entry-hash
                   :resolved-at resolved-at}))}))
 
@@ -240,6 +259,11 @@
          resolved-tokenizer-profiles (resolved-tokenizer-profile-labels
                                       definition
                                       resolved-at)
+         resolved-pack-policy (resolve-pack-policy
+                               (required-string "pack_policy_id"
+                                                (get definition "pack_policy_id")
+                                                {:label definition-label})
+                               resolved-at)
          identity-object (analysis-identity/request-set-identity-object
                           {:schema-hash (manifest/schema-hash request-set-schema-path)
                            :corpus-snapshot-hash (:corpus-snapshot-hash
@@ -250,8 +274,7 @@
                                                            resolved-tokenizer-profiles)
                            :analysis-recipe-hashes (mapv :hash resolved-recipes)
                            :missing-policy (get definition "missing_policy")
-                           :pack-policy-hash (analysis-identity/hash-json-value
-                                              (get definition "pack_policy"))})
+                           :pack-policy-hash (:hash resolved-pack-policy)})
          source-workset-path (sibling-workset-path subject-source-path)
          request-set {"schema_id" request-set-schema-id
                       "schema_hash" (manifest/schema-hash request-set-schema-path)
@@ -261,6 +284,7 @@
                       "resolved_recipe_labels" (mapv :label resolved-recipes)
                       "resolved_tokenizer_profile_labels" (mapv :label
                                                                 resolved-tokenizer-profiles)
+                      "resolved_pack_policy_label" (:label resolved-pack-policy)
                       "resolution" (cond-> {"source_definition_path" (request-set-definition-path label)
                                             "resolved_at" resolved-at
                                             "resolver_id" resolver-id}

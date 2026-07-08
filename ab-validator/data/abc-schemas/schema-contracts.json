@@ -55,8 +55,8 @@
       "path": "data/abc-schemas/schemas/request-set.schema.json",
       "id": "https://w3id.org/abc/schemas/request-set.schema.json",
       "title": "ABC Request Set",
-      "version": "0.1.1",
-      "hash": "sha256:0e94d9c4a4d1378401f73f30577e19b1c3a97d607e88d08d6ddd0f98af80d6c4"
+      "version": "0.1.2",
+      "hash": "sha256:075e48811964f439ceb82643bb485138add8764cb17546f554422849a2918f9c"
     },
     {
       "path": "data/abc-schemas/schemas/source-region-coverage.schema.json",
@@ -71,6 +71,13 @@
       "title": "ABC Snapshot Index",
       "version": "0.1.0",
       "hash": "sha256:ef0aaccd2d5d86204bb22c5d94e3c3d4dab2a6cfe4b82c353873317c77a3c31f"
+    },
+    {
+      "path": "data/abc-schemas/schemas/pack-policy.schema.json",
+      "id": "https://w3id.org/abc/schemas/pack-policy.schema.json",
+      "title": "ABC Pack Policy",
+      "version": "0.1.0",
+      "hash": "sha256:1f9cf22a8994d84b82163f74c2cbc1a9684778691d892ab79d360d4bec1446bb"
     },
     {
       "path": "data/abc-schemas/schemas/tokenizer-profile.schema.json",

@@ -16,6 +16,8 @@
 
 (def tokenizer-profile-hash hash-json-value)
 
+(def pack-policy-hash hash-json-value)
+
 (defn- required-string [label value]
   (when (or (not (string? value)) (string/blank? value))
     (throw (ex-info (str label " must be a non-empty string")
@@ -88,5 +90,12 @@
   [{:keys [profile-id tokenizer-profile-hash registry-entry-hash resolved-at]}]
   {"profile_id" profile-id
    "tokenizer_profile_hash" tokenizer-profile-hash
+   "registry_entry_hash" registry-entry-hash
+   "resolved_at" resolved-at})
+
+(defn resolved-pack-policy-label
+  [{:keys [policy-id pack-policy-hash registry-entry-hash resolved-at]}]
+  {"policy_id" policy-id
+   "pack_policy_hash" pack-policy-hash
    "registry_entry_hash" registry-entry-hash
    "resolved_at" resolved-at})

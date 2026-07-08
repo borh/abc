@@ -39,6 +39,14 @@ exercised by `test/abc/tools/materialize_tokenized_test.clj`,
 `test/abc/tools/materialize_analysis_test.clj`, and the design-bundle
 validation path.
 
+Pack policy values now have a schema-backed registry. `schemas/pack-policy.schema.json`,
+`data/pack-policies/no-pack-v1.json`, and
+`data/pack-policies/parquet-basic-v1.json` define the minimal `none` policy
+and one pack-producing policy. Request-set definitions resolve
+`pack_policy_id` through this registry; request-set identity carries only the
+resolved `pack_policy_hash`, while `resolved_pack_policy_label` records the
+semantic id, registry-entry hash, and resolution time.
+
 Snapshot-publication work may proceed with TEI, plaintext, token-independent
 analysis, request-set fixtures, and snapshot indexes. It must not claim
 canonical tokenizer outputs or tokenizer-backed metrics until this ADR or a
@@ -564,7 +572,11 @@ remaining materialization and validation work lands.
 - Batch derivation tests show per-work failure manifests are emitted while the
   batch derivation succeeds when the batch-level contract is satisfied.
 - A pack policy schema exists, including a canonical `none` policy and at
-  least one pack-producing policy.
+  least one pack-producing policy; `schemas/pack-policy.schema.json`,
+  `data/pack-policies/no-pack-v1.json`,
+  `data/pack-policies/parquet-basic-v1.json`,
+  `test/abc/tools/schema_test.clj`, and
+  `test/abc/tools/request_set_resolver_test.clj` cover this.
 - A pack output-format spec defines Parquet columns and types; its hash is
   recorded as `pack_output_format_spec_hash`.
 - A pack fixture records `pack_id`, `request_set_id`, `artifact_set_hash`, and

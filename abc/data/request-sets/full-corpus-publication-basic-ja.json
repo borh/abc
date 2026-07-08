@@ -1,6 +1,6 @@
 {
   "label": "full-corpus-publication-basic-ja",
-  "request_set_id": "sha256:8bbbc51a669250afa6a95ca999c16f4d7f530916e6d110a024804cdd8c61b2a2",
+  "request_set_id": "sha256:9e3e2d085f92d16ca7fc48cc6a4455e386bafc8b7fe9209f8ccc31b551611118",
   "request_set_identity_object":
   {
     "analysis_recipe_hashes": [],
@@ -11,8 +11,8 @@
         "policy_hash": "sha256:df21c590fd8d5b934fd426e632a3d8a09c2bd3fa299ca6b4c8fe4c797e1d1391"
       }],
     "missing_policy": "build-missing-only",
-    "pack_policy_hash": "sha256:b413f4838a9d32b8b9427453a4318b2f9538d818c6f5726e8e0c41740693fe93",
-    "schema_hash": "sha256:0e94d9c4a4d1378401f73f30577e19b1c3a97d607e88d08d6ddd0f98af80d6c4",
+    "pack_policy_hash": "sha256:bea01b5e4311dc2bdb6df3b69cd8c9b0a0cba14cde74f2df87b1d74a2a10cccf",
+    "schema_hash": "sha256:075e48811964f439ceb82643bb485138add8764cb17546f554422849a2918f9c",
     "subjects": [
       {
         "metadata_record_hash": "sha256:c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1",
@@ -35,8 +35,15 @@
     "resolver_id": "abc.tools.request-set-resolver\/v1",
     "source_definition_path": "data\/request-set-definitions\/full-corpus-publication-basic-ja.json"
   },
+  "resolved_pack_policy_label":
+  {
+    "pack_policy_hash": "sha256:bea01b5e4311dc2bdb6df3b69cd8c9b0a0cba14cde74f2df87b1d74a2a10cccf",
+    "policy_id": "no-pack-v1",
+    "registry_entry_hash": "sha256:a108132b4c2aed0b3f39e1b074f4a9fb75b315bf81267d3cf7446dd8852c37b8",
+    "resolved_at": "2026-07-07T00:00:00Z"
+  },
   "resolved_recipe_labels": [],
   "resolved_tokenizer_profile_labels": [],
-  "schema_hash": "sha256:0e94d9c4a4d1378401f73f30577e19b1c3a97d607e88d08d6ddd0f98af80d6c4",
+  "schema_hash": "sha256:075e48811964f439ceb82643bb485138add8764cb17546f554422849a2918f9c",
   "schema_id": "https:\/\/w3id.org\/abc\/schemas\/request-set.schema.json"
 }

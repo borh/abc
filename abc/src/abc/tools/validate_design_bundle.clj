@@ -331,6 +331,7 @@
         analysis-result-schema (files/read-json "schemas/analysis-result.schema.json")
         request-set-schema (files/read-json "schemas/request-set.schema.json")
         snapshot-index-schema (files/read-json "schemas/snapshot-index.schema.json")
+        pack-policy-schema (files/read-json "schemas/pack-policy.schema.json")
         source-region-coverage-schema (files/read-json "schemas/source-region-coverage.schema.json")
         token-output-schema (files/read-json "schemas/token-output.schema.json")
         tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
@@ -351,6 +352,7 @@
                            ["schemas/analysis-result.schema.json" analysis-result-schema]
                            ["schemas/request-set.schema.json" request-set-schema]
                            ["schemas/snapshot-index.schema.json" snapshot-index-schema]
+                           ["schemas/pack-policy.schema.json" pack-policy-schema]
                            ["schemas/source-region-coverage.schema.json" source-region-coverage-schema]
                            ["schemas/token-output.schema.json" token-output-schema]
                            ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]
@@ -383,6 +385,9 @@
     (doseq [path ["data/analysis-recipes/literary-basic-ja-v1.json"
                   "data/analysis-recipes/token-basic-ja-v1.json"]]
       (validate-json! analysis-recipe-schema path))
+    (doseq [path ["data/pack-policies/no-pack-v1.json"
+                  "data/pack-policies/parquet-basic-v1.json"]]
+      (validate-json! pack-policy-schema path))
     (validate-json! analysis-result-schema
                     "examples/v0/example-work/analysis-result.json")
     (validate-json! token-output-schema

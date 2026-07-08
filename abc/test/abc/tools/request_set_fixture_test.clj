@@ -26,5 +26,12 @@
                (get request-set "request_set_id")))
         (is (= (resolver/resolve-request-set label)
                request-set))
+        (is (= "no-pack-v1"
+               (get-in request-set ["resolved_pack_policy_label"
+                                    "policy_id"])))
+        (is (= (get-in request-set ["request_set_identity_object"
+                                    "pack_policy_hash"])
+               (get-in request-set ["resolved_pack_policy_label"
+                                    "pack_policy_hash"])))
         (is (= [] (get-in request-set ["request_set_identity_object"
                                        "tokenizer_profile_hashes"])))))))

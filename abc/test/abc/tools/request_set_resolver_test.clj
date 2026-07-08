@@ -21,9 +21,7 @@
    "analysis_recipe_ids" ["literary-basic-ja-v1"]
    "tokenizer_profile_ids" []
    "missing_policy" "build-missing-only"
-   "pack_policy" {"schema_id" "https://w3id.org/abc/policies/request-set-pack-policy-v1"
-                  "policy_id" "no-pack-v1"
-                  "pack_kind" "none"}})
+   "pack_policy_id" "no-pack-v1"})
 
 (defn- tokenizer-profile-definition []
   (assoc (source-snapshot-definition "unused-source-snapshot.json")
@@ -41,8 +39,10 @@
   (let [resolved (resolver/resolve-request-set "smoke-basic-ja")
         identity-object (get resolved "request_set_identity_object")
         recipe (files/read-json "data/analysis-recipes/literary-basic-ja-v1.json")
+        pack-policy (files/read-json "data/pack-policies/no-pack-v1.json")
         recipe-hash (analysis-identity/analysis-recipe-hash recipe)
-        recipe-label (first (get resolved "resolved_recipe_labels"))]
+        recipe-label (first (get resolved "resolved_recipe_labels"))
+        pack-policy-label (get resolved "resolved_pack_policy_label")]
     (is (= "smoke-basic-ja" (get resolved "label")))
     (is (= "request-set-v1" (get resolved "request_set_schema_version")))
     (is (nil? (get resolved "fixture_role")))
@@ -50,13 +50,20 @@
            (get identity-object "schema_hash")))
     (is (= [recipe-hash]
            (get identity-object "analysis_recipe_hashes")))
+    (is (= (analysis-identity/pack-policy-hash pack-policy)
+           (get identity-object "pack_policy_hash")))
     (is (= [] (get identity-object "tokenizer_profile_hashes")))
     (is (= (analysis-identity/request-set-id resolved)
            (get resolved "request_set_id")))
     (is (= "literary-basic-ja-v1" (get recipe-label "recipe_id")))
     (is (= recipe-hash (get recipe-label "analysis_recipe_hash")))
     (is (re-matches files/hash-pattern
-                    (get recipe-label "registry_entry_hash")))))
+                    (get recipe-label "registry_entry_hash")))
+    (is (= "no-pack-v1" (get pack-policy-label "policy_id")))
+    (is (= (analysis-identity/pack-policy-hash pack-policy)
+           (get pack-policy-label "pack_policy_hash")))
+    (is (re-matches files/hash-pattern
+                    (get pack-policy-label "registry_entry_hash")))))
 
 (deftest resolve-request-set-golden-files-match-resolver-output-test
   (doseq [label (resolver/request-set-labels)]
@@ -93,6 +100,24 @@
                  resolved)))
       (is (= (analysis-identity/request-set-id resolved)
              (get resolved "request_set_id"))))))
+
+(deftest resolve-request-set-rejects-unknown-pack-policy-test
+  (with-redefs [resolver/read-request-set-definition
+                (fn [_] (assoc (source-snapshot-definition "unused-source-snapshot.json")
+                               "label" "unknown-pack-policy-basic-ja"
+                               "corpus_snapshot_hash" (files/example-hash "aa")
+                               "subjects" [{"source_id" "aozora:000001"
+                                            "work_id" "aozora:000001"
+                                            "work_content_hash" (files/example-hash "bb")
+                                            "metadata_record_hash" nil}]
+                               "subject_source" nil
+                               "pack_policy_id" "missing-pack-v1"))
+                resolver/request-set-definition-path
+                (fn [_] "unit/unknown-pack-policy-basic-ja.json")]
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"Unknown pack policy"
+         (resolver/resolve-request-set "unknown-pack-policy-basic-ja")))))
 
 (deftest full-corpus-request-sets-use-source-snapshot-subject-source-test
   (doseq [label ["full-corpus-publication-basic-ja"

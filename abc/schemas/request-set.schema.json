@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/request-set.schema.json",
   "title": "ABC Request Set",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -14,6 +14,7 @@
     "request_set_identity_object",
     "resolved_recipe_labels",
     "resolved_tokenizer_profile_labels",
+    "resolved_pack_policy_label",
     "resolution"
   ],
   "properties": {
@@ -34,6 +35,9 @@
     "resolved_tokenizer_profile_labels": {
       "type": "array",
       "items": { "$ref": "#/$defs/resolvedTokenizerProfileLabel" }
+    },
+    "resolved_pack_policy_label": {
+      "$ref": "#/$defs/resolvedPackPolicyLabel"
     },
     "resolution": {
       "type": "object",
@@ -158,6 +162,22 @@
       "properties": {
         "profile_id": { "type": "string", "minLength": 1 },
         "tokenizer_profile_hash": { "$ref": "#/$defs/hash" },
+        "registry_entry_hash": { "$ref": "#/$defs/hash" },
+        "resolved_at": { "type": "string", "minLength": 1 }
+      }
+    },
+    "resolvedPackPolicyLabel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy_id",
+        "pack_policy_hash",
+        "registry_entry_hash",
+        "resolved_at"
+      ],
+      "properties": {
+        "policy_id": { "type": "string", "minLength": 1 },
+        "pack_policy_hash": { "$ref": "#/$defs/hash" },
         "registry_entry_hash": { "$ref": "#/$defs/hash" },
         "resolved_at": { "type": "string", "minLength": 1 }
       }

@@ -1,0 +1,26 @@
+{
+  "compression_policy":
+  {
+    "method": "zstd",
+    "zstd_level": 3
+  },
+  "included_artifact_kinds": ["analysis","failure","plaintext","tei"],
+  "included_sidecar_roles": ["analysis-result","rdf-view","validation-result","warnings"],
+  "locator_policy":
+  {
+    "mode": "relative-path"
+  },
+  "metric_table_output_format_spec_hashes": ["sha256:9292929292929292929292929292929292929292929292929292929292929292"],
+  "missing_artifact_behavior": "record-missing-status",
+  "pack_index_output_format_spec_hash": "sha256:9191919191919191919191919191919191919191919191919191919191919191",
+  "pack_kind": "parquet-pack-v1",
+  "policy_id": "parquet-basic-v1",
+  "policy_version": "1.0.0",
+  "row_group_policy":
+  {
+    "mode": "target-rows",
+    "target_rows": 5000
+  },
+  "schema_hash": "sha256:1f9cf22a8994d84b82163f74c2cbc1a9684778691d892ab79d360d4bec1446bb",
+  "schema_id": "https:\/\/w3id.org\/abc\/schemas\/pack-policy.schema.json"
+}

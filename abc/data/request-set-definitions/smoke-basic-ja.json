@@ -19,9 +19,5 @@
   "analysis_recipe_ids": ["literary-basic-ja-v1"],
   "tokenizer_profile_ids": [],
   "missing_policy": "build-missing-only",
-  "pack_policy": {
-    "schema_id": "https://w3id.org/abc/policies/request-set-pack-policy-v1",
-    "policy_id": "no-pack-v1",
-    "pack_kind": "none"
-  }
+  "pack_policy_id": "no-pack-v1"
 }

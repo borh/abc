@@ -407,10 +407,13 @@
         (validate/validate-json-schemas! [])
         (is (every? (set @checked-schemas)
                     ["schemas/analysis-recipe.schema.json"
-                     "schemas/analysis-result.schema.json"]))
+                     "schemas/analysis-result.schema.json"
+                     "schemas/pack-policy.schema.json"]))
         (is (every? (set @checked-json)
                     ["data/analysis-recipes/literary-basic-ja-v1.json"
                      "data/analysis-recipes/token-basic-ja-v1.json"
+                     "data/pack-policies/no-pack-v1.json"
+                     "data/pack-policies/parquet-basic-v1.json"
                      "examples/v0/example-work/analysis-result.json"]))))))
 
 (deftest validate-json-schemas-includes-snapshot-index-fixture-test

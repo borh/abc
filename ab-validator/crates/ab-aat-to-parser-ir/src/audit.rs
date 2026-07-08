@@ -355,6 +355,13 @@ fn collect_inputs(aat_dirs: &[PathBuf]) -> Result<Vec<CollectedInput>> {
 
         let files = collect_json_files(dir)
             .with_context(|| format!("failed to collect AAT JSON files under {}", dir.display()))?;
+        if files.is_empty() {
+            anyhow::bail!(
+                "no AAT JSON files found under {} (does it exist and contain .json files, \
+                 or symlinks to them?)",
+                dir.display()
+            );
+        }
         inputs.push(CollectedInput {
             label,
             aat_dir: dir.clone(),
@@ -381,12 +388,19 @@ fn collect_json_files(dir: &Path) -> Result<Vec<PathBuf>> {
             let entry =
                 entry.with_context(|| format!("failed to read entry under {}", path.display()))?;
             let entry_path = entry.path();
-            let file_type = entry
-                .file_type()
-                .with_context(|| format!("failed to stat {}", entry_path.display()))?;
-            if file_type.is_dir() {
+            // Follow symlinks: corpus subsets (e.g. calib-*) are directories of
+            // symlinks into the main corpus. `DirEntry::file_type` reports the link
+            // itself, not its target, so using it here would silently skip every
+            // symlinked AAT and audit as "0 files". `fs::metadata` resolves the
+            // target. A broken symlink resolves to an error; skip it rather than
+            // aborting the whole audit (the empty-input guard still catches a
+            // directory that collects nothing).
+            let Ok(metadata) = fs::metadata(&entry_path) else {
+                continue;
+            };
+            if metadata.is_dir() {
                 stack.push(entry_path);
-            } else if file_type.is_file()
+            } else if metadata.is_file()
                 && entry_path.extension().and_then(|value| value.to_str()) == Some("json")
             {
                 files.push(entry_path);
@@ -1362,5 +1376,43 @@ mod sentence_projection_audit_tests {
             classify_sentence_projection_failure("mapping schema hash mismatch"),
             None
         );
+    }
+
+    #[test]
+    fn collect_json_files_follows_symlinked_entries() {
+        // Corpus subsets are directories of symlinks into the main corpus; the
+        // collector must resolve link targets, not skip them.
+        let target_dir = tempfile::tempdir().unwrap();
+        let real = target_dir.path().join("work.json");
+        std::fs::write(&real, b"{}").unwrap();
+
+        let subset = tempfile::tempdir().unwrap();
+        std::fs::write(subset.path().join("direct.json"), b"{}").unwrap();
+        std::os::unix::fs::symlink(&real, subset.path().join("linked.json")).unwrap();
+        // A broken symlink must be skipped, not abort collection.
+        std::os::unix::fs::symlink(
+            target_dir.path().join("missing.json"),
+            subset.path().join("broken.json"),
+        )
+        .unwrap();
+
+        let mut names: Vec<String> = collect_json_files(subset.path())
+            .unwrap()
+            .iter()
+            .map(|p| p.file_name().unwrap().to_string_lossy().into_owned())
+            .collect();
+        names.sort();
+        assert_eq!(names, vec!["direct.json", "linked.json"]);
+    }
+
+    #[test]
+    fn collect_inputs_errors_on_directory_with_no_aat_files() {
+        // A directory that collects zero files must fail loudly rather than
+        // producing a silent "0 succeeded, 0 failed" success.
+        let empty = tempfile::tempdir().unwrap();
+        let error = collect_inputs(&[empty.path().to_path_buf()])
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("no AAT JSON files found"), "got: {error}");
     }
 }

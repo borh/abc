@@ -1,5 +1,6 @@
 (ns abc.tools.parser-ir-tei
-  (:require [clojure.string :as string]))
+  (:require [abc.tools.parser-ir-publication-whitespace :as whitespace]
+            [clojure.string :as string]))
 
 (defn- present-text? [text]
   (seq text))
@@ -174,7 +175,8 @@
 (defn- render-text-node
   ([acc node] (render-text-node acc node 0))
   ([acc node _depth]
-   (append-inline acc (get node "text"))))
+   (update acc :current-paragraph into
+           (whitespace/source-text->tei-inline (get node "text")))))
 
 (defn- render-ruby-node
   ([acc node] (render-ruby-node acc node 0))

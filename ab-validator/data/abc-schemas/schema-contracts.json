@@ -77,7 +77,7 @@
       "id": "https://w3id.org/abc/schemas/tei-eaj-comparison.schema.json",
       "title": "ABC TEI-EAJ Aozora Comparison Export",
       "version": "0.1.0",
-      "hash": "sha256:100124fa38abdb7764bdb5a2f21b82f87ad9de4fbf49f36980cf9fef3830a874"
+      "hash": "sha256:e2acfdb37a05fcb5e429729b6ba86c3d68b04ad2c2e5601295bee3048273b499"
     },
     {
       "path": "data/abc-schemas/schemas/pack-policy.schema.json",

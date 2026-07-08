@@ -253,7 +253,13 @@
         "tei_eaj_p_count": { "$ref": "#/$defs/nullableNonNegativeInteger" },
         "abc_note_count": { "$ref": "#/$defs/nullableNonNegativeInteger" },
         "tei_eaj_note_count": { "$ref": "#/$defs/nullableNonNegativeInteger" },
-        "first_difference": { "$ref": "#/$defs/firstDifference" }
+        "first_difference": { "$ref": "#/$defs/firstDifference" },
+        "alignment_probe": {
+          "anyOf": [
+            { "$ref": "alignment-probe-v1.schema.json" },
+            { "type": "null" }
+          ]
+        }
       }
     }
   }

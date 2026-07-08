@@ -337,6 +337,43 @@ aozora-rs is confirmed a throughput-only candidate; aozora2's robustness gap *is
 timeout pathology (a third axis undercutting it). See the companion report for the
 full per-construct table and threats.
 
+### 4.9 Parity/support audit — the constructs coverage doesn't score
+§4.7 scores the 9 highest-mass constructs; the source-authority summary lists **21**.
+A systematic sweep of the remaining scoreable constructs
+(`reports/aat-fidelity/parity-support-audit.py`,
+`2026-07-08-parity-support-audit.json`) — signatures vocabulary-audited per adapter as
+in §4.7 — surfaces where a parser drops a construct *entirely* while others represent
+it (✗ = rate < 0.05). aozora is the re-measured HEAD parser (§7; control confirms
+these are parser-invariant).
+
+| construct | src occ | aozora | aozora2 | aozora-rs | aozora2html | aozora-epub3 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| chitsuki 地付き | 20,358 | 0.90 | ~1.0 | **✗** | **✗** | **✗** |
+| burasage ぶら下げ | 13,278 | 0.93 | 0.49 | 0.39 | **✗** | **✗** |
+| bold/italic | 8,830 | 0.62 | 0.39 | 0.41 | 0.56 | 0.78 |
+| warichu 割注 | 6,605 | 0.58 | 0.43 | 0.46 | 0.29 | 0.44 |
+| yokogumi 横組 | 3,690 | **✗** | 0.07 | **✗** | 0.37 | **✗** |
+| jizume 字詰め | 3,239 | **✗** | 0.37 | **✗** | **✗** | **✗** |
+
+**Findings:**
+- **Every parser drops at least one construct entirely** — support is complementary,
+  not nested, reinforcing §4.2 finding #1 across a wider construct set.
+- **The recommended `aozora-pipeline` drops `jizume` (字詰め) and `yokogumi` (横組)
+  outright** — two concrete, named gaps for the fork's backlog (small mass, ~0.2% of
+  the corpus, but real).
+- **`chitsuki` is dropped by 3 of 5** (aozora-rs, aozora2html, aozora-epub3);
+  **`burasage` by 2** (aozora2html, aozora-epub3). `aozora2html`/`epub3` (the HTML/EPUB
+  converters) systematically lose bottom-alignment/hanging-indent as distinct nodes.
+- **`bold`/`italic` and `warichu` are represented by all five** — no parity gap.
+- **Unscoreable:** `keigakomi` (罫囲み, box) is emitted by aozora-rs/aozora2html/epub3
+  but has *no* source-authority denominator, so it can't be rate-scored (a gap in the
+  denominators, not the parsers); `kunoji` (くの字, 10,701) is emitted as a gaiji node,
+  already inside `gaiji.marker`.
+
+These six constructs total ~56k source occurrences (~1.4% of mass) — too small to move
+the §4.7 weighted ranking, which is why they were out of the headline scope; the audit
+records them as the completeness frontier and the recommended parser's specific gaps.
+
 ## 5. Threats to validity / limitations
 
 1. **Instrument authority.** P4suta is corroborating, not authoritative; a
@@ -394,20 +431,29 @@ fast-moving; every number here is a snapshot of these exact revisions:
 
 | parser | source | rev | locked |
 | --- | --- | --- | --- |
-| aozora-pipeline (reference / recommended base) | `P4suta/aozora` | `5df2cfa5` | 2026-07-03 |
+| aozora-pipeline (reference / recommended base) | `P4suta/aozora` | `1a4f864` (HEAD; §4.7/§4.8 numbers measured on `5df2cfa5`) | 2026-07-08 |
 | aozora-core (aozora2) | `takahashim/aozora2` | `93420b53` | 2026-01-04 |
 | aozora-rs | `kinoko0518/aozora-rs` | `2b2b8f64` | 2026-05-07 |
 | conformance vectors | `P4suta/aozora-notation-spec` | `b60665fd` | 2026-07-02 |
 | corpus | `aozorabunko/aozorabunko` | `0e9ea3e5` | 2026-04-24 |
 
-> **Staleness note (load-bearing for the fork decision).** `P4suta/aozora` is under
-> heavy active development — as of 2026-07-08 upstream HEAD is already ~14+ commits
-> ahead of the measured pin (mostly dependency bumps, but including #434 which moves
-> lossy notation forms Tier1→Tier2, *changing default render output*, and later
-> notation-hygiene/diagnostics-unification work). The recommendation is robust to this
-> (it leads on every axis by margins larger than a few-day drift), but before
-> committing to the fork, **re-pin to a current `P4suta/aozora` and re-run §4.7/§4.8** —
-> the harmonized signatures + reconciliation assertion make that a ~5-minute recompute.
+> **Staleness — resolved by a controlled re-measure.** `P4suta/aozora` is under heavy
+> active development; the §4.7/§4.8 numbers were measured on `5df2cfa5` (2026-07-03),
+> and `flake.lock` is now re-pinned to HEAD `1a4f864` (2026-07-08, ~14 commits ahead:
+> dependency bumps plus a marker→typed-node output restructuring and the schemaVersion
+> 1→2 envelope bump). A **controlled experiment** — old vs new parser over the *same*
+> pinned corpus — isolates the parser effect: **≤0.05 on any construct (only `tcy`,
+> −0.05); every other tracked construct changes by ≤0.001.** The output restructuring
+> is representation-only and absorbed by the union signatures. **Conclusions are
+> unaffected.** Two infrastructure fixes were needed to re-measure on the pinned
+> corpus and are now in place (so future re-pins are a ~5-min recompute): `ab-index`
+> now indexes the symlinked nix corpus (it previously skipped every symlinked work
+> file → 0 works), and the adapter accepts inspect `schemaVersion` 2 (verified a pure
+> version bump). *Corpus caveat:* the §4.7 denominators are source-authority counts
+> from the original local extraction; the pinned nix corpus has slightly fewer `gaiji`
+> / `jisage` source occurrences, so a fully-nix-reproducible re-measure would recompute
+> denominators there — it rescales those two rows (num and denom move together) without
+> changing rankings.
 
 ```
 just aozora-notation-spec-comparison            # matrix + summary
@@ -448,3 +494,14 @@ Backing data: `2026-07-08-aozora-notation-spec-comparison.summary.json`,
   family weakness — a full independent instrument, not a seed.
 - Uniform per-parser methodology write-up (or a normalization that puts all
   candidates on one scale).
+- ~~Re-pin `P4suta/aozora` to HEAD and re-measure~~ — **done (§7)**: HEAD `1a4f864` is
+  measurement-equivalent to `5df2cfa5` (parser effect ≤0.05, `tcy` only); `flake.lock`
+  re-pinned; `ab-index` symlink + adapter schemaVersion-2 fixes landed so re-pins are
+  now a ~5-min recompute.
+- **Fully-nix-reproducible re-measure:** recompute the §4.7 source-authority
+  denominators on the pinned `aozorabunko` corpus (they are currently from the
+  original local extraction; the pinned corpus has fewer `gaiji`/`jisage` source
+  occurrences). Rescales those two rows without changing rankings.
+- **Close the recommended parser's construct gaps** surfaced by the parity audit
+  (§4.9): `aozora-pipeline` drops `jizume` (字詰め) and `yokogumi` (横組) entirely, and
+  the source-authority summary has no `keigakomi` (罫囲み) denominator to score it.

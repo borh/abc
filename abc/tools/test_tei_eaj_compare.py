@@ -170,6 +170,77 @@ class TeiEajCompareTest(unittest.TestCase):
 
         self.assertEqual([], reports.abc_all_work_inputs(context))
 
+    def test_alignment_probe_command_consumes_workset_without_paper_default(self):
+        context = reports.ReportContext(
+            compare_script=pathlib.Path("tei_eaj_compare.py"),
+            tei_eaj_root=pathlib.Path("tei-eaj"),
+            source_rev="rev",
+            abc_melos=None,
+            abc_tei=[],
+            abc_tei_dir=[pathlib.Path("target/soranoha/full/artifacts").as_posix()],
+            alignment_probe_bin="probe-bin",
+        )
+
+        command = reports.alignment_probe_command(
+            context,
+            pathlib.Path("workset.json"),
+            pathlib.Path("alignment-probe.json"),
+            pathlib.Path("alignment-probe.md"),
+            max_rows=4,
+        )
+
+        command_text = " ".join(str(part) for part in command)
+        self.assertEqual("probe-bin", command[0])
+        self.assertIn("tei-eaj-alignment-probe", command)
+        self.assertIn("--workset", command)
+        self.assertIn("--max-rows", command)
+        self.assertNotIn("paper/demo-melos-real/tei.xml", command_text)
+
+    def test_attaches_alignment_probes_to_workset_export(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            workset_path = root / "workset.json"
+            probe_path = root / "alignment-probe.json"
+            workset_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "tei-eaj-aozora-workset-export-v1",
+                        "files": [
+                            {
+                                "tei_eaj_file": "data/complete/tei_lib_lv4/1567_tei.xml",
+                                "comparison_status": "compared",
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            probe_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "tei-eaj-alignment-probe-report-v1",
+                        "rows": [
+                            {
+                                "tei_eaj_file": "data/complete/tei_lib_lv4/1567_tei.xml",
+                                "alignment_probe": {
+                                    "schema_version": "alignment-probe-v1",
+                                    "diagnosis_counts": {"tail_addition": 1},
+                                },
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            reports.attach_alignment_probes_to_workset(workset_path, probe_path)
+            updated = json.loads(workset_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            {"tail_addition": 1},
+            updated["files"][0]["alignment_probe"]["diagnosis_counts"],
+        )
+
     def test_body_base_text_ignores_ruby_readings_and_parentheses(self):
         with tempfile.TemporaryDirectory() as td:
             root = pathlib.Path(td)

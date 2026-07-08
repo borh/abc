@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import dataclasses
+import json
 import os
 import pathlib
 import subprocess
@@ -11,6 +12,7 @@ from collections.abc import Sequence
 DEFAULT_SOURCE_REV = "77a675fc2771936f9544505d922d4cd45075338c"
 DEFAULT_REPORT_SUBDIR = pathlib.Path("out/reports/tei-eaj-aozora")
 DEFAULT_COMPARE_SCRIPT = pathlib.Path(__file__).resolve().with_name("tei_eaj_compare.py")
+DEFAULT_ALIGNMENT_PROBE_BIN = "ab-aat-to-parser-ir"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -21,6 +23,7 @@ class ReportContext:
     abc_melos: str | None
     abc_tei: Sequence[str]
     abc_tei_dir: Sequence[str]
+    alignment_probe_bin: str = DEFAULT_ALIGNMENT_PROBE_BIN
 
 
 def default_report_dir(cwd: pathlib.Path) -> pathlib.Path:
@@ -38,11 +41,7 @@ def default_abc_tei_dirs(cwd: pathlib.Path) -> list[str]:
     if env_value:
         return [path for path in env_value.split(os.pathsep) if path]
     candidates = [
-        cwd
-        / "target"
-        / "soranoha"
-        / "full-corpus-publication-basic-ja"
-        / "artifacts",
+        cwd / "target" / "soranoha" / "full-corpus-publication-basic-ja" / "artifacts",
     ]
     return [candidate.as_posix() for candidate in candidates if candidate.exists()]
 
@@ -133,6 +132,68 @@ def command_workset(context: ReportContext, output: str | None) -> pathlib.Path:
     return target
 
 
+def alignment_probe_command(
+    context: ReportContext,
+    workset: pathlib.Path,
+    summary_json: pathlib.Path,
+    report_md: pathlib.Path,
+    max_rows: int | None = None,
+) -> list[str]:
+    command = [
+        context.alignment_probe_bin,
+        "tei-eaj-alignment-probe",
+        "--workset",
+        str(workset),
+        "--summary-json",
+        str(summary_json),
+        "--report-md",
+        str(report_md),
+    ]
+    if max_rows is not None:
+        command.extend(["--max-rows", str(max_rows)])
+    return command
+
+
+def attach_alignment_probes_to_workset(
+    workset_path: pathlib.Path, alignment_probe_path: pathlib.Path
+) -> int:
+    workset = json.loads(workset_path.read_text(encoding="utf-8"))
+    probe_report = json.loads(alignment_probe_path.read_text(encoding="utf-8"))
+    probes_by_file = {
+        row["tei_eaj_file"]: row["alignment_probe"]
+        for row in probe_report.get("rows", [])
+        if row.get("alignment_probe") is not None
+    }
+    attached = 0
+    for row in workset.get("files", []):
+        probe = probes_by_file.get(row.get("tei_eaj_file"))
+        if probe is not None:
+            row["alignment_probe"] = probe
+            attached += 1
+    workset_path.write_text(
+        json.dumps(workset, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return attached
+
+
+def command_alignment_probe(
+    context: ReportContext,
+    workset: pathlib.Path,
+    summary_json: pathlib.Path,
+    report_md: pathlib.Path,
+    max_rows: int | None = None,
+) -> pathlib.Path:
+    summary_json.parent.mkdir(parents=True, exist_ok=True)
+    report_md.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        alignment_probe_command(context, workset, summary_json, report_md, max_rows),
+        check=True,
+    )
+    attach_alignment_probes_to_workset(workset, summary_json)
+    return summary_json
+
+
 def command_all(context: ReportContext, outputs: list[str]) -> None:
     if len(outputs) not in (0, 3):
         raise SystemExit(
@@ -146,6 +207,34 @@ def command_all(context: ReportContext, outputs: list[str]) -> None:
     print(f"Updated {command_workset(context, workset_output)}")
 
 
+def command_all_with_probes(
+    context: ReportContext, outputs: list[str], max_rows: int | None
+) -> None:
+    if len(outputs) not in (0, 5):
+        raise SystemExit(
+            "all-with-probes accepts either no output paths or exactly 5: "
+            "MELOS_MD ALL_WORK_MD WORKSET_JSON ALIGNMENT_JSON ALIGNMENT_MD"
+        )
+    report_dir = default_report_dir(pathlib.Path.cwd())
+    melos_output = outputs[0] if outputs else None
+    all_work_output = outputs[1] if outputs else None
+    workset_output = outputs[2] if outputs else None
+    alignment_json = (
+        pathlib.Path(outputs[3]) if outputs else report_dir / "tei-eaj-alignment-probe.json"
+    )
+    alignment_md = (
+        pathlib.Path(outputs[4]) if outputs else report_dir / "tei-eaj-alignment-probe.md"
+    )
+    print(f"Updated {command_melos(context, melos_output)}")
+    print(f"Updated {command_all_work(context, all_work_output)}")
+    workset = command_workset(context, workset_output)
+    print(f"Updated {workset}")
+    print(
+        f"Updated {command_alignment_probe(context, workset, alignment_json, alignment_md, max_rows)}"
+    )
+    print(f"Updated {alignment_md}")
+
+
 def context_from_args(args: argparse.Namespace) -> ReportContext:
     return ReportContext(
         compare_script=args.compare_script,
@@ -156,6 +245,7 @@ def context_from_args(args: argparse.Namespace) -> ReportContext:
         abc_tei_dir=args.abc_tei_dir
         if args.abc_tei or args.abc_tei_dir
         else default_abc_tei_dirs(pathlib.Path.cwd()),
+        alignment_probe_bin=args.alignment_probe_bin,
     )
 
 
@@ -167,6 +257,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tei-eaj-root", required=True, type=pathlib.Path)
     parser.add_argument("--source-rev", default=DEFAULT_SOURCE_REV)
     parser.add_argument("--abc-melos", default=None)
+    parser.add_argument(
+        "--alignment-probe-bin",
+        default=os.environ.get("ABC_TEI_EAJ_ALIGNMENT_PROBE_BIN", DEFAULT_ALIGNMENT_PROBE_BIN),
+    )
     parser.add_argument(
         "--abc-tei",
         action="append",
@@ -192,6 +286,18 @@ def main(argv: list[str] | None = None) -> int:
     all_work_parser.add_argument("output", nargs="?")
     workset_parser = subparsers.add_parser("workset-json")
     workset_parser.add_argument("output", nargs="?")
+    alignment_parser = subparsers.add_parser("alignment-probe")
+    alignment_parser.add_argument("workset", nargs="?")
+    alignment_parser.add_argument("summary_json", nargs="?")
+    alignment_parser.add_argument("report_md", nargs="?")
+    alignment_parser.add_argument("--max-rows", type=int, default=None)
+    all_with_probes_parser = subparsers.add_parser("all-with-probes")
+    all_with_probes_parser.add_argument(
+        "outputs",
+        nargs="*",
+        help="Optional MELOS_MD ALL_WORK_MD WORKSET_JSON ALIGNMENT_JSON ALIGNMENT_MD output paths",
+    )
+    all_with_probes_parser.add_argument("--max-probe-rows", type=int, default=None)
     args = parser.parse_args(argv)
     context = context_from_args(args)
 
@@ -203,6 +309,26 @@ def main(argv: list[str] | None = None) -> int:
         command_all_work(context, args.output)
     elif args.command == "workset-json":
         command_workset(context, args.output)
+    elif args.command == "alignment-probe":
+        report_dir = default_report_dir(pathlib.Path.cwd())
+        workset = (
+            pathlib.Path(args.workset)
+            if args.workset
+            else report_dir / "tei-eaj-aozora-workset-export.json"
+        )
+        summary_json = (
+            pathlib.Path(args.summary_json)
+            if args.summary_json
+            else report_dir / "tei-eaj-alignment-probe.json"
+        )
+        report_md = (
+            pathlib.Path(args.report_md)
+            if args.report_md
+            else report_dir / "tei-eaj-alignment-probe.md"
+        )
+        command_alignment_probe(context, workset, summary_json, report_md, args.max_rows)
+    elif args.command == "all-with-probes":
+        command_all_with_probes(context, args.outputs, args.max_probe_rows)
     return 0
 
 

@@ -1,5 +1,6 @@
 (ns abc.tools.manifest-index-test
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.analysis-identity :as analysis-identity]
+            [abc.tools.files :as files]
             [abc.tools.manifest-index :as manifest-index]
             [clojure.test :refer [deftest is testing]]))
 
@@ -107,6 +108,37 @@
                "media_type" "application/json"}
     "provenance" {"used" []
                   "was_derived_from" [(files/example-hash "03")]}}))
+
+(defn tokenizer-profile []
+  (files/read-json "data/tokenizer-profiles/fixture-tokenizer-ja-v1.json"))
+
+(defn tokenized-manifest-from-producer
+  [artifact-id producer-artifact-id profile & [identity-overrides provenance-overrides]]
+  (let [profile-hash (analysis-identity/tokenizer-profile-hash profile)]
+    {"artifact_id" artifact-id
+     "artifact_kind" "tokenized"
+     "validation_status" "passed"
+     "manifest_identity_object" (merge
+                                 {"manifest_schema_hash" (files/example-hash "01")
+                                  "corpus_snapshot_hash" (files/example-hash "02")
+                                  "work_content_hash" (files/example-hash "03")
+                                  "metadata_record_hash" nil
+                                  "parser_build_hash" (files/example-hash "04")
+                                  "parser_config_hash" (files/example-hash "05")
+                                  "aat_parser_ir_mapping_hash" (files/example-hash "06")
+                                  "parser_ir_schema_hash" (files/example-hash "07")
+                                  "tei_profile_hash" nil
+                                  "tokenizer_build_hash" (get-in profile ["tokenizer" "build_hash"])
+                                  "tokenizer_dictionary_hash" (get-in profile ["dictionary" "archive_hash"])
+                                  "tokenizer_profile_hash" profile-hash
+                                  "analysis_recipe_hash" nil
+                                  "output_format_spec_hash" (get profile "token_output_schema_hash")}
+                                 identity-overrides)
+     "content" {"content_hash" (files/example-hash "11")
+                "media_type" "application/json"}
+     "provenance" (merge {"used" [producer-artifact-id profile-hash]
+                          "was_derived_from" [producer-artifact-id]}
+                         provenance-overrides)}))
 
 (deftest index-entries-test
   (is (= [{"manifest_path" "a.manifest.json"
@@ -353,3 +385,84 @@
     (is (thrown-with-msg? clojure.lang.ExceptionInfo
                           #"Successful tokenized manifests require tokenizer_profile_hash"
                           (manifest-index/validate-tokenized-release-guardrail! entries)))))
+
+(deftest tokenized-copied-field-validation-test
+  (let [producer-id (files/example-hash "71")
+        tokenized-id (files/example-hash "72")
+        profile (tokenizer-profile)
+        profile-hash (analysis-identity/tokenizer-profile-hash profile)
+        producer (parser-ir-manifest producer-id (files/example-hash "04"))
+        good-tokenized (tokenized-manifest-from-producer tokenized-id
+                                                         producer-id
+                                                         profile)
+        bad-parser-copy (tokenized-manifest-from-producer
+                         (files/example-hash "73")
+                         producer-id
+                         profile
+                         {"parser_build_hash" (files/example-hash "99")})
+        bad-profile-copy (tokenized-manifest-from-producer
+                          (files/example-hash "74")
+                          producer-id
+                          profile
+                          {"tokenizer_build_hash" (files/example-hash "98")})
+        bad-dictionary-copy (tokenized-manifest-from-producer
+                             (files/example-hash "75")
+                             producer-id
+                             profile
+                             {"tokenizer_dictionary_hash" (files/example-hash "97")})]
+    (is (empty? (manifest-index/tokenized-copied-field-errors
+                 (manifest-index/index-entries {"parser.manifest.json" producer
+                                                "tokenized.manifest.json" good-tokenized})
+                 {profile-hash profile})))
+    (is (= [{:tokenized_artifact_id (files/example-hash "73")
+             :producer_artifact_id producer-id
+             :source :producer
+             :field "parser_build_hash"
+             :tokenized_value (files/example-hash "99")
+             :expected_value (files/example-hash "04")}
+            {:tokenized_artifact_id (files/example-hash "74")
+             :tokenizer_profile_hash profile-hash
+             :source :tokenizer-profile
+             :field "tokenizer_build_hash"
+             :tokenized_value (files/example-hash "98")
+             :expected_value (get-in profile ["tokenizer" "build_hash"])}
+            {:tokenized_artifact_id (files/example-hash "75")
+             :tokenizer_profile_hash profile-hash
+             :source :tokenizer-profile
+             :field "tokenizer_dictionary_hash"
+             :tokenized_value (files/example-hash "97")
+             :expected_value (get-in profile ["dictionary" "archive_hash"])}]
+           (manifest-index/tokenized-copied-field-errors
+            (manifest-index/index-entries {"parser.manifest.json" producer
+                                           "bad-parser.manifest.json" bad-parser-copy
+                                           "bad-profile.manifest.json" bad-profile-copy
+                                           "bad-dictionary.manifest.json" bad-dictionary-copy})
+            {profile-hash profile})))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"Tokenized manifest copied identity fields differ from producer or tokenizer profile"
+                          (manifest-index/validate-tokenized-copied-fields!
+                           (manifest-index/index-entries {"parser.manifest.json" producer
+                                                          "bad-profile.manifest.json" bad-profile-copy})
+                           {profile-hash profile})))))
+
+(deftest tokenized-copied-field-validation-requires-profile-provenance-test
+  (let [producer-id (files/example-hash "81")
+        tokenized-id (files/example-hash "82")
+        profile (tokenizer-profile)
+        profile-hash (analysis-identity/tokenizer-profile-hash profile)
+        producer (parser-ir-manifest producer-id (files/example-hash "04"))
+        tokenized (tokenized-manifest-from-producer tokenized-id
+                                                    producer-id
+                                                    profile
+                                                    {}
+                                                    {"used" [producer-id]})]
+    (is (= [{:tokenized_artifact_id tokenized-id
+             :tokenizer_profile_hash profile-hash
+             :source :provenance
+             :field "tokenizer_profile_hash"
+             :tokenized_value nil
+             :expected_value profile-hash}]
+           (manifest-index/tokenized-copied-field-errors
+            (manifest-index/index-entries {"parser.manifest.json" producer
+                                           "tokenized.manifest.json" tokenized})
+            {profile-hash profile})))))

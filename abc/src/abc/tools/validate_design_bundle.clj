@@ -4,6 +4,7 @@
             ;; Apache SSHD) get pulled in by other requires.
    [abc.tools.logging :as logging]
    [abc.tools.aat-parser-ir-compat :as compat]
+   [abc.tools.analysis-identity :as analysis-identity]
    [abc.tools.files :as files]
    [abc.tools.iiif :as iiif]
    [abc.tools.linked-art :as linked-art]
@@ -40,6 +41,15 @@
 (defn accepted-parser-ir-schema-hashes []
   (conj legacy-parser-ir-schema-hashes
         (manifest/schema-hash "schemas/parser-ir.schema.json")))
+
+(defn tokenizer-profiles-by-hash []
+  (->> (file-seq (io/file "data/tokenizer-profiles"))
+       (filter #(.isFile %))
+       (filter #(string/ends-with? (.getName %) ".json"))
+       (map files/read-json)
+       (map (fn [profile]
+              [(analysis-identity/tokenizer-profile-hash profile) profile]))
+       (into {})))
 
 (defn- parser-ir-schema-hash-accepted? [value]
   (contains? (accepted-parser-ir-schema-hashes) value))
@@ -928,9 +938,12 @@
         (let [entries (manifest-index/index-manifest-files
                        (concat (vals materialized)
                                [(:plaintext-manifest publication-output)
-                                (:tei-manifest publication-output)]))]
+                                (:tei-manifest publication-output)]))
+              tokenizer-profiles (tokenizer-profiles-by-hash)]
           (manifest-index/validate-no-reproducibility-conflicts! entries)
           (manifest-index/validate-tokenized-release-guardrail! entries)
+          (manifest-index/validate-tokenized-copied-fields! entries
+                                                            tokenizer-profiles)
           (manifest-index/validate-analysis-copied-fields! entries))
         (tel/log! :info "materialized manifest index ok")
         (tel/log! :info "==> Checking materialized RDF views")

@@ -25,10 +25,12 @@ closed. Manifest schema v0.4.2 added `tokenizer_profile_hash` to
 sidecar role; `schemas/token-output.schema.json` v0.1.0 defines the first
 accepted token-stream output contract. Release validation now rejects
 successful tokenized manifests only when the tokenizer profile coordinate is
-missing or null. ABC still cannot publish tokenized slices, tokenizer-backed
-stylometric analysis, or collection analysis packs as canonical snapshot
-artifacts until copied-field validation, tokenized materialization, and pack
-acceptance criteria below are implemented.
+missing or null, and rejects tokenized manifests whose parser/mapping identity
+fields differ from their producer parser-IR manifest or whose tokenizer
+build/dictionary fields differ from the cited tokenizer profile. ABC still
+cannot publish tokenized slices, tokenizer-backed stylometric analysis, or
+collection analysis packs as canonical snapshot artifacts until tokenized
+materialization and pack acceptance criteria below are implemented.
 
 Snapshot-publication work may proceed with TEI, plaintext, token-independent
 analysis, request-set fixtures, and snapshot indexes. It must not claim
@@ -535,9 +537,11 @@ remaining materialization and validation work lands.
   tokenizer profile hash, token output schema hash, and token index/input span
   coordinates.
 - Release validation fails when copied parser/mapping identity fields in a
-  tokenized manifest differ from the producer manifest.
+  tokenized manifest differ from the producer manifest;
+  `test/abc/tools/manifest_index_test.clj` covers this guardrail.
 - Release validation fails when tokenized manifest build/dictionary fields do
-  not match the tokenizer profile content.
+  not match the tokenizer profile content;
+  `test/abc/tools/manifest_index_test.clj` covers this guardrail.
 - A tokenizer-backed analysis fixture consumes a tokenized producer manifest
   via `token-stream-v1`.
 - Request-set resolver tests cover semantic profile label resolution to

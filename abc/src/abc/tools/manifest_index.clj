@@ -109,13 +109,13 @@
         (map (fn [entry] [(get entry "artifact_id") entry]))
         entries))
 
-(defn- find-producer-entry [by-artifact-id analysis-entry]
+(defn- find-parser-ir-producer-entry [by-artifact-id entry]
   (some (fn [artifact-id]
-          (let [entry (get by-artifact-id artifact-id)]
-            (when (successful-parser-ir-entry? entry)
-              entry)))
-        (concat (get analysis-entry "provenance_was_derived_from")
-                (get analysis-entry "provenance_used"))))
+          (let [candidate (get by-artifact-id artifact-id)]
+            (when (successful-parser-ir-entry? candidate)
+              candidate)))
+        (concat (get entry "provenance_was_derived_from")
+                (get entry "provenance_used"))))
 
 (defn- copied-field-errors [analysis-entry producer-entry]
   (->> parser-ir-copied-fields
@@ -136,7 +136,8 @@
          (filter successful-entry?)
          (filter #(= "analysis" (get % "artifact_kind")))
          (mapcat (fn [analysis-entry]
-                   (if-let [producer-entry (find-producer-entry by-artifact-id analysis-entry)]
+                   (if-let [producer-entry (find-parser-ir-producer-entry by-artifact-id
+                                                                          analysis-entry)]
                      (copied-field-errors analysis-entry producer-entry)
                      [{:analysis_artifact_id (get analysis-entry "artifact_id")
                        :producer_artifact_id nil
@@ -151,5 +152,99 @@
     (when (seq errors)
       (throw (ex-info "Analysis manifest copied identity fields differ from producer"
                       {:type :abc/analysis-copied-field-conflict
+                       :errors errors}))))
+  true)
+
+(def tokenized-profile-copied-fields
+  {"tokenizer_build_hash" ["tokenizer" "build_hash"]
+   "tokenizer_dictionary_hash" ["dictionary" "archive_hash"]
+   "output_format_spec_hash" ["token_output_schema_hash"]})
+
+(defn- tokenized-producer-copied-field-errors [tokenized-entry producer-entry]
+  (->> parser-ir-copied-fields
+       (keep (fn [field]
+               (let [tokenized-value (identity-value tokenized-entry field)
+                     expected-value (identity-value producer-entry field)]
+                 (when-not (= tokenized-value expected-value)
+                   {:tokenized_artifact_id (get tokenized-entry "artifact_id")
+                    :producer_artifact_id (get producer-entry "artifact_id")
+                    :source :producer
+                    :field field
+                    :tokenized_value tokenized-value
+                    :expected_value expected-value}))))
+       vec))
+
+(defn- tokenized-profile-provenance-error [tokenized-entry profile-hash]
+  (when-not (some #{profile-hash} (get tokenized-entry "provenance_used"))
+    {:tokenized_artifact_id (get tokenized-entry "artifact_id")
+     :tokenizer_profile_hash profile-hash
+     :source :provenance
+     :field "tokenizer_profile_hash"
+     :tokenized_value nil
+     :expected_value profile-hash}))
+
+(defn- tokenized-profile-lookup-error [tokenized-entry profile-hash]
+  {:tokenized_artifact_id (get tokenized-entry "artifact_id")
+   :tokenizer_profile_hash profile-hash
+   :source :tokenizer-profile
+   :field "__profile__"
+   :tokenized_value profile-hash
+   :expected_value :known-profile})
+
+(defn- tokenized-profile-copied-field-errors [tokenized-entry profile]
+  (->> tokenized-profile-copied-fields
+       (keep (fn [[field profile-path]]
+               (let [tokenized-value (identity-value tokenized-entry field)
+                     expected-value (get-in profile profile-path)]
+                 (when-not (= tokenized-value expected-value)
+                   {:tokenized_artifact_id (get tokenized-entry "artifact_id")
+                    :tokenizer_profile_hash (identity-value tokenized-entry
+                                                            "tokenizer_profile_hash")
+                    :source :tokenizer-profile
+                    :field field
+                    :tokenized_value tokenized-value
+                    :expected_value expected-value}))))
+       vec))
+
+(defn- tokenized-entry-copied-field-errors
+  [by-artifact-id tokenizer-profiles-by-hash tokenized-entry]
+  (let [profile-hash (identity-value tokenized-entry "tokenizer_profile_hash")
+        profile (get tokenizer-profiles-by-hash profile-hash)
+        producer-entry (find-parser-ir-producer-entry by-artifact-id
+                                                      tokenized-entry)
+        provenance-error (tokenized-profile-provenance-error tokenized-entry
+                                                             profile-hash)]
+    (vec
+     (concat
+      (if producer-entry
+        (tokenized-producer-copied-field-errors tokenized-entry producer-entry)
+        [{:tokenized_artifact_id (get tokenized-entry "artifact_id")
+          :producer_artifact_id nil
+          :source :producer
+          :field "__producer__"
+          :tokenized_value (vec (concat (get tokenized-entry
+                                             "provenance_was_derived_from")
+                                        (get tokenized-entry "provenance_used")))
+          :expected_value :successful-parser-ir}])
+      (if profile
+        (cond-> (tokenized-profile-copied-field-errors tokenized-entry profile)
+          provenance-error (conj provenance-error))
+        [(tokenized-profile-lookup-error tokenized-entry profile-hash)])))))
+
+(defn tokenized-copied-field-errors [entries tokenizer-profiles-by-hash]
+  (let [by-artifact-id (entry-by-artifact-id entries)]
+    (->> entries
+         (filter successful-entry?)
+         (filter #(= "tokenized" (get % "artifact_kind")))
+         (mapcat #(tokenized-entry-copied-field-errors by-artifact-id
+                                                       tokenizer-profiles-by-hash
+                                                       %))
+         vec)))
+
+(defn validate-tokenized-copied-fields! [entries tokenizer-profiles-by-hash]
+  (let [errors (tokenized-copied-field-errors entries tokenizer-profiles-by-hash)]
+    (when (seq errors)
+      (throw (ex-info "Tokenized manifest copied identity fields differ from producer or tokenizer profile"
+                      {:type :abc/tokenized-copied-field-conflict
                        :errors errors}))))
   true)

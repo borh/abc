@@ -200,7 +200,11 @@ fn remap_rebuilds_original_surfaces_under_length_preserving_normalization() {
     let mut analysis = make_analysis(&normalized_text, normalized_morphemes());
     remap_spans(&mut analysis, &offset_map, GOLDEN_SOURCE).unwrap();
 
-    let surfaces: Vec<&str> = analysis.morphemes.iter().map(|m| m.surface.as_str()).collect();
+    let surfaces: Vec<&str> = analysis
+        .morphemes
+        .iter()
+        .map(|m| m.surface.as_str())
+        .collect();
     assert_eq!(surfaces, ["吾輩", "ハ", "猫", "デアル", "果テ"]);
     // Byte spans unchanged (length-preserving) but now denote original-doc bytes.
     assert_eq!(analysis.morphemes[1].byte_span, 6..9);

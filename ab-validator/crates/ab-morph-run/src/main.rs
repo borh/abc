@@ -102,6 +102,26 @@ to default or delete the heuristic path without a human-annotated gold set."
 The model carries no training-provenance metadata; verify its source before trusting output."
         )]
         ortho_ml_model: Option<PathBuf>,
+        #[arg(
+            long = "works-parquet",
+            value_name = "PATH",
+            requires = "warehouse_dir",
+            help = "Lane A (historical-kana): an aozora_works.parquet sidecar (from \
+`import-aozora-metadata`). When set, only works whose orthographic_style is in \
+--orthographic-style are analyzed — a run-eligibility filter for running old-kana \
+works under a historical UniDic (e.g. --analyzer vibrato:unidic-kindai-bungo-202512). \
+Does not change normalization."
+        )]
+        works_parquet: Option<PathBuf>,
+        #[arg(
+            long = "orthographic-style",
+            value_name = "STYLE",
+            value_delimiter = ',',
+            requires = "works_parquet",
+            help = "orthographic_style values eligible for this run (comma-separated). \
+Defaults to the old-kana set 新字旧仮名,旧字旧仮名 when --works-parquet is set without it."
+        )]
+        orthographic_style: Vec<String>,
     },
     SummarizeWarehouseNway {
         #[arg(long)]
@@ -416,12 +436,20 @@ fn main() -> Result<()> {
             progress_interval_seconds,
             ortho_detect,
             ortho_ml_model,
+            works_parquet,
+            orthographic_style,
         } => {
             validate_warehouse_cli(warehouse_dir.as_ref(), run_id.as_deref(), resume, jobs)?;
             if ortho_detect == ab_morph_run::OrthoDetectMode::Ml && ortho_ml_model.is_none() {
                 bail!("--ortho-ml-model PATH is required when --ortho-detect=ml");
             }
             if let Some(warehouse_dir) = warehouse_dir {
+                let eligible = works_parquet
+                    .as_deref()
+                    .map(|path| {
+                        ab_morph_run::resolve_orthographic_eligibility(path, &orthographic_style)
+                    })
+                    .transpose()?;
                 return ab_morph_run::run_analyze_aat_warehouse(
                     aat.as_deref(),
                     aat_dir.as_deref(),
@@ -435,6 +463,7 @@ fn main() -> Result<()> {
                     parquet_zstd_level,
                     ortho_detect,
                     ortho_ml_model,
+                    eligible.as_ref(),
                 );
             }
             let progress_enabled = progress || progress_interval_seconds.is_some();

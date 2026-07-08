@@ -228,6 +228,7 @@ pub fn run_analyze_aat_warehouse(
     zstd_level: i32,
     ortho_detect: OrthoDetectMode,
     ortho_ml_model: Option<PathBuf>,
+    eligible_source_ids: Option<&BTreeSet<String>>,
 ) -> Result<()> {
     run_analyze_aat_warehouse_impl(
         aat,
@@ -240,6 +241,7 @@ pub fn run_analyze_aat_warehouse(
         zstd_level,
         ortho_detect,
         ortho_ml_model,
+        eligible_source_ids,
     )
 }
 
@@ -255,6 +257,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
     zstd_level: i32,
     ortho_detect: OrthoDetectMode,
     ortho_ml_model: Option<PathBuf>,
+    eligible_source_ids: Option<&BTreeSet<String>>,
 ) -> Result<()> {
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
@@ -267,6 +270,23 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
     }
     let jobs = crate::auto_jobs::resolve_jobs(jobs, analyzer_ids.len());
     let inputs = discover_aat_inputs(aat, aat_dir)?;
+    // Lane A: run-eligibility filter by orthographic_style (outside
+    // normalization, I2-D17b). Drops works not in the eligible set before any
+    // analysis; logged so the narrowing is never silent.
+    let inputs = match eligible_source_ids {
+        Some(eligible) => {
+            let discovered = inputs.len();
+            let kept = crate::orthographic_select::filter_inputs_by_source_ids(inputs, eligible);
+            eprintln!(
+                "ab-morph-run: orthographic_style eligibility filter kept {}/{} works ({} eligible source_ids)",
+                kept.len(),
+                discovered,
+                eligible.len()
+            );
+            kept
+        }
+        None => inputs,
+    };
     let input_mode = if aat.is_some() { "aat" } else { "aat_dir" };
     let input_path = aat
         .or(aat_dir)

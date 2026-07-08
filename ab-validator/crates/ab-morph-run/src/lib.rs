@@ -4,6 +4,7 @@ mod compact;
 mod import_aozora;
 mod nway;
 mod options;
+mod orthographic_select;
 mod oracle;
 mod output;
 mod pipeline;
@@ -187,6 +188,7 @@ pub fn run_analyze_aat_warehouse(
     zstd_level: i32,
     ortho_detect: OrthoDetectMode,
     ortho_ml_model: Option<PathBuf>,
+    eligible_source_ids: Option<&std::collections::BTreeSet<String>>,
 ) -> Result<()> {
     pipeline::run_analyze_aat_warehouse(
         aat,
@@ -199,7 +201,29 @@ pub fn run_analyze_aat_warehouse(
         zstd_level,
         ortho_detect,
         ortho_ml_model,
+        eligible_source_ids,
     )
+}
+
+/// Lane A (historical-kana): resolve the set of eligible `source_id`s for a run
+/// from an `aozora_works.parquet` sidecar, keeping works whose
+/// `orthographic_style` is in `styles`. When `styles` is empty, defaults to the
+/// old-kana set (`新字旧仮名`, `旧字旧仮名`). Pass the result to
+/// [`run_analyze_aat_warehouse`]'s `eligible_source_ids`.
+///
+/// # Errors
+///
+/// Returns an error if the sidecar cannot be read or lacks the required columns.
+pub fn resolve_orthographic_eligibility(
+    works_parquet: &Path,
+    styles: &[String],
+) -> Result<std::collections::BTreeSet<String>> {
+    let allowed: std::collections::BTreeSet<String> = if styles.is_empty() {
+        orthographic_select::old_kana_styles()
+    } else {
+        styles.iter().cloned().collect()
+    };
+    orthographic_select::eligible_source_ids(works_parquet, &allowed)
 }
 
 /// Run over an explicit list of AAT inputs.
@@ -1913,6 +1937,7 @@ mod tests {
             3,
             OrthoDetectMode::Off,
             None,
+            None,
         )
         .unwrap();
 
@@ -1948,6 +1973,65 @@ mod tests {
     }
 
     #[test]
+    fn warehouse_eligibility_filter_narrows_run_to_selected_source_ids() {
+        // Lane A: only works in the eligible set are analyzed; the rest are
+        // dropped before analysis (run-eligibility filter, outside normalization).
+        let dir = temp_dir("warehouse-eligibility");
+        let aat_dir = dir.join("aats");
+        let warehouse_dir = dir.join("warehouse");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::write(
+            aat_dir.join("source-old.json"),
+            tiny_aat("work-old").replace("吾輩は猫である。", "今日"),
+        )
+        .unwrap();
+        fs::write(
+            aat_dir.join("source-modern.json"),
+            tiny_aat("work-modern").replace("吾輩は猫である。", "今日"),
+        )
+        .unwrap();
+
+        let eligible: BTreeSet<String> = ["source-old".to_owned()].into_iter().collect();
+        run_analyze_aat_warehouse(
+            None,
+            Some(&aat_dir),
+            &["test:single".to_owned()],
+            &warehouse_dir,
+            "run-a",
+            1,
+            WarehouseProfile::Full,
+            3,
+            OrthoDetectMode::Off,
+            None,
+            Some(&eligible),
+        )
+        .unwrap();
+
+        let run_dir = warehouse_dir.join("runs").join("run-a");
+        let file = fs::File::open(run_dir.join("sources.parquet")).unwrap();
+        let reader = parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder::try_new(file)
+            .unwrap()
+            .build()
+            .unwrap();
+        let mut source_ids = BTreeSet::new();
+        for batch in reader {
+            let batch = batch.unwrap();
+            let idx = batch.schema().index_of("source_id").unwrap();
+            let values = batch
+                .column(idx)
+                .as_any()
+                .downcast_ref::<arrow_array::StringArray>()
+                .unwrap();
+            for row in 0..batch.num_rows() {
+                source_ids.insert(values.value(row).to_owned());
+            }
+        }
+        assert_eq!(source_ids, eligible, "only the eligible work should be analyzed");
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
     fn warehouse_triage_profile_omits_raw_feature_tables() {
         let dir = temp_dir("warehouse-triage-profile");
         let aat_dir = dir.join("aats");
@@ -1969,6 +2053,7 @@ mod tests {
             WarehouseProfile::Triage,
             3,
             OrthoDetectMode::Off,
+            None,
             None,
         )
         .unwrap();
@@ -2027,6 +2112,7 @@ mod tests {
             3,
             OrthoDetectMode::Off,
             None,
+            None,
         )
         .unwrap();
 
@@ -2065,6 +2151,7 @@ mod tests {
             3,
             OrthoDetectMode::Off,
             None,
+            None,
         )
         .unwrap();
 
@@ -2102,6 +2189,7 @@ mod tests {
             WarehouseProfile::Full,
             3,
             OrthoDetectMode::Off,
+            None,
             None,
         )
         .unwrap();
@@ -2146,6 +2234,7 @@ mod tests {
             WarehouseProfile::Full,
             3,
             OrthoDetectMode::Off,
+            None,
             None,
         )
         .unwrap_err();

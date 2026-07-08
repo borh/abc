@@ -209,6 +209,9 @@
   (str (.relativize (.toPath (io/file root))
                     (.toPath (io/file file)))))
 
+(defn- normalized-relative-path [root file]
+  (string/replace (relative-path root file) "\\" "/"))
+
 (defn- loose-manifest-reference [root manifest-file]
   {"manifest_path" (str (io/file manifest-file))
    "locator" {"kind" "loose"
@@ -675,28 +678,47 @@
      "validation" validation
      "notes" "Citable reproduction evidence report. This file is not part of snapshot identity; cite snapshot_identity_hash, request_set_id, and artifact hashes from snapshot-index.json."}))
 
+(defn- write-publication-report-file! [root snapshot output-path]
+  (validate-snapshot-root-references! root snapshot)
+  (validate-run-summary! root snapshot)
+  (let [run-summary (read-required-run-summary root)
+        validation {"snapshot_root_valid" true
+                    "checked_manifest_references" (count (get snapshot
+                                                              "artifact_references"
+                                                              []))
+                    "run_summary_valid" true}
+        report (publication-report snapshot run-summary validation)
+        output-file (io/file output-path)]
+    (manifest/write-json-file! output-file report)
+    {:file output-file
+     :report report}))
+
 (defn publication-report! [snapshot-root output-path]
   (let [root (io/file snapshot-root)
         snapshot (read-valid-snapshot-index root)]
     (when-not (.isDirectory root)
       (throw (ex-info "publication-report requires a snapshot root directory"
                       {:path (str root)})))
-    (validate-snapshot-root-references! root snapshot)
-    (validate-run-summary! root snapshot)
-    (let [run-summary (read-required-run-summary root)
-          validation {"snapshot_root_valid" true
-                      "checked_manifest_references" (count (get snapshot
-                                                                "artifact_references"
-                                                                []))
-                      "run_summary_valid" true}
-          report (publication-report snapshot run-summary validation)
-          output-file (io/file output-path)]
-      (manifest/write-json-file! output-file report)
-      (println "publication_report:" (str output-file))
+    (let [{:keys [file]} (write-publication-report-file! root
+                                                         snapshot
+                                                         output-path)]
+      (println "publication_report:" (str file))
       (println "snapshot_identity_hash:" (get snapshot
                                               "snapshot_identity_hash"))
       (println "request_set_label:" (get snapshot "request_set_label"))
       0)))
+
+(defn- write-layout-report-file! [root snapshot output-path]
+  (validate-snapshot-root-references! root snapshot)
+  (let [validation {"snapshot_root_valid" true
+                    "checked_manifest_references" (count (get snapshot
+                                                              "artifact_references"
+                                                              []))}
+        report (layout-report/build-report root snapshot validation)
+        output-file (io/file output-path)]
+    (manifest/write-json-file! output-file report)
+    {:file output-file
+     :report report}))
 
 (defn layout-report! [snapshot-root output-path]
   (let [root (io/file snapshot-root)
@@ -704,15 +726,10 @@
     (when-not (.isDirectory root)
       (throw (ex-info "layout-report requires a snapshot root directory"
                       {:path (str root)})))
-    (validate-snapshot-root-references! root snapshot)
-    (let [validation {"snapshot_root_valid" true
-                      "checked_manifest_references" (count (get snapshot
-                                                                "artifact_references"
-                                                                []))}
-          report (layout-report/build-report root snapshot validation)
-          output-file (io/file output-path)]
-      (manifest/write-json-file! output-file report)
-      (println "layout_report:" (str output-file))
+    (let [{:keys [file]} (write-layout-report-file! root
+                                                    snapshot
+                                                    output-path)]
+      (println "layout_report:" (str file))
       (println "snapshot_identity_hash:" (get snapshot
                                               "snapshot_identity_hash"))
       (println "request_set_label:" (get snapshot "request_set_label"))
@@ -766,7 +783,7 @@
 (defn- generated-at-from-date [snapshot-date]
   (str snapshot-date "T00:00:00Z"))
 
-(defn source-snapshot!
+(defn- write-source-snapshot-root!
   [input-root output-root snapshot-scope snapshot-date]
   (let [output-root-file (io/file output-root)
         workset-file (io/file output-root-file "source-snapshot.workset.edn")
@@ -781,11 +798,186 @@
                                   :output-path (str snapshot-file)
                                   :generated-at (generated-at-from-date
                                                  snapshot-date)})]
+    {:workset-file workset-file
+     :snapshot-file snapshot-file
+     :snapshot (files/read-json snapshot-file)
+     :snapshot-hash snapshot-hash
+     :works-count works-count}))
+
+(defn source-snapshot!
+  [input-root output-root snapshot-scope snapshot-date]
+  (let [{:keys [workset-file snapshot-file snapshot-hash works-count]}
+        (write-source-snapshot-root! input-root
+                                     output-root
+                                     snapshot-scope
+                                     snapshot-date)]
     (println "source_snapshot_workset:" (str workset-file))
     (println "source_snapshot:" (str snapshot-file))
     (println "source_snapshot_hash:" snapshot-hash)
     (println "works_count:" works-count)
     0))
+
+(defn- zstd-archives [root]
+  (->> (file-seq (io/file root))
+       (filter #(.isFile %))
+       (filter #(string/ends-with? (str %) ".tar.zst"))
+       (sort-by str)
+       vec))
+
+(defn- archive-summary [root]
+  (let [archives (zstd-archives root)]
+    {"count" (count archives)
+     "byte_count" (reduce + 0 (map #(.length %) archives))
+     "paths" (mapv #(normalized-relative-path root %) archives)}))
+
+(defn- validate-staged-root! [staged-root]
+  (let [staged-snapshot (read-valid-snapshot-index staged-root)]
+    (validate-snapshot-root-references! staged-root staged-snapshot)
+    (validate-run-summary! staged-root staged-snapshot)
+    staged-snapshot))
+
+(defn- publication-rehearsal-report
+  [{:keys [input-root output-root source-snapshot-result request-set-file
+           request-set snapshot-root snapshot staged-root staged-result
+           publication-report-file publication-report-value layout-report-file
+           layout-report-value]}]
+  (let [identity-object (get snapshot "snapshot_index_identity_object")
+        staged-snapshot (:snapshot staged-result)
+        staged-archives (archive-summary staged-root)]
+    {"schema_id" "https://w3id.org/abc/soranoha-publication-rehearsal-report-v0.json"
+     "report_version" "0.1.0"
+     "generated_at" (get snapshot "generated_at")
+     "input_root" (str (io/file input-root))
+     "output_root" (str (io/file output-root))
+     "source_snapshot_path" (normalized-relative-path
+                             output-root
+                             (:snapshot-file source-snapshot-result))
+     "source_snapshot_workset_path" (normalized-relative-path
+                                     output-root
+                                     (:workset-file source-snapshot-result))
+     "source_snapshot_hash" (:snapshot-hash source-snapshot-result)
+     "request_set_label" (get request-set "label")
+     "request_set_id" (get request-set "request_set_id")
+     "request_set_path" (normalized-relative-path output-root request-set-file)
+     "snapshot_root" (normalized-relative-path output-root snapshot-root)
+     "snapshot_label" (get snapshot "snapshot_label")
+     "snapshot_identity_hash" (get snapshot "snapshot_identity_hash")
+     "snapshot_summary" (get snapshot "summary")
+     "staged_root" (normalized-relative-path output-root staged-root)
+     "staged_index_path" (normalized-relative-path output-root
+                                                   (:index-file staged-result))
+     "publication_report_path" (normalized-relative-path
+                                output-root
+                                publication-report-file)
+     "layout_report_path" (normalized-relative-path output-root
+                                                    layout-report-file)
+     "work_count" (:works-count source-snapshot-result)
+     "manifest_reference_count" (count (get snapshot
+                                            "artifact_references"
+                                            []))
+     "artifact_kind_counts" (layout-report/artifact-kind-counts snapshot)
+     "archive_format" (get-in staged-snapshot ["layout_policy"
+                                               "archive_format"])
+     "staged_archive_count" (get staged-archives "count")
+     "staged_archive_byte_count" (get staged-archives "byte_count")
+     "staged_archive_paths" (get staged-archives "paths")
+     "parser_evidence_hashes" (get identity-object "parser_evidence_hashes")
+     "publication_report_hash" (manifest/file-hash publication-report-file)
+     "layout_report_hash" (manifest/file-hash layout-report-file)
+     "validation" {"snapshot_root_valid" true
+                   "staged_root_valid" true
+                   "publication_report_valid" (true? (get-in publication-report-value
+                                                             ["validation"
+                                                              "snapshot_root_valid"]))
+                   "layout_report_valid" (true? (get-in layout-report-value
+                                                        ["validation"
+                                                         "snapshot_root_valid"]))}
+     "rehearsal_command" "soranoha publication-rehearsal <materialized-root> <output-root> <request-set-label> <snapshot-scope> <snapshot-date>"
+     "internal_steps" [{"step" "source-snapshot"
+                        "output" "source-snapshot/source-snapshot.json"}
+                       {"step" "resolve-request-set"
+                        "output" "request-sets/<label>.json"}
+                       {"step" "materialize-snapshot-root"
+                        "output" "snapshot-root/snapshot-index.json"}
+                       {"step" "publication-report"
+                        "output" "reports/publication-report.json"}
+                       {"step" "layout-report"
+                        "output" "reports/layout-report.json"}
+                       {"step" "stage-publication"
+                        "output" "publication/index.json"}
+                       {"step" "validate-staged"
+                        "input" "publication/index.json"}]
+     "notes" "End-to-end publication rehearsal report. Use it to record a full-corpus dry run; publication identity remains snapshot_identity_hash plus request_set_id and artifact hashes."}))
+
+(defn publication-rehearsal!
+  [input-root output-root request-set-label snapshot-scope snapshot-date]
+  (let [output-root-file (io/file output-root)
+        source-snapshot-root (io/file output-root-file "source-snapshot")
+        request-set-dir (io/file output-root-file "request-sets")
+        request-set-file (io/file request-set-dir
+                                  (str request-set-label ".json"))
+        snapshot-root (io/file output-root-file "snapshot-root")
+        reports-root (io/file output-root-file "reports")
+        publication-report-file (io/file reports-root "publication-report.json")
+        layout-report-file (io/file reports-root "layout-report.json")
+        staged-root (io/file output-root-file "publication")
+        rehearsal-report-file (io/file output-root-file
+                                       "rehearsal-report.json")]
+    (files/delete-tree! output-root-file)
+    (.mkdirs output-root-file)
+    (let [source-snapshot-result (write-source-snapshot-root!
+                                  input-root
+                                  source-snapshot-root
+                                  snapshot-scope
+                                  snapshot-date)
+          request-set (request-set-resolver/resolve-request-set
+                       request-set-label
+                       {:subject-source-path
+                        (str (:snapshot-file source-snapshot-result))})
+          _ (manifest/write-json-file! request-set-file request-set)
+          _ (materialize-snapshot-root! (str request-set-file) snapshot-root)
+          snapshot (read-valid-snapshot-index snapshot-root)
+          _ (validate-snapshot-root-references! snapshot-root snapshot)
+          _ (validate-run-summary! snapshot-root snapshot)
+          {publication-report-value :report}
+          (write-publication-report-file! snapshot-root
+                                          snapshot
+                                          publication-report-file)
+          {layout-report-value :report}
+          (write-layout-report-file! snapshot-root
+                                     snapshot
+                                     layout-report-file)
+          staged-result (stage-publication/stage-publication!
+                         {:snapshot-root snapshot-root
+                          :staged-root staged-root
+                          :snapshot snapshot})
+          staged-snapshot (validate-staged-root! staged-root)
+          staged-result (assoc staged-result :snapshot staged-snapshot)
+          report (publication-rehearsal-report
+                  {:input-root input-root
+                   :output-root output-root-file
+                   :source-snapshot-result source-snapshot-result
+                   :request-set-file request-set-file
+                   :request-set request-set
+                   :snapshot-root snapshot-root
+                   :snapshot snapshot
+                   :staged-root staged-root
+                   :staged-result staged-result
+                   :publication-report-file publication-report-file
+                   :publication-report-value publication-report-value
+                   :layout-report-file layout-report-file
+                   :layout-report-value layout-report-value})]
+      (manifest/write-json-file! rehearsal-report-file report)
+      (println "rehearsal_report:" (str rehearsal-report-file))
+      (println "source_snapshot:" (str (:snapshot-file source-snapshot-result)))
+      (println "request_set:" (str request-set-file))
+      (println "snapshot_root:" (str snapshot-root))
+      (println "staged_index:" (str (:index-file staged-result)))
+      (println "snapshot_identity_hash:" (get snapshot
+                                              "snapshot_identity_hash"))
+      (println "request_set_id:" (get request-set "request_set_id"))
+      (println "work_count:" (:works-count source-snapshot-result))
+      0)))
 
 (defn usage []
   (string/join
@@ -803,7 +995,8 @@
     "  publication-report <snapshot-root> <output-path>"
     "  layout-report <snapshot-root> <output-path>"
     "  stage-publication <snapshot-root> <output-root>"
-    "  source-snapshot <materialized-root> <output-root> <snapshot-scope> <snapshot-date>"]))
+    "  source-snapshot <materialized-root> <output-root> <snapshot-scope> <snapshot-date>"
+    "  publication-rehearsal <materialized-root> <output-root> <request-set-label> <snapshot-scope> <snapshot-date>"]))
 
 (def commands
   {"list-request-sets" {:args 0
@@ -827,7 +1020,9 @@
    "stage-publication" {:args 2
                         :run stage-publication!}
    "source-snapshot" {:args 4
-                      :run source-snapshot!}})
+                      :run source-snapshot!}
+   "publication-rehearsal" {:args 5
+                            :run publication-rehearsal!}})
 
 (defn run! [args]
   (let [[command & rest-args] args]

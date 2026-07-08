@@ -558,6 +558,76 @@
         (delete-tree! snapshot-root)
         (delete-tree! root)))))
 
+(deftest publication-rehearsal-command-runs-full-chain-test
+  (let [root (fixture/temp-dir "abc-soranoha-publication-rehearsal")
+        input-root (io/file root "materialized")
+        output-root (io/file root "rehearsal")]
+    (try
+      (fixture/materialized-work! input-root
+                                  {:slug "alpha"
+                                   :title "一"
+                                   :work-id "000001"
+                                   :person-id "000879"
+                                   :work-hash (fixture/example-hash "a1")})
+      (let [out (with-out-str
+                  (is (zero? (soranoha/run!
+                              ["publication-rehearsal"
+                               (str input-root)
+                               (str output-root)
+                               "full-corpus-basic-ja"
+                               "unit-test-source-snapshot"
+                               "2026-07-07"]))))
+            report-file (io/file output-root "rehearsal-report.json")
+            request-set-file (io/file output-root
+                                      "request-sets"
+                                      "full-corpus-basic-ja.json")
+            snapshot-root (io/file output-root "snapshot-root")
+            staged-root (io/file output-root "publication")
+            publication-report-file (io/file output-root
+                                             "reports"
+                                             "publication-report.json")
+            layout-report-file (io/file output-root
+                                        "reports"
+                                        "layout-report.json")]
+        (is (string/includes? out (str report-file)))
+        (is (.exists request-set-file))
+        (is (.exists (io/file snapshot-root "snapshot-index.json")))
+        (is (.exists (io/file staged-root "index.json")))
+        (is (.exists publication-report-file))
+        (is (.exists layout-report-file))
+        (with-out-str
+          (is (zero? (soranoha/run! ["validate" (str staged-root)]))))
+        (let [report (files/read-json report-file)
+              staged-index (files/read-json (io/file staged-root "index.json"))
+              request-set (files/read-json request-set-file)]
+          (is (= "https://w3id.org/abc/soranoha-publication-rehearsal-report-v0.json"
+                 (get report "schema_id")))
+          (is (= "0.1.0" (get report "report_version")))
+          (is (= (get request-set "request_set_id")
+                 (get report "request_set_id")))
+          (is (= (get staged-index "snapshot_identity_hash")
+                 (get report "snapshot_identity_hash")))
+          (is (= 1 (get report "work_count")))
+          (is (= 4 (get report "manifest_reference_count")))
+          (is (= "tar.zst" (get report "archive_format")))
+          (is (= "soranoha publication-rehearsal <materialized-root> <output-root> <request-set-label> <snapshot-scope> <snapshot-date>"
+                 (get report "rehearsal_command")))
+          (is (= ["source-snapshot"
+                  "resolve-request-set"
+                  "materialize-snapshot-root"
+                  "publication-report"
+                  "layout-report"
+                  "stage-publication"
+                  "validate-staged"]
+                 (mapv #(get % "step") (get report "internal_steps"))))
+          (is (nil? (get report "commands")))
+          (is (= true (get-in report ["validation"
+                                      "snapshot_root_valid"])))
+          (is (= true (get-in report ["validation"
+                                      "staged_root_valid"])))))
+      (finally
+        (delete-tree! root)))))
+
 (deftest reproduce-command-skips-analysis-for-generated-publication-request-set-test
   (let [root (fixture/temp-dir "abc-soranoha-reproduce-publication-source")
         snapshot-root (io/file "target/soranoha/full-corpus-publication-basic-ja")]

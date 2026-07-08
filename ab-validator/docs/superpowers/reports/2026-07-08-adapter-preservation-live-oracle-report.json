@@ -1,0 +1,1532 @@
+{
+  "rows": [
+    {
+      "case_id": "gaiji.jis.2-13-47",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "gaiji.jis.2-13-47",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "gaiji.jis.2-13-47",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "expected gaiji \"「てへん＋掌」、第4水準2-13-47\" at blocks.*.content.*"
+      ]
+    },
+    {
+      "case_id": "gaiji.unicode.u546d",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "normative",
+      "failures": []
+    },
+    {
+      "case_id": "gaiji.unicode.u546d",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "normative",
+      "failures": []
+    },
+    {
+      "case_id": "gaiji.unicode.u546d",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "normative",
+      "failures": [
+        "expected gaiji \"「口＋世」、U+546D\" at blocks.*.content.*"
+      ]
+    },
+    {
+      "case_id": "ruby.gaiji.inline_base",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "ruby.gaiji.inline_base",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "ruby.gaiji.inline_base",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"噯が出た。\", got \"※［＃「口＋愛」、第3水準1-15-23］が出た。\"",
+        "expected 1 ruby nodes at blocks.*.content.*, found 0",
+        "expected gaiji \"「口＋愛」、第3水準1-15-23\" at blocks.*.content.*.base_content.*"
+      ]
+    },
+    {
+      "case_id": "ruby.double.right_left",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "ruby.double.right_left",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "ruby.double.right_left",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"青空文庫\", got \"青空文庫［＃「青空文庫」の左に「aozora bunko」のルビ］\"",
+        "expected 1 ruby nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"ruby\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "ruby.placement.left",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "ruby.placement.left",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "ruby.placement.left",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"青空文庫\", got \"青空文庫［＃「青空文庫」の左に「あおぞらぶんこ」のルビ］\"",
+        "expected 1 ruby nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"ruby\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "ruby.nested_forbidden.target_includes_ruby",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "ruby.nested_forbidden.target_includes_ruby",
+      "adapter": "aozora-rs",
+      "schema_status": "fail",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "ruby.nested_forbidden.target_includes_ruby",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "expected 1 raw nodes at blocks.*.content.*, found 0"
+      ]
+    },
+    {
+      "case_id": "annotation.chuuki.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "annotation.chuuki.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "annotation.chuuki.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"吹喋\", got \"吹喋［＃「喋」の「ママ」の注記］\"",
+        "expected 1 ruby nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"text\", \"ruby\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "annotation.bouki.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "annotation.bouki.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "annotation.bouki.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"支部長の顔にさっと血が流れた\", got \"支部長の顔にさっと血が流れ［＃「血が流れ」に「×」の傍記］た\"",
+        "expected 1 ruby nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"text\", \"ruby\", \"text\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "gaiji.dakuten_katakana.ve",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "gaiji.dakuten_katakana.ve",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "gaiji.dakuten_katakana.ve",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "expected gaiji \"濁点付き片仮名ヱ、1-7-84\" at blocks.*.content.*"
+      ]
+    },
+    {
+      "case_id": "gaiji.un_embed.description_only",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "gaiji.un_embed.description_only",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "gaiji.un_embed.description_only",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"これはである。\", got \"これは※［＃底本では欠字］である。\"",
+        "expected kind sequence [\"text\", \"gaiji\", \"text\"] at blocks.*.content",
+        "expected gaiji \"底本では欠字\" at blocks.*.content.*"
+      ]
+    },
+    {
+      "case_id": "iteration.kunoji.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "normative",
+      "failures": []
+    },
+    {
+      "case_id": "iteration.kunoji.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "normative",
+      "failures": []
+    },
+    {
+      "case_id": "iteration.kunoji.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "normative",
+      "failures": [
+        "visible_text expected \"〳〵\", got \"／＼\"",
+        "expected kind sequence [\"gaiji\"] at blocks.*.content",
+        "expected gaiji \"くの字点\" at blocks.*.content.*"
+      ]
+    },
+    {
+      "case_id": "accent.diacritic.e_acute",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "accent.diacritic.e_acute",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "accent.diacritic.e_acute",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"繁雑な日本の étiquette も、\", got \"繁雑な日本の 〔étiquette〕 も、\"",
+        "expected 1 accent nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"text\", \"accent\", \"text\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "kunten.kaeriten.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "kunten.kaeriten.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "kunten.kaeriten.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"漢文\", got \"漢［＃返り点一］文\"",
+        "expected 1 style nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"text\", \"style\", \"text\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "kunten.okurigana.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "kunten.okurigana.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "kunten.okurigana.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"漢文\", got \"漢［＃訓点送り仮名「読」］文\"",
+        "expected 1 ruby nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"text\", \"ruby\", \"text\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "heading.inline_form.large",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "heading.inline_form.large",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "heading.inline_form.large",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"序章\", got \"序章［＃「序章」の大見出し］\"",
+        "expected 1 heading nodes at blocks.*, found 0",
+        "expected kind sequence [\"heading\"] at blocks"
+      ]
+    },
+    {
+      "case_id": "heading.dogyo.medium",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "heading.dogyo.medium",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "heading.dogyo.medium",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "heading.mado.small",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "heading.mado.small",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "heading.mado.small",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.boten.white_sesame",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.boten.white_sesame",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.boten.white_sesame",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "expected 1 style nodes at blocks.*.content.*, found 0"
+      ]
+    },
+    {
+      "case_id": "decoration.bousen.double",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.bousen.double",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.bousen.double",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "expected 1 style nodes at blocks.*.content.*, found 0"
+      ]
+    },
+    {
+      "case_id": "decoration.bold_italic.both",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.bold_italic.both",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.bold_italic.both",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "expected 1 style nodes at blocks.*.content.*, found 0"
+      ]
+    },
+    {
+      "case_id": "decoration.bold_italic.block",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.bold_italic.block",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.bold_italic.block",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"太字斜体\", got \"［＃ここから太字］\\n太字\\n［＃ここで太字終わり］\\n［＃ここから斜体］\\n斜体\\n［＃ここで斜体終わり］\"",
+        "expected 1 style nodes at blocks.*.content.*, found 0",
+        "expected 1 style nodes at blocks.*.content.*, found 0"
+      ]
+    },
+    {
+      "case_id": "decoration.font_size.larger",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.font_size.larger",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.font_size.larger",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "expected 1 font_size nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"font_size\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "decoration.font_size.block_larger",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.font_size.block_larger",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.font_size.block_larger",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"大きい\", got \"［＃ここから2段階大きな文字］\\n大きい\\n［＃ここで大きな文字終わり］\"",
+        "expected 1 font_size nodes at blocks.*.content.*, found 0",
+        "expected 1 text nodes at blocks.*.content.*.content.*, found 0",
+        "expected kind sequence [\"font_size\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "decoration.keigakomi.inline",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.keigakomi.inline",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.keigakomi.inline",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "expected 1 keigakomi nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"keigakomi\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "decoration.direction_override.left_boten",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.direction_override.left_boten",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "decoration.direction_override.left_boten",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "expected 1 style nodes at blocks.*.content.*, found 0"
+      ]
+    },
+    {
+      "case_id": "indentation.jisage_oneline.two_chars",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "indentation.jisage_oneline.two_chars",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "indentation.jisage_oneline.two_chars",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"字下げ行\", got \"字下げ行［＃この行2字下げ］\"",
+        "expected 1 style nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"style\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "indentation.chitsuki.line",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "indentation.chitsuki.line",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "indentation.chitsuki.line",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"右寄せ\", got \"右寄せ［＃この行地付き］\"",
+        "expected 1 style nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"style\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "indentation.jizume.width",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "indentation.jizume.width",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "indentation.jizume.width",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"本文\", got \"［＃ここから字詰め4］\\n本文\\n［＃ここで字詰め終わり］\"",
+        "expected 1 style nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"style\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "indentation.burasage.hanging",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "indentation.burasage.hanging",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "indentation.burasage.hanging",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "layout.yokogumi.inline",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "layout.yokogumi.inline",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "layout.yokogumi.inline",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"ABC\", got \"ABC［＃「ABC」の横組み］\"",
+        "expected 1 yokogumi nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"yokogumi\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "layout.tcy.inline",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "layout.tcy.inline",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "layout.tcy.inline",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"12\", got \"12［＃「12」の縦中横］\"",
+        "expected 1 tcy nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"tcy\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "layout.tcy.block",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "layout.tcy.block",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "layout.tcy.block",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"12\", got \"［＃ここから縦中横］\\n12\\n［＃ここで縦中横終わり］\"",
+        "expected 1 tcy nodes at blocks.*.content.*, found 0",
+        "expected 1 text nodes at blocks.*.content.*.content.*, found 0",
+        "expected kind sequence [\"tcy\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "warigaki.parenthetical.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "warigaki.parenthetical.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "warigaki.parenthetical.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"本文に注が入る。\", got \"本文に［＃割書］注［＃割書終わり］が入る。\"",
+        "expected 1 warigaki nodes at blocks.*.content.*, found 0",
+        "expected 1 text nodes at blocks.*.content.*.upper.*, found 0",
+        "expected kind sequence [\"text\", \"warigaki\", \"text\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "caption.inline.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "caption.inline.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "caption.inline.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"猫の図\", got \"猫の図［＃「猫の図」のキャプション］\"",
+        "expected 1 caption nodes at blocks.*.content.*, found 0",
+        "expected 1 text nodes at blocks.*.content.*.content.*, found 0",
+        "expected kind sequence [\"caption\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "caption.block.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "caption.block.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "caption.block.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"猫の図\", got \"［＃ここからキャプション］\\n猫の図\\n［＃ここでキャプション終わり］\"",
+        "expected 1 caption_block nodes at blocks.*, found 0",
+        "expected 1 text nodes at blocks.*.children.*.content.*, found 0",
+        "expected kind sequence [\"caption_block\"] at blocks",
+        "expected kind sequence [\"paragraph\"] at blocks.*.children"
+      ]
+    },
+    {
+      "case_id": "figure.image_inline.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "figure.image_inline.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "figure.image_inline.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "expected 1 figure nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"figure\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "editor_note.unmapped.blank",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "editor_note.unmapped.blank",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "editor_note.unmapped.blank",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"本文続き\", got \"本文［＃左頁］続き\"",
+        "expected 1 text nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"text\", \"text\", \"text\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "reference.frontref.boten",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "reference.frontref.boten",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "reference.frontref.boten",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"参照\", got \"参照［＃「参照」に「強調」の傍点］\"",
+        "expected 1 style nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"style\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "break.line_explicit.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "break.line_explicit.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "break.line_explicit.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"前\\n後\", got \"前［＃改行］後\"",
+        "expected 1 text nodes at blocks.*.content.*, found 0",
+        "expected kind sequence [\"text\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "break.page.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "break.page.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "break.page.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"前の段落。後の段落。\", got \"前の段落。\\n［＃改ページ］\\n後の段落。\"",
+        "expected 1 paragraph nodes at blocks.*, found 0",
+        "expected no raw nodes at **, found 1",
+        "expected kind sequence [\"paragraph\", \"paragraph\", \"paragraph\"] at blocks"
+      ]
+    },
+    {
+      "case_id": "ruby.basic.simple",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "ruby.basic.simple",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "ruby.basic.simple",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "heading.basic.large",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "heading.basic.large",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "heading.basic.large",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "emphasis.boten.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "emphasis.boten.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "emphasis.boten.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "expected 1 style nodes at blocks.*.content.*, found 0"
+      ]
+    },
+    {
+      "case_id": "indentation.jisage_block.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "indentation.jisage_block.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "indentation.jisage_block.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "warichu.basic.inline",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "warichu.basic.inline",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "warichu.basic.inline",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"本文に注釈が入る。\", got \"本文に［＃割り注］注釈［＃割り注終わり］が入る。\"",
+        "expected 1 warigaki nodes at blocks.*.content.*, found 0",
+        "expected 1 text nodes at blocks.*.content.*.upper.*, found 0",
+        "expected kind sequence [\"text\", \"warigaki\", \"text\"] at blocks.*.content"
+      ]
+    },
+    {
+      "case_id": "figure.image_caption.basic",
+      "adapter": "aozora2",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "figure.image_caption.basic",
+      "adapter": "aozora-rs",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": []
+    },
+    {
+      "case_id": "figure.image_caption.basic",
+      "adapter": "aozora",
+      "schema_status": "pass",
+      "upstream_status": "no_observation",
+      "oracle_status": "fail",
+      "oracle_review_status": "reviewed",
+      "oracle_evidence_strength": "reference",
+      "failures": [
+        "visible_text expected \"猫の図\", got \"［＃「猫の図」のキャプション付きの図（fig00001_01.png、横321×縦123）入る］\\n猫の図\"",
+        "expected 1 figure nodes at blocks.*.content.*, found 0",
+        "expected 1 text nodes at blocks.*.content.*.caption.*, found 0",
+        "expected no raw nodes at **, found 1"
+      ]
+    }
+  ]
+}

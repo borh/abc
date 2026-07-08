@@ -467,31 +467,74 @@
       (throw (ex-info "array-ordering negative fixtures produced the same digest"
                       {:digest array-a})))))
 
+(def ^:private tei-ns "http://www.tei-c.org/ns/1.0")
+
+(defn- tei-fixture
+  [path schematron-kind & {:keys [expected-rules project-rng?]
+                           :or {project-rng? true}}]
+  (cond-> {:path path
+           :schematron-kind schematron-kind
+           :project-rng? project-rng?}
+    expected-rules (assoc :expected-rules expected-rules)))
+
+(def tei-fixture-catalog
+  [(tei-fixture "examples/v0/example-work/tei.xml" :valid)
+   (tei-fixture "fixtures/tei/valid/rashomon-minimal.xml" :valid)
+   (tei-fixture "fixtures/tei/valid/source-span-local-ref.xml" :valid)
+   (tei-fixture "fixtures/tei/valid/transcription-enrichment-declared.xml" :valid)
+   (tei-fixture "fixtures/tei/warnings/figure-missing-desc.xml" :warning
+                :expected-rules #{"abc-figure-accessibility"})
+   (tei-fixture "fixtures/tei/warnings/transcription-enrichment-undeclared.xml" :warning
+                :expected-rules #{"abc-transcription-vs-annotation"})
+   (tei-fixture "fixtures/tei/invalid/missing-title.xml" :invalid
+                :expected-rules #{"abc-tei-header-title"}
+                :project-rng? false)
+   (tei-fixture "fixtures/tei/invalid/abc-bad-layout-params.xml" :invalid
+                :expected-rules #{"abc-layout-params-shape"})
+   (tei-fixture "fixtures/tei/invalid/abc-bad-preservation-record.xml" :invalid
+                :expected-rules #{"abc-preservation-record-shape"}
+                :project-rng? false)
+   (tei-fixture "fixtures/tei/invalid/abc-missing-vocab-version.xml" :invalid
+                :expected-rules #{"abc-vocab-version-declared"})
+   (tei-fixture "fixtures/tei/invalid/char-empty-decl.xml" :invalid
+                :expected-rules #{"abc-char-resolution-form"})
+   (tei-fixture "fixtures/tei/invalid/gaiji-dangling-ref.xml" :invalid
+                :expected-rules #{"abc-gaiji-chardecl-resolution"})
+   (tei-fixture "fixtures/tei/invalid/gaiji-missing-ref.xml" :invalid
+                :expected-rules #{"abc-gaiji-reference"})
+   (tei-fixture "fixtures/tei/invalid/header-no-language.xml" :invalid
+                :expected-rules #{"abc-header-language-declared"})
+   (tei-fixture "fixtures/tei/invalid/missing-source-work-id.xml" :invalid
+                :expected-rules #{"abc-tei-header-source-work-id"})
+   (tei-fixture "fixtures/tei/invalid/ruby-empty-base.xml" :invalid
+                :expected-rules #{"abc-ruby-base-non-empty"})
+   (tei-fixture "fixtures/tei/invalid/ruby-empty-reading.xml" :invalid
+                :expected-rules #{"abc-ruby-reading-non-empty"})
+   (tei-fixture "fixtures/tei/invalid/ruby-missing-reading.xml" :invalid
+                :expected-rules #{"abc-ruby-complete"}
+                :project-rng? false)
+   (tei-fixture "fixtures/tei/invalid/source-span-dangling-ref.xml" :invalid
+                :expected-rules #{"abc-source-span-target-exists"})
+   (tei-fixture "fixtures/tei/invalid/source-span-external-ref.xml" :invalid
+                :expected-rules #{"abc-source-span-reference"
+                                  "abc-source-span-target-exists"})])
+
+(defn tei-fixture-paths []
+  (mapv :path tei-fixture-catalog))
+
+(defn tei-xml-paths []
+  (into ["schemas/tei-profile.odd"
+         "schemas/tei-profile.sch"
+         "schemas/tei-profile.rng"]
+        (tei-fixture-paths)))
+
+(defn tei-project-rng-paths []
+  (->> tei-fixture-catalog
+       (filter :project-rng?)
+       (mapv :path)))
+
 (defn validate-xml! []
-  (run-command! "xmllint" "--noout"
-                "schemas/tei-profile.odd"
-                "schemas/tei-profile.sch"
-                "schemas/tei-profile.rng"
-                "examples/v0/example-work/tei.xml"
-                "fixtures/tei/valid/rashomon-minimal.xml"
-                "fixtures/tei/valid/source-span-local-ref.xml"
-                "fixtures/tei/valid/transcription-enrichment-declared.xml"
-                "fixtures/tei/invalid/abc-bad-layout-params.xml"
-                "fixtures/tei/invalid/abc-bad-preservation-record.xml"
-                "fixtures/tei/invalid/abc-missing-vocab-version.xml"
-                "fixtures/tei/invalid/char-empty-decl.xml"
-                "fixtures/tei/invalid/gaiji-dangling-ref.xml"
-                "fixtures/tei/invalid/gaiji-missing-ref.xml"
-                "fixtures/tei/invalid/header-no-language.xml"
-                "fixtures/tei/invalid/missing-source-work-id.xml"
-                "fixtures/tei/invalid/missing-title.xml"
-                "fixtures/tei/invalid/ruby-empty-base.xml"
-                "fixtures/tei/invalid/ruby-empty-reading.xml"
-                "fixtures/tei/invalid/ruby-missing-reading.xml"
-                "fixtures/tei/invalid/source-span-dangling-ref.xml"
-                "fixtures/tei/invalid/source-span-external-ref.xml"
-                "fixtures/tei/warnings/figure-missing-desc.xml"
-                "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"))
+  (apply run-command! "xmllint" "--noout" (tei-xml-paths)))
 
 (defn- render-tei-violation
   "Render a violation map to a single line. Label is supplied by the
@@ -603,57 +646,46 @@
                        :expected (sort (seq expected-set))
                        :actual (sort actual-errors)})))))
 
+(defn- namespace-aware-document [path]
+  (let [factory (doto (javax.xml.parsers.DocumentBuilderFactory/newInstance)
+                  (.setNamespaceAware true))]
+    (.. factory newDocumentBuilder (parse (io/file path)))))
+
 (defn rule-universe
   "Return the canonical set of ABC Schematron rule ids declared in
   schemas/tei-profile.odd. The set is derived from the ODD at runtime so
   it cannot drift from the authored constraintSpec identifiers."
-  []
-  (->> (slurp "schemas/tei-profile.odd")
-       (re-seq #"<constraintSpec[^>]*\bident=\"(abc-[a-z0-9-]+)\"")
-       (map second)
-       set))
+  ([] (rule-universe "schemas/tei-profile.odd"))
+  ([odd-path]
+   (let [nodes (.getElementsByTagNameNS (namespace-aware-document odd-path)
+                                        tei-ns
+                                        "constraintSpec")]
+     (into #{}
+           (keep (fn [i]
+                   (let [node (.item nodes i)
+                         scheme (.getAttribute node "scheme")
+                         ident (.getAttribute node "ident")]
+                     (when (and (= "schematron" scheme)
+                                (re-matches #"abc-[a-z0-9-]+" ident))
+                       ident))))
+           (range (.getLength nodes))))))
+
+(defn- tei-schematron-fixtures-for [kind]
+  (->> tei-fixture-catalog
+       (filter #(= kind (:schematron-kind %)))
+       (map (fn [{:keys [path expected-rules]}]
+              (if (= :valid kind)
+                path
+                [path expected-rules])))))
 
 (def tei-schematron-fixtures
-  "Hand-coded partition of TEI Schematron fixtures. The expected rule
-  sets are still maintained here, but they are now cross-checked against
-  the ODD-derived rule universe by validate-tei-schematron!."
+  "TEI Schematron fixture partition derived from tei-fixture-catalog. Expected
+  rule sets are cross-checked against the ODD-derived rule universe by
+  validate-tei-schematron!."
   {:schema-path "schemas/tei-profile.sch"
-   :valid-fixtures ["examples/v0/example-work/tei.xml"
-                    "fixtures/tei/valid/rashomon-minimal.xml"
-                    "fixtures/tei/valid/source-span-local-ref.xml"
-                    "fixtures/tei/valid/transcription-enrichment-declared.xml"]
-   :warning-fixtures {"fixtures/tei/warnings/figure-missing-desc.xml"
-                      #{"abc-figure-accessibility"}
-                      "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
-                      #{"abc-transcription-vs-annotation"}}
-   :invalid-fixtures {"fixtures/tei/invalid/missing-title.xml"
-                      #{"abc-tei-header-title"}
-                      "fixtures/tei/invalid/abc-bad-layout-params.xml"
-                      #{"abc-layout-params-shape"}
-                      "fixtures/tei/invalid/abc-bad-preservation-record.xml"
-                      #{"abc-preservation-record-shape"}
-                      "fixtures/tei/invalid/abc-missing-vocab-version.xml"
-                      #{"abc-vocab-version-declared"}
-                      "fixtures/tei/invalid/char-empty-decl.xml"
-                      #{"abc-char-resolution-form"}
-                      "fixtures/tei/invalid/gaiji-dangling-ref.xml"
-                      #{"abc-gaiji-chardecl-resolution"}
-                      "fixtures/tei/invalid/gaiji-missing-ref.xml"
-                      #{"abc-gaiji-reference"}
-                      "fixtures/tei/invalid/header-no-language.xml"
-                      #{"abc-header-language-declared"}
-                      "fixtures/tei/invalid/missing-source-work-id.xml"
-                      #{"abc-tei-header-source-work-id"}
-                      "fixtures/tei/invalid/ruby-empty-base.xml"
-                      #{"abc-ruby-base-non-empty"}
-                      "fixtures/tei/invalid/ruby-empty-reading.xml"
-                      #{"abc-ruby-reading-non-empty"}
-                      "fixtures/tei/invalid/ruby-missing-reading.xml"
-                      #{"abc-ruby-complete"}
-                      "fixtures/tei/invalid/source-span-external-ref.xml"
-                      #{"abc-source-span-reference" "abc-source-span-target-exists"}
-                      "fixtures/tei/invalid/source-span-dangling-ref.xml"
-                      #{"abc-source-span-target-exists"}}})
+   :valid-fixtures (vec (tei-schematron-fixtures-for :valid))
+   :warning-fixtures (into {} (tei-schematron-fixtures-for :warning))
+   :invalid-fixtures (into {} (tei-schematron-fixtures-for :invalid))})
 
 (defn validate-tei-schematron!
   [{:keys [schema-path valid-fixtures warning-fixtures invalid-fixtures]}]
@@ -1048,32 +1080,10 @@
                      ["examples/v0/example-work/tei.xml"])
       (tel/log! :info "tei rng validation ok")
       (tel/log! :info "==> Validating TEI against project RelaxNG")
-      ;; missing-title and ruby-missing-reading are intentionally
-      ;; structurally invalid TEI: they have no <title> at all, and a
-      ;; <ruby> with no <rt>. Both fail the RelaxNG content model that
-      ;; the ODD-derived tei-profile.rng now enforces, in addition to
-      ;; tripping their corresponding ABC Schematron rule. They are
-      ;; covered by the Schematron partition below; excluding them from
-      ;; the project-RNG step keeps the structural-validity step honest
-      ;; about which fixtures *should* pass RNG.
-      (validate-tei! "schemas/tei-profile.rng"
-                     ["examples/v0/example-work/tei.xml"
-                      "fixtures/tei/valid/rashomon-minimal.xml"
-                      "fixtures/tei/valid/source-span-local-ref.xml"
-                      "fixtures/tei/valid/transcription-enrichment-declared.xml"
-                      "fixtures/tei/warnings/figure-missing-desc.xml"
-                      "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
-                      "fixtures/tei/invalid/abc-bad-layout-params.xml"
-                      "fixtures/tei/invalid/abc-missing-vocab-version.xml"
-                      "fixtures/tei/invalid/char-empty-decl.xml"
-                      "fixtures/tei/invalid/gaiji-dangling-ref.xml"
-                      "fixtures/tei/invalid/gaiji-missing-ref.xml"
-                      "fixtures/tei/invalid/header-no-language.xml"
-                      "fixtures/tei/invalid/missing-source-work-id.xml"
-                      "fixtures/tei/invalid/ruby-empty-base.xml"
-                      "fixtures/tei/invalid/ruby-empty-reading.xml"
-                      "fixtures/tei/invalid/source-span-dangling-ref.xml"
-                      "fixtures/tei/invalid/source-span-external-ref.xml"])
+      ;; Some negative Schematron fixtures are intentionally structurally
+      ;; invalid too. tei-fixture-catalog marks which fixtures should pass the
+      ;; ODD-derived Relax NG layer so this list does not drift independently.
+      (validate-tei! "schemas/tei-profile.rng" (tei-project-rng-paths))
       (tel/log! :info "tei project rng validation ok")
       (tel/log! :info "==> Validating TEI against project Schematron")
       (validate-tei-schematron! tei-schematron-fixtures)

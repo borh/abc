@@ -54,10 +54,12 @@ let
         sed -E -i 's|id="schematron-constraint-(abc-[a-z0-9-]+)-[0-9]+"|id="\1"|g' tei-profile.sch
         sed -E -i 's|id="abc-tei-v0-(abc-[a-z0-9-]+)-constraint-rule-[0-9]+"|id="\1"|g' tei-profile.sch tei-profile.rng
         # Drop inherited TEI built-in patterns that the ODD did not declare.
-        # The ABC v0 Schematron evaluator (abc.tools.schematron) is a minimal
-        # subset and does not implement sch:let or other features used by the
-        # inherited TEI corpus. The 7 ABC constraintSpec rules are the
-        # committed contract surface.
+        # The committed v0 Schematron artifact is the ABC profile policy
+        # surface; inherited TEI diagnostics remain out-of-scope until ABC
+        # explicitly adopts them. This also preserves compatibility with
+        # ph-schematron's stricter pure ISO model, which rejects the inherited
+        # TEI sch:let / role="nonfatal" constructs even though the XSLT path can
+        # execute them.
         awk '
           /^   <pattern id="schematron-constraint-/ { drop = 1 }
           !drop { print }

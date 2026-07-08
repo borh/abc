@@ -128,11 +128,10 @@ Seventeen contract-harness milestones complete:
   Saxon-HE 12.9, runs `odd2odd.xsl → odd2relax.xsl` and
   `odd2odd.xsl → extract-isosch.xsl`, then applies a narrow
   build-artifact canonicalization step: strip generation-timestamp
-  comments, rewrite the seven ABC `constraintSpec` pattern IDs
+  comments, rewrite the ABC `constraintSpec` pattern IDs
   from `schematron-constraint-<ident>-<seq>` back to the bare
-  `<ident>`, and drop inherited TEI built-in patterns the v0 ABC
-  Schematron evaluator does not implement (`<sch:let>` and
-  `role="nonfatal"` semantics live there). The ODD picks up
+  `<ident>`, and drop inherited TEI built-in patterns that are outside
+  the v0 ABC profile policy surface. The ODD picks up
   `<moduleRef key="gaiji"/>` (so `<g>` / `<charDecl>` / `<char>`
   are admitted under their real module) and
   `<moduleRef key="analysis"/>` (so `tei:w | tei:m | tei:pc`
@@ -192,7 +191,7 @@ Seventeen contract-harness milestones complete:
   `docs/lod/json-ld-context-policy.md` flip from Draft to Active.
 - **2026-04-29 TEI Schematron rule expansion (ADR 0012 widening).**
   Three rules added to `schemas/tei-profile.odd`, regenerated through
-  the same TEI-Stylesheets / Saxon pipeline as the seven baseline
+  the same TEI-Stylesheets / Saxon pipeline as the baseline
   rules so the existing `tei-profile-drift` flake check keeps the
   generated `tei-profile.sch` honest:
   - `abc-ruby-base-non-empty` (error): `tei:ruby/tei:rb` must have
@@ -309,14 +308,13 @@ Seventeen contract-harness milestones complete:
   `abc-header-language-declared`
   (`teiHeader//profileDesc/langUsage/language[@ident]` is present and
   non-empty). Three invalid fixtures + three deftests cover the new
-  rules; the inventory in `docs/tei-validation.md` advances from ten
-  to thirteen ABC patterns. The fourth candidate from the previous
+  rules; the inventory in `docs/tei-validation.md` advances with the
+  ABC pattern set. The fourth candidate from the previous
   milestone (parser-IR scope-qualifier expectation) is deferred — it
   needs a separate ADR to decide how
   `explicit`/`inferred`/`grouped`/`mid-word`/`ambiguous` are encoded
-  in TEI before a Schematron rule can be written. The v0 evaluator's
-  `<sch:let>` and `role="nonfatal"` ceiling on inherited TEI rules
-  remains.
+  in TEI before a Schematron rule can be written. Inherited TEI
+  Schematron rules remain outside the committed ABC profile artifact.
 
 ## Canonical Commands
 

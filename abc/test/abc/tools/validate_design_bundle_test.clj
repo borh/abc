@@ -1936,44 +1936,7 @@
 (deftest validate-tei-schematron-expected-findings-test
   (testing "expected invalid fixtures fail with the requested rule IDs"
     (is (nil? (validate/validate-tei-schematron!
-               {:schema-path "schemas/tei-profile.sch"
-                :valid-fixtures ["examples/v0/example-work/tei.xml"
-                                 "fixtures/tei/valid/rashomon-minimal.xml"
-                                 "fixtures/tei/valid/source-span-local-ref.xml"
-                                 "fixtures/tei/valid/transcription-enrichment-declared.xml"]
-                :warning-fixtures {"fixtures/tei/warnings/figure-missing-desc.xml"
-                                   #{"abc-figure-accessibility"}
-                                   "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
-                                   #{"abc-transcription-vs-annotation"}}
-                :invalid-fixtures {"fixtures/tei/invalid/missing-title.xml"
-                                   #{"abc-tei-header-title"}
-                                   "fixtures/tei/invalid/abc-bad-layout-params.xml"
-                                   #{"abc-layout-params-shape"}
-                                   "fixtures/tei/invalid/abc-bad-preservation-record.xml"
-                                   #{"abc-preservation-record-shape"}
-                                   "fixtures/tei/invalid/abc-missing-vocab-version.xml"
-                                   #{"abc-vocab-version-declared"}
-                                   "fixtures/tei/invalid/missing-source-work-id.xml"
-                                   #{"abc-tei-header-source-work-id"}
-                                   "fixtures/tei/invalid/char-empty-decl.xml"
-                                   #{"abc-char-resolution-form"}
-                                   "fixtures/tei/invalid/gaiji-missing-ref.xml"
-                                   #{"abc-gaiji-reference"}
-                                   "fixtures/tei/invalid/gaiji-dangling-ref.xml"
-                                   #{"abc-gaiji-chardecl-resolution"}
-                                   "fixtures/tei/invalid/header-no-language.xml"
-                                   #{"abc-header-language-declared"}
-                                   "fixtures/tei/invalid/ruby-missing-reading.xml"
-                                   #{"abc-ruby-complete"}
-                                   "fixtures/tei/invalid/ruby-empty-base.xml"
-                                   #{"abc-ruby-base-non-empty"}
-                                   "fixtures/tei/invalid/ruby-empty-reading.xml"
-                                   #{"abc-ruby-reading-non-empty"}
-                                   "fixtures/tei/invalid/source-span-external-ref.xml"
-                                   #{"abc-source-span-reference"
-                                     "abc-source-span-target-exists"}
-                                   "fixtures/tei/invalid/source-span-dangling-ref.xml"
-                                   #{"abc-source-span-target-exists"}}})))))
+               validate/tei-schematron-fixtures)))))
 
 (deftest validate-tei-schematron-loud-fail-test
   (testing "a fixture missing its expected finding makes the harness fail"
@@ -1998,10 +1961,43 @@
            :warning-fixtures {}
            :invalid-fixtures {}})))))
 
+(deftest tei-fixture-catalog-drives-validation-paths-test
+  (testing "TEI fixture paths are derived from a single catalog"
+    (let [fixture-paths (mapv :path validate/tei-fixture-catalog)
+          schematron validate/tei-schematron-fixtures
+          schematron-paths (set (concat (:valid-fixtures schematron)
+                                        (keys (:warning-fixtures schematron))
+                                        (keys (:invalid-fixtures schematron))))]
+      (is (= fixture-paths (validate/tei-fixture-paths)))
+      (is (= (into ["schemas/tei-profile.odd"
+                    "schemas/tei-profile.sch"
+                    "schemas/tei-profile.rng"]
+                   fixture-paths)
+             (validate/tei-xml-paths)))
+      (is (= ["examples/v0/example-work/tei.xml"
+              "fixtures/tei/valid/rashomon-minimal.xml"
+              "fixtures/tei/valid/source-span-local-ref.xml"
+              "fixtures/tei/valid/transcription-enrichment-declared.xml"
+              "fixtures/tei/warnings/figure-missing-desc.xml"
+              "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
+              "fixtures/tei/invalid/abc-bad-layout-params.xml"
+              "fixtures/tei/invalid/abc-missing-vocab-version.xml"
+              "fixtures/tei/invalid/char-empty-decl.xml"
+              "fixtures/tei/invalid/gaiji-dangling-ref.xml"
+              "fixtures/tei/invalid/gaiji-missing-ref.xml"
+              "fixtures/tei/invalid/header-no-language.xml"
+              "fixtures/tei/invalid/missing-source-work-id.xml"
+              "fixtures/tei/invalid/ruby-empty-base.xml"
+              "fixtures/tei/invalid/ruby-empty-reading.xml"
+              "fixtures/tei/invalid/source-span-dangling-ref.xml"
+              "fixtures/tei/invalid/source-span-external-ref.xml"]
+             (validate/tei-project-rng-paths)))
+      (is (= (set fixture-paths) schematron-paths)))))
+
 (def ^:private expected-tei-schematron-fixtures-snapshot
-  "Hard-coded snapshot of the production TEI Schematron fixture map as of
-  the refactor. It pins the current partition so any change to the
-  production map is deliberate and reviewable."
+  "Snapshot of the production TEI Schematron fixture map derived from
+  tei-fixture-catalog. It pins the current partition so any catalog change is
+  deliberate and reviewable."
   {:schema-path "schemas/tei-profile.sch"
    :valid-fixtures ["examples/v0/example-work/tei.xml"
                     "fixtures/tei/valid/rashomon-minimal.xml"
@@ -2064,6 +2060,23 @@
              "abc-transcription-vs-annotation"
              "abc-vocab-version-declared"}
            (validate/rule-universe)))))
+
+(deftest rule-universe-parses-xml-instead-of-regex-shape-test
+  (testing "rule-universe reads ODD XML attributes independent of quote style"
+    (let [odd (java.io.File/createTempFile "abc-rule-universe" ".odd")]
+      (try
+        (spit odd (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                       "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\">"
+                       "<text><body>"
+                       "<constraintSpec scheme='schematron' ident='abc-single-quoted'>"
+                       "<constraint><sch:pattern xmlns:sch=\"http://purl.oclc.org/dsdl/schematron\"/></constraint>"
+                       "</constraintSpec>"
+                       "<constraintSpec ident=\"abc-non-schematron\" scheme=\"other\"/>"
+                       "</body></text></TEI>"))
+        (is (= #{"abc-single-quoted"}
+               (validate/rule-universe (str odd))))
+        (finally
+          (.delete odd))))))
 
 (def ^:private bundle-args
   {:record-path "examples/v0/example-work/metadata-record.json"

@@ -99,12 +99,13 @@ step before emitting `tei-profile.rng` / `tei-profile.sch`:
    `extract-isosch.xsl` mints) back to the bare `<ident>` declared by
    the ODD's `constraintSpec/@ident`. Inherited TEI built-in pattern
    IDs are left untouched.
-3. Drop inherited TEI built-in patterns. The ODD's seven
-   `constraintSpec` rules are the committed contract surface; the v0
-   ABC Schematron evaluator (`abc.tools.schematron`) does not implement
-   `<sch:let>` or `role="nonfatal"` semantics that the inherited TEI
-   corpus depends on, so those patterns are stripped here rather than
-   deferred-and-failed at validation time.
+3. Drop inherited TEI built-in patterns. The ODD's ABC
+   `constraintSpec` rules are the committed contract surface; inherited
+   TEI diagnostics are not part of the v0 ABC profile policy. The
+   ph-schematron XSLT path can execute the inherited patterns, but the
+   stricter ph-schematron pure ISO model rejects inherited constructs
+   such as `<sch:let>` and `role="nonfatal"`, so the committed artifact
+   keeps that compatibility boundary explicit.
 
 This canonicalization is purely artifact-shape: the ODD remains the
 single source of truth, and a future ADR can swap the toolchain or

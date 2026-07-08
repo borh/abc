@@ -104,11 +104,12 @@ that the business-rule layer catches constraints the structural schema cannot.
 and `schemas/tei-profile.sch` are reproducibly generated from the ODD by the
 Nix derivation `tei-profile-artifacts` (TEI Stylesheets v7.60.0 + p5subset
 4.11.0 + Saxon-HE 12.9). Build-artifact canonicalization strips generation
-timestamps, rewrites the thirteen ABC `constraintSpec` pattern IDs back to their
-declared idents (the `abc-[a-z0-9-]+` regex requires lowercase + digits +
-hyphens — mixed-case idents fall through and get dropped by the
-inherited-pattern filter), and drops inherited TEI built-in patterns the v0
-ABC Schematron evaluator does not implement. To regenerate after an ODD edit:
+timestamps, rewrites the sixteen ABC `constraintSpec` pattern IDs back to their
+declared idents, and drops inherited TEI built-in patterns so the committed
+Schematron artifact remains the ABC profile policy surface. The validation
+harness keeps TEI fixture paths in a single catalog that derives the XML
+well-formedness list, project Relax NG list, and Schematron fixture partition.
+To regenerate after an ODD edit:
 
 ```
 nix run .#regenerate-tei-profile

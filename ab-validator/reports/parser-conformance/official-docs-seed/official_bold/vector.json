@@ -1,0 +1,21 @@
+{
+  "name": "official_bold",
+  "meta": {
+    "feature": "emphasis",
+    "level": "should",
+    "spec_section": "https://www.aozora.gr.jp/annotation/emphasis.html",
+    "note": "[provenance:official] 太字 forward-reference form ［＃「○○」は太字］"
+  },
+  "source": "重要［＃「重要」は太字］。\n",
+  "expected": {
+    "nodes": [
+      {
+        "kind": "emphasis",
+        "span": {
+          "start": 0,
+          "end": 39
+        }
+      }
+    ]
+  }
+}

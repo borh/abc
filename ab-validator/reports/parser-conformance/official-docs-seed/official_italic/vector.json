@@ -1,0 +1,21 @@
+{
+  "name": "official_italic",
+  "meta": {
+    "feature": "emphasis",
+    "level": "should",
+    "spec_section": "https://www.aozora.gr.jp/annotation/emphasis.html",
+    "note": "[provenance:official] 斜体 forward-reference form ［＃「○○」は斜体］"
+  },
+  "source": "strong［＃「strong」は斜体］\n",
+  "expected": {
+    "nodes": [
+      {
+        "kind": "emphasis",
+        "span": {
+          "start": 0,
+          "end": 36
+        }
+      }
+    ]
+  }
+}

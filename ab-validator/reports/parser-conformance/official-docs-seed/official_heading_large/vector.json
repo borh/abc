@@ -1,0 +1,21 @@
+{
+  "name": "official_heading_large",
+  "meta": {
+    "feature": "heading",
+    "level": "should",
+    "spec_section": "https://www.aozora.gr.jp/annotation/heading.html",
+    "note": "[provenance:official] verbatim example; 大見出し (large heading)"
+  },
+  "source": "上　先生と私［＃「上　先生と私」は大見出し］\n",
+  "expected": {
+    "nodes": [
+      {
+        "kind": "heading",
+        "span": {
+          "start": 0,
+          "end": 66
+        }
+      }
+    ]
+  }
+}

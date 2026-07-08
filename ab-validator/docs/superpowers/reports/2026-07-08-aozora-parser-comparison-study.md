@@ -146,6 +146,31 @@ a consolidated parser is that each covers a different slice. Families where *eve
 AAT parser diverges (high-value targets): break, structural-marker, tate_chu_yoko,
 warichu, composite, tables_columns, angle_quote, kaeriten.
 
+### 4.5 Independent-instrument corroboration (official-docs seed)
+To reduce reliance on the single P4suta instrument, an independent **seed** of 11
+vectors was authored from the *official* 青空文庫 annotation documentation
+(`aozora.gr.jp/annotation`, CC-BY 4.0; several verbatim examples), each provenanced
+to a specific official page (`reports/parser-conformance/author-official-seed.py`,
+`official-docs-seed/`). Scored by the same harness (AAT kind-sequence; the
+`inspect` column is invalid here — nominal spans):
+
+- **Core constructs replicate as universal**: ruby (explicit + implicit), bouten,
+  gaiji (JIS X 0213), heading (大見出し), bold, italic **pass on all** AAT parsers
+  (ab-aozora, aozora2, aozora-rs). This confirms the low P4suta scores stem from
+  *edge cases*, not core recognition.
+- **Weak families replicate independently**: page-break (改丁/改ページ) diverges for
+  aozora2/aozora-rs; single-line 地上げ diverges for all — matching P4suta's
+  `break`/`layout` weakness.
+
+So the headline findings are **not P4suta artifacts**. Caveats: the seed is small
+(11) and uses *clean canonical* forms (P4suta stresses edge cases), so it
+reproduces the *relative* family weaknesses, not the low absolute pass rates; and
+it reuses the shared kind vocabulary for expected labels (independent cases, shared
+scale). Report: `2026-07-08-official-docs-seed-comparison.md`.
+
+### 4.6 Performance
+_(Populated from `parser-performance-all-parsers` over a corpus sample; see §7.)_
+
 ## 5. Threats to validity / limitations
 
 1. **Instrument authority.** P4suta is corroborating, not authoritative; a
@@ -198,7 +223,8 @@ Backing data: `2026-07-08-aozora-notation-spec-comparison.summary.json`,
 - Fold in the performance dimension (uniform corpus, wall/CPU/mem).
 - Resolve the `aozora-rs-core` gaiji blind spot and confirm a valid document
   wrapper (or repair its adapter's typed projection — deferred).
-- Consider a second, independent instrument (official-docs-derived cases) to
-  reduce reliance on P4suta.
+- Expand the official-docs seed (§4.5) from 11 clean cases toward edge-case
+  coverage and precise spans, so it reproduces absolute rates, not just relative
+  family weakness — a full independent instrument, not a seed.
 - Uniform per-parser methodology write-up (or a normalization that puts all
   candidates on one scale).

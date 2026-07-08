@@ -1,0 +1,21 @@
+{
+  "name": "official_bousen",
+  "meta": {
+    "feature": "bousen",
+    "level": "should",
+    "spec_section": "https://www.aozora.gr.jp/annotation/emphasis.html",
+    "note": "[provenance:official] verbatim example; 傍線 -> <em class=underline_solid>; spec has no bousen kind -> emphasis"
+  },
+  "source": "この形は傍線［＃「傍線」に傍線］と書いてください。\n",
+  "expected": {
+    "nodes": [
+      {
+        "kind": "emphasis",
+        "span": {
+          "start": 0,
+          "end": 75
+        }
+      }
+    ]
+  }
+}

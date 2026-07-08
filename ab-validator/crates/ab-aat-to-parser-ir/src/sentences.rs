@@ -2,6 +2,30 @@ use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
+/// Maximum quote-nesting depth the detector will recurse into. Real literary
+/// text rarely exceeds 2-3 levels; the cap guards against runaway recursion on
+/// malformed marker sequences.
+const MAX_NESTING_DEPTH: usize = 5;
+
+/// A region of text enclosed by a matching pair of synthesized `quote` nodes
+/// (an `open` marker followed by its matching `close`).
+///
+/// Byte offsets are absolute (in the parser-IR `decoded_utf8` coordinate
+/// system): `inner_byte_start` is the end of the opening marker, `inner_byte_end`
+/// is the start of the closing marker.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct NestedRegion {
+    pub inner_byte_start: usize,
+    pub inner_byte_end: usize,
+    pub opening_marker_node: usize,
+    pub closing_marker_node: usize,
+    pub nesting_level: usize,
+}
+
+/// Detect all quote-enclosed regions in `nodes[range_start..range_end]`,
+/// recursing into each matched pair so nested quotes are reported at their own
+/// (deeper) nesting level. Unmatched `open` markers produce no region.
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SentenceSegmentation {
     pub schema_version: String,
@@ -49,6 +73,92 @@ pub fn segmentation_meta() -> SentenceSegmentation {
         coordinate_system: "decoded_utf8".to_owned(),
         coverage: "body-paragraphs".to_owned(),
     }
+}
+
+pub(crate) fn detect_nested_regions(
+    nodes: &[Value],
+    node_start: usize,
+    node_end: usize,
+) -> Vec<NestedRegion> {
+    detect_nested_regions_inner(nodes, node_start, node_end, 0)
+}
+
+fn detect_nested_regions_inner(
+    nodes: &[Value],
+    range_start: usize,
+    range_end: usize,
+    depth: usize,
+) -> Vec<NestedRegion> {
+    if depth >= MAX_NESTING_DEPTH {
+        return Vec::new();
+    }
+
+    let mut regions = Vec::new();
+    let mut i = range_start;
+
+    while i < range_end {
+        let node = &nodes[i];
+        if node.get("type").and_then(Value::as_str) != Some("quote")
+            || node.get("marker_type").and_then(Value::as_str) != Some("open")
+        {
+            i += 1;
+            continue;
+        }
+
+        let open_byte_end =
+            value_usize(node, "/span/end", "quote span.end").unwrap_or(0);
+        let open_node = i;
+
+        // Find the matching close at the same depth: count intervening opens.
+        let mut j = i + 1;
+        let mut inner_depth = 0usize;
+        let mut matched = false;
+        while j < range_end {
+            let next = &nodes[j];
+            if next.get("type").and_then(Value::as_str) == Some("quote") {
+                match next.get("marker_type").and_then(Value::as_str) {
+                    Some("open") => inner_depth += 1,
+                    Some("close") => {
+                        if inner_depth == 0 {
+                            let close_byte_start = value_usize(next, "/span/start", "quote span.start")
+                                .unwrap_or(0);
+                            let close_node = j;
+
+                            regions.push(NestedRegion {
+                                inner_byte_start: open_byte_end,
+                                inner_byte_end: close_byte_start,
+                                opening_marker_node: open_node,
+                                closing_marker_node: close_node,
+                                nesting_level: depth,
+                            });
+
+                            // Recurse on the inner node slice for nested quotes.
+                            regions.extend(detect_nested_regions_inner(
+                                nodes,
+                                open_node + 1,
+                                close_node,
+                                depth + 1,
+                            ));
+
+                            i = close_node + 1;
+                            matched = true;
+                            break;
+                        }
+                        inner_depth -= 1;
+                    }
+                    _ => {}
+                }
+            }
+            j += 1;
+        }
+
+        if !matched {
+            // Unmatched open marker — skip it, no region emitted.
+            i += 1;
+        }
+    }
+
+    regions
 }
 
 pub fn project_sentences(
@@ -941,5 +1051,50 @@ mod tests {
             projection.paragraphs[0]["node_range"],
             json!({"start":0,"end":1})
         );
+    }
+
+    #[test]
+    fn detect_nested_regions_basic() {
+        let nodes = vec![
+            json!({"type":"text","span":{"start":0,"end":6},"text":"先生は"}),
+            json!({"type":"quote","span":{"start":6,"end":9},"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":{"start":9,"end":15},"text":"綺麗だ"}),
+            json!({"type":"quote","span":{"start":15,"end":18},"marker_type":"close","text":"」"}),
+            json!({"type":"text","span":{"start":18,"end":24},"text":"といった"}),
+        ];
+        let regions = detect_nested_regions(&nodes, 0, nodes.len());
+        assert_eq!(regions.len(), 1);
+        assert_eq!(regions[0].inner_byte_start, 9);
+        assert_eq!(regions[0].inner_byte_end, 15);
+        assert_eq!(regions[0].opening_marker_node, 1);
+        assert_eq!(regions[0].closing_marker_node, 3);
+        assert_eq!(regions[0].nesting_level, 0);
+    }
+
+    #[test]
+    fn detect_nested_regions_recursive() {
+        let nodes = vec![
+            json!({"type":"quote","span":{"start":0,"end":3},"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":{"start":3,"end":9},"text":"outer "}),
+            json!({"type":"quote","span":{"start":9,"end":12},"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":{"start":12,"end":17},"text":"inner"}),
+            json!({"type":"quote","span":{"start":17,"end":21},"marker_type":"close","text":"」"}),
+            json!({"type":"text","span":{"start":21,"end":27},"text":" text"}),
+            json!({"type":"quote","span":{"start":27,"end":30},"marker_type":"close","text":"」"}),
+        ];
+        let regions = detect_nested_regions(&nodes, 0, nodes.len());
+        assert_eq!(regions.len(), 2);
+        assert_eq!(regions[0].nesting_level, 0);
+        assert_eq!(regions[1].nesting_level, 1);
+    }
+
+    #[test]
+    fn detect_nested_regions_unmatched_open_emits_nothing() {
+        let nodes = vec![
+            json!({"type":"quote","span":{"start":0,"end":3},"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":{"start":3,"end":9},"text":"閉じない"}),
+        ];
+        let regions = detect_nested_regions(&nodes, 0, nodes.len());
+        assert!(regions.is_empty());
     }
 }

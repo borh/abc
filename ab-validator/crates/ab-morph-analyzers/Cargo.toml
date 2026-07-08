@@ -19,3 +19,6 @@ sudachi.workspace = true
 vaporetto.workspace = true
 vibrato-rkyv.workspace = true
 zstd.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

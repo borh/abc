@@ -213,9 +213,24 @@ independently identified.
   `run-normalization-provenance.json` sidecar. The live ABC path does not yet
   read the sidecar (ABC has no warehouse-consumption seam yet) — mechanism in
   place, wiring deferred as YAGNI. T1 transport confirmed.
-- **P5 — Reproducibility test.** A run + its recorded policy hash regenerate the
-  identical derived input from source; a golden fixture pins detector →
-  normalized-text → remapped spans end-to-end on the warehouse path.
+- **P5 — Reproducibility test. DONE (2026-07-08).** A golden fixture pins the
+  detector-driven derivation chain the warehouse run path executes
+  (`sentence_split` → `HeuristicV1::detect` → `ortho_normalize` → `remap_spans`)
+  end-to-end from a fixed source: the derived (normalized) text, the remapped
+  morpheme spans/surfaces in original-doc coordinates, and the recorded
+  heuristic-v1 `policy_hash` — the same hash the warehouse run records
+  (`resolve_run_normalization`) and the tokenizer profile declares (abc).
+  Reproducibility is asserted by re-running the chain and comparing byte-for-byte.
+  Test: `ab-morph-analyzers/tests/ortho_reproducibility_golden.rs` +
+  `tests/fixtures/ortho-reproducibility-golden.json`. Pins the length-PRESERVING
+  kata→hira path (byte spans unchanged, surfaces rebuilt from the original
+  katakana); complements `remap_vu.rs`, which pins the length-CHANGING ヴ→う゛
+  case. Driven with the character-level cascade + an empty first-pass token
+  stream, so it needs no analyzer dictionary and stays a fast unit test. The
+  literal pipeline plumbing (AAT read → parquet write) and the on-warehouse hash
+  recording are already covered by `warehouse_mode_writes_sealed_parquet_*` and
+  `resolve_run_normalization_heuristic_matches_policy_hash`; a heavy real-dictionary
+  warehouse run for P5 would duplicate those without adding coverage (YAGNI).
 
 ## Open questions (incubate before committing P2/P4)
 

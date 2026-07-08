@@ -1,0 +1,13 @@
+{
+  "source_text": "吾輩ハ猫デアル果テ",
+  "detector_id": "HeuristicV1",
+  "policy_hash": "sha256:1670ff1d5ff27575dc63ffd448cb140b3d497247bb7b36e1b4e2f1623aa0fa2c",
+  "normalized_text": "吾輩は猫である果て",
+  "remapped_morphemes": [
+    { "surface": "吾輩", "byte_span": [0, 6], "char_span": [0, 2] },
+    { "surface": "ハ", "byte_span": [6, 9], "char_span": [2, 3] },
+    { "surface": "猫", "byte_span": [9, 12], "char_span": [3, 4] },
+    { "surface": "デアル", "byte_span": [12, 21], "char_span": [4, 7] },
+    { "surface": "果テ", "byte_span": [21, 27], "char_span": [7, 9] }
+  ]
+}

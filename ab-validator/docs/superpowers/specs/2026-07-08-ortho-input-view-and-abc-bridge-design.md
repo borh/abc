@@ -150,7 +150,11 @@ agreement check passes end-to-end in `validate_design_bundle`.
   defaulting to the profile's declared value. Building that seam speculatively
   now would be YAGNI; the mechanism (emitter + reader-shaped JSON + check) is in
   place for it.
-- P5 (reproducibility golden) still follows.
+- P5 (reproducibility golden) — **DONE (2026-07-08)**. Golden fixture pins the
+  detector-driven derivation chain (`HeuristicV1::detect` → `ortho_normalize` →
+  `remap_spans`) and binds the derived input to the recorded heuristic-v1
+  `policy_hash`. See parent spec P5 and
+  `ab-morph-analyzers/tests/ortho_reproducibility_golden.rs`.
 
 ## Open questions
 

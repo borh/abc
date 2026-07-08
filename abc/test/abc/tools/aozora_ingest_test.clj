@@ -476,3 +476,17 @@
         (finally
           (delete-recursive work-dir)
           (delete-recursive persons-dir))))))
+
+(deftest merge-catalog-defaults-fills-only-omitted-flags
+  (testing "env fallbacks fill omitted --zip / --source-url"
+    (is (= {:zip-path "/pinned/catalog.zip" :source-url "github:x"}
+           (ingest/merge-catalog-defaults
+            {} {:zip "/pinned/catalog.zip" :source-url "github:x"}))))
+  (testing "explicit CLI values win over env fallbacks"
+    (is (= {:zip-path "/cli.zip" :source-url "cli-url"}
+           (ingest/merge-catalog-defaults
+            {:zip-path "/cli.zip" :source-url "cli-url"}
+            {:zip "/pinned/catalog.zip" :source-url "github:x"}))))
+  (testing "blank / absent fallbacks stay nil"
+    (is (= {:zip-path nil :source-url nil}
+           (ingest/merge-catalog-defaults {} {:zip "  " :source-url nil})))))

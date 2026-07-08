@@ -22,7 +22,8 @@ use ab_morph_analyzers::{
     MorphAnalyzer, SudachiAnalyzer, SudachiMode, VaporettoAnalyzer, VibratoAnalyzer,
 };
 use ab_morph_diff::{
-    Analysis, Comparison, MorphDiffError, compare_pair, compare_pair_compact_with_source_text,
+    Analysis, Comparison, MorphDiffError, NwayFeatureValueGroup, compare_pair,
+    compare_pair_compact_with_source_text,
 };
 use ab_ortho_detect::OrthoDetector;
 use ab_plaintext::{PlainTextDocument, from_aat_value, from_aat_value_with_spans};
@@ -474,10 +475,10 @@ fn append_warehouse_nway_fact_rows(
         source_text,
         analyses,
         10_000,
-        |facts| {
-            feature_pattern_counts.record(&facts.regions, &facts.feature_diffs)?;
+        &mut feature_pattern_counts,
+        |batch| {
             if want_oracle {
-                region_lookup.extend(facts.regions.iter().map(|r| {
+                region_lookup.extend(batch.regions.iter().map(|r| {
                     crate::oracle::ruby::RegionSpan {
                         region_index: r.region_index,
                         char_start: r.char_start,
@@ -486,9 +487,10 @@ fn append_warehouse_nway_fact_rows(
                     }
                 }));
             }
-            writer.append_nway_regions(&facts.regions)?;
-            writer.append_nway_region_analyzers(&facts.region_analyzers)?;
-            writer.append_nway_feature_diffs(&facts.feature_diffs)?;
+            writer.append_nway_regions(&batch.regions)?;
+            writer.append_nway_region_analyzers(&batch.region_analyzers)?;
+            let feature_diff_columns = std::mem::take(&mut batch.feature_diffs);
+            writer.append_nway_feature_diff_columns(feature_diff_columns)?;
             Ok(())
         },
     )?;
@@ -563,6 +565,18 @@ impl WarehouseFeaturePatternAccumulator {
     /// monotonicity guard below returns an error rather than silently
     /// under-merging groups (a debug-only assertion would not be safe here,
     /// since release builds must not silently miscount).
+    ///
+    /// Since `nway_feature_diffs` moved to a direct Arrow-column producer
+    /// (`push_region_rows` no longer materializes `Vec<NwayFeatureDiffRow>`
+    /// on the production path), production code calls
+    /// [`record_region_feature_group`](Self::record_region_feature_group)
+    /// instead of this method. `record` is retained as: (a) the reference
+    /// oracle for the differential test
+    /// `feature_pattern_accumulator_region_group_path_matches_reference_row_path`,
+    /// and (b) a still-`pub` API this crate's own
+    /// `warehouse_feature_pattern_accumulator` micro-bench (and its existing
+    /// `feature_pattern_accumulator_linear_scan_matches_reference_grouping`
+    /// test) drives directly.
     pub fn record(
         &mut self,
         regions: &[NwayRegionRow],
@@ -747,6 +761,62 @@ impl WarehouseFeaturePatternAccumulator {
             })
             .collect()
     }
+
+    /// Aggregates one n-way region's feature-group directly from
+    /// `ab_morph_diff::NwayFeatureGroup` data (`values`), without
+    /// materializing a `NwayFeatureDiffRow` first. This is the production
+    /// path `push_region_rows` (`warehouse::rows`) calls per feature-group,
+    /// in the same pass that appends into the `NwayFeatureDiffsColumns`
+    /// arrow builder.
+    ///
+    /// Unlike `record`/`keyed_core_diffs`, no re-grouping or contiguous-run
+    /// scan is needed here: `values` is already partitioned by distinct
+    /// feature value (one call per `NwayRegion::feature_groups` entry,
+    /// already scoped to a single region), and already ordered exactly like
+    /// the `BTreeMap<Option<FeatureValue>, Vec<AnalyzerId>>` that `record`'s
+    /// `warehouse_feature_pattern_from_rows` reconstructs from flattened rows
+    /// -- `ab_morph_diff::nway::value_group` builds `NwayFeatureGroup::values`
+    /// from such a `BTreeMap` and sorts each value's analyzers, so iterating
+    /// `values` in order and joining already-sorted `analyzers` reproduces
+    /// the identical formatted pattern string. Content-identity with the
+    /// row-based reference path is characterized by the differential test
+    /// `feature_pattern_accumulator_region_group_path_matches_reference_row_path`.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn record_region_feature_group(
+        &mut self,
+        source_id: &str,
+        text_id: &str,
+        is_nonempty_whitespace: bool,
+        feature_key: &str,
+        scope_type: &str,
+        scope_position: Option<u64>,
+        scope_surface: Option<&str>,
+        values: &[NwayFeatureValueGroup],
+    ) {
+        if !WAREHOUSE_CORE_FEATURE_KEYS.contains(&feature_key) {
+            return;
+        }
+        let Some(pattern) = warehouse_feature_pattern_from_value_groups(
+            feature_key,
+            scope_type,
+            scope_position,
+            scope_surface,
+            values,
+        ) else {
+            return;
+        };
+        let entry = self
+            .patterns
+            .entry(WarehouseFeaturePatternKey {
+                feature_key: feature_key.to_owned(),
+                is_nonempty_whitespace,
+                pattern,
+            })
+            .or_default();
+        entry.examples += 1;
+        entry.source_ids.insert(source_id.to_owned());
+        entry.text_ids.insert(text_id.to_owned());
+    }
 }
 
 fn warehouse_feature_pattern_from_rows(
@@ -787,17 +857,61 @@ fn warehouse_feature_pattern_from_rows(
     ))
 }
 
+/// Same formatting as [`warehouse_feature_pattern_from_rows`], but fed
+/// directly from an `ab_morph_diff::NwayFeatureGroup`'s already-partitioned
+/// `values` instead of re-partitioning a flattened `&[&NwayFeatureDiffRow]`
+/// via a `BTreeMap`. See
+/// [`record_region_feature_group`](WarehouseFeaturePatternAccumulator::record_region_feature_group)
+/// for why this produces an identical string.
+fn warehouse_feature_pattern_from_value_groups(
+    feature_key: &str,
+    scope_type: &str,
+    scope_position: Option<u64>,
+    scope_surface: Option<&str>,
+    values: &[NwayFeatureValueGroup],
+) -> Option<String> {
+    if values.len() <= 1 {
+        return None;
+    }
+    let values_str = values
+        .iter()
+        .map(|value_group| {
+            format!(
+                "{}=>{}",
+                value_group.value.as_deref().unwrap_or_default(),
+                value_group
+                    .analyzers
+                    .iter()
+                    .map(String::as_str)
+                    .collect::<Vec<_>>()
+                    .join("+")
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(" ; ");
+    Some(format!(
+        "{feature_key} {} {values_str}",
+        warehouse_feature_scope_label_parts(scope_type, scope_position, scope_surface)
+    ))
+}
+
 fn warehouse_feature_scope_label(group: &WarehouseFeatureGroupKey) -> String {
-    match group.scope_type.as_ref() {
+    warehouse_feature_scope_label_parts(
+        group.scope_type.as_ref(),
+        group.scope_position,
+        group.scope_surface.as_deref(),
+    )
+}
+
+fn warehouse_feature_scope_label_parts(
+    scope_type: &str,
+    scope_position: Option<u64>,
+    scope_surface: Option<&str>,
+) -> String {
+    match scope_type {
         "whole_region" => "whole_region".to_owned(),
-        "token_position" => format!(
-            "token_position:{}",
-            group.scope_position.unwrap_or_default()
-        ),
-        "surface" => format!(
-            "surface:{}",
-            group.scope_surface.as_deref().unwrap_or_default()
-        ),
+        "token_position" => format!("token_position:{}", scope_position.unwrap_or_default()),
+        "surface" => format!("surface:{}", scope_surface.unwrap_or_default()),
         other => other.to_owned(),
     }
 }
@@ -2535,17 +2649,10 @@ mod tests {
         }
     }
 
-    #[test]
-    fn push_region_rows_emits_maximal_contiguous_feature_diff_runs() {
-        // Producer-invariant CI guard (Step 3b): runs the REAL producer
-        // (`warehouse::rows::nway_fact_rows`, which drives `push_region_rows`)
-        // over representative multi-region, multi-scope input and asserts the
-        // emitted `feature_diffs` form maximal contiguous
-        // `WarehouseFeatureGroupKey` runs. `WarehouseFeaturePatternAccumulator
-        // ::record`'s linear scan depends on this; if a future change to the
-        // producer breaks it, this test (not a silent miscount in release)
-        // is what should fail.
-        let source_text = "今日は晴れ";
+    /// Representative multi-region, multi-scope, multi-analyzer fixture
+    /// shared by `push_region_rows_emits_maximal_contiguous_feature_diff_runs`
+    /// and `feature_pattern_accumulator_region_group_path_matches_reference_row_path`.
+    fn nway_test_fixture_analyses(source_text: &str) -> Vec<Analysis> {
         let vibrato = Analysis {
             analyzer: "vibrato".to_owned(),
             text_id: "text-a".to_owned(),
@@ -2594,7 +2701,21 @@ mod tests {
             ortho_annotations: None,
             ortho_offset_map: None,
         };
-        let analyses = vec![vibrato, sudachi_a, sudachi_c];
+        vec![vibrato, sudachi_a, sudachi_c]
+    }
+
+    #[test]
+    fn push_region_rows_emits_maximal_contiguous_feature_diff_runs() {
+        // Producer-invariant CI guard (Step 3b): runs the REAL producer
+        // (`warehouse::rows::nway_fact_rows`, which drives `push_region_rows`)
+        // over representative multi-region, multi-scope input and asserts the
+        // emitted `feature_diffs` form maximal contiguous
+        // `WarehouseFeatureGroupKey` runs. `WarehouseFeaturePatternAccumulator
+        // ::record`'s linear scan depends on this; if a future change to the
+        // producer breaks it, this test (not a silent miscount in release)
+        // is what should fail.
+        let source_text = "今日は晴れ";
+        let analyses = nway_test_fixture_analyses(source_text);
 
         let facts =
             crate::warehouse::rows::nway_fact_rows("run-a", "source-a", source_text, &analyses)
@@ -2624,5 +2745,46 @@ mod tests {
         );
 
         assert_feature_diffs_form_maximal_contiguous_runs(&facts.feature_diffs);
+    }
+
+    #[test]
+    fn feature_pattern_accumulator_region_group_path_matches_reference_row_path() {
+        // Content-neutrality differential test for Task 4 (nway_feature_diffs
+        // direct-column producer): the production path feeds
+        // `feature_pattern_counts` via
+        // `WarehouseFeaturePatternAccumulator::record_region_feature_group`,
+        // called once per `NwayRegion::feature_groups` entry from
+        // `push_region_rows` (`warehouse::rows`), directly from
+        // `ab_morph_diff` types -- no `Vec<NwayFeatureDiffRow>` is ever
+        // materialized on this path. The retained row-based `record` (fed by
+        // `nway_fact_rows`'s `Vec<NwayFeatureDiffRow>`, itself built by the
+        // `#[cfg(test)]`-only `push_region_rows_reference`) is this test's
+        // oracle. Both must aggregate identical `feature_pattern_counts`
+        // rows -- see `record_region_feature_group`'s doc comment for why
+        // `NwayFeatureGroup::values`'s pre-sorted ordering guarantees this.
+        let source_text = "今日は晴れ";
+        let analyses = nway_test_fixture_analyses(source_text);
+
+        let facts =
+            crate::warehouse::rows::nway_fact_rows("run-a", "source-a", source_text, &analyses)
+                .unwrap();
+        let mut reference = WarehouseFeaturePatternAccumulator::default();
+        reference
+            .record(&facts.regions, &facts.feature_diffs)
+            .unwrap();
+
+        let mut region_group = WarehouseFeaturePatternAccumulator::default();
+        warehouse::rows::visit_nway_fact_row_batches(
+            "run-a",
+            "source-a",
+            source_text,
+            &analyses,
+            10_000,
+            &mut region_group,
+            |_batch| Ok(()),
+        )
+        .unwrap();
+
+        assert_eq!(region_group.into_rows(), reference.into_rows());
     }
 }

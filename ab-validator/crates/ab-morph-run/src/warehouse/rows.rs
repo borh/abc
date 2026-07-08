@@ -4,19 +4,52 @@ use std::ops::Range;
 use ab_morph_diff::MorphDiffError;
 use ab_morph_diff::{Analysis, NwayFeatureScope, NwayRegion, visit_nway_regions_with_source_text};
 #[cfg(test)]
-use ab_warehouse::schema::MorphemeFeatureRow;
+use ab_warehouse::schema::{MorphemeFeatureRow, NwayFeatureDiffRow};
 use ab_warehouse::schema::{
-    AnalysisRow, MorphemeRow, NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionRow,
-    ProjectionSpanRow, SourceRow,
+    AnalysisRow, MorphemeRow, NwayRegionAnalyzerRow, NwayRegionRow, ProjectionSpanRow, SourceRow,
 };
-use ab_warehouse::writer::MorphemeFeaturesColumns;
+use ab_warehouse::writer::{MorphemeFeaturesColumns, NwayFeatureDiffsColumns};
 use anyhow::Result as AnyhowResult;
 
+use crate::WarehouseFeaturePatternAccumulator;
+
+/// Reference `Vec<Row>` fact-table bundle, retained for this module's own
+/// unit tests and the differential tests in `lib.rs` that characterize the
+/// direct-column production path ([`NwayFactBatch`]) against it. Production
+/// code (`visit_nway_fact_row_batches`) never constructs this -- see
+/// [`push_region_rows_reference`] vs. [`push_region_rows`].
+#[cfg(test)]
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub(crate) struct NwayFactRows {
     pub(crate) regions: Vec<NwayRegionRow>,
     pub(crate) region_analyzers: Vec<NwayRegionAnalyzerRow>,
     pub(crate) feature_diffs: Vec<NwayFeatureDiffRow>,
+}
+
+/// Production fact-table batch. `regions`/`region_analyzers` stay
+/// `Vec<Row>` (untouched this round -- see the task brief); `feature_diffs`
+/// is a direct Arrow-column builder instead of `Vec<NwayFeatureDiffRow>`:
+/// `nway_feature_diffs` is the highest-row-volume warehouse table (~23.4B
+/// rows), so [`push_region_rows`] appends straight into it, skipping the
+/// per-row `Arc::clone` bumps a `Vec<NwayFeatureDiffRow>` would require (6
+/// `Arc<str>`/`Option<Arc<str>>` fields per row).
+#[derive(Default)]
+pub(crate) struct NwayFactBatch {
+    pub(crate) regions: Vec<NwayRegionRow>,
+    pub(crate) region_analyzers: Vec<NwayRegionAnalyzerRow>,
+    pub(crate) feature_diffs: NwayFeatureDiffsColumns,
+}
+
+impl NwayFactBatch {
+    fn is_empty(&self) -> bool {
+        self.regions.is_empty() && self.region_analyzers.is_empty() && self.feature_diffs.is_empty()
+    }
+
+    fn clear(&mut self) {
+        self.regions.clear();
+        self.region_analyzers.clear();
+        self.feature_diffs = NwayFeatureDiffsColumns::new();
+    }
 }
 
 /// Per-document identifiers shared by every n-way fact row, hoisted to
@@ -249,21 +282,29 @@ pub(crate) fn nway_fact_rows(
     let mut rows = NwayFactRows::default();
     let char_map = ab_morph_diff::CharByteMap::new(source_text);
     visit_nway_regions_with_source_text(analyses, source_text, &[], |region| {
-        push_region_rows(&ids, source_text, &char_map, region, &mut rows);
+        push_region_rows_reference(&ids, source_text, &char_map, region, &mut rows);
     })?;
     Ok(rows)
 }
 
+/// Batches n-way fact rows across `analyses`, flushing to `on_batch` every
+/// `batch_region_limit` regions (production: every 10k, see
+/// `append_warehouse_nway_fact_rows` in `lib.rs`). `pattern_counts` is fed
+/// directly from each region's `feature_groups` as it is visited (see
+/// `push_region_rows`), so the caller no longer needs to separately call
+/// `WarehouseFeaturePatternAccumulator::record` against a materialized
+/// `Vec<NwayFeatureDiffRow>` after the fact.
 pub(crate) fn visit_nway_fact_row_batches<F>(
     run_id: &str,
     source_id: &str,
     source_text: &str,
     analyses: &[Analysis],
     batch_region_limit: usize,
+    pattern_counts: &mut WarehouseFeaturePatternAccumulator,
     mut on_batch: F,
 ) -> AnyhowResult<()>
 where
-    F: FnMut(&NwayFactRows) -> AnyhowResult<()>,
+    F: FnMut(&mut NwayFactBatch) -> AnyhowResult<()>,
 {
     let text_id = analyses
         .first()
@@ -271,52 +312,46 @@ where
         .unwrap_or_default();
     let ids = NwayRowIds::new(run_id, source_id, &text_id, analyses);
     let batch_region_limit = batch_region_limit.max(1);
-    let mut rows = NwayFactRows::default();
+    let mut batch = NwayFactBatch::default();
     let mut flush_error = None;
     let char_map = ab_morph_diff::CharByteMap::new(source_text);
     visit_nway_regions_with_source_text(analyses, source_text, &[], |region| {
         if flush_error.is_some() {
             return;
         }
-        push_region_rows(&ids, source_text, &char_map, region, &mut rows);
-        if rows.regions.len() >= batch_region_limit {
-            if let Err(error) = on_batch(&rows) {
+        push_region_rows(&ids, source_text, &char_map, region, &mut batch, pattern_counts);
+        if batch.regions.len() >= batch_region_limit {
+            if let Err(error) = on_batch(&mut batch) {
                 flush_error = Some(error);
             }
-            rows.clear();
+            batch.clear();
         }
     })?;
     if let Some(error) = flush_error {
         return Err(error);
     }
-    if !rows.is_empty() {
-        on_batch(&rows)?;
+    if !batch.is_empty() {
+        on_batch(&mut batch)?;
     }
     Ok(())
 }
 
-impl NwayFactRows {
-    fn is_empty(&self) -> bool {
-        self.regions.is_empty() && self.region_analyzers.is_empty() && self.feature_diffs.is_empty()
-    }
-
-    fn clear(&mut self) {
-        self.regions.clear();
-        self.region_analyzers.clear();
-        self.feature_diffs.clear();
-    }
-}
-
-fn push_region_rows(
+/// Pushes `region`'s `NwayRegionRow` and `NwayRegionAnalyzerRow`s (shared by
+/// both the production and reference feature-diff paths) and returns whether
+/// its excerpt is nonempty whitespace, for reuse by the feature-diff/pattern
+/// bookkeeping that follows.
+fn push_region_and_analyzer_rows(
     ids: &NwayRowIds,
     source_text: &str,
     char_map: &ab_morph_diff::CharByteMap,
     region: &NwayRegion,
-    rows: &mut NwayFactRows,
-) {
+    regions: &mut Vec<NwayRegionRow>,
+    region_analyzers: &mut Vec<NwayRegionAnalyzerRow>,
+) -> bool {
     let byte_span = byte_span_from_char_span(char_map, &region.text_span);
     let excerpt = &source_text[byte_span.clone()];
-    rows.regions.push(NwayRegionRow {
+    let is_nonempty_whitespace = !excerpt.is_empty() && excerpt.chars().all(char::is_whitespace);
+    regions.push(NwayRegionRow {
         run_id: std::sync::Arc::clone(&ids.run_id),
         source_id: std::sync::Arc::clone(&ids.source_id),
         text_id: std::sync::Arc::clone(&ids.text_id),
@@ -325,14 +360,14 @@ fn push_region_rows(
         byte_end: byte_span.end as u64,
         char_start: region.text_span.start as u64,
         char_end: region.text_span.end as u64,
-        is_nonempty_whitespace: !excerpt.is_empty() && excerpt.chars().all(char::is_whitespace),
+        is_nonempty_whitespace,
         is_agreement: region.is_agreement(),
         has_coverage_mismatch: region.has_coverage_mismatch(),
         has_segmentation_disagreement: region.has_segmentation_disagreement(),
         has_feature_disagreement: region.has_feature_disagreement(),
     });
 
-    rows.region_analyzers.extend(
+    region_analyzers.extend(
         region
             .per_analyzer
             .iter()
@@ -347,6 +382,96 @@ fn push_region_rows(
                 morpheme_end: entry.indices.end as u64,
                 surfaces: entry.surfaces.clone(),
             }),
+    );
+
+    is_nonempty_whitespace
+}
+
+/// Production feature-diff path: appends each n-way feature-diff directly
+/// into `batch.feature_diffs`' Arrow builder (via plain `&str`/`Option<&str>`,
+/// so `StringBuilder::append_value` copies bytes -- no `Arc::clone` at all)
+/// and feeds `pattern_counts` straight from `region.feature_groups`, instead
+/// of materializing a `Vec<NwayFeatureDiffRow>` first. This is
+/// content-identical to the retained reference path
+/// ([`push_region_rows_reference`]) because `group.values` is already
+/// partitioned and ordered exactly like the `BTreeMap<Option<FeatureValue>,
+/// Vec<AnalyzerId>>` the old row-based `WarehouseFeaturePatternAccumulator::
+/// record` reconstructs (`ab_morph_diff::nway::value_group` builds `values`
+/// from such a `BTreeMap` and sorts each value's analyzers) -- see
+/// `feature_pattern_accumulator_region_group_path_matches_reference_row_path`
+/// in `lib.rs`.
+fn push_region_rows(
+    ids: &NwayRowIds,
+    source_text: &str,
+    char_map: &ab_morph_diff::CharByteMap,
+    region: &NwayRegion,
+    batch: &mut NwayFactBatch,
+    pattern_counts: &mut WarehouseFeaturePatternAccumulator,
+) {
+    let is_nonempty_whitespace = push_region_and_analyzer_rows(
+        ids,
+        source_text,
+        char_map,
+        region,
+        &mut batch.regions,
+        &mut batch.region_analyzers,
+    );
+
+    for group in &region.feature_groups {
+        if group.values.len() < 2 {
+            continue;
+        }
+        let (scope_type, scope_position, scope_surface) = feature_scope_parts(&group.scope);
+        pattern_counts.record_region_feature_group(
+            ids.source_id.as_ref(),
+            ids.text_id.as_ref(),
+            is_nonempty_whitespace,
+            group.key.as_ref(),
+            scope_type.as_ref(),
+            scope_position,
+            scope_surface.as_deref(),
+            &group.values,
+        );
+        for value_group in &group.values {
+            for analyzer_id in &value_group.analyzers {
+                batch.feature_diffs.push_row(
+                    ids.run_id.as_ref(),
+                    ids.source_id.as_ref(),
+                    ids.text_id.as_ref(),
+                    region.region_index as u64,
+                    group.key.as_ref(),
+                    scope_type.as_ref(),
+                    scope_position,
+                    scope_surface.as_deref(),
+                    value_group.value.as_deref(),
+                    analyzer_id.as_str(),
+                );
+            }
+        }
+    }
+}
+
+/// Reference `Vec<Row>`-collecting implementation, retained for this
+/// module's own unit tests and the differential tests in `lib.rs` that
+/// characterize [`push_region_rows`] against it. Production code
+/// (`visit_nway_fact_row_batches`) uses `push_region_rows` instead, which
+/// appends straight into a `NwayFeatureDiffsColumns` builder and never
+/// materializes a `Vec<NwayFeatureDiffRow>`.
+#[cfg(test)]
+fn push_region_rows_reference(
+    ids: &NwayRowIds,
+    source_text: &str,
+    char_map: &ab_morph_diff::CharByteMap,
+    region: &NwayRegion,
+    rows: &mut NwayFactRows,
+) {
+    push_region_and_analyzer_rows(
+        ids,
+        source_text,
+        char_map,
+        region,
+        &mut rows.regions,
+        &mut rows.region_analyzers,
     );
 
     for group in &region.feature_groups {
@@ -561,26 +686,34 @@ mod tests {
             ),
         ];
         let collected = nway_fact_rows("run-a", "source-a", "今日は晴れ", &analyses).unwrap();
-        let mut batched = NwayFactRows::default();
+        let mut batched_regions = Vec::new();
+        let mut batched_region_analyzers = Vec::new();
+        let mut batched_feature_diff_count = 0usize;
+        let mut pattern_counts = crate::WarehouseFeaturePatternAccumulator::default();
 
+        // `feature_diffs` is now a `NwayFeatureDiffsColumns` arrow builder
+        // (not `Clone`/`PartialEq`), so compare row counts instead of the
+        // full struct -- `regions`/`region_analyzers` still get an exact
+        // equality check.
         visit_nway_fact_row_batches(
             "run-a",
             "source-a",
             "今日は晴れ",
             &analyses,
             1,
+            &mut pattern_counts,
             |batch| {
-                batched.regions.extend(batch.regions.clone());
-                batched
-                    .region_analyzers
-                    .extend(batch.region_analyzers.clone());
-                batched.feature_diffs.extend(batch.feature_diffs.clone());
+                batched_regions.extend(batch.regions.clone());
+                batched_region_analyzers.extend(batch.region_analyzers.clone());
+                batched_feature_diff_count += batch.feature_diffs.len();
                 Ok(())
             },
         )
         .unwrap();
 
-        assert_eq!(batched, collected);
+        assert_eq!(batched_regions, collected.regions);
+        assert_eq!(batched_region_analyzers, collected.region_analyzers);
+        assert_eq!(batched_feature_diff_count, collected.feature_diffs.len());
     }
 
     #[test]

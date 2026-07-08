@@ -153,12 +153,14 @@ git commit -m "feat(tei-eaj): run alignment probes from report wrapper"
 - Regenerate: `abc/docs/handoffs/tei-eaj-aozora-workset-export.json`
 - Regenerate: `abc/docs/handoffs/tei-eaj-aozora-all-work-comparison-report.md`
 - Regenerate: `abc/docs/handoffs/tei-eaj-aozora-melos-comparison-report.md`
-- Regenerate: `abc/docs/handoffs/tei-eaj-alignment-probe-melos.json`
-- Regenerate: `abc/docs/handoffs/tei-eaj-alignment-probe-melos.md`
+- Keep fixture characterization: `abc/docs/handoffs/tei-eaj-alignment-probe-melos.json`
+- Keep fixture characterization: `abc/docs/handoffs/tei-eaj-alignment-probe-melos.md`
+- Generate production probe: `abc/docs/handoffs/tei-eaj-aozora-alignment-probe.json`
+- Generate production probe: `abc/docs/handoffs/tei-eaj-aozora-alignment-probe.md`
 
 **Interfaces:**
 - Produces: flake app `tei-eaj-aozora-alignment-probe`.
-- Produces: flake check `abc-tei-eaj-aozora-alignment-probe-generation`.
+- Produces: flake check `tei-eaj-aozora-alignment-probe-generation`.
 
 - [ ] **Step 1: Write failing Nix check expectation**
 
@@ -180,7 +182,7 @@ PY
 Run:
 
 ```bash
-nix build .#checks.x86_64-linux.abc-tei-eaj-aozora-alignment-probe-generation --print-build-logs
+nix build .#checks.x86_64-linux.tei-eaj-aozora-alignment-probe-generation --print-build-logs
 ```
 
 Expected: failure until the app/check wiring exists.
@@ -198,9 +200,8 @@ Run the bounded generation path. Checked-in handoffs must not contain the ignore
 Run:
 
 ```bash
-rg "ignored paper-demo TEI path literal" abc/tools abc/docs/handoffs ab-validator/crates/ab-aat-to-parser-ir/tests
 nix build .#checks.x86_64-linux.abc-tei-eaj-aozora-report-generation --print-build-logs
-nix build .#checks.x86_64-linux.abc-tei-eaj-aozora-alignment-probe-generation --print-build-logs
+nix build .#checks.x86_64-linux.tei-eaj-aozora-alignment-probe-generation --print-build-logs
 ```
 
 Commit:
@@ -261,7 +262,7 @@ python -m unittest abc.tools.test_tei_eaj_compare
 cargo test -p ab-aat-to-parser-ir tei_eaj_alignment_probe -- --nocapture
 cargo test -p ab-diff-utils
 nix build .#checks.x86_64-linux.abc-tei-eaj-aozora-report-generation --print-build-logs
-nix build .#checks.x86_64-linux.abc-tei-eaj-aozora-alignment-probe-generation --print-build-logs
+nix build .#checks.x86_64-linux.tei-eaj-aozora-alignment-probe-generation --print-build-logs
 ```
 
 - [ ] **Step 2: Run full gate**

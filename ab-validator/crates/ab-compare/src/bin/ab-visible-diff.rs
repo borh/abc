@@ -1,8 +1,8 @@
 use std::{collections::BTreeMap, path::PathBuf};
 
 use ab_diff_utils::{
-    AlignmentConfig, AlignmentKind, AlignmentRegion, ComparisonEvidence, ComparisonToken,
-    algorithm_config_hash, align_pair, sentence_like_tokens,
+    AlignmentConfig, AlignmentKind, AlignmentRegion, ComparisonEvidence, algorithm_config_hash,
+    align_pair, sentence_like_tokens,
 };
 use anyhow::{Context, Result};
 use clap::Parser;
@@ -94,8 +94,8 @@ fn build_probe(
     right_witness: String,
 ) -> Result<AlignmentProbe> {
     let config = AlignmentConfig::default();
-    let left_tokens = comparison_tokens(left);
-    let right_tokens = comparison_tokens(right);
+    let left_tokens = sentence_like_tokens(left);
+    let right_tokens = sentence_like_tokens(right);
     let result = align_pair(&left_tokens, &right_tokens, &config);
     let algorithm_config =
         serde_json::to_value(&config).context("failed to serialize alignment config")?;
@@ -135,10 +135,6 @@ fn build_probe(
             "max_sample_chars": MAX_SAMPLE_CHARS
         }),
     })
-}
-
-fn comparison_tokens(text: &str) -> Vec<ComparisonToken> {
-    sentence_like_tokens(text)
 }
 
 fn sample_for_region(region: &AlignmentRegion, diagnosis: &str) -> ProbeSample {

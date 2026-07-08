@@ -196,6 +196,14 @@ class TeiEajCompareTest(unittest.TestCase):
         self.assertIn("--max-rows", command)
         self.assertNotIn("paper", command_text)
 
+    def test_default_alignment_probe_outputs_use_aozora_report_names(self):
+        report_dir = pathlib.Path("out/reports/tei-eaj-aozora")
+
+        summary_json, report_md = reports.default_alignment_probe_outputs(report_dir)
+
+        self.assertEqual(report_dir / "tei-eaj-aozora-alignment-probe.json", summary_json)
+        self.assertEqual(report_dir / "tei-eaj-aozora-alignment-probe.md", report_md)
+
     def test_attaches_alignment_probes_to_workset_export(self):
         with tempfile.TemporaryDirectory() as td:
             root = pathlib.Path(td)

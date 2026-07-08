@@ -75,6 +75,13 @@ def output_or_default(value: str | None, report_dir: pathlib.Path, filename: str
     return pathlib.Path(value) if value else report_dir / filename
 
 
+def default_alignment_probe_outputs(report_dir: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path]:
+    return (
+        report_dir / "tei-eaj-aozora-alignment-probe.json",
+        report_dir / "tei-eaj-aozora-alignment-probe.md",
+    )
+
+
 def command_melos(context: ReportContext, output: str | None) -> pathlib.Path:
     target = output_or_default(
         output,
@@ -219,12 +226,9 @@ def command_all_with_probes(
     melos_output = outputs[0] if outputs else None
     all_work_output = outputs[1] if outputs else None
     workset_output = outputs[2] if outputs else None
-    alignment_json = (
-        pathlib.Path(outputs[3]) if outputs else report_dir / "tei-eaj-alignment-probe.json"
-    )
-    alignment_md = (
-        pathlib.Path(outputs[4]) if outputs else report_dir / "tei-eaj-alignment-probe.md"
-    )
+    default_alignment_json, default_alignment_md = default_alignment_probe_outputs(report_dir)
+    alignment_json = pathlib.Path(outputs[3]) if outputs else default_alignment_json
+    alignment_md = pathlib.Path(outputs[4]) if outputs else default_alignment_md
     print(f"Updated {command_melos(context, melos_output)}")
     print(f"Updated {command_all_work(context, all_work_output)}")
     workset = command_workset(context, workset_output)
@@ -319,12 +323,12 @@ def main(argv: list[str] | None = None) -> int:
         summary_json = (
             pathlib.Path(args.summary_json)
             if args.summary_json
-            else report_dir / "tei-eaj-alignment-probe.json"
+            else default_alignment_probe_outputs(report_dir)[0]
         )
         report_md = (
             pathlib.Path(args.report_md)
             if args.report_md
-            else report_dir / "tei-eaj-alignment-probe.md"
+            else default_alignment_probe_outputs(report_dir)[1]
         )
         command_alignment_probe(context, workset, summary_json, report_md, args.max_rows)
     elif args.command == "all-with-probes":

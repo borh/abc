@@ -31,11 +31,18 @@ Comparison corpus:
   `nix run .#tei-eaj-aozora-all-work-report`
 - Regenerate the machine-readable all-work handoff:
   `nix run .#tei-eaj-aozora-workset-json`
+- Regenerate the bounded alignment probe report from an existing workset:
+  `nix run .#abc-tei-eaj-aozora-alignment-probe`
+- Regenerate all reports and attach bounded alignment probes:
+  `nix run .#abc-tei-eaj-aozora-reports-with-probes`
 - Current reports:
   - `docs/handoffs/tei-eaj-aozora-all-work-comparison-report.md`
   - `docs/handoffs/tei-eaj-aozora-melos-comparison-report.md`
+  - `docs/handoffs/tei-eaj-aozora-alignment-probe.md`
 - Machine-readable workset export:
   `docs/handoffs/tei-eaj-aozora-workset-export.json`
+- Machine-readable bounded alignment probe export:
+  `docs/handoffs/tei-eaj-aozora-alignment-probe.json`
 - Melos comparison files:
   - `data/complete/tei_lib_lv4/1567_tei.xml`
   - `data/complete/tei_lib_lv4/1567_header_updated.xml`
@@ -44,15 +51,18 @@ The comparison source is pinned through Nix instead of vendored into this
 repository. The `tei-eaj-aozora-comparison-source` flake check verifies that the
 pinned checkout still contains the Melos Level 4 files. The
 `tei-eaj-aozora-report-generation` flake check runs both report modes against
-the pinned checkout using a temporary ABC counterpart fixture, so the report
-tooling is automatically exercised even though `paper/` is intentionally
+the pinned checkout using a temporary ABC counterpart fixture. The
+`tei-eaj-aozora-alignment-probe-generation` flake check also exercises the
+bounded Rust probe and attaches probe output into the generated workset, so the
+report tooling is automatically exercised even though `paper/` is intentionally
 gitignored.
 
 The pinned checkout currently contains 62 XML files overall. The all-work
 report and JSON workset export enumerate all 62 complete, draft, and etc XML
-files. In the current local paper workset they discover ABC TEI counterparts
+files. In the checked-in generated workset, ABC TEI counterparts are discovered
 for work IDs `127` and `1567`; only `1567` appears in TEI-EAJ, so the literal
-comparison still covers the two Level 4 Melos files above. The remaining
+comparison and bounded production probe currently cover the two Level 4 Melos
+files above. The remaining
 uncompared rows split into 55 missing ABC counterparts and 5 files without
 candidate work IDs. These rows are materialization/source-identification
 coverage backlog, not text mismatches. No draft Melos TEI file exists in the
@@ -113,7 +123,8 @@ Do not use `aozora_tei` as:
    concrete text/structure comparisons. Use
    `docs/handoffs/tei-eaj-aozora-workset-export.json` as the machine-readable
    target list for that work.
-3. Add an `ab-validator` probe against Melos comparing ABC parser-IR structural
-   output to the TEI-EAJ Level 4 Melos files at the paragraph/source-note level.
+3. Promote the bounded probe from sentence-like text runs toward
+   paragraph/source-note diagnostics once parser-IR preserves those producer
+   values directly.
 4. Keep Level 4 entity and speech attribution as a separate enrichment track
    with its own validation rules and declared editorial status.

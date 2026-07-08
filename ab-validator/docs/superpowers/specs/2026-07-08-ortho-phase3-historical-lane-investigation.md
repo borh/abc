@@ -1,8 +1,11 @@
 # Ortho Phase-3 Historical-Kana Lane — Investigation
 
 **Date:** 2026-07-08
-**Status:** INVESTIGATION (provisional). The evidence reframes the problem; one
-direction fork is open for the human partner before any build.
+**Status:** INVESTIGATION → DIRECTION CHOSEN (2026-07-08): **Both Lane A and
+Lane B** (human partner). Sequence: Lane A first (buildable now), then Lane B
+after a short design step settles its historical→modern surface mechanism (the
+one unresolved unknown — see "Lane B open sub-question"). The evidence below
+reframed the problem before this choice.
 **Parent:** `2026-07-08-ortho-historical-scope-and-determinism-tier-design.md`
 (U3/U4) and `2026-07-08-ortho-normalized-tokenizer-input-policy-design.md`
 (Issue 2). This is the Phase-3 issue those specs deferred.
@@ -125,36 +128,49 @@ forget). Now:
 This is a prerequisite for Lane A being usable at all, and for testing any lane
 across the dictionary matrix.
 
-## Open fork (needs a decision before building)
+## Chosen direction: Both A and B (sequenced)
 
-1. **Direction.** Lane A (dictionary selection), Lane B (surface normalization),
-   both, or Lane C (park it)?
-2. **Cross-analyzer comparability.** Is comparing analyzers on old-kana text a
-   real goal? If yes, Lane B is on the table; if no, Lane A/C suffice.
-3. **Coverage bar.** For Lane A, is `kindai-bungo`'s segmentation good enough on
-   the actual corpus (measure on 旧仮名 works), or is `qkana` better for some
-   sub-genre?
+The human partner chose **both lanes** — dictionary selection for vibrato **and**
+the surface normalizer so every analyzer (incl. sudachi) can be compared on the
+same modernized input. Build order and open items:
 
-**Provisional recommendation:** Lane A + park the surface normalizer (effectively
-A over C). UniDic already gives modern identity; the segmentation win is a
-dictionary-selection knob that now works with no new normalization code or
-identity risk. Build Lane B only if cross-analyzer comparability on old-kana text
-becomes a stated requirement — that is the one scenario the evidence does not
-already cover.
+**Lane A (build first — no unresolved unknowns):**
+- Corpus measurement: count `新字旧仮名`/`旧字旧仮名` works (needs an importer run —
+  metadata is not committed) and score `kindai-bungo` vs `qkana` segmentation on
+  them; decide the default historical dictionary per sub-genre.
+- Wire `orthographic_style` pre-selection into run configuration (I2-D17b:
+  eligibility filter outside normalization).
+- Confirm the selected dictionary `archive_hash` flows into the tokenized /
+  input-view identity for old-kana works (it is already a `dictionary`
+  coordinate).
+- Test coverage across the dictionary matrix (enabled by the resolution fix).
+
+**Lane B (build after a short design step):**
+
+### Lane B open sub-question (settle before implementing)
+The probe showed UniDic yields a modern **lemma** (`今日`, kanji) and a modern
+**reading** (`キョー`, katakana) — but **not** the modern **surface kana**
+(`きょう`) that a surface normalizer must emit. So Lane B still needs a mechanism
+to generate modern *surface* forms, which is the original deferred Open
+Question #3. Candidate mechanisms, to be chosen in a Lane-B design doc:
+- **Rules + POS**: obsolete-kana swaps (ゐ→い, ゑ→え), digraph sound-changes
+  (au/iu/eu→ō/yū/yō: けふ→きょう, てふ→ちょう), medial は/ひ/ふ/へ/ほ→わ/い/う/え/お,
+  with particle は/へ/を protected via the analyzer's POS (I2-D17b pre-selection
+  makes the analyzer available). Deterministic; a hash-bound rules table
+  satisfies I2-D17's `dictionary_hash` requirement (here a *rules* hash).
+- **Historical-UniDic-assisted**: tokenize under `kindai-bungo` for correct
+  segmentation + reading, then reconstruct modern surfaces (heavier; couples B
+  to a UniDic).
+- **External historical-kana lexicon**: a curated けふ→きょう map (coverage vs.
+  maintenance).
+Then, per I2-D17: add the `OrthoDetectorId` variant binding that hash + the
+validation coupling; emit **token-granular** annotations so length-changing
+spans remap cleanly (U3 whole-span-only warning); route remap failures to the
+existing honest `ortho_remap_crosses_boundary` error row.
 
 ## Non-goals / deferred
 
-- Building the dictionary-backed historical→modern **surface** normalizer now
-  (Lane B) — deferred pending the fork.
 - 旧字体→新字体 (kanji-form) normalization — out of scope (a separate axis;
   `orthographic_style` records it, nothing normalizes it).
 - A committed dictionary-comparison tool — the probe was disposable; formalize
   only if the matrix needs to be re-run regularly.
-
-## Follow-ups if Lane A is chosen
-
-- Corpus measurement: count `新字旧仮名`/`旧字旧仮名` works (needs an importer run —
-  metadata is not committed) and score `kindai-bungo` segmentation on them.
-- Wire `orthographic_style` pre-selection into run configuration.
-- Record the selected dictionary `archive_hash` in the tokenized/input-view
-  identity for old-kana works (confirm it already flows via `dictionary`).

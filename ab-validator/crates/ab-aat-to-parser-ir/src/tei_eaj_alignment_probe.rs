@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, path::PathBuf};
 
 use ab_diff_utils::{
     AlignmentConfig, AlignmentKind, AlignmentRegion, ComparisonEvidence, ComparisonToken,
-    algorithm_config_hash, align_pair,
+    algorithm_config_hash, align_pair, remove_unicode_whitespace, sentence_like_runs,
 };
 use anyhow::{Context, Result, bail};
 use roxmltree::{Document, Node};
@@ -226,7 +226,7 @@ fn extract_body_tokens(xml: &str) -> Result<Vec<TeiToken>> {
         .filter(|node| node.is_element() && matches!(node.tag_name().name(), "p" | "head"))
     {
         let base_text = base_text_excluding_apparatus(element);
-        for (run_idx, run) in split_sentence_like_runs(&base_text).into_iter().enumerate() {
+        for (run_idx, run) in sentence_like_runs(&base_text).into_iter().enumerate() {
             let normalized = remove_unicode_whitespace(&run);
             if normalized.is_empty() {
                 continue;
@@ -279,37 +279,6 @@ fn skip_base_text_element(node: Node<'_, '_>) -> bool {
     name == "span"
         && (matches!(node.attribute("type"), Some("rt" | "rp"))
             || node.attribute("rend") == Some("notes"))
-}
-
-fn split_sentence_like_runs(text: &str) -> Vec<String> {
-    let mut runs = Vec::new();
-    let mut current = String::new();
-    let mut boundary_pending = false;
-    for ch in text.chars() {
-        if boundary_pending && !matches!(ch, '」' | '』' | '）' | '】' | '〉' | '》' | ')' | ']')
-        {
-            push_nonblank(&mut runs, &mut current);
-            boundary_pending = false;
-        }
-        current.push(ch);
-        if matches!(ch, '。' | '？' | '！' | '?' | '!') {
-            boundary_pending = true;
-        }
-    }
-    push_nonblank(&mut runs, &mut current);
-    runs
-}
-
-fn push_nonblank(runs: &mut Vec<String>, current: &mut String) {
-    if !remove_unicode_whitespace(current).is_empty() {
-        runs.push(std::mem::take(current));
-    } else {
-        current.clear();
-    }
-}
-
-fn remove_unicode_whitespace(value: &str) -> String {
-    value.chars().filter(|ch| !ch.is_whitespace()).collect()
 }
 
 fn element_path(node: Node<'_, '_>) -> String {

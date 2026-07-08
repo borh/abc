@@ -292,6 +292,48 @@ fn triage_report_buckets_differences_by_feature_and_metrics() {
 }
 
 #[test]
+fn visible_diff_cli_emits_alignment_probe_for_tail_addition() {
+    let temp = tempfile::tempdir().unwrap();
+    let left = temp.path().join("left.txt");
+    let right = temp.path().join("right.txt");
+    let output_path = temp.path().join("visible-probe.json");
+    std::fs::write(&left, "一。二。三。").unwrap();
+    std::fs::write(&right, "一。二。").unwrap();
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_ab-visible-diff"))
+        .arg("--left")
+        .arg(&left)
+        .arg("--right")
+        .arg(&right)
+        .arg("--output")
+        .arg(&output_path)
+        .arg("--left-witness")
+        .arg("current-renderer")
+        .arg("--right-witness")
+        .arg("previous-renderer")
+        .output()
+        .unwrap();
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let probe: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(output_path).unwrap()).unwrap();
+    assert_eq!(probe["schema_version"], "alignment-probe-v1");
+    assert_eq!(probe["evidence_level"], "token_sequence_aligned");
+    assert_eq!(probe["left_witness"], "current-renderer");
+    assert_eq!(probe["right_witness"], "previous-renderer");
+    assert_eq!(probe["diagnosis_counts"]["insertion"], 1);
+    assert_eq!(probe["diagnosis_event_count"], 1);
+    assert_eq!(probe["summary"]["insertion_regions"], 1);
+    assert_eq!(probe["samples"][0]["kind"], "insertion");
+    assert_eq!(probe["samples"][0]["left_text"], "三。");
+    assert_eq!(probe["samples"][0]["right_text"], "");
+}
+
+#[test]
 fn detects_aat_structural_differences_when_reports_match() {
     let temp = tempfile::tempdir().unwrap();
     let a = temp.path().join("a");

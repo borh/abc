@@ -350,7 +350,10 @@ mod tests {
         assert!(dict_search_dirs_from(None).is_empty());
         // `:`-separated list, empty entries skipped.
         let dirs = dict_search_dirs_from(Some("/a/share/vibrato::/b".into()));
-        assert_eq!(dirs, vec![PathBuf::from("/a/share/vibrato"), PathBuf::from("/b")]);
+        assert_eq!(
+            dirs,
+            vec![PathBuf::from("/a/share/vibrato"), PathBuf::from("/b")]
+        );
     }
 
     #[test]

@@ -46,7 +46,12 @@ pub(crate) fn eligible_source_ids(
     let reader = parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder::try_new(file)
         .with_context(|| format!("failed to read {}", works_parquet.display()))?
         .build()
-        .with_context(|| format!("failed to build parquet reader for {}", works_parquet.display()))?;
+        .with_context(|| {
+            format!(
+                "failed to build parquet reader for {}",
+                works_parquet.display()
+            )
+        })?;
 
     let mut ids = BTreeSet::new();
     for batch in reader {
@@ -108,11 +113,9 @@ mod tests {
         ]));
         let source_ids = StringArray::from(rows.iter().map(|(s, _)| *s).collect::<Vec<_>>());
         let styles = StringArray::from(rows.iter().map(|(_, o)| *o).collect::<Vec<_>>());
-        let batch = RecordBatch::try_new(
-            schema.clone(),
-            vec![Arc::new(source_ids), Arc::new(styles)],
-        )
-        .unwrap();
+        let batch =
+            RecordBatch::try_new(schema.clone(), vec![Arc::new(source_ids), Arc::new(styles)])
+                .unwrap();
         let file = File::create(path).unwrap();
         let mut writer = ArrowWriter::try_new(file, schema, None).unwrap();
         writer.write(&batch).unwrap();
@@ -127,10 +130,10 @@ mod tests {
             &path,
             &[
                 ("natsume_100", "新字新仮名"), // modern → excluded
-                ("mori_200", "新字旧仮名"),     // old kana → included
-                ("koda_300", "旧字旧仮名"),     // old kana → included
-                ("izumi_400", "旧字新仮名"),    // old kanji, modern kana → excluded
-                ("other_500", "その他"),        // unknown → excluded
+                ("mori_200", "新字旧仮名"),    // old kana → included
+                ("koda_300", "旧字旧仮名"),    // old kana → included
+                ("izumi_400", "旧字新仮名"),   // old kanji, modern kana → excluded
+                ("other_500", "その他"),       // unknown → excluded
             ],
         );
 
@@ -145,8 +148,9 @@ mod tests {
 
     #[test]
     fn filter_inputs_keeps_only_matching_source_ids() {
-        let allowed: BTreeSet<String> =
-            ["mori_200".to_owned(), "koda_300".to_owned()].into_iter().collect();
+        let allowed: BTreeSet<String> = ["mori_200".to_owned(), "koda_300".to_owned()]
+            .into_iter()
+            .collect();
         let inputs = vec![
             PathBuf::from("/aat/natsume_100.json"),
             PathBuf::from("/aat/mori_200.json"),

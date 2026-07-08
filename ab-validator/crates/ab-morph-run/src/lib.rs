@@ -4,8 +4,8 @@ mod compact;
 mod import_aozora;
 mod nway;
 mod options;
-mod orthographic_select;
 mod oracle;
+mod orthographic_select;
 mod output;
 mod pipeline;
 mod script;
@@ -2026,7 +2026,10 @@ mod tests {
                 source_ids.insert(values.value(row).to_owned());
             }
         }
-        assert_eq!(source_ids, eligible, "only the eligible work should be analyzed");
+        assert_eq!(
+            source_ids, eligible,
+            "only the eligible work should be analyzed"
+        );
 
         let _ = fs::remove_dir_all(dir);
     }

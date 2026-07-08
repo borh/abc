@@ -8,7 +8,9 @@
             [abc.tools.soranoha :as soranoha]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.test :refer [deftest is]]))
+            [clojure.test :refer [deftest is]])
+  (:import [java.nio.charset StandardCharsets]
+           [java.util.zip ZipEntry ZipOutputStream]))
 
 (defn- temp-json-path [prefix]
   (let [file (java.io.File/createTempFile prefix ".json")]
@@ -17,6 +19,58 @@
 
 (defn- delete-tree! [file]
   (fixture/delete-tree! file))
+
+(def ^:private build-publication-csv
+  (str "作品ID,作品名,作品名読み,ソート用読み,副題,副題読み,原題,初出,"
+       "分類番号,文字遣い種別,作品著作権フラグ,公開日,最終更新日,図書カードURL,"
+       "人物ID,姓,名,姓読み,名読み,姓読みソート用,名読みソート用,"
+       "姓ローマ字,名ローマ字,役割フラグ,生年月日,没年月日,人物著作権フラグ,"
+       "底本名1,底本出版社名1,底本初版発行年1,入力に使用した版1,校正に使用した版1,"
+       "底本の親本名1,底本の親本出版社名1,底本の親本初版発行年1,"
+       "底本名2,底本出版社名2,底本初版発行年2,入力に使用した版2,校正に使用した版2,"
+       "底本の親本名2,底本の親本出版社名2,底本の親本初版発行年2,"
+       "入力者,校正者,テキストファイルURL,テキストファイル最終更新日,"
+       "テキストファイル符号化方式,テキストファイル文字集合,テキストファイル修正回数,"
+       "XHTML/HTMLファイルURL,XHTML/HTMLファイル最終更新日,"
+       "XHTML/HTMLファイル符号化方式,XHTML/HTMLファイル文字集合,"
+       "XHTML/HTMLファイル修正回数\n"
+       "\"000001\",\"羅生門\",\"らしょうもん\",\"らしようもん\",\"\",\"\",\"\","
+       "\"\",\"NDC 913\",\"新字新仮名\",\"なし\",\"1997-10-29\","
+       "\"2022-07-16\",\"https://www.aozora.gr.jp/cards/000879/card1.html\","
+       "\"000879\",\"芥川\",\"竜之介\",\"あくたがわ\",\"りゅうのすけ\","
+       "\"あくたかわ\",\"りゆうのすけ\",\"Akutagawa\",\"Ryunosuke\","
+       "\"著者\",\"1892-03-01\",\"1927-07-24\",\"なし\","
+       "\"羅生門\",\"テスト出版社\",\"\",\"\",\"\",\"\",\"\",\"\","
+       "\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"野口英司\",\"校正者\","
+       "\"https://www.aozora.gr.jp/cards/000879/files/000001_ruby_fixture.zip\","
+       "\"2022-07-16\",\"ShiftJIS\",\"JIS X 0208\",\"1\","
+       "\"https://www.aozora.gr.jp/cards/000879/files/000001_15260.html\","
+       "\"2022-07-16\",\"ShiftJIS\",\"JIS X 0208\",\"1\"\n"))
+
+(defn- write-zip!
+  [file entries]
+  (.mkdirs (.getParentFile (io/file file)))
+  (with-open [out (ZipOutputStream. (io/output-stream file))]
+    (doseq [[name content] entries]
+      (.putNextEntry out (ZipEntry. name))
+      (.write out (.getBytes (str content) StandardCharsets/UTF_8))
+      (.closeEntry out))))
+
+(defn- official-aozora-fixture! [root]
+  (let [catalog (io/file root "index_pages" "list_person_all_extended_utf8.zip")
+        work-zip (io/file root "cards" "000879" "files"
+                          "000001_ruby_fixture.zip")
+        non-text-zip (io/file root "cards" "000879" "files"
+                              "000001_images.zip")
+        support-zip (io/file root "support" "tools.zip")]
+    (write-zip! catalog {"list_person_all_extended_utf8.csv"
+                         build-publication-csv})
+    (write-zip! work-zip {"000001.txt" "本文です。"})
+    (write-zip! non-text-zip {"cover.png" "not text"})
+    (write-zip! support-zip {"README.txt" "support"})
+    (.mkdirs (io/file root ".git"))
+    (spit (io/file root ".git" "HEAD") "fixture-head\n")
+    root))
 
 (defn- write-generated-source-request-set!
   [root label]
@@ -625,6 +679,77 @@
                                       "snapshot_root_valid"])))
           (is (= true (get-in report ["validation"
                                       "staged_root_valid"])))))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-command-materializes-and-delegates-to-rehearsal-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-publication")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        output-root (io/file root "build-output")]
+    (try
+      (let [out (with-out-str
+                  (is (zero? (soranoha/run!
+                              ["build-publication"
+                               "--aozora-root" (str aozora-root)
+                               "--config" "abc/config/publication-basic-ja.json"
+                               "--snapshot-date" "2026-07-08"
+                               "--output-root" (str output-root)]))))
+            slug "000001_000879_000001_ruby_fixture"
+            official-source-file (io/file output-root
+                                          "materialized-root"
+                                          "works"
+                                          slug
+                                          "official-source.json")
+            source-selection-report-file (io/file output-root
+                                                  "source-selection-report.json")
+            rehearsal-report-file (io/file output-root
+                                           "rehearsal"
+                                           "rehearsal-report.json")
+            tei-file (io/file output-root
+                              "rehearsal"
+                              "snapshot-root"
+                              "artifacts"
+                              "works"
+                              slug
+                              "tei"
+                              "tei.xml")]
+        (is (string/includes? out "build_publication_root:"))
+        (is (.exists official-source-file))
+        (is (.exists source-selection-report-file))
+        (is (.exists rehearsal-report-file))
+        (is (.exists tei-file))
+        (let [report (files/read-json source-selection-report-file)
+              official-source (files/read-json official-source-file)]
+          (is (= 1 (get report "selected_source_count")))
+          (is (<= 2 (get report "rejected_source_count")))
+          (is (= ["cards/000879/files/000001_ruby_fixture.zip"]
+                 (mapv #(get % "text_zip_relpath")
+                       (get report "selected_sources"))))
+          (is (= "cards/000879/files/000001_ruby_fixture.zip"
+                 (get official-source "text_zip_relpath"))))
+        (with-out-str
+          (is (zero? (soranoha/run!
+                      ["validate"
+                       (str (io/file output-root
+                                     "rehearsal"
+                                     "publication"))])))))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-command-requires-snapshot-date-for-publication-config-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-publication-date")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        output-root (io/file root "build-output")
+        err (java.io.StringWriter.)]
+    (try
+      (binding [*err* err]
+        (is (= 1 (soranoha/run!
+                  ["build-publication"
+                   "--aozora-root" (str aozora-root)
+                   "--config" "abc/config/publication-basic-ja.json"
+                   "--output-root" (str output-root)]))))
+      (is (string/includes? (str err) "snapshot-date is required"))
+      (is (not (.exists output-root)))
       (finally
         (delete-tree! root)))))
 

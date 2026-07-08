@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/soranoha-publication-build-config.schema.json",
+  "title": "Soranoha Publication Build Config",
+  "version": "0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "config_schema_id",
+    "request_set_label",
+    "snapshot_scope",
+    "parser_profile",
+    "publication_profile",
+    "continue_on_failure",
+    "materialization_scope"
+  ],
+  "properties": {
+    "config_schema_id": {
+      "const": "https://w3id.org/abc/schemas/soranoha-publication-build-config.schema.json"
+    },
+    "request_set_label": { "type": "string", "minLength": 1 },
+    "snapshot_scope": { "type": "string", "minLength": 1 },
+    "parser_profile": { "type": "string", "minLength": 1 },
+    "publication_profile": { "type": "string", "minLength": 1 },
+    "continue_on_failure": { "type": "boolean" },
+    "materialization_scope": {
+      "enum": ["smoke", "demo", "full-corpus"]
+    }
+  }
+}

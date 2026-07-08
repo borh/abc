@@ -12,6 +12,7 @@
             [abc.tools.schema :as schema]
             [abc.tools.source-snapshot-workset :as source-snapshot-workset]
             [abc.tools.snapshot-index :as snapshot-index]
+            [abc.tools.soranoha-build-publication :as build-publication]
             [abc.tools.soranoha-layout-report :as layout-report]
             [abc.tools.soranoha-stage-publication :as stage-publication]
             [abc.tools.tar :as tar]
@@ -996,7 +997,8 @@
     "  layout-report <snapshot-root> <output-path>"
     "  stage-publication <snapshot-root> <output-root>"
     "  source-snapshot <materialized-root> <output-root> <snapshot-scope> <snapshot-date>"
-    "  publication-rehearsal <materialized-root> <output-root> <request-set-label> <snapshot-scope> <snapshot-date>"]))
+    "  publication-rehearsal <materialized-root> <output-root> <request-set-label> <snapshot-scope> <snapshot-date>"
+    "  build-publication --aozora-root DIR --config FILE --snapshot-date YYYY-MM-DD --output-root DIR [--replace]"]))
 
 (def commands
   {"list-request-sets" {:args 0
@@ -1022,7 +1024,12 @@
    "source-snapshot" {:args 4
                       :run source-snapshot!}
    "publication-rehearsal" {:args 5
-                            :run publication-rehearsal!}})
+                            :run publication-rehearsal!}
+   "build-publication" {:args :variadic
+                        :run (fn [& args]
+                               (build-publication/build-publication!
+                                publication-rehearsal!
+                                args))}})
 
 (defn run! [args]
   (let [[command & rest-args] args]
@@ -1036,7 +1043,9 @@
             (println (usage)))
           2)
 
-      (not= (:args (get commands command)) (count rest-args))
+      (let [arity (:args (get commands command))]
+        (and (integer? arity)
+             (not= arity (count rest-args))))
       (do (binding [*out* *err*]
             (println "wrong arity for command:" command)
             (println (usage)))

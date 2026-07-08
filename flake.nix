@@ -254,6 +254,17 @@
               ''
                 bash tests/aat-run-set-smoke.sh
               '';
+          monorepo-aat-materialization-workflow =
+            mkMonorepoCheck "soranoha-monorepo-aat-materialization-workflow"
+              [
+                pkgs.bash
+                pkgs.coreutils
+                pkgs.python3
+              ]
+              ''
+                bash tests/aat-materialization-workflow-smoke.sh
+                bash tests/aat-diagnostic-run-set-smoke.sh
+              '';
           monorepo-python-quality =
             mkMonorepoCheck "soranoha-monorepo-python-quality"
               [

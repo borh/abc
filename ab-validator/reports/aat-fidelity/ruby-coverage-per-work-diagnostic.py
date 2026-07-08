@@ -1,13 +1,17 @@
 import glob
 import json
 import os
+from pathlib import Path
 import statistics
+import sys
 
-GLOBS = {
-    "aozora": "/db/ab-validator/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter/*.json",
-    "aozora-rs": "/db/ab-validator/fidelity-corpus/aozora-rs/aat/aozora-rs-adapter/*.json",
-    "aozora2html": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/*.json",
-}
+REPORTS_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPORTS_ROOT / "lib"))
+from aat_runs import adapter_aat_globs, load_run_set  # noqa: E402
+
+ORDER = ["aozora", "aozora-rs", "aozora2html"]
+RUN_SET = load_run_set()
+GLOBS = adapter_aat_globs(RUN_SET, order=ORDER)
 
 
 def wid(p):  # work id from filename: 000005_5-<hash>.json

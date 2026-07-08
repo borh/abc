@@ -90,6 +90,8 @@
               back-text (tei-element-body tei-text "back")]
           (is (string/includes? tei-text "xmlns:abc=\"https://w3id.org/abc/ns/tei\""))
           (is (string/includes? tei-text "abc:vocab-version=\"0\""))
+          (is (not (string/includes? tei-text "?><")))
+          (is (re-find #"\n\s*<" tei-text))
           (is (= 2 (count (re-seq #"<(?:[A-Za-z0-9_-]+:)?p(?:\s|>)"
                                   body-text))))
           (is (not (string/includes? body-text "（古伝説と、シルレルの詩から。）")))

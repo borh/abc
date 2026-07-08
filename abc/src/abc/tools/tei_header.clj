@@ -246,6 +246,11 @@
   [hiccup]
   (xml/emit-str (->xml-element hiccup)))
 
+(defn hiccup->pretty-xml-string
+  "Serialise TEI hiccup to indented XML for publication/inspection artifacts."
+  [hiccup]
+  (xml/indent-str (->xml-element hiccup)))
+
 (defn emit-xml
   "Serialise a hiccup TEI header to an XML string. The TEI namespace
   is the default; xml: prefix is bound to the XML namespace."

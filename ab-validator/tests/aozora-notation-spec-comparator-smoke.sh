@@ -90,7 +90,13 @@ jq -e '.totals.vectors == 2' "$tmp/summary.json"
 jq -e '.totals.adapters == 2' "$tmp/summary.json"
 jq -e '.totals.rows == 4' "$tmp/summary.json"
 jq -e '.rows[] | select(.vector == "ruby_explicit" and .adapter == "fake") | .status == "pass"' "$tmp/summary.json"
-jq -e '.rows[] | select(.vector == "ruby_explicit" and .adapter == "fake-aat") | .status == "warning"' "$tmp/summary.json"
+# AAT adapters are now scored via the projected spec-kind sequence: the fake AAT
+# adapter emits a matching ruby node, so it passes (was a blanket skip->warning).
+jq -e '.rows[] | select(.vector == "ruby_explicit" and .adapter == "fake-aat") | .status == "pass"' "$tmp/summary.json"
+# Projections an AAT adapter cannot answer (pairs/diagnostics) are explicit skips,
+# not warnings, so they no longer mask the nodes pass/fail.
+jq -e '.rows[] | select(.vector == "ruby_explicit" and .adapter == "fake-aat") | (.skips | length) > 0' "$tmp/summary.json"
+jq -e '.totals | has("skip")' "$tmp/summary.json"
 jq -e '.rows[] | select(.vector == "unsupported_shape" and .adapter == "fake") | .status == "warning"' "$tmp/summary.json"
 rg -n 'ruby_explicit' "$tmp/report.md"
 rg -n 'unsupported_shape' "$tmp/report.md"

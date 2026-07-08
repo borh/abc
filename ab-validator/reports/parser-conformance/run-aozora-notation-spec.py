@@ -260,7 +260,9 @@ def evaluate(adapter: Adapter, vector: dict[str, Any]) -> Row:
                 failures.append(f"{projection}: expected {want!r}, got {actual!r}")
         for projection in ("serialize", "html"):
             if expected.get(projection) is not None:
-                skips.append(f"{projection}: not compared (inspect exposes node/pairs/diagnostics only)")
+                skips.append(
+                    f"{projection}: not compared (inspect exposes node/pairs/diagnostics only)"
+                )
 
     if failures and level == "must":
         status = "fail"

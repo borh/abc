@@ -40,28 +40,59 @@ Open Question 2 asked whether this occurs in real corpus data before relaxing th
 failure mode — it does, and the answer points to designing a lossless split for
 inline-container nodes rather than keeping the hard fail or snapping boundaries.
 
-### "Other" failures — same root cause
+### "Other" failures — a distinct (whitespace) cause, not the container gap
 
 Two representative works, mechanism confirmed by inspecting the offending
-paragraphs:
+paragraphs and reproduced with the converter:
 
-- **`001585` — off-by-1 tiling** (`sentence spans end at 495, expected paragraph
+- **`001585` — off-by-N tiling** (`sentence spans end at 495, expected paragraph
   end 496`, `sentences.rs:411`): the body paragraph ends with a trailing
   `{"kind":"text","value":"\n"}` node after `style`/unmapped-div wrappers. The
   trailing newline is not tiled into any sentence span.
 - **`001091` — no sentence spans** (`body paragraph has no sentence spans for
-  non-empty byte span`, `sentences.rs:395`): the paragraph's entire visible text
-  lives inside a `font_size` inline-container node, so projection produces zero
-  sentence rows for a non-empty span.
+  non-empty byte span`, `sentences.rs:395`): the actual failing paragraph is a
+  body paragraph (block 109) with content `[text, figure]` whose visible text is
+  just `"\n"` — whitespace-only, while the byte span is non-empty.
+  `ab_plaintext::sentence_split` returns zero spans for whitespace-only input, so
+  the tiling assert bails. Reproduced directly: a paragraph whose only content is
+  `"　\n"` fails identically. (An earlier draft of this report attributed this to
+  a `font_size` inline container; that was wrong — the failing paragraph is
+  `[text, figure]` with whitespace-only visible text, not a container.)
 
-## Single root cause
+## Root causes — two distinct gaps
 
-All three failure families reduce to one gap: **sentence projection does not
-recurse into inline-container nodes** (`emphasis` / `layout-span` / `style` /
-`font_size` carrying `inline_children`). Body text wrapped in such a container
-either hard-fails (a boundary lands inside it) or disappears from segmentation (a
-paragraph made only of one yields no rows). `is_splittable_text_node`
-(`sentences.rs:338`) treats any node with `inline_children` as atomic.
+The failures split into two unrelated mechanisms, not one:
+
+1. **Inline-container atomic-boundary (dominant):** sentence projection cannot
+   split `emphasis` / `layout-span` carrying `inline_children`
+   (`is_splittable_text_node`, `sentences.rs:338`, treats any `inline_children`
+   node as atomic), so a boundary inside such a container hard-fails.
+2. **Whitespace-only visible text (the "other" failures):** a body paragraph
+   whose visible text is whitespace-only/empty but whose byte span is non-empty,
+   plus trailing whitespace nodes not tiled into the last sentence. This is a
+   whitespace-handling gap, independent of `inline_children`.
+
+A residual `gaiji` atomic-boundary (1/97) exists too: a `gaiji` whose visible text
+carries an interior terminal. `gaiji` is a single glyph and stays atomic, so this
+is a separate, rare residual, not covered by the container fix.
+
+## Phase B validation (2026-07-08)
+
+After implementing Phase B (B1 recursive inline-container split + B2 whitespace
+handling; see the design spec), re-running the same `calib-triage-1000` audit:
+
+| Metric | Before (Phase A) | After (Phase B) |
+|---|---|---|
+| succeeded | 903 | **999** |
+| failed | 97 | **1** |
+| emphasis / layout-span atomic-boundary | 64 | **0** |
+| whitespace ("other") | 32 | **0** |
+| `gaiji` atomic-boundary | 1 | 1 (accepted, B-D7) |
+
+The single remaining failure is the accepted `gaiji` hard-fail
+(`sentence boundary falls inside atomic node gaiji at byte 37532`); no new failure
+classes appeared. This satisfies U2 — publication-grade parser-IR for this corpus
+is now clean except for the accepted `gaiji` residual, which unblocks Issue 4 (B4).
 
 Because ~9–10% of publication-grade works currently fail conversion, **all
 publication-grade parser-IR is not yet regenerated cleanly** — this gates Issue 4
@@ -102,17 +133,21 @@ emphasis at byte 6`.
 
 ## Recommended next steps
 
-1. **Design a lossless split for inline-container nodes** (emphasis / layout-span /
-   style / font_size with `inline_children`) so a sentence boundary inside them
-   splits the container rather than failing. This clears the majority (~6.5%) of
-   failures and is the substantive follow-up the corpus evidence justifies.
-2. **Fix trailing whitespace/newline tiling** so trailing text nodes are absorbed
-   into the preceding sentence span (clears the off-by-N "other" failures).
-3. **Cover all-container paragraphs** so a paragraph whose text is entirely inside
-   a container still yields sentence rows (clears "no sentence spans").
+1. **Design a lossless split for `emphasis`/`layout-span` with `inline_children`**
+   so a sentence boundary inside them splits the container into siblings rather
+   than failing. This clears the dominant (~6.5%) atomic-boundary failures. See
+   `docs/superpowers/specs/2026-07-08-parser-ir-inline-container-lossless-split-design.md`.
+2. **Fix whitespace handling** (distinct from 1): absorb trailing whitespace/newline
+   text nodes into the last sentence (off-by-N), and stop bailing on body
+   paragraphs whose visible text is whitespace-only while the byte span is
+   non-empty (the "no sentence spans" case).
+3. **`gaiji` atomic-boundary residual** (1/97): accepted as a rare hard-fail
+   (single glyph, no lossless split). Keep it classified separately in the audit
+   so it never masks new regressions.
 4. **Re-run the audit at full-adapter scale** once (1)–(3) land, and only then
    proceed with Issue 4 (fallback retirement), which requires a clean corpus.
-5. Fix the `audit-corpus` symlink-skipping / zero-file-silent-success behavior.
+5. ~~Fix the `audit-corpus` symlink-skipping / zero-file-silent-success behavior.~~
+   Done (see the FIXED tooling section above).
 
 ## Reproduction
 

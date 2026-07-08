@@ -17,8 +17,7 @@
           "kind": "style",
           "style_type": "sesame_dot",
           "content": [
-            { "kind": "text", "value": "甲。乙" },
-            { "kind": "ruby", "base": "丙", "reading": "へい", "direction": "right" }
+            { "kind": "ruby", "base": "甲。乙", "reading": "こう", "direction": "right" }
           ]
         }
       ]

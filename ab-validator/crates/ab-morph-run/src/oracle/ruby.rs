@@ -303,6 +303,15 @@ pub fn adjudicate(
             winning_analyzer,
             losing_analyzers: losers,
             evidence_detail,
+            // Resolved bases have ≥1 exact-tiling analyzer that matched the editor
+            // ruby, so the normalized editor reading is the authoritative adjudicated
+            // reading. Unresolved bases (nonstandard_ruby / no_comparable_reading)
+            // have no confirmed match and carry no adjudicated reading.
+            adjudicated_reading: if classification == "resolved" {
+                Some(ruby_norm.clone())
+            } else {
+                None
+            },
         });
     }
     rows
@@ -397,6 +406,15 @@ fn adjudicate_reference(
             winning_analyzer,
             losing_analyzers: losers,
             evidence_detail,
+            // Resolved bases have ≥1 exact-tiling analyzer that matched the editor
+            // ruby, so the normalized editor reading is the authoritative adjudicated
+            // reading. Unresolved bases (nonstandard_ruby / no_comparable_reading)
+            // have no confirmed match and carry no adjudicated reading.
+            adjudicated_reading: if classification == "resolved" {
+                Some(ruby_norm.clone())
+            } else {
+                None
+            },
         });
     }
     rows
@@ -635,6 +653,8 @@ mod tests {
         assert!(rows[0].winning_analyzer.is_none());
         assert_eq!(rows[0].losing_analyzers.len(), 2);
         assert!(rows[0].evidence_detail.contains("nonstandard_ruby"));
+        // Not resolved → no adjudicated reading (the ruby stays evidence only).
+        assert!(rows[0].adjudicated_reading.is_none());
     }
 
     #[test]
@@ -697,6 +717,9 @@ mod tests {
         let rows = adjudicate("r", "s", "t", &[base(0, 2, "ほんき")], &[a, b], &regions());
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].classification, "no_comparable_reading");
+        // No exact-tiling comparison → misalignment stays evidence, no adjudicated
+        // reading is emitted.
+        assert!(rows[0].adjudicated_reading.is_none());
     }
 
     #[test]
@@ -729,6 +752,9 @@ mod tests {
         );
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].classification, "resolved");
+        // Resolved: the normalized editor reading is surfaced as the adjudicated
+        // authoritative reading (never altering tokenization).
+        assert_eq!(rows[0].adjudicated_reading.as_deref(), Some("とうきょう"));
     }
 
     #[test]

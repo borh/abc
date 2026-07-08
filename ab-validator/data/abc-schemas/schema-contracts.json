@@ -70,7 +70,7 @@
       "id": "https://w3id.org/abc/schemas/snapshot-index.schema.json",
       "title": "ABC Snapshot Index",
       "version": "0.1.0",
-      "hash": "sha256:ef0aaccd2d5d86204bb22c5d94e3c3d4dab2a6cfe4b82c353873317c77a3c31f"
+      "hash": "sha256:9be8e22d8d7f7b246c3bb3bf43e7ded7b099a179e95e47fe6d073f062bd0ef2e"
     },
     {
       "path": "data/abc-schemas/schemas/pack-policy.schema.json",

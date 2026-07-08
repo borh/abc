@@ -2,7 +2,6 @@
 resources/abc/ndc9.edn.xz
 deps-lock.json
 src/abc/annotation/schema.clj
-src/abc/text.clj
 src/abc/ndc.clj
 src/abc/tools/hash.clj
 src/abc/tools/jcs.clj
@@ -69,5 +68,4 @@ examples/v0/example-persons/000879.json
 data/parser-ir-publication-policy-v0.json
 test/abc/tools/validate_design_bundle_test.clj
 test/abc/annotation_schema_test.clj
-test/abc/text_test.clj
 test/abc/ndc_test.clj

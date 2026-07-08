@@ -20,7 +20,12 @@ measure coverage at all. The consistent result across breadth **and** mass **and
 speed is that **`aozora-pipeline` leads** (corpus coverage 0.972, 22/25 must,
 1.25 s median); `aozora-rs` is a strong second on corpus coverage (0.937) and
 fastest (~90×), its low conformance being a headerless-vector artifact; `aozora2`
-(0.840) and `aozora2html` (0.700) trail on real texts.
+(0.840) and `aozora2html` (0.745) trail on real texts. Decomposing corpus coverage
+into **fidelity** (representation quality on works a parser completes) and
+**robustness** (whether it completes them) sharpens the picture without changing the
+call: aozora2html is actually the *most faithful* per work (0.975) but disqualified
+by catastrophic robustness, and aozora-rs's coverage rank was flattered by robustness
+(lowest fidelity, 0.925) — leaving `aozora-pipeline` the only parser strong on both.
 
 > **Authority caveat (load-bearing).** The conformance suite is the third-party
 > P4suta `upstream-aozora-notation-spec`. By standing project decision it is
@@ -273,9 +278,48 @@ completes the work). aozora2html's fidelity is ~1.0 on ruby; its low coverage is
 **robustness** problem (a different, more fixable failure than dropping constructs).
 The other adapters completed different work counts too (aozora/aozora-rs ~17,600–17,900,
 epub3 17,844, aozora2 17,856), so each carries a smaller version of this. **A pure
-fidelity comparison should be recomputed over the intersection of works *all*
-adapters completed** (see §8); the numbers above are honest "total-mass" coverage,
-not isolated fidelity.
+fidelity comparison recomputed over the intersection of works *all* adapters
+completed is now §4.8**; the numbers above are honest "total-mass" coverage, not
+isolated fidelity.
+
+### 4.8 Fidelity vs robustness — decomposing corpus coverage
+Corpus coverage (§4.7) multiplies two independent axes: **robustness** (did the
+adapter produce output at all?) and **fidelity** (*given it ran*, how faithfully did
+it represent the markup?). Separating them
+(`reports/aat-fidelity/fidelity-robustness-split.py`; full report
+`2026-07-08-fidelity-robustness-split.md`) recomputes coverage over **I = the
+intersection of works all five parsers completed** (17,518 works), scoring every
+parser on an identical input set. The per-work counts are asserted to reconcile with
+§4.7's full-corpus numerators, so it is the same instrument; the unit is the source
+input file (basenames are shared across adapters), and fidelity is reported under two
+denominators — *best-attested* (per-work max; adapter-neutral) and *reference*
+(aozora-pipeline) — that give the same ranking.
+
+**Robustness (completion over 17,886 works).** aozora-pipeline and aozora-rs complete
+**every** work; aozora-epub3 0.996; aozora2 0.998; aozora2html 0.983. The rate hides
+the damage because missed works are the *largest*: aozora2's 30 missing works hold
+**13.6% of all ruby** (the timeout-on-giants pathology of §4.6 resurfacing), and
+aozora2html's 302 missing works (197 no-output + 105 empty) hold **24.7% of ruby**.
+
+**Fidelity (best-attested, weighted):** aozora2html **0.975** > aozora **0.970** >
+aozora-epub3 0.956 > aozora2 0.953 > aozora-rs **0.925** (ranking invariant under the
+reference denominator). On ruby (88% of mass) all five sit at 0.97–0.999 — the entire
+§4.7 ruby spread was missing works, not lossiness.
+
+**Two inversions vs §4.7 corpus coverage — the finding:**
+- **aozora2html: 0.745 (5th) → 0.975 fidelity (1st), Δ+0.230.** Its coverage deficit
+  is *entirely* robustness; per work it is the most faithful parser measured.
+- **aozora-rs: 0.937 (2nd) → 0.925 fidelity (5th), Δ−0.012.** Its coverage rank was
+  flattered by perfect robustness; on equal inputs it is the *least* faithful
+  (tcy 0.000, bousen 0.152, heading 0.224 — genuine parser gaps).
+
+**This strengthens the pick.** The axes are orthogonal and **aozora-pipeline is the
+only parser top-tier on both** — fidelity 0.970 (tied for the lead) *and* robustness
+1.000 *and* fastest. aozora2html's best-in-class fidelity is disqualified by
+catastrophic robustness (and lives in non-canonical encodings needing normalization);
+aozora-rs is confirmed a throughput-only candidate; aozora2's robustness gap *is* its
+timeout pathology (a third axis undercutting it). See the companion report for the
+full per-construct table and threats.
 
 ## 5. Threats to validity / limitations
 
@@ -336,11 +380,20 @@ python reports/parser-conformance/measure-aozora-rs-core.py "$VECTORS"  # aozora
 # $VECTORS = "$(nix build --no-link --print-out-paths .#upstream-aozora-notation-spec)/conformance/vectors"
 ```
 
+```
+# §4.8 fidelity/robustness split (reconciles with §4.7; ~3 min over the AAT dumps)
+python3 reports/aat-fidelity/fidelity-robustness-split.py \
+  docs/superpowers/reports/2026-07-08-normalized-corpus-coverage.json \
+  > docs/superpowers/reports/2026-07-08-fidelity-robustness-split.json
+```
+
 Backing data: `2026-07-08-aozora-notation-spec-comparison.summary.json`,
 `2026-07-08-parser-divergence-attribution.json`,
-`2026-07-08-aozora-rs-core-capability.json`. Companion reports:
+`2026-07-08-aozora-rs-core-capability.json`,
+`2026-07-08-fidelity-robustness-split.json`. Companion reports:
 `2026-07-08-parser-conformance-comparison.md`,
-`2026-07-08-parser-fork-candidacy-faithful-comparison.md`.
+`2026-07-08-parser-fork-candidacy-faithful-comparison.md`,
+`2026-07-08-fidelity-robustness-split.md`.
 
 ## 8. Open work toward publication
 
@@ -348,10 +401,11 @@ Backing data: `2026-07-08-aozora-notation-spec-comparison.summary.json`,
   timeout pathology (which inputs, and whether it is a cheap fix).
 - Resolve the `aozora-rs-core` gaiji blind spot and confirm a valid document
   wrapper (or repair its adapter's typed projection — deferred).
-- Split coverage into **fidelity** (over the intersection of works all adapters
-  completed) and **robustness** (per-adapter work-completion rate), per the §4.7
-  closure — so aozora2html's ruby ~1.0 fidelity isn't hidden behind its work-failure
-  rate. Also verify each adapter's *own* completed-work denominator.
+- ~~Split coverage into **fidelity** and **robustness**~~ — **done (§4.8**,
+  `2026-07-08-fidelity-robustness-split.{md,json}`): aozora2html's fidelity is the
+  highest measured (0.975) and its coverage deficit is pure robustness; aozora-rs's
+  coverage rank was flattered by robustness (fidelity 0.925, lowest). The split
+  reinforces the aozora-pipeline pick (only parser top-tier on both axes).
 - Expand the official-docs seed (§4.5) from 11 clean cases toward edge-case
   coverage and precise spans, so it reproduces absolute rates, not just relative
   family weakness — a full independent instrument, not a seed.

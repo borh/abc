@@ -199,29 +199,39 @@ Conformance (§4.1–4.6) measures **breadth** on curated construct sets weighte
 toward edge cases. The decision-relevant question is **mass**: across the real
 corpus, weighted by how often each construct actually occurs, what fraction can
 each parser represent? Measured over each parser's full-corpus AAT (~17,800 works)
-with **normalized recognition** — canonical `style_type` spellings collapsed
-(`boten≡bouten`, `bousen≡bosen`) and a construct counted whether emitted as a typed
-`kind` node **or** a `raw` node with `x-source-marker-kind`
-(`reports/aat-fidelity/normalized-corpus-coverage.py`):
+with **fair normalized recognition** (`reports/aat-fidelity/normalized-corpus-coverage.py`).
+
+**Fairness method.** Recognition signatures are derived from a *full-corpus
+vocabulary audit* of every adapter's real output
+(`2026-07-08-adapter-aat-vocabulary-audit.txt`), not from guesses. Each construct's
+signature is the **union** of every adapter's actual encoding; the encodings are
+disjoint across adapters (ab-aozora emits only `x-source-marker-kind`; aozora2html
+emits HTML-flavoured `style_type`s), so the union credits each adapter for its own
+form without cross-contamination. Counts are 1-per-occurrence; rates are capped at
+1.0 in the weighted sum.
 
 | construct | corpus freq | aozora | aozora2 | aozora-rs | aozora2html | aozora-epub3 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | ruby | 3,607,926 | 0.99 | 0.85 | 0.99 | 0.74 | 0.96 |
-| boten | 129,086 | ~1.0 | 0.97 | 0.95 | **0.00** | 0.98 |
+| boten | 129,086 | ~1.0 | 0.97 | 0.95 | 0.89 | 0.98 |
 | jisage_block | 94,993 | 0.97 | 0.38 | 0.46 | ~1.0 | ~1.0 |
-| heading | 80,592 | 0.84 | 0.91 | **0.24** | **0.10** | 0.84 |
-| font_size | 51,508 | **0.00** | 0.33 | **0.00** | 0.25 | **0.00** |
-| tcy | 19,794 | 0.95 | 0.86 | **0.00** | **0.00** | 0.69 |
-| bousen | 18,127 | **0.00**† | 0.95 | 0.18 | 0.13 | 0.81 |
-| figure | 5,877 | 0.99 | 0.88 | 0.91 | 0.70 | 0.05 |
-| **freq-weighted coverage** | **4.0 M** | **0.972** | **0.840** | **0.937** | **0.700** | **0.940** |
+| heading | 80,592 | 0.84 | 0.91 | 0.24 | 0.77 | 0.84 |
+| font_size | 51,508 | 0.00‡ | 0.33 | 0.00‡ | 0.25 | 0.00‡ |
+| tcy | 19,794 | 0.95 | 0.86 | 0.00‡ | 0.00‡ | 0.69 |
+| bousen | 18,127 | 0.00† | 0.95 | 0.18 | 0.79 | 0.81 |
+| figure | 5,877 | 0.99 | 0.88 | 0.91 | 0.70 | 0.05‡ |
+| **freq-weighted coverage** | **4.0 M** | **0.972** | **0.840** | **0.937** | **0.745** | **0.940** |
 
-**Why the naive predicate would have lied:** `ab-aozora` emits ruby ~99% as
-`raw`+`x-source-marker-kind`, only ~1% as typed nodes; counting only `kind=="ruby"`
-would report the *reference* parser near-zero on ruby. Normalization (a fix that
-belongs in the AAT contract — a canonical `style_type` enum and typed-node ≡
-marker-kind equivalence) is what makes cross-parser coverage measurable, and it
-would also shrink downstream IR `AMBIGUITY` sidecars (§2).
+**The audit caught real unfairness** — and fixing it did *not* change the ranking,
+which is the point of checking. `aozora2html` had been scored **boten 0.00,
+bousen 0.13, heading 0.10**; the audit showed it emits boten as `sesame_dot`
+(+`white_circle`/`black_circle`/`bullseye`/… dot variants), bousen as
+`underline_solid`, and most headings as `unmapped-h4`/`h5` styles — so the fair
+figures are **0.89 / 0.79 / 0.77**, raising its total 0.700 → 0.745. Separately,
+counting only `kind=="ruby"` would have reported the *reference* parser near-zero on
+ruby, since ab-aozora emits ruby ~99% as `raw`+marker. This normalization belongs in
+the AAT contract (canonical `style_type` enum; typed-node ≡ marker-kind); it would
+also shrink downstream IR `AMBIGUITY` sidecars (§2).
 
 **Findings (robust despite caveats below):**
 - **`aozora-pipeline` leads corpus coverage (0.972)** — best on *both* mass and
@@ -236,13 +246,22 @@ would also shrink downstream IR `AMBIGUITY` sidecars (§2).
   per-construct row for where parsers genuinely diverge (heading, tcy, bousen,
   font_size are the real differentiators).
 
-Caveats: a few rates exceed 1.0 (over-counting when a parser emits multiple nodes
-per occurrence, e.g. `containerOpen` per line) — **capped at 1.0** in the weighted
-sum, so coverage is not inflated. †`aozora` bousen 0.00 is almost certainly a
-normalization predicate-miss for that adapter's bousen encoding, not a real gap
-(0.45% of mass; negligible to the weighted score). `aozora-epub3` ran under a 300 s
-per-work cap, so its numbers reflect completed works. Fine gaiji sub-constructs are
-excluded (adapter-dropped fields — the residual granularity wall).
+Caveats (documented, not fairness bugs): **‡** marks a **verified-real 0** — the
+vocabulary audit confirms the adapter emits *no* node for that construct (aozora-rs
+`tcy`: 1 node in the entire corpus; aozora2html `tcy`: none; aozora/aozora-rs/epub3
+`font_size`: none; epub3 `figure`: 305, it emits images as separate files). **†**
+`aozora` bousen is **folded**, not dropped — ab-aozora emits a generic `emphasis`
+marker with no distinct bousen (it keeps the span, loses the type); scored 0 for
+*distinct* representation, 0.45% of mass. A few rates exceed 1.0 (a parser emits
+>1 node per occurrence, e.g. epub3's per-line `jisage_block`) — **capped at 1.0**,
+so coverage is not inflated; and ab-aozora's `jisage_block` is approximated by
+`containerOpen`, which slightly over-attributes (it covers all block containers).
+Adapters completed different work counts (aozora2html 17,689 of 17,886), so
+numerators over completed works are lightly (~1%) under the corpus-wide denominator.
+`aozora2html`'s ruby 0.74 is a *real* node-count ratio (verified recursive), the one
+cell most worth a targeted follow-up since ruby dominates the weighted score. Fine
+gaiji sub-constructs remain excluded (adapter-dropped fields — the residual
+granularity wall).
 
 ## 5. Threats to validity / limitations
 

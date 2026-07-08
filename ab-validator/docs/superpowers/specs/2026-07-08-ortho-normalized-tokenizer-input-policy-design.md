@@ -203,12 +203,18 @@ independently identified.
   original P2 sketch are **deferred** — the run-level hash is what the P4 bridge
   consumes; per-source enrichment can be added if P4 shows a need (YAGNI). Not
   persisted on the JSONL `RunManifest` path (warehouse is the ABC-consumed path).
-- **P3 — Input-view identity.** Allow a non-identity `policy_hash` on
-  `parser-ir-plaintext-body-v1` input views (request-set + analysis-result);
-  keep Invariant 1. No new enum value (F2).
-- **P4 — ABC bridge.** Populate `tokenizer-profile.input_normalization_policy_hash`
-  from the real policy; record the applied policy in request-set `input_views`;
-  add the profile ⇄ input-view agreement check (F1).
+- **P3 — Input-view identity.** Add a **new** required
+  `input_normalization_policy_hash` field (identity sentinel for off) on the
+  `parser-ir-plaintext-body-v1` input views (request-set + analysis-result) to
+  record the applied normalization; keep Invariant 1. No new enum value (F2, as
+  corrected). **Designed jointly with P4** — see
+  `2026-07-08-ortho-input-view-and-abc-bridge-design.md`. Not yet implemented
+  (touches ABC hashed identity; awaiting go-ahead on the cascade).
+- **P4 — ABC bridge.** Read the applied hash from the Rust run provenance,
+  populate the input-view record, and enforce the profile ⇄ input-view ⇄ run
+  agreement (F1); rewire the tokenizer-profile fixture hash. See the combined
+  P3+P4 design above. Transport sub-decision (T1 Rust-emitted JSON vs T2 ABC
+  parquet read) open; recommend T1.
 - **P5 — Reproducibility test.** A run + its recorded policy hash regenerate the
   identical derived input from source; a golden fixture pins detector →
   normalized-text → remapped spans end-to-end on the warehouse path.

@@ -40,9 +40,9 @@
   com.taoensso/telemere-slf4j      {:mvn/version "1.2.1"}
 
   org.relaxng/jing                 {:mvn/version "20241231"}
-  ;; Explicit for the v0 Schematron harness. Upgrade to Saxon 12.x in a
-  ;; separate dependency-refresh change.
-  net.sf.saxon/Saxon-HE            {:mvn/version "9.6.0-4"}
+  ;; Explicit for the v0 Schematron harness; aligns the runtime XPath engine
+  ;; with the ODD artifact generator and current Schematron tooling.
+  net.sf.saxon/Saxon-HE            {:mvn/version "12.9"}
 
   ;; Linked Art / JSON-LD publication-view harness (ADR 0013). Jena pulls in
   ;; titanium-json-ld 1.4.1 transitively; this explicit pin upgrades it to

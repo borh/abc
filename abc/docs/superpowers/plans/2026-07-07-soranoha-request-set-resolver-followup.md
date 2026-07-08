@@ -582,3 +582,33 @@ Run `soranoha reproduce demo-basic-ja`, `soranoha validate target/soranoha/demo-
 - [x] Run `git diff --check`.
 - [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
 - [x] Run `nix flake check`.
+
+### Task 30: Publication Rehearsal Command
+
+**Files:**
+- Modify: `abc/src/abc/tools/soranoha.clj`
+- Modify: `abc/test/abc/tools/soranoha_test.clj`
+
+**Interfaces:**
+- Produces: `soranoha publication-rehearsal <materialized-root> <output-root> <request-set-label> <snapshot-scope> <snapshot-date>`.
+- Consumes: the existing source-snapshot, request-set resolver, snapshot reproduction, validation, publication-report, layout-report, and stage-publication helpers.
+
+- [x] Add a failing Soranoha test showing a materialized corpus root can be rehearsed into one output root with source snapshot, resolved request set, snapshot root, reports, staged publication, and `rehearsal-report.json`.
+- [x] Implement the command by composing existing helpers directly, not by parsing CLI output.
+- [x] Write a deterministic rehearsal report with request-set identity, snapshot identity, source snapshot hash, artifact counts, archive format, staged archive byte counts, report hashes, validation status, the top-level rehearsal command, and internal step outputs.
+- [x] Preserve publication identity while writing the staged root; the report is operational evidence, not snapshot identity.
+
+### Task 31: Publication Rehearsal Verification
+
+**Files:**
+- All touched files.
+
+**Interfaces:**
+- Consumes: completed publication-rehearsal command.
+- Produces: verified one-command dry-run path for full-corpus publication evidence.
+
+- [x] Run focused Soranoha tests.
+- [x] Run focused request-set/source-snapshot/snapshot tests.
+- [x] Run `git diff --check`.
+- [x] Run `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests -L`.
+- [x] Run `nix flake check`.

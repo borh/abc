@@ -3162,3 +3162,42 @@ fn cli_tei_eaj_structural_expansion_writes_reports() {
     let report_text = std::fs::read_to_string(&report).unwrap();
     assert!(report_text.contains("TEI-EAJ Structural Expansion"));
 }
+
+#[test]
+fn quote_node_emission_from_text() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: include_fixture_json("quote-node-emission.aat.json"),
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+    let nodes = output.parser_ir["nodes"].as_array().unwrap();
+    let quote_nodes: Vec<_> = nodes
+        .iter()
+        .filter(|n| n["type"] == "quote")
+        .collect();
+    assert_eq!(quote_nodes.len(), 2, "expected open+close quote nodes");
+    assert_eq!(quote_nodes[0]["marker_type"], "open");
+    assert_eq!(quote_nodes[0]["text"], "「");
+    assert!(quote_nodes[0]["nesting_level"].is_null());
+    assert_eq!(quote_nodes[1]["marker_type"], "close");
+    assert_eq!(quote_nodes[1]["text"], "」");
+    // Sub-segments carry synthetic spans (decoded_utf8 coordinate system).
+    assert_eq!(
+        quote_nodes[0]["span"]["coordinate_system"],
+        "decoded_utf8"
+    );
+    // The text nodes around the markers are split out, not merged.
+    let text_nodes: Vec<_> = nodes
+        .iter()
+        .filter(|n| n["type"] == "text")
+        .map(|n| n["text"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        text_nodes,
+        vec!["先生は", "綺麗だ", "といった。"],
+        "text node should be split at 「」 markers"
+    );
+}

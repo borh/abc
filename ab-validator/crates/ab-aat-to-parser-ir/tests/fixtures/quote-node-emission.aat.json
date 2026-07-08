@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "work_id": "test-quote-nodes",
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "content": [
+        { "kind": "text", "value": "先生は「綺麗だ」といった。" }
+      ]
+    }
+  ],
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "0.0.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "parse_complete": true,
+    "warnings": []
+  }
+}

@@ -711,6 +711,103 @@ fn map_inline_content(
     Ok(current)
 }
 
+/// Emit the parser-IR text node for an AAT `text` inline, preserving its
+/// source span. Handles source-derived line-break text. Behavior-preserving
+/// extraction of the former `"text"` arm of [`map_inline_to_nodes`].
+fn map_text_node(
+    node: &Value,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    synthetic_warnings: &mut Vec<Value>,
+    offset: u64,
+    path: &str,
+) -> Result<u64> {
+    if is_source_derived_line_break_text(node) {
+        return map_source_derived_line_break_text(node, nodes, recorder, offset, path);
+    }
+    let _ = synthetic_warnings; // signature symmetry with map_text_node_with_quotes
+    let text = node["value"].as_str().unwrap_or("");
+    let end = offset + utf8_len(text);
+    let span = map_span(node.get("span"), offset, end, recorder, path)?;
+    nodes.push(json!({"type": "text", "span": span, "text": text}));
+    Ok(end)
+}
+
+/// Like [`map_text_node`] but splits the text at `「」`/`『』` markers and
+/// synthesizes `quote` nodes for each marker. Sub-segments and quote nodes use
+/// synthetic spans (no false source-pointer claims) — a marker-free text node
+/// delegates to [`map_text_node`] and keeps its real span.
+///
+/// `nesting_level` is stored as `null`; it is derivable from the ordered
+/// `marker_type` sequence downstream.
+fn map_text_node_with_quotes(
+    node: &Value,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    synthetic_warnings: &mut Vec<Value>,
+    offset: u64,
+    path: &str,
+) -> Result<u64> {
+    let text = node["value"].as_str().unwrap_or("");
+    let quote_chars: &[char] = &['「', '」', '『', '』'];
+
+    if !text.chars().any(|c| quote_chars.contains(&c)) {
+        return map_text_node(node, nodes, recorder, synthetic_warnings, offset, path);
+    }
+
+    let mut pos = offset;
+    let mut segment_start = 0usize;
+
+    for (i, ch) in text.char_indices() {
+        if !quote_chars.contains(&ch) {
+            continue;
+        }
+        // Emit the text segment before the marker (if non-empty).
+        if segment_start < i {
+            let segment_text = &text[segment_start..i];
+            let end = pos + utf8_len(segment_text);
+            nodes.push(json!({
+                "type": "text",
+                "span": synthetic_span(pos, end),
+                "text": segment_text,
+            }));
+            pos = end;
+        }
+
+        // Emit the quote marker node with a synthetic single-char span.
+        let marker_type = if ch == '「' || ch == '『' {
+            "open"
+        } else {
+            "close"
+        };
+        let ch_len = utf8_len(ch.to_string().as_str());
+        let span = synthetic_span(pos, pos + ch_len);
+        nodes.push(json!({
+            "type": "quote",
+            "span": span,
+            "marker_type": marker_type,
+            "nesting_level": null,
+            "text": ch.to_string(),
+        }));
+        pos += ch_len;
+        segment_start = i + ch.len_utf8();
+    }
+
+    // Emit any trailing text after the last marker.
+    if segment_start < text.len() {
+        let segment_text = &text[segment_start..];
+        let end = pos + utf8_len(segment_text);
+        nodes.push(json!({
+            "type": "text",
+            "span": synthetic_span(pos, end),
+            "text": segment_text,
+        }));
+        pos = end;
+    }
+
+    Ok(pos)
+}
+
 fn map_inline_to_nodes(
     node: &Value,
     nodes: &mut Vec<Value>,
@@ -721,14 +818,7 @@ fn map_inline_to_nodes(
 ) -> Result<u64> {
     match node["kind"].as_str().unwrap_or("") {
         "text" => {
-            if is_source_derived_line_break_text(node) {
-                return map_source_derived_line_break_text(node, nodes, recorder, offset, path);
-            }
-            let text = node["value"].as_str().unwrap_or("");
-            let end = offset + utf8_len(text);
-            let span = map_span(node.get("span"), offset, end, recorder, path)?;
-            nodes.push(json!({"type": "text", "span": span, "text": text}));
-            Ok(end)
+            return map_text_node_with_quotes(node, nodes, recorder, synthetic_warnings, offset, path);
         }
         "ruby" => {
             let base = node["base"].as_str().unwrap_or("");

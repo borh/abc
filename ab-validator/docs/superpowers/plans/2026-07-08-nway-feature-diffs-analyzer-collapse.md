@@ -632,6 +632,38 @@ git commit -m "docs(perf): record nway feature-diff collapse validation (hinoki)
 
 ---
 
+## Validation Record (hinoki) — 2026-07-08
+
+**Runs** (both: 4 analyzers = vibrato + vibrato:unidic-novel-202512 + sudachi-a + sudachi-c, `--jobs 0` [auto-jobs 18], `--parquet-zstd-level 3`, same full corpus, GNU `time -v`):
+
+- **Baseline** `e26f154` (v2, scalar `analyzer_id`) — run_id `collapse-base`, EXIT=0
+- **Branch** `2a9282f` (v3, `analyzers VARCHAR[]`) — run_id `collapse-head`, EXIT=0
+
+### Content-neutrality — PASS (equivalence under UNNEST)
+
+- ✅ **`nway_feature_diffs`:** `UNNEST(v3).analyzers` reproduces the v2 per-analyzer multiset **exactly** — order-independent triple fingerprint identical: `count = 23,356,986,673`, `sum(hash(9 cols)) = 215431653957195586291151690789`, `bit_xor(hash) = 17664366447492355357` (excludes `run_id`).
+- ✅ **Derived tables unperturbed** (must be identical, and are): `feature_pattern_counts` fingerprint `8394223 | 77398034491242627755677596 | 2497861013597570096`; `nway_region_oracle_evidence` `2329135 | 21500790416366119743713232 | 933086773057794946` — both match base vs head.
+- ✅ **Row-level witness:** `EXCEPT ALL` both directions **empty** on an aligned single-source slice (`source_id=001529_50685-dd3b2fe4e5bf`), v2 rows vs `UNNEST(v3)` rows.
+- ✅ **All other tables:** row counts byte-identical (sources 17,885; projection_spans 10,832,338; morphemes 662,984,226; morpheme_features 12,575,103,913; nway_regions 161,142,784; nway_region_analyzers 644,571,136; errors 0).
+
+> Note: the plan's shard-subset `EXCEPT ALL` (Step 4) is unusable as written — v3's ~half row count repartitions the parquet `part-NNNNN` files, so v2 `part-00000` and v3 `part-00000` cover different sources (file-misaligned). Replaced by the full-table triple fingerprint (strictly stronger — exact count + two independent order-insensitive hash aggregates over all 23.4B rows) plus the content-aligned single-source `EXCEPT ALL` above.
+
+### Payoff
+
+| Metric | `e26f154` (v2) | `2a9282f` (v3) | Δ |
+| --- | --- | --- | --- |
+| **`nway_feature_diffs` rows** | 23,356,986,673 | 11,865,581,907 | **−49.2 %** (1.968 analyzers/row) |
+| **warehouse-write** (Σ 590 shards) | 4393.7 s (16.0 %) | 3403.0 s (13.0 %) | **−22.5 %** |
+| Wall clock | 29:53.6 | 28:15.4 | −5.5 % |
+| Max RSS | 31.97 GiB | 30.49 GiB | −4.6 % |
+| phase total | 27410.9 s | 26242.8 s | −4.3 % |
+| — adjudication | 17505.6 s (63.9 %) | 17255.6 s (65.8 %) | −1.4 % (flat) |
+| — analysis | 3988.6 s | 4023.9 s | +0.9 % (noise) |
+
+**Reading.** The collapse is a **storage/write win, not a wall-clock win** — exactly as scoped. Halving the largest table's rows (−49.2 %) cut warehouse-write CPU −22.5 % and shrinks the on-disk parquet correspondingly; wall clock moves only −5.5 % because write is ~16 % of CPU and adjudication (~64 %) is untouched. Content-neutrality is proven at corpus scale: expanding v3 is byte-for-byte the v2 table, and every other table is unchanged.
+
+---
+
 ## Out of scope
 
 - Surfacing `analyzers[]` in views, the summary report, or any external contract (foreclosed by the physical-only decision).

@@ -199,6 +199,18 @@ capable *and* ~14× faster than `aozora-core`, with no timeouts — it now leads
 both axes. (Memory trades inversely with speed: `aozora-rs` is fastest but heaviest;
 `aozora-core` lightest but slowest.)
 
+> **Update 2026-07-09 — the pathology is pinpointed** (`2026-07-09-aozora-core-perf-pathology.md`).
+> A controlled contrast (aozora-core on the 30 works it fails at corpus scale vs. 30
+> *larger* works it completes) shows the slowness is **work-specific and ruby-density
+> driven, not size-driven**: the larger controls all finish (median 1.25 s, max 16 s,
+> 0 timeouts) while the ruby-dense giants take 22–173 s with 12/30 timeouts. Giants
+> carry ~9× the ruby density (21.4 vs 2.4 ruby/KB). All failures are timeouts, never
+> crashes → a superlinear ruby-handling algorithm. So aozora-core is "occasionally
+> catastrophic on ruby-dense inputs," not "slow everywhere" — confirming §4.8's claim
+> that the robustness gap and the perf pathology are the same defect. A cheap fix is
+> *plausible* (algorithmic) but unproven; even fixed, aozora-core still trails on
+> coverage, so the recommendation is unchanged.
+
 ### 4.7 Corpus coverage — how much of *real* markup each parser represents
 Conformance (§4.1–4.6) measures **breadth** on curated construct sets weighted
 toward edge cases. The decision-relevant question is **mass**: across the real
@@ -393,6 +405,11 @@ records them as the completeness frontier and the recommended parser's specific 
    2/6 timeouts suggest *work-specific* pathology (some inputs blow up) rather than
    a uniform constant — a larger sample would separate "slow everywhere" from
    "occasionally catastrophic." Memory figures are peak RSS, not steady-state.
+   *Resolved 2026-07-09* (`2026-07-09-aozora-core-perf-pathology.md`): a 60-work
+   controlled contrast confirms the pathology is work-specific and ruby-density
+   driven — larger control works all complete (median 1.25 s) while ruby-dense
+   giants time out (12/30). "Occasionally catastrophic on ruby-dense inputs," not
+   "slow everywhere."
 6. **Conformance ≠ admission.** The 2026-07-06 acceptance criteria gate on measured
    publication accounting, valid parser-IR, zero unknown-markup counters, and perf —
    conformance is one input.

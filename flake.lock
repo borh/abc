@@ -5,7 +5,9 @@
         "abc": [
           "abc"
         ],
-        "aozorabunko-src": "aozorabunko-src",
+        "aozorabunko-src": [
+          "aozorabunko-src"
+        ],
         "clj-nix": [
           "clj-nix"
         ],
@@ -34,6 +36,9 @@
     },
     "abc": {
       "inputs": {
+        "aozorabunko-src": [
+          "aozorabunko-src"
+        ],
         "clj-nix": [
           "clj-nix"
         ],
@@ -251,6 +256,7 @@
       "inputs": {
         "ab-validator": "ab-validator",
         "abc": "abc",
+        "aozorabunko-src": "aozorabunko-src",
         "clj-nix": "clj-nix",
         "nixpkgs": "nixpkgs",
         "tei-p5": "tei-p5"

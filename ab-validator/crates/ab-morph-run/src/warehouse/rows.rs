@@ -452,7 +452,7 @@ fn push_region_rows(
                 scope_position,
                 scope_surface.as_deref(),
                 value_group.value.as_deref(),
-                &value_group.analyzers,      // &[AnalyzerId] = &[String], already sorted
+                &value_group.analyzers, // &[AnalyzerId] = &[String], already sorted
             );
         }
     }
@@ -497,7 +497,11 @@ fn push_region_rows_reference(
                 scope_position,
                 scope_surface: scope_surface.clone(),
                 feature_value: value_group.value.clone(),
-                analyzers: value_group.analyzers.iter().map(|a| ids.analyzer(a)).collect(),
+                analyzers: value_group
+                    .analyzers
+                    .iter()
+                    .map(|a| ids.analyzer(a))
+                    .collect(),
             });
         }
     }
@@ -560,8 +564,10 @@ pub(crate) fn decode_feature_diff_rows(batch: &RecordBatch) -> Vec<NwayFeatureDi
                 feature_key: feature_key.value(row).into(),
                 scope_type: scope_type.value(row).into(),
                 scope_position: (!scope_position.is_null(row)).then(|| scope_position.value(row)),
-                scope_surface: (!scope_surface.is_null(row)).then(|| scope_surface.value(row).into()),
-                feature_value: (!feature_value.is_null(row)).then(|| feature_value.value(row).into()),
+                scope_surface: (!scope_surface.is_null(row))
+                    .then(|| scope_surface.value(row).into()),
+                feature_value: (!feature_value.is_null(row))
+                    .then(|| feature_value.value(row).into()),
                 analyzers: (0..strs.len()).map(|i| strs.value(i).into()).collect(),
             }
         })
@@ -814,12 +820,7 @@ mod tests {
                 "今日",
                 vec![m("今日", 0..6, 0..2, [("pos1", Some("動詞"))])],
             ),
-            analysis(
-                "work-a",
-                "mecab",
-                "今日",
-                vec![m("今日", 0..6, 0..2, [])],
-            ),
+            analysis("work-a", "mecab", "今日", vec![m("今日", 0..6, 0..2, [])]),
         ];
 
         let mut batched_feature_diffs = Vec::new();
@@ -846,7 +847,10 @@ mod tests {
         // diff engine's normal behavior, unrelated to the collapse), so
         // filter to one scope to keep the expected set unambiguous.
         let mut expanded: Vec<(String, String)> = Vec::new(); // (feature_value_or_∅, analyzer)
-        for row in collapsed.iter().filter(|row| row.scope_type.as_ref() == "whole_region") {
+        for row in collapsed
+            .iter()
+            .filter(|row| row.scope_type.as_ref() == "whole_region")
+        {
             for a in &row.analyzers {
                 expanded.push((
                     row.feature_value.as_deref().unwrap_or("∅").to_owned(),

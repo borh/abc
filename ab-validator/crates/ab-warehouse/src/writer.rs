@@ -2065,8 +2065,15 @@ mod tests {
         // Field: List<Utf8>, list itself non-null.
         let field = batch.schema().field(9).clone();
         assert_eq!(field.name(), "analyzers");
-        assert!(!field.is_nullable(), "analyzers list column must be non-null");
-        let list = batch.column(9).as_any().downcast_ref::<ListArray>().unwrap();
+        assert!(
+            !field.is_nullable(),
+            "analyzers list column must be non-null"
+        );
+        let list = batch
+            .column(9)
+            .as_any()
+            .downcast_ref::<ListArray>()
+            .unwrap();
         assert!(!list.is_null(0), "no null list entries");
         let values = list.value(0);
         let strs = values

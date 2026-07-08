@@ -8,6 +8,7 @@
       url = "path:./abc";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.clj-nix.follows = "clj-nix";
+      inputs.aozorabunko-src.follows = "aozorabunko-src";
     };
 
     ab-validator = {
@@ -15,6 +16,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.clj-nix.follows = "clj-nix";
       inputs.abc.follows = "abc";
+      inputs.aozorabunko-src.follows = "aozorabunko-src";
     };
 
     clj-nix = {
@@ -26,6 +28,11 @@
       url = "github:TEIC/TEI/P5_Release_4.11.0";
       flake = false;
     };
+
+    aozorabunko-src = {
+      url = "github:aozorabunko/aozorabunko/0e9ea3e586eb0aa34039fabfc85a407d2f98b165";
+      flake = false;
+    };
   };
 
   outputs =
@@ -35,6 +42,7 @@
       abc,
       ab-validator,
       tei-p5,
+      aozorabunko-src,
       ...
     }:
     let

@@ -36,7 +36,9 @@ use warehouse::schema::{
     ErrorRow as WarehouseErrorRow, FeaturePatternCountRow, NwayFeatureDiffRow, NwayRegionRow,
     RunAnalyzerRow, RunRow, WarehousePaths, WarehouseTable,
 };
-use warehouse::writer::{WarehouseWriter, parquet_table_row_count, stage_parquet_table_part};
+use warehouse::writer::{
+    MorphemeFeaturesColumns, WarehouseWriter, parquet_table_row_count, stage_parquet_table_part,
+};
 
 const LARGE_INPUT_THRESHOLD_BYTES: u64 = 5 * 1024 * 1024;
 const WAREHOUSE_MORPHEME_ROW_BATCH_SIZE: usize = 50_000;

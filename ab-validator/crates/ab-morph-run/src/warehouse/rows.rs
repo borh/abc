@@ -3,10 +3,13 @@ use std::ops::Range;
 #[cfg(test)]
 use ab_morph_diff::MorphDiffError;
 use ab_morph_diff::{Analysis, NwayFeatureScope, NwayRegion, visit_nway_regions_with_source_text};
+#[cfg(test)]
+use ab_warehouse::schema::MorphemeFeatureRow;
 use ab_warehouse::schema::{
-    AnalysisRow, MorphemeFeatureRow, MorphemeRow, NwayFeatureDiffRow, NwayRegionAnalyzerRow,
-    NwayRegionRow, ProjectionSpanRow, SourceRow,
+    AnalysisRow, MorphemeRow, NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionRow,
+    ProjectionSpanRow, SourceRow,
 };
+use ab_warehouse::writer::MorphemeFeaturesColumns;
 use anyhow::Result as AnyhowResult;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
@@ -126,6 +129,12 @@ pub(crate) fn morpheme_feature_rows(
     morpheme_feature_rows_for_range(run_id, source_id, analysis, 0..analysis.morphemes.len())
 }
 
+/// Reference `Vec<Row>`-collecting implementation, retained for this
+/// module's own unit tests only. Production code (`pipeline.rs`) uses
+/// [`push_morpheme_features_for_range`] instead, which appends straight into
+/// a [`MorphemeFeaturesColumns`] builder and never materializes a
+/// `Vec<MorphemeFeatureRow>`.
+#[cfg(test)]
 pub(crate) fn morpheme_feature_rows_for_range(
     run_id: &str,
     source_id: &str,
@@ -161,6 +170,42 @@ pub(crate) fn morpheme_feature_rows_for_range(
                 })
         })
         .collect()
+}
+
+/// Append every morpheme-feature in `range` directly into `columns`' Arrow
+/// builders. This is the producer side of the direct-column path: `run_id`,
+/// `source_id`, `text_id`, and `analyzer_id` are passed by `&str` and copied
+/// straight into the builder's buffers, so -- unlike the retained
+/// `Vec<MorphemeFeatureRow>` reference path above -- no `Arc::clone` happens
+/// per row here at all.
+pub(crate) fn push_morpheme_features_for_range(
+    run_id: &str,
+    source_id: &str,
+    analysis: &Analysis,
+    range: Range<usize>,
+    columns: &mut MorphemeFeaturesColumns,
+) {
+    let text_id = analysis.text_id.as_str();
+    let analyzer_id = analysis.analyzer.as_str();
+    for (index, morpheme) in analysis
+        .morphemes
+        .iter()
+        .enumerate()
+        .skip(range.start)
+        .take(range.end.saturating_sub(range.start))
+    {
+        for (key, value) in morpheme.features.iter() {
+            columns.push_row(
+                run_id,
+                source_id,
+                text_id,
+                analyzer_id,
+                index as u64,
+                key.as_ref(),
+                value.as_deref(),
+            );
+        }
+    }
 }
 
 pub(crate) fn projection_span_rows(

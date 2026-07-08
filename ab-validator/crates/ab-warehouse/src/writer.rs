@@ -5,7 +5,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
-use arrow_array::builder::{ListBuilder, StringBuilder};
+use arrow_array::builder::{ArrayBuilder, ListBuilder, StringBuilder, UInt64Builder};
 use arrow_array::{ArrayRef, BooleanArray, RecordBatch, StringArray, UInt32Array, UInt64Array};
 use arrow_schema::{DataType, Field, Schema};
 use parquet::arrow::ArrowWriter;
@@ -14,10 +14,15 @@ use parquet::basic::{Compression, ZstdLevel};
 use parquet::file::properties::WriterProperties;
 
 use crate::schema::{
-    AnalysisRow, ErrorRow, FeaturePatternCountRow, MorphemeFeatureRow, MorphemeRow,
-    NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionOracleEvidenceRow, NwayRegionRow,
-    ProjectionSpanRow, RunAnalyzerRow, RunRow, SourceRow, WarehousePaths, WarehouseTable,
+    AnalysisRow, ErrorRow, FeaturePatternCountRow, MorphemeRow, NwayFeatureDiffRow,
+    NwayRegionAnalyzerRow, NwayRegionOracleEvidenceRow, NwayRegionRow, ProjectionSpanRow,
+    RunAnalyzerRow, RunRow, SourceRow, WarehousePaths, WarehouseTable,
 };
+// `MorphemeFeatureRow` (the `Vec<Row>` intermediate) is retained only for the
+// `#[cfg(test)]` reference-transposition path -- see
+// `append_morpheme_features_reference` and `MorphemeFeaturesColumns`.
+#[cfg(test)]
+use crate::schema::MorphemeFeatureRow;
 
 const WAREHOUSE_MAX_ROW_GROUP_SIZE: usize = 50_000;
 
@@ -312,7 +317,14 @@ impl WarehouseWriter {
         )
     }
 
-    pub fn append_morpheme_features(&mut self, rows: &[MorphemeFeatureRow]) -> Result<()> {
+    /// Reference `Vec<Row>` -> transposed-arrays implementation, retained only
+    /// to characterize byte-identity against the direct-builder path (see
+    /// [`append_morpheme_feature_columns`](Self::append_morpheme_feature_columns)).
+    /// Production code no longer allocates a `Vec<MorphemeFeatureRow>` for
+    /// this table -- the producer appends straight into a
+    /// [`MorphemeFeaturesColumns`] builder instead.
+    #[cfg(test)]
+    fn append_morpheme_features_reference(&mut self, rows: &[MorphemeFeatureRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -333,6 +345,28 @@ impl WarehouseWriter {
             ],
             &mut self.write_time,
         )
+    }
+
+    /// Write a finished [`MorphemeFeaturesColumns`] builder as a single
+    /// `RecordBatch`. Producers (see `ab-morph-run`'s
+    /// `push_morpheme_features_for_range`) append each morpheme-feature
+    /// directly into the builder's Arrow buffers, so this table never
+    /// materializes a `Vec<MorphemeFeatureRow>` on the production path -- the
+    /// highest-row-volume warehouse table, where the per-row `Arc::clone`
+    /// bumps that entailed mattered at billions-of-rows scale.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the underlying writer fails to write the batch.
+    pub fn append_morpheme_feature_columns(
+        &mut self,
+        mut columns: MorphemeFeaturesColumns,
+    ) -> Result<()> {
+        if columns.is_empty() || self.morpheme_features.is_none() {
+            return Ok(());
+        }
+        let batch = columns.finish();
+        self.append_record_batch(WarehouseTable::MorphemeFeatures, batch)
     }
 
     pub fn append_nway_regions(&mut self, rows: &[NwayRegionRow]) -> Result<()> {
@@ -595,6 +629,97 @@ impl WarehouseWriter {
         crate::sql::write_run_views_sql(&self.paths.staging_dir, &self.paths.final_dir)?;
         finalize_staging_run(&self.paths)?;
         Ok(self.write_time)
+    }
+}
+
+/// Column-oriented builder for the `morpheme_features` table (7 columns, in
+/// `morpheme_features_schema()` order). Producers append each
+/// morpheme-feature directly into this builder's Arrow buffers via
+/// [`push_row`](Self::push_row) instead of collecting a
+/// `Vec<MorphemeFeatureRow>` first -- `morpheme_features` is the
+/// highest-row-volume warehouse table, so skipping the per-row `Arc::clone`
+/// bumps (previously ~5 per row: 4 id columns + the feature key) and the
+/// intermediate `Vec` allocation matters at billions-of-rows scale.
+pub struct MorphemeFeaturesColumns {
+    run_id: StringBuilder,
+    source_id: StringBuilder,
+    text_id: StringBuilder,
+    analyzer_id: StringBuilder,
+    morpheme_index: UInt64Builder,
+    feature_key: StringBuilder,
+    feature_value: StringBuilder,
+}
+
+impl MorphemeFeaturesColumns {
+    #[must_use]
+    pub fn new() -> Self {
+        Self {
+            run_id: StringBuilder::new(),
+            source_id: StringBuilder::new(),
+            text_id: StringBuilder::new(),
+            analyzer_id: StringBuilder::new(),
+            morpheme_index: UInt64Builder::new(),
+            feature_key: StringBuilder::new(),
+            feature_value: StringBuilder::new(),
+        }
+    }
+
+    /// Append one `morpheme_features` row directly into the column builders.
+    #[allow(clippy::too_many_arguments)]
+    pub fn push_row(
+        &mut self,
+        run_id: &str,
+        source_id: &str,
+        text_id: &str,
+        analyzer_id: &str,
+        morpheme_index: u64,
+        feature_key: &str,
+        feature_value: Option<&str>,
+    ) {
+        self.run_id.append_value(run_id);
+        self.source_id.append_value(source_id);
+        self.text_id.append_value(text_id);
+        self.analyzer_id.append_value(analyzer_id);
+        self.morpheme_index.append_value(morpheme_index);
+        self.feature_key.append_value(feature_key);
+        self.feature_value.append_option(feature_value);
+    }
+
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.morpheme_index.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// Finish every column builder into a single `RecordBatch` matching
+    /// `morpheme_features_schema()`'s exact field order and types (`Utf8` /
+    /// `UInt64`, no dictionary encoding) so output stays byte-identical to
+    /// the retained `Vec<Row>` reference path.
+    #[must_use]
+    pub fn finish(&mut self) -> RecordBatch {
+        RecordBatch::try_new(
+            morpheme_features_schema(),
+            vec![
+                Arc::new(self.run_id.finish()),
+                Arc::new(self.source_id.finish()),
+                Arc::new(self.text_id.finish()),
+                Arc::new(self.analyzer_id.finish()),
+                Arc::new(self.morpheme_index.finish()),
+                Arc::new(self.feature_key.finish()),
+                Arc::new(self.feature_value.finish()),
+            ],
+        )
+        .expect("MorphemeFeaturesColumns builders match the documented schema")
+    }
+}
+
+impl Default for MorphemeFeaturesColumns {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -1473,6 +1598,105 @@ mod tests {
         let before_close = writer.write_time();
         let total = writer.finalize().unwrap();
         assert!(total >= before_close, "finalize folds in close() time");
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn morpheme_features_direct_builder_matches_reference_bytes() {
+        // Covers: repeated ids across rows, a `None` feature_value, and
+        // multiple analyzers/morphemes -- exercising the byte layout the
+        // 7-column schema must preserve.
+        let run_id: Arc<str> = Arc::from("run-a");
+        let source_id: Arc<str> = Arc::from("source-a");
+        let text_id: Arc<str> = Arc::from("work-a");
+        let analyzer_a: Arc<str> = Arc::from("vibrato:unidic");
+        let analyzer_b: Arc<str> = Arc::from("sudachi-c");
+        let rows = vec![
+            MorphemeFeatureRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                analyzer_id: Arc::clone(&analyzer_a),
+                morpheme_index: 0,
+                feature_key: Arc::from("pos1"),
+                feature_value: Some(Arc::from("名詞")),
+            },
+            MorphemeFeatureRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                analyzer_id: Arc::clone(&analyzer_a),
+                morpheme_index: 0,
+                feature_key: Arc::from("lemma"),
+                feature_value: None,
+            },
+            MorphemeFeatureRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                analyzer_id: Arc::clone(&analyzer_a),
+                morpheme_index: 1,
+                feature_key: Arc::from("pos1"),
+                feature_value: Some(Arc::from("助詞")),
+            },
+            MorphemeFeatureRow {
+                run_id: Arc::clone(&run_id),
+                source_id: Arc::clone(&source_id),
+                text_id: Arc::clone(&text_id),
+                analyzer_id: Arc::clone(&analyzer_b),
+                morpheme_index: 0,
+                feature_key: Arc::from("pos1"),
+                feature_value: Some(Arc::from("名詞")),
+            },
+        ];
+
+        let root = temp_dir("mf-byte-identity");
+
+        let reference_paths = WarehousePaths::new(root.join("reference"), "run-a");
+        let mut reference_writer = WarehouseWriter::create_for_tables(
+            reference_paths.clone(),
+            &[WarehouseTable::MorphemeFeatures],
+            3,
+        )
+        .unwrap();
+        reference_writer
+            .append_morpheme_features_reference(&rows)
+            .unwrap();
+        reference_writer.finalize().unwrap();
+
+        let direct_paths = WarehousePaths::new(root.join("direct"), "run-a");
+        let mut direct_writer = WarehouseWriter::create_for_tables(
+            direct_paths.clone(),
+            &[WarehouseTable::MorphemeFeatures],
+            3,
+        )
+        .unwrap();
+        let mut columns = MorphemeFeaturesColumns::new();
+        for row in &rows {
+            columns.push_row(
+                row.run_id.as_ref(),
+                row.source_id.as_ref(),
+                row.text_id.as_ref(),
+                row.analyzer_id.as_ref(),
+                row.morpheme_index,
+                row.feature_key.as_ref(),
+                row.feature_value.as_deref(),
+            );
+        }
+        direct_writer
+            .append_morpheme_feature_columns(columns)
+            .unwrap();
+        direct_writer.finalize().unwrap();
+
+        let reference_bytes =
+            fs::read(reference_paths.final_table_path(WarehouseTable::MorphemeFeatures)).unwrap();
+        let direct_bytes =
+            fs::read(direct_paths.final_table_path(WarehouseTable::MorphemeFeatures)).unwrap();
+        assert_eq!(
+            reference_bytes, direct_bytes,
+            "direct-builder parquet bytes must match the reference transposition exactly"
+        );
 
         let _ = fs::remove_dir_all(root);
     }

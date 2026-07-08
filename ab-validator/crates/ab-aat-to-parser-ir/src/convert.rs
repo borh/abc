@@ -817,7 +817,9 @@ fn map_inline_to_nodes(
     path: &str,
 ) -> Result<u64> {
     match node["kind"].as_str().unwrap_or("") {
-        "text" => map_text_node_with_quotes(node, nodes, recorder, synthetic_warnings, offset, path),
+        "text" => {
+            map_text_node_with_quotes(node, nodes, recorder, synthetic_warnings, offset, path)
+        }
         "ruby" => {
             let base = node["base"].as_str().unwrap_or("");
             let end = offset + utf8_len(base);

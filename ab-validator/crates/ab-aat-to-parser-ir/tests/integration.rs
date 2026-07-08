@@ -201,7 +201,7 @@ fn legacy_schema_hashes_match_mapping_artifact() {
     );
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "sha256:40d7ff6683a395e8727de55574c3af1fd70475cfa325ae5b67cc19fdb3eb32b6"
+        "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2"
     );
 }
 
@@ -256,7 +256,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.2.7");
+    assert_eq!(mapping.mapping_version, "0.2.8");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -414,7 +414,7 @@ fn parser_ir_emits_split_sentence_rows_and_ortho_tags() {
         output
             .parser_ir
             .pointer("/sentence_segmentation/splitter_id"),
-        Some(&json!("ab-plaintext-japanese-v1"))
+        Some(&json!("ab-plaintext-japanese-v2"))
     );
     assert_eq!(
         output.parser_ir.pointer("/paragraphs/0/node_range"),
@@ -3197,10 +3197,7 @@ fn quote_node_emission_from_text() {
     })
     .unwrap();
     let nodes = output.parser_ir["nodes"].as_array().unwrap();
-    let quote_nodes: Vec<_> = nodes
-        .iter()
-        .filter(|n| n["type"] == "quote")
-        .collect();
+    let quote_nodes: Vec<_> = nodes.iter().filter(|n| n["type"] == "quote").collect();
     assert_eq!(quote_nodes.len(), 2, "expected open+close quote nodes");
     assert_eq!(quote_nodes[0]["marker_type"], "open");
     assert_eq!(quote_nodes[0]["text"], "「");
@@ -3208,10 +3205,7 @@ fn quote_node_emission_from_text() {
     assert_eq!(quote_nodes[1]["marker_type"], "close");
     assert_eq!(quote_nodes[1]["text"], "」");
     // Sub-segments carry synthetic spans (decoded_utf8 coordinate system).
-    assert_eq!(
-        quote_nodes[0]["span"]["coordinate_system"],
-        "decoded_utf8"
-    );
+    assert_eq!(quote_nodes[0]["span"]["coordinate_system"], "decoded_utf8");
     // The text nodes around the markers are split out, not merged.
     let text_nodes: Vec<_> = nodes
         .iter()
@@ -3224,8 +3218,6 @@ fn quote_node_emission_from_text() {
         "text node should be split at 「」 markers"
     );
 }
-
-
 
 #[test]
 fn fragment_assembly_single_inner_sentence() {
@@ -3241,7 +3233,10 @@ fn fragment_assembly_single_inner_sentence() {
     // Outer-I, one inner sentence, outer-F.
     assert_eq!(sentences.len(), 3);
     assert_eq!(sentences[0]["part"], "I");
-    assert!(sentences[1].get("part").is_none(), "inner sentence has no part");
+    assert!(
+        sentences[1].get("part").is_none(),
+        "inner sentence has no part"
+    );
     assert_eq!(sentences[2]["part"], "F");
     // I <-> F linking (skips the inner sentence).
     assert_eq!(sentences[0]["next_id"], sentences[2]["id"]);
@@ -3254,8 +3249,14 @@ fn fragment_assembly_single_inner_sentence() {
     let i_text = visible_text_for_sentence(nodes, &sentences[0]);
     let inner_text = visible_text_for_sentence(nodes, &sentences[1]);
     assert_eq!(i_text, "先生は梢を見上げて、");
-    assert!(inner_text.starts_with('「'), "inner sentence keeps the open marker: {inner_text}");
-    assert!(inner_text.ends_with('」'), "inner sentence keeps the close marker: {inner_text}");
+    assert!(
+        inner_text.starts_with('「'),
+        "inner sentence keeps the open marker: {inner_text}"
+    );
+    assert!(
+        inner_text.ends_with('」'),
+        "inner sentence keeps the close marker: {inner_text}"
+    );
 }
 
 #[test]
@@ -3272,8 +3273,14 @@ fn fragment_assembly_multiple_inner_sentences() {
     // Outer-I, two inner sentences, outer-F.
     assert_eq!(sentences.len(), 4);
     assert_eq!(sentences[0]["part"], "I");
-    assert!(sentences[1].get("part").is_none(), "inner sentence 1 has no part");
-    assert!(sentences[2].get("part").is_none(), "inner sentence 2 has no part");
+    assert!(
+        sentences[1].get("part").is_none(),
+        "inner sentence 1 has no part"
+    );
+    assert!(
+        sentences[2].get("part").is_none(),
+        "inner sentence 2 has no part"
+    );
     assert_eq!(sentences[3]["part"], "F");
     assert_eq!(sentences[0]["next_id"], sentences[3]["id"]);
     assert_eq!(sentences[3]["prev_id"], sentences[0]["id"]);

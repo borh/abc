@@ -545,8 +545,7 @@ fn write_run_normalization_provenance(
     let path = final_dir.join(RUN_NORMALIZATION_PROVENANCE_FILE);
     let text = serde_json::to_string_pretty(&value)
         .context("failed to serialize run-normalization provenance")?;
-    std::fs::write(&path, text)
-        .with_context(|| format!("failed to write {}", path.display()))?;
+    std::fs::write(&path, text).with_context(|| format!("failed to write {}", path.display()))?;
     Ok(())
 }
 

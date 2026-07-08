@@ -212,7 +212,10 @@ impl WarehouseWriter {
                     rows.iter()
                         .map(|row| row.input_normalization_detector_id.as_deref()),
                 ),
-                string_array(rows.iter().map(|row| row.input_normalization_policy_hash.as_str())),
+                string_array(
+                    rows.iter()
+                        .map(|row| row.input_normalization_policy_hash.as_str()),
+                ),
             ],
             &mut self.write_time,
         )

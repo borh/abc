@@ -894,10 +894,12 @@ pub(crate) fn run_analyze_aat_serial(
                         // dropped (Invariant 4) — including on the warehouse path,
                         // which publication uses and which has no errors_writer.
                         let (code, message) = match &e {
-                            ab_ortho_detect::OrthoMapError::CrossesBoundary { range, boundary } => (
-                                "ortho_remap_crosses_boundary",
-                                format!("range {range:?} crosses boundary at byte {boundary}"),
-                            ),
+                            ab_ortho_detect::OrthoMapError::CrossesBoundary { range, boundary } => {
+                                (
+                                    "ortho_remap_crosses_boundary",
+                                    format!("range {range:?} crosses boundary at byte {boundary}"),
+                                )
+                            }
                             ab_ortho_detect::OrthoMapError::UncoveredOffset { offset } => (
                                 "ortho_remap_uncovered_offset",
                                 format!("offset {offset} not covered"),

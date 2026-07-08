@@ -74,7 +74,7 @@ struct SentenceBounds {
 pub fn segmentation_meta() -> SentenceSegmentation {
     SentenceSegmentation {
         schema_version: "sentence-segmentation-v1".to_owned(),
-        splitter_id: "ab-plaintext-japanese-v1".to_owned(),
+        splitter_id: "ab-plaintext-japanese-v2".to_owned(),
         coordinate_system: "decoded_utf8".to_owned(),
         coverage: "body-paragraphs".to_owned(),
     }
@@ -110,10 +110,8 @@ fn detect_nested_regions_inner(
             continue;
         }
 
-        let open_byte_start =
-            value_usize(node, "/span/start", "quote span.start").unwrap_or(0);
-        let open_byte_end =
-            value_usize(node, "/span/end", "quote span.end").unwrap_or(0);
+        let open_byte_start = value_usize(node, "/span/start", "quote span.start").unwrap_or(0);
+        let open_byte_end = value_usize(node, "/span/end", "quote span.end").unwrap_or(0);
         let open_node = i;
 
         // Find the matching close at the same depth: count intervening opens.
@@ -127,10 +125,10 @@ fn detect_nested_regions_inner(
                     Some("open") => inner_depth += 1,
                     Some("close") => {
                         if inner_depth == 0 {
-                            let close_byte_start = value_usize(next, "/span/start", "quote span.start")
-                                .unwrap_or(0);
-                            let close_byte_end = value_usize(next, "/span/end", "quote span.end")
-                                .unwrap_or(0);
+                            let close_byte_start =
+                                value_usize(next, "/span/start", "quote span.start").unwrap_or(0);
+                            let close_byte_end =
+                                value_usize(next, "/span/end", "quote span.end").unwrap_or(0);
                             let close_node = j;
 
                             regions.push(NestedRegion {

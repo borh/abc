@@ -77,22 +77,19 @@ pub fn split_sentences_with_options<'a>(
         let should_split = match (prev, next) {
             (Some(prev_ch), Some(next_ch)) => {
                 // Suppress when any of these hold; split otherwise.
-                !(
-                    is_sentence_terminal(next_ch)
-                        || (!suppress && is_closing_quote_or_bracket(next_ch))
-                        || (ch == '。'
-                            && !suppress
-                            && closing_bracket_ahead(input, chars[i].0 + ch.len_utf8()))
-                        || ((ch == '.' || ch == '．') && is_cjk_digit(prev_ch))
-                        || ((ch == '！' || ch == '？') && is_japanese_continuation(next_ch))
-                        || (is_period_non_boundary_neighbor(prev_ch)
-                            && is_period_non_boundary_neighbor(next_ch)
-                            && ch != '。')
-                )
+                !(is_sentence_terminal(next_ch)
+                    || (!suppress && is_closing_quote_or_bracket(next_ch))
+                    || (ch == '。'
+                        && !suppress
+                        && closing_bracket_ahead(input, chars[i].0 + ch.len_utf8()))
+                    || ((ch == '.' || ch == '．') && is_cjk_digit(prev_ch))
+                    || ((ch == '！' || ch == '？') && is_japanese_continuation(next_ch))
+                    || (is_period_non_boundary_neighbor(prev_ch)
+                        && is_period_non_boundary_neighbor(next_ch)
+                        && ch != '。'))
             }
             // End of input: split only on `。` so a trailing `?`/`!` stays attached.
-            (Some(_), None) =>
-                ch == '。',
+            (Some(_), None) => ch == '。',
             _ => true,
         };
 
@@ -162,9 +159,36 @@ fn is_cjk_digit(ch: char) -> bool {
 fn is_japanese_continuation(ch: char) -> bool {
     matches!(
         ch,
-        '笑' | '泣' | '汗' | '涙' | '怒' | '嬉' | '爆' | '驚' | '喜' | '悲' | '謎'
-            | '恥' | '焦' | '苦' | '照' | '憂' | '…' | '〜' | 'と' | 'っ' | 'ぁ'
-            | 'ぃ' | 'ぅ' | 'ぇ' | 'ぉ' | 'ッ' | 'ァ' | 'ィ' | 'ゥ' | 'ェ' | 'ォ'
+        '笑' | '泣'
+            | '汗'
+            | '涙'
+            | '怒'
+            | '嬉'
+            | '爆'
+            | '驚'
+            | '喜'
+            | '悲'
+            | '謎'
+            | '恥'
+            | '焦'
+            | '苦'
+            | '照'
+            | '憂'
+            | '…'
+            | '〜'
+            | 'と'
+            | 'っ'
+            | 'ぁ'
+            | 'ぃ'
+            | 'ぅ'
+            | 'ぇ'
+            | 'ぉ'
+            | 'ッ'
+            | 'ァ'
+            | 'ィ'
+            | 'ゥ'
+            | 'ェ'
+            | 'ォ'
     )
 }
 
@@ -198,7 +222,18 @@ fn is_period_non_boundary_neighbor(ch: char) -> bool {
 fn is_closing_quote_or_bracket(ch: char) -> bool {
     matches!(
         ch,
-        ')' | '）' | '」' | '』' | '】' | '］' | '〕' | '〉' | '》' | ']' | '"' | '\u{201D}' | '\u{2019}'
+        ')' | '）'
+            | '」'
+            | '』'
+            | '】'
+            | '］'
+            | '〕'
+            | '〉'
+            | '》'
+            | ']'
+            | '"'
+            | '\u{201D}'
+            | '\u{2019}'
     )
 }
 
@@ -375,7 +410,10 @@ mod sentence_split_tests {
         // boundary comes after the bracket.
         let spans = split_sentences("先生は「綺麗ですよ。落葉で埋まります」といった。");
         assert_eq!(spans.len(), 1);
-        assert_eq!(spans[0].text, "先生は「綺麗ですよ。落葉で埋まります」といった。");
+        assert_eq!(
+            spans[0].text,
+            "先生は「綺麗ですよ。落葉で埋まります」といった。"
+        );
     }
 
     #[test]

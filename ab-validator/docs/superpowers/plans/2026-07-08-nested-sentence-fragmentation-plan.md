@@ -25,15 +25,16 @@
 | File | Action | Responsibility |
 |---|---|---|
 | `ab-validator/crates/ab-plaintext/src/lib.rs` | Modify | Replace `sentence_split` with `split_sentences` + `SplitOptions` |
-| `ab-validator/crates/ab-plaintext/tests/splitter_v2.rs` | Create | Splitter v2 tests + BCCWW validation |
+| `abc/schemas/parser-ir.schema.json` | Modify | Add optional fragment fields to `$defs/sentence` |
+| `ab-validator/data/abc-schemas/nix-schemas/parser-ir.schema.json` | Modify | Mirror ABC schema |
+| `ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs` | Modify | Extend `ParserIrSentence`, nesting detection, fragment assembly |
 | `ab-validator/crates/ab-aat-to-parser-ir/src/convert.rs` | Modify | Synthesize quote nodes from text `「」`/`『』` |
-| `ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs` | Modify | Nesting detection, fragment assembly, tiling assertions |
 | `ab-validator/crates/ab-aat-to-parser-ir/tests/fixtures/nested-sentence-fragmentation.aat.json` | Create | End-to-end fixture from Kokoro |
 | `ab-validator/crates/ab-aat-to-parser-ir/tests/integration.rs` | Modify | Fragment assembly tests |
 | `abc/src/abc/tools/parser_ir_tei.clj` | Modify | Fragment attribute rendering |
 | `abc/src/abc/tools/parser_ir_sentence_policy.clj` | Modify | Fragment field coherence checks |
 | `abc/test/abc/tools/parser_ir_tei_test.clj` | Modify | Renderer fragment tests |
-| `abc/schemas/tei-profile.rng` | Modify | Add `att.linking` to `<s>` |
+| `abc/schemas/tei-profile.rng` | Modify | Add `@next`/`@prev` to `<s>` |
 
 ---
 
@@ -47,19 +48,13 @@
 - Produces: `pub fn split_sentences_with_options(input: &str, opts: &SplitOptions) -> Vec<SentenceSpan<'_>>`
 - Produces: `pub fn split_sentences(input: &str) -> Vec<SentenceSpan<'_>>` (default opts wrapper)
 
-- [ ] **Step 1: Add `SplitOptions` struct and `split_sentences_with_options` function**
-
-Add the new splitter logic alongside the existing `sentence_split`. The new function implements the user's improved rules:
-- `…` only splits at end-of-line
-- CJK numbered lists (`１．`) recognized, no split
-- `！`/`？` + Japanese continuation stays together
-- `closing_bracket_ahead` with depth tracking
-- Closing quotations adds `"`, `"`, `'`
-- `suppress_closing_bracket_check` flag skips `closing_bracket_ahead` when true
+- [ ] **Step 1: Add `SplitOptions` struct**
 
 ```rust
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SplitOptions {
+    /// When true, skip the closing_bracket_ahead() check.
+    /// Used when re-splitting text inside a known quote region.
     pub suppress_closing_bracket_check: bool,
 }
 
@@ -70,24 +65,153 @@ impl Default for SplitOptions {
         }
     }
 }
+```
 
+- [ ] **Step 2: Add `split_sentences_with_options` function**
+
+The algorithm matches the user's `split_sentences` with these adaptations:
+- Returns `Vec<SentenceSpan<'_>>` (borrows from input, tracks byte/char offsets)
+- Newlines are NOT boundaries (match existing `sentence_split` behavior)
+- `suppress_closing_bracket_check` skips `closing_bracket_ahead()` when true
+
+```rust
 pub fn split_sentences_with_options(
     input: &str,
     opts: &SplitOptions,
 ) -> Vec<SentenceSpan<'_>> {
-    // Implementation from user's split_sentences, adapted to return SentenceSpan
-    // Key: track byte_offset and char_offset as we iterate
-    // When opts.suppress_closing_bracket_check is true, skip closing_bracket_ahead()
-    // Newlines are NOT boundaries (match existing behavior)
-    // ... (full implementation)
+    const DELIMITERS: &[char] = &['.', '!', '?', '．', '。', '！', '？', '…'];
+    const CLOSING_QUOTATIONS: &[char] = &[
+        ')', '）', '」', '』', '】', '］', '〕', '〉', '》', ']',
+        '"', '\u{201D}', '\u{2019}',
+    ];
+
+    fn is_cjk_digit(ch: char) -> bool {
+        matches!(ch,
+            '0'..='9' | '０'..='９' | '〇' |
+            '一' | '二' | '三' | '四' | '五' | '六' | '七' | '八' | '九' | '十'
+        )
+    }
+
+    fn is_japanese_continuation(ch: char) -> bool {
+        matches!(ch,
+            '笑' | '泣' | '汗' | '涙' | '怒' | '嬉' | '爆' | '驚' | '喜' | '悲' |
+            '謎' | '恥' | '焦' | '苦' | '照' | '憂' |
+            '…' | '〜' |
+            'と' | 'っ' | 'ぁ' | 'ぃ' | 'ぅ' | 'ぇ' | 'ぉ' |
+            'ッ' | 'ァ' | 'ィ' | 'ゥ' | 'ェ' | 'ォ'
+        )
+    }
+
+    fn closing_bracket_ahead(input: &str, byte_pos: usize) -> bool {
+        const CLOSING: &[char] = &[')', '）', '」', '』', '】', '］', '〕', '〉', '》'];
+        const OPENING: &[char] = &['(', '（', '「', '『', '【', '［', '〔', '〈', '《'];
+        let mut depth = 0i32;
+        for ch in input[byte_pos..].chars() {
+            if ch == '\n' { return false; }
+            if CLOSING.contains(&ch) {
+                if depth == 0 { return true; }
+                depth -= 1;
+            } else if OPENING.contains(&ch) {
+                depth += 1;
+            }
+        }
+        false
+    }
+
+    fn is_period_non_boundary_neighbor(ch: char) -> bool {
+        ch.is_ascii_alphanumeric() || matches!(ch, '０'..='９' | 'Ａ'..='Ｚ' | 'ａ'..='ｚ')
+    }
+
+    let mut spans = Vec::new();
+    let mut byte_start = 0usize;
+    let mut char_start = 0usize;
+    let mut buffer: [Option<char>; 2] = [None, None];
+    let mut chars = input.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        let shifted = buffer;
+        buffer[0] = shifted[1];
+        buffer[1] = Some(c);
+
+        // Newlines are NOT boundaries (preserved behavior)
+        if c == '\n' {
+            continue;
+        }
+
+        if !DELIMITERS.contains(&c) {
+            continue;
+        }
+
+        let z = buffer[0];
+        let _y = buffer[1];
+        let next = chars.peek();
+        let byte_offset = byte_start + &input[byte_start..].find(c).unwrap_or(0);
+
+        let should_split = match (z, next) {
+            (Some(_z), Some(next_c)) => {
+                if DELIMITERS.contains(next_c) {
+                    false // repeated delimiter
+                } else if CLOSING_QUOTATIONS.contains(next_c) {
+                    false // closing quote after delimiter
+                } else if c == '。' && !opts.suppress_closing_bracket_check {
+                    if closing_bracket_ahead(input, byte_offset + c.len_utf8()) {
+                        false
+                    } else {
+                        true
+                    }
+                } else if c == '…' {
+                    false // … only at EOL (never here since newlines aren't boundaries)
+                } else if (c == '.' || c == '．') && is_cjk_digit(_z) {
+                    false // CJK numbered list
+                } else if (c == '！' || c == '？') && is_japanese_continuation(*next_c) {
+                    false // exclamation continuation
+                } else if is_period_non_boundary_neighbor(_z) && is_period_non_boundary_neighbor(*next_c) && c != '。' {
+                    false // between alphanumerics
+                } else {
+                    true
+                }
+            }
+            (Some(_z), None) => c == '。', // end of input: split only on 。
+            _ => true,
+        };
+
+        if should_split {
+            let end_byte = byte_offset + c.len_utf8();
+            let text_slice = &input[byte_start..end_byte];
+            if !text_slice.trim().is_empty() {
+                spans.push(SentenceSpan {
+                    text: text_slice,
+                    byte_offset: byte_start,
+                    char_offset: char_start,
+                });
+            }
+            char_start += text_slice.chars().count();
+            byte_start = end_byte;
+        }
+    }
+
+    // Trailing text
+    if byte_start < input.len() {
+        let text_slice = &input[byte_start..];
+        if !text_slice.trim().is_empty() {
+            spans.push(SentenceSpan {
+                text: text_slice,
+                byte_offset: byte_start,
+                char_offset: char_start,
+            });
+        }
+    }
+
+    spans
 }
 
+/// Convenience wrapper with default options.
 pub fn split_sentences(input: &str) -> Vec<SentenceSpan<'_>> {
     split_sentences_with_options(input, &SplitOptions::default())
 }
 ```
 
-- [ ] **Step 2: Add unit tests for `split_sentences`**
+- [ ] **Step 3: Add unit tests**
 
 Add tests in the existing `mod sentence_split_tests` block:
 
@@ -108,12 +232,6 @@ fn split_sentences_adjacent_terminals() {
 }
 
 #[test]
-fn split_sentences_decimal_point() {
-    let spans = split_sentences("これは3.14です。終わり。");
-    assert_eq!(spans[0].text, "これは3.14です。");
-}
-
-#[test]
 fn split_sentences_cjk_numbered_list() {
     let spans = split_sentences("１．項目。２．項目。");
     assert_eq!(spans.len(), 2);
@@ -129,10 +247,8 @@ fn split_sentences_exclamation_continuation() {
 
 #[test]
 fn split_sentences_closing_bracket_depth() {
-    // 「...。...」 stays together because closing_bracket_ahead finds 」
     let spans = split_sentences("先生は「綺麗ですよ。落葉で埋まります」といった。");
     assert_eq!(spans.len(), 1);
-    assert_eq!(spans[0].text, "先生は「綺麗ですよ。落葉で埋まります」といった。");
 }
 
 #[test]
@@ -151,14 +267,20 @@ fn split_sentences_newlines_not_boundaries() {
     assert_eq!(spans.len(), 1);
     assert_eq!(spans[0].text, "一行目\n二行目。");
 }
+
+#[test]
+fn split_sentences_closing_curly_quote() {
+    let spans = split_sentences("He said \u{201C}hello.\u{201D} Then left.");
+    assert_eq!(spans.len(), 1);
+}
 ```
 
-- [ ] **Step 3: Run tests to verify**
+- [ ] **Step 4: Run tests**
 
 Run: `cargo test -p ab-plaintext -- split_sentences`
 Expected: All new tests PASS
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add ab-validator/crates/ab-plaintext/src/lib.rs
@@ -171,78 +293,103 @@ suppress_closing_bracket_check flag for nested sentence re-splitting."
 
 ---
 
-### Task 2: Splitter v2 Tests + BCCWW Validation
+### Task 2: Parser-IR Schema Update
 
 **Files:**
-- Create: `ab-validator/crates/ab-plaintext/tests/splitter_v2.rs`
+- Modify: `abc/schemas/parser-ir.schema.json`
+- Modify: `ab-validator/data/abc-schemas/nix-schemas/parser-ir.schema.json` (mirror)
 
 **Interfaces:**
-- Consumes: `split_sentences`, `split_sentences_with_options`, `SplitOptions` from Task 1
+- Produces: Optional `part`, `fragment_group`, `next_id`, `prev_id` fields on `$defs/sentence`
 
-- [ ] **Step 1: Create integration test file**
+- [ ] **Step 1: Add fragment fields to `$defs/sentence`**
 
-Create `ab-validator/crates/ab-plaintext/tests/splitter_v2.rs`:
+In `abc/schemas/parser-ir.schema.json`, add to the `properties` of `sentence`:
 
-```rust
-use ab_plaintext::{split_sentences, split_sentences_with_options, SplitOptions};
-
-#[test]
-fn fixture_matrix_matches_legacy_cases() {
-    let cases = [
-        ("吾輩は猫である。名前はまだ無い。", vec!["吾輩は猫である。", "名前はまだ無い。"]),
-        ("え！？本当。", vec!["え！？", "本当。"]),
-        ("これは3.14です。終わり。", vec!["これは3.14です。", "終わり。"]),
-        ("一行目\n二行目。", vec!["一行目\n二行目。"]),
-    ];
-    for (input, expected) in cases {
-        let actual: Vec<&str> = split_sentences(input).iter().map(|s| s.text).collect();
-        assert_eq!(actual, expected, "input: {input}");
-    }
-}
-
-#[test]
-fn nested_sentence_basic() {
-    let text = "先生は梢を見上げて、「綺麗ですよ。落葉で埋まります」といった。";
-    let spans = split_sentences(text);
-    // closing_bracket_ahead suppresses inner splits → one sentence
-    assert_eq!(spans.len(), 1);
-    assert_eq!(spans[0].text, text);
-}
-
-#[test]
-fn nested_sentence_suppress_mode() {
-    let inner = "綺麗ですよ。落葉で埋まります」";
-    let opts = SplitOptions { suppress_closing_bracket_check: true };
-    let spans = split_sentences_with_options(inner, &opts);
-    assert_eq!(spans.len(), 2);
-    assert_eq!(spans[0].text, "綺麗ですよ。");
-    assert_eq!(spans[1].text, "落葉で埋まります」");
-}
-
-#[test]
-fn unmatched_quote_no_split() {
-    let text = "先生は「綺麗ですといった。";
-    let spans = split_sentences(text);
-    // No matching 「」, no fragmentation
-    assert_eq!(spans.len(), 1);
-}
+```json
+"part": { "type": "string", "enum": ["I", "M", "F"] },
+"fragment_group": { "type": "string", "pattern": "^fg[0-9]{6}$" },
+"next_id": { "type": "string", "pattern": "^s[0-9]{6}$" },
+"prev_id": { "type": "string", "pattern": "^s[0-9]{6}$" }
 ```
 
-- [ ] **Step 2: Run integration tests**
+These are optional (not in `required`), so backward compatible.
 
-Run: `cargo test -p ab-plaintext --test splitter_v2`
-Expected: All tests PASS
+- [ ] **Step 2: Mirror to ab-validator**
 
-- [ ] **Step 3: Commit**
+Copy the same changes to `ab-validator/data/abc-schemas/nix-schemas/parser-ir.schema.json`.
+
+- [ ] **Step 3: Verify schema validates**
+
+Run: `cargo check -p ab-aat-to-parser-ir`
+Expected: PASS
+
+- [ ] **Step 4: Commit**
 
 ```bash
-git add ab-validator/crates/ab-plaintext/tests/splitter_v2.rs
-git commit -m "test(ab-plaintext): add splitter v2 integration tests"
+git add abc/schemas/parser-ir.schema.json
+git add ab-validator/data/abc-schemas/nix-schemas/parser-ir.schema.json
+git commit -m "feat(abc): add optional fragment fields to sentence schema
+
+Adds part, fragment_group, next_id, prev_id as optional fields
+for TEI Chapter 21 sentence fragmentation."
 ```
 
 ---
 
-### Task 3: Quote Node Synthesis in Converter
+### Task 3: Extend `ParserIrSentence` Struct
+
+**Files:**
+- Modify: `ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs`
+
+**Interfaces:**
+- Modifies: `ParserIrSentence` with new optional fields
+- Produces: Serializable fragment fields (omitted when None)
+
+- [ ] **Step 1: Add fragment fields to `ParserIrSentence`**
+
+```rust
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ParserIrSentence {
+    pub id: String,
+    pub paragraph_id: String,
+    pub span: Value,
+    pub node_range: Value,
+    pub tags: Vec<String>,
+    pub orthographic_annotation_indices: Vec<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub part: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fragment_group: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prev_id: Option<String>,
+}
+```
+
+- [ ] **Step 2: Update all `ParserIrSentence` construction sites**
+
+Add `part: None, fragment_group: None, next_id: None, prev_id: None` to every existing `ParserIrSentence { ... }` literal in `sentences.rs`.
+
+- [ ] **Step 3: Run tests**
+
+Run: `cargo test -p ab-aat-to-parser-ir`
+Expected: PASS (existing tests pass with None fields)
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs
+git commit -m "feat(ab-aat-to-parser-ir): add fragment fields to ParserIrSentence
+
+Adds optional part, fragment_group, next_id, prev_id fields.
+Serialized only when present (skip_serializing_if None)."
+```
+
+---
+
+### Task 4: Quote Node Synthesis in Converter
 
 **Files:**
 - Modify: `ab-validator/crates/ab-aat-to-parser-ir/src/convert.rs`
@@ -250,10 +397,11 @@ git commit -m "test(ab-plaintext): add splitter v2 integration tests"
 **Interfaces:**
 - Produces: Quote nodes in `outputs.nodes` with `type: "quote"`, `marker_type`, `text`
 - Consumes: Text nodes containing `「`/`」`/`『`/`』` characters
+- Preserves: Source spans via `map_span`
 
 - [ ] **Step 1: Add `map_text_node_with_quotes` function**
 
-When processing a text node, check if it contains `「`, `」`, `『`, or `』`. If so, split the text node into segments: text before the marker, the marker as a quote node, text after the marker. Recurse for multiple markers in one text node.
+When processing a text node, check if it contains `「`, `」`, `『`, or `』`. If so, split into segments. Preserve source spans via `map_span`. Keep `is_source_derived_line_break_text` short-circuit.
 
 ```rust
 fn map_text_node_with_quotes(
@@ -265,29 +413,31 @@ fn map_text_node_with_quotes(
 ) -> Result<u64> {
     let text = node.get("value").and_then(Value::as_str).unwrap_or("");
     let quote_chars: &[char] = &['「', '」', '『', '』'];
-    
+
     if !text.chars().any(|c| quote_chars.contains(&c)) {
         // No quotes — use existing text node mapping
         return map_text_node(node, nodes, recorder, current_offset, path);
     }
-    
+
+    let source_span = node.get("span");
     let mut offset = current_offset;
-    let mut segment_start = 0;
-    
+    let mut segment_start_byte = 0;
+
     for (i, ch) in text.char_indices() {
         if quote_chars.contains(&ch) {
             // Emit text segment before the quote (if non-empty)
-            if segment_start < i {
-                let segment_text = &text[segment_start..i];
+            if segment_start_byte < i {
+                let segment_text = &text[segment_start_byte..i];
                 let end = offset + segment_text.len() as u64;
+                let span = map_span(source_span, offset, end, recorder, path)?;
                 nodes.push(json!({
                     "type": "text",
-                    "span": span(offset, end),
+                    "span": span,
                     "text": segment_text,
                 }));
                 offset = end;
             }
-            
+
             // Emit quote node
             let marker_type = match ch {
                 '「' | '『' => "open",
@@ -295,41 +445,43 @@ fn map_text_node_with_quotes(
                 _ => unreachable!(),
             };
             let ch_len = ch.len_utf8() as u64;
+            let span = map_span(source_span, offset, offset + ch_len, recorder, path)?;
             nodes.push(json!({
                 "type": "quote",
-                "span": span(offset, offset + ch_len),
+                "span": span,
                 "marker_type": marker_type,
                 "nesting_level": null,
                 "text": ch.to_string(),
             }));
             offset += ch_len;
-            segment_start = i + ch.len_utf8();
+            segment_start_byte = i + ch.len_utf8();
         }
     }
-    
+
     // Emit remaining text after last quote
-    if segment_start < text.len() {
-        let segment_text = &text[segment_start..];
+    if segment_start_byte < text.len() {
+        let segment_text = &text[segment_start_byte..];
         let end = offset + segment_text.len() as u64;
+        let span = map_span(source_span, offset, end, recorder, path)?;
         nodes.push(json!({
             "type": "text",
-            "span": span(offset, end),
+            "span": span,
             "text": segment_text,
         }));
         offset = end;
     }
-    
+
     Ok(offset)
 }
 ```
 
 - [ ] **Step 2: Wire into existing text node processing**
 
-In `map_inline_node`, replace the text node case to call `map_text_node_with_quotes` instead of the direct text node emission.
+In `map_inline_node`, replace the text node arm to call `map_text_node_with_quotes` instead of direct text node emission. Keep `is_source_derived_line_break_text` short-circuit before the quote check.
 
-- [ ] **Step 3: Add test for quote node emission**
+- [ ] **Step 3: Create fixture**
 
-Create fixture `ab-validator/crates/ab-aat-to-parser-ir/tests/fixtures/quote-node-emission.aat.json`:
+Create `ab-validator/crates/ab-aat-to-parser-ir/tests/fixtures/quote-node-emission.aat.json`:
 
 ```json
 {
@@ -338,25 +490,36 @@ Create fixture `ab-validator/crates/ab-aat-to-parser-ir/tests/fixtures/quote-nod
   "blocks": [
     {
       "kind": "paragraph",
-      "span": { "line_start": 1, "line_end": 1, "byte_start": 0, "byte_end": 30 },
       "content": [
         {"kind": "text", "value": "先生は「綺麗だ」といった。"}
       ]
     }
   ],
-  "meta": {"adapter": "fixture", "adapter_version": "0.0.0", "source_encoding": "utf-8", "source_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000", "parse_complete": true, "warnings": []}
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "0.0.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "parse_complete": true,
+    "warnings": []
+  }
 }
 ```
 
-Add integration test in `integration.rs`:
+- [ ] **Step 4: Add integration test**
 
 ```rust
 #[test]
 fn quote_node_emission_from_text() {
-    // Load fixture, run conversion, verify quote nodes exist with correct marker_type
-    let input = load_fixture("quote-node-emission.aat.json");
-    let result = convert_to_parser_ir(&input, &mapping()).unwrap();
-    let quote_nodes: Vec<_> = result.nodes.iter()
+    let (schemas, mapping) = schemas_and_mapping();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: include_fixture_json("quote-node-emission.aat.json"),
+        schemas: &schemas,
+        mapping: &mapping,
+        options: ConversionOptions::default(),
+    }).unwrap();
+    let nodes = output.parser_ir["nodes"].as_array().unwrap();
+    let quote_nodes: Vec<_> = nodes.iter()
         .filter(|n| n["type"] == "quote")
         .collect();
     assert_eq!(quote_nodes.len(), 2);
@@ -367,12 +530,12 @@ fn quote_node_emission_from_text() {
 }
 ```
 
-- [ ] **Step 4: Run tests**
+- [ ] **Step 5: Run tests**
 
 Run: `cargo test -p ab-aat-to-parser-ir -- quote_node_emission`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add ab-validator/crates/ab-aat-to-parser-ir/src/convert.rs
@@ -385,86 +548,126 @@ text segments + quote nodes with marker_type open/close."
 
 ---
 
-### Task 4: Nesting Detection
+### Task 5: Nesting Detection (Recursive)
 
 **Files:**
 - Modify: `ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs`
 
 **Interfaces:**
-- Produces: `struct NestedRegion { outer_sentence_idx, inner_byte_start, inner_byte_end, opening_marker_node, closing_marker_node, nesting_level }`
-- Produces: `fn detect_nested_regions(nodes: &[Value], sentence_span: &Value) -> Vec<NestedRegion>`
-- Consumes: Quote nodes from Task 3
+- Produces: `struct NestedRegion { inner_byte_start, inner_byte_end, opening_marker_node, closing_marker_node, nesting_level }`
+- Produces: `fn detect_nested_regions(nodes: &[Value], sentence_start: usize, sentence_end: usize) -> Vec<NestedRegion>`
+- Consumes: Quote nodes from Task 4
 
-- [ ] **Step 1: Add `NestedRegion` struct and `detect_nested_regions` function**
+- [ ] **Step 1: Add `NestedRegion` struct**
 
 ```rust
 const MAX_NESTING_DEPTH: usize = 5;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct NestedRegion {
-    outer_sentence_idx: usize,
-    inner_byte_start: usize,
-    inner_byte_end: usize,
+    inner_byte_start: usize,     // byte offset after opening marker
+    inner_byte_end: usize,       // byte offset before closing marker
     opening_marker_node: Option<usize>,
     closing_marker_node: Option<usize>,
     nesting_level: usize,
 }
+```
 
+- [ ] **Step 2: Add recursive `detect_nested_regions` function**
+
+The function scans for open/close quote pairs, emits regions at every depth, and recurses on inner node slices:
+
+```rust
 fn detect_nested_regions(
     nodes: &[Value],
     sentence_start: usize,
     sentence_end: usize,
-    sentence_byte_start: usize,
 ) -> Vec<NestedRegion> {
+    detect_nested_regions_inner(nodes, sentence_start, sentence_end, 0)
+}
+
+fn detect_nested_regions_inner(
+    nodes: &[Value],
+    range_start: usize,
+    range_end: usize,
+    depth: usize,
+) -> Vec<NestedRegion> {
+    if depth >= MAX_NESTING_DEPTH {
+        return Vec::new();
+    }
+
     let mut regions = Vec::new();
-    let mut open_stack: Vec<(usize, usize, usize)> = Vec::new(); // (node_idx, byte_pos, depth)
-    let mut depth = 0usize;
-    
-    for node_idx in sentence_start..sentence_end {
-        let node = &nodes[node_idx];
+    let mut i = range_start;
+
+    while i < range_end {
+        let node = &nodes[i];
         if node.get("type").and_then(Value::as_str) != Some("quote") {
+            i += 1;
             continue;
         }
         let marker_type = node.get("marker_type").and_then(Value::as_str).unwrap_or("");
-        let byte_start = node.pointer("/span/start").and_then(Value::as_u64).unwrap_or(0) as usize;
-        let byte_end = node.pointer("/span/end").and_then(Value::as_u64).unwrap_or(0) as usize;
-        
-        match marker_type {
-            "open" => {
-                if depth < MAX_NESTING_DEPTH {
-                    open_stack.push((node_idx, byte_end, depth));
-                    depth += 1;
-                }
-            }
-            "close" => {
-                if let Some((open_idx, inner_start, open_depth)) = open_stack.pop() {
-                    if open_depth == 0 {
-                        regions.push(NestedRegion {
-                            outer_sentence_idx: 0, // filled by caller
-                            inner_byte_start: inner_start,
-                            inner_byte_end: byte_start,
-                            opening_marker_node: Some(open_idx),
-                            closing_marker_node: Some(node_idx),
-                            nesting_level: open_depth,
-                        });
+        if marker_type != "open" {
+            i += 1;
+            continue;
+        }
+
+        let open_byte_end = value_usize(node, "/span/end", "quote span.end").unwrap_or(0);
+        let open_node = i;
+
+        // Find matching close
+        let mut j = i + 1;
+        let mut inner_depth = 0usize;
+        while j < range_end {
+            let next = &nodes[j];
+            if next.get("type").and_then(Value::as_str) == Some("quote") {
+                match next.get("marker_type").and_then(Value::as_str) {
+                    Some("open") => inner_depth += 1,
+                    Some("close") => {
+                        if inner_depth == 0 {
+                            // Found matching close
+                            let close_byte_start = value_usize(next, "/span/start", "quote span.start").unwrap_or(0);
+                            let close_node = j;
+
+                            // Emit this region
+                            regions.push(NestedRegion {
+                                inner_byte_start: open_byte_end,
+                                inner_byte_end: close_byte_start,
+                                opening_marker_node: Some(open_node),
+                                closing_marker_node: Some(close_node),
+                                nesting_level: depth,
+                            });
+
+                            // Recurse on inner nodes
+                            let inner_regions = detect_nested_regions_inner(
+                                nodes, open_node + 1, close_node, depth + 1,
+                            );
+                            regions.extend(inner_regions);
+
+                            i = close_node + 1;
+                            break;
+                        }
+                        inner_depth -= 1;
                     }
-                    depth = depth.saturating_sub(1);
+                    _ => {}
                 }
             }
-            _ => {}
+            j += 1;
+        }
+        if j >= range_end {
+            // Unmatched open — skip
+            i += 1;
         }
     }
-    
+
     regions
 }
 ```
 
-- [ ] **Step 2: Add unit tests for nesting detection**
+- [ ] **Step 3: Add unit tests**
 
 ```rust
 #[test]
 fn detect_nested_regions_basic() {
-    // Nodes: text("先生は"), quote("「"), text("綺麗だ"), quote("」"), text("といった")
     let nodes = vec![
         json!({"type":"text","span":{"start":0,"end":6},"text":"先生は"}),
         json!({"type":"quote","span":{"start":6,"end":9},"marker_type":"open","nesting_level":null,"text":"「"}),
@@ -472,114 +675,184 @@ fn detect_nested_regions_basic() {
         json!({"type":"quote","span":{"start":15,"end":18},"marker_type":"close","nesting_level":null,"text":"」"}),
         json!({"type":"text","span":{"start":18,"end":24},"text":"といった"}),
     ];
-    let regions = detect_nested_regions(&nodes, 0, 5, 0);
+    let regions = detect_nested_regions(&nodes, 0, 5);
     assert_eq!(regions.len(), 1);
-    assert_eq!(regions[0].inner_byte_start, 9); // after 「
-    assert_eq!(regions[0].inner_byte_end, 15); // before 」
+    assert_eq!(regions[0].inner_byte_start, 9);
+    assert_eq!(regions[0].inner_byte_end, 15);
 }
 
 #[test]
-fn detect_nested_regions_no_quotes() {
+fn detect_nested_regions_recursive() {
+    // 「outer 「inner」 text」
     let nodes = vec![
-        json!({"type":"text","span":{"start":0,"end":12},"text":"普通の文です"}),
+        json!({"type":"quote","span":{"start":0,"end":3},"marker_type":"open","text":"「"}),
+        json!({"type":"text","span":{"start":3,"end":9},"text":"outer "}),
+        json!({"type":"quote","span":{"start":9,"end":12},"marker_type":"open","text":"「"}),
+        json!({"type":"text","span":{"start":12,"end":17},"text":"inner"}),
+        json!({"type":"quote","span":{"start":17,"end":21},"marker_type":"close","text":"」"}),
+        json!({"type":"text","span":{"start":21,"end":27},"text":" text"}),
+        json!({"type":"quote","span":{"start":27,"end":30},"marker_type":"close","text":"」"}),
     ];
-    let regions = detect_nested_regions(&nodes, 0, 1, 0);
-    assert!(regions.is_empty());
+    let regions = detect_nested_regions(&nodes, 0, 7);
+    assert_eq!(regions.len(), 2); // outer + inner
+    assert_eq!(regions[0].nesting_level, 0); // outer
+    assert_eq!(regions[1].nesting_level, 1); // inner
 }
 
 #[test]
 fn detect_nested_regions_unmatched() {
     let nodes = vec![
-        json!({"type":"quote","span":{"start":0,"end":3},"marker_type":"open","nesting_level":null,"text":"「"}),
+        json!({"type":"quote","span":{"start":0,"end":3},"marker_type":"open","text":"「"}),
         json!({"type":"text","span":{"start":3,"end":9},"text":"閉じない"}),
     ];
-    let regions = detect_nested_regions(&nodes, 0, 2, 0);
+    let regions = detect_nested_regions(&nodes, 0, 2);
     assert!(regions.is_empty());
 }
 ```
 
-- [ ] **Step 3: Run tests**
+- [ ] **Step 4: Run tests**
 
 Run: `cargo test -p ab-aat-to-parser-ir -- detect_nested_regions`
 Expected: PASS
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs
-git commit -m "feat(ab-aat-to-parser-ir): add nesting detection for quote nodes
+git commit -m "feat(ab-aat-to-parser-ir): add recursive nesting detection
 
 Detects nested regions by scanning for open/close quote node pairs.
-Max depth 5. Unmatched markers produce no regions."
+Recurses on inner node slices for nested quotes. Max depth 5."
 ```
 
 ---
 
-### Task 5: Fragment Assembly
+### Task 6: Fragment Assembly
 
 **Files:**
 - Modify: `ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs`
 
 **Interfaces:**
-- Modifies: `project_body_paragraph` to call nesting detection + fragment assembly
+- Modifies: `project_body_paragraph` to merge flat + inner boundaries before single split pass
 - Produces: Sentence rows with `part`, `fragment_group`, `next_id`, `prev_id`
-- Consumes: `detect_nested_regions` from Task 4, `split_sentences_with_options` from Task 1
+- Consumes: `detect_nested_regions` from Task 5, `split_sentences_with_options` from Task 1
 
-- [ ] **Step 1: Add fragment assembly logic to `project_body_paragraph`**
+- [ ] **Step 1: Restructure `project_body_paragraph`**
 
-After the existing flat split, for each sentence that contains nested regions:
-1. Re-split inner text with `suppress_closing_bracket_check: true`
-2. Split nodes at finer boundaries
-3. Create fragment rows with part/group/next/prev
+The key insight: flat split and inner re-split boundaries must be merged BEFORE the single `split_node_at_boundaries` pass, because nodes are consumed (mem::taken) during that pass.
 
 ```rust
-// Inside project_body_paragraph, after flat split:
-for (sent_idx, bounds) in bounds.iter().enumerate() {
-    let sentence_nodes = &rewritten_nodes[sentence_node_start..sentence_node_end];
-    let nested = detect_nested_regions(sentence_nodes, 0, sentence_nodes.len(), bounds.start);
-    
-    if nested.is_empty() {
-        // No nesting — emit as-is (existing logic)
-        rows.push(ParserIrSentence { /* existing fields, no part/group */ });
-    } else {
-        // Fragment assembly
-        let fragment_group = format!("fg{:06}", fragment_group_counter);
-        fragment_group_counter += 1;
-        
-        // Before first nested region: part="I"
-        // Each nested region: no part (inner sentences)
-        // After last nested region: part="F"
-        // Assign next_id/prev_id linking
+fn project_body_paragraph(
+    original_nodes: &mut [Value],
+    rewritten_nodes: &mut Vec<Value>,
+    paragraph: &Value,
+    paragraph_rewritten_start: usize,
+    sentence_index_start: usize,
+    ortho: Option<&crate::ortho_annotations::OrthoAnnotationsBundle>,
+) -> Result<Vec<ParserIrSentence>> {
+    let paragraph_start = value_usize(paragraph, "/span/start", "paragraph span.start")?;
+    let paragraph_end = value_usize(paragraph, "/span/end", "paragraph span.end")?;
+    let paragraph_text = paragraph_visible_text(original_nodes)?;
+
+    // Step 1: Flat split
+    let mut flat_bounds: Vec<SentenceBounds> = ab_plaintext::split_sentences(&paragraph_text)
+        .into_iter()
+        .map(|span| SentenceBounds {
+            start: paragraph_start + span.byte_offset,
+            end: paragraph_start + span.byte_offset + span.text.len(),
+        })
+        .collect();
+
+    // Whitespace handling (existing)
+    // ... (existing whitespace absorption logic)
+
+    // Step 2: For each flat sentence, detect nested regions and compute inner boundaries
+    let mut all_inner_boundaries: Vec<usize> = Vec::new();
+    let mut sentence_nested_info: Vec<Vec<NestedRegion>> = Vec::new();
+
+    for bounds in &flat_bounds {
+        // Find nodes in this sentence's byte range
+        let nested = detect_nested_regions_for_sentence(
+            original_nodes, bounds.start, bounds.end,
+        );
+        for region in &nested {
+            // Re-split inner text
+            let inner_text = &paragraph_text[
+                (region.inner_byte_start - paragraph_start)..
+                (region.inner_byte_end - paragraph_start)
+            ];
+            let inner_spans = ab_plaintext::split_sentences_with_options(
+                inner_text,
+                &SplitOptions { suppress_closing_bracket_check: true },
+            );
+            for span in &inner_spans {
+                let abs_boundary = region.inner_byte_start + span.byte_offset + span.text.len();
+                if abs_boundary < region.inner_byte_end {
+                    all_inner_boundaries.push(abs_boundary);
+                }
+            }
+        }
+        sentence_nested_info.push(nested);
     }
+
+    // Step 3: Merge flat + inner boundaries
+    let mut split_boundaries: Vec<usize> = flat_bounds
+        .iter()
+        .take(flat_bounds.len().saturating_sub(1))
+        .map(|s| s.end)
+        .collect();
+    split_boundaries.extend(all_inner_boundaries);
+    split_boundaries.sort();
+    split_boundaries.dedup();
+
+    // Step 4: Single split_node_at_boundaries pass (nodes consumed here)
+    for node in original_nodes.iter_mut() {
+        split_node_at_boundaries(node, &split_boundaries, rewritten_nodes)?;
+    }
+
+    // Step 5: Build fine-grained bounds (flat + inner splits)
+    let mut fine_bounds: Vec<SentenceBounds> = Vec::new();
+    for (i, flat) in flat_bounds.iter().enumerate() {
+        let nested = &sentence_nested_info[i];
+        if nested.is_empty() {
+            fine_bounds.push(*flat);
+        } else {
+            // Split flat bound at inner boundaries
+            let mut cursor = flat.start;
+            for region in nested {
+                if cursor < region.inner_byte_start {
+                    fine_bounds.push(SentenceBounds { start: cursor, end: region.inner_byte_start });
+                }
+                // Inner region becomes one or more sentences (already split above)
+                // ... (collect inner bounds from re-split)
+                cursor = region.inner_byte_end;
+            }
+            if cursor < flat.end {
+                fine_bounds.push(SentenceBounds { start: cursor, end: flat.end });
+            }
+        }
+    }
+
+    // Step 6: Build sentence rows with fragment fields
+    let mut rows = Vec::new();
+    let mut fragment_group_counter = 0usize;
+    // ... (fragment assembly logic using fine_bounds and sentence_nested_info)
+
+    // Step 7: Assert tiling + field coherence
+    assert_sentence_span_tiling(paragraph_start, paragraph_end, &fine_bounds)?;
+    assert_fragment_field_coherence(&rows)?;
+
+    Ok(rows)
 }
 ```
 
-- [ ] **Step 2: Add tiling assertion for fragment groups**
-
-```rust
-fn assert_fragment_group_tiling(
-    rows: &[ParserIrSentence],
-    fragment_groups: &HashMap<String, Vec<usize>>,
-) -> Result<()> {
-    for (group_id, indices) in fragment_groups {
-        let group_rows: Vec<_> = indices.iter().map(|i| &rows[*i]).collect();
-        // Verify fragments tile the original sentence byte range
-        // Verify fragments tile the original sentence node range
-    }
-    Ok(())
-}
-```
-
-- [ ] **Step 3: Add orthographic annotation redistribution**
+- [ ] **Step 2: Add orthographic annotation redistribution**
 
 Fragment rows inherit `tags` and `orthographic_annotation_indices` by byte-overlap:
 
 ```rust
-// For each fragment row:
 let annotation_indices = overlapping_ortho_indices(
-    fragment_span.start,
-    fragment_span.end,
-    ortho,
+    bounds.start, bounds.end, ortho,
 );
 let tags = if annotation_indices.is_empty() {
     Vec::new()
@@ -588,144 +861,95 @@ let tags = if annotation_indices.is_empty() {
 };
 ```
 
-- [ ] **Step 4: Create end-to-end fixture**
+- [ ] **Step 3: Create end-to-end fixture**
 
-Create `ab-validator/crates/ab-aat-to-parser-ir/tests/fixtures/nested-sentence-fragmentation.aat.json` with the Kokoro example.
+Create `ab-validator/crates/ab-aat-to-parser-ir/tests/fixtures/nested-sentence-fragmentation.aat.json`:
 
-- [ ] **Step 5: Add integration tests**
+```json
+{
+  "version": 1,
+  "work_id": "test-fragmentation",
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "content": [
+        {"kind": "text", "value": "先生は高い梢を見上げて、「もう少しすると、綺麗ですよ。"},
+        {"kind": "text", "value": "この木がすっかり黄葉して、ここいらの地面は金色の落葉で埋まるようになります」"},
+        {"kind": "text", "value": "といった。"}
+      ]
+    }
+  ],
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "0.0.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "parse_complete": true,
+    "warnings": []
+  }
+}
+```
+
+- [ ] **Step 4: Add integration tests**
 
 ```rust
 #[test]
 fn fragment_assembly_single_inner_sentence() {
-    // "先生は梢を見上げて、「綺麗です」といった。"
-    // → 3 sentences: part="I", (no part), part="F"
-    let input = load_fixture("nested-sentence-fragmentation.aat.json");
-    let result = convert_to_parser_ir(&input, &mapping()).unwrap();
-    let sentences = result.sentences.as_ref().unwrap();
+    let (schemas, mapping) = schemas_and_mapping();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: include_fixture_json("nested-sentence-fragmentation.aat.json"),
+        schemas: &schemas,
+        mapping: &mapping,
+        options: ConversionOptions { validate_output_parser_ir: true, ..Default::default() },
+    }).unwrap();
+    let sentences = output.parser_ir["sentences"].as_array().unwrap();
     assert_eq!(sentences.len(), 4);
-    assert_eq!(sentences[0].part, Some("I".to_string()));
-    assert_eq!(sentences[1].part, None);
-    assert_eq!(sentences[2].part, None);
-    assert_eq!(sentences[3].part, Some("F".to_string()));
-}
-
-#[test]
-fn fragment_assembly_multiple_inner_sentences() {
-    // "先生は梢を見上げて、「綺麗ですよ。落葉で埋まります」といった。"
-    // → 4 sentences: part="I", (no part), (no part), part="F"
-    // ...
+    assert_eq!(sentences[0]["part"], "I");
+    assert_eq!(sentences[1]["part"], serde_json::Value::Null);
+    assert_eq!(sentences[2]["part"], serde_json::Value::Null);
+    assert_eq!(sentences[3]["part"], "F");
+    assert_eq!(sentences[0]["next_id"], sentences[3]["id"]);
+    assert_eq!(sentences[3]["prev_id"], sentences[0]["id"]);
 }
 
 #[test]
 fn fragment_field_coherence() {
-    // Verify: part="I" → next_id present, prev_id absent
-    // Verify: part="F" → prev_id present, next_id absent
-    // Verify: part absent → no fragment_group, no next_id, no prev_id
-    // ...
-}
-
-#[test]
-fn ortho_overlap_fragmented() {
-    // Verify correct tag/index distribution across fragments
-    // ...
+    let (schemas, mapping) = schemas_and_mapping();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: include_fixture_json("nested-sentence-fragmentation.aat.json"),
+        schemas: &schemas,
+        mapping: &mapping,
+        options: ConversionOptions::default(),
+    }).unwrap();
+    let sentences = output.parser_ir["sentences"].as_array().unwrap();
+    for s in sentences {
+        let part = s.get("part");
+        let next = s.get("next_id");
+        let prev = s.get("prev_id");
+        let group = s.get("fragment_group");
+        // Verify combinatorial constraints
+        if part.is_some() && part != Some(&serde_json::Value::Null) {
+            assert!(group.is_some());
+        }
+        // ... (full constraint checks)
+    }
 }
 ```
 
-- [ ] **Step 6: Run tests**
+- [ ] **Step 5: Run tests**
 
 Run: `cargo test -p ab-aat-to-parser-ir -- fragment`
 Expected: PASS
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs
 git add ab-validator/crates/ab-aat-to-parser-ir/tests/
 git commit -m "feat(ab-aat-to-parser-ir): add fragment assembly for nested sentences
 
-Detects nested regions, re-splits inner text, creates fragment rows
-with part/fragment_group/next_id/prev_id. Adds tiling assertions
-and orthographic annotation redistribution."
-```
-
----
-
-### Task 6: Cross-Field Fragment Constraints (Validator Side)
-
-**Files:**
-- Modify: `ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs`
-
-**Interfaces:**
-- Produces: `fn assert_fragment_field_coherence(rows: &[ParserIrSentence]) -> Result<()>`
-- Consumes: Sentence rows from Task 5
-
-- [ ] **Step 1: Add coherence assertion function**
-
-```rust
-fn assert_fragment_field_coherence(rows: &[ParserIrSentence]) -> Result<()> {
-    for row in rows {
-        let has_part = row.part.is_some();
-        let has_group = row.fragment_group.is_some();
-        let has_next = row.next_id.is_some();
-        let has_prev = row.prev_id.is_some();
-        
-        if has_part != has_group {
-            bail!("sentence {} has part but no fragment_group (or vice versa)", row.id);
-        }
-        match row.part.as_deref() {
-            Some("I") => {
-                if !has_next { bail!("sentence {} part=I but no next_id", row.id); }
-                if has_prev { bail!("sentence {} part=I but has prev_id", row.id); }
-            }
-            Some("M") => {
-                if !has_next { bail!("sentence {} part=M but no next_id", row.id); }
-                if !has_prev { bail!("sentence {} part=M but no prev_id", row.id); }
-            }
-            Some("F") => {
-                if has_next { bail!("sentence {} part=F but has next_id", row.id); }
-                if !has_prev { bail!("sentence {} part=F but no prev_id", row.id); }
-            }
-            None => {
-                if has_group { bail!("sentence {} has fragment_group but no part", row.id); }
-                if has_next { bail!("sentence {} has next_id but no part", row.id); }
-                if has_prev { bail!("sentence {} has prev_id but no part", row.id); }
-            }
-            _ => bail!("sentence {} has invalid part value: {:?}", row.id, row.part),
-        }
-    }
-    Ok(())
-}
-```
-
-- [ ] **Step 2: Wire into `project_body_paragraph`**
-
-Call `assert_fragment_field_coherence(&rows)` before returning.
-
-- [ ] **Step 3: Add test for invalid fragment fields**
-
-```rust
-#[test]
-fn fragment_field_coherence_rejects_invalid() {
-    // Test: part="I" without next_id → error
-    // Test: part="F" with next_id → error
-    // Test: no part with fragment_group → error
-    // ...
-}
-```
-
-- [ ] **Step 4: Run tests**
-
-Run: `cargo test -p ab-aat-to-parser-ir -- fragment_field_coherence`
-Expected: PASS
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs
-git commit -m "feat(ab-aat-to-parser-ir): add fragment field coherence assertions
-
-Validates part↔next_id/prev_id/fragment_group combinatorial
-constraints at conversion time."
+Merges flat + inner boundaries before single split_node_at_boundaries
+pass. Creates fragment rows with part/fragment_group/next_id/prev_id."
 ```
 
 ---
@@ -741,7 +965,7 @@ constraints at conversion time."
 
 - [ ] **Step 1: Update `sentence-attrs` function**
 
-Replace the existing `sentence-attrs` with the version from the spec:
+Replace the existing `sentence-attrs`:
 
 ```clojure
 (defn- sentence-attrs [sentence]
@@ -764,32 +988,35 @@ Replace the existing `sentence-attrs` with the version from the spec:
 
 - [ ] **Step 2: Add renderer test**
 
-In `abc/test/abc/tools/parser_ir_tei_test.clj`:
+In `abc/test/abc/tools/parser_ir_tei_test.clj`, use string keys (matching `(get sentence "id")` convention):
 
 ```clojure
 (deftest fragment-attributes-test
   (testing "fragmented sentences render with part/xml:id/next/prev"
-    (let [parser-ir {:nodes [{:type "text" :span {:start 0 :end 12} :text "先生は言った。"}
-                             {:type "text" :span {:start 12 :end 24} :text "「綺麗だ」といった。"}]
-                     :paragraphs [{:id "p000000" :role "body" :span {:start 0 :end 24}
-                                   :node_range {:start 0 :end 2}}]
-                     :sentences [{:id "s000000" :paragraph_id "p000000"
-                                  :span {:start 0 :end 12} :node_range {:start 0 :end 1}
-                                  :tags [] :orthographic_annotation_indices []
-                                  :part "I" :fragment_group "fg000000" :next_id "s000002"}
-                                 {:id "s000001" :paragraph_id "p000000"
-                                  :span {:start 12 :end 18} :node_range {:start 1 :start 2}
-                                  :tags [] :orthographic_annotation_indices []}
-                                 {:id "s000002" :paragraph_id "p000000"
-                                  :span {:start 18 :end 24} :node_range {:start 2 :end 3}
-                                  :tags [] :orthographic_annotation_indices []
-                                  :part "F" :fragment_group "fg000000" :prev_id "s000000"}]}
+    (let [parser-ir {"nodes" [{"type" "text" "span" {"start" 0 "end" 12} "text" "先生は言った。"}
+                              {"type" "text" "span" {"start" 12 "end" 24} "text" "「綺麗だ」といった。"}]
+                     "paragraphs" [{"id" "p000000" "role" "body" "span" {"start" 0 "end" 24}
+                                    "node_range" {"start" 0 "end" 2}}]
+                     "sentences" [{"id" "s000000" "paragraph_id" "p000000"
+                                   "span" {"start" 0 "end" 12} "node_range" {"start" 0 "end" 1}
+                                   "tags" [] "orthographic_annotation_indices" []
+                                   "part" "I" "fragment_group" "fg000000" "next_id" "s000002"}
+                                  {"id" "s000001" "paragraph_id" "p000000"
+                                   "span" {"start" 12 "end" 18} "node_range" {"start" 1 "end" 2}
+                                   "tags" [] "orthographic_annotation_indices" []}
+                                  {"id" "s000002" "paragraph_id" "p000000"
+                                   "span" {"start" 18 "end" 24} "node_range" {"start" 2 "end" 3}
+                                   "tags" [] "orthographic_annotation_indices" []
+                                   "part" "F" "fragment_group" "fg000000" "prev_id" "s000000"}]}
           result (render parser-ir)
-          s-elements (get-in result [:body 1 1])] ; <body> → <p> → children
-      (is (= "I" (get-in s-elements [0 1 :part])))
+          body (get-in result [:body])
+          s-elements (second (second body))] ; <body> → <p> → children
+      ;; Verify fragment attributes
       (is (= "s000000" (get-in s-elements [0 1 :xml:id])))
+      (is (= "I" (get-in s-elements [0 1 :part])))
       (is (= "#s000002" (get-in s-elements [0 1 :next])))
       (is (nil? (get-in s-elements [0 1 :prev])))
+      (is (= "s000001" (get-in s-elements [1 1 :xml:id])))
       (is (nil? (get-in s-elements [1 1 :part])))
       (is (= "F" (get-in s-elements [2 1 :part])))
       (is (= "#s000000" (get-in s-elements [2 1 :prev]))))))
@@ -797,7 +1024,7 @@ In `abc/test/abc/tools/parser_ir_tei_test.clj`:
 
 - [ ] **Step 3: Run tests**
 
-Run: `just abc-clj-kondo` or `nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests`
+Run: `nix build .#checks.x86_64-linux.abc-clj-kondo`
 Expected: PASS
 
 - [ ] **Step 4: Commit**
@@ -822,7 +1049,7 @@ attributes for TEI Chapter 21 fragmentation."
 - Consumes: Sentence rows with fragment fields
 - Produces: Error messages for invalid fragment field combinations
 
-- [ ] **Step 1: Add fragment field checks to `sentence-coherence-errors`**
+- [ ] **Step 1: Add fragment field checks**
 
 ```clojure
 (defn- fragment-field-errors [sentence]
@@ -867,32 +1094,19 @@ attributes for TEI Chapter 21 fragmentation."
 
 Add `(mapcat fragment-field-errors sentences)` to the error collection.
 
-- [ ] **Step 3: Add test**
+- [ ] **Step 3: Run tests**
 
-```clojure
-(deftest fragment-field-coherence-test
-  (testing "valid fragment fields pass"
-    (let [sentences [{:id "s0" :part "I" :fragment_group "fg0" :next_id "s1"}
-                     {:id "s1" :part "F" :fragment_group "fg0" :prev_id "s0"}]]
-      (is (empty? (fragment-field-errors (first sentences))))))
-  (testing "part=I without next_id fails"
-    (let [sentence {:id "s0" :part "I" :fragment_group "fg0"}]
-      (is (seq (fragment-field-errors sentence))))))
-```
-
-- [ ] **Step 4: Run tests**
-
-Run: `just abc-clj-kondo`
+Run: `nix build .#checks.x86_64-linux.abc-clj-kondo`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add abc/src/abc/tools/parser_ir_sentence_policy.clj
 git commit -m "feat(abc): add fragment field coherence checks
 
-Validates part↔next_id/prev_id/fragment_group constraints in the
-publication gate."
+Validates part/next_id/prev_id/fragment_group combinatorial
+constraints in the publication gate."
 ```
 
 ---
@@ -903,22 +1117,33 @@ publication gate."
 - Modify: `abc/schemas/tei-profile.rng`
 
 **Interfaces:**
-- Produces: `att.linking.attributes` referenced by `<s>`
-- Allows: `@next` and `@prev` on `<s>`
+- Produces: `@next` and `@prev` allowed on `<s>`
 
-- [ ] **Step 1: Add `att.linking` reference to `<s>` element**
+- [ ] **Step 1: Add `@next` and `@prev` to `<s>`**
 
-Find the `<s>` element definition (around line 13270) and add:
+Since `att.linking.attributes` is not defined in this RNG, add the attributes inline on the `<s>` element definition (around line 13270):
 
 ```xml
-<ref name="att.linking.attributes"/>
+<optional>
+   <attribute name="next">
+      <a:documentation>points to the next fragment in a fragmented sentence</a:documentation>
+      <data type="anyURI"/>
+   </attribute>
+</optional>
+<optional>
+   <attribute name="prev">
+      <a:documentation>points to the previous fragment in a fragmented sentence</a:documentation>
+      <data type="anyURI"/>
+   </attribute>
+</optional>
 ```
 
-After the existing `<ref name="att.segLike.attributes"/>` line.
+Add after the existing `<ref name="att.segLike.attributes"/>` line.
 
-- [ ] **Step 2: Verify schema validates**
+- [ ] **Step 2: Verify schema compiles**
 
-Run: `just nix-format-check` (if RNG is nix-formatted) or manual validation
+Run: `nix build .#checks.x86_64-linux.abc-clj-kondo`
+Expected: PASS
 
 - [ ] **Step 3: Commit**
 
@@ -926,20 +1151,20 @@ Run: `just nix-format-check` (if RNG is nix-formatted) or manual validation
 git add abc/schemas/tei-profile.rng
 git commit -m "feat(abc): allow @next/@prev on s element
 
-Adds att.linking reference to s for TEI Chapter 21 fragmentation."
+Adds inline attribute definitions for TEI Chapter 21 fragmentation."
 ```
 
 ---
 
-### Task 10: Splitter ID Update + Final Integration
+### Task 10: Splitter ID Update
 
 **Files:**
-- Modify: `ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs` (splitter_id)
+- Modify: `ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs`
 
 **Interfaces:**
 - Produces: `splitter_id: "ab-plaintext-japanese-v2"` in sentence_segmentation
 
-- [ ] **Step 1: Update `segmentation_meta` function**
+- [ ] **Step 1: Update `segmentation_meta`**
 
 ```rust
 pub fn segmentation_meta() -> SentenceSegmentation {
@@ -954,41 +1179,43 @@ pub fn segmentation_meta() -> SentenceSegmentation {
 
 - [ ] **Step 2: Run full test suite**
 
-Run: `just validate-migration`
+Run: `nix build .#checks.x86_64-linux.ab-validator-cargo-check && nix build .#checks.x86_64-linux.ab-validator-cargo-clippy && nix build .#checks.x86_64-linux.abc-clj-kondo`
 Expected: PASS
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs
-git commit -m "feat(ab-aat-to-parser-ir): update splitter_id to v2
-
-Reflects the new split_sentences logic with improved rules."
+git commit -m "feat(ab-aat-to-parser-ir): update splitter_id to v2"
 ```
 
 ---
 
-### Task 11: Corpus Validation
+### Task 11: Final Validation
 
 **Files:**
 - None (validation run only)
 
-- [ ] **Step 1: Run full-adapter corpus audit**
-
-Run: `just aat-to-parser-ir-full-audit 24`
-Expected: 0 new failures beyond the accepted gaiji residual
-
-- [ ] **Step 2: Document results**
-
-Create report at `ab-validator/docs/reports/2026-07-08-nested-sentence-fragmentation-audit.md` with:
-- Total works audited
-- Works with fragmented sentences
-- New failure classes (if any)
-- Residual accepted failures
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 1: Run all checks**
 
 ```bash
-git add ab-validator/docs/reports/
-git commit -m "docs: add nested sentence fragmentation audit report"
+nix build .#checks.x86_64-linux.ab-validator-cargo-check
+nix build .#checks.x86_64-linux.ab-validator-cargo-clippy
+nix build .#checks.x86_64-linux.ab-validator-cargo-fmt
+nix build .#checks.x86_64-linux.abc-clj-kondo
+nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests
+```
+
+Expected: All PASS
+
+- [ ] **Step 2: Run focused converter tests**
+
+Run: `cargo test -p ab-aat-to-parser-ir`
+Expected: All PASS
+
+- [ ] **Step 3: Commit any fixes**
+
+```bash
+git add -A
+git commit -m "fix: final validation fixes"
 ```

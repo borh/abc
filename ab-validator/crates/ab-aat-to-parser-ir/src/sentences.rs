@@ -18,6 +18,14 @@ pub struct ParserIrSentence {
     pub node_range: Value,
     pub tags: Vec<String>,
     pub orthographic_annotation_indices: Vec<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub part: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fragment_group: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub prev_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -189,6 +197,10 @@ fn project_body_paragraph(
             }),
             tags,
             orthographic_annotation_indices: annotation_indices,
+            part: None,
+            fragment_group: None,
+            next_id: None,
+            prev_id: None,
         });
     }
 

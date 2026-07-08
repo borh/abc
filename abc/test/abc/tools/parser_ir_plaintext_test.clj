@@ -100,6 +100,14 @@
                                       "continuation_indent" 1
                                       "source" "aat-style"}}]})))))
 
+(deftest source-text-newline-runs-are-publication-normalized-test
+  (testing "source/control-line separator whitespace does not leak as empty publication lines"
+    (is (= "序\n本文"
+           (plaintext/render-string
+            {"nodes" [{"type" "text"
+                       "span" {"start" 0 "end" 20 "coordinate_system" "decoded_utf8"}
+                       "text" "\r\n\r\n序\r\n\r\n\r\n本文\r\n\r\n"}]})))))
+
 (deftest emphasis-inline-children-render-visible-plaintext-test
   (testing "plaintext uses inline children but omits ruby readings and metadata"
     (is (= "東京X内"

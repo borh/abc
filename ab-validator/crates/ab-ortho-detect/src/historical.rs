@@ -35,9 +35,9 @@ use std::sync::Arc;
 
 use ab_plaintext::SentenceSpan;
 
+use crate::OrthoDetector;
 use crate::script::kata_to_hira;
 use crate::types::{OrthoAnnotation, OrthoDetectorId, OrthoNormalization};
-use crate::OrthoDetector;
 
 /// The minimal token view the modernizer needs from the segmentation oracle.
 ///
@@ -320,19 +320,28 @@ mod tests {
 
     #[test]
     fn digraph_kefu_becomes_kyou() {
-        assert_eq!(modernize_token(&tok("けふ", "キョー", "名詞")).as_deref(), Some("きょう"));
+        assert_eq!(
+            modernize_token(&tok("けふ", "キョー", "名詞")).as_deref(),
+            Some("きょう")
+        );
     }
 
     #[test]
     fn digraph_tefu_becomes_chou() {
         // てふ (butterfly) reads チョー → ちょう.
-        assert_eq!(modernize_token(&tok("てふ", "チョー", "名詞")).as_deref(), Some("ちょう"));
+        assert_eq!(
+            modernize_token(&tok("てふ", "チョー", "名詞")).as_deref(),
+            Some("ちょう")
+        );
     }
 
     #[test]
     fn digraph_kau_becomes_kou() {
         // かう reads コー → こう.
-        assert_eq!(modernize_token(&tok("かう", "コー", "動詞")).as_deref(), Some("こう"));
+        assert_eq!(
+            modernize_token(&tok("かう", "コー", "動詞")).as_deref(),
+            Some("こう")
+        );
     }
 
     // ---- regular surface rewrite ----
@@ -340,28 +349,52 @@ mod tests {
     #[test]
     fn medial_hagyou_rewrites() {
         // おもふ → おもう (medial ふ), かは → かわ (medial は, not a particle here).
-        assert_eq!(modernize_token(&tok("おもふ", "オモウ", "動詞")).as_deref(), Some("おもう"));
-        assert_eq!(modernize_token(&tok("かは", "カワ", "名詞")).as_deref(), Some("かわ"));
+        assert_eq!(
+            modernize_token(&tok("おもふ", "オモウ", "動詞")).as_deref(),
+            Some("おもう")
+        );
+        assert_eq!(
+            modernize_token(&tok("かは", "カワ", "名詞")).as_deref(),
+            Some("かわ")
+        );
     }
 
     #[test]
     fn kanji_mixed_keeps_kanji_rewrites_kana() {
         // 使ひ → 使い: kanji passes through, medial ひ → い.
-        assert_eq!(modernize_token(&tok("使ひ", "ツカイ", "動詞")).as_deref(), Some("使い"));
+        assert_eq!(
+            modernize_token(&tok("使ひ", "ツカイ", "動詞")).as_deref(),
+            Some("使い")
+        );
         // 思ふ → 思う.
-        assert_eq!(modernize_token(&tok("思ふ", "オモウ", "動詞")).as_deref(), Some("思う"));
+        assert_eq!(
+            modernize_token(&tok("思ふ", "オモウ", "動詞")).as_deref(),
+            Some("思う")
+        );
     }
 
     #[test]
     fn obsolete_kana_swaps() {
-        assert_eq!(modernize_token(&tok("ゐる", "イル", "動詞")).as_deref(), Some("いる"));
-        assert_eq!(modernize_token(&tok("こゑ", "コエ", "名詞")).as_deref(), Some("こえ"));
+        assert_eq!(
+            modernize_token(&tok("ゐる", "イル", "動詞")).as_deref(),
+            Some("いる")
+        );
+        assert_eq!(
+            modernize_token(&tok("こゑ", "コエ", "名詞")).as_deref(),
+            Some("こえ")
+        );
     }
 
     #[test]
     fn yotsugana_swaps() {
-        assert_eq!(modernize_token(&tok("みづ", "ミズ", "名詞")).as_deref(), Some("みず"));
-        assert_eq!(modernize_token(&tok("はぢ", "ハジ", "名詞")).as_deref(), Some("はじ"));
+        assert_eq!(
+            modernize_token(&tok("みづ", "ミズ", "名詞")).as_deref(),
+            Some("みず")
+        );
+        assert_eq!(
+            modernize_token(&tok("はぢ", "ハジ", "名詞")).as_deref(),
+            Some("はじ")
+        );
     }
 
     // ---- particle guard ----
@@ -394,7 +427,10 @@ mod tests {
     #[test]
     fn all_kana_digraph_still_reconstructs() {
         // The gate must not disturb the genuine all-kana digraph case.
-        assert_eq!(modernize_token(&tok("てふ", "チョー", "名詞")).as_deref(), Some("ちょう"));
+        assert_eq!(
+            modernize_token(&tok("てふ", "チョー", "名詞")).as_deref(),
+            Some("ちょう")
+        );
     }
 
     #[test]
@@ -406,7 +442,11 @@ mod tests {
     #[test]
     fn missing_pron_falls_back_to_surface_rewrite() {
         // No pron → cannot take the digraph path; surface rewrite still applies.
-        let t = HistToken { surface: "ゐ", pron: None, pos1: Some("動詞") };
+        let t = HistToken {
+            surface: "ゐ",
+            pron: None,
+            pos1: Some("動詞"),
+        };
         assert_eq!(modernize_token(&t).as_deref(), Some("い"));
     }
 
@@ -446,8 +486,7 @@ mod tests {
             otok("は", 6..9, "ワ", "助詞"),
             otok("けふ", 9..15, "キョー", "名詞"),
         ]);
-        let detector =
-            HistoricalRewriteV1::new(Arc::new(oracle), "sha256:kindaidict".to_owned());
+        let detector = HistoricalRewriteV1::new(Arc::new(oracle), "sha256:kindaidict".to_owned());
         let anns = detector.detect(&[sentence]);
         // Only けふ changes: 今日 is already modern, は is a protected particle.
         assert_eq!(anns.len(), 1);
@@ -485,8 +524,7 @@ mod tests {
             char_offset: 0,
         };
         let oracle = StubOracle(vec![otok("けふ", 0..6, "キョー", "名詞")]);
-        let detector =
-            HistoricalRewriteV1::new(Arc::new(oracle), "sha256:d".to_owned());
+        let detector = HistoricalRewriteV1::new(Arc::new(oracle), "sha256:d".to_owned());
         let anns = detector.detect(&[sentence]);
         let (normalized, map) = crate::ortho_normalize("けふ", &anns);
         assert_eq!(normalized, "きょう");

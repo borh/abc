@@ -1,8 +1,18 @@
 (ns abc.tools.parser-ir-plaintext
-  (:require [clojure.string :as string]))
+  (:require [abc.tools.parser-ir-publication-whitespace :as whitespace]
+            [clojure.string :as string]))
 
 (defn- append-text [acc node-text]
-  (update acc :text str (or node-text "")))
+  (-> acc
+      (update :text str (or node-text ""))
+      (assoc :source-text-ended-with-newline? false)))
+
+(defn- append-source-text [acc node-text]
+  (-> acc
+      (update :text str
+              (whitespace/source-text->plaintext node-text (empty? (:text acc))))
+      (assoc :source-text-ended-with-newline?
+             (whitespace/source-text-ends-with-newline? node-text))))
 
 (defn- mark-omitted [acc node-type]
   (update acc :omitted conj {:type node-type :policy "omitted"}))
@@ -25,7 +35,7 @@
 (defn- render-text-node
   ([acc node] (render-text-node acc node 0))
   ([acc node _depth]
-   (append-text acc (get node "text"))))
+   (append-source-text acc (get node "text"))))
 
 (defn- render-ruby-node
   ([acc node] (render-ruby-node acc node 0))
@@ -147,14 +157,19 @@
        acc))))
 
 (defn render [parser-ir]
-  (let [{:keys [text front_notes source_notes node_counts omitted]}
+  (let [{:keys [text front_notes source_notes node_counts omitted
+                source-text-ended-with-newline?]}
         (reduce render-node
                 {:text ""
                  :front_notes []
                  :source_notes []
                  :node_counts {}
-                 :omitted []}
+                 :omitted []
+                 :source-text-ended-with-newline? false}
                 (get parser-ir "nodes"))
+        text (if source-text-ended-with-newline?
+               (whitespace/trim-trailing-newlines text)
+               text)
         text (str (when (seq front_notes)
                     (str (string/join "\n" front_notes) "\n\n"))
                   text

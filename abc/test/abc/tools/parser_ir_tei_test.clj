@@ -70,6 +70,17 @@
       (is (= {"text" 2 "line-break" 1} (:node_counts result)))
       (is (empty? (:omitted result))))))
 
+(deftest source-text-newline-runs-render-as-structural-lb-test
+  (testing "source/control-line separator whitespace does not enter TEI as literal body text"
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "text"
+                             "span" {"start" 0 "end" 20 "coordinate_system" "decoded_utf8"}
+                             "text" "\r\n\r\n序\r\n\r\n\r\n本文\r\n\r\n"}]})
+          paragraph (some #(when (= :p (first %)) %) (hiccup-nodes (:body result)))]
+      (is (= [:p "序" [:lb] "本文"] paragraph))
+      (is (not-any? #(and (string? %) (re-find #"\r|\n" %))
+                    (hiccup-nodes (:body result)))))))
+
 (deftest emphasis-inline-children-render-nested-tei-test
   (testing "emphasis inline_children render nested hi and ruby nodes"
     (let [result (parser-ir-tei/render

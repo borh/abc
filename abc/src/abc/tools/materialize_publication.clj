@@ -584,7 +584,7 @@
         tei-validation-result-file (io/file output-dir "tei-validation-result.json")]
     (write-string-file! plain-file (:text plaintext-result))
     (write-string-file! tei-file
-                        (tei-header/hiccup->xml-string
+                        (tei-header/hiccup->pretty-xml-string
                          (tei-document header (:body tei-result))))
     (manifest/write-json-file!
      preservation-file

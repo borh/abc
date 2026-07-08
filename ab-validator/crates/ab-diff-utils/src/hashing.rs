@@ -47,7 +47,7 @@ pub fn canonical_json_string(value: &Value) -> anyhow::Result<String> {
         }
         Value::Object(values) => {
             let mut entries: Vec<_> = values.iter().collect();
-            entries.sort_by(|(left, _), (right, _)| left.cmp(right));
+            entries.sort_by_key(|(key, _)| *key);
             let inner = entries
                 .into_iter()
                 .map(|(key, value)| {

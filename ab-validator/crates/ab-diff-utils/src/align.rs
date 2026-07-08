@@ -132,6 +132,14 @@ enum Edit {
     Substitute(usize, usize),
 }
 
+#[derive(Debug, Clone, Copy)]
+struct RegionBounds {
+    left_start: usize,
+    left_end: usize,
+    right_start: usize,
+    right_end: usize,
+}
+
 fn align_partitioned(
     left: &[ComparisonToken],
     right: &[ComparisonToken],
@@ -168,10 +176,12 @@ fn align_partitioned(
             AlignmentKind::Equal,
             left,
             right,
-            left_anchor,
-            left_anchor_end,
-            right_anchor,
-            right_anchor_end,
+            RegionBounds {
+                left_start: left_anchor,
+                left_end: left_anchor_end,
+                right_start: right_anchor,
+                right_end: right_anchor_end,
+            },
             false,
         ));
         left_cursor = left_anchor_end;
@@ -209,10 +219,12 @@ fn align_window(
             AlignmentKind::UnclassifiedMismatch,
             left,
             right,
-            left_start,
-            left_end,
-            right_start,
-            right_end,
+            RegionBounds {
+                left_start,
+                left_end,
+                right_start,
+                right_end,
+            },
             true,
         )];
     }
@@ -363,10 +375,12 @@ fn coalesce_script(
             kind,
             left,
             right,
-            left_start,
-            left_end,
-            right_start,
-            right_end,
+            RegionBounds {
+                left_start,
+                left_end,
+                right_start,
+                right_end,
+            },
             false,
         ));
     }
@@ -377,18 +391,17 @@ fn make_region(
     kind: AlignmentKind,
     left: &[ComparisonToken],
     right: &[ComparisonToken],
-    left_start: usize,
-    left_end: usize,
-    right_start: usize,
-    right_end: usize,
+    bounds: RegionBounds,
     truncated: bool,
 ) -> AlignmentRegion {
-    let (left_text_sample, left_sample_truncated) = sample_text(&left[left_start..left_end]);
-    let (right_text_sample, right_sample_truncated) = sample_text(&right[right_start..right_end]);
+    let (left_text_sample, left_sample_truncated) =
+        sample_text(&left[bounds.left_start..bounds.left_end]);
+    let (right_text_sample, right_sample_truncated) =
+        sample_text(&right[bounds.right_start..bounds.right_end]);
     AlignmentRegion {
         kind,
-        left_range: [left_start, left_end],
-        right_range: [right_start, right_end],
+        left_range: [bounds.left_start, bounds.left_end],
+        right_range: [bounds.right_start, bounds.right_end],
         left_text_sample,
         right_text_sample,
         truncated: truncated || left_sample_truncated || right_sample_truncated,

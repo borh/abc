@@ -1,0 +1,26 @@
+{
+  "determinism_tier": "exact",
+  "error_behavior": {
+    "metric_failure": "record-failed-metric",
+    "missing_required_identity_field": "failed-manifest-or-none"
+  },
+  "metrics": [
+    {
+      "formula_version": "fixture-token-input-v1",
+      "metric_id": "fixture-token-count",
+      "unit": "token",
+      "value_type": "integer"
+    }
+  ],
+  "normalization_policy": {
+    "newline_policy": "token-stream-v1",
+    "unicode_normalization": "producer-preserved"
+  },
+  "plaintext_policy_hash": null,
+  "recipe_id": "token-basic-ja-v1",
+  "recipe_version": "0.1.0",
+  "required_output_schema_hash": "sha256:52d420dd985849cfb7cbd2bfb0f28bb04100c901e105506f972204157a1b0fa6",
+  "schema_id": "https://w3id.org/abc/schemas/analysis-recipe.schema.json",
+  "supported_input_view_kinds": ["token-stream-v1"],
+  "tokenizer_required": true
+}

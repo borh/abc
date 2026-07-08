@@ -1,9 +1,9 @@
 {
   "label": "smoke-basic-ja",
-  "request_set_id": "sha256:c5eeb11b9de2795d49bb71b064792854b746590578094135bf231dc465b98a08",
+  "request_set_id": "sha256:842e135a201146504c7c26a61dd41901812533f0f770b87b4ec7fef11e9f096e",
   "request_set_identity_object":
   {
-    "analysis_recipe_hashes": ["sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b"],
+    "analysis_recipe_hashes": ["sha256:1e2bb82410039a7f8d465e82f29f15472f451ae6d99eeca35292819ec2f24c1e"],
     "corpus_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
     "input_views": [
       {
@@ -31,9 +31,9 @@
   },
   "resolved_recipe_labels": [
     {
-      "analysis_recipe_hash": "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b",
+      "analysis_recipe_hash": "sha256:1e2bb82410039a7f8d465e82f29f15472f451ae6d99eeca35292819ec2f24c1e",
       "recipe_id": "literary-basic-ja-v1",
-      "registry_entry_hash": "sha256:ee609be205ee3a4c811c3baa060fe196c4f042b13d4475a07661ca978ee70abe",
+      "registry_entry_hash": "sha256:338bc4172b3a6d7f4d65970b1317d4ad5c09e2bb33d07637f180b9d7e4dbe7d2",
       "resolved_at": "2026-07-07T00:00:00Z"
     }],
   "resolved_tokenizer_profile_labels": [],

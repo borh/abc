@@ -20,7 +20,7 @@
   "plaintext_policy_hash": "sha256:1000000000000000000000000000000000000000000000000000000000000001",
   "recipe_id": "literary-basic-ja-v1",
   "recipe_version": "0.1.0",
-  "required_output_schema_hash": "sha256:d282e7fa9c726a86ffbd37dcc5f3ccf6f4c19cf7e490172638797907d1602c8a",
+  "required_output_schema_hash": "sha256:52d420dd985849cfb7cbd2bfb0f28bb04100c901e105506f972204157a1b0fa6",
   "schema_id": "https:\/\/w3id.org\/abc\/schemas\/analysis-recipe.schema.json",
   "supported_input_view_kinds": ["parser-ir-plaintext-body-v1"],
   "tokenizer_required": false

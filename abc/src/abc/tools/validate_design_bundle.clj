@@ -12,6 +12,7 @@
    [abc.tools.manifest-index :as manifest-index]
    [abc.tools.manifest-to-rdf :as manifest-to-rdf]
    [abc.tools.manifest :as manifest]
+   [abc.tools.materialize-analysis :as analysis]
    [abc.tools.materialize-import :as materialize]
    [abc.tools.materialize-publication :as publication]
    [abc.tools.materialize-tokenized :as tokenized]
@@ -61,6 +62,20 @@
     "input_span" {"start" 2
                   "end" 3}
     "text" "猫"}])
+
+(def ^:private fixture-analysis-subject
+  {"source_id" "aozora:example-work"
+   "logical_path" "aozora/example-work.txt"
+   "git_ref" "refs/heads/fixture"
+   "work_id" "aozora:example-work"})
+
+(def ^:private fixture-token-analysis-metrics
+  [{"metric_id" "fixture-token-count"
+    "value" 2
+    "value_type" "integer"
+    "denominator" nil
+    "unit" "token"
+    "status" "passed"}])
 
 (defn- parser-ir-schema-hash-accepted? [value]
   (contains? (accepted-parser-ir-schema-hashes) value))
@@ -365,8 +380,9 @@
                     "examples/ab-validator-output/source-region-coverage.json")
     (validate-json! aat-parser-ir-divergence-bundle-schema
                     "examples/ab-validator-output/divergence.json")
-    (validate-json! analysis-recipe-schema
-                    "data/analysis-recipes/literary-basic-ja-v1.json")
+    (doseq [path ["data/analysis-recipes/literary-basic-ja-v1.json"
+                  "data/analysis-recipes/token-basic-ja-v1.json"]]
+      (validate-json! analysis-recipe-schema path))
     (validate-json! analysis-result-schema
                     "examples/v0/example-work/analysis-result.json")
     (validate-json! token-output-schema
@@ -922,7 +938,8 @@
                            (make-array java.nio.file.attribute.FileAttribute 0)))
         materialized-dir (io/file temp-dir "materialized-import")
         publication-dir (io/file temp-dir "publication")
-        tokenized-dir (io/file temp-dir "tokenized")]
+        tokenized-dir (io/file temp-dir "tokenized")
+        token-analysis-dir (io/file temp-dir "token-analysis")]
     (try
       (tel/log! :info "==> Materializing imported ab-validator output")
       (let [materialized (materialize/materialize-import!
@@ -945,17 +962,31 @@
                                :tokens fixture-tokenized-tokens
                                :output-dir tokenized-dir
                                :generated-at materialize/default-generated-at})
+            token-analysis-output (analysis/materialize-token-backed-analysis!
+                                   {:producer-manifest (files/read-json
+                                                        (:manifest
+                                                         tokenized-output))
+                                    :recipe (files/read-json
+                                             "data/analysis-recipes/token-basic-ja-v1.json")
+                                    :subject fixture-analysis-subject
+                                    :metrics fixture-token-analysis-metrics
+                                    :output-dir token-analysis-dir
+                                    :generated-at materialize/default-generated-at})
             manifest-paths (concat (vals materialized)
                                    [(:plaintext-manifest publication-output)
                                     (:tei-manifest publication-output)
-                                    (:manifest tokenized-output)])]
+                                    (:manifest tokenized-output)
+                                    (:manifest token-analysis-output)])]
         (tel/log! :info "materialized import ok")
         (tel/log! :info "parser-IR publication materialization ok")
         (tel/log! :info "tokenized fixture materialization ok")
+        (tel/log! :info "token-backed analysis fixture materialization ok")
         (tel/log! :info "==> Validating JSON schemas and examples")
         (validate-json-schemas! manifest-paths)
         (validate-json! (files/read-json "schemas/token-output.schema.json")
                         (:token-stream tokenized-output))
+        (validate-json! (files/read-json "schemas/analysis-result.schema.json")
+                        (:analysis-result token-analysis-output))
         (tel/log! :info "json schema validation ok")
         (tel/log! :info "==> Checking parser-IR publication output")
         (validate-publication-output! publication-output)

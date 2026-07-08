@@ -4,11 +4,12 @@
       "artifact_id": "sha256:0101010101010101010101010101010101010101010101010101010101010101",
       "artifact_kind": "source",
       "content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
-      "locator": {
+      "locator":
+      {
         "kind": "loose",
-        "path": "manifests/source.manifest.json"
+        "path": "manifests\/source.manifest.json"
       },
-      "manifest_content_hash": "sha256:5afce94cdde32ec28190935c7ba18d0bef7438f3ac5e0ef3b3987b6e3f1e8cbc",
+      "manifest_content_hash": "sha256:05a4bcb9b699d27e4a68c42971da25d52b383c94e3c134b85aad3cd28a2fed43",
       "sidecar_role": null,
       "validation_status": "passed"
     },
@@ -16,59 +17,51 @@
       "artifact_id": "sha256:ed9b00739a19aae6ae4aa9a33d84d44067c7e10c03b32a0d7353379c783c8dbc",
       "artifact_kind": "tei",
       "content_hash": "sha256:0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c",
-      "locator": {
+      "locator":
+      {
         "kind": "loose",
-        "path": "manifests/tei.manifest.json"
+        "path": "manifests\/tei.manifest.json"
       },
-      "manifest_content_hash": "sha256:59e532bc3fc560c4545ceccbe55d81769bf69bb2a2513d34dd8d388fd39548d6",
+      "manifest_content_hash": "sha256:aa41f59801d546115dd6d925ebd57e325e2676da0d6703efcce02e37c0843f84",
       "sidecar_role": null,
       "validation_status": "warning"
-    }
-  ],
-  "failure_policy": {
+    }],
+  "failure_policy":
+  {
     "allow_nonzero_failures": true,
     "max_failure_rate": null,
-    "per_diagnostic_tolerances": {}
+    "per_diagnostic_tolerances":
+    {}
   },
   "generated_at": "2026-07-07T00:00:00Z",
-  "layout_policy": {
+  "layout_policy":
+  {
     "archive_format": "tar.zst",
     "batch_target_work_count": 250,
-    "batched_artifact_kinds": [
-      "analysis",
-      "tokenized"
-    ],
-    "loose_artifact_kinds": [
-      "tei",
-      "plaintext"
-    ]
+    "batched_artifact_kinds": ["analysis","tokenized"],
+    "loose_artifact_kinds": ["tei","plaintext"]
   },
   "request_set_label": "smoke-basic-ja",
   "schema_hash": "sha256:ef0aaccd2d5d86204bb22c5d94e3c3d4dab2a6cfe4b82c353873317c77a3c31f",
-  "schema_id": "https://w3id.org/abc/schemas/snapshot-index.schema.json",
-  "snapshot_identity_hash": "sha256:d98e86b0e7855492c58236db46dad1387b7fbb902f8e18318fe69a8161a78155",
-  "snapshot_index_identity_object": {
-    "analysis_recipe_hashes": [
-      "sha256:c2d37aa0d1cd92c67239757463df2b12f94cf933ebbced810c88301420efde2b"
-    ],
-    "artifact_set_hash": "sha256:3b268021c6c02f76cc8c809ca1484eb88f2606bc01124b2199224ba5aa580b71",
+  "schema_id": "https:\/\/w3id.org\/abc\/schemas\/snapshot-index.schema.json",
+  "snapshot_identity_hash": "sha256:17f3a3e98d4e69ab1d20c4aaaaac99b2241114858d3aa5556d128f3db2255f46",
+  "snapshot_index_identity_object":
+  {
+    "analysis_recipe_hashes": ["sha256:1e2bb82410039a7f8d465e82f29f15472f451ae6d99eeca35292819ec2f24c1e"],
+    "artifact_set_hash": "sha256:32be5d18d806b427a9fca4436b472e46dcf14d3dd9927c182653838df8929f26",
     "failure_policy_hash": "sha256:ca48558aa7fa54464f120e8f7c6c8c2ace4464f1441d03cb2e188b82adcc8629",
     "layout_policy_hash": "sha256:3722bc2643277b169d456c2de9d82e274c39540f3d4918ad2c42e827175c20d9",
     "manifest_index_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
     "parser_evidence_hashes": [],
-    "request_set_id": "sha256:54e76d9f4093af087b53cb2a93a77438f0a42030ab6e2609eac435644776755b",
-    "schema_hashes": [
-      "sha256:3b8703095321a59c7acf35e0e391cc46b0b7d7d10da9bb233cb78fb0e7747f6c",
-      "sha256:86353a3dec96058209924c00261d560c7ef424891e0d1c2a19d71d9d07882394",
-      "sha256:d282e7fa9c726a86ffbd37dcc5f3ccf6f4c19cf7e490172638797907d1602c8a",
-      "sha256:ef0aaccd2d5d86204bb22c5d94e3c3d4dab2a6cfe4b82c353873317c77a3c31f"
-    ],
+    "request_set_id": "sha256:842e135a201146504c7c26a61dd41901812533f0f770b87b4ec7fef11e9f096e",
+    "schema_hashes": ["sha256:0e94d9c4a4d1378401f73f30577e19b1c3a97d607e88d08d6ddd0f98af80d6c4","sha256:3097d32f05a04daddab540548fb30846fa8b6a4cb1400e3af1ba7606e195f0b1","sha256:52d420dd985849cfb7cbd2bfb0f28bb04100c901e105506f972204157a1b0fa6","sha256:ef0aaccd2d5d86204bb22c5d94e3c3d4dab2a6cfe4b82c353873317c77a3c31f"],
     "snapshot_index_schema_hash": "sha256:ef0aaccd2d5d86204bb22c5d94e3c3d4dab2a6cfe4b82c353873317c77a3c31f",
     "source_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
     "tokenizer_profile_hashes": []
   },
   "snapshot_label": "soranoha-snapshot-2026-07-07-01",
-  "summary": {
+  "summary":
+  {
     "failure_count": 0,
     "failure_rate": 0.0,
     "success_count": 2,

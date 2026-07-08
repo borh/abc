@@ -251,11 +251,20 @@ independently identified.
   tests are the guard. If a future consumer needs to *construct* (not just read) a
   policy hash outside Rust, revisit and promote the descriptor to a checked-in
   schema then.
-- **U3 — `HistoricalToModern` scope.** The reserved kind is out of the v1 policy;
-  confirm before pinning `kinds` as a closed set in the descriptor.
-- **U4 — `determinism_tier` interaction.** How the tokenizer-profile
-  `determinism_tier` composes with a normalization policy (does normalization
-  change the tier?). Likely orthogonal, but confirm.
+- **U3 — `HistoricalToModern` scope. RESOLVED (2026-07-08):** keep the variant
+  **reserved as a documented Phase-3 lane** (not removed, not designed now).
+  `kinds` stays an OPEN set within `ortho-input-normalization-v1`; v1 emits only
+  `ScriptKatakanaToHiragana` (structural). A future historical detector must add
+  an `OrthoDetectorId` variant binding a `dictionary_hash`, gate on
+  `orthographic_style` (旧仮名) metadata, and accept whole-span-only remap. See
+  `2026-07-08-ortho-historical-scope-and-determinism-tier-design.md`.
+- **U4 — `determinism_tier` interaction. RESOLVED (2026-07-08):** orthogonal to
+  the normalization policy — a deterministic (mechanical kata→hira or
+  pinned-model ML) normalization preserves the tier, because the normalization
+  policy is already a required pin for the Exact classification. Documented the
+  effective-tier rule (tier = min across inputs; normalization is one input);
+  **deferred** building any gate (nothing consumes `determinism_tier` yet). See
+  `2026-07-08-ortho-historical-scope-and-determinism-tier-design.md`.
 
 ## Non-goals
 

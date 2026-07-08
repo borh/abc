@@ -1,16 +1,15 @@
 (ns abc.tools.schematron
-  "Small Schematron evaluator for ABC's v0 profile subset.
+  "Schematron evaluator for ABC's TEI profile.
 
-  This is not a full ISO Schematron compiler. It evaluates the checked-in
-  `schemas/tei-profile.sch` constructs ABC currently uses:
-  sch:ns, sch:pattern, sch:rule, sch:assert, and sch:report. Each pattern
-  must contain exactly one rule until ISO rule-claim semantics are implemented.
-  XPath 2.0 expressions are evaluated with Saxon-HE."
+  Validation uses ph-schematron's ISO Schematron-to-XSLT engine and returns the
+  ABC finding shape consumed by publication and design-bundle validation."
   (:require [clojure.java.io :as io]
             [clojure.string :as string])
   (:import [javax.xml.parsers DocumentBuilderFactory]
            [javax.xml.transform.stream StreamSource]
-           [net.sf.saxon.s9api Processor XdmNode]))
+           [com.helger.schematron.sch SchematronResourceSCH]
+           [com.helger.schematron.svrl SVRLFailedAssert SVRLSuccessfulReport]
+           [com.helger.schematron.svrl.jaxb ActivePattern FailedAssert FiredRule SuccessfulReport]))
 
 (def ^:private schematron-ns "http://purl.oclc.org/dsdl/schematron")
 
@@ -67,10 +66,6 @@
          (let [pattern (.item patterns pattern-index)
                pattern-id (attr pattern "id")
                rules (vec (element-children pattern "rule"))]
-           (when-not (= 1 (count rules))
-             (throw (ex-info "ABC v0 Schematron requires exactly one sch:rule per sch:pattern until ISO rule-claim semantics are implemented"
-                             {:pattern-id pattern-id
-                              :rule-count (count rules)})))
            (mapcat
             (fn [rule]
               (let [context (or (attr rule "context")
@@ -82,74 +77,66 @@
             rules)))
        (range (.getLength patterns))))}))
 
-(defn- processor []
-  (Processor. false))
+(defn- severity [kind role]
+  (keyword (or (when-not (string/blank? role) role)
+               (if (= kind :report) "warning" "error"))))
 
-(defn- document-node [^Processor processor xml-path]
-  (let [builder (.newDocumentBuilder processor)]
-    (.setLineNumbering builder true)
-    (.build builder (StreamSource. (io/file xml-path)))))
-
-(defn- compiler [^Processor processor namespaces]
-  (let [compiler (.newXPathCompiler processor)]
-    (doseq [[prefix uri] namespaces]
-      (.declareNamespace compiler prefix uri))
-    compiler))
-
-(defn- context-search-expr [context-expr]
-  (->> (string/split context-expr #"\|")
-       (map string/trim)
-       (map #(if (string/starts-with? % "/") % (str "//" %)))
-       (string/join " | ")))
-
-(defn- select-nodes [compiler ^XdmNode document context-expr]
-  (let [selector (.load (.compile compiler (context-search-expr context-expr)))]
-    (.setContextItem selector document)
-    (vec (iterator-seq (.iterator (.evaluate selector))))))
-
-(defn- boolean-test [compiler node test-expr]
-  (let [selector (.load (.compile compiler test-expr))]
-    (.setContextItem selector node)
-    (.effectiveBooleanValue selector)))
-
-(defn- node-location [^XdmNode node]
-  (let [line (.getLineNumber node)]
-    (when (pos? line)
-      (str line))))
-
-(defn- finding [label check node]
+(defn- finding [label rule-id context kind message]
   {:label label
-   :rule-id (:rule-id check)
-   :severity (:severity check)
-   :kind (:kind check)
-   :context (:context check)
-   :test (:test check)
-   :message (:message check)
-   :location (node-location node)})
+   :rule-id rule-id
+   :severity (severity kind (.getRole message))
+   :kind kind
+   :context context
+   :test (.getTest message)
+   :message (string/trim (.getText message))
+   :location (.getLocation message)})
+
+(defn- schematron-resource [schema-path]
+  (let [resource (SchematronResourceSCH/fromFile (io/file schema-path))]
+    (when-not (.isValidSchematron resource)
+      (throw (ex-info "Invalid Schematron schema"
+                      {:schema-path schema-path})))
+    resource))
+
+(defn- svrl-findings [label svrl]
+  (loop [items (seq (.getActivePatternAndFiredRuleAndFailedAssert svrl))
+         rule-id nil
+         context nil
+         findings []]
+    (if-not items
+      findings
+      (let [item (first items)]
+        (cond
+          (instance? ActivePattern item)
+          (recur (next items) (.getId ^ActivePattern item) nil findings)
+
+          (instance? FiredRule item)
+          (recur (next items) rule-id (.getContext ^FiredRule item) findings)
+
+          (instance? FailedAssert item)
+          (recur (next items) rule-id context
+                 (conj findings
+                       (finding label rule-id context :assert
+                                (SVRLFailedAssert. ^FailedAssert item))))
+
+          (instance? SuccessfulReport item)
+          (recur (next items) rule-id context
+                 (conj findings
+                       (finding label rule-id context :report
+                                (SVRLSuccessfulReport. ^SuccessfulReport item))))
+
+          :else
+          (recur (next items) rule-id context findings))))))
 
 (defn validate!
-  "Evaluate an ABC Schematron schema against one XML document.
+  "Evaluate an ISO Schematron schema against one XML document.
 
   Returns {:label string, :findings [...]}. Assertion findings are emitted when
   the test is false. Report findings are emitted when the test is true."
   [{:keys [schema-path xml-path label]}]
-  (let [{:keys [namespaces checks]} (parse-schema schema-path)
-        proc (processor)
-        doc (document-node proc xml-path)
-        comp (compiler proc namespaces)
-        findings
-        (reduce
-         (fn [acc check]
-           (let [nodes (select-nodes comp doc (:context check))]
-             (into acc
-                   (keep
-                    (fn [node]
-                      (let [result (boolean-test comp node (:test check))]
-                        (case (:kind check)
-                          :assert (when-not result (finding label check node))
-                          :report (when result (finding label check node)))))
-                    nodes))))
-         []
-         checks)]
+  (let [resource (schematron-resource schema-path)
+        svrl (.applySchematronValidationToSVRL resource
+                                               (StreamSource. (io/file xml-path)))
+        findings (svrl-findings label svrl)]
     {:label label
      :findings (vec findings)}))

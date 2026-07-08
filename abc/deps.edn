@@ -43,6 +43,8 @@
   ;; Explicit for the v0 Schematron harness; aligns the runtime XPath engine
   ;; with the ODD artifact generator and current Schematron tooling.
   net.sf.saxon/Saxon-HE            {:mvn/version "12.9"}
+  com.helger.schematron/ph-schematron-xslt {:mvn/version "9.2.0"}
+  org.glassfish.jaxb/jaxb-runtime  {:mvn/version "4.0.6"}
 
   ;; Linked Art / JSON-LD publication-view harness (ADR 0013). Jena pulls in
   ;; titanium-json-ld 1.4.1 transitively; this explicit pin upgrades it to

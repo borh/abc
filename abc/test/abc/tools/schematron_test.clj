@@ -197,20 +197,25 @@
       (is (= [:error]
              (mapv :severity findings))))))
 
-(deftest multi-rule-pattern-is-rejected-test
-  (testing "v0 evaluator rejects patterns with more than one rule until ISO claim semantics exist"
-    (let [tmp (java.io.File/createTempFile "abc-sch-multi-rule" ".sch")]
+(deftest multi-rule-pattern-evaluates-all-rules-test
+  (testing "ISO Schematron patterns with multiple rules are evaluated"
+    (let [schema (java.io.File/createTempFile "abc-sch-multi-rule" ".sch")
+          xml (java.io.File/createTempFile "abc-sch-multi-rule" ".xml")]
       (try
-        (spit tmp (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                       "<sch:schema xmlns:sch=\"http://purl.oclc.org/dsdl/schematron\">"
-                       "  <sch:pattern id=\"two-rules\">"
-                       "    <sch:rule context=\"*\"><sch:assert test=\"true()\">ok</sch:assert></sch:rule>"
-                       "    <sch:rule context=\"*\"><sch:assert test=\"true()\">ok</sch:assert></sch:rule>"
-                       "  </sch:pattern>"
-                       "</sch:schema>"))
-        (is (thrown-with-msg?
-             clojure.lang.ExceptionInfo
-             #"one sch:rule per sch:pattern"
-             (schematron/parse-schema (str tmp))))
+        (spit schema (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                          "<sch:schema xmlns:sch=\"http://purl.oclc.org/dsdl/schematron\" queryBinding=\"xslt2\">"
+                          "  <sch:pattern id=\"two-rules\">"
+                          "    <sch:rule context=\"item[@n = '1']\"><sch:assert test=\"false()\">one</sch:assert></sch:rule>"
+                          "    <sch:rule context=\"item[@n = '2']\"><sch:assert test=\"false()\">two</sch:assert></sch:rule>"
+                          "  </sch:pattern>"
+                          "</sch:schema>"))
+        (spit xml "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><item n=\"1\"/><item n=\"2\"/></root>")
+        (let [{:keys [findings]} (schematron/validate!
+                                  {:schema-path (str schema)
+                                   :xml-path (str xml)
+                                   :label "multi-rule"})]
+          (is (= ["two-rules" "two-rules"] (mapv :rule-id findings)))
+          (is (= ["one" "two"] (mapv :message findings))))
         (finally
-          (.delete tmp))))))
+          (.delete schema)
+          (.delete xml))))))

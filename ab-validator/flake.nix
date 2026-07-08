@@ -432,6 +432,21 @@
           hash = "sha256-92+UbTLIuatnm65S+528yK+4A3T93ZFlOQ5+1C71D0c=";
         };
 
+        # 近世 (Edo-period) editions — for the ~2% of Aozora authored by pre-Meiji
+        # writers (曲亭馬琴, 井原西鶴, …) whose raw 旧字旧仮名 texts the 近代/現代
+        # dictionaries mis-segment. Not in the default run set; opt in by name.
+        vibratoDictKinseiEdo = buildUnidicVibratoDict {
+          name = "unidic-kinsei-edo";
+          url = "https://clrd.ninjal.ac.jp/unidic_archive/2512/unidic-kinsei-edo-v202512.zip";
+          hash = "sha256-5mrD9DjCadBDzC01zPpY9dkz1xOQkJsiUZCBmEaYvdQ=";
+        };
+
+        vibratoDictKinseiBungo = buildUnidicVibratoDict {
+          name = "unidic-kinsei-bungo";
+          url = "https://clrd.ninjal.ac.jp/unidic_archive/2512/unidic-kinsei-bungo-v202512.zip";
+          hash = "sha256-0kw9488O5+61/hI5DIPmmv+tL960e1vrs+20XT8oFjU=";
+        };
+
         # Combined package: all built vibrato dictionaries.
         vibratoDictionaries = pkgs.symlinkJoin {
           name = "vibrato-dictionaries";
@@ -441,6 +456,8 @@
             vibratoDictNovel
             vibratoDictQkana
             vibratoDictKindaiBungo
+            vibratoDictKinseiEdo
+            vibratoDictKinseiBungo
           ];
         };
 
@@ -1321,6 +1338,8 @@
           vibrato-dict-novel = vibratoDictNovel;
           vibrato-dict-qkana = vibratoDictQkana;
           vibrato-dict-kindai-bungo = vibratoDictKindaiBungo;
+          vibrato-dict-kinsei-edo = vibratoDictKinseiEdo;
+          vibrato-dict-kinsei-bungo = vibratoDictKinseiBungo;
           vibrato-dictionaries = vibratoDictionaries;
         };
 

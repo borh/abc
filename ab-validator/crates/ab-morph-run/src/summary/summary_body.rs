@@ -28,6 +28,20 @@ use crate::output::for_each_jsonl_or_zst_line;
 use crate::script::{ScriptCategory, classify_text};
 use crate::warehouse::schema::WarehouseTable;
 
+/// Renders a `nway_feature_diffs` source relation that re-expands the collapsed
+/// `analyzers` list into a scalar `analyzer_id` column, so SQL written against
+/// the pre-v3 per-analyzer shape keeps working. `features_sql` is the
+/// already-quoted argument to `read_parquet(...)`.
+pub(super) fn nway_feature_diffs_expanded_source(features_sql: &str) -> String {
+    format!(
+        "(SELECT src.run_id, src.source_id, src.text_id, src.region_index, \
+                 src.feature_key, src.scope_type, src.scope_position, \
+                 src.scope_surface, src.feature_value, u.analyzer_id \
+          FROM read_parquet({features_sql}) AS src, \
+               UNNEST(src.analyzers) AS u(analyzer_id))"
+    )
+}
+
 #[derive(Debug, Default)]
 pub(crate) struct Accumulator {
     source_ids: BTreeSet<String>,
@@ -1530,6 +1544,7 @@ struct MaterializedFeatureIter {
     reader: ParquetRecordBatchReader,
     batch: Option<RecordBatch>,
     row: usize,
+    analyzer_pos: usize,
 }
 
 impl MaterializedFeatureIter {
@@ -1541,6 +1556,7 @@ impl MaterializedFeatureIter {
             .build()?,
             batch: None,
             row: 0,
+            analyzer_pos: 0,
         })
     }
 
@@ -1550,25 +1566,33 @@ impl MaterializedFeatureIter {
                 && self.row < batch.num_rows()
             {
                 let row = self.row;
+                let analyzers = batch_string_list_value(batch, "analyzers", row)?;
+                if self.analyzer_pos < analyzers.len() {
+                    let analyzer_id = analyzers[self.analyzer_pos].clone();
+                    self.analyzer_pos += 1;
+                    return Ok(Some(MaterializedFeatureRow {
+                        region: MaterializedRegionKey {
+                            source_id: batch_string_value(batch, "source_id", row)?,
+                            text_id: batch_string_value(batch, "text_id", row)?,
+                            region_index: batch_u64_value(batch, "region_index", row)?,
+                        },
+                        feature_key: batch_string_value(batch, "feature_key", row)?,
+                        scope_type: batch_string_value(batch, "scope_type", row)?,
+                        scope_position: batch_nullable_u64_value(batch, "scope_position", row)?,
+                        scope_surface: batch_nullable_string_value(batch, "scope_surface", row)?,
+                        feature_value: batch_nullable_string_value(batch, "feature_value", row)?,
+                        analyzer_id,
+                    }));
+                }
                 self.row += 1;
-                return Ok(Some(MaterializedFeatureRow {
-                    region: MaterializedRegionKey {
-                        source_id: batch_string_value(batch, "source_id", row)?,
-                        text_id: batch_string_value(batch, "text_id", row)?,
-                        region_index: batch_u64_value(batch, "region_index", row)?,
-                    },
-                    feature_key: batch_string_value(batch, "feature_key", row)?,
-                    scope_type: batch_string_value(batch, "scope_type", row)?,
-                    scope_position: batch_nullable_u64_value(batch, "scope_position", row)?,
-                    scope_surface: batch_nullable_string_value(batch, "scope_surface", row)?,
-                    feature_value: batch_nullable_string_value(batch, "feature_value", row)?,
-                    analyzer_id: batch_string_value(batch, "analyzer_id", row)?,
-                }));
+                self.analyzer_pos = 0;
+                continue;
             }
             match self.reader.next() {
                 Some(batch) => {
                     self.batch = Some(batch?);
                     self.row = 0;
+                    self.analyzer_pos = 0;
                 }
                 None => return Ok(None),
             }
@@ -1611,6 +1635,15 @@ fn parquet_part_paths_for_table(
 fn batch_string_value(batch: &RecordBatch, name: &str, row: usize) -> Result<String> {
     let index = batch.schema().index_of(name)?;
     Ok(string_column(batch, index)?.value(row).to_owned())
+}
+
+fn batch_string_list_value(batch: &RecordBatch, name: &str, row: usize) -> Result<Vec<String>> {
+    let idx = batch
+        .schema()
+        .index_of(name)
+        .with_context(|| format!("missing column {name}"))?;
+    let list = list_string_column(batch, idx)?;
+    list_string_value(list, row)
 }
 
 fn batch_nullable_string_value(
@@ -1670,6 +1703,7 @@ pub(crate) fn warehouse_pattern_duckdb_sql(
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
+    let source = nway_feature_diffs_expanded_source(&features);
     let region_filter = warehouse_duckdb_region_filter(options);
     let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
     let text_exclusion = sql_not_in_clause("text_id", &options.exclusions.text_ids);
@@ -1771,7 +1805,7 @@ filtered_feature_rows AS (
     SELECT
         f.*,
         {schema_expr} AS analyzer_schema_id
-    FROM read_parquet({features}) AS f
+    FROM {source} AS f
     JOIN regions AS r USING (source_id, text_id, region_index)
     WHERE {feature_filter}
       AND {excluded_values}
@@ -1908,6 +1942,7 @@ fn materialize_core_feature_pattern_counts_duckdb_sql(
 ) -> String {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
+    let source = nway_feature_diffs_expanded_source(&features);
     let output = sql_literal(&output_path.display().to_string());
     let feature_key = sql_literal(feature_key);
     let body = format!(
@@ -1929,7 +1964,7 @@ feature_values AS (
         f.scope_surface,
         f.feature_value,
         list(f.analyzer_id ORDER BY f.analyzer_id) AS analyzers
-    FROM read_parquet({features}) AS f
+    FROM {source} AS f
     JOIN regions AS r USING (source_id, text_id, region_index)
     WHERE feature_key = {feature_key}
     GROUP BY f.source_id, f.text_id, f.region_index, r.is_nonempty_whitespace, f.feature_key, f.scope_type, f.scope_position, f.scope_surface, f.feature_value
@@ -1996,6 +2031,7 @@ fn warehouse_feature_pattern_select_sql(
     profile_filter: &str,
     limit: usize,
 ) -> String {
+    let source = nway_feature_diffs_expanded_source(features);
     format!(
         r#"
 WITH regions AS (
@@ -2016,7 +2052,7 @@ feature_values AS (
         f.scope_surface,
         f.feature_value,
         list(f.analyzer_id ORDER BY f.analyzer_id) AS analyzers
-    FROM read_parquet({features}) AS f
+    FROM {source} AS f
     JOIN regions AS r USING (source_id, text_id, region_index)
     WHERE {feature_filter}
       AND {excluded_values}
@@ -2097,6 +2133,7 @@ pub(crate) fn warehouse_region_examples_duckdb_sql(
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
+    let source = nway_feature_diffs_expanded_source(&features);
     let kind_filter = warehouse_region_kind_filter(options.kind);
     let text_filter = warehouse_text_filter_sql(options.text_filter);
     let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
@@ -2155,7 +2192,7 @@ feature_diffs AS (
             ' ; '
             ORDER BY f.feature_key, f.scope_type, f.scope_position, f.scope_surface, f.feature_value NULLS FIRST, f.analyzer_id
         ) AS feature_diffs
-    FROM read_parquet({features}) AS f
+    FROM {source} AS f
     JOIN selected_regions AS r USING (source_id, text_id, region_index)
     GROUP BY f.source_id, f.text_id, f.region_index
 )
@@ -2188,6 +2225,7 @@ pub(crate) fn warehouse_pattern_examples_duckdb_sql(
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
+    let source = nway_feature_diffs_expanded_source(&features);
     let text_filter = warehouse_text_filter_sql(options.text_filter);
     let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
     let text_exclusion = sql_not_in_clause("text_id", &options.exclusions.text_ids);
@@ -2249,7 +2287,7 @@ filtered_feature_rows AS (
     SELECT
         f.*,
         {schema_expr} AS analyzer_schema_id
-    FROM read_parquet({features}) AS f
+    FROM {source} AS f
     JOIN base_regions AS r USING (source_id, text_id, region_index)
     WHERE {feature_filter}
       AND {excluded_values}
@@ -2331,7 +2369,7 @@ feature_values AS (
         f.scope_surface,
         f.feature_value,
         list(f.analyzer_id ORDER BY f.analyzer_id) AS analyzers
-    FROM read_parquet({features}) AS f
+    FROM {source} AS f
     JOIN base_regions AS r USING (source_id, text_id, region_index)
     WHERE {feature_filter}
       AND {excluded_values}
@@ -2410,7 +2448,7 @@ feature_diffs AS (
             ' ; '
             ORDER BY f.feature_key, f.scope_type, f.scope_position, f.scope_surface, f.feature_value NULLS FIRST, f.analyzer_id
         ) AS feature_diffs
-    FROM read_parquet({features}) AS f
+    FROM {source} AS f
     JOIN selected_regions AS r USING (source_id, text_id, region_index)
     GROUP BY f.source_id, f.text_id, f.region_index
 )
@@ -3374,24 +3412,28 @@ pub(super) fn read_warehouse_feature_diffs(
         let scope_position = u64_column(&batch, 6)?;
         let scope_surface = string_column(&batch, 7)?;
         let feature_value = string_column(&batch, 8)?;
-        let analyzer_id = string_column(&batch, 9)?;
+        let analyzers = list_string_column(&batch, 9)?;
         for row in 0..batch.num_rows() {
-            facts.push(WarehouseFeatureDiffFact {
-                key: WarehouseFeatureGroupKey {
-                    region: WarehouseRegionKey {
-                        run_id: run_id.value(row).to_owned(),
-                        source_id: source_id.value(row).to_owned(),
-                        text_id: text_id.value(row).to_owned(),
-                        region_index: region_index.value(row),
-                    },
-                    feature_key: feature_key.value(row).to_owned(),
-                    scope_type: scope_type.value(row).to_owned(),
-                    scope_position: nullable_u64_value(scope_position, row),
-                    scope_surface: nullable_string_value(scope_surface, row),
+            let key = WarehouseFeatureGroupKey {
+                region: WarehouseRegionKey {
+                    run_id: run_id.value(row).to_owned(),
+                    source_id: source_id.value(row).to_owned(),
+                    text_id: text_id.value(row).to_owned(),
+                    region_index: region_index.value(row),
                 },
-                feature_value: nullable_string_value(feature_value, row),
-                analyzer_id: analyzer_id.value(row).to_owned(),
-            });
+                feature_key: feature_key.value(row).to_owned(),
+                scope_type: scope_type.value(row).to_owned(),
+                scope_position: nullable_u64_value(scope_position, row),
+                scope_surface: nullable_string_value(scope_surface, row),
+            };
+            let feature_value_row = nullable_string_value(feature_value, row);
+            for analyzer_id in list_string_value(analyzers, row)? {
+                facts.push(WarehouseFeatureDiffFact {
+                    key: key.clone(),
+                    feature_value: feature_value_row.clone(),
+                    analyzer_id,
+                });
+            }
         }
     }
     Ok(facts)
@@ -4700,7 +4742,7 @@ mod tests {
                     scope_position: None,
                     scope_surface: None,
                     feature_value: Some("名詞".into()),
-                    analyzer_id: "vibrato".into(),
+                    analyzers: vec!["vibrato".into()],
                 },
                 NwayFeatureDiffRow {
                     run_id: "run-a".into(),
@@ -4712,7 +4754,7 @@ mod tests {
                     scope_position: None,
                     scope_surface: None,
                     feature_value: Some("空白".into()),
-                    analyzer_id: "sudachi-c".into(),
+                    analyzers: vec!["sudachi-c".into()],
                 },
                 NwayFeatureDiffRow {
                     run_id: "run-a".into(),
@@ -4724,7 +4766,7 @@ mod tests {
                     scope_position: None,
                     scope_surface: None,
                     feature_value: Some("今日".into()),
-                    analyzer_id: "vibrato".into(),
+                    analyzers: vec!["vibrato".into()],
                 },
                 NwayFeatureDiffRow {
                     run_id: "run-a".into(),
@@ -4736,7 +4778,7 @@ mod tests {
                     scope_position: None,
                     scope_surface: None,
                     feature_value: Some("きょう".into()),
-                    analyzer_id: "sudachi-c".into(),
+                    analyzers: vec!["sudachi-c".into()],
                 },
             ])
             .unwrap();
@@ -4786,6 +4828,81 @@ mod tests {
                 .feature_diffs
                 .iter()
                 .all(|feature| feature.feature_key == "pos1")
+        );
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn read_warehouse_feature_diffs_unnests_collapsed_analyzers() {
+        use crate::warehouse::schema::{NwayFeatureDiffRow, NwayRegionRow, RunRow, WarehousePaths};
+        use crate::warehouse::writer::WarehouseWriter;
+
+        let root = temp_dir("warehouse-feature-diffs-unnest");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_runs(&[RunRow {
+                schema_version: crate::warehouse::schema::SCHEMA_VERSION,
+                run_id: "run-a".to_owned(),
+                created_at_utc: "2026-05-01T00:00:00Z".to_owned(),
+                input_mode: "aat_dir".to_owned(),
+                input_path: "scratch/aats".to_owned(),
+                source_count: 1,
+                analyzer_count: 2,
+                error_count: 0,
+            }])
+            .unwrap();
+        writer
+            .append_nway_regions(&[NwayRegionRow {
+                run_id: "run-a".into(),
+                source_id: "source-a".into(),
+                text_id: "work-a".into(),
+                region_index: 0,
+                byte_start: 0,
+                byte_end: 6,
+                char_start: 0,
+                char_end: 2,
+                is_nonempty_whitespace: false,
+                is_agreement: false,
+                has_coverage_mismatch: false,
+                has_segmentation_disagreement: false,
+                has_feature_disagreement: true,
+            }])
+            .unwrap();
+        writer
+            .append_nway_feature_diffs(&[NwayFeatureDiffRow {
+                run_id: "run-a".into(),
+                source_id: "source-a".into(),
+                text_id: "work-a".into(),
+                region_index: 0,
+                feature_key: "pos1".into(),
+                scope_type: "whole_region".into(),
+                scope_position: None,
+                scope_surface: None,
+                feature_value: Some("名詞".into()),
+                analyzers: vec!["sudachi-c".into(), "vibrato".into()],
+            }])
+            .unwrap();
+        writer.finalize().unwrap();
+
+        let facts = read_warehouse_feature_diffs(&paths.final_dir).unwrap();
+
+        assert_eq!(facts.len(), 2);
+        assert!(facts.iter().all(|fact| fact.key.region.run_id == "run-a"
+            && fact.key.region.source_id == "source-a"
+            && fact.key.region.text_id == "work-a"
+            && fact.key.region.region_index == 0
+            && fact.key.feature_key == "pos1"
+            && fact.feature_value.as_deref() == Some("名詞")));
+        let mut analyzer_ids = facts
+            .iter()
+            .map(|fact| fact.analyzer_id.clone())
+            .collect::<Vec<_>>();
+        analyzer_ids.sort();
+        assert_eq!(
+            analyzer_ids,
+            vec!["sudachi-c".to_owned(), "vibrato".to_owned()]
         );
 
         let _ = fs::remove_dir_all(root);
@@ -5080,7 +5197,7 @@ mod tests {
                     scope_position: None,
                     scope_surface: None,
                     feature_value: Some("名詞".into()),
-                    analyzer_id: "vibrato".into(),
+                    analyzers: vec!["vibrato".into()],
                 },
                 NwayFeatureDiffRow {
                     run_id: "run-a".into(),
@@ -5092,7 +5209,7 @@ mod tests {
                     scope_position: None,
                     scope_surface: None,
                     feature_value: Some("空白".into()),
-                    analyzer_id: "sudachi-c".into(),
+                    analyzers: vec!["sudachi-c".into()],
                 },
                 NwayFeatureDiffRow {
                     run_id: "run-a".into(),
@@ -5104,7 +5221,7 @@ mod tests {
                     scope_position: None,
                     scope_surface: None,
                     feature_value: Some("今日".into()),
-                    analyzer_id: "vibrato".into(),
+                    analyzers: vec!["vibrato".into()],
                 },
                 NwayFeatureDiffRow {
                     run_id: "run-a".into(),
@@ -5116,7 +5233,7 @@ mod tests {
                     scope_position: None,
                     scope_surface: None,
                     feature_value: Some("きょう".into()),
-                    analyzer_id: "sudachi-c".into(),
+                    analyzers: vec!["sudachi-c".into()],
                 },
             ])
             .unwrap();
@@ -5493,7 +5610,7 @@ mod tests {
                     scope_position: None,
                     scope_surface: None,
                     feature_value: Some("名詞".into()),
-                    analyzer_id: "vibrato".into(),
+                    analyzers: vec!["vibrato".into()],
                 },
                 NwayFeatureDiffRow {
                     run_id: "run-a".into(),
@@ -5505,7 +5622,7 @@ mod tests {
                     scope_position: None,
                     scope_surface: None,
                     feature_value: Some("空白".into()),
-                    analyzer_id: "sudachi-c".into(),
+                    analyzers: vec!["sudachi-c".into()],
                 },
             ])
             .unwrap();
@@ -5653,7 +5770,7 @@ mod tests {
                     scope_position: None,
                     scope_surface: None,
                     feature_value: Some("名詞".into()),
-                    analyzer_id: "vibrato".into(),
+                    analyzers: vec!["vibrato".into()],
                 },
                 NwayFeatureDiffRow {
                     run_id: "run-a".into(),
@@ -5665,7 +5782,7 @@ mod tests {
                     scope_position: None,
                     scope_surface: None,
                     feature_value: Some("空白".into()),
-                    analyzer_id: "sudachi-c".into(),
+                    analyzers: vec!["sudachi-c".into()],
                 },
             ])
             .unwrap();

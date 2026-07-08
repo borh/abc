@@ -22,7 +22,10 @@ SELECT * FROM read_parquet('__RUN_DIR__/nway_region_oracle_evidence.parquet');
 
 -- __RAW_FEATURE_DIFFS_BEGIN__
 CREATE OR REPLACE VIEW warehouse_nway_feature_diffs AS
-SELECT * FROM read_parquet('__RUN_DIR__/nway_feature_diffs.parquet');
+SELECT run_id, source_id, text_id, region_index, feature_key, scope_type,
+       scope_position, scope_surface, feature_value, analyzer_id
+FROM read_parquet('__RUN_DIR__/nway_feature_diffs.parquet'),
+     UNNEST(analyzers) AS t(analyzer_id);
 -- __RAW_FEATURE_DIFFS_END__
 
 CREATE OR REPLACE VIEW top_segmentation_patterns AS

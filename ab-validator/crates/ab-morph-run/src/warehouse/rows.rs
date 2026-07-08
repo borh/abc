@@ -11,7 +11,7 @@ use ab_warehouse::schema::{MorphemeFeatureRow, NwayFeatureDiffRow};
 use ab_warehouse::writer::{MorphemeFeaturesColumns, NwayFeatureDiffsColumns};
 use anyhow::Result as AnyhowResult;
 #[cfg(test)]
-use arrow_array::{Array, RecordBatch, StringArray, UInt64Array};
+use arrow_array::{Array, ListArray, RecordBatch, StringArray, UInt64Array};
 
 use crate::WarehouseFeaturePatternAccumulator;
 
@@ -442,20 +442,18 @@ fn push_region_rows(
             &group.values,
         );
         for value_group in &group.values {
-            for analyzer_id in &value_group.analyzers {
-                batch.feature_diffs.push_row(
-                    ids.run_id.as_ref(),
-                    ids.source_id.as_ref(),
-                    ids.text_id.as_ref(),
-                    region.region_index as u64,
-                    group.key.as_ref(),
-                    scope_type.as_ref(),
-                    scope_position,
-                    scope_surface.as_deref(),
-                    value_group.value.as_deref(),
-                    analyzer_id.as_str(),
-                );
-            }
+            batch.feature_diffs.push_row(
+                ids.run_id.as_ref(),
+                ids.source_id.as_ref(),
+                ids.text_id.as_ref(),
+                region.region_index as u64,
+                group.key.as_ref(),
+                scope_type.as_ref(),
+                scope_position,
+                scope_surface.as_deref(),
+                value_group.value.as_deref(),
+                &value_group.analyzers,      // &[AnalyzerId] = &[String], already sorted
+            );
         }
     }
 }
@@ -489,20 +487,18 @@ fn push_region_rows_reference(
         }
         let (scope_type, scope_position, scope_surface) = feature_scope_parts(&group.scope);
         for value_group in &group.values {
-            for analyzer_id in &value_group.analyzers {
-                rows.feature_diffs.push(NwayFeatureDiffRow {
-                    run_id: std::sync::Arc::clone(&ids.run_id),
-                    source_id: std::sync::Arc::clone(&ids.source_id),
-                    text_id: std::sync::Arc::clone(&ids.text_id),
-                    region_index: region.region_index as u64,
-                    feature_key: std::sync::Arc::clone(&group.key),
-                    scope_type: std::sync::Arc::clone(&scope_type),
-                    scope_position,
-                    scope_surface: scope_surface.clone(),
-                    feature_value: value_group.value.clone(),
-                    analyzer_id: ids.analyzer(analyzer_id),
-                });
-            }
+            rows.feature_diffs.push(NwayFeatureDiffRow {
+                run_id: std::sync::Arc::clone(&ids.run_id),
+                source_id: std::sync::Arc::clone(&ids.source_id),
+                text_id: std::sync::Arc::clone(&ids.text_id),
+                region_index: region.region_index as u64,
+                feature_key: std::sync::Arc::clone(&group.key),
+                scope_type: std::sync::Arc::clone(&scope_type),
+                scope_position,
+                scope_surface: scope_surface.clone(),
+                feature_value: value_group.value.clone(),
+                analyzers: value_group.analyzers.iter().map(|a| ids.analyzer(a)).collect(),
+            });
         }
     }
 }
@@ -543,20 +539,31 @@ pub(crate) fn decode_feature_diff_rows(batch: &RecordBatch) -> Vec<NwayFeatureDi
     let scope_position = u64s(batch, 6);
     let scope_surface = strings(batch, 7);
     let feature_value = strings(batch, 8);
-    let analyzer_id = strings(batch, 9);
+    let analyzers = batch
+        .column(9)
+        .as_any()
+        .downcast_ref::<ListArray>()
+        .expect("nway_feature_diffs analyzers column is a ListArray");
 
     (0..batch.num_rows())
-        .map(|row| NwayFeatureDiffRow {
-            run_id: run_id.value(row).into(),
-            source_id: source_id.value(row).into(),
-            text_id: text_id.value(row).into(),
-            region_index: region_index.value(row),
-            feature_key: feature_key.value(row).into(),
-            scope_type: scope_type.value(row).into(),
-            scope_position: (!scope_position.is_null(row)).then(|| scope_position.value(row)),
-            scope_surface: (!scope_surface.is_null(row)).then(|| scope_surface.value(row).into()),
-            feature_value: (!feature_value.is_null(row)).then(|| feature_value.value(row).into()),
-            analyzer_id: analyzer_id.value(row).into(),
+        .map(|row| {
+            let list = analyzers.value(row);
+            let strs = list
+                .as_any()
+                .downcast_ref::<StringArray>()
+                .expect("analyzers list items are Utf8");
+            NwayFeatureDiffRow {
+                run_id: run_id.value(row).into(),
+                source_id: source_id.value(row).into(),
+                text_id: text_id.value(row).into(),
+                region_index: region_index.value(row),
+                feature_key: feature_key.value(row).into(),
+                scope_type: scope_type.value(row).into(),
+                scope_position: (!scope_position.is_null(row)).then(|| scope_position.value(row)),
+                scope_surface: (!scope_surface.is_null(row)).then(|| scope_surface.value(row).into()),
+                feature_value: (!feature_value.is_null(row)).then(|| feature_value.value(row).into()),
+                analyzers: (0..strs.len()).map(|i| strs.value(i).into()).collect(),
+            }
         })
         .collect()
 }
@@ -780,6 +787,89 @@ mod tests {
         assert_eq!(batched_regions, collected.regions);
         assert_eq!(batched_region_analyzers, collected.region_analyzers);
         assert_eq!(batched_feature_diffs, collected.feature_diffs);
+    }
+
+    #[test]
+    fn collapsed_rows_unnest_to_per_analyzer_expansion() {
+        // Four analyzers agree on segmentation (one morpheme spanning the
+        // whole region) but disagree on the `pos1` feature: vibrato and
+        // sudachi-c both say 名詞, sudachi-a says 動詞, and mecab has no
+        // `pos1` feature at all (the `None` value-group).
+        let analyses = vec![
+            analysis(
+                "work-a",
+                "vibrato",
+                "今日",
+                vec![m("今日", 0..6, 0..2, [("pos1", Some("名詞"))])],
+            ),
+            analysis(
+                "work-a",
+                "sudachi-c",
+                "今日",
+                vec![m("今日", 0..6, 0..2, [("pos1", Some("名詞"))])],
+            ),
+            analysis(
+                "work-a",
+                "sudachi-a",
+                "今日",
+                vec![m("今日", 0..6, 0..2, [("pos1", Some("動詞"))])],
+            ),
+            analysis(
+                "work-a",
+                "mecab",
+                "今日",
+                vec![m("今日", 0..6, 0..2, [])],
+            ),
+        ];
+
+        let mut batched_feature_diffs = Vec::new();
+        let mut pattern_counts = crate::WarehouseFeaturePatternAccumulator::default();
+        visit_nway_fact_row_batches(
+            "run-a",
+            "source-a",
+            "今日",
+            &analyses,
+            1,
+            &mut pattern_counts,
+            |batch| {
+                batched_feature_diffs
+                    .extend(decode_feature_diff_rows(&batch.feature_diffs.finish()));
+                Ok(())
+            },
+        )
+        .unwrap();
+        let collapsed = batched_feature_diffs;
+
+        // Expected per-analyzer expansion (UNNEST of collapsed), restricted to
+        // the `whole_region` scope group: a single-token region also emits an
+        // equivalent `surface` scope group for the same feature (the n-way
+        // diff engine's normal behavior, unrelated to the collapse), so
+        // filter to one scope to keep the expected set unambiguous.
+        let mut expanded: Vec<(String, String)> = Vec::new(); // (feature_value_or_∅, analyzer)
+        for row in collapsed.iter().filter(|row| row.scope_type.as_ref() == "whole_region") {
+            for a in &row.analyzers {
+                expanded.push((
+                    row.feature_value.as_deref().unwrap_or("∅").to_owned(),
+                    a.to_string(),
+                ));
+            }
+        }
+        expanded.sort();
+        let mut want = vec![
+            ("名詞".to_owned(), "sudachi-c".to_owned()),
+            ("名詞".to_owned(), "vibrato".to_owned()),
+            ("動詞".to_owned(), "sudachi-a".to_owned()),
+            ("∅".to_owned(), "mecab".to_owned()),
+        ];
+        want.sort();
+        assert_eq!(expanded, want);
+        // And each collapsed row's analyzers are ascending & non-empty.
+        for row in &collapsed {
+            assert!(!row.analyzers.is_empty());
+            let mut sorted = row.analyzers.clone();
+            sorted.sort();
+            assert_eq!(row.analyzers, sorted, "analyzers must be ascending");
+        }
     }
 
     #[test]

@@ -380,6 +380,7 @@ fn feature_stage_query(
     analyzer_ids: &[String],
 ) -> String {
     let base = base_regions_cte(regions, analyzers, filter, "r.has_feature_disagreement");
+    let source = crate::summary::summary_body::nway_feature_diffs_expanded_source(features);
     let analyzer_flags = analyzer_ids
         .iter()
         .enumerate()
@@ -398,7 +399,7 @@ SELECT f.feature_key, f.scope_type, f.scope_position, f.scope_surface,
        b.char_start, b.char_end, b.has_coverage_mismatch,
        f.feature_value,
        {analyzer_flags}
-FROM read_parquet({features}) f
+FROM {source} f
 JOIN base_regions b USING (source_id, text_id, region_index)
 WHERE {feature_predicate}
 GROUP BY ALL

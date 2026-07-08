@@ -836,7 +836,7 @@ fn warehouse_feature_pattern_from_rows(
         by_value
             .entry(fact.feature_value.clone())
             .or_default()
-            .push(fact.analyzer_id.clone());
+            .extend(fact.analyzers.iter().cloned());
     }
     if by_value.len() <= 1 {
         return None;
@@ -2542,7 +2542,7 @@ mod tests {
             scope_position,
             scope_surface: scope_surface.map(Arc::from),
             feature_value: feature_value.map(Arc::from),
-            analyzer_id: Arc::from(analyzer_id),
+            analyzers: vec![Arc::from(analyzer_id)],
         }
     }
 

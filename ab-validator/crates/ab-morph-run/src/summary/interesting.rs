@@ -48,7 +48,7 @@ use crate::warehouse::schema::WarehouseTable;
 /// always; do not treat a `--rank-scope within-kind` run under v2 as
 /// interchangeable with a genuine pre-2026-07-06 v1 artifact.
 pub(crate) const SCORE_VERSION: u32 = 2;
-pub(crate) const READER_MAX_SCHEMA_VERSION: u32 = 2;
+pub(crate) const READER_MAX_SCHEMA_VERSION: u32 = 3;
 pub(crate) const RRF_K: f64 = 60.0;
 pub(crate) const ANOMALY_W_COV: f64 = 5.0;
 const MAX_SAMPLE_IDS: usize = 5;
@@ -1740,7 +1740,7 @@ mod tests {
             scope_position: None,
             scope_surface: None,
             feature_value: Some(feature_value.into()),
-            analyzer_id: analyzer_id.into(),
+            analyzers: vec![analyzer_id.into()],
         }
     }
 
@@ -2188,7 +2188,7 @@ mod tests {
         let root = tempfile::tempdir().unwrap();
         let paths = WarehousePaths::new(root.path(), RUN);
         let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
-        writer.append_runs(&[run_row(3, 0, 2)]).unwrap();
+        writer.append_runs(&[run_row(4, 0, 2)]).unwrap();
         writer
             .append_run_analyzers(&[analyzer_row("vibrato"), analyzer_row("sudachi-a")])
             .unwrap();
@@ -2201,7 +2201,7 @@ mod tests {
         assert!(
             error
                 .to_string()
-                .contains("schema_version 3 exceeds this reader's supported maximum 2"),
+                .contains("schema_version 4 exceeds this reader's supported maximum 3"),
             "{error}"
         );
     }

@@ -176,6 +176,104 @@ mod tests {
         let _ = fs::remove_dir_all(dir);
     }
 
+    /// End-to-end check that the canonical `warehouse_nway_feature_diffs`
+    /// view (Task 2, step 9) re-expands a collapsed `analyzers` list column
+    /// back into one row per analyzer with a scalar `analyzer_id`, matching
+    /// the pre-collapse (schema v2) per-analyzer row shape byte-for-byte.
+    /// Skips (rather than fails) if the `duckdb` binary is unavailable in
+    /// this environment, mirroring `ab-morph-run`'s `run_duckdb_statement`.
+    #[test]
+    fn warehouse_nway_feature_diffs_view_unnests_collapsed_analyzers() {
+        use crate::schema::{NwayFeatureDiffRow, NwayRegionRow, RunRow, WarehousePaths};
+        use crate::writer::WarehouseWriter;
+
+        let root = std::env::temp_dir().join(format!(
+            "ab-warehouse-view-unnest-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_runs(&[RunRow {
+                schema_version: crate::schema::SCHEMA_VERSION,
+                run_id: "run-a".to_owned(),
+                created_at_utc: "2026-05-01T00:00:00Z".to_owned(),
+                input_mode: "aat_dir".to_owned(),
+                input_path: "scratch/aats".to_owned(),
+                source_count: 1,
+                analyzer_count: 2,
+                error_count: 0,
+            }])
+            .unwrap();
+        writer
+            .append_nway_regions(&[NwayRegionRow {
+                run_id: "run-a".into(),
+                source_id: "source-a".into(),
+                text_id: "work-a".into(),
+                region_index: 0,
+                byte_start: 0,
+                byte_end: 6,
+                char_start: 0,
+                char_end: 2,
+                is_nonempty_whitespace: false,
+                is_agreement: false,
+                has_coverage_mismatch: false,
+                has_segmentation_disagreement: false,
+                has_feature_disagreement: true,
+            }])
+            .unwrap();
+        writer
+            .append_nway_feature_diffs(&[NwayFeatureDiffRow {
+                run_id: "run-a".into(),
+                source_id: "source-a".into(),
+                text_id: "work-a".into(),
+                region_index: 0,
+                feature_key: "pos1".into(),
+                scope_type: "whole_region".into(),
+                scope_position: None,
+                scope_surface: None,
+                feature_value: Some("名詞".into()),
+                analyzers: vec!["sudachi-c".into(), "vibrato".into()],
+            }])
+            .unwrap();
+        writer.finalize().unwrap();
+
+        // `finalize` already renders `views.sql` (via `write_run_views_sql`)
+        // into the finalized run directory.
+        let views_sql = fs::read_to_string(paths.final_dir.join("views.sql")).unwrap();
+        let query = format!(
+            "{views_sql}\nCOPY (SELECT feature_value, analyzer_id FROM warehouse_nway_feature_diffs ORDER BY analyzer_id) TO STDOUT (HEADER, DELIMITER '\\t');"
+        );
+        let output = match std::process::Command::new("duckdb")
+            .arg("-c")
+            .arg(&query)
+            .output()
+        {
+            Ok(output) => output,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                let _ = fs::remove_dir_all(&root);
+                eprintln!("skipping: duckdb binary not found");
+                return;
+            }
+            Err(error) => panic!("failed to run duckdb: {error}"),
+        };
+        assert!(
+            output.status.success(),
+            "duckdb failed: stderr={}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let lines: Vec<&str> = stdout.lines().collect();
+        assert_eq!(lines[0], "feature_value\tanalyzer_id");
+        assert_eq!(&lines[1..], &["名詞\tsudachi-c", "名詞\tvibrato"]);
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
     fn schema_sql_columns(table_name: &str) -> Vec<&str> {
         let start = format!("CREATE TABLE {table_name} (");
         let (_, rest) = SCHEMA_SQL

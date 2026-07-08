@@ -29,7 +29,7 @@ fn diff_row(
         scope_position: None,
         scope_surface: None,
         feature_value: Some(Arc::from(feature_value)),
-        analyzer_id: Arc::from(analyzer_id),
+        analyzers: vec![Arc::from(analyzer_id)],
     }
 }
 

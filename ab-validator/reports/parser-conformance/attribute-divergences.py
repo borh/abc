@@ -26,6 +26,7 @@ Scoped to the Rust AAT-mode fork candidates (aozora2 -> aozora-core,
 aozora-rs -> aozora-rs-core). The reference `aozora` (aozora-pipeline) is measured
 faithfully via inspect elsewhere and needs no attribution.
 """
+
 from __future__ import annotations
 
 import collections
@@ -39,9 +40,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent  # ab-validator/
 
 # Reuse the harness's exact projection (single source of truth).
-spec = importlib.util.spec_from_file_location(
-    "conf_harness", HERE / "run-aozora-notation-spec.py"
-)
+spec = importlib.util.spec_from_file_location("conf_harness", HERE / "run-aozora-notation-spec.py")
 harness = importlib.util.module_from_spec(spec)
 sys.modules["conf_harness"] = harness  # dataclass resolution needs this registered
 spec.loader.exec_module(harness)
@@ -50,7 +49,11 @@ expected_kind_seq = harness.expected_kind_seq
 
 CANDIDATES = {
     "aozora2": [str(REPO / "adapters/aozora2/target/release/aozora2-adapter"), "--mode", "aat"],
-    "aozora-rs": [str(REPO / "adapters/aozora-rs/target/release/aozora-rs-adapter"), "--mode", "aat"],
+    "aozora-rs": [
+        str(REPO / "adapters/aozora-rs/target/release/aozora-rs-adapter"),
+        "--mode",
+        "aat",
+    ],
 }
 
 
@@ -60,9 +63,9 @@ def walk_kinds(blocks):
 
     def rec(node):
         seen.add(node.get("kind"))
-        for child in (node.get("content") or []):
+        for child in node.get("content") or []:
             rec(child)
-        for child in (node.get("children") or []):
+        for child in node.get("children") or []:
             rec(child)
 
     for b in blocks:
@@ -83,8 +86,14 @@ def categorize(blocks, projected, expected):
 
 
 def run(adapter_cmd, source):
-    proc = subprocess.run(adapter_cmd, input=source, text=True,
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    proc = subprocess.run(
+        adapter_cmd,
+        input=source,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
     if proc.returncode != 0:
         return None
     try:
@@ -102,8 +111,8 @@ def main():
     out = {"schema_version": 1, "candidates": {}}
     for label, cmd in CANDIDATES.items():
         per_cat = collections.Counter()
-        per_family_cap = collections.Counter()   # capable (pass/typed/raw)
-        per_family_gap = collections.Counter()    # dropped-to-text
+        per_family_cap = collections.Counter()  # capable (pass/typed/raw)
+        per_family_gap = collections.Counter()  # dropped-to-text
         rows = []
         for v in vectors:
             exp = expected_kind_seq(v)
@@ -112,8 +121,14 @@ def main():
             aat = run(cmd, v["source"])
             if aat is None:
                 per_cat["adapter-error"] += 1
-                rows.append({"vector": v["name"], "family": v["meta"]["feature"],
-                             "level": v["meta"]["level"], "category": "adapter-error"})
+                rows.append(
+                    {
+                        "vector": v["name"],
+                        "family": v["meta"]["feature"],
+                        "level": v["meta"]["level"],
+                        "category": "adapter-error",
+                    }
+                )
                 continue
             projected, _ = project_aat(aat.get("blocks", []) or [])
             cat = categorize(aat.get("blocks", []) or [], projected, exp)
@@ -123,8 +138,16 @@ def main():
                 per_family_gap[fam] += 1
             else:
                 per_family_cap[fam] += 1
-            rows.append({"vector": v["name"], "family": fam, "level": v["meta"]["level"],
-                         "category": cat, "expected": exp, "projected": projected})
+            rows.append(
+                {
+                    "vector": v["name"],
+                    "family": fam,
+                    "level": v["meta"]["level"],
+                    "category": cat,
+                    "expected": exp,
+                    "projected": projected,
+                }
+            )
         recoverable = per_cat["pass"] + per_cat["typed-mismatch"] + per_cat["raw-preserved"]
         out["candidates"][label] = {
             "categories": dict(per_cat),

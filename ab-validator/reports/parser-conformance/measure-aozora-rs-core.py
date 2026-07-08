@@ -10,6 +10,7 @@ Buckets each nodes-bearing vector:
   not-recognized       parser produced no construct tokens (only text/br) -> a
                        genuine aozora-rs-core capability gap
 """
+
 from __future__ import annotations
 
 import collections
@@ -25,11 +26,18 @@ BIN = "adapters/aozora-rs/target/release/aozora-rs-adapter"
 INLINE = {
     "boten": "bouten",
     "bosen": "emphasis",
-    "bold": "emphasis", "italic": "emphasis", "smaller": "emphasis",
-    "bigger": "emphasis", "sub": "emphasis", "sup": "emphasis",
-    "kerning": "emphasis", "mama": "emphasis",
+    "bold": "emphasis",
+    "italic": "emphasis",
+    "smaller": "emphasis",
+    "bigger": "emphasis",
+    "sub": "emphasis",
+    "sup": "emphasis",
+    "kerning": "emphasis",
+    "mama": "emphasis",
     "ruby": "ruby",
-    "a_head": "heading", "b_head": "heading", "c_head": "heading",
+    "a_head": "heading",
+    "b_head": "heading",
+    "c_head": "heading",
     "hin_v": "combineUpright",
 }
 # block-scope Deco -> paired containerOpen/containerClose.
@@ -78,8 +86,9 @@ def main():
         if nodes is None:
             continue
         expected = [n["kind"] for n in nodes]
-        proc = subprocess.run([BIN, "--mode", "retokenized"], input=v["source"],
-                              text=True, capture_output=True)
+        proc = subprocess.run(
+            [BIN, "--mode", "retokenized"], input=v["source"], text=True, capture_output=True
+        )
         try:
             tokens = json.loads(proc.stdout)["retokenized"]
         except Exception:
@@ -97,8 +106,16 @@ def main():
         cats[cat] += 1
         if level == "must":
             must[cat] += 1
-        rows.append({"vector": v["name"], "family": fam, "level": level,
-                     "category": cat, "expected": expected, "projected": projected})
+        rows.append(
+            {
+                "vector": v["name"],
+                "family": fam,
+                "level": level,
+                "category": cat,
+                "expected": expected,
+                "projected": projected,
+            }
+        )
 
     total = sum(cats.values())
     result = {

@@ -30,6 +30,7 @@
 - Modify: `crates/ab-warehouse/src/writer.rs` (`nway_feature_diffs_schema`, `NwayFeatureDiffsColumns`, `append_nway_feature_diffs`, `string_list_array`; tests)
 - Modify: `crates/ab-warehouse/sql/schema.sql` (nway DDL)
 - Modify: `crates/ab-warehouse/src/sql.rs` (reject-message literal)
+- Modify: `crates/ab-warehouse/benches/warehouse_columns.rs` (the `push_row` call at `:104`)
 - Test: existing `nway_feature_diffs_direct_builder_matches_reference_bytes` and `schema_sql_columns_match_documented_parquet_columns` (both in `ab-warehouse`), plus a new list-invariant test.
 
 **Interfaces:**
@@ -150,12 +151,19 @@ In `push_row`, change the final parameter and body:
         self.scope_position.append_option(scope_position);
         self.scope_surface.append_option(scope_surface);
         self.feature_value.append_option(feature_value);
+        debug_assert!(
+            !analyzers.is_empty(),
+            "nway_feature_diffs analyzers list must be non-empty; an empty list \
+             vanishes under the readers' UNNEST",
+        );
         for analyzer in analyzers {
             self.analyzers.values().append_value(analyzer.as_ref());
         }
         self.analyzers.append(true);
     }
 ```
+
+The `debug_assert!` enforces the non-empty invariant at the writer boundary (the producer never emits an empty value-group, but a stray future/test caller would otherwise persist a row that disappears under `UNNEST`).
 In `finish()`, replace `Arc::new(self.analyzer_id.finish())` with `Arc::new(self.analyzers.finish())`.
 
 - [ ] **Step 6: Update the DDL and the reject-message literal**
@@ -199,16 +207,25 @@ fn nway_feature_diffs_analyzers_is_non_null_sorted_list() {
 Run: `cargo test -p ab-warehouse nway_feature_diffs_analyzers_is_non_null_sorted_list -v 2>&1 | tail -15`
 Expected: PASS.
 
-- [ ] **Step 10: Run the full `ab-warehouse` crate test suite**
+- [ ] **Step 10: Update the `ab-warehouse` bench to the list `push_row` signature**
+
+In `crates/ab-warehouse/benches/warehouse_columns.rs`, `bench_direct_build_and_append_nway_feature_diffs` calls `columns.push_row(…, analyzer_id)` at `:104` with a scalar `analyzer_id` (`:114`). Change the final argument from `analyzer_id` to a one-element slice `&[analyzer_id]` so it matches the new `push_row(…, analyzers: &[impl AsRef<str>])`. (This bench measures the scalar-fan-out cost; a single-element list is the faithful per-row analog. Leave `NWAY_ANALYZERS`/indexing as-is.)
+
+- [ ] **Step 11: Run the `ab-warehouse` crate tests AND `--all-targets` check**
 
 Run: `cargo test -p ab-warehouse 2>&1 | tail -15`
-Expected: PASS (0 failures). Do NOT run a workspace build — `ab-morph-run` will not compile until Task 2 (expected, per Global Constraints).
+Expected: PASS (0 failures).
+Run: `cargo check -p ab-warehouse --all-targets 2>&1 | tail -15`
+Expected: clean (this compiles the bench, catching the `push_row` signature change).
+Run: `cargo clippy -p ab-warehouse --all-targets 2>&1 | tail -15`
+Expected: no warnings. Do NOT run a workspace build — `ab-morph-run` will not compile until Task 2 (expected, per Global Constraints).
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 12: Commit**
 
 ```bash
 git add crates/ab-warehouse/src/schema.rs crates/ab-warehouse/src/writer.rs \
-        crates/ab-warehouse/sql/schema.sql crates/ab-warehouse/src/sql.rs
+        crates/ab-warehouse/sql/schema.sql crates/ab-warehouse/src/sql.rs \
+        crates/ab-warehouse/benches/warehouse_columns.rs
 git commit -m "feat(warehouse)!: nway_feature_diffs analyzers VARCHAR[] column (schema v3)"
 ```
 
@@ -219,10 +236,12 @@ git commit -m "feat(warehouse)!: nway_feature_diffs analyzers VARCHAR[] column (
 **Files:**
 - Modify: `crates/ab-morph-run/src/warehouse/rows.rs` (`push_region_rows`, `push_region_rows_reference`, `decode_feature_diff_rows`)
 - Modify: `crates/ab-morph-run/src/lib.rs` (`warehouse_feature_pattern_from_rows`; `NwayFeatureDiffRow` test fixtures)
-- Modify: `crates/ab-morph-run/src/summary/summary_body.rs` (`read_warehouse_feature_diffs`, the two raw-parquet SQL builders, fixtures)
+- Modify: `crates/ab-morph-run/src/summary/summary_body.rs` (`read_warehouse_feature_diffs`, `MaterializedFeatureIter`, the seven raw-parquet SQL builders, `nway_feature_diffs_expanded_source` + `batch_string_list_value` helpers, fixtures)
+- Modify: `crates/ab-morph-run/src/summary/interesting.rs` (`READER_MAX_SCHEMA_VERSION`; fixtures)
 - Modify: `crates/ab-morph-run/src/summary/interesting_sql.rs` (raw-parquet SQL builder)
+- Modify: `crates/ab-morph-run/benches/warehouse_feature_pattern_accumulator.rs` (`NwayFeatureDiffRow` fixture at `:22`)
 - Modify: `crates/ab-warehouse/sql/morph_views.sql` (canonical `warehouse_nway_feature_diffs` view)
-- Optionally modify: `crates/ab-morph-run/sql/morph_views.sql` (stale copy — see Step 12)
+- Delete: `crates/ab-morph-run/sql/morph_views.sql` (stale, unreferenced — see Step 12)
 - Test: `batched_nway_fact_rows_match_collected_rows` (rows.rs), `push_region_rows_emits_maximal_contiguous_feature_diff_runs` (lib.rs), `feature_pattern_accumulator_linear_scan_matches_reference_grouping` (lib.rs), plus new collapse-equivalence, reader round-trip, and view-output tests.
 
 **Interfaces:**
@@ -357,6 +376,64 @@ In `crates/ab-morph-run/src/summary/summary_body.rs`, in `read_warehouse_feature
 ```
 (`list_string_column` and `list_string_value` already exist at `summary_body.rs:3615`/`:3631`. `WarehouseFeatureGroupKey` derives `Clone`; if not, clone its fields inline.)
 
+- [ ] **Step 5b: Re-expand the second direct reader, `MaterializedFeatureIter`**
+
+`MaterializedFeatureIter::next_row` (`summary_body.rs:1547`) reads the feature-diffs parquet directly **by column name**, building one `MaterializedFeatureRow` per parquet row with `analyzer_id: batch_string_value(batch, "analyzer_id", row)?` (`:1565`). On v3 the column is named `analyzers` (a list), so this fails at runtime with "missing column analyzer_id". Unnest it: yield one `MaterializedFeatureRow` per analyzer by tracking a position within the current row's list.
+
+First add a list-cell helper near `batch_string_value` (`:1611`):
+```rust
+fn batch_string_list_value(batch: &RecordBatch, name: &str, row: usize) -> Result<Vec<String>> {
+    let idx = batch
+        .schema()
+        .index_of(name)
+        .with_context(|| format!("missing column {name}"))?;
+    let list = list_string_column(batch, idx)?;
+    list_string_value(list, row)
+}
+```
+Add an `analyzer_pos: usize` field to `MaterializedFeatureIter` (initialize `analyzer_pos: 0` in `new`). Rewrite `next_row` so it emits per analyzer and only advances `row` once its list is exhausted:
+```rust
+    fn next_row(&mut self) -> Result<Option<MaterializedFeatureRow>> {
+        loop {
+            if let Some(batch) = self.batch.as_ref()
+                && self.row < batch.num_rows()
+            {
+                let row = self.row;
+                let analyzers = batch_string_list_value(batch, "analyzers", row)?;
+                if self.analyzer_pos < analyzers.len() {
+                    let analyzer_id = analyzers[self.analyzer_pos].clone();
+                    self.analyzer_pos += 1;
+                    return Ok(Some(MaterializedFeatureRow {
+                        region: MaterializedRegionKey {
+                            source_id: batch_string_value(batch, "source_id", row)?,
+                            text_id: batch_string_value(batch, "text_id", row)?,
+                            region_index: batch_u64_value(batch, "region_index", row)?,
+                        },
+                        feature_key: batch_string_value(batch, "feature_key", row)?,
+                        scope_type: batch_string_value(batch, "scope_type", row)?,
+                        scope_position: batch_nullable_u64_value(batch, "scope_position", row)?,
+                        scope_surface: batch_nullable_string_value(batch, "scope_surface", row)?,
+                        feature_value: batch_nullable_string_value(batch, "feature_value", row)?,
+                        analyzer_id,
+                    }));
+                }
+                self.row += 1;
+                self.analyzer_pos = 0;
+                continue;
+            }
+            match self.reader.next() {
+                Some(batch) => {
+                    self.batch = Some(batch?);
+                    self.row = 0;
+                    self.analyzer_pos = 0;
+                }
+                None => return Ok(None),
+            }
+        }
+    }
+```
+(`MaterializedFeatureRow` keeps its scalar `analyzer_id: String`, so this iterator's downstream consumers are unaffected — it just yields the same per-analyzer stream as before.)
+
 - [ ] **Step 6: Add a shared inline UNNEST compatibility fragment**
 
 The raw-parquet SQL builders read `read_parquet({features})` directly and reference `f.analyzer_id`, bypassing the view. Add one helper near the top of `crates/ab-morph-run/src/summary/summary_body.rs` (and make it `pub(super)` so `interesting_sql.rs` can use it):
@@ -415,9 +492,17 @@ Across `crates/ab-morph-run/src/summary/summary_body.rs` and `crates/ab-morph-ru
 Run: `cargo test -p ab-morph-run batched_nway_fact_rows_match_collected_rows push_region_rows_emits_maximal_contiguous_feature_diff_runs feature_pattern_accumulator_linear_scan_matches_reference_grouping 2>&1 | tail -20`
 Expected: PASS (3 tests). These confirm the collapsed direct-Arrow path still equals the collapsed reference, and the accumulator grouping is unchanged.
 
-- [ ] **Step 12: Handle the stale SQL copy**
+- [ ] **Step 12: Delete the stale SQL copy**
 
-`crates/ab-morph-run/sql/morph_views.sql` is not `include_str!`-loaded anywhere (grep confirms). For hygiene, mirror the same `warehouse_nway_feature_diffs` UNNEST edit into it so the two files don't diverge further; do not add any sync tooling. (If the reviewer prefers, deleting the stale file is acceptable — but that is out of scope for this task; default to the mirrored edit.)
+`crates/ab-morph-run/sql/morph_views.sql` is referenced nowhere — no `include_str!`, no `build.rs` (the crate has none), no `Cargo.toml` include, no `flake.nix` reference (all verified by grep). Maintaining a known-stale, untooled mirror invites false confidence, so remove it rather than editing it:
+```bash
+git rm crates/ab-morph-run/sql/morph_views.sql
+```
+If `git rm` reports the file is referenced by something unexpected, stop and surface it instead of forcing the delete.
+
+- [ ] **Step 12b: Update the `ab-morph-run` accumulator bench fixture**
+
+In `crates/ab-morph-run/benches/warehouse_feature_pattern_accumulator.rs`, the `fact(…)` builder (`:21`) constructs `NwayFeatureDiffRow { …, analyzer_id: Arc::from(analyzer_id) }` (`:32`). Change that field to `analyzers: vec![Arc::from(analyzer_id)]` (the bench feeds one analyzer per fact; a single-element list preserves its meaning). The `fixture()` (`:39`) that calls it needs no other change.
 
 - [ ] **Step 13: Add the collapse-equivalence test**
 
@@ -473,10 +558,15 @@ Add to `crates/ab-morph-run/src/summary/summary_body.rs` tests: write a small wa
 
 If a test already asserts `top_feature_differences` output over a fixture warehouse, confirm it still passes unchanged. If none exists, add one that creates a warehouse with collapsed rows, applies `MORPH_VIEWS_SQL_TEMPLATE`, and asserts `SELECT * FROM warehouse_nway_feature_diffs ORDER BY …` yields exactly the per-analyzer rows (one per analyzer, `analyzer_id` scalar) matching the pre-collapse expectation.
 
-- [ ] **Step 16: Run the full workspace test suite — expect PASS (workspace green restored)**
+- [ ] **Step 16: Run the full workspace gate — tests, `--all-targets` check, and clippy**
 
 Run: `cargo test --workspace 2>&1 | tail -25`
-Expected: PASS (0 failures). This is the checkpoint that the cross-crate breaking change is fully reconciled.
+Expected: PASS (0 failures).
+Run: `cargo check --workspace --all-targets 2>&1 | tail -20`
+Expected: clean — this compiles benches/tests/examples (the repo's `just workspace-check` and CI gate; it catches the two updated benches).
+Run: `cargo clippy --workspace --all-targets 2>&1 | tail -20`
+Expected: no warnings (CI runs clippy with `--all-targets`; the `format!`-based SQL fragment must not trip `clippy::uninlined_format_args` etc.).
+This trio is the checkpoint that the cross-crate breaking change is fully reconciled.
 
 - [ ] **Step 17: Commit**
 
@@ -484,8 +574,10 @@ Expected: PASS (0 failures). This is the checkpoint that the cross-crate breakin
 git add crates/ab-morph-run/src/warehouse/rows.rs crates/ab-morph-run/src/lib.rs \
         crates/ab-morph-run/src/summary/summary_body.rs \
         crates/ab-morph-run/src/summary/interesting_sql.rs \
-        crates/ab-warehouse/sql/morph_views.sql crates/ab-morph-run/sql/morph_views.sql \
-        crates/ab-morph-run/src/summary/interesting.rs
+        crates/ab-morph-run/src/summary/interesting.rs \
+        crates/ab-morph-run/benches/warehouse_feature_pattern_accumulator.rs \
+        crates/ab-warehouse/sql/morph_views.sql
+git rm crates/ab-morph-run/sql/morph_views.sql   # already staged by Step 12, listed here for completeness
 git commit -m "feat(morph-run): collapse nway feature-diffs producer; re-expand all consumers"
 ```
 

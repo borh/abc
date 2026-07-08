@@ -33,7 +33,7 @@
     };
 
     upstream-aozora-src = {
-      url = "github:P4suta/aozora/5df2cfa55a96da3ac74943ab56611b0134ec8076";
+      url = "github:P4suta/aozora/1a4f864603970983719655aa4af4525958ac2d38";
       flake = false;
     };
 

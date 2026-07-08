@@ -338,17 +338,17 @@
     "upstream-aozora-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1783113030,
-        "narHash": "sha256-361j+iuMv9Ep5P2XMQ90qTh5M5S8jqPImy2qGn8GXtE=",
+        "lastModified": 1783519963,
+        "narHash": "sha256-XS7BdCpcbfJoTRYcrHWwcCErmQFRfFF7U7FUQU2Ezsg=",
         "owner": "P4suta",
         "repo": "aozora",
-        "rev": "5df2cfa55a96da3ac74943ab56611b0134ec8076",
+        "rev": "1a4f864603970983719655aa4af4525958ac2d38",
         "type": "github"
       },
       "original": {
         "owner": "P4suta",
         "repo": "aozora",
-        "rev": "5df2cfa55a96da3ac74943ab56611b0134ec8076",
+        "rev": "1a4f864603970983719655aa4af4525958ac2d38",
         "type": "github"
       }
     },

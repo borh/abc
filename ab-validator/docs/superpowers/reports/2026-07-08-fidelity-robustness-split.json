@@ -1,0 +1,500 @@
+{
+ "schema_version": 1,
+ "note": "fidelity/robustness split; see fidelity-robustness-split.py docstring",
+ "adapters_order": [
+  "aozora",
+  "aozora2",
+  "aozora-rs",
+  "aozora2html",
+  "aozora-epub3"
+ ],
+ "reconciliation": {
+  "all_ok": true,
+  "per_adapter": {
+   "aozora": {
+    "ok": true,
+    "mismatch": {}
+   },
+   "aozora2": {
+    "ok": true,
+    "mismatch": {}
+   },
+   "aozora-rs": {
+    "ok": true,
+    "mismatch": {}
+   },
+   "aozora2html": {
+    "ok": true,
+    "mismatch": {}
+   },
+   "aozora-epub3": {
+    "ok": true,
+    "mismatch": {}
+   }
+  }
+ },
+ "robustness": {
+  "aozora": {
+   "completed_works": 17886,
+   "union_works": 17886,
+   "completion_rate": 1.0,
+   "missing_works": 0,
+   "missing_ruby_mass": 0,
+   "missing_ruby_mass_pct": 0.0
+  },
+  "aozora2": {
+   "completed_works": 17856,
+   "union_works": 17886,
+   "completion_rate": 0.9983,
+   "missing_works": 30,
+   "missing_ruby_mass": 488481,
+   "missing_ruby_mass_pct": 13.58
+  },
+  "aozora-rs": {
+   "completed_works": 17886,
+   "union_works": 17886,
+   "completion_rate": 1.0,
+   "missing_works": 0,
+   "missing_ruby_mass": 0,
+   "missing_ruby_mass_pct": 0.0
+  },
+  "aozora2html": {
+   "completed_works": 17584,
+   "union_works": 17886,
+   "completion_rate": 0.9831,
+   "missing_works": 302,
+   "missing_ruby_mass": 887294,
+   "missing_ruby_mass_pct": 24.67
+  },
+  "aozora-epub3": {
+   "completed_works": 17815,
+   "union_works": 17886,
+   "completion_rate": 0.996,
+   "missing_works": 71,
+   "missing_ruby_mass": 40331,
+   "missing_ruby_mass_pct": 1.12
+  }
+ },
+ "intersection_works": 17518,
+ "fidelity_best_attested": {
+  "denominator": "best_attested",
+  "constructs": [
+   "ruby.basic",
+   "decoration.boten",
+   "decoration.bousen",
+   "heading.basic",
+   "gaiji.marker",
+   "decoration.font_size",
+   "layout.tcy",
+   "figure.image_inline",
+   "indentation.jisage_block"
+  ],
+  "weights": {
+   "ruby.basic": 2552896,
+   "decoration.boten": 127147,
+   "decoration.bousen": 14065,
+   "heading.basic": 60939,
+   "gaiji.marker": 81530,
+   "decoration.font_size": 12583,
+   "layout.tcy": 7625,
+   "figure.image_inline": 4107,
+   "indentation.jisage_block": 114943
+  },
+  "adapters": {
+   "aozora": {
+    "per_construct": {
+     "ruby.basic": {
+      "num": 2549711,
+      "rate": 0.9988
+     },
+     "decoration.boten": {
+      "num": 127062,
+      "rate": 0.9993
+     },
+     "decoration.bousen": {
+      "num": 0,
+      "rate": 0.0
+     },
+     "heading.basic": {
+      "num": 52173,
+      "rate": 0.8562
+     },
+     "gaiji.marker": {
+      "num": 29089,
+      "rate": 0.3568
+     },
+     "decoration.font_size": {
+      "num": 0,
+      "rate": 0.0
+     },
+     "layout.tcy": {
+      "num": 7411,
+      "rate": 0.9719
+     },
+     "figure.image_inline": {
+      "num": 4106,
+      "rate": 0.9998
+     },
+     "indentation.jisage_block": {
+      "num": 67302,
+      "rate": 0.5855
+     }
+    },
+    "weighted_fidelity": 0.9533
+   },
+   "aozora2": {
+    "per_construct": {
+     "ruby.basic": {
+      "num": 2526949,
+      "rate": 0.9898
+     },
+     "decoration.boten": {
+      "num": 108570,
+      "rate": 0.8539
+     },
+     "decoration.bousen": {
+      "num": 13797,
+      "rate": 0.9809
+     },
+     "heading.basic": {
+      "num": 58381,
+      "rate": 0.958
+     },
+     "gaiji.marker": {
+      "num": 30904,
+      "rate": 0.3791
+     },
+     "decoration.font_size": {
+      "num": 12544,
+      "rate": 0.9969
+     },
+     "layout.tcy": {
+      "num": 6738,
+      "rate": 0.8837
+     },
+     "figure.image_inline": {
+      "num": 3990,
+      "rate": 0.9715
+     },
+     "indentation.jisage_block": {
+      "num": 79348,
+      "rate": 0.6903
+     }
+    },
+    "weighted_fidelity": 0.9548
+   },
+   "aozora-rs": {
+    "per_construct": {
+     "ruby.basic": {
+      "num": 2520794,
+      "rate": 0.9874
+     },
+     "decoration.boten": {
+      "num": 103165,
+      "rate": 0.8114
+     },
+     "decoration.bousen": {
+      "num": 2134,
+      "rate": 0.1517
+     },
+     "heading.basic": {
+      "num": 13666,
+      "rate": 0.2243
+     },
+     "gaiji.marker": {
+      "num": 75375,
+      "rate": 0.9245
+     },
+     "decoration.font_size": {
+      "num": 83,
+      "rate": 0.0066
+     },
+     "layout.tcy": {
+      "num": 0,
+      "rate": 0.0
+     },
+     "figure.image_inline": {
+      "num": 3859,
+      "rate": 0.9396
+     },
+     "indentation.jisage_block": {
+      "num": 34056,
+      "rate": 0.2963
+     }
+    },
+    "weighted_fidelity": 0.9252
+   },
+   "aozora2html": {
+    "per_construct": {
+     "ruby.basic": {
+      "num": 2527413,
+      "rate": 0.99
+     },
+     "decoration.boten": {
+      "num": 110601,
+      "rate": 0.8699
+     },
+     "decoration.bousen": {
+      "num": 14038,
+      "rate": 0.9981
+     },
+     "heading.basic": {
+      "num": 59555,
+      "rate": 0.9773
+     },
+     "gaiji.marker": {
+      "num": 33797,
+      "rate": 0.4145
+     },
+     "decoration.font_size": {
+      "num": 12583,
+      "rate": 1.0
+     },
+     "layout.tcy": {
+      "num": 0,
+      "rate": 0.0
+     },
+     "figure.image_inline": {
+      "num": 3991,
+      "rate": 0.9718
+     },
+     "indentation.jisage_block": {
+      "num": 93390,
+      "rate": 0.8125
+     }
+    },
+    "weighted_fidelity": 0.9595
+   },
+   "aozora-epub3": {
+    "per_construct": {
+     "ruby.basic": {
+      "num": 2483702,
+      "rate": 0.9729
+     },
+     "decoration.boten": {
+      "num": 109343,
+      "rate": 0.86
+     },
+     "decoration.bousen": {
+      "num": 13560,
+      "rate": 0.9641
+     },
+     "heading.basic": {
+      "num": 51513,
+      "rate": 0.8453
+     },
+     "gaiji.marker": {
+      "num": 0,
+      "rate": 0.0
+     },
+     "decoration.font_size": {
+      "num": 0,
+      "rate": 0.0
+     },
+     "layout.tcy": {
+      "num": 6032,
+      "rate": 0.7911
+     },
+     "figure.image_inline": {
+      "num": 305,
+      "rate": 0.0743
+     },
+     "indentation.jisage_block": {
+      "num": 103324,
+      "rate": 0.8989
+     }
+    },
+    "weighted_fidelity": 0.9301
+   }
+  }
+ },
+ "fidelity_reference": {
+  "denominator": "reference",
+  "constructs": [
+   "ruby.basic",
+   "decoration.boten",
+   "heading.basic",
+   "gaiji.marker",
+   "layout.tcy",
+   "figure.image_inline",
+   "indentation.jisage_block"
+  ],
+  "weights": {
+   "ruby.basic": 2549711,
+   "decoration.boten": 127062,
+   "heading.basic": 52173,
+   "gaiji.marker": 29089,
+   "layout.tcy": 7411,
+   "figure.image_inline": 4106,
+   "indentation.jisage_block": 67302
+  },
+  "adapters": {
+   "aozora": {
+    "per_construct": {
+     "ruby.basic": {
+      "num": 2549711,
+      "rate": 1.0
+     },
+     "decoration.boten": {
+      "num": 127062,
+      "rate": 1.0
+     },
+     "heading.basic": {
+      "num": 52173,
+      "rate": 1.0
+     },
+     "gaiji.marker": {
+      "num": 29089,
+      "rate": 1.0
+     },
+     "layout.tcy": {
+      "num": 7411,
+      "rate": 1.0
+     },
+     "figure.image_inline": {
+      "num": 4106,
+      "rate": 1.0
+     },
+     "indentation.jisage_block": {
+      "num": 67302,
+      "rate": 1.0
+     }
+    },
+    "weighted_fidelity": 1.0
+   },
+   "aozora2": {
+    "per_construct": {
+     "ruby.basic": {
+      "num": 2523774,
+      "rate": 0.9898
+     },
+     "decoration.boten": {
+      "num": 108537,
+      "rate": 0.8542
+     },
+     "heading.basic": {
+      "num": 51682,
+      "rate": 0.9906
+     },
+     "gaiji.marker": {
+      "num": 24983,
+      "rate": 0.8588
+     },
+     "layout.tcy": {
+      "num": 6636,
+      "rate": 0.8954
+     },
+     "figure.image_inline": {
+      "num": 3990,
+      "rate": 0.9717
+     },
+     "indentation.jisage_block": {
+      "num": 40876,
+      "rate": 0.6074
+     }
+    },
+    "weighted_fidelity": 0.9731
+   },
+   "aozora-rs": {
+    "per_construct": {
+     "ruby.basic": {
+      "num": 2517793,
+      "rate": 0.9875
+     },
+     "decoration.boten": {
+      "num": 103135,
+      "rate": 0.8117
+     },
+     "heading.basic": {
+      "num": 10917,
+      "rate": 0.2092
+     },
+     "gaiji.marker": {
+      "num": 25858,
+      "rate": 0.8889
+     },
+     "layout.tcy": {
+      "num": 0,
+      "rate": 0.0
+     },
+     "figure.image_inline": {
+      "num": 3859,
+      "rate": 0.9398
+     },
+     "indentation.jisage_block": {
+      "num": 34056,
+      "rate": 0.506
+     }
+    },
+    "weighted_fidelity": 0.9502
+   },
+   "aozora2html": {
+    "per_construct": {
+     "ruby.basic": {
+      "num": 2524251,
+      "rate": 0.99
+     },
+     "decoration.boten": {
+      "num": 110530,
+      "rate": 0.8699
+     },
+     "heading.basic": {
+      "num": 51756,
+      "rate": 0.992
+     },
+     "gaiji.marker": {
+      "num": 24911,
+      "rate": 0.8564
+     },
+     "layout.tcy": {
+      "num": 0,
+      "rate": 0.0
+     },
+     "figure.image_inline": {
+      "num": 3990,
+      "rate": 0.9717
+     },
+     "indentation.jisage_block": {
+      "num": 47591,
+      "rate": 0.7071
+     }
+    },
+    "weighted_fidelity": 0.974
+   },
+   "aozora-epub3": {
+    "per_construct": {
+     "ruby.basic": {
+      "num": 2483147,
+      "rate": 0.9739
+     },
+     "decoration.boten": {
+      "num": 109278,
+      "rate": 0.86
+     },
+     "heading.basic": {
+      "num": 44871,
+      "rate": 0.86
+     },
+     "gaiji.marker": {
+      "num": 0,
+      "rate": 0.0
+     },
+     "layout.tcy": {
+      "num": 5819,
+      "rate": 0.7852
+     },
+     "figure.image_inline": {
+      "num": 305,
+      "rate": 0.0743
+     },
+     "indentation.jisage_block": {
+      "num": 55790,
+      "rate": 0.829
+     }
+    },
+    "weighted_fidelity": 0.9515
+   }
+  }
+ },
+ "reference_adapter": "aozora"
+}

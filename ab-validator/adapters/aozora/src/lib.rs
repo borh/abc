@@ -850,7 +850,12 @@ where
     let output = run_aozora(["inspect", kind, "-"], source)?;
     let envelope: Envelope<T> = serde_json::from_str(&output)
         .with_context(|| format!("parse aozora inspect {kind} JSON"))?;
-    if envelope.schema_version != 1 {
+    // schemaVersion 2 (P4suta/aozora >= 2026-07 HEAD) is a pure version bump for the
+    // envelopes this adapter consumes — the `data` payload for `nodes`, `diagnostics`,
+    // and `gaiji` is byte-identical to v1 (verified by diffing `aozora schema <kind>`
+    // across revisions). Accept both; reject anything newer so an actual structural
+    // change is caught rather than silently mis-parsed.
+    if !matches!(envelope.schema_version, 1 | 2) {
         bail!(
             "unsupported aozora inspect {kind} schemaVersion {}",
             envelope.schema_version

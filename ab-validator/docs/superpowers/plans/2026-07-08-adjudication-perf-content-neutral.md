@@ -209,25 +209,44 @@ git commit -m "perf(warehouse): build nway_feature_diffs arrow columns directly 
 
 ---
 
-## Validation Record (hinoki) — fill after merge + build
+## Validation Record (hinoki) — 2026-07-08
 
-The content-neutral bar: every affected table must be **value/multiset-identical** to a current-`main`
-baseline (row *order* may differ — parallel sharding — but row *contents as a multiset* must not). File-byte
-identity is NOT the corpus bar (see Global Constraints); `du` is not a validity check.
+**Scope note.** By the time this round reached its full-corpus run, `main` had advanced past the merged perf
+round (`68761e1`) with changes that alter emitted output *unconditionally*: the Phase-B sentence splitter
+(`sentences.rs` inline-container / whitespace-only paragraph split) and the new `adjudicated_reading` column
+on `nway_region_oracle_evidence`. A `main`-baseline **content-parity** check was therefore no longer meaningful —
+it would mismatch by design, not by regression. The perf round's content-neutrality is already established at the
+unit level (retained `*_reference` fns + byte-identity / full-row differential tests, all green, merged), so the
+corpus run was reframed to its remaining purpose: a **cumulative performance measurement**. `--ortho-detect`
+stays at its `Off` default in both runs, so it contributes nothing to the delta.
 
-- [ ] Build the branch on hinoki (release). Confirm the 4 micro-benches' local numbers are recorded in commits.
-- [ ] Run a **current-`main` baseline** full-corpus run AND the **branch** run (both auto-jobs, zstd 3, same corpus). Record wall, peak RSS, and the `phase-timings` line for each.
-      - branch: wall ____   RSS ____   analysis % ____   **adjudication % ____** (expect a fall vs 74.3%)   warehouse-write % ____   other % ____
-- [ ] **Extend `scripts/oracle-validation-diff.sh`** (or a sibling script) with a per-table **order-independent value fingerprint** and run it baseline-vs-branch. For each of `feature_pattern_counts`, `morpheme_features`, `nway_feature_diffs`, and `nway_region_oracle_evidence` (INCLUDING the full `evidence_detail` column), compute over ALL columns:
-      `SELECT count(*) AS n, sum(hash(COLUMNS(*))) AS h_sum, bit_xor(hash(COLUMNS(*))) AS h_xor`
-      (or `hash(col1, col2, ...)` listing every column). **All three of `(n, h_sum, h_xor)` must match** between baseline and branch per table. PASS/FAIL: ____
-      - feature_pattern_counts ____ · morpheme_features ____ · nway_feature_diffs ____ · oracle_evidence ____
-- [ ] **Confirmatory `EXCEPT ALL`** (exact multiset diff, both directions empty) over all columns on the smaller tables (`feature_pattern_counts`, `nway_region_oracle_evidence`); optional spot-check on a `morpheme_features`/`nway_feature_diffs` shard subset if the full `EXCEPT ALL` is too heavy. PASS/FAIL: ____
-- [ ] Oracle keyed 4-bucket diff (existing check): dropped=0, newly_emitted=0, classification_changed=0. PASS/FAIL: ____
-- [ ] Row-count parity on the other (untouched) tables — should be identical. PASS/FAIL: ____
-- [ ] Record the aggregate adjudication-CPU delta and wall-clock delta vs the `ab7ec42` baseline (wall 43:09, adjudication 74.3%).
+**Runs** (both: 4 analyzers = vibrato + vibrato:unidic-novel-202512 + sudachi-a + sudachi-c, `--jobs 0`
+[auto-jobs 18], `--parquet-zstd-level 3`, same corpus, GNU `time -v`):
 
-> A fingerprint mismatch on any affected table is a **content regression** — stop and diagnose (do not merge); it means a refactor changed emitted values, not just layout.
+- **Baseline** `c969fd5` (pre-follow-up) — run_id `adjperf-base`, EXIT=0
+- **Head** `6c3f0d2` (latest `main`: perf round + folded-in changes) — run_id `adjperf-head`, EXIT=0
+
+| Metric | `c969fd5` | `6c3f0d2` | Δ |
+| --- | --- | --- | --- |
+| Wall clock | 45:41.7 | 30:48.7 | **−32.6 %** (−14m53s) |
+| Max RSS | 34.1 GiB | 32.5 GiB | −4.7 % |
+| phase total (Σ 590 shards) | 43106.6 s | 28488.3 s | −33.9 % |
+| — analysis | 4692.7 s (10.9 %) | 3919.5 s (13.8 %) | −16.5 % |
+| — **adjudication** | 32217.5 s (74.7 %) | 18508.1 s (65.0 %) | **−42.6 %** (−13709 s) |
+| — warehouse-write | 4504.1 s (10.4 %) | 4429.6 s (15.5 %) | −1.7 % (flat) |
+| — other | 1692.2 s (3.9 %) | 1631.0 s (5.7 %) | −3.6 % |
+
+**Reading.** The adjudication phase — the lever this round targeted — fell −42.6 % (−13,709 s summed), which
+accounts for essentially the entire wall-clock win. Its share of total CPU dropped 74.7 % → 65.0 %.
+Warehouse-write stayed flat (−1.7 %), reconfirming the earlier finding that write was never the bottleneck.
+Baseline numbers (wall 45:41, adjudication 74.7 %) are consistent with the earlier `ab7ec42` reference
+(wall 43:09, adjudication 74.3 %).
+
+**Row counts** (informational — parity NOT asserted; equal counts ≠ byte-identity): all 11 tables came out
+**identical** base vs head (sources 17,885; projection_spans 10,832,338; morphemes 662,984,226;
+morpheme_features 12,575,103,913; nway_regions 161,142,784; nway_feature_diffs 23,356,986,673;
+nway_region_oracle_evidence 2,329,135; feature_pattern_counts 8,394,223; errors 0). Reassuring that the
+folded-in semantic changes did not perturb scale on this corpus, but not a content-neutrality claim.
 
 ## Deferred (documented, not this round)
 

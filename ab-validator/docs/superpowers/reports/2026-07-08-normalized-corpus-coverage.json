@@ -6,12 +6,13 @@
   "decoration.boten": 129086,
   "decoration.bousen": 18127,
   "heading.basic": 80592,
+  "gaiji.marker": 62355,
   "decoration.font_size": 51508,
   "layout.tcy": 19794,
   "figure.image_inline": 5877,
   "indentation.jisage_block": 94993
  },
- "total_weighted_occurrences": 4007903,
+ "total_weighted_occurrences": 4070258,
  "adapters": {
   "aozora": {
    "files": 17886,
@@ -36,6 +37,11 @@
      "rate": 0.841,
      "folded": null
     },
+    "gaiji.marker": {
+     "num": 48208,
+     "rate": 0.773,
+     "folded": null
+    },
     "decoration.font_size": {
      "num": 46,
      "rate": 0.001,
@@ -57,7 +63,7 @@
      "folded": null
     }
    },
-   "frequency_weighted_coverage": 0.972
+   "frequency_weighted_coverage": 0.969
   },
   "aozora2": {
    "files": 17856,
@@ -78,8 +84,13 @@
      "folded": null
     },
     "heading.basic": {
-     "num": 73695,
-     "rate": 0.914,
+     "num": 73817,
+     "rate": 0.916,
+     "folded": null
+    },
+    "gaiji.marker": {
+     "num": 51225,
+     "rate": 0.822,
      "folded": null
     },
     "decoration.font_size": {
@@ -98,12 +109,12 @@
      "folded": null
     },
     "indentation.jisage_block": {
-     "num": 36105,
-     "rate": 0.38,
+     "num": 101854,
+     "rate": 1.072,
      "folded": null
     }
    },
-   "frequency_weighted_coverage": 0.84
+   "frequency_weighted_coverage": 0.855
   },
   "aozora-rs": {
    "files": 17886,
@@ -128,6 +139,11 @@
      "rate": 0.244,
      "folded": null
     },
+    "gaiji.marker": {
+     "num": 111762,
+     "rate": 1.792,
+     "folded": null
+    },
     "decoration.font_size": {
      "num": 135,
      "rate": 0.003,
@@ -144,12 +160,12 @@
      "folded": null
     },
     "indentation.jisage_block": {
-     "num": 44063,
+     "num": 44065,
      "rate": 0.464,
      "folded": null
     }
    },
-   "frequency_weighted_coverage": 0.937
+   "frequency_weighted_coverage": 0.938
   },
   "aozora2html": {
    "files": 17689,
@@ -174,6 +190,11 @@
      "rate": 0.773,
      "folded": null
     },
+    "gaiji.marker": {
+     "num": 35737,
+     "rate": 0.573,
+     "folded": null
+    },
     "decoration.font_size": {
      "num": 12796,
      "rate": 0.248,
@@ -195,7 +216,7 @@
      "folded": null
     }
    },
-   "frequency_weighted_coverage": 0.745
+   "frequency_weighted_coverage": 0.743
   },
   "aozora-epub3": {
    "files": 17844,
@@ -220,6 +241,11 @@
      "rate": 0.844,
      "folded": null
     },
+    "gaiji.marker": {
+     "num": 0,
+     "rate": 0.0,
+     "folded": null
+    },
     "decoration.font_size": {
      "num": 0,
      "rate": 0.0,
@@ -241,7 +267,7 @@
      "folded": null
     }
    },
-   "frequency_weighted_coverage": 0.94
+   "frequency_weighted_coverage": 0.926
   }
  }
 }

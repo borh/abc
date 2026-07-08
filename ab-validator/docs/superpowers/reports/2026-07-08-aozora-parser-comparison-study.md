@@ -17,15 +17,15 @@ disagree in instructive ways: conformance favors edge-case breadth; corpus
 coverage is dominated by ruby (~90% of all markup mass). Normalizing AAT
 representation variants (a fix that belongs in the AAT contract) is required to
 measure coverage at all. The consistent result across breadth **and** mass **and**
-speed is that **`aozora-pipeline` leads** (corpus coverage 0.972, 22/25 must,
-1.25 s median); `aozora-rs` is a strong second on corpus coverage (0.937) and
+speed is that **`aozora-pipeline` leads** (corpus coverage 0.969, 22/25 must,
+1.25 s median); `aozora-rs` is a clean second on corpus coverage (0.938) and
 fastest (~90×), its low conformance being a headerless-vector artifact; `aozora2`
-(0.840) and `aozora2html` (0.745) trail on real texts. Decomposing corpus coverage
+(0.855) and `aozora2html` (0.743) trail on real texts. Decomposing corpus coverage
 into **fidelity** (representation quality on works a parser completes) and
 **robustness** (whether it completes them) sharpens the picture without changing the
-call: aozora2html is actually the *most faithful* per work (0.975) but disqualified
+call: aozora2html is actually the *most faithful* per work (0.974) but disqualified
 by catastrophic robustness, and aozora-rs's coverage rank was flattered by robustness
-(lowest fidelity, 0.925) — leaving `aozora-pipeline` the only parser strong on both.
+(lowest fidelity, 0.950) — leaving `aozora-pipeline` the only parser strong on both.
 
 > **Authority caveat (load-bearing).** The conformance suite is the third-party
 > P4suta `upstream-aozora-notation-spec`. By standing project decision it is
@@ -218,34 +218,46 @@ form without cross-contamination. Counts are 1-per-occurrence; rates are capped 
 | construct | corpus freq | aozora | aozora2 | aozora-rs | aozora2html | aozora-epub3 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | ruby | 3,607,926 | 0.99 | 0.85 | 0.99 | 0.74 | 0.96 |
-| boten | 129,086 | ~1.0 | 0.97 | 0.95 | 0.89 | 0.98 |
-| jisage_block | 94,993 | 0.97 | 0.38 | 0.46 | ~1.0 | ~1.0 |
-| heading | 80,592 | 0.84 | 0.91 | 0.24 | 0.77 | 0.84 |
+| boten | 129,086 | ~1.0∗ | 0.97 | 0.95 | 0.89 | 0.98 |
+| jisage (harmonized) | 94,993 | 0.97 | ~1.0∗ | 0.46 | ~1.0∗ | ~1.0∗ |
+| heading | 80,592 | 0.84 | 0.92 | 0.24 | 0.77 | 0.84 |
+| gaiji | 62,355 | 0.77 | 0.82 | ~1.0∗ | 0.57 | **0.00‡** |
 | font_size | 51,508 | 0.00‡ | 0.33 | 0.00‡ | 0.25 | 0.00‡ |
 | tcy | 19,794 | 0.95 | 0.86 | 0.00‡ | 0.00‡ | 0.69 |
 | bousen | 18,127 | 0.00† | 0.95 | 0.18 | 0.79 | 0.81 |
 | figure | 5,877 | 0.99 | 0.88 | 0.91 | 0.70 | 0.05‡ |
-| **freq-weighted coverage** | **4.0 M** | **0.972** | **0.840** | **0.937** | **0.745** | **0.940** |
+| **freq-weighted coverage** | **4.07 M** | **0.969** | **0.855** | **0.938** | **0.743** | **0.926** |
+
+∗ rate exceeds 1.0 (adapter emits >1 node per source occurrence — aozora boten 1.19×;
+jisage per-line by aozora2/epub3; gaiji by aozora-rs 1.79×) — **capped at 1.0**, so
+coverage is not inflated. **Indentation is harmonized**: aozora2 uses `jisage_line` as
+a primary 字下げ encoding, folded into the signature (0.38 → ~1.0; no adapter loses).
+**gaiji** (62k occ) is added; it exposes that **aozora-epub3 emits no gaiji at all**.
 
 **The audit caught real unfairness** — and fixing it did *not* change the ranking,
 which is the point of checking. `aozora2html` had been scored **boten 0.00,
 bousen 0.13, heading 0.10**; the audit showed it emits boten as `sesame_dot`
 (+`white_circle`/`black_circle`/`bullseye`/… dot variants), bousen as
 `underline_solid`, and most headings as `unmapped-h4`/`h5` styles — so the fair
-figures are **0.89 / 0.79 / 0.77**, raising its total 0.700 → 0.745. Separately,
-counting only `kind=="ruby"` would have reported the *reference* parser near-zero on
-ruby, since ab-aozora emits ruby ~99% as `raw`+marker. This normalization belongs in
-the AAT contract (canonical `style_type` enum; typed-node ≡ marker-kind); it would
-also shrink downstream IR `AMBIGUITY` sidecars (§2).
+figures are **0.89 / 0.79 / 0.77**. A later vocabulary re-audit (see §4.8) added two
+more normalizations: **indentation** (aozora2 emits 字下げ as per-line `jisage_line`,
+folding it in lifts aozora2's jisage 0.38 → ~1.0) and **gaiji** (62k occ, previously
+excluded — exposing that aozora-epub3 emits none). Separately, counting only
+`kind=="ruby"` would have reported the *reference* parser near-zero on ruby, since
+ab-aozora emits ruby ~99% as `raw`+marker. This normalization belongs in the AAT
+contract (canonical `style_type` enum; typed-node ≡ marker-kind); it would also shrink
+downstream IR `AMBIGUITY` sidecars (§2).
 
 **Findings (robust despite caveats below):**
-- **`aozora-pipeline` leads corpus coverage (0.972)** — best on *both* mass and
+- **`aozora-pipeline` leads corpus coverage (0.969)** — best on *both* mass and
   breadth, and fast. The fork base is confirmed, not a toss-up.
-- **`aozora-rs` (0.937) is near the top on real texts** — its §4.3 "27%" was a
+- **`aozora-rs` (0.938) is a clean second on real texts** — its §4.3 "27%" was a
   headerless-vector artifact; with real document structure it nearly matches the
   leader. Corpus context, not curated vectors, is where it shows its strength.
-- **`aozora2` (0.840) trails `aozora-rs`** despite leading AAT *conformance* —
-  because ruby is ~90% of all markup mass and aozora2's ruby (0.85) lags.
+- **`aozora2` (0.855) trails** despite leading AAT *conformance* — because ruby is
+  ~90% of all markup mass and aozora2's ruby (0.85) lags (the indentation fix lifted
+  it from 0.840); and **aozora-epub3 (0.926) slips below `aozora-rs`** once its
+  zero-gaiji gap is counted.
 - The ranking is **ruby-dominated** (ruby = 90% of weighted occurrences); read the
   weighted number as "ruby coverage, adjusted by the long tail," and the
   per-construct row for where parsers genuinely diverge (heading, tcy, bousen,
@@ -270,9 +282,9 @@ granularity wall).
 *robustness*).** A per-work diagnostic (`/tmp` script, method in commit) shows the
 0.74 is **not** ruby lossiness: on the works aozora2html actually processes, its
 per-work ruby ratio vs aozora-rs is **median 1.000 / mean 0.998** — near-perfect
-fidelity. The gap is that aozora2html **fails entirely on ~193 works** (plus 82 it
-emits empty), and those are **ruby-heavy large works holding 27.5% of all ruby
-mass**. So corpus coverage as computed here mixes two distinct axes:
+fidelity. The gap is that aozora2html **fails entirely on ~197 works** (plus ~105 it
+emits empty), and those are **ruby-heavy large works** (§4.8 makes this precise: 302
+missed works holding **24.7% of all ruby mass**). So corpus coverage mixes two axes:
 *fidelity* (markup captured *given the adapter ran*) and *robustness* (whether it
 completes the work). aozora2html's fidelity is ~1.0 on ruby; its low coverage is a
 **robustness** problem (a different, more fixable failure than dropping constructs).
@@ -292,8 +304,10 @@ intersection of works all five parsers completed** (17,518 works), scoring every
 parser on an identical input set. The per-work counts are asserted to reconcile with
 §4.7's full-corpus numerators, so it is the same instrument; the unit is the source
 input file (basenames are shared across adapters), and fidelity is reported under two
-denominators — *best-attested* (per-work max; adapter-neutral) and *reference*
-(aozora-pipeline) — that give the same ranking.
+denominators — *reference* (aozora-pipeline; primary — immune to other adapters'
+over-emission) and *best-attested* (per-work max; adapter-neutral cross-check, but
+inflated on gaiji/indentation where node counts are incommensurable). Both give the
+same ranking; ruby (86% of mass) drives it and is proxy-insensitive.
 
 **Robustness (completion over 17,886 works).** aozora-pipeline and aozora-rs complete
 **every** work; aozora-epub3 0.996; aozora2 0.998; aozora2html 0.983. The rate hides
@@ -301,21 +315,23 @@ the damage because missed works are the *largest*: aozora2's 30 missing works ho
 **13.6% of all ruby** (the timeout-on-giants pathology of §4.6 resurfacing), and
 aozora2html's 302 missing works (197 no-output + 105 empty) hold **24.7% of ruby**.
 
-**Fidelity (best-attested, weighted):** aozora2html **0.975** > aozora **0.970** >
-aozora-epub3 0.956 > aozora2 0.953 > aozora-rs **0.925** (ranking invariant under the
-reference denominator). On ruby (88% of mass) all five sit at 0.97–0.999 — the entire
-§4.7 ruby spread was missing works, not lossiness.
+**Fidelity (weighted, reference denominator):** aozora2html **0.974** > aozora2 0.973
+> aozora-epub3 0.952 > aozora-rs **0.950** (aozora 1.000 by construction); the
+best-attested cross-check agrees (aozora2html 0.960 top, aozora-rs 0.925 bottom, aozora
+0.953). On ruby (86% of mass) all five sit at 0.97–0.999 — the entire §4.7 ruby spread
+was missing works, not lossiness.
 
 **Two inversions vs §4.7 corpus coverage — the finding:**
-- **aozora2html: 0.745 (5th) → 0.975 fidelity (1st), Δ+0.230.** Its coverage deficit
+- **aozora2html: 0.743 (5th) → 0.974 fidelity (1st), Δ+0.231.** Its coverage deficit
   is *entirely* robustness; per work it is the most faithful parser measured.
-- **aozora-rs: 0.937 (2nd) → 0.925 fidelity (5th), Δ−0.012.** Its coverage rank was
-  flattered by perfect robustness; on equal inputs it is the *least* faithful
-  (tcy 0.000, bousen 0.152, heading 0.224 — genuine parser gaps).
+- **aozora-rs: 0.938 (2nd) → last on fidelity (0.950 ref / 0.925 best-attested).** Its
+  coverage rank was flattered by perfect robustness; on equal inputs it is the *least*
+  faithful (tcy 0.000, bousen 0.152, heading 0.224 — genuine parser gaps).
 
 **This strengthens the pick.** The axes are orthogonal and **aozora-pipeline is the
-only parser top-tier on both** — fidelity 0.970 (tied for the lead) *and* robustness
-1.000 *and* fastest. aozora2html's best-in-class fidelity is disqualified by
+only parser top-tier on both** — fidelity ~0.97 (tied with aozora2html for the lead)
+*and* robustness 1.000 *and* fastest. aozora2html's best-in-class fidelity is
+disqualified by
 catastrophic robustness (and lives in non-canonical encodings needing normalization);
 aozora-rs is confirmed a throughput-only candidate; aozora2's robustness gap *is* its
 timeout pathology (a third axis undercutting it). See the companion report for the
@@ -360,10 +376,10 @@ stays the long play. Because parser fidelity governs loss through the whole pipe
 fewer AMBIGUITY sidecars ⇒ higher-fidelity TEI.
 
 **Recommendation:** base the new parser on `aozora-pipeline`. It is now the clear
-choice on *every* axis measured — corpus coverage (0.972, highest), conformance
+choice on *every* axis measured — corpus coverage (0.969, highest), conformance
 breadth (22/25 must), and speed (1.25 s, no timeouts) — while being actively
 maintained and permissively licensed. `aozora-core`'s earlier "trivially forkable"
-appeal is undercut on two independent axes (mediocre corpus coverage 0.840 *and*
+appeal is undercut on two independent axes (mediocre corpus coverage 0.855 *and*
 catastrophic speed with 2/6 timeouts). `aozora-rs` is the credible alternative
 *only* if raw throughput dominates and its heading/tcy/bousen gaps are acceptable
 or cheaply closable. Concrete first steps: contribute the 3 `diagnostics`
@@ -403,9 +419,10 @@ Backing data: `2026-07-08-aozora-notation-spec-comparison.summary.json`,
   wrapper (or repair its adapter's typed projection — deferred).
 - ~~Split coverage into **fidelity** and **robustness**~~ — **done (§4.8**,
   `2026-07-08-fidelity-robustness-split.{md,json}`): aozora2html's fidelity is the
-  highest measured (0.975) and its coverage deficit is pure robustness; aozora-rs's
-  coverage rank was flattered by robustness (fidelity 0.925, lowest). The split
-  reinforces the aozora-pipeline pick (only parser top-tier on both axes).
+  highest measured (0.974) and its coverage deficit is pure robustness; aozora-rs's
+  coverage rank was flattered by robustness (fidelity 0.950 ref / 0.925 best-attested,
+  lowest). Also harmonized indentation and added gaiji to the shared signatures. The
+  split reinforces the aozora-pipeline pick (only parser top-tier on both axes).
 - Expand the official-docs seed (§4.5) from 11 clean cases toward edge-case
   coverage and precise spans, so it reproduces absolute rates, not just relative
   family weakness — a full independent instrument, not a seed.

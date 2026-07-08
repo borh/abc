@@ -73,13 +73,19 @@ SIG = {
     },
     "heading.basic": {
         "kinds": {"heading"},
-        "styles": {"unmapped-h3", "unmapped-h4", "unmapped-h5"},
+        "styles": {"unmapped-h3", "unmapped-h4", "unmapped-h5", "midashi"},
         "markers": {"heading", "headingHint"},
     },
+    # gaiji (外字): kept in sync with normalized-corpus-coverage.py SIG (see there).
+    "gaiji.marker": {"kinds": {"gaiji"}, "styles": set(), "markers": {"gaiji"}},
     "decoration.font_size": {"kinds": {"font_size"}, "styles": set(), "markers": {"font_size", "lineFontSize"}},
     "layout.tcy": {"kinds": {"tcy"}, "styles": set(), "markers": {"tcy", "combineUpright"}},
     "figure.image_inline": {"kinds": {"figure"}, "styles": set(), "markers": {"figure", "illustration"}},
-    "indentation.jisage_block": {"kinds": {"jisage_block"}, "styles": set(), "markers": {"containerOpen"}},
+    # jisage (字下げ) harmonised: block + aozora2 per-line `jisage_line` form. See
+    # normalized-corpus-coverage.py SIG for rationale. Best-attested denominator can be
+    # inflated by per-line emission, so the reference denominator is authoritative for
+    # this row (it caps at aozora's per-block count); reported and flagged accordingly.
+    "indentation.jisage_block": {"kinds": {"jisage_block"}, "styles": {"jisage_line"}, "markers": {"containerOpen"}},
 }
 # Constructs the aozora reference parser does not distinctly emit -> undefined under
 # the reference denominator (folded/dropped, not a fidelity signal about others).

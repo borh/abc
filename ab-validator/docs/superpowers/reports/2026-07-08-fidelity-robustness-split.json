@@ -83,6 +83,7 @@
    "decoration.boten",
    "decoration.bousen",
    "heading.basic",
+   "gaiji.marker",
    "decoration.font_size",
    "layout.tcy",
    "figure.image_inline",
@@ -93,10 +94,11 @@
    "decoration.boten": 127147,
    "decoration.bousen": 14065,
    "heading.basic": 60939,
+   "gaiji.marker": 81530,
    "decoration.font_size": 12583,
    "layout.tcy": 7625,
    "figure.image_inline": 4107,
-   "indentation.jisage_block": 114873
+   "indentation.jisage_block": 114943
   },
   "adapters": {
    "aozora": {
@@ -117,6 +119,10 @@
       "num": 52173,
       "rate": 0.8562
      },
+     "gaiji.marker": {
+      "num": 29089,
+      "rate": 0.3568
+     },
      "decoration.font_size": {
       "num": 0,
       "rate": 0.0
@@ -131,10 +137,10 @@
      },
      "indentation.jisage_block": {
       "num": 67302,
-      "rate": 0.5859
+      "rate": 0.5855
      }
     },
-    "weighted_fidelity": 0.9701
+    "weighted_fidelity": 0.9533
    },
    "aozora2": {
     "per_construct": {
@@ -151,8 +157,12 @@
       "rate": 0.9809
      },
      "heading.basic": {
-      "num": 58271,
-      "rate": 0.9562
+      "num": 58381,
+      "rate": 0.958
+     },
+     "gaiji.marker": {
+      "num": 30904,
+      "rate": 0.3791
      },
      "decoration.font_size": {
       "num": 12544,
@@ -167,11 +177,11 @@
       "rate": 0.9715
      },
      "indentation.jisage_block": {
-      "num": 28474,
-      "rate": 0.2479
+      "num": 79348,
+      "rate": 0.6903
      }
     },
-    "weighted_fidelity": 0.9534
+    "weighted_fidelity": 0.9548
    },
    "aozora-rs": {
     "per_construct": {
@@ -191,6 +201,10 @@
       "num": 13666,
       "rate": 0.2243
      },
+     "gaiji.marker": {
+      "num": 75375,
+      "rate": 0.9245
+     },
      "decoration.font_size": {
       "num": 83,
       "rate": 0.0066
@@ -205,7 +219,7 @@
      },
      "indentation.jisage_block": {
       "num": 34056,
-      "rate": 0.2965
+      "rate": 0.2963
      }
     },
     "weighted_fidelity": 0.9252
@@ -228,6 +242,10 @@
       "num": 59555,
       "rate": 0.9773
      },
+     "gaiji.marker": {
+      "num": 33797,
+      "rate": 0.4145
+     },
      "decoration.font_size": {
       "num": 12583,
       "rate": 1.0
@@ -242,10 +260,10 @@
      },
      "indentation.jisage_block": {
       "num": 93390,
-      "rate": 0.813
+      "rate": 0.8125
      }
     },
-    "weighted_fidelity": 0.9749
+    "weighted_fidelity": 0.9595
    },
    "aozora-epub3": {
     "per_construct": {
@@ -265,6 +283,10 @@
       "num": 51513,
       "rate": 0.8453
      },
+     "gaiji.marker": {
+      "num": 0,
+      "rate": 0.0
+     },
      "decoration.font_size": {
       "num": 0,
       "rate": 0.0
@@ -279,10 +301,10 @@
      },
      "indentation.jisage_block": {
       "num": 103324,
-      "rate": 0.8995
+      "rate": 0.8989
      }
     },
-    "weighted_fidelity": 0.9563
+    "weighted_fidelity": 0.9301
    }
   }
  },
@@ -292,6 +314,7 @@
    "ruby.basic",
    "decoration.boten",
    "heading.basic",
+   "gaiji.marker",
    "layout.tcy",
    "figure.image_inline",
    "indentation.jisage_block"
@@ -300,6 +323,7 @@
    "ruby.basic": 2549711,
    "decoration.boten": 127062,
    "heading.basic": 52173,
+   "gaiji.marker": 29089,
    "layout.tcy": 7411,
    "figure.image_inline": 4106,
    "indentation.jisage_block": 67302
@@ -317,6 +341,10 @@
      },
      "heading.basic": {
       "num": 52173,
+      "rate": 1.0
+     },
+     "gaiji.marker": {
+      "num": 29089,
       "rate": 1.0
      },
      "layout.tcy": {
@@ -345,8 +373,12 @@
       "rate": 0.8542
      },
      "heading.basic": {
-      "num": 51573,
-      "rate": 0.9885
+      "num": 51682,
+      "rate": 0.9906
+     },
+     "gaiji.marker": {
+      "num": 24983,
+      "rate": 0.8588
      },
      "layout.tcy": {
       "num": 6636,
@@ -357,11 +389,11 @@
       "rate": 0.9717
      },
      "indentation.jisage_block": {
-      "num": 28443,
-      "rate": 0.4226
+      "num": 40876,
+      "rate": 0.6074
      }
     },
-    "weighted_fidelity": 0.9698
+    "weighted_fidelity": 0.9731
    },
    "aozora-rs": {
     "per_construct": {
@@ -377,6 +409,10 @@
       "num": 10917,
       "rate": 0.2092
      },
+     "gaiji.marker": {
+      "num": 25858,
+      "rate": 0.8889
+     },
      "layout.tcy": {
       "num": 0,
       "rate": 0.0
@@ -390,7 +426,7 @@
       "rate": 0.506
      }
     },
-    "weighted_fidelity": 0.9508
+    "weighted_fidelity": 0.9502
    },
    "aozora2html": {
     "per_construct": {
@@ -406,6 +442,10 @@
       "num": 51756,
       "rate": 0.992
      },
+     "gaiji.marker": {
+      "num": 24911,
+      "rate": 0.8564
+     },
      "layout.tcy": {
       "num": 0,
       "rate": 0.0
@@ -419,7 +459,7 @@
       "rate": 0.7071
      }
     },
-    "weighted_fidelity": 0.9752
+    "weighted_fidelity": 0.974
    },
    "aozora-epub3": {
     "per_construct": {
@@ -435,6 +475,10 @@
       "num": 44871,
       "rate": 0.86
      },
+     "gaiji.marker": {
+      "num": 0,
+      "rate": 0.0
+     },
      "layout.tcy": {
       "num": 5819,
       "rate": 0.7852
@@ -448,7 +492,7 @@
       "rate": 0.829
      }
     },
-    "weighted_fidelity": 0.9613
+    "weighted_fidelity": 0.9515
    }
   }
  },

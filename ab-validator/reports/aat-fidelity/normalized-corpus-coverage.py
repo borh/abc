@@ -50,13 +50,23 @@ SIG = {
     },
     "heading.basic": {
         "kinds": {"heading"},
-        "styles": {"unmapped-h3", "unmapped-h4", "unmapped-h5"},  # a2html: heading, level not canonicalised
+        # a2html: heading, level not canonicalised; aozora2 also emits `midashi` style.
+        "styles": {"unmapped-h3", "unmapped-h4", "unmapped-h5", "midashi"},
         "markers": {"heading", "headingHint"},
     },
+    # gaiji (外字): all gaiji regardless of resolution method. denom `gaiji.marker` is the
+    # total (= jis_code + unicode + un_embed). aozora emits it as an x-source marker;
+    # the natives as kind==gaiji. epub3 emits NONE (a real gap, previously invisible).
+    "gaiji.marker": {"kinds": {"gaiji"}, "styles": set(), "markers": {"gaiji"}},
     "decoration.font_size": {"kinds": {"font_size"}, "styles": set(), "markers": {"font_size", "lineFontSize"}},
     "layout.tcy": {"kinds": {"tcy"}, "styles": set(), "markers": {"tcy", "combineUpright"}},
     "figure.image_inline": {"kinds": {"figure"}, "styles": set(), "markers": {"figure", "illustration"}},
-    "indentation.jisage_block": {"kinds": {"jisage_block"}, "styles": set(), "markers": {"containerOpen"}},
+    # jisage (字下げ) harmonised: block form (jisage_block kind / containerOpen marker) and
+    # aozora2's per-line form (`jisage_line` style, which it uses INSTEAD of jisage_block in
+    # many works) are the SAME source construct bucketed differently. Denominator is
+    # jisage_block source occurrences (94,993; the +279 jisage_oneline is negligible).
+    # Corpus-level cap absorbs aozora2/epub3 per-line over-emission.
+    "indentation.jisage_block": {"kinds": {"jisage_block"}, "styles": {"jisage_line"}, "markers": {"containerOpen"}},
 }
 # cells that are represented-but-not-distinct (parser kept the span, lost the type)
 FOLDED = {("aozora", "decoration.bousen"): "folded into generic `emphasis` marker"}

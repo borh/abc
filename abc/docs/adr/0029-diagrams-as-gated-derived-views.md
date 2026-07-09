@@ -100,9 +100,10 @@ Two ADR-header hygiene rules become binding lints:
 - `test/abc/tools/diagram/workflow_graph_test.clj` renders
   `examples/workflow/passed.workflow-run.json` deterministically and builds
   producer→consumer edges.
-- `test/abc/tools/diagram/core_test.clj` proves each committed diagram's file
-  equals `core/render` of its registry entry (the drift gate) and that `run!`
-  returns non-zero when a lint problem exists.
+- `test/abc/tools/diagram/registry_test.clj` proves each committed diagram's
+  file equals `core/render` of its registry entry (the kaocha-level drift gate);
+  `test/abc/tools/diagram/core_test.clj` proves `run!` reports lint problems via
+  `:ok? false` (and does not exit).
 
 ## Rollback
 

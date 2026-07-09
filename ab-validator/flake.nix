@@ -1298,6 +1298,38 @@
           };
         };
 
+        aatFidelityDuckdbSmokeCheck = mkSmokeCheck {
+          name = "aat-fidelity-duckdb-smoke-check";
+          testScript = "tests/aat-fidelity-duckdb-smoke.sh";
+          nativeBuildInputs = [
+            pythonWithAatDuckdb
+            pkgs.duckdb
+            pkgs.glibc.bin
+          ];
+          extraEnv = {
+            AB_AAT_TRIAGE_PYTHON = "${pythonWithAatDuckdb}/bin/python3";
+            AB_DUCKDB_BIN = "${pkgs.duckdb}/bin/duckdb";
+          };
+          extraPreScript = ''
+            export AB_DB_ROOT="$TMPDIR/ab-validator"
+          '';
+        };
+
+        aatOracleAuditSmokeCheck = mkSmokeCheck {
+          name = "aat-oracle-audit-smoke-check";
+          testScript = "tests/aat-oracle-audit-smoke.sh";
+          nativeBuildInputs = [
+            abOracleBin
+            pkgs.ripgrep
+          ];
+          extraEnv = {
+            AB_ORACLE_BIN = "${abOracleBin}/bin/ab-oracle";
+          };
+          extraPreScript = ''
+            export AB_DB_ROOT="$TMPDIR/ab-validator"
+          '';
+        };
+
         level3AdmissionSmokeCheck = mkSmokeCheck {
           name = "parser-ir-level3-admission-smoke-check";
           testScript = "tests/parser-ir-level3-admission-smoke.sh";
@@ -1821,6 +1853,8 @@
           aat-to-parser-ir-smoke = abAatToParserIrCheck;
           source-inventory-smoke = sourceInventorySmokeCheck;
           source-representability-gate = sourceRepresentabilityGateCheck;
+          aat-fidelity-duckdb-smoke = aatFidelityDuckdbSmokeCheck;
+          aat-oracle-audit-smoke = aatOracleAuditSmokeCheck;
         };
 
         devShells = {

@@ -3,6 +3,7 @@
 Status: Accepted
 Date: 2026-04-29
 Accepted: 2026-04-29
+Amends: ADR 0017
 
 ## Context
 

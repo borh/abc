@@ -40,6 +40,31 @@ examples/v0/example-persons/_indexes/<person_id>.json
 Both are subdirectories, so the current immediate-level person-record discovery
 filter skips them.
 
+#### Path-safe filename encoding
+
+`<drift_event_id>` in the JSON content is the canonical `sha256:<hex>` string.
+For the **filename** only, the `:` SHOULD be replaced with `-` so the path is
+shell-, URL-, and cross-filesystem-safe (a literal `:` in a filename is
+awkward on Windows, in many object stores, and in shell globs):
+
+```text
+_events/sha256-<hex>.json
+```
+
+The filename is a locator, not an identity value: `validate-drift-events!`
+discovers files by `*.json` glob and reads the canonical `drift_event_id`
+from the JSON body, so the filename encoding does not affect identity,
+referential integrity, or the `drift_event_ids` values stored in index sidecars
+(those always use the canonical `sha256:<hex>` form from the JSON body).
+
+The existing checked-in fixtures and tests use the historical `sha256:<hex>.json`
+filename form and reference it by exact path in
+`src/abc/tools/validate_design_bundle.clj` and the corresponding tests.
+Migrating them to the path-safe `sha256-<hex>.json` form is a code-and-test
+change (rename the fixture files and update the exact-path `:event` references)
+that is tracked as follow-up; new drift-event fixtures SHOULD use the path-safe
+form from the start.
+
 ### File format
 
 Each drift event is wrapper JSON:
@@ -192,9 +217,24 @@ https://w3id.org/abc/persons/<person_id>#snapshot-<person_record_hash_short>
 `event->graph` derives `<person_record_hash_short>` from the
 `person_record_hash` stored in the event's `participants[]` item. The short
 hash is the first 12 lowercase hex characters of the digest after the `sha256:`
-prefix. `event->graph` must not read the current person record to discover the
-hash, because that would rebind historical events after later bibliographic
-edits.
+prefix (48 bits), chosen to keep the fragment identifier readable while staying
+well outside any plausible per-person collision space. `event->graph` must not
+read the current person record to discover the hash, because that would rebind
+historical events after later bibliographic edits.
+
+Because the fragment is truncated, a theoretical collision exists if two
+snapshots of the **same** `person_id` in one event's `participants[]` shared
+the first 12 hex characters of different `person_record_hash` values. At v0
+corpus scale this is astronomically unlikely and has not been observed. The
+current validation does not include a dedicated snapshot-IRI collision check
+(it relies on the per-event `person_record_hash` distinctness that
+`participants[]` already implies), so a latent collision would surface as a
+duplicate snapshot Entity rather than as a distinct failure code. This is
+tracked as a deferred follow-up: a future ADR may either add an explicit
+per-event snapshot-IRI collision check or widen the fragment to the full hash
+(or ≥24 hex characters); either change would rotate committed drift fixtures
+and their derived RDF graphs and is therefore deferred rather than folded into
+this Accepted ADR.
 
 The `#snapshot-` fragment is a deliberate hash-IRI design, not a separate
 HTTP resource. A snapshot is a PROV-O specialization of a person and lives in

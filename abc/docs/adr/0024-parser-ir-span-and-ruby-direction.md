@@ -71,6 +71,26 @@ ADR and introduce a new parser-IR schema hash. Existing fixtures remain valid
 because all added fields are optional; do not reinterpret parser-IR emitted
 under this schema hash under a new coordinate or ruby model.
 
+## Acceptance Criteria
+
+- `schemas/parser-ir.schema.json` accepts `span.coordinate_system =
+  "decoded_utf8"` and an optional `rubyNode.ruby.direction` in
+  `{"left","right",null}`, and the committed fixture
+  `examples/ab-validator-output/parser-ir.json` exercises a non-null
+  `direction` value.
+- Existing parser-IR fixtures that carry only `{start, end}` or
+  `{start, end, line, column}` continue to validate (the new fields are
+  optional), so the additive change does not invalidate prior fixtures.
+- `test/abc/tools/materialize_publication_test.clj` and
+  `test/abc/tools/parser_ir_plaintext_test.clj` exercise spans carrying
+  `coordinate_system: "decoded_utf8"`.
+- `test/abc/tools/parser_ir_tei_test.clj` exercises `ruby.direction` in TEI
+  body rendering.
+- `test/abc/tools/schema_test.clj` covers the JCS schema-hash discipline so a
+  parser-IR schema change rotates the schema hash used by parser-IR manifests.
+- `nix run .#validate-design-bundle` completes successfully after the
+  schema-hash rotation recorded in Implementation Status.
+
 ## Deferred follow-ups
 
 1. **Producer implementation:** Future AAT -> parser-IR mapping code should emit `span.coordinate_system: "decoded_utf8"` and project known AAT `ruby.direction` values into parser-IR.

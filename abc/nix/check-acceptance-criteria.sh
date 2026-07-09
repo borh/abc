@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Layer F: every ADR with an "Acceptance Criteria" section must name an
-# executable condemnation (fixtures/|test/|facts/prolog/) — UNLESS the ADR is
+# executable check (fixtures/|test/|facts/prolog/) — UNLESS the ADR is
 # on the legacy allowlist. Ratcheted: forward rule for new/changed ADRs; the
 # allowlist exempts the pre-existing ADRs (0001-0010, 0011-0014, 0017-0018,
 # 0020-0022) whose Acceptance Criteria pre-date this gate. Verified
@@ -30,7 +30,7 @@ for f in "$adr_dir"/[0-9]*.md; do
   section=$(sed -n '/^## Acceptance Criteria/,/^## /p' "$f")
   if ! printf '%s\n' "$section" | grep -qE 'fixtures/|test/|facts/prolog/'; then
     echo "ADR $basename has an Acceptance Criteria section with no executable path" >&2
-    echo "(expected a fixtures/|test/|facts/prolog/ reference). Add a condemned fixture," >&2
+    echo "(expected a fixtures/|test/|facts/prolog/ reference). Add a negative fixture," >&2
     echo "property test, or Prolog query; or, if legacy, add to .acceptance-legacy-allowlist." >&2
     status=1
   fi

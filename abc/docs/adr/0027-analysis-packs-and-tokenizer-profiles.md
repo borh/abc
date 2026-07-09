@@ -194,7 +194,7 @@ The token stream content records:
 - token records,
 - warnings.
 
-The first accepted token coordinate system is:
+The first target token coordinate system is:
 
 ```text
 token-index-v1 + unicode-scalar-value-input-spans
@@ -329,6 +329,18 @@ pack_id = sha256(RFC8785-JCS(pack_identity_object))
 - `artifact_set_hash`,
 - `missing_policy_hash`,
 - `schema_hashes`.
+
+`schema_hashes` is a sorted, de-duplicated array of `sha256:<64 lowercase hex>`
+schema-hash strings covering every schema whose hash is material to the
+release contract: at least the manifest schema hash, the pack-policy schema
+hash, the pack-output schema hash, the analysis-result schema hash, and (when
+tokenized slices are in the pack) the token-output schema hash. It follows the
+same `hashArray` shape already implemented for `schema_hashes` in
+`schemas/snapshot-index.schema.json` (unique items, each matching
+`^sha256:[0-9a-f]{64}$`). `schema_hashes` is the *direct* schema-rotation
+signal in pack identity; it is in addition to the *indirect* schema signal that
+flows through `artifact_set_hash` via each manifest's `manifest_content_hash`
+(see the corollary below).
 
 `artifact_set_hash` is the JCS SHA-256 hash of sorted artifact references. Each
 artifact reference contains:

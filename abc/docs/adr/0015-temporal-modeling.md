@@ -277,6 +277,31 @@ predicates would rotate every committed person/metadata RDF fixture and
 follow-up ADR that schedules it with the schema-hash cascade, following the
 same discipline as ADR 0017 / ADR 0018.
 
+## Acceptance Criteria
+
+- `schemas/person-record.schema.json` `nullableDate` admits the constrained
+  EDTF lexical subset and rejects out-of-grammar values.
+- `abc.tools.aozora-csv/parse-date` performs cosmetic normalization
+  (pad-month/day/year, strip-whitespace, collapse-multi-dash,
+  normalize-date-separator), BCE astronomical-year conversion
+  (`前347` → `-0346`), and sentinel-to-null mapping (`不詳`/`未詳` → `null`),
+  each recorded under a distinct `parse_corrections` rule;
+  `test/abc/tools/aozora_csv_test.clj` covers each rule plus rejection of
+  calendar-impossible full and BCE dates.
+- `abc.tools.person-record/record->graph` dispatches on lexical shape to pick
+  `xsd:date` / `xsd:gYearMonth` / `xsd:gYear` for the RDA predicate and emits
+  the parallel `abc:edtfDateOfBirth` / `abc:edtfDateOfDeath` echo;
+  `test/abc/tools/person_record_test.clj` covers the key triples and the
+  `000879` (芥川) example.
+- `schemas/manifest.shacl.ttl` accepts any of `xsd:date`, `xsd:gYearMonth`,
+  `xsd:gYear` on the RDA predicates and constrains the EDTF echo with
+  `sh:datatype abc:EDTF`, `sh:maxCount 1`, and the v0 lexical `sh:pattern`;
+  `test/abc/tools/shacl_test.clj` covers a malformed EDTF literal being
+  rejected by `PersonRecordShape`.
+- The 000879 fixture validates and its full-ISO dates are unaffected by the
+  rotation; `test/abc/tools/person_record_test.clj` covers the example
+  person fixture and schema hash.
+
 ## References
 
 - EDTF specification (LoC): https://www.loc.gov/standards/datetime/

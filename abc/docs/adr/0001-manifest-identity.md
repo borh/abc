@@ -4,6 +4,7 @@ Status: Accepted
 Date: 2026-04-26
 Accepted: 2026-04-28
 Supersedes: none
+Amended by: ADR 0010, ADR 0023, ADR 0027
 Source: `docs/high-level-architecture-note.md` v0.5
 
 ## Implementation Status
@@ -64,6 +65,15 @@ The `manifest_identity_object` contains only identity-bearing fields:
 - `tokenizer_dictionary_hash`
 - `analysis_recipe_hash`
 - `output_format_spec_hash`
+
+This is the v0 baseline field set. Later ADRs amend this list: ADR 0023 adds
+`aat_parser_ir_mapping_hash` and ADR 0027 adds `tokenizer_profile_hash`
+(see the `Amended by:` header field above). The authoritative current field
+set and nullability contract is the bundled `schemas/manifest.schema.json`;
+this ADR records the identity *rule* (each field is identity-bearing, null
+means "not applicable" not "unknown", arrays are sorted before JCS), not a
+frozen field inventory. See `docs/adr/README.md` ("Manifest identity
+invariants") for the global null-semantics and non-circularity invariants.
 
 Absent dimensions are present as JSON `null`. Arrays inside identity fields
 must either have schema-defined order or be sorted before hashing by a stable

@@ -109,6 +109,31 @@ the completed `0.1.1` conversion-audit evidence for `aozora-rs` and
 for the mapping hash; it is not re-stated here so that a mapping rotation does
 not make this ADR stale).
 
+## Acceptance Criteria
+
+- `schemas/aat-parser-ir-mapping.schema.json`,
+  `schemas/aat-parser-ir-divergence.schema.json`, and
+  `schemas/aat-parser-ir-divergence-bundle.schema.json` are valid JSON Schema
+  Draft 2020-12 documents validated by the design-bundle schema pass;
+  `test/abc/tools/validate_design_bundle_test.clj` covers this.
+- `data/aat-parser-ir-compatibility.edn` loads and
+  `aat_parser_ir_compat/validate-registry!` accepts the checked-in registry
+  (exact adapter/version/mapping/parser-IR-schema match keys, required
+  `evidence_scope`, no adapter-neutral/wildcard entries).
+- `aat_parser_ir_compat/admission-report` reports `:admitted`, `:missing`, and
+  `:conflicts` for producer candidates against the registry, treating an
+  already-admitted match key with changed evidence as a conflict rather than
+  admitted; `test/abc/tools/validate_design_bundle_test.clj`
+  (`aat-parser-ir-compatibility-admission-report-test`) covers admitted,
+  missing, and conflict cases.
+- Materialized parser-IR manifests copy `mapping_hash` from
+  `manifest-inputs.json` into
+  `manifest_identity_object.aat_parser_ir_mapping_hash`;
+  `test/abc/tools/materialize_import_test.clj` covers this.
+- `validate-design-bundle` validates the AAT mapping and divergence contracts
+  (schemas + registry) end-to-end against the committed fixture in
+  `examples/ab-validator-output/`.
+
 ## Deferred Decisions
 
 - Whether parser-IR or a future AAT version should add first-class warigaki.

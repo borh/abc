@@ -17,8 +17,8 @@ the snapshot-index schema, and the Soranoha request-set inspection command
 exist. The request-set materialization planner and Nix materialization strategy
 are still pending.
 
-This ADR accepts only the first token-independent per-work analysis slice:
-analysis over `parser-ir-plaintext-body-v1`. It does not accept standalone
+This ADR proposes only the first token-independent per-work analysis slice:
+analysis over `parser-ir-plaintext-body-v1`. It does not propose standalone
 tokenized artifacts, collection analysis packs, Parquet pack layouts, corpus
 statistics inputs, run-provenance bridges, or PROV-O exports.
 
@@ -41,7 +41,7 @@ tokenizers, dictionaries, profiles, recipes, and output formats.
 ABC will model literary and stylometric results as canonical per-work
 `analysis` artifacts called analysis slices.
 
-The first accepted slice coordinate is:
+The first target slice coordinate is:
 
 ```text
 subject coordinate
@@ -51,8 +51,8 @@ subject coordinate
   -> per-work analysis manifest and analysis-result sidecar
 ```
 
-For this first slice, tokenizer fields are null because the accepted input view
-is text, not tokens.
+For this first slice, tokenizer fields are null because the input view is
+text, not tokens.
 
 ### Manifest Identity
 

@@ -510,6 +510,98 @@
           lockFile = ./adapters/aozora-epub3/Cargo.lock;
         };
 
+        # ── Repo's own Rust adapters, packaged as reproducible derivations ──
+        #
+        # Prior to this the five adapters under adapters/ were built only via
+        # `cargo build` inside justfile recipes — the ADR's F5 finding: the
+        # adapter *build* itself was not pinned/reproducible. Each Rust adapter
+        # is a crate excluded from the root workspace (see the `exclude` list in
+        # ./Cargo.toml) with its own Cargo.lock. We package them with
+        # `rustPlatform.buildRustPackage`, reusing the existing importCargoLock
+        # cargo-deps where they already exist (aozoraCargoDeps,
+        # aozora2htmlCargoDeps, aozoraEpub3CargoDeps) and adding new vendored
+        # deps for the two adapters that lacked them. All builds are fully
+        # offline; deps resolve from the importCargoLock vendor dirs.
+        #
+        # doCheck is disabled: F5 is about pinning the *build*, and the adapter
+        # test suites are already exercised by the dedicated smoke/parity checks
+        # (aozora-smoke, aozora-epub3-smoke, aozora2html-rust-parity, …), several
+        # of which need fixtures/oracles this plain build derivation does not
+        # stage. This mirrors the doCheck = false convention used by the other
+        # single-binary build derivations here (taxonomyGenerator,
+        # sourceInventoryBin).
+
+        # aozora2 has a `path` dependency that reaches outside the adapter dir
+        # (crates/ab-source-syntax). Its vendored deps are keyed to the adapter's
+        # own Cargo.lock, but the build src must be the whole ab-validator tree
+        # so that path dep resolves; buildAndTestSubdir + cargoRoot point cargo
+        # at the adapter's self-contained workspace.
+        aozora2AdapterCargoDeps = rustPlatform.importCargoLock {
+          lockFile = ./adapters/aozora2/Cargo.lock;
+        };
+
+        # NOTE: aozora-rs is intentionally NOT packaged here yet. Its
+        # `path` dep on crates/ab-ir now transitively requires ab-ortho-detect →
+        # bincode, but the committed adapters/aozora-rs/Cargo.lock predates that
+        # change (it still records ab-ir as depending only on ab-plaintext),
+        # so a fully-offline `buildRustPackage` from the vendored lock fails with
+        # `no matching package named bincode`. Reproducibly packaging it requires
+        # first regenerating adapters/aozora-rs/Cargo.lock against the current
+        # crates/ tree — see the deferred "aozora-rs adapter repair" follow-up.
+        # The git-dep hash is preserved here for when that lock is refreshed:
+        #   "aozora-rs-core-0.1.0" = "sha256-FstLN45x25KjRr9Q7ORJ8W7/lRVlvIld0xAEpKZ9EUE=";
+
+        aozoraAdapter = rustPlatform.buildRustPackage {
+          pname = "aozora-adapter";
+          version = "0.1.0";
+
+          src = cleanProjectSource ./adapters/aozora;
+          cargoDeps = aozoraCargoDeps;
+
+          doCheck = false;
+
+          meta.description = "Repo adapter wrapping the aozora (aozora-pipeline) parser into AAT";
+        };
+
+        aozora2Adapter = rustPlatform.buildRustPackage {
+          pname = "aozora2-adapter";
+          version = "0.1.0";
+
+          src = source;
+          cargoDeps = aozora2AdapterCargoDeps;
+
+          buildAndTestSubdir = "adapters/aozora2";
+          cargoRoot = "adapters/aozora2";
+
+          doCheck = false;
+
+          meta.description = "Repo adapter wrapping the aozora2 (aozora-core) parser into AAT";
+        };
+
+        aozora2htmlAdapter = rustPlatform.buildRustPackage {
+          pname = "aozora2html-adapter";
+          version = "0.1.0";
+
+          src = cleanProjectSource ./adapters/aozora2html;
+          cargoDeps = aozora2htmlCargoDeps;
+
+          doCheck = false;
+
+          meta.description = "Repo adapter mapping aozora2html XHTML output into AAT";
+        };
+
+        aozoraEpub3Adapter = rustPlatform.buildRustPackage {
+          pname = "aozora-epub3-adapter";
+          version = "0.1.0";
+
+          src = cleanProjectSource ./adapters/aozora-epub3;
+          cargoDeps = aozoraEpub3CargoDeps;
+
+          doCheck = false;
+
+          meta.description = "Repo adapter mapping AozoraEpub3 XHTML output into AAT";
+        };
+
         aozora2htmlGem = pkgs.fetchurl {
           url = "https://rubygems.org/downloads/aozora2html-3.0.1.gem";
           hash = "sha256-TcEQby6RGtCW8GG8jDIUB55LUoDSvP3tX95BfW3OuEE=";
@@ -1321,6 +1413,10 @@
           default = abValidator;
           ab-validator = abValidator;
           ab-aat-to-parser-ir = abAatToParserIr;
+          aozora-adapter = aozoraAdapter;
+          aozora2-adapter = aozora2Adapter;
+          aozora2html-adapter = aozora2htmlAdapter;
+          aozora-epub3-adapter = aozoraEpub3Adapter;
           aozorabunko-corpus = aozorabunkoCorpus;
           upstream-parser-aozora2 = upstreamParserAozora2;
           upstream-parser-aozora-rs = upstreamParserAozoraRs;
@@ -1393,6 +1489,10 @@
           upstream-parser-aozora2 = upstreamParserAozora2;
           upstream-parser-aozora-rs = upstreamParserAozoraRs;
           upstream-parser-aozora = upstreamParserAozora;
+          aozora-adapter = aozoraAdapter;
+          aozora2-adapter = aozora2Adapter;
+          aozora2html-adapter = aozora2htmlAdapter;
+          aozora-epub3-adapter = aozoraEpub3Adapter;
           upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
           upstream-aozora-metadata = upstreamAozoraMetadataCheck;
           upstream-parser-metadata = upstreamNonRustMetadata;

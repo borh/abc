@@ -214,7 +214,7 @@ system is shippable and behavior-preserving at every boundary.
 | **Phase 1** — manifest authoritative | env-overrides impossible | ✅ merged `a4d15879` | byte-identical resolution + `test_aat_runs.py` |
 | **2 · Move B** — resolve/compute skeleton + single lock | *one obvious way*; glue deleted | ✅ done (branch) | report bytes == Phase-1 baseline (byte-identical on full corpus) |
 | **2 · Move C** — close ambient env | zero-env compute (closed value) | ✅ done (branch) | `env -i compute <lock>` runs — proven in `test_fidelity_lock.py` |
-| **2 · Move A** — content-address **in place on `/db`** | *provably correct* | scoped (below); per criterion | golden-lock + fail-closed |
+| **2 · Move A** — content-address **in place on `/db`** | *provably correct* | ✅ done (branch); A1–A3 + A4a | fails closed on hash mismatch; report bytes unchanged |
 
 **Note on Move C:** it turned out *substantially subsumed by Move B* — because the lock
 carries deployment-bound absolute paths and compute reads only the lock, compute was
@@ -271,3 +271,19 @@ right shape is **content-addressing in place on `/db`**, not the nix store. Thre
 hash of the 5 pinned dumps. **No** adapter/`ab-check` nix packaging, **no** store bloat.
 Nix's value for *build* determinism (F5 — package the adapters) remains, but is independent
 and out of Move A's critical path.
+
+**Implemented (branch):** A1 `reports/lib/aat_hash.py` (`hash_aat_dir`, ~9s over 25 GB, raw
+bytes); A2 `expected.content_hash` pinned for all 5 adapters in `current.json`, carried into
+the lock; A3 resolve verifies by default (`--no-verify-content` opt-out) and fails closed on
+mismatch — proven in `test_fidelity_lock.py`, report bytes unchanged. A4a made the generator
+descriptor reproducible (`SOURCE_DATE_EPOCH` + boolean `repo_dirty`).
+
+**A4b (strip `aozora-rs` `meta.metrics`) — dropped.** Investigation showed the `meta.metrics`
+block is *not* pure telemetry: the 8 `*_ms` timings are **schema-required**
+(`data/aat-schema.json`) and feed a perf summary (`run-parser-comparison.sh` →
+`aozora-rs-metrics-summary.json`), and the block also holds *deterministic* semantic fields
+(`fallback_used/reason`, counts) that `ab-compare` and `ab-aat-to-parser-ir` consume. Removal
+would be lossy and force a schema + perf-tool change — and it is **not needed**: raw-bytes
+hashing already detects mutation of the on-disk `aozora-rs` dump. Only *regeneration*-
+reproducibility (a weaker, separable property) is affected; if ever wanted, normalise `*_ms`
+at hash time rather than deleting the fields.

@@ -2,7 +2,8 @@
   "Tier 1 pure builder: ADR headers (+ adr-relations.edn, Task 6) -> decision-map
    graph value. lint* enforces header hygiene and (Task 6) sidecar rules.
    See ADR 0029."
-  (:require [clojure.java.io :as io]
+  (:require [clojure.edn :as edn]
+            [clojure.java.io :as io]
             [clojure.string :as str]))
 
 (def adr-dir "docs/adr")
@@ -58,11 +59,23 @@
 
 (defn parse-all [dir] (mapv #(parse-adr dir %) (adr-files dir)))
 
-;; --- typed relationship sidecar (fully wired in Task 6; stub keeps Task 5 green)
-(defn load-relations [] [])
+;; --- typed relationship sidecar --------------------------------------------
+(def header-owned-types #{:amends :supersedes :depends-on})
+(def relation-types #{:restates-hard-rule :schema-hash-cascade :harness-for :extends})
+
+(def ^:private relation-label
+  {:restates-hard-rule "restates hard rule"
+   :schema-hash-cascade "schema-hash cascade"
+   :harness-for "harness for"
+   :extends "extends"})
+
+(defn load-relations []
+  (if (.exists (io/file relations-path))
+    (:relations (edn/read-string (slurp relations-path)))
+    []))
 
 ;; --- lint (pure core + IO wrapper) ------------------------------------------
-(defn lint-adrs [adrs _relations]
+(defn lint-adrs [adrs relations]
   (let [by-num (into {} (map (juxt :num identity)) adrs)
         exists? (set (keys by-num))]
     (vec
@@ -74,7 +87,26 @@
       (for [a adrs t (:amends a)
             :when (and (exists? t) (not (some #{(:num a)} (:amended-by (by-num t)))))]
         (format "ADR %04d amends ADR %04d but ADR %04d lacks `Amended by: ADR %04d`"
-                (:num a) t t (:num a)))))))
+                (:num a) t t (:num a)))
+      ;; sidecar: shape
+      (for [r relations
+            :when (not (and (integer? (:from r)) (integer? (:to r)) (keyword? (:type r))))]
+        (format "adr-relations entry is malformed: %s" (pr-str r)))
+      ;; sidecar: single ownership — header-owned types forbidden here
+      (for [r relations :when (header-owned-types (:type r))]
+        (format "adr-relations edge %04d->%04d uses header-owned type %s; put it in the ADR header"
+                (:from r) (:to r) (:type r)))
+      ;; sidecar: unknown types
+      (for [r relations
+            :when (and (keyword? (:type r))
+                       (not (relation-types (:type r)))
+                       (not (header-owned-types (:type r))))]
+        (format "adr-relations edge %04d->%04d uses unknown relation type %s"
+                (:from r) (:to r) (:type r)))
+      ;; sidecar: referential integrity
+      (for [r relations n [(:from r) (:to r)]
+            :when (and (integer? n) (not (exists? n)))]
+        (format "adr-relations edge references non-existent ADR %04d" n))))))
 
 (defn lint* [] (lint-adrs (parse-all adr-dir) (load-relations)))
 
@@ -92,14 +124,19 @@
    :supersedes [:thick "supersedes"]
    :depends-on [:dashed "depends on"]})
 
+(defn all-edges [adrs relations]
+  (concat (header-edges adrs)
+          (for [r relations] {:from (:from r) :to (:to r) :type (:type r)})))
+
 ;; graph-from is pure (no IO) so edge construction is unit-testable with
 ;; synthetic adrs; build is the thin source-reading wrapper. Task 6 switches the
 ;; edge source from (header-edges adrs) to (all-edges adrs relations).
 (defn graph-from [adrs relations]
   (let [nums (set (map :num adrs))
-        edges (for [e (header-edges adrs)   ;; Task 6: (all-edges adrs relations)
+        edges (for [e (all-edges adrs relations)
                     :when (and (nums (:from e)) (nums (:to e)))
-                    :let [[style label] (get edge-style (:type e) [:solid (name (:type e))])]]
+                    :let [[style label] (or (get edge-style (:type e))
+                                            [:dashed (get relation-label (:type e) (name (:type e)))])]]
                 {:from (node-id (:from e)) :to (node-id (:to e)) :style style :label label})]
     {:direction "LR"
      :nodes (for [a adrs]

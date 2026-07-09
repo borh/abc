@@ -35,3 +35,19 @@
     (is (= "LR" (:direction g)))
     (is (= (adr/build) g))
     (is (seq (:nodes g)))))
+
+(deftest sidecar-rejects-header-owned-type
+  (let [adrs [{:num 1 :title "A" :status "Accepted" :supersedes [] :amends [] :amended-by [] :depends-on []}
+              {:num 2 :title "B" :status "Accepted" :supersedes [] :amends [] :amended-by [] :depends-on []}]
+        rels [{:from 2 :to 1 :type :amends}]]
+    (is (some #(str/includes? % "header-owned") (adr/lint-adrs adrs rels)))))
+
+(deftest sidecar-rejects-dangling-and-unknown
+  (let [adrs [{:num 1 :title "A" :status "Accepted" :supersedes [] :amends [] :amended-by [] :depends-on []}]]
+    (is (some #(str/includes? % "0099") (adr/lint-adrs adrs [{:from 1 :to 99 :type :extends}])))
+    (is (some #(str/includes? % "unknown relation") (adr/lint-adrs adrs [{:from 1 :to 1 :type :bogus}])))))
+
+(deftest sidecar-clean-and-committed-file-valid
+  (is (= [] (adr/lint*)))                          ;; real edn passes all rules
+  (let [g (adr/build)]                             ;; semantic edge present
+    (is (some #(= "restates hard rule" (:label %)) (:edges g)))))

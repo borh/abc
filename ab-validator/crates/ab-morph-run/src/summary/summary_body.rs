@@ -3493,7 +3493,22 @@ pub(super) fn read_warehouse_feature_diffs(
         let scope_position = u64_column(&batch, 6)?;
         let scope_surface = string_column(&batch, 7)?;
         let feature_value = string_column(&batch, 8)?;
-        let analyzers = list_string_column(&batch, 9)?;
+        // The analyzer column differs by schema era (see FeatureDiffsShape):
+        // v3 collapsed `analyzers` list vs pre-v3 scalar `analyzer_id`.
+        let schema = batch.schema();
+        let analyzers_list = match schema.index_of("analyzers") {
+            Ok(index) => Some(list_string_column(&batch, index)?),
+            Err(_) => None,
+        };
+        let analyzer_scalar = match analyzers_list {
+            Some(_) => None,
+            None => {
+                let index = schema.index_of("analyzer_id").context(
+                    "nway_feature_diffs has neither `analyzers` nor `analyzer_id` column",
+                )?;
+                Some(string_column(&batch, index)?)
+            }
+        };
         for row in 0..batch.num_rows() {
             let key = WarehouseFeatureGroupKey {
                 region: WarehouseRegionKey {
@@ -3508,11 +3523,19 @@ pub(super) fn read_warehouse_feature_diffs(
                 scope_surface: nullable_string_value(scope_surface, row),
             };
             let feature_value_row = nullable_string_value(feature_value, row);
-            for analyzer_id in list_string_value(analyzers, row)? {
+            if let Some(list) = analyzers_list {
+                for analyzer_id in list_string_value(list, row)? {
+                    facts.push(WarehouseFeatureDiffFact {
+                        key: key.clone(),
+                        feature_value: feature_value_row.clone(),
+                        analyzer_id,
+                    });
+                }
+            } else if let Some(scalar) = analyzer_scalar {
                 facts.push(WarehouseFeatureDiffFact {
-                    key: key.clone(),
-                    feature_value: feature_value_row.clone(),
-                    analyzer_id,
+                    key,
+                    feature_value: feature_value_row,
+                    analyzer_id: scalar.value(row).to_owned(),
                 });
             }
         }

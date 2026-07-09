@@ -140,6 +140,34 @@
                           "was_derived_from" [producer-artifact-id]}
                          provenance-overrides)}))
 
+(defn annotation-manifest-from-producer
+  [artifact-id producer-artifact-id policy-hash & [identity-overrides provenance-overrides]]
+  {"artifact_id" artifact-id
+   "artifact_kind" "annotation"
+   "validation_status" "passed"
+   "manifest_identity_object" (merge
+                               {"manifest_schema_hash" (files/example-hash "01")
+                                "corpus_snapshot_hash" (files/example-hash "02")
+                                "work_content_hash" (files/example-hash "03")
+                                "metadata_record_hash" nil
+                                "parser_build_hash" (files/example-hash "04")
+                                "parser_config_hash" (files/example-hash "05")
+                                "aat_parser_ir_mapping_hash" (files/example-hash "06")
+                                "parser_ir_schema_hash" (files/example-hash "07")
+                                "tei_profile_hash" nil
+                                "tokenizer_build_hash" nil
+                                "tokenizer_dictionary_hash" nil
+                                "tokenizer_profile_hash" nil
+                                "analysis_recipe_hash" nil
+                                "annotation_policy_hash" policy-hash
+                                "output_format_spec_hash" (files/example-hash "09")}
+                               identity-overrides)
+   "content" {"content_hash" (files/example-hash "11")
+              "media_type" "application/json"}
+   "provenance" (merge {"used" [producer-artifact-id policy-hash]
+                        "was_derived_from" [producer-artifact-id]}
+                       provenance-overrides)})
+
 (deftest index-entries-test
   (is (= [{"manifest_path" "a.manifest.json"
            "artifact_id" "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -466,3 +494,56 @@
             (manifest-index/index-entries {"parser.manifest.json" producer
                                            "tokenized.manifest.json" tokenized})
             {profile-hash profile})))))
+
+(deftest annotation-copied-field-validation-test
+  (let [producer-id (files/example-hash "91")
+        annotation-id (files/example-hash "92")
+        policy-hash (files/example-hash "93")
+        producer (parser-ir-manifest producer-id (files/example-hash "04"))
+        good-annotation (annotation-manifest-from-producer annotation-id
+                                                           producer-id
+                                                           policy-hash)
+        bad-parser-copy (annotation-manifest-from-producer
+                         (files/example-hash "94")
+                         producer-id
+                         policy-hash
+                         {"parser_build_hash" (files/example-hash "99")})]
+    (is (empty? (manifest-index/annotation-copied-field-errors
+                 (manifest-index/index-entries {"parser.manifest.json" producer
+                                                "annotation.manifest.json" good-annotation}))))
+    (is (= [{:annotation_artifact_id (files/example-hash "94")
+             :producer_artifact_id producer-id
+             :source :producer
+             :field "parser_build_hash"
+             :annotation_value (files/example-hash "99")
+             :expected_value (files/example-hash "04")}]
+           (manifest-index/annotation-copied-field-errors
+            (manifest-index/index-entries {"parser.manifest.json" producer
+                                           "bad-parser.manifest.json" bad-parser-copy}))))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"Annotation manifest copied identity fields differ from producer"
+                          (manifest-index/validate-annotation-copied-fields!
+                           (manifest-index/index-entries {"parser.manifest.json" producer
+                                                          "bad-parser.manifest.json" bad-parser-copy}))))))
+
+(deftest annotation-release-guardrail-test
+  (let [producer-id (files/example-hash "95")
+        passed-annotation (annotation-manifest-from-producer (files/example-hash "96")
+                                                             producer-id
+                                                             (files/example-hash "97"))
+        null-policy-annotation (annotation-manifest-from-producer
+                                (files/example-hash "98")
+                                producer-id
+                                nil
+                                {}
+                                {"used" [producer-id]})
+        entries (manifest-index/index-entries
+                 {"passed-annotation.manifest.json" passed-annotation
+                  "null-policy-annotation.manifest.json" null-policy-annotation})]
+    (is (= [{:artifact_id (files/example-hash "98")
+             :manifest_path "null-policy-annotation.manifest.json"
+             :validation_status "passed"}]
+           (manifest-index/annotation-release-guardrail-errors entries)))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"Successful annotation manifests require annotation_policy_hash"
+                          (manifest-index/validate-annotation-release-guardrail! entries)))))

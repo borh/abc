@@ -48,6 +48,7 @@
    "tokenizer_dictionary_hash"
    "tokenizer_profile_hash"
    "analysis_recipe_hash"
+   "annotation_policy_hash"
    "output_format_spec_hash"])
 
 (defn identity-object [manifest-inputs {:keys [manifest-schema-hash output-format-spec-hash]}]
@@ -67,6 +68,7 @@
                     "tokenizer_dictionary_hash" nil
                     "tokenizer_profile_hash" (get manifest-inputs k)
                     "analysis_recipe_hash" nil
+                    "annotation_policy_hash" nil
                     "output_format_spec_hash" output-format-spec-hash)]))
         identity-keys))
 

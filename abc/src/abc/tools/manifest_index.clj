@@ -298,3 +298,66 @@
                       {:type :abc/tokenized-copied-field-conflict
                        :errors errors}))))
   true)
+
+(defn annotation-release-guardrail-errors [entries]
+  (->> entries
+       (filter successful-entry?)
+       (filter #(= "annotation" (get % "artifact_kind")))
+       (filter #(nil? (identity-value % "annotation_policy_hash")))
+       (map (fn [entry]
+              {:artifact_id (get entry "artifact_id")
+               :manifest_path (get entry "manifest_path")
+               :validation_status (get entry "validation_status")}))
+       (sort-by (juxt :artifact_id :manifest_path))
+       vec))
+
+(defn validate-annotation-release-guardrail! [entries]
+  (let [errors (annotation-release-guardrail-errors entries)]
+    (when (seq errors)
+      (throw (ex-info "Successful annotation manifests require annotation_policy_hash in manifest identity"
+                      {:type :abc/annotation-release-before-policy-hash
+                       :errors errors}))))
+  true)
+
+(defn- annotation-producer-copied-field-errors [annotation-entry producer-entry]
+  (->> parser-ir-copied-fields
+       (keep (fn [field]
+               (let [annotation-value (identity-value annotation-entry field)
+                     expected-value (identity-value producer-entry field)]
+                 (when-not (= annotation-value expected-value)
+                   {:annotation_artifact_id (get annotation-entry "artifact_id")
+                    :producer_artifact_id (get producer-entry "artifact_id")
+                    :source :producer
+                    :field field
+                    :annotation_value annotation-value
+                    :expected_value expected-value}))))
+       vec))
+
+(defn- annotation-entry-copied-field-errors [by-artifact-id annotation-entry]
+  (if-let [producer-entry (find-parser-ir-producer-entry by-artifact-id
+                                                         annotation-entry)]
+    (annotation-producer-copied-field-errors annotation-entry producer-entry)
+    [{:annotation_artifact_id (get annotation-entry "artifact_id")
+      :producer_artifact_id nil
+      :source :producer
+      :field "__producer__"
+      :annotation_value (vec (concat (get annotation-entry
+                                          "provenance_was_derived_from")
+                                     (get annotation-entry "provenance_used")))
+      :expected_value :successful-parser-ir}]))
+
+(defn annotation-copied-field-errors [entries]
+  (let [by-artifact-id (entry-by-artifact-id entries)]
+    (->> entries
+         (filter successful-entry?)
+         (filter #(= "annotation" (get % "artifact_kind")))
+         (mapcat #(annotation-entry-copied-field-errors by-artifact-id %))
+         vec)))
+
+(defn validate-annotation-copied-fields! [entries]
+  (let [errors (annotation-copied-field-errors entries)]
+    (when (seq errors)
+      (throw (ex-info "Annotation manifest copied identity fields differ from producer parser-IR manifest"
+                      {:type :abc/annotation-copied-field-conflict
+                       :errors errors}))))
+  true)

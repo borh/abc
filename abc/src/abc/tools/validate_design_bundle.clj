@@ -13,6 +13,7 @@
    [abc.tools.manifest-to-rdf :as manifest-to-rdf]
    [abc.tools.manifest :as manifest]
    [abc.tools.materialize-analysis :as analysis]
+   [abc.tools.materialize-annotations :as annotations]
    [abc.tools.materialize-import :as materialize]
    [abc.tools.materialize-publication :as publication]
    [abc.tools.materialize-tokenized :as tokenized]
@@ -338,6 +339,7 @@
         source-region-coverage-schema (files/read-json "schemas/source-region-coverage.schema.json")
         tei-eaj-comparison-schema (files/read-json "schemas/tei-eaj-comparison.schema.json")
         token-output-schema (files/read-json "schemas/token-output.schema.json")
+        annotation-output-schema (files/read-json "schemas/annotation-output.schema.json")
         tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
         iiif-applicability-schema (files/read-json "schemas/iiif-applicability.schema.json")
         person-drift-event-schema (files/read-json "schemas/person-drift-event.schema.json")
@@ -361,6 +363,7 @@
                            ["schemas/source-region-coverage.schema.json" source-region-coverage-schema]
                            ["schemas/tei-eaj-comparison.schema.json" tei-eaj-comparison-schema]
                            ["schemas/token-output.schema.json" token-output-schema]
+                           ["schemas/annotation-output.schema.json" annotation-output-schema]
                            ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]
                            ["schemas/iiif-applicability.schema.json" iiif-applicability-schema]
                            ["schemas/person-drift-event.schema.json" person-drift-event-schema]
@@ -402,6 +405,8 @@
                     "examples/v0/example-work/analysis-result.json")
     (validate-json! token-output-schema
                     "examples/v0/example-work/token-stream.json")
+    (validate-json! annotation-output-schema
+                    "examples/v0/example-work/body-annotations.json")
     (doseq [label ["smoke-basic-ja"
                    "demo-basic-ja"
                    "full-corpus-publication-basic-ja"
@@ -986,7 +991,8 @@
         materialized-dir (io/file temp-dir "materialized-import")
         publication-dir (io/file temp-dir "publication")
         tokenized-dir (io/file temp-dir "tokenized")
-        token-analysis-dir (io/file temp-dir "token-analysis")]
+        token-analysis-dir (io/file temp-dir "token-analysis")
+        annotation-dir (io/file temp-dir "annotation")]
     (try
       (tel/log! :info "==> Materializing imported ab-validator output")
       (let [materialized (materialize/materialize-import!
@@ -1019,21 +1025,35 @@
                                     :metrics fixture-token-analysis-metrics
                                     :output-dir token-analysis-dir
                                     :generated-at materialize/default-generated-at})
+            annotation-output (annotations/materialize-annotations!
+                               {:producer-manifest (files/read-json
+                                                    (:parser-ir materialized))
+                                :parser-ir (files/read-json
+                                            "examples/ab-validator-output/parser-ir.json")
+                                :annotation-policy (files/read-json
+                                                    "data/annotation-policies/ruby-gaiji-v1.json")
+                                :input-plaintext-policy-hash (files/example-hash "13")
+                                :output-dir annotation-dir
+                                :generated-at materialize/default-generated-at})
             manifest-paths (concat (vals materialized)
                                    [(:plaintext-manifest publication-output)
                                     (:tei-manifest publication-output)
                                     (:manifest tokenized-output)
-                                    (:manifest token-analysis-output)])]
+                                    (:manifest token-analysis-output)
+                                    (:manifest annotation-output)])]
         (tel/log! :info "materialized import ok")
         (tel/log! :info "parser-IR publication materialization ok")
         (tel/log! :info "tokenized fixture materialization ok")
         (tel/log! :info "token-backed analysis fixture materialization ok")
+        (tel/log! :info "annotation fixture materialization ok")
         (tel/log! :info "==> Validating JSON schemas and examples")
         (validate-json-schemas! manifest-paths)
         (validate-json! (files/read-json "schemas/token-output.schema.json")
                         (:token-stream tokenized-output))
         (validate-json! (files/read-json "schemas/analysis-result.schema.json")
                         (:analysis-result token-analysis-output))
+        (validate-json! (files/read-json "schemas/annotation-output.schema.json")
+                        (:annotations annotation-output))
         (tel/log! :info "json schema validation ok")
         (tel/log! :info "==> Checking parser-IR publication output")
         (validate-publication-output! publication-output)
@@ -1045,7 +1065,9 @@
           (manifest-index/validate-tokenized-release-guardrail! entries)
           (manifest-index/validate-tokenized-copied-fields! entries
                                                             tokenizer-profiles)
-          (manifest-index/validate-analysis-copied-fields! entries))
+          (manifest-index/validate-analysis-copied-fields! entries)
+          (manifest-index/validate-annotation-release-guardrail! entries)
+          (manifest-index/validate-annotation-copied-fields! entries))
         (tel/log! :info "materialized manifest index ok")
         (tel/log! :info "==> Checking materialized RDF views")
         (doseq [manifest-path manifest-paths]

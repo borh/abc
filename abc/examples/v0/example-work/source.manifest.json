@@ -17,6 +17,7 @@
     "tokenizer_dictionary_hash": null,
     "tokenizer_profile_hash": null,
     "analysis_recipe_hash": null,
+    "annotation_policy_hash": null,
     "output_format_spec_hash": "sha256:0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a"
   },
   "content": {

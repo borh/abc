@@ -54,6 +54,7 @@
                                               "tokenizer_dictionary_hash" nil
                                               "tokenizer_profile_hash" nil
                                               "analysis_recipe_hash" (files/example-hash "07")
+                                              "annotation_policy_hash" nil
                                               "output_format_spec_hash" (manifest/schema-hash "schemas/analysis-result.schema.json")}
                   "content" {"content_hash" (files/example-hash "08")
                              "media_type" "application/json"
@@ -99,6 +100,7 @@
                                               "tokenizer_dictionary_hash" (files/example-hash "11")
                                               "tokenizer_profile_hash" (files/example-hash "12")
                                               "analysis_recipe_hash" nil
+                                              "annotation_policy_hash" nil
                                               "output_format_spec_hash" token-output-schema-hash}
                   "content" {"content_hash" token-stream-hash
                              "media_type" "application/json"

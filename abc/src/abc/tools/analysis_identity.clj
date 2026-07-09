@@ -26,6 +26,8 @@
 
 (def pack-policy-hash hash-json-value)
 
+(def annotation-policy-hash hash-json-value)
+
 (defn- required-string [label value]
   (when (or (not (string? value)) (string/blank? value))
     (throw (ex-info (str label " must be a non-empty string")

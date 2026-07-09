@@ -34,6 +34,7 @@
       "tokenizer_dictionary_hash" nil
       "tokenizer_profile_hash" nil
       "analysis_recipe_hash" analysis-recipe-hash
+      "annotation_policy_hash" nil
       "output_format_spec_hash" (manifest/schema-hash "schemas/analysis-result.schema.json")}
      (select-keys producer-identity copied-parser-ir-fields))))
 
@@ -47,6 +48,7 @@
       "work_content_hash" (get producer-identity "work_content_hash")
       "metadata_record_hash" (get producer-identity "metadata_record_hash")
       "analysis_recipe_hash" analysis-recipe-hash
+      "annotation_policy_hash" nil
       "output_format_spec_hash" (manifest/schema-hash "schemas/analysis-result.schema.json")}
      (select-keys producer-identity copied-tokenized-analysis-fields))))
 

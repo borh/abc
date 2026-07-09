@@ -10,7 +10,9 @@
     (try
       (f dir)
       (finally
-        (doseq [file (file-seq dir)]
+        ;; file-seq is pre-order (parent first); reverse so children are
+        ;; deleted before their directory, leaving no empty scratch dir behind.
+        (doseq [file (reverse (file-seq dir))]
           (.delete file))))))
 
 (def comps

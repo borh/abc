@@ -114,14 +114,18 @@ becomes an explicit manifest value.
 
 - **Phase 0 (done this session, stopgaps):** hardened `validate_run_set` to *catch* the
   dump-swap; `run-coverage-report.sh` neutralizes env. These treat the symptom.
-- **Phase 1 — manifest authoritative (kills F2, most of F1):** make `aat_runs`
-  resolution ignore the `_aat_dir_env`/`_run_descriptor_env` overrides; keep only
-  `AB_AAT_RUN_SET` for manifest selection. Delete the env-neutralization glue that
-  becomes unnecessary. *Characterize:* the three coverage scripts already read the
-  run-set — re-run and diff outputs to confirm unchanged. Low risk, high payoff.
-- **Phase 2 — locked manifest + pure compute (F3/F4):** extend the manifest with
-  corpus/matrix; add a `resolve` step emitting a locked manifest; point compute tools at
-  it as their sole input.
+- **Phase 1 — manifest authoritative (kills F2, most of F1): DONE — merged `a4d15879`
+  (feat `3d5d658e`).** `aat_runs` resolution ignores the `_aat_dir_env`/`_run_descriptor_env`
+  overrides; only `AB_AAT_RUN_SET` selects the manifest; the env-neutralization glue is
+  deleted; characterized by a byte-identical coverage-resolution diff + a new
+  `test_aat_runs.py`. Low risk, high payoff.
+- **Phase 2 — locked manifest + pure compute (F3/F4): DESIGNED — see
+  `2026-07-09-fidelity-phase2-resolve-compute-lock.md`.** That doc sharpens Phase 2 with
+  the evidence Phase 1 surfaced: dumps are *not* content-addressed (descriptors carry no
+  byte-hash and record a dirty tree — F6), compute still has two input channels (F7) and
+  residual ambient env (F8), and inputs are keyed by wall-clock time (F9). Target:
+  `resolve → compute` over a closed, content-addressed **lock**; the keystone (content-
+  addressing) is what makes idempotency *provable* rather than conventional.
 - **Phase 3 — thin recipes:** shrink `just` recipes to resolve→compute; delete `run-*.sh`
   glue superseded by the pure entrypoints.
 - **Phase 4 — build knobs (F5):** relocate `RUSTC_WRAPPER` to devshell/`.cargo`; prefer

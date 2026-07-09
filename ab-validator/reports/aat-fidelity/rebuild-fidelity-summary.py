@@ -14,6 +14,7 @@ Usage:
   rebuild-fidelity-summary.py <inventory.json> <old-summary.json> > new-summary.json
 """
 
+import argparse
 import glob
 import json
 import sys
@@ -22,7 +23,7 @@ from pathlib import Path
 
 REPORTS_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPORTS_ROOT / "lib"))
-from aat_runs import adapter_aat_dirs, load_run_set  # noqa: E402
+from fidelity_lock import load_lock, lock_aat_dirs, lock_run_set_id  # noqa: E402
 
 
 def has(n, f):
@@ -107,8 +108,15 @@ def walk(v, ad, counts):
 
 
 def main():
-    inventory = json.load(open(sys.argv[1]))
-    old = json.load(open(sys.argv[2]))
+    ap = argparse.ArgumentParser(description="rebuild the fidelity summary (denominators)")
+    ap.add_argument("inventory", help="source-inventory JSON")
+    ap.add_argument("old_summary", help="prior fidelity summary JSON (carries metadata)")
+    ap.add_argument("--lock", required=True, help="resolved fidelity lock (dump selection)")
+    args = ap.parse_args()
+    lock = load_lock(args.lock)
+
+    inventory = json.load(open(args.inventory))
+    old = json.load(open(args.old_summary))
     occ = {row_id: v["occurrences"] for row_id, v in inventory["rows"].items()}
 
     # recognition/was metadata per (adapter, construct) carried from the prior summary
@@ -120,8 +128,7 @@ def main():
                 "was": cell.get("was"),
             }
 
-    run_set = load_run_set()
-    dirs = adapter_aat_dirs(run_set, order=["aozora2", "aozora-rs"])
+    dirs = lock_aat_dirs(lock, order=["aozora2", "aozora-rs"])
     counts = {ad: defaultdict(int) for ad in ("aozora2", "aozora-rs")}
     for ad in ("aozora2", "aozora-rs"):
         n = 0
@@ -165,7 +172,7 @@ def main():
             "works_scanned": inventory.get("works_scanned"),
             "markers_total": inventory.get("markers_total"),
         },
-        "run_set_id": run_set.get("run_set_id"),
+        "run_set_id": lock_run_set_id(lock),
         "classified": report,
         "skipped": skipped,
     }

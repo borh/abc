@@ -20,6 +20,7 @@ ab-aozora bousen which is `folded` (into a generic `emphasis` marker) — report
 distinctly.
 """
 
+import argparse
 import collections
 import glob
 import json
@@ -28,12 +29,10 @@ import sys
 
 REPORTS_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPORTS_ROOT / "lib"))
-from aat_runs import adapter_aat_globs, load_run_set  # noqa: E402
+from fidelity_lock import load_lock, lock_aat_globs, lock_run_set_id  # noqa: E402
 
 
 ORDER = ["aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3"]
-RUN_SET = load_run_set()
-AAT_GLOBS = adapter_aat_globs(RUN_SET, order=ORDER)
 
 # construct -> {"kinds":set, "styles":set(style_type), "markers":set(x-source-marker-kind)}
 # derived from the full-corpus vocabulary audit (2026-07-08).
@@ -129,21 +128,28 @@ def count_file(path, counts):
 
 
 def main():
-    summary = json.load(open(sys.argv[1]))
+    ap = argparse.ArgumentParser(description="§4.7 normalized, frequency-weighted corpus coverage")
+    ap.add_argument("summary", help="fidelity summary JSON (denominators)")
+    ap.add_argument("--lock", required=True, help="resolved fidelity lock (dump selection)")
+    args = ap.parse_args()
+    lock = load_lock(args.lock)
+    aat_globs = lock_aat_globs(lock, order=ORDER)
+
+    summary = json.load(open(args.summary))
     denom = {r["construct"]: r["denominator"] for r in summary["classified"]}
     scored = [sid for sid in SIG if denom.get(sid)]
     total = sum(denom[sid] for sid in scored)
 
     out = {
         "schema_version": 2,
-        "aat_run_set_id": RUN_SET.get("run_set_id"),
-        "aat_globs": AAT_GLOBS,
+        "aat_run_set_id": lock_run_set_id(lock),
+        "aat_globs": aat_globs,
         "note": "fair union-signature normalization; see script docstring",
         "denominators": {s: denom[s] for s in scored},
         "total_weighted_occurrences": total,
         "adapters": {},
     }
-    for label, pattern in AAT_GLOBS.items():
+    for label, pattern in aat_globs.items():
         files = glob.glob(pattern)
         counts = collections.Counter()
         for f in files:

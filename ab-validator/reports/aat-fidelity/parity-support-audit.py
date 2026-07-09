@@ -17,6 +17,7 @@ human matrix to stderr.
 """
 
 import collections
+import argparse
 import glob
 import json
 from pathlib import Path
@@ -24,12 +25,10 @@ import sys
 
 REPORTS_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPORTS_ROOT / "lib"))
-from aat_runs import adapter_aat_globs, load_run_set  # noqa: E402
+from fidelity_lock import load_lock, lock_aat_globs, lock_run_set_id  # noqa: E402
 
 
 ORDER = ["aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3"]
-RUN_SET = load_run_set()
-AAT_GLOBS = adapter_aat_globs(RUN_SET, order=ORDER)
 
 # Signatures = the UNION of each adapter's real encoding for the construct, from the
 # full-corpus vocabulary audit (2026-07-08). Constructs beyond the tracked-9 are the
@@ -147,14 +146,21 @@ def count_dir(pattern):
 
 
 def main():
-    summary = json.load(open(sys.argv[1]))
+    ap = argparse.ArgumentParser(description="§4.9 parity support audit")
+    ap.add_argument("summary", help="fidelity summary JSON (denominators)")
+    ap.add_argument("--lock", required=True, help="resolved fidelity lock (dump selection)")
+    args = ap.parse_args()
+    lock = load_lock(args.lock)
+    aat_globs = lock_aat_globs(lock, order=ORDER)
+
+    summary = json.load(open(args.summary))
     denom = {r["construct"]: r["denominator"] for r in summary["classified"]}
     # gaiji.marker is the total gaiji denominator (jis_code+unicode+un_embed sum into it)
     per = {}
     for a in ORDER:
-        per[a], nfiles = count_dir(AAT_GLOBS[a])
+        per[a], nfiles = count_dir(aat_globs[a])
         print(
-            f"{a}: scanned {nfiles} files ({'REPIN' if 'repin' in AAT_GLOBS[a] else 'prior'} aozora dump)"
+            f"{a}: scanned {nfiles} files ({'REPIN' if 'repin' in aat_globs[a] else 'prior'} aozora dump)"
             if a == "aozora"
             else f"{a}: scanned {nfiles} files",
             file=sys.stderr,
@@ -179,9 +185,9 @@ def main():
 
     out = {
         "schema_version": 1,
-        "aat_run_set_id": RUN_SET.get("run_set_id"),
-        "aat_globs": AAT_GLOBS,
-        "aozora_dump": AAT_GLOBS["aozora"],
+        "aat_run_set_id": lock_run_set_id(lock),
+        "aat_globs": aat_globs,
+        "aozora_dump": aat_globs["aozora"],
         "constructs": rows,
         "unscoreable": UNSCOREABLE_NOTE,
     }

@@ -14,7 +14,8 @@
           "repo": "aozora",
           "rev": "1a4f864603970983719655aa4af4525958ac2d38",
           "narHash": "sha256-XS7BdCpcbfJoTRYcrHWwcCErmQFRfFF7U7FUQU2Ezsg="
-        }
+        },
+        "content_hash": "sha256:9860a7b64bce8b0af2f09f587df239a95ae7ffe9afd97961447306b022cecfa0"
       }
     },
     "aozora2": {
@@ -29,7 +30,8 @@
           "repo": "aozora2",
           "rev": "93420b53c7d52579a0ca3fde466cef8ce6d89879",
           "narHash": "sha256-nrtxilPBk6Xu+XWMih4NhKvKwiq9damCIS8zIUalDkI="
-        }
+        },
+        "content_hash": "sha256:aae42b7002e49bea18514c7b3c2bd84acf505b38ac8fcd57f5df81db5a5371ed"
       }
     },
     "aozora-rs": {
@@ -44,7 +46,8 @@
           "repo": "aozora-rs",
           "rev": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
           "narHash": "sha256-bBPtWKURMmyCeym8dsvfzvwAlY5096uK6xZL2w7XwYs="
-        }
+        },
+        "content_hash": "sha256:d6b49647423feee96594dca99b60b7f6147a65f22318c85e256eb71817f41ad3"
       }
     },
     "aozora2html": {
@@ -52,7 +55,8 @@
       "run_descriptor": "${AB_DB_ROOT}/aat-corpus/aozora2html-full-20260703T020301Z/metadata.json",
       "expected": {
         "adapter_id": "aozora2html",
-        "adapter_version_contains": "aozora2html-adapter"
+        "adapter_version_contains": "aozora2html-adapter",
+        "content_hash": "sha256:bcbb36b167128310fd49285b3f124f26c067976693be89e52f8f8b5174fa12ff"
       }
     },
     "aozora-epub3": {
@@ -60,7 +64,8 @@
       "run_descriptor": "${AB_DB_ROOT}/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/metadata.json",
       "expected": {
         "adapter_id": "aozora-epub3",
-        "adapter_version_contains": "aozora-epub3-adapter"
+        "adapter_version_contains": "aozora-epub3-adapter",
+        "content_hash": "sha256:b734be04ab821a369c137c6596059dc6a079a1a01172f488f413f2ba2d3eadd4"
       }
     }
   }

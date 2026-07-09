@@ -262,6 +262,7 @@ run_step build-triage "$triage_dir" uv run --isolated --no-project --with 'duckd
 
 python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" <<'PY'
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -274,11 +275,23 @@ out = pathlib.Path(out_dir)
 def run(args):
     return subprocess.check_output(args, cwd=repo, text=True).strip()
 
+# Reproducible descriptor (Phase 2 A4a): honour SOURCE_DATE_EPOCH so a rebuild can
+# stamp a fixed time, and record the dirty-tree state as a clean boolean instead of
+# the noisy multi-line `git status --short` that made descriptors non-reproducible
+# and buried the provenance hole (F6). The aat/ tree itself is what gets content-
+# addressed; this just stops the descriptor from carrying run-specific noise.
+_sde = os.environ.get("SOURCE_DATE_EPOCH")
+generated_at = (
+    datetime.fromtimestamp(int(_sde), timezone.utc).isoformat()
+    if _sde
+    else datetime.now(timezone.utc).isoformat()
+)
+
 metadata = {
-    "schema_version": 1,
-    "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+    "schema_version": 2,
+    "generated_at_utc": generated_at,
     "repo_head": run(["git", "rev-parse", "HEAD"]),
-    "repo_status_short": run(["git", "status", "--short"]),
+    "repo_dirty": bool(run(["git", "status", "--short"])),
     "corpus": str(pathlib.Path(corpus).resolve()),
     "report_id": report_id,
     "jobs": int(jobs),

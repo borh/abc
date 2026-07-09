@@ -266,9 +266,11 @@ fidelity-denominator-recompute JOBS="24" INDEX="" CORPUS="" PRIOR_SUMMARY="docs/
 		--matrix "{{repo_root}}/data/aozora-syntax-coverage.toml" \
 		--index "$index" --corpus "$corpus" --jobs "{{JOBS}}" \
 		--output-json "$inv_dir/inventory.json" --report-md "$inv_dir/inventory.md"; \
+	lock="$inv_dir/fidelity.lock.json"; \
+	python3 "{{repo_root}}/reports/aat-fidelity/resolve-run-set.py" --repo-root "{{repo_root}}" --out "$lock"; \
 	python3 "{{repo_root}}/reports/aat-fidelity/rebuild-fidelity-summary.py" \
-		"$inv_dir/inventory.json" "{{repo_root}}/{{PRIOR_SUMMARY}}" > "{{repo_root}}/{{OUT_SUMMARY}}"; \
-	echo "wrote {{OUT_SUMMARY}} (pinned-corpus denominators; inventory: $inv_dir)"
+		"$inv_dir/inventory.json" "{{repo_root}}/{{PRIOR_SUMMARY}}" --lock "$lock" > "{{repo_root}}/{{OUT_SUMMARY}}"; \
+	echo "wrote {{OUT_SUMMARY}} (pinned-corpus denominators; inventory: $inv_dir; lock: $lock)"
 
 # Run the §4.7/§4.8/§4.9 coverage reports from a fidelity summary. The AAT run-set is the
 # SOLE dump-selection authority (aat_runs ignores ambient AB_*_AAT_DIR); this validates +

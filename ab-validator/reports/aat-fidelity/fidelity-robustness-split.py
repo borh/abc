@@ -42,6 +42,7 @@ Usage: python3 fidelity-robustness-split.py <full-corpus-coverage.json> > out.js
   (the coverage JSON is used only for the reconciliation assertion.)
 """
 
+import argparse
 import collections
 import glob
 import json
@@ -51,12 +52,10 @@ import sys
 
 REPORTS_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPORTS_ROOT / "lib"))
-from aat_runs import adapter_aat_globs, load_run_set  # noqa: E402
+from fidelity_lock import load_lock, lock_aat_globs, lock_run_set_id  # noqa: E402
 
 
 ORDER = ["aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3"]
-RUN_SET = load_run_set()
-AAT_GLOBS = adapter_aat_globs(RUN_SET, order=ORDER)
 
 # Same union signatures as normalized-corpus-coverage.py (do not diverge).
 SIG = {
@@ -161,13 +160,20 @@ def count_file(path):
 
 
 def main():
-    coverage = json.load(open(sys.argv[1]))
+    ap = argparse.ArgumentParser(description="§4.8 fidelity/robustness split")
+    ap.add_argument("coverage", help="normalized-corpus-coverage.py output JSON")
+    ap.add_argument("--lock", required=True, help="resolved fidelity lock (dump selection)")
+    args = ap.parse_args()
+    lock = load_lock(args.lock)
+    aat_globs = lock_aat_globs(lock, order=ORDER)
+
+    coverage = json.load(open(args.coverage))
     constructs = list(SIG.keys())
 
     # per adapter: workid -> Counter (only completed works); and completion sets
     per = {a: {} for a in ORDER}
     for a in ORDER:
-        files = glob.glob(AAT_GLOBS[a])
+        files = glob.glob(aat_globs[a])
         for f in files:
             w, c = count_file(f)
             if c is not None:
@@ -263,8 +269,8 @@ def main():
 
     out = {
         "schema_version": 1,
-        "aat_run_set_id": RUN_SET.get("run_set_id"),
-        "aat_globs": AAT_GLOBS,
+        "aat_run_set_id": lock_run_set_id(lock),
+        "aat_globs": aat_globs,
         "note": "fidelity/robustness split; see fidelity-robustness-split.py docstring",
         "adapters_order": ORDER,
         "reconciliation": {"all_ok": all_ok, "per_adapter": recon},

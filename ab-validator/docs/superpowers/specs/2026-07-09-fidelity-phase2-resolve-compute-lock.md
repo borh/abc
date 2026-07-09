@@ -128,10 +128,11 @@ Both fail today, and the evidence names why.
 ```
 
 **The lock is a designed protocol, not an incidental dump.** It is the one contract
-between resolve and compute, so it must not repeat the disease (implicit contracts). Give
-it a JSON Schema alongside the existing `data/abc-schemas`, a `schema_version`, and a
-single owner (resolve emits, compute consumes read-only). **Defining that schema is the
-first concrete deliverable of Phase 2.** Fields (sketch): per adapter — resolved absolute
+between resolve and compute, so it must not repeat the disease (implicit contracts). It has
+a local JSON Schema next to its emitter (`reports/aat-fidelity/fidelity-lock.schema.json` —
+internal to ab-validator, NOT the published `abc/schemas` package), a `lock_format` version
+tag, and a single owner (resolve emits, compute consumes read-only). **This schema was the
+first concrete deliverable of Phase 2 (landed in Move B).** Fields (sketch): per adapter — resolved absolute
 `aat_dir`, its producing derivation store path (= its content identity) or interim
 `content_hash`, `adapter_version`, flake `rev`/`narHash`; plus corpus store path and the
 inventory identity. The lock is a *closed value*: everything compute needs, nothing it

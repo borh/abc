@@ -54,7 +54,7 @@ pub use calibration::{
     ExportLabelsOptions, ExportSummary, LabelScores, MethodScores, RankingComparison,
     run_compare_rankings, run_export_labels, run_score_labels,
 };
-pub use hydrate::HydrateOptions;
+pub use hydrate::{HydrateOptions, HydrateRunSummary, run_hydrate_interesting};
 pub use import_aozora::{ImportSummary, run_import_aozora_metadata};
 pub use nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
 // Re-exported for the `oracle_adjudicate` criterion bench (benches/ compile as

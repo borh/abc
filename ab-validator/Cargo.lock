@@ -167,6 +167,7 @@ name = "ab-morph-run"
 version = "0.1.0"
 dependencies = [
  "ab-diff-utils",
+ "ab-encoding",
  "ab-morph-analyzers",
  "ab-morph-diff",
  "ab-ortho-detect",

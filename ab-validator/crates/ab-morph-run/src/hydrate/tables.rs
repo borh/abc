@@ -119,7 +119,6 @@ fn list_str_value(array: &ListArray, row: usize) -> Result<Vec<String>> {
 
 /// One row of `sources.parquet` for a wanted `source_id`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[allow(dead_code)]
 pub struct SourceInfo {
     pub text_id: String,
     pub aat_path: String,
@@ -128,7 +127,6 @@ pub struct SourceInfo {
 
 /// Reads `sources.parquet`, keeping only rows whose `source_id` is in
 /// `source_ids`. Key: `source_id`.
-#[allow(dead_code)]
 pub fn read_sources_for(
     run_dir: &Path,
     source_ids: &BTreeSet<String>,
@@ -161,7 +159,6 @@ pub fn read_sources_for(
 /// One row of `nway_region_analyzers.parquet` for a wanted `(source_id,
 /// region_index)`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[allow(dead_code)]
 pub struct RegionAnalyzerRow {
     pub analyzer_id: String,
     pub covers_exactly: bool,
@@ -173,7 +170,6 @@ pub struct RegionAnalyzerRow {
 /// Reads `nway_region_analyzers.parquet`, keeping only rows whose
 /// `(source_id, region_index)` is in `wanted`. Key: `(source_id,
 /// region_index)`; rows within each key are sorted by `analyzer_id`.
-#[allow(dead_code)]
 pub fn read_region_analyzers_for(
     run_dir: &Path,
     wanted: &BTreeSet<(String, u64)>,
@@ -230,7 +226,6 @@ pub fn read_region_analyzers_for(
 /// One morpheme, with its `morpheme_features` folded in by
 /// `read_tokens_for`.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
-#[allow(dead_code)]
 pub struct Token {
     pub surface: String,
     pub char_start: u64,
@@ -242,7 +237,6 @@ pub struct Token {
 /// only rows inside a wanted `[morpheme_start, morpheme_end)` interval.
 /// `ranges` maps `(source_id, analyzer_id)` to its wanted intervals. Key:
 /// `(source_id, analyzer_id, morpheme_index)`.
-#[allow(dead_code)]
 pub fn read_tokens_for(
     run_dir: &Path,
     ranges: &BTreeMap<(String, String), Vec<(u64, u64)>>,
@@ -332,7 +326,6 @@ pub fn read_tokens_for(
 /// One row of the optional `aozora_works.parquet` sidecar for a wanted
 /// `source_id`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[allow(dead_code)]
 pub struct WorkRow {
     pub work_id: String,
     pub title: String,
@@ -348,7 +341,6 @@ pub struct WorkRow {
 /// `orthographic_style`) are read by name; if absent from the schema
 /// entirely (an older importer), they are treated as all-null rather than
 /// erroring.
-#[allow(dead_code)]
 pub fn read_works_for(
     run_dir: &Path,
     source_ids: &BTreeSet<String>,
@@ -431,7 +423,7 @@ pub fn read_works_for(
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::warehouse::schema::{
         MorphemeRow, NwayRegionAnalyzerRow, RunRow, SCHEMA_VERSION, SourceRow, WarehousePaths,
@@ -445,7 +437,10 @@ mod tests {
         Arc::from(s)
     }
 
-    fn write_fixture(root: &std::path::Path) -> std::path::PathBuf {
+    /// Also used by `hydrate::tests::write_e2e_fixture` (Task 7's
+    /// end-to-end orchestration fixture); `pub(crate)` for that cross-module
+    /// `#[cfg(test)]` reuse.
+    pub(crate) fn write_fixture(root: &std::path::Path) -> std::path::PathBuf {
         let paths = WarehousePaths::new(root, RUN);
         let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
         writer

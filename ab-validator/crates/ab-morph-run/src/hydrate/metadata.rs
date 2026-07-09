@@ -15,7 +15,6 @@ use crate::hydrate::tables::WorkRow;
 /// One contributor to a work (author, translator, …), resolved against
 /// `persons/<person_id>.json` when possible.
 #[derive(Debug, Clone, PartialEq, Serialize)]
-#[allow(dead_code)]
 pub struct Contributor {
     pub person_id: String,
     pub role: String,
@@ -27,7 +26,6 @@ pub struct Contributor {
 /// `Some`) overlaid with ABC catalog fields when the catalog and its
 /// records are available.
 #[derive(Debug, Clone, PartialEq, Serialize)]
-#[allow(dead_code)]
 pub struct WorkMeta {
     pub work_id: Option<String>,
     pub title: Option<String>,
@@ -91,7 +89,6 @@ fn str_field(value: &serde_json::Value, field: &str) -> Option<String> {
 ///   (`work-record-missing: works/<id>.json` /
 ///   `person-record-missing: persons/<id>.json`); resolution degrades
 ///   field-by-field.
-#[allow(dead_code)]
 pub fn resolve_work_meta(
     work_row: Option<&WorkRow>,
     abc_catalog: Option<&Path>,

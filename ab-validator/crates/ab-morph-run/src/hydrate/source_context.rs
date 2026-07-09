@@ -6,7 +6,6 @@ use serde::Serialize;
 
 /// A load failure with its spec error-vocabulary code.
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct SourceLoadError {
     pub code: &'static str,
     pub detail: String,
@@ -16,7 +15,6 @@ pub struct SourceLoadError {
 /// for pointer resolution. Offset agreement with the warehouse is enforced
 /// at load (spec §Layer 1 offset-safety invariant).
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct SourceContext {
     pub text: String,
     pub spans: Vec<ab_plaintext::ProjectionSpan>,
@@ -25,7 +23,6 @@ pub struct SourceContext {
 
 /// Layers 1/3/4 for one region, each independently degradable.
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct RegionLayers {
     pub snippet: Option<Snippet>,
     pub aozora_markup: Option<AozoraMarkup>,
@@ -34,7 +31,6 @@ pub struct RegionLayers {
 }
 
 impl SourceContext {
-    #[allow(dead_code)]
     pub fn load(aat_path: &str, expected_chars: u64) -> Result<Self, SourceLoadError> {
         let bytes = std::fs::read(aat_path).map_err(|err| SourceLoadError {
             code: "aat-missing",
@@ -58,7 +54,6 @@ impl SourceContext {
         Ok(Self { text, spans, aat })
     }
 
-    #[allow(dead_code)]
     pub fn hydrate_region(
         &self,
         char_start: u64,
@@ -99,7 +94,6 @@ impl SourceContext {
 /// A snippet window around a region, parts kept separate so JSON consumers
 /// can re-mark (spec §Layer 1).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[allow(dead_code)]
 pub struct Snippet {
     pub before: String,
     pub region: String,
@@ -130,7 +124,6 @@ impl Snippet {
 /// Slices `text` by char index (never byte index) into a window of up to
 /// `context` chars on each side of `[char_start, char_end)`. Errors when the
 /// span is inverted or exceeds the text's char count.
-#[allow(dead_code)]
 pub fn snippet_window(
     text: &str,
     char_start: u64,
@@ -157,7 +150,6 @@ pub fn snippet_window(
 
 /// One contributing AAT node's identity + flags (spec §Layer 4).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[allow(dead_code)]
 pub struct AatNodeRef {
     pub pointer: String,
     pub inline_kind: String,
@@ -169,7 +161,6 @@ pub struct AatNodeRef {
 /// lists nodes rendered semantically rather than byte-verified; empty means
 /// the slice is verbatim sanitized-source markup.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[allow(dead_code)]
 pub struct AozoraMarkup {
     pub text: String,
     pub byte_start: u64,
@@ -181,7 +172,6 @@ pub struct AozoraMarkup {
 /// `[char_start, char_end)` from the typed AAT nodes the projection spans
 /// point at. Errors (`markup-unreconstructable`) when a contributing node
 /// has no renderable content.
-#[allow(dead_code)]
 pub fn reconstruct_markup(
     aat: &serde_json::Value,
     spans: &[ab_plaintext::ProjectionSpan],
@@ -399,7 +389,7 @@ fn render_node(node: &serde_json::Value, span_len: u64) -> Option<Rendered> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     #[test]
@@ -431,11 +421,15 @@ mod tests {
 
     use serde_json::json;
 
+    /// Also used by `hydrate::tests::write_e2e_fixture` (Task 7's
+    /// end-to-end orchestration fixture); `pub(crate)` for that cross-module
+    /// `#[cfg(test)]` reuse.
+    ///
     /// Sanitized-source layout the spans below describe (byte offsets):
     ///   0..15  text  "このあいびきは"  — wait, keep it byte-countable:
     /// Use ASCII-measurable pieces: "AB" (2b) + "｜仏蘭西《フランス》" (30b)
     /// + "CD" (2b) + "端物《はもの》" (21b) + gaiji marker (20b) + "EF" (2b).
-    fn typed_aat_fixture() -> serde_json::Value {
+    pub(crate) fn typed_aat_fixture() -> serde_json::Value {
         json!({
             "version": 1,
             "work_id": "src-a",

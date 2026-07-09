@@ -10,7 +10,6 @@ use crate::hydrate::tables::{RegionAnalyzerRow, Token};
 
 /// A group of analyzer results that agree on coverage and tokens.
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
-#[allow(dead_code)]
 pub struct AnalyzerAnalysis {
     pub analyzer_ids: Vec<String>,
     pub covers_exactly: bool,
@@ -20,7 +19,6 @@ pub struct AnalyzerAnalysis {
 /// Groups analyses by `(covers_exactly, tokens)`, collecting analyzers that agree.
 /// Groups are ordered by first (sorted) analyzer ID. `analyzer_ids` within each group
 /// stay sorted (rows arrive pre-sorted by analyzer_id per tables.rs contract).
-#[allow(dead_code)]
 pub fn group_analyses(
     rows: &[RegionAnalyzerRow],
     tokens: &BTreeMap<(String, String, u64), Token>,
@@ -54,7 +52,6 @@ pub fn group_analyses(
 /// Maps full analyzer IDs to shortened forms. Strips leading `vibrato:unidic-` and
 /// a trailing `-<digits>` run. If two full IDs collide on the same short form,
 /// both keep their full IDs.
-#[allow(dead_code)]
 pub fn short_analyzer_ids(full_ids: &BTreeSet<String>) -> BTreeMap<String, String> {
     let candidate = |id: &str| -> String {
         let stripped = id.strip_prefix("vibrato:unidic-").unwrap_or(id);

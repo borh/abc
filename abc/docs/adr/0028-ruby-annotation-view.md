@@ -69,7 +69,9 @@ built:
 - **Schema-contracts registration**: `schemas/annotation-output.schema.json`
   is registered in `schemas/schema-contracts.json` and
   `tools/schema_contracts.py`'s `SCHEMA_FILES`, the deferred registration
-  from the first slice.
+  from the first slice, and also in the ab-validator vendored contracts
+  (`ab-validator/data/abc-schemas/schema-contracts.json`), generated via the
+  monorepo-root `scripts/abc_schema_contracts.py`.
 
 ## Context
 

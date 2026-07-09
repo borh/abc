@@ -89,11 +89,12 @@ if [[ -z "$adapter_id" ]]; then
 fi
 
 # Every adapter's dump identity now fully captures the code that produces its
-# output, so the active skip fires for all three. aozora is a single,
-# self-contained, content-addressed nix binary (no external renderer). The
-# wrapper adapters orchestrate an external renderer (Ruby aozora2html gem /
-# AozoraEpub3.jar) which is now pinned by content: renderer_attr names the nix
-# package whose store dir is resolved and hashed into identity (see below).
+# output, so the active skip fires for all three. Each adapter shells out to an
+# external parser/renderer that is pinned by content: the aozora adapter to the
+# upstream `aozora` parser, the wrapper adapters to the Ruby aozora2html gem /
+# AozoraEpub3.jar. renderer_attr names the nix package whose store dir is
+# resolved, exported under the adapter's env var, and hashed into identity
+# (see below).
 case "$adapter_id" in
   aozora2html)
     default_out_dir="${AB_AOZORA2HTML_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora2html-full-$(date -u +%Y%m%dT%H%M%SZ)}"

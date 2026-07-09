@@ -48,11 +48,12 @@ def build_identity_object(
     logic change in either must invalidate a dump's identity — otherwise stale
     output is served as fresh.
 
-    `renderer_dir` is the external parser that wrapper adapters (aozora2html,
-    aozora-epub3) invoke as a subprocess to produce the `aat/` output — the Ruby
-    aozora2html gem, or AozoraEpub3.jar. Since it determines the output, its nix
+    `renderer_dir` is the external parser/renderer an adapter invokes as a
+    subprocess to produce the `aat/` output — the upstream `aozora` parser for
+    the aozora adapter, the Ruby aozora2html gem for aozora2html, or
+    AozoraEpub3.jar for aozora-epub3. Since it determines the output, its nix
     package dir is hashed by content (`tree_hash`), same as the corpus. It is
-    `None` for self-contained adapters (aozora) that have no external renderer.
+    `None` only when no external parser/renderer is supplied.
 
     `work_ids` is a *file path* (`ab-check --work-ids` is a `PathBuf` whose JSON
     content selects works), so it is hashed by CONTENT, not by its path string —

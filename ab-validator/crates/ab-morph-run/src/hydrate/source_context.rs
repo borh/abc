@@ -319,6 +319,25 @@ fn node_byte_span(node: &serde_json::Value) -> Option<(u64, u64)> {
     ))
 }
 
+/// The Aozora marker form of a gaiji node — `※［＃description］` when a
+/// description is present, else the resolved character. Both callers use
+/// this so gaiji renders identically at top level and nested inside
+/// style/tcy; byte-length verification (top level only) decides
+/// verbatim-vs-approximate.
+fn gaiji_markup(node: &serde_json::Value) -> Option<String> {
+    if let Some(description) = node
+        .get("description")
+        .and_then(serde_json::Value::as_str)
+        .filter(|description| !description.is_empty())
+    {
+        return Some(format!("※［＃{description}］"));
+    }
+    node.get("resolved")
+        .and_then(serde_json::Value::as_str)
+        .filter(|resolved| !resolved.is_empty())
+        .map(str::to_owned)
+}
+
 /// Extracts text content from a node, handling nested typed children
 /// (e.g. ruby, gaiji) when recursing into style/tcy. Returns None if the
 /// node has no renderable text.
@@ -330,14 +349,7 @@ fn inline_child_text(node: &serde_json::Value) -> Option<String> {
             let reading = node.get("reading")?.as_str()?;
             Some(format!("{base}《{reading}》"))
         }
-        "gaiji" => match node.get("resolved").and_then(serde_json::Value::as_str) {
-            Some(resolved) if !resolved.is_empty() => Some(resolved.to_owned()),
-            _ => node
-                .get("description")
-                .and_then(serde_json::Value::as_str)
-                .filter(|description| !description.is_empty())
-                .map(|description| format!("※［＃{description}］")),
-        },
+        "gaiji" => gaiji_markup(node),
         "style" | "tcy" => {
             let inner: String = node
                 .get("content")?
@@ -382,14 +394,16 @@ fn render_node(node: &serde_json::Value, span_len: u64) -> Option<Rendered> {
             }
         }
         "gaiji" => {
-            let description = node
-                .get("description")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("");
-            if description.is_empty() {
-                return None;
+            let rendered = gaiji_markup(node)?;
+            // Same byte-length rule as ruby: a marker that tiles its span
+            // exactly is verbatim sanitized-source markup; anything else
+            // (elided code suffix, resolved-character fallback) is a
+            // semantic approximation.
+            if rendered.len() as u64 == span_len {
+                Some(Rendered::Verbatim(rendered))
+            } else {
+                Some(Rendered::Approximate(rendered))
             }
-            Some(Rendered::Approximate(format!("※［＃{description}］")))
         }
         // style/tcy: render inner text content, including nested typed nodes
         // (ruby, gaiji, etc.), always approximate (the surrounding marker form
@@ -644,5 +658,77 @@ pub(crate) mod tests {
         assert!(layers.aozora_markup.is_none());
         assert!(!layers.errors.is_empty());
         assert!(!layers.aat_nodes.is_empty());
+    }
+
+    #[test]
+    fn gaiji_renders_marker_form_at_every_nesting_level_and_byte_verifies() {
+        // Top level, span length exactly equal to the rendered marker
+        // (`※［＃小書き片仮名ン］` = 4 marker chars + 7 description chars,
+        // all 3-byte UTF-8 = 33 bytes) ⇒ Verbatim, not approximate.
+        let aat = json!({
+            "version": 1, "work_id": "src-gaiji",
+            "blocks": [{"kind": "paragraph", "content": [
+                {"kind": "gaiji", "description": "小書き片仮名ン", "resolved": "ン",
+                 "span": {"byte_start": 0, "byte_end": 33, "line_start": 1, "line_end": 1}}
+            ]}],
+            "meta": {"adapter": "aozora", "adapter_version": "fixture",
+                     "source_encoding": "windows-31j", "parse_complete": true,
+                     "source_hash": "sha256:00", "warnings": []}
+        });
+        let (text, spans) = ab_plaintext::visible_text_projection_with_spans(&aat);
+        assert_eq!(text, "ン");
+        let (markup, _) = reconstruct_markup(&aat, &spans, 0, 1).unwrap();
+        assert_eq!(markup.text, "※［＃小書き片仮名ン］");
+        assert!(
+            markup.approximate_pointers.is_empty(),
+            "byte-exact gaiji marker must be verbatim"
+        );
+
+        // Nested inside a style node: same marker form (previously the
+        // nested arm preferred `resolved`, diverging from the top level).
+        let aat = json!({
+            "version": 1, "work_id": "src-style-gaiji",
+            "blocks": [{"kind": "paragraph", "content": [
+                {"kind": "style", "class": "bouten", "content": [
+                    {"kind": "gaiji", "description": "小書き片仮名ン", "resolved": "ン"}
+                ],
+                 "span": {"byte_start": 0, "byte_end": 39, "line_start": 1, "line_end": 1}}
+            ]}],
+            "meta": {"adapter": "aozora", "adapter_version": "fixture",
+                     "source_encoding": "windows-31j", "parse_complete": true,
+                     "source_hash": "sha256:00", "warnings": []}
+        });
+        let span = ab_plaintext::ProjectionSpan {
+            projected_char_start: 0,
+            projected_char_end: 1,
+            aat_pointer: "/blocks/0/content/0".to_owned(),
+            inline_kind: "style".to_owned(),
+            is_ruby_base: false,
+            is_gaiji: false,
+            is_note: false,
+        };
+        let (markup, _) = reconstruct_markup(&aat, &[span], 0, 1).unwrap();
+        assert_eq!(markup.text, "※［＃小書き片仮名ン］");
+    }
+
+    #[test]
+    fn gaiji_without_description_falls_back_to_resolved_as_approximate() {
+        let aat = json!({
+            "version": 1, "work_id": "src-gaiji-resolved",
+            "blocks": [{"kind": "paragraph", "content": [
+                {"kind": "gaiji", "description": "", "resolved": "ン",
+                 "span": {"byte_start": 0, "byte_end": 20, "line_start": 1, "line_end": 1}}
+            ]}],
+            "meta": {"adapter": "aozora", "adapter_version": "fixture",
+                     "source_encoding": "windows-31j", "parse_complete": true,
+                     "source_hash": "sha256:00", "warnings": []}
+        });
+        let (_, spans) = ab_plaintext::visible_text_projection_with_spans(&aat);
+        let (markup, _) = reconstruct_markup(&aat, &spans, 0, 1).unwrap();
+        assert_eq!(markup.text, "ン");
+        assert_eq!(
+            markup.approximate_pointers,
+            vec!["/blocks/0/content/0".to_owned()]
+        );
     }
 }

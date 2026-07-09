@@ -68,7 +68,7 @@ The corpora the dictionary-comparison runs use (e.g. `aozora-full-repin-1a4f864`
 2. Render each contributing node, deduped by pointer, in document order:
    - `text` → `value`; `raw` → `source` (both verbatim);
    - `ruby` → `base《reading》`, prepending `｜` when the node's byte-span length exceeds the rendered form by exactly its 3 bytes (**byte-length verification**: rendered UTF-8 length must equal the span length, else the node is flagged approximate);
-   - `gaiji` → `※［＃description］`, `style`/`tcy` → inner text — semantic forms, always flagged approximate.
+   - `gaiji` → `※［＃description］` (falling back to the resolved character when the description is empty) at every nesting level; byte-length-verified like ruby, so an exactly-tiling marker is verbatim and anything else is flagged approximate. `style`/`tcy` → inner text — semantic, always approximate.
 3. **Coverage check:** the sum of rendered nodes' span lengths must tile the covering `[min byte_start, max byte_end)`; gaps (non-projecting markers inside the region) render as `…` and flag the slice approximate.
 
 The JSON records per-slice fidelity: `approximate_pointers` lists the nodes whose rendering is semantic rather than byte-verified; an empty list means the slice is verbatim sanitized-source markup. A fully-verbatim original-file mode (corpus index → zip → windows-31j decode → sanitize → slice) was considered and deliberately dropped: it adds an external parser dependency and a corpus-checkout requirement for marginal gain, and can be revisited if approximate gaiji/style rendering proves insufficient.

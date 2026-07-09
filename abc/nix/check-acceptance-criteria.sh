@@ -27,7 +27,7 @@ for f in "$adr_dir"/[0-9]*.md; do
   # Extract the Acceptance Criteria section (to the next ## heading) and check
   # for an executable path: a fixtures/ reference, a test/ path, or a
   # committed Prolog fact/query file under fixtures/v0/facts/prolog/.
-  section=$(sed -n '/^## Acceptance Criteria/,/^## /p' "$f")
+  section=$(sed -n '/^## acceptance criteria/I,/^## /p' "$f")
   if ! printf '%s\n' "$section" | grep -qE 'fixtures/|test/|facts/prolog/'; then
     echo "ADR $basename has an Acceptance Criteria section with no executable path" >&2
     echo "(expected a fixtures/|test/|facts/prolog/ reference). Add a negative fixture," >&2

@@ -65,3 +65,25 @@
         (is (zero? exit)
             (str "lint should have passed on the good synthetic ADR; "
                  "exit=" exit " out=" out " err=" err))))))
+
+(deftest acceptance-lint-handles-lowercase-heading-test
+  (testing "a lowercase '## Acceptance criteria' heading WITH a valid
+            executable path passes — the presence grep is case-insensitive,
+            so section extraction must be too (regression: ADR 0028's
+            original lowercase heading extracted an empty section and
+            false-failed the lint)"
+    (let [tmp (str (Files/createTempDirectory
+                    "abc-adr-lint-case" (make-array FileAttribute 0)))
+          adr-tmp (io/file (str tmp "/adr"))]
+      (.mkdirs adr-tmp)
+      (spit (io/file (str adr-tmp "/9997-lowercase.md"))
+            (str "# ADR 9997: Lowercase\n\n"
+                 "## Acceptance criteria\n\n"
+                 "- Enforced by test/abc/tools/code_as_spec_test.clj.\n"))
+      (let [{:keys [exit out err]}
+            (sh "bash" script
+                :env (env {"ADR_DIR" (str adr-tmp)
+                           "ALLOWLIST" (str adr-tmp "/.acceptance-legacy-allowlist")}))]
+        (is (zero? exit)
+            (str "lowercase heading with a valid path should pass (exit="
+                 exit " out=" out " err=" err))))))

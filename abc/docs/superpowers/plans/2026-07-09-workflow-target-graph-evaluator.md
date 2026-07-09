@@ -171,7 +171,7 @@ Create `abc/src/abc/tools/workflow/target.clj`:
                        {:type :missing-dependency :node k :dep d}))
         cyc     (find-cycle graph)
         errors  (cond-> missing cyc (conj {:type :cycle :cycle cyc}))]
-    (seq errors)))
+    (when (seq errors) errors)))
 ```
 
 - [ ] **Step 4: Run the tests to verify they pass**

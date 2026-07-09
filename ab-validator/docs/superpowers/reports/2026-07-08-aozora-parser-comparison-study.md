@@ -392,7 +392,13 @@ records them as the completeness frontier and the recommended parser's specific 
    divergence is a lead to check against official docs, not a proven defect.
 2. **Methodological non-uniformity.** Parsers are measured three ways (§3.2). Each
    is defensible and the reason is stated, but cross-parser numbers are not a
-   single scale; read them with the method attached.
+   single scale; read them with the method attached. *Clarified 2026-07-09*
+   (`2026-07-09-measurement-methodology.md`): the three methods are confined to the
+   *conformance-breadth* layer (§4.1–4.6, corroboration); the **verdict is stated on
+   the corpus-coverage layer (§4.7–4.9), which is already a single uniform axis** — all
+   five parsers measured identically via fair union signatures, cross-checked by the
+   AAT validation oracle (§3.4), two-denominator agreement (§4.8), and corpus-invariant
+   denominators (§1).
 3. **`aozora-epub3` is disadvantaged by construction** (full-document EPUB
    converter fed headerless one-line vectors; 1 pass, 4 crashes) — a floor, not a
    verdict.

@@ -82,7 +82,7 @@
       (testing label
         (let [definition (resolver/read-request-set-definition label)
               recipes (mapv #(files/read-json
-                              (str "data/analysis-recipes/" % ".json"))
+                              (str resolver/analysis-recipes-dir "/" % ".json"))
                             (get definition "analysis_recipe_ids" []))]
           (is (nil? (analysis-identity/assert-input-view-coverage!
                      {:input-views (get definition "input_views")

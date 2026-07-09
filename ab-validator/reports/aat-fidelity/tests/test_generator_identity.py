@@ -23,11 +23,17 @@ class GeneratorIdentity(unittest.TestCase):
         (self.corpus / "cards" / "w1.txt").write_text("work one", encoding="utf-8")
         self.adapter = self.d / "adapter.bin"
         self.adapter.write_bytes(b"ADAPTERv1")
+        self.ab_index = self.d / "ab-index"
+        self.ab_index.write_bytes(b"INDEXv1")
+        self.ab_check = self.d / "ab-check"
+        self.ab_check.write_bytes(b"CHECKv1")
         self.fp = self.d / "feature-patterns.toml"
         self.fp.write_text("[p]\n", encoding="utf-8")
         self.base = dict(
             corpus_dir=self.corpus, adapter_version="1.2.3",
-            adapter_binary=self.adapter, feature_patterns_file=self.fp,
+            adapter_binary=self.adapter,
+            ab_index_binary=self.ab_index, ab_check_binary=self.ab_check,
+            feature_patterns_file=self.fp,
         )
 
     def h(self, **ov):
@@ -48,6 +54,16 @@ class GeneratorIdentity(unittest.TestCase):
     def test_adapter_binary_change(self) -> None:
         before = self.h()
         self.adapter.write_bytes(b"ADAPTERv2")
+        self.assertNotEqual(before, self.h())
+
+    def test_ab_index_binary_change_changes_hash(self) -> None:
+        before = self.h()
+        self.ab_index.write_bytes(b"INDEXv2")  # indexer rebuilt with a logic change
+        self.assertNotEqual(before, self.h())
+
+    def test_ab_check_binary_change_changes_hash(self) -> None:
+        before = self.h()
+        self.ab_check.write_bytes(b"CHECKv2")  # fidelity engine rebuilt
         self.assertNotEqual(before, self.h())
 
     def test_feature_patterns_change(self) -> None:
@@ -73,6 +89,7 @@ class GeneratorIdentity(unittest.TestCase):
         self.assertEqual(
             set(obj),
             {"corpus_content_hash", "adapter_version", "adapter_binary_hash",
+             "ab_index_binary_hash", "ab_check_binary_hash",
              "feature_patterns_hash", "timeout", "features", "work_ids_hash"},
         )
         self.assertIsNone(obj["timeout"])

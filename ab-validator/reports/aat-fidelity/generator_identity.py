@@ -32,12 +32,19 @@ def build_identity_object(
     corpus_dir: str | Path,
     adapter_version: str,
     adapter_binary: str | Path,
+    ab_index_binary: str | Path,
+    ab_check_binary: str | Path,
     feature_patterns_file: str | Path,
     timeout: str | None = None,
     features: str | None = None,
     work_ids: str | None = None,
 ) -> dict[str, Any]:
     """Assemble the content identity of an AAT dump's inputs.
+
+    `ab_index_binary` and `ab_check_binary` are hashed by content: both binaries
+    produce the `aat/` tree (`ab-index`'s `index.json` feeds `ab-check`), so a
+    logic change in either must invalidate a dump's identity — otherwise stale
+    output is served as fresh.
 
     `work_ids` is a *file path* (`ab-check --work-ids` is a `PathBuf` whose JSON
     content selects works), so it is hashed by CONTENT, not by its path string —
@@ -49,6 +56,8 @@ def build_identity_object(
         "corpus_content_hash": tree_hash.tree_hash(corpus_dir),
         "adapter_version": adapter_version,
         "adapter_binary_hash": hashing.file_sha256(Path(adapter_binary)),
+        "ab_index_binary_hash": hashing.file_sha256(Path(ab_index_binary)),
+        "ab_check_binary_hash": hashing.file_sha256(Path(ab_check_binary)),
         "feature_patterns_hash": hashing.file_sha256(Path(feature_patterns_file)),
         "timeout": timeout,
         "features": features,
@@ -79,6 +88,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--corpus-dir", required=True)
     ap.add_argument("--adapter-version", required=True)
     ap.add_argument("--adapter-binary", required=True)
+    ap.add_argument("--ab-index-binary", required=True)
+    ap.add_argument("--ab-check-binary", required=True)
     ap.add_argument("--feature-patterns", required=True)
     ap.add_argument("--timeout", default=None)
     ap.add_argument("--features", default=None)
@@ -86,7 +97,9 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(sys.argv[1:] if argv is None else argv)
     print(generator_input_set_hash(
         corpus_dir=a.corpus_dir, adapter_version=a.adapter_version,
-        adapter_binary=a.adapter_binary, feature_patterns_file=a.feature_patterns,
+        adapter_binary=a.adapter_binary,
+        ab_index_binary=a.ab_index_binary, ab_check_binary=a.ab_check_binary,
+        feature_patterns_file=a.feature_patterns,
         timeout=a.timeout, features=a.features, work_ids=a.work_ids,
     ))
     return 0

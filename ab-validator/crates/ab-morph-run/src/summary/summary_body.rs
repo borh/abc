@@ -38,7 +38,6 @@ pub(crate) enum FeatureDiffsShape {
     /// Schema >= 3: `analyzers: List<Utf8>`, one row per value-group.
     CollapsedAnalyzers,
     /// Pre-v3: scalar `analyzer_id: Utf8`, one row per analyzer.
-    #[allow(dead_code)]
     ScalarAnalyzerId,
 }
 
@@ -47,7 +46,6 @@ pub(crate) enum FeatureDiffsShape {
 /// footer is authoritative — `runs.schema_version` is never consulted, so a
 /// run dir whose version metadata disagrees with its actual files still
 /// reads correctly.
-#[allow(dead_code)]
 pub(crate) fn nway_feature_diffs_shape(run_dir: &Path) -> Result<FeatureDiffsShape> {
     let path = run_dir.join(WarehouseTable::NwayFeatureDiffs.file_name());
     let file_path = if path.is_dir() {
@@ -1210,6 +1208,7 @@ pub fn materialize_warehouse_core_feature_pattern_counts(
                 .map(|key| (*key).to_owned())
                 .collect()
         });
+    let shape = nway_feature_diffs_shape(run_dir)?;
     let mut used_duckdb = false;
     for feature_key in &feature_keys {
         let part_path = output_path.join(format!("{feature_key}.parquet"));
@@ -1221,6 +1220,7 @@ pub fn materialize_warehouse_core_feature_pattern_counts(
             run_dir,
             &part_path,
             feature_key.as_str(),
+            shape,
         );
         if !run_duckdb_statement(run_dir, sql, "warehouse feature pattern materialization")? {
             break;
@@ -1773,12 +1773,12 @@ pub(super) fn run_duckdb_statement(run_dir: &Path, sql: String, context: &str) -
 pub(crate) fn warehouse_pattern_duckdb_sql(
     run_dir: &Path,
     options: &WarehousePatternOptions,
+    shape: FeatureDiffsShape,
 ) -> String {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
-    let source =
-        nway_feature_diffs_expanded_source(&features, FeatureDiffsShape::CollapsedAnalyzers);
+    let source = nway_feature_diffs_expanded_source(&features, shape);
     let region_filter = warehouse_duckdb_region_filter(options);
     let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
     let text_exclusion = sql_not_in_clause("text_id", &options.exclusions.text_ids);
@@ -1803,6 +1803,7 @@ pub(crate) fn warehouse_pattern_duckdb_sql(
                         &excluded_values,
                         "TRUE",
                         limit,
+                        shape,
                     )
                 )
             })
@@ -1956,6 +1957,7 @@ patterns AS (
                     &excluded_values,
                     profile_filter,
                     limit,
+                    shape,
                 )
             }
         }
@@ -2014,11 +2016,11 @@ fn materialize_core_feature_pattern_counts_duckdb_sql(
     run_dir: &Path,
     output_path: &Path,
     feature_key: &str,
+    shape: FeatureDiffsShape,
 ) -> String {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
-    let source =
-        nway_feature_diffs_expanded_source(&features, FeatureDiffsShape::CollapsedAnalyzers);
+    let source = nway_feature_diffs_expanded_source(&features, shape);
     let output = sql_literal(&output_path.display().to_string());
     let feature_key = sql_literal(feature_key);
     let body = format!(
@@ -2106,9 +2108,9 @@ fn warehouse_feature_pattern_select_sql(
     excluded_values: &str,
     profile_filter: &str,
     limit: usize,
+    shape: FeatureDiffsShape,
 ) -> String {
-    let source =
-        nway_feature_diffs_expanded_source(features, FeatureDiffsShape::CollapsedAnalyzers);
+    let source = nway_feature_diffs_expanded_source(features, shape);
     format!(
         r#"
 WITH regions AS (
@@ -2206,12 +2208,12 @@ fn warehouse_duckdb_region_filter(options: &WarehousePatternOptions) -> &'static
 pub(crate) fn warehouse_region_examples_duckdb_sql(
     run_dir: &Path,
     options: &WarehouseRegionOptions,
+    shape: FeatureDiffsShape,
 ) -> String {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
-    let source =
-        nway_feature_diffs_expanded_source(&features, FeatureDiffsShape::CollapsedAnalyzers);
+    let source = nway_feature_diffs_expanded_source(&features, shape);
     let kind_filter = warehouse_region_kind_filter(options.kind);
     let text_filter = warehouse_text_filter_sql(options.text_filter);
     let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
@@ -2299,12 +2301,12 @@ ORDER BY r.source_id, r.text_id, r.region_index
 pub(crate) fn warehouse_pattern_examples_duckdb_sql(
     run_dir: &Path,
     options: &WarehousePatternExampleOptions,
+    shape: FeatureDiffsShape,
 ) -> String {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
-    let source =
-        nway_feature_diffs_expanded_source(&features, FeatureDiffsShape::CollapsedAnalyzers);
+    let source = nway_feature_diffs_expanded_source(&features, shape);
     let text_filter = warehouse_text_filter_sql(options.text_filter);
     let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
     let text_exclusion = sql_not_in_clause("text_id", &options.exclusions.text_ids);
@@ -5012,6 +5014,7 @@ mod tests {
                 ),
                 limit: 7,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(
@@ -5035,10 +5038,35 @@ mod tests {
                 exclusions: SummaryExclusions::default(),
                 limit: 7,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(feature_sql.contains("feature_key = 'pos''1'"));
         assert!(feature_sql.contains("feature_value NOT IN ('空''白')"));
+    }
+
+    #[test]
+    fn warehouse_pattern_sql_adapts_to_scalar_shape() {
+        let dir = tempfile::tempdir().unwrap();
+        let options = WarehousePatternOptions {
+            kind: NwayPatternKind::Feature,
+            feature_key: None,
+            feature_profile: WarehouseFeatureProfile::Raw,
+            text_filter: WarehouseTextFilter::All,
+            excluded_feature_values: BTreeSet::new(),
+            exclusions: SummaryExclusions::default(),
+            limit: 5,
+        };
+        let collapsed = warehouse_pattern_duckdb_sql(
+            dir.path(),
+            &options,
+            FeatureDiffsShape::CollapsedAnalyzers,
+        );
+        assert!(collapsed.contains("UNNEST(src.analyzers)"));
+        let scalar =
+            warehouse_pattern_duckdb_sql(dir.path(), &options, FeatureDiffsShape::ScalarAnalyzerId);
+        assert!(!scalar.contains("UNNEST"));
+        assert!(scalar.contains("src.analyzer_id"));
     }
 
     #[test]
@@ -5054,6 +5082,7 @@ mod tests {
                 ),
                 limit: 11,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.contains("read_parquet('scratch/warehouse/runs/run''s/nway_regions.parquet')"));
@@ -5094,6 +5123,7 @@ mod tests {
                 exclusions: SummaryExclusions::default(),
                 limit: 3,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.contains("pattern = 'pos''1 whole_region 名詞=>vibrato ; 空白=>sudachi-c'"));
@@ -5119,6 +5149,7 @@ mod tests {
                 exclusions: SummaryExclusions::default(),
                 limit: 1,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.contains("nway_regions.parquet/*.parquet"));
@@ -5141,6 +5172,7 @@ mod tests {
                 exclusions: SummaryExclusions::default(),
                 limit: 5,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.starts_with("SET temp_directory = "));
@@ -5164,6 +5196,7 @@ mod tests {
                 exclusions: SummaryExclusions::default(),
                 limit: 5,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.contains("UNION ALL"));
@@ -5226,6 +5259,7 @@ mod tests {
             Path::new("scratch/warehouse/runs/run-a"),
             Path::new("scratch/warehouse/runs/run-a/feature_pattern_counts.parquet"),
             "pos1",
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.contains("COPY ("));
@@ -5375,6 +5409,7 @@ mod tests {
                 exclusions: SummaryExclusions::default(),
                 limit: 5,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.contains("schema_value_counts"));

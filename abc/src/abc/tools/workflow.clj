@@ -204,6 +204,9 @@
            "inputs" (mapv path-record (:inputs result []))
            "outputs" (mapv path-record (:outputs result []))
            "messages" (mapv path-record (:messages result []))}
+    (:node-summary-ref result)
+    (assoc "node_summary_ref" (:node-summary-ref result))
+
     error
     (assoc "error" {"error_class" (.getName (class error))
                     "message" (.getMessage error)

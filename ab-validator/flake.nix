@@ -1855,14 +1855,17 @@
               # Usage: vibrato-dict-link cwj
               #        vibrato-dict-link novel
               vibrato-dict-link() {
+                local flake_dir
+                flake_dir="$(git rev-parse --show-toplevel 2>/dev/null)/ab-validator"
+                if [ ! -e "$flake_dir/flake.nix" ]; then flake_dir="."; fi
                 local name="''${1:-cwj}"
                 local pkg="vibrato-dict-$name"
                 local attr="$pkg"
-                if ! nix eval ".#packages.$(nix eval --impure --raw --expr builtins.currentSystem).$attr" >/dev/null 2>&1; then
+                if ! nix eval "$flake_dir#packages.$(nix eval --impure --raw --expr builtins.currentSystem).$attr" >/dev/null 2>&1; then
                   attr="ab-validator-$pkg"
                 fi
                 echo "building .#$attr ..." >&2
-                nix build ".#$attr" --no-link --print-out-paths | while read -r out; do
+                nix build "$flake_dir#$attr" --no-link --print-out-paths | while read -r out; do
                   for dict in "$out"/share/vibrato/*.dic.zst; do
                     [ -f "$dict" ] || continue
                     ln -sf "$dict" "dictionary/compiled/$(basename "$dict")"

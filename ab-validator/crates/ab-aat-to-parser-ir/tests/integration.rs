@@ -3510,3 +3510,71 @@ fn fragment_field_coherence_holds() {
         }
     }
 }
+
+#[test]
+fn ruby_node_span_is_decoded_not_raw_source() {
+    // Regression for the converter coordinate-system bug. The AAT emits a RAW
+    // source span for a ruby node — byte_start=9, byte_end=24 covering the source
+    // markup `下《した》` (15 bytes) — but the parser-IR coordinate system is
+    // decoded_utf8. The converter must project the ruby node's span to the DECODED
+    // base (`下`, 3 bytes at decoded offset 9), i.e. [9, 12], so it stays consistent
+    // with sibling text spans and the visible-text sentence splitter. Copying the
+    // raw AAT offsets here (the old `map_span` behaviour) desynchronised node spans
+    // and made ruby-heavy corpora fail — or crash — sentence projection. See
+    // `map_node_span`.
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "ruby-decoded-span",
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [
+                {"kind": "text", "value": "先生は"},
+                {
+                    "kind": "ruby",
+                    "base": "下",
+                    "reading": "した",
+                    "direction": "right",
+                    "span": {"byte_start": 9, "byte_end": 24, "line_start": 1, "line_end": 1}
+                },
+                {"kind": "text", "value": "です。"}
+            ]
+        }],
+        "meta": {
+            "adapter": "fixture",
+            "adapter_version": "0.0.0",
+            "source_encoding": "utf-8",
+            "source_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "parse_complete": true,
+            "warnings": []
+        }
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    let nodes = output.parser_ir["nodes"].as_array().unwrap();
+    let ruby = nodes
+        .iter()
+        .find(|n| n["type"] == "ruby")
+        .expect("parser-IR should contain a ruby node");
+    assert_eq!(ruby["ruby"]["base"], "下");
+    assert_eq!(
+        ruby["span"]["start"], 9,
+        "decoded start is after 先生は (9 bytes)"
+    );
+    assert_eq!(
+        ruby["span"]["end"], 12,
+        "decoded end covers the base 下 (3 bytes), NOT the raw source markup (would be 24)"
+    );
+    assert_eq!(ruby["span"]["coordinate_system"], "decoded_utf8");
+
+    // The whole (ruby-bearing) document must convert and remain schema-valid — the
+    // sentence projection over the now-consistent decoded spans succeeds.
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}

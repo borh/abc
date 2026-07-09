@@ -257,11 +257,18 @@ fn project_body_paragraph(
     let paragraph_end = value_usize(paragraph, "/span/end", "paragraph span.end")?;
     let paragraph_text = paragraph_visible_text(original_nodes)?;
 
-    debug_assert_eq!(
-        paragraph_text.len(),
-        (paragraph_end - paragraph_start) as usize,
-        "visible text length must equal byte span length"
-    );
+    // INVARIANT: `paragraph_text.len()` equals `paragraph_end - paragraph_start`.
+    // Both the visible-text projection (ruby -> base, gaiji -> resolved char) and
+    // the node/paragraph spans are in the same decoded_utf8 coordinate system, so
+    // the flat/region byte offsets below index `paragraph_text` consistently. This
+    // holds because the converter projects EVERY node span to decoded coordinates
+    // (see convert.rs `map_node_span` / `paragraph_span`); a historical bug there
+    // copied raw AAT source offsets (which include ruby/gaiji markup) for some
+    // nodes, breaking the invariant and causing a large sentence-projection failure
+    // rate — or crashes — on ruby-heavy corpora. The guards in this function,
+    // split_node_at_boundaries, and the audit's catch_unwind remain as defensive
+    // backstops so any residual/future span inconsistency is RECORDED (in the
+    // sentence_projection_failures bucket) rather than crashing a corpus run.
 
     // --- Phase 0: flat sentence split (default rules; quotes suppress splits). ---
     let mut flat_bounds: Vec<SentenceBounds> = ab_plaintext::split_sentences(&paragraph_text)
@@ -360,15 +367,35 @@ fn project_body_paragraph(
             // Inner sentences: re-split the between-marker text with bracket
             // suppression off, then extend the first span to the open marker and
             // the last span to the close marker so the brackets are enclosed.
-            let inner_start_local = region.inner_byte_start - paragraph_start;
-            let inner_end_local = region.inner_byte_end - paragraph_start;
-            let inner_text = &paragraph_text[inner_start_local..inner_end_local];
-            let inner_spans = ab_plaintext::split_sentences_with_options(
-                inner_text,
-                &ab_plaintext::SplitOptions {
-                    suppress_closing_bracket_check: true,
-                },
-            );
+            //
+            // The region offsets are source-coordinate bytes; we index them into the
+            // VISIBLE-text `paragraph_text`. When the paragraph contains ruby/gaiji
+            // (visible text shorter than the source span), those offsets can fall out
+            // of range or mid-character. Guard the slice: on divergence, skip the
+            // inner re-split and let the whole region become one inner sentence (the
+            // same fallback as an empty inner span below). Paragraphs whose offsets
+            // are valid keep their exact prior splitting, so this only changes files
+            // that previously panicked here.
+            let inner_local = region
+                .inner_byte_start
+                .checked_sub(paragraph_start)
+                .zip(region.inner_byte_end.checked_sub(paragraph_start));
+            let inner_spans = match inner_local {
+                Some((start_local, end_local))
+                    if start_local <= end_local
+                        && end_local <= paragraph_text.len()
+                        && paragraph_text.is_char_boundary(start_local)
+                        && paragraph_text.is_char_boundary(end_local) =>
+                {
+                    ab_plaintext::split_sentences_with_options(
+                        &paragraph_text[start_local..end_local],
+                        &ab_plaintext::SplitOptions {
+                            suppress_closing_bracket_check: true,
+                        },
+                    )
+                }
+                _ => Vec::new(),
+            };
             let n = inner_spans.len();
             let mut prev_end_abs = region.outer_byte_start;
             for (k, span) in inner_spans.iter().enumerate() {
@@ -479,10 +506,17 @@ fn project_body_paragraph(
                 } else {
                     "M"
                 };
-                let next_id = (pos + 1 < count)
-                    .then(|| format!("s{:06}", sentence_index_start + group_outer_fi[g][pos + 1]));
-                let prev_id = (pos > 0)
-                    .then(|| format!("s{:06}", sentence_index_start + group_outer_fi[g][pos - 1]));
+                // `pos` is the Phase-2 outer position; `group_outer_fi[g]` is the
+                // post-coalesce list of surviving outer fragments. These can desync
+                // when coalescing drops a fragment, so index with `.get()` — a
+                // missing neighbour yields no link rather than an out-of-bounds panic.
+                let next_id = group_outer_fi[g]
+                    .get(pos + 1)
+                    .map(|fi| format!("s{:06}", sentence_index_start + fi));
+                let prev_id = pos
+                    .checked_sub(1)
+                    .and_then(|prev| group_outer_fi[g].get(prev))
+                    .map(|fi| format!("s{:06}", sentence_index_start + fi));
                 (
                     Some(part.to_owned()),
                     Some(format!("fg{:06}", g)),
@@ -744,9 +778,26 @@ fn split_node_at_boundaries(
             .get("text")
             .and_then(Value::as_str)
             .context("splittable node missing text")?;
-        let local_start = segment_start - start;
-        let local_end = segment_end - start;
-        if !text.is_char_boundary(local_start) || !text.is_char_boundary(local_end) {
+        // Fail closed (not panic) if a boundary is below the node start or the
+        // segment is inverted (start > end). A well-formed boundary set is
+        // monotonic within [start, end]; a violation means an upstream span
+        // inconsistency for this file, which the audit records as a failure.
+        let (Some(local_start), Some(local_end)) = (
+            segment_start.checked_sub(start),
+            segment_end.checked_sub(start),
+        ) else {
+            bail!(
+                "sentence node ranges out of order in node {} (segment {}..{} vs node start {})",
+                node_type(node),
+                segment_start,
+                segment_end,
+                start
+            );
+        };
+        if local_start > local_end
+            || !text.is_char_boundary(local_start)
+            || !text.is_char_boundary(local_end)
+        {
             bail!(
                 "sentence boundary falls outside UTF-8 character boundary in node {} at byte {}",
                 node_type(node),
@@ -1498,5 +1549,36 @@ mod tests {
         ];
         let regions = detect_nested_regions(&nodes, 0, nodes.len());
         assert!(regions.is_empty());
+    }
+
+    /// Regression: a quote region whose source-coordinate offsets fall outside the
+    /// (shorter) visible paragraph text — because a preceding ruby node's span covers
+    /// the source markup `下《した》` (15 bytes) while its visible base is `下` (3
+    /// bytes) — must degrade gracefully, not panic inside the inner-text `str` slice.
+    /// The region's inner offset (source byte 18) lands past the 15-byte visible
+    /// paragraph text; the guarded slice falls back to one inner sentence for the
+    /// region. Repinned aozora dumps surfaced this coordinate-system divergence.
+    #[test]
+    fn quote_region_offset_past_visible_text_degrades_without_panic() {
+        let nodes = vec![
+            json!({"type":"ruby","span":span(0,15),"ruby":{"base":"下","reading":"した"}}),
+            json!({"type":"quote","span":span(15,18),"marker_type":"open","text":"「"}),
+            json!({"type":"text","span":span(18,24),"text":"あい"}),
+            json!({"type":"quote","span":span(24,27),"marker_type":"close","text":"」"}),
+        ];
+        let paragraphs = vec![json!({
+            "id":"p000000","span":span(0,27),"span_source":"direct",
+            "node_range":{"start":0,"end":4},"role":"body",
+            "source_pointer":"blocks[0]","classification":"direct"
+        })];
+
+        // Previously panicked (`byte index 18 is out of bounds`); must now return Ok
+        // with the paragraph tiled into non-empty sentences.
+        let projection = project_sentences(nodes, paragraphs, None)
+            .expect("divergent quote-region offsets must degrade gracefully, not panic");
+        assert!(
+            !projection.sentences.is_empty(),
+            "graceful fallback must still emit sentence rows"
+        );
     }
 }

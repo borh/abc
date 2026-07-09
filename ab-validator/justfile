@@ -8,11 +8,13 @@ abc_repo_root := env_var_or_default("AB_ABC_ROOT", workspace_root + "/abc")
 ab_db_root := env_var_or_default("AB_DB_ROOT", workspace_root + "/ab-validator/scratch/state")
 morph_warehouse_dir := env_var_or_default("AB_MORPH_WAREHOUSE_DIR", ab_db_root + "/morph-warehouse")
 morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", ab_db_root + "/aat-corpus/aozora2html-aat/aozora2html-adapter")
-aozora_rs_full_aat_dir := env_var_or_default("AB_AOZORA_RS_AAT_DIR", workspace_root + "/scratch/morph-full-corpus/aats/aozora-rs-adapter")
-aozora2_full_aat_dir := env_var_or_default("AB_AOZORA2_AAT_DIR", ab_db_root + "/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter")
+# aozora2html AAT dir is still consumed by the parser-ir-level3-* smoke recipes as
+# a single-file fixture source. The parser-IR full/tei-eaj audits now source ALL
+# five adapters' dumps from the fidelity run-set lock (see aat-to-parser-ir-full-audit),
+# so the former per-adapter *_full_aat_dir vars for the other four were removed to
+# avoid a second, drifting pin of the same dumps (they had already diverged for
+# aozora and aozora-rs).
 aozora2html_full_aat_dir := env_var_or_default("AB_AOZORA2HTML_AAT_DIR", ab_db_root + "/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter")
-aozora_epub3_full_aat_dir := env_var_or_default("AB_AOZORA_EPUB3_AAT_DIR", ab_db_root + "/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter")
-aozora_full_aat_dir := env_var_or_default("AB_AOZORA_AAT_DIR", ab_db_root + "/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter")
 tei_eaj_workset := env_var_or_default("AB_TEI_EAJ_WORKSET", abc_repo_root + "/out/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json")
 aozora2html_flake := repo_root + "#aozora2html"
 vibrato_dictionary_root := repo_root + "/dictionary"
@@ -302,14 +304,20 @@ fidelity-coverage-refresh JOBS="24" INDEX="" CORPUS="":
 official-docs-seed-comparison REPORT_MD="docs/superpowers/reports/2026-07-09-official-docs-seed-comparison.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-09-official-docs-seed-comparison.summary.json":
 	@just aozora-notation-spec-comparison VECTORS="{{repo_root}}/reports/parser-conformance/official-docs-seed" REPORT_MD="{{REPORT_MD}}" SUMMARY_JSON="{{SUMMARY_JSON}}"
 
-aat-to-parser-ir-full-audit JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json" COMPAT_EDN="docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn":
+# Full parser-IR conversion audit over all five adapters. Dump selection comes
+# from the fidelity run-set (resolve-run-set -> lock, content-verified, fails
+# closed), NOT from ambient env / drifting justfile defaults — so this audit and
+# the fidelity coverage reports read the SAME pinned dumps. Pass a pre-resolved
+# LOCK (e.g. from `just fidelity-resolve`) to skip the fresh resolve.
+aat-to-parser-ir-full-audit JOBS="24" LOCK="" REPORT_MD="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json" COMPAT_EDN="docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn":
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"
-	@"{{repo_root}}/target/release/ab-aat-to-parser-ir" audit-corpus \
-		--aat-dir "{{aozora_rs_full_aat_dir}}" \
-		--aat-dir "{{aozora2_full_aat_dir}}" \
-		--aat-dir "{{aozora2html_full_aat_dir}}" \
-		--aat-dir "{{aozora_epub3_full_aat_dir}}" \
-		--aat-dir "{{aozora_full_aat_dir}}" \
+	@lock="{{LOCK}}"; \
+	if [ -z "$lock" ]; then lock="$(mktemp)"; trap 'rm -f "$lock"' EXIT; \
+		python3 "{{repo_root}}/reports/aat-fidelity/resolve-run-set.py" --repo-root "{{repo_root}}" --out "$lock"; fi; \
+	dirs_raw="$(python3 "{{repo_root}}/reports/aat-fidelity/lock-aat-dirs.py" "$lock" --order aozora-rs aozora2 aozora2html aozora-epub3 aozora)"; \
+	mapfile -t dirs <<< "$dirs_raw"; \
+	args=(); for d in "${dirs[@]}"; do args+=(--aat-dir "$d"); done; \
+	"{{repo_root}}/target/release/ab-aat-to-parser-ir" audit-corpus "${args[@]}" \
 		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}" \
@@ -505,16 +513,22 @@ parser-ir-publication-coverage-report PARSER_IR_SCHEMA="data/abc-schemas/schemas
 		--report-md "{{repo_root}}/{{REPORT_MD}}" \
 		"${args[@]}"
 
-tei-eaj-structural-expansion JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
+# TEI-EAJ structural expansion audit. Like aat-to-parser-ir-full-audit, the
+# per-adapter dumps are sourced from the fidelity run-set lock (content-verified,
+# fails closed) rather than drifting justfile defaults. Pass LOCK to reuse a
+# pre-resolved lock (e.g. from `just fidelity-resolve`).
+tei-eaj-structural-expansion JOBS="24" LOCK="" REPORT_MD="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
 	@test -f "{{tei_eaj_workset}}" || { echo "missing TEI-EAJ workset export: {{tei_eaj_workset}}" >&2; exit 2; }
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"
-	@"{{repo_root}}/target/release/ab-aat-to-parser-ir" tei-eaj-structural-expansion \
+	@lock="{{LOCK}}"; \
+	if [ -z "$lock" ]; then lock="$(mktemp)"; trap 'rm -f "$lock"' EXIT; \
+		python3 "{{repo_root}}/reports/aat-fidelity/resolve-run-set.py" --repo-root "{{repo_root}}" --out "$lock"; fi; \
+	dirs_raw="$(python3 "{{repo_root}}/reports/aat-fidelity/lock-aat-dirs.py" "$lock" --labeled --order aozora-rs aozora2 aozora2html aozora-epub3 aozora)"; \
+	mapfile -t dirs <<< "$dirs_raw"; \
+	args=(); for d in "${dirs[@]}"; do args+=(--aat-dir "$d"); done; \
+	"{{repo_root}}/target/release/ab-aat-to-parser-ir" tei-eaj-structural-expansion \
 		--workset "{{tei_eaj_workset}}" \
-		--aat-dir "aozora-rs={{aozora_rs_full_aat_dir}}" \
-		--aat-dir "aozora2={{aozora2_full_aat_dir}}" \
-		--aat-dir "aozora2html={{aozora2html_full_aat_dir}}" \
-		--aat-dir "aozora-epub3={{aozora_epub3_full_aat_dir}}" \
-		--aat-dir "aozora={{aozora_full_aat_dir}}" \
+		"${args[@]}" \
 		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}" \

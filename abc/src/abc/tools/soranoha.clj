@@ -4,6 +4,7 @@
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.manifest :as manifest]
+            [abc.tools.manifest-index :as manifest-index]
             [abc.tools.materialize-analysis :as materialize-analysis]
             [abc.tools.materialize-annotations :as materialize-annotations]
             [abc.tools.materialize-publication :as materialize-publication]
@@ -510,6 +511,17 @@
       annotation-result
       (conj (:annotation-manifest-file annotation-result)))))
 
+(defn validate-annotation-manifests!
+  "Release guardrails for annotation manifests in the batch path (spec A6):
+  indexes the produced manifests and applies the annotation release
+  guardrail + copied-field validators. A distinct step (not braided into
+  materialize-entry!) so it stays cheap to widen to other kinds later."
+  [manifest-files]
+  (let [entries (manifest-index/index-manifest-files manifest-files)]
+    (manifest-index/validate-annotation-release-guardrail! entries)
+    (manifest-index/validate-annotation-copied-fields! entries)
+    nil))
+
 (defn materialize-snapshot-root! [label-or-path root]
   (let [request-set (read-request-set label-or-path)
         label (get request-set "label")
@@ -521,15 +533,16 @@
     (files/delete-tree! root)
     (.mkdirs (io/file root))
     (let [generated-at (get plan "generated_at")
-          manifest-files (mapcat
-                          (fn [materialization]
-                            (materialize-entry!
-                             {:root root
-                              :materialization materialization
-                              :request-set request-set
-                              :annotation-materialization annotation-materialization
-                              :generated-at generated-at}))
-                          materializations)
+          manifest-files (vec (mapcat
+                               (fn [materialization]
+                                 (materialize-entry!
+                                  {:root root
+                                   :materialization materialization
+                                   :request-set request-set
+                                   :annotation-materialization annotation-materialization
+                                   :generated-at generated-at}))
+                               materializations))
+          _guardrails (validate-annotation-manifests! (map str manifest-files))
           generated-plan (assoc plan
                                 "manifest_references"
                                 (mapv #(loose-manifest-reference root %)

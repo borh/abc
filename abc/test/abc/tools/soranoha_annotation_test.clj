@@ -1,6 +1,7 @@
 (ns abc.tools.soranoha-annotation-test
   (:require [abc.tools.analysis-identity :as analysis-identity]
             [abc.tools.files :as files]
+            [abc.tools.manifest :as manifest]
             [abc.tools.schema :as schema]
             [abc.tools.snapshot-index :as snapshot-index]
             [abc.tools.soranoha :as soranoha]
@@ -68,5 +69,37 @@
       (doseq [slug ["demo-fixture-a" "demo-fixture-b"]]
         (is (not (.exists (io/file root "artifacts" "works" slug "annotations")))
             slug))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest validate-annotation-manifests-passes-on-materialized-root-test
+  (let [root (fixture/temp-dir "abc-annotation-guardrail-root")]
+    (try
+      (soranoha/materialize-snapshot-root! "demo-annotation-ja" root)
+      (let [manifests (->> (file-seq (io/file root "artifacts"))
+                           (filter #(and (.isFile %)
+                                         (.endsWith (.getName %) ".manifest.json")))
+                           (mapv str))]
+        (is (nil? (soranoha/validate-annotation-manifests! manifests))))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest validate-annotation-manifests-rejects-stripped-policy-hash-test
+  (let [root (fixture/temp-dir "abc-annotation-guardrail-bad-root")]
+    (try
+      (soranoha/materialize-snapshot-root! "demo-annotation-ja" root)
+      (let [manifest-file (io/file root "artifacts" "works" "demo-fixture-a"
+                                   "annotations" "annotation.manifest.json")
+            manifest-value (files/read-json manifest-file)]
+        (manifest/write-json-file!
+         manifest-file
+         (update manifest-value "manifest_identity_object"
+                 dissoc "annotation_policy_hash"))
+        (let [manifests (->> (file-seq (io/file root "artifacts"))
+                             (filter #(and (.isFile %)
+                                           (.endsWith (.getName %) ".manifest.json")))
+                             (mapv str))]
+          (is (thrown? clojure.lang.ExceptionInfo
+                       (soranoha/validate-annotation-manifests! manifests)))))
       (finally
         (fixture/delete-tree! root)))))

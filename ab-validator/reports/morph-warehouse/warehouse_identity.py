@@ -1,0 +1,63 @@
+"""Input-set identity for a morph-warehouse run.
+
+Builds the identity_object from the exact arguments a warehouse recipe passes to
+`ab-morph-run analyze-aat`, then reduces it to one input_set_hash via run_identity.
+Content-based and fail-toward-correctness: every knob that changes the analyzed
+output is folded in; parallelism (--jobs), temp dirs, and report ids are excluded
+(they change neither which works are analyzed nor the emitted bytes). Optional
+knobs are represented explicitly (null when the flag is not passed) so that "flag
+absent" and "flag present" are unambiguously different identities. See
+docs/superpowers/specs/2026-07-09-batch-run-staleness-skip-recompute-design.md.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+from typing import Any
+
+_LIB = Path(__file__).resolve().parents[1] / "lib"
+sys.path.insert(0, str(_LIB))
+
+import run_identity  # noqa: E402
+import aat_hash  # noqa: E402
+import hashing  # noqa: E402
+
+
+def build_identity_object(
+    *,
+    aat_dir: str | Path,
+    dictionaries: dict[str, str],
+    analyzers: list[str],
+    warehouse_profile: str,
+    schema_files: list[str | Path],
+    ortho_detect: str | None = None,
+    works_parquet: str | Path | None = None,
+) -> dict[str, Any]:
+    """Assemble the content identity of a warehouse run's inputs.
+
+    - aat_dir: the checked AAT dump directory; hashed by content (hash_aat_dir).
+    - dictionaries: {name: nix-store-path}; store paths are already content ids.
+    - analyzers: selected analyzer specs incl. dict variants ('vibrato:unidic-…');
+      sorted for order-independence.
+    - warehouse_profile: 'full' | 'triage'.
+    - schema_files: warehouse schema .sql files; hashed by content.
+    - ortho_detect: e.g. 'historical'; None when the flag is not passed.
+    - works_parquet: eligibility slice; hashed by content, None when not passed.
+    """
+    return {
+        "aat_content_hash": aat_hash.hash_aat_dir(aat_dir),
+        "dictionaries": {name: str(path) for name, path in dictionaries.items()},
+        "analyzers": sorted(analyzers),
+        "warehouse_profile": warehouse_profile,
+        "ortho_detect": ortho_detect,
+        "works_parquet_hash": (
+            hashing.file_sha256(Path(works_parquet)) if works_parquet is not None else None
+        ),
+        "schema_version": {Path(s).name: hashing.file_sha256(Path(s)) for s in schema_files},
+    }
+
+
+def warehouse_input_set_hash(**kwargs: Any) -> str:
+    """input_set_hash of build_identity_object(**kwargs)."""
+    return run_identity.input_set_hash(build_identity_object(**kwargs))

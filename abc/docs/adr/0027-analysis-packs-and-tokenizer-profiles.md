@@ -169,6 +169,46 @@ The accepted first input view for tokenization is
 `parser-ir-plaintext-body-v1`. Later input views require an input-view identity
 map update.
 
+### What the plaintext input view preserves and loses
+
+`parser-ir-plaintext-body-v1` preserves ruby **base text** and resolved gaiji
+codepoints; it drops ruby **readings**, ruby span boundaries, ruby direction,
+and the node alignment back to parser-IR
+(`src/abc/tools/parser_ir_plaintext.clj`). Tokenizers therefore see the
+complete visible body text. What is lost is annotation, not text.
+
+The probe recorded in `docs/handoffs/ruby-annotation-probe-2026-07-09.md`
+measured both halves of that loss over a deterministic 80-work sample:
+
+- Ruby spans are not word boundaries: 32.2% of ruby spans straddle a token
+  edge under `unidic-novel`, overwhelmingly legitimate stem ruby whose reading
+  is prefix-consistent with the tokenizer's reading. Ruby spans must not be
+  fed to tokenizers as hard segmentation constraints, and this ADR does not
+  define a ruby-constrained tokenization path. Plaintext-view tokenization is
+  not a measured segmentation-accuracy loss.
+- Ruby readings are unrecoverable annotation: 31.3% of author readings differ
+  substantively from the best-fitting period dictionary's readings (gikun,
+  foreign-word glosses, name readings, lexical reading choices). Preserving
+  them requires joining parser-IR ruby nodes to token streams, which ADR 0028
+  proposes as a downstream overlay.
+
+Two alternatives are rejected rather than deferred:
+
+- **TEI-body tokenization input view.** TEI is a downstream publication
+  rendering of the same parser-IR; it contains no information parser-IR lacks,
+  and tokenizing from it would pull `tei_profile_hash` and XML processing into
+  analysis identity for zero informational gain.
+- **Ruby spans as tokenizer segmentation constraints.** Refuted by the probe
+  boundary measurements above. A tokenizer profile that experiments with
+  constraint decoding remains expressible as profile configuration, but it is
+  not an accepted release path.
+
+Token spans expressed in the plaintext input view's coordinate system are what
+make annotation joins possible downstream: any annotation view over the same
+plaintext coordinates joins to any token stream by span intersection, without
+tokenizer cooperation. This is a design invariant of the input-view span
+requirement, not an incidental property.
+
 For a tokenized slice:
 
 - subject fields come from the consumed parser-IR/plaintext producer;
@@ -245,7 +285,9 @@ The analysis recipe must state:
 - denominator policy,
 - sentence segmentation policy when metric formulas depend on sentence units,
 - treatment of ruby, gaiji, notes, source apparatus, front matter, and back
-  matter,
+  matter — including whether author ruby readings from an ADR 0028 annotation
+  overlay supplant tokenizer-assigned readings, and how overlay conflict
+  classifications are handled,
 - exact null/warning/failure behavior.
 
 Recipes that require corpus-level statistics, such as corpus-normalized
@@ -620,6 +662,14 @@ remaining materialization and validation work lands.
 ## Deferred Decisions
 
 - Which tokenizer profile is first accepted for public Japanese tokenization.
+  The ruby-annotation probe supports `unidic-novel` (already compiled as a
+  Vibrato dictionary in the ab-validator flake) as the first candidate for
+  Aozora prose.
+- Ruby annotation overlays joining parser-IR ruby nodes to token streams:
+  proposed separately as ADR 0028, not decided here.
+- Exposing the Vibrato and Sudachi CLI runners through the Nix flake so
+  tokenizer-profile `fixture evidence hash` values can be produced from
+  pinned, runnable tools rather than ad hoc local runners.
 - Exact token record columns beyond token index and input span requirements.
 - Exact tokenizer-backed metric formulas.
 - Whether public research-data packaging uses RO-Crate, Frictionless Data

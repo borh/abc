@@ -308,13 +308,9 @@ pub fn read_tokens_for(
             if !values.is_null(row) {
                 let source_id = source_ids.value(row);
                 let analyzer_id = analyzer_ids.value(row);
-                // Borrowed pre-check: does this (source_id, analyzer_id) exist in ranges_by_source?
-                // Only allocate the owned key if the borrowed check passes.
-                if ranges_by_source
-                    .get(source_id)
-                    .and_then(|by_analyzer| by_analyzer.get(analyzer_id))
-                    .is_some()
-                {
+                // Interval-precise pre-check: is this morpheme_index within a wanted interval?
+                // Only allocate the owned key if the interval check passes.
+                if wanted(source_id, analyzer_id, indices.value(row)) {
                     let key = (
                         source_id.to_owned(),
                         analyzer_id.to_owned(),

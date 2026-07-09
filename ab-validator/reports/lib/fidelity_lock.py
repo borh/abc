@@ -65,3 +65,9 @@ def lock_aat_globs(lock: JsonObject, order: list[str] | None = None) -> dict[str
 def lock_run_set_id(lock: JsonObject) -> str | None:
     value = lock.get("run_set_id")
     return value if isinstance(value, str) else None
+
+
+def lock_db_root(lock: JsonObject) -> str | None:
+    """The AB_DB_ROOT deployment binding recorded at resolve time (provenance)."""
+    value = lock.get("db_root")
+    return value if isinstance(value, str) else None

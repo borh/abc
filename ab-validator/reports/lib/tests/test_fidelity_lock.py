@@ -13,6 +13,8 @@ from __future__ import annotations
 import importlib.util
 import json
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -57,6 +59,13 @@ class LockReader(unittest.TestCase):
         self.assertEqual(fidelity_lock.lock_aat_globs(lock)["a"], "/x/a/*.json")
         self.assertEqual(fidelity_lock.lock_run_set_id(lock), "rs")
 
+    def test_db_root_provenance(self) -> None:
+        p = self._write(
+            {"lock_format": "fidelity-lock/v1", "run_set_id": "rs",
+             "db_root": "/mnt/bulk/ab-validator", "adapters": {"a": {"aat_dir": "/x/a"}}}
+        )
+        self.assertEqual(fidelity_lock.lock_db_root(fidelity_lock.load_lock(p)), "/mnt/bulk/ab-validator")
+
 
 class SubstitutionIsIdentity(unittest.TestCase):
     """resolve->lock globs == the old aat_runs globs, for the same manifest."""
@@ -91,6 +100,37 @@ class SubstitutionIsIdentity(unittest.TestCase):
         lock = resolve_run_set.resolve_lock(run_set, repo_root=self._tmp, verify_dirs=True)
         new = fidelity_lock.lock_aat_globs(lock, order=["aozora"])
         self.assertEqual(old, new)
+
+
+class ComputeIsClosed(unittest.TestCase):
+    """Move C proof: a compute tool runs under an EMPTY environment given only the lock.
+
+    If compute read any ambient config (AB_DB_ROOT / AB_AAT_RUN_SET / CWD discovery),
+    `env -i` would break it. It doesn't — the lock is a closed value.
+    """
+
+    def test_normalized_coverage_runs_under_empty_env(self) -> None:
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(tmp, ignore_errors=True))
+        aat = Path(tmp) / "aat" / "aozora-adapter"
+        aat.mkdir(parents=True)
+        (aat / "000001_1.json").write_text('{"blocks":[]}', encoding="utf-8")
+        order = ["aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3"]
+        lock = Path(tmp) / "l.json"
+        lock.write_text(json.dumps({
+            "lock_format": "fidelity-lock/v1", "run_set_id": "envi",
+            "adapters": {a: {"aat_dir": str(aat)} for a in order},
+        }), encoding="utf-8")
+        summary = Path(tmp) / "s.json"
+        summary.write_text(json.dumps({"classified": [{"construct": "ruby.basic", "denominator": 1}]}), encoding="utf-8")
+        tool = _LIB.parent / "aat-fidelity" / "normalized-corpus-coverage.py"
+        # empty env except PATH (so python3 resolves); NO AB_* vars, no CWD dependence.
+        r = subprocess.run(
+            ["env", "-i", "PATH=" + os.environ["PATH"], sys.executable, str(tool), str(summary), "--lock", str(lock)],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(json.loads(r.stdout)["aat_run_set_id"], "envi")
 
 
 if __name__ == "__main__":

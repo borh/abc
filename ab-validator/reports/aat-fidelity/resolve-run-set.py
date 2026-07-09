@@ -16,12 +16,13 @@ from __future__ import annotations
 import argparse
 import glob
 import json
+import os
 from pathlib import Path
 import sys
 
 REPORTS_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPORTS_ROOT / "lib"))
-from aat_runs import adapter_aat_dirs, load_run_set, validate_run_set  # noqa: E402
+from aat_runs import DEFAULT_DB_ROOT, adapter_aat_dirs, load_run_set, validate_run_set  # noqa: E402
 from fidelity_lock import LOCK_FORMAT  # noqa: E402
 
 
@@ -61,6 +62,9 @@ def resolve_lock(
         "lock_format": LOCK_FORMAT,
         "run_set_id": run_set.get("run_set_id"),
         "manifest": run_set.get("_run_set_path"),
+        # The deployment binding this lock was resolved against (F8: AB_DB_ROOT is a
+        # per-deployment bulk-storage root, confined here to the resolve boundary).
+        "db_root": os.environ.get("AB_DB_ROOT", DEFAULT_DB_ROOT),
         "adapters": {label: {"aat_dir": aat_dir} for label, aat_dir in dirs.items()},
     }
 

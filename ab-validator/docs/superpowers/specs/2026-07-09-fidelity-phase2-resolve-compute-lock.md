@@ -211,13 +211,15 @@ system is shippable and behavior-preserving at every boundary.
 | Step | Delivers | State | Gate (characterization) |
 |---|---|---|---|
 | **Phase 1** — manifest authoritative | env-overrides impossible | ✅ merged `a4d15879` | byte-identical resolution + `test_aat_runs.py` |
-| **2 · Move B** — resolve/compute skeleton + single lock | *one obvious way*; glue deleted | next | report bytes == Phase-1 baseline |
-| **2 · Move C** — close ambient env | zero-env compute (closed value) | after B | `env -i compute <lock>` identical |
+| **2 · Move B** — resolve/compute skeleton + single lock | *one obvious way*; glue deleted | ✅ done (branch) | report bytes == Phase-1 baseline (byte-identical on full corpus) |
+| **2 · Move C** — close ambient env | zero-env compute (closed value) | ✅ done (branch) | `env -i compute <lock>` runs — proven in `test_fidelity_lock.py` |
 | **2 · Move A** — content-address (via derivations) | *provably correct* | keystone; per criterion above | golden-lock + fail-closed |
 
-**Immediate next deliverable:** the **lock JSON Schema** (owner = resolve, `schema_version`)
-— it is the contract everything else in Phase 2 composes against, and pins down Move B
-before any recipe is touched.
+**Note on Move C:** it turned out *substantially subsumed by Move B* — because the lock
+carries deployment-bound absolute paths and compute reads only the lock, compute was
+already env-free once B landed. Move C therefore reduced to (a) recording the `db_root`
+deployment binding in the lock as provenance and (b) making the `env -i` closure a durable
+test. `AB_AAT_RUN_SET` remains a legitimate run selector confined to `resolve` (F8 nuance).
 
 **The finish line, concretely:** when Move A lands, the three tests in *"the proof you
 cannot write today"* become real, and the env compute reads collapses from Phase-1's

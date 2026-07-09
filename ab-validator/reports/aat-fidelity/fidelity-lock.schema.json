@@ -20,6 +20,10 @@
       "type": "string",
       "description": "Path of the manifest this lock was resolved from (record, not an input)."
     },
+    "db_root": {
+      "type": "string",
+      "description": "The AB_DB_ROOT deployment binding this lock was resolved against (provenance). Per-deployment bulk-storage root; the aat_dir paths below are absolute under it."
+    },
     "adapters": {
       "type": "object",
       "minProperties": 1,

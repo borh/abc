@@ -880,6 +880,23 @@ morph-warehouse-run-lane-b works_parquet analyzers="vibrato sudachi-a sudachi-c"
 			--works-parquet "{{works_parquet}}" \
 			--jobs "$jobs"
 
+# Hydrate an interestingness ranking artifact into a self-contained example
+# bundle (examples.md + examples.json): snippets, per-analyzer tables,
+# reconstructed aozora markup, work metadata. Run on the machine holding the
+# warehouse run dir + AAT corpus (hinoki for full-corpus runs).
+morph-warehouse-hydrate-interesting interesting run_dir output_dir abc_catalog="" context_chars="40" limit="" force="":
+	@engine_bin="$(nix build .#ab-morph-run --no-link --print-out-paths)/bin/ab-morph-run"; \
+	args=(); \
+	if [ -n "{{abc_catalog}}" ]; then args+=(--abc-catalog "{{abc_catalog}}"); fi; \
+	if [ -n "{{limit}}" ]; then args+=(--limit "{{limit}}"); fi; \
+	if [ -n "{{force}}" ]; then args+=(--force); fi; \
+	"$engine_bin" hydrate-interesting \
+		--interesting "{{interesting}}" \
+		--run-dir "{{run_dir}}" \
+		--output-dir "{{output_dir}}" \
+		--context-chars "{{context_chars}}" \
+		"${args[@]}"
+
 morph-warehouse-run-full aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
 	@just morph-warehouse-run full "{{aat_dir}}" "{{run_id}}" "{{jobs}}"
 

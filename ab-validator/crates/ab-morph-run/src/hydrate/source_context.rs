@@ -214,6 +214,38 @@ fn node_byte_span(node: &serde_json::Value) -> Option<(u64, u64)> {
     ))
 }
 
+/// Extracts text content from a node, handling nested typed children
+/// (e.g. ruby, gaiji) when recursing into style/tcy. Returns None if the
+/// node has no renderable text.
+fn inline_child_text(node: &serde_json::Value) -> Option<String> {
+    match node.get("kind")?.as_str()? {
+        "text" => node.get("value")?.as_str().map(str::to_owned),
+        "ruby" => {
+            let base = node.get("base")?.as_str()?;
+            let reading = node.get("reading")?.as_str()?;
+            Some(format!("{base}《{reading}》"))
+        }
+        "gaiji" => match node.get("resolved").and_then(serde_json::Value::as_str) {
+            Some(resolved) if !resolved.is_empty() => Some(resolved.to_owned()),
+            _ => node
+                .get("description")
+                .and_then(serde_json::Value::as_str)
+                .filter(|description| !description.is_empty())
+                .map(|description| format!("※［＃{description}］")),
+        },
+        "style" | "tcy" => {
+            let inner: String = node
+                .get("content")?
+                .as_array()?
+                .iter()
+                .filter_map(inline_child_text)
+                .collect();
+            if inner.is_empty() { None } else { Some(inner) }
+        }
+        _ => None,
+    }
+}
+
 /// Renders one typed AAT node back to Aozora markup. `span_len` is the
 /// node's sanitized-source byte length, used for byte-length verification
 /// (spec §Layer 3 step 2).
@@ -254,14 +286,15 @@ fn render_node(node: &serde_json::Value, span_len: u64) -> Option<Rendered> {
             }
             Some(Rendered::Approximate(format!("※［＃{description}］")))
         }
-        // style/tcy: render inner text content, always approximate (the
-        // surrounding marker form is not recoverable byte-exactly).
+        // style/tcy: render inner text content, including nested typed nodes
+        // (ruby, gaiji, etc.), always approximate (the surrounding marker form
+        // is not recoverable byte-exactly).
         "style" | "tcy" => {
             let inner: String = node
                 .get("content")?
                 .as_array()?
                 .iter()
-                .filter_map(|child| child.get("value").and_then(serde_json::Value::as_str))
+                .filter_map(inline_child_text)
                 .collect();
             if inner.is_empty() {
                 None
@@ -411,5 +444,49 @@ mod tests {
         };
         let err = reconstruct_markup(&aat, &[span], 0, 1).unwrap_err();
         assert!(err.to_string().contains("markup-unreconstructable"));
+    }
+
+    #[test]
+    fn markup_reconstruction_renders_style_node_with_nested_ruby() {
+        // AAT with a style (bouten) node whose content contains a ruby child.
+        // Sanitized-source layout: "▲仏蘭西▲" (the ▲ are bouten markers, bytes
+        // 0-3, 33-36) with ruby "仏蘭西《フランス》" inside (bytes 3-33).
+        let aat = json!({
+            "version": 1, "work_id": "src-style-ruby",
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "style", "class": "bouten", "content": [
+                        {"kind": "ruby", "base": "仏蘭西", "reading": "フランス", "direction": "right"}
+                    ],
+                     "span": {"byte_start": 0, "byte_end": 36, "line_start": 1, "line_end": 1}}
+                ]
+            }],
+            "meta": {"adapter": "aozora", "adapter_version": "fixture",
+                     "source_encoding": "windows-31j", "parse_complete": true,
+                     "source_hash": "sha256:00", "warnings": []}
+        });
+        // Build a span pointing at the style node. The style node renders the
+        // ruby base+reading without byte-exact recovery (no marker form).
+        let span = ab_plaintext::ProjectionSpan {
+            projected_char_start: 0,
+            projected_char_end: 3, // "仏蘭西" is 3 chars
+            aat_pointer: "/blocks/0/content/0".to_owned(),
+            inline_kind: "style".to_owned(),
+            is_ruby_base: false,
+            is_gaiji: false,
+            is_note: false,
+        };
+        let (markup, nodes) = reconstruct_markup(&aat, &[span], 0, 3).unwrap();
+        // The rendered text should include the ruby base and reading.
+        assert_eq!(markup.text, "仏蘭西《フランス》");
+        // The style node should be flagged as approximate (marker not recovered).
+        assert_eq!(
+            markup.approximate_pointers,
+            vec!["/blocks/0/content/0".to_owned()]
+        );
+        assert_eq!(nodes.len(), 1);
+        assert_eq!(nodes[0].pointer, "/blocks/0/content/0");
+        assert_eq!(nodes[0].inline_kind, "style");
     }
 }

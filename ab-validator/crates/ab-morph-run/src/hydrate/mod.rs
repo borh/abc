@@ -8,6 +8,7 @@
 use std::path::PathBuf;
 
 pub mod source_context;
+pub mod tables;
 
 /// Options for [`run_hydrate_interesting`].
 #[derive(Debug, Clone)]

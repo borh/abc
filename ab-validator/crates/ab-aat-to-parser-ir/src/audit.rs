@@ -425,19 +425,35 @@ fn audit_file(
     let (raw_nodes, outcome) = match read_json(&file.path) {
         Ok(aat) => {
             let raw_nodes = summarize_raw_nodes(&aat);
-            let outcome = match converter.convert(
-                aat,
-                ConversionOptions {
-                    validate_input_aat: true,
-                    validate_output_parser_ir: true,
-                    ..ConversionOptions::default()
-                },
-            ) {
-                Ok(output) => {
+            // Corpus-scan resilience: a latent bug in conversion/sentence-projection
+            // that panics on one edge-case file (e.g. an inconsistent node span in a
+            // repinned dump) must not abort the whole audit. Catch the panic and
+            // record it as a per-file failure, exactly as a returned Err would be.
+            // The unit tests call convert() directly (outside this guard), so
+            // panic-shaped regressions still surface there — only the corpus scan is
+            // made fault-tolerant.
+            let converted = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                converter.convert(
+                    aat,
+                    ConversionOptions {
+                        validate_input_aat: true,
+                        validate_output_parser_ir: true,
+                        ..ConversionOptions::default()
+                    },
+                )
+            }));
+            let outcome = match converted {
+                Ok(Ok(output)) => {
                     FileOutcome::Success(Box::new(summarize_output(&output, mapping_hash)))
                 }
-                Err(error) => FileOutcome::Failure {
+                Ok(Err(error)) => FileOutcome::Failure {
                     message: format!("{error:#}"),
+                },
+                Err(panic) => FileOutcome::Failure {
+                    message: format!(
+                        "internal panic during conversion: {}",
+                        panic_message(&panic)
+                    ),
                 },
             };
             (raw_nodes, outcome)
@@ -454,6 +470,18 @@ fn audit_file(
         relative_path,
         raw_nodes,
         outcome,
+    }
+}
+
+/// Best-effort extraction of a panic payload's message (the string passed to
+/// `panic!` / produced by `unwrap`/slice/index panics).
+fn panic_message(panic: &Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = panic.downcast_ref::<&str>() {
+        (*s).to_owned()
+    } else if let Some(s) = panic.downcast_ref::<String>() {
+        s.clone()
+    } else {
+        "unknown panic payload".to_owned()
     }
 }
 

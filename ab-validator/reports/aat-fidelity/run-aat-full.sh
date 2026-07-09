@@ -239,7 +239,37 @@ if [[ ! -d "$corpus/cards" ]]; then
   exit 2
 fi
 if [[ -e "$out_dir" && "$force" != "1" ]]; then
-  printf 'output directory already exists: %s\n' "$out_dir" >&2
+  # Active skip (Task 4): if a prior dump at $out_dir is provably fresh for the
+  # current inputs, exit 0 without recomputing. Gated on adapter_identity_complete
+  # so a fresh check only fires for adapters whose identity fully captures the code
+  # that produced the dump (aozora). For wrapper adapters (identity incomplete) we
+  # do NOT compute the pre-hash — their adapter_hash_target (the Rust mapper) is not
+  # built until the build-adapter step, which runs AFTER this gate — and keep the
+  # fail-closed "output dir exists → pass --force" behavior unchanged.
+  #
+  # The input_set_hash computed here MUST be byte-identical to the one
+  # provenance_fields(...) writes into metadata.json below; its args mirror that
+  # heredoc's provenance_fields(...) call exactly (corpus/cards, adapter_hash_target
+  # as --adapter-binary, "$adapter" --version, ab-index/ab-check bins, feature
+  # patterns, and the same optional timeout/features/work-ids).
+  if [[ "$adapter_identity_complete" == "1" ]]; then
+    current_hash="$(python "$repo_root/reports/aat-fidelity/generator_identity.py" \
+      --corpus-dir "$corpus/cards" \
+      --adapter-version "$("$adapter" --version)" \
+      --adapter-binary "$adapter_hash_target" \
+      --ab-index-binary "$ab_index_bin" \
+      --ab-check-binary "$ab_check_bin" \
+      --feature-patterns "$repo_root/data/feature-patterns.toml" \
+      ${timeout:+--timeout "$timeout"} \
+      ${features:+--features "$features"} \
+      ${work_ids:+--work-ids "$work_ids"})"
+    if python "$repo_root/reports/aat-fidelity/generator_skip.py" \
+         --out-dir "$out_dir" --input-set-hash "$current_hash"; then
+      printf '%s AAT dump already fresh, skipping: %s\n' "$adapter_id" "$out_dir"
+      exit 0
+    fi
+  fi
+  printf 'output directory exists (stale, unverifiable, or identity-incomplete adapter): %s\n' "$out_dir" >&2
   printf 'pass --force to replace it\n' >&2
   exit 2
 fi

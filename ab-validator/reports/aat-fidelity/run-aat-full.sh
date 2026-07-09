@@ -221,6 +221,7 @@ fi
 # build-free.
 ab_index_bin="$(nix build "$repo_root#ab-index" --no-link --print-out-paths)/bin/ab-index"
 ab_check_bin="$(nix build "$repo_root#ab-check" --no-link --print-out-paths)/bin/ab-check"
+triage_python="$(nix build "$repo_root#aat-triage-python" --no-link --print-out-paths)/bin/python3"
 
 # The self-contained aozora adapter also comes from nix (its identity is
 # complete). The wrapper adapters keep the bash-wrapper path set in the case
@@ -346,10 +347,7 @@ fi
 
 run_step check-corpus "$reports_dir" "$ab_check_bin" "${check_args[@]}"
 
-duckdb_bin="$(aat_duckdb_bin)"
-aat_setup_duckdb_runtime "$duckdb_bin"
-
-run_step build-triage "$triage_dir" uv run --isolated --no-project --with 'duckdb>=1.1' \
+run_step build-triage "$triage_dir" "$triage_python" \
   "$repo_root/reports/aat-fidelity/build-aat-batch-triage.py" \
   --reports-dir "$reports_dir" \
   --aat-dir "$aat_dir" \

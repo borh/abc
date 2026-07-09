@@ -82,6 +82,21 @@ def validate_run_set(
             elif require_paths:
                 errors.append(f"adapter {label}: run descriptor missing: {path}")
 
+            # Coherence: the run_descriptor (metadata.json) must sit at the root of the
+            # SAME dump as the resolved aat_dir. A stale `<label>_aat_dir_env` override
+            # can otherwise swap in a different dump while the descriptor still resolves
+            # to the run-set default (which matches flake.lock), so validation would pass
+            # on the wrong data. See 2026-07-09-fidelity-workflow-integration.md.
+            dump_root = Path(descriptor_path).parent
+            try:
+                Path(aat_dir).resolve().relative_to(dump_root.resolve())
+            except ValueError:
+                errors.append(
+                    f"adapter {label}: aat_dir is not under the run_descriptor dump root "
+                    f"(dump-swap / stale *_AAT_DIR override?): aat_dir={aat_dir} "
+                    f"descriptor_root={dump_root}"
+                )
+
         expected = entry.get("expected", {})
         if isinstance(expected, dict):
             errors.extend(_validate_expected(label, expected, descriptor, lock_nodes))

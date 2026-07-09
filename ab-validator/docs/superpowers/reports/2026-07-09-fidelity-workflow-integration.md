@@ -62,10 +62,13 @@ and `run_descriptor` can diverge because they are independent fields.
 1. **Neutralize the stale profile overrides** — remove `AB_AOZORA_AAT_DIR` /
    `AB_AOZORA_RS_AAT_DIR` (and siblings) from the profile, or repoint them at the
    run-set defaults. They predate the run-set and now actively defeat it.
-2. **Bind `run_descriptor` to the resolved `aat_dir`** — default the descriptor to
-   `<aat_dir>/../metadata.json` (co-located) instead of a separately-overridable field,
-   so a dir swap can't pass with a stale default descriptor. Then `validate_run_set`
-   verifies the descriptor that actually ships with the data.
+2. **Bind `run_descriptor` to the resolved `aat_dir`** — ✅ *implemented 2026-07-09* as a
+   coherence check in `validate_run_set`: it now errors if the resolved `aat_dir` is not
+   under the resolved `run_descriptor`'s dump root, so a stale `*_AAT_DIR` override that
+   swaps the dump is flagged (verified: the previously-silent `AB_AOZORA_AAT_DIR`→old-dump
+   swap now fails validation; clean env still passes). A deeper version would *default*
+   the descriptor to `<aat_dir>/../../metadata.json` so the two can't be set
+   independently at all.
 3. **Emit `metadata.json` for every dump** — aozora2 (`…-layout-fix5`) and aozora-rs
    (`fidelity-corpus/aozora-rs`) currently lack descriptors, so `--require-paths`
    validation fails even in a clean env. Backfill them (the `run-*-aat-full.sh` runners

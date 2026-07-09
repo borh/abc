@@ -83,6 +83,10 @@ token coordinate family), not Java UTF-16 units: track with
 `{"input_view_kind": "parser-ir-body-annotations-v1", "policy_hash": …}`.
 No resolver code change; add a fixture.
 
+*(First slice shipped the demonstration fixture only; the widening landed
+2026-07-10: schema v0.1.4 `oneOf`, `allowed-input-view-kinds`, and the
+resolved `demo-annotation-ja` fixture.)*
+
 ## D7. Span survival under text-rewriting normalization (M2)
 
 **Decision (deferred to a tokenizer-profile schema rev, recorded here).** The

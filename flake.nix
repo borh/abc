@@ -254,6 +254,16 @@
               ''
                 bash tests/aat-run-set-smoke.sh
               '';
+          monorepo-fidelity-lock-idempotency =
+            mkMonorepoCheck "soranoha-monorepo-fidelity-lock-idempotency"
+              [
+                pkgs.bash
+                pkgs.coreutils
+                pkgs.python3
+              ]
+              ''
+                bash tests/fidelity-lock-idempotency-smoke.sh
+              '';
           monorepo-aat-materialization-workflow =
             mkMonorepoCheck "soranoha-monorepo-aat-materialization-workflow"
               [

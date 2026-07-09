@@ -183,13 +183,19 @@ git commit -m "feat(fidelity): shared input-set identity hasher for batch skip-r
 
 ---
 
-## Slice 2 — morph-warehouse identity + skip (grounded outline; expand when reached)
+## Slice 2 — morph-warehouse identity + skip (grounded; invocation-boundary design)
 
-**Deliverable:** `ab-morph-run analyze-aat` computes a warehouse `identity_object` = `{aat_content_hash (reuse the AAT dump's existing content_hash), dictionaries (nix store paths of sudachi/vibrato/vaporetto), analyzers (selected set), warehouse_profile (full|triage), schema_version (sha256 of ab-morph-run/sql/schema.sql + ab-warehouse schema)}`, writes a `run-manifest.json` sidecar + an `input_set_hash` column on `runs.parquet`, maintains a `by-input/<input_set_hash> -> runs/<run-id>` index, and **skips** when `by-input/<H>` resolves to a run whose Parquet outputs re-verify — unless `--force`.
+**Design (grounded):** skip-recompute lives at the **invocation boundary**, not inside the Rust engine. `analyze-aat` is called only from thin `justfile`/bash recipes (`morph-warehouse-run-with-analyzers` `justfile:762`, `-historical`, `-lane-b`; `benchmarks/run-morph-corpus.sh`) with explicit args and nix-store dictionary paths. A Python **resolve→compute→record wrapper** replaces the raw `cargo run` — the 45 GB Rust pipeline is untouched (lowest blast radius). `input_set_hash` on `runs.parquet` is a deferred nicety, not required.
 
-**Grounding needed before writing tasks:** `crates/ab-morph-run/src/main.rs` (analyze-aat args, dispatch `:417-473`), `src/lib.rs:180 run_analyze_aat_warehouse`, `src/pipeline.rs` (`.staging` + publish path `:2146-2252`), `sql/schema.sql` (runs table), how dictionary paths/env arrive. Confirm open-question knobs: does `warehouse_profile` change values or only retained tables; are analyzer versions captured.
+**`identity_object`** (from the exact recipe args): `aat_content_hash = hash_aat_dir(--aat-dir)`; `dictionaries` = nix store paths (`AB_SUDACHI_DICT`/`AB_VIBRATO_DICT_DIR`/`AB_VAPORETTO_DICT`); `analyzers` = selected set **incl. dict variants** (`vibrato:unidic-…`); `warehouse_profile`; `ortho_detect`; `works_parquet_hash = file_sha256(--works-parquet)` when passed (absent key otherwise); `schema_version = file_sha256(sql/schema.sql)(+ab-warehouse)`. **Excluded** (parallelism/location only): `--jobs`, temp dirs, report ids.
 
-**Interfaces produced:** `run-manifest.json` schema; `input_set_hash` column; `by-input/` index layout; `--force` flag. **Verification:** fixture warehouse (tiny AAT dir) proving deterministic identity, skip-on-match, recompute-on-mutated-input, `--force` overrides.
+**Tasks (expand to full TDD when dispatched):**
+- **2.1** `reports/morph-warehouse/warehouse_identity.py` — build `identity_object` from explicit inputs → `run_identity.input_set_hash`. Pure (reuses `run_identity`, `aat_hash.hash_aat_dir`, `hashing.file_sha256`). Fixture-tested: determinism; each knob changes the hash; works-parquet present vs absent differ.
+- **2.2** `reports/morph-warehouse/warehouse_index.py` — `run-manifest.json` writer (identity_object + input_set_hash + recorded output-file hashes) + `by-input/<hash> → runs/<run-id>` symlink; and a reader that resolves the index and **re-verifies** the run's recorded outputs → `fresh | stale | missing` (mirrors `valid-cached-node-result`). Fixture warehouse test.
+- **2.3** `reports/morph-warehouse/run-warehouse.py` — the wrapper: compute identity → check index → SKIP if fresh, else invoke the compute command (an **injectable** callable, like the nix-bridge `:runner`, so it is unit-testable without the real Rust batch) → on success write manifest + index. `--force` bypasses. Fixture test: skip path, compute-and-record path (fake command), force path.
+- **2.4** wire the `justfile` recipes to call `run-warehouse.py` instead of raw `cargo run` — **additive: a cache miss invokes the byte-identical `analyze-aat` command**. *High-risk, cannot be sandbox-verified on the 45 GB batch — surface to the human before landing (per SDD escalation); verify by `just --dry-run`/command-echo that the miss path reproduces today's invocation exactly.*
+
+**Interfaces produced:** `warehouse_identity.build_identity_object(...)`/`input_set_hash`; `run-manifest.json` shape; `by-input/` layout; `warehouse_index.check(...) -> fresh|stale|missing`; the wrapper CLI + `--force`.
 
 ## Slice 3 — AAT generator identity + skip / F6 (grounded outline; expand when reached)
 

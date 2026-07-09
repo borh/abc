@@ -112,21 +112,38 @@ re-verifies.
 
 ### morph-warehouse runs (the quick win — inputs already computable)
 
-`identity_object` =
-- `aat_content_hash` — **reuse** the AAT dump's existing `content_hash` (already
-  pinned / produced above); no new hashing of the AAT dir needed;
-- `dictionaries` — the nix store paths of `AB_SUDACHI_DICT`, `AB_VIBRATO_DICT`,
-  `AB_VAPORETTO_DICT` (already content-addressed);
-- `analyzers` — the selected analyzer set (`AB_MORPH_ANALYZERS`);
-- `warehouse_profile` — `full` | `triage` (changes which tables are kept);
-- `schema_version` — `sha256-file` of `ab-morph-run/sql/schema.sql` (+ `ab-warehouse`
-  schema), so a schema change invalidates;
+**Do skip-recompute at the invocation boundary, not inside the Rust engine.**
+`analyze-aat` is invoked only from thin `justfile`/bash recipes (e.g.
+`morph-warehouse-run-with-analyzers` at `justfile:762`, the `-historical` and
+`-lane-b` variants, `benchmarks/run-morph-corpus.sh`) with explicit
+`--aat-dir/--analyzer/--warehouse-dir/--run-id/--warehouse-profile` and dictionary
+store paths from `nix build .#{vibrato-dictionaries,sudachi-dictionary-full}`. So a
+**Python resolve→compute→record wrapper** replaces the raw `cargo run` in those
+recipes and leaves the 45 GB Rust pipeline **untouched** (lowest blast radius,
+matches the resolve→compute→lock shape). The optional `input_set_hash` column on
+`runs.parquet` is a later nicety, not required for skip.
+
+`identity_object` (compute from the exact recipe arguments) =
+- `aat_content_hash` — `hash_aat_dir(--aat-dir)` (reuses the AAT dump's existing
+  content identity; no new hashing scheme);
+- `dictionaries` — the nix store paths behind `AB_SUDACHI_DICT` /
+  `AB_VIBRATO_DICT_DIR` / `AB_VAPORETTO_DICT` (already content-addressed);
+- `analyzers` — the selected analyzer set **including dict variants** (e.g.
+  `vibrato:unidic-kindai-bungo-202512`);
+- `warehouse_profile` — `full` | `triage`;
+- `ortho_detect` — e.g. `historical` (changes normalization → changes output);
+- `works_parquet_hash` — `file_sha256(--works-parquet)` when an eligibility slice
+  is passed (it changes which works are analyzed → changes output); absent key when
+  not passed;
+- `schema_version` — `file_sha256` of `ab-morph-run/sql/schema.sql` (+ the
+  `ab-warehouse` schema);
 - `identity_version`.
 
-Everything here **already exists** — this is why morph-warehouse is the
-lowest-effort, highest-gap-closing target. Record `input_set_hash` on the run
-(a new column on `runs.parquet` + a `run-manifest.json` sidecar) and skip when a
-published run with that identity exists and its Parquet outputs re-verify.
+The grounded knob list above resolves open-question 1 for this batch: `--jobs`,
+temp dirs, and report ids are **excluded** (parallelism / location only, no output
+bytes). Record `input_set_hash` in a `run-manifest.json` sidecar beside the run
+and maintain a `by-input/<hash> → runs/<run-id>` index; skip when `by-input/<H>`
+resolves to a published run whose Parquet tables re-verify — unless `--force`.
 
 ## Stateless addressing vs. an index (a real tradeoff)
 

@@ -260,7 +260,7 @@ run_step build-triage "$triage_dir" uv run --isolated --no-project --with 'duckd
   --report-id "$report_id" \
   --out-dir "$triage_dir"
 
-python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" <<'PY'
+python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" "$features" "$work_ids" <<'PY'
 import json
 import os
 import pathlib
@@ -268,7 +268,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-repo_root, corpus, out_dir, report_id, jobs, timeout, adapter, adapter_id = sys.argv[1:]
+repo_root, corpus, out_dir, report_id, jobs, timeout, adapter, adapter_id, features, work_ids = sys.argv[1:]
 repo = pathlib.Path(repo_root)
 out = pathlib.Path(out_dir)
 
@@ -288,7 +288,7 @@ generated_at = (
 )
 
 metadata = {
-    "schema_version": 2,
+    "schema_version": 3,
     "generated_at_utc": generated_at,
     "repo_head": run(["git", "rev-parse", "HEAD"]),
     "repo_dirty": bool(run(["git", "status", "--short"])),
@@ -306,6 +306,25 @@ metadata = {
     "db_path": str(out / "fidelity.duckdb"),
     "workflow_run_path": str(out / "workflow-run.json"),
 }
+
+# F6: record the dump's input identity and its own output content hash, so
+# staleness is decidable (a dump is stale exactly when a freshly-computed
+# input_set_hash differs from the one recorded here). The corpus (cards tree),
+# adapter binary, and feature-patterns are hashed by content; --jobs is excluded.
+sys.path.insert(0, str(repo / "reports" / "aat-fidelity"))
+import generator_identity  # noqa: E402
+
+metadata.update(generator_identity.provenance_fields(
+    aat_dir=out / "aat",
+    corpus_dir=pathlib.Path(corpus) / "cards",
+    adapter_version=metadata["adapter_version"],
+    adapter_binary=adapter,
+    feature_patterns_file=repo / "data" / "feature-patterns.toml",
+    timeout=timeout or None,
+    features=features or None,
+    work_ids=work_ids or None,
+))
+
 (out / "metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n")
 PY
 workflow_step_pass write-metadata "$metadata_path"

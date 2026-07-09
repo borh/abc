@@ -132,11 +132,13 @@ Evaluation:
 Evaluator protocol (one implementation now, swappable later):
 
 ```clojure
-(eval-target graph target opts)
+(eval-target graph target inputs opts)
 ;; => {:value       <realized target value>
 ;;     :nodes       [node-summary ...]   ; keyed by node key, unordered
 ;;     :edges       [[from-key to-key] ...]}
 ```
+
+`inputs` supplies `:value` node values by key; `opts` carries evaluation policy.
 
 `opts` carries evaluation policy. A future backend (for example Nodely) would
 implement this same protocol; that is the only place a backend choice would live.

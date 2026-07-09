@@ -1,0 +1,21 @@
+{
+  "name": "official_heading_small",
+  "meta": {
+    "feature": "heading",
+    "level": "should",
+    "spec_section": "https://www.aozora.gr.jp/annotation/heading.html",
+    "note": "[provenance:official] 小見出し (small heading)"
+  },
+  "source": "小節［＃「小節」は小見出し］\n",
+  "expected": {
+    "nodes": [
+      {
+        "kind": "heading",
+        "span": {
+          "start": 0,
+          "end": 42
+        }
+      }
+    ]
+  }
+}

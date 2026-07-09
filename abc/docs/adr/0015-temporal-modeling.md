@@ -253,6 +253,30 @@ change `person-record-hash`.
   numbering. The conversion is documented in the parser and visible
   in `parse_corrections`.
 
+## Known deprecated vocabulary
+
+The `rdag2:` prefix used here is bound to
+`http://RDVocab.info/ElementsGr2/` (see `abc.tools.rdf-prefixes` and
+`schemas/manifest.shacl.ttl`). That namespace is the **deprecated** RDA
+Group 2 element set: the RDA Registry states that the draft elements at
+`rdvocab.info` were never officially published and are deprecated in favour of
+the published `rdaregistry.info` element sets.
+
+The published equivalents, per the RDA deprecation map, are:
+
+| Deprecated (this ADR) | Published RDA property |
+| --- | --- |
+| `rdag2:dateOfBirth` | `http://rdaregistry.info/Elements/a/P50121` (`rdaa:P50121`) |
+| `rdag2:dateOfDeath` | `http://rdaregistry.info/Elements/a/P50120` (`rdaa:P50120`) |
+
+This is tracked technical debt, not a correctness defect: the predicates
+exist, carry the intended RDA-at-creation-time semantics, and the ADR is
+internally consistent. Switching to the published `rdaregistry.info/Elements/a/`
+predicates would rotate every committed person/metadata RDF fixture and
+`person_record_hash` / `metadata_record_hash` and is therefore deferred to a
+follow-up ADR that schedules it with the schema-hash cascade, following the
+same discipline as ADR 0017 / ADR 0018.
+
 ## References
 
 - EDTF specification (LoC): https://www.loc.gov/standards/datetime/
@@ -262,3 +286,6 @@ change `person-record-hash`.
 - PeriodO: https://perio.do/
 - XSD date/time datatypes:
   https://www.w3.org/TR/xmlschema11-2/#dateTimeStamp
+- RDA Registry (published element sets): https://www.rdaregistry.info/Elements/a/
+- RDA deprecation map (deprecated `rdvocab.info` → published `rdaregistry.info`):
+  https://www.rdaregistry.info/rgArch/mapRDAOld2NewProp.html

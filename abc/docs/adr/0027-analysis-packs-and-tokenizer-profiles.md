@@ -353,6 +353,21 @@ single changed per-work output changes the pack id even when the requested
 coordinate set is unchanged. This is intentional for release packs: a pack id
 identifies the exact content set, not merely the work/recipe/profile selection.
 
+A direct corollary, recorded explicitly so it is not discovered later: a
+manifest **schema version rotation** (a new `manifest_schema_hash`) changes
+the bytes of every manifest and therefore its `manifest_content_hash`, which
+cascades through `artifact_set_hash` into `pack_id` — even when the underlying
+work content, tokenizer profiles, analysis recipes, and request set are
+byte-identical. Because `pack_identity_object` also carries `schema_hashes`
+as a first-class field, schema rotation is represented twice in pack identity:
+once directly via `schema_hashes` and once indirectly via the
+`manifest_content_hash` cascade. This double representation is acceptable
+because `pack_id` is a release-equality boundary, not a long-lived stable
+identifier, and packs are rebuildable views (a re-run under the new schema
+hash reproducibly produces the new `pack_id`). Packs must not be cited as
+stable-per-work references; only per-work `artifact_id` values are stable
+across schema rotations of unrelated dimensions.
+
 ### Pack Policy Value
 
 `pack_policy_hash` is the JCS SHA-256 hash of a canonical pack policy JSON

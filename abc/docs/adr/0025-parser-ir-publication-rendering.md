@@ -105,9 +105,11 @@ can evolve independently from the TEI body renderer logic.
 - `nix run .#validate-design-bundle` checks the committed example publication
   outputs and TEI validation gates.
 - `clojure -M:test` includes focused tests for the TEI body renderer
-  (`parser_ir_tei_test.clj`), the plaintext renderer
-  (`parser_ir_plaintext_test.clj`), and publication materialization
-  (`materialize_publication_test.clj`).
+  (`test/abc/tools/parser_ir_tei_test.clj`), the plaintext renderer
+  (`test/abc/tools/parser_ir_plaintext_test.clj`), the publication
+  policy gate (`test/abc/tools/parser_ir_publication_policy_test.clj`), and
+  publication materialization
+  (`test/abc/tools/materialize_publication_test.clj`).
 
 ## Rollback
 

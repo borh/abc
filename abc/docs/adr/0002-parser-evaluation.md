@@ -106,8 +106,14 @@ Parser candidates must pass these gates before they are considered viable:
 
 Before comparing candidates, "unacceptable" means:
 
-- `fatal_failure_rate` is at or below the threshold recorded in the candidate
-  report for the smoke corpus.
+- `fatal_failure_rate` is at or below the ABC-defined gate threshold for the
+  smoke corpus. The candidate report records the *measured* rate, not the gate
+  threshold: a candidate cannot pass by declaring its own threshold, because
+  the threshold is ABC's acceptance gate, not a self-declared value. The gate
+  threshold is recorded in this ADR's smoke-corpus contract
+  (`docs/v0-design-bundle/ci-smoke-corpus.md`); if no explicit threshold is
+  recorded there, the gate defaults to a zero fatal-failure rate for the smoke
+  corpus during Draft status.
 - `source_span_coverage` is 100% for parsed source bytes, excluding documented
   ignored regions.
 - `unsupported_constructs` has zero silent drops.

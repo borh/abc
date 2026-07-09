@@ -45,6 +45,13 @@ The command reads:
 - `warnings.jsonl`,
 - optional `divergence.json` or legacy `divergence.jsonl`.
 
+The canonical mapping-divergence sidecar is `divergence.json`; the
+`divergence.jsonl` reader is a legacy fallback for older `ab-validator`
+output that recorded divergence records as JSONL. The fallback is only used
+when `divergence.json` is absent; the committed fixture ships `divergence.json`
+only, and the JSONL path is retained so historical producer bundles still
+materialize without conversion. New producer output should emit `divergence.json`.
+
 It writes:
 
 - `parser-ir.manifest.json`,

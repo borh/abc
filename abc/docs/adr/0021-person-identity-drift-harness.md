@@ -196,6 +196,18 @@ prefix. `event->graph` must not read the current person record to discover the
 hash, because that would rebind historical events after later bibliographic
 edits.
 
+The `#snapshot-` fragment is a deliberate hash-IRI design, not a separate
+HTTP resource. A snapshot is a PROV-O specialization of a person and lives in
+the same document namespace as the person IRI; dereferencing the snapshot IRI
+returns the person document (the fragment is resolved client-side within that
+document). This follows the common LOD pattern where a `specializationOf`
+target shares the document of the general thing. The implication for HTTP
+consumers is recorded: a snapshot IRI is **not** independently dereferenceable,
+and clients that fetch the snapshot IRI receive the person resource rather
+than a per-snapshot representation. A future ADR may mint slash-IRI snapshot
+paths if independent per-snapshot content negotiation is required; that would
+rotate committed drift fixtures and is therefore deferred.
+
 Each snapshot Entity carries:
 
 ```text

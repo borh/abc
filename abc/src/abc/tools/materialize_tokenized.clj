@@ -30,6 +30,7 @@
       "tokenizer_dictionary_hash" (get-in tokenizer-profile ["dictionary" "archive_hash"])
       "tokenizer_profile_hash" profile-hash
       "analysis_recipe_hash" nil
+      "annotation_policy_hash" nil
       "output_format_spec_hash" (get tokenizer-profile "token_output_schema_hash")}
      (select-keys producer-identity copied-parser-ir-fields))))
 

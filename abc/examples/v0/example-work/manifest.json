@@ -17,6 +17,7 @@
   "manifest_identity_object": 
   {
     "analysis_recipe_hash": null,
+    "annotation_policy_hash": null,
     "corpus_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
     "manifest_schema_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
     "metadata_record_hash": "sha256:9771a47f4f1e7c3e186044078872a5f5e2c316e0c0c8ebc3d66bdea470fd4ef5",

@@ -14,7 +14,7 @@
    "schemas/alignment-probe-v1.schema.json" "0.1.0"
    "schemas/analysis-recipe.schema.json" "0.1.1"
    "schemas/analysis-result.schema.json" "0.1.2"
-   "schemas/manifest.schema.json" "0.4.3"
+   "schemas/manifest.schema.json" "0.4.4"
    "schemas/parser-ir-publication-preservation.schema.json" "0.3.0"
    "schemas/request-set.schema.json" "0.1.3"
    "schemas/source-region-coverage.schema.json" "0.2.1"
@@ -80,6 +80,7 @@
                          "tokenizer_dictionary_hash" nil
                          "tokenizer_profile_hash" nil
                          "analysis_recipe_hash" nil
+                         "annotation_policy_hash" nil
                          "output_format_spec_hash" (files/example-hash "07")}
         manifest {"manifest_schema_id" "https://w3id.org/abc/schemas/manifest.schema.json"
                   "artifact_id" (manifest/artifact-id identity-object)

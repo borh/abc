@@ -34,8 +34,8 @@
       "path": "data/abc-schemas/schemas/manifest.schema.json",
       "id": "https://w3id.org/abc/schemas/manifest.schema.json",
       "title": "ABC Artifact Manifest",
-      "version": "0.4.3",
-      "hash": "sha256:3097d32f05a04daddab540548fb30846fa8b6a4cb1400e3af1ba7606e195f0b1"
+      "version": "0.4.4",
+      "hash": "sha256:8813e7142aa81afebb7de89f2c760afd0068cd72c1357ce0a255ea88f7650bc3"
     },
     {
       "path": "data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json",

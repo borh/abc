@@ -17,3 +17,12 @@
     (is (= "ruby-gaiji-v1" (get policy "policy_id")))
     (is (= ["gaiji" "ruby"] (vec (sort (get policy "annotation_kinds")))))
     (is (= "parser-ir-plaintext-body-v1" (get policy "aligns_to")))))
+
+(deftest manifest-schema-accepts-annotation-kind-test
+  (let [schema (files/read-json "schemas/manifest.schema.json")]
+    (is (= "0.4.4" (get schema "version")))
+    (is (some #{"annotation"} (get-in schema ["properties" "artifact_kind" "enum"])))
+    (is (some #{"body-annotations"}
+              (get-in schema ["$defs" "sidecar" "properties" "role" "enum"])))
+    (is (some #{"annotation_policy_hash"}
+              (get-in schema ["$defs" "identityObject" "required"])))))

@@ -11,6 +11,8 @@ from pathlib import Path
 
 _PKG = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_PKG))
+_LIB = _PKG.parent / "lib"
+sys.path.insert(0, str(_LIB))
 
 import warehouse_index as wix  # noqa: E402
 
@@ -45,6 +47,14 @@ class WarehouseIndex(unittest.TestCase):
         before = wix.hash_run_dir(self.run)
         (self.run / "runs.parquet").write_bytes(b"MUTATED")
         self.assertNotEqual(before, wix.hash_run_dir(self.run))
+
+    def test_hash_run_dir_matches_tree_hash(self) -> None:
+        import tree_hash
+        # same exclude the runner uses for the manifest
+        self.assertEqual(
+            wix.hash_run_dir(self.run, exclude_names=("run-manifest.json",)),
+            tree_hash.tree_hash(self.run, exclude_names=("run-manifest.json",)),
+        )
 
     def test_check_missing_when_not_indexed(self) -> None:
         self.assertEqual(wix.check(self.wh, self.ish)["status"], "missing")

@@ -81,6 +81,12 @@ def provenance_fields(*, aat_dir: str | Path, **identity_kwargs: Any) -> dict[st
     }
 
 
+def identity_fields(**identity_kwargs: Any) -> dict[str, Any]:
+    """The full identity object, for recording in metadata.json alongside the
+    derived input_set_hash — so an audit can see WHICH input changed."""
+    return build_identity_object(**identity_kwargs)
+
+
 def main(argv: list[str] | None = None) -> int:
     """Emit the input_set_hash for the given generator inputs (used by the
     run-aat-full.sh pre-build skip check)."""

@@ -19,25 +19,18 @@ docs/superpowers/specs/2026-07-09-batch-run-staleness-skip-recompute-design.md.
 
 from __future__ import annotations
 
-import hashlib
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
+_LIB = Path(__file__).resolve().parents[1] / "lib"
+sys.path.insert(0, str(_LIB))
+
+import tree_hash  # noqa: E402
+
 MANIFEST_NAME = "run-manifest.json"
 MANIFEST_FORMAT = "morph-warehouse-run-manifest/v1"
-_READ_CHUNK = 1 << 20  # 1 MiB
-
-
-def _file_digest(path: Path) -> bytes:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        while True:
-            chunk = f.read(_READ_CHUNK)
-            if not chunk:
-                break
-            h.update(chunk)
-    return h.digest()
 
 
 def _index_name(input_set_hash: str) -> str:
@@ -48,31 +41,14 @@ def _index_name(input_set_hash: str) -> str:
 def hash_run_dir(run_dir: str | Path, *, exclude_names: tuple[str, ...] = (MANIFEST_NAME,)) -> str:
     """Return ``sha256:<hex>`` over every file under ``run_dir`` (any extension).
 
-    Folds sorted relative POSIX paths with each file's byte digest, so both the
-    file set and every file's content are covered, independent of walk order.
-    Top-level files whose name is in ``exclude_names`` are skipped, so the manifest
-    can live in the run dir without being part of its own hash.
+    The warehouse-run view of ``tree_hash.tree_hash``: folds sorted relative POSIX
+    paths with each file's byte digest, so both the file set and every file's
+    content are covered, independent of walk order. Top-level files whose name is
+    in ``exclude_names`` are skipped, so the manifest can live in the run dir
+    without being part of its own hash. Proven byte-identical to ``tree_hash`` by
+    ``test_hash_run_dir_matches_tree_hash`` before this delegation was introduced.
     """
-    root = Path(run_dir)
-    if not root.is_dir():
-        raise ValueError(f"not a directory: {root}")
-    exclude = set(exclude_names)
-    rels = sorted(
-        rel
-        for p in root.rglob("*")
-        if p.is_file()
-        for rel in [p.relative_to(root).as_posix()]
-        if rel not in exclude
-    )
-    if not rels:
-        raise ValueError(f"no output files under {root}")
-    top = hashlib.sha256()
-    for rel in rels:
-        top.update(rel.encode("utf-8"))
-        top.update(b"\0")
-        top.update(_file_digest(root / rel))
-        top.update(b"\n")
-    return "sha256:" + top.hexdigest()
+    return tree_hash.tree_hash(run_dir, exclude_names=exclude_names)
 
 
 def write_run_manifest(

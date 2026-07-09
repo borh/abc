@@ -396,8 +396,10 @@ metadata = {
 sys.path.insert(0, str(repo / "reports" / "aat-fidelity"))
 import generator_identity  # noqa: E402
 
-metadata.update(generator_identity.provenance_fields(
-    aat_dir=out / "aat",
+# Shared kwargs, passed identically to provenance_fields (the hash) and
+# identity_fields (the object that hash is over) — so the recorded
+# input_identity object and the recorded input_set_hash correspond exactly.
+identity_kwargs = dict(
     corpus_dir=pathlib.Path(corpus) / "cards",
     adapter_version=metadata["adapter_version"],
     # Identity pins the code that actually changes: for wrapper adapters this is
@@ -411,7 +413,11 @@ metadata.update(generator_identity.provenance_fields(
     timeout=timeout or None,
     features=features or None,
     work_ids=work_ids or None,
-))
+)
+metadata.update(generator_identity.provenance_fields(aat_dir=out / "aat", **identity_kwargs))
+# Full identity object (not only its derived hash), so a future audit can see
+# WHICH input changed, not merely that input_set_hash moved.
+metadata["input_identity"] = generator_identity.identity_fields(**identity_kwargs)
 
 (out / "metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n")
 PY

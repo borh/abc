@@ -32,7 +32,9 @@
         (is (= (get-in request-set ["request_set_identity_object"
                                     "pack_policy_hash"])
                (get-in request-set ["resolved_pack_policy_label"
-                                    "pack_policy_hash"])))))))
+                                    "pack_policy_hash"])))
+        (is (= [] (get-in request-set ["request_set_identity_object"
+                                       "tokenizer_profile_hashes"])))))))
 
 ;; D6 (2026-07-09 design, widened 2026-07-10): annotation views participate in
 ;; request-set input_views as {"input_view_kind" "parser-ir-body-annotations-v1",

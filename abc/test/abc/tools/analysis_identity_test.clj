@@ -183,30 +183,28 @@
               :recipes [coverage-token-recipe]
               :tokenizer-profile-ids ["fixture-tokenizer-ja-v1"]}))))
 
-(deftest input-view-coverage-rejects-unconsumed-plaintext-view-test
-  (is (thrown-with-msg?
-       clojure.lang.ExceptionInfo
-       #"Request-set input view has no consumer"
-       (analysis-identity/assert-input-view-coverage!
-        {:input-views [coverage-plaintext-view]
-         :recipes []
-         :tokenizer-profile-ids []}))))
-
 (deftest input-view-coverage-accepts-tokenizer-only-request-set-test
   ;; mirrors the committed tokenizer-profile resolver test: no recipes, one
-  ;; profile — the tokenizer is the plaintext view's consumer.
+  ;; profile — a no-recipe request set passes vacuously (Direction A has
+  ;; nothing to check when there are no recipes to run).
   (is (nil? (analysis-identity/assert-input-view-coverage!
              {:input-views [coverage-plaintext-view]
               :recipes []
               :tokenizer-profile-ids ["fixture-tokenizer-ja-v1"]}))))
 
-(deftest input-view-coverage-accepts-unconsumed-annotation-view-test
-  ;; demo-annotation-ja shape: the annotation view is consumed by the
-  ;; annotation materializer (ADR 0028), never dead even with no
-  ;; annotation-consuming recipe.
+(deftest input-view-coverage-ignores-views-no-recipe-consumes-test
+  ;; Views may be consumed outside the recipe system: the publication flow
+  ;; consumes the plaintext view (full-corpus-publication-basic-ja declares
+  ;; one with no recipes and no tokenizer profiles) and the annotation
+  ;; materializer consumes annotation views directly (ADR 0028). So a
+  ;; declared view with no recipe consumer is NOT an error.
   (is (nil? (analysis-identity/assert-input-view-coverage!
              {:input-views [coverage-plaintext-view coverage-annotation-view]
               :recipes [coverage-plaintext-recipe]
+              :tokenizer-profile-ids []})))
+  (is (nil? (analysis-identity/assert-input-view-coverage!
+             {:input-views [coverage-plaintext-view]
+              :recipes []
               :tokenizer-profile-ids []}))))
 
 (deftest input-view-coverage-accepts-annotation-consuming-recipe-test

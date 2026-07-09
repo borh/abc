@@ -15,7 +15,7 @@
     }
   ],
   "analysis_recipe_ids": [],
-  "tokenizer_profile_ids": ["fixture-tokenizer-ja-v1"],
+  "tokenizer_profile_ids": [],
   "missing_policy": "build-missing-only",
   "pack_policy_id": "no-pack-v1"
 }

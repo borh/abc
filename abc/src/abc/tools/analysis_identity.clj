@@ -81,29 +81,30 @@
        vec))
 
 (defn assert-input-view-coverage!
-  "Machine-checks the agreement between analysis-recipe
-  `supported_input_view_kinds` and a request-set definition's `input_views`
-  (ADR 0028 D6 follow-through).
+  "Machine-checks that every analysis recipe a request set references can
+  consume at least one input view the request set provides (ADR 0028 D6
+  follow-through: recipe `supported_input_view_kinds` ↔ request-set
+  `input_views` agreement).
 
-  Consumer model:
-  - Provided kinds are the declared input-view kinds, plus the derived
-    \"token-stream-v1\" view when tokenizer profiles are present.
-  - Direction A (recipe runnability): every referenced recipe must support at
-    least one provided kind — otherwise the recipe could never run.
-  - Direction B (no dead views): every declared view kind must have a
-    consumer — a recipe that supports it, the tokenizer (consumes
-    \"parser-ir-plaintext-body-v1\" when profiles are present), or the
-    annotation materializer (\"parser-ir-body-annotations-v1\" is materialized
-    directly from parser IR per ADR 0028, not recipe-mediated) — otherwise
-    the view changes the request_set_id without affecting any output.
+  Provided kinds are the declared input-view kinds, plus the derived
+  \"token-stream-v1\" view when tokenizer profiles are present. A recipe
+  whose `supported_input_view_kinds` intersects none of them could never
+  run — a hard error.
+
+  The converse direction (flagging a declared view no recipe consumes) is
+  deliberately NOT checked: views are also consumed outside the recipe
+  system — the publication flow consumes the plaintext view (see
+  `full-corpus-publication-basic-ja`, which declares a plaintext view with
+  no recipes and no tokenizer profiles), and the annotation materializer
+  consumes \"parser-ir-body-annotations-v1\" directly (ADR 0028) — so
+  dead-view detection is not decidable from the recipe registry alone.
 
   Takes {:input-views ..., :recipes <raw recipe registry values>,
   :tokenizer-profile-ids ...}; returns nil, throws ex-info on violation."
   [{:keys [input-views recipes tokenizer-profile-ids]}]
   (let [view-kinds (into #{} (map #(get % "input_view_kind")) input-views)
-        tokenized? (boolean (seq tokenizer-profile-ids))
         provided (cond-> view-kinds
-                   tokenized? (conj "token-stream-v1"))]
+                   (seq tokenizer-profile-ids) (conj "token-stream-v1"))]
     (doseq [recipe recipes]
       (let [supported (set (get recipe "supported_input_view_kinds"))]
         (when (empty? (set/intersection supported provided))
@@ -111,15 +112,6 @@
                           {:recipe_id (get recipe "recipe_id")
                            :supported_input_view_kinds (vec (sort supported))
                            :provided_input_view_kinds (vec (sort provided))})))))
-    (let [consumed (cond-> (into #{"parser-ir-body-annotations-v1"}
-                                 (mapcat #(get % "supported_input_view_kinds"))
-                                 recipes)
-                     tokenized? (conj "parser-ir-plaintext-body-v1"))]
-      (doseq [kind (sort view-kinds)]
-        (when-not (contains? consumed kind)
-          (throw (ex-info "Request-set input view has no consumer"
-                          {:input_view_kind kind
-                           :consumed_input_view_kinds (vec (sort consumed))})))))
     nil))
 
 (defn- canonical-hashes [values]

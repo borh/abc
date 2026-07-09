@@ -1,6 +1,6 @@
 {
   "label": "full-corpus-publication-basic-ja",
-  "request_set_id": "sha256:de6537b37bcc2bf29fd03b5d5b90c404a0971c2cd74e1cdb0956d6624b458b6a",
+  "request_set_id": "sha256:8fcbe12b544aa4464362f1215992ef76e390b5867d13c7a071ee0b2a40b0e279",
   "request_set_identity_object":
   {
     "analysis_recipe_hashes": [],
@@ -27,7 +27,7 @@
         "work_content_hash": "sha256:2424242424242424242424242424242424242424242424242424242424242424",
         "work_id": "aozora:000002"
       }],
-    "tokenizer_profile_hashes": ["sha256:ebda1b253abd250e9acc708f0a2c4f2fdeee03478b04c7d76be5f3240cbc998b"]
+    "tokenizer_profile_hashes": []
   },
   "request_set_schema_version": "request-set-v1",
   "resolution":
@@ -44,13 +44,7 @@
     "resolved_at": "2026-07-07T00:00:00Z"
   },
   "resolved_recipe_labels": [],
-  "resolved_tokenizer_profile_labels": [
-    {
-      "profile_id": "fixture-tokenizer-ja-v1",
-      "registry_entry_hash": "sha256:77994799b1436f3b4194a5759dfeb9f3e387b8d4bc1a8108136367318d23a1df",
-      "resolved_at": "2026-07-07T00:00:00Z",
-      "tokenizer_profile_hash": "sha256:ebda1b253abd250e9acc708f0a2c4f2fdeee03478b04c7d76be5f3240cbc998b"
-    }],
+  "resolved_tokenizer_profile_labels": [],
   "schema_hash": "sha256:87357b591fab820bf514389336ad8c4fb1ec338629e65803a0bfd747e53e4ed9",
   "schema_id": "https:\/\/w3id.org\/abc\/schemas\/request-set.schema.json"
 }

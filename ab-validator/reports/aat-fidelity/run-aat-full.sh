@@ -88,11 +88,12 @@ if [[ -z "$adapter_id" ]]; then
   exit 2
 fi
 
-# adapter_identity_complete marks whether an adapter's dump identity fully
-# captures the code that produces its output. aozora=1: a single, self-contained,
-# content-addressed nix binary. Wrapper adapters=0: they orchestrate an external
-# renderer (Ruby aozora2html gem / AozoraEpub3.jar) that identity does not hash.
-# Task 4 active-skip must consult this: skip only when identity is complete (=1).
+# Every adapter's dump identity now fully captures the code that produces its
+# output, so the active skip fires for all three. aozora is a single,
+# self-contained, content-addressed nix binary (no external renderer). The
+# wrapper adapters orchestrate an external renderer (Ruby aozora2html gem /
+# AozoraEpub3.jar) which is now pinned by content: renderer_attr names the nix
+# package whose store dir is resolved and hashed into identity (see below).
 case "$adapter_id" in
   aozora2html)
     default_out_dir="${AB_AOZORA2HTML_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora2html-full-$(date -u +%Y%m%dT%H%M%SZ)}"
@@ -107,7 +108,7 @@ case "$adapter_id" in
     adapter="$repo_root/adapters/aozora2html/aozora2html-adapter"
     build_step=(run_just aozora2html-rust-build)
     adapter_hash_target="$repo_root/adapters/aozora2html/target/release/aozora2html-adapter"
-    adapter_identity_complete=0
+    renderer_attr="upstream-parser-aozora2html"
     ;;
   aozora)
     default_out_dir="${AB_AOZORA_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-full-$(date -u +%Y%m%dT%H%M%SZ)}"
@@ -119,7 +120,7 @@ case "$adapter_id" in
     # --print-plan reports (no build). No build_step — it comes prebuilt.
     adapter="aozora-adapter"
     build_step=()
-    adapter_identity_complete=1
+    renderer_attr=""
     ;;
   aozora-epub3)
     default_out_dir="${AB_AOZORA_EPUB3_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-epub3-full-$(date -u +%Y%m%dT%H%M%SZ)}"
@@ -131,7 +132,7 @@ case "$adapter_id" in
     adapter="$repo_root/adapters/aozora-epub3/aozora-epub3-adapter"
     build_step=(run_just aozora-epub3-build)
     adapter_hash_target="$repo_root/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
-    adapter_identity_complete=0
+    renderer_attr="upstream-parser-aozora-epub3"
     ;;
   *)
     printf 'unknown AAT adapter: %s\n' "$adapter_id" >&2
@@ -230,6 +231,26 @@ if [[ "$adapter_id" == "aozora" ]]; then
   adapter_hash_target="$adapter"
 fi
 
+# Resolve the external renderer (wrapper adapters) from its nix store dir so it
+# is pinned by content, and build the Rust mapper NOW (before the skip gate) so
+# its hash is available to the gate. aozora has no external renderer.
+renderer_dir=""
+if [[ -n "$renderer_attr" ]]; then
+  renderer_dir="$(nix build "$repo_root#$renderer_attr" --no-link --print-out-paths)"
+fi
+if [[ "$adapter_id" == "aozora2html" ]]; then
+  export AB_AOZORA2HTML_BIN="$renderer_dir/bin/aozora2html"
+elif [[ "$adapter_id" == "aozora-epub3" ]]; then
+  export AB_AOZORAEPUB3_JAR="$renderer_dir/lib/AozoraEpub3.jar"
+fi
+# Wrapper adapters build their Rust mapper up front so the gate can hash it
+# (adapter_hash_target points at the mapper binary). aozora comes prebuilt from
+# nix (build_step empty). This runs pre-workflow_init, so use a plain build (not
+# run_step); the post-workflow build-adapter step below re-verifies incrementally.
+if [[ ${#build_step[@]} -gt 0 ]]; then
+  "${build_step[@]}"
+fi
+
 if [[ ! "$jobs" =~ ^[0-9]+$ || "$jobs" == "0" ]]; then
   echo "--jobs must be a positive integer" >&2
   exit 2
@@ -239,40 +260,41 @@ if [[ ! -d "$corpus/cards" ]]; then
   exit 2
 fi
 if [[ -e "$out_dir" && "$force" != "1" ]]; then
-  # Active skip (Task 4): if a prior dump at $out_dir is provably fresh for the
-  # current inputs, exit 0 without recomputing. Gated on adapter_identity_complete
-  # so a fresh check only fires for adapters whose identity fully captures the code
-  # that produced the dump (aozora). For wrapper adapters (identity incomplete) we
-  # do NOT compute the pre-hash — their adapter_hash_target (the Rust mapper) is not
-  # built until the build-adapter step, which runs AFTER this gate — and keep the
-  # fail-closed "output dir exists → pass --force" behavior unchanged.
-  #
-  # The input_set_hash computed here MUST be byte-identical to the one
+  # Active skip: if a prior dump at $out_dir is provably fresh for the current
+  # inputs, exit 0 without recomputing. Every adapter is identity-complete now
+  # (aozora is a self-contained nix binary; wrapper adapters pin their Rust
+  # mapper AND their nix-packaged renderer, both resolved above), so the check
+  # runs for all. The input_set_hash here MUST be byte-identical to the one
   # provenance_fields(...) writes into metadata.json below; its args mirror that
   # heredoc's provenance_fields(...) call exactly (corpus/cards, adapter_hash_target
   # as --adapter-binary, the adapter --version run from $repo_root, ab-index/ab-check
-  # bins, feature patterns, and the same optional timeout/features/work-ids).
-  if [[ "$adapter_identity_complete" == "1" ]]; then
-    # --version is run from $repo_root so it is byte-identical to the metadata
-    # heredoc's run([adapter, "--version"], cwd=repo) — otherwise a cwd-sensitive
-    # adapter would make the recorded hash unreproducible here (silently never skip).
-    current_hash="$(python "$repo_root/reports/aat-fidelity/generator_identity.py" \
-      --corpus-dir "$corpus/cards" \
-      --adapter-version "$(cd "$repo_root" && "$adapter" --version)" \
-      --adapter-binary "$adapter_hash_target" \
-      --ab-index-binary "$ab_index_bin" \
-      --ab-check-binary "$ab_check_bin" \
-      --feature-patterns "$repo_root/data/feature-patterns.toml" \
-      ${timeout:+--timeout "$timeout"} \
-      ${features:+--features "$features"} \
-      ${work_ids:+--work-ids "$work_ids"})"
-    if python "$repo_root/reports/aat-fidelity/generator_skip.py" \
-         --out-dir "$out_dir" --input-set-hash "$current_hash"; then
-      printf '%s AAT dump already fresh, skipping: %s\n' "$adapter_id" "$out_dir"
-      exit 0
-    fi
+  # bins, feature patterns, the renderer dir, and the same optional
+  # timeout/features/work-ids).
+  #
+  # --version is run from $repo_root so it is byte-identical to the metadata
+  # heredoc's run([adapter, "--version"], cwd=repo) — otherwise a cwd-sensitive
+  # adapter would make the recorded hash unreproducible here (silently never skip).
+  renderer_arg=()
+  if [[ -n "$renderer_dir" ]]; then
+    renderer_arg=(--renderer-dir "$renderer_dir")
   fi
-  printf 'output directory exists (stale, unverifiable, or identity-incomplete adapter): %s\n' "$out_dir" >&2
+  current_hash="$(python "$repo_root/reports/aat-fidelity/generator_identity.py" \
+    --corpus-dir "$corpus/cards" \
+    --adapter-version "$(cd "$repo_root" && "$adapter" --version)" \
+    --adapter-binary "$adapter_hash_target" \
+    --ab-index-binary "$ab_index_bin" \
+    --ab-check-binary "$ab_check_bin" \
+    --feature-patterns "$repo_root/data/feature-patterns.toml" \
+    "${renderer_arg[@]}" \
+    ${timeout:+--timeout "$timeout"} \
+    ${features:+--features "$features"} \
+    ${work_ids:+--work-ids "$work_ids"})"
+  if python "$repo_root/reports/aat-fidelity/generator_skip.py" \
+       --out-dir "$out_dir" --input-set-hash "$current_hash"; then
+    printf '%s AAT dump already fresh, skipping: %s\n' "$adapter_id" "$out_dir"
+    exit 0
+  fi
+  printf 'output directory exists (stale or unverifiable): %s\n' "$out_dir" >&2
   printf 'pass --force to replace it\n' >&2
   exit 2
 fi
@@ -299,11 +321,6 @@ run_step() {
 # aozora comes prebuilt from nix (build_step is empty) so it runs no build.
 if [[ ${#build_step[@]} -gt 0 ]]; then
   run_step build-adapter "$adapter" "${build_step[@]}"
-fi
-
-if [[ "$adapter_id" == "aozora-epub3" && -z "${AB_AOZORAEPUB3_JAR:-}" ]]; then
-  epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths "$repo_root#upstream-parser-aozora-epub3")"
-  export AB_AOZORAEPUB3_JAR="$epub3_pkg/lib/AozoraEpub3.jar"
 fi
 
 run_step build-index "$index_path" "$ab_index_bin" \
@@ -340,7 +357,7 @@ run_step build-triage "$triage_dir" uv run --isolated --no-project --with 'duckd
   --report-id "$report_id" \
   --out-dir "$triage_dir"
 
-python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" "$features" "$work_ids" "$ab_index_bin" "$ab_check_bin" "$adapter_hash_target" <<'PY'
+python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" "$features" "$work_ids" "$ab_index_bin" "$ab_check_bin" "$adapter_hash_target" "$renderer_dir" <<'PY'
 import json
 import os
 import pathlib
@@ -348,7 +365,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-repo_root, corpus, out_dir, report_id, jobs, timeout, adapter, adapter_id, features, work_ids, ab_index_bin, ab_check_bin, adapter_hash_target = sys.argv[1:]
+repo_root, corpus, out_dir, report_id, jobs, timeout, adapter, adapter_id, features, work_ids, ab_index_bin, ab_check_bin, adapter_hash_target, renderer_dir = sys.argv[1:]
 repo = pathlib.Path(repo_root)
 out = pathlib.Path(out_dir)
 
@@ -410,6 +427,7 @@ identity_kwargs = dict(
     ab_index_binary=ab_index_bin,
     ab_check_binary=ab_check_bin,
     feature_patterns_file=repo / "data" / "feature-patterns.toml",
+    renderer_dir=(renderer_dir or None),
     timeout=timeout or None,
     features=features or None,
     work_ids=work_ids or None,

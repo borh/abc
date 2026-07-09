@@ -1345,6 +1345,53 @@
               '';
             };
 
+        # The morphological-analysis engine (`ab-morph-run analyze-aat`). Built
+        # through nix so the morph-warehouse skip gate can pin it by content
+        # (store path / binary hash) — running it via `cargo` from live source
+        # would leave the engine version out of the run's input identity.
+        abMorphRun =
+          if hasCargoManifest && hasCargoLock then
+            rustPlatform.buildRustPackage {
+              pname = "ab-morph-run";
+              version = "0.1.0";
+
+              src = source;
+              cargoDeps = abCargoDeps;
+
+              nativeBuildInputs = [
+                pkgs.pkg-config
+                pkgs.zstd
+              ];
+
+              buildInputs = [
+                pkgs.pdfium-binaries
+              ]
+              ++ lib.optionals pkgs.stdenv.isDarwin [
+                pkgs.libiconv
+                pkgs.darwin.apple_sdk.frameworks.Security
+                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+              ];
+
+              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
+              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
+              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
+              AB_ABC_ROOT = "${abcSchemaRootForNix}";
+
+              cargoBuildFlags = [
+                "--package"
+                "ab-morph-run"
+              ];
+              doCheck = false;
+            }
+          else
+            pkgs.writeShellApplication {
+              name = "ab-morph-run";
+              text = ''
+                echo 'Rust workspace not scaffolded' >&2
+                exit 1
+              '';
+            };
+
         abAatToParserIrCheck = mkSmokeCheck {
           name = "ab-aat-to-parser-ir-smoke-check";
           testScript = "tests/aat-to-parser-ir-cli-smoke.sh";
@@ -1450,6 +1497,7 @@
           default = abValidator;
           ab-validator = abValidator;
           ab-aat-to-parser-ir = abAatToParserIr;
+          ab-morph-run = abMorphRun;
           aozora-adapter = aozoraAdapter;
           aozora2-adapter = aozora2Adapter;
           aozora2html-adapter = aozora2htmlAdapter;

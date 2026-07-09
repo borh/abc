@@ -774,10 +774,12 @@ morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_di
 	force_flag=(); if [ -n "{{force}}" ]; then force_flag=(--force); fi; \
 	vibrato_dir="$(nix build .#vibrato-dictionaries --no-link --print-out-paths)/share/vibrato"; \
 	sudachi_dic="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic"; \
+	engine_bin="$(nix build .#ab-morph-run --no-link --print-out-paths)/bin/ab-morph-run"; \
 	AB_VIBRATO_DICT_DIR="$vibrato_dir" \
 	AB_SUDACHI_DICT="$sudachi_dic" \
 	python3 reports/morph-warehouse/warehouse_runner.py \
 		--aat-dir "{{aat_dir}}" \
+		--engine-binary "$engine_bin" \
 		"${args[@]}" \
 		--warehouse-dir "{{morph_warehouse_dir}}" \
 		--run-id "$run_id" \
@@ -788,7 +790,7 @@ morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_di
 		--schema-file crates/ab-warehouse/sql/schema.sql \
 		"${force_flag[@]}" \
 		-- \
-		cargo run --release -p ab-morph-run -- analyze-aat \
+		"$engine_bin" analyze-aat \
 			--aat-dir "{{aat_dir}}" \
 			"${args[@]}" \
 			--warehouse-dir "{{morph_warehouse_dir}}" \

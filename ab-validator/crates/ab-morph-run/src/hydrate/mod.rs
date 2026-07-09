@@ -7,6 +7,7 @@
 
 use std::path::PathBuf;
 
+pub mod metadata;
 pub mod source_context;
 pub mod tables;
 

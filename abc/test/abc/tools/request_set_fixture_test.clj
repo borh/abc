@@ -70,3 +70,23 @@
       (is (seq variants)))
     (testing "every kind the schema admits is exactly the resolver allow-list"
       (is (= analysis-identity/allowed-input-view-kinds schema-kinds)))))
+
+;; Machine-check (ADR 0028 D6 follow-through): every committed request-set
+;; definition's input_views agree with its referenced recipes'
+;; supported_input_view_kinds — checked against the raw registry values, so
+;; registry drift bites here even before anything resolves.
+(deftest definitions-and-recipes-input-view-coverage-machine-check-test
+  (let [labels (resolver/request-set-labels)]
+    (is (seq labels))
+    (doseq [label labels]
+      (testing label
+        (let [definition (resolver/read-request-set-definition label)
+              recipes (mapv #(files/read-json
+                              (str resolver/analysis-recipes-dir "/" % ".json"))
+                            (get definition "analysis_recipe_ids" []))]
+          (is (nil? (analysis-identity/assert-input-view-coverage!
+                     {:input-views (get definition "input_views")
+                      :recipes recipes
+                      :tokenizer-profile-ids (get definition
+                                                  "tokenizer_profile_ids"
+                                                  [])}))))))))

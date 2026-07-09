@@ -89,7 +89,8 @@
                              (semantic-registry-entry semantic-id
                                                       value-hash
                                                       resolved-at))]
-    {:hash value-hash
+    {:value value
+     :hash value-hash
      :label (label-fn (assoc opts
                              :content-hash value-hash
                              :registry-entry-hash registry-entry-hash))}))
@@ -259,6 +260,12 @@
          resolved-tokenizer-profiles (resolved-tokenizer-profile-labels
                                       definition
                                       resolved-at)
+         _coverage (analysis-identity/assert-input-view-coverage!
+                    {:input-views (get definition "input_views")
+                     :recipes (mapv :value resolved-recipes)
+                     :tokenizer-profile-ids (get definition
+                                                 "tokenizer_profile_ids"
+                                                 [])})
          resolved-pack-policy (resolve-pack-policy
                                (required-string "pack_policy_id"
                                                 (get definition "pack_policy_id")

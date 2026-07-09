@@ -52,3 +52,14 @@
       (is (re-matches files/hash-pattern policy-hash))
       (is (= #{"input_view_kind" "policy_hash"} (set (keys input-view))))
       (is (= "parser-ir-body-annotations-v1" (get input-view "input_view_kind"))))))
+
+(deftest input-view-kinds-schema-and-allow-list-agree-test
+  (let [schema (files/read-json "schemas/request-set.schema.json")
+        variants (get-in schema ["$defs" "inputView" "oneOf"])
+        schema-kinds (into #{}
+                           (mapcat #(get-in % ["properties" "input_view_kind" "enum"]))
+                           variants)]
+    (testing "inputView is a oneOf over per-kind variants"
+      (is (seq variants)))
+    (testing "every kind the schema admits is exactly the resolver allow-list"
+      (is (= analysis-identity/allowed-input-view-kinds schema-kinds)))))

@@ -103,9 +103,12 @@ for template in "$query_dir"/*.sql; do
 
   {
     printf "SET temp_directory='%s';\n" "$tmp_dir_sql"
-    printf "SET memory_limit='8GB';\n"
+    # Full-corpus runs (e.g. dict-comparison over the whole Aozora set) exceed a
+    # small cap on the nway_feature_diffs aggregation; make it tunable. The 8GB
+    # default stays CI-safe for triage-sized runs.
+    printf "SET memory_limit='%s';\n" "${AB_DUCKDB_MEMORY_LIMIT:-8GB}"
     printf "SET preserve_insertion_order=false;\n"
-    printf "SET threads=4;\n"
+    printf "SET threads=%s;\n" "${AB_DUCKDB_THREADS:-4}"
     printf "COPY (\n"
     cat "$snapshot"
     printf "\n) TO '%s' (HEADER, DELIMITER '\\t');\n" "$output_sql"

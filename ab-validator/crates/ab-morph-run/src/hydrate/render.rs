@@ -196,7 +196,7 @@ fn render_body(
     writeln!(out)?;
     match &example.aozora_markup {
         Some(markup) => {
-            let header = if markup.approximate_pointers.is_empty() {
+            let header = if markup.approximate_pointers.is_empty() && markup.gaps.is_empty() {
                 "Aozora markup:"
             } else {
                 "Aozora markup (approximate):"

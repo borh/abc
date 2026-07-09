@@ -69,7 +69,7 @@ The corpora the dictionary-comparison runs use (e.g. `aozora-full-repin-1a4f864`
    - `text` → `value`; `raw` → `source` (both verbatim);
    - `ruby` → `base《reading》`, prepending `｜` when the node's byte-span length exceeds the rendered form by exactly its 3 bytes (**byte-length verification**: rendered UTF-8 length must equal the span length, else the node is flagged approximate);
    - `gaiji` → `※［＃description］` (falling back to the resolved character when the description is empty) at every nesting level; byte-length-verified like ruby, so an exactly-tiling marker is verbatim and anything else is flagged approximate. `style`/`tcy` → inner text — semantic, always approximate.
-3. **Coverage check:** the sum of rendered nodes' span lengths must tile the covering `[min byte_start, max byte_end)`; gaps (non-projecting markers inside the region) render as `…` and flag the slice approximate.
+3. **Coverage check:** the sum of rendered nodes' span lengths must tile the covering `[min byte_start, max byte_end)`; gaps (non-projecting markers inside the region) render as `…` and are recorded per-slice as `gaps: [{byte_start, byte_end}]`; a slice with gaps is approximate as a whole, but the nodes around a gap keep their own byte-verified status.
 
 The JSON records per-slice fidelity: `approximate_pointers` lists the nodes whose rendering is semantic rather than byte-verified; an empty list means the slice is verbatim sanitized-source markup. A fully-verbatim original-file mode (corpus index → zip → windows-31j decode → sanitize → slice) was considered and deliberately dropped: it adds an external parser dependency and a corpus-checkout requirement for marginal gain, and can be revisited if approximate gaiji/style rendering proves insufficient.
 
@@ -93,7 +93,7 @@ The contributing nodes' RFC 6901 pointers (`/blocks/41/content/3`) plus `inline_
   "char_start": 769, "char_end": 784,
   "snippet": { "before": "…", "region": "…", "after": "…" },
   "analyzer_analyses": [ { "analyzer_ids": ["…"], "tokens": [ { "surface": "…", "features": {…} } ] } ],
-  "aozora_markup": { "text": "…《…》…", "byte_start": 123, "byte_end": 456, "approximate_pointers": [] },
+  "aozora_markup": { "text": "…《…》…", "byte_start": 123, "byte_end": 456, "approximate_pointers": [], "gaps": [] },
   "aat_nodes": [ { "pointer": "/blocks/41/content/3", "inline_kind": "ruby", "is_ruby_base": true, "is_gaiji": false } ],
   "work": { "work_id": "…", "title": "…", "author": { "person_id": "…", "family_name": "…", … },
             "first_published": "…", "orthographic_style": "…", "ndc": "…", "card_url": "…" },

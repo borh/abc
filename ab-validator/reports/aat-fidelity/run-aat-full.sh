@@ -250,12 +250,15 @@ if [[ -e "$out_dir" && "$force" != "1" ]]; then
   # The input_set_hash computed here MUST be byte-identical to the one
   # provenance_fields(...) writes into metadata.json below; its args mirror that
   # heredoc's provenance_fields(...) call exactly (corpus/cards, adapter_hash_target
-  # as --adapter-binary, "$adapter" --version, ab-index/ab-check bins, feature
-  # patterns, and the same optional timeout/features/work-ids).
+  # as --adapter-binary, the adapter --version run from $repo_root, ab-index/ab-check
+  # bins, feature patterns, and the same optional timeout/features/work-ids).
   if [[ "$adapter_identity_complete" == "1" ]]; then
+    # --version is run from $repo_root so it is byte-identical to the metadata
+    # heredoc's run([adapter, "--version"], cwd=repo) — otherwise a cwd-sensitive
+    # adapter would make the recorded hash unreproducible here (silently never skip).
     current_hash="$(python "$repo_root/reports/aat-fidelity/generator_identity.py" \
       --corpus-dir "$corpus/cards" \
-      --adapter-version "$("$adapter" --version)" \
+      --adapter-version "$(cd "$repo_root" && "$adapter" --version)" \
       --adapter-binary "$adapter_hash_target" \
       --ab-index-binary "$ab_index_bin" \
       --ab-check-binary "$ab_check_bin" \

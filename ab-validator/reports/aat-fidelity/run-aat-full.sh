@@ -94,24 +94,21 @@ case "$adapter_id" in
     default_jobs="${AB_AOZORA2HTML_AAT_FULL_JOBS:-$(nproc)}"
     default_timeout="${AB_AOZORA2HTML_AAT_FULL_TIMEOUT:-300s}"
     default_report_id="${AB_AOZORA2HTML_AAT_FULL_REPORT_ID:-aozora2html-full-$(date -u +%F)}"
-    adapter="$repo_root/adapters/aozora2html/aozora2html-adapter"
-    build_step=(run_just aozora2html-rust-build)
+    adapter_attr="aozora2html-adapter"
     ;;
   aozora)
     default_out_dir="${AB_AOZORA_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-full-$(date -u +%Y%m%dT%H%M%SZ)}"
     default_jobs="${AB_AOZORA_AAT_FULL_JOBS:-$(nproc)}"
     default_timeout="${AB_AOZORA_AAT_FULL_TIMEOUT:-300s}"
     default_report_id="${AB_AOZORA_AAT_FULL_REPORT_ID:-aozora-full-$(date -u +%F)}"
-    adapter="$repo_root/adapters/aozora/target/release/aozora-adapter"
-    build_step=(run_just aozora-build)
+    adapter_attr="aozora-adapter"
     ;;
   aozora-epub3)
     default_out_dir="${AB_AOZORA_EPUB3_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-epub3-full-$(date -u +%Y%m%dT%H%M%SZ)}"
     default_jobs="${AB_AOZORA_EPUB3_AAT_FULL_JOBS:-$(nproc)}"
     default_timeout="${AB_AOZORA_EPUB3_AAT_FULL_TIMEOUT:-300s}"
     default_report_id="${AB_AOZORA_EPUB3_AAT_FULL_REPORT_ID:-aozora-epub3-full-$(date -u +%F)}"
-    adapter="$repo_root/adapters/aozora-epub3/aozora-epub3-adapter"
-    build_step=(run_just aozora-epub3-build)
+    adapter_attr="aozora-epub3-adapter"
     ;;
   *)
     printf 'unknown AAT adapter: %s\n' "$adapter_id" >&2
@@ -125,6 +122,12 @@ jobs="${jobs:-$default_jobs}"
 timeout="${timeout:-$default_timeout}"
 report_id="${report_id:-$default_report_id}"
 corpus="${corpus:-$(aat_aozorabunko_corpus)}"
+
+# Placeholder for --print-plan: the flake attr id, not a resolved store path.
+# Resolving the real binaries requires a nix build, which must NOT happen on
+# the --print-plan early-exit path below (no network/build needed for a plan).
+# The real resolve (overwriting this) happens right after that early-exit.
+adapter="$adapter_attr"
 
 index_path="$out_dir/index.json"
 reports_dir="$out_dir/check-reports"
@@ -186,6 +189,17 @@ if [[ "$print_plan" == "1" ]]; then
   exit 0
 fi
 
+# All code through nix: resolve the adapter, ab-index, and ab-check binaries
+# from the flake's store paths (never cargo/just against the live source
+# tree). This runs only past the --print-plan early-exit above, so a plan
+# request stays build-free. adapter_attr%-adapter strips the trailing
+# "-adapter" suffix so it round-trips to the package's actual bin/ name for
+# all three adapters (verified: aozora-adapter, aozora2html-adapter,
+# aozora-epub3-adapter).
+adapter="$(nix build ".#$adapter_attr" --no-link --print-out-paths)/bin/${adapter_attr%-adapter}-adapter"
+ab_index_bin="$(nix build .#ab-index --no-link --print-out-paths)/bin/ab-index"
+ab_check_bin="$(nix build .#ab-check --no-link --print-out-paths)/bin/ab-check"
+
 if [[ ! "$jobs" =~ ^[0-9]+$ || "$jobs" == "0" ]]; then
   echo "--jobs must be a positive integer" >&2
   exit 2
@@ -218,20 +232,17 @@ run_step() {
   fi
 }
 
-run_step build-adapter "$adapter" "${build_step[@]}"
-
 if [[ "$adapter_id" == "aozora-epub3" && -z "${AB_AOZORAEPUB3_JAR:-}" ]]; then
   epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths "$repo_root#upstream-parser-aozora-epub3")"
   export AB_AOZORAEPUB3_JAR="$epub3_pkg/lib/AozoraEpub3.jar"
 fi
 
-run_step build-index "$index_path" run_cargo run -p ab-index -- \
+run_step build-index "$index_path" "$ab_index_bin" \
   --corpus "$corpus" \
   --patterns "$repo_root/data/feature-patterns.toml" \
   --output "$index_path"
 
 check_args=(
-  run -p ab-check --
   --index "$index_path"
   --corpus "$corpus"
   --adapter "$adapter"
@@ -247,7 +258,7 @@ if [[ -n "$features" ]]; then
   check_args+=(--features "$features")
 fi
 
-run_step check-corpus "$reports_dir" run_cargo "${check_args[@]}"
+run_step check-corpus "$reports_dir" "$ab_check_bin" "${check_args[@]}"
 
 duckdb_bin="$(aat_duckdb_bin)"
 aat_setup_duckdb_runtime "$duckdb_bin"
@@ -260,7 +271,7 @@ run_step build-triage "$triage_dir" uv run --isolated --no-project --with 'duckd
   --report-id "$report_id" \
   --out-dir "$triage_dir"
 
-python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" "$features" "$work_ids" <<'PY'
+python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" "$features" "$work_ids" "$ab_index_bin" "$ab_check_bin" <<'PY'
 import json
 import os
 import pathlib
@@ -268,7 +279,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-repo_root, corpus, out_dir, report_id, jobs, timeout, adapter, adapter_id, features, work_ids = sys.argv[1:]
+repo_root, corpus, out_dir, report_id, jobs, timeout, adapter, adapter_id, features, work_ids, ab_index_bin, ab_check_bin = sys.argv[1:]
 repo = pathlib.Path(repo_root)
 out = pathlib.Path(out_dir)
 
@@ -299,6 +310,8 @@ metadata = {
     "adapter_id": adapter_id,
     "adapter": adapter,
     "adapter_version": run([adapter, "--version"]),
+    "ab_index": ab_index_bin,
+    "ab_check": ab_check_bin,
     "index_path": str(out / "index.json"),
     "reports_dir": str(out / "check-reports"),
     "aat_dir": str(out / "aat"),
@@ -319,6 +332,8 @@ metadata.update(generator_identity.provenance_fields(
     corpus_dir=pathlib.Path(corpus) / "cards",
     adapter_version=metadata["adapter_version"],
     adapter_binary=adapter,
+    ab_index_binary=ab_index_bin,
+    ab_check_binary=ab_check_bin,
     feature_patterns_file=repo / "data" / "feature-patterns.toml",
     timeout=timeout or None,
     features=features or None,

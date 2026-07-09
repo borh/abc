@@ -1,18 +1,63 @@
 # ADR 0028: Ruby Annotation View for the Token and Analysis Chain
 
-Status: Proposed (skeleton — decision shape and evidence recorded; identity
-field mapping and schemas not yet drafted)
+Status: Proposed (first slice implemented — schema, policy, renderer
+instrumentation, materializer, manifest-index validators, join, and
+design-bundle wiring landed; open questions D1-D6 and D8 settled per
+`docs/superpowers/specs/2026-07-09-ruby-annotation-view-design.md`; D7 and D9
+remain deferred; ratification to Accepted is a separate step)
 Date: 2026-07-09
 Supersedes: none
 Depends on: ADR 0023, ADR 0024, ADR 0025, ADR 0026, ADR 0027
-Source: `docs/handoffs/ruby-annotation-probe-2026-07-09.md`
+Source: `docs/handoffs/ruby-annotation-probe-2026-07-09.md`,
+`docs/superpowers/specs/2026-07-09-ruby-annotation-view-design.md`
 
 ## Implementation Status
 
-Skeleton only. The measurement probe and its evidence note exist
-(`prototypes/ruby-annotation-probe/`,
-`docs/handoffs/ruby-annotation-probe-2026-07-09.md`). No schema, renderer,
-or manifest work has started.
+First slice implemented (2026-07-09/10). The measurement probe and its
+evidence note exist (`prototypes/ruby-annotation-probe/`,
+`docs/handoffs/ruby-annotation-probe-2026-07-09.md`), and the design decisions
+in `docs/superpowers/specs/2026-07-09-ruby-annotation-view-design.md` are
+built:
+
+- **Annotation output schema v0.1.0** (`schemas/annotation-output.schema.json`)
+  and the first policy value, `data/annotation-policies/ruby-gaiji-v1.json`
+  (D2, D3, D4). `abc.tools.analysis-identity/annotation-policy-hash` hashes
+  policy content under the ADR 0001 JCS discipline; covered by
+  `test/abc/tools/annotation_identity_test.clj`.
+- **Manifest schema v0.4.4** (`schemas/manifest.schema.json`, mirrored to the
+  ab-validator pin at `ab-validator/data/abc-schemas/nix-schemas/manifest.schema.json`
+  and `schema-contracts.json`): `artifact_kind = "annotation"`, sidecar role
+  `body-annotations`, and a required-nullable `annotation_policy_hash` field on
+  every `manifest_identity_object` (D1, D2, D8).
+- **Renderer instrumentation**:
+  `abc.tools.parser-ir-plaintext/render-with-annotations` adds unicode-scalar
+  span tracking to the existing single-traversal reduce accumulator;
+  `render`/`render-string` remain byte-identical (D5). Covered by
+  `test/abc/tools/parser_ir_annotations_test.clj` (including an astral-plane
+  gaiji codepoint case).
+- **Materializer**: `abc.tools.materialize-annotations/materialize-annotations!`
+  copies producer parser-IR identity fields into the annotation manifest, the
+  ADR 0026 consumer pattern. Covered by
+  `test/abc/tools/materialize_annotations_test.clj`.
+- **Manifest-index validators**: `abc.tools.manifest-index/annotation-copied-field-errors`
+  / `validate-annotation-copied-fields!` and
+  `annotation-release-guardrail-errors` / `validate-annotation-release-guardrail!`,
+  extending `test/abc/tools/manifest_index_test.clj`.
+- **Token join**: `abc.tools.annotation-join/join` performs the
+  span-intersection join against a token stream, producing the four probe
+  classifications (`aligned-single`, `aligned-multi`, `stem-prefix`,
+  `conflict`). Covered by `test/abc/tools/annotation_join_test.clj`. This is a
+  generated view, not a canonical artifact (Decision item 4).
+- **Design-bundle wiring**: `abc.tools.validate-design-bundle` materializes the
+  annotation fixture, schema-validates it, and runs it through the
+  manifest-index checks above, against committed example outputs
+  (`examples/v0/example-work/body-annotations.json`).
+- **D6 demonstration**: `test/abc/tools/request_set_fixture_test.clj` shows an
+  annotation view's `{input_view_kind, policy_hash}` shape as it would appear
+  in a request set's `input_views` array. This is a shape-demonstration
+  `deftest`, not resolver support — the resolver's allowed-input-view-kinds
+  and `request-set.schema.json`'s `inputView` enum are **not** widened by this
+  slice; a request set cannot yet actually resolve an annotation input view.
 
 ## Context
 
@@ -47,14 +92,14 @@ tokenization chain already uses.
 1. **The annotation view is a sibling projection, not a change to plaintext
    or TEI.** The plaintext renderer's output bytes, policy hash, and existing
    artifacts are untouched. ADR 0025 is not amended.
-2. **Content**: one record per ruby node (and unresolved gaiji node — open
-   question below) contributing to the plaintext body:
+2. **Content**: one record per ruby node and per gaiji node (resolved and
+   unresolved — settled as D3 below) contributing to the plaintext body:
    - span in plaintext unicode-scalar offsets (the ADR 0027 token coordinate
      family),
    - source span (`decoded_utf8`, ADR 0024),
-   - `ruby.base`, `ruby.reading`, `ruby.direction`,
-   - `ruby.scope` only if the invented-value question below resolves to
-     including it.
+   - `ruby.base`, `ruby.reading`, `ruby.direction`; `ruby.scope` is withheld
+     (settled as D4 below),
+   - gaiji records carry `raw_marker`, `unicode`, `resolved` (D3).
 3. **Identity** follows the ADR 0026 consumer pattern: subject fields and
    parser/mapping fields copied exactly from the producer parser-IR manifest;
    an annotation policy hash identifying the projection rules and the
@@ -74,6 +119,64 @@ tokenization chain already uses.
    first instance of a general annotation-view family (see Generalization
    below). Artifact kind, sidecar role, coordinate contract, and identity
    shape are chosen for the family; ruby is one `annotation_kind` within it.
+
+### Settled: identity, naming, and mechanics (formerly open questions D1-D6, D8)
+
+The open questions below were settled in
+`docs/superpowers/specs/2026-07-09-ruby-annotation-view-design.md` (D1-D9) and
+built in the first slice. D7 and D9 remain deferred (see Open questions
+below); the rest are decided:
+
+- **D1 — Identity field mapping.** New nullable `annotation_policy_hash` field
+  on `manifest_identity_object` (manifest schema v0.4.4), non-null exactly for
+  `artifact_kind = "annotation"`. *Why*: folding the policy into
+  `output_format_spec_hash` would conflate "what the output looks like" with
+  "what was projected"; the v0.4.2 `tokenizer_profile_hash` addition already
+  established the mechanics of an identity-field addition (schema-hash
+  rotation, fixture updates, ab-validator pin bump). Two annotation policies
+  over the same work must not collide on `artifact_id`, and now cannot.
+- **D2 — Naming.** `artifact_kind = "annotation"`; sidecar role
+  `body-annotations`; consumer input view kind
+  `parser-ir-body-annotations-v1`; per-record `annotation_kind` values in the
+  first slice: `ruby`, `gaiji`. *Why*: kind names stay family-generic; the
+  per-record `annotation_kind` carries specialization, so future ML/LLM layers
+  (`ner`, `speaker`, ...) are new record kinds or policy values, not new
+  manifest machinery.
+- **D3 — Gaiji records: included.** The view emits records for all gaiji
+  nodes, resolved and unresolved, carrying `raw_marker`, `unicode`,
+  `resolved`, and the plaintext span (empty span allowed when the node
+  contributed no visible text). *Why*: recipes need to count/exclude gaiji
+  regions (ADR 0027's mandatory gaiji-treatment recipe clause); the marginal
+  renderer cost is one more branch in the same traversal. This also gives the
+  schema a second, non-ruby `annotation_kind` in the first slice.
+  `ruby.scope` (a separate, ABC-invented field) is withheld — see D4.
+- **D4 — `ruby.scope`: withheld from v0.1.0.** The annotation output schema
+  does not carry `ruby.scope`; `ruby.direction` is carried (schema-backed and
+  measured, ADR 0024). *Why*: scope is an ABC mapping invention (I-01, ADR
+  0024 deferred follow-ups); publishing invented values in an analysis-facing
+  contract would launder them into downstream results. Returns when AAT
+  supplies producer-measured scope.
+- **D5 — Alignment production: instrument the plaintext renderer's
+  traversal.** `abc.tools.parser-ir-plaintext/render-with-annotations` adds
+  offset tracking to the existing reduce accumulator rather than re-deriving
+  spans in a separate transform. *Why*: one traversal cannot drift from
+  itself; a separate re-derivation would need permanent byte-equality
+  validation against the renderer — which is the argument for sharing the
+  traversal instead. Offsets are unicode scalar values (`codePointCount`), not
+  UTF-16 units, tested with an astral-plane gaiji codepoint.
+- **D6 — Request sets: annotation views participate as input views.**
+  Annotation views appear in request-set `input_views` as
+  `{"input_view_kind": "parser-ir-body-annotations-v1", "policy_hash": …}`.
+  Built as a shape-demonstration fixture only in this slice — no resolver
+  code change, and the resolver allow-list / `request-set.schema.json`
+  `inputView` enum are not widened (see Implementation Status).
+- **D8 — One identity slot for the family.** `annotation_policy_hash` serves
+  both source-projection policies (ruby/gaiji, this slice) and future
+  annotator profiles (ML/LLM) alike: both are hash-addressed canonical JSON
+  values with binding-log semantic ids. `annotation_kind` lives in policy and
+  content, not in manifest identity. *Why*: mirrors `tokenizer_profile_hash`
+  — one coordinate, profile content carries the detail — avoiding the
+  Cartesian growth of a distinct identity field per annotator family.
 
 ## Generalization: annotation views beyond ruby
 
@@ -121,64 +224,84 @@ those layers are additional instances of the same shape, not a new design:
   join is cheap and deterministic; materializing it canonically would
   reintroduce the Cartesian growth ADR 0026/0027 were designed to avoid.
 
-## Open questions (to resolve before Proposed → Accepted)
+## Open questions (deferred; remaining before Proposed → Accepted)
 
-- **Identity field mapping**: does the annotation policy hash get a new
-  nullable `annotation_policy_hash` manifest identity field (family-consistent
-  with the v0.4.2 `tokenizer_profile_hash` addition), or fold into
-  `output_format_spec_hash`? Two annotation policies over the same work must
-  not collide on `artifact_id`.
-- **Artifact kind and sidecar role naming**: e.g. `artifact_kind =
-  "annotation"` with sidecar role `body-annotations`, input view kind
-  `parser-ir-body-annotations-v1` for consumers.
-- **Gaiji records**: include unresolved gaiji (raw marker, reference) so
-  analysis can count/exclude them, or keep the view ruby-only?
-- **`ruby.scope`**: it is an ABC mapping invention (I-01, ADR 0024 deferred
-  follow-ups) — publish it in an analysis-facing contract, or withhold until
-  AAT supplies producer-measured scope?
-- **Alignment production**: instrument the plaintext renderer to emit spans in
-  the same traversal (guarantees byte-consistency with the plaintext view), or
-  re-derive alignment in a separate pure transform validated against the
-  rendered plaintext?
-- **Whether the annotation view participates in request-set identity** as an
-  input view with its own policy hash (ADR 0026 request-set input-view arrays
-  already accommodate this).
-- **Span survival under text-rewriting normalization.** If a tokenizer or
-  annotator profile's input normalization rewrites surface text (e.g. the
+Of the nine open questions originally listed here, seven are settled — see
+"Settled: identity, naming, and mechanics" above (identity field mapping =
+D1, artifact-kind/sidecar naming = D2, gaiji records = D3, `ruby.scope` = D4,
+alignment production = D5, request-set participation = D6, identity-slot
+naming for the generalized family = D8). Two remain open, per
+`docs/superpowers/specs/2026-07-09-ruby-annotation-view-design.md` D7 and D9:
+
+- **D7 — Span survival under text-rewriting normalization.** If a tokenizer
+  or annotator profile's input normalization rewrites surface text (e.g. the
   morphology warehouse's M2 old-kana modernization), token spans refer to the
   normalized text, not the plaintext view the annotation spans anchor to.
-  Either normalization policies must be span-preserving, or they must emit an
-  offset map back to the plaintext view; profiles that can do neither cannot
-  support annotation joins and must say so in their profile content.
-- **Identity slot naming for the generalized family**: one nullable
-  `annotation_policy_hash`-style field serving both source-projection
-  policies (ruby) and annotator profiles (ML/LLM), or distinct fields; and
-  whether `annotation_kind` belongs in identity or only in content.
-- **Model provenance floor for `exploratory` annotators** (remote LLM APIs):
-  minimum recorded identity (API model id, request parameters, prompt hash,
-  response capture) for a value that can never be exactly replayed, and how
-  such artifacts are marked so release validation excludes them from exact
-  claims.
+  **Deferred decision** (recorded in the design spec, not yet built): the
+  tokenizer-profile schema will gain `span_preservation` ∈
+  `{"preserving", "offset-map", "none"}`; profiles that rewrite text must
+  declare `offset-map` and emit one, or declare `none` and thereby forfeit
+  annotation-join and Exact-tier-with-input-spans support. Not in the first
+  slice — the ruby view itself is unaffected because it anchors to the
+  plaintext view directly, not to any tokenizer's normalized text. Tracked as
+  a future tokenizer-profile schema revision.
+- **D9 — Model provenance floor for `exploratory` annotators** (remote LLM
+  APIs): minimum recorded identity (API model id, request parameters, prompt
+  hash, response capture) for a value that can never be exactly replayed, and
+  how such artifacts are marked so release validation excludes them from
+  exact claims. **Deferred guidance** (recorded in the design spec, not
+  enforced by anything in this slice): a future model-annotator ADR must
+  record at minimum API/model identifier and version, full request-parameter
+  hash, prompt-template hash, response-capture hash, and capture timestamp.
+  The first slice's policy schema is an open map under a versioned schema, so
+  it leaves room for this without needing a schema change now; enforcement
+  belongs to that future ADR.
 
-## Acceptance criteria (sketch)
+## Acceptance Criteria
 
-- An annotation output schema exists and is hashable under the ADR 0001 JCS
-  discipline.
-- A fixture materializes one per-work annotation view from the committed
-  parser-IR example; spans verified against the committed plaintext fixture
-  byte-for-byte (unicode-scalar offsets).
-- Copied parser/mapping identity fields validate against the producer
-  parser-IR manifest, reusing the ADR 0026 copied-field release validation.
-- A joined token/reading fixture demonstrates span-intersection join against
-  a `token-stream-v1` sidecar, including at least one stem-prefix and one
-  conflict classification (probe data provides real cases).
-- A tokenizer-backed analysis recipe fixture states a supplantation policy and
-  consumes the join.
-- Renderer coverage remains schema-derived and fails closed on new parser-IR
-  node types, matching the ADR 0025 discipline.
-- The annotation output schema demonstrates the family shape with at least
-  one non-ruby `annotation_kind` fixture (a stub is sufficient), so the ruby
-  slice cannot accidentally specialize the contract.
+Status per criterion, first slice (Tasks 1-7):
+
+- **Done.** An annotation output schema exists and is hashable under the
+  ADR 0001 JCS discipline: `schemas/annotation-output.schema.json`,
+  `abc.tools.analysis-identity/annotation-policy-hash`, verified by
+  `test/abc/tools/annotation_identity_test.clj`.
+- **Done.** A fixture materializes one per-work annotation view from the
+  committed parser-IR example; spans verified against the committed
+  plaintext fixture byte-for-byte (unicode-scalar offsets):
+  `test/abc/tools/parser_ir_annotations_test.clj`,
+  `test/abc/tools/materialize_annotations_test.clj`, and the design-bundle
+  fixture wiring in `abc.tools.validate-design-bundle` against
+  `examples/v0/example-work/body-annotations.json`.
+- **Done.** Copied parser/mapping identity fields validate against the
+  producer parser-IR manifest, reusing the ADR 0026 copied-field release
+  validation: `abc.tools.manifest-index/annotation-copied-field-errors` and
+  `annotation-release-guardrail-errors`, exercised in
+  `test/abc/tools/manifest_index_test.clj`.
+- **Done.** A joined token/reading fixture demonstrates span-intersection
+  join against a token stream, including at least one stem-prefix and one
+  conflict classification (probe data provides real cases):
+  `abc.tools.annotation-join/join`, `test/abc/tools/annotation_join_test.clj`.
+- **Not yet built.** A tokenizer-backed analysis recipe fixture that states a
+  supplantation policy and consumes the join. The join primitive exists
+  (above); no recipe schema or fixture consumes it yet. Deferred to a later
+  task.
+- **Unchanged, inherited.** Renderer coverage remains schema-derived and
+  fails closed on new parser-IR node types, matching the ADR 0025
+  discipline: `render-with-annotations` shares the same `node-renderers` /
+  `covered-node-types` tables as `render`, validated by the pre-existing
+  `test/abc/tools/parser_ir_plaintext_test.clj`.
+- **Done.** The annotation output schema demonstrates the family shape with
+  at least one non-ruby `annotation_kind` fixture: the schema and the first
+  policy (`data/annotation-policies/ruby-gaiji-v1.json`) carry two
+  `annotation_kind` values, `ruby` and `gaiji` (D3), exercised together in
+  `test/abc/tools/parser_ir_annotations_test.clj` and
+  `test/abc/tools/materialize_annotations_test.clj`. Both kinds still derive
+  from the same source-projection policy; a fully independent ML/LLM
+  `annotation_kind` (e.g. `ner`) remains future work under D8/D9.
+- **Demonstration only, not resolver support.** D6 (request-set
+  participation): `test/abc/tools/request_set_fixture_test.clj` shows the
+  `{input_view_kind, policy_hash}` shape; the resolver and
+  `request-set.schema.json` `inputView` enum are not widened.
 
 ## Rollback
 

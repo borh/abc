@@ -36,10 +36,9 @@ assert plan["jobs"] == 3
 assert plan["timeout"] == "99s"
 assert plan["corpus"] == str((tmp / "corpus").resolve())
 assert plan["out_dir"] == str(tmp / "out")
-# --print-plan stays nix-build-free: "adapter" is the flake attr id, not a
-# resolved store path (the real nix store path is resolved past the
-# --print-plan early-exit, in the actual run).
-assert plan["adapter"] == "aozora2html-adapter"
+# aozora2html is a wrapper-pipeline adapter: ab-check invokes the bash wrapper
+# script directly (no nix resolve), so --print-plan reports that path.
+assert plan["adapter"] == str(repo_root / "ab-validator/adapters/aozora2html/aozora2html-adapter")
 assert plan["index_path"] == str(tmp / "out/index.json")
 assert plan["aat_dir"] == str(tmp / "out/aat")
 assert plan["metadata_path"] == str(tmp / "out/metadata.json")

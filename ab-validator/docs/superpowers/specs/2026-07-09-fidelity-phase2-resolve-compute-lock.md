@@ -36,20 +36,21 @@ Both fail today, and the evidence names why.
 > path exists. `validate_run_set` checks `flake.lock` rev == descriptor rev, but the
 > descriptor's own rev was dirty, so the pin validates against the wrong thing.
 > Idempotency is *hoped for*, not verified; a mutated/truncated dump is undetectable.
-> **Alternative (preferred: dumps become derivations).** Make each dump a **nix
-> derivation** built from the pinned parser derivation + pinned corpus. Then its **store
-> path *is* its content hash** — verification is free (nix already did it, on a clean
-> tree), the producing build is pinned (absorbs F5), and the dirty-tree hole closes
-> outright. The manifest pins the store path; resolve just checks it realises.
-> **Alternative (interim: hand-hash loose `/db` dumps).** If derivations aren't ready,
-> hash each dump's AAT tree (narHash-style) into its descriptor at generation; the
-> manifest pins that hash; resolve recomputes and compares, failing closed on mismatch.
-> A crutch, because loose `/db` dirs are mutable *between* hash and read.
-> **Tradeoff.** The derivation route costs upfront nix packaging of the dump build (and
-> store disk); the interim costs a full re-hash of ~17k-file dumps on every resolve (no
-> free store-path cache — these dirs aren't in the store) plus regenerating every existing
-> descriptor to carry the hash. This is the price of "provable," and the reason the
-> derivation route is preferred: it makes correctness free rather than computed.
+> **Alternative — content-address the `aat/` tree IN PLACE on `/db`** (the 2026-07-09
+> investigation reversed the earlier "derivations preferred" ranking; see the Move A
+> scoping section below). Hash the already-deterministic per-work `aat/` tree (normalised
+> — strip `meta.metrics`), record the hash in the descriptor + pin it in the manifest;
+> resolve verifies and fails closed. Bulk bytes stay on the flexible `/db` tier; the dump's
+> identity is its tree-hash, not a store path.
+> **Rejected — dumps as nix derivations (store output).** Would make the store path the
+> hash, but the ~25 GB of dumps cannot live in `/nix/store` (94 % full, 88 GB free vs
+> `/db`'s 1.2 TB), and it needs packaging 5 adapters + `ab-check`/`ab-index` + a hermetic
+> corpus-walk. Nix stays valuable for the *adapter build* (F5), whose output is small — but
+> the *dump output* belongs on `/db`.
+> **Tradeoff.** In-place hashing costs a one-time hash of the 5 pinned dumps and a
+> normalisation step; full re-verification on every resolve is expensive (~minutes over
+> 25 GB), so resolve verifies cheaply by default (manifest hash == descriptor hash) with
+> opt-in full rehash (CI / `--verify-content`).
 
 ### F7 — Two input channels; dump-selection is a fake seam · **Strong suggestion**
 > **Observation.** The compute tools take the fidelity summary as an explicit
@@ -213,7 +214,7 @@ system is shippable and behavior-preserving at every boundary.
 | **Phase 1** — manifest authoritative | env-overrides impossible | ✅ merged `a4d15879` | byte-identical resolution + `test_aat_runs.py` |
 | **2 · Move B** — resolve/compute skeleton + single lock | *one obvious way*; glue deleted | ✅ done (branch) | report bytes == Phase-1 baseline (byte-identical on full corpus) |
 | **2 · Move C** — close ambient env | zero-env compute (closed value) | ✅ done (branch) | `env -i compute <lock>` runs — proven in `test_fidelity_lock.py` |
-| **2 · Move A** — content-address (via derivations) | *provably correct* | keystone; per criterion above | golden-lock + fail-closed |
+| **2 · Move A** — content-address **in place on `/db`** | *provably correct* | scoped (below); per criterion | golden-lock + fail-closed |
 
 **Note on Move C:** it turned out *substantially subsumed by Move B* — because the lock
 carries deployment-bound absolute paths and compute reads only the lock, compute was
@@ -229,3 +230,44 @@ correct" is not a slogan but a passing CI gate.
 **Recommended order: B → C → A**, with A governed by the decision criterion (not reflexive
 zeal). B first because it builds the stage the rest slots into; C next because closing the
 value is cheap once resolve exists; A when its trigger fires.
+
+## Move A scoping (2026-07-09 investigation)
+
+We scoped the "dumps as nix derivations" route and it **reversed the recommendation**: the
+right shape is **content-addressing in place on `/db`**, not the nix store. Three findings:
+
+1. **Storage forbids store output.** Dumps total ~25 GB on `/db` (aozora alone: 17,886
+   files, 2.9 GB); `/nix/store` is 94 % full (88 GB free) on a *different, smaller* disk,
+   and nix would accrue a new store path per re-pin. `/db` is the deliberate bulk tier
+   (1.2 TB free). The dump output must stay on `/db`.
+2. **The `aat/` tree is already deterministic.** Per-work filenames are content-derived
+   (`sanitize(work.id)-sha256(txt_path)[:12].json`); content is stable-key-ordered JSON with
+   no timestamps/RNG/HashMap-iteration; rayon parallelism doesn't affect the tree. All the
+   nondeterminism (dir-name `$(date)`, `generated_at_utc`, `repo_status_short`, `jobs=nproc`,
+   absolute paths) lives in the **surrounding `metadata.json` / dir-names — not the tree we
+   hash.** **One caveat:** the `aozora-rs` adapter embeds wall-clock float `meta.metrics`
+   (`decode_ms`, …) — nondeterministic — so hashing must **normalise** (strip `meta.metrics`),
+   or the adapter must omit it from canonical AAT.
+3. **The derivation route is expensive and still store-bound.** Corpus + upstream parsers
+   are already nix derivations, but the repo's 5 adapters and `ab-check`/`ab-index` are not
+   packaged, and no derivation walks the corpus — that orchestration lives in `run-aat-full.sh`.
+   Packaging all of it is large, and its output couldn't live on `/db` cleanly anyway.
+
+**Recommended Move A shape (in place, ~modest):**
+- **A1 — dump hasher.** A tool computing a stable content hash over an adapter's `aat/` dir:
+  `sha256` over sorted `(relative_path, canonical_json_bytes)`, where canonicalisation strips
+  `meta.metrics`. Output: one dump content-hash.
+- **A2 — record + pin.** Write the hash into the descriptor (or a sidecar) and pin it in the
+  manifest (`expected.content_hash`). The lock's reserved `content_hash` field carries it.
+- **A3 — resolve verifies, fails closed.** Cheap by default (manifest hash == descriptor
+  hash); opt-in full rehash (`--verify-content` / CI) since rehashing 25 GB per resolve is
+  minutes. Then the golden-lock + fail-closed tests in *"the proof you cannot write today"*
+  become real.
+- **A4 — hygiene (separable, not required for A1–A3).** Make `run-aat-full.sh` descriptors
+  reproducible (drop `$(date)`/dirty-tree/`nproc`/absolute paths, or use `SOURCE_DATE_EPOCH`)
+  and strip `meta.metrics` from `aozora-rs` canonical AAT. Independent of the hashing.
+
+**Cost:** a Python hasher + descriptor/manifest fields + resolve verification + a one-time
+hash of the 5 pinned dumps. **No** adapter/`ab-check` nix packaging, **no** store bloat.
+Nix's value for *build* determinism (F5 — package the adapters) remains, but is independent
+and out of Move A's critical path.

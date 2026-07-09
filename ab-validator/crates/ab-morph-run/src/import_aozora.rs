@@ -23,7 +23,7 @@ use crate::warehouse::schema::WarehouseTable;
 /// change updates this constant and the field mapping together in one
 /// reviewed change (spec Decision 3).
 pub const ABC_METADATA_RECORD_SCHEMA_HASH: &str =
-    "sha256:692dfa23215ea6c58e21f5d293b364dff06371c75fb32ebc9694f52e8e5c9b1f";
+    "sha256:55eeb37795d53b1c9041d11215328536eada911f36335abfd5f213dfa3a90fb8";
 
 /// Parses a warehouse `source_id` of the form `<person>_<card>-<hash12>`
 /// (e.g. `000136_731-9559c30ae312`) into the 6-digit zero-padded ABC

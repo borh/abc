@@ -540,16 +540,22 @@
           lockFile = ./adapters/aozora2/Cargo.lock;
         };
 
-        # NOTE: aozora-rs is intentionally NOT packaged here yet. Its
-        # `path` dep on crates/ab-ir now transitively requires ab-ortho-detect →
-        # bincode, but the committed adapters/aozora-rs/Cargo.lock predates that
-        # change (it still records ab-ir as depending only on ab-plaintext),
-        # so a fully-offline `buildRustPackage` from the vendored lock fails with
-        # `no matching package named bincode`. Reproducibly packaging it requires
-        # first regenerating adapters/aozora-rs/Cargo.lock against the current
-        # crates/ tree — see the deferred "aozora-rs adapter repair" follow-up.
-        # The git-dep hash is preserved here for when that lock is refreshed:
-        #   "aozora-rs-core-0.1.0" = "sha256-FstLN45x25KjRr9Q7ORJ8W7/lRVlvIld0xAEpKZ9EUE=";
+        # aozora-rs, like aozora2, has `path` deps that reach outside the adapter
+        # dir (crates/ab-ir, crates/ab-source-syntax and the third_party/aozora-rs-gaiji
+        # patch), so its build src is the whole ab-validator tree with
+        # buildAndTestSubdir + cargoRoot pointing cargo at the adapter's workspace.
+        # Its only git dependency is aozora-rs-core (aozora-rs-gaiji is [patch]ed to
+        # the vendored third_party path), so importCargoLock needs a single outputHash.
+        # This was previously blocked: crates/ab-ir now transitively requires
+        # ab-ortho-detect → bincode, and the committed Cargo.lock predated that
+        # change, so an offline build failed with `no matching package named bincode`.
+        # The lock has since been regenerated against the current crates/ tree.
+        aozoraRsAdapterCargoDeps = rustPlatform.importCargoLock {
+          lockFile = ./adapters/aozora-rs/Cargo.lock;
+          outputHashes = {
+            "aozora-rs-core-0.1.0" = "sha256-FstLN45x25KjRr9Q7ORJ8W7/lRVlvIld0xAEpKZ9EUE=";
+          };
+        };
 
         aozoraAdapter = rustPlatform.buildRustPackage {
           pname = "aozora-adapter";
@@ -576,6 +582,37 @@
           doCheck = false;
 
           meta.description = "Repo adapter wrapping the aozora2 (aozora-core) parser into AAT";
+        };
+
+        aozoraRsAdapter = rustPlatform.buildRustPackage {
+          pname = "aozora-rs-adapter";
+          version = "0.1.0";
+
+          src = source;
+          cargoDeps = aozoraRsAdapterCargoDeps;
+
+          buildAndTestSubdir = "adapters/aozora-rs";
+          cargoRoot = "adapters/aozora-rs";
+
+          buildInputs = [
+            pkgs.pdfium-binaries
+          ];
+
+          # third_party/aozora-rs-gaiji's build.rs otherwise downloads the JIS X
+          # 0213 menkuten table, a pdfium binary, and Aozora's gaiji_chuki.pdf
+          # from the live network at build time — impossible in the Nix sandbox
+          # and non-reproducible even outside it (the PDF/table drift upstream).
+          # The vendored fork in third_party/ adds these env-var escape hatches;
+          # we satisfy all three from the pinned inputs already used elsewhere in
+          # this flake (aozoraRsGaijiMenkuten, aozoraRsGaijiChukiPdf,
+          # pdfium-binaries) so the build is fully offline and reproducible.
+          AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
+          AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
+          AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
+
+          doCheck = false;
+
+          meta.description = "Repo adapter wrapping the aozora-rs-core parser into AAT";
         };
 
         aozora2htmlAdapter = rustPlatform.buildRustPackage {
@@ -1417,6 +1454,7 @@
           aozora2-adapter = aozora2Adapter;
           aozora2html-adapter = aozora2htmlAdapter;
           aozora-epub3-adapter = aozoraEpub3Adapter;
+          aozora-rs-adapter = aozoraRsAdapter;
           aozorabunko-corpus = aozorabunkoCorpus;
           upstream-parser-aozora2 = upstreamParserAozora2;
           upstream-parser-aozora-rs = upstreamParserAozoraRs;
@@ -1493,6 +1531,7 @@
           aozora2-adapter = aozora2Adapter;
           aozora2html-adapter = aozora2htmlAdapter;
           aozora-epub3-adapter = aozoraEpub3Adapter;
+          aozora-rs-adapter = aozoraRsAdapter;
           upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
           upstream-aozora-metadata = upstreamAozoraMetadataCheck;
           upstream-parser-metadata = upstreamNonRustMetadata;

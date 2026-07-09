@@ -21,6 +21,7 @@ _LIB = Path(__file__).resolve().parents[1] / "lib"
 sys.path.insert(0, str(_LIB))
 
 import aat_hash  # noqa: E402
+import freshness  # noqa: E402
 
 
 def is_fresh(out_dir: str | Path, current_input_set_hash: str) -> dict[str, Any]:
@@ -35,14 +36,17 @@ def is_fresh(out_dir: str | Path, current_input_set_hash: str) -> dict[str, Any]
         return {"fresh": False, "reason": "malformed metadata.json"}
     if not isinstance(meta, dict):
         return {"fresh": False, "reason": "metadata.json is not an object"}
-    if meta.get("input_set_hash") != current_input_set_hash:
+    decision = freshness.classify(
+        meta.get("input_set_hash"),
+        current_input_set_hash,
+        meta.get("output_content_hash"),
+        lambda: aat_hash.hash_aat_dir(out / "aat"),
+    )
+    if decision.verdict is freshness.Verdict.INPUT_MISMATCH:
         return {"fresh": False, "reason": "input_set_hash differs (inputs changed)"}
-    recorded = meta.get("output_content_hash")
-    try:
-        actual = aat_hash.hash_aat_dir(out / "aat")
-    except (ValueError, OSError):
+    if decision.verdict is freshness.Verdict.OUTPUT_UNREADABLE:
         return {"fresh": False, "reason": "aat outputs missing or unreadable"}
-    if actual != recorded:
+    if decision.verdict is freshness.Verdict.OUTPUT_MISMATCH:
         return {"fresh": False, "reason": "aat content hash mismatch"}
     return {"fresh": True, "reason": "inputs unchanged and outputs verify"}
 

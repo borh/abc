@@ -25,7 +25,7 @@ if [[ "${1:-}" == "--mode" && $# -ge 2 ]]; then
 fi
 
 tmp_dir="$(mktemp -d)"
-trap 'rm -rf "$tmp_dir"' EXIT
+trap 'rm -rf "$tmp_dir"' EXIT INT TERM
 stdin_raw="$tmp_dir/stdin.raw"
 parser_sjis_src="$tmp_dir/parser.sjis"
 crlf_src="$tmp_dir/crlf.txt"
@@ -94,4 +94,4 @@ mode_arg=(--mode "$mode")
 # Rust mapper reads --source for hash/encoding metadata. Pass the original
 # stdin bytes so source_hash matches what other adapters see.
 common_args=(--source "$stdin_raw" --xhtml "$xhtml" "${mode_arg[@]}" "${parse_complete_arg[@]}")
-exec "$RUST_MAPPER_BIN" "${common_args[@]}"
+"$RUST_MAPPER_BIN" "${common_args[@]}"

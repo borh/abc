@@ -1,7 +1,7 @@
 //! Analyzer analysis grouping and ID shortening.
 //!
 //! Assembles `RegionAnalyzerRow`s into `AnalyzerAnalysis` groups, where each group
-//! collects analyzers that agree on `(covers_exactly, tokens)`. Also provides ID
+//! collects analyzers that agree on `(covers_exactly, surfaces, tokens)`. Also provides ID
 //! shortening that strips leading `vibrato:unidic-` and trailing `-<digits>` suffixes.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -13,10 +13,11 @@ use crate::hydrate::tables::{RegionAnalyzerRow, Token};
 pub struct AnalyzerAnalysis {
     pub analyzer_ids: Vec<String>,
     pub covers_exactly: bool,
+    pub surfaces: Vec<String>,
     pub tokens: Vec<Token>,
 }
 
-/// Groups analyses by `(covers_exactly, tokens)`, collecting analyzers that agree.
+/// Groups analyses by `(covers_exactly, surfaces, tokens)`, collecting analyzers that agree.
 /// Groups are ordered by first (sorted) analyzer ID. `analyzer_ids` within each group
 /// stay sorted (rows arrive pre-sorted by analyzer_id per tables.rs contract).
 pub fn group_analyses(
@@ -34,14 +35,16 @@ pub fn group_analyses(
                     .cloned()
             })
             .collect();
-        match groups
-            .iter_mut()
-            .find(|group| group.covers_exactly == row.covers_exactly && group.tokens == row_tokens)
-        {
+        match groups.iter_mut().find(|group| {
+            group.covers_exactly == row.covers_exactly
+                && group.surfaces == row.surfaces
+                && group.tokens == row_tokens
+        }) {
             Some(group) => group.analyzer_ids.push(row.analyzer_id.clone()),
             None => groups.push(AnalyzerAnalysis {
                 analyzer_ids: vec![row.analyzer_id.clone()],
                 covers_exactly: row.covers_exactly,
+                surfaces: row.surfaces.clone(),
                 tokens: row_tokens,
             }),
         }
@@ -92,13 +95,6 @@ mod tests {
         use crate::hydrate::tables::{RegionAnalyzerRow, Token};
         use std::collections::BTreeMap;
 
-        let row = |analyzer_id: &str, start: u64, end: u64| RegionAnalyzerRow {
-            analyzer_id: analyzer_id.to_owned(),
-            covers_exactly: true,
-            morpheme_start: start,
-            morpheme_end: end,
-            surfaces: vec![],
-        };
         let token = |surface: &str, cs: u64, ce: u64, pos1: &str| Token {
             surface: surface.to_owned(),
             char_start: cs,
@@ -107,9 +103,27 @@ mod tests {
         };
         // vibrato and sudachi-c agree (one token); sudachi-a splits in two.
         let rows = vec![
-            row("sudachi-a", 1, 3),
-            row("sudachi-c", 1, 2),
-            row("vibrato:unidic-cwj-202512", 1, 2),
+            RegionAnalyzerRow {
+                analyzer_id: "sudachi-a".to_owned(),
+                covers_exactly: true,
+                morpheme_start: 1,
+                morpheme_end: 3,
+                surfaces: vec!["猫".to_owned(), "である".to_owned()],
+            },
+            RegionAnalyzerRow {
+                analyzer_id: "sudachi-c".to_owned(),
+                covers_exactly: true,
+                morpheme_start: 1,
+                morpheme_end: 2,
+                surfaces: vec!["猫である".to_owned()],
+            },
+            RegionAnalyzerRow {
+                analyzer_id: "vibrato:unidic-cwj-202512".to_owned(),
+                covers_exactly: true,
+                morpheme_start: 1,
+                morpheme_end: 2,
+                surfaces: vec!["猫である".to_owned()],
+            },
         ];
         let mut tokens: BTreeMap<(String, String, u64), Token> = BTreeMap::new();
         tokens.insert(
@@ -138,6 +152,37 @@ mod tests {
             vec!["sudachi-c", "vibrato:unidic-cwj-202512"]
         );
         assert_eq!(groups[1].tokens[0].surface, "猫である");
+    }
+
+    #[test]
+    fn differing_surfaces_prevent_grouping_and_render_from_surfaces() {
+        use crate::hydrate::tables::RegionAnalyzerRow;
+        use std::collections::BTreeMap;
+
+        // No tokens recorded at all: without surfaces in the key these two
+        // would collapse into one "identical" group despite segmenting
+        // differently.
+        let rows = vec![
+            RegionAnalyzerRow {
+                analyzer_id: "sudachi-a".to_owned(),
+                covers_exactly: true,
+                morpheme_start: 0,
+                morpheme_end: 2,
+                surfaces: vec!["今".to_owned(), "日".to_owned()],
+            },
+            RegionAnalyzerRow {
+                analyzer_id: "vibrato".to_owned(),
+                covers_exactly: true,
+                morpheme_start: 0,
+                morpheme_end: 1,
+                surfaces: vec!["今日".to_owned()],
+            },
+        ];
+        let tokens = BTreeMap::new();
+        let groups = group_analyses(&rows, &tokens, "src-a");
+        assert_eq!(groups.len(), 2);
+        assert_eq!(groups[0].surfaces, vec!["今", "日"]);
+        assert_eq!(groups[1].surfaces, vec!["今日"]);
     }
 
     #[test]

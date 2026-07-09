@@ -6,7 +6,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-MAPPER_BIN="${REPO_ROOT}/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
+MAPPER_BIN="${AB_AOZORAEPUB3_MAPPER_BIN:-${REPO_ROOT}/adapters/aozora-epub3/target/release/aozora-epub3-adapter}"
 JAR_PATH="${AB_AOZORAEPUB3_JAR:-}"
 
 if [[ "${1:-}" == "--version" ]]; then

@@ -101,13 +101,12 @@ case "$adapter_id" in
     default_timeout="${AB_AOZORA2HTML_AAT_FULL_TIMEOUT:-300s}"
     default_report_id="${AB_AOZORA2HTML_AAT_FULL_REPORT_ID:-aozora2html-full-$(date -u +%F)}"
     # Wrapper-pipeline adapter: ab-check invokes this bash wrapper (Ruby
-    # aozora2html renderer + Rust mapper), not a self-contained binary, so it
-    # stays on its build pipeline (the flake's mapper-only package would fail
-    # ab-check's `--mode aat` on raw stdin). Identity pins the Rust mapper
-    # binary — the code that actually changes — not the wrapper script.
+    # aozora2html renderer + Rust mapper), not a self-contained binary. The
+    # Rust mapper is resolved from nix past the --print-plan early-exit
+    # (mapper_attr below); identity pins that nix mapper binary — the code that
+    # actually changes — not the wrapper script.
     adapter="$repo_root/adapters/aozora2html/aozora2html-adapter"
-    build_step=(run_just aozora2html-rust-build)
-    adapter_hash_target="$repo_root/adapters/aozora2html/target/release/aozora2html-adapter"
+    mapper_attr="aozora2html-adapter"
     renderer_attr="upstream-parser-aozora2html"
     ;;
   aozora)
@@ -117,9 +116,9 @@ case "$adapter_id" in
     default_report_id="${AB_AOZORA_AAT_FULL_REPORT_ID:-aozora-full-$(date -u +%F)}"
     # Self-contained Rust binary resolved from nix past the --print-plan
     # early-exit; here "adapter" is just the flake attr id placeholder that
-    # --print-plan reports (no build). No build_step — it comes prebuilt.
+    # --print-plan reports (no build); it comes prebuilt, no mapper attr.
     adapter="aozora-adapter"
-    build_step=()
+    mapper_attr=""
     renderer_attr=""
     ;;
   aozora-epub3)
@@ -128,10 +127,10 @@ case "$adapter_id" in
     default_timeout="${AB_AOZORA_EPUB3_AAT_FULL_TIMEOUT:-300s}"
     default_report_id="${AB_AOZORA_EPUB3_AAT_FULL_REPORT_ID:-aozora-epub3-full-$(date -u +%F)}"
     # Wrapper-pipeline adapter (AozoraEpub3.jar + Rust mapper): same rationale
-    # as aozora2html above. Identity pins the Rust mapper binary.
+    # as aozora2html above. Identity pins the nix-built Rust mapper binary
+    # (mapper_attr below).
     adapter="$repo_root/adapters/aozora-epub3/aozora-epub3-adapter"
-    build_step=(run_just aozora-epub3-build)
-    adapter_hash_target="$repo_root/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
+    mapper_attr="aozora-epub3-adapter"
     renderer_attr="upstream-parser-aozora-epub3"
     ;;
   *)
@@ -225,16 +224,32 @@ triage_python="$(nix build "$repo_root#aat-triage-python" --no-link --print-out-
 
 # The self-contained aozora adapter also comes from nix (its identity is
 # complete). The wrapper adapters keep the bash-wrapper path set in the case
-# block (ab-check invokes it) and build their Rust mapper via build_step below;
-# adapter_hash_target already points at that mapper binary for them.
+# block (ab-check invokes it) and resolve their Rust mapper from nix below;
+# adapter_hash_target then points at that nix mapper binary for them.
 if [[ "$adapter_id" == "aozora" ]]; then
   adapter="$(nix build "$repo_root#aozora-adapter" --no-link --print-out-paths)/bin/aozora-adapter"
   adapter_hash_target="$adapter"
 fi
 
+# Wrapper adapters resolve their Rust mapper from nix (the flake packages the
+# identical mapper crate). adapter_hash_target — the binary hashed into identity
+# — becomes that nix store binary, and the matching wrapper override is exported
+# so ab-check's wrapper execs the SAME binary (recorded == checked). Both must be
+# set before the skip gate, which runs "$adapter" --version (the wrapper, which
+# execs the exported mapper) and hashes adapter_hash_target.
+if [[ -n "$mapper_attr" ]]; then
+  mapper_bin="$(nix build "$repo_root#$mapper_attr" --no-link --print-out-paths)/bin/$mapper_attr"
+  adapter_hash_target="$mapper_bin"
+  if [[ "$adapter_id" == "aozora2html" ]]; then
+    export AB_AOZORA2HTML_MAPPER_BIN="$mapper_bin"
+  elif [[ "$adapter_id" == "aozora-epub3" ]]; then
+    export AB_AOZORAEPUB3_MAPPER_BIN="$mapper_bin"
+  fi
+fi
+
 # Resolve the external renderer (wrapper adapters) from its nix store dir so it
-# is pinned by content, and build the Rust mapper NOW (before the skip gate) so
-# its hash is available to the gate. aozora has no external renderer.
+# is pinned by content (the Rust mapper was already resolved from nix above).
+# aozora has no external renderer.
 renderer_dir=""
 if [[ -n "$renderer_attr" ]]; then
   renderer_dir="$(nix build "$repo_root#$renderer_attr" --no-link --print-out-paths)"
@@ -244,14 +259,6 @@ if [[ "$adapter_id" == "aozora2html" ]]; then
 elif [[ "$adapter_id" == "aozora-epub3" ]]; then
   export AB_AOZORAEPUB3_JAR="$renderer_dir/lib/AozoraEpub3.jar"
 fi
-# Wrapper adapters build their Rust mapper up front so the gate can hash it
-# (adapter_hash_target points at the mapper binary). aozora comes prebuilt from
-# nix (build_step empty). This runs pre-workflow_init, so use a plain build (not
-# run_step); the post-workflow build-adapter step below re-verifies incrementally.
-if [[ ${#build_step[@]} -gt 0 ]]; then
-  "${build_step[@]}"
-fi
-
 if [[ ! "$jobs" =~ ^[0-9]+$ || "$jobs" == "0" ]]; then
   echo "--jobs must be a positive integer" >&2
   exit 2
@@ -317,12 +324,6 @@ run_step() {
     exit "$status"
   fi
 }
-
-# Wrapper adapters build their Rust mapper here (build_step is non-empty);
-# aozora comes prebuilt from nix (build_step is empty) so it runs no build.
-if [[ ${#build_step[@]} -gt 0 ]]; then
-  run_step build-adapter "$adapter" "${build_step[@]}"
-fi
 
 run_step build-index "$index_path" "$ab_index_bin" \
   --corpus "$corpus" \

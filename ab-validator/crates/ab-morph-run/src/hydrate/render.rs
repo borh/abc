@@ -248,7 +248,13 @@ fn render_analyzer_ids(
     analysis
         .analyzer_ids
         .iter()
-        .map(|id| (*full_to_short.get(id.as_str()).unwrap_or(&id.as_str())).to_owned())
+        .map(|id| {
+            full_to_short
+                .get(id.as_str())
+                .copied()
+                .unwrap_or(id.as_str())
+                .to_owned()
+        })
         .collect::<Vec<_>>()
         .join(", ")
 }

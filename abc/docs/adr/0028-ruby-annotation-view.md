@@ -64,8 +64,25 @@ built:
   `oneOf` kinds to the allow-list, and
   `annotation-input-view-resolves-in-demo-annotation-ja-test` resolves the
   fixture end-to-end. A request set can now actually resolve an annotation
-  input view; materializing annotation artifacts *per request set* remains
-  future work (only the identity/schema layer accepts the view).
+  input view, and `abc.tools.analysis-identity/assert-input-view-coverage!`
+  (enforced by the resolver, pinned fixture-wide by
+  `definitions-and-recipes-input-view-coverage-machine-check-test` in
+  `test/abc/tools/request_set_fixture_test.clj`) machine-checks the
+  recipe-`supported_input_view_kinds` ↔ request-set-views agreement:
+  every referenced recipe must be able to consume at least one view the
+  request set provides (tokenizer profiles supply the derived
+  `token-stream-v1` view). The converse — flagging a declared view no
+  recipe consumes — is deliberately not checked: views are consumed
+  outside the recipe system too (the publication flow consumes the
+  plaintext view, as in `full-corpus-publication-basic-ja`; the annotation
+  materializer consumes annotation views directly), so dead-view detection
+  is not decidable from the recipe registry. Materializing annotation
+  artifacts *per request set* remains future work, as does widening
+  `schemas/analysis-recipe.schema.json`'s `supported_input_view_kinds` enum
+  so a recipe can declare annotation-view consumption — that widening
+  belongs with the first annotation-consuming recipe, because the schema's
+  `tokenizer_required` conditionals (plaintext-policy/newline coupling)
+  need a design decision for annotation-only recipes.
 - **Schema-contracts registration**: `schemas/annotation-output.schema.json`
   is registered in `schemas/schema-contracts.json` and the monorepo-root
   `scripts/abc_schema_contracts.py`'s single `SCHEMA_FILES`, the deferred
@@ -298,8 +315,12 @@ Status per criterion, first slice (Tasks 1-7):
   `abc.tools.annotation-join/join`, `test/abc/tools/annotation_join_test.clj`.
 - **Not yet built.** A tokenizer-backed analysis recipe fixture that states a
   supplantation policy and consumes the join. The join primitive exists
-  (above); no recipe schema or fixture consumes it yet. Deferred to a later
-  task.
+  (above), and the recipe/request-set input-view coverage machine-check is
+  in place (`abc.tools.analysis-identity/assert-input-view-coverage!`,
+  `test/abc/tools/analysis_identity_test.clj`,
+  `test/abc/tools/request_set_fixture_test.clj`) so such a recipe cannot be
+  referenced by a request set that fails to feed it; no recipe schema or
+  fixture consumes the join yet. Deferred to a later task.
 - **Unchanged, inherited.** Renderer coverage remains schema-derived and
   fails closed on new parser-IR node types, matching the ADR 0025
   discipline: `render-with-annotations` shares the same `node-renderers` /

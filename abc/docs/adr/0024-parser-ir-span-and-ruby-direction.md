@@ -6,6 +6,18 @@ Accepted: 2026-07-03
 Supersedes: none
 Depends on: ADR 0002 (source_span_coverage gate), `docs/handoffs/review-reflection.md` §1.3/§1.5, `docs/handoffs/full-corpus-probe.md`
 
+## Implementation Status
+
+Accepted on 2026-07-03 after `schemas/parser-ir.schema.json` gained
+`span.coordinate_system` and `ruby.direction`, the imported ab-validator
+boundary fixture was rotated to parser-IR schema hash
+`sha256:b22d3f24676d443972a543305a2536783762d6a102c42b2efafbf92849d16f13`,
+and `nix run .#validate-design-bundle` completed successfully.
+
+The v0 design-bundle parser-IR example still uses synthetic fixture hashes
+inside the design example manifest; that fixture remains schema-valid and is
+not the external parser boundary hash gate.
+
 ## Context
 
 External review §1.3 and §1.5 identified two load-bearing gaps in `schemas/parser-ir.schema.json`:
@@ -52,17 +64,12 @@ This promotes `ruby.direction` out of the v1 LOSS ledger. Existing fixtures that
 - Existing parser-IR fixtures remain valid because all new fields are optional.
 - The fixture regeneration + schema-hash rotation happened once for this batch, not once per addition.
 
-## Implementation Status
+## Rollback
 
-Accepted on 2026-07-03 after `schemas/parser-ir.schema.json` gained
-`span.coordinate_system` and `ruby.direction`, the imported ab-validator
-boundary fixture was rotated to parser-IR schema hash
-`sha256:b22d3f24676d443972a543305a2536783762d6a102c42b2efafbf92849d16f13`,
-and `nix run .#validate-design-bundle` completed successfully.
-
-The v0 design-bundle parser-IR example still uses synthetic fixture hashes
-inside the design example manifest; that fixture remains schema-valid and is
-not the external parser boundary hash gate.
+If the additive span/ruby fields prove insufficient or wrong, supersede this
+ADR and introduce a new parser-IR schema hash. Existing fixtures remain valid
+because all added fields are optional; do not reinterpret parser-IR emitted
+under this schema hash under a new coordinate or ruby model.
 
 ## Deferred follow-ups
 

@@ -4,6 +4,7 @@ Status: Accepted
 Date: 2026-07-03
 Accepted: 2026-07-03
 Supersedes: none
+Amends: ADR 0001
 Depends on: ADR 0001, ADR 0006, ADR 0007, ADR 0009, ADR 0024,
 `docs/handoffs/owned-mapping-design.md`,
 `docs/handoffs/full-corpus-probe.md`
@@ -103,8 +104,10 @@ that adapter.
 The checked-in registry keeps the older `0.1.0` `aozora-rs-adapter`
 mapping-generation entry for legacy `derived_from` fixtures. It also authorizes
 the completed `0.1.1` conversion-audit evidence for `aozora-rs` and
-`aozora2html` using canonical mapping hash
-`sha256:4c0d3eb53942b4e1e14a6efc614bab99e391e90d85b817e090b42d02c05ba22e`.
+`aozora2html` using the canonical mapping hash recorded in
+`data/aat-parser-ir-compatibility.edn` (the registry is the source of truth
+for the mapping hash; it is not re-stated here so that a mapping rotation does
+not make this ADR stale).
 
 ## Deferred Decisions
 

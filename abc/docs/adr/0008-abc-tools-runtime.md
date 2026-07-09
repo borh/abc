@@ -46,16 +46,17 @@ nix run .#validate-design-bundle
 Clojure entry point.
 
 For v0, the Clojure validator performs JSON Schema Draft 2020-12 checks through
-the `org.clojars.jules_gosnell/m3` JVM library. Clojure owns orchestration, file
-selection, fixture hash checks, JSONL parsing, run-summary checks, and external
-command reporting.
+the `com.networknt/json-schema-validator` JVM library (pinned at 3.0.6).
+Clojure owns orchestration, file selection, fixture hash checks, JSONL parsing,
+run-summary checks, and external command reporting.
 
 ## Runtime Boundaries
 
 - Clojure owns ABC command logic.
 - Nix owns dependency pinning and command exposure.
 - Bash wrappers are allowed only as thin compatibility shims.
-- `m3` owns JSON Schema validation inside the JVM.
+- `com.networknt/json-schema-validator` owns JSON Schema validation inside the
+  JVM.
 - `xmllint` and `git-cliff` remain external tools invoked by the Clojure CLI
   until native replacements are justified.
 

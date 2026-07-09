@@ -151,6 +151,16 @@ still be possible. The failure mode belongs behind an explicit audit flag.
 - `aozora-ingest` still produces source-faithful person and work records from
   the CSV without applying drift-event rewrites.
 
+## Rollback
+
+If the drift-participant update check proves noisy or expensive, keep the raw
+`aozora-ingest` source-faithful path and drop only the
+`--drift-persons-dir` / `drift_participant_updates` surface from the audit. The
+report-only default means removing the check does not change generated person
+or work records, drift sidecars, or manifest identity. Do not reinterpret prior
+audit reports that included drift-participant updates; dropping the check is an
+audit-surface change, not an identity or drift-model change.
+
 ## References
 
 - ADR 0020: Person identity drift data model.

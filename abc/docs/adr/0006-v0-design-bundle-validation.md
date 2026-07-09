@@ -116,7 +116,8 @@ does not yet prove that any parser candidate satisfies the IR contract.
 The script must run inside `nix develop .#validation` using pinned dev-shell
 tools where possible. The validation dev shell provides:
 
-- Clojure with the `m3` JSON Schema validator,
+- Clojure with the `com.networknt/json-schema-validator` JSON Schema validator
+  (pinned at 3.0.6),
 - `xmllint` via `libxml2`,
 - Jing for Relax NG compatibility validation,
 - an ISO Schematron-capable processor,
@@ -132,8 +133,8 @@ or dictionary overlays.
 
 ## CI Policy
 
-CI runs `nix run .#validate-design-bundle` on push and pull request. CI should remain a smoke
-gate, not a full corpus build:
+CI runs `nix run .#validate-design-bundle` on push and pull request. CI should
+remain a smoke gate, not a full corpus build:
 
 - no Aozora corpus checkout,
 - no parser candidate execution,

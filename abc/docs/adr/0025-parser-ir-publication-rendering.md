@@ -84,3 +84,36 @@ node types require renderer coverage updates before ABC can publish them.
 
 Because renderers are pure transforms, materialization and manifest assembly
 can evolve independently from the TEI body renderer logic.
+
+## Acceptance Criteria
+
+- `src/abc/tools/parser_ir_tei.clj` renders a valid TEI `<body>` from a
+  committed parser-IR fixture.
+- `src/abc/tools/parser_ir_plaintext.clj` renders visible-body plaintext
+  (ruby, gaiji, source apparatus, and provenance excluded from the body) from
+  the same parser-IR boundary.
+- `src/abc/tools/materialize_publication.clj` adds the TEI header, writes
+  plaintext and TEI files, runs project Relax NG and Schematron validation,
+  and writes artifact manifests plus `tei-validation-result.json`.
+- Renderer coverage is schema-derived and fails closed when parser-IR adds node
+  types not covered by the renderer; `parser_ir_publication_policy_test.clj`
+  covers this.
+- Generated Aozora ruby uses `type="furigana"` as the default
+  `jpn_classical`-aligned heuristic; the renderer is not described as Level 3
+  for prose works until parser-IR carries paragraph boundaries and source
+  attribution/source-note blocks.
+- `nix run .#validate-design-bundle` checks the committed example publication
+  outputs and TEI validation gates.
+- `clojure -M:test` includes focused tests for the TEI body renderer
+  (`parser_ir_tei_test.clj`), the plaintext renderer
+  (`parser_ir_plaintext_test.clj`), and publication materialization
+  (`materialize_publication_test.clj`).
+
+## Rollback
+
+If the parser-IR-derived publication boundary proves insufficient, keep the
+renderer and materialization command names stable and replace
+implementation internals behind the same Nix app / Clojure entry points. Do
+not reinterpret publication artifacts rendered under this ADR under a different
+renderer contract; supersede this ADR and record a new renderer/schema hash
+coordinate instead.

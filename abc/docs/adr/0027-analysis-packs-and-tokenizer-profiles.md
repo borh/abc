@@ -3,6 +3,7 @@
 Status: Proposed
 Date: 2026-07-07
 Supersedes: none
+Amends: ADR 0001
 Depends on: ADR 0001, ADR 0003, ADR 0004, ADR 0010, ADR 0025, ADR 0026
 Source: `docs/adr/0026-analysis-artifact-identity.md`,
 `docs/superpowers/specs/2026-07-07-soranoha-snapshot-publication-design.md`

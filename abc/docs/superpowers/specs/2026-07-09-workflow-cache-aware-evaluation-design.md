@@ -1,6 +1,6 @@
 # Workflow Cache-Aware Evaluation Design
 
-Status: Proposed design — for review before build (2026-07-09)
+Status: Proposed design — revised 2026-07-09 after Hickey + simplification review (see [Review outcome](#review-outcome-what-the-lenses-changed))
 Date: 2026-07-09
 Owner: Soranoha architecture track
 Builds on: [Workflow Target-Graph Evaluator Design](2026-07-09-workflow-target-graph-evaluator-design.md)
@@ -11,6 +11,31 @@ This spec designs how the standalone cache primitives
 decisions that reuse forces. It is deliberately paused before implementation:
 the impl-identity decision (below) is a trust boundary and deserves a review
 gate.
+
+## Review outcome — what the lenses changed
+
+This spec was reviewed with `rich-hickey-review` and `codebase-simplification`.
+The lenses **tightened** it rather than overturning it. Changes folded in below:
+
+- **Build is gated on a measured hot leaf (Finding 1).** The cache has zero
+  callers today, and the obvious candidate — nix flake realization — is already
+  content-addressed by the nix store (a rebuild is a store hit). Before building,
+  identify *one* expensive, deterministic, **uncached** leaf and measure it. If
+  none clears the bar, this design rests specified-but-unbuilt.
+- **Store is an injected value/fn-pair, not a `defprotocol` (Finding 2).** The
+  established precedent — the nix-bridge `:runner` — is a plain injected function,
+  and a filesystem cache store *runs in the kaocha sandbox* (unlike nix), so no
+  protocol is needed for testability. One real backend + a test double is not
+  present variation.
+- **Identity hashes ALL resolved deps, never a hand-declared subset (Finding
+  3).** A declared input subset can silently narrow identity → wrong reuse, the
+  one failure the design exists to prevent. Non-serializable dep ⇒ leaf not
+  cacheable (same fail-safe as impl-hash).
+- **Slice plan collapses to one thin vertical slice (Finding 6).** Cache the one
+  measured leaf end-to-end; generalize only on the second beneficiary.
+
+Decisions that **survived** review unchanged: declared `:impl/hash` stamp
+(simpler and fail-safe vs. source-derived), and leaves-only scope.
 
 ## Decision (proposed)
 
@@ -56,37 +81,40 @@ Three prerequisites are missing before reuse can be wired. Each is a design
 decision, addressed below through the Hickey lens (protocol boundary, trust
 boundary, value identity).
 
-## Decision 1 — Cache-store protocol (the missing boundary)
+## Decision 1 — Cache-store seam: an injected value, not a protocol
 
 **Observation.** There is a key function and a validity function but no
-`get`/`put`-by-key seam. Reuse needs one, and per the evaluator spec's own
-discipline (the nix `:runner` is injected, never hard-wired) it must be
-**injectable** so the kaocha sandbox can substitute an in-memory store.
+`get`/`put`-by-key seam. Reuse needs one, injectable so tests can substitute a
+trivial store. The evaluator spec's precedent is the nix-bridge `:runner` — a
+**plain injected function**, deliberately *not* a protocol.
 
-**Design.** A small protocol, owned by a new reuse layer
-(`abc.tools.workflow.cache-eval`), injected via an `eval-target` opt:
+**Design.** Inject a store *value* via an `eval-target` opt — the minimum that
+carries a `fetch`/`store!` pair:
 
 ```clojure
-(defprotocol NodeCacheStore
-  (-fetch  [store cache-key]        "Cached entry map, or nil for a miss.")
-  (-store! [store cache-key entry]  "Persist entry under cache-key; returns store."))
+;; opts: {:cache-store {:fetch  (fn [cache-key] entry-or-nil)   ; nil = miss
+;;                      :store! (fn [cache-key entry] ...)}}
 ```
 
-- **Owner:** the reuse layer. The evaluator depends only on the protocol, never
-  on a concrete store — same decoupling shape as the runner.
-- **Miss semantics:** `-fetch` returns `nil` for absent keys. Miss is a
-  *lookup* outcome, distinct from validity (see Decision 4).
-- **Test store:** an in-memory `atom`-backed map. **Production store:** a
-  content-addressed directory under `AB_DB_ROOT` (per
-  [[db-root-is-deployment-config]] — cache blobs are per-deployment bulk
-  storage, resolved at the edge, never baked into identity). GC/eviction is
-  **out of scope** for the first cut (content-addressed entries are safe to keep
-  or prune out-of-band).
+- **No `defprotocol`.** A filesystem cache store *runs in the kaocha sandbox*
+  (the cache tests already do real temp-dir I/O), unlike nix — so there is no
+  can't-run-offline pressure forcing polymorphism. One real backend plus a test
+  double is not present variation; a protocol here would be an abstraction paying
+  no rent, and inconsistent with the runner next door. Promote to a protocol the
+  day a second real backend or a dispatch need appears.
+- **Miss semantics:** `fetch` returns `nil` for absent keys. Miss is a *lookup*
+  outcome, distinct from validity (see Decision 4).
+- **Test store:** an in-memory `atom`-backed map behind the same two fns.
+  **Production store:** a content-addressed directory under `AB_DB_ROOT` (per
+  [[db-root-is-deployment-config]] — cache blobs are per-deployment bulk storage,
+  resolved at the edge, never baked into identity). GC/eviction is **out of
+  scope** for the first cut.
 - **Absent store:** when no `:cache-store` opt is supplied, `eval-target`
   behaves exactly as today. Caching is purely additive.
 
-Severity of getting this wrong: **blocker** — an implicit store contract is the
-classic entangled cache. Keep it a named protocol.
+Severity of getting this wrong: **strong suggestion** — an implicit store
+contract would be an entangled cache, but the honest, minimal seam is the fn-pair,
+not a named type.
 
 ## Decision 2 — Implementation identity (the load-bearing trust boundary)
 
@@ -100,10 +128,12 @@ an explicit `:impl/hash` — a version stamp the author bumps whenever the leaf'
 logic changes:
 
 ```clojure
-(leaf deps impl-id impl-fn {:impl/hash "admit-v3"
-                            :cache/inputs  [:request-set :snapshot]   ; dep keys hashed into identity
-                            :cache/policy  {"pack-policy" "sha256:…"}}) ; declared policy hashes
+(leaf deps impl-id impl-fn {:impl/hash "admit-v3"})  ; the ONLY cache declaration
 ```
+
+The declaration is a single string. Everything else in identity is *derived*
+from the leaf's already-resolved dependencies (Decision 3), not re-declared —
+so there is no second list to keep in sync.
 
 - **No `:impl/hash` ⇒ not cacheable.** A leaf with no declared implementation
   identity always runs its `impl-fn`. Forgetting the stamp costs a
@@ -121,21 +151,33 @@ logic changes:
 Severity: **blocker / trust-boundary.** This is the decision that most warrants
 the human review gate — hence the pause.
 
-## Decision 3 — Value identity of inter-leaf dependencies
+## Decision 3 — Value identity: hash ALL resolved deps, never a declared subset
 
 **Observation.** `input_value_hashes` needs canonical hashes of the values a leaf
-consumes from its dependencies, but `eval-target` today passes **arbitrary
-Clojure values** between leaves with no serializability requirement.
+consumes, but `eval-target` today passes **arbitrary Clojure values** between
+leaves with no serializability requirement.
 
-**Design.** A cacheable leaf's declared `:cache/inputs` dep values must be
-**JCS-canonicalizable** (JSON-able). The reuse layer projects each to
-`format-sha256(sha256-json-jcs value)` and feeds the map to `node-cache-key` as
-`input-value-hashes`. Values that are not JSON-able cannot feed a cacheable leaf
-— enforced with a clear error at key-construction time, not a silent
-mis-hash. Non-cacheable leaves are unaffected and may pass any value.
+**Design.** Identity covers **every** value the leaf's `:deps` resolve to — the
+evaluator has already realized them. The reuse layer projects each to
+`format-sha256(sha256-json-jcs value)` and feeds the whole map to
+`node-cache-key` as `input-value-hashes`. There is **no hand-declared input
+subset**: a subset lets identity silently *narrow*, so a leaf would reuse a stale
+result when an un-listed dep changed — wrong reuse, the exact failure this design
+exists to prevent (this is why the earlier `:cache/inputs` idea was rejected in
+review). If any dep value is not JCS-canonicalizable, the leaf is **not
+cacheable** — the same fail-safe as a missing `:impl/hash` (correct-but-slow,
+never silently-stale) — surfaced as a clear error at key-construction time, not a
+silent mis-hash. Non-cacheable leaves are unaffected and may pass any value.
 
-Severity: **strong suggestion** — the constraint is real but narrow (only the
-declared cache inputs of opt-in leaves), and an explicit error keeps it honest.
+**One source of identity (Finding 4).** The reuse layer populates
+`node-cache-key` from a *single* resolved-inputs projection. Keep
+`path_content_hashes` as a distinct channel only where the *mechanism* genuinely
+differs — hashing a file by its bytes rather than an in-memory value. "Policy" is
+not a separate channel: a policy that affects a leaf's output enters as an
+ordinary dependency value and is hashed with the rest.
+
+Severity: **blocker** on the subset question (hash all deps); **strong
+suggestion** on collapsing the key's parallel channels.
 
 ## Decision 4 — The status-vocabulary bridge (resolves the flagged Item 1 seam)
 
@@ -174,17 +216,19 @@ Within `eval-target`'s `realize`, the `:leaf` branch gains a cacheable path
 (only when a `:cache-store` opt is present **and** the leaf declares
 `:impl/hash`):
 
-1. Resolve declared `:cache/inputs` deps (already realized via the normal
-   recursion) and project them to `input-value-hashes`.
-2. Build the identity map and `node-cache-key` from: workflow/target/node keys,
-   `graph-version` (an `eval-target` opt), `node-kind`, `impl-id`,
-   declared `:impl/hash`, `input-value-hashes`, declared path/policy hashes.
-3. `-fetch` the entry. Run `valid-cached-node-result` against the eval env
+1. Project **all** of the leaf's already-resolved dep values to
+   `input-value-hashes` (Decision 3). A non-serializable dep aborts the cache
+   path — the leaf runs normally.
+2. Build the identity map and `node-cache-key` from a single resolved-inputs
+   source: workflow/target/node keys, `graph-version` (an `eval-target` opt),
+   `node-kind`, `impl-id`, declared `:impl/hash`, `input-value-hashes`, and
+   `path-content-hashes` only where a dep is a file hashed by bytes.
+3. `fetch` the entry. Run `valid-cached-node-result` against the eval env
    (`:base-dir`, identity-relevant `:config`).
 4. Compute `status = (lookup->cache-status cached validity)`.
    - `"hit"` → **reuse** the cached value + outputs; **skip** `impl-fn`.
    - `"miss"` / `"stale"` / `"invalid"` → run `impl-fn`, materialize outputs,
-     `-store!` a fresh entry.
+     `store!` a fresh entry.
 5. Record `:cache {:status status}` (and optionally `:key`) on the node summary.
 
 The value and status a node contributes are **identical** whether hit or
@@ -214,33 +258,44 @@ reuse correctness contract made executable.
 - **Store unavailable** → treat as miss; recompute. Never fail the target for a
   cache-layer error.
 
-## Proposed slice plan (for the follow-on build)
+## Build plan — one thin vertical slice, gated on measurement
 
-- **Slice A — Reuse boundary.** `NodeCacheStore` protocol + in-memory test store
-  + `lookup->cache-status` bridge (Decision 4). Pure/tested; no `eval-target`
-  change. *(Closes the Item 1 seam properly, with a caller.)*
-- **Slice B — Leaf identity.** Extend `leaf` with the optional 4th options map
-  (`:impl/hash`, `:cache/inputs`, `:cache/policy`); add the `value-hash` helper
-  (Decision 3) and a `leaf->cache-key` builder over `node-cache-key`. Pure/tested.
-- **Slice C — Cache-aware `eval-target`.** Wire the flow above behind the
-  `:cache-store`/`:graph-version` opts; add the `:cache` node-summary field;
-  the twice-evaluate reuse-correctness test.
-- **Slice D — Production store + end-to-end report.** Content-addressed store
-  under `AB_DB_ROOT`; feed the `:cache` field through `report/node-record` to the
-  schema; confirm `just schema-drift` green (schema already supports the field —
-  no schema edit expected, so the four-place registration gotcha should not
-  trigger; verify).
+**Gate (Finding 1):** first identify a real, expensive, deterministic,
+**uncached** leaf and measure its cost across two runs. Do not build until one
+clears the bar. (The obvious candidate — nix realization — is already nix-store
+cached; the true beneficiary is more likely a large content-hashing or
+parse-heavy leaf. Measure, don't assume.)
+
+Once a leaf is chosen, build **one vertical slice** that caches exactly that leaf
+end-to-end, rather than the general framework ahead of use:
+
+1. `lookup->cache-status` bridge (Decision 4) + an in-memory `{:fetch :store!}`
+   test store — *gives the corrected Item 1 bridge its first real caller.*
+2. `leaf`'s optional `{:impl/hash …}` map; the `value-hash` helper and a
+   `leaf->cache-key` builder that hashes **all** resolved deps (Decision 3).
+3. Cache-aware `eval-target` behind the `:cache-store`/`:graph-version` opts, for
+   the one chosen leaf; add the `:cache` node-summary field; the
+   twice-evaluate reuse-correctness test (equal `:value`, equal `:status`, second
+   run reports `"hit"`).
+4. The `:cache` field already flows through `report/node-record` to the schema —
+   confirm `just schema-drift` green (no schema edit expected; verify).
+
+**Generalize only on the second beneficiary.** A production content-addressed
+store under `AB_DB_ROOT` and broader leaf opt-in are follow-ons, not part of the
+first slice.
 
 ## Open questions for review
 
-1. **impl-identity model** — declared `:impl/hash` stamp (recommended,
-   fail-safe) vs. source-file-derived hash? *Load-bearing; needs your call.*
-2. **Scope of caching** — leaves only (recommended; branches are routing, value
-   nodes are inputs), or ever cache a branch/value node?
-3. **Store location** — a dedicated `AB_DB_ROOT/workflow-cache/` subtree, or
-   fold into an existing bulk-storage layout?
-4. **GC/eviction** — confirm out-of-scope for the first cut (content-addressed,
-   pruned out-of-band).
+1. **Which leaf justifies the build (Finding 1)** — the gating measurement.
+   Until one expensive, deterministic, uncached leaf is identified and measured,
+   nothing is built.
+2. **Store location** — a dedicated `AB_DB_ROOT/workflow-cache/` subtree, or fold
+   into an existing bulk-storage layout? (Deferred to the generalize step.)
+
+*Resolved in review:* impl-identity = declared `:impl/hash` stamp (fail-safe,
+less braided than source-derived); scope = leaves only; store seam = injected
+fn-pair, no protocol; identity = all resolved deps, no subset; GC = out of scope
+for the first cut.
 
 ## Alternatives considered
 
@@ -255,3 +310,13 @@ reuse correctness contract made executable.
   first cut: coarse invalidation (any input change busts everything) throws away
   the branch-skip and per-leaf reuse the evaluator already models. Per-leaf reuse
   composes with the existing DAG.
+- **`defprotocol NodeCacheStore`** — rejected in review: the codebase's own
+  injection precedent (nix `:runner`) is a bare function, a filesystem store runs
+  in the sandbox, and one real backend + a test double is not present variation.
+  An injected fn-pair is the honest minimum (Decision 1).
+- **Hand-declared `:cache/inputs` subset** — rejected in review: a subset lets
+  cache identity silently narrow, producing wrong reuse. Hash all resolved deps
+  (Decision 3).
+- **Build the general A–D framework up front** — rejected in review: abstraction
+  ahead of a single measured beneficiary. One vertical slice, generalize on the
+  second use.

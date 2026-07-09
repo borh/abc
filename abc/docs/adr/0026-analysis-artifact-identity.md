@@ -22,6 +22,17 @@ analysis over `parser-ir-plaintext-body-v1`. It does not propose standalone
 tokenized artifacts, collection analysis packs, Parquet pack layouts, corpus
 statistics inputs, run-provenance bridges, or PROV-O exports.
 
+2026-07-09 dependency note: this ADR `Depends on` ADR 0003 and ADR 0025.
+ADR 0025 is `Accepted`, but ADR 0003 remains `Draft` with its cost-envelope
+acceptance criteria (real manifests, cold builds, the recorded CI runner,
+<30s / <2GB) unmet — only synthetic evaluator-only probes exist (see ADR 0003
+Implementation Status). The Nix Materialization section below already states
+"ADR 0003 remains Draft, so release-scale use must respect its measured
+evaluation envelope once that envelope is accepted"; that phrase is the
+governing constraint, and any promotion of this ADR from `Proposed` to
+`Accepted` for release-scale use must reuse an accepted ADR 0003 envelope rather
+than the synthetic probe.
+
 ## Context
 
 ABC already reserves tokenizer and analysis coordinates in manifest identity,

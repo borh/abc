@@ -16,6 +16,21 @@ manifest fixtures and canonicalization fixtures are committed and exercised by
 `nix run .#validate-design-bundle`. See archived plan
 `docs/superpowers/plans/archive/2026-04-27-metadata-data-model.md`.
 
+2026-07-09 cross-language verification note: the Context below states that the
+identity rule should work across Rust, Clojure/JVM, Python, JavaScript, RDF
+tooling, and Nix. As of this date every implementation and every determinism
+check is Clojure/JVM-only (see ADR 0011's two-run byte-identity test and ADR
+0010's single-JCS-implementation note). The cross-language claim is therefore a
+*target*, not a verified v0 property. Two factors mitigate the largest JCS
+divergence risk (RFC 8785 number canonicalization): `manifest_identity_object`
+is composed almost entirely of `sha256:<hex>` string fields, and the schema-hash
+and request-set-hash disciplines operate on JSON Schema / JSON values rather
+than on bare numeric payloads. Nothing in the schema currently forbids a future
+identity field from carrying a number, date, or non-normalized string, so a
+future amendment MUST treat such a field as requiring a cross-language
+conformance fixture before it is admitted to
+`manifest_identity_object`.
+
 ## Context
 
 ABC needs reproducible artifact identity for a living corpus. File paths,
@@ -123,6 +138,11 @@ sha256-rfc8785-jcs-bundled-json-schema-v0
   different `content.content_hash`, release validation fails with a
   reproducibility-conflict report unless a later schema explicitly marks the
   artifact kind non-deterministic and non-releaseable.
+- Before any non-Clojure implementation is relied on for identity, a
+  cross-language RFC 8785 JCS conformance fixture (canonical bytes reproduced
+  byte-for-byte by at least one non-JVM implementation) is committed and
+  exercised. Until then, the cross-language language in the Context is treated
+  as a target, not a satisfied criterion.
 
 ## Rollback
 

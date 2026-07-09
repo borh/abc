@@ -80,17 +80,39 @@ trustworthy while allowing implementation tracking to stay current.
 
 ## Manifest identity invariants
 
-Two global invariants apply to `manifest_identity_object` across every ADR
+Three global invariants apply to `manifest_identity_object` across every ADR
 that touches it (ADR 0001, 0010, 0023, 0026, 0027):
 
 1. **`null` means "not applicable", not "unknown".** A coordinate is `null` in
    `manifest_identity_object` when it is not part of that artifact kind's
    derivation contract. If a required coordinate cannot be determined, the
    producer MUST emit a failed manifest or no manifest — never a successful
-   manifest with `null` standing for an unknown value.
+   manifest with `null` standing for an unknown value. (Note: ADR 0015
+   deliberately maps Aozora's `不詳`/`未詳` knowledge-gap sentinels to identity
+   `null` for date coordinates and preserves the gap-vs-empty distinction in
+   `parse_corrections` provenance; that mapping is consistent with this
+   invariant because the *identity coordinate* is genuinely not applicable at a
+   determinable date precision, not an unknown value smuggled past the rule.)
 2. **`artifact_id` is never nested.** `artifact_id` is the hash of
    `manifest_identity_object`; including it inside the object would make
    identity circular.
+3. **Re-generating a derived view never changes `artifact_id`.** TEI, RDF/PROV-O,
+   Turtle, JSON-LD, Linked Art, IIIF Presentation, request-set resolution,
+   manifest indexes, and query packs are derived publication views, not identity
+   inputs. Regeneration, re-compaction, schema evolution of the derived view, or
+   a status move such as `not_applicable` → `applicable` for IIIF MUST NOT feed
+   `manifest_identity_object` or change `artifact_id`. This is the "Hard Rule"
+   restated in ADR 0013, 0014, 0015, 0016, 0017, 0018, 0020, and 0021; it is
+   recorded once here as an invariant rather than re-decided per ADR.
+
+Across schema-version rotations of the identity fields themselves (ADR 0015 →
+0016 → 0017/0018 → 0020), older manifests retain their original
+`manifest_schema_hash` and are not reinterpreted under the new rule. This keeps
+historical manifests valid but means the same underlying facts can accumulate
+distinct `artifact_id` values across schema generations; an equivalence /
+migration story (e.g. a non-identity `supersedes_artifact_id` provenance edge)
+linking generations is not part of v0 identity and is recorded below as a
+known open question for longitudinal analysis over a living corpus.
 
 The current field set of `manifest_identity_object` is amended across multiple
 ADRs (0001 → 0010 → 0023 → 0027). The authoritative current field list is the
@@ -113,3 +135,46 @@ An Accepted ADR without an Acceptance Criteria section is allowed but weaker:
 it has no executable gate readers can point at. New Accepted ADRs SHOULD include
 an Acceptance Criteria section with at least one `test/` or `fixtures/`
 reference.
+
+## Known open questions
+
+These are design questions the ADR set has surfaced but not yet decided. They
+are recorded here so they are not silently lost; resolving one means accepting
+a new ADR (or amending an existing Decision via a new ADR), not editing this
+list in place as a substitute for a decision.
+
+- **Cross-implementation identity conformance.** ADR 0001 targets identity that
+  works across Rust, Clojure/JVM, Python, JavaScript, RDF tooling, and Nix, but
+  v0 verifies only the Clojure/JVM implementation. RFC 8785 JCS has real edge
+  cases (number formatting, Unicode normalization) that are untested across
+  languages. A cross-language conformance fixture is a prerequisite before any
+  non-JVM implementation is relied on for `artifact_id`. See ADR 0001
+  Implementation Status and Acceptance Criteria.
+- **Cross-generation artifact equivalence.** Schema-hash cascade rotations
+  (ADR 0015 → 0016 → 0017/0018 → 0020) intentionally do not reinterpret old
+  manifests, so the same underlying facts accumulate distinct `artifact_id`
+  values across schema generations. v0 has no equivalence or migration edge
+  (e.g. a non-identity `supersedes_artifact_id` provenance link) connecting
+  generations. This is acceptable for archival revalidation but tensions with
+  the "living corpus" longitudinal-continuity goal. A future ADR should decide
+  whether such an edge is identity-bearing, provenance-only, or out of scope.
+- **Cross-view RDF harmonization is not structurally closed.** ADR 0017 fixed
+  one instance where `abc:` resolved to two different IRIs between the Turtle
+  manifest view and the JSON-LD / Linked Art view, but the harness still does
+  not structurally assert that the two serializations describe the same entity
+  IRIs and the same `artifactId`. The identity-invariant check only round-trips
+  `artifactId` through JSON-LD expansion; it does not compare TTL and JSON-LD
+  entity identity. A harness-level cross-view agreement check is an open item.
+- **`Accepted` semantics are fixture-scope.** Most `Accepted` ADRs are gated by
+  `validate-design-bundle` over repository-local fixtures (ADR 0006), and the
+  example work (羅生門, text-only) is the single exercised fixture. IIIF
+  `applicable` (ADR 0014), real split/merge person drift (ADR 0020–0022), and
+  tokenized analysis slices (ADR 0026/0027) are either deferred or exercised
+  only synthetically. `Accepted` therefore means "the contract is binding on
+  the exercised fixture set", not "validated at corpus scale or on the design's
+  hard cases."
+- **ADR 0003 cost envelope is unmeasured.** ADR 0003's own acceptance criteria
+  (real manifests, cold builds, incremental rebuilds, the recorded CI runner,
+  <30s / <2GB) are unmet; only synthetic evaluator-only probes exist. ADRs 0026
+  and 0027 both `Depend on` ADR 0003 while it remains `Draft`, so release-scale
+  materialization must respect a not-yet-accepted envelope.

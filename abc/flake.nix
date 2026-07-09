@@ -461,7 +461,7 @@
                 cp -R ${./.} source
                 chmod -R u+w source
                 cd source
-                python tools/schema_contracts.py
+                python tools/check_schema_contracts_manifest.py
                 mkdir -p "$out"
                 echo "schemas/schema-contracts.json matches the checked-in schemas." > "$out/result.txt"
               '';

@@ -67,11 +67,11 @@ built:
   input view; materializing annotation artifacts *per request set* remains
   future work (only the identity/schema layer accepts the view).
 - **Schema-contracts registration**: `schemas/annotation-output.schema.json`
-  is registered in `schemas/schema-contracts.json` and
-  `tools/schema_contracts.py`'s `SCHEMA_FILES`, the deferred registration
-  from the first slice, and also in the ab-validator vendored contracts
-  (`ab-validator/data/abc-schemas/schema-contracts.json`), generated via the
-  monorepo-root `scripts/abc_schema_contracts.py`.
+  is registered in `schemas/schema-contracts.json` and the monorepo-root
+  `scripts/abc_schema_contracts.py`'s single `SCHEMA_FILES`, the deferred
+  registration from the first slice, and also in the ab-validator vendored
+  contracts (`ab-validator/data/abc-schemas/schema-contracts.json`),
+  generated via that same `scripts/abc_schema_contracts.py`.
 
 ## Context
 

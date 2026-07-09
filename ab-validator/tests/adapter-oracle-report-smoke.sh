@@ -10,10 +10,13 @@ oracle_target="$(target_for ab-oracle-fidelity-smoke)"
 
 test -s "$report_json"
 
-run_cargo run \
-  --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" \
-  --target-dir "$oracle_target" \
-  -- \
+if [[ -n "${AB_ORACLE_BIN:-}" ]]; then
+  oracle_cmd=("$AB_ORACLE_BIN")
+else
+  oracle_cmd=(run_cargo run --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" --target-dir "$oracle_target" --)
+fi
+
+"${oracle_cmd[@]}" \
   --report-md-from-json "$report_json" > "$report_md"
 
 rg -n 'schema_status|upstream_status|oracle_status|gaiji.jis.2-13-47' "$report_md"

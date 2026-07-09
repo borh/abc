@@ -18,6 +18,7 @@ if str(_REPO_ROOT) not in sys.path:
 from reports.lib.hashing import sha256_hex
 from reports.lib.io import read_json as load_json
 from reports.lib.io import write_json
+from reports.lib.legacy_json_c14n import canonical_json
 from reports.lib.paths import display_path, policy_dir, schemas_dir
 from reports.lib.source_region import (
     ALLOWED_MEASUREMENT_STATUSES as SOURCE_REGION_ALLOWED_MEASUREMENT_STATUSES,
@@ -1870,12 +1871,6 @@ def parse_args() -> argparse.Namespace:
 def write_text(path: pathlib.Path, value: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(value, encoding="utf-8")
-
-
-def canonical_json(value: object) -> str:
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).replace(
-        "/", "\\/"
-    )
 
 
 def document_hash(value: object) -> str:

@@ -4,6 +4,13 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/aat-fidelity-env.sh"
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
+
+if [[ -n "${AB_AAT_TRIAGE_PYTHON:-}" ]]; then
+  triage_py=("$AB_AAT_TRIAGE_PYTHON")
+else
+  triage_py=(uv run --isolated --no-project --with 'duckdb>=1.1')
+fi
+
 out="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/aozora2html-measurement-audit-smoke"
 base="$out/base"
 retry="$out/retry"
@@ -295,7 +302,7 @@ cat > "$other/aat/fixture-adapter/work-war-other-failure.json" <<'JSON'
 }
 JSON
 
-uv run --isolated --no-project --with 'duckdb>=1.1' \
+"${triage_py[@]}" \
   "$repo_root/reports/aat-fidelity/build-aat-batch-triage.py" \
   --reports-dir "$base/check-reports" \
   --aat-dir "$base/aat" \
@@ -303,7 +310,7 @@ uv run --isolated --no-project --with 'duckdb>=1.1' \
   --report-id smoke-base \
   --out-dir "$base/triage"
 
-uv run --isolated --no-project --with 'duckdb>=1.1' \
+"${triage_py[@]}" \
   "$repo_root/reports/aat-fidelity/build-aat-batch-triage.py" \
   --reports-dir "$retry/check-reports" \
   --aat-dir "$retry/aat" \
@@ -311,7 +318,7 @@ uv run --isolated --no-project --with 'duckdb>=1.1' \
   --report-id smoke-retry \
   --out-dir "$retry/triage"
 
-uv run --isolated --no-project --with 'duckdb>=1.1' \
+"${triage_py[@]}" \
   "$repo_root/reports/aat-fidelity/build-aat-batch-triage.py" \
   --reports-dir "$other/check-reports" \
   --aat-dir "$other/aat" \

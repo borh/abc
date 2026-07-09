@@ -2,6 +2,13 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ -n "${AB_AAT_TRIAGE_PYTHON:-}" ]]; then
+  triage_py=("$AB_AAT_TRIAGE_PYTHON")
+else
+  triage_py=(uv run --isolated --no-project --with 'duckdb>=1.1')
+fi
+
 out_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/duckdb-smoke"
 db_path="$out_dir/fidelity.duckdb"
 report_path="$repo_root/reports/aat-fidelity/fixtures/report.json"
@@ -16,8 +23,7 @@ fi
 libstdcxx_dir="$(dirname "$(ldd "$duckdb_bin" | awk '/libstdc\+\+/{print $3; exit}')")"
 export LD_LIBRARY_PATH="$libstdcxx_dir:${LD_LIBRARY_PATH:-}"
 
-uv run --isolated --no-project \
-  --with 'duckdb>=1.1' \
+"${triage_py[@]}" \
   "$repo_root/reports/aat-fidelity/load-report-duckdb.py" \
   --report "$report_path" \
   --oracle "$repo_root/data/aat-oracle-cases.toml" \
@@ -26,7 +32,10 @@ uv run --isolated --no-project \
 
 test -s "$db_path"
 
-uv run --isolated --no-project --with 'duckdb>=1.1' python - "$db_path" <<'PY'
+tmp_py="$(mktemp --suffix=.py)"
+trap 'rm -f "$tmp_py"' EXIT
+
+cat > "$tmp_py" <<'PY'
 import sys
 import duckdb
 
@@ -45,3 +54,5 @@ assert row == ("aozora2", "gaiji.jis.2-13-47", "pass", "faithful", "pass")
 
 print("aat fidelity duckdb smoke ok")
 PY
+
+"${triage_py[@]}" "$tmp_py" "$db_path"

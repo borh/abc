@@ -13,16 +13,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 
-
-def canonical_json(value: object) -> str:
-    return json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).replace("/", "\\/")
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "lib"))
+from legacy_json_c14n import canonical_json  # noqa: E402
 
 
 def schema_hash(path: Path) -> str:

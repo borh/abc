@@ -24,12 +24,14 @@ aat_setup_duckdb_runtime "$duckdb_bin"
 oracle_target="$(target_for ab-oracle-cross-adapter-smoke)"
 aozora2html_bin="$AB_VALIDATOR_ROOT/adapters/aozora2html/aozora2html-adapter"
 case_count="${#case_ids[@]}"
+if [[ -n "${AB_ORACLE_BIN:-}" ]]; then
+  oracle_cmd=("$AB_ORACLE_BIN")
+else
+  oracle_cmd=(run_cargo run --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" --target-dir "$oracle_target" --)
+fi
 for case_id in "${case_ids[@]}"; do
   safe_case_id="${case_id//./_}"
-  run_cargo run \
-    --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" \
-    --target-dir "$oracle_target" \
-    -- \
+  "${oracle_cmd[@]}" \
     --oracle "$AB_VALIDATOR_ROOT/data/aat-oracle-cases.toml" \
     --upstream "$AB_VALIDATOR_ROOT/data/aat-upstream-observations.toml" \
     --adapter "aozora2html=$aozora2html_bin" \

@@ -259,7 +259,9 @@ cat > "$out_dir/structural-summary.json" <<JSON
 }
 JSON
 
-(cd "$repo_root" && cargo build -p ab-aat-to-parser-ir >/dev/null)
+if [[ -z "${AB_AAT_TO_PARSER_IR_BIN:-}" ]]; then
+  (cd "$repo_root" && cargo build -p ab-aat-to-parser-ir >/dev/null)
+fi
 
 python "$repo_root/reports/parser-ir/tei-eaj-generated-compare.py" \
   --workset "$out_dir/workset.json" \

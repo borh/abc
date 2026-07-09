@@ -24,19 +24,19 @@ if [[ "${1:-}" == "--mode" && $# -ge 2 ]]; then
   mode="$2"
 fi
 
-stdin_raw="$(mktemp --suffix=.raw)"
-parser_sjis_src="$(mktemp --suffix=.parser.sjis)"
-crlf_src="$(mktemp --suffix=.txt)"
-xhtml="$(mktemp --suffix=.html)"
-trap 'rm -f "$stdin_raw" "$parser_sjis_src" "$crlf_src" "$xhtml"' EXIT
+tmp_dir="$(mktemp -d)"
+trap 'rm -rf "$tmp_dir"' EXIT
+stdin_raw="$tmp_dir/stdin.raw"
+parser_sjis_src="$tmp_dir/parser.sjis"
+crlf_src="$tmp_dir/crlf.txt"
+xhtml="$tmp_dir/out.html"
 
 cat > "$stdin_raw"
 
 # aozora2html requires Shift_JIS input with CRLF line endings (lib/aozora2html.rb:157
 # hardcodes 'rb:Shift_JIS'). Detect input encoding, transcode to Shift_JIS if
 # needed, then normalize line endings.
-sjis_src="$(mktemp --suffix=.sjis)"
-trap 'rm -f "$stdin_raw" "$parser_sjis_src" "$crlf_src" "$xhtml" "$sjis_src"' EXIT
+sjis_src="$tmp_dir/sjis.sjis"
 
 if head -c 3 "$stdin_raw" | od -An -tx1 | tr -d ' \n' | grep -q '^efbbbf'; then
   tail -c +4 "$stdin_raw" | iconv -f UTF-8 -t CP932 > "$sjis_src"
@@ -57,8 +57,7 @@ fi
 
 perl -pe 's/\r?\n?$/\r\n/' "$parser_sjis_src" > "$crlf_src"
 
-parser_err="$(mktemp --suffix=.err)"
-trap 'rm -f "$stdin_raw" "$parser_sjis_src" "$crlf_src" "$xhtml" "$sjis_src" "$parser_err"' EXIT
+parser_err="$tmp_dir/parser.err"
 
 # Ruby parser may abort partway through (CRLF errors, JIS-out-of-range, etc.).
 # Capture its exit and let the Rust mapper emit a parse_complete=false envelope so

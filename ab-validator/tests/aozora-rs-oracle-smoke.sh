@@ -11,10 +11,13 @@ oracle_target="$(target_for aozora-rs-oracle-smoke)"
 adapter_target="$(target_for aozora-rs-oracle-smoke-adapter)"
 adapter_bin="$(adapter_bin_path "$AB_VALIDATOR_ROOT/adapters/aozora-rs/Cargo.toml" aozora-rs-adapter "$adapter_target")"
 
-run_cargo run \
-  --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" \
-  --target-dir "$oracle_target" \
-  -- \
+if [[ -n "${AB_ORACLE_BIN:-}" ]]; then
+  oracle_cmd=("$AB_ORACLE_BIN")
+else
+  oracle_cmd=(run_cargo run --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" --target-dir "$oracle_target" --)
+fi
+
+"${oracle_cmd[@]}" \
   --oracle "$AB_VALIDATOR_ROOT/data/aat-oracle-cases.toml" \
   --upstream "$AB_VALIDATOR_ROOT/data/aat-upstream-observations.toml" \
   --adapter "aozora-rs=$adapter_bin" \

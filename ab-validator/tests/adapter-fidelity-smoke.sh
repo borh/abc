@@ -10,10 +10,13 @@ aozora2_target="$(target_for aozora2-fidelity-smoke)"
 oracle_target="$(target_for ab-oracle-fidelity-smoke)"
 aozora2_bin="$(adapter_bin_path "$AB_VALIDATOR_ROOT/adapters/aozora2/Cargo.toml" aozora2-adapter "$aozora2_target")"
 
-run_cargo run \
-  --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" \
-  --target-dir "$oracle_target" \
-  -- \
+if [[ -n "${AB_ORACLE_BIN:-}" ]]; then
+  oracle_cmd=("$AB_ORACLE_BIN")
+else
+  oracle_cmd=(run_cargo run --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" --target-dir "$oracle_target" --)
+fi
+
+"${oracle_cmd[@]}" \
   --oracle "$AB_VALIDATOR_ROOT/data/aat-oracle-cases.toml" \
   --upstream "$AB_VALIDATOR_ROOT/data/aat-upstream-observations.toml" \
   --adapter "aozora2=$aozora2_bin" \

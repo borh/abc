@@ -16,6 +16,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 from reports.lib.hashing import sha256_hex
 from reports.lib.io import read_json, write_json
+from reports.lib.legacy_json_c14n import canonical_json
 from reports.lib.paths import repo_root
 
 SCHEMA_VERSION = "profile-aware-level3-tei-admission-v1"
@@ -75,15 +76,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--summary-json", required=True, type=pathlib.Path)
     parser.add_argument("--report-md", required=True, type=pathlib.Path)
     return parser.parse_args()
-
-
-def canonical_json(value: object) -> str:
-    return json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).replace("/", "\\/")
 
 
 def document_hash(value: object) -> str:

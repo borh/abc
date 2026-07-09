@@ -8,18 +8,18 @@ mkdir -p "$out_dir"
 
 oracle_target="$(target_for ab-oracle-audit-smoke)"
 
-run_cargo run \
-  --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" \
-  --target-dir "$oracle_target" \
-  -- \
+if [[ -n "${AB_ORACLE_BIN:-}" ]]; then
+  oracle_cmd=("$AB_ORACLE_BIN")
+else
+  oracle_cmd=(run_cargo run --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" --target-dir "$oracle_target" --)
+fi
+
+"${oracle_cmd[@]}" \
   --oracle "$AB_VALIDATOR_ROOT/data/aat-oracle-cases.toml" \
   --syntax-coverage "$AB_VALIDATOR_ROOT/data/aozora-syntax-coverage.toml" \
   --audit-json "$out_dir/audit.json"
 
-run_cargo run \
-  --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" \
-  --target-dir "$oracle_target" \
-  -- \
+"${oracle_cmd[@]}" \
   --audit-md-from-json "$out_dir/audit.json" > "$out_dir/audit.md"
 
 rg -n '"total_cases"|"review_status_counts"|"syntax_rows_without_reviewed_oracle_coverage"' "$out_dir/audit.json"

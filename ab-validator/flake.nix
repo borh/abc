@@ -1257,6 +1257,21 @@
           doCheck = false;
         };
 
+        abOracleBin = rustPlatform.buildRustPackage {
+          pname = "ab-oracle";
+          version = "0.1.0";
+
+          src = source;
+          cargoDeps = abCargoDeps;
+
+          cargoBuildFlags = [
+            "--package"
+            "ab-oracle"
+          ];
+
+          doCheck = false;
+        };
+
         sourceInventorySmokeCheck = mkSmokeCheck {
           name = "source-inventory-smoke-check";
           testScript = "tests/source-inventory-smoke.sh";
@@ -1673,6 +1688,7 @@
           ab-check = abCheck;
           aat-triage-python = pythonWithAatDuckdb;
           ab-source-inventory = sourceInventoryBin;
+          ab-oracle = abOracleBin;
           aozora-adapter = aozoraAdapter;
           aozora2-adapter = aozora2Adapter;
           aozora2html-adapter = aozora2htmlAdapter;
@@ -1734,6 +1750,14 @@
           }
           // {
             meta.description = "Run the AAT to parser-IR conversion CLI";
+          };
+
+        apps.ab-oracle =
+          flake-utils.lib.mkApp {
+            drv = abOracleBin;
+          }
+          // {
+            meta.description = "Run the ab-oracle cross-adapter fidelity oracle";
           };
 
         apps.adapter-fidelity-notes-schema-smoke =

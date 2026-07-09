@@ -29,10 +29,13 @@ fi
 report_json="$out_dir/report.json"
 report_md="$out_dir/report.md"
 
-run_cargo run \
-  --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" \
-  --target-dir "$oracle_target" \
-  -- \
+if [[ -n "${AB_ORACLE_BIN:-}" ]]; then
+  oracle_cmd=("$AB_ORACLE_BIN")
+else
+  oracle_cmd=(run_cargo run --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" --target-dir "$oracle_target" --)
+fi
+
+"${oracle_cmd[@]}" \
   --oracle "$AB_VALIDATOR_ROOT/data/aat-oracle-cases.toml" \
   --upstream "$AB_VALIDATOR_ROOT/data/aat-upstream-observations.toml" \
   --adapter "aozora2=$aozora2_bin" \
@@ -42,10 +45,7 @@ run_cargo run \
   "${case_args[@]}" \
   --report-json "$report_json"
 
-run_cargo run \
-  --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" \
-  --target-dir "$oracle_target" \
-  -- \
+"${oracle_cmd[@]}" \
   --report-md-from-json "$report_json" \
   > "$report_md"
 

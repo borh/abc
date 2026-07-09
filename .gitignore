@@ -1,6 +1,8 @@
 .direnv/
 .ruff_cache/
 .mypy_cache/
+.lsp/
+.clj-kondo/
 .cargo/
 .soranoha/
 .worktrees/

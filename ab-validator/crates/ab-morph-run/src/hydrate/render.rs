@@ -312,5 +312,21 @@ mod tests {
         assert!(md.contains("｜仏蘭西《フランス》"));
         assert!(md.contains("AAT: /blocks/0/content/1"));
         assert!(!md.contains('\t'), "markdown must not contain raw tabs");
+        // Anomaly rendering assertions:
+        assert!(md.contains("## Anomalies"), "anomalies section missing");
+        assert!(
+            md.contains("（anomaly 3.91）"),
+            "anomaly score heading missing"
+        );
+        // Snippet marker appears at least twice: once in row example, once in anomaly example
+        assert!(
+            md.matches("【仏蘭西】").count() >= 2,
+            "snippet marker should appear at least twice (row + anomaly)"
+        );
+        // No "_(none)_" since we now have anomalies
+        assert!(
+            !md.contains("_(none)_"),
+            "_(none)_ should not appear when anomalies exist"
+        );
     }
 }

@@ -531,7 +531,17 @@ pub(crate) mod tests {
             },
             "run_id": run_id,
             "rows": rows,
-            "anomalies": [],
+            "anomalies": [
+                {
+                    "source_id": "src-a",
+                    "text_id": "txt-a",
+                    "region_index": 2,
+                    "char_start": 2,
+                    "char_end": 5,
+                    "has_coverage_mismatch": false,
+                    "anomaly_score": 3.91
+                }
+            ],
         })
     }
 

@@ -759,7 +759,11 @@ morph-warehouse-run-suw profile="full" aat_dir=morph_warehouse_aat_dir run_id=""
 # the combined `vibrato-dictionaries` flake output so every vibrato dictionary
 # resolves by name, and AB_SUDACHI_DICT at the sudachi dict. GC-safe (nix build
 # realizes the store paths); no `dictionary/compiled/` linking step.
-morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_dir analyzers="vibrato sudachi-a sudachi-c" run_id="" jobs="0":
+# Gated on input-set identity: skips the analyze-aat batch when a fresh warehouse
+# run is already indexed for these inputs (AAT content, dictionaries, analyzers,
+# profile, schema). Pass force="1" to recompute. The command after `--` is the
+# byte-identical invocation used before the gate — a cache miss runs exactly it.
+morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_dir analyzers="vibrato sudachi-a sudachi-c" run_id="" jobs="0" force="":
 	@jobs="{{jobs}}"; \
 	run_id="{{run_id}}"; \
 	if [ -z "$run_id" ]; then run_id="{{profile}}-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
@@ -767,15 +771,30 @@ morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_di
 	for analyzer in {{analyzers}}; do \
 	  args+=(--analyzer "$analyzer"); \
 	done; \
-	AB_VIBRATO_DICT_DIR="$(nix build .#vibrato-dictionaries --no-link --print-out-paths)/share/vibrato" \
-	AB_SUDACHI_DICT="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic" \
-	cargo run --release -p ab-morph-run -- analyze-aat \
+	force_flag=(); if [ -n "{{force}}" ]; then force_flag=(--force); fi; \
+	vibrato_dir="$(nix build .#vibrato-dictionaries --no-link --print-out-paths)/share/vibrato"; \
+	sudachi_dic="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic"; \
+	AB_VIBRATO_DICT_DIR="$vibrato_dir" \
+	AB_SUDACHI_DICT="$sudachi_dic" \
+	python3 reports/morph-warehouse/warehouse_runner.py \
 		--aat-dir "{{aat_dir}}" \
 		"${args[@]}" \
 		--warehouse-dir "{{morph_warehouse_dir}}" \
 		--run-id "$run_id" \
 		--warehouse-profile "{{profile}}" \
-		--jobs "$jobs"
+		--dict "vibrato=$vibrato_dir" \
+		--dict "sudachi=$sudachi_dic" \
+		--schema-file crates/ab-morph-run/sql/schema.sql \
+		--schema-file crates/ab-warehouse/sql/schema.sql \
+		"${force_flag[@]}" \
+		-- \
+		cargo run --release -p ab-morph-run -- analyze-aat \
+			--aat-dir "{{aat_dir}}" \
+			"${args[@]}" \
+			--warehouse-dir "{{morph_warehouse_dir}}" \
+			--run-id "$run_id" \
+			--warehouse-profile "{{profile}}" \
+			--jobs "$jobs"
 
 # Lane A (historical-kana): analyze only old-kana works (新字旧仮名/旧字旧仮名) under a
 # historical UniDic. `works_parquet` is an aozora_works.parquet sidecar produced by

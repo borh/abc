@@ -14,6 +14,9 @@ docs/superpowers/specs/2026-07-09-batch-run-staleness-skip-recompute-design.md.
 
 from __future__ import annotations
 
+import argparse
+import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Callable
@@ -23,6 +26,7 @@ sys.path.insert(0, str(_LIB))
 
 import run_identity  # noqa: E402
 
+import warehouse_identity  # noqa: E402  (sibling module)
 import warehouse_index  # noqa: E402  (sibling module)
 
 
@@ -75,3 +79,81 @@ def resolve_compute_record(
         "run_id": run_id,
         "run_dir": str(run_dir),
     }
+
+
+def _parse_dicts(pairs: list[str]) -> dict[str, str]:
+    """Turn ``--dict name=/store/path`` pairs into a {name: path} map."""
+    out: dict[str, str] = {}
+    for pair in pairs:
+        name, sep, path = pair.partition("=")
+        if not sep or not name:
+            raise SystemExit(f"--dict expects name=path, got {pair!r}")
+        out[name] = path
+    return out
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI: gate a warehouse run. Wrapper args describe the identity; the compute
+    command follows a literal ``--``. On a fresh index hit the command is skipped;
+    otherwise it is run verbatim (byte-identical to an ungated invocation) and the
+    run is recorded.
+
+    Example:
+        warehouse_runner.py --aat-dir D --warehouse-dir W --run-id R \\
+            --warehouse-profile full --analyzer vibrato --analyzer sudachi-a \\
+            --dict sudachi=/nix/store/… --schema-file crates/…/schema.sql \\
+            -- cargo run --release -p ab-morph-run -- analyze-aat --aat-dir D …
+    """
+    raw = list(sys.argv[1:] if argv is None else argv)
+    if "--" in raw:
+        cut = raw.index("--")
+        wrapper_argv, command = raw[:cut], raw[cut + 1:]
+    else:
+        wrapper_argv, command = raw, []
+
+    ap = argparse.ArgumentParser(description="Gate a morph-warehouse run on input-set identity.")
+    ap.add_argument("--aat-dir", required=True)
+    ap.add_argument("--warehouse-dir", required=True)
+    ap.add_argument("--run-id", required=True)
+    ap.add_argument("--warehouse-profile", required=True)
+    ap.add_argument("--analyzer", action="append", default=[], dest="analyzers")
+    ap.add_argument("--ortho-detect", default=None)
+    ap.add_argument("--works-parquet", default=None)
+    ap.add_argument("--dict", action="append", default=[], dest="dicts",
+                    help="name=store_path (repeatable); nix store paths are content ids")
+    ap.add_argument("--schema-file", action="append", default=[], dest="schema_files")
+    ap.add_argument("--force", action="store_true")
+    args = ap.parse_args(wrapper_argv)
+
+    if not command:
+        ap.error("missing compute command after '--'")
+
+    identity_object = warehouse_identity.build_identity_object(
+        aat_dir=args.aat_dir,
+        dictionaries=_parse_dicts(args.dicts),
+        analyzers=args.analyzers,
+        warehouse_profile=args.warehouse_profile,
+        schema_files=args.schema_files,
+        ortho_detect=args.ortho_detect,
+        works_parquet=args.works_parquet,
+    )
+
+    def compute() -> None:
+        subprocess.run(command, check=True)
+
+    result = resolve_compute_record(
+        warehouse_dir=args.warehouse_dir,
+        run_id=args.run_id,
+        identity_object=identity_object,
+        compute=compute,
+        force=args.force,
+    )
+    if result["action"] == "skip":
+        print(f"SKIP {result['run_id']}: fresh run already indexed for these inputs "
+              f"({result['input_set_hash']}); pass --force to recompute.", file=sys.stderr)
+    print(json.dumps(result))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

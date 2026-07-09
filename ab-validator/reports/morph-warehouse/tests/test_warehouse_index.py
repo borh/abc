@@ -90,10 +90,15 @@ class WarehouseIndex(unittest.TestCase):
 
     def test_check_stale_when_outputs_vanish(self) -> None:
         self._publish()
-        # Remove every output file but keep the manifest -> re-hash finds nothing.
+        # Remove EVERY output file (incl. views.sql) but keep the manifest, so the
+        # re-hash finds nothing and hits the new exception guard (not the ordinary
+        # hash-mismatch branch).
         (self.run / "runs.parquet").unlink()
+        (self.run / "views.sql").unlink()
         shutil.rmtree(self.run / "analyses.parquet")
-        self.assertEqual(wix.check(self.wh, self.ish)["status"], "stale")
+        res = wix.check(self.wh, self.ish)
+        self.assertEqual(res["status"], "stale")
+        self.assertEqual(res["reason"], "run outputs missing or unreadable")
 
     def test_link_by_input_is_symlink_and_replaceable(self) -> None:
         self._publish()

@@ -220,3 +220,36 @@
                (resolver/resolve-request-set "source-snapshot-basic-ja")))))
       (finally
         (fixture/delete-tree! root)))))
+
+(defn- token-recipe-definition [tokenizer-profile-ids]
+  (assoc (source-snapshot-definition "unused-source-snapshot.json")
+         "label" "token-recipe-coverage-basic-ja"
+         "corpus_snapshot_hash" (files/example-hash "aa")
+         "subjects" [{"source_id" "aozora:000001"
+                      "work_id" "aozora:000001"
+                      "work_content_hash" (files/example-hash "bb")
+                      "metadata_record_hash" nil}]
+         "subject_source" nil
+         "analysis_recipe_ids" ["token-basic-ja-v1"]
+         "tokenizer_profile_ids" tokenizer-profile-ids))
+
+(deftest resolve-request-set-rejects-unconsumable-recipe-test
+  ;; token-basic-ja-v1 supports only token-stream-v1; with no tokenizer
+  ;; profile the request set provides nothing it can consume.
+  (with-redefs [resolver/read-request-set-definition
+                (fn [_] (token-recipe-definition []))
+                resolver/request-set-definition-path
+                (fn [_] "unit/token-recipe-coverage-basic-ja.json")]
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"Analysis recipe cannot consume any provided input view"
+         (resolver/resolve-request-set "token-recipe-coverage-basic-ja")))))
+
+(deftest resolve-request-set-accepts-token-recipe-with-tokenizer-profile-test
+  (with-redefs [resolver/read-request-set-definition
+                (fn [_] (token-recipe-definition ["fixture-tokenizer-ja-v1"]))
+                resolver/request-set-definition-path
+                (fn [_] "unit/token-recipe-coverage-basic-ja.json")]
+    (let [resolved (resolver/resolve-request-set "token-recipe-coverage-basic-ja")]
+      (is (= (analysis-identity/request-set-id resolved)
+             (get resolved "request_set_id"))))))

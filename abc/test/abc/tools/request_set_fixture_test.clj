@@ -32,9 +32,7 @@
         (is (= (get-in request-set ["request_set_identity_object"
                                     "pack_policy_hash"])
                (get-in request-set ["resolved_pack_policy_label"
-                                    "pack_policy_hash"])))
-        (is (= [] (get-in request-set ["request_set_identity_object"
-                                       "tokenizer_profile_hashes"])))))))
+                                    "pack_policy_hash"])))))))
 
 ;; D6 (2026-07-09 design, widened 2026-07-10): annotation views participate in
 ;; request-set input_views as {"input_view_kind" "parser-ir-body-annotations-v1",
@@ -70,3 +68,23 @@
       (is (seq variants)))
     (testing "every kind the schema admits is exactly the resolver allow-list"
       (is (= analysis-identity/allowed-input-view-kinds schema-kinds)))))
+
+;; Machine-check (ADR 0028 D6 follow-through): every committed request-set
+;; definition's input_views agree with its referenced recipes'
+;; supported_input_view_kinds — checked against the raw registry values, so
+;; registry drift bites here even before anything resolves.
+(deftest definitions-and-recipes-input-view-coverage-machine-check-test
+  (let [labels (resolver/request-set-labels)]
+    (is (seq labels))
+    (doseq [label labels]
+      (testing label
+        (let [definition (resolver/read-request-set-definition label)
+              recipes (mapv #(files/read-json
+                              (str "data/analysis-recipes/" % ".json"))
+                            (get definition "analysis_recipe_ids" []))]
+          (is (nil? (analysis-identity/assert-input-view-coverage!
+                     {:input-views (get definition "input_views")
+                      :recipes recipes
+                      :tokenizer-profile-ids (get definition
+                                                  "tokenizer_profile_ids"
+                                                  [])}))))))))

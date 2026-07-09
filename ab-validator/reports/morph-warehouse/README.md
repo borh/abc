@@ -59,3 +59,27 @@ reports/morph-warehouse/open-warehouse-explorer.sh
 ```
 
 The notebook uses contextual marimo UI controls for report view, row limit, feature key, term probes, source/text substring filters, and comma- or whitespace-separated exact `source_id` / `text_id` lists. It is triage-safe: it only reads the same warehouse tables as the static report, plus the selected source's AAT JSON when the `AAT structure` view is active. AAT JSON is rendered with marimo's native JSON tree viewer.
+
+## Hydrated example bundles
+
+`ab-morph-run hydrate-interesting` turns an interestingness ranking JSON into
+a self-contained `examples.md` + `examples.json` bundle: projected-text
+snippets with the disagreement region marked 【…】, per-analyzer
+segmentation/POS tables, aozora markup reconstructed from the AAT, and work
+metadata (title, author, year — author names resolved from an ABC catalog
+export's `persons/`). Run it where the warehouse run dir and AAT corpus live
+(hinoki for full-corpus runs — use the Tailscale FQDN
+`hinoki.hyakutake-barbel.ts.net`; the bare `hinoki` ssh alias resolves to a
+different host), then copy the bundle next to the existing reports:
+
+```bash
+just morph-warehouse-hydrate-interesting \
+  /db/ab-validator/morph-warehouse/reports/dict-cmp-m2-full-2026-07-09/interesting-dictcmp-m2-full.json \
+  /db/ab-validator/morph-warehouse/runs/dict-cmp-m2-full-2026-07-09 \
+  /db/ab-validator/morph-warehouse/reports/dict-cmp-m2-full-2026-07-09/examples \
+  /db/ab-validator/abc-corpus/aozora-catalog-0e9ea3e5
+```
+
+Every layer degrades independently (missing catalog → author ids; changed
+AAT → `projection-mismatch` instead of a wrong quote); the bundle records
+per-example `errors[]` and the CLI prints a full/partial/failed tally.

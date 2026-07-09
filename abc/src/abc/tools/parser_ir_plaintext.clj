@@ -2,17 +2,23 @@
   (:require [abc.tools.parser-ir-publication-whitespace :as whitespace]
             [clojure.string :as string]))
 
+(defn- scalar-count [^String s]
+  (.codePointCount s 0 (.length s)))
+
 (defn- append-text [acc node-text]
-  (-> acc
-      (update :text str (or node-text ""))
-      (assoc :source-text-ended-with-newline? false)))
+  (let [s (or node-text "")]
+    (-> acc
+        (update :text str s)
+        (update :offset (fnil + 0) (scalar-count s))
+        (assoc :source-text-ended-with-newline? false))))
 
 (defn- append-source-text [acc node-text]
-  (-> acc
-      (update :text str
-              (whitespace/source-text->plaintext node-text (empty? (:text acc))))
-      (assoc :source-text-ended-with-newline?
-             (whitespace/source-text-ends-with-newline? node-text))))
+  (let [s (whitespace/source-text->plaintext node-text (empty? (:text acc)))]
+    (-> acc
+        (update :text str s)
+        (update :offset (fnil + 0) (scalar-count s))
+        (assoc :source-text-ended-with-newline?
+               (whitespace/source-text-ends-with-newline? node-text)))))
 
 (defn- mark-omitted [acc node-type]
   (update acc :omitted conj {:type node-type :policy "omitted"}))
@@ -40,13 +46,31 @@
 (defn- render-ruby-node
   ([acc node] (render-ruby-node acc node 0))
   ([acc node _depth]
-   (append-text acc (get-in node ["ruby" "base"]))))
+   (let [start (:offset acc 0)
+         acc (append-text acc (get-in node ["ruby" "base"]))]
+     (update acc :annotations (fnil conj [])
+             (cond-> {"annotation_kind" "ruby"
+                      "span" {"start" start "end" (:offset acc)}
+                      "ruby" {"base" (or (get-in node ["ruby" "base"]) "")
+                              "reading" (or (get-in node ["ruby" "reading"]) "")
+                              "direction" (get-in node ["ruby" "direction"])}}
+               (get node "span") (assoc "source_span"
+                                        (select-keys (get node "span") ["start" "end"])))))))
 
 (defn- render-gaiji-node
   ([acc node] (render-gaiji-node acc node 0))
   ([acc node _depth]
-   (append-text acc (or (get-in node ["gaiji" "unicode"])
-                        (get-in node ["gaiji" "raw_marker"])))))
+   (let [start (:offset acc 0)
+         acc (append-text acc (or (get-in node ["gaiji" "unicode"])
+                                  (get-in node ["gaiji" "raw_marker"])))]
+     (update acc :annotations (fnil conj [])
+             (cond-> {"annotation_kind" "gaiji"
+                      "span" {"start" start "end" (:offset acc)}
+                      "gaiji" {"raw_marker" (or (get-in node ["gaiji" "raw_marker"]) "")
+                               "unicode" (get-in node ["gaiji" "unicode"])
+                               "resolved" (boolean (get-in node ["gaiji" "resolved"]))}}
+               (get node "span") (assoc "source_span"
+                                        (select-keys (get node "span") ["start" "end"])))))))
 
 (defn- inline-children-need-visible-text-fallback? [children]
   (boolean
@@ -156,28 +180,36 @@
        (render-node-fn acc node depth)
        acc))))
 
-(defn render [parser-ir]
-  (let [{:keys [text front_notes source_notes node_counts omitted
+(defn render-with-annotations [parser-ir]
+  (let [{:keys [text front_notes source_notes node_counts omitted annotations
                 source-text-ended-with-newline?]}
         (reduce render-node
-                {:text ""
-                 :front_notes []
-                 :source_notes []
-                 :node_counts {}
-                 :omitted []
+                {:text "" :offset 0 :annotations []
+                 :front_notes [] :source_notes []
+                 :node_counts {} :omitted []
                  :source-text-ended-with-newline? false}
                 (get parser-ir "nodes"))
         text (if source-text-ended-with-newline?
                (whitespace/trim-trailing-newlines text)
                text)
-        text (str (when (seq front_notes)
-                    (str (string/join "\n" front_notes) "\n\n"))
-                  text
+        prefix (when (seq front_notes)
+                 (str (string/join "\n" front_notes) "\n\n"))
+        shift (if prefix (scalar-count prefix) 0)
+        text (str prefix text
                   (when (seq source_notes)
                     (str "\n\n" (string/join "\n" source_notes))))]
     {:text text
+     :annotations (mapv (fn [ann]
+                          (update ann "span"
+                                  (fn [{:strs [start end]}]
+                                    {"start" (+ start shift)
+                                     "end" (+ end shift)})))
+                        annotations)
      :node_counts node_counts
      :omitted omitted}))
+
+(defn render [parser-ir]
+  (dissoc (render-with-annotations parser-ir) :annotations))
 
 (defn render-string [parser-ir]
   (:text (render parser-ir)))

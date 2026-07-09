@@ -571,18 +571,13 @@ fn paragraph_span(
     fallback_start: u64,
     fallback_end: u64,
 ) -> Result<(Value, &'static str)> {
-    if let Some(span) = block_span {
-        return Ok((
-            json!({
-                "start": span.get("byte_start").and_then(Value::as_u64).unwrap_or(fallback_start),
-                "end": span.get("byte_end").and_then(Value::as_u64).unwrap_or(fallback_end),
-                "line": span.get("line_start").cloned().unwrap_or(Value::Null),
-                "column": null,
-                "coordinate_system": "decoded_utf8",
-            }),
-            "direct",
-        ));
-    }
+    // Derive the paragraph span from its child node spans, which are in decoded
+    // coordinates. This is the ONLY source consistent with `paragraph_start`/`_end`
+    // as used by the sentence splitter — the AAT block `byte_start`/`byte_end` are
+    // raw-source offsets (they include ruby/gaiji markup) and the `current`
+    // accumulator can overshoot the last visible node, both of which desynchronise
+    // the paragraph span from its nodes. The block span, when present, only supplies
+    // `line` provenance and marks the span_source as "direct".
     if node_start < node_end
         && let (Some(first), Some(last)) = (nodes.get(node_start), nodes.get(node_end - 1))
     {
@@ -594,11 +589,22 @@ fn paragraph_span(
             .pointer("/span/end")
             .and_then(Value::as_u64)
             .unwrap_or(fallback_end);
-        let line = first.pointer("/span/line").cloned().unwrap_or(Value::Null);
-        let column = first
-            .pointer("/span/column")
-            .cloned()
-            .unwrap_or(Value::Null);
+        let (line, column, span_source) = if let Some(span) = block_span {
+            (
+                span.get("line_start").cloned().unwrap_or(Value::Null),
+                Value::Null,
+                "direct",
+            )
+        } else {
+            (
+                first.pointer("/span/line").cloned().unwrap_or(Value::Null),
+                first
+                    .pointer("/span/column")
+                    .cloned()
+                    .unwrap_or(Value::Null),
+                "derived",
+            )
+        };
         return Ok((
             json!({
                 "start": start,
@@ -607,7 +613,7 @@ fn paragraph_span(
                 "column": column,
                 "coordinate_system": "decoded_utf8",
             }),
-            "derived",
+            span_source,
         ));
     }
     Ok((
@@ -728,7 +734,7 @@ fn map_text_node(
     let _ = synthetic_warnings; // signature symmetry with map_text_node_with_quotes
     let text = node["value"].as_str().unwrap_or("");
     let end = offset + utf8_len(text);
-    let span = map_span(node.get("span"), offset, end, recorder, path)?;
+    let span = map_node_span(node.get("span"), offset, end, recorder, path)?;
     nodes.push(json!({"type": "text", "span": span, "text": text}));
     Ok(end)
 }
@@ -823,7 +829,7 @@ fn map_inline_to_nodes(
         "ruby" => {
             let base = node["base"].as_str().unwrap_or("");
             let end = offset + utf8_len(base);
-            let span = map_span(node.get("span"), offset, end, recorder, path)?;
+            let span = map_node_span(node.get("span"), offset, end, recorder, path)?;
             recorder.record(
                 "INVENTION",
                 None,
@@ -859,7 +865,7 @@ fn map_inline_to_nodes(
                 .or_else(|| node["description"].as_str())
                 .unwrap_or("");
             let end = offset + utf8_len(visible);
-            let span = map_span(node.get("span"), offset, end, recorder, path)?;
+            let span = map_node_span(node.get("span"), offset, end, recorder, path)?;
             let unicode = node.get("resolved").cloned().unwrap_or(Value::Null);
             let description_pointer = format!("{path}.gaiji.description");
             recorder.record(
@@ -935,7 +941,7 @@ fn map_inline_to_nodes(
                 Some("(emphasis.text)"),
             )?;
             let end = offset + utf8_len(&text);
-            let span = map_span(node.get("span"), offset, end, recorder, path)?;
+            let span = map_node_span(node.get("span"), offset, end, recorder, path)?;
             let inline_children = inline_children_nodes(
                 node.get("content"),
                 recorder,
@@ -979,7 +985,7 @@ fn map_inline_to_nodes(
                 Some("(emphasis.text)"),
             )?;
             let end = offset + utf8_len(&text);
-            let span = map_span(node.get("span"), offset, end, recorder, path)?;
+            let span = map_node_span(node.get("span"), offset, end, recorder, path)?;
             let inline_children = inline_children_nodes(
                 node.get("content"),
                 recorder,
@@ -1041,7 +1047,7 @@ fn map_layout_span_to_node(
 ) -> Result<u64> {
     let text = plain_visible_content_text(node.get("content"))?;
     let end = offset + utf8_len(&text);
-    let span = map_span(node.get("span"), offset, end, recorder, path)?;
+    let span = map_node_span(node.get("span"), offset, end, recorder, path)?;
     let inline_children = inline_children_nodes(
         node.get("content"),
         recorder,
@@ -1359,7 +1365,7 @@ fn map_accent_to_node(
 
     let text = accent_text(node);
     let end = offset + utf8_len(&text);
-    let span = map_span(node.get("span"), offset, end, recorder, path)?;
+    let span = map_node_span(node.get("span"), offset, end, recorder, path)?;
     nodes.push(json!({
         "type": "emphasis",
         "span": span,
@@ -1398,7 +1404,7 @@ fn map_raw_to_nodes(
     let source = node.get("source").and_then(Value::as_str).unwrap_or("");
     match raw_recovery_class(node, source) {
         RawRecoveryClass::PageBreak => {
-            let span = map_span(node.get("span"), offset, offset, recorder, path)?;
+            let span = map_node_span(node.get("span"), offset, offset, recorder, path)?;
             nodes.push(json!({
                 "type": "page-break",
                 "span": span,
@@ -1407,7 +1413,7 @@ fn map_raw_to_nodes(
             }));
         }
         RawRecoveryClass::SourceNote => {
-            let span = map_span(node.get("span"), offset, offset, recorder, path)?;
+            let span = map_node_span(node.get("span"), offset, offset, recorder, path)?;
             nodes.push(json!({
                 "type": "editor-note",
                 "span": span,
@@ -1523,7 +1529,7 @@ fn map_figure_to_node(
     record_optional_figure_loss(node, recorder, path, "height")?;
     record_optional_figure_loss(node, recorder, path, "width")?;
 
-    let span = map_span(node.get("span"), offset, offset, recorder, path)?;
+    let span = map_node_span(node.get("span"), offset, offset, recorder, path)?;
     nodes.push(json!({
         "type": "image",
         "span": span,
@@ -1820,6 +1826,47 @@ fn warigaki_target<'a>(
     } else {
         bail!("unmeasured warigaki divergence at {warigaki_pointer}")
     }
+}
+
+/// Build a parser-IR node span in the pipeline's `decoded_utf8` coordinate system.
+///
+/// Unlike [`map_span`], this IGNORES the AAT `byte_start`/`byte_end` for the span
+/// value and uses the caller's accumulated decoded offsets `[start, end)`. The AAT
+/// offsets are raw-source bytes that include Aozora markup (ruby `《…》`, gaiji /
+/// bouten `［＃…］`), so they run ahead of the decoded stream and must NOT be used
+/// as `decoded_utf8` span values — doing so is what desynchronised container /
+/// ruby / gaiji node spans from their (decoded) siblings and children and made the
+/// sentence projection fail or crash on ruby-heavy corpora. The AAT `line_start`
+/// is kept for provenance; the AMBIGUITY divergence for a missing span is still
+/// recorded, matching `map_span`. Inline children already build spans this way via
+/// `synthetic_span`; this is the top-level equivalent that also carries `line`.
+fn map_node_span(
+    aat_span: Option<&Value>,
+    start: u64,
+    end: u64,
+    recorder: &mut DivergenceRecorder,
+    path: &str,
+) -> Result<Value> {
+    if aat_span.is_none() {
+        let span_pointer = format!("{path}.span");
+        recorder.record_if_measured(
+            "AMBIGUITY",
+            Some(span_pointer.as_str()),
+            Some("span"),
+            None,
+            None,
+        );
+    }
+    Ok(json!({
+        "start": start,
+        "end": end,
+        "line": aat_span
+            .and_then(|s| s.get("line_start"))
+            .cloned()
+            .unwrap_or(Value::Null),
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+    }))
 }
 
 fn map_span(

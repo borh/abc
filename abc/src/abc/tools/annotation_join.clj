@@ -21,12 +21,24 @@
 
 (defn join
   "Join annotations to tokens by span intersection in the shared plaintext
-  unicode-scalar coordinate system. Returns a generated view; never a
-  canonical artifact (ADR 0028)."
+  unicode-scalar coordinate system.
+
+  Preconditions (relied on, not checked): `tokens` is sorted by input_span
+  start and non-overlapping, as tokenizer output streams are — classification
+  reads the first/last covering token positionally. Degenerate spans
+  (start >= end) cover no text: zero-width annotation spans (D3 allows
+  empty gaiji spans) and inverted spans alike yield token_indexes [] and
+  classification \"conflict\"; a fifth classification for
+  invisible-vs-misaligned is deliberately deferred until a consumer needs
+  the distinction (ADR 0028 records four probe classifications).
+
+  Returns a generated view; never a canonical artifact (ADR 0028)."
   [tokens annotations]
   (mapv (fn [ann]
           (let [{:strs [start end]} (get ann "span")
-                cover (overlapping tokens start end)]
+                cover (if (>= start end)
+                        []
+                        (overlapping tokens start end))]
             {"annotation" ann
              "token_indexes" (mapv #(get % "token_index") cover)
              "classification" (if (empty? cover)

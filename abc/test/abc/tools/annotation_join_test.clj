@@ -25,3 +25,18 @@
     (is (= "stem-prefix" (get (by-base "行") "classification")))
     (is (= [5] (get (by-base "行") "token_indexes")))
     (is (= "conflict" (get (by-base "く道") "classification")))))
+
+(deftest join-zero-width-span-test
+  (testing "zero-width spans (D3 allows empty gaiji spans) cover no text:
+            no spurious token_indexes from point-containment, classified
+            conflict under the deliberate four-class contract"
+    (let [tokens [(tok 0 0 2 "吾輩") (tok 1 2 3 "が")]
+          result (join/join tokens [(ruby-ann 1 1 "" "")])]
+      (is (= [] (get (first result) "token_indexes")))
+      (is (= "conflict" (get (first result) "classification")))))
+  (testing "inverted spans (start > end) are degenerate too: same no-coverage,
+            conflict outcome as zero-width, guarded by (>= start end)"
+    (let [tokens [(tok 0 0 2 "吾輩") (tok 1 2 3 "が")]
+          result (join/join tokens [(ruby-ann 2 1 "" "")])]
+      (is (= [] (get (first result) "token_indexes")))
+      (is (= "conflict" (get (first result) "classification"))))))

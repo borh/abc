@@ -537,13 +537,32 @@
                                 nil
                                 {}
                                 {"used" [producer-id]})
+        failed-annotation (-> (annotation-manifest-from-producer
+                               (files/example-hash "93")
+                               producer-id
+                               nil
+                               {}
+                               {"used" [producer-id]})
+                              (assoc "validation_status" "failed"))
+        missing-key-annotation (-> (annotation-manifest-from-producer
+                                    (files/example-hash "94")
+                                    producer-id
+                                    (files/example-hash "97"))
+                                   (update "manifest_identity_object"
+                                           dissoc "annotation_policy_hash"))
         entries (manifest-index/index-entries
                  {"passed-annotation.manifest.json" passed-annotation
-                  "null-policy-annotation.manifest.json" null-policy-annotation})]
-    (is (= [{:artifact_id (files/example-hash "98")
+                  "null-policy-annotation.manifest.json" null-policy-annotation
+                  "failed-annotation.manifest.json" failed-annotation
+                  "missing-key-annotation.manifest.json" missing-key-annotation})]
+    (is (= [{:artifact_id (files/example-hash "94")
+             :manifest_path "missing-key-annotation.manifest.json"
+             :validation_status "passed"}
+            {:artifact_id (files/example-hash "98")
              :manifest_path "null-policy-annotation.manifest.json"
              :validation_status "passed"}]
-           (manifest-index/annotation-release-guardrail-errors entries)))
+           (manifest-index/annotation-release-guardrail-errors entries))
+        "explicit-null AND missing-key both reported; failed-status excluded")
     (is (thrown-with-msg? clojure.lang.ExceptionInfo
                           #"Successful annotation manifests require annotation_policy_hash"
                           (manifest-index/validate-annotation-release-guardrail! entries)))))

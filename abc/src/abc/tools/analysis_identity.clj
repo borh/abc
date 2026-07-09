@@ -7,7 +7,7 @@
   #{"require-existing" "build-missing-only" "record-missing-status"})
 
 (def allowed-input-view-kinds
-  #{"parser-ir-plaintext-body-v1"})
+  #{"parser-ir-plaintext-body-v1" "parser-ir-body-annotations-v1"})
 
 ;; The identity (no-op) input-normalization policy hash — produced by Rust
 ;; (ab_ortho_detect::NormalizationPolicy::identity, spec Issue 2 P1) and used

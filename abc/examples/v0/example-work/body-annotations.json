@@ -1,6 +1,6 @@
 {
   "schema_id": "https://w3id.org/abc/schemas/annotation-output.schema.json",
-  "schema_hash": "sha256:ecda531448d362c678c30d7e523cec7105149b5bd2ffaaa8ee1fbde252991af9",
+  "schema_hash": "sha256:898f1c8d3306625898e228c9a3ff76c577e9172fca2cec291c6a1045ea51a3b5",
   "annotation_policy_hash": "sha256:6b2b9f29b742d434a2a114ace68549c3ad2611454785cb7a6924f5eaf95babde",
   "producer": {
     "input_view_kind": "parser-ir-plaintext-body-v1",

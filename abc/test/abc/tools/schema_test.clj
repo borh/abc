@@ -16,7 +16,7 @@
    "schemas/analysis-result.schema.json" "0.1.2"
    "schemas/manifest.schema.json" "0.4.4"
    "schemas/parser-ir-publication-preservation.schema.json" "0.3.0"
-   "schemas/request-set.schema.json" "0.1.3"
+   "schemas/request-set.schema.json" "0.1.4"
    "schemas/source-region-coverage.schema.json" "0.2.1"
    "schemas/snapshot-index.schema.json" "0.1.0"
    "schemas/tei-eaj-comparison.schema.json" "0.1.0"

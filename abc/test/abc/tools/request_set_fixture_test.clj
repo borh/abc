@@ -36,19 +36,37 @@
         (is (= [] (get-in request-set ["request_set_identity_object"
                                        "tokenizer_profile_hashes"])))))))
 
-;; D6 (2026-07-09 ruby-annotation-view design): annotation views appear in
+;; D6 (2026-07-09 design, widened 2026-07-10): annotation views participate in
 ;; request-set input_views as {"input_view_kind" "parser-ir-body-annotations-v1",
-;; "policy_hash" <annotation-policy-hash>} — no resolver code change, this is a
-;; demonstration fixture of the shape rather than a resolved request set (the
-;; resolver's allowed-input-view-kinds and request-set.schema.json's inputView
-;; enum remain parser-ir-plaintext-body-v1-only until a later task widens them).
-(deftest annotation-input-view-fixture-entry-matches-design-d6-test
-  (testing "D6: annotation views appear in request-set input_views as {input_view_kind, policy_hash}"
-    (let [policy (files/read-json "data/annotation-policies/ruby-gaiji-v1.json")
-          policy-hash (analysis-identity/annotation-policy-hash policy)
-          input-view {"input_view_kind" "parser-ir-body-annotations-v1"
-                      "policy_hash" policy-hash}]
-      (is (= "ruby-gaiji-v1" (get policy "policy_id")))
-      (is (re-matches files/hash-pattern policy-hash))
-      (is (= #{"input_view_kind" "policy_hash"} (set (keys input-view))))
-      (is (= "parser-ir-body-annotations-v1" (get input-view "input_view_kind"))))))
+;; "policy_hash" <annotation-policy-hash>}. demo-annotation-ja is the resolved
+;; fixture; the round-trip deftest above covers its request_set_id and resolver
+;; equality like every other label, and input-view-kinds-schema-and-allow-list-
+;; agree-test pins the schema/allow-list agreement.
+(deftest annotation-input-view-resolves-in-demo-annotation-ja-test
+  (let [request-set (files/read-json "data/request-sets/demo-annotation-ja.json")
+        policy (files/read-json "data/annotation-policies/ruby-gaiji-v1.json")
+        views (get-in request-set ["request_set_identity_object" "input_views"])
+        ann-views (filterv #(= "parser-ir-body-annotations-v1"
+                               (get % "input_view_kind"))
+                           views)]
+    (testing "exactly one annotation input view, carrying the ruby-gaiji-v1 hash"
+      (is (= 1 (count ann-views)))
+      (is (= (analysis-identity/annotation-policy-hash policy)
+             (get (first ann-views) "policy_hash"))))
+    (testing "the D6 two-key shape, no normalization coordinate (deferred D7)"
+      (is (= #{"input_view_kind" "policy_hash"}
+             (set (keys (first ann-views))))))
+    (testing "the plaintext view rides alongside for the token join"
+      (is (some #(= "parser-ir-plaintext-body-v1" (get % "input_view_kind"))
+                views)))))
+
+(deftest input-view-kinds-schema-and-allow-list-agree-test
+  (let [schema (files/read-json "schemas/request-set.schema.json")
+        variants (get-in schema ["$defs" "inputView" "oneOf"])
+        schema-kinds (into #{}
+                           (mapcat #(get-in % ["properties" "input_view_kind" "enum"]))
+                           variants)]
+    (testing "inputView is a oneOf over per-kind variants"
+      (is (seq variants)))
+    (testing "every kind the schema admits is exactly the resolver allow-list"
+      (is (= analysis-identity/allowed-input-view-kinds schema-kinds)))))

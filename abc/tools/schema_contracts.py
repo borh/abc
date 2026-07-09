@@ -17,6 +17,7 @@ SCHEMA_FILES = (
     "analysis-result.schema.json",
     "aat-parser-ir-divergence.schema.json",
     "aat-parser-ir-mapping.schema.json",
+    "annotation-output.schema.json",
     "manifest.schema.json",
     "parser-ir-publication-preservation.schema.json",
     "parser-ir.schema.json",

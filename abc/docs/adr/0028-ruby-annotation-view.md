@@ -52,12 +52,26 @@ built:
   annotation fixture, schema-validates it, and runs it through the
   manifest-index checks above, against committed example outputs
   (`examples/v0/example-work/body-annotations.json`).
-- **D6 demonstration**: `test/abc/tools/request_set_fixture_test.clj` shows an
-  annotation view's `{input_view_kind, policy_hash}` shape as it would appear
-  in a request set's `input_views` array. This is a shape-demonstration
-  `deftest`, not resolver support — the resolver's allowed-input-view-kinds
-  and `request-set.schema.json`'s `inputView` enum are **not** widened by this
-  slice; a request set cannot yet actually resolve an annotation input view.
+- **D6 widened (2026-07-10)**: `abc.tools.analysis-identity/allowed-input-view-kinds`
+  now includes `parser-ir-body-annotations-v1` alongside
+  `parser-ir-plaintext-body-v1`; request-set schema v0.1.4's `$defs.inputView`
+  is a `oneOf` over the plaintext three-key variant and the D6 annotation
+  two-key variant (`{input_view_kind, policy_hash}`); and
+  `data/request-sets/demo-annotation-ja.json` is a resolved fixture carrying
+  both an annotation and a plaintext input view. Covered by
+  `test/abc/tools/request_set_fixture_test.clj`: the machine-check
+  `input-view-kinds-schema-and-allow-list-agree-test` binds the schema's
+  `oneOf` kinds to the allow-list, and
+  `annotation-input-view-resolves-in-demo-annotation-ja-test` resolves the
+  fixture end-to-end. A request set can now actually resolve an annotation
+  input view; materializing annotation artifacts *per request set* remains
+  future work (only the identity/schema layer accepts the view).
+- **Schema-contracts registration**: `schemas/annotation-output.schema.json`
+  is registered in `schemas/schema-contracts.json` and
+  `tools/schema_contracts.py`'s `SCHEMA_FILES`, the deferred registration
+  from the first slice, and also in the ab-validator vendored contracts
+  (`ab-validator/data/abc-schemas/schema-contracts.json`), generated via the
+  monorepo-root `scripts/abc_schema_contracts.py`.
 
 ## Context
 
@@ -167,9 +181,10 @@ below); the rest are decided:
 - **D6 — Request sets: annotation views participate as input views.**
   Annotation views appear in request-set `input_views` as
   `{"input_view_kind": "parser-ir-body-annotations-v1", "policy_hash": …}`.
-  Built as a shape-demonstration fixture only in this slice — no resolver
-  code change, and the resolver allow-list / `request-set.schema.json`
-  `inputView` enum are not widened (see Implementation Status).
+  Widened 2026-07-10: the resolver allow-list and `request-set.schema.json`'s
+  `inputView` `oneOf` now admit the annotation kind, and
+  `data/request-sets/demo-annotation-ja.json` is a resolved fixture (see
+  Implementation Status).
 - **D8 — One identity slot for the family.** `annotation_policy_hash` serves
   both source-projection policies (ruby/gaiji, this slice) and future
   annotator profiles (ML/LLM) alike: both are hash-addressed canonical JSON
@@ -298,10 +313,15 @@ Status per criterion, first slice (Tasks 1-7):
   `test/abc/tools/materialize_annotations_test.clj`. Both kinds still derive
   from the same source-projection policy; a fully independent ML/LLM
   `annotation_kind` (e.g. `ner`) remains future work under D8/D9.
-- **Demonstration only, not resolver support.** D6 (request-set
-  participation): `test/abc/tools/request_set_fixture_test.clj` shows the
-  `{input_view_kind, policy_hash}` shape; the resolver and
-  `request-set.schema.json` `inputView` enum are not widened.
+- **Done.** D6 (request-set participation): `allowed-input-view-kinds` and
+  `request-set.schema.json`'s `inputView` `oneOf` both admit
+  `parser-ir-body-annotations-v1`, and `data/request-sets/demo-annotation-ja.json`
+  is a resolved fixture carrying the `{input_view_kind, policy_hash}` shape
+  alongside a plaintext view: `test/abc/tools/request_set_fixture_test.clj`
+  (`input-view-kinds-schema-and-allow-list-agree-test`,
+  `annotation-input-view-resolves-in-demo-annotation-ja-test`). Materializing
+  annotation artifacts per request set is not built in this slice — only the
+  identity/schema layer accepts the view.
 
 ## Rollback
 

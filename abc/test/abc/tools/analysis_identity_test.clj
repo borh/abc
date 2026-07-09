@@ -2,7 +2,7 @@
   (:require [abc.tools.analysis-identity :as analysis-identity]
             [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
-            [clojure.test :refer [deftest is]]))
+            [clojure.test :refer [deftest is testing]]))
 
 (def subject-a
   {"source_id" "aozora:1"
@@ -113,3 +113,25 @@
        (analysis-identity/assert-input-normalization-agreement!
         {:declared "sha256:530c59689dd909c171790036cddc7916f8685897b6342bfa794d4611816d3813"
          :applied (files/example-hash "77")}))))
+
+(deftest request-set-identity-accepts-annotation-input-view-test
+  (let [annotation-view {"input_view_kind" "parser-ir-body-annotations-v1"
+                         "policy_hash" (files/example-hash "31")}
+        plaintext-view {"input_view_kind" "parser-ir-plaintext-body-v1"
+                        "policy_hash" (files/example-hash "32")
+                        "input_normalization_policy_hash" (files/example-hash "33")}
+        identity-object (analysis-identity/request-set-identity-object
+                         {:schema-hash (files/example-hash "01")
+                          :corpus-snapshot-hash (files/example-hash "02")
+                          :subjects [subject-a]
+                          :input-views [plaintext-view annotation-view]
+                          :tokenizer-profile-hashes []
+                          :analysis-recipe-hashes []
+                          :missing-policy "build-missing-only"
+                          :pack-policy-hash (files/example-hash "05")})]
+    (testing "annotation views participate and sort by kind (b… before p…)"
+      (is (= ["parser-ir-body-annotations-v1" "parser-ir-plaintext-body-v1"]
+             (mapv #(get % "input_view_kind")
+                   (get identity-object "input_views")))))
+    (testing "the D6 two-key shape passes through untouched"
+      (is (= annotation-view (first (get identity-object "input_views")))))))

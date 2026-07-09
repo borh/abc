@@ -123,11 +123,20 @@ def check(warehouse_dir: str | Path, input_set_hash: str) -> dict[str, Any]:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (ValueError, OSError):
         return {"status": "invalid", "reason": "malformed run manifest", "run_dir": str(run_dir)}
+    if not isinstance(manifest, dict):
+        return {"status": "invalid", "reason": "run manifest is not an object",
+                "run_dir": str(run_dir)}
     if manifest.get("input_set_hash") != input_set_hash:
         return {"status": "invalid", "reason": "manifest input_set_hash mismatch",
                 "run_dir": str(run_dir)}
     recorded = manifest.get("output_content_hash")
-    actual = hash_run_dir(run_dir)
+    try:
+        actual = hash_run_dir(run_dir)
+    except (ValueError, OSError):
+        # Outputs vanished/unreadable since publish (only the manifest survives, or
+        # the run dir is gone). Fail toward recompute, not an uncaught exception.
+        return {"status": "stale", "reason": "run outputs missing or unreadable",
+                "run_dir": str(run_dir)}
     if actual != recorded:
         return {"status": "stale", "reason": "output content hash mismatch",
                 "recorded": recorded, "actual": actual, "run_dir": str(run_dir)}

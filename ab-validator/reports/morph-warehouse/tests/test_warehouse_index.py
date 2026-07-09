@@ -73,6 +73,28 @@ class WarehouseIndex(unittest.TestCase):
         mp.write_text(json.dumps(m), encoding="utf-8")
         self.assertEqual(wix.check(self.wh, self.ish)["status"], "invalid")
 
+    def test_check_invalid_on_dangling_link(self) -> None:
+        self._publish()
+        shutil.rmtree(self.run)  # target gone, symlink dangles
+        self.assertEqual(wix.check(self.wh, self.ish)["status"], "invalid")
+
+    def test_check_invalid_on_non_object_manifest(self) -> None:
+        self._publish()
+        (self.run / wix.MANIFEST_NAME).write_text("[1, 2, 3]", encoding="utf-8")
+        self.assertEqual(wix.check(self.wh, self.ish)["status"], "invalid")
+
+    def test_check_invalid_on_malformed_json_manifest(self) -> None:
+        self._publish()
+        (self.run / wix.MANIFEST_NAME).write_text("{not json", encoding="utf-8")
+        self.assertEqual(wix.check(self.wh, self.ish)["status"], "invalid")
+
+    def test_check_stale_when_outputs_vanish(self) -> None:
+        self._publish()
+        # Remove every output file but keep the manifest -> re-hash finds nothing.
+        (self.run / "runs.parquet").unlink()
+        shutil.rmtree(self.run / "analyses.parquet")
+        self.assertEqual(wix.check(self.wh, self.ish)["status"], "stale")
+
     def test_link_by_input_is_symlink_and_replaceable(self) -> None:
         self._publish()
         link = self.wh / "by-input" / self.ish.split(":", 1)[-1]

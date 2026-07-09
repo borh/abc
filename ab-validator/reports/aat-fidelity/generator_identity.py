@@ -14,6 +14,7 @@ docs/superpowers/specs/2026-07-09-batch-run-staleness-skip-recompute-design.md.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -97,6 +98,14 @@ def identity_fields(**identity_kwargs: Any) -> dict[str, Any]:
     return build_identity_object(**identity_kwargs)
 
 
+def identity_payload(**identity_kwargs: Any) -> dict[str, Any]:
+    """Compute the identity object and its input_set_hash together, so a caller
+    can compute identity ONCE and reuse it for both the skip check and the
+    recorded metadata (instead of recomputing build_identity_object per use)."""
+    obj = build_identity_object(**identity_kwargs)
+    return {"input_set_hash": run_identity.input_set_hash(obj), "identity_object": obj}
+
+
 def main(argv: list[str] | None = None) -> int:
     """Emit the input_set_hash for the given generator inputs (used by the
     run-aat-full.sh pre-build skip check)."""
@@ -111,15 +120,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--timeout", default=None)
     ap.add_argument("--features", default=None)
     ap.add_argument("--work-ids", default=None)
+    ap.add_argument("--emit-identity", default=None,
+                     help="write {input_set_hash, identity_object} JSON to this path")
     a = ap.parse_args(sys.argv[1:] if argv is None else argv)
-    print(generator_input_set_hash(
+    pay = identity_payload(
         corpus_dir=a.corpus_dir, adapter_version=a.adapter_version,
         adapter_binary=a.adapter_binary,
         ab_index_binary=a.ab_index_binary, ab_check_binary=a.ab_check_binary,
         feature_patterns_file=a.feature_patterns,
         renderer_dir=a.renderer_dir,
         timeout=a.timeout, features=a.features, work_ids=a.work_ids,
-    ))
+    )
+    if a.emit_identity:
+        Path(a.emit_identity).write_text(json.dumps(pay) + "\n", encoding="utf-8")
+    print(pay["input_set_hash"])
     return 0
 
 

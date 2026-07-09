@@ -5,6 +5,20 @@ Date: 2026-04-29
 Accepted: 2026-04-29
 Amended by: ADR 0018
 
+## Implementation Status
+
+2026-07-09 follow-up note: the namespace bug fixed by this ADR was a spot fix —
+the `abc:` namespace was unified and the three LOD fixtures regenerated — but
+the class of bug is not structurally closed. The identity-invariant check in
+`abc.tools.linked-art` only round-trips `artifactId` through JSON-LD expansion;
+it does not assert that the Turtle manifest view (`manifest->ttl`) and the
+JSON-LD / Linked Art view describe the same entity IRIs. The two serializations
+run on independent code paths, so a future divergence on entity-level identity
+between the two views could again pass every existing test. A harness-level
+cross-view agreement check (entity IRIs + `artifactId` asserted equal across
+TTL and JSON-LD) is an open item; see `docs/adr/README.md` ("Cross-view RDF
+harmonization is not structurally closed").
+
 ## Context
 
 The metadata-record + person-record milestones (specs at

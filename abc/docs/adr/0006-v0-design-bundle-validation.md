@@ -4,6 +4,7 @@ Status: Accepted
 Date: 2026-04-26
 Accepted: 2026-04-28
 Supersedes: none
+Amended by: ADR 0008
 Source: `docs/high-level-architecture-note.md` v0.5 and
 `docs/v0-design-bundle/README.md`
 

@@ -496,6 +496,119 @@
           cp -R ${sudachiRustSource}/resources "$out/resources"
         '';
 
+        # ── Tokenizer CLI runners ──
+        #
+        # Standalone Vibrato and Sudachi CLIs built from the exact sources the
+        # workspace already pins, wired to the flake dictionaries. These exist
+        # so tokenizer-profile fixture evidence and ad hoc probes run pinned,
+        # reproducible runners instead of ambient tools (ADR 0027 deferred
+        # decision; docs/handoffs/ruby-annotation-probe-2026-07-09.md caveat).
+
+        vibratoRkyvSource = pkgs.fetchgit {
+          url = "https://github.com/o24s/vibrato-rkyv.git";
+          rev = "6467251cdb945f8f0ca0c6bfd8c96036ab9d4e12";
+          hash = cargoGitOutputHashes."vibrato-rkyv-0.7.7";
+        };
+
+        # The vibrato-rkyv repo ships no workspace Cargo.lock (the ab-validator
+        # workspace pins it as a git dependency, which needs none). The lock
+        # under third_party/vibrato-rkyv-cli/ was generated once from the
+        # pinned rev so the CLI builds offline.
+        vibratoCli = rustPlatform.buildRustPackage {
+          pname = "vibrato-cli";
+          version = "0.7.7-6467251";
+
+          src = vibratoRkyvSource;
+          cargoLock = {
+            lockFile = ./third_party/vibrato-rkyv-cli/Cargo.lock;
+            # The fork's evaluate/map crates depend on sudachi.rs at the same
+            # rev the ab-validator workspace already pins.
+            outputHashes."sudachi-0.6.11-a1" = cargoGitOutputHashes."sudachi-0.6.11-a1";
+          };
+          postPatch = ''
+            cp ${./third_party/vibrato-rkyv-cli/Cargo.lock} Cargo.lock
+
+            # Force pointer_width_64 on the transitive rkyv so dictionaries
+            # produced by mecab-dic-converter load; same pattern as the
+            # ab-validator workspace Cargo.toml. The committed Cargo.lock was
+            # generated with this dependency edge present.
+            cat >> tokenize/Cargo.toml <<'TOML'
+
+            [dependencies.rkyv]
+            version = "0.8"
+            features = ["pointer_width_64"]
+            TOML
+          '';
+
+          cargoBuildFlags = [
+            "-p"
+            "tokenize"
+          ];
+          doCheck = false;
+
+          meta.description = "Vibrato (rkyv fork) tokenize CLI; loads the flake's .dic.zst dictionaries directly";
+        };
+
+        sudachiCli = rustPlatform.buildRustPackage {
+          pname = "sudachi-cli";
+          version = "0.6.11-a1";
+
+          src = sudachiRustSource;
+          cargoLock.lockFile = sudachiRustSource + "/Cargo.lock";
+
+          cargoBuildFlags = [
+            "-p"
+            "sudachi-cli"
+          ];
+          doCheck = false;
+
+          meta.description = "Sudachi.rs CLI built from the workspace-pinned source";
+        };
+
+        vibratoTokenizeApp = pkgs.writeShellApplication {
+          name = "vibrato-tokenize";
+          text = ''
+            # AB_VIBRATO_DICT selects a flake dictionary by short name
+            # (unidic-novel default; cwj, csj, qkana, kindai-bungo,
+            # kinsei-edo, kinsei-bungo) or an explicit .dic.zst path.
+            # AB_VIBRATO_CACHE_DIR redirects the decompressed-dictionary cache
+            # (~1 GB per dictionary) away from a small $HOME.
+            if [ -n "''${AB_VIBRATO_CACHE_DIR:-}" ]; then
+              export XDG_CACHE_HOME="$AB_VIBRATO_CACHE_DIR"
+            fi
+            dict="''${AB_VIBRATO_DICT:-unidic-novel}"
+            case "$dict" in
+              */* | *.dic.zst) dic_path="$dict" ;;
+              unidic-*) dic_path="${vibratoDictionaries}/share/vibrato/$dict-202512.dic.zst" ;;
+              *) dic_path="${vibratoDictionaries}/share/vibrato/unidic-$dict-202512.dic.zst" ;;
+            esac
+            exec ${vibratoCli}/bin/tokenize -i "$dic_path" "$@"
+          '';
+        };
+
+        sudachiApp = pkgs.writeShellApplication {
+          name = "sudachi";
+          text = ''
+            # Default config, resources, and system dictionary come from the
+            # flake pins; any explicit -r/-p/-l argument disables the
+            # corresponding default.
+            defaults=()
+            case " $* " in
+              *" -r "* | *" --config-file "*) ;;
+              *) defaults+=(-r "${sudachiRustSource}/resources/sudachi.json") ;;
+            esac
+            case " $* " in
+              *" -p "* | *" --resource_dir "*) ;;
+              *) defaults+=(-p "${sudachiRustSource}/resources") ;;
+            esac
+            case " $* " in
+              *" -l "* | *" --dict "*) ;;
+              *) defaults+=(-l "${sudachiDictionaryFull}/share/sudachi/system_full.dic") ;;
+            esac
+            exec ${sudachiCli}/bin/sudachi "''${defaults[@]}" "$@"
+          '';
+        };
+
         aozora2htmlCargoDeps = rustPlatform.importCargoLock {
           lockFile = ./adapters/aozora2html/Cargo.lock;
         };
@@ -1405,7 +1518,10 @@
               cargoDeps = abCargoDeps;
               nativeBuildInputs = [ pkgs.pkg-config ];
               AB_ABC_ROOT = "${abcSchemaRootForNix}";
-              cargoBuildFlags = [ "--package" "ab-index" ];
+              cargoBuildFlags = [
+                "--package"
+                "ab-index"
+              ];
               doCheck = false;
             }
           else
@@ -1430,7 +1546,10 @@
               cargoDeps = abCargoDeps;
               nativeBuildInputs = [ pkgs.pkg-config ];
               AB_ABC_ROOT = "${abcSchemaRootForNix}";
-              cargoBuildFlags = [ "--package" "ab-check" ];
+              cargoBuildFlags = [
+                "--package"
+                "ab-check"
+              ];
               doCheck = false;
             }
           else
@@ -1575,6 +1694,10 @@
           vibrato-dict-kinsei-edo = vibratoDictKinseiEdo;
           vibrato-dict-kinsei-bungo = vibratoDictKinseiBungo;
           vibrato-dictionaries = vibratoDictionaries;
+          vibrato-cli = vibratoCli;
+          sudachi-cli = sudachiCli;
+          vibrato-tokenize = vibratoTokenizeApp;
+          sudachi = sudachiApp;
         };
 
         apps.default =
@@ -1615,6 +1738,22 @@
           }
           // {
             meta.description = "Run the adapter fidelity notes schema smoke test";
+          };
+
+        apps.vibrato-tokenize =
+          flake-utils.lib.mkApp {
+            drv = vibratoTokenizeApp;
+          }
+          // {
+            meta.description = "Tokenize stdin with the pinned Vibrato CLI; AB_VIBRATO_DICT selects a flake dictionary (default unidic-novel)";
+          };
+
+        apps.sudachi =
+          flake-utils.lib.mkApp {
+            drv = sudachiApp;
+          }
+          // {
+            meta.description = "Run the pinned Sudachi CLI with the flake's full system dictionary as default";
           };
 
         checks = {

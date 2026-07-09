@@ -81,12 +81,16 @@ Two gaps, one project:
 
 ## Slice A — per-request-set annotation materialization
 
-**A1. Trigger.** `materialize-entry!` materializes annotation artifacts for
-each input view of kind `parser-ir-body-annotations-v1` in the resolved
-request set's `request_set_identity_object.input_views`. Zero such views →
-step skipped (all existing request sets except `demo-annotation-ja`).
-Multiple annotation views (distinct policy hashes) → one artifact per view;
-ADR 0028 D1 already guarantees distinct `artifact_id`s per policy.
+**A1. Trigger.** `materialize-entry!` materializes annotation artifacts
+when the resolved request set's `request_set_identity_object.input_views`
+contain an input view of kind `parser-ir-body-annotations-v1`. Zero such
+views → step skipped (all existing request sets except
+`demo-annotation-ja`). Exactly one is supported in v1. More than one
+(distinct policy hashes are representable, and ADR 0028 D1 would give them
+distinct `artifact_id`s) → fail closed with a named error: the per-work
+*file layout* and snapshot-reference semantics for multiple annotation
+views are deliberately undecided until a real request set needs them —
+inventing a layout now would be speculation.
 
 **A2. Policy resolution — by content hash, once per run, fail closed.** The
 identity view carries only `policy_hash`. Resolution scans the

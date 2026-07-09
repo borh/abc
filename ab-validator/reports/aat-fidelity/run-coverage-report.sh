@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Single entry point for the fidelity-coverage reports (§4.7 / §4.8 / §4.9).
 #
-# Enforces the AAT run-set as the SOLE dump-selection authority: stale profile
-# `AB_*_AAT_DIR` overrides silently defeat the run-set (see
-# docs/superpowers/reports/2026-07-09-fidelity-workflow-integration.md), so this
-# script neutralizes them, validates the run-set, checks the resolved dirs exist,
-# then runs the three coverage scripts against a denominator summary.
+# The AAT run-set (run-sets/current.json) is the SOLE dump-selection authority:
+# resolution ignores ambient `AB_*_AAT_DIR` entirely (aat_runs, F1/F2 of the
+# fidelity-run idempotency ADR), so no env-neutralization is needed here. This
+# script validates the run-set, checks the resolved dirs exist, then runs the
+# three coverage scripts against a denominator summary.
 #
 # Usage:
 #   run-coverage-report.sh <fidelity-summary.json> [out_dir]
@@ -20,20 +20,11 @@ summary="${1:?usage: run-coverage-report.sh <fidelity-summary.json> [out_dir]}"
 out_dir="${2:-$ab_root/scratch/coverage-report}"
 mkdir -p "$out_dir"
 
-# 1. run-set is the sole authority: drop stale per-adapter dump overrides.
-for v in AB_AOZORA_AAT_DIR AB_AOZORA2_AAT_DIR AB_AOZORA_RS_AAT_DIR \
-         AB_AOZORA2HTML_AAT_DIR AB_AOZORA_EPUB3_AAT_DIR AB_MORPH_WAREHOUSE_AAT_DIR; do
-  if [[ -n "${!v:-}" ]]; then
-    echo "note: unsetting $v (run-set governs dump selection)" >&2
-    unset "$v"
-  fi
-done
-
-# 2. validate run-set coherence (adapter_id + flake.lock rev/narHash).
+# 1. validate run-set coherence (adapter_id + flake.lock rev/narHash).
 echo "== validate run-set ==" >&2
 python3 "$here/validate-aat-run-set.py" --repo-root "$ab_root" | tee "$out_dir/run-set-validation.json" >&2
 
-# 3. verify the resolved AAT dirs actually exist (descriptors may not yet; dirs must).
+# 2. verify the resolved AAT dirs actually exist (descriptors may not yet; dirs must).
 echo "== resolved AAT dirs ==" >&2
 python3 - <<PY
 import sys
@@ -52,7 +43,7 @@ if missing:
     sys.exit(3)
 PY
 
-# 4. run the three coverage scripts against the run-set + summary.
+# 3. run the three coverage scripts against the run-set + summary.
 echo "== normalized-corpus-coverage (§4.7) ==" >&2
 python3 "$here/normalized-corpus-coverage.py" "$summary" > "$out_dir/normalized-corpus-coverage.json"
 echo "== parity-support-audit (§4.9) ==" >&2

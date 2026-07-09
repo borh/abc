@@ -266,16 +266,14 @@ fidelity-denominator-recompute JOBS="24" INDEX="" CORPUS="" PRIOR_SUMMARY="docs/
 		--matrix "{{repo_root}}/data/aozora-syntax-coverage.toml" \
 		--index "$index" --corpus "$corpus" --jobs "{{JOBS}}" \
 		--output-json "$inv_dir/inventory.json" --report-md "$inv_dir/inventory.md"; \
-	env -u AB_AOZORA_AAT_DIR -u AB_AOZORA2_AAT_DIR -u AB_AOZORA_RS_AAT_DIR \
-	    -u AB_AOZORA2HTML_AAT_DIR -u AB_AOZORA_EPUB3_AAT_DIR -u AB_MORPH_WAREHOUSE_AAT_DIR \
-		python3 "{{repo_root}}/reports/aat-fidelity/rebuild-fidelity-summary.py" \
+	python3 "{{repo_root}}/reports/aat-fidelity/rebuild-fidelity-summary.py" \
 		"$inv_dir/inventory.json" "{{repo_root}}/{{PRIOR_SUMMARY}}" > "{{repo_root}}/{{OUT_SUMMARY}}"; \
 	echo "wrote {{OUT_SUMMARY}} (pinned-corpus denominators; inventory: $inv_dir)"
 
-# Run the §4.7/§4.8/§4.9 coverage reports from a fidelity summary, with the AAT run-set
-# as the SOLE dump-selection authority (neutralizes stale AB_*_AAT_DIR overrides, then
-# validates + runs normalized-corpus-coverage / parity-support-audit /
-# fidelity-robustness-split). See run-coverage-report.sh.
+# Run the §4.7/§4.8/§4.9 coverage reports from a fidelity summary. The AAT run-set is the
+# SOLE dump-selection authority (aat_runs ignores ambient AB_*_AAT_DIR); this validates +
+# runs normalized-corpus-coverage / parity-support-audit / fidelity-robustness-split.
+# See run-coverage-report.sh.
 fidelity-coverage-report SUMMARY="docs/superpowers/reports/2026-07-09-corpus-adapter-fidelity.summary.json" OUT_DIR="":
 	@bash "{{repo_root}}/reports/aat-fidelity/run-coverage-report.sh" "{{repo_root}}/{{SUMMARY}}" {{OUT_DIR}}
 

@@ -83,10 +83,10 @@ def validate_run_set(
                 errors.append(f"adapter {label}: run descriptor missing: {path}")
 
             # Coherence: the run_descriptor (metadata.json) must sit at the root of the
-            # SAME dump as the resolved aat_dir. A stale `<label>_aat_dir_env` override
-            # can otherwise swap in a different dump while the descriptor still resolves
-            # to the run-set default (which matches flake.lock), so validation would pass
-            # on the wrong data. See 2026-07-09-fidelity-workflow-integration.md.
+            # SAME dump as the resolved aat_dir. Defence in depth against a hand-edited
+            # manifest that points aat_dir and run_descriptor at different dumps, so the
+            # descriptor (which matches flake.lock) would validate the wrong data. See
+            # 2026-07-09-fidelity-workflow-integration.md and the idempotency design ADR.
             dump_root = Path(descriptor_path).parent
             try:
                 Path(aat_dir).resolve().relative_to(dump_root.resolve())
@@ -118,12 +118,14 @@ def _adapter_path(run_set: JsonObject, label: str, field: str) -> str:
 
 
 def _optional_adapter_path(run_set: JsonObject, label: str, field: str) -> str | None:
+    # The manifest is the sole authority for dump selection. Legacy per-adapter
+    # `<field>_env` override fields are intentionally NOT honoured: a stale
+    # ambient `AB_*_AAT_DIR` must never silently swap in a different dump (F1/F2
+    # of the fidelity-run idempotency design). Only `AB_DB_ROOT` interpolation
+    # inside the pinned value remains, via `_resolve_path`.
     entry = _adapters(run_set)[label]
     if not isinstance(entry, dict):
         return None
-    env_name = entry.get(f"{field}_env")
-    if isinstance(env_name, str) and os.environ.get(env_name):
-        return os.environ[env_name]
     value = entry.get(field)
     if not isinstance(value, str) or not value:
         return None

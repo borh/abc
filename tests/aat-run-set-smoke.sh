@@ -71,8 +71,11 @@ assert validate_run_set(
     require_paths=True,
 ) == []
 
+# The manifest is authoritative: a stale ambient AB_AOZORA_AAT_DIR must NOT swap
+# the dump, even though the entry still carries the legacy aat_dir_env field
+# (fidelity Phase 1, F1/F2 of the idempotency ADR).
 os.environ["AB_AOZORA_AAT_DIR"] = str(override_dir)
-assert adapter_aat_globs(run_set)["aozora"].endswith("/override/aat/aozora-adapter/*.json")
+assert adapter_aat_globs(run_set)["aozora"].endswith("/aozora/aat/aozora-adapter/*.json")
 
 bad = json.loads(json.dumps(run_set))
 bad["adapters"]["aozora"]["expected"]["source"]["rev"] = "deadbeef"

@@ -16,7 +16,8 @@ set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ab_root="$(cd "$here/../.." && pwd)"
 summary="${1:?usage: run-coverage-report.sh <fidelity-summary.json> [out_dir]}"
-out_dir="${2:-$here/run-sets/last-coverage-run}"
+# Default output goes to gitignored scratch/, never into the tracked reports/ tree.
+out_dir="${2:-$ab_root/scratch/coverage-report}"
 mkdir -p "$out_dir"
 
 # 1. run-set is the sole authority: drop stale per-adapter dump overrides.

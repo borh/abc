@@ -244,6 +244,52 @@ source-inventory-full JOBS="24" INDEX="" CORPUS="":
 		--unknown-workset "{{ab_db_root}}/source-inventory/unknown-workset.json" \
 		--strict-representability
 
+# --- fidelity coverage entry points -----------------------------------------
+# INTERIM (2026-07-09): single entry points that fold this session's ad-hoc coverage
+# runs into `just` and encode the run-set-as-sole-authority env hygiene in one place.
+# These are a stopgap — the target is to remove the env dance entirely, not wrap it;
+# see docs/superpowers/specs/2026-07-09-fidelity-run-idempotency-design.md (Phase 1
+# supersedes the env-neutralization glue).
+
+# Recompute the corpus-adapter fidelity DENOMINATORS (source-authority `occ`) on the
+# PINNED corpus via ab-source-inventory, then rebuild the fidelity summary so numerators
+# (run-set AAT dumps) and denominators share one corpus (study §1). Emits OUT_SUMMARY,
+# which `fidelity-coverage-report` consumes. INDEX defaults to the pinned-corpus index;
+# CORPUS resolves via nix when empty.
+fidelity-denominator-recompute JOBS="24" INDEX="" CORPUS="" PRIOR_SUMMARY="docs/superpowers/reports/2026-07-08-corpus-adapter-fidelity.summary.json" OUT_SUMMARY="docs/superpowers/reports/2026-07-09-corpus-adapter-fidelity.summary.json":
+	@index="{{INDEX}}"; if [ -z "$index" ]; then index="{{ab_db_root}}/aat-corpus/index.json"; fi; \
+	test -f "$index" || { echo "index not found: $index (pass INDEX=...)" >&2; exit 2; }; \
+	corpus="{{CORPUS}}"; if [ -z "$corpus" ]; then corpus="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#aozorabunko-corpus')"; fi; \
+	cargo build -p ab-coverage --bin ab-source-inventory --release --jobs "{{JOBS}}"; \
+	inv_dir="{{ab_db_root}}/source-inventory/pinned-$(date -u +%Y%m%dT%H%M%SZ)"; mkdir -p "$inv_dir"; \
+	"{{repo_root}}/target/release/ab-source-inventory" \
+		--matrix "{{repo_root}}/data/aozora-syntax-coverage.toml" \
+		--index "$index" --corpus "$corpus" --jobs "{{JOBS}}" \
+		--output-json "$inv_dir/inventory.json" --report-md "$inv_dir/inventory.md"; \
+	env -u AB_AOZORA_AAT_DIR -u AB_AOZORA2_AAT_DIR -u AB_AOZORA_RS_AAT_DIR \
+	    -u AB_AOZORA2HTML_AAT_DIR -u AB_AOZORA_EPUB3_AAT_DIR -u AB_MORPH_WAREHOUSE_AAT_DIR \
+		python3 "{{repo_root}}/reports/aat-fidelity/rebuild-fidelity-summary.py" \
+		"$inv_dir/inventory.json" "{{repo_root}}/{{PRIOR_SUMMARY}}" > "{{repo_root}}/{{OUT_SUMMARY}}"; \
+	echo "wrote {{OUT_SUMMARY}} (pinned-corpus denominators; inventory: $inv_dir)"
+
+# Run the §4.7/§4.8/§4.9 coverage reports from a fidelity summary, with the AAT run-set
+# as the SOLE dump-selection authority (neutralizes stale AB_*_AAT_DIR overrides, then
+# validates + runs normalized-corpus-coverage / parity-support-audit /
+# fidelity-robustness-split). See run-coverage-report.sh.
+fidelity-coverage-report SUMMARY="docs/superpowers/reports/2026-07-09-corpus-adapter-fidelity.summary.json" OUT_DIR="":
+	@bash "{{repo_root}}/reports/aat-fidelity/run-coverage-report.sh" "{{repo_root}}/{{SUMMARY}}" {{OUT_DIR}}
+
+# One-shot §1 refresh: pinned-corpus denominators -> coverage reports.
+fidelity-coverage-refresh JOBS="24" INDEX="" CORPUS="":
+	@just fidelity-denominator-recompute JOBS="{{JOBS}}" INDEX="{{INDEX}}" CORPUS="{{CORPUS}}"
+	@just fidelity-coverage-report
+
+# Score the expanded official-docs seed (§4.5/§5) through the shared notation-spec
+# harness (all five adapters, auto-built) — a thin, discoverable wrapper over
+# aozora-notation-spec-comparison pinned to the seed vectors.
+official-docs-seed-comparison REPORT_MD="docs/superpowers/reports/2026-07-09-official-docs-seed-comparison.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-09-official-docs-seed-comparison.summary.json":
+	@just aozora-notation-spec-comparison VECTORS="{{repo_root}}/reports/parser-conformance/official-docs-seed" REPORT_MD="{{REPORT_MD}}" SUMMARY_JSON="{{SUMMARY_JSON}}"
+
 aat-to-parser-ir-full-audit JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json" COMPAT_EDN="docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn":
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"
 	@"{{repo_root}}/target/release/ab-aat-to-parser-ir" audit-corpus \

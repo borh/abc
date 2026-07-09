@@ -1,0 +1,10 @@
+{
+  "schema_id": "https://w3id.org/abc/schemas/annotation-policy.schema.json",
+  "policy_id": "ruby-gaiji-v1",
+  "annotation_kinds": ["ruby", "gaiji"],
+  "aligns_to": "parser-ir-plaintext-body-v1",
+  "coordinate_system": "unicode-scalar-value-plaintext-spans",
+  "ruby_fields": ["base", "reading", "direction"],
+  "gaiji_fields": ["raw_marker", "unicode", "resolved"],
+  "notes": "ruby.scope withheld: mapping invention I-01 (design D4)."
+}

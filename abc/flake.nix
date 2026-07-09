@@ -71,6 +71,33 @@
               localPkgsOverlay
             ];
           };
+          # Offline clj-nix dependency cache (same lockfile the `checks` use), so
+          # apps resolve their classpath hermetically instead of downloading from
+          # Maven Central / cloning git deps at runtime.
+          cljDepsCache = pkgs.mk-deps-cache {
+            lockfile = ./deps-lock.json;
+          };
+          # Reliable, CWD-independent launcher for a `-M:<alias>` Clojure tool.
+          # Resolves deps.edn + the abc `src` classpath from the pinned flake
+          # source (not the caller's working directory), points Clojure at the
+          # offline dependency cache, and gives it a writable cpcache dir. `env`
+          # injects app-specific environment (catalog paths, schema paths, …).
+          mkCljLauncher =
+            {
+              name,
+              alias,
+              env ? "",
+            }:
+            pkgs.writeShellScript name ''
+              export HOME="${cljDepsCache}"
+              export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+              export CLJ_CONFIG="${cljDepsCache}/.clojure"
+              export GITLIBS="${cljDepsCache}/.gitlibs"
+              export CLJ_CACHE="$(mktemp -d)"
+              ${env}
+              cd ${./.}
+              exec ${pkgs.clojure}/bin/clojure -M:${alias} "$@"
+            '';
           tei = import ./nix/tei-profile-artifacts.nix {
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
@@ -99,16 +126,19 @@
           validate-design-bundle = {
             type = "app";
             program = toString (
-              pkgs.writeShellScript "abc-validate-design-bundle" ''
-                export PATH="${
-                  pkgs.lib.makeBinPath [
-                    pkgs.git-cliff
-                    pkgs.libxml2
-                  ]
-                }:''${PATH:-}"
-                export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
-                exec ${pkgs.clojure}/bin/clojure -M:abc/validate-design-bundle "$@"
-              ''
+              mkCljLauncher {
+                name = "abc-validate-design-bundle";
+                alias = "abc/validate-design-bundle";
+                env = ''
+                  export PATH="${
+                    pkgs.lib.makeBinPath [
+                      pkgs.git-cliff
+                      pkgs.libxml2
+                    ]
+                  }:''${PATH:-}"
+                  export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
+                '';
+              }
             );
             meta.description = "Validate ABC v0 design-bundle schemas and fixtures";
           };
@@ -116,10 +146,10 @@
           soranoha = {
             type = "app";
             program = toString (
-              pkgs.writeShellScript "soranoha" ''
-                cd ${./.}
-                exec ${pkgs.clojure}/bin/clojure -M:abc/soranoha "$@"
-              ''
+              mkCljLauncher {
+                name = "soranoha";
+                alias = "abc/soranoha";
+              }
             );
             meta.description = "Soranoha snapshot publication command dispatcher";
           };
@@ -127,9 +157,10 @@
           materialize-import = {
             type = "app";
             program = toString (
-              pkgs.writeShellScript "abc-materialize-import" ''
-                exec ${pkgs.clojure}/bin/clojure -M:abc/materialize-import "$@"
-              ''
+              mkCljLauncher {
+                name = "abc-materialize-import";
+                alias = "abc/materialize-import";
+              }
             );
             meta.description = "Materialize imported ab-validator output as ABC manifests";
           };
@@ -137,9 +168,10 @@
           materialize-publication = {
             type = "app";
             program = toString (
-              pkgs.writeShellScript "abc-materialize-publication" ''
-                exec ${pkgs.clojure}/bin/clojure -M:abc/materialize-publication "$@"
-              ''
+              mkCljLauncher {
+                name = "abc-materialize-publication";
+                alias = "abc/materialize-publication";
+              }
             );
             meta.description = "Materialize parser-IR publication plaintext and TEI artifacts";
           };
@@ -147,9 +179,10 @@
           materialize-publications-batch = {
             type = "app";
             program = toString (
-              pkgs.writeShellScript "abc-materialize-publications-batch" ''
-                exec ${pkgs.clojure}/bin/clojure -M:abc/materialize-publication "$@"
-              ''
+              mkCljLauncher {
+                name = "abc-materialize-publications-batch";
+                alias = "abc/materialize-publication";
+              }
             );
             meta.description = "Materialize parser-IR publication plaintext and TEI artifacts from a batch JSON";
           };
@@ -157,9 +190,10 @@
           materialize-source-snapshot = {
             type = "app";
             program = toString (
-              pkgs.writeShellScript "abc-materialize-source-snapshot" ''
-                exec ${pkgs.clojure}/bin/clojure -M:abc/materialize-source-snapshot "$@"
-              ''
+              mkCljLauncher {
+                name = "abc-materialize-source-snapshot";
+                alias = "abc/materialize-source-snapshot";
+              }
             );
             meta.description = "Materialize a source corpus snapshot and source manifests";
           };
@@ -167,9 +201,10 @@
           manifest-to-rdf = {
             type = "app";
             program = toString (
-              pkgs.writeShellScript "abc-manifest-to-rdf" ''
-                exec ${pkgs.clojure}/bin/clojure -M:abc/manifest-to-rdf "$@"
-              ''
+              mkCljLauncher {
+                name = "abc-manifest-to-rdf";
+                alias = "abc/manifest-to-rdf";
+              }
             );
             meta.description = "Generate deterministic RDF/Turtle view from an ABC manifest";
           };
@@ -177,14 +212,17 @@
           aozora-ingest = {
             type = "app";
             program = toString (
-              pkgs.writeShellScript "abc-aozora-ingest" ''
+              mkCljLauncher {
+                name = "abc-aozora-ingest";
+                alias = "abc/aozora-ingest";
                 # Default the catalog to the pinned canonical Aozora source, so
                 # `--zip`/`--source-url` may be omitted (the tool falls back to
                 # these env vars). An explicit --zip on the command line wins.
-                export ABC_AOZORA_CATALOG_ZIP="${aozorabunko-src}/index_pages/list_person_all_extended_utf8.zip"
-                export ABC_AOZORA_CATALOG_URL="github:aozorabunko/aozorabunko/0e9ea3e586eb0aa34039fabfc85a407d2f98b165"
-                exec ${pkgs.clojure}/bin/clojure -M:abc/aozora-ingest "$@"
-              ''
+                env = ''
+                  export ABC_AOZORA_CATALOG_ZIP="${aozorabunko-src}/index_pages/list_person_all_extended_utf8.zip"
+                  export ABC_AOZORA_CATALOG_URL="github:aozorabunko/aozorabunko/0e9ea3e586eb0aa34039fabfc85a407d2f98b165"
+                '';
+              }
             );
             meta.description = "Build a metadata-record JSON from the canonical (pinned) Aozora catalog, or a --zip slice";
           };
@@ -192,9 +230,10 @@
           validate-corpus = {
             type = "app";
             program = toString (
-              pkgs.writeShellScript "abc-validate-corpus" ''
-                exec ${pkgs.clojure}/bin/clojure -M:abc/validate-corpus "$@"
-              ''
+              mkCljLauncher {
+                name = "abc-validate-corpus";
+                alias = "abc/validate-corpus";
+              }
             );
             meta.description = "Validate an ingested corpus directory through SHACL";
           };
@@ -202,9 +241,10 @@
           person-drift-history = {
             type = "app";
             program = toString (
-              pkgs.writeShellScript "abc-person-drift-history" ''
-                exec ${pkgs.clojure}/bin/clojure -M:abc/person-drift-history "$@"
-              ''
+              mkCljLauncher {
+                name = "abc-person-drift-history";
+                alias = "abc/person-drift-history";
+              }
             );
             meta.description = "Audit generated corpus snapshots for conservative person split/merge candidates";
           };
@@ -212,9 +252,10 @@
           aozora-history-audit = {
             type = "app";
             program = toString (
-              pkgs.writeShellScript "abc-aozora-history-audit" ''
-                exec ${pkgs.clojure}/bin/clojure -M:abc/aozora-history-audit "$@"
-              ''
+              mkCljLauncher {
+                name = "abc-aozora-history-audit";
+                alias = "abc/aozora-history-audit";
+              }
             );
             meta.description = "Extract two Aozora git refs, ingest them, validate current corpus, and report person drift candidates";
           };

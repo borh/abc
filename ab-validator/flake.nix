@@ -1672,6 +1672,7 @@
           ab-index = abIndex;
           ab-check = abCheck;
           aat-triage-python = pythonWithAatDuckdb;
+          ab-source-inventory = sourceInventoryBin;
           aozora-adapter = aozoraAdapter;
           aozora2-adapter = aozora2Adapter;
           aozora2html-adapter = aozora2htmlAdapter;

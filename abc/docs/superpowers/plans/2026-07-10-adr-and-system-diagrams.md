@@ -160,9 +160,10 @@ Two ADR-header hygiene rules become binding lints:
 - `test/abc/tools/diagram/workflow_graph_test.clj` renders
   `examples/workflow/passed.workflow-run.json` deterministically and builds
   producer→consumer edges.
-- `test/abc/tools/diagram/core_test.clj` proves each committed diagram's file
-  equals `core/render` of its registry entry (the drift gate) and that `run!`
-  returns non-zero when a lint problem exists.
+- `test/abc/tools/diagram/registry_test.clj` proves each committed diagram's
+  file equals `core/render` of its registry entry (the kaocha-level drift gate);
+  `test/abc/tools/diagram/core_test.clj` proves `run!` reports lint problems via
+  `:ok? false` (and does not exit).
 
 ## Rollback
 
@@ -841,7 +842,7 @@ git commit -m "feat(diagram): Tier-2 schema-checked system-architecture builder"
 **Files:**
 - Create: `src/abc/tools/diagram/workflow_graph.clj`, `src/abc/tools/diagram/registry.clj`
 - Create (generated): `docs/adr/adr-graph.mmd`, `docs/architecture.mmd`
-- Test: `test/abc/tools/diagram/workflow_graph_test.clj`
+- Test: `test/abc/tools/diagram/workflow_graph_test.clj`, `test/abc/tools/diagram/registry_test.clj`
 - Modify: `deps.edn` (aliases)
 
 **Interfaces:**
@@ -949,6 +950,20 @@ git commit -m "feat(diagram): Tier-2 schema-checked system-architecture builder"
     (System/exit (if ok? 0 1))))
 ```
 
+- [ ] **Step 4b: Write `registry_test.clj`** — the kaocha-level drift gate that each committed diagram's file equals `core/render` of its entry (run this AFTER Step 6 generates the files):
+
+```clojure
+(ns abc.tools.diagram.registry-test
+  (:require [clojure.test :refer [deftest is]]
+            [abc.tools.diagram.core :as core]
+            [abc.tools.diagram.registry :as registry]))
+
+(deftest committed-diagrams-are-current
+  (doseq [d registry/committed-diagrams]
+    (is (= (slurp (:out-path d)) (core/render d))
+        (str (:id d) " committed file is stale vs core/render"))))
+```
+
 - [ ] **Step 5: Add aliases to `deps.edn`** (in `:aliases`, alongside the `:abc/*` entries):
 
 ```clojure
@@ -975,7 +990,7 @@ Expected: check passes; tests pass; workflow renderer prints a `flowchart TD` wi
 
 ```bash
 git add src/abc/tools/diagram/workflow_graph.clj src/abc/tools/diagram/registry.clj \
-        test/abc/tools/diagram/workflow_graph_test.clj deps.edn \
+        test/abc/tools/diagram/workflow_graph_test.clj test/abc/tools/diagram/registry_test.clj deps.edn \
         docs/adr/adr-graph.mmd docs/architecture.mmd
 git commit -m "feat(diagram): runtime-provenance generator, registry, and committed diagrams"
 ```

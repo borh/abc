@@ -64,10 +64,79 @@ run_adapter() {
     '{name: $name, seconds: $seconds, reports: $reports, failures: $failures}'
 }
 
+# Reproducible run descriptor for one adapter's AAT dump. Mirrors run-aat-full.sh's
+# metadata.json (schema_version 2, SOURCE_DATE_EPOCH-honouring timestamp, repo_head,
+# repo_dirty boolean, corpus, adapter_id, adapter_version) so the aozora2/aozora-rs
+# dumps this benchmark produces are self-describing like the other adapters'. It also
+# folds in `content_hash` (via reports/lib/aat_hash.hash_aat_dir over the dump) so the
+# descriptor self-certifies its own bytes. Placed at $out_dir/aats/<name>/metadata.json:
+# its parent dir contains the <name>-adapter AAT tree, matching the run-set's coherence
+# rule that run_descriptor sits at the dump root above aat_dir. Additive only — this does
+# not touch the comparison logic below.
+write_run_descriptor() {
+  local name="$1"
+  local adapter="$2"
+  python3 - "$repo_root" "$corpus" "$out_dir" "$name" "$adapter" "$jobs" "$timeout" <<'PY'
+import json
+import os
+import pathlib
+import subprocess
+import sys
+from datetime import datetime, timezone
+
+repo_root, corpus, out_dir, name, adapter, jobs, timeout = sys.argv[1:]
+repo = pathlib.Path(repo_root)
+out = pathlib.Path(out_dir)
+sys.path.insert(0, str(repo / "reports" / "lib"))
+from aat_hash import hash_aat_dir  # noqa: E402
+
+
+def run(args):
+    return subprocess.check_output(args, cwd=repo, text=True).strip()
+
+
+_sde = os.environ.get("SOURCE_DATE_EPOCH")
+generated_at = (
+    datetime.fromtimestamp(int(_sde), timezone.utc).isoformat()
+    if _sde
+    else datetime.now(timezone.utc).isoformat()
+)
+
+aat_dir = out / "aats" / name / f"{name}-adapter"
+reports_dir = out / "reports" / name / f"{name}-adapter"
+
+metadata = {
+    "schema_version": 2,
+    "generated_at_utc": generated_at,
+    "repo_head": run(["git", "rev-parse", "HEAD"]),
+    "repo_dirty": bool(run(["git", "status", "--short"])),
+    "corpus": str(pathlib.Path(corpus).resolve()),
+    "report_id": f"parser-comparison-{name}",
+    "jobs": int(jobs),
+    "timeout": timeout,
+    "adapter_id": name,
+    "adapter": adapter,
+    "adapter_version": run([adapter, "--version"]),
+    "index_path": str(out / "index.json"),
+    "reports_dir": str(reports_dir),
+    "aat_dir": str(aat_dir),
+    "content_hash": hash_aat_dir(aat_dir),
+}
+(out / "aats" / name / "metadata.json").write_text(
+    json.dumps(metadata, indent=2, ensure_ascii=False) + "\n"
+)
+PY
+}
+
 run_adapter aozora2 "$repo_root/adapters/aozora2/target/release/aozora2-adapter" \
   > "$out_dir/aozora2-summary.json"
 run_adapter aozora-rs "$repo_root/adapters/aozora-rs/target/release/aozora-rs-adapter" \
   > "$out_dir/aozora-rs-summary.json"
+
+# Self-describing descriptors next to each AAT dump (aozora2 + aozora-rs), matching the
+# metadata.json the other adapters get from run-aat-full.sh. See write_run_descriptor.
+write_run_descriptor aozora2 "$repo_root/adapters/aozora2/target/release/aozora2-adapter"
+write_run_descriptor aozora-rs "$repo_root/adapters/aozora-rs/target/release/aozora-rs-adapter"
 
 target/release/ab-compare \
   --reports-a "$out_dir/reports/aozora2/aozora2-adapter" \

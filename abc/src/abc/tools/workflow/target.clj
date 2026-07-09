@@ -83,4 +83,4 @@
                        {:type :missing-dependency :node k :dep d}))
         cyc     (find-cycle graph)
         errors  (cond-> missing cyc (conj {:type :cycle :cycle cyc}))]
-    (seq errors)))
+    (when (seq errors) errors)))

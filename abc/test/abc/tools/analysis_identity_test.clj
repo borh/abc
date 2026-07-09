@@ -135,3 +135,90 @@
                    (get identity-object "input_views")))))
     (testing "the D6 two-key shape passes through untouched"
       (is (= annotation-view (first (get identity-object "input_views")))))))
+
+;; --- assert-input-view-coverage! (recipe supported_input_view_kinds ↔
+;; request-set input_views agreement; ADR 0028 D6 follow-through) ---
+
+(def coverage-plaintext-view
+  {"input_view_kind" "parser-ir-plaintext-body-v1"
+   "policy_hash" (files/example-hash "41")
+   "input_normalization_policy_hash" (files/example-hash "42")})
+
+(def coverage-annotation-view
+  {"input_view_kind" "parser-ir-body-annotations-v1"
+   "policy_hash" (files/example-hash "43")})
+
+(def coverage-plaintext-recipe
+  {"recipe_id" "plaintext-recipe-v1"
+   "supported_input_view_kinds" ["parser-ir-plaintext-body-v1"]})
+
+(def coverage-token-recipe
+  {"recipe_id" "token-recipe-v1"
+   "supported_input_view_kinds" ["token-stream-v1"]})
+
+(def coverage-annotation-recipe
+  {"recipe_id" "annotation-recipe-v1"
+   "supported_input_view_kinds" ["parser-ir-body-annotations-v1"]})
+
+(deftest input-view-coverage-passes-for-plaintext-recipe-test
+  (is (nil? (analysis-identity/assert-input-view-coverage!
+             {:input-views [coverage-plaintext-view]
+              :recipes [coverage-plaintext-recipe]
+              :tokenizer-profile-ids []}))))
+
+(deftest input-view-coverage-rejects-token-recipe-without-tokenizer-test
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"Analysis recipe cannot consume any provided input view"
+       (analysis-identity/assert-input-view-coverage!
+        {:input-views [coverage-plaintext-view]
+         :recipes [coverage-plaintext-recipe coverage-token-recipe]
+         :tokenizer-profile-ids []}))))
+
+(deftest input-view-coverage-accepts-token-recipe-with-tokenizer-test
+  ;; tokenizer profiles provide the derived token-stream-v1 view AND consume
+  ;; the plaintext view, so both directions pass.
+  (is (nil? (analysis-identity/assert-input-view-coverage!
+             {:input-views [coverage-plaintext-view]
+              :recipes [coverage-token-recipe]
+              :tokenizer-profile-ids ["fixture-tokenizer-ja-v1"]}))))
+
+(deftest input-view-coverage-rejects-unconsumed-plaintext-view-test
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"Request-set input view has no consumer"
+       (analysis-identity/assert-input-view-coverage!
+        {:input-views [coverage-plaintext-view]
+         :recipes []
+         :tokenizer-profile-ids []}))))
+
+(deftest input-view-coverage-accepts-tokenizer-only-request-set-test
+  ;; mirrors the committed tokenizer-profile resolver test: no recipes, one
+  ;; profile — the tokenizer is the plaintext view's consumer.
+  (is (nil? (analysis-identity/assert-input-view-coverage!
+             {:input-views [coverage-plaintext-view]
+              :recipes []
+              :tokenizer-profile-ids ["fixture-tokenizer-ja-v1"]}))))
+
+(deftest input-view-coverage-accepts-unconsumed-annotation-view-test
+  ;; demo-annotation-ja shape: the annotation view is consumed by the
+  ;; annotation materializer (ADR 0028), never dead even with no
+  ;; annotation-consuming recipe.
+  (is (nil? (analysis-identity/assert-input-view-coverage!
+             {:input-views [coverage-plaintext-view coverage-annotation-view]
+              :recipes [coverage-plaintext-recipe]
+              :tokenizer-profile-ids []}))))
+
+(deftest input-view-coverage-accepts-annotation-consuming-recipe-test
+  ;; forward case: once annotation-consuming recipes exist, an
+  ;; annotation-only request set is runnable.
+  (is (nil? (analysis-identity/assert-input-view-coverage!
+             {:input-views [coverage-annotation-view]
+              :recipes [coverage-annotation-recipe]
+              :tokenizer-profile-ids []}))))
+
+(deftest input-view-coverage-empty-request-set-passes-test
+  (is (nil? (analysis-identity/assert-input-view-coverage!
+             {:input-views []
+              :recipes []
+              :tokenizer-profile-ids []}))))

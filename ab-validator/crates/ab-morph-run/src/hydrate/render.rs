@@ -173,7 +173,7 @@ fn render_body(
     match &example.snippet {
         Some(snippet) => writeln!(out, "> {}", snippet.marked())?,
         None => {
-            let error = layer_error(&example.errors, &["snippet:"]);
+            let error = layer_error(&example.errors, &["projection-mismatch"]);
             writeln!(out, "_snippet unavailable: {error}_")?;
         }
     }

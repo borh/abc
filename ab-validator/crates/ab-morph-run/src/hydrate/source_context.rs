@@ -66,7 +66,10 @@ impl SourceContext {
         let snippet = match snippet_window(&self.text, char_start, char_end, context_chars) {
             Ok(snippet) => Some(snippet),
             Err(err) => {
-                errors.push(format!("snippet: {err}"));
+                // An example span the projected text cannot contain is a
+                // projection disagreement (closed vocabulary) — same code
+                // as the source-level char-count gate.
+                errors.push(format!("projection-mismatch: {err}"));
                 None
             }
         };
@@ -677,6 +680,16 @@ pub(crate) mod tests {
         assert!(layers.aozora_markup.is_none());
         assert!(!layers.errors.is_empty());
         assert!(!layers.aat_nodes.is_empty());
+
+        // Every error uses the closed vocabulary — the snippet failure is a
+        // projection disagreement, not its own ad-hoc code.
+        for error in &layers.errors {
+            let code = error.split(':').next().unwrap();
+            assert!(
+                ["projection-mismatch", "markup-unreconstructable"].contains(&code),
+                "unexpected error code in {error:?}"
+            );
+        }
     }
 
     #[test]

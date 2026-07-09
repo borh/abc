@@ -110,7 +110,7 @@ Per-example degradation, never build failure. Error vocabulary:
 | code | meaning | effect |
 |---|---|---|
 | `aat-missing` | `sources.aat_path` unreadable | example has metadata layer only |
-| `projection-mismatch` | re-projected char count ≠ `sources.source_chars` | snippet/markup/AAT layers omitted for that source |
+| `projection-mismatch` | re-projected char count ≠ `sources.source_chars`, or an example span outside the projected text | snippet/markup/AAT layers omitted for that source |
 | `markup-unreconstructable` | a contributing node has no renderable content (e.g. legacy raw node with empty `source`) | markup layer omitted |
 | `work-record-missing` | no ABC `works/<work_id>.json` | metadata from `aozora_works` only |
 | `person-record-missing` | no ABC `persons/<person_id>.json` | author shown as person id |

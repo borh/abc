@@ -29,6 +29,9 @@ class GeneratorIdentity(unittest.TestCase):
         self.ab_check.write_bytes(b"CHECKv1")
         self.fp = self.d / "feature-patterns.toml"
         self.fp.write_text("[p]\n", encoding="utf-8")
+        self.renderer = self.d / "renderer"
+        (self.renderer / "lib").mkdir(parents=True)
+        (self.renderer / "lib" / "engine.rb").write_text("render v1", encoding="utf-8")
         self.base = dict(
             corpus_dir=self.corpus, adapter_version="1.2.3",
             adapter_binary=self.adapter,
@@ -89,12 +92,24 @@ class GeneratorIdentity(unittest.TestCase):
         self.assertEqual(
             set(obj),
             {"corpus_content_hash", "adapter_version", "adapter_binary_hash",
-             "ab_index_binary_hash", "ab_check_binary_hash",
+             "ab_index_binary_hash", "ab_check_binary_hash", "renderer_content_hash",
              "feature_patterns_hash", "timeout", "features", "work_ids_hash"},
         )
         self.assertIsNone(obj["timeout"])
         self.assertIsNone(obj["features"])
         self.assertIsNone(obj["work_ids_hash"])
+
+    def test_renderer_absent_by_default_is_none(self) -> None:
+        obj = gi.build_identity_object(**self.base)
+        self.assertIsNone(obj["renderer_content_hash"])
+
+    def test_renderer_presence_changes_hash(self) -> None:
+        self.assertNotEqual(self.h(), self.h(renderer_dir=self.renderer))
+
+    def test_renderer_content_change_changes_hash(self) -> None:
+        before = self.h(renderer_dir=self.renderer)
+        (self.renderer / "lib" / "engine.rb").write_text("render v2", encoding="utf-8")
+        self.assertNotEqual(before, self.h(renderer_dir=self.renderer))
 
     def test_provenance_fields(self) -> None:
         aat = self.d / "aat"

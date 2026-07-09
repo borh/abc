@@ -802,19 +802,35 @@ morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_di
 # historical UniDic. `works_parquet` is an aozora_works.parquet sidecar produced by
 # `import-aozora-metadata` from a prior baseline run (it carries orthographic_style
 # per source_id). The eligibility filter runs OUTSIDE normalization.
-morph-warehouse-run-historical works_parquet dict="unidic-kindai-bungo-202512" profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
+morph-warehouse-run-historical works_parquet dict="unidic-kindai-bungo-202512" profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0" force="":
 	@jobs="{{jobs}}"; \
 	run_id="{{run_id}}"; \
 	if [ -z "$run_id" ]; then run_id="historical-{{dict}}-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
-	AB_VIBRATO_DICT_DIR="$(nix build .#vibrato-dictionaries --no-link --print-out-paths)/share/vibrato" \
-	cargo run --release -p ab-morph-run -- analyze-aat \
+	force_flag=(); if [ -n "{{force}}" ]; then force_flag=(--force); fi; \
+	vibrato_dir="$(nix build .#vibrato-dictionaries --no-link --print-out-paths)/share/vibrato"; \
+	engine_bin="$(nix build .#ab-morph-run --no-link --print-out-paths)/bin/ab-morph-run"; \
+	AB_VIBRATO_DICT_DIR="$vibrato_dir" \
+	python3 reports/morph-warehouse/warehouse_runner.py \
 		--aat-dir "{{aat_dir}}" \
+		--engine-binary "$engine_bin" \
 		--analyzer "vibrato:{{dict}}" \
 		--warehouse-dir "{{morph_warehouse_dir}}" \
 		--run-id "$run_id" \
 		--warehouse-profile "{{profile}}" \
+		--dict "vibrato=$vibrato_dir" \
+		--schema-file crates/ab-morph-run/sql/schema.sql \
+		--schema-file crates/ab-warehouse/sql/schema.sql \
 		--works-parquet "{{works_parquet}}" \
-		--jobs "$jobs"
+		"${force_flag[@]}" \
+		-- \
+		"$engine_bin" analyze-aat \
+			--aat-dir "{{aat_dir}}" \
+			--analyzer "vibrato:{{dict}}" \
+			--warehouse-dir "{{morph_warehouse_dir}}" \
+			--run-id "$run_id" \
+			--warehouse-profile "{{profile}}" \
+			--works-parquet "{{works_parquet}}" \
+			--jobs "$jobs"
 
 # Lane B (M2, historical→modern surface): modernize old-kana input, then feed the
 # SAME modernized text to every analyzer (comparability). Runs the standard
@@ -822,7 +838,7 @@ morph-warehouse-run-historical works_parquet dict="unidic-kindai-bungo-202512" p
 # kindai-bungo oracle segments/reads the historical text and the input is rewritten
 # to 現代仮名遣い before tokenization. `works_parquet` restricts to 新字旧仮名/旧字旧仮名
 # (the eligibility slice, OUTSIDE normalization). ~94.8% ground-truth accuracy.
-morph-warehouse-run-lane-b works_parquet analyzers="vibrato sudachi-a sudachi-c" profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
+morph-warehouse-run-lane-b works_parquet analyzers="vibrato sudachi-a sudachi-c" profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0" force="":
 	@jobs="{{jobs}}"; \
 	run_id="{{run_id}}"; \
 	if [ -z "$run_id" ]; then run_id="lane-b-m2-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
@@ -830,17 +846,36 @@ morph-warehouse-run-lane-b works_parquet analyzers="vibrato sudachi-a sudachi-c"
 	for analyzer in {{analyzers}}; do \
 	  args+=(--analyzer "$analyzer"); \
 	done; \
-	AB_VIBRATO_DICT_DIR="$(nix build .#vibrato-dictionaries --no-link --print-out-paths)/share/vibrato" \
-	AB_SUDACHI_DICT="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic" \
-	cargo run --release -p ab-morph-run -- analyze-aat \
+	force_flag=(); if [ -n "{{force}}" ]; then force_flag=(--force); fi; \
+	vibrato_dir="$(nix build .#vibrato-dictionaries --no-link --print-out-paths)/share/vibrato"; \
+	sudachi_dic="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic"; \
+	engine_bin="$(nix build .#ab-morph-run --no-link --print-out-paths)/bin/ab-morph-run"; \
+	AB_VIBRATO_DICT_DIR="$vibrato_dir" \
+	AB_SUDACHI_DICT="$sudachi_dic" \
+	python3 reports/morph-warehouse/warehouse_runner.py \
 		--aat-dir "{{aat_dir}}" \
+		--engine-binary "$engine_bin" \
 		"${args[@]}" \
 		--warehouse-dir "{{morph_warehouse_dir}}" \
 		--run-id "$run_id" \
 		--warehouse-profile "{{profile}}" \
+		--dict "vibrato=$vibrato_dir" \
+		--dict "sudachi=$sudachi_dic" \
+		--schema-file crates/ab-morph-run/sql/schema.sql \
+		--schema-file crates/ab-warehouse/sql/schema.sql \
 		--ortho-detect historical \
 		--works-parquet "{{works_parquet}}" \
-		--jobs "$jobs"
+		"${force_flag[@]}" \
+		-- \
+		"$engine_bin" analyze-aat \
+			--aat-dir "{{aat_dir}}" \
+			"${args[@]}" \
+			--warehouse-dir "{{morph_warehouse_dir}}" \
+			--run-id "$run_id" \
+			--warehouse-profile "{{profile}}" \
+			--ortho-detect historical \
+			--works-parquet "{{works_parquet}}" \
+			--jobs "$jobs"
 
 morph-warehouse-run-full aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
 	@just morph-warehouse-run full "{{aat_dir}}" "{{run_id}}" "{{jobs}}"

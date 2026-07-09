@@ -1070,6 +1070,8 @@
           ps.pytest
         ]);
 
+        pythonWithAatDuckdb = pkgs.python3.withPackages (ps: [ ps.duckdb ]);
+
         stageAbcSchemas = ''
           abc_root="$work_dir/abc"
           mkdir -p "$abc_root/schemas"
@@ -1669,6 +1671,7 @@
           ab-morph-run = abMorphRun;
           ab-index = abIndex;
           ab-check = abCheck;
+          aat-triage-python = pythonWithAatDuckdb;
           aozora-adapter = aozoraAdapter;
           aozora2-adapter = aozora2Adapter;
           aozora2html-adapter = aozora2htmlAdapter;

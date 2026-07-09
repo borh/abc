@@ -561,29 +561,32 @@ upstream-xhtml-full JOBS="0" MAX_CARDS="0" TRIAGE_LIMIT="100":
 	@jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
 	"{{repo_root}}/reports/aat-fidelity/run-upstream-xhtml-full.sh" --out-dir "{{ab_db_root}}/aat-fidelity/upstream-xhtml-full" --db "{{ab_db_root}}/aat-fidelity/cross-adapter/fidelity.duckdb" --report-id upstream-xhtml-full --jobs "$jobs" --max-cards "{{MAX_CARDS}}" --triage-limit "{{TRIAGE_LIMIT}}"
 
-aozora2html-aat-full DIR="" JOBS="0" TIMEOUT="180s" REPORT_ID="" WORK_IDS="" FEATURES="":
+aozora2html-aat-full DIR="" JOBS="0" TIMEOUT="180s" REPORT_ID="" WORK_IDS="" FEATURES="" FORCE="":
 	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-corpus/aozora2html-full-$(date -u +%Y%m%dT%H%M%SZ)"; fi; \
 	jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
 	report_id="{{REPORT_ID}}"; if [ -z "$report_id" ]; then report_id="aozora2html-full-$(date -u +%F)"; fi; \
-	args=(--out-dir "$run_dir" --jobs "$jobs" --timeout "{{TIMEOUT}}" --report-id "$report_id" --force); \
+	args=(--out-dir "$run_dir" --jobs "$jobs" --timeout "{{TIMEOUT}}" --report-id "$report_id"); \
+	if [ -n "{{FORCE}}" ]; then args+=(--force); fi; \
 	if [ -n "{{WORK_IDS}}" ]; then args+=(--work-ids "{{WORK_IDS}}"); fi; \
 	if [ -n "{{FEATURES}}" ]; then args+=(--features "{{FEATURES}}"); fi; \
 	"{{repo_root}}/reports/aat-fidelity/run-aozora2html-aat-full.sh" "${args[@]}"
 
-aozora-aat-full DIR="" JOBS="0" TIMEOUT="300s" REPORT_ID="" WORK_IDS="" FEATURES="":
+aozora-aat-full DIR="" JOBS="0" TIMEOUT="300s" REPORT_ID="" WORK_IDS="" FEATURES="" FORCE="":
 	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-corpus/aozora-full-$(date -u +%Y%m%dT%H%M%SZ)"; fi; \
 	jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
 	report_id="{{REPORT_ID}}"; if [ -z "$report_id" ]; then report_id="aozora-full-$(date -u +%F)"; fi; \
-	args=(--out-dir "$run_dir" --jobs "$jobs" --timeout "{{TIMEOUT}}" --report-id "$report_id" --force); \
+	args=(--out-dir "$run_dir" --jobs "$jobs" --timeout "{{TIMEOUT}}" --report-id "$report_id"); \
+	if [ -n "{{FORCE}}" ]; then args+=(--force); fi; \
 	if [ -n "{{WORK_IDS}}" ]; then args+=(--work-ids "{{WORK_IDS}}"); fi; \
 	if [ -n "{{FEATURES}}" ]; then args+=(--features "{{FEATURES}}"); fi; \
 	"{{repo_root}}/reports/aat-fidelity/run-aozora-aat-full.sh" "${args[@]}"
 
-aozora-epub3-aat-full DIR="" JOBS="0" TIMEOUT="300s" REPORT_ID="" WORK_IDS="" FEATURES="":
+aozora-epub3-aat-full DIR="" JOBS="0" TIMEOUT="300s" REPORT_ID="" WORK_IDS="" FEATURES="" FORCE="":
 	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-corpus/aozora-epub3-full-$(date -u +%Y%m%dT%H%M%SZ)"; fi; \
 	jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
 	report_id="{{REPORT_ID}}"; if [ -z "$report_id" ]; then report_id="aozora-epub3-full-$(date -u +%F)"; fi; \
-	args=(--out-dir "$run_dir" --jobs "$jobs" --timeout "{{TIMEOUT}}" --report-id "$report_id" --force); \
+	args=(--out-dir "$run_dir" --jobs "$jobs" --timeout "{{TIMEOUT}}" --report-id "$report_id"); \
+	if [ -n "{{FORCE}}" ]; then args+=(--force); fi; \
 	if [ -n "{{WORK_IDS}}" ]; then args+=(--work-ids "{{WORK_IDS}}"); fi; \
 	if [ -n "{{FEATURES}}" ]; then args+=(--features "{{FEATURES}}"); fi; \
 	"{{repo_root}}/reports/aat-fidelity/run-aozora-epub3-aat-full.sh" "${args[@]}"

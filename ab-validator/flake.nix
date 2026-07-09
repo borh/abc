@@ -1392,6 +1392,56 @@
               '';
             };
 
+        # ab-index: builds the corpus feature index (index.json) consumed by
+        # ab-check. Packaged through nix so run-aat-full.sh can pin it by content
+        # (store path) in the AAT dump's input identity — running it via cargo from
+        # live source would leave the indexer's version out of the dump identity.
+        abIndex =
+          if hasCargoManifest && hasCargoLock then
+            rustPlatform.buildRustPackage {
+              pname = "ab-index";
+              version = "0.1.0";
+              src = source;
+              cargoDeps = abCargoDeps;
+              nativeBuildInputs = [ pkgs.pkg-config ];
+              AB_ABC_ROOT = "${abcSchemaRootForNix}";
+              cargoBuildFlags = [ "--package" "ab-index" ];
+              doCheck = false;
+            }
+          else
+            pkgs.writeShellApplication {
+              name = "ab-index";
+              text = ''
+                echo 'Rust workspace not scaffolded' >&2
+                exit 1
+              '';
+            };
+
+        # ab-check: the fidelity engine that produces the aat/ tree (runs the
+        # adapter per work, emits AAT JSON). Packaged through nix so its version is
+        # pinnable by content in the dump identity — it is the primary output
+        # producer, so leaving it unpinned is the worst engine-hole.
+        abCheck =
+          if hasCargoManifest && hasCargoLock then
+            rustPlatform.buildRustPackage {
+              pname = "ab-check";
+              version = "0.1.0";
+              src = source;
+              cargoDeps = abCargoDeps;
+              nativeBuildInputs = [ pkgs.pkg-config ];
+              AB_ABC_ROOT = "${abcSchemaRootForNix}";
+              cargoBuildFlags = [ "--package" "ab-check" ];
+              doCheck = false;
+            }
+          else
+            pkgs.writeShellApplication {
+              name = "ab-check";
+              text = ''
+                echo 'Rust workspace not scaffolded' >&2
+                exit 1
+              '';
+            };
+
         abAatToParserIrCheck = mkSmokeCheck {
           name = "ab-aat-to-parser-ir-smoke-check";
           testScript = "tests/aat-to-parser-ir-cli-smoke.sh";
@@ -1498,6 +1548,8 @@
           ab-validator = abValidator;
           ab-aat-to-parser-ir = abAatToParserIr;
           ab-morph-run = abMorphRun;
+          ab-index = abIndex;
+          ab-check = abCheck;
           aozora-adapter = aozoraAdapter;
           aozora2-adapter = aozora2Adapter;
           aozora2html-adapter = aozora2htmlAdapter;

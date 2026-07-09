@@ -3,7 +3,8 @@
             [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [abc.tools.parser-ir-plaintext :as plaintext]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.string :as string]))
 
 (def activity-id "https://w3id.org/abc/activity/materialize-annotations")
 (def tool-agent "abc.tools.materialize-annotations")
@@ -104,3 +105,63 @@
                                  :generated-at generated-at}))
     {:annotations annotations-file
      :manifest manifest-file}))
+
+(def annotation-input-view-kind "parser-ir-body-annotations-v1")
+
+(defn- registry-policies [registry-dir]
+  (->> (.listFiles (io/file registry-dir))
+       (filter #(and (.isFile %) (string/ends-with? (.getName %) ".json")))
+       (sort-by #(.getName %))
+       (mapv (fn [f] {:path (str f)
+                      :policy (files/read-json f)}))))
+
+(defn- resolve-policy-by-hash [registry-dir policy-hash]
+  (let [matches (filterv #(= policy-hash
+                             (analysis-identity/annotation-policy-hash
+                              (:policy %)))
+                         (registry-policies registry-dir))]
+    (case (count matches)
+      0 (throw (ex-info "Unknown annotation policy hash"
+                        {:policy_hash policy-hash
+                         :registry_dir registry-dir}))
+      1 (:policy (first matches))
+      (throw (ex-info "Duplicate annotation policy hash in registry"
+                      {:policy_hash policy-hash
+                       :paths (mapv :path matches)})))))
+
+(defn- aligned-plaintext-policy-hash [input-views policy]
+  (let [aligns-to (get policy "aligns_to")
+        aligned (filterv #(= aligns-to (get % "input_view_kind")) input-views)]
+    (when-not (= 1 (count aligned))
+      (throw (ex-info "Annotation view requires exactly one aligned input view"
+                      {:aligns_to aligns-to
+                       :aligned_view_count (count aligned)})))
+    (get (first aligned) "policy_hash")))
+
+(defn resolve-annotation-materialization
+  "Resolves a request set's annotation input view to the concrete
+  materialization inputs, ONCE per run (spec A1-A3). Returns nil when the
+  request set declares no annotation view; otherwise
+  {:view <input-view> :policy <registry value>
+   :input-plaintext-policy-hash <the aligned view's policy_hash>}.
+  Fails closed on: unknown/duplicate policy hash in the registry, more than
+  one annotation view (v1 layout is single-view), and anything but exactly
+  one input view of the policy's aligns_to kind."
+  [{:keys [request-set registry-dir]}]
+  (let [input-views (get-in request-set
+                            ["request_set_identity_object" "input_views"])
+        annotation-views (filterv #(= annotation-input-view-kind
+                                      (get % "input_view_kind"))
+                                  input-views)]
+    (when (seq annotation-views)
+      (when (> (count annotation-views) 1)
+        (throw (ex-info "Multiple annotation input views are not supported"
+                        {:label (get request-set "label")
+                         :annotation_view_count (count annotation-views)})))
+      (let [view (first annotation-views)
+            policy (resolve-policy-by-hash registry-dir
+                                           (get view "policy_hash"))]
+        {:view view
+         :policy policy
+         :input-plaintext-policy-hash (aligned-plaintext-policy-hash
+                                       input-views policy)}))))

@@ -43,6 +43,8 @@ class RunnerCLI(unittest.TestCase):
         (self.aat / "000001_1-a.json").write_text('{"b":[1]}', encoding="utf-8")
         self.schema = self.dir / "schema.sql"
         self.schema.write_text("CREATE TABLE t(x);", encoding="utf-8")
+        self.engine = self.dir / "ab-morph-run"
+        self.engine.write_bytes(b"ENGINEv1")
         self.wh = self.dir / "warehouse"
         self.run_id = "cli-run"
         self.marker = self.dir / "compute-calls.log"
@@ -51,6 +53,7 @@ class RunnerCLI(unittest.TestCase):
     def _argv(self, force: bool = False) -> list[str]:
         argv = [
             "--aat-dir", str(self.aat),
+            "--engine-binary", str(self.engine),
             "--warehouse-dir", str(self.wh),
             "--run-id", self.run_id,
             "--warehouse-profile", "full",
@@ -75,7 +78,7 @@ class RunnerCLI(unittest.TestCase):
 
     def _expected_hash(self) -> str:
         return wi.warehouse_input_set_hash(
-            aat_dir=self.aat, dictionaries={"sudachi": "/nix/store/aaa"},
+            aat_dir=self.aat, engine_binary=self.engine, dictionaries={"sudachi": "/nix/store/aaa"},
             analyzers=["vibrato", "sudachi-a"], warehouse_profile="full",
             schema_files=[self.schema],
         )
@@ -103,20 +106,23 @@ class RunnerCLI(unittest.TestCase):
     def test_missing_command_after_dashdash_errors(self) -> None:
         with self.assertRaises(SystemExit):
             wr.main([
-                "--aat-dir", str(self.aat), "--warehouse-dir", str(self.wh),
+                "--aat-dir", str(self.aat), "--engine-binary", str(self.engine),
+                "--warehouse-dir", str(self.wh),
                 "--run-id", self.run_id, "--warehouse-profile", "full",
             ])
 
     def test_empty_command_after_dashdash_errors(self) -> None:
         with self.assertRaises(SystemExit):
             wr.main([
-                "--aat-dir", str(self.aat), "--warehouse-dir", str(self.wh),
+                "--aat-dir", str(self.aat), "--engine-binary", str(self.engine),
+                "--warehouse-dir", str(self.wh),
                 "--run-id", self.run_id, "--warehouse-profile", "full", "--",
             ])
 
     def test_compute_failure_propagates_exit_code(self) -> None:
         argv = [
-            "--aat-dir", str(self.aat), "--warehouse-dir", str(self.wh),
+            "--aat-dir", str(self.aat), "--engine-binary", str(self.engine),
+            "--warehouse-dir", str(self.wh),
             "--run-id", self.run_id, "--warehouse-profile", "full",
             "--schema-file", str(self.schema),
             "--", sys.executable, "-c", "import sys; sys.exit(3)",
@@ -130,7 +136,8 @@ class RunnerCLI(unittest.TestCase):
     def test_bad_dict_pair_errors(self) -> None:
         with self.assertRaises(SystemExit):
             wr.main([
-                "--aat-dir", str(self.aat), "--warehouse-dir", str(self.wh),
+                "--aat-dir", str(self.aat), "--engine-binary", str(self.engine),
+                "--warehouse-dir", str(self.wh),
                 "--run-id", self.run_id, "--warehouse-profile", "full",
                 "--dict", "no-equals-sign",
                 "--", "true",

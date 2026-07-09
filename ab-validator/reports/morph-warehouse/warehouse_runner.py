@@ -113,6 +113,8 @@ def main(argv: list[str] | None = None) -> int:
 
     ap = argparse.ArgumentParser(description="Gate a morph-warehouse run on input-set identity.")
     ap.add_argument("--aat-dir", required=True)
+    ap.add_argument("--engine-binary", required=True,
+                    help="the built ab-morph-run binary (hashed into identity)")
     ap.add_argument("--warehouse-dir", required=True)
     ap.add_argument("--run-id", required=True)
     ap.add_argument("--warehouse-profile", required=True)
@@ -130,6 +132,7 @@ def main(argv: list[str] | None = None) -> int:
 
     identity_object = warehouse_identity.build_identity_object(
         aat_dir=args.aat_dir,
+        engine_binary=args.engine_binary,
         dictionaries=_parse_dicts(args.dicts),
         analyzers=args.analyzers,
         warehouse_profile=args.warehouse_profile,

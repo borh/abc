@@ -23,8 +23,11 @@ class WarehouseIdentity(unittest.TestCase):
         (self.aat / "000001_1-aaaa.json").write_text('{"blocks":[1]}', encoding="utf-8")
         self.schema = self.dir / "schema.sql"
         self.schema.write_text("CREATE TABLE runs(id TEXT);", encoding="utf-8")
+        self.engine = self.dir / "ab-morph-run"
+        self.engine.write_bytes(b"ENGINEv1")
         self.base = dict(
             aat_dir=self.aat,
+            engine_binary=self.engine,
             dictionaries={"sudachi": "/nix/store/aaa-sudachi", "vibrato": "/nix/store/bbb-vibrato"},
             analyzers=["vibrato", "sudachi-a", "sudachi-c"],
             warehouse_profile="full",
@@ -61,6 +64,11 @@ class WarehouseIdentity(unittest.TestCase):
     def test_profile_change_changes_hash(self) -> None:
         self.assertNotEqual(self.h(), self.h(warehouse_profile="triage"))
 
+    def test_engine_binary_change_changes_hash(self) -> None:
+        before = self.h()
+        self.engine.write_bytes(b"ENGINEv2")  # engine rebuilt with a logic change
+        self.assertNotEqual(before, self.h())
+
     def test_ortho_detect_absent_vs_present(self) -> None:
         self.assertNotEqual(self.h(), self.h(ortho_detect="historical"))
 
@@ -81,8 +89,8 @@ class WarehouseIdentity(unittest.TestCase):
         obj = wi.build_identity_object(**self.base)
         self.assertEqual(
             set(obj),
-            {"aat_content_hash", "dictionaries", "analyzers", "warehouse_profile",
-             "ortho_detect", "works_parquet_hash", "schema_version"},
+            {"aat_content_hash", "engine_binary_hash", "dictionaries", "analyzers",
+             "warehouse_profile", "ortho_detect", "works_parquet_hash", "schema_version"},
         )
         self.assertIsNone(obj["ortho_detect"])
         self.assertIsNone(obj["works_parquet_hash"])

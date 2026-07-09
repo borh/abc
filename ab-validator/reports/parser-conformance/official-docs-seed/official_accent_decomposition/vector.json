@@ -1,0 +1,21 @@
+{
+  "name": "official_accent_decomposition",
+  "meta": {
+    "feature": "accent",
+    "level": "should",
+    "spec_section": "https://www.aozora.gr.jp/annotation/external_character.html",
+    "note": "[provenance:official] verbatim example; accent-decomposed Latin 〔e'tiquette〕"
+  },
+  "source": "〔e'tiquette〕\n",
+  "expected": {
+    "nodes": [
+      {
+        "kind": "accent",
+        "span": {
+          "start": 0,
+          "end": 16
+        }
+      }
+    ]
+  }
+}

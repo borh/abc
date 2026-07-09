@@ -1,0 +1,499 @@
+{
+ "schema_version": 1,
+ "aat_run_set_id": "current-aat-fidelity-2026-07-09",
+ "aat_globs": {
+  "aozora": "/db/ab-validator/aat-corpus/aozora-full-repin-1a4f864/aat/aozora-adapter/*.json",
+  "aozora2": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/*.json",
+  "aozora-rs": "/db/ab-validator/fidelity-corpus/aozora-rs/aat/aozora-rs-adapter/*.json",
+  "aozora2html": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/*.json",
+  "aozora-epub3": "/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter/*.json"
+ },
+ "aozora_dump": "/db/ab-validator/aat-corpus/aozora-full-repin-1a4f864/aat/aozora-adapter/*.json",
+ "constructs": [
+  {
+   "construct": "ruby.basic",
+   "denominator": 3607926,
+   "note": null,
+   "adapters": {
+    "aozora": {
+     "num": 3556724,
+     "rate": 0.986,
+     "status": "ok"
+    },
+    "aozora2": {
+     "num": 3077027,
+     "rate": 0.853,
+     "status": "ok"
+    },
+    "aozora-rs": {
+     "num": 3558717,
+     "rate": 0.986,
+     "status": "ok"
+    },
+    "aozora2html": {
+     "num": 2683275,
+     "rate": 0.744,
+     "status": "ok"
+    },
+    "aozora-epub3": {
+     "num": 3448867,
+     "rate": 0.956,
+     "status": "ok"
+    }
+   }
+  },
+  {
+   "construct": "decoration.boten",
+   "denominator": 129086,
+   "note": null,
+   "adapters": {
+    "aozora": {
+     "num": 150857,
+     "rate": 1.169,
+     "status": "ok"
+    },
+    "aozora2": {
+     "num": 125232,
+     "rate": 0.97,
+     "status": "ok"
+    },
+    "aozora-rs": {
+     "num": 122734,
+     "rate": 0.951,
+     "status": "ok"
+    },
+    "aozora2html": {
+     "num": 114982,
+     "rate": 0.891,
+     "status": "ok"
+    },
+    "aozora-epub3": {
+     "num": 126904,
+     "rate": 0.983,
+     "status": "ok"
+    }
+   }
+  },
+  {
+   "construct": "decoration.bousen",
+   "denominator": 18127,
+   "note": "aozora folds into `emphasis` marker",
+   "adapters": {
+    "aozora": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    },
+    "aozora2": {
+     "num": 17185,
+     "rate": 0.948,
+     "status": "ok"
+    },
+    "aozora-rs": {
+     "num": 3217,
+     "rate": 0.177,
+     "status": "folded"
+    },
+    "aozora2html": {
+     "num": 14389,
+     "rate": 0.794,
+     "status": "ok"
+    },
+    "aozora-epub3": {
+     "num": 14647,
+     "rate": 0.808,
+     "status": "ok"
+    }
+   }
+  },
+  {
+   "construct": "heading.basic",
+   "denominator": 80592,
+   "note": null,
+   "adapters": {
+    "aozora": {
+     "num": 67365,
+     "rate": 0.836,
+     "status": "ok"
+    },
+    "aozora2": {
+     "num": 73817,
+     "rate": 0.916,
+     "status": "ok"
+    },
+    "aozora-rs": {
+     "num": 19640,
+     "rate": 0.244,
+     "status": "folded"
+    },
+    "aozora2html": {
+     "num": 62280,
+     "rate": 0.773,
+     "status": "ok"
+    },
+    "aozora-epub3": {
+     "num": 68033,
+     "rate": 0.844,
+     "status": "ok"
+    }
+   }
+  },
+  {
+   "construct": "gaiji.marker",
+   "denominator": 62351,
+   "note": null,
+   "adapters": {
+    "aozora": {
+     "num": 41551,
+     "rate": 0.666,
+     "status": "ok"
+    },
+    "aozora2": {
+     "num": 51225,
+     "rate": 0.822,
+     "status": "ok"
+    },
+    "aozora-rs": {
+     "num": 111762,
+     "rate": 1.792,
+     "status": "ok"
+    },
+    "aozora2html": {
+     "num": 35737,
+     "rate": 0.573,
+     "status": "folded"
+    },
+    "aozora-epub3": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    }
+   }
+  },
+  {
+   "construct": "decoration.font_size",
+   "denominator": 51508,
+   "note": null,
+   "adapters": {
+    "aozora": {
+     "num": 46,
+     "rate": 0.001,
+     "status": "drop"
+    },
+    "aozora2": {
+     "num": 16944,
+     "rate": 0.329,
+     "status": "folded"
+    },
+    "aozora-rs": {
+     "num": 135,
+     "rate": 0.003,
+     "status": "drop"
+    },
+    "aozora2html": {
+     "num": 12796,
+     "rate": 0.248,
+     "status": "folded"
+    },
+    "aozora-epub3": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    }
+   }
+  },
+  {
+   "construct": "layout.tcy",
+   "denominator": 19794,
+   "note": null,
+   "adapters": {
+    "aozora": {
+     "num": 17741,
+     "rate": 0.896,
+     "status": "ok"
+    },
+    "aozora2": {
+     "num": 17076,
+     "rate": 0.863,
+     "status": "ok"
+    },
+    "aozora-rs": {
+     "num": 1,
+     "rate": 0.0,
+     "status": "drop"
+    },
+    "aozora2html": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    },
+    "aozora-epub3": {
+     "num": 13605,
+     "rate": 0.687,
+     "status": "ok"
+    }
+   }
+  },
+  {
+   "construct": "figure.image_inline",
+   "denominator": 5877,
+   "note": null,
+   "adapters": {
+    "aozora": {
+     "num": 5698,
+     "rate": 0.97,
+     "status": "ok"
+    },
+    "aozora2": {
+     "num": 5188,
+     "rate": 0.883,
+     "status": "ok"
+    },
+    "aozora-rs": {
+     "num": 5344,
+     "rate": 0.909,
+     "status": "ok"
+    },
+    "aozora2html": {
+     "num": 4111,
+     "rate": 0.7,
+     "status": "ok"
+    },
+    "aozora-epub3": {
+     "num": 305,
+     "rate": 0.052,
+     "status": "folded"
+    }
+   }
+  },
+  {
+   "construct": "indentation.jisage_block",
+   "denominator": 94993,
+   "note": null,
+   "adapters": {
+    "aozora": {
+     "num": 77926,
+     "rate": 0.82,
+     "status": "ok"
+    },
+    "aozora2": {
+     "num": 101854,
+     "rate": 1.072,
+     "status": "ok"
+    },
+    "aozora-rs": {
+     "num": 44065,
+     "rate": 0.464,
+     "status": "folded"
+    },
+    "aozora2html": {
+     "num": 96347,
+     "rate": 1.014,
+     "status": "ok"
+    },
+    "aozora-epub3": {
+     "num": 134260,
+     "rate": 1.413,
+     "status": "ok"
+    }
+   }
+  },
+  {
+   "construct": "indentation.chitsuki",
+   "denominator": 20358,
+   "note": "地付き flush-bottom; aozora=alignEnd marker, aozora2=chitsuki style",
+   "adapters": {
+    "aozora": {
+     "num": 18361,
+     "rate": 0.902,
+     "status": "ok"
+    },
+    "aozora2": {
+     "num": 24681,
+     "rate": 1.212,
+     "status": "ok"
+    },
+    "aozora-rs": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    },
+    "aozora2html": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    },
+    "aozora-epub3": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    }
+   }
+  },
+  {
+   "construct": "indentation.burasage",
+   "denominator": 13278,
+   "note": "ぶら下げ hanging indent",
+   "adapters": {
+    "aozora": {
+     "num": 12386,
+     "rate": 0.933,
+     "status": "ok"
+    },
+    "aozora2": {
+     "num": 6540,
+     "rate": 0.493,
+     "status": "folded"
+    },
+    "aozora-rs": {
+     "num": 5155,
+     "rate": 0.388,
+     "status": "folded"
+    },
+    "aozora2html": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    },
+    "aozora-epub3": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    }
+   }
+  },
+  {
+   "construct": "indentation.jizume",
+   "denominator": 3239,
+   "note": "字詰め chars-per-line",
+   "adapters": {
+    "aozora": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    },
+    "aozora2": {
+     "num": 1212,
+     "rate": 0.374,
+     "status": "folded"
+    },
+    "aozora-rs": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    },
+    "aozora2html": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    },
+    "aozora-epub3": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    }
+   }
+  },
+  {
+   "construct": "decoration.bold_italic",
+   "denominator": 8830,
+   "note": "aozora emits only lineBold (~drops bold/italic)",
+   "adapters": {
+    "aozora": {
+     "num": 5488,
+     "rate": 0.622,
+     "status": "ok"
+    },
+    "aozora2": {
+     "num": 3402,
+     "rate": 0.385,
+     "status": "folded"
+    },
+    "aozora-rs": {
+     "num": 3597,
+     "rate": 0.407,
+     "status": "folded"
+    },
+    "aozora2html": {
+     "num": 4926,
+     "rate": 0.558,
+     "status": "folded"
+    },
+    "aozora-epub3": {
+     "num": 6843,
+     "rate": 0.775,
+     "status": "ok"
+    }
+   }
+  },
+  {
+   "construct": "warichu.basic",
+   "denominator": 6605,
+   "note": "割注 inline double-line annotation",
+   "adapters": {
+    "aozora": {
+     "num": 3855,
+     "rate": 0.584,
+     "status": "folded"
+    },
+    "aozora2": {
+     "num": 2854,
+     "rate": 0.432,
+     "status": "folded"
+    },
+    "aozora-rs": {
+     "num": 3011,
+     "rate": 0.456,
+     "status": "folded"
+    },
+    "aozora2html": {
+     "num": 1939,
+     "rate": 0.294,
+     "status": "folded"
+    },
+    "aozora-epub3": {
+     "num": 2932,
+     "rate": 0.444,
+     "status": "folded"
+    }
+   }
+  },
+  {
+   "construct": "layout.yokogumi",
+   "denominator": 3690,
+   "note": "横組 horizontal-in-vertical",
+   "adapters": {
+    "aozora": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    },
+    "aozora2": {
+     "num": 271,
+     "rate": 0.073,
+     "status": "folded"
+    },
+    "aozora-rs": {
+     "num": 0,
+     "rate": 0.0,
+     "status": "drop"
+    },
+    "aozora2html": {
+     "num": 1367,
+     "rate": 0.37,
+     "status": "folded"
+    },
+    "aozora-epub3": {
+     "num": 1,
+     "rate": 0.0,
+     "status": "drop"
+    }
+   }
+  }
+ ],
+ "unscoreable": {
+  "decoration.keigakomi": "aozora-rs 200 / a2html 420 / epub3 190(block); no source denominator",
+  "accent.diacritic": "source denominator is 0",
+  "iteration.kunoji": "emitted as a gaiji node (subsumed in gaiji.marker); denom 10,701"
+ }
+}

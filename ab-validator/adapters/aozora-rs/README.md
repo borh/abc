@@ -1,14 +1,25 @@
 # aozora-rs adapter — maintenance notice
 
-> **Status: not building (2026-07-03).** This adapter is intentionally left in a
-> broken state pending a migration to the AAT-JSON adapter boundary.
+> **Status update (2026-07-09): builds clean.** `cargo build --manifest-path
+> adapters/aozora-rs/Cargo.toml --release` exits 0 and the binary produces AAT — the
+> `E0425` breakage described below has since been resolved. The adapter is still
+> **fallback-dominant** (≈97% of emitted nodes are `x-provenance: source_fallback`, i.e.
+> the source lexer, not aozora-rs-core's typed parse) and remains **excluded from the
+> workspace** and off all gates. The typed-projection repair is tracked as a deferred
+> follow-up — see `docs/superpowers/reports/2026-07-09-aozora-rs-adapter-repair-assessment.md`
+> and memory `aozora-rs-adapter-repair-deferred`. The historical note below is kept for
+> context.
 
-## Why it is broken
+> **Status: not building (2026-07-03) — SUPERSEDED, see above.** This adapter was
+> intentionally left in a broken state pending a migration to the AAT-JSON adapter
+> boundary.
+
+## Why it was broken (2026-07-03)
 
 The typed adapter depends on `ab-ir` Rust internals. The workspace removed
 `ab_ir::block_content_mut`, and the current `Block::Break` variant no longer
 carries a `content` field, so the old mutable accessor cannot be cleanly
-restored. `cargo build` in this directory fails with three `E0425` errors at
+restored. `cargo build` in this directory then failed with three `E0425` errors at
 `src/aat.rs:464,642,753`.
 
 See:

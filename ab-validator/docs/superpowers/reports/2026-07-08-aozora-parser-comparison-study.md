@@ -392,7 +392,13 @@ records them as the completeness frontier and the recommended parser's specific 
    divergence is a lead to check against official docs, not a proven defect.
 2. **Methodological non-uniformity.** Parsers are measured three ways (§3.2). Each
    is defensible and the reason is stated, but cross-parser numbers are not a
-   single scale; read them with the method attached.
+   single scale; read them with the method attached. *Clarified 2026-07-09*
+   (`2026-07-09-measurement-methodology.md`): the three methods are confined to the
+   *conformance-breadth* layer (§4.1–4.6, corroboration); the **verdict is stated on
+   the corpus-coverage layer (§4.7–4.9), which is already a single uniform axis** — all
+   five parsers measured identically via fair union signatures, cross-checked by the
+   AAT validation oracle (§3.4), two-denominator agreement (§4.8), and corpus-invariant
+   denominators (§1).
 3. **`aozora-epub3` is disadvantaged by construction** (full-document EPUB
    converter fed headerless one-line vectors; 1 pass, 4 crashes) — a floor, not a
    verdict.
@@ -466,11 +472,15 @@ fast-moving; every number here is a snapshot of these exact revisions:
 > corpus and are now in place (so future re-pins are a ~5-min recompute): `ab-index`
 > now indexes the symlinked nix corpus (it previously skipped every symlinked work
 > file → 0 works), and the adapter accepts inspect `schemaVersion` 2 (verified a pure
-> version bump). *Corpus caveat:* the §4.7 denominators are source-authority counts
-> from the original local extraction; the pinned nix corpus has slightly fewer `gaiji`
-> / `jisage` source occurrences, so a fully-nix-reproducible re-measure would recompute
-> denominators there — it rescales those two rows (num and denom move together) without
-> changing rankings.
+> version bump). *Corpus caveat — resolved 2026-07-09* (§1,
+> `2026-07-09-full-nix-denominator-recompute.md`): a full `ab-source-inventory` run on
+> the pinned corpus shows the source-authority denominators are **corpus-invariant** —
+> 17 of 21 constructs byte-identical to the local extraction, the only movement being
+> `gaiji.marker` −4 and `gaiji.un_embed` −3 (an 8-work count difference); `jisage` is
+> identical. The earlier "phantom gaiji/jisage drop" was a *numerator* artifact (naive
+> nix re-measure before the `ab-index` symlink fix), not denominator drift. The
+> fully-pinned re-run (repin numerators + pinned denominators) leaves all rankings
+> unchanged (aozora 0.957 vs the mixed-corpus 0.969, the delta being the repin dump).
 
 ```
 just aozora-notation-spec-comparison            # matrix + summary

@@ -37,7 +37,22 @@ upstream development.
 
 ## Open work (prioritized)
 
-### 1. Full-nix-corpus denominator recompute — *consistency/reproducibility* (medium)
+### 1. Full-nix-corpus denominator recompute — ✅ DONE 2026-07-09
+**Report:** `docs/superpowers/reports/2026-07-09-full-nix-denominator-recompute.md`
+(commit `9d2a62d2`). Ran `ab-source-inventory` on the pinned corpus. **Headline: the
+source-authority denominators are corpus-invariant** — 17/21 constructs byte-identical
+to the local extraction; only `gaiji.marker` −4 and `gaiji.un_embed` −3 (an 8-work count
+diff); `jisage` identical. This *retires* the §7 corpus caveat: the feared phantom
+gaiji/jisage drop was a numerator artifact (pre `ab-index` fix), not denominator drift.
+Fully-pinned re-run (repin num + pinned denom) leaves all rankings unchanged (aozora
+0.957 #1; §4.8 robustness identical + fidelity ordering preserved; §4.9 drops hold).
+Resolves §2 gaps: keigakomi scoreable (denom 717); yokogumi/jizume corpus-invariant.
+Tooling (run-set-native): `rebuild-fidelity-summary.py`, `run-coverage-report.sh`.
+**Also surfaced + documented a reproducibility hole** (stale `AB_*_AAT_DIR` profile env
+vars silently override the run-set) — `2026-07-09-fidelity-workflow-integration.md`.
+
+<details><summary>original §1 brief (superseded)</summary>
+
 **Why.** §4.7 numerators are now measurable on the pinned nix corpus (after the
 `ab-index` fix), but the **denominators** are still source-authority counts from the
 original *local* extraction (`build-inputs.json` → `2026-07-08-corpus-adapter-fidelity.summary.json`).
@@ -54,6 +69,7 @@ the pinned corpus; rebuild the fidelity summary; then re-run `normalized-corpus-
 pointed at `aozora-full-repin-1a4f864`. Expect only the `gaiji`/`jisage` rows to move
 (num and denom together); rankings unchanged.
 **Effort.** ~1 session; the heavy parts (index, parse) are now ~5–10 min each.
+</details>
 
 ### 2. Close `aozora-pipeline`'s construct gaps — ✅ DONE 2026-07-09
 **Report:** `docs/superpowers/reports/2026-07-09-aozora-pipeline-construct-gap-backlog.md`
@@ -81,19 +97,32 @@ the ruby density (21.4 vs 2.4 ruby/KB). Confirms §4.8 (same defect). All-timeou
 need a profiling pass on e.g. `001562_56145`). Verdict unchanged (aozora-core still trails
 coverage 0.855). Tooling: `analyze-aozora2-giants-perf.py`.
 
-### 4. `aozora-rs-core` gaiji blind spot / adapter typed projection — *deferred*
-The `retokenized` dump is blind to gaiji (§5 threat #4); and the production aozora-rs
-adapter's typed AAT projection under-represents the parser. See memory
-`aozora-rs-adapter-repair-deferred`. Only matters if aozora-rs becomes a serious
-throughput-first candidate.
+### 4. `aozora-rs-core` gaiji blind spot / adapter typed projection — ⏸ ASSESSED, STAYS DEFERRED
+**Assessment:** `docs/superpowers/reports/2026-07-09-aozora-rs-adapter-repair-assessment.md`
+(commit `0ec732ce`). Measured: adapter **builds clean** (README "not building" is STALE);
+**fallback-dominant quantified** — ~97% of nodes `source_fallback`, 80% of works
+fallback-dominant, so the production adapter reflects the source lexer not aozora-rs-core.
+Repair sites confirmed (`aat.rs:241` drops Kunten/Okurigana; block Deco under-mapped;
+`lib.rs:227-232` round-trip gate; + retokenized gaiji blind spot). ~1 session, real
+regression risk. **Condition (aozora-rs throughput-first) NOT met** → keep deferred.
+Cheap safe follow-up: fix the stale README.
 
-### 5. Expand the official-docs seed (§4.5) — *independent instrument*
-From 11 clean cases toward edge cases + precise spans, so it reproduces absolute rates
-(a full independent instrument, not a seed). `author-official-seed.py`.
+### 5. Expand the official-docs seed (§4.5) — ✅ DONE 2026-07-09
+**Report:** `docs/superpowers/reports/2026-07-09-official-docs-seed-expansion.md`
+(commit `7c1834b5`). `author-official-seed.py` expanded **11 → 30** vectors, all
+provenanced to official docs (傍点/傍線 variants, heading levels+forms, gaiji
+Unicode/description/kana, accent decomposition, Latin-base ruby). Activation vs the
+recommended parser: 14/19 new edge cases pass; 5 diverge (underline sub-family fold,
+accent not typed, range-form heading) — new finer-grained findings. Precise spans + full
+4-adapter re-score noted as follow-ups.
 
-### 6. Uniform per-parser methodology write-up — *publication polish*
-A single-scale normalization (or a clear methodology section) that puts all candidates
-on one axis, per §5 threat #2.
+### 6. Uniform per-parser methodology write-up — ✅ DONE 2026-07-09
+**Report:** `docs/superpowers/reports/2026-07-09-measurement-methodology.md` (commit
+`26230fe6`). Clarifies the two measurement layers: the verdict rests on the
+**corpus-coverage layer (§4.7-4.9), already a single uniform axis** (all 5 parsers, one
+method); the "three methods" (§3.2) are confined to the conformance-breadth
+corroboration layer. Anchored by the AAT validation oracle, two-denominator agreement,
+and §1's corpus-invariant denominators. Study §5 threat #2 updated.
 
 ## The bigger decision (after or instead of the above)
 
@@ -143,11 +172,17 @@ parser-IR validity, publication accounting, zero unknown-markup, perf. Or contri
 
 ## Immediate next decision
 
-**Done 2026-07-09:** §2 (construct-gap backlog) and §3 (aozora-core perf pathology) —
-see above. Neither changes the verdict.
+**Done 2026-07-09:** §1, §2, §3, §5, §6 complete; §4 assessed and kept deferred
+(condition unmet). None changed the verdict. The research arm is now
+**publication-complete** on every axis, fully reproducible on the pinned corpus, with
+the measurement methodology and independent instrument documented.
 
-Remaining: either **do §1 (full-nix denominators)** to make the study fully reproducible
-on the pinned corpus (and resolve the yokogumi/keigakomi denominator gaps §2 surfaced),
-finish the smaller §4–6 polish, or **start the parser design** on the aozora-pipeline
-base. The research arm is publication-adjacent; §1/§4–6 are polish that doesn't change
-the verdict.
+**Remaining, in priority order:**
+1. **Start the parser design** on the `aozora-pipeline` base (`brainstorming` →
+   `writing-plans`), against the 2026-07-06 acceptance criteria — the forward move.
+2. Small opt-ins surfaced by the followups (none block the design):
+   - fix the stale `adapters/aozora-rs/README.md` "not building" status (§4).
+   - neutralize the stale `AB_*_AAT_DIR` profile env overrides + close the run-set
+     validation hole (`2026-07-09-fidelity-workflow-integration.md`); note these touch
+     infra under active development in sibling worktrees.
+   - the §4 adapter repair itself — only if aozora-rs is reconsidered on throughput.

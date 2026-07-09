@@ -62,10 +62,16 @@ class LockReader(unittest.TestCase):
 
     def test_db_root_provenance(self) -> None:
         p = self._write(
-            {"lock_format": "fidelity-lock/v1", "run_set_id": "rs",
-             "db_root": "/mnt/bulk/ab-validator", "adapters": {"a": {"aat_dir": "/x/a"}}}
+            {
+                "lock_format": "fidelity-lock/v1",
+                "run_set_id": "rs",
+                "db_root": "/mnt/bulk/ab-validator",
+                "adapters": {"a": {"aat_dir": "/x/a"}},
+            }
         )
-        self.assertEqual(fidelity_lock.lock_db_root(fidelity_lock.load_lock(p)), "/mnt/bulk/ab-validator")
+        self.assertEqual(
+            fidelity_lock.lock_db_root(fidelity_lock.load_lock(p)), "/mnt/bulk/ab-validator"
+        )
 
 
 class SubstitutionIsIdentity(unittest.TestCase):
@@ -114,16 +120,24 @@ class ContentVerification(unittest.TestCase):
         (aat / "000001_1.json").write_text('{"blocks":[]}', encoding="utf-8")
         expected = {} if pinned_hash is None else {"content_hash": pinned_hash}
         manifest = Path(tmp) / "run-set.json"
-        manifest.write_text(json.dumps({
-            "schema_version": 1, "run_set_id": "cv",
-            "adapters": {"aozora": {"aat_dir": str(aat), "expected": expected}},
-        }), encoding="utf-8")
+        manifest.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "run_set_id": "cv",
+                    "adapters": {"aozora": {"aat_dir": str(aat), "expected": expected}},
+                }
+            ),
+            encoding="utf-8",
+        )
         return tmp, manifest, aat
 
     def test_verify_records_actual_hash_in_lock(self) -> None:
         tmp, manifest, aat = self._fixture(pinned_hash=None)  # unpinned: record, don't gate
         rs = aat_runs.load_run_set(manifest)
-        lock = resolve_run_set.resolve_lock(rs, repo_root=tmp, verify_dirs=True, verify_content=True)
+        lock = resolve_run_set.resolve_lock(
+            rs, repo_root=tmp, verify_dirs=True, verify_content=True
+        )
         self.assertEqual(lock["adapters"]["aozora"]["content_hash"], aat_hash.hash_aat_dir(aat))
 
     def test_fails_closed_on_hash_mismatch(self) -> None:
@@ -136,12 +150,22 @@ class ContentVerification(unittest.TestCase):
         tmp, manifest, aat = self._fixture(pinned_hash=None)
         good = aat_hash.hash_aat_dir(aat)
         json.loads(manifest.read_text())  # sanity
-        manifest.write_text(json.dumps({
-            "schema_version": 1, "run_set_id": "cv",
-            "adapters": {"aozora": {"aat_dir": str(aat), "expected": {"content_hash": good}}},
-        }), encoding="utf-8")
+        manifest.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "run_set_id": "cv",
+                    "adapters": {
+                        "aozora": {"aat_dir": str(aat), "expected": {"content_hash": good}}
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
         rs = aat_runs.load_run_set(manifest)
-        lock = resolve_run_set.resolve_lock(rs, repo_root=tmp, verify_dirs=True, verify_content=True)
+        lock = resolve_run_set.resolve_lock(
+            rs, repo_root=tmp, verify_dirs=True, verify_content=True
+        )
         self.assertEqual(lock["adapters"]["aozora"]["content_hash"], good)
 
 
@@ -160,17 +184,36 @@ class ComputeIsClosed(unittest.TestCase):
         (aat / "000001_1.json").write_text('{"blocks":[]}', encoding="utf-8")
         order = ["aozora", "aozora2", "aozora-rs", "aozora2html", "aozora-epub3"]
         lock = Path(tmp) / "l.json"
-        lock.write_text(json.dumps({
-            "lock_format": "fidelity-lock/v1", "run_set_id": "envi",
-            "adapters": {a: {"aat_dir": str(aat)} for a in order},
-        }), encoding="utf-8")
+        lock.write_text(
+            json.dumps(
+                {
+                    "lock_format": "fidelity-lock/v1",
+                    "run_set_id": "envi",
+                    "adapters": {a: {"aat_dir": str(aat)} for a in order},
+                }
+            ),
+            encoding="utf-8",
+        )
         summary = Path(tmp) / "s.json"
-        summary.write_text(json.dumps({"classified": [{"construct": "ruby.basic", "denominator": 1}]}), encoding="utf-8")
+        summary.write_text(
+            json.dumps({"classified": [{"construct": "ruby.basic", "denominator": 1}]}),
+            encoding="utf-8",
+        )
         tool = _LIB.parent / "aat-fidelity" / "normalized-corpus-coverage.py"
         # empty env except PATH (so python3 resolves); NO AB_* vars, no CWD dependence.
         r = subprocess.run(
-            ["env", "-i", "PATH=" + os.environ["PATH"], sys.executable, str(tool), str(summary), "--lock", str(lock)],
-            capture_output=True, text=True,
+            [
+                "env",
+                "-i",
+                "PATH=" + os.environ["PATH"],
+                sys.executable,
+                str(tool),
+                str(summary),
+                "--lock",
+                str(lock),
+            ],
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(json.loads(r.stdout)["aat_run_set_id"], "envi")

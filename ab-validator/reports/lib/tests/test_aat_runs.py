@@ -43,9 +43,7 @@ _EXPECTED = "/db/ab-validator/aat-corpus/pinned/aat/aozora-adapter"
 
 class ManifestIsAuthoritative(unittest.TestCase):
     def setUp(self) -> None:
-        self._saved = {
-            k: os.environ.pop(k, None) for k in ("AB_AOZORA_AAT_DIR",)
-        }
+        self._saved = {k: os.environ.pop(k, None) for k in ("AB_AOZORA_AAT_DIR",)}
         os.environ.setdefault("AB_DB_ROOT", "/db/ab-validator")
         fd, name = tempfile.mkstemp(suffix=".json")
         os.close(fd)

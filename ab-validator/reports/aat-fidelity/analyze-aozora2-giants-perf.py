@@ -9,6 +9,7 @@ is structural (input-specific), not size-driven.
 
 Usage: python3 analyze-aozora2-giants-perf.py <results.json> <workset-meta.json>
 """
+
 import collections
 import json
 import statistics
@@ -49,8 +50,10 @@ def main():
     # sample stderr previews from non-timeout errors (what blows up)
     for r in g:
         if str(r["status"]).startswith("error:"):
-            print(f"  {r['work_id']} exit={r.get('exit_code')} size={r.get('size')}: "
-                  f"{(r.get('stderr_preview') or '').strip()[:200]}")
+            print(
+                f"  {r['work_id']} exit={r.get('exit_code')} size={r.get('size')}: "
+                f"{(r.get('stderr_preview') or '').strip()[:200]}"
+            )
 
     # do any giants complete within the limit? (slow-but-finite vs unbounded)
     g_ok = [r for r in g if r["status"] == "ok"]
@@ -64,9 +67,11 @@ def main():
     gs = cohort_stats(g)
     print("\n--- VERDICT ---")
     if cs["wall_max"] is not None and cs["timeout"] == 0 and (gs["timeout"] + gs["errors"]) > 0:
-        print(f"Controls (larger works) all completed, max {cs['wall_max']}s; "
-              f"giants show {gs['timeout']} timeouts + {gs['errors']} errors. "
-              f"=> WORK-SPECIFIC pathology, not size-driven.")
+        print(
+            f"Controls (larger works) all completed, max {cs['wall_max']}s; "
+            f"giants show {gs['timeout']} timeouts + {gs['errors']} errors. "
+            f"=> WORK-SPECIFIC pathology, not size-driven."
+        )
     else:
         print("Pattern not clearly work-specific; inspect cohorts above.")
 

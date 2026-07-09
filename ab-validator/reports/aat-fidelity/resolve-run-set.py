@@ -61,8 +61,7 @@ def resolve_lock(
     errors = validate_run_set(run_set, repo_root=repo_root, require_paths=False)
     if errors:
         raise ValueError(
-            "run-set validation failed; refusing to emit a lock:\n  - "
-            + "\n  - ".join(errors)
+            "run-set validation failed; refusing to emit a lock:\n  - " + "\n  - ".join(errors)
         )
     dirs = adapter_aat_dirs(run_set)  # all adapters, manifest order, absolute
     if verify_dirs:

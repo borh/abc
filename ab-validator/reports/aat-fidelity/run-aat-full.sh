@@ -267,36 +267,39 @@ if [[ ! -d "$corpus/cards" ]]; then
   printf 'missing Aozora corpus cards directory: %s/cards\n' "$corpus" >&2
   exit 2
 fi
+# Compute the input identity ONCE (tree_hash over the corpus is the expensive
+# part) and reuse it for both the skip gate and the recorded metadata, so the
+# gate hash and the recorded hash are the SAME value by construction rather than
+# two argument lists that must be kept byte-identical by hand. --version is run
+# from $repo_root so the recorded adapter_version is reproducible for a
+# cwd-sensitive adapter (otherwise a stale dump could never be recognised as
+# fresh). identity_file is a mktemp OUTSIDE $out_dir, so it survives the
+# `rm -rf "$out_dir"` below and can still be read by the metadata writer.
+adapter_version="$(cd "$repo_root" && "$adapter" --version)"
+identity_file="$(mktemp)"
+cleanup_identity_file() { rm -f "$identity_file"; }
+trap cleanup_identity_file EXIT
+renderer_arg=()
+if [[ -n "$renderer_dir" ]]; then
+  renderer_arg=(--renderer-dir "$renderer_dir")
+fi
+current_hash="$(python "$repo_root/reports/aat-fidelity/generator_identity.py" \
+  --emit-identity "$identity_file" \
+  --corpus-dir "$corpus/cards" \
+  --adapter-version "$adapter_version" \
+  --adapter-binary "$adapter_hash_target" \
+  --ab-index-binary "$ab_index_bin" \
+  --ab-check-binary "$ab_check_bin" \
+  --feature-patterns "$repo_root/data/feature-patterns.toml" \
+  "${renderer_arg[@]}" \
+  ${timeout:+--timeout "$timeout"} \
+  ${features:+--features "$features"} \
+  ${work_ids:+--work-ids "$work_ids"})"
+
 if [[ -e "$out_dir" && "$force" != "1" ]]; then
-  # Active skip: if a prior dump at $out_dir is provably fresh for the current
-  # inputs, exit 0 without recomputing. Every adapter is identity-complete now
-  # (aozora is a self-contained nix binary; wrapper adapters pin their Rust
-  # mapper AND their nix-packaged renderer, both resolved above), so the check
-  # runs for all. The input_set_hash here MUST be byte-identical to the one
-  # provenance_fields(...) writes into metadata.json below; its args mirror that
-  # heredoc's provenance_fields(...) call exactly (corpus/cards, adapter_hash_target
-  # as --adapter-binary, the adapter --version run from $repo_root, ab-index/ab-check
-  # bins, feature patterns, the renderer dir, and the same optional
-  # timeout/features/work-ids).
-  #
-  # --version is run from $repo_root so it is byte-identical to the metadata
-  # heredoc's run([adapter, "--version"], cwd=repo) — otherwise a cwd-sensitive
-  # adapter would make the recorded hash unreproducible here (silently never skip).
-  renderer_arg=()
-  if [[ -n "$renderer_dir" ]]; then
-    renderer_arg=(--renderer-dir "$renderer_dir")
-  fi
-  current_hash="$(python "$repo_root/reports/aat-fidelity/generator_identity.py" \
-    --corpus-dir "$corpus/cards" \
-    --adapter-version "$(cd "$repo_root" && "$adapter" --version)" \
-    --adapter-binary "$adapter_hash_target" \
-    --ab-index-binary "$ab_index_bin" \
-    --ab-check-binary "$ab_check_bin" \
-    --feature-patterns "$repo_root/data/feature-patterns.toml" \
-    "${renderer_arg[@]}" \
-    ${timeout:+--timeout "$timeout"} \
-    ${features:+--features "$features"} \
-    ${work_ids:+--work-ids "$work_ids"})"
+  # A prior dump exists: skip recompute iff it is provably fresh for the current
+  # inputs. current_hash was computed once above and is the same value the
+  # metadata below records, so the gate and the record cannot drift.
   if python "$repo_root/reports/aat-fidelity/generator_skip.py" \
        --out-dir "$out_dir" --input-set-hash "$current_hash"; then
     printf '%s AAT dump already fresh, skipping: %s\n' "$adapter_id" "$out_dir"
@@ -356,7 +359,7 @@ run_step build-triage "$triage_dir" "$triage_python" \
   --report-id "$report_id" \
   --out-dir "$triage_dir"
 
-python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" "$features" "$work_ids" "$ab_index_bin" "$ab_check_bin" "$adapter_hash_target" "$renderer_dir" <<'PY'
+python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" "$features" "$work_ids" "$ab_index_bin" "$ab_check_bin" "$adapter_hash_target" "$renderer_dir" "$identity_file" "$adapter_version" <<'PY'
 import json
 import os
 import pathlib
@@ -364,7 +367,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-repo_root, corpus, out_dir, report_id, jobs, timeout, adapter, adapter_id, features, work_ids, ab_index_bin, ab_check_bin, adapter_hash_target, renderer_dir = sys.argv[1:]
+repo_root, corpus, out_dir, report_id, jobs, timeout, adapter, adapter_id, features, work_ids, ab_index_bin, ab_check_bin, adapter_hash_target, renderer_dir, identity_file, adapter_version = sys.argv[1:]
 repo = pathlib.Path(repo_root)
 out = pathlib.Path(out_dir)
 
@@ -394,7 +397,7 @@ metadata = {
     "timeout": timeout,
     "adapter_id": adapter_id,
     "adapter": adapter,
-    "adapter_version": run([adapter, "--version"]),
+    "adapter_version": adapter_version,
     "ab_index": ab_index_bin,
     "ab_check": ab_check_bin,
     "index_path": str(out / "index.json"),
@@ -407,34 +410,20 @@ metadata = {
 
 # F6: record the dump's input identity and its own output content hash, so
 # staleness is decidable (a dump is stale exactly when a freshly-computed
-# input_set_hash differs from the one recorded here). The corpus (cards tree),
-# adapter binary, and feature-patterns are hashed by content; --jobs is excluded.
-sys.path.insert(0, str(repo / "reports" / "aat-fidelity"))
-import generator_identity  # noqa: E402
+# input_set_hash differs from the one recorded here). The input identity was
+# computed ONCE up front (identity_file) and its hash was the value the skip gate
+# checked; reusing it verbatim here makes the recorded input_set_hash equal the
+# gated one by construction. Only output_content_hash is fresh (it hashes the
+# aat/ tree this run just produced).
+payload = json.loads(pathlib.Path(identity_file).read_text())
+sys.path.insert(0, str(repo / "reports" / "lib"))
+import aat_hash  # noqa: E402
 
-# Shared kwargs, passed identically to provenance_fields (the hash) and
-# identity_fields (the object that hash is over) — so the recorded
-# input_identity object and the recorded input_set_hash correspond exactly.
-identity_kwargs = dict(
-    corpus_dir=pathlib.Path(corpus) / "cards",
-    adapter_version=metadata["adapter_version"],
-    # Identity pins the code that actually changes: for wrapper adapters this is
-    # the Rust mapper binary (not the invoked bash wrapper); for aozora it is the
-    # nix binary itself (== adapter). "adapter"/"adapter_version" above still
-    # describe the invoked path.
-    adapter_binary=adapter_hash_target,
-    ab_index_binary=ab_index_bin,
-    ab_check_binary=ab_check_bin,
-    feature_patterns_file=repo / "data" / "feature-patterns.toml",
-    renderer_dir=(renderer_dir or None),
-    timeout=timeout or None,
-    features=features or None,
-    work_ids=work_ids or None,
-)
-metadata.update(generator_identity.provenance_fields(aat_dir=out / "aat", **identity_kwargs))
+metadata["input_set_hash"] = payload["input_set_hash"]
+metadata["output_content_hash"] = aat_hash.hash_aat_dir(out / "aat")
 # Full identity object (not only its derived hash), so a future audit can see
 # WHICH input changed, not merely that input_set_hash moved.
-metadata["input_identity"] = generator_identity.identity_fields(**identity_kwargs)
+metadata["input_identity"] = payload["identity_object"]
 
 (out / "metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n")
 PY

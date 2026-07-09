@@ -289,6 +289,27 @@ Defaults to the old-kana set 新字旧仮名,旧字旧仮名 when --works-parque
         #[arg(long)]
         force: bool,
     },
+    /// Hydrates a summarize-warehouse-interesting JSON artifact into a
+    /// self-contained example bundle (examples.md + examples.json) with
+    /// text snippets, per-analyzer tables, reconstructed aozora markup,
+    /// and work metadata. Spec:
+    /// docs/superpowers/specs/2026-07-10-hydrate-interesting-examples-design.md
+    HydrateInteresting {
+        #[arg(long)]
+        interesting: PathBuf,
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+        #[arg(long)]
+        abc_catalog: Option<PathBuf>,
+        #[arg(long, default_value_t = 40)]
+        context_chars: usize,
+        #[arg(long)]
+        limit: Option<usize>,
+        #[arg(long)]
+        force: bool,
+    },
     SummarizeWarehouseErrors {
         #[arg(long)]
         run_dir: PathBuf,
@@ -775,6 +796,37 @@ fn main() -> Result<()> {
                 ab_morph_run::InterestingOutputFormat::Table => {
                     ab_morph_run::write_interesting_tsv(&summary, &mut writer)?;
                 }
+            }
+            Ok(())
+        }
+        Command::HydrateInteresting {
+            interesting,
+            run_dir,
+            output_dir,
+            abc_catalog,
+            context_chars,
+            limit,
+            force,
+        } => {
+            let summary = ab_morph_run::run_hydrate_interesting(&ab_morph_run::HydrateOptions {
+                interesting,
+                run_dir,
+                output_dir: output_dir.clone(),
+                abc_catalog,
+                context_chars,
+                limit,
+                force,
+                built_at_utc: chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
+            })?;
+            eprintln!(
+                "hydrated {} examples fully, {} partially, {} failed → {}",
+                summary.examples_full,
+                summary.examples_partial,
+                summary.examples_failed,
+                output_dir.display()
+            );
+            for (code, count) in &summary.error_counts {
+                eprintln!("  {code}: {count}");
             }
             Ok(())
         }
@@ -1963,6 +2015,51 @@ mod tests {
         assert!((anomaly_w_cov - 5.0).abs() < f64::EPSILON);
         assert_eq!(score_mode, ab_morph_run::ScoreMode::Rrf);
         assert_eq!(sample_seed, None);
+    }
+
+    #[test]
+    fn parses_hydrate_interesting_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "hydrate-interesting",
+            "--interesting",
+            "scratch/interesting.json",
+            "--run-dir",
+            "scratch/morph-warehouse/runs/full-2026-05-01",
+            "--output-dir",
+            "scratch/hydrated",
+            "--abc-catalog",
+            "scratch/abc.json",
+            "--context-chars",
+            "80",
+            "--limit",
+            "100",
+            "--force",
+        ]);
+
+        let Command::HydrateInteresting {
+            interesting,
+            run_dir,
+            output_dir,
+            abc_catalog,
+            context_chars,
+            limit,
+            force,
+        } = args.command
+        else {
+            panic!("expected hydrate-interesting");
+        };
+
+        assert_eq!(interesting, PathBuf::from("scratch/interesting.json"));
+        assert_eq!(
+            run_dir,
+            PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
+        );
+        assert_eq!(output_dir, PathBuf::from("scratch/hydrated"));
+        assert_eq!(abc_catalog, Some(PathBuf::from("scratch/abc.json")));
+        assert_eq!(context_chars, 80);
+        assert_eq!(limit, Some(100));
+        assert!(force);
     }
 
     #[test]

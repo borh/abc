@@ -35,6 +35,7 @@ def build_identity_object(
     ab_index_binary: str | Path,
     ab_check_binary: str | Path,
     feature_patterns_file: str | Path,
+    renderer_dir: str | Path | None = None,
     timeout: str | None = None,
     features: str | None = None,
     work_ids: str | None = None,
@@ -45,6 +46,12 @@ def build_identity_object(
     produce the `aat/` tree (`ab-index`'s `index.json` feeds `ab-check`), so a
     logic change in either must invalidate a dump's identity — otherwise stale
     output is served as fresh.
+
+    `renderer_dir` is the external parser that wrapper adapters (aozora2html,
+    aozora-epub3) invoke as a subprocess to produce the `aat/` output — the Ruby
+    aozora2html gem, or AozoraEpub3.jar. Since it determines the output, its nix
+    package dir is hashed by content (`tree_hash`), same as the corpus. It is
+    `None` for self-contained adapters (aozora) that have no external renderer.
 
     `work_ids` is a *file path* (`ab-check --work-ids` is a `PathBuf` whose JSON
     content selects works), so it is hashed by CONTENT, not by its path string —
@@ -58,6 +65,9 @@ def build_identity_object(
         "adapter_binary_hash": hashing.file_sha256(Path(adapter_binary)),
         "ab_index_binary_hash": hashing.file_sha256(Path(ab_index_binary)),
         "ab_check_binary_hash": hashing.file_sha256(Path(ab_check_binary)),
+        "renderer_content_hash": (
+            tree_hash.tree_hash(renderer_dir) if renderer_dir is not None else None
+        ),
         "feature_patterns_hash": hashing.file_sha256(Path(feature_patterns_file)),
         "timeout": timeout,
         "features": features,
@@ -97,6 +107,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--ab-index-binary", required=True)
     ap.add_argument("--ab-check-binary", required=True)
     ap.add_argument("--feature-patterns", required=True)
+    ap.add_argument("--renderer-dir", default=None)
     ap.add_argument("--timeout", default=None)
     ap.add_argument("--features", default=None)
     ap.add_argument("--work-ids", default=None)
@@ -106,6 +117,7 @@ def main(argv: list[str] | None = None) -> int:
         adapter_binary=a.adapter_binary,
         ab_index_binary=a.ab_index_binary, ab_check_binary=a.ab_check_binary,
         feature_patterns_file=a.feature_patterns,
+        renderer_dir=a.renderer_dir,
         timeout=a.timeout, features=a.features, work_ids=a.work_ids,
     ))
     return 0

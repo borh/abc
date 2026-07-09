@@ -251,6 +251,18 @@ source-inventory-full JOBS="24" INDEX="" CORPUS="":
 # see docs/superpowers/specs/2026-07-09-fidelity-run-idempotency-design.md (Phase 1
 # supersedes the env-neutralization glue).
 
+# Resolve the pinned run-set manifest into a fidelity lock: the single impure step that
+# validates run-set coherence, hashes each pinned dump against its expected content_hash,
+# and fails closed on any mismatch/empty dir (aat_runs ignores ambient AB_*_AAT_DIR). This
+# is the same resolve that `fidelity-denominator-recompute` and `run-coverage-report.sh`
+# perform internally; exposed here as a thin wrapper for ad-hoc inspection. Writes the lock
+# to OUT (default: gitignored scratch/). See resolve-run-set.py.
+fidelity-resolve OUT="scratch/fidelity.lock.json":
+	@out="{{OUT}}"; case "$out" in /*) ;; *) out="{{repo_root}}/$out";; esac; \
+	mkdir -p "$(dirname "$out")"; \
+	python3 "{{repo_root}}/reports/aat-fidelity/resolve-run-set.py" --repo-root "{{repo_root}}" --out "$out"; \
+	echo "wrote fidelity lock to $out" >&2
+
 # Recompute the corpus-adapter fidelity DENOMINATORS (source-authority `occ`) on the
 # PINNED corpus via ab-source-inventory, then rebuild the fidelity summary so numerators
 # (run-set AAT dumps) and denominators share one corpus (study §1). Emits OUT_SUMMARY,

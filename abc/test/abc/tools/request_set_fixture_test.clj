@@ -35,3 +35,20 @@
                                     "pack_policy_hash"])))
         (is (= [] (get-in request-set ["request_set_identity_object"
                                        "tokenizer_profile_hashes"])))))))
+
+;; D6 (2026-07-09 ruby-annotation-view design): annotation views appear in
+;; request-set input_views as {"input_view_kind" "parser-ir-body-annotations-v1",
+;; "policy_hash" <annotation-policy-hash>} — no resolver code change, this is a
+;; demonstration fixture of the shape rather than a resolved request set (the
+;; resolver's allowed-input-view-kinds and request-set.schema.json's inputView
+;; enum remain parser-ir-plaintext-body-v1-only until a later task widens them).
+(deftest annotation-input-view-fixture-entry-matches-design-d6-test
+  (testing "D6: annotation views appear in request-set input_views as {input_view_kind, policy_hash}"
+    (let [policy (files/read-json "data/annotation-policies/ruby-gaiji-v1.json")
+          policy-hash (analysis-identity/annotation-policy-hash policy)
+          input-view {"input_view_kind" "parser-ir-body-annotations-v1"
+                      "policy_hash" policy-hash}]
+      (is (= "ruby-gaiji-v1" (get policy "policy_id")))
+      (is (re-matches files/hash-pattern policy-hash))
+      (is (= #{"input_view_kind" "policy_hash"} (set (keys input-view))))
+      (is (= "parser-ir-body-annotations-v1" (get input-view "input_view_kind"))))))

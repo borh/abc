@@ -107,6 +107,26 @@ class RunnerCLI(unittest.TestCase):
                 "--run-id", self.run_id, "--warehouse-profile", "full",
             ])
 
+    def test_empty_command_after_dashdash_errors(self) -> None:
+        with self.assertRaises(SystemExit):
+            wr.main([
+                "--aat-dir", str(self.aat), "--warehouse-dir", str(self.wh),
+                "--run-id", self.run_id, "--warehouse-profile", "full", "--",
+            ])
+
+    def test_compute_failure_propagates_exit_code(self) -> None:
+        argv = [
+            "--aat-dir", str(self.aat), "--warehouse-dir", str(self.wh),
+            "--run-id", self.run_id, "--warehouse-profile", "full",
+            "--schema-file", str(self.schema),
+            "--", sys.executable, "-c", "import sys; sys.exit(3)",
+        ]
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            rc = wr.main(argv)
+        self.assertEqual(rc, 3)  # child exit code preserved, not collapsed to 1
+        self.assertFalse((self.wh / "by-input").exists())  # nothing recorded
+
     def test_bad_dict_pair_errors(self) -> None:
         with self.assertRaises(SystemExit):
             wr.main([

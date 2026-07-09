@@ -141,13 +141,19 @@ def main(argv: list[str] | None = None) -> int:
     def compute() -> None:
         subprocess.run(command, check=True)
 
-    result = resolve_compute_record(
-        warehouse_dir=args.warehouse_dir,
-        run_id=args.run_id,
-        identity_object=identity_object,
-        compute=compute,
-        force=args.force,
-    )
+    try:
+        result = resolve_compute_record(
+            warehouse_dir=args.warehouse_dir,
+            run_id=args.run_id,
+            identity_object=identity_object,
+            compute=compute,
+            force=args.force,
+        )
+    except subprocess.CalledProcessError as exc:
+        # Preserve the batch's own exit code (nothing was recorded — the
+        # exception propagated before the manifest/index write).
+        print(f"compute command failed (exit {exc.returncode})", file=sys.stderr)
+        return exc.returncode
     if result["action"] == "skip":
         print(f"SKIP {result['run_id']}: fresh run already indexed for these inputs "
               f"({result['input_set_hash']}); pass --force to recompute.", file=sys.stderr)

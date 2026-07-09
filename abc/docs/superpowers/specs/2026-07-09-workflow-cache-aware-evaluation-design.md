@@ -1,6 +1,6 @@
 # Workflow Cache-Aware Evaluation Design
 
-Status: Proposed design — revised 2026-07-09 after Hickey + simplification review (see [Review outcome](#review-outcome-what-the-lenses-changed))
+Status: Reviewed + measured 2026-07-09 — **NO-GO for now** (no leaf clears the cost bar; see [Measurement](#measurement-2026-07-09--gono-go-no-go-for-now)). Design rests specified-but-unbuilt.
 Date: 2026-07-09
 Owner: Soranoha architecture track
 Builds on: [Workflow Target-Graph Evaluator Design](2026-07-09-workflow-target-graph-evaluator-design.md)
@@ -36,6 +36,41 @@ The lenses **tightened** it rather than overturning it. Changes folded in below:
 
 Decisions that **survived** review unchanged: declared `:impl/hash` stamp
 (simpler and fail-safe vs. source-derived), and leaves-only scope.
+
+## Measurement (2026-07-09) — go/no-go: **NO-GO for now**
+
+Finding 1's gate was executed. Costs measured with the real `abc.tools` on a
+representative 0.67 MB corpus JSON, warmed, median of 15–20 runs:
+
+| Operation | Cost / 0.67 MB | Role |
+|---|---|---|
+| `sha256-file` | **0.40 ms** | file-byte cache key |
+| `read-json` | 1.98 ms | a *parse* leaf's whole compute |
+| `validation-errors` | 5.39 ms | a *validate* leaf's whole compute |
+| `sha256-json-jcs` | **12.35 ms** | value cache key (hash a resolved dep value) |
+| `nix eval` fixed overhead | ~17 ms | nix-bridge per-call floor — **but nix already store-caches the build** |
+
+Two hard conclusions:
+
+1. **Value-keyed caching is net-negative for every leaf we actually have.**
+   Building the key by JCS-hashing an input value (12.35 ms) costs **2–6× the
+   compute it would save** (parse 2 ms, validate 5.4 ms). JCS canonicalization is
+   a full re-serialization pass — inherently as expensive as, or worse than, the
+   parse/validate it guards. Caching these leaves would make the workflow
+   *slower*.
+2. **No leaf clears the bar today.** File-byte keying is cheap (0.40 ms), but the
+   file-input leaves we have save only single-digit ms of parse/validate — not
+   worth cache machinery, disk, and staleness risk. The one clearly expensive
+   leaf, nix realization, is **already** content-addressed by the nix store; our
+   cache would save only the ~17 ms spawn/eval while adding its own
+   key+lookup+re-hash cost.
+
+**Decision: do not build.** The design rests specified-but-unbuilt. Re-open only
+when a leaf appears whose deterministic compute is **large relative to a
+file-byte key** — as a quantitative bar, compute **≳ 50 ms** *and* the leaf is
+**file-keyable** (hash inputs by bytes at ~0.4 ms/MB, never by re-JCS-ing a large
+in-memory value). Heavy multi-file corpus validation or a first (uncached) build
+of a large derivation are the shapes to watch for.
 
 ## Decision (proposed)
 
@@ -178,6 +213,14 @@ ordinary dependency value and is hashed with the rest.
 
 Severity: **blocker** on the subset question (hash all deps); **strong
 suggestion** on collapsing the key's parallel channels.
+
+**Measurement caveat (2026-07-09).** JCS-hashing a large in-memory value costs
+~12 ms/MB — *more* than parsing or validating it (see
+[Measurement](#measurement-2026-07-09--gono-go-no-go-for-now)). So value-keying
+is only viable for leaves whose compute dwarfs it. Whenever a dep is backed by a
+file, key on **file bytes** (`sha256-file`, ~0.4 ms/MB) or an
+upstream-already-computed value hash — never re-JCS a large value just to build a
+key. This constraint is *why* the current beneficiaries don't clear the bar.
 
 ## Decision 4 — The status-vocabulary bridge (resolves the flagged Item 1 seam)
 

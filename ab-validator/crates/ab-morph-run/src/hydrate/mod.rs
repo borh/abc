@@ -16,6 +16,7 @@ use crate::summary::{AnomalyRow, InterestingRow, InterestingSummary, ScoreVersio
 
 pub mod analyses;
 pub mod metadata;
+pub mod render;
 pub mod source_context;
 pub mod tables;
 
@@ -310,6 +311,13 @@ pub fn run_hydrate_interesting(opts: &HydrateOptions) -> Result<HydrateRunSummar
     writeln!(writer)
         .with_context(|| format!("failed to write {}", examples_json_path.display()))?;
 
+    // Also write examples.md, the human-facing rendering of the same bundle.
+    let md_file = File::create(&examples_md_path)
+        .with_context(|| format!("failed to create {}", examples_md_path.display()))?;
+    let mut md_writer = std::io::BufWriter::new(md_file);
+    render::write_markdown(&bundle, &mut md_writer)
+        .with_context(|| format!("failed to write {}", examples_md_path.display()))?;
+
     Ok(run_summary)
 }
 
@@ -396,7 +404,7 @@ fn tally(summary: &mut HydrateRunSummary, example: &HydratedExample) {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use std::sync::Arc;
 
@@ -532,7 +540,11 @@ mod tests {
     /// the typed AAT fixture's 12 projected chars), the typed AAT file,
     /// a Task 5 ABC catalog, an aozora_works.parquet mapping src-a→000080,
     /// and a ranking JSON whose single row exemplifies chars [2,5) region 2.
-    fn write_e2e_fixture() -> (tempfile::TempDir, HydrateOptions) {
+    /// `pub(crate)` for cross-module `#[cfg(test)]` reuse — Task 8's
+    /// `render::tests::markdown_renders_all_layers` drives this same
+    /// end-to-end fixture through `run_hydrate_interesting` to pin the
+    /// renderer against real bundle output.
+    pub(crate) fn write_e2e_fixture() -> (tempfile::TempDir, HydrateOptions) {
         let dir = tempfile::tempdir().unwrap();
         let run_dir = crate::hydrate::tables::tests::write_fixture(dir.path());
         std::fs::write(
@@ -603,12 +615,6 @@ mod tests {
         run_hydrate_interesting(&opts_a).unwrap();
         run_hydrate_interesting(&opts_b).unwrap();
         for name in ["examples.json", "examples.md"] {
-            // Guard until Task 8 adds examples.md: only compare files that
-            // actually exist yet, so this test passes trivially for the
-            // not-yet-written file.
-            if !opts_a.output_dir.join(name).exists() {
-                continue;
-            }
             assert_eq!(
                 std::fs::read(opts_a.output_dir.join(name)).unwrap(),
                 std::fs::read(opts_b.output_dir.join(name)).unwrap(),

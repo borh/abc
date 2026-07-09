@@ -17,8 +17,23 @@
 - The consumer model (fixed by this plan, do not redesign):
   - **Provided kinds** = the definition's `input_views` kinds ∪ `{"token-stream-v1"}` iff `tokenizer_profile_ids` is non-empty (the token stream is a derived view produced by tokenizer profiles).
   - **Direction A (recipe runnability):** every referenced recipe's `supported_input_view_kinds` must intersect the provided kinds.
-  - **Direction B (no dead views):** every kind in `input_views` must have a consumer: a referenced recipe that supports it, OR the tokenizer (consumes `parser-ir-plaintext-body-v1`, iff `tokenizer_profile_ids` non-empty), OR the annotation materializer (`parser-ir-body-annotations-v1` is always consumable — per ADR 0028, annotation artifacts are materialized directly from parser IR, not recipe-mediated).
-- Error messages (exact, tests match on them): Direction A throws `"Analysis recipe cannot consume any provided input view"`; Direction B throws `"Request-set input view has no consumer"`.
+- Error message (exact, tests match on it): `"Analysis recipe cannot consume any provided input view"`.
+
+## Revision (2026-07-10, during Task 2)
+
+The plan originally also specified a **Direction B (no dead views)**: every
+declared view kind needs a consumer among {referenced recipes, tokenizer,
+annotation materializer}. Task 2's fixture-wide machine-check disproved that
+model: `full-corpus-publication-basic-ja` legitimately declares a plaintext
+input view with zero recipes and zero tokenizer profiles — its consumer is
+the *publication* materialization flow, which has no signal in the
+definition or the recipe registry. Dead-view detection is therefore not
+decidable from the recipe registry, and Direction B is dropped: the check is
+Direction A only. Task 1's code blocks below are superseded where they
+mention Direction B / the `"Request-set input view has no consumer"` error;
+the committed code (post-fix) is authoritative. Do not "fix" fixtures under
+`data/` to satisfy a check — a check that rejects a legitimate committed
+fixture is evidence against the check's model.
 - ADR heading must remain exactly `## Acceptance Criteria` (the lint's section extraction is case-sensitive... was fixed, but keep exact case anyway).
 
 ---
@@ -355,13 +370,16 @@ A request set can now actually resolve an annotation
   (enforced by the resolver, pinned fixture-wide by
   `definitions-and-recipes-input-view-coverage-machine-check-test` in
   `test/abc/tools/request_set_fixture_test.clj`) machine-checks the
-  recipe-`supported_input_view_kinds` ↔ request-set-views agreement in both
-  directions: every referenced recipe must be able to consume a provided
-  view (the tokenizer supplies the derived `token-stream-v1` view), and
-  every declared view must have a consumer (the tokenizer consumes the
-  plaintext view; the annotation materializer consumes annotation views
-  directly, not recipe-mediated). Materializing annotation artifacts *per
-  request set* remains future work, as does widening
+  recipe-`supported_input_view_kinds` ↔ request-set-views agreement:
+  every referenced recipe must be able to consume at least one view the
+  request set provides (tokenizer profiles supply the derived
+  `token-stream-v1` view). The converse — flagging a declared view no
+  recipe consumes — is deliberately not checked: views are consumed
+  outside the recipe system too (the publication flow consumes the
+  plaintext view, as in `full-corpus-publication-basic-ja`; the annotation
+  materializer consumes annotation views directly), so dead-view detection
+  is not decidable from the recipe registry. Materializing annotation
+  artifacts *per request set* remains future work, as does widening
   `schemas/analysis-recipe.schema.json`'s `supported_input_view_kinds` enum
   so a recipe can declare annotation-view consumption — that widening
   belongs with the first annotation-consuming recipe, because the schema's

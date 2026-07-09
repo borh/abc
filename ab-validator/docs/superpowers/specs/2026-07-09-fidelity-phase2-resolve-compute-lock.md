@@ -66,17 +66,26 @@ Both fail today, and the evidence names why.
 > **Tradeoff.** An explicit lock artifact must exist before compute runs — which *is* the
 > reproducibility record.
 
-### F8 — Residual ambient env (`AB_DB_ROOT`, `AB_AAT_RUN_SET`) · **Strong suggestion**
+### F8 — Ambient env at *compute* time (`AB_DB_ROOT`, `AB_AAT_RUN_SET`) · **Strong suggestion**
 > **Observation.** After Phase 1, `_resolve_path` still interpolates `${AB_DB_ROOT}` into
-> every manifest path, and `AB_AAT_RUN_SET` still selects the manifest. So the *same*
-> manifest resolves to different paths under different `AB_DB_ROOT` — config-as-place
-> survives in the last two env vars.
-> **Risk.** The manifest is not a *closed* value; resolution depends on the environment;
-> the last of F1 is unclosed.
-> **Alternative.** `resolve` bakes `AB_DB_ROOT` into the lock (absolute store paths after
-> resolution); `AB_AAT_RUN_SET` demotes to a positional "which manifest" argument. Then
-> **compute reads zero env vars**.
-> **Tradeoff.** Minor — one interpolation moves from compute-time to resolve-time.
+> every manifest path, and `AB_AAT_RUN_SET` still selects the manifest — and these are read
+> at *compute* time (compute calls `load_run_set()`).
+> **Nuance (per maintainer).** `AB_DB_ROOT` is **not** accidental config-as-place to
+> eliminate — it is a legitimate *deployment* binding: the general bulk-storage root, which
+> differs by machine like a mount point. A manifest expressed relative to it is *portable*
+> across deployments; that is a feature. `AB_AAT_RUN_SET` is likewise a legitimate
+> "which run" selector. The defect is only that these are resolved at *compute* time, so
+> compute is not a closed function of a value.
+> **Risk.** Compute's output depends on the ambient environment, not solely on its input;
+> the run is not reproducible from the lock alone.
+> **Alternative.** Keep both as deployment/run parameters but **confine them to `resolve`**:
+> resolve reads `AB_DB_ROOT` once and bakes the deployment-bound absolute paths into the
+> lock (recording the resolved root as provenance); `AB_AAT_RUN_SET` demotes to resolve's
+> positional "which manifest" argument. Then the **manifest stays deployment-portable, the
+> lock is deployment-bound, and compute reads zero env** — the nix shape exactly (portable
+> flake, machine-bound lock, closed build).
+> **Tradeoff.** Minor — the interpolation moves from compute-time to resolve-time; the lock
+> becomes deployment-specific (correct: it is the resolved value for *this* deployment).
 
 ### F9 — Time-as-identity and mutable output location · **Strong suggestion (sharpens F4)**
 > **Observation.** `fidelity-denominator-recompute` writes its inventory to a

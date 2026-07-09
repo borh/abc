@@ -264,6 +264,16 @@
               ''
                 bash tests/fidelity-lock-idempotency-smoke.sh
               '';
+          monorepo-batch-run-staleness =
+            mkMonorepoCheck "soranoha-monorepo-batch-run-staleness"
+              [
+                pkgs.bash
+                pkgs.coreutils
+                pkgs.python3
+              ]
+              ''
+                bash ab-validator/tests/batch-run-staleness-smoke.sh
+              '';
           monorepo-aat-materialization-workflow =
             mkMonorepoCheck "soranoha-monorepo-aat-materialization-workflow"
               [

@@ -36,6 +36,8 @@ assert plan["jobs"] == 3
 assert plan["timeout"] == "99s"
 assert plan["corpus"] == str((tmp / "corpus").resolve())
 assert plan["out_dir"] == str(tmp / "out")
+# aozora2html is a wrapper-pipeline adapter: ab-check invokes the bash wrapper
+# script directly (no nix resolve), so --print-plan reports that path.
 assert plan["adapter"] == str(repo_root / "ab-validator/adapters/aozora2html/aozora2html-adapter")
 assert plan["index_path"] == str(tmp / "out/index.json")
 assert plan["aat_dir"] == str(tmp / "out/aat")

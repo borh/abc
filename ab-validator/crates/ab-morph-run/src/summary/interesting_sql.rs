@@ -380,7 +380,10 @@ fn feature_stage_query(
     analyzer_ids: &[String],
 ) -> String {
     let base = base_regions_cte(regions, analyzers, filter, "r.has_feature_disagreement");
-    let source = crate::summary::summary_body::nway_feature_diffs_expanded_source(features);
+    let source = crate::summary::summary_body::nway_feature_diffs_expanded_source(
+        features,
+        crate::summary::summary_body::FeatureDiffsShape::CollapsedAnalyzers,
+    );
     let analyzer_flags = analyzer_ids
         .iter()
         .enumerate()

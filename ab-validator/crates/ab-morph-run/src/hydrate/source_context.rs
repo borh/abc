@@ -4,6 +4,98 @@
 use anyhow::{Result, bail};
 use serde::Serialize;
 
+/// A load failure with its spec error-vocabulary code.
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct SourceLoadError {
+    pub code: &'static str,
+    pub detail: String,
+}
+
+/// One source's AAT, loaded once: re-projected text + spans + the raw JSON
+/// for pointer resolution. Offset agreement with the warehouse is enforced
+/// at load (spec §Layer 1 offset-safety invariant).
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct SourceContext {
+    pub text: String,
+    pub spans: Vec<ab_plaintext::ProjectionSpan>,
+    aat: serde_json::Value,
+}
+
+/// Layers 1/3/4 for one region, each independently degradable.
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct RegionLayers {
+    pub snippet: Option<Snippet>,
+    pub aozora_markup: Option<AozoraMarkup>,
+    pub aat_nodes: Vec<AatNodeRef>,
+    pub errors: Vec<String>,
+}
+
+impl SourceContext {
+    #[allow(dead_code)]
+    pub fn load(aat_path: &str, expected_chars: u64) -> Result<Self, SourceLoadError> {
+        let bytes = std::fs::read(aat_path).map_err(|err| SourceLoadError {
+            code: "aat-missing",
+            detail: format!("{aat_path}: {err}"),
+        })?;
+        let aat: serde_json::Value =
+            serde_json::from_slice(&bytes).map_err(|err| SourceLoadError {
+                code: "aat-missing",
+                detail: format!("{aat_path}: not parseable as AAT JSON: {err}"),
+            })?;
+        let (text, spans) = ab_plaintext::visible_text_projection_with_spans(&aat);
+        let projected_chars = text.chars().count() as u64;
+        if projected_chars != expected_chars {
+            return Err(SourceLoadError {
+                code: "projection-mismatch",
+                detail: format!(
+                    "{aat_path}: projected {projected_chars} chars, warehouse sources.source_chars says {expected_chars}"
+                ),
+            });
+        }
+        Ok(Self { text, spans, aat })
+    }
+
+    #[allow(dead_code)]
+    pub fn hydrate_region(
+        &self,
+        char_start: u64,
+        char_end: u64,
+        context_chars: usize,
+    ) -> RegionLayers {
+        let mut errors = Vec::new();
+        let total_chars = self.text.chars().count() as u64;
+
+        let snippet = match snippet_window(&self.text, char_start, char_end, context_chars) {
+            Ok(snippet) => Some(snippet),
+            Err(err) => {
+                errors.push(format!("snippet: {err}"));
+                None
+            }
+        };
+        let (aozora_markup, aat_nodes) = if char_end > total_chars {
+            errors.push(format!("markup-unreconstructable: span [{char_start}, {char_end}) exceeds document bounds ({total_chars} chars)"));
+            (None, Vec::new())
+        } else {
+            match reconstruct_markup(&self.aat, &self.spans, char_start, char_end) {
+                Ok((markup, nodes)) => (Some(markup), nodes),
+                Err(err) => {
+                    errors.push(err.to_string()); // already "markup-unreconstructable: …"
+                    (None, Vec::new())
+                }
+            }
+        };
+        RegionLayers {
+            snippet,
+            aozora_markup,
+            aat_nodes,
+            errors,
+        }
+    }
+}
+
 /// A snippet window around a region, parts kept separate so JSON consumers
 /// can re-mark (spec §Layer 1).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -488,5 +580,40 @@ mod tests {
         assert_eq!(nodes.len(), 1);
         assert_eq!(nodes[0].pointer, "/blocks/0/content/0");
         assert_eq!(nodes[0].inline_kind, "style");
+    }
+
+    #[test]
+    fn source_context_load_rejects_char_count_mismatch() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("src-a.json");
+        std::fs::write(&path, serde_json::to_vec(&typed_aat_fixture()).unwrap()).unwrap();
+        // Projected text is 12 chars; claim 99 ⇒ projection-mismatch.
+        let err = SourceContext::load(path.to_str().unwrap(), 99).unwrap_err();
+        assert_eq!(err.code, "projection-mismatch");
+        let err =
+            SourceContext::load(dir.path().join("absent.json").to_str().unwrap(), 12).unwrap_err();
+        assert_eq!(err.code, "aat-missing");
+    }
+
+    #[test]
+    fn hydrate_region_degrades_markup_but_keeps_snippet() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("src-a.json");
+        std::fs::write(&path, serde_json::to_vec(&typed_aat_fixture()).unwrap()).unwrap();
+        let ctx = SourceContext::load(path.to_str().unwrap(), 12).unwrap();
+
+        let layers = ctx.hydrate_region(2, 5, 2);
+        assert!(layers.errors.is_empty());
+        assert_eq!(layers.snippet.as_ref().unwrap().region, "仏蘭西");
+        assert_eq!(
+            layers.aozora_markup.as_ref().unwrap().text,
+            "｜仏蘭西《フランス》"
+        );
+
+        // Out-of-range region: snippet errors, markup errors, both recorded.
+        let layers = ctx.hydrate_region(0, 999, 2);
+        assert!(layers.snippet.is_none());
+        assert!(layers.aozora_markup.is_none());
+        assert!(!layers.errors.is_empty());
     }
 }

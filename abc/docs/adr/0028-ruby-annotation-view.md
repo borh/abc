@@ -70,6 +70,45 @@ tokenization chain already uses.
    state (per the amended ADR 0027 recipe rules) whether author readings
    supplant tokenizer readings, and how join classifications are handled:
    `aligned-single`, `aligned-multi`, `stem-prefix`, `conflict`.
+6. **Naming and contracts must not hardcode ruby.** The ruby view is the
+   first instance of a general annotation-view family (see Generalization
+   below). Artifact kind, sidecar role, coordinate contract, and identity
+   shape are chosen for the family; ruby is one `annotation_kind` within it.
+
+## Generalization: annotation views beyond ruby
+
+Reaching TEI-EAJ `aozora_tei` Levels 4 and 5 will require annotations that
+are not producer-preserved source structure: named entities, speaker and
+dialogue attribution, quotation structure, dates/places, and similar layers
+produced by ML or LLM models. The annotation-view contract is designed so
+those layers are additional instances of the same shape, not a new design:
+
+- **Same coordinate and join contract.** Every annotation view records spans
+  in the plaintext unicode-scalar coordinate system (and source spans where
+  derivable), and joins to token streams or other annotation views by span
+  intersection. Model annotators consume the plaintext view; they do not get
+  bespoke input paths.
+- **Annotator profile identity.** Model-derived annotation views replace the
+  trivial source-projection policy with a hash-addressed **annotator
+  profile**, following the ADR 0027 tokenizer-profile discipline: model
+  name/version, weights hash, configuration/prompt hash, output schema hash,
+  determinism tier, and fixture evidence hash, with semantic ids bound
+  through the same append-only binding-log rule. The identity slot this ADR
+  introduces for the ruby projection policy is the same slot an annotator
+  profile hash occupies.
+- **Determinism tiers apply per ADR 0027's table.** The ruby view is
+  source-derived and `exact`. Locally pinned model inference is at best
+  `stable`/`bounded` (trusted signed cache only). Remote LLM API outputs are
+  `exploratory`: local only, never substitutable, and never part of an exact
+  release claim. Lowest-tier-wins already governs anything downstream that
+  consumes them.
+- **TEI Levels 4/5 are a rendering consequence, not a separate pipeline.** A
+  future publication renderer (superseding or extending ADR 0025's contract)
+  renders inline TEI from parser-IR plus selected annotation views as
+  standoff inputs, attributing model-derived markup per annotator profile
+  (TEI `@resp`/certainty). That renderer decision is out of scope here; this
+  ADR's job is that annotation artifacts carry the identity and coordinates
+  such a renderer will need.
 
 ## Rejected alternatives
 
@@ -104,6 +143,22 @@ tokenization chain already uses.
 - **Whether the annotation view participates in request-set identity** as an
   input view with its own policy hash (ADR 0026 request-set input-view arrays
   already accommodate this).
+- **Span survival under text-rewriting normalization.** If a tokenizer or
+  annotator profile's input normalization rewrites surface text (e.g. the
+  morphology warehouse's M2 old-kana modernization), token spans refer to the
+  normalized text, not the plaintext view the annotation spans anchor to.
+  Either normalization policies must be span-preserving, or they must emit an
+  offset map back to the plaintext view; profiles that can do neither cannot
+  support annotation joins and must say so in their profile content.
+- **Identity slot naming for the generalized family**: one nullable
+  `annotation_policy_hash`-style field serving both source-projection
+  policies (ruby) and annotator profiles (ML/LLM), or distinct fields; and
+  whether `annotation_kind` belongs in identity or only in content.
+- **Model provenance floor for `exploratory` annotators** (remote LLM APIs):
+  minimum recorded identity (API model id, request parameters, prompt hash,
+  response capture) for a value that can never be exactly replayed, and how
+  such artifacts are marked so release validation excludes them from exact
+  claims.
 
 ## Acceptance criteria (sketch)
 
@@ -121,6 +176,9 @@ tokenization chain already uses.
   consumes the join.
 - Renderer coverage remains schema-derived and fails closed on new parser-IR
   node types, matching the ADR 0025 discipline.
+- The annotation output schema demonstrates the family shape with at least
+  one non-ruby `annotation_kind` fixture (a stub is sufficient), so the ruby
+  slice cannot accidentally specialize the contract.
 
 ## Rollback
 

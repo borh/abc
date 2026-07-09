@@ -70,18 +70,30 @@ impl SourceContext {
                 None
             }
         };
-        let (aozora_markup, aat_nodes) = if char_end > total_chars {
+        // reconstruct_markup's overlap filter would happily succeed on an
+        // over-long range (every span overlaps), so an out-of-range region
+        // must be rejected here to avoid quoting markup for a span the
+        // warehouse never defined. The AAT node layer has no such
+        // correctness concern — it is just node identities — so it is still
+        // computed below with char_end clamped to document bounds.
+        let aozora_markup = if char_end > total_chars {
             errors.push(format!("markup-unreconstructable: span [{char_start}, {char_end}) exceeds document bounds ({total_chars} chars)"));
-            (None, Vec::new())
+            None
         } else {
             match reconstruct_markup(&self.aat, &self.spans, char_start, char_end) {
-                Ok((markup, nodes)) => (Some(markup), nodes),
+                Ok((markup, _nodes)) => Some(markup),
                 Err(err) => {
                     errors.push(err.to_string()); // already "markup-unreconstructable: …"
-                    (None, Vec::new())
+                    None
                 }
             }
         };
+        // Layer 4 (AAT node context) survives markup-layer failure (spec
+        // §Layer 4: "useful for debugging projection artifacts" — most
+        // valuable exactly when markup reconstruction fails). Clamp
+        // char_end so an out-of-range region still yields the spans that
+        // overlap the in-bounds portion.
+        let aat_nodes = contributing_node_refs(&self.spans, char_start, char_end.min(total_chars));
         RegionLayers {
             snippet,
             aozora_markup,
@@ -110,7 +122,6 @@ impl Snippet {
     /// the constructor encodes by leaving `before`/`after` at full context
     /// length; callers never re-check bounds.
     #[must_use]
-    #[allow(dead_code)]
     pub fn marked(&self) -> String {
         let lead = if self.at_doc_start { "" } else { "…" };
         let trail = if self.at_doc_end { "" } else { "…" };
@@ -138,7 +149,7 @@ pub fn snippet_window(
     let start = char_start as usize;
     let end = char_end as usize;
     let context_start = start.saturating_sub(context);
-    let context_end = (end + context).min(chars.len());
+    let context_end = end.saturating_add(context).min(chars.len());
     Ok(Snippet {
         before: chars[context_start..start].iter().collect(),
         region: chars[start..end].iter().collect(),
@@ -178,18 +189,10 @@ pub fn reconstruct_markup(
     char_start: u64,
     char_end: u64,
 ) -> Result<(AozoraMarkup, Vec<AatNodeRef>)> {
-    // Contributing spans, deduped by pointer, in document order. Spans are
-    // sorted by projected offset already (projection contract).
-    let mut pointers_seen = std::collections::BTreeSet::new();
-    let mut contributing = Vec::new();
-    for span in spans {
-        if span.projected_char_end <= char_start || span.projected_char_start >= char_end {
-            continue;
-        }
-        if pointers_seen.insert(span.aat_pointer.clone()) {
-            contributing.push(span);
-        }
-    }
+    // Contributing spans, deduped by pointer, in document order (spec
+    // §Layer 4; the same filter is reused by `contributing_node_refs` for
+    // the AAT-node layer, which survives markup failure).
+    let contributing = contributing_node_refs(spans, char_start, char_end);
     if contributing.is_empty() {
         bail!(
             "markup-unreconstructable: no projection spans cover chars [{char_start}, {char_end})"
@@ -198,22 +201,21 @@ pub fn reconstruct_markup(
 
     let mut rendered = String::new();
     let mut approximate = Vec::new();
-    let mut nodes = Vec::new();
     let mut byte_start = u64::MAX;
     let mut byte_end = 0u64;
     let mut prev_byte_end: Option<u64> = None;
 
-    for span in &contributing {
-        let node = resolve_spanned_node(aat, &span.aat_pointer).ok_or_else(|| {
+    for node_ref in &contributing {
+        let node = resolve_spanned_node(aat, &node_ref.pointer).ok_or_else(|| {
             anyhow::anyhow!(
                 "markup-unreconstructable: pointer {} has no spanned node",
-                span.aat_pointer
+                node_ref.pointer
             )
         })?;
         let (node_start, node_end) = node_byte_span(node).ok_or_else(|| {
             anyhow::anyhow!(
                 "markup-unreconstructable: node {} has no byte span",
-                span.aat_pointer
+                node_ref.pointer
             )
         })?;
         // Coverage check: a gap between consecutive contributing nodes means
@@ -223,31 +225,25 @@ pub fn reconstruct_markup(
             && node_start > prev
         {
             rendered.push('…');
-            approximate.push(span.aat_pointer.clone());
+            approximate.push(node_ref.pointer.clone());
         }
         let piece = render_node(node, node_end - node_start).ok_or_else(|| {
             anyhow::anyhow!(
                 "markup-unreconstructable: node {} ({}) has no renderable content",
-                span.aat_pointer,
-                span.inline_kind
+                node_ref.pointer,
+                node_ref.inline_kind
             )
         })?;
         match piece {
             Rendered::Verbatim(text) => rendered.push_str(&text),
             Rendered::Approximate(text) => {
                 rendered.push_str(&text);
-                approximate.push(span.aat_pointer.clone());
+                approximate.push(node_ref.pointer.clone());
             }
         }
         byte_start = byte_start.min(node_start);
         byte_end = byte_end.max(node_end);
         prev_byte_end = Some(node_end);
-        nodes.push(AatNodeRef {
-            pointer: span.aat_pointer.clone(),
-            inline_kind: span.inline_kind.clone(),
-            is_ruby_base: span.is_ruby_base,
-            is_gaiji: span.is_gaiji,
-        });
     }
     approximate.sort();
     approximate.dedup();
@@ -258,8 +254,35 @@ pub fn reconstruct_markup(
             byte_end,
             approximate_pointers: approximate,
         },
-        nodes,
+        contributing,
     ))
+}
+
+/// The contributing spans' node identities for `[char_start, char_end)`,
+/// deduped by pointer, in document order — computable even when markup
+/// rendering fails (spec §Layer 4: node context survives markup omission).
+/// Spans are sorted by projected offset already (projection contract).
+fn contributing_node_refs(
+    spans: &[ab_plaintext::ProjectionSpan],
+    char_start: u64,
+    char_end: u64,
+) -> Vec<AatNodeRef> {
+    let mut pointers_seen = std::collections::BTreeSet::new();
+    let mut refs = Vec::new();
+    for span in spans {
+        if span.projected_char_end <= char_start || span.projected_char_start >= char_end {
+            continue;
+        }
+        if pointers_seen.insert(span.aat_pointer.clone()) {
+            refs.push(AatNodeRef {
+                pointer: span.aat_pointer.clone(),
+                inline_kind: span.inline_kind.clone(),
+                is_ruby_base: span.is_ruby_base,
+                is_gaiji: span.is_gaiji,
+            });
+        }
+    }
+    refs
 }
 
 enum Rendered {
@@ -528,8 +551,16 @@ pub(crate) mod tests {
             is_gaiji: false,
             is_note: false,
         };
-        let err = reconstruct_markup(&aat, &[span], 0, 1).unwrap_err();
+        let err = reconstruct_markup(&aat, std::slice::from_ref(&span), 0, 1).unwrap_err();
         assert!(err.to_string().contains("markup-unreconstructable"));
+
+        // The AAT node layer is built purely from projection spans (spec
+        // §Layer 4), so it still yields the raw node's ref even though
+        // markup reconstruction failed on it above.
+        let nodes = contributing_node_refs(std::slice::from_ref(&span), 0, 1);
+        assert_eq!(nodes.len(), 1);
+        assert_eq!(nodes[0].pointer, "/blocks/0/content/0");
+        assert_eq!(nodes[0].inline_kind, "raw");
     }
 
     #[test]
@@ -605,9 +636,13 @@ pub(crate) mod tests {
         );
 
         // Out-of-range region: snippet errors, markup errors, both recorded.
+        // The AAT node layer survives (spec §Layer 4: node context is
+        // computable even when markup rendering fails), clamped to the
+        // in-bounds portion of the requested range.
         let layers = ctx.hydrate_region(0, 999, 2);
         assert!(layers.snippet.is_none());
         assert!(layers.aozora_markup.is_none());
         assert!(!layers.errors.is_empty());
+        assert!(!layers.aat_nodes.is_empty());
     }
 }

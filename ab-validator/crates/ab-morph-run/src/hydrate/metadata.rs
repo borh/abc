@@ -42,7 +42,6 @@ impl WorkMeta {
     /// contributor, `、`-separated; falls back to `person:<id>` when both
     /// names are unresolved; empty string when there is no author
     /// contributor.
-    #[allow(dead_code)]
     pub fn display_author(&self) -> String {
         self.contributors
             .iter()

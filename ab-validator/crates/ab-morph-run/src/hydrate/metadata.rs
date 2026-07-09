@@ -87,7 +87,8 @@ fn str_field(value: &serde_json::Value, field: &str) -> Option<String> {
 ///   record is missing/unparseable ⇒ nonfatal error entry
 ///   (`work-record-missing: works/<id>.json` /
 ///   `person-record-missing: persons/<id>.json`); resolution degrades
-///   field-by-field.
+///   field-by-field. A work record that exists but lists no contributors
+///   falls back to the warehouse's `author_person_id`.
 pub fn resolve_work_meta(
     work_row: Option<&WorkRow>,
     abc_catalog: Option<&Path>,
@@ -108,7 +109,6 @@ pub fn resolve_work_meta(
         contributors: Vec::new(),
     };
 
-    let mut record_available = false;
     let mut contributor_pairs: Vec<(String, String)> = Vec::new();
 
     if let Some(catalog) = abc_catalog {
@@ -117,7 +117,6 @@ pub fn resolve_work_meta(
             .join(format!("{}.json", work_row.work_id));
         match load_json(&work_path) {
             Some(record) => {
-                record_available = true;
                 if let Some(work) = record.get("work") {
                     if let Some(title) = str_field(work, "title") {
                         meta.title = Some(title);
@@ -154,8 +153,10 @@ pub fn resolve_work_meta(
         }
     }
 
+    // A work record that exists but lists no contributors must not
+    // silently drop the warehouse's author_person_id — fall back whenever
+    // no contributor was collected, whatever the reason.
     if contributor_pairs.is_empty()
-        && !record_available
         && let Some(author_person_id) = &work_row.author_person_id
     {
         contributor_pairs.push((author_person_id.clone(), "著者".to_owned()));
@@ -265,5 +266,30 @@ mod tests {
                 .iter()
                 .any(|e| e.starts_with("person-record-missing"))
         );
+    }
+
+    #[test]
+    fn contributor_less_work_record_falls_back_to_warehouse_author() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("works")).unwrap();
+        std::fs::create_dir_all(dir.path().join("persons")).unwrap();
+        // Work record present but with no contributors array.
+        std::fs::write(
+            dir.path().join("works/000080.json"),
+            serde_json::json!({"work": {"work_id": "000080", "title": "煙管"}}).to_string(),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join("persons/000879.json"),
+            serde_json::json!({
+                "person_id": "000879", "family_name": "芥川", "given_name": "竜之介"
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let (meta, errors) = resolve_work_meta(Some(&work_row()), Some(dir.path()));
+        assert!(errors.is_empty());
+        // The warehouse author_person_id still resolves through persons/.
+        assert_eq!(meta.unwrap().display_author(), "芥川竜之介");
     }
 }

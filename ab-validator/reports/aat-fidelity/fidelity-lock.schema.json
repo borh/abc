@@ -39,7 +39,7 @@
           },
           "content_hash": {
             "type": "string",
-            "description": "Reserved for Phase 2 Move A: verified content hash of the dump tree. Absent until content-addressing lands."
+            "description": "sha256:<hex> content hash of the dump's aat/ tree (Move A). Recorded by resolve; when the manifest pins expected.content_hash, resolve verifies this equals it and fails closed on mismatch. Format: see reports/lib/aat_hash.py."
           },
           "store_path": {
             "type": "string",

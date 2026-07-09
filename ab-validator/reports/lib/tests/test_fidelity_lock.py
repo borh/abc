@@ -23,6 +23,7 @@ from pathlib import Path
 _LIB = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_LIB))
 
+import aat_hash  # noqa: E402
 import aat_runs  # noqa: E402
 import fidelity_lock  # noqa: E402
 
@@ -100,6 +101,48 @@ class SubstitutionIsIdentity(unittest.TestCase):
         lock = resolve_run_set.resolve_lock(run_set, repo_root=self._tmp, verify_dirs=True)
         new = fidelity_lock.lock_aat_globs(lock, order=["aozora"])
         self.assertEqual(old, new)
+
+
+class ContentVerification(unittest.TestCase):
+    """Move A: resolve verifies each dump against its pinned content_hash, fails closed."""
+
+    def _fixture(self, pinned_hash) -> tuple:
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(lambda: shutil.rmtree(tmp, ignore_errors=True))
+        aat = Path(tmp) / "aat" / "aozora-adapter"
+        aat.mkdir(parents=True)
+        (aat / "000001_1.json").write_text('{"blocks":[]}', encoding="utf-8")
+        expected = {} if pinned_hash is None else {"content_hash": pinned_hash}
+        manifest = Path(tmp) / "run-set.json"
+        manifest.write_text(json.dumps({
+            "schema_version": 1, "run_set_id": "cv",
+            "adapters": {"aozora": {"aat_dir": str(aat), "expected": expected}},
+        }), encoding="utf-8")
+        return tmp, manifest, aat
+
+    def test_verify_records_actual_hash_in_lock(self) -> None:
+        tmp, manifest, aat = self._fixture(pinned_hash=None)  # unpinned: record, don't gate
+        rs = aat_runs.load_run_set(manifest)
+        lock = resolve_run_set.resolve_lock(rs, repo_root=tmp, verify_dirs=True, verify_content=True)
+        self.assertEqual(lock["adapters"]["aozora"]["content_hash"], aat_hash.hash_aat_dir(aat))
+
+    def test_fails_closed_on_hash_mismatch(self) -> None:
+        tmp, manifest, _ = self._fixture(pinned_hash="sha256:deadbeef")
+        rs = aat_runs.load_run_set(manifest)
+        with self.assertRaises(ValueError):
+            resolve_run_set.resolve_lock(rs, repo_root=tmp, verify_dirs=True, verify_content=True)
+
+    def test_correct_pin_passes(self) -> None:
+        tmp, manifest, aat = self._fixture(pinned_hash=None)
+        good = aat_hash.hash_aat_dir(aat)
+        json.loads(manifest.read_text())  # sanity
+        manifest.write_text(json.dumps({
+            "schema_version": 1, "run_set_id": "cv",
+            "adapters": {"aozora": {"aat_dir": str(aat), "expected": {"content_hash": good}}},
+        }), encoding="utf-8")
+        rs = aat_runs.load_run_set(manifest)
+        lock = resolve_run_set.resolve_lock(rs, repo_root=tmp, verify_dirs=True, verify_content=True)
+        self.assertEqual(lock["adapters"]["aozora"]["content_hash"], good)
 
 
 class ComputeIsClosed(unittest.TestCase):

@@ -23,7 +23,19 @@ import sys
 REPORTS_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPORTS_ROOT / "lib"))
 from aat_runs import DEFAULT_DB_ROOT, adapter_aat_dirs, load_run_set, validate_run_set  # noqa: E402
+from aat_hash import hash_aat_dir  # noqa: E402
 from fidelity_lock import LOCK_FORMAT  # noqa: E402
+
+
+def _expected_content_hash(run_set: dict, label: str) -> str | None:
+    entry = run_set.get("adapters", {}).get(label)
+    if isinstance(entry, dict):
+        expected = entry.get("expected")
+        if isinstance(expected, dict):
+            value = expected.get("content_hash")
+            if isinstance(value, str) and value:
+                return value
+    return None
 
 
 def resolve_lock(
@@ -31,14 +43,20 @@ def resolve_lock(
     *,
     repo_root: str = ".",
     verify_dirs: bool = True,
+    verify_content: bool = True,
 ) -> dict:
     """Validate the run-set and return the resolved lock, or raise on failure.
 
-    Folds the two checks the pipeline previously ran separately (validate-aat-run-set
-    coherence + the run-coverage-report.sh non-empty-dir gate) into the one resolve
-    step, and fails closed if either fails. Descriptor (`metadata.json`) presence is
-    NOT required — some dumps legitimately lack one today (behavior-preserving with the
-    pre-Phase-2 pipeline, which validated coherence without `--require-paths`).
+    Folds three checks into the one resolve step and fails closed if any fails:
+    validate-aat-run-set coherence, the non-empty-dir gate, and (Move A) content
+    verification — each pinned adapter's on-disk AAT tree is hashed and compared to the
+    manifest's `expected.content_hash`, so a mutated/truncated/swapped `/db` dump is
+    caught here (the idempotency gate), not silently computed on. Descriptor
+    (`metadata.json`) presence is NOT required — some dumps legitimately lack one today.
+
+    verify_content is on by default (hashing the pinned dumps is ~seconds); pass
+    verify_content=False for fast dev iteration. Adapters without a pinned
+    `content_hash` are recorded but not gated (allows gradual pinning).
     """
     errors = validate_run_set(run_set, repo_root=repo_root, require_paths=False)
     if errors:
@@ -58,6 +76,30 @@ def resolve_lock(
                 "run-set resolves to empty AAT dir(s); refusing to emit a lock:\n  - "
                 + "\n  - ".join(empty)
             )
+
+    adapters: dict[str, dict] = {}
+    hash_errors: list[str] = []
+    for label, aat_dir in dirs.items():
+        entry: dict[str, str] = {"aat_dir": aat_dir}
+        expected = _expected_content_hash(run_set, label)
+        if verify_content:
+            actual = hash_aat_dir(aat_dir)
+            if expected and actual != expected:
+                hash_errors.append(
+                    f"{label}: content hash mismatch — the dump at {aat_dir} does not "
+                    f"match the pinned identity (mutated / truncated / regenerated?): "
+                    f"expected {expected}, got {actual}"
+                )
+            entry["content_hash"] = actual
+        elif expected:
+            entry["content_hash"] = expected  # recorded but unverified (fast mode)
+        adapters[label] = entry
+    if hash_errors:
+        raise ValueError(
+            "dump content verification failed; refusing to emit a lock:\n  - "
+            + "\n  - ".join(hash_errors)
+        )
+
     return {
         "lock_format": LOCK_FORMAT,
         "run_set_id": run_set.get("run_set_id"),
@@ -65,7 +107,7 @@ def resolve_lock(
         # The deployment binding this lock was resolved against (F8: AB_DB_ROOT is a
         # per-deployment bulk-storage root, confined here to the resolve boundary).
         "db_root": os.environ.get("AB_DB_ROOT", DEFAULT_DB_ROOT),
-        "adapters": {label: {"aat_dir": aat_dir} for label, aat_dir in dirs.items()},
+        "adapters": adapters,
     }
 
 
@@ -83,6 +125,12 @@ def main() -> int:
         action="store_true",
         help="Skip the non-empty-AAT-dir gate (for tests without a populated /db).",
     )
+    parser.add_argument(
+        "--no-verify-content",
+        action="store_true",
+        help="Skip hashing dumps to verify content against the pinned content_hash "
+        "(fast dev iteration; the pinned hash is recorded unverified).",
+    )
     args = parser.parse_args()
 
     run_set = load_run_set(args.run_set)
@@ -90,6 +138,7 @@ def main() -> int:
         run_set,
         repo_root=args.repo_root,
         verify_dirs=not args.no_verify_dirs,
+        verify_content=not args.no_verify_content,
     )
     text = json.dumps(lock, ensure_ascii=False, indent=2) + "\n"
     if args.out:

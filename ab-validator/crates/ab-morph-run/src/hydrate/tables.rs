@@ -229,7 +229,7 @@ pub fn read_region_analyzers_for(
 
 /// One morpheme, with its `morpheme_features` folded in by
 /// `read_tokens_for`.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 #[allow(dead_code)]
 pub struct Token {
     pub surface: String,

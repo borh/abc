@@ -15,11 +15,10 @@ _REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "lib"))
-from legacy_json_c14n import canonical_json  # noqa: E402
 from reports.lib.hashing import sha256_hex
 from reports.lib.io import read_json as load_json
 from reports.lib.io import write_json
+from reports.lib.legacy_json_c14n import canonical_json
 from reports.lib.paths import display_path, policy_dir, schemas_dir
 from reports.lib.source_region import (
     ALLOWED_MEASUREMENT_STATUSES as SOURCE_REGION_ALLOWED_MEASUREMENT_STATUSES,

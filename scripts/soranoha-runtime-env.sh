@@ -35,11 +35,7 @@ _soranoha_vars=(
   AB_MORPH_WAREHOUSE_DIR
   AB_MORPH_WAREHOUSE_AAT_DIR
   AB_AAT_RUN_SET
-  AB_AOZORA_RS_AAT_DIR
-  AB_AOZORA2_AAT_DIR
   AB_AOZORA2HTML_AAT_DIR
-  AB_AOZORA_EPUB3_AAT_DIR
-  AB_AOZORA_AAT_DIR
   AB_TEI_EAJ_WORKSET
   ABC_OUTPUT_ROOT
   ABC_REPORT_DIR
@@ -75,11 +71,15 @@ export AB_DB_ROOT="${AB_DB_ROOT:-$SORANOHA_WORKSPACE_ROOT/ab-validator/scratch/s
 export AB_MORPH_WAREHOUSE_DIR="${AB_MORPH_WAREHOUSE_DIR:-$AB_DB_ROOT/morph-warehouse}"
 export AB_MORPH_WAREHOUSE_AAT_DIR="${AB_MORPH_WAREHOUSE_AAT_DIR:-$AB_DB_ROOT/aat-corpus/aozora2html-aat/aozora2html-adapter}"
 export AB_AAT_RUN_SET="${AB_AAT_RUN_SET:-$SORANOHA_WORKSPACE_ROOT/ab-validator/reports/aat-fidelity/run-sets/current.json}"
-export AB_AOZORA_RS_AAT_DIR="${AB_AOZORA_RS_AAT_DIR:-$SORANOHA_WORKSPACE_ROOT/scratch/morph-full-corpus/aats/aozora-rs-adapter}"
-export AB_AOZORA2_AAT_DIR="${AB_AOZORA2_AAT_DIR:-$AB_DB_ROOT/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter}"
+# Per-adapter fidelity AAT dumps are NO LONGER selected by env. The AAT run-set
+# (AB_AAT_RUN_SET -> resolve-run-set -> lock) is the sole dump-selection authority
+# (aat_runs ignores ambient AB_*_AAT_DIR; the parser-IR audits and the mapping
+# smoke resolve dirs from the lock). The former AB_AOZORA{,_RS,2,2HTML,_EPUB3}_AAT_DIR
+# overrides were removed to stop stale/broken defaults (e.g. a nonexistent scratch
+# aozora-rs path) silently diverging from the pins. AB_AOZORA2HTML_AAT_DIR is kept
+# below only as a single-file fixture source for the parser-ir-level3-* smokes and
+# morph-warehouse recipes (a dev convenience, not fidelity dump selection).
 export AB_AOZORA2HTML_AAT_DIR="${AB_AOZORA2HTML_AAT_DIR:-$AB_DB_ROOT/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter}"
-export AB_AOZORA_EPUB3_AAT_DIR="${AB_AOZORA_EPUB3_AAT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter}"
-export AB_AOZORA_AAT_DIR="${AB_AOZORA_AAT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-full-repin-1a4f864/aat/aozora-adapter}"
 
 export ABC_OUTPUT_ROOT="${ABC_OUTPUT_ROOT:-$SORANOHA_WORKSPACE_ROOT/abc/out}"
 export ABC_REPORT_DIR="${ABC_REPORT_DIR:-$ABC_OUTPUT_ROOT/reports}"

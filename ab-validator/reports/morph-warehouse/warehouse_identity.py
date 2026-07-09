@@ -44,6 +44,13 @@ def build_identity_object(
     - schema_files: warehouse schema .sql files; hashed by content.
     - ortho_detect: e.g. 'historical'; None when the flag is not passed.
     - works_parquet: eligibility slice; hashed by content, None when not passed.
+
+    Forward-risk: these keys cover exactly the `analyze-aat` flags the current
+    warehouse recipes vary. Other output-determining flags (`--output-profile`,
+    `--nway*`, `--orthographic-style`, `--ortho-ml-model`, `--parquet-zstd-level`)
+    sit at fixed CLI defaults today and are therefore NOT in identity. If a recipe
+    ever begins varying one, add it here — otherwise identity silently under-covers
+    and a changed run would be served as fresh.
     """
     return {
         "aat_content_hash": aat_hash.hash_aat_dir(aat_dir),
@@ -54,7 +61,10 @@ def build_identity_object(
         "works_parquet_hash": (
             hashing.file_sha256(Path(works_parquet)) if works_parquet is not None else None
         ),
-        "schema_version": {Path(s).name: hashing.file_sha256(Path(s)) for s in schema_files},
+        # Content hashes only, sorted — schema files are identified by their bytes,
+        # not their names, so two same-basename files in different dirs cannot
+        # collide.
+        "schema_version": sorted(hashing.file_sha256(Path(s)) for s in schema_files),
     }
 
 

@@ -1,6 +1,7 @@
 (ns abc.tools.annotation-identity-test
   (:require [abc.tools.analysis-identity :as analysis-identity]
             [abc.tools.files :as files]
+            [abc.tools.manifest :as manifest]
             [clojure.test :refer [deftest is testing]]))
 
 (deftest annotation-policy-hash-test
@@ -26,3 +27,15 @@
               (get-in schema ["$defs" "sidecar" "properties" "role" "enum"])))
     (is (some #{"annotation_policy_hash"}
               (get-in schema ["$defs" "identityObject" "required"])))))
+
+(deftest example-work-fixture-embedded-hashes-pinned-test
+  (testing "committed example-work annotation fixture's embedded hashes match
+            freshly computed schema/policy hashes (catches silent drift if
+            schemas/annotation-output.schema.json or
+            data/annotation-policies/ruby-gaiji-v1.json change)"
+    (let [fixture (files/read-json "examples/v0/example-work/body-annotations.json")
+          policy (files/read-json "data/annotation-policies/ruby-gaiji-v1.json")]
+      (is (= (manifest/schema-hash "schemas/annotation-output.schema.json")
+             (get fixture "schema_hash")))
+      (is (= (analysis-identity/annotation-policy-hash policy)
+             (get fixture "annotation_policy_hash"))))))

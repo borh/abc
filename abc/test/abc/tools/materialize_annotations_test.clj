@@ -90,6 +90,7 @@
           (is (= "annotation" (get manifest-value "artifact_kind")))
           (is (re-matches #"sha256:[0-9a-f]{64}" (get ident "annotation_policy_hash")))
           (is (= policy-hash (get ident "annotation_policy_hash")))
+          (is (nil? (get ident "tei_profile_hash")))
           (is (nil? (get ident "tokenizer_build_hash")))
           (is (nil? (get ident "tokenizer_dictionary_hash")))
           (is (nil? (get ident "tokenizer_profile_hash")))

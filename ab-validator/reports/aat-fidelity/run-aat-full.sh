@@ -89,11 +89,12 @@ if [[ -z "$adapter_id" ]]; then
 fi
 
 # Every adapter's dump identity now fully captures the code that produces its
-# output, so the active skip fires for all three. aozora is a single,
-# self-contained, content-addressed nix binary (no external renderer). The
-# wrapper adapters orchestrate an external renderer (Ruby aozora2html gem /
-# AozoraEpub3.jar) which is now pinned by content: renderer_attr names the nix
-# package whose store dir is resolved and hashed into identity (see below).
+# output, so the active skip fires for all three. Each adapter shells out to an
+# external parser/renderer that is pinned by content: the aozora adapter to the
+# upstream `aozora` parser, the wrapper adapters to the Ruby aozora2html gem /
+# AozoraEpub3.jar. renderer_attr names the nix package whose store dir is
+# resolved, exported under the adapter's env var, and hashed into identity
+# (see below).
 case "$adapter_id" in
   aozora2html)
     default_out_dir="${AB_AOZORA2HTML_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora2html-full-$(date -u +%Y%m%dT%H%M%SZ)}"
@@ -114,12 +115,16 @@ case "$adapter_id" in
     default_jobs="${AB_AOZORA_AAT_FULL_JOBS:-$(nproc)}"
     default_timeout="${AB_AOZORA_AAT_FULL_TIMEOUT:-300s}"
     default_report_id="${AB_AOZORA_AAT_FULL_REPORT_ID:-aozora-full-$(date -u +%F)}"
-    # Self-contained Rust binary resolved from nix past the --print-plan
+    # The Rust mapper binary is resolved from nix past the --print-plan
     # early-exit; here "adapter" is just the flake attr id placeholder that
     # --print-plan reports (no build); it comes prebuilt, no mapper attr.
+    # The adapter spawns the external upstream `aozora` parser (via
+    # AB_AOZORA_BIN); treat it as this adapter's renderer so it is both
+    # provisioned below and pinned by content in the identity, exactly like the
+    # aozora2html/aozora-epub3 renderers.
     adapter="aozora-adapter"
     mapper_attr=""
-    renderer_attr=""
+    renderer_attr="upstream-parser-aozora"
     ;;
   aozora-epub3)
     default_out_dir="${AB_AOZORA_EPUB3_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-epub3-full-$(date -u +%Y%m%dT%H%M%SZ)}"
@@ -222,9 +227,11 @@ ab_index_bin="$(nix build "$repo_root#ab-index" --no-link --print-out-paths)/bin
 ab_check_bin="$(nix build "$repo_root#ab-check" --no-link --print-out-paths)/bin/ab-check"
 triage_python="$(nix build "$repo_root#aat-triage-python" --no-link --print-out-paths)/bin/python3"
 
-# The self-contained aozora adapter also comes from nix (its identity is
-# complete). The wrapper adapters keep the bash-wrapper path set in the case
-# block (ab-check invokes it) and resolve their Rust mapper from nix below;
+# The aozora adapter's Rust mapper binary also comes from nix; adapter_hash_target
+# pins it. The adapter additionally spawns the external upstream `aozora` parser,
+# resolved + provisioned + content-pinned below as this adapter's renderer (so its
+# identity is complete). The wrapper adapters keep the bash-wrapper path set in the
+# case block (ab-check invokes it) and resolve their Rust mapper from nix below;
 # adapter_hash_target then points at that nix mapper binary for them.
 if [[ "$adapter_id" == "aozora" ]]; then
   adapter="$(nix build "$repo_root#aozora-adapter" --no-link --print-out-paths)/bin/aozora-adapter"
@@ -247,9 +254,11 @@ if [[ -n "$mapper_attr" ]]; then
   fi
 fi
 
-# Resolve the external renderer (wrapper adapters) from its nix store dir so it
-# is pinned by content (the Rust mapper was already resolved from nix above).
-# aozora has no external renderer.
+# Resolve each adapter's external parser/renderer from its nix store dir so it is
+# pinned by content (the Rust mapper was already resolved from nix above): the
+# aozora2html Ruby gem, the AozoraEpub3.jar, or — for the aozora adapter — the
+# upstream `aozora` parser it spawns. Each is exported under the env var its
+# adapter reads, so ab-check runs the SAME store binary that identity pins.
 renderer_dir=""
 if [[ -n "$renderer_attr" ]]; then
   renderer_dir="$(nix build "$repo_root#$renderer_attr" --no-link --print-out-paths)"
@@ -258,6 +267,8 @@ if [[ "$adapter_id" == "aozora2html" ]]; then
   export AB_AOZORA2HTML_BIN="$renderer_dir/bin/aozora2html"
 elif [[ "$adapter_id" == "aozora-epub3" ]]; then
   export AB_AOZORAEPUB3_JAR="$renderer_dir/lib/AozoraEpub3.jar"
+elif [[ "$adapter_id" == "aozora" ]]; then
+  export AB_AOZORA_BIN="$renderer_dir/bin/aozora"
 fi
 if [[ ! "$jobs" =~ ^[0-9]+$ || "$jobs" == "0" ]]; then
   echo "--jobs must be a positive integer" >&2

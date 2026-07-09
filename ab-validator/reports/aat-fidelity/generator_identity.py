@@ -37,7 +37,14 @@ def build_identity_object(
     features: str | None = None,
     work_ids: str | None = None,
 ) -> dict[str, Any]:
-    """Assemble the content identity of an AAT dump's inputs."""
+    """Assemble the content identity of an AAT dump's inputs.
+
+    `work_ids` is a *file path* (`ab-check --work-ids` is a `PathBuf` whose JSON
+    content selects works), so it is hashed by CONTENT, not by its path string —
+    otherwise an in-place edit of the work-ids file would leave identity unchanged
+    while the selected works, and thus the output, changed. `features` is a
+    genuine inline comma list, so its literal value is the identity.
+    """
     return {
         "corpus_content_hash": tree_hash.tree_hash(corpus_dir),
         "adapter_version": adapter_version,
@@ -45,7 +52,9 @@ def build_identity_object(
         "feature_patterns_hash": hashing.file_sha256(Path(feature_patterns_file)),
         "timeout": timeout,
         "features": features,
-        "work_ids": work_ids,
+        "work_ids_hash": (
+            hashing.file_sha256(Path(work_ids)) if work_ids is not None else None
+        ),
     }
 
 

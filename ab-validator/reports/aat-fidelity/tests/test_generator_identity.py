@@ -55,21 +55,29 @@ class GeneratorIdentity(unittest.TestCase):
         self.fp.write_text("[p]\nx=1\n", encoding="utf-8")
         self.assertNotEqual(before, self.h())
 
-    def test_output_flags_absent_vs_present(self) -> None:
+    def test_timeout_and_features_absent_vs_present(self) -> None:
         self.assertNotEqual(self.h(), self.h(timeout="30"))
         self.assertNotEqual(self.h(), self.h(features="ruby"))
-        self.assertNotEqual(self.h(), self.h(work_ids="1,2"))
+
+    def test_work_ids_hashed_by_content_not_path(self) -> None:
+        wid = self.d / "work-ids.json"
+        wid.write_text('["1","2"]', encoding="utf-8")
+        with_wid = self.h(work_ids=str(wid))
+        self.assertNotEqual(self.h(), with_wid)  # absent vs present
+        # editing the work-ids file IN PLACE (same path) must change identity
+        wid.write_text('["3","4"]', encoding="utf-8")
+        self.assertNotEqual(with_wid, self.h(work_ids=str(wid)))
 
     def test_identity_object_keys(self) -> None:
         obj = gi.build_identity_object(**self.base)
         self.assertEqual(
             set(obj),
             {"corpus_content_hash", "adapter_version", "adapter_binary_hash",
-             "feature_patterns_hash", "timeout", "features", "work_ids"},
+             "feature_patterns_hash", "timeout", "features", "work_ids_hash"},
         )
         self.assertIsNone(obj["timeout"])
         self.assertIsNone(obj["features"])
-        self.assertIsNone(obj["work_ids"])
+        self.assertIsNone(obj["work_ids_hash"])
 
     def test_provenance_fields(self) -> None:
         aat = self.d / "aat"

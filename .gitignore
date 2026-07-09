@@ -9,3 +9,9 @@ scratch/
 out/
 result
 result-*
+
+# Stray vibrato dictionary root created when `nix develop` runs from the repo
+# root (the shellHook's `mkdir -p dictionary/...` is CWD-relative). The real,
+# intended cache lives in ab-validator/dictionary/ (see ab-validator/.gitignore);
+# this anchors the root duplicate so it never shows as untracked churn.
+/dictionary/

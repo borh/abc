@@ -76,7 +76,8 @@ Two gaps, one project:
 - No manifest-index validator unification for analysis/tokenized kinds in
   the batch path (recorded as a parity gap, out of scope).
 - No changes to manifest schema, request-set schema, or any identity object
-  shape. Zero schema-hash rotation in slice A.
+  shape. The ONE schema that rotates in slice A is
+  `snapshot-index.schema.json` (see A5) — nothing else.
 
 ## Slice A — per-request-set annotation materialization
 
@@ -130,11 +131,25 @@ parser-IR value are already in scope). Outputs land at
 file joins the loose manifest-reference list that feeds
 `snapshot-index.json`.
 
-**A5. Layout-policy/kind plumbing.** `"annotation"` is added to the demo
-plan's `loose_artifact_kinds` and to the generated-plan layout policy;
-whatever kind enums exist in `snapshot-index` validation must admit it. The
-end-to-end test (A7) is the proof that the plumbing is complete — any
-missed enum fails there.
+**A5. Layout-policy/kind plumbing — the one schema rotation.**
+`snapshot-index.schema.json` hard-enums artifact kinds in two places:
+`layoutPolicy.loose_artifact_kinds` items (`["tei","plaintext"]`) and
+`artifactReference.artifact_kind`. Both get `"annotation"`; schema version
+0.1.0 → 0.1.1. `snapshot_index.clj` itself passes kinds through (no code
+enum). Ripple (the schema-contracts drill, per project memory): regenerate
+`schemas/schema-contracts.json` via the abc wrapper `--write`; byte-copy
+the schema into ab-validator's `nix-schemas/` mirror; regenerate
+`ab-validator/data/abc-schemas/schema-contracts.json` via its own
+`--write`; verify BOTH drift checks by actually building them
+(`nix build .#checks.x86_64-linux.schema-contract-drift --no-link` in each
+flake — `--no-build` is blind to this class of breakage). The committed
+example `examples/v0/snapshot/snapshot-index.json` stays untouched: it is
+gated on *internal* hash consistency only (verified: no test compares its
+embedded `snapshot_index_schema_hash` to the live schema file), and
+regenerating it has no producing tool committed. `"annotation"` is then
+added to the demo plan's `loose_artifact_kinds`; the generated-plan layout
+policy gains it too. The end-to-end test (A7) proves the plumbing is
+complete — any missed enum fails there.
 
 **A6. Release guardrails move into the batch path for annotations.** After
 the per-work loop, `materialize-snapshot-root!` runs a distinct, named

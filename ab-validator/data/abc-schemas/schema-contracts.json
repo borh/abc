@@ -101,11 +101,18 @@
       "hash": "sha256:3f7b925bbd70255d480f72f639f045964237a84a52ee58e76642de3633ff0439"
     },
     {
+      "path": "data/abc-schemas/schemas/workflow-nodes.schema.json",
+      "id": "https://w3id.org/abc/schemas/workflow-nodes.schema.json",
+      "title": "Soranoha workflow node summary record",
+      "version": "0.1.0",
+      "hash": "sha256:2fb69d7ef9ab2f889feddb4d14514e0bca2921f0c6817860eba2897f270b90ca"
+    },
+    {
       "path": "data/abc-schemas/schemas/workflow-run.schema.json",
       "id": "https://w3id.org/abc/schemas/workflow-run.schema.json",
       "title": "Soranoha workflow run report",
-      "version": "0.1.0",
-      "hash": "sha256:c7615522f63e60662806c02e2a59db8c44237004d1b7a450c7639fc5798c19ba"
+      "version": "0.2.0",
+      "hash": "sha256:dfa394b5de5495b222c2bc21f5d232bb72e40c991d493de5108bb329d8da3dae"
     }
   ]
 }

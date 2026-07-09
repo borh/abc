@@ -178,6 +178,18 @@ pub fn read_region_analyzers_for(
     run_dir: &Path,
     wanted: &BTreeSet<(String, u64)>,
 ) -> Result<BTreeMap<(String, u64), Vec<RegionAnalyzerRow>>> {
+    // Build a borrowed lookup index: source_id (as &str) → set of wanted region_indices.
+    // This avoids allocating a String for every row before the reject check.
+    let wanted_by_source: BTreeMap<&str, BTreeSet<u64>> =
+        wanted
+            .iter()
+            .fold(BTreeMap::new(), |mut acc, (source_id, region_idx)| {
+                acc.entry(source_id.as_str())
+                    .or_default()
+                    .insert(*region_idx);
+                acc
+            });
+
     let mut regions: BTreeMap<(String, u64), Vec<RegionAnalyzerRow>> = BTreeMap::new();
     for_each_table_batch(run_dir, WarehouseTable::NwayRegionAnalyzers, |batch| {
         let source_ids = str_col(batch, "source_id")?;
@@ -188,10 +200,17 @@ pub fn read_region_analyzers_for(
         let morpheme_ends = u64_col(batch, "morpheme_end")?;
         let surfaces = list_str_col(batch, "surfaces")?;
         for row in 0..batch.num_rows() {
-            let key = (source_ids.value(row).to_owned(), region_indices.value(row));
-            if !wanted.contains(&key) {
+            let source_id = source_ids.value(row);
+            let region_idx = region_indices.value(row);
+            // Borrowed check first: does this source_id exist, and does it have this region_idx?
+            if !wanted_by_source
+                .get(source_id)
+                .is_some_and(|regions| regions.contains(&region_idx))
+            {
                 continue;
             }
+            // Only allocate the owned key after we know the row is wanted.
+            let key = (source_id.to_owned(), region_idx);
             regions.entry(key).or_default().push(RegionAnalyzerRow {
                 analyzer_id: analyzer_ids.value(row).to_owned(),
                 covers_exactly: covers_exactly.value(row),
@@ -228,15 +247,30 @@ pub fn read_tokens_for(
     run_dir: &Path,
     ranges: &BTreeMap<(String, String), Vec<(u64, u64)>>,
 ) -> Result<BTreeMap<(String, String, u64), Token>> {
+    // Build a borrowed lookup index: source_id (as &str) → analyzer_id (as &str) → intervals.
+    // This avoids allocating owned Strings for every row before the reject check.
+    #[allow(clippy::type_complexity)]
+    let ranges_by_source: BTreeMap<&str, BTreeMap<&str, &Vec<(u64, u64)>>> = ranges.iter().fold(
+        BTreeMap::new(),
+        |mut acc, ((source_id, analyzer_id), intervals)| {
+            acc.entry(source_id.as_str())
+                .or_default()
+                .insert(analyzer_id.as_str(), intervals);
+            acc
+        },
+    );
+
     let wanted = |source_id: &str, analyzer_id: &str, morpheme_index: u64| -> bool {
-        ranges
-            .get(&(source_id.to_owned(), analyzer_id.to_owned()))
+        ranges_by_source
+            .get(source_id)
+            .and_then(|by_analyzer| by_analyzer.get(analyzer_id))
             .is_some_and(|intervals| {
                 intervals
                     .iter()
                     .any(|&(start, end)| morpheme_index >= start && morpheme_index < end)
             })
     };
+
     let mut tokens = BTreeMap::new();
     for_each_table_batch(run_dir, WarehouseTable::Morphemes, |batch| {
         let source_ids = str_col(batch, "source_id")?;
@@ -271,17 +305,27 @@ pub fn read_tokens_for(
         let keys = str_col(batch, "feature_key")?;
         let values = str_col(batch, "feature_value")?;
         for row in 0..batch.num_rows() {
-            let key = (
-                source_ids.value(row).to_owned(),
-                analyzer_ids.value(row).to_owned(),
-                indices.value(row),
-            );
-            if let Some(token) = tokens.get_mut(&key)
-                && !values.is_null(row)
-            {
-                token
-                    .features
-                    .insert(keys.value(row).to_owned(), values.value(row).to_owned());
+            if !values.is_null(row) {
+                let source_id = source_ids.value(row);
+                let analyzer_id = analyzer_ids.value(row);
+                // Borrowed pre-check: does this (source_id, analyzer_id) exist in ranges_by_source?
+                // Only allocate the owned key if the borrowed check passes.
+                if ranges_by_source
+                    .get(source_id)
+                    .and_then(|by_analyzer| by_analyzer.get(analyzer_id))
+                    .is_some()
+                {
+                    let key = (
+                        source_id.to_owned(),
+                        analyzer_id.to_owned(),
+                        indices.value(row),
+                    );
+                    if let Some(token) = tokens.get_mut(&key) {
+                        token
+                            .features
+                            .insert(keys.value(row).to_owned(), values.value(row).to_owned());
+                    }
+                }
             }
         }
         Ok(())

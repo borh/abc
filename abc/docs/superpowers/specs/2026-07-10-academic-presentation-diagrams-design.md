@@ -311,6 +311,10 @@ Automated tests cover:
 - failure of a stale current-parser inset;
 - deterministic DOT generation;
 - deterministic normalized SVG generation under pinned inputs;
+- namespace-correct SVG XML: the document root and every emitted element
+  resolve to `http://www.w3.org/2000/svg`;
+- pinned librsvg rasterization to a non-blank 1920 by 1080 image, so structural
+  checks cannot pass an artifact that the presentation renderer cannot use;
 - exact canvas, background, palette, minimum font sizes, title, description,
   embedded font, and absence of external resources;
 - committed DOT and SVG drift;

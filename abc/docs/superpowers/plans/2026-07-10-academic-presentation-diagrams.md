@@ -6,7 +6,7 @@
 
 **Architecture:** Add a checked presentation projection over the existing architecture stages, manifest schema, and ADR ownership data. Pure Clojure builders produce enriched graph values and deterministic DOT; a separate effect-owning SVG pipeline invokes Nix-pinned Graphviz, embeds a pinned Noto Sans CJK JP subset, normalizes the SVG onto an exact 1920×1080 black canvas, and drift-checks committed DOT/SVG artifacts without changing the existing Mermaid registry.
 
-**Tech Stack:** Clojure 1.12, EDN, `clojure.data.xml`, `babashka.process`, Graphviz 12.2.1 from the locked Nixpkgs input, Noto Sans CJK Sans 2.004, fonttools 4.61.1, Kaocha, Nix flakes, SVG 1.1-compatible XML.
+**Tech Stack:** Clojure 1.12, EDN, `clojure.data.xml`, `babashka.process`, Graphviz 12.2.1 from the locked Nixpkgs input, Noto Sans CJK Sans 2.004, a combined Python environment containing fonttools 4.61.1 plus Brotli, librsvg, ImageMagick, Kaocha, Nix flakes, SVG 1.1-compatible XML.
 
 ## Global Constraints
 
@@ -19,6 +19,8 @@
 - At 1920×1080, titles are at least 52 px, primary labels 30 px, secondary labels 22 px, citations 16 px, and strokes 2 px.
 - Preserve SVG text; do not convert labels to paths.
 - Embed the used Noto Sans CJK JP glyph subset as a `data:font/woff2;base64,...` resource.
+- Every emitted SVG element, including the root and hand-built title/background/footer elements, must resolve to the namespace URI `http://www.w3.org/2000/svg`.
+- The pinned Nix gate must rasterize both SVGs with librsvg and verify 1920×1080 PNG output; non-empty XML is not sufficient.
 - Every presentation node has canonical backing. Every semantic connector is backed by an identity-contract relation, canonical edge, or reachable canonical path.
 - The current parser inset must resolve the live path `:aozora-snapshot -> :aat -> :parser-ir`; generation fails when it stops resolving.
 - Presentation data, DOT, and SVG must never enter `manifest_identity_object` or ArtifactID computation.
@@ -46,6 +48,89 @@
 - `flake.nix` — pinned runtime app/dev-shell inputs and `presentation-diagram-drift` check.
 - `docs/architecture.md` — links, audience/purpose distinction, and regeneration instructions.
 - `test/abc/tools/schema_test.clj` — explicit regression that presentation fields are rejected inside manifest identity.
+
+---
+
+### Task 0: Rendering-Risk Preflight Spike
+
+**Files:** None. This blocking preflight runs against the locked toolchain before Task 1 changes repository files.
+
+**Interfaces:**
+- Consumes: the root flake's locked Nixpkgs input.
+- Produces: verified constraints for Graphviz HTML labels and colors, WOFF2 subsetting and variable weights, namespace-qualified XML assembly, and real rasterization.
+
+- [ ] **Step 1: Verify Graphviz HTML labels, palette output, and rasterization**
+
+Run from the monorepo root:
+
+```sh
+nix shell --inputs-from . nixpkgs#graphviz nixpkgs#librsvg -c bash -euo pipefail -c '
+dot_source='"'"'digraph g { graph [bgcolor="transparent",rankdir="LR",splines="polyline"]; node [fontname="Noto Sans CJK JP"]; subgraph cluster_current { label="Current producer implementation"; color="#A7B0BE"; fontcolor="#A7B0BE"; fontsize="22"; style="rounded,dashed"; a [label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="3"><TR><TD><FONT POINT-SIZE="30"><B>AAT evidence</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="22">current detail</FONT></TD></TR></TABLE>>,shape="rect",style="rounded",penwidth="2",color="#F2B84B",fontcolor="#F5F7FA"]; } b [label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="3"><TR><TD><FONT POINT-SIZE="30"><B>Parser-IR</B></FONT></TD></TR></TABLE>>,shape="rect",style="rounded",penwidth="2",color="#48CAE4",fontcolor="#F5F7FA"]; a -> b [label="mapping compatibility",color="#F2B84B",fontcolor="#A7B0BE",fontsize="22",penwidth="2",style="dashed"]; }'"'"'
+svg=$(printf "%s" "$dot_source" | dot -Tsvg)
+colors=$(printf "%s" "$svg" | grep -Eo '"'"'(fill|stroke|color)="[^"]+"'"'"' | sort -u)
+printf "%s\n" "$colors"
+while IFS= read -r declaration; do
+  value=${declaration#*=\"}; value=${value%\"}; value=${value^^}
+  case "$value" in
+    "#000000"|"#F5F7FA"|"#A7B0BE"|"#48CAE4"|"#F2B84B"|"#7BC47F"|"NONE"|"TRANSPARENT") ;;
+    *) echo "unexpected Graphviz color: $value" >&2; exit 1 ;;
+  esac
+done <<<"$colors"
+printf "%s" "$svg" | rsvg-convert --width 1920 --height 1080 >/tmp/soranoha-graphviz-spike.png
+test -s /tmp/soranoha-graphviz-spike.png
+rm -f /tmp/soranoha-graphviz-spike.png
+'
+```
+
+Expected: HTML-table labels rasterize and reported colors are only lowercase forms of the approved palette plus `none`/`transparent`. Any additional named or hex color blocks implementation until the DOT theme explicitly overrides its source.
+
+- [ ] **Step 2: Verify WOFF2 encoding and the retained weight axis**
+
+```sh
+font=$(nix build --inputs-from . nixpkgs#noto-fonts-cjk-sans \
+  --no-link --print-out-paths)/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc
+font_env='let f = builtins.getFlake (toString ./.); pkgs = import f.inputs.nixpkgs { system = builtins.currentSystem; }; in pkgs.python3.withPackages (ps: [ ps.fonttools ps.brotli ])'
+rm -f /tmp/soranoha-font-spike.woff2 /tmp/soranoha-font-spike.ttx
+nix shell --impure --expr "$font_env" -c pyftsubset "$font" \
+  --font-number=0 --text='Soranoha 再現可能性 AAT Parser-IR · 400 700' \
+  --flavor=woff2 --layout-features='*' \
+  --output-file=/tmp/soranoha-font-spike.woff2
+nix shell --impure --expr "$font_env" -c ttx -q -f \
+  -o /tmp/soranoha-font-spike.ttx -t fvar /tmp/soranoha-font-spike.woff2
+rg -n '<AxisTag>wght</AxisTag>|<MinValue>100.0</MinValue>|<MaxValue>900.0</MaxValue>' \
+  /tmp/soranoha-font-spike.ttx
+test -s /tmp/soranoha-font-spike.woff2
+rm -f /tmp/soranoha-font-spike.woff2 /tmp/soranoha-font-spike.ttx
+```
+
+Expected: WOFF2 encoding succeeds and the subset retains the `wght` axis spanning 100–900, covering 400 and 700. `python3Packages.fonttools` alone is not acceptable: its wrapper lacks the optional Brotli module needed for WOFF2.
+
+- [ ] **Step 3: Verify namespace-qualified `data.xml` construction**
+
+Run from `abc/`:
+
+```sh
+clojure -M -e '
+(require (quote [clojure.data.xml :as xml]))
+(let [uri "http://www.w3.org/2000/svg"
+      q #(xml/qname uri %)
+      root (xml/element (q "svg") {:viewBox "0 0 1920 1080"}
+                        (xml/element (q "title") {} "Spike")
+                        (xml/element (q "rect")
+                                     {:x "0" :y "0" :width "1920"
+                                      :height "1080" :fill "#000000"}))
+      parsed (xml/parse-str (xml/emit-str root))]
+  (assert (= uri (xml/qname-uri (:tag parsed))))
+  (assert (every? #(= uri (xml/qname-uri (:tag %)))
+                  (filter :tag (tree-seq map? :content parsed))))
+  (println (xml/emit-str root)))'
+```
+
+Expected: both assertions pass. The emitted prefix is immaterial; every element QName must resolve to the SVG namespace. Never use bare `:svg` plus a literal `:xmlns` attribute.
+
+- [ ] **Step 4: Record the preflight outcome**
+
+Record command outputs in the execution report. If any step fails, stop before Task 1 and revise the rendering design; do not build the pure model around an unproven renderer.
 
 ---
 
@@ -354,6 +439,7 @@ git commit -m "feat(diagram): validate academic presentation model"
 - Consumes: `presentation-model/validated-model` and `presentation-model/reachable?`.
 - Produces:
   - `theme -> presentation theme map`
+  - `validate-graph! [context graph] -> graph`, throwing on missing backing or undeclared edge endpoints
   - `reproducibility-graph [model] -> enriched graph map`
   - `publication-graph [model] -> enriched graph map`
   - `graphs [] -> vector of both graph maps`
@@ -401,6 +487,17 @@ Create `abc/test/abc/tools/diagram/presentation_figures_test.clj`:
   (doseq [g (figures/graphs)
           item (concat (:nodes g) (:edges g))]
     (is (map? (:backing item)) (str (:id g) " " item))))
+
+(deftest graph-validation-rejects-phantom-edge-endpoints
+  (let [context (:context (model/validated-model))]
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"undeclared node"
+         (figures/validate-graph!
+          context
+          {:id :broken
+           :nodes [{:id :declared :backing {:stages [:manifest]}}]
+           :edges [{:from :declared :to :typo
+                    :backing {:stages [:manifest]}}]})))))
 
 (deftest publication-output-summary-is-backed-by-live-output-stages
   (let [g (graph :publication)
@@ -514,7 +611,14 @@ Create `abc/src/abc/tools/diagram/presentation_figures.clj`. Keep data assembly 
       (seq unreachable)
       (conj (str "backing targets are unreachable " unreachable)))))
 
-(defn- assert-graph-backing! [context graph]
+(defn validate-graph! [context graph]
+  (let [node-ids (set (map :id (:nodes graph)))]
+    (doseq [{:keys [from to] :as edge} (:edges graph)
+            endpoint [from to]
+            :when (not (node-ids endpoint))]
+      (throw (ex-info "presentation edge references undeclared node"
+                      {:figure (:id graph) :edge edge
+                       :endpoint endpoint :node-ids node-ids}))))
   (doseq [item (concat (:nodes graph) (:edges graph))]
     (when-not (map? (:backing item))
       (throw (ex-info "presentation item has no canonical backing"
@@ -596,7 +700,7 @@ Create `abc/src/abc/tools/diagram/presentation_figures.clj`. Keep data assembly 
                       :reachable-targets [:tei :rdf :iiif :tokenized :analysis :annotation]}}]
    :footer "Changing an identity-bearing input produces a new ArtifactID and rebuilds only dependent layers."
          :primary-order [:sources :artifact-id :manifest :views]}]
-    (assert-graph-backing! context graph)))
+    (validate-graph! context graph)))
 
 (defn publication-graph [{:keys [metadata context]}]
   (let [figure :publication
@@ -649,7 +753,7 @@ Create `abc/src/abc/tools/diagram/presentation_figures.clj`. Keep data assembly 
      :identity-spine [:source :parser-process :parser-ir :manifest :outputs]
          :primary-order [:source :parser-process :parser-ir :manifest :outputs]
          :footer "Stable contract shown prominently; current AAT implementation shown as a dashed inset."}]
-    (assert-graph-backing! context graph)))
+    (validate-graph! context graph)))
 
 (defn graphs []
   (let [validated (model/validated-model)]
@@ -657,7 +761,7 @@ Create `abc/src/abc/tools/diagram/presentation_figures.clj`. Keep data assembly 
      (publication-graph validated)]))
 ```
 
-The two final `assert-graph-backing!` calls make the backing checks execute in
+The two final `validate-graph!` calls make endpoint and backing checks execute in
 production rather than remaining test-only assertions.
 
 - [ ] **Step 4: Run the focused model and projection tests**
@@ -940,6 +1044,7 @@ Create `abc/test/abc/tools/diagram/presentation_svg_test.clj`:
 (ns abc.tools.diagram.presentation-svg-test
   (:require [abc.tools.diagram.presentation-figures :as figures]
             [abc.tools.diagram.presentation-svg :as svg]
+            [clojure.data.xml :as xml]
             [clojure.string :as str]
             [clojure.test :refer [deftest is]]))
 
@@ -955,11 +1060,19 @@ Create `abc/test/abc/tools/diagram/presentation_svg_test.clj`:
    :theme figures/theme})
 
 (deftest normalization-produces-self-contained-slide-svg
-  (let [out (svg/normalize-svg graph raw-svg (.getBytes "woff2" "UTF-8"))]
+  (let [out (svg/normalize-svg graph raw-svg (.getBytes "woff2" "UTF-8"))
+        root (xml/parse-str out)
+        elements (filter :tag (tree-seq map? :content root))]
     (is (str/includes? out "viewBox=\"0 0 1920 1080\""))
     (is (str/includes? out "fill=\"#000000\""))
-    (is (str/includes? out "<title id=\"figure-title\">Test Figure</title>"))
-    (is (str/includes? out "<desc id=\"figure-description\">Accessible description</desc>"))
+    (is (= svg/svg-namespace (xml/qname-uri (:tag root))))
+    (is (every? #(= svg/svg-namespace (xml/qname-uri (:tag %))) elements))
+    (is (some #(and (= "title" (xml/qname-local (:tag %)))
+                    (= ["Test Figure"] (:content %)))
+              elements))
+    (is (some #(and (= "desc" (xml/qname-local (:tag %)))
+                    (= ["Accessible description"] (:content %)))
+              elements))
     (is (str/includes? out "data:font/woff2;base64,"))
     (is (str/includes? out "font-size=\"52\""))
     (is (= [] (svg/svg-problems out)))))
@@ -974,6 +1087,11 @@ Create `abc/test/abc/tools/diagram/presentation_svg_test.clj`:
 (deftest malformed-graphviz-svg-is-actionable
   (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Graphviz SVG"
                         (svg/normalize-svg graph "not xml" (byte-array 0)))))
+
+(deftest validator-rejects-a-null-namespace-svg-root
+  (is (some #(str/includes? % "root is not in the SVG namespace")
+            (svg/svg-problems
+             "<svg viewBox=\"0 0 1920 1080\"><title>x</title></svg>"))))
 ```
 
 - [ ] **Step 2: Run the focused test and confirm the missing namespace failure**
@@ -1002,6 +1120,8 @@ Create `abc/src/abc/tools/diagram/presentation_svg.clj` with:
   #{"#000000" "#F5F7FA" "#A7B0BE" "#48CAE4" "#F2B84B" "#7BC47F"
     "none" "transparent"})
 
+(def svg-namespace "http://www.w3.org/2000/svg")
+
 (defn- parse-xml [label value]
   (try
     ;; Graphviz emits a remote SVG 1.1 DOCTYPE. The figure is self-contained;
@@ -1019,7 +1139,7 @@ Create `abc/src/abc/tools/diagram/presentation_svg.clj` with:
     parts))
 
 (defn- element [tag attrs & content]
-  (apply xml/element tag attrs content))
+  (apply xml/element (xml/qname svg-namespace (name tag)) attrs content))
 
 (defn- font-style [woff2-bytes]
   (str "@font-face{font-family:'Noto Sans CJK JP';font-style:normal;"
@@ -1037,8 +1157,7 @@ Create `abc/src/abc/tools/diagram/presentation_svg.clj` with:
         graph-content (:content raw-root)
         root
         (element :svg
-                 {:xmlns "http://www.w3.org/2000/svg"
-                  :width "1920" :height "1080"
+                 {:width "1920" :height "1080"
                   :viewBox "0 0 1920 1080"
                   :role "img"
                   :aria-labelledby "figure-title figure-description"}
@@ -1114,11 +1233,20 @@ Create `abc/src/abc/tools/diagram/presentation_svg.clj` with:
                                     (not (str/starts-with? value "#")))]
                      value)
           font-problems (keep font-size-problem
-                              (filter #(= "text" (tag-name %)) nodes))]
+                              (filter #(= "text" (tag-name %)) nodes))
+          wrong-namespace
+          (for [node nodes
+                :when (and (:tag node)
+                           (not= svg-namespace (xml/qname-uri (:tag node))))]
+            (tag-name node))]
       (vec
        (concat
         (when-not (= "0 0 1920 1080" (attr root "viewBox"))
           ["presentation SVG must use viewBox 0 0 1920 1080"])
+        (when-not (= svg-namespace (xml/qname-uri (:tag root)))
+          ["presentation SVG root is not in the SVG namespace"])
+        (for [tag wrong-namespace]
+          (str "presentation element is not in the SVG namespace: " tag))
         (when-not (some #(= "title" (tag-name %)) nodes)
           ["presentation SVG needs title"])
         (when-not (some #(= "desc" (tag-name %)) nodes)
@@ -1408,10 +1536,35 @@ Add beside `:abc/diagrams` in `abc/deps.edn`:
 
 - [ ] **Step 5: Pin the renderer in the ABC app and development shell**
 
-In `abc/flake.nix`, extend `mkCljLauncher` with `callerCwd ? false` and replace its unconditional `cd ${./.}` with:
+In the `apps` system-local `let` in `abc/flake.nix`, add an isolated Python environment and a dedicated caller-working-directory launcher. Do not modify `mkCljLauncher`; its existing callers retain their current working-directory behavior and therefore have no shared-helper blast radius.
 
 ```nix
-${pkgs.lib.optionalString (!callerCwd) "cd ${./.}"}
+presentationFontTools = pkgs.python3.withPackages (ps: [
+  ps.fonttools
+  ps.brotli
+]);
+presentationLauncher = pkgs.writeShellScript "abc-presentation-diagrams" ''
+  set -euo pipefail
+  export HOME="${cljDepsCache}"
+  export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+  export CLJ_CONFIG="${cljDepsCache}/.clojure"
+  export GITLIBS="${cljDepsCache}/.gitlibs"
+  export CLJ_CACHE="$(mktemp -d)"
+  if [ -f abc/deps.edn ] && [ -f abc/docs/architecture-stages.edn ]; then
+    cd abc
+  elif [ -f deps.edn ] && [ -f docs/architecture-stages.edn ]; then
+    :
+  else
+    echo "presentation-diagrams: run from the monorepo root or abc/" >&2
+    exit 2
+  fi
+  export ABC_GRAPHVIZ_DOT="${pkgs.graphviz}/bin/dot"
+  export ABC_FONTTOOLS_SUBSET="${presentationFontTools}/bin/pyftsubset"
+  export ABC_PRESENTATION_FONT="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc"
+  export ABC_PRESENTATION_FONT_DIR="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk"
+  export DOTFONTPATH="$ABC_PRESENTATION_FONT_DIR"
+  exec ${pkgs.clojure}/bin/clojure -M:abc/presentation-diagrams "$@"
+'';
 ```
 
 Add this app next to `validate-design-bundle`:
@@ -1419,35 +1572,16 @@ Add this app next to `validate-design-bundle`:
 ```nix
 presentation-diagrams = {
   type = "app";
-  program = toString (mkCljLauncher {
-    name = "abc-presentation-diagrams";
-    alias = "abc/presentation-diagrams";
-    callerCwd = true;
-    env = ''
-      if [ -f abc/deps.edn ] && [ -f abc/docs/architecture-stages.edn ]; then
-        cd abc
-      elif [ -f deps.edn ] && [ -f docs/architecture-stages.edn ]; then
-        :
-      else
-        echo "presentation-diagrams: run from the monorepo root or abc/" >&2
-        exit 2
-      fi
-      export ABC_GRAPHVIZ_DOT="${pkgs.graphviz}/bin/dot"
-      export ABC_FONTTOOLS_SUBSET="${pkgs.python3Packages.fonttools}/bin/pyftsubset"
-      export ABC_PRESENTATION_FONT="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc"
-      export ABC_PRESENTATION_FONT_DIR="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk"
-      export DOTFONTPATH="$ABC_PRESENTATION_FONT_DIR"
-    '';
-  });
+  program = toString presentationLauncher;
   meta.description = "Generate or drift-check academic presentation SVG diagrams";
 };
 ```
 
-Add `graphviz`, `noto-fonts-cjk-sans`, and `python3Packages.fonttools` to `devShells.default.packages`. Add these shell variables to the same shell:
+In the `devShells` system-local `let`, define the same `presentationFontTools` expression. Add `graphviz`, `noto-fonts-cjk-sans`, and `presentationFontTools` to `devShells.default.packages`. Add these shell variables to the same shell:
 
 ```nix
 ABC_GRAPHVIZ_DOT = "${pkgs.graphviz}/bin/dot";
-ABC_FONTTOOLS_SUBSET = "${pkgs.python3Packages.fonttools}/bin/pyftsubset";
+ABC_FONTTOOLS_SUBSET = "${presentationFontTools}/bin/pyftsubset";
 ABC_PRESENTATION_FONT = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc";
 ABC_PRESENTATION_FONT_DIR = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk";
 DOTFONTPATH = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk";
@@ -1457,6 +1591,15 @@ DOTFONTPATH = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk";
 
 Add `presentation-diagram-renderer` in `abc/flake.nix` checks. It exercises rendering into a writable copy but does not yet require committed artifact equality:
 
+First add this binding beside `cljDepsCache` in the checks `let`:
+
+```nix
+presentationFontTools = pkgs.python3.withPackages (ps: [
+  ps.fonttools
+  ps.brotli
+]);
+```
+
 ```nix
 presentation-diagram-renderer =
   pkgs.runCommand "abc-presentation-diagram-renderer"
@@ -1464,8 +1607,10 @@ presentation-diagram-renderer =
       nativeBuildInputs = [
         pkgs.clojure
         pkgs.graphviz
+        pkgs.imagemagick
+        pkgs.librsvg
         pkgs.noto-fonts-cjk-sans
-        pkgs.python3Packages.fonttools
+        presentationFontTools
       ];
     }
     ''
@@ -1479,13 +1624,17 @@ presentation-diagram-renderer =
       export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
       export GITLIBS="$HOME/.gitlibs"
       export ABC_GRAPHVIZ_DOT="${pkgs.graphviz}/bin/dot"
-      export ABC_FONTTOOLS_SUBSET="${pkgs.python3Packages.fonttools}/bin/pyftsubset"
+      export ABC_FONTTOOLS_SUBSET="${presentationFontTools}/bin/pyftsubset"
       export ABC_PRESENTATION_FONT="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc"
       export ABC_PRESENTATION_FONT_DIR="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk"
       export DOTFONTPATH="$ABC_PRESENTATION_FONT_DIR"
       clojure -M:abc/presentation-diagrams
-      test -s docs/figures/soranoha-reproducibility-architecture.svg
-      test -s docs/figures/soranoha-publication-pipeline.svg
+      for svg in docs/figures/*.svg; do
+        png="$TMPDIR/$(basename "$svg" .svg).png"
+        rsvg-convert --width 1920 --height 1080 "$svg" --output "$png"
+        test "$(magick identify -format '%wx%h' "$png")" = "1920x1080"
+        test "$(magick identify -format '%k' "$png")" -gt 1
+      done
       mkdir -p "$out"
       cp docs/figures/*.dot docs/figures/*.svg "$out"/
     '';
@@ -1572,6 +1721,11 @@ Inspect both PNGs at original size with the image-viewing tool. Report each chec
 - only the approved palette is visible; and
 - both figures look like one professional set.
 
+For the primary-unit count, the five coordinate-family nodes are subordinate
+items inside the single **15-coordinate identity contract** cluster; they count
+as one primary unit, not five. Figure 1 therefore has four primary units:
+sources/evidence, identity contract, validated manifest, and scholarly views.
+
 If any item fails, do not patch generated DOT/SVG. Change only presentation metadata, figure projection data, or shared theme/layout tokens; rerun Steps 1–3. Stop at this checkpoint and show the user the proofs or a concise visual review before committing.
 
 - [ ] **Step 4: Run semantic and structural checks after visual approval**
@@ -1641,11 +1795,20 @@ Rename `presentation-diagram-renderer` to `presentation-diagram-drift` in `abc/f
 
 ```nix
 clojure -M:abc/presentation-diagrams --check
+for svg in docs/figures/*.svg; do
+  png="$TMPDIR/$(basename "$svg" .svg).png"
+  rsvg-convert --width 1920 --height 1080 "$svg" --output "$png"
+  test "$(magick identify -format '%wx%h' "$png")" = "1920x1080"
+  test "$(magick identify -format '%k' "$png")" -gt 1
+done
 mkdir -p "$out"
 echo "Academic presentation DOT and SVG artifacts are current." > "$out/result.txt"
 ```
 
-Keep Graphviz, Noto, fonttools, the offline Clojure cache, and all renderer environment variables unchanged.
+Keep Graphviz, Noto, the combined fonttools+Brotli environment, librsvg,
+ImageMagick, the offline Clojure cache, and all renderer environment variables
+unchanged. Rasterization is a permanent drift-gate responsibility, not only a
+manual-proof step.
 
 - [ ] **Step 4: Link the figures and document their distinct purpose**
 
@@ -1737,12 +1900,14 @@ git commit -m "build(diagram): enforce presentation SVG drift"
 
 - [ ] Both titles exactly match the approved concise titles.
 - [ ] Both SVGs have an explicit black 1920×1080 canvas.
+- [ ] Every element QName resolves to the SVG namespace, including the root.
+- [ ] The pinned Nix gate rasterizes both SVGs to non-blank 1920×1080 PNGs.
 - [ ] Both SVGs embed Noto Sans CJK JP WOFF2 data and preserve text elements.
 - [ ] Figure 1 shows all fifteen live identity coordinates in five families.
 - [ ] Figure 1 distinguishes ArtifactID from content hash.
 - [ ] Figure 2 keeps the stable source → parser process → Parser-IR → manifest → outputs path dominant.
 - [ ] Figure 2 labels the AAT path as **Current producer implementation**.
-- [ ] Every node, citation, and connector passes canonical backing validation.
+- [ ] Every node, citation, connector, and edge endpoint passes canonical validation.
 - [ ] Existing Mermaid diagrams remain unchanged and current.
 - [ ] Presentation artifacts are excluded from manifest identity.
 - [ ] Generated DOT/SVG files are byte-current under pinned Nix inputs.

@@ -1,7 +1,8 @@
 # ADR 0031: Uniform ADR Governance Validation
 
-Status: Proposed
+Status: Accepted
 Date: 2026-07-10
+Accepted: 2026-07-10
 Supersedes: none
 Amends: ADR 0029 [scope: ADR header and decision-graph source validation]
 Depends on: ADR 0029 [scope: generated decision graph contract]
@@ -9,7 +10,9 @@ Source: `docs/superpowers/specs/2026-07-10-adr-governance-hardening-design.md`
 
 ## Implementation Status
 
-Implementation is in progress under the approved governance-hardening plan.
+Accepted on 2026-07-10 after the shared ADR parser, uniform corpus migration,
+Nix governance gate, per-coordinate architecture validation, and workflow-run
+validation passed the Acceptance Criteria below.
 
 ## Context
 

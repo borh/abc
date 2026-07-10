@@ -389,7 +389,31 @@ Parser-IR is a publication boundary, not a claim that every output should contai
 
 Dictionary choice can change POS even when token boundaries look similar [@den2008; @daactools2026].
 
-<!-- Evidence: tokenizer-comparison-view.md regions 15 and 208. Profiles: sudachi-20260116 and unidic-cwj-202512. -->
+<!--
+Evidence path: pinned Sudachi and Vibrato/UniDic flake outputs; ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md
+Inspect/regenerate: printf 'その地点を求むるならば\nメロスには竹馬の友があった。\n' | nix run .#ab-validator-sudachi -- --mode A; printf 'その地点を求むるならば\nメロスには竹馬の友があった。\n' | nix run .#ab-validator-vibrato-tokenize -- --sysdic "$(nix build .#ab-validator-vibrato-dict-cwj --no-link --print-out-paths)/share/vibrato/unidic-cwj-202512.dic.zst"
+Inputs: sudachi-20260116; unidic-cwj-202512; literal bounded regions
+Expected: Sudachi A keeps 求むる and splits 竹馬/の/友; Vibrato splits 求/む/る and 竹馬/の/友
+Class: bounded live query over pinned analyzers
+-->
+
+# Corpus Scale Does Not Remove Local Differences
+
+- **17,894** works analyzed with Vibrato and Sudachi
+- **0** analyzer failures and **0** comparison failures
+- **7,358,000** segmentation-difference regions
+- Boundary-F1 median: **0.973**
+- Boundary-F1 minimum: **0.688** — the work containing 求むる
+
+The median establishes broad agreement; the regions identify analytically consequential disagreement.
+
+<!--
+Evidence path: ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md
+Inspect/regenerate: sed -n '35,100p' ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md
+Inputs: 17,894 AAT files; Vibrato unidic-cwj-202512; Sudachi C
+Expected: 0 failures; 7,358,000 regions; median 0.972972972972973; minimum 0.6884927066450566
+Class: checked-in full-corpus report
+-->
 
 # Live Demo: Follow the Evidence
 
@@ -437,6 +461,7 @@ Provenance narrative: sibling archive paper/demo-trace.md; it is not a build inp
 
 # Appendix: Source Markup Inventory
 
+::: {.compact}
 | Family | Occurrences | Example |
 | --- | ---: | --- |
 | Ruby | 3,607,926 | `吾輩《わがはい》` |
@@ -449,10 +474,37 @@ Provenance narrative: sibling archive paper/demo-trace.md; it is not a build inp
 | Layout | 24,442 | `［＃ページの左右中央］` |
 | Annotations | 35,517 | `「text」の注記付き` |
 | Warigaki | 6,607 | `［＃割り注］` |
+:::
 
-<!-- Counts overlap by family; source: abstract Table 1. -->
+<!--
+Evidence path: ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
+Inspect/regenerate: jq '{works_scanned,markers_total,row_count:(.rows|length),rows:.rows}' ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
+Inputs: 17,894-work source-authority extraction
+Expected: 4,323,915 de-duplicated markers and 50 rows; presentation-family totals overlap
+Class: checked-in generated source-authority summary
+-->
 
-# Appendix: Reading the Parser Numbers
+# Appendix: More Aozora Syntax Examples
+
+::: {.compact}
+| Function | Source example | Corpus evidence |
+| --- | --- | ---: |
+| Directional ruby | `｜あのひと《...》` | 318 occurrences |
+| 縦中横 | `「12」の縦中横` | 19,794 occurrences |
+| 罫囲み | `［＃ここから罫囲み］` | 717 occurrences |
+| Quote block | `［＃ここから引用］` | 21 occurrences |
+| Warigaki | `［＃割り注］` | 6,605 occurrences |
+:::
+
+<!--
+Evidence path: ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md
+Inspect/regenerate: sed -n '70,100p' ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md
+Inputs: 17,894-work source-authority extraction
+Expected: directional ruby 318; tcy 19794; keigakomi 717; quote 21; warichu 6605
+Class: checked-in generated source-authority report
+-->
+
+# Appendix: Parser Names and Measurement Lenses
 
 - **Breadth:** curated constructs, equal weight per vector
 - **Mass:** real-corpus occurrences, ruby-dominated
@@ -461,3 +513,82 @@ Provenance narrative: sibling archive paper/demo-trace.md; it is not a build inp
 - **Speed:** operational feasibility
 
 No single column answers every research question.
+
+<!--
+Evidence path: ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
+Inspect/regenerate: sed -n '85,145p' ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
+Inputs: adapter and native-parser measurement paths
+Expected: separate conformance, capability, mass, fidelity, robustness, and speed interpretations
+Class: checked-in comparison methodology
+-->
+
+# Appendix: Parser Coverage by Construct
+
+::: {.compact}
+| Construct | Source occurrences | Pipeline | aozora-rs | aozora2 | aozora2html | Epub3 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Ruby | 3,607,926 | 0.99 | 0.99 | 0.85 | 0.74 | 0.96 |
+| Heading | 80,592 | 0.84 | 0.24 | 0.92 | 0.77 | 0.84 |
+| Gaiji | 62,355 | 0.77 | 1.00 | 0.82 | 0.57 | 0.00 |
+| 縦中横 | 19,794 | 0.95 | 0.00 | 0.86 | 0.00 | 0.69 |
+| 傍線 | 18,127 | folded | 0.18 | 0.95 | 0.79 | 0.81 |
+:::
+
+<!--
+Evidence path: ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
+Inspect/regenerate: sed -n '219,285p' ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
+Inputs: normalized full-corpus adapter vocabulary and source denominators
+Expected: construct rows and normalized rates shown above
+Class: checked-in frequency-weighted coverage report
+-->
+
+# Appendix: Transformation Taxonomy
+
+::: {.compact}
+| Category | Default meaning | Sidecar |
+| --- | --- | --- |
+| `LOSS` | AAT information lacks an IR field | yes |
+| `INVENTION` | IR requires an absent value | no |
+| `AMBIGUITY` | semantic/range mismatch | yes |
+| `UNSUPPORTED` | no IR representation | yes |
+| `STRUCTURAL` | tree-shape boundary loss | yes |
+:::
+
+<!--
+Evidence path: ab-validator/data/aat-to-parser-ir-mapping-v1.json
+Inspect/regenerate: jq '.loss_taxonomy' ab-validator/data/aat-to-parser-ir-mapping-v1.json
+Inputs: mapping version 0.2.1
+Expected: five categories with default action and records_sidecar flag
+Class: checked-in mapping contract
+-->
+
+# Appendix: Additional Tokenizer Regions
+
+::: {.compact}
+| Region | Sudachi | Vibrato + CWJ | Research consequence |
+| --- | --- | --- | --- |
+| 求むる | one verb | 求／む／る | archaic morphology and POS |
+| 竹馬の友 | C: one named entity | three tokens | idiom/entity recognition |
+| む | inside 求むる | CWJ: noun; CSJ: auxiliary | dictionary-dependent POS |
+:::
+
+<!--
+Evidence path: pinned Sudachi and Vibrato dictionary outputs; ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md
+Inspect/regenerate: printf 'その地点を求むるならば\nメロスには竹馬の友があった。\n' | nix run .#ab-validator-sudachi -- --mode C
+Inputs: sudachi-20260116 and versioned UniDic profiles
+Expected: bounded region differences shown above; dictionary identity recorded with artifact
+Class: bounded live query plus checked-in corpus report
+-->
+
+# Appendix: Reproducing the Evidence
+
+- [Pinned TEI-EAJ source](https://github.com/TEI-EAJ/aozora_tei):
+  `nix run .#abc-tei-eaj-aozora-tei-source`
+- Parser study:
+  `sed -n '219,345p' ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md`
+- Mapping rule A-06:
+  `jq '.transform_rule_descriptions[] | select(.rule_id == "A-06")' ab-validator/data/aat-to-parser-ir-mapping-v1.json`
+- Publication fixture:
+  `nix run .#abc-materialize-publication -- abc/examples/v0/example-work/parser-ir.json abc/examples/v0/example-work/metadata-record.json abc/examples/v0/example-persons /tmp/jadh-publication --generated-at 2026-07-03T00:00:00Z`
+
+The publication command demonstrates the reproducible fixture—not the gated real Melos comparison.

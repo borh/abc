@@ -1,7 +1,7 @@
 # Gate A: full-corpus AAT parity (fork shim vs run-set-pinned reference)
 
 **Date:** 2026-07-10
-**Authority:** ADR 0031 (hard detach), `.superpowers/sdd/task-9-brief.md`,
+**Authority:** ADR 0032 (hard detach), `.superpowers/sdd/task-9-brief.md`,
 `docs/handoffs/2026-07-10-parser-fork-provenance.md`.
 **Verdict:** `FORK_PARITY_CONFIRMED`
 

@@ -1,7 +1,7 @@
 # Gate B: fork conformance parity (127-vector suite + 30-vector official-docs seed)
 
 **Date:** 2026-07-10
-**Authority:** ADR 0031 (hard detach), `.superpowers/sdd/task-7-brief.md`,
+**Authority:** ADR 0032 (hard detach), `.superpowers/sdd/task-7-brief.md`,
 `docs/handoffs/2026-07-10-parser-fork-provenance.md`.
 **Verdict:** `FORK_CONFORMANCE_PARITY_CONFIRMED`
 

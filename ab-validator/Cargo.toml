@@ -45,7 +45,7 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 
 # Lifted verbatim from the aozora upstream workspace root (rev 1a4f864,
-# ADR 0031 hard detach) so the `ab-aozora-*` crates' `[lints] workspace =
+# ADR 0032 hard detach) so the `ab-aozora-*` crates' `[lints] workspace =
 # true` / `[lints.rust] ...` stanzas resolve unchanged. Scoped: Cargo
 # only applies `[workspace.lints]` to member crates that opt in via
 # `[lints] workspace = true`; no other ab-validator crate does, so this

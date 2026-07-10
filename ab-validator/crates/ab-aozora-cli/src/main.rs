@@ -1,7 +1,7 @@
 //! Parity shim (Phase 1 only): reproduces `aozora inspect
 //! {nodes,pairs,diagnostics,gaiji} -` byte-for-byte over the lifted
 //! ab-aozora-facade (fork of P4suta/aozora at
-//! 1a4f864603970983719655aa4af4525958ac2d38; ADR 0031).
+//! 1a4f864603970983719655aa4af4525958ac2d38; ADR 0032).
 //! (`pairs` added by Task 7: the conformance harness probes it on
 //! inspect adapters; upstream `InspectKind::Pairs => json::pairs(&tree)`.)
 use std::io::{Read, Write};
@@ -11,7 +11,7 @@ use ab_aozora_facade::{Document, json};
 const VERSION_LINE: &str = concat!(
     "ab-aozora-cli ",
     env!("CARGO_PKG_VERSION"),
-    " (fork of P4suta/aozora @ 1a4f864, ADR 0031)"
+    " (fork of P4suta/aozora @ 1a4f864, ADR 0032)"
 );
 
 fn main() {

@@ -4,7 +4,7 @@ Status: Accepted
 Date: 2026-07-10
 Accepted: 2026-07-10
 Supersedes: none
-Amended by: ADR 0031
+Amended by: ADR 0032
 Amends: ADR 0002
 Depends on: ADR 0002, ADR 0007, ADR 0023
 Source: `ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md`

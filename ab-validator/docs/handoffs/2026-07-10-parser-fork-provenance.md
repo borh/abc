@@ -1,8 +1,12 @@
 # Parser fork provenance (hard detach)
 
 Date: 2026-07-10
-Authority: ADR 0030 (selection), ADR 0031 (hard detach),
+Authority: ADR 0030 (selection), ADR 0032 (hard detach),
 `docs/superpowers/specs/2026-07-10-consolidated-parser-design.md`.
+
+Note: 2026-07-10: ADR renumbered 0031→0032 after main allocated 0031 to
+governance validation; frozen gate-evidence JSONs retain the binary's
+original 0031-bearing version string.
 
 ## Detach point
 
@@ -61,8 +65,9 @@ Closure notes (Step 1 evidence):
 
 Not lifted: aozora-cst / aozora-query (feature-gated off in the umbrella —
 Step 2 evidence), aozora-cli (the shim in crates/ab-aozora-cli reimplements
-only the 3-kind inspect dispatch over `ab_aozora_facade::json`), and all
-bindings/tooling crates per the design's minimal-core decision.
+only the 4-kind inspect dispatch (nodes, diagnostics, gaiji, pairs) over
+`ab_aozora_facade::json`), and all bindings/tooling crates per the design's
+minimal-core decision.
 
 ## Step 2 evidence: cst/query feature gating
 

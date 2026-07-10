@@ -1,4 +1,4 @@
-# ADR 0031: Parser Fork Hard Detach
+# ADR 0032: Parser Fork Hard Detach
 
 Status: Accepted
 Date: 2026-07-10
@@ -73,7 +73,7 @@ timeouts). The porting lane stays open and cheap relative to merging.
 
 ## Acceptance Criteria
 
-- ADR 0030 carries the reciprocal `Amended by: ADR 0031` header link,
+- ADR 0030 carries the reciprocal `Amended by: ADR 0032` header link,
   enforced by the header-hygiene lint proven in
   `test/abc/tools/diagram/adr_graph_test.clj`.
 - The fork-provenance handoff

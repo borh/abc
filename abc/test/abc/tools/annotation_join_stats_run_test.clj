@@ -10,7 +10,7 @@
             [clojure.test :refer [deftest is testing]]))
 
 (deftest work-id-from-aat-filename-test
-  (is (= "000050_50770"
+  (is (= "000050_50770-ec42438f68c8"
          (run/work-id-from-aat-filename "000050_50770-ec42438f68c8.json"))))
 
 (deftest work-id-from-aat-filename-rejects-unexpected-test
@@ -236,7 +236,7 @@
                  (catch clojure.lang.ExceptionInfo e e))]
         (is (some? ex))
         (is (= "Tokenizer output missing for works" (ex-message ex)))
-        (is (= ["000002_2"] (:missing (ex-data ex)))))
+        (is (= ["000002_2-bbbbbbbbbbbb"] (:missing (ex-data ex)))))
       (finally
         (fixture/delete-tree! root)))))
 
@@ -317,7 +317,7 @@
         (is (= "passed" (get run-record "status")))
         (testing "the errored work is excluded and lands in skipped_work_ids"
           (is (= 1 (get aggregate "work_count")))
-          (is (= ["000002_2"] (get aggregate "skipped_work_ids"))))
+          (is (= ["000002_2-bbbbbbbbbbbb"] (get aggregate "skipped_work_ids"))))
         (testing "the tokenize step records a warning about errored works"
           (let [tokenize-step (->> (get run-record "steps")
                                    (filter #(= "tokenize" (get % "id")))
@@ -413,7 +413,7 @@
           (is (= (files/read-json plan-file)
                  (files/read-json (io/file out-root "join-stats-plan.json")))))
         (testing "pipeline artifacts exist per work"
-          (doseq [work-id ["000001_1" "000002_2"]]
+          (doseq [work-id ["000001_1-aaaaaaaaaaaa" "000002_2-bbbbbbbbbbbb"]]
             (is (.isFile (io/file out-root "parser-ir" work-id
                                   "parser-ir.json")))
             (is (.isFile (io/file out-root "plaintext" (str work-id ".txt"))))
@@ -421,7 +421,7 @@
                                   (str work-id ".tokens.jsonl"))))))
         (testing "streamed demux keeps each work's tokens aligned to its
                   own plaintext lines"
-          (doseq [work-id ["000001_1" "000002_2"]]
+          (doseq [work-id ["000001_1-aaaaaaaaaaaa" "000002_2-bbbbbbbbbbbb"]]
             (let [plain-lines (->> (string/split
                                     (slurp (io/file out-root "plaintext"
                                                     (str work-id ".txt")))

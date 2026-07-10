@@ -23,10 +23,15 @@
             [clojure.string :as string]))
 
 (defn work-id-from-aat-filename
-  "AAT dump files are named <work-id>-<hash12>.json; return the work id."
+  "AAT dump files are named <work-id>-<hash12>.json; return the full file
+  stem (work id + content-hash suffix). A dump can contain several files
+  for one Aozora work (multi-file works, fragments) with distinct hashes,
+  so the bare work id is not a unique pipeline key — a full-corpus repin
+  dump has 236 work ids spanning 281 extra files. File-stem identity keeps
+  every dump entry distinct; work-level aggregation stays a follow-up."
   [filename]
-  (if-let [[_ work-id] (re-matches #"(.+)-[0-9a-f]{12}\.json" filename)]
-    work-id
+  (if-let [[_ stem] (re-matches #"((.+)-[0-9a-f]{12})\.json" filename)]
+    stem
     (throw (ex-info "AAT filename does not match <work-id>-<hash12>.json"
                     {:filename filename}))))
 

@@ -18,7 +18,7 @@ Budget: 22 min talk + 5 min demo + 3 min buffer.
 Render with the downstream website generator; the Markdown remains Pandoc-flavored and backend-neutral.
 -->
 
-# Aozora Bunko Is Shared Research Infrastructure
+# Aozora Bunko as Shared Research Infrastructure
 
 - Public reading and literary scholarship
 - Corpus linguistics, stylistics, and NLP
@@ -377,12 +377,34 @@ Inputs: TEI-EAJ/aozora_tei@77a675fc2771936f9544505d922d4cd45075338c
 Expected: SHA-256 c2f6e43fbc3235e832feccf47e5b06c896959d8aa2a9798132e8dca12df5c7be; work 1567; curated Level 4
 Class: pinned upstream curated TEI
 
-DRAFT XML GATE
-Evidence path: target abc/paper/demo-melos-real/{parser-ir.aozora2html.json,metadata-record.json,source.manifest.json,tei.xml,tei.manifest.json,tei-validation-result.json}
-Inspect/regenerate: rg --files abc | rg 'demo-melos-real/(parser-ir|metadata-record|source\.manifest|tei\.xml|tei\.manifest|tei-validation-result)'
-Inputs: work ID 1567; tracked Parser-IR, metadata/persons, source manifest; generated-at 2026-07-04T00:00:00Z
-Expected: work-matched TEI plus manifest identity and zero validation findings
-Class: readiness gate; no Soranoha fixture is shown as a real edition
+-->
+
+# Generated Soranoha TEI from the Same Work
+
+## [走れメロス](https://www.aozora.gr.jp/cards/000035/card1567.html)
+
+```xml
+<p>
+  <s xml:id="s000000">　メロスは激怒した。</s>
+  <s xml:id="s000001">必ず、かの
+    <ruby type="furigana" rend="right">
+      <rb>邪智暴虐</rb><rt>じゃちぼうぎゃく</rt>
+    </ruby>の王を除かなければならぬと決意した。</s>
+  <s xml:id="s000002">メロスには政治がわからぬ。</s>
+  <s xml:id="s000003">メロスは、村の牧人である。</s>
+</p>
+```
+
+- **TEI-EAJ** adds curated people, places, and roles.
+- **Soranoha** adds generated sentence boundaries and explicit ruby direction.
+- Relax NG, Schematron, and XML well-formedness all pass with **zero findings**.
+
+<!--
+Evidence path: docs/presentations/evidence/melos-1567-wip.md
+Inspect/regenerate: sed -n '1,120p' docs/presentations/evidence/melos-1567-wip.md
+Inputs: Soranoha 606937f5; Aozora Bunko 0e9ea3e586eb0aa34039fabfc85a407d2f98b165; aozora2html; tei-profile-v0; snapshot date 2026-07-10
+Expected: TEI SHA-256 c5fa74b94b853878857f390e900ebe04bbf7479493042ef580faa9c9ce1d3481; ArtifactID c65d60679502f267cf54d1614d457e93d1852261245335bd901138a1c052d7da; three validation layers passed with zero findings
+Class: checked-in WIP evidence snapshot from a hermetic full-corpus run; bounded regeneration command not yet stable
 -->
 
 # Publication Is Plural
@@ -500,7 +522,7 @@ Provenance narrative: sibling archive paper/demo-trace.md; it is not a build inp
 
 - Long-tail gaps remain, including 字詰め and 横組 in the recommended candidate.
 - Parser consolidation is recommended, not complete.
-- A work-matched TEI-EAJ/Soranoha XML comparison is in progress.
+- A bounded, presentation-safe regeneration command for the Melos comparison is still in progress.
 - TEI Levels 4–5 require editorial and enrichment work.
 - Tokenizer suitability needs work-level and genre-aware evaluation.
 - Every corpus, parser, dictionary, or profile change requires remeasurement.

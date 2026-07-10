@@ -537,6 +537,9 @@
           {
             pname,
             cargoBuildFlags ? null,
+            # Defaults suit the gated workspace CLIs. An ungated simple bin must
+            # pass `nativeBuildInputs = [ ]` and `gated = false` explicitly, else
+            # it silently gains pkg-config and stub-on-unscaffolded behavior.
             nativeBuildInputs ? [ pkgs.pkg-config ],
             buildInputs ? [ ],
             env ? { },
@@ -793,11 +796,7 @@
             name = "aozora-rs";
             manifestPath = "adapters/aozora-rs/Cargo.toml";
             cargoDeps = aozoraRsAdapterCargoDeps;
-            extraEnv = {
-              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
-              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
-              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-            };
+            extraEnv = gaijiEnv;
           })
           (mkAdapterCargoQualityCheck {
             name = "aozora-epub3";
@@ -847,11 +846,7 @@
             manifestPath = "adapters/aozora-rs/Cargo.toml";
             cargoDeps = aozoraRsAdapterCargoDeps;
             checkSuffix = "decoding-contract-check";
-            extraEnv = {
-              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
-              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
-              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-            };
+            extraEnv = gaijiEnv;
             cargoCommand = ''
               cargo test --manifest-path "$manifest" \
                 --offline --locked source_decoding_contract
@@ -1137,14 +1132,7 @@
             pkgs.zstd
           ];
 
-          buildInputs = [
-            pkgs.pdfium-binaries
-          ]
-          ++ lib.optionals pkgs.stdenv.isDarwin [
-            pkgs.libiconv
-            pkgs.darwin.apple_sdk.frameworks.Security
-            pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-          ];
+          buildInputs = gaijiBuildInputs;
 
           src = source;
         };

@@ -550,13 +550,7 @@
               }
               ''
                 ${copyWritableSource}
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                export GITLIBS="$HOME/.gitlibs"
-
+                ${cljSandboxEnv}
                 clojure -M:abc/adr-governance
 
                 mkdir -p "$out"

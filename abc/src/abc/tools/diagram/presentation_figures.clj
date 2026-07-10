@@ -59,6 +59,16 @@
 
 (def ^:private relation-keys #{:coordinates :stages :path})
 
+(def ^:private node-relations
+  {:source #{:stages}
+   :evidence #{:stages}
+   :contract #{:stages}
+   :identity #{:stages}
+   :output #{:stages}
+   :implementation-detail #{:stages}
+   :coordinate-family #{:coordinates}
+   :identity-formula #{:coordinates}})
+
 (def ^:private edge-relations
   {:identity-input #{:coordinates}
    :identity #{:coordinates :stages}
@@ -101,9 +111,8 @@
 
 (defn- item-relation-problems [item-type role backing]
   (let [actual (set/intersection relation-keys (set (keys backing)))
-        allowed (if (= :node item-type)
-                  #{:coordinates :stages}
-                  (get edge-relations role #{}))]
+        allowed (get (if (= :node item-type) node-relations edge-relations)
+                     role #{})]
     (when (seq (set/difference actual allowed))
       [(str (name item-type) " backing relation is invalid for role " role
             ": " (sort actual))])))
@@ -117,23 +126,31 @@
         stage-values (if (valid-list? stages keyword?) stages [])
         target-values (if (valid-list? reachable-targets keyword?)
                         reachable-targets [])
+        path-values (if (valid-list? path keyword?) path [])
         adr-values (if (and (sequential? adrs) (every? integer? adrs)) adrs [])
         coordinate-set (:coordinates context)
         stage-set (set (keys (:stages context)))
         missing-coordinates (sort (remove coordinate-set coordinate-values))
         missing-stages (sort (remove stage-set stage-values))
         missing-targets (sort (remove stage-set target-values))
+        missing-path-stages (sort (remove stage-set path-values))
+        zero-hop-path? (boolean (some (fn [[from to]] (= from to))
+                                      (partition 2 1 path-values)))
+        path-ready? (and (<= 2 (count path-values))
+                         (empty? missing-path-stages)
+                         (not zero-hop-path?))
         allowed-adrs (set (concat
                            (mapcat #(get-in context [:stages % :adr]) stage-values)
                            (mapcat #(get (:coordinate-owners context) %)
                                    coordinate-values)))
         invalid-adrs (sort (remove allowed-adrs adr-values))
         nonexistent-adrs (sort (remove (:adr-nums context) adr-values))
-        path-source (when (valid-list? path keyword?) (first path))
-        unreachable (sort (remove #(and path-source
-                                        (model/reachable? (:stage-edges context)
-                                                          path-source %))
-                                  target-values))]
+        path-source (first path-values)
+        unreachable (if path-ready?
+                      (sort (remove #(model/reachable? (:stage-edges context)
+                                                       path-source %)
+                                    target-values))
+                      [])]
     (cond-> (into shapes (item-relation-problems item-type role backing))
       (seq missing-coordinates)
       (conj (str "unknown backing coordinates " missing-coordinates))
@@ -141,12 +158,17 @@
       (conj (str "unknown backing stages " missing-stages))
       (seq missing-targets)
       (conj (str "unknown reachable targets " missing-targets))
+      (seq missing-path-stages)
+      (conj (str "unknown backing path stages " missing-path-stages))
+      zero-hop-path?
+      (conj (str "backing path contains a zero-hop between consecutive stages "
+                 path))
       (seq invalid-adrs)
       (conj (str "citations are not canonical for backing " invalid-adrs))
       (seq nonexistent-adrs)
       (conj (str "citations reference non-existent ADRs " nonexistent-adrs))
       (and (contains? backing :path)
-           (valid-list? path keyword?)
+           path-ready?
            (not (path-valid? context path)))
       (conj (str "backing path does not resolve " path))
       (seq unreachable)

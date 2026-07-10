@@ -1,10 +1,18 @@
 (ns abc.tools.diagram.presentation-figures-test
   (:require [abc.tools.diagram.presentation-figures :as figures]
             [abc.tools.diagram.presentation-model :as model]
+            [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]))
 
 (defn- graph [id]
   (some #(when (= id (:id %)) %) (figures/graphs)))
+
+(defn- validation-problems [context graph]
+  (try
+    (figures/validate-graph! context graph)
+    nil
+    (catch clojure.lang.ExceptionInfo ex
+      (:problems (ex-data ex)))))
 
 (deftest reproducibility-figure-has-approved-title-and-five-coordinate-families
   (let [g (graph :reproducibility)
@@ -62,20 +70,23 @@
 
 (deftest graph-validation-requires-recognized-non-empty-well-formed-backing
   (let [context (:context (model/validated-model))
-        valid-node {:id :declared :backing {:stages [:manifest]}}
+        valid-node {:id :declared :role :identity
+                    :backing {:stages [:manifest]}}
         valid-edge {:from :declared :to :other :role :validation
                     :backing {:path [:parser-ir :manifest]}}
         graph-with-node-backing
         (fn [backing]
           {:id :broken-node
            :nodes [(assoc valid-node :backing backing)
-                   {:id :other :backing {:stages [:manifest]}}]
+                   {:id :other :role :identity
+                    :backing {:stages [:manifest]}}]
            :edges [valid-edge]})
         graph-with-edge-backing
         (fn [role backing]
           {:id :broken-edge
            :nodes [valid-node
-                   {:id :other :backing {:stages [:manifest]}}]
+                   {:id :other :role :identity
+                    :backing {:stages [:manifest]}}]
            :edges [(assoc valid-edge :role role :backing backing)]})]
     (doseq [[label graph]
             [["empty map" (graph-with-node-backing {})]
@@ -101,6 +112,59 @@
            clojure.lang.ExceptionInfo #"backing is invalid"
            (figures/validate-graph! context graph))
           label))))
+
+(deftest graph-validation-rejects-unknown-and-zero-hop-path-members
+  (let [context (:context (model/validated-model))
+        graph-with-path
+        (fn [path]
+          {:id :path-backing
+           :nodes [{:id :from :role :evidence
+                    :backing {:stages [:aat]}}
+                   {:id :to :role :contract
+                    :backing {:stages [:parser-ir]}}]
+           :edges [{:from :from :to :to :role :validation
+                    :backing {:path path
+                              :reachable-targets [:parser-ir]}}]})]
+    (doseq [[label path expected]
+            [["unknown self path" [:missing :missing]
+              ["unknown backing path stages" "zero-hop"]]
+             ["unknown destination" [:aat :missing]
+              ["unknown backing path stages"]]
+             ["consecutive identical member" [:aat :aat :parser-ir]
+              ["zero-hop"]]]]
+      (let [problems (validation-problems context (graph-with-path path))]
+        (is (seq problems) label)
+        (doseq [fragment expected]
+          (is (some #(str/includes? % fragment) problems) label))
+        (is (not-any? #(str/includes? % "does not resolve") problems)
+            (str label " is rejected before reachability"))))
+    (let [reachability-calls (atom 0)]
+      (with-redefs [model/reachable? (fn [& _]
+                                       (swap! reachability-calls inc)
+                                       false)]
+        (is (seq (validation-problems context
+                                      (graph-with-path [:aat :missing])))))
+      (is (zero? @reachability-calls)
+          "unknown path stages prevent reachability evaluation"))
+    (is (= (graph-with-path [:aat :parser-ir])
+           (figures/validate-graph! context
+                                    (graph-with-path [:aat :parser-ir]))))))
+
+(deftest graph-validation-enforces-node-role-backing-relations
+  (let [context (:context (model/validated-model))]
+    (doseq [[label node]
+            [["output node cannot use coordinate backing"
+              {:id :output :role :output
+               :backing {:coordinates ["manifest_schema_hash"]}}]
+             ["unknown node role cannot use stage backing"
+              {:id :unknown :role :imaginary
+               :backing {:stages [:manifest]}}]]]
+      (let [problems (validation-problems
+                      context {:id :node-role :nodes [node] :edges []})]
+        (is (seq problems) label)
+        (is (some #(str/includes? % "node backing relation is invalid for role")
+                  problems)
+            label)))))
 
 (deftest canonical-graphs-satisfy-strict-backing-validation
   (let [context (:context (model/validated-model))]

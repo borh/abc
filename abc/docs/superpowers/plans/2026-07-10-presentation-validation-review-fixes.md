@@ -87,3 +87,19 @@
 - [x] Run full Kaocha, presentation generate/check, ADR and Mermaid checks, relevant Nix drift/clj-kondo checks, and inspect the diff.
 - [x] Compare generated artifact hashes before/after; retain regeneration only when bytes changed.
 - [x] Commit all scoped files once, then report RED/GREEN evidence, commit hash, clean status, and concerns.
+
+### Task 6: Path membership and node-role backing review
+
+**Files:**
+- Modify: `abc/test/abc/tools/diagram/presentation_figures_test.clj`
+- Modify: `abc/src/abc/tools/diagram/presentation_figures.clj`
+
+**Interfaces:**
+- Consumes: path backing over canonical stages and node backing keyed by the displayed node role.
+- Produces: rejection of unknown or consecutive-identical path stages before reachability and an explicit node-role relation policy matching the canonical figures.
+
+- [x] Add failing structured-problem tests for unknown path stages, zero-hop path segments, output nodes with coordinate backing, and unknown node roles with stage backing.
+- [x] Run the focused namespace and verify RED from the intended missing validation.
+- [x] Add path membership/zero-hop gates and an explicit `node-relations` table derived from canonical figure roles.
+- [x] Re-run the focused namespace and verify canonical paths/graphs and all regressions are GREEN.
+- [x] Run full verification, confirm generated hashes remain unchanged, and commit `fix(diagram): validate presentation backing roles` without merging or pushing.

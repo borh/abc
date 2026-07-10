@@ -15,7 +15,12 @@ renderer keeps ruby base text, resolved gaiji, drops annotations) — good
 enough for a probe, not identity-faithful.
 """
 
-import csv, io, json, re, subprocess, sys, unicodedata, zipfile
+import csv
+import json
+import re
+import subprocess
+import sys
+import zipfile
 from pathlib import Path
 
 CORPUS = Path("/nix/store/sdr1imwrxfldvlwzs2d2fhs11vxncgpx-aozorabunko-corpus/cards")
@@ -110,7 +115,7 @@ def extract_body(raw):
     text = raw.replace("\r\n", "\n").replace("\r", "\n")
     lines = text.split("\n")
     # header: metadata block delimited by ---- lines near the top
-    delim = [i for i, l in enumerate(lines[:80]) if re.fullmatch(r"-{10,}", l.strip())]
+    delim = [i for i, line in enumerate(lines[:80]) if re.fullmatch(r"-{10,}", line.strip())]
     start = delim[-1] + 1 if len(delim) >= 2 else 0
     # footer: from 底本： (or blank-line-then-底本)
     end = len(lines)
@@ -232,10 +237,7 @@ def analyze_work(path, dicdir):
     if not rubies:
         return None
     tokens, misaligned = tokenize(plain, dicdir)
-    starts = {t[0]: i for i, t in enumerate(tokens)}
-    ends = {t[1] for t in tokens}
-    # token lookup by position: build boundary set + interval index
-    bounds = sorted(set(t[0] for t in tokens) | ends)
+    # Token lookup uses the monotonic cursor below.
     stats = {
         "rubies": 0,
         "aligned_single": 0,

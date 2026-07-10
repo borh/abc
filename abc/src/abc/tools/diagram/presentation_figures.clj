@@ -35,17 +35,20 @@
                          (sort-by :id)
                          vec)
         owners (vec (sort (set (mapcat #(get (:coordinate-owners context) (:id %))
-                                       coordinates))))]
-    {:id family
-     :label ({:source "Source identity"
-              :parsing "Parsing identity"
-              :publication "Publication contracts"
-              :analysis "Linguistic analysis"
-              :output "Output format"} family)
-     :role :coordinate-family
-     :group :identity-contract
-     :coordinates coordinates
-     :backing {:coordinates (mapv :id coordinates) :adrs owners}}))
+                                       coordinates))))
+        family-label ({:source "Source identity"
+                       :parsing "Parsing identity"
+                       :publication "Publication contracts"
+                       :analysis "Linguistic analysis"
+                       :output "Output format"} family)]
+    (cond-> {:id family
+             :label family-label
+             :role :coordinate-family
+             :group :identity-contract
+             :coordinates coordinates
+             :backing {:coordinates (mapv :id coordinates) :adrs owners}}
+      (#{:source :parsing :analysis} family)
+      (assoc :coordinate-columns 2))))
 
 (defn- path-valid? [context path]
   (and (sequential? path)
@@ -198,6 +201,7 @@
   (let [graph
         {:id :reproducibility
          :direction "LR"
+         :concentrate? true
          :title (get-in metadata [:figures :reproducibility :title])
          :subtitle (get-in metadata [:figures :reproducibility :subtitle])
          :description "Sources and evidence enter a versioned identity contract; ArtifactID identifies a validated manifest from which scholarly views derive."
@@ -227,38 +231,48 @@
                                    :output :derived
                                    "TEI · text · RDF · Linked Art · IIIF · annotation · analysis")]))
          :edges [{:from :sources :to :source :role :identity-input :style :solid
+                  :tail-port :n
                   :backing {:coordinates ["corpus_snapshot_hash" "work_content_hash"
                                           "metadata_record_hash"]}}
                  {:from :sources :to :parsing :role :identity-input :style :solid
+                  :tail-port :n
                   :backing {:coordinates ["parser_build_hash" "parser_config_hash"
                                           "aat_parser_ir_mapping_hash"
                                           "parser_ir_schema_hash"]}}
                  {:from :sources :to :publication :role :identity-input :style :solid
+                  :tail-port :n
                   :backing {:coordinates ["manifest_schema_hash" "tei_profile_hash"]}}
                  {:from :sources :to :analysis :role :identity-input :style :solid
+                  :tail-port :n
                   :backing {:coordinates ["tokenizer_build_hash"
                                           "tokenizer_dictionary_hash"
                                           "tokenizer_profile_hash"
                                           "analysis_recipe_hash"
                                           "annotation_policy_hash"]}}
                  {:from :sources :to :output :role :identity-input :style :solid
+                  :tail-port :n
                   :backing {:coordinates ["output_format_spec_hash"]}}
                  {:from :source :to :artifact-id :role :identity :style :solid
+                  :head-port :w
                   :backing {:coordinates ["corpus_snapshot_hash" "work_content_hash"
                                           "metadata_record_hash"]}}
                  {:from :parsing :to :artifact-id :role :identity :style :solid
+                  :head-port :w
                   :backing {:coordinates ["parser_build_hash" "parser_config_hash"
                                           "aat_parser_ir_mapping_hash"
                                           "parser_ir_schema_hash"]}}
                  {:from :publication :to :artifact-id :role :identity :style :solid
+                  :head-port :w
                   :backing {:coordinates ["manifest_schema_hash" "tei_profile_hash"]}}
                  {:from :analysis :to :artifact-id :role :identity :style :solid
+                  :head-port :w
                   :backing {:coordinates ["tokenizer_build_hash"
                                           "tokenizer_dictionary_hash"
                                           "tokenizer_profile_hash"
                                           "analysis_recipe_hash"
                                           "annotation_policy_hash"]}}
                  {:from :output :to :artifact-id :role :identity :style :solid
+                  :head-port :w
                   :backing {:coordinates ["output_format_spec_hash"]}}
                  {:from :artifact-id :to :manifest :role :identity :style :thick
                   :backing {:stages [:manifest] :adrs (stage-adrs context [:manifest])}}

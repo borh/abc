@@ -1,5 +1,6 @@
 (ns abc.tools.diagram.presentation-figures-test
-  (:require [abc.tools.diagram.presentation-figures :as figures]
+  (:require [abc.tools.diagram.graphviz :as graphviz]
+            [abc.tools.diagram.presentation-figures :as figures]
             [abc.tools.diagram.presentation-model :as model]
             [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]))
@@ -72,6 +73,34 @@
     (is (= "TEI · text · RDF · Linked Art · IIIF · annotation · analysis"
            (:outputs subtitles)))
     (is (nil? (:aat-detail subtitles)))))
+
+(deftest reproducibility-layout-hints-do-not-change-topology
+  (let [g (graph :reproducibility)
+        family (into {} (map (juxt :id identity)
+                             (filter #(= :coordinate-family (:role %))
+                                     (:nodes g))))]
+    (is (:concentrate? g))
+    (is (= 2 (:coordinate-columns (:source family))))
+    (is (= 2 (:coordinate-columns (:parsing family))))
+    (is (= 2 (:coordinate-columns (:analysis family))))
+    (is (= (:reproducibility expected-topology) (semantic-topology g)))
+    (is (every? #(= :w (:head-port %))
+                (filter #(= :artifact-id (:to %)) (:edges g))))))
+
+(deftest all-fifteen-coordinate-labels-render-once
+  (let [g (graph :reproducibility)
+        labels (map :label
+                    (mapcat :coordinates
+                            (filter #(= :coordinate-family (:role %))
+                                    (:nodes g))))
+        out (graphviz/dot g)]
+    (is (= 15 (count labels)))
+    (is (= 15 (count (distinct labels))))
+    (doseq [label labels]
+      (is (= 1 (count (re-seq
+                       (re-pattern (java.util.regex.Pattern/quote label))
+                       out)))
+          label))))
 
 (deftest reproducibility-figure-has-approved-title-and-five-coordinate-families
   (let [g (graph :reproducibility)

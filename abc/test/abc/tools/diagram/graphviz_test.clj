@@ -76,6 +76,37 @@
                        "\"a\" -> \"z\" [style=\"invis\",weight=\"100\"]"))
     (is (re-find #"[^\r\n]\n\z" out))))
 
+(deftest single-coordinate-equal-to-heading-renders-once
+  (let [node {:id :output :label "Output format"
+              :coordinates [{:id "output_format_spec_hash"
+                             :label "Output format"}]
+              :role :coordinate-family :group :a :backing {}}
+        out (graphviz/dot (assoc sample :nodes [node] :edges []
+                                :primary-order [] :concentrate? true))]
+    (is (= 1 (count (re-seq #"Output format" out))))
+    (is (str/includes? out "concentrate=\"true\""))))
+
+(deftest coordinate-columns-and-edge-ports-are-layout-only
+  (let [out (graphviz/dot (-> sample
+                              (assoc-in [:nodes 1 :coordinate-columns] 2)
+                              (assoc-in [:edges 0 :tail-port] :n)))]
+    (is (re-find #"Coordinate alpha.*Coordinate beta.*</TR>.*Coordinate gamma"
+                 out))
+    (is (str/includes? out "tailport=\"n\""))))
+
+(deftest ownership-role-colors-remain-stable
+  (doseq [[role color] [[:coordinate-family "#48CAE4"]
+                        [:identity "#48CAE4"]
+                        [:evidence "#F2B84B"]
+                        [:validation "#F2B84B"]
+                        [:output "#7BC47F"]
+                        [:source "#A7B0BE"]
+                        [:contract "#A7B0BE"]]]
+    (let [node {:id role :label (name role) :role role :backing {}}
+          out (graphviz/dot (assoc sample :nodes [node] :edges []
+                                  :primary-order []))]
+      (is (str/includes? out (str "color=\"" color "\"")) (name role)))))
+
 (deftest dot-rejects-sanitized-node-id-collisions
   (is (thrown-with-msg?
        clojure.lang.ExceptionInfo

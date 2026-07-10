@@ -427,8 +427,11 @@ removed. Evidence:
   adapter's dependency surface. This is the one place a non-forked,
   non-vendored upstream crate still runs inside the fork's owning crate;
   the fork's own `ab-aozora-pipeline` (already lifted, see the LIFT_SET
-  table above) has no public `lexer::sanitize` equivalent yet. Swapping the
-  import for the fork's own lexer sanitize path is a Phase 3 item, gated by
-  Phase 3's own conformance/parity evidence — it is a behavior-relevant
-  change to gate-covered code and must not be folded into a metadata-only
-  fix.
+  table above) exposes `ab_aozora_pipeline::lexer::sanitize::sanitize`
+  publicly, but behavioral equivalence between crates.io `0.4.1` and the
+  `1a4f864` lift has not been verified (the lift postdates the published
+  release; e.g. later sanitize changes may not exist in `0.4.1`). Swapping
+  the import for the fork's own lexer sanitize path is therefore a Phase 3
+  item, gated by Phase 3's own conformance/parity evidence — it is a
+  behavior-relevant change to gate-covered code and must not be folded into
+  a metadata-only fix.

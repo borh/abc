@@ -97,3 +97,19 @@ syntax_row_ids = []
 status = "active"
 summary = "Initial aozora adapter maps from the upstream inspect JSON surface and raw-preserves unsupported node kinds."
 evidence = "docs/superpowers/specs/2026-07-05-aozora-parser-and-notation-spec-comparator.md"
+
+[[note]]
+id = "aozora2-upstream-implicit-ruby-base-lost-after-gaiji-ruby"
+adapter = "aozora2"
+syntax_row_ids = ["ruby.basic", "gaiji_ruby.inline_base"]
+status = "active"
+summary = "Upstream aozora-core 0.7.1: after a gaiji-bearing ruby earlier in the same line, the next bar-less ruby is parsed as Ruby { children: [] } — the base text stays in the preceding Text node and the AAT ruby has an empty base (3,541 rubies across 1,266 works in the aozora2-full-20260705 dump). Reproduced against the upstream crate directly; the adapter maps the upstream nodes faithfully."
+evidence = "docs/handoffs/2026-07-10-ruby-base-fidelity-audit.md"
+
+[[note]]
+id = "aozora-epub3-implicit-ruby-base-drops"
+adapter = "aozora-epub3"
+syntax_row_ids = ["ruby.basic"]
+status = "active"
+summary = "Marginal rendered-output loss: 14 empty ruby bases across 3 works in the aozora-epub3-full-20260704 dump (12 are readings over image-rendered gaiji bases; 2 lose a plain kanji base)."
+evidence = "docs/handoffs/2026-07-10-ruby-base-fidelity-audit.md"

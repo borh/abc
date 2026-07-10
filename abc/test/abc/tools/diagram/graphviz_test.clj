@@ -17,18 +17,23 @@
            :primary-size 30
            :secondary-size 22
            :stroke-width 2}
-   :groups [{:id :b :label "Second"}
+   :groups [{:id :b :label "Second" :cluster? false}
             {:id :a :label "First" :style :dashed}]
    :nodes [{:id :z :label "Zed" :role :output :group :b :backing {}}
            {:id :a
-            :label "A \"quoted\" label"
-            :subtitle "sub"
+            :label "A \"quoted\" presentation node label that wraps predictably"
+            :subtitle "This subtitle is deliberately long enough to wrap"
+            :label-wrap 18
+            :subtitle-wrap 18
+            :coordinates [{:label "Coordinate alpha"}
+                          {:label "Coordinate beta"}
+                          {:label "Coordinate gamma"}]
             :role :identity
             :group :a
             :backing {}}]
    :edges [{:from :z
             :to :a
-            :label "later"
+            :label "compatibility gate"
             :role :validation
             :style :dashed
             :backing {}}
@@ -47,13 +52,24 @@
   (let [out (graphviz/dot sample)]
     (is (= out (graphviz/dot sample)))
     (is (str/starts-with? out "// GENERATED"))
-    (is (< (.indexOf out "cluster_a") (.indexOf out "cluster_b")))
+    (is (neg? (.indexOf out "cluster_b")))
     (is (< (.indexOf out "\"a\"") (.indexOf out "\"z\"")))
-    (is (str/includes? out "A &quot;quoted&quot; label"))
+    (is (str/includes? out
+                       "A &quot;quoted&quot;<BR/>presentation node<BR/>label that wraps<BR/>predictably"))
+    (is (str/includes? out
+                       "This subtitle is<BR/>deliberately long<BR/>enough to wrap"))
+    (is (re-find #"Coordinate alpha.*Coordinate beta.*Coordinate gamma.*</TR>" out))
     (is (str/includes? out "label=<<TABLE"))
+    (is (str/includes? out "CELLPADDING=\"1\""))
+    (is (str/includes? out "nodesep=\"0.02\""))
+    (is (str/includes? out "ranksep=\"0.10\""))
+    (is (str/includes? out "margin=\"0\";"))
+    (is (str/includes? out "margin=\"0.04,0.02\""))
+    (is (str/includes? out "xlabel=\"compatibility\\ngate\""))
     (is (str/includes? out "style=\"dashed\""))
     (is (str/includes? out "style=\"rounded,dashed\""))
-    (is (= 2 (count (re-seq #"    penwidth=\"2\";" out))))
+    (is (= 1 (count (re-seq #"    penwidth=\"2\";" out))))
+    (is (= 2 (count (re-seq #"group=\"primary\"" out))))
     (is (str/includes? out
                        "\"a\" -> \"z\" [style=\"invis\",weight=\"100\"]"))
     (is (str/ends-with? out "\n"))))

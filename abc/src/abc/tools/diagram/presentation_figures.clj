@@ -107,7 +107,8 @@
          :subtitle (get-in metadata [:figures :reproducibility :subtitle])
          :description "Sources and computational evidence enter a canonical identity contract, producing a validated manifest and traceable scholarly views."
          :theme theme
-         :groups [{:id :inputs :label "Sources and computational evidence"}
+         :groups [{:id :inputs :label "Sources and computational evidence"
+                   :cluster? false}
                   {:id :identity-contract :label "15-coordinate identity contract"}
                   {:id :record :label "Durable scholarly record"}
                   {:id :derived :label "Derived scholarly views"}]
@@ -176,7 +177,9 @@
 (defn publication-graph [{:keys [metadata context]}]
   (let [figure :publication
         node (fn [id role group subtitle]
-               (aggregate-node metadata context figure id role group subtitle))
+               (assoc (aggregate-node metadata context figure id role group subtitle)
+                      :label-wrap 18
+                      :subtitle-wrap 18))
         graph
         {:id :publication
          :direction "LR"
@@ -198,6 +201,8 @@
                   :label "AAT evidence + mapping gate"
                   :subtitle "Current implementation detail"
                   :role :implementation-detail :group :current-inset
+                  :label-wrap 18
+                  :subtitle-wrap 18
                   :backing {:stages [:aat]
                             :adrs (stage-adrs context [:aat])}}]
          :edges [{:from :source :to :parser-process :label "parse + measure"

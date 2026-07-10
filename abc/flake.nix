@@ -77,6 +77,32 @@
           cljDepsCache = pkgs.mk-deps-cache {
             lockfile = ./deps-lock.json;
           };
+          presentationFontTools = pkgs.python3.withPackages (ps: [
+            ps.fonttools
+            ps.brotli
+          ]);
+          presentationLauncher = pkgs.writeShellScript "abc-presentation-diagrams" ''
+            set -euo pipefail
+            export HOME="${cljDepsCache}"
+            export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+            export CLJ_CONFIG="${cljDepsCache}/.clojure"
+            export GITLIBS="${cljDepsCache}/.gitlibs"
+            export CLJ_CACHE="$(mktemp -d)"
+            if [ -f abc/deps.edn ] && [ -f abc/docs/architecture-stages.edn ]; then
+              cd abc
+            elif [ -f deps.edn ] && [ -f docs/architecture-stages.edn ]; then
+              :
+            else
+              echo "presentation-diagrams: run from the monorepo root or abc/" >&2
+              exit 2
+            fi
+            export ABC_GRAPHVIZ_DOT="${pkgs.graphviz}/bin/dot"
+            export ABC_FONTTOOLS_SUBSET="${presentationFontTools}/bin/pyftsubset"
+            export ABC_PRESENTATION_FONT="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc"
+            export ABC_PRESENTATION_FONT_DIR="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk"
+            export DOTFONTPATH="$ABC_PRESENTATION_FONT_DIR"
+            exec ${pkgs.clojure}/bin/clojure -M:abc/presentation-diagrams "$@"
+          '';
           # Reliable, CWD-independent launcher for a `-M:<alias>` Clojure tool.
           # Resolves deps.edn + the abc `src` classpath from the pinned flake
           # source (not the caller's working directory), points Clojure at the
@@ -139,6 +165,12 @@
               '';
             });
             meta.description = "Validate ABC v0 design-bundle schemas and fixtures";
+          };
+
+          presentation-diagrams = {
+            type = "app";
+            program = toString presentationLauncher;
+            meta.description = "Generate or drift-check academic presentation SVG diagrams";
           };
 
           soranoha = {
@@ -331,6 +363,10 @@
           cljDepsCache = pkgs.mk-deps-cache {
             lockfile = ./deps-lock.json;
           };
+          presentationFontTools = pkgs.python3.withPackages (ps: [
+            ps.fonttools
+            ps.brotli
+          ]);
           tei = import ./nix/tei-profile-artifacts.nix {
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
@@ -402,6 +438,44 @@
 
                 mkdir -p "$out"
                 echo "ADR + architecture diagrams current; header/sidecar/stage lints clean." > "$out/result.txt"
+              '';
+
+          presentation-diagram-renderer =
+            pkgs.runCommand "abc-presentation-diagram-renderer"
+              {
+                nativeBuildInputs = [
+                  pkgs.clojure
+                  pkgs.graphviz
+                  pkgs.imagemagick
+                  pkgs.librsvg
+                  pkgs.noto-fonts-cjk-sans
+                  presentationFontTools
+                ];
+              }
+              ''
+                cp -R ${./.} source
+                chmod -R u+w source
+                cd source
+                export HOME="${cljDepsCache}"
+                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+                export CLJ_CONFIG="$HOME/.clojure"
+                export CLJ_CACHE="$TMPDIR/cp-cache"
+                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
+                export GITLIBS="$HOME/.gitlibs"
+                export ABC_GRAPHVIZ_DOT="${pkgs.graphviz}/bin/dot"
+                export ABC_FONTTOOLS_SUBSET="${presentationFontTools}/bin/pyftsubset"
+                export ABC_PRESENTATION_FONT="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc"
+                export ABC_PRESENTATION_FONT_DIR="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk"
+                export DOTFONTPATH="$ABC_PRESENTATION_FONT_DIR"
+                clojure -M:abc/presentation-diagrams
+                for svg in docs/figures/*.svg; do
+                  png="$TMPDIR/$(basename "$svg" .svg).png"
+                  rsvg-convert --width 1920 --height 1080 "$svg" --output "$png"
+                  test "$(magick identify -format '%wx%h' "$png")" = "1920x1080"
+                  test "$(magick identify -format '%k' "$png")" -gt 1
+                done
+                mkdir -p "$out"
+                cp docs/figures/*.dot docs/figures/*.svg "$out"/
               '';
 
           clj-kondo =
@@ -648,19 +722,31 @@
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
           };
+          presentationFontTools = pkgs.python3.withPackages (ps: [
+            ps.fonttools
+            ps.brotli
+          ]);
 
         in
         {
           default = pkgs.mkShell {
             TEI_SCHEMA_PATH = "${tei.teiAllSchema}";
+            ABC_GRAPHVIZ_DOT = "${pkgs.graphviz}/bin/dot";
+            ABC_FONTTOOLS_SUBSET = "${presentationFontTools}/bin/pyftsubset";
+            ABC_PRESENTATION_FONT = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc";
+            ABC_PRESENTATION_FONT_DIR = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk";
+            DOTFONTPATH = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk";
             packages = with pkgs; [
               cljfmt
               clojure
               git
               git-cliff
+              graphviz
               jdk21
               jq
               libxml2
+              noto-fonts-cjk-sans
+              presentationFontTools
             ];
           };
 

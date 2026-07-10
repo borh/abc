@@ -86,17 +86,17 @@
                  (parse-double (element-attr graph-wrapper "data-graph-scale")))))
     (is (and graph-wrapper
              (str/includes? (element-attr graph-wrapper "transform")
-                            "translate(310.0000 230.0000)")))
+                            "translate(215.0000 195.0000)")))
     (is (= [] (svg/svg-problems out)))))
 
 (deftest normalization-uses-the-fixed-graph-region
-  (let [region-raw (str/replace raw-svg "0 0 200 100" "0 0 1728 650")
+  (let [region-raw (str/replace raw-svg "0 0 200 100" "0 0 1728 745")
         root (xml/parse-str
               (svg/normalize-svg graph region-raw
                                  (.getBytes "woff2" "UTF-8")))
         graph-wrapper (find-element root "g" "figure-graph")]
     (is (= "1.000000" (element-attr graph-wrapper "data-graph-scale")))
-    (is (= "translate(96.0000 230.0000) scale(1.000000)"
+    (is (= "translate(96.0000 195.0000) scale(1.000000)"
            (element-attr graph-wrapper "transform")))))
 
 (deftest normalization-rejects-a-graph-that-requires-downscaling

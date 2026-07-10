@@ -14,6 +14,22 @@
       (str/replace "\"" "\\\"")
       (str/replace "\n" "\\n")))
 
+(defn- wrap-lines [value width]
+  (let [tokens (->> (str/split (str value) #"\s+")
+                    (remove str/blank?)
+                    (mapcat (fn [token]
+                              (map #(apply str %)
+                                   (partition-all width token)))))]
+    (reduce (fn [lines token]
+              (let [line (peek lines)]
+                (if (and line (<= (+ (count line) 1 (count token)) width))
+                  (conj (pop lines) (str line " " token))
+                  (conj lines token))))
+            [] tokens)))
+
+(defn- html-lines [value width]
+  (str/join "<BR/>" (map escape-html (wrap-lines value width))))
+
 (defn- id-string [value]
   (-> (name value)
       (str/replace #"[^A-Za-z0-9_]" "_")))
@@ -44,30 +60,36 @@
     :else
     {:color (:secondary theme) :fontcolor (:text theme)}))
 
-(defn- html-label [{:keys [label subtitle coordinates]} theme]
+(defn- html-label [{:keys [label subtitle coordinates label-wrap subtitle-wrap]} theme]
   (str "<"
-       "<TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLPADDING=\"3\">"
+       "<TABLE BORDER=\"0\" CELLBORDER=\"0\" CELLPADDING=\"1\">"
        "<TR><TD><FONT POINT-SIZE=\"" (:primary-size theme) "\"><B>"
-       (escape-html label) "</B></FONT></TD></TR>"
+       (html-lines label (or label-wrap 28)) "</B></FONT></TD></TR>"
        (when subtitle
          (str "<TR><TD><FONT COLOR=\"" (:secondary theme)
               "\" POINT-SIZE=\"" (:secondary-size theme) "\">"
-              (escape-html subtitle) "</FONT></TD></TR>"))
+              (html-lines subtitle (or subtitle-wrap 28)) "</FONT></TD></TR>"))
        (apply str
-              (for [{:keys [label]} coordinates]
-                (str "<TR><TD ALIGN=\"LEFT\"><FONT COLOR=\""
-                     (:secondary theme) "\" POINT-SIZE=\""
-                     (:secondary-size theme) "\">· "
-                     (escape-html label) "</FONT></TD></TR>")))
+              (for [row (partition-all 3 coordinates)]
+                (str "<TR>"
+                     (apply str
+                            (for [{:keys [label]} row]
+                              (str "<TD ALIGN=\"LEFT\"><FONT COLOR=\""
+                                   (:secondary theme) "\" POINT-SIZE=\""
+                                   (:secondary-size theme) "\">· "
+                                   (escape-html label) "</FONT></TD>")))
+                     "</TR>")))
        "</TABLE>>"))
 
-(defn- node-line [node theme]
+(defn- node-line [node theme primary-ids]
   (let [style (role-style theme (:role node))]
     (str "    \"" (id-string (:id node)) "\" "
          (attrs (merge {:label {:html (html-label node theme)}
                         :shape (if (= :validation (:role node)) "diamond" "rect")
                         :style "rounded"
                         :penwidth (:stroke-width theme)}
+                       (when (primary-ids (:id node))
+                         {:group "primary"})
                        style))
          ";")))
 
@@ -85,7 +107,7 @@
                               (:stroke-width theme))
                   :style (if (= :dashed (:style edge)) "dashed" "solid")}
                  (when-let [label (:label edge)]
-                   {:label label})))
+                   {:xlabel (str/join "\n" (wrap-lines label 14))})))
          ";")))
 
 (defn- id-collisions [nodes]
@@ -101,6 +123,9 @@
     (throw (ex-info "duplicate presentation node ids"
                     {:collisions collisions})))
   (let [grouped (group-by :group nodes)
+        primary-ids (set primary-order)
+        clustered-groups (remove #(false? (:cluster? %)) groups)
+        flat-group-ids (set (map :id (filter #(false? (:cluster? %)) groups)))
         group-lines
         (mapcat
          (fn [{:keys [id label style]}]
@@ -112,13 +137,16 @@
              "    fontname=\"Noto Sans CJK JP\";"
              (str "    fontcolor=\"" (:secondary theme) "\";")
              (str "    fontsize=\"" (:secondary-size theme) "\";")
+             "    margin=\"0\";"
              (str "    style=\"rounded"
                   (when (= :dashed style) ",dashed") "\";")]
-            (map #(node-line % theme)
+            (map #(node-line % theme primary-ids)
                  (sort-by (comp id-string :id) (get grouped id)))
             ["  }"]))
-         (sort-by (comp id-string :id) groups))
-        ungrouped (sort-by (comp id-string :id) (get grouped nil))
+         (sort-by (comp id-string :id) clustered-groups))
+        ungrouped (sort-by (comp id-string :id)
+                           (concat (get grouped nil)
+                                   (mapcat grouped flat-group-ids)))
         order-lines
         (for [[from to] (partition 2 1 primary-order)]
           (str "  \"" (id-string from) "\" -> \"" (id-string to)
@@ -129,20 +157,20 @@
      "  graph " (attrs {:bgcolor "transparent"
                         :fontname "Noto Sans CJK JP"
                         :fontcolor (:text theme)
-                        :nodesep "0.55"
-                        :ranksep "0.85"
+                        :nodesep "0.02"
+                        :ranksep "0.10"
                         :pad "0.05"
                         :margin "0"
                         :rankdir direction
                         :splines "polyline"})
      ";\n"
      "  node " (attrs {:fontname "Noto Sans CJK JP"
-                       :margin "0.20,0.14"})
+                       :margin "0.04,0.02"})
      ";\n"
      "  edge " (attrs {:arrowsize "0.75"}) ";\n"
      (str/join "\n" group-lines) "\n"
      (when (seq ungrouped)
-       (str (str/join "\n" (map #(node-line % theme) ungrouped)) "\n"))
+       (str (str/join "\n" (map #(node-line % theme primary-ids) ungrouped)) "\n"))
      (when (seq order-lines)
        (str (str/join "\n" order-lines) "\n"))
      (str/join "\n"

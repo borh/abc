@@ -10,6 +10,7 @@
   (let [g (graph :reproducibility)
         family-nodes (filter #(= :coordinate-family (:role %)) (:nodes g))]
     (is (= "Soranoha Reproducibility Architecture" (:title g)))
+    (is (false? (:cluster? (some #(when (= :inputs (:id %)) %) (:groups g)))))
     (is (= #{:source :parsing :publication :analysis :output}
            (set (map :id family-nodes))))
     (is (= 15 (reduce + (map #(count (:coordinates %)) family-nodes))))
@@ -26,6 +27,8 @@
            (get-in g [:current-inset :path])))
     (is (= "Current producer implementation"
            (get-in g [:current-inset :label])))
+    (is (every? #(= 18 (:label-wrap %)) (:nodes g)))
+    (is (every? #(= 18 (:subtitle-wrap %)) (:nodes g)))
     (is (some #(= :aat-detail (:id %)) (:nodes g)))
     (is (= :dashed
            (:style (some #(when (= :current-inset (:id %)) %) (:groups g)))))))

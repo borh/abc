@@ -48,9 +48,9 @@
   (let [raw-root (parse-xml "Graphviz SVG" raw-svg)
         [_ _ raw-width raw-height] (parse-view-box raw-root)
         graph-x 96.0
-        graph-y 230.0
+        graph-y 195.0
         graph-width 1728.0
-        graph-height 650.0
+        graph-height 745.0
         scale (min (/ graph-width raw-width) (/ graph-height raw-height))
         tx (+ graph-x (/ (- graph-width (* raw-width scale)) 2.0))
         ty (+ graph-y (/ (- graph-height (* raw-height scale)) 2.0))

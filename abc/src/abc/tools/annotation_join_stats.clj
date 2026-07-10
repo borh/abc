@@ -68,7 +68,8 @@
 
 (defn aggregate
   "Aggregates per-work stats: summed counts plus per-kind classification
-  rates (fractions of that kind's total)."
+  rates (fractions of that kind's corpus-wide total, so a kind's rates sum
+  to 1)."
   [work-stats-seq]
   (let [annotation-counts (merge-counts (map :annotation_counts work-stats-seq))
         kinds (keys annotation-counts)
@@ -80,17 +81,11 @@
                               kinds)
         rates (into {}
                     (map (fn [kind]
-                           [kind (into {}
-                                       (map (fn [c]
-                                              (let [relevant-works (filter #(get-in % [:classifications kind c])
-                                                                           work-stats-seq)
-                                                    total-c (reduce + (map #(get-in % [:classifications kind c])
-                                                                           relevant-works))
-                                                    total-kind (reduce + (map #(get-in % [:annotation_counts kind])
-                                                                              relevant-works))]
-                                                [c (double (/ total-c total-kind))])))
-                                       (keys (reduce merge {} (map #(get-in % [:classifications kind])
-                                                                   work-stats-seq))))]))
+                           (let [total (get annotation-counts kind)]
+                             [kind (into {}
+                                         (map (fn [[c n]]
+                                                [c (double (/ n total))]))
+                                         (get classifications kind))])))
                     kinds)]
     {:work_count (count work-stats-seq)
      :annotation_counts annotation-counts

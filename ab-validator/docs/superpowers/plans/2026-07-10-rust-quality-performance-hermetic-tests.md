@@ -692,4 +692,3 @@ rg -n '/nix/store|/db/' ab-validator/flake.nix ab-validator/justfile \
 ```
 
 Expected: no newly introduced literal store/database paths, no generated benchmark artifacts, and only intended source changes.
-

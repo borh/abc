@@ -68,4 +68,3 @@ The broad `summary_body.rs` split is therefore deferred. This plan treats shape 
 - AAT comparison results are byte-for-byte equal while full parsed roots are no longer retained corpus-wide.
 - DuckDB and in-memory summaries remain equal for scalar and collapsed feature-diff shapes, and the streaming materialization fallback remains covered.
 - Root workspace tests, adapter tests, focused Nix checks, and `just validate-migration` pass.
-

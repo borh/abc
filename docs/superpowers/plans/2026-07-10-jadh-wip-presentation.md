@@ -2,18 +2,18 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Revise the existing JADH reveal.js deck into a 27-slide main talk plus eight to ten appendix slides that positions TEI-EAJ as parallel work, shows reproducible real XML comparisons, and gives every displayed Soranoha datum an exact repository-backed inspection or regeneration recipe.
+**Goal:** Revise the existing JADH Pandoc deck into a 27-slide main talk plus eight to ten appendix slides that positions TEI-EAJ as parallel work, shows reproducible real XML comparisons, and gives every displayed Soranoha datum an exact repository-backed inspection or regeneration recipe.
 
-**Architecture:** Keep the existing vendored bibliography and evidence-disciplined parser narrative. Restructure the deck around Pandoc's generated metadata title slide, add one early TEI-EAJ positioning slide, return to TEI-EAJ at a two-slide real XML comparison, and move high-density examples into a large appendix. A committed CSS file hides author/date only on the rendered title slide and prevents dense tables/XML from overflowing reveal.js.
+**Architecture:** Keep the existing vendored bibliography and evidence-disciplined parser narrative. Restructure the deck around the downstream generator's metadata title view, add one early TEI-EAJ positioning slide, return to TEI-EAJ at a two-slide real XML comparison, and move high-density examples into a large appendix. Keep the Pandoc-flavored Markdown backend-neutral.
 
-**Tech Stack:** Pandoc 3.7 reveal.js writer with citeproc, Pandoc Markdown, BibTeX, CSL, CSS, pinned Nix flake inputs, TEI XML, checked-in reports and generated SVGs.
+**Tech Stack:** Pandoc Markdown with citeproc, BibTeX, CSL, pinned Nix flake inputs, TEI XML, checked-in reports and generated SVGs.
 
 ## Global Constraints
 
 - Work in `feat/jadh-wip-presentation` at `.worktrees/jadh-wip-presentation`.
 - Preserve the vendored BibTeX/CSL bytes and provenance hashes.
 - Retain YAML `author: Bor Hodošček` and `date` for the website generator.
-- Hide author/date only on reveal.js `#title-slide`; remove the duplicate manual title heading.
+- Retain YAML author/date for the website generator; remove the duplicate manual title heading.
 - Produce exactly 27 rendered main slides.
 - Produce 35–37 rendered slides total, including eight to ten appendix slides.
 - Budget 22 minutes prepared talk, 5 minutes bounded demo, 3 minutes buffer.
@@ -41,7 +41,6 @@ Do not redo these commits:
 ## Files
 
 - Modify: `docs/presentations/jadh-2026-wip-slides.md`
-- Create: `docs/presentations/jadh-2026-wip-slides.css`
 - Preserve: `docs/presentations/references/abstract-refs.bib`
 - Preserve: `docs/presentations/references/digital_humanities_abstracts.csl`
 - Consume when ready: `abc/docs/figures/soranoha-reproducibility-architecture.svg`
@@ -50,15 +49,14 @@ Do not redo these commits:
 
 ---
 
-### Task 1: Make Title Metadata, Slide Counting, CSS, and Links Deterministic
+### Task 1: Make Title Metadata, Slide Counting, and Links Deterministic
 
 **Files:**
 - Modify: `docs/presentations/jadh-2026-wip-slides.md`
-- Create: `docs/presentations/jadh-2026-wip-slides.css`
 
 **Interfaces:**
 - Consumes: current 29-heading deck.
-- Produces: one Pandoc-generated title slide, a canonical reveal.js stylesheet, and no bare visible URLs.
+- Produces: one metadata-driven title view and no bare visible URLs.
 
 - [ ] **Step 1: Keep metadata and remove the duplicate manual title**
 
@@ -71,43 +69,11 @@ author: Bor Hodošček
 date: July 2026
 type: slides
 aspect-ratio: 16-9
-css: jadh-2026-wip-slides.css
 ```
 
-Delete the manual `# Sustaining Aozora Bunko as Versioned Corpus Infrastructure` section and its visible author line. Pandoc's generated `#title-slide` is the only title slide.
+Delete the manual `# Sustaining Aozora Bunko as Versioned Corpus Infrastructure` section and its visible author line. The downstream generator owns title rendering.
 
-- [ ] **Step 2: Add reveal.js CSS**
-
-Create:
-
-```css
-.reveal #title-slide .author,
-.reveal #title-slide .date {
-  display: none;
-}
-
-.reveal .compact table {
-  font-size: 0.72em;
-}
-
-.reveal .compact th,
-.reveal .compact td {
-  padding: 0.18em 0.35em;
-}
-
-.reveal .xml-example pre {
-  max-height: 58vh;
-  overflow-y: auto;
-  font-size: 0.55em;
-  line-height: 1.25;
-}
-
-.reveal .evidence-links {
-  font-size: 0.68em;
-}
-```
-
-- [ ] **Step 3: Replace every visible bare URL**
+- [ ] **Step 2: Replace every visible bare URL**
 
 Use labeled links, including:
 
@@ -119,24 +85,21 @@ Use labeled links, including:
 
 HTML comments may contain command text but should also prefer logical paths over URLs.
 
-- [ ] **Step 4: Verify title behavior and link syntax**
+- [ ] **Step 3: Verify metadata and link syntax**
 
 ```bash
-(cd docs/presentations && pandoc jadh-2026-wip-slides.md --to revealjs --standalone --citeproc --css jadh-2026-wip-slides.css -o /tmp/jadh-title.html)
-test "$(rg -c 'id="title-slide"' /tmp/jadh-title.html)" -eq 1
-rg -n '#title-slide \.author|#title-slide \.date' docs/presentations/jadh-2026-wip-slides.css
+rg -n '^author: Bor Hodošček$|^date: ' docs/presentations/jadh-2026-wip-slides.md
 ! rg -n '^# Sustaining Aozora Bunko' docs/presentations/jadh-2026-wip-slides.md
 ! rg -n '(^|[[:space:]])https?://' docs/presentations/jadh-2026-wip-slides.md
-rm /tmp/jadh-title.html
 ```
 
-Expected: one generated title slide; CSS hides author/date; no duplicate title; no visible bare URL.
+Expected: YAML author/date retained; no duplicate manual title; no visible bare URL.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
-git add docs/presentations/jadh-2026-wip-slides.md docs/presentations/jadh-2026-wip-slides.css
-git commit -m "docs(presentation): normalize reveal title and dense-slide styling"
+git add docs/presentations/jadh-2026-wip-slides.md
+git commit -m "docs(presentation): normalize metadata title"
 ```
 
 ---
@@ -311,7 +274,7 @@ Slide 1 uses two short verbatim excerpts labeled:
 ## Generated Soranoha — 走れメロス, validated publication view
 ```
 
-Slide 2 annotates paragraph boundaries, ruby, notes, headers, and enrichment. Put code inside `::: {.xml-example}` fenced divs. Include pinned TEI-EAJ commit, work ID `1567`, Soranoha ArtifactID/manifest identity, materialization command, and validation result in HTML comments.
+Slide 2 annotates paragraph boundaries, ruby, notes, headers, and enrichment. Use ordinary fenced XML code blocks. Include pinned TEI-EAJ commit, work ID `1567`, Soranoha ArtifactID/manifest identity, materialization command, and validation result in HTML comments.
 
 If the Soranoha gate is closed, add the headings and `DRAFT XML GATE` comments but do not fabricate audience-facing XML.
 
@@ -393,10 +356,8 @@ Label the publication command as a reproducible fixture demonstration, not the r
 - [ ] **Step 5: Verify rendered count and evidence comments**
 
 ```bash
-(cd docs/presentations && pandoc jadh-2026-wip-slides.md --to revealjs --standalone --citeproc --css jadh-2026-wip-slides.css -o /tmp/jadh-count.html)
-sections="$(rg -c '^<section' /tmp/jadh-count.html)"
-test "$sections" -ge 35
-test "$sections" -le 37
+(cd docs/presentations && pandoc jadh-2026-wip-slides.md --from markdown --to native --citeproc -o /tmp/jadh-count.native)
+test -s /tmp/jadh-count.native
 python - <<'PY'
 from pathlib import Path
 p = Path("docs/presentations/jadh-2026-wip-slides.md").read_text()
@@ -404,7 +365,7 @@ for marker in ["Evidence path:", "Inspect/regenerate:", "Inputs:", "Expected:", 
     assert marker in p, marker
 print("evidence comment vocabulary present")
 PY
-rm /tmp/jadh-count.html
+rm /tmp/jadh-count.native
 ```
 
 - [ ] **Step 6: Commit**
@@ -458,18 +419,16 @@ cmp ../../../archive/abc/paper/digital_humanities_abstracts.csl docs/presentatio
 rg -n '302 ruby-heavy|24\.7% of ruby mass|0\.983 work completion' docs/presentations/jadh-2026-wip-slides.md
 ```
 
-- [ ] **Step 5: Render and inspect overflow at 1920×1080**
+- [ ] **Step 5: Parse with Pandoc and inspect the downstream website rendering**
 
 ```bash
-(cd docs/presentations && pandoc jadh-2026-wip-slides.md --to revealjs --standalone --citeproc --css jadh-2026-wip-slides.css -o /tmp/jadh-final.html)
-test -s /tmp/jadh-final.html
-test "$(rg -c 'id="title-slide"' /tmp/jadh-final.html)" -eq 1
-sections="$(rg -c '^<section' /tmp/jadh-final.html)"
-test "$sections" -ge 35
-test "$sections" -le 37
+(cd docs/presentations && pandoc jadh-2026-wip-slides.md --from markdown --to native --citeproc -o /tmp/jadh-final.native)
+test -s /tmp/jadh-final.native
 ```
 
-Open the HTML at a 1920×1080 viewport. Verify the parser coverage table, both XML slides, tokenizer table, and appendix inventory without scrolling the whole slide; only the bounded XML code region may scroll.
+Render through the downstream website generator. Verify the parser coverage
+table, both XML slides, tokenizer table, and appendix inventory. If content does
+not fit, split the slide or move detail to the appendix.
 
 - [ ] **Step 6: Rehearse**
 
@@ -487,7 +446,7 @@ If over budget, mark example slides as optional or move them to the appendix. Do
 ```bash
 just validate-migration
 git diff --check
-git add docs/presentations/jadh-2026-wip-slides.md docs/presentations/jadh-2026-wip-slides.css
+git add docs/presentations/jadh-2026-wip-slides.md
 git commit -m "docs(presentation): finalize TEI-EAJ and evidence-rich deck"
 ```
 
@@ -500,8 +459,8 @@ Do not make an empty commit. If any readiness gate remains open, do not claim de
 Report:
 
 - rendered main/appendix/total slide counts;
-- Pandoc version and exact reveal.js render command;
-- CSS overflow inspection result;
+- Pandoc version and parse command;
+- downstream website-rendering inspection result;
 - citation-key and vendored-file checks;
 - TEI-EAJ pinned revision and selected XML path;
 - Soranoha XML ArtifactID, materialization command, and validation result;

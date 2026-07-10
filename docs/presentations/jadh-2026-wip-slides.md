@@ -5,7 +5,6 @@ author: Bor Hodošček
 date: July 2026
 type: slides
 aspect-ratio: 16-9
-css: jadh-2026-wip-slides.css
 bibliography: references/abstract-refs.bib
 csl: references/digital_humanities_abstracts.csl
 link-citations: true
@@ -16,7 +15,7 @@ Citation provenance:
 - abstract-refs.bib sha256:ecac6b1d04171239d5cd1467a37802ff8e9fe8a5820f03ebbdb05cec196ae897
 - digital_humanities_abstracts.csl sha256:51537ae9dd3a3a77a971757942c3769c722379aa78d7f2a0bec442e57197c1c9
 Budget: 22 min talk + 5 min demo + 3 min buffer.
-Canonical Pandoc backend: reveal.js (`--to revealjs --standalone --citeproc`).
+Render with the downstream website generator; the Markdown remains Pandoc-flavored and backend-neutral.
 -->
 
 # Aozora Bunko Is Shared Research Infrastructure
@@ -311,7 +310,6 @@ Each category has an explicit action and sidecar policy.
 
 ## 走れメロス — Level 4
 
-::: {.xml-example}
 ```xml
 <p>
   <persName corresp="#メロス">メロス</persName>は激怒した。
@@ -326,7 +324,6 @@ Each category has an explicit action and sidecar policy.
   <roleName>村の牧人</roleName>である。
 </p>
 ```
-:::
 
 [Pinned TEI-EAJ project source](https://github.com/TEI-EAJ/aozora_tei) [@teieaj2023; @okada2023]
 
@@ -461,7 +458,6 @@ Provenance narrative: sibling archive paper/demo-trace.md; it is not a build inp
 
 # Appendix: Source Markup Inventory
 
-::: {.compact}
 | Family | Occurrences | Example |
 | --- | ---: | --- |
 | Ruby | 3,607,926 | `吾輩《わがはい》` |
@@ -474,7 +470,6 @@ Provenance narrative: sibling archive paper/demo-trace.md; it is not a build inp
 | Layout | 24,442 | `［＃ページの左右中央］` |
 | Annotations | 35,517 | `「text」の注記付き` |
 | Warigaki | 6,607 | `［＃割り注］` |
-:::
 
 <!--
 Evidence path: ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
@@ -486,7 +481,6 @@ Class: checked-in generated source-authority summary
 
 # Appendix: More Aozora Syntax Examples
 
-::: {.compact}
 | Function | Source example | Corpus evidence |
 | --- | --- | ---: |
 | Directional ruby | `｜あのひと《...》` | 318 occurrences |
@@ -494,7 +488,6 @@ Class: checked-in generated source-authority summary
 | 罫囲み | `［＃ここから罫囲み］` | 717 occurrences |
 | Quote block | `［＃ここから引用］` | 21 occurrences |
 | Warigaki | `［＃割り注］` | 6,605 occurrences |
-:::
 
 <!--
 Evidence path: ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md
@@ -524,7 +517,6 @@ Class: checked-in comparison methodology
 
 # Appendix: Parser Coverage by Construct
 
-::: {.compact}
 | Construct | Source occurrences | Pipeline | aozora-rs | aozora2 | aozora2html | Epub3 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Ruby | 3,607,926 | 0.99 | 0.99 | 0.85 | 0.74 | 0.96 |
@@ -532,7 +524,6 @@ Class: checked-in comparison methodology
 | Gaiji | 62,355 | 0.77 | 1.00 | 0.82 | 0.57 | 0.00 |
 | 縦中横 | 19,794 | 0.95 | 0.00 | 0.86 | 0.00 | 0.69 |
 | 傍線 | 18,127 | folded | 0.18 | 0.95 | 0.79 | 0.81 |
-:::
 
 <!--
 Evidence path: ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
@@ -544,7 +535,6 @@ Class: checked-in frequency-weighted coverage report
 
 # Appendix: Transformation Taxonomy
 
-::: {.compact}
 | Category | Default meaning | Sidecar |
 | --- | --- | --- |
 | `LOSS` | AAT information lacks an IR field | yes |
@@ -552,7 +542,6 @@ Class: checked-in frequency-weighted coverage report
 | `AMBIGUITY` | semantic/range mismatch | yes |
 | `UNSUPPORTED` | no IR representation | yes |
 | `STRUCTURAL` | tree-shape boundary loss | yes |
-:::
 
 <!--
 Evidence path: ab-validator/data/aat-to-parser-ir-mapping-v1.json
@@ -564,13 +553,11 @@ Class: checked-in mapping contract
 
 # Appendix: Additional Tokenizer Regions
 
-::: {.compact}
 | Region | Sudachi | Vibrato + CWJ | Research consequence |
 | --- | --- | --- | --- |
 | 求むる | one verb | 求／む／る | archaic morphology and POS |
 | 竹馬の友 | C: one named entity | three tokens | idiom/entity recognition |
 | む | inside 求むる | CWJ: noun; CSJ: auxiliary | dictionary-dependent POS |
-:::
 
 <!--
 Evidence path: pinned Sudachi and Vibrato dictionary outputs; ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md

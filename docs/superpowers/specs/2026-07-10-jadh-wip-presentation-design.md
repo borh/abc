@@ -331,9 +331,9 @@ must not replace citations in the argument.
 ## Content and Authoring Conventions
 
 - Retain `author: Bor Hodošček` and the presentation `date` in YAML because a
-  downstream website generator consumes them. The reveal.js stylesheet hides
-  the rendered author and date elements only on `#title-slide`, leaving title
-  and subtitle visible. Do not duplicate the title as a manual level-one slide.
+  downstream website generator consumes them. Do not duplicate the title as a
+  manual level-one slide. Whether metadata appears in the generated title view
+  is owned by that downstream generator.
 - Use Pandoc YAML and citation syntax rather than renderer-specific extensions.
 - Keep repository paths, commands, detailed provenance, and speaker cues in HTML
   comments unless the audience needs them.
@@ -348,12 +348,10 @@ must not replace citations in the argument.
   enrichment, or tokenizer evaluation as completed.
 - Use labeled Markdown links for every visible web resource; do not display bare
   URLs.
-- The canonical Pandoc backend is reveal.js.
-- Dense slides use a committed reveal.js stylesheet referenced by the render
-  command. XML examples use a bounded code region with reduced but legible font
-  size and vertical overflow; tables use compact cell spacing. If a slide still
-  overflows at 1920×1080, split it or move detail to the appendix rather than
-  relying on reveal.js auto-scaling.
+- Keep the Pandoc-flavored Markdown backend-neutral; do not add a stylesheet or
+  renderer-specific slide configuration.
+- If a dense slide does not fit the downstream renderer, split it or move detail
+  to the appendix rather than relying on renderer-specific auto-scaling.
 
 ## Evidence Reproduction Contract
 
@@ -378,8 +376,8 @@ flake inputs and are preflighted before presentation.
 ## Validation
 
 The existing 29-heading draft predates this revision. Implementation must bring
-it into conformance by retaining YAML author/date while suppressing their
-reveal.js title-slide display, removing the duplicate manual title, adding the single
+it into conformance by retaining YAML author/date, removing the duplicate manual
+title, adding the single
 early TEI-EAJ positioning slide, adding draft-gated real XML comparisons,
 expanding the tokenizer/data appendix, converting bare URLs to labeled Markdown
 links, and adding reproduction comments. The draft's corrected mass-weighted
@@ -398,9 +396,9 @@ Before the deck is considered complete:
   checked-in report;
 - the rendered main sequence contains exactly 27 slides and the complete rendered
   deck contains between 35 and 37 slides including eight to ten appendices;
-- slide-count validation parses Pandoc/reveal.js output and includes the
-  generated metadata title slide; it does not equate the number of level-one
-  Markdown headings with the rendered slide count;
+- slide-count validation accounts for the downstream generator's metadata title
+  view; it does not blindly equate level-one Markdown headings with rendered
+  slide count;
 - every visible web resource is a labeled Markdown link;
 - every displayed Soranoha datum satisfies the evidence reproduction contract;
 - real TEI comparison excerpts identify their upstream revision, work identity,

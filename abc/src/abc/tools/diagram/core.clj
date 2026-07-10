@@ -3,6 +3,7 @@
    value {:id :out-path :regen :build :lint}; :build is pure (-> flowchart input)
    and :lint is pure (-> problem strings). This module renders and gates them so
    the tier builders stay pure. See ADR 0029."
+  (:refer-clojure :exclude [run!])
   (:require [clojure.java.io :as io]
             [abc.tools.diagram.mermaid :as mermaid]))
 

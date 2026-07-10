@@ -155,6 +155,41 @@
     (write-adr! dir "0002-file.md" "")
     (is (= ["0002-file.md"] (adr/adr-files (.getPath dir))))))
 
+(deftest repository-discovery-fails-closed
+  (let [repo (temp-dir)
+        missing (adr/validate-repository repo "docs/adr")]
+    (is (contains? (kinds missing) :missing-adr-directory))
+    (write-path! repo "docs/adr" "not a directory")
+    (is (contains? (kinds (adr/validate-repository repo "docs/adr"))
+                   :invalid-adr-directory))))
+
+(deftest repository-rejects-empty-and-malformed-adr-corpora
+  (let [repo (temp-dir)
+        adr-dir (io/file repo "docs/adr")]
+    (.mkdirs adr-dir)
+    (write-adr! adr-dir "README.md" "# ADR index\n")
+    (is (contains? (kinds (adr/validate-repository repo "docs/adr"))
+                   :empty-adr-corpus))
+    (write-adr! adr-dir "bad-name.md"
+                "# ADR 0001: Bad name\n\nStatus: Draft\nDate: 2026-07-10\n\n## Decision\n\nX.\n")
+    (is (contains? (kinds (adr/validate-repository repo "docs/adr"))
+                   :invalid-adr-filename))))
+
+(deftest header-fields-require-exact-colon-space-syntax
+  (let [dir (temp-dir)]
+    (doseq [[filename line]
+            [["0001-missing-space.md" "Status:Draft"]
+             ["0002-leading-space.md" "Status:  Draft"]
+             ["0003-tab.md" "Status:\tDraft"]
+             ["0004-trailing-space.md" "Status: Draft "]]]
+      (write-adr! dir filename
+                  (str "# ADR " (subs filename 0 4) ": Invalid header\n\n"
+                       line "\nDate: 2026-07-10\n\n## Decision\n\nX.\n")))
+    (doseq [filename (adr/adr-files dir)]
+      (is (contains? (kinds (:parse-problems (adr/parse-adr dir filename)))
+                     :invalid-header-line)
+          filename))))
+
 (deftest status-must-be-an-exact-vocabulary-value
   (let [dir (temp-dir)]
     (write-adr! dir "0001-bad.md"
@@ -235,6 +270,50 @@
     (let [problems (adr/validate-adrs (adr/parse-all (.getPath dir)) dir)]
       (is (contains? (kinds problems) :missing-evidence))
       (is (contains? (kinds problems) :unverified-evidence-directory)))))
+
+(deftest evidence-paths-are-contained-in-canonical-allowed-roots
+  (let [repo (temp-dir)
+        adr-dir (io/file repo "docs/adr")]
+    (.mkdirs adr-dir)
+    (write-path! repo "test/evidence.clj" "(ns evidence)")
+    (write-path! repo "fixtures/evidence.txt" "fixture")
+    (write-path! repo "nix/evidence.nix" "{}")
+    (write-adr! adr-dir "0001-contained.md"
+                (str "# ADR 0001: Contained\n\nStatus: Accepted\nDate: 2026-07-10\n"
+                     "Accepted: 2026-07-10\n\n## Decision\n\nX.\n\n"
+                     "## Implementation Status\n\nDone.\n\n## Acceptance Criteria\n\n"
+                     "- `test/./evidence.clj`, `fixtures/evidence.txt`, and `nix/evidence.nix`.\n"))
+    (is (empty? (adr/validate-repository repo "docs/adr")))))
+
+(deftest evidence-rejects-lexical-traversal-and-malformed-paths
+  (let [repo (temp-dir)
+        adr-dir (io/file repo "docs/adr")]
+    (.mkdirs adr-dir)
+    (write-path! repo "outside.clj" "outside")
+    (write-adr! adr-dir "0001-traversal.md"
+                (str "# ADR 0001: Traversal\n\nStatus: Draft\nDate: 2026-07-10\n\n"
+                     "## Decision\n\nX.\n\n## Acceptance Criteria\n\n"
+                     "- `test/../outside.clj` and `test/\u0000bad.clj`.\n"))
+    (let [problem-kinds (kinds (adr/validate-repository repo "docs/adr"))]
+      (is (contains? problem-kinds :evidence-path-traversal))
+      (is (contains? problem-kinds :malformed-evidence-path)))))
+
+(deftest evidence-rejects-real-path-symlink-escape
+  (let [repo (temp-dir)
+        adr-dir (io/file repo "docs/adr")
+        outside (temp-dir)
+        outside-file (write-path! outside "escaped.clj" "outside")]
+    (.mkdirs adr-dir)
+    (.mkdirs (io/file repo "test"))
+    (Files/createSymbolicLink (.toPath (io/file repo "test/escaped.clj"))
+                              (.toPath outside-file)
+                              (make-array FileAttribute 0))
+    (write-adr! adr-dir "0001-symlink.md"
+                (str "# ADR 0001: Symlink\n\nStatus: Draft\nDate: 2026-07-10\n\n"
+                     "## Decision\n\nX.\n\n## Acceptance Criteria\n\n"
+                     "- `test/escaped.clj`.\n"))
+    (is (contains? (kinds (adr/validate-repository repo "docs/adr"))
+                   :evidence-real-path-escape))))
 
 (deftest duplicate-numbers-relations-and-missing-targets-are-rejected
   (let [dir (temp-dir)]

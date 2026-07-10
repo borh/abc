@@ -1,4 +1,5 @@
 (ns abc.tools.adr-governance
+  (:refer-clojure :exclude [run!])
   (:require [abc.tools.adr :as adr]))
 
 (defn run! [repo-root]

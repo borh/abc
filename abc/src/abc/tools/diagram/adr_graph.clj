@@ -1,5 +1,5 @@
 (ns abc.tools.diagram.adr-graph
-  "Tier 1 pure builder: ADR headers (+ adr-relations.edn, Task 6) -> decision-map
+  "Tier 1 pure builder: ADR headers (+ adr-relations.edn) -> decision-map
    graph value. lint* delegates ADR governance to abc.tools.adr and enforces
    semantic-sidecar rules locally.
    See ADR 0029."
@@ -97,8 +97,7 @@
             {:from (:from r) :to (:to r) :type (:type r)})))
 
 ;; graph-from is pure (no IO) so edge construction is unit-testable with
-;; synthetic adrs; build is the thin source-reading wrapper. Task 6 switches the
-;; edge source from (header-edges adrs) to (all-edges adrs relations).
+;; synthetic adrs; build is the thin source-reading wrapper.
 (defn graph-from [adrs relations]
   (let [nums (set (map :num adrs))
         edges (for [e (all-edges adrs relations)

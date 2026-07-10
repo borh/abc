@@ -91,7 +91,7 @@ trustworthy while allowing implementation tracking to stay current.
 ## Manifest identity invariants
 
 Three global invariants apply to `manifest_identity_object` across every ADR
-that touches it (ADR 0001, 0010, 0023, 0026, 0027):
+that touches it (ADR 0001, 0010, 0023, 0026, 0027, 0028):
 
 1. **`null` means "not applicable", not "unknown".** A coordinate is `null` in
    `manifest_identity_object` when it is not part of that artifact kind's
@@ -125,9 +125,10 @@ linking generations is not part of v0 identity and is recorded below as a
 known open question for longitudinal analysis over a living corpus.
 
 The current field set of `manifest_identity_object` is amended across multiple
-ADRs (0001 → 0010 → 0023 → 0027). The authoritative current field list is the
-bundled `schemas/manifest.schema.json`, not any single ADR's prose; ADR prose
-records the *rule* for each field's introduction and nullability semantics.
+ADRs (0001 → 0010 → 0023 → 0027 → 0028). ADR 0028 introduces
+`annotation_policy_hash`. The authoritative current field list is the bundled
+`schemas/manifest.schema.json`, not any single ADR's prose; ADR prose records
+the *rule* for each field's introduction and nullability semantics.
 
 ## Acceptance Criteria gate
 

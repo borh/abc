@@ -600,7 +600,9 @@ Add at least one code-spanned path to each Accepted allowlisted ADR according to
 | 0021 | `test/abc/tools/person_drift_test.clj` |
 | 0022 | `test/abc/tools/aozora_history_audit_test.clj` |
 
-Do not add evidence to Draft ADRs 0002–0005 merely to satisfy the old shell rule.
+The user independently accepted ADR 0030, which amended and accepted ADR 0002;
+this is not an incidental governance promotion. Do not add evidence to the
+remaining Draft ADRs 0003–0005 merely to satisfy the old shell rule.
 
 - [ ] **Step 5: Add ADR 0031 in Proposed state**
 
@@ -1193,7 +1195,7 @@ git commit -m "docs(adr): accept uniform governance validation"
 - [ ] `abc.tools.adr` is the only ADR Markdown parser; `rg -n "parse-adr|header-block|adr-ref-tokens" abc/src` finds no parallel parser in diagram code.
 - [ ] No permanent allowlist or shell acceptance gate remains.
 - [ ] All 31 ADRs pass exact lifecycle/header/relation validation.
-- [ ] Draft ADRs 0002–0005 retain honest promotion criteria without fabricated evidence.
+- [ ] The user's independent acceptance of ADR 0030 amended and accepted ADR 0002; only ADRs 0003–0005 remain Draft, with honest promotion criteria and no fabricated evidence. This is not an incidental governance promotion.
 - [ ] ADR 0028 is exactly Proposed; ADRs 0026–0029 were not promoted.
 - [ ] Scoped supersession and dependency labels remain visible in `adr-graph.mmd`.
 - [ ] Architecture coordinate keys equal all 15 required manifest identity fields, and stage ADR ownership is derived from those keys.

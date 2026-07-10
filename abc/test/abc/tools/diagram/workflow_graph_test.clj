@@ -71,3 +71,13 @@
     (is (= 2 exit))
     (is (str/includes? err
                        "usage: clojure -M:abc/workflow-graph <workflow-run.json>"))))
+
+(deftest cli-rejects-invalid-workflow-with-actionable-stderr-only
+  (let [file (java.io.File/createTempFile "invalid-workflow" ".json")]
+    (spit file "{\"status\":\"mystery\"}")
+    (let [{:keys [exit out err]}
+          (shell/sh "clojure" "-M:abc/workflow-graph" (.getPath file))]
+      (is (= 1 exit))
+      (is (= "" out))
+      (is (str/includes? err "workflow-run validation failed:"))
+      (is (str/includes? err "status")))))

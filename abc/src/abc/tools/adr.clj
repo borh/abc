@@ -1,7 +1,8 @@
 (ns abc.tools.adr
   (:require [clojure.java.io :as io]
             [clojure.string :as str])
-  (:import [java.time LocalDate]))
+  (:import [java.nio.file InvalidPathException Paths]
+           [java.time LocalDate]))
 
 (def statuses #{"Draft" "Proposed" "Accepted" "Superseded" "Withdrawn"})
 (def header-fields
@@ -14,15 +15,16 @@
    "Amended by" :amended-by
    "Depends on" :depends-on})
 (def evidence-prefixes ["test/" "fixtures/" "nix/"])
+(def ^:private evidence-roots #{"test" "fixtures" "nix"})
 
 (defn problem [kind file message & {:as data}]
   (merge {:kind kind :file file :message message} data))
 
 (defn adr-files [dir]
-  (->> (.listFiles (io/file dir))
+  (->> (or (.listFiles (io/file dir)) [])
        (filter #(.isFile %))
        (map #(.getName %))
-       (filter #(re-matches #"\d{4}-.*\.md" %))
+       (filter #(re-matches #"\d{4}-.+\.md" %))
        sort
        vec))
 
@@ -86,32 +88,40 @@
   (->
    (reduce
     (fn [{:keys [seen] :as parsed} line]
-      (if-let [[_ field value] (re-matches #"([^:]+):(.*)" line)]
+      (if-let [[_ field raw-value] (re-matches #"([^:]+):(.*)" line)]
         (cond
           (not (contains? header-fields field))
           (update parsed :problems conj
                   (problem :unknown-header-field file
                            "header field is not recognized"
-                           :field field :value (str/trim value)))
+                           :field field :value raw-value))
 
           (contains? seen field)
           (update parsed :problems conj
                   (problem :duplicate-header-field file
                            "header field appears more than once"
-                           :field field :value (str/trim value)))
+                           :field field :value raw-value))
 
-          (str/blank? value)
+          (str/blank? raw-value)
           (-> parsed
               (update :seen conj field)
               (update :problems conj
                       (problem :empty-header-value file
                                "header field value must not be empty"
-                               :field field :value (str/trim value))))
+                               :field field :value raw-value)))
+
+          (not (re-matches #" [^\s].*\S| [^\s]" raw-value))
+          (-> parsed
+              (update :seen conj field)
+              (update :problems conj
+                      (problem :invalid-header-line file
+                               "header line must be exactly `Field: value`"
+                               :field field :value line)))
 
           :else
           (-> parsed
               (update :seen conj field)
-              (assoc-in [:fields field] (str/trim value))))
+              (assoc-in [:fields field] (subs raw-value 1))))
         (update parsed :problems conj
                 (problem :invalid-header-line file
                          "header line must be `Field: non-empty value`"
@@ -329,27 +339,70 @@
                  "an Accepted ADR dependency on Draft or Proposed requires scope"
                  :value item)))))
 
-(defn- existing-file? [repo-root path]
-  (.isFile (io/file repo-root path)))
+(defn- raw-path [path]
+  (Paths/get path (make-array String 0)))
+
+(defn- traversal? [path]
+  (some #(= ".." (str %)) (iterator-seq (.iterator path))))
+
+(defn- evidence-path-state [repo-root path]
+  (try
+    (let [relative (raw-path path)
+          root (-> (io/file repo-root) .toPath .toAbsolutePath .normalize)
+          resolved (-> root (.resolve relative) .normalize)
+          allowed-root-name (when (pos? (.getNameCount relative))
+                              (str (.getName relative 0)))]
+      (cond
+        (.isAbsolute relative) {:problem :evidence-path-traversal}
+        (traversal? relative) {:problem :evidence-path-traversal}
+        (not (.startsWith resolved root)) {:problem :evidence-path-traversal}
+        (not (contains? evidence-roots allowed-root-name))
+        {:problem :evidence-path-traversal}
+        (not (.exists (.toFile resolved))) {:problem :missing-evidence-path}
+        :else
+        (let [real-repo-root (.toRealPath root (make-array java.nio.file.LinkOption 0))
+              allowed-root (-> root (.resolve allowed-root-name) .normalize)
+              real-allowed-root (.toRealPath allowed-root (make-array java.nio.file.LinkOption 0))
+              real-path (.toRealPath resolved (make-array java.nio.file.LinkOption 0))]
+          (if (and (.startsWith real-allowed-root real-repo-root)
+                   (.startsWith real-path real-allowed-root))
+            {:path (.toFile resolved)}
+            {:problem :evidence-real-path-escape}))))
+    (catch InvalidPathException _
+      {:problem :malformed-evidence-path})))
+
+(defn- evidence-path-problem [file item state]
+  (when-let [kind (:problem state)]
+    (problem kind file
+             (case kind
+               :evidence-path-traversal "evidence path contains lexical traversal"
+               :evidence-real-path-escape "evidence real path escapes the repository"
+               :malformed-evidence-path "evidence path is malformed"
+               :missing-evidence-path "evidence path does not exist")
+             :value item)))
 
 (defn- evidence-problems [repo-root {:keys [file status evidence]}]
-  (let [by-criterion (group-by :criterion-index evidence)]
+  (let [by-criterion (group-by :criterion-index evidence)
+        states (into {} (map (fn [{:keys [path]}]
+                               [path (evidence-path-state repo-root path)])
+                             evidence))]
     (concat
      (when (and (= "Accepted" status) (empty? evidence))
        [(problem :missing-evidence file
                  "Accepted status requires an evidence path in Acceptance Criteria")])
-     (for [{:keys [path] :as item} evidence
-           :when (not (.exists (io/file repo-root path)))]
-       (problem :missing-evidence-path file
-                "evidence path does not exist"
-                :value item))
+     (keep (fn [{:keys [path] :as item}]
+             (evidence-path-problem file item (get states path)))
+           evidence)
      (for [{:keys [path criterion-index] :as item} evidence
-           :when (.isDirectory (io/file repo-root path))
+           :let [state (get states path)]
+           :when (and (nil? (:problem state)) (.isDirectory (:path state)))
            :let [companions (get by-criterion criterion-index)]
            :when (not-any? (fn [{companion :path}]
                              (and (or (str/starts-with? companion "test/")
                                       (str/starts-with? companion "nix/"))
-                                  (existing-file? repo-root companion)))
+                                  (let [companion-state (get states companion)]
+                                    (and (nil? (:problem companion-state))
+                                         (.isFile (:path companion-state))))))
                            companions)]
        (problem :unverified-evidence-directory file
                 "an evidence directory requires an existing test/ or nix/ file in the same criterion"
@@ -371,5 +424,29 @@
 (defn validate-repository
   ([repo-root] (validate-repository repo-root "docs/adr"))
   ([repo-root adr-dir]
-   (validate-adrs (parse-all (str (io/file repo-root adr-dir)))
-                  (io/file repo-root))))
+   (let [directory (io/file repo-root adr-dir)]
+     (cond
+       (not (.exists directory))
+       [(problem :missing-adr-directory adr-dir "ADR directory does not exist")]
+
+       (not (.isDirectory directory))
+       [(problem :invalid-adr-directory adr-dir "ADR path is not a directory")]
+
+       :else
+       (let [markdown-files (->> (or (.listFiles directory) [])
+                                 (filter #(.isFile %))
+                                 (map #(.getName %))
+                                 (filter #(and (str/ends-with? % ".md")
+                                               (not= "README.md" %)))
+                                 sort
+                                 vec)
+             malformed (remove #(re-matches #"\d{4}-.+\.md" %) markdown-files)
+             adrs (parse-all directory)]
+         (vec
+          (concat
+           (when (empty? markdown-files)
+             [(problem :empty-adr-corpus adr-dir "ADR directory contains no ADR Markdown files")])
+           (for [filename malformed]
+             (problem :invalid-adr-filename filename
+                      "ADR filename must be `NNNN-title.md`"))
+           (validate-adrs adrs (io/file repo-root)))))))))

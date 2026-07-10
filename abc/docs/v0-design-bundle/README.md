@@ -61,8 +61,10 @@ should be read through `docs/design-survey.md`.
    unified around ODD-derived Relax NG plus Schematron.
 3. Adopt ADR 0007 after the imported-output schemas are accepted.
 4. Adopt ADR 0009 and ADR 0010 after materialized identity behavior is reconciled.
-5. Keep ADR 0002, ADR 0003, ADR 0004, and ADR 0005 Draft until their gates
-   are exercised by implementation.
+5. ADR 0030 was independently accepted by the user and amended ADR 0002,
+   accepting its parser-evaluation criteria. Keep only ADR 0003, ADR 0004, and
+   ADR 0005 Draft until their gates are exercised by implementation; this was
+   not an incidental governance promotion.
 6. Validate the example manifest against `schemas/manifest.schema.json`.
 7. Validate the parser IR fixture against `schemas/parser-ir.schema.json`.
 8. Generate the RDF view from the JSON manifest using the mapping rules.

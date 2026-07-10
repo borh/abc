@@ -41,12 +41,24 @@
    :message (string/trim (.getText message))
    :location (.getLocation message)})
 
+;; Compiling the ISO-Schematron schema to XSLT is by far the dominant per-call
+;; cost (~0.4s vs ~0.03s for the actual validation). ph-schematron caches the
+;; bound transformer inside a SchematronResourceSCH once it is used, so reusing
+;; the resource across validations skips recompilation. Cache by canonical path
+;; + mtime so an edited schema busts the entry. Sequential use only (matches the
+;; TEI RelaxNG validator's contract).
+(defonce ^:private resource-cache (atom {}))
+
 (defn- schematron-resource [schema-path]
-  (let [resource (SchematronResourceSCH/fromFile (io/file schema-path))]
-    (when-not (.isValidSchematron resource)
-      (throw (ex-info "Invalid Schematron schema"
-                      {:schema-path schema-path})))
-    resource))
+  (let [file (io/file schema-path)
+        cache-key [(.getCanonicalPath file) (.lastModified file)]]
+    (or (get @resource-cache cache-key)
+        (let [resource (SchematronResourceSCH/fromFile file)]
+          (when-not (.isValidSchematron resource)
+            (throw (ex-info "Invalid Schematron schema"
+                            {:schema-path schema-path})))
+          (swap! resource-cache assoc cache-key resource)
+          resource))))
 
 (defn schema-valid?
   "Return whether ph-schematron accepts schema-path for the selected backend.

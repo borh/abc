@@ -13,6 +13,7 @@ Usage:
   run-perf-workset.py --workset data/perf-workset.json \
       --baseline-bin PATH --candidate-bin PATH --corpus DIR --out report.json
 """
+
 import argparse
 import hashlib
 import json
@@ -28,15 +29,19 @@ def sha256(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def timed_runs(bin_path: str, source: bytes, warmup: int, measured: int,
-               timeout_s: float) -> dict:
+def timed_runs(bin_path: str, source: bytes, warmup: int, measured: int, timeout_s: float) -> dict:
     times, timeouts = [], 0
     for i in range(warmup + measured):
         start = time.monotonic()
         try:
-            subprocess.run([bin_path, "inspect", "nodes", "-"], input=source,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                           timeout=timeout_s, check=False)
+            subprocess.run(
+                [bin_path, "inspect", "nodes", "-"],
+                input=source,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=timeout_s,
+                check=False,
+            )
             elapsed = time.monotonic() - start
         except subprocess.TimeoutExpired:
             timeouts += 1
@@ -65,16 +70,25 @@ def main() -> int:
     corpus = pathlib.Path(args.corpus)
     report = {
         "workset_id": ws["workset_id"],
-        "machine": {"node": platform.node(), "machine": platform.machine(),
-                    "processor": platform.processor(),
-                    "cpu_count": __import__("os").cpu_count()},
+        "machine": {
+            "node": platform.node(),
+            "machine": platform.machine(),
+            "processor": platform.processor(),
+            "cpu_count": __import__("os").cpu_count(),
+        },
         "bins": {
-            "baseline": {"path": args.baseline_bin,
-                         "version": subprocess.run([args.baseline_bin, "--version"],
-                                                   capture_output=True, text=True).stdout.strip()},
-            "candidate": {"path": args.candidate_bin,
-                          "version": subprocess.run([args.candidate_bin, "--version"],
-                                                    capture_output=True, text=True).stdout.strip()},
+            "baseline": {
+                "path": args.baseline_bin,
+                "version": subprocess.run(
+                    [args.baseline_bin, "--version"], capture_output=True, text=True
+                ).stdout.strip(),
+            },
+            "candidate": {
+                "path": args.candidate_bin,
+                "version": subprocess.run(
+                    [args.candidate_bin, "--version"], capture_output=True, text=True
+                ).stdout.strip(),
+            },
         },
         "works": [],
     }
@@ -83,8 +97,11 @@ def main() -> int:
         try:
             actual = sha256(src_path)
         except FileNotFoundError:
-            print(f"FAIL-CLOSED: {work['work_id']} source missing at {src_path} — "
-                  f"run extract-perf-workset-corpus.py first", file=sys.stderr)
+            print(
+                f"FAIL-CLOSED: {work['work_id']} source missing at {src_path} — "
+                f"run extract-perf-workset-corpus.py first",
+                file=sys.stderr,
+            )
             return 2
         if actual != work["source_sha256"]:
             print(f"FAIL-CLOSED: {work['work_id']} sha256 {actual} != pinned", file=sys.stderr)
@@ -92,24 +109,30 @@ def main() -> int:
         source = src_path.read_bytes()
         row = {"work_id": work["work_id"]}
         for label, bin_path in (("baseline", args.baseline_bin), ("candidate", args.candidate_bin)):
-            row[label] = timed_runs(bin_path, source, proto["warmup_runs"],
-                                    proto["measured_runs"], proto["per_work_timeout_seconds"])
+            row[label] = timed_runs(
+                bin_path,
+                source,
+                proto["warmup_runs"],
+                proto["measured_runs"],
+                proto["per_work_timeout_seconds"],
+            )
         report["works"].append(row)
 
     base_med = statistics.median(w["baseline"]["median_s"] for w in report["works"])
     cand_med = statistics.median(w["candidate"]["median_s"] for w in report["works"])
     regression_pct = 100.0 * (cand_med - base_med) / base_med if base_med else 0.0
-    new_timeouts = any(w["candidate"]["timeouts"] > w["baseline"]["timeouts"]
-                       for w in report["works"])
+    new_timeouts = any(
+        w["candidate"]["timeouts"] > w["baseline"]["timeouts"] for w in report["works"]
+    )
     report["summary"] = {
         "baseline_workset_median_s": round(base_med, 4),
         "candidate_workset_median_s": round(cand_med, 4),
         "regression_pct": round(regression_pct, 2),
         "threshold_pct": proto["median_regression_block_threshold_pct"],
         "new_timeouts": new_timeouts,
-        "verdict": "BLOCK" if new_timeouts or
-                   regression_pct > proto["median_regression_block_threshold_pct"]
-                   else "PASS",
+        "verdict": "BLOCK"
+        if new_timeouts or regression_pct > proto["median_regression_block_threshold_pct"]
+        else "PASS",
     }
     pathlib.Path(args.out).write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report["summary"], indent=2))

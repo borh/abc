@@ -10,6 +10,7 @@ which is acceptable because both sides are serde_json output.
 
 Exit 0 = parity; 1 = divergence; 2 = usage/reference error.
 """
+
 import json
 import pathlib
 import sys
@@ -46,13 +47,18 @@ def main() -> int:
         b = normalize(json.loads(b_files[name].read_text()))
         if a != b:
             diverged.append(name)
-    print(json.dumps({
-        "compared": len(set(a_files) & set(b_files)),
-        "missing_count": len(missing),
-        "missing_sample": missing[:20],
-        "diverged_count": len(diverged),
-        "diverged_sample": diverged[:20],
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                "compared": len(set(a_files) & set(b_files)),
+                "missing_count": len(missing),
+                "missing_sample": missing[:20],
+                "diverged_count": len(diverged),
+                "diverged_sample": diverged[:20],
+            },
+            indent=2,
+        )
+    )
     return 0 if not missing and not diverged else 1
 
 

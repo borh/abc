@@ -29,6 +29,7 @@
    [abc.tools.source-region-contract :as source-region]
    [abc.tools.tei :as tei]
    [arachne.aristotle :as aa]
+   [babashka.fs :as fs]
    [clojure.java.io :as io]
    [clojure.set :as set]
    [clojure.string :as string]
@@ -48,12 +49,9 @@
         (manifest/schema-hash "schemas/parser-ir.schema.json")))
 
 (defn tokenizer-profiles-by-hash []
-  (->> (file-seq (io/file "data/tokenizer-profiles"))
-       (filter #(.isFile %))
-       (filter #(string/ends-with? (.getName %) ".json"))
-       (map files/read-json)
-       (map (fn [profile]
-              [(analysis-identity/tokenizer-profile-hash profile) profile]))
+  (->> (fs/glob "data/tokenizer-profiles" "*.json")
+       (map (comp files/read-json fs/file))
+       (map (juxt analysis-identity/tokenizer-profile-hash identity))
        (into {})))
 
 (def ^:private fixture-tokenized-tokens

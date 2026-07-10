@@ -2,6 +2,7 @@
   (:require [abc.tools.analysis-identity :as analysis-identity]
             [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
+            [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string]))
 
@@ -38,18 +39,13 @@
 (def source-snapshot-workset-file-name
   "source-snapshot.workset.edn")
 
-(defn- json-file? [file]
-  (and (.isFile file)
-       (string/ends-with? (.getName file) ".json")))
-
 (defn request-set-labels []
-  (let [dir (io/file definitions-dir)]
-    (->> (file-seq dir)
-         (filter json-file?)
-         (map #(.getName %))
-         (map #(subs % 0 (- (count %) (count ".json"))))
-         sort
-         vec)))
+  ;; definitions live directly in definitions-dir (flat); glob "*.json"
+  ;; matches root-level files (fs/glob "**/*.json" would match subdirs only).
+  (->> (fs/glob definitions-dir "*.json")
+       (map (comp fs/strip-ext fs/file-name))
+       sort
+       vec))
 
 (defn request-set-definition-path [label]
   (str definitions-dir "/" label ".json"))

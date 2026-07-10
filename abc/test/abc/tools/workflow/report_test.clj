@@ -4,14 +4,26 @@
             [abc.tools.workflow.report :as report]
             [abc.tools.workflow.target :as target]
             [clojure.java.io :as io]
-            [clojure.test :refer [deftest is testing]])
+            [clojure.test :refer [deftest is testing use-fixtures]])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
 
+;; Track temp dirs and delete them in a :each fixture so a failing test
+;; cannot orphan them (these tests previously never cleaned up).
+(def ^:private created-temp-dirs (atom []))
+
 (defn- temp-dir [prefix]
-  (.toFile (Files/createTempDirectory
-            prefix
-            (make-array FileAttribute 0))))
+  (let [d (.toFile (Files/createTempDirectory prefix (make-array FileAttribute 0)))]
+    (swap! created-temp-dirs conj d)
+    d))
+
+(use-fixtures :each
+  (fn [f]
+    (try
+      (f)
+      (finally
+        (run! files/delete-tree! @created-temp-dirs)
+        (reset! created-temp-dirs [])))))
 
 (def nodes-schema
   (files/read-json "schemas/workflow-nodes.schema.json"))

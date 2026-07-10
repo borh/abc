@@ -196,13 +196,19 @@
         plan (snapshot-plan request-set)]
     (snapshot-index/build-snapshot-index-from-plan request-set plan)))
 
+(defn- print-snapshot-summary!
+  "Print the standard snapshot label / identity-hash / request-set-label
+  triple to stdout (shared by the snapshot-emitting commands)."
+  [snapshot]
+  (println "snapshot_label:" (get snapshot "snapshot_label"))
+  (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))
+  (println "request_set_label:" (get snapshot "request_set_label")))
+
 (defn snapshot-index! [label output-path]
   (let [snapshot (build-snapshot-index label)
         output-file (snapshot-index/write-snapshot-index! snapshot output-path)]
     (println "snapshot_index:" (str output-file))
-    (println "snapshot_label:" (get snapshot "snapshot_label"))
-    (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))
-    (println "request_set_label:" (get snapshot "request_set_label"))
+    (print-snapshot-summary! snapshot)
     0))
 
 (defn default-snapshot-root [label]
@@ -572,9 +578,7 @@
                                                 label-or-path
                                                 (default-snapshot-root label))]
     (println "snapshot_index:" (str snapshot-index-file))
-    (println "snapshot_label:" (get snapshot "snapshot_label"))
-    (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))
-    (println "request_set_label:" (get snapshot "request_set_label"))
+    (print-snapshot-summary! snapshot)
     0))
 
 (defn snapshot-index-path [path]
@@ -809,9 +813,7 @@
 (defn explain-snapshot! [path]
   (let [snapshot (read-valid-snapshot-index path)
         summary (get snapshot "summary")]
-    (println "snapshot_label:" (get snapshot "snapshot_label"))
-    (println "snapshot_identity_hash:" (get snapshot "snapshot_identity_hash"))
-    (println "request_set_label:" (get snapshot "request_set_label"))
+    (print-snapshot-summary! snapshot)
     (println "request_set_id:" (get-in snapshot ["snapshot_index_identity_object"
                                                  "request_set_id"]))
     (println "total_artifacts:" (get summary "total_artifacts"))
@@ -1167,7 +1169,7 @@
 
 (def commands
   {"list-request-sets" {:args 0
-                        :run (fn [] (list-request-sets!))}
+                        :run list-request-sets!}
    "explain-request-set" {:args 1
                           :run explain-request-set!}
    "resolve-request-set" {:args 3

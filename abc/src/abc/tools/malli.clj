@@ -47,15 +47,33 @@
        (not (string/starts-with? value "../"))
        (not (string/starts-with? value "/"))))
 
-(def ^:private parser-evidence-example
-  {:evidence_id "ab-validator/example"
-   :evidence_class :conversion-compatibility
-   :producer_component "ab-validator"
-   :logical_path "ab-validator/docs/example.md"
-   :current_external_path "docs/example.md"
-   :sha256 example-hash
-   :status :citable
-   :summary "Example evidence."})
+(def ^:private parser-evidence-examples
+  "Several valid entries covering each evidence_class / status enum and the
+  present / absent / nil variants of :current_external_path, so the schema's
+  generator produces varied (not constant) values."
+  [{:evidence_id "ab-validator/example"
+    :evidence_class :conversion-compatibility
+    :producer_component "ab-validator"
+    :logical_path "ab-validator/docs/example.md"
+    :current_external_path "docs/example.md"
+    :sha256 example-hash
+    :status :citable
+    :summary "Example evidence."}
+   {:evidence_id "ab-validator/selection"
+    :evidence_class :parser-selection
+    :producer_component "ab-validator"
+    :logical_path "ab-validator/docs/selection.md"
+    :sha256 example-hash
+    :status :provisional
+    :summary "Parser selection evidence."}
+   {:evidence_id "ab-validator/oracle"
+    :evidence_class :comparator-oracle
+    :producer_component "ab-validator"
+    :logical_path "ab-validator/docs/oracle.md"
+    :current_external_path nil
+    :sha256 example-hash
+    :status :superseded
+    :summary "Comparator oracle evidence."}])
 
 (def ^:private compat-entry-example
   {:aat_version 1
@@ -126,7 +144,7 @@
     concrete-adapter?]
 
    ::parser-evidence-entry
-   [:map {:gen/elements [parser-evidence-example]}
+   [:map {:gen/elements parser-evidence-examples}
     [:evidence_id ::nonblank-string]
     [:evidence_class [:enum {:error/message "must be conversion-compatibility, parser-selection, or comparator-oracle"}
                       :conversion-compatibility :parser-selection :comparator-oracle]]

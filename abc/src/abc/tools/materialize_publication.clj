@@ -187,13 +187,11 @@
 
 (defn- publication-identity-object
   [manifest-inputs {:keys [output-format-spec-hash tei-profile-hash]}]
-  (cond-> (manifest/identity-object
-           manifest-inputs
-           {:manifest-schema-hash (manifest/schema-hash "schemas/manifest.schema.json")
-            :output-format-spec-hash output-format-spec-hash})
-    true
-    (assoc "metadata_record_hash" (get manifest-inputs "metadata_record_hash"))
-
+  (cond-> (assoc (manifest/identity-object
+                  manifest-inputs
+                  {:manifest-schema-hash (manifest/schema-hash "schemas/manifest.schema.json")
+                   :output-format-spec-hash output-format-spec-hash})
+                 "metadata_record_hash" (get manifest-inputs "metadata_record_hash"))
     tei-profile-hash
     (assoc "tei_profile_hash" tei-profile-hash)))
 

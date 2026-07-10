@@ -81,7 +81,8 @@
 
 (defn- paragraph-attrs [paragraph]
   (when-let [layout (get paragraph "layout")]
-    (let [rend (layout-rend layout)]
+    (let [rend (layout-rend layout)
+          params (layout-params layout)]
       (cond-> {}
         rend
         (assoc :rend rend)
@@ -89,8 +90,8 @@
         (get layout "kind")
         (assoc :abc/layout-kind (get layout "kind"))
 
-        (layout-params layout)
-        (assoc :abc/layout-params (layout-params layout))))))
+        params
+        (assoc :abc/layout-params params)))))
 
 (defn- source-note-hiccup [node]
   [:note {:type (get node "note_type")}
@@ -228,16 +229,17 @@
   ([acc node depth]
    (let [layout (get node "layout")]
      (if-let [rend (some-> layout inline-layout-rend)]
-       (render-inline-wrapper acc
-                              (seq (get node "inline_children"))
-                              (get node "text")
-                              depth
-                              [:hi (cond-> {:rend rend}
-                                     (get layout "kind")
-                                     (assoc :abc/layout-kind (get layout "kind"))
+       (let [params (layout-params layout)]
+         (render-inline-wrapper acc
+                                (seq (get node "inline_children"))
+                                (get node "text")
+                                depth
+                                [:hi (cond-> {:rend rend}
+                                       (get layout "kind")
+                                       (assoc :abc/layout-kind (get layout "kind"))
 
-                                     (layout-params layout)
-                                     (assoc :abc/layout-params (layout-params layout)))])
+                                       params
+                                       (assoc :abc/layout-params params))]))
        (mark-omitted acc "layout-span")))))
 
 (defn- render-heading-node

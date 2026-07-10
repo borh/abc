@@ -2,7 +2,8 @@
   (:require [abc.tools.edn-registry :as registry]
             [abc.tools.files :as files]
             [abc.tools.malli :as am]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [malli.core :as m]))
 
 (def index-path
   (files/path "data" "parser-evidence-citations.edn"))
@@ -84,3 +85,16 @@
         sort
         distinct
         vec)))
+
+;; Instrumented contract (bites once abc.tools.malli/install! runs): the
+;; 1-arity is only ever called with a validated index, so this documents the
+;; invariant and gives mi/instrument! a real function schema to wrap. Schemas
+;; are inlined (core schemas only) rather than registry ::refs so the m/=>
+;; resolves at load time — registry refs are not populated until install!.
+(m/=> citable-hashes
+      [:function
+       [:=> [:cat] [:vector :string]]
+       [:=> [:cat [:map [:entries [:vector [:map
+                                            [:sha256 :string]
+                                            [:status :keyword]]]]]]
+        [:vector :string]]])

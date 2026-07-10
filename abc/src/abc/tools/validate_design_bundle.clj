@@ -29,6 +29,7 @@
    [abc.tools.source-region-contract :as source-region]
    [abc.tools.tei :as tei]
    [arachne.aristotle :as aa]
+   [babashka.fs :as fs]
    [clojure.java.io :as io]
    [clojure.set :as set]
    [clojure.string :as string]
@@ -48,12 +49,9 @@
         (manifest/schema-hash "schemas/parser-ir.schema.json")))
 
 (defn tokenizer-profiles-by-hash []
-  (->> (file-seq (io/file "data/tokenizer-profiles"))
-       (filter #(.isFile %))
-       (filter #(string/ends-with? (.getName %) ".json"))
-       (map files/read-json)
-       (map (fn [profile]
-              [(analysis-identity/tokenizer-profile-hash profile) profile]))
+  (->> (fs/glob "data/tokenizer-profiles" "*.json")
+       (map (comp files/read-json fs/file))
+       (map (juxt analysis-identity/tokenizer-profile-hash identity))
        (into {})))
 
 (def ^:private fixture-tokenized-tokens
@@ -102,7 +100,7 @@
   (let [expected-parser-ir (manifest/schema-hash "schemas/parser-ir.schema.json")
         actual-parser-ir (get parser-ir "schema_hash")]
     (vec
-     (when (not (parser-ir-schema-hash-accepted? actual-parser-ir))
+     (when-not (parser-ir-schema-hash-accepted? actual-parser-ir)
        [(str "ab-validator parser IR schema_hash " actual-parser-ir
              " does not match ABC parser IR schema hash " expected-parser-ir)]))))
 
@@ -305,9 +303,8 @@
   (schema/schema-valid! schema path))
 
 (defn run-command! [& command]
-  (let [process (ProcessBuilder. command)
-        _ (.inheritIO process)
-        started (.start process)
+  (let [started (.start (doto (ProcessBuilder. command)
+                          (.inheritIO)))
         exit-code (.waitFor started)]
     (when-not (zero? exit-code)
       (throw (ex-info (str "Command failed: " (string/join " " command))

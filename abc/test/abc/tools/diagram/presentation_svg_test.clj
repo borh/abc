@@ -44,6 +44,14 @@
                  (mapv #(if (map? %) (transform-elements % f) %) content))))
     node))
 
+(defn- raw-svg-with-inner-transform [transform]
+  (str "<svg xmlns=\"http://www.w3.org/2000/svg\" "
+       "width=\"200pt\" height=\"100pt\" viewBox=\"0 0 200 100\">"
+       "<g id=\"graph0\"><g transform=\"" transform "\">"
+       "<text font-size=\"30\">Example</text>"
+       "<path fill=\"none\" stroke=\"#48CAE4\" stroke-width=\"2\" "
+       "d=\"M0,0 L10,10\"/></g></g></svg>"))
+
 (deftest normalization-produces-self-contained-slide-svg
   (let [out (svg/normalize-svg graph raw-svg (.getBytes "woff2" "UTF-8"))
         root (xml/parse-str out)
@@ -114,6 +122,36 @@
     (is (some #(str/includes? % "graph text is smaller than 22 px") problems))
     (is (some #(str/includes? % "graph stroke is thinner than 2 px") problems))))
 
+(deftest graph-content-rejects-descendant-uniform-downscaling
+  (let [problems (svg/svg-problems
+                  (svg/normalize-svg
+                   graph (raw-svg-with-inner-transform "scale(0.5)")
+                   (.getBytes "woff2" "UTF-8")))]
+    (is (some #(str/includes? % "descendant SVG transform scale") problems))))
+
+(deftest graph-content-rejects-descendant-two-axis-downscaling
+  (let [problems (svg/svg-problems
+                  (svg/normalize-svg
+                   graph (raw-svg-with-inner-transform "scale(1 0.5)")
+                   (.getBytes "woff2" "UTF-8")))]
+    (is (some #(str/includes? % "descendant SVG transform scale") problems))))
+
+(deftest graph-content-rejects-unsupported-transform-matrices
+  (let [problems (svg/svg-problems
+                  (svg/normalize-svg
+                   graph (raw-svg-with-inner-transform "matrix(1 0 0 1 0 0)")
+                   (.getBytes "woff2" "UTF-8")))]
+    (is (some #(str/includes? % "unsupported descendant SVG transform")
+              problems))))
+
+(deftest graph-content-allows-normal-graphviz-transform-lists
+  (let [out (svg/normalize-svg
+             graph
+             (raw-svg-with-inner-transform
+              "scale(1 1) rotate(0) translate(4 96)")
+             (.getBytes "woff2" "UTF-8"))]
+    (is (= [] (svg/svg-problems out)))))
+
 (deftest validation-rejects-external-resources-and-unknown-colors
   (let [out (svg/normalize-svg graph raw-svg (.getBytes "woff2" "UTF-8"))
         root (xml/parse-str out)
@@ -124,6 +162,13 @@
                   (xml/emit-str (update root :content conj image)))]
     (is (some #(str/includes? % "external SVG resource") problems))
     (is (some #(str/includes? % "unapproved SVG color") problems))))
+
+(deftest validation-checks-all-svg-color-bearing-attributes
+  (let [root (normalized-root)
+        stop (qualified-element :stop {:stop-color "red"})
+        problems (svg/svg-problems
+                  (xml/emit-str (update root :content conj stop)))]
+    (is (some #(str/includes? % "unapproved SVG color red") problems))))
 
 (deftest validation-rejects-style-injection-and-noncanonical-stylesheets
   (let [root (normalized-root)

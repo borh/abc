@@ -15,6 +15,10 @@
 (def ^:private font-stylesheet-pattern
   #"^@font-face\{font-family:'Noto Sans CJK JP';font-style:normal;font-weight:400 700;src:url\(data:font/woff2;base64,([A-Za-z0-9+/]+={0,2})\) format\('woff2'\);\}text\{font-family:'Noto Sans CJK JP',sans-serif;\}$")
 
+(def ^:private color-attributes
+  ["fill" "stroke" "color" "stop-color" "flood-color" "lighting-color"
+   "solid-color" "viewport-fill"])
+
 (defn- parse-xml [label value]
   (try
     ;; Graphviz emits a remote SVG 1.1 DOCTYPE. The figure is self-contained;
@@ -125,6 +129,43 @@
   (or (= "bold" value)
       (some-> (parse-number value) (>= 700.0))))
 
+(defn- transform-arguments [value]
+  (let [raw-parts (remove str/blank? (str/split value #"[\s,]+"))
+        numbers (mapv parse-number raw-parts)]
+    (when (every? some? numbers) numbers)))
+
+(defn- descendant-transform-problems [node]
+  (when-let [transform (attr node "transform")]
+    (let [commands (re-seq #"([A-Za-z]+)\s*\(([^)]*)\)" transform)
+          remainder (-> transform
+                        (str/replace #"[A-Za-z]+\s*\([^)]*\)" "")
+                        (str/replace #"[\s,]" ""))]
+      (vec
+       (concat
+        (when (or (empty? commands) (not (str/blank? remainder)))
+          [(str "unsupported descendant SVG transform: " transform)])
+        (mapcat
+         (fn [[_ command raw-arguments]]
+           (let [arguments (transform-arguments raw-arguments)
+                 expected-arities (case command
+                                    "scale" #{1 2}
+                                    "translate" #{1 2}
+                                    "rotate" #{1 3}
+                                    nil)]
+             (cond
+               (or (nil? expected-arities)
+                   (nil? arguments)
+                   (not (expected-arities (count arguments))))
+               [(str "unsupported descendant SVG transform: " command
+                     "(" raw-arguments ")")]
+
+               (and (= "scale" command) (some #(< % 1.0) arguments))
+               [(str "descendant SVG transform scale must be at least 1: "
+                     command "(" raw-arguments ")")]
+
+               :else [])))
+         commands))))))
+
 (defn- graph-node-problems [graph-root]
   (letfn [(walk [node inherited]
             (if-not (map? node)
@@ -147,6 +188,7 @@
                              :font-size font-size
                              :font-weight font-weight}]
                 (concat
+                 (descendant-transform-problems node)
                  (when text?
                    (cond
                      (nil? size)
@@ -224,7 +266,7 @@
           transform-scale (some-> graph-root graph-transform-scale)
           attribute-colors
           (for [node nodes
-                key-name ["fill" "stroke" "color"]
+                key-name color-attributes
                 :let [value (attr node key-name)]
                 :when value]
             (if (str/starts-with? value "#")

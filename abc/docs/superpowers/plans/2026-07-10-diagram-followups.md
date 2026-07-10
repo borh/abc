@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **STATUS: DRAFT FOR REVIEW — not yet approved for execution.** The executable scope is Tasks 1–5. Schema rendering/registration remains explicitly deferred under “Deferred design work”; it is not an implementation task in this plan.
+> **STATUS: APPROVED AND EXECUTED.** Tasks 1–5 were approved and executed. Schema rendering/registration remains explicitly deferred under “Deferred design work”; it is not an implementation task in this plan.
 
 **Goal:** Harden the ADR and architecture diagram tooling without accepting malformed ADR syntax, leaking test files, silently merging Mermaid nodes, or adding a second generated copy of the architecture diagram.
 

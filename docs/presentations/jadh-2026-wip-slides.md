@@ -274,10 +274,100 @@ Parser-IR is a publication boundary, not a claim that every output should contai
 
 # Tokenization Is a Scholarly Choice
 
+- Segmentation changes the units available for counting and comparison.
+- Lemmas and parts of speech depend on tokenizer and dictionary identity.
+- Literary and historical forms expose differences hidden by contemporary prose.
+- Soranoha publishes tokenizer-specific artifacts as parallel analytical views [@kanda2025; @worksapplications2026].
+
+**There is no single authoritative tokenized corpus.**
+
 # Two Regions, Different Analyses
+
+| Region | Sudachi A/B | Sudachi C | Vibrato + UniDic CWJ |
+| --- | --- | --- | --- |
+| 求むる | 求むる（動詞） | 求むる（動詞） | 求｜む｜る（名詞／名詞／助動詞） |
+| 竹馬の友 | 竹馬｜の｜友 | 竹馬の友（固有名詞） | 竹馬｜の｜友 |
+
+Dictionary choice can change POS even when token boundaries look similar [@den2008; @daactools2026].
+
+<!-- Evidence: tokenizer-comparison-view.md regions 15 and 208. Profiles: sudachi-20260116 and unidic-cwj-202512. -->
 
 # Live Demo: Follow the Evidence
 
+1. Inspect source constructs and authority-backed mappings.
+2. Compare selected parser lanes.
+3. Inspect AAT → Parser-IR transformation records.
+4. Materialize TEI and visible plaintext.
+5. Compare tokenization over one selected region.
+
+<!--
+DEMO BUDGET: 5:00; never run corpus-scale work live.
+
+Preflight tracked demo artifacts:
+  rg --files abc | rg 'demo-(rashomon|melos)-real/(parser-ir|divergence|tei|plain)'
+
+Update this comment with actual tracked monorepo paths after the demo artifacts land.
+Never use machine-local database paths or an untracked references/ directory.
+Each live read-only jq/rg/display command must complete in under five seconds.
+
+Fallback: narrate slides 19, 20, 21, and 23; do not improvise a corpus-scale run.
+Provenance narrative: sibling archive paper/demo-trace.md; it is not a build input.
+-->
+
 # Current Limits and Next Work
 
+- Long-tail gaps remain, including 字詰め and 横組 in the recommended candidate.
+- Parser consolidation is recommended, not complete.
+- TEI Levels 4–5 require editorial and enrichment work.
+- Tokenizer suitability needs work-level and genre-aware evaluation.
+- Every corpus, parser, dictionary, or profile change requires remeasurement.
+
+**Work in progress means preserving the boundary between measured results and planned work.**
+
 # Versioned, Inspectable, Comparable, Reproducible
+
+- Inventory source syntax before transforming it.
+- Measure parsers against authority-backed evidence.
+- Record normalization and loss at representation boundaries.
+- Publish parser- and tokenizer-specific scholarly views.
+- Bind every view to explicit identities, contracts, and recipes.
+
+**Corpus transformation is part of the scholarly method.**
+
+Repository: <https://github.com/borh/soranoha>
+
+# Appendix: Source Markup Inventory
+
+| Family | Occurrences | Example |
+| --- | ---: | --- |
+| Ruby | 3,607,926 | `吾輩《わがはい》` |
+| Emphasis | 157,494 | `［＃太字］` |
+| Indentation | 266,540 | `［＃ここから2字下げ］` |
+| Gaiji | 121,535 | `※［＃「口＋世」、U+546D］` |
+| Headings | 94,111 | `［＃大見出し］` |
+| Decorations | 208,333 | `［＃「語」に傍点］` |
+| Kunten | 34,549 | `［＃レ］` |
+| Layout | 24,442 | `［＃ページの左右中央］` |
+| Annotations | 35,517 | `「text」の注記付き` |
+| Warigaki | 6,607 | `［＃割り注］` |
+
+<!-- Counts overlap by family; source: abstract Table 1. -->
+
+# Appendix: Reading the Parser Numbers
+
+- **Breadth:** curated constructs, equal weight per vector
+- **Mass:** real-corpus occurrences, ruby-dominated
+- **Fidelity:** representation quality on a common completed-work intersection
+- **Robustness:** completion over the pinned corpus
+- **Speed:** operational feasibility
+
+No single column answers every research question.
+
+# Appendix: References and Artifacts
+
+- Aozora Bunko [@aozorabunko2026]
+- TEI-EAJ guidance and comparison evidence [@teieaj2023; @okada2023]
+- Sudachi and UniDic/Vibrato [@worksapplications2026; @den2008; @daactools2026]
+- Soranoha: <https://github.com/borh/soranoha>
+
+<!-- Pandoc citeproc resolves references from the vendored BibTeX and CSL files. -->

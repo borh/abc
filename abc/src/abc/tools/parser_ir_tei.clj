@@ -173,13 +173,11 @@
             children)))
 
 (defn- render-text-node
-  ([acc node] (render-text-node acc node 0))
   ([acc node _depth]
    (update acc :current-paragraph into
            (whitespace/source-text->tei-inline (get node "text")))))
 
 (defn- render-ruby-node
-  ([acc node] (render-ruby-node acc node 0))
   ([acc node _depth]
    (let [ruby (get node "ruby")]
      (if (and (present-ruby-text? (get ruby "base"))
@@ -194,7 +192,6 @@
        (mark-omitted acc "ruby")))))
 
 (defn- render-gaiji-node
-  ([acc node] (render-gaiji-node acc node 0))
   ([acc node _depth]
    (let [declaration (gaiji-declaration node)]
      (-> acc
@@ -202,7 +199,6 @@
          (append-inline [:g {:ref (str "#" (:xml-id declaration))}])))))
 
 (defn- render-editor-note-node
-  ([acc node] (render-editor-note-node acc node 0))
   ([acc node _depth]
    (let [note (get node "note")]
      (append-inline acc
@@ -221,7 +217,6 @@
     (append-inline acc (conj wrapper text))))
 
 (defn- render-emphasis-node
-  ([acc node] (render-emphasis-node acc node 0))
   ([acc node depth]
    (render-inline-wrapper acc
                           (seq (get node "inline_children"))
@@ -230,7 +225,6 @@
                           [:hi {:rend (get node "style")}])))
 
 (defn- render-layout-span-node
-  ([acc node] (render-layout-span-node acc node 0))
   ([acc node depth]
    (let [layout (get node "layout")]
      (if-let [rend (some-> layout inline-layout-rend)]
@@ -247,7 +241,6 @@
        (mark-omitted acc "layout-span")))))
 
 (defn- render-heading-node
-  ([acc node] (render-heading-node acc node 0))
   ([acc node depth]
    (let [children (seq (get node "inline_children"))
          base (-> acc flush-paragraph flush-division)]
@@ -265,7 +258,6 @@
                 (get node "text")])))))
 
 (defn- render-indentation-node
-  ([acc node] (render-indentation-node acc node 0))
   ([acc node _depth]
    (if (present-text? (get node "text"))
      (append-inline acc
@@ -275,7 +267,6 @@
      (mark-omitted acc "indentation"))))
 
 (defn- render-page-break-node
-  ([acc node] (render-page-break-node acc node 0))
   ([acc node _depth]
    (append-block acc
                  (cond-> [:pb]
@@ -283,12 +274,10 @@
                    (conj {:n (get node "page_number")})))))
 
 (defn- render-line-break-node
-  ([acc node] (render-line-break-node acc node 0))
   ([acc _node _depth]
    (append-inline acc [:lb])))
 
 (defn- render-image-node
-  ([acc node] (render-image-node acc node 0))
   ([acc node _depth]
    (append-block acc
                  (cond-> [:figure
@@ -297,19 +286,16 @@
                    (conj [:figDesc (get node "alt")])))))
 
 (defn- render-caption-node
-  ([acc node] (render-caption-node acc node 0))
   ([acc node _depth]
    (append-block acc [:figDesc (get node "text")])))
 
 (defn- render-quote-node
-  ([acc node] (render-quote-node acc node 0))
   ([acc node _depth]
    (if (present-text? (get node "text"))
      (append-inline acc [:quote (get node "text")])
      (mark-omitted acc "quote"))))
 
 (defn- render-source-note-node
-  ([acc node] (render-source-note-node acc node 0))
   ([acc node _depth]
    (if-not (present-text? (get node "text"))
      (mark-omitted acc "source-note")

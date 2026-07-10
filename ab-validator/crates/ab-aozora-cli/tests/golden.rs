@@ -25,7 +25,7 @@ fn inspect_matches_pinned_upstream_on_samples() {
         b"plain ascii only\n",
         "壊れた《ルビ\r\n".as_bytes(),
     ];
-    for kind in ["nodes", "diagnostics", "gaiji"] {
+    for kind in ["nodes", "pairs", "diagnostics", "gaiji"] {
         for (i, sample) in samples.iter().enumerate() {
             let (up_code, up_out) = run(&upstream, &["inspect", kind, "-"], sample);
             let (sh_code, sh_out) = run(shim, &["inspect", kind, "-"], sample);

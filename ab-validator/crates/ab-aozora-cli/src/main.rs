@@ -1,7 +1,9 @@
 //! Parity shim (Phase 1 only): reproduces `aozora inspect
-//! {nodes,diagnostics,gaiji} -` byte-for-byte over the lifted
+//! {nodes,pairs,diagnostics,gaiji} -` byte-for-byte over the lifted
 //! ab-aozora-facade (fork of P4suta/aozora at
 //! 1a4f864603970983719655aa4af4525958ac2d38; ADR 0031).
+//! (`pairs` added by Task 7: the conformance harness probes it on
+//! inspect adapters; upstream `InspectKind::Pairs => json::pairs(&tree)`.)
 use std::io::{Read, Write};
 
 use ab_aozora_facade::{Document, json};
@@ -22,12 +24,14 @@ fn main() {
         [_, cmd, kind, dash]
             if cmd == "inspect"
                 && dash == "-"
-                && matches!(kind.as_str(), "nodes" | "diagnostics" | "gaiji") =>
+                && matches!(kind.as_str(), "nodes" | "pairs" | "diagnostics" | "gaiji") =>
         {
             kind.clone()
         }
         _ => {
-            eprintln!("usage: ab-aozora-cli inspect {{nodes|diagnostics|gaiji}} -  |  --version");
+            eprintln!(
+                "usage: ab-aozora-cli inspect {{nodes|pairs|diagnostics|gaiji}} -  |  --version"
+            );
             std::process::exit(64);
         }
     };
@@ -71,6 +75,7 @@ fn emit(kind: &str, raw: &[u8]) -> Result<Vec<u8>, String> {
     let json = match kind {
         "gaiji" => json::gaiji(&source),
         "nodes" => json::nodes(&Document::new(source).parse()),
+        "pairs" => json::pairs(&Document::new(source).parse()),
         "diagnostics" => json::diagnostics(Document::new(source).parse().diagnostics()),
         _ => unreachable!("kind validated in main"),
     };

@@ -90,6 +90,65 @@
   (.setExecutable ^java.io.File file true)
   file)
 
+(deftest run-surfaces-tokenizer-failure-with-stderr-test
+  (let [root (fixture/temp-dir "abc-join-stats-run-tokfail")
+        aat-dir (io/file root "aat")
+        out-root (io/file root "out")
+        plan-file (io/file root "plan.json")
+        parser-ir-fixture (.getAbsolutePath
+                           (io/file "examples/ab-validator-output/parser-ir.json"))
+        converter (write-stub!
+                   (io/file root "stub-converter.sh")
+                   (str "#!/usr/bin/env bash\nset -eu\n"
+                        "out=\"\"; div=\"\"\n"
+                        "while [ $# -gt 0 ]; do\n"
+                        "  case \"$1\" in\n"
+                        "    --parser-ir-out) out=\"$2\"; shift 2 ;;\n"
+                        "    --divergence-out) div=\"$2\"; shift 2 ;;\n"
+                        "    *) shift ;;\n"
+                        "  esac\n"
+                        "done\n"
+                        "cp " parser-ir-fixture " \"$out\"\n"
+                        "printf '{}' > \"$div\"\n"))
+        ;; dies without reading stdin — the run must surface the child's
+        ;; exit code and stderr, not a stdin write failure
+        tokenizer (write-stub!
+                   (io/file root "stub-tokenizer.sh")
+                   "#!/usr/bin/env bash\necho 'dictionary exploded' >&2\nexit 7\n")]
+    (try
+      (.mkdirs aat-dir)
+      (spit (io/file aat-dir "000001_1-aaaaaaaaaaaa.json") "{}")
+      (manifest/write-json-file!
+       plan-file
+       {"label" "tokfail-test"
+        "aat_dir" (str aat-dir)
+        "mapping" parser-ir-fixture
+        "stride" 1
+        "tokenizer_dict" "stub-dict"})
+      (let [ex (try
+                 (run/run-annotation-join-stats-run!
+                  {:plan-file (str plan-file)
+                   :out-root (str out-root)
+                   :converter-bin (str converter)
+                   :tokenizer-bin (str tokenizer)})
+                 nil
+                 (catch clojure.lang.ExceptionInfo e e))]
+        (is (some? ex))
+        (is (= "Tokenizer failed" (ex-message ex)))
+        (is (= 7 (:exit (ex-data ex))))
+        (is (re-find #"dictionary exploded" (:stderr (ex-data ex))))
+        (testing "workflow run records the failed step before rethrowing"
+          (let [run-record (files/read-json
+                            (io/file out-root "workflow-run.json"))]
+            (is (= "failed" (get run-record "status")))
+            (is (= "failed"
+                   (->> (get run-record "steps")
+                        (filter #(= "tokenize" (get % "id")))
+                        first
+                        (#(get % "status"))))))))
+      (finally
+        (fixture/delete-tree! root)))))
+
 (deftest run-annotation-join-stats-run-end-to-end-test
   (let [root (fixture/temp-dir "abc-join-stats-run-e2e")
         aat-dir (io/file root "aat")

@@ -45,7 +45,9 @@
 
 (defn- run-process!
   "Run cmd to completion, feeding stdin (when given) and draining stdout and
-  stderr concurrently so neither pipe can deadlock. Returns
+  stderr concurrently so neither pipe can deadlock. A broken pipe while
+  writing stdin (the child died early) is tolerated so the child's exit code
+  and stderr — the actual diagnosis — survive to the caller. Returns
   {:exit :out :err}."
   [{:keys [cmd env stdin]}]
   (let [pb (ProcessBuilder. ^java.util.List (mapv str cmd))]
@@ -56,9 +58,11 @@
                                             :encoding "UTF-8")))
           err-fut (future (slurp (io/reader (.getErrorStream proc)
                                             :encoding "UTF-8")))]
-      (with-open [w (io/writer (.getOutputStream proc) :encoding "UTF-8")]
-        (when stdin
-          (.write w ^String stdin)))
+      (try
+        (with-open [w (io/writer (.getOutputStream proc) :encoding "UTF-8")]
+          (when stdin
+            (.write w ^String stdin)))
+        (catch java.io.IOException _))
       (let [exit (.waitFor proc)]
         {:exit exit :out @out-fut :err @err-fut}))))
 

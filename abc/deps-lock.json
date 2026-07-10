@@ -176,14 +176,14 @@
       "hash": "sha256-kl5kVlpzJ1gMwZ7ipsiAj4umZ7QPVcmEBiPMtEXtyTo="
     },
     {
-      "mvn-path": "com/cnuernber/charred/1.039/charred-1.039.jar",
+      "mvn-path": "com/cnuernber/charred/1.041/charred-1.041.jar",
       "mvn-repo": "https://repo.clojars.org/",
-      "hash": "sha256-tInjdQSAAyUxk4jEN7KceLFkZUFAEQybhG0M2CBrI6Q="
+      "hash": "sha256-3dyUBZFiqoUKcCsIDWfNPHPacKkpCkOQppRvN9Maxo4="
     },
     {
-      "mvn-path": "com/cnuernber/charred/1.039/charred-1.039.pom",
+      "mvn-path": "com/cnuernber/charred/1.041/charred-1.041.pom",
       "mvn-repo": "https://repo.clojars.org/",
-      "hash": "sha256-M5IruQeSOCqFPaLnnnBzkGU+S0Zzo6JRg/PeUlpt0Ks="
+      "hash": "sha256-00vE5SpiEIDyaQ9x2FyWtp11VhopWE2/xKIpLlUcrec="
     },
     {
       "mvn-path": "com/cognitect/aws/api/0.8.408/api-0.8.408.jar",

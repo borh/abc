@@ -97,8 +97,8 @@ mod document;
 mod incremental;
 mod splice;
 
-#[cfg(feature = "json")]
-#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
+#[cfg(feature = "entries")]
+#[cfg_attr(docsrs, doc(cfg(feature = "entries")))]
 pub mod json;
 
 /// Plain-text diagnostic rendering (`miette`-free, every target).

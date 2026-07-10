@@ -76,8 +76,23 @@ built:
   outside the recipe system too (the publication flow consumes the
   plaintext view, as in `full-corpus-publication-basic-ja`; the annotation
   materializer consumes annotation views directly), so dead-view detection
-  is not decidable from the recipe registry. Materializing annotation
-  artifacts *per request set* remains future work, as does widening
+  is not decidable from the recipe registry. Materializing annotation artifacts *per request set* landed 2026-07-10:
+  `abc.tools.soranoha/materialize-snapshot-root!` resolves the annotation
+  view once per run
+  (`abc.tools.materialize-annotations/resolve-annotation-materialization`,
+  fail-closed on unknown/duplicate policy hashes and on anything but exactly
+  one aligned plaintext view), materializes per-work
+  `annotations/body-annotations.json` + `annotation.manifest.json`, includes
+  them in `snapshot-index.json` (snapshot-index schema v0.1.1 admits the
+  `annotation` kind), and runs the annotation release guardrails in the
+  batch path (`abc.tools.soranoha/validate-annotation-manifests!`). Covered
+  by `test/abc/tools/soranoha_annotation_test.clj` and
+  `test/abc/tools/materialize_annotations_test.clj`. Corpus-scale join
+  statistics tooling exists (`soranoha annotation-join-stats`,
+  `test/abc/tools/annotation_join_stats_test.clj`); the corpus run and its
+  D7/D9 evidence are pending
+  (`docs/superpowers/specs/2026-07-10-per-request-set-annotation-materialization-design.md`).
+  Still future work: widening
   `schemas/analysis-recipe.schema.json`'s `supported_input_view_kinds` enum
   so a recipe can declare annotation-view consumption — that widening
   belongs with the first annotation-consuming recipe, because the schema's
@@ -321,6 +336,10 @@ Status per criterion, first slice (Tasks 1-7):
   `test/abc/tools/request_set_fixture_test.clj`) so such a recipe cannot be
   referenced by a request set that fails to feed it; no recipe schema or
   fixture consumes the join yet. Deferred to a later task.
+- **Done (2026-07-10).** Annotation artifacts materialize per request set
+  through the batch loop with release guardrails, and join-statistics
+  tooling is fixture-tested: `test/abc/tools/soranoha_annotation_test.clj`,
+  `test/abc/tools/annotation_join_stats_test.clj`.
 - **Unchanged, inherited.** Renderer coverage remains schema-derived and
   fails closed on new parser-IR node types, matching the ADR 0025
   discipline: `render-with-annotations` shares the same `node-renderers` /

@@ -1,8 +1,8 @@
 # Per-Request-Set Annotation Materialization + Corpus-Scale Ruby Join Statistics — Design
 
 Date: 2026-07-10
-Status: Draft (hammock pass done; slice A settled, slice B carries two named
-provisional items to be settled by bounded probes during implementation)
+Status: Slice A and slice B tooling implemented (this branch); corpus run
+and D7/D9 evidence handoff pending (post-merge, operator-side)
 Depends on: ADR 0028 (first slice + D6 widening + input-view coverage
 machine-check), ADR 0026/0027 (identity discipline), ADR 0024/0025
 (span/render discipline)

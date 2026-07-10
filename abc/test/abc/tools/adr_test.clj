@@ -115,6 +115,13 @@
       (is (some #(= :missing-required-blank-line (:kind %))
                 (:parse-problems parsed))))))
 
+(deftest end-of-file-is-not-a-required-blank-line
+  (let [dir (temp-dir)]
+    (write-adr! dir "0001-title-only.md" "# ADR 0001: Title only")
+    (is (some #(= :missing-required-blank-line (:kind %))
+              (:parse-problems
+               (adr/parse-adr (.getPath dir) "0001-title-only.md"))))))
+
 (deftest duplicate-field-tracks-an-empty-first-occurrence
   (let [dir (temp-dir)]
     (write-adr! dir "0001-duplicate-empty.md"

@@ -67,7 +67,8 @@
       :criterion-index idx})))
 
 (defn- header-lines [file lines]
-  (let [has-required-blank? (str/blank? (second lines))]
+  (let [separator (second lines)
+        has-required-blank? (and (some? separator) (str/blank? separator))]
     {:lines (loop [remaining (drop (if has-required-blank? 2 1) lines)
                    result []]
               (let [line (first remaining)]

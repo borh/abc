@@ -92,7 +92,7 @@ The contributing nodes' RFC 6901 pointers (`/blocks/41/content/3`) plus `inline_
   "source_id": "…", "text_id": "…", "region_index": 526,
   "char_start": 769, "char_end": 784,
   "snippet": { "before": "…", "region": "…", "after": "…" },
-  "analyzer_analyses": [ { "analyzer_ids": ["…"], "tokens": [ { "surface": "…", "features": {…} } ] } ],
+  "analyzer_analyses": [ { "analyzer_ids": ["…"], "surfaces": ["…"], "tokens": [ { "surface": "…", "features": {…} } ] } ],
   "aozora_markup": { "text": "…《…》…", "byte_start": 123, "byte_end": 456, "approximate_pointers": [], "gaps": [] },
   "aat_nodes": [ { "pointer": "/blocks/41/content/3", "inline_kind": "ruby", "is_ruby_base": true, "is_gaiji": false } ],
   "work": { "work_id": "…", "title": "…", "author": { "person_id": "…", "family_name": "…", … },

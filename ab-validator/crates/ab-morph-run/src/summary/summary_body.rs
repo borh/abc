@@ -1640,7 +1640,7 @@ impl MaterializedFeatureIter {
                 && self.row < batch.num_rows()
             {
                 let row = self.row;
-                let analyzers = batch_string_list_value(batch, "analyzers", row)?;
+                let analyzers = batch_analyzer_ids_value(batch, row)?;
                 if self.analyzer_pos < analyzers.len() {
                     let analyzer_id = analyzers[self.analyzer_pos].clone();
                     self.analyzer_pos += 1;
@@ -1711,13 +1711,21 @@ fn batch_string_value(batch: &RecordBatch, name: &str, row: usize) -> Result<Str
     Ok(string_column(batch, index)?.value(row).to_owned())
 }
 
-fn batch_string_list_value(batch: &RecordBatch, name: &str, row: usize) -> Result<Vec<String>> {
-    let idx = batch
-        .schema()
-        .index_of(name)
-        .with_context(|| format!("missing column {name}"))?;
-    let list = list_string_column(batch, idx)?;
-    list_string_value(list, row)
+/// Reads the analyzer id(s) for a `nway_feature_diffs` row, adapting to
+/// whichever on-disk shape the batch carries (see `FeatureDiffsShape`):
+/// the v3 collapsed `analyzers` list (zero or more analyzers per row) or
+/// the pre-v3 scalar `analyzer_id` column (exactly one analyzer per row,
+/// returned as a single-element vec so callers can iterate uniformly).
+fn batch_analyzer_ids_value(batch: &RecordBatch, row: usize) -> Result<Vec<String>> {
+    let schema = batch.schema();
+    if let Ok(idx) = schema.index_of("analyzers") {
+        let list = list_string_column(batch, idx)?;
+        return list_string_value(list, row);
+    }
+    if let Ok(idx) = schema.index_of("analyzer_id") {
+        return Ok(vec![string_column(batch, idx)?.value(row).to_owned()]);
+    }
+    bail!("nway_feature_diffs has neither `analyzers` nor `analyzer_id` column")
 }
 
 fn batch_nullable_string_value(
@@ -5415,6 +5423,104 @@ mod tests {
         assert!(rows[0].pattern.contains("名詞=>vibrato"));
         assert!(rows[0].pattern.contains("空白=>sudachi-c"));
         assert!(!rows[0].pattern.contains("lemma"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn materialized_feature_iter_reads_pre_v3_scalar_analyzer_id_column() {
+        use crate::warehouse::schema::{NwayFeatureDiffRow, NwayRegionRow, RunRow, WarehousePaths};
+        use crate::warehouse::writer::WarehouseWriter;
+
+        let root = temp_dir("warehouse-materialized-feature-iter-scalar");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_runs(&[RunRow {
+                schema_version: crate::warehouse::schema::SCHEMA_VERSION,
+                run_id: "run-a".to_owned(),
+                created_at_utc: "2026-05-01T00:00:00Z".to_owned(),
+                input_mode: "aat_dir".to_owned(),
+                input_path: "scratch/aats".to_owned(),
+                source_count: 1,
+                analyzer_count: 2,
+                error_count: 0,
+                ortho_detect_mode: "off".to_owned(),
+                input_normalization_detector_id: None,
+                input_normalization_policy_hash: "sha256:identity".to_owned(),
+            }])
+            .unwrap();
+        writer
+            .append_nway_regions(&[NwayRegionRow {
+                run_id: "run-a".into(),
+                source_id: "source-a".into(),
+                text_id: "work-a".into(),
+                region_index: 0,
+                byte_start: 0,
+                byte_end: 6,
+                char_start: 0,
+                char_end: 2,
+                is_nonempty_whitespace: false,
+                is_agreement: false,
+                has_coverage_mismatch: false,
+                has_segmentation_disagreement: false,
+                has_feature_disagreement: true,
+            }])
+            .unwrap();
+        writer
+            .append_nway_feature_diffs(&[
+                NwayFeatureDiffRow {
+                    run_id: "run-a".into(),
+                    source_id: "source-a".into(),
+                    text_id: "work-a".into(),
+                    region_index: 0,
+                    feature_key: "pos1".into(),
+                    scope_type: "whole_region".into(),
+                    scope_position: None,
+                    scope_surface: None,
+                    feature_value: Some("名詞".into()),
+                    analyzers: vec!["vibrato".into()],
+                },
+                NwayFeatureDiffRow {
+                    run_id: "run-a".into(),
+                    source_id: "source-a".into(),
+                    text_id: "work-a".into(),
+                    region_index: 0,
+                    feature_key: "pos1".into(),
+                    scope_type: "whole_region".into(),
+                    scope_position: None,
+                    scope_surface: None,
+                    feature_value: Some("空白".into()),
+                    analyzers: vec!["sudachi-c".into()],
+                },
+            ])
+            .unwrap();
+        writer.finalize().unwrap();
+
+        // Rewrite the on-disk nway_feature_diffs from the v3 collapsed
+        // `analyzers` list shape into the pre-v3 scalar `analyzer_id` shape,
+        // exactly as a run produced before the v3 collapse migration would
+        // look. This drives the exact bug in MaterializedFeatureIter::next_row,
+        // independent of whether a `duckdb` binary happens to be on PATH.
+        crate::summary::interesting::rewrite_feature_diffs_as_scalar(&paths.final_dir);
+
+        let mut accumulator = FeaturePatternMaterializer::default();
+        for (regions, features) in paired_region_feature_part_paths(&paths.final_dir).unwrap() {
+            materialize_core_feature_pattern_counts_part(
+                &regions,
+                &features,
+                &[String::from("pos1")],
+                &mut accumulator,
+            )
+            .unwrap();
+        }
+
+        assert_eq!(accumulator.patterns.len(), 1);
+        let (key, entry) = accumulator.patterns.iter().next().unwrap();
+        assert_eq!(key.feature_key, "pos1");
+        assert!(key.pattern.contains("名詞=>vibrato"));
+        assert!(key.pattern.contains("空白=>sudachi-c"));
+        assert_eq!(entry.examples, 1);
 
         let _ = fs::remove_dir_all(root);
     }

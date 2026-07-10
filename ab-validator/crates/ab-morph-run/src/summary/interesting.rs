@@ -1609,6 +1609,105 @@ pub fn write_interesting_tsv(summary: &InterestingSummary, mut out: impl Write) 
     Ok(())
 }
 
+/// Rewrites `run_dir/nway_feature_diffs.parquet` from the v3 collapsed
+/// shape into the pre-v3 scalar `analyzer_id` shape (one row per
+/// analyzer, expanded in the list's stored — ascending — order,
+/// mirroring the pre-v3 producer's emission order).
+///
+/// Shared test-support helper: also used by `summary_body`'s tests to
+/// exercise shape-adaptive readers against pre-v3 fixtures.
+#[cfg(test)]
+pub(crate) fn rewrite_feature_diffs_as_scalar(run_dir: &Path) {
+    use std::sync::Arc;
+
+    use arrow_array::{Array, ListArray, RecordBatch, StringArray, UInt64Array};
+    use arrow_schema::{DataType, Field, Schema};
+    use parquet::arrow::ArrowWriter;
+
+    let path = run_dir.join(WarehouseTable::NwayFeatureDiffs.file_name());
+    let batches = super::summary_body::read_warehouse_parquet_file(&path).unwrap();
+    let scalar_schema = Arc::new(Schema::new(vec![
+        Field::new("run_id", DataType::Utf8, false),
+        Field::new("source_id", DataType::Utf8, false),
+        Field::new("text_id", DataType::Utf8, false),
+        Field::new("region_index", DataType::UInt64, false),
+        Field::new("feature_key", DataType::Utf8, false),
+        Field::new("scope_type", DataType::Utf8, false),
+        Field::new("scope_position", DataType::UInt64, true),
+        Field::new("scope_surface", DataType::Utf8, true),
+        Field::new("feature_value", DataType::Utf8, true),
+        Field::new("analyzer_id", DataType::Utf8, false),
+    ]));
+    let mut strings: [Vec<Option<String>>; 8] = Default::default();
+    let mut region_indexes = Vec::<u64>::new();
+    let mut scope_positions = Vec::<Option<u64>>::new();
+    for batch in &batches {
+        let column = |index: usize| {
+            batch
+                .column(index)
+                .as_any()
+                .downcast_ref::<StringArray>()
+                .unwrap()
+        };
+        let region_index = batch
+            .column(3)
+            .as_any()
+            .downcast_ref::<UInt64Array>()
+            .unwrap();
+        let scope_position = batch
+            .column(6)
+            .as_any()
+            .downcast_ref::<UInt64Array>()
+            .unwrap();
+        let analyzers = batch
+            .column(9)
+            .as_any()
+            .downcast_ref::<ListArray>()
+            .unwrap();
+        for row in 0..batch.num_rows() {
+            let list = analyzers.value(row);
+            let items = list.as_any().downcast_ref::<StringArray>().unwrap();
+            for item in 0..items.len() {
+                for (target, source_index) in strings.iter_mut().zip([0usize, 1, 2, 4, 5, 7, 8, 9])
+                {
+                    if source_index == 9 {
+                        target.push(Some(items.value(item).to_owned()));
+                    } else {
+                        let array = column(source_index);
+                        target.push((!array.is_null(row)).then(|| array.value(row).to_owned()));
+                    }
+                }
+                region_indexes.push(region_index.value(row));
+                scope_positions
+                    .push((!scope_position.is_null(row)).then(|| scope_position.value(row)));
+            }
+        }
+    }
+    let string_array = |values: &Vec<Option<String>>| -> Arc<dyn Array> {
+        Arc::new(StringArray::from(values.clone()))
+    };
+    let batch = RecordBatch::try_new(
+        scalar_schema.clone(),
+        vec![
+            string_array(&strings[0]),
+            string_array(&strings[1]),
+            string_array(&strings[2]),
+            Arc::new(UInt64Array::from(region_indexes.clone())),
+            string_array(&strings[3]),
+            string_array(&strings[4]),
+            Arc::new(UInt64Array::from(scope_positions.clone())),
+            string_array(&strings[5]),
+            string_array(&strings[6]),
+            string_array(&strings[7]),
+        ],
+    )
+    .unwrap();
+    let file = std::fs::File::create(&path).unwrap();
+    let mut writer = ArrowWriter::try_new(file, scalar_schema, None).unwrap();
+    writer.write(&batch).unwrap();
+    writer.close().unwrap();
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs::File;
@@ -2454,99 +2553,6 @@ mod tests {
                 serde_json::to_string_pretty(&duckdb).unwrap()
             );
         }
-    }
-
-    /// Rewrites `run_dir/nway_feature_diffs.parquet` from the v3 collapsed
-    /// shape into the pre-v3 scalar `analyzer_id` shape (one row per
-    /// analyzer, expanded in the list's stored — ascending — order,
-    /// mirroring the pre-v3 producer's emission order).
-    fn rewrite_feature_diffs_as_scalar(run_dir: &Path) {
-        use arrow_array::{Array, ListArray, StringArray, UInt64Array};
-        use parquet::arrow::ArrowWriter;
-
-        let path = run_dir.join(WarehouseTable::NwayFeatureDiffs.file_name());
-        let batches = crate::summary::summary_body::read_warehouse_parquet_file(&path).unwrap();
-        let scalar_schema = Arc::new(Schema::new(vec![
-            Field::new("run_id", DataType::Utf8, false),
-            Field::new("source_id", DataType::Utf8, false),
-            Field::new("text_id", DataType::Utf8, false),
-            Field::new("region_index", DataType::UInt64, false),
-            Field::new("feature_key", DataType::Utf8, false),
-            Field::new("scope_type", DataType::Utf8, false),
-            Field::new("scope_position", DataType::UInt64, true),
-            Field::new("scope_surface", DataType::Utf8, true),
-            Field::new("feature_value", DataType::Utf8, true),
-            Field::new("analyzer_id", DataType::Utf8, false),
-        ]));
-        let mut strings: [Vec<Option<String>>; 8] = Default::default();
-        let mut region_indexes = Vec::<u64>::new();
-        let mut scope_positions = Vec::<Option<u64>>::new();
-        for batch in &batches {
-            let column = |index: usize| {
-                batch
-                    .column(index)
-                    .as_any()
-                    .downcast_ref::<StringArray>()
-                    .unwrap()
-            };
-            let region_index = batch
-                .column(3)
-                .as_any()
-                .downcast_ref::<UInt64Array>()
-                .unwrap();
-            let scope_position = batch
-                .column(6)
-                .as_any()
-                .downcast_ref::<UInt64Array>()
-                .unwrap();
-            let analyzers = batch
-                .column(9)
-                .as_any()
-                .downcast_ref::<ListArray>()
-                .unwrap();
-            for row in 0..batch.num_rows() {
-                let list = analyzers.value(row);
-                let items = list.as_any().downcast_ref::<StringArray>().unwrap();
-                for item in 0..items.len() {
-                    for (target, source_index) in
-                        strings.iter_mut().zip([0usize, 1, 2, 4, 5, 7, 8, 9])
-                    {
-                        if source_index == 9 {
-                            target.push(Some(items.value(item).to_owned()));
-                        } else {
-                            let array = column(source_index);
-                            target.push((!array.is_null(row)).then(|| array.value(row).to_owned()));
-                        }
-                    }
-                    region_indexes.push(region_index.value(row));
-                    scope_positions
-                        .push((!scope_position.is_null(row)).then(|| scope_position.value(row)));
-                }
-            }
-        }
-        let string_array = |values: &Vec<Option<String>>| -> Arc<dyn Array> {
-            Arc::new(StringArray::from(values.clone()))
-        };
-        let batch = RecordBatch::try_new(
-            scalar_schema.clone(),
-            vec![
-                string_array(&strings[0]),
-                string_array(&strings[1]),
-                string_array(&strings[2]),
-                Arc::new(UInt64Array::from(region_indexes.clone())),
-                string_array(&strings[3]),
-                string_array(&strings[4]),
-                Arc::new(UInt64Array::from(scope_positions.clone())),
-                string_array(&strings[5]),
-                string_array(&strings[6]),
-                string_array(&strings[7]),
-            ],
-        )
-        .unwrap();
-        let file = std::fs::File::create(&path).unwrap();
-        let mut writer = ArrowWriter::try_new(file, scalar_schema, None).unwrap();
-        writer.write(&batch).unwrap();
-        writer.close().unwrap();
     }
 
     #[test]

@@ -1,8 +1,10 @@
 //! Byte parity against the frozen adapter, modulo the two identity
-//! pointers. Env-gated: set AB_REFERENCE_ADAPTER_BIN (a built
-//! adapters/aozora binary) and AB_AOZORA_BIN (the pinned upstream aozora)
+//! pointers. Env-gated: set `AB_REFERENCE_ADAPTER_BIN` (a built
+//! adapters/aozora binary) and `AB_AOZORA_BIN` (the pinned upstream aozora)
 //! or the test skips (prints SKIP, passes) — mirrors the shim goldens'
 //! env-gating so `cargo test --workspace` stays hermetic.
+use std::env;
+use std::fs;
 use std::io::Write;
 use std::process::{Command, Stdio};
 
@@ -28,20 +30,20 @@ fn normalize(mut bytes: Vec<u8>) -> Vec<u8> {
 #[test]
 fn byte_parity_with_frozen_adapter_modulo_identity() {
     let (Ok(reference_bin), Ok(_)) = (
-        std::env::var("AB_REFERENCE_ADAPTER_BIN"),
-        std::env::var("AB_AOZORA_BIN"),
+        env::var("AB_REFERENCE_ADAPTER_BIN"),
+        env::var("AB_AOZORA_BIN"),
     ) else {
         eprintln!("SKIP: AB_REFERENCE_ADAPTER_BIN / AB_AOZORA_BIN not set");
         return;
     };
-    for entry in std::fs::read_dir(concat!(
+    for entry in fs::read_dir(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tests/data"
     ))
     .unwrap()
     {
         let path = entry.unwrap().path();
-        let bytes = std::fs::read(&path).unwrap();
+        let bytes = fs::read(&path).unwrap();
         let mut child = Command::new(&reference_bin)
             .args(["--mode", "aat"])
             .stdin(Stdio::piped())

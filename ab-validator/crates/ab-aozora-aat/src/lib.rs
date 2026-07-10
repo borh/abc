@@ -1,21 +1,31 @@
-use std::{collections::BTreeMap, sync::LazyLock};
+//! AAT (Aozora AST Transform) adapter ported from the frozen aozora adapter.
+
+use std::{collections::BTreeMap, fmt::Write as _, mem, str, sync::LazyLock};
 
 use anyhow::Result;
 use aozora_pipeline::lexer::sanitize as sanitize_aozora_source;
 use encoding_rs::SHIFT_JIS;
 use regex::Regex;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
+
+use ab_aozora_facade::{self, Document, encoding, json as aozora_json};
 
 static RUBY_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap());
 
+/// Wire-shaped source decoding output ported from the frozen adapter.
 #[derive(Debug)]
 pub struct DecodedSource {
+    /// Decoded text.
     pub text: String,
+    /// Decoded text with sanitization for span alignment.
     pub span_text: String,
+    /// The encoding that was successfully decoded (utf-8, utf-8-bom, windows-31j, or lossy variant).
     pub encoding: &'static str,
+    /// Hex-encoded SHA256 hash of the input bytes.
     pub source_hash: String,
 }
 
@@ -50,10 +60,15 @@ struct AozoraGaiji {
     resolved: Option<String>,
 }
 
+/// Decode source bytes to a normalized text with encoding detection.
+///
+/// # Errors
+///
+/// Returns an error if UTF-8 decoding with BOM fails unexpectedly.
 pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     let source_hash = format!("sha256:{}", hex_sha256(bytes));
     if bytes.starts_with(&[0xef, 0xbb, 0xbf]) {
-        let text = std::str::from_utf8(&bytes[3..])?.to_owned();
+        let text = str::from_utf8(&bytes[3..])?.to_owned();
         let span_text = sanitize_for_aat(&text);
         return Ok(DecodedSource {
             text,
@@ -62,7 +77,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
             source_hash,
         });
     }
-    if let Ok(text) = std::str::from_utf8(bytes) {
+    if let Ok(text) = str::from_utf8(bytes) {
         let text = text.to_owned();
         let span_text = sanitize_for_aat(&text);
         return Ok(DecodedSource {
@@ -154,28 +169,26 @@ fn lines_from(source: &str, offset: usize) -> impl Iterator<Item = (usize, &str)
     })
 }
 
-use ab_aozora_facade::{Document, json};
-
 fn projections(
     span_text: &str,
 ) -> Result<(Vec<AozoraNode>, Vec<AozoraDiagnostic>, Vec<AozoraGaiji>)> {
     // Mirrors the upstream binary's own stdin handling: each `aozora
     // inspect` subprocess ran decode_auto over the bytes the adapter piped
     // in (already-valid UTF-8 passes through unchanged).
-    let source = ab_aozora_facade::encoding::decode_auto(span_text.as_bytes())
+    let source = encoding::decode_auto(span_text.as_bytes())
         .map_err(|err| anyhow::anyhow!("decode_auto: {err:?}"))?;
     let doc = Document::new(source.clone());
     let tree = doc.parse();
-    let nodes = from_entries(json::node_entries(&tree))?;
-    let diagnostics = from_entries(json::diagnostic_entries(tree.diagnostics()))?;
-    let gaiji = from_entries(json::gaiji_entries(&source))?;
+    let nodes = from_entries(aozora_json::node_entries(&tree))?;
+    let diagnostics = from_entries(aozora_json::diagnostic_entries(tree.diagnostics()))?;
+    let gaiji = from_entries(aozora_json::gaiji_entries(&source))?;
     Ok((nodes, diagnostics, gaiji))
 }
 
 /// Same data path as the deleted wire hop: the facade's Serialize impls
 /// (which produced the inspect JSON) feed the adapter's Deserialize types.
-/// Deserialization is key-order-independent, so no preserve_order needed.
-fn from_entries<S: serde::Serialize, T: serde::de::DeserializeOwned>(
+/// Deserialization is key-order-independent, so no `preserve_order` needed.
+fn from_entries<S: Serialize, T: DeserializeOwned>(
     entries: Vec<S>,
 ) -> Result<Vec<T>> {
     Ok(serde_json::from_value(serde_json::to_value(entries)?)?)
@@ -184,8 +197,13 @@ fn from_entries<S: serde::Serialize, T: serde::de::DeserializeOwned>(
 // The wire envelope's schemaVersion check becomes a compile-time pin: the
 // from_entries round-trip is only valid against the wire shape this port
 // was written for.
-const _: () = assert!(json::SCHEMA_VERSION == 2);
+const _: () = assert!(aozora_json::SCHEMA_VERSION == 2, "incompatible wire schema version");
 
+/// Transform Aozora source bytes into AAT JSON output.
+///
+/// # Errors
+///
+/// Returns an error if source decoding, projection parsing, or JSON serialization fails.
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decoded = decode_source_bytes(bytes)?;
     let (nodes, diagnostics, gaiji) = projections(&decoded.span_text)?;
@@ -232,6 +250,10 @@ fn build_aat(
     })
 }
 
+#[allow(
+    clippy::needless_pass_by_value,
+    reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+)]
 fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
     let mut blocks = Vec::new();
     let mut paragraph = Vec::new();
@@ -258,7 +280,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
         if let Some(offset) = align_end_offset(&node) {
             let boundary = find_next_raw_boundary(&content, index + 1);
             if boundary > index + 1 {
-                push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let inner = content[index + 1..boundary].to_vec();
                 push_chitsuki_paragraph(&mut blocks, offset, inner);
                 index = boundary;
@@ -268,7 +290,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
 
         if let Some((first, rest)) = burasage_container_indent(&node) {
             if let Some(close_index) = find_matching_jisage_close(&content, index + 1) {
-                push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..close_index].to_vec();
                 strip_boundary_newlines(&mut inner);
                 push_burasage_paragraph(&mut blocks, first, rest, inner);
@@ -278,7 +300,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
             }
             let boundary = find_next_container_boundary(&content, index + 1);
             if boundary > index + 1 {
-                push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..boundary].to_vec();
                 strip_boundary_newlines(&mut inner);
                 push_burasage_paragraph(&mut blocks, first, rest, inner);
@@ -287,7 +309,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
             }
         } else if let Some(indent) = jisage_container_indent(&node) {
             if let Some(close_index) = find_matching_jisage_close(&content, index + 1) {
-                push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..close_index].to_vec();
                 strip_boundary_newlines(&mut inner);
                 blocks.push(json!({
@@ -301,7 +323,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
             }
             let boundary = find_next_container_boundary(&content, index + 1);
             if boundary > index + 1 {
-                push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..boundary].to_vec();
                 strip_boundary_newlines(&mut inner);
                 blocks.push(json!({
@@ -317,7 +339,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
         if is_heading_hint_raw(&node)
             && let Some(heading) = heading_block_from_hint(&mut paragraph, &node)
         {
-            push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+            push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
             blocks.push(heading);
             strip_next_leading_newline = true;
             index += 1;
@@ -334,6 +356,10 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
     blocks
 }
 
+#[allow(
+    clippy::needless_pass_by_value,
+    reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+)]
 fn push_paragraph_if_not_empty(blocks: &mut Vec<Value>, content: Vec<Value>) {
     if content.is_empty() {
         return;
@@ -344,6 +370,10 @@ fn push_paragraph_if_not_empty(blocks: &mut Vec<Value>, content: Vec<Value>) {
     }));
 }
 
+#[allow(
+    clippy::needless_pass_by_value,
+    reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+)]
 fn push_chitsuki_paragraph(blocks: &mut Vec<Value>, offset: u64, content: Vec<Value>) {
     blocks.push(json!({
         "kind": "paragraph",
@@ -371,6 +401,10 @@ fn align_end_offset(node: &Value) -> Option<u64> {
     parse_aozora_number_before(source, "字上げ")
 }
 
+#[allow(
+    clippy::needless_pass_by_value,
+    reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+)]
 fn push_burasage_paragraph(blocks: &mut Vec<Value>, first: u64, rest: u64, content: Vec<Value>) {
     blocks.push(json!({
         "kind": "paragraph",
@@ -451,16 +485,14 @@ fn find_next_container_boundary(content: &[Value], start: usize) -> usize {
     content[start..]
         .iter()
         .position(is_container_marker_raw)
-        .map(|offset| start + offset)
-        .unwrap_or(content.len())
+        .map_or(content.len(), |offset| start + offset)
 }
 
 fn find_next_raw_boundary(content: &[Value], start: usize) -> usize {
     content[start..]
         .iter()
         .position(|node| node.get("kind").and_then(Value::as_str) == Some("raw"))
-        .map(|offset| start + offset)
-        .unwrap_or(content.len())
+        .map_or(content.len(), |offset| start + offset)
 }
 
 fn is_container_marker_raw(node: &Value) -> bool {
@@ -749,6 +781,10 @@ fn contains_aozora_markup(source: &str) -> bool {
         || source.contains('〕')
 }
 
+#[allow(
+    clippy::option_if_let_else,
+    reason = "if/else form preserved from frozen adapter; lambda restructure not permitted"
+)]
 fn ruby_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
     let source = source_slice(&decoded.span_text, &node.span);
     if let Some(caps) = RUBY_RE.captures(source) {
@@ -853,17 +889,18 @@ fn source_slice<'a>(source: &'a str, span: &Span) -> &'a str {
     source.get(span.start..span.end).unwrap_or("")
 }
 
-/// Identity fields per the executable-boundary contract: adapter id,
-/// adapter version, AAT schema version, build identity. The git rev is
-/// injected by build.rs from AB_AOZORA_GIT_REV and is part of the
-/// registry's exact-match coordinate — a "git unknown" build must never
-/// become gate evidence or a registry row.
+/// Identity fields per the executable-boundary contract.
+///
+/// Returns a version string with adapter id, version, AAT schema version, and build identity.
+/// The git rev is injected by build.rs from `AB_AOZORA_GIT_REV` and is part of the registry's
+/// exact-match coordinate — a "git unknown" build must never become gate evidence or a registry row.
+#[must_use]
 pub fn adapter_version() -> String {
     format!(
         "ab-aozora {} aat-schema 1 facade {} wire-schema {} (git {})",
         env!("CARGO_PKG_VERSION"),
         ab_aozora_facade_version(),
-        ab_aozora_facade::json::SCHEMA_VERSION,
+        aozora_json::SCHEMA_VERSION,
         env!("AB_AOZORA_GIT_REV"),
     )
 }
@@ -878,8 +915,10 @@ fn hex_sha256(bytes: &[u8]) -> String {
     let digest = Sha256::digest(bytes);
     let mut out = String::with_capacity(digest.len() * 2);
     for byte in digest {
-        use std::fmt::Write as _;
-        let _ = write!(out, "{byte:02x}");
+        #[allow(unused_must_use, reason = "write to Vec never fails")]
+        {
+            write!(out, "{byte:02x}");
+        }
     }
     out
 }

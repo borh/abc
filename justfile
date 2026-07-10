@@ -25,6 +25,9 @@ python-quality:
 nix-format-check:
 	@find . \
 		-path './.git' -prune -o \
+		-path './.claude' -prune -o \
+		-path './.worktrees' -prune -o \
+		-path './worktrees' -prune -o \
 		-path './.direnv' -prune -o \
 		-path './result*' -prune -o \
 		-name '*.nix' -print0 \

@@ -77,6 +77,44 @@
           cljDepsCache = pkgs.mk-deps-cache {
             lockfile = ./deps-lock.json;
           };
+          presentationFontTools = pkgs.python3.withPackages (ps: [
+            ps.fonttools
+            ps.brotli
+          ]);
+          presentationFontConfig = pkgs.makeFontsConf {
+            fontDirectories = [ pkgs.noto-fonts-cjk-sans ];
+            impureFontDirectories = [ ];
+            includes = [ ];
+          };
+          presentationLauncher = pkgs.writeShellScript "abc-presentation-diagrams" ''
+            set -euo pipefail
+            export HOME="${cljDepsCache}"
+            export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+            export CLJ_CONFIG="${cljDepsCache}/.clojure"
+            export GITLIBS="${cljDepsCache}/.gitlibs"
+            presentationCache="$(mktemp -d)"
+            trap 'rm -rf "$presentationCache"' EXIT
+            export CLJ_CACHE="$presentationCache/clojure"
+            export FONTCONFIG_FILE="${presentationFontConfig}"
+            unset FONTCONFIG_PATH XDG_CONFIG_HOME XDG_CONFIG_DIRS XDG_DATA_DIRS
+            export XDG_CACHE_HOME="$presentationCache/xdg-cache"
+            export XDG_DATA_HOME="$presentationCache/xdg-data"
+            mkdir -p "$CLJ_CACHE" "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
+            if [ -f abc/deps.edn ] && [ -f abc/docs/architecture-stages.edn ]; then
+              cd abc
+            elif [ -f deps.edn ] && [ -f docs/architecture-stages.edn ]; then
+              :
+            else
+              echo "presentation-diagrams: run from the monorepo root or abc/" >&2
+              exit 2
+            fi
+            export ABC_GRAPHVIZ_DOT="${pkgs.graphviz}/bin/dot"
+            export ABC_FONTTOOLS_SUBSET="${presentationFontTools}/bin/pyftsubset"
+            export ABC_PRESENTATION_FONT="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc"
+            export ABC_PRESENTATION_FONT_DIR="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk"
+            export DOTFONTPATH="$ABC_PRESENTATION_FONT_DIR"
+            ${pkgs.clojure}/bin/clojure -M:abc/presentation-diagrams "$@"
+          '';
           # Reliable, CWD-independent launcher for a `-M:<alias>` Clojure tool.
           # Resolves deps.edn + the abc `src` classpath from the pinned flake
           # source (not the caller's working directory), points Clojure at the
@@ -150,6 +188,12 @@
               }:''${PATH:-}"
               export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
             '';
+          };
+
+          presentation-diagrams = {
+            type = "app";
+            program = toString presentationLauncher;
+            meta.description = "Generate or drift-check academic presentation SVG diagrams";
           };
 
           soranoha = mkCljApp {
@@ -309,6 +353,15 @@
           cljDepsCache = pkgs.mk-deps-cache {
             lockfile = ./deps-lock.json;
           };
+          presentationFontTools = pkgs.python3.withPackages (ps: [
+            ps.fonttools
+            ps.brotli
+          ]);
+          presentationFontConfig = pkgs.makeFontsConf {
+            fontDirectories = [ pkgs.noto-fonts-cjk-sans ];
+            impureFontDirectories = [ ];
+            includes = [ ];
+          };
           tei = import ./nix/tei-profile-artifacts.nix {
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
@@ -377,6 +430,80 @@
 
                 mkdir -p "$out"
                 echo "ADR + architecture diagrams current; header/sidecar/stage lints clean." > "$out/result.txt"
+              '';
+
+          presentation-diagram-drift =
+            pkgs.runCommand "abc-presentation-diagram-drift"
+              {
+                nativeBuildInputs = [
+                  pkgs.clojure
+                  pkgs.graphviz
+                  pkgs.imagemagick
+                  pkgs.librsvg
+                  pkgs.noto-fonts-cjk-sans
+                  presentationFontTools
+                ];
+              }
+              ''
+                cp -R ${./.} source
+                chmod -R u+w source
+                cd source
+                export HOME="${cljDepsCache}"
+                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+                export CLJ_CONFIG="$HOME/.clojure"
+                export CLJ_CACHE="$TMPDIR/cp-cache"
+                export GITLIBS="$HOME/.gitlibs"
+                export FONTCONFIG_FILE="${presentationFontConfig}"
+                unset FONTCONFIG_PATH XDG_CONFIG_HOME XDG_CONFIG_DIRS XDG_DATA_DIRS
+                export XDG_CACHE_HOME="$TMPDIR/font-cache"
+                export XDG_DATA_HOME="$TMPDIR/xdg-data"
+                mkdir -p "$CLJ_CACHE" "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
+                grep -Fq \
+                  '<dir>${pkgs.noto-fonts-cjk-sans}</dir>' \
+                  "$FONTCONFIG_FILE"
+                activeFontPaths="$TMPDIR/fontconfig-active-paths"
+                sed -n \
+                  -e '/^[[:space:]]*<dir[ >]/p' \
+                  -e '/^[[:space:]]*<include[ >]/p' \
+                  "$FONTCONFIG_FILE" > "$activeFontPaths"
+                for forbidden in \
+                  /etc/fonts \
+                  /usr/share/fonts \
+                  /usr/local/share/fonts \
+                  '~/.nix-profile' \
+                  /nix/var/nix/profiles
+                do
+                  if grep -Fq "$forbidden" "$activeFontPaths"; then
+                    echo "presentation Fontconfig contains forbidden path: $forbidden" >&2
+                    exit 1
+                  fi
+                done
+                while IFS= read -r fontPath; do
+                  fontPath="$(printf '%s\n' "$fontPath" | sed 's/^[[:space:]]*//')"
+                  case "$fontPath" in
+                    '<dir>/nix/store/'*'</dir>' | '<dir prefix="xdg">fonts</dir>')
+                      ;;
+                    *)
+                      echo "presentation Fontconfig contains non-store path: $fontPath" >&2
+                      exit 1
+                      ;;
+                  esac
+                done < "$activeFontPaths"
+                test -z "$(find "$XDG_DATA_HOME" -mindepth 1 -print -quit)"
+                export ABC_GRAPHVIZ_DOT="${pkgs.graphviz}/bin/dot"
+                export ABC_FONTTOOLS_SUBSET="${presentationFontTools}/bin/pyftsubset"
+                export ABC_PRESENTATION_FONT="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc"
+                export ABC_PRESENTATION_FONT_DIR="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk"
+                export DOTFONTPATH="$ABC_PRESENTATION_FONT_DIR"
+                clojure -M:abc/presentation-diagrams --check
+                for svg in docs/figures/*.svg; do
+                  png="$TMPDIR/$(basename "$svg" .svg).png"
+                  rsvg-convert --width 1920 --height 1080 "$svg" --output "$png"
+                  test "$(magick identify -format '%wx%h' "$png")" = "1920x1080"
+                  test "$(magick identify -format '%k' "$png")" -gt 1
+                done
+                mkdir -p "$out"
+                echo "Academic presentation DOT and SVG artifacts are current." > "$out/result.txt"
               '';
 
           clj-kondo =
@@ -611,19 +738,45 @@
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
           };
+          presentationFontTools = pkgs.python3.withPackages (ps: [
+            ps.fonttools
+            ps.brotli
+          ]);
+          presentationFontConfig = pkgs.makeFontsConf {
+            fontDirectories = [ pkgs.noto-fonts-cjk-sans ];
+            impureFontDirectories = [ ];
+            includes = [ ];
+          };
 
         in
         {
           default = pkgs.mkShell {
             TEI_SCHEMA_PATH = "${tei.teiAllSchema}";
+            ABC_GRAPHVIZ_DOT = "${pkgs.graphviz}/bin/dot";
+            ABC_FONTTOOLS_SUBSET = "${presentationFontTools}/bin/pyftsubset";
+            ABC_PRESENTATION_FONT = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc";
+            ABC_PRESENTATION_FONT_DIR = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk";
+            DOTFONTPATH = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk";
+            FONTCONFIG_FILE = "${presentationFontConfig}";
+            shellHook = ''
+              unset FONTCONFIG_PATH XDG_CONFIG_HOME XDG_CONFIG_DIRS XDG_DATA_DIRS
+              presentationFontCache="$(mktemp -d)"
+              export XDG_CACHE_HOME="$presentationFontCache/xdg-cache"
+              export XDG_DATA_HOME="$presentationFontCache/xdg-data"
+              mkdir -p "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
+              trap 'rm -rf "$presentationFontCache"' EXIT
+            '';
             packages = with pkgs; [
               cljfmt
               clojure
               git
               git-cliff
+              graphviz
               jdk21
               jq
               libxml2
+              noto-fonts-cjk-sans
+              presentationFontTools
             ];
           };
 

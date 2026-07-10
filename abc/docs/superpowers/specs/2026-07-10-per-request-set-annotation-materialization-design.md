@@ -1,8 +1,11 @@
 # Per-Request-Set Annotation Materialization + Corpus-Scale Ruby Join Statistics — Design
 
 Date: 2026-07-10
-Status: Slice A and slice B tooling implemented (this branch); corpus run
-and D7/D9 evidence handoff pending (post-merge, operator-side)
+Status: Implemented (merged 4f90e720) and run: the corpus statistics run and
+its D7/D9 evidence are recorded in
+`docs/handoffs/2026-07-10-annotation-join-stats-run.md` (headline: renderer
+coordinates sound; adapter ruby-base extents not — the conflict class
+functions as an adapter-fidelity detector)
 Depends on: ADR 0028 (first slice + D6 widening + input-view coverage
 machine-check), ADR 0026/0027 (identity discipline), ADR 0024/0025
 (span/render discipline)

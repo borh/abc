@@ -14,6 +14,65 @@
     (catch clojure.lang.ExceptionInfo ex
       (:problems (ex-data ex)))))
 
+(def expected-topology
+  {:reproducibility
+   {:nodes #{:sources :source :parsing :publication :analysis :output
+             :artifact-id :manifest :views}
+    :edges #{[:sources :source] [:sources :parsing]
+             [:sources :publication] [:sources :analysis] [:sources :output]
+             [:source :artifact-id] [:parsing :artifact-id]
+             [:publication :artifact-id] [:analysis :artifact-id]
+             [:output :artifact-id] [:artifact-id :manifest]
+             [:manifest :views]}}
+   :publication
+   {:nodes #{:source :parser-process :parser-ir :manifest :outputs :aat-detail}
+    :edges #{[:source :parser-process] [:parser-process :parser-ir]
+             [:parser-ir :manifest] [:manifest :outputs]
+             [:parser-process :aat-detail] [:aat-detail :parser-ir]}}})
+
+(defn- semantic-topology [graph]
+  {:nodes (set (map :id (:nodes graph)))
+   :edges (set (map (juxt :from :to) (:edges graph)))})
+
+(deftest editorial-revision-preserves-semantic-topology
+  (doseq [[id expected] expected-topology]
+    (is (= expected (semantic-topology (graph id))) (name id))))
+
+(deftest reproducibility-editorial-contract
+  (let [g (graph :reproducibility)
+        group (some #(when (= :identity-contract (:id %)) %) (:groups g))
+        nodes (into {} (map (juxt :id identity) (:nodes g)))]
+    (is (= "Versioned identity contract" (:label group)))
+    (is (= "Identity-bearing inputs determine ArtifactID." (:footer g)))
+    (is (not (str/includes? (:footer g) "rebuilds only dependent layers")))
+    (is (= [{:id "output_format_spec_hash" :label "Output format"}]
+           (:coordinates (:output nodes))))
+    (is (= 34 (get-in g [:theme :primary-size])))
+    (is (= 24 (get-in g [:theme :secondary-size])))
+    (is (= #{"#000000" "#F5F7FA" "#A7B0BE"
+             "#48CAE4" "#F2B84B" "#7BC47F"}
+           (set (map (get-in g [:theme])
+                     [:canvas :text :secondary :identity :evidence :output]))))
+    (is (= "Sources and evidence enter a versioned identity contract; ArtifactID identifies a validated manifest from which scholarly views derive."
+           (:description g)))
+    (is (= "Sources · metadata · parser evidence"
+           (:subtitle (:sources nodes))))
+    (is (= "SHA-256 of canonical manifest identity"
+           (:subtitle (:artifact-id nodes))))))
+
+(deftest publication-copy-is-presentation-brief
+  (let [g (graph :publication)
+        subtitles (into {} (map (juxt :id :subtitle) (:nodes g)))]
+    (is (= "A stable source-to-Parser-IR-to-manifest publication path, with the current AAT producer implementation shown as subordinate detail."
+           (:description g)))
+    (is (= "Text · metadata" (:source subtitles)))
+    (is (= "Versioned evidence · configuration" (:parser-process subtitles)))
+    (is (= "Stable publication interchange" (:parser-ir subtitles)))
+    (is (= "Identity · provenance · validation · content" (:manifest subtitles)))
+    (is (= "TEI · text · RDF · Linked Art · IIIF · annotation · analysis"
+           (:outputs subtitles)))
+    (is (nil? (:aat-detail subtitles)))))
+
 (deftest reproducibility-figure-has-approved-title-and-five-coordinate-families
   (let [g (graph :reproducibility)
         family-nodes (filter #(= :coordinate-family (:role %)) (:nodes g))
@@ -24,9 +83,9 @@
            (set (map :id family-nodes))))
     (is (= 15 (reduce + (map #(count (:coordinates %)) family-nodes))))
     (is (= "ArtifactID" (:label artifact-id)))
-    (is (= "SHA-256(JCS(manifest_identity_object)) · canonical identity; distinct from the output byte hash"
+    (is (= "SHA-256 of canonical manifest identity"
            (:subtitle artifact-id)))
-    (is (= 42 (:subtitle-wrap artifact-id)))))
+    (is (nil? (:subtitle-wrap artifact-id)))))
 
 (deftest publication-figure-keeps-stable-path-and-current-inset-separate
   (let [g (graph :publication)]

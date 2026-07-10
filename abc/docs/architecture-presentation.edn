@@ -30,7 +30,7 @@
  :figures
  {:reproducibility
   {:title "Soranoha Reproducibility Architecture"
-   :subtitle "Exact sources, evidence, contracts, and recipes produce traceable scholarly views"
+   :subtitle "Identity, provenance, and scholarly derivatives"
    :aggregates
    {:sources {:stages [:aozora-snapshot :metadata :aat]
               :label "Sources and evidence"}
@@ -42,12 +42,12 @@
             :label "Scholarly views"}}}
   :publication
   {:title "Soranoha Publication Pipeline"
-   :subtitle "Validated source transformation with explicit evidence, contracts, and provenance"
+   :subtitle "Validated transformation from source to scholarly outputs"
    :aggregates
    {:source {:stages [:aozora-snapshot :metadata] :label "Aozora source"}
     :parser-process {:stages [:aat] :label "Validated parser process"}
     :parser-ir {:stages [:parser-ir] :label "Parser-IR"}
-    :manifest {:stages [:manifest] :label "Identity and provenance manifest"}
+    :manifest {:stages [:manifest] :label "Validated manifest"}
     :outputs {:stages [:tei :rdf :iiif :tokenized :analysis :annotation]
               :label "Scholarly outputs"}}
    :current-inset

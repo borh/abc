@@ -10,8 +10,8 @@
    :evidence "#F2B84B"
    :output "#7BC47F"
    :title-size 52
-   :primary-size 30
-   :secondary-size 22
+   :primary-size 34
+   :secondary-size 24
    :citation-size 16
    :stroke-width 2
    :safe-margin 96})
@@ -35,17 +35,20 @@
                          (sort-by :id)
                          vec)
         owners (vec (sort (set (mapcat #(get (:coordinate-owners context) (:id %))
-                                       coordinates))))]
-    {:id family
-     :label ({:source "Source identity"
-              :parsing "Parsing identity"
-              :publication "Publication contracts"
-              :analysis "Linguistic analysis"
-              :output "Output format"} family)
-     :role :coordinate-family
-     :group :identity-contract
-     :coordinates coordinates
-     :backing {:coordinates (mapv :id coordinates) :adrs owners}}))
+                                       coordinates))))
+        family-label ({:source "Source identity"
+                       :parsing "Parsing identity"
+                       :publication "Publication contracts"
+                       :analysis "Linguistic analysis"
+                       :output "Output format"} family)]
+    (cond-> {:id family
+             :label family-label
+             :role :coordinate-family
+             :group :identity-contract
+             :coordinates coordinates
+             :backing {:coordinates (mapv :id coordinates) :adrs owners}}
+      (= :parsing family)
+      (assoc :coordinate-columns 2))))
 
 (defn- path-valid? [context path]
   (and (sequential? path)
@@ -198,75 +201,87 @@
   (let [graph
         {:id :reproducibility
          :direction "LR"
+         :concentrate? true
          :title (get-in metadata [:figures :reproducibility :title])
          :subtitle (get-in metadata [:figures :reproducibility :subtitle])
-         :description "Sources and computational evidence enter a canonical identity contract, producing a validated manifest and traceable scholarly views."
+         :description "Sources and evidence enter a versioned identity contract; ArtifactID identifies a validated manifest from which scholarly views derive."
          :theme theme
          :groups [{:id :inputs :label "Sources and computational evidence"
                    :cluster? false}
-                  {:id :identity-contract :label "15-coordinate identity contract"}
-                  {:id :record :label "Durable scholarly record"}
-                  {:id :derived :label "Derived scholarly views"}]
+                  {:id :identity-contract :label "Versioned identity contract"}
+                  {:id :record :label "Scholarly record"}
+                  {:id :derived :label "Derived views"}]
          :nodes (vec
                  (concat
                   [(aggregate-node metadata context :reproducibility :sources
                                    :evidence :inputs
-                                   "Corpus, bibliographic metadata, and parser evidence")]
+                                   "Sources · metadata · parser evidence")]
                   (map #(family-node metadata context %)
                        [:source :parsing :publication :analysis :output])
                   [{:id :artifact-id
                     :label "ArtifactID"
-                    :subtitle "SHA-256(JCS(manifest_identity_object)) · canonical identity; distinct from the output byte hash"
-                    :subtitle-wrap 42
+                    :subtitle "SHA-256 of canonical manifest identity"
                     :role :identity-formula :group :identity-contract
                     :backing {:coordinates (vec (sort (:coordinates context)))
                               :adrs (vec (sort (set (mapcat val (:coordinate-owners context)))))}}
                    (aggregate-node metadata context :reproducibility :manifest
                                    :identity :record
-                                   "Identity, provenance, validation status, and content hash")
+                                   "Identity · provenance · validation · content hash")
                    (aggregate-node metadata context :reproducibility :views
                                    :output :derived
-                                   "TEI, visible text, RDF, Linked Art, IIIF, annotation, and analysis")]))
+                                   "TEI · text · RDF · Linked Art · IIIF · annotation · analysis")]))
          :edges [{:from :sources :to :source :role :identity-input :style :solid
+                  :tail-port :n
                   :backing {:coordinates ["corpus_snapshot_hash" "work_content_hash"
                                           "metadata_record_hash"]}}
                  {:from :sources :to :parsing :role :identity-input :style :solid
+                  :tail-port :n
                   :backing {:coordinates ["parser_build_hash" "parser_config_hash"
                                           "aat_parser_ir_mapping_hash"
                                           "parser_ir_schema_hash"]}}
                  {:from :sources :to :publication :role :identity-input :style :solid
+                  :tail-port :n
                   :backing {:coordinates ["manifest_schema_hash" "tei_profile_hash"]}}
                  {:from :sources :to :analysis :role :identity-input :style :solid
+                  :tail-port :n
                   :backing {:coordinates ["tokenizer_build_hash"
                                           "tokenizer_dictionary_hash"
                                           "tokenizer_profile_hash"
                                           "analysis_recipe_hash"
                                           "annotation_policy_hash"]}}
                  {:from :sources :to :output :role :identity-input :style :solid
+                  :tail-port :n
                   :backing {:coordinates ["output_format_spec_hash"]}}
                  {:from :source :to :artifact-id :role :identity :style :solid
+                  :head-port :nw
                   :backing {:coordinates ["corpus_snapshot_hash" "work_content_hash"
                                           "metadata_record_hash"]}}
                  {:from :parsing :to :artifact-id :role :identity :style :solid
+                  :head-port :nw
                   :backing {:coordinates ["parser_build_hash" "parser_config_hash"
                                           "aat_parser_ir_mapping_hash"
                                           "parser_ir_schema_hash"]}}
                  {:from :publication :to :artifact-id :role :identity :style :solid
+                  :head-port :nw
                   :backing {:coordinates ["manifest_schema_hash" "tei_profile_hash"]}}
                  {:from :analysis :to :artifact-id :role :identity :style :solid
+                  :head-port :nw
                   :backing {:coordinates ["tokenizer_build_hash"
                                           "tokenizer_dictionary_hash"
                                           "tokenizer_profile_hash"
                                           "analysis_recipe_hash"
                                           "annotation_policy_hash"]}}
                  {:from :output :to :artifact-id :role :identity :style :solid
+                  :head-port :nw
                   :backing {:coordinates ["output_format_spec_hash"]}}
                  {:from :artifact-id :to :manifest :role :identity :style :thick
+                  :tail-port :ne :head-port :nw
                   :backing {:stages [:manifest] :adrs (stage-adrs context [:manifest])}}
                  {:from :manifest :to :views :role :derived-view :style :solid
+                  :tail-port :ne :head-port :nw
                   :backing {:path [:manifest :tei]
                             :reachable-targets [:tei :rdf :iiif :tokenized :analysis :annotation]}}]
-         :footer "Changing an identity-bearing input produces a new ArtifactID and rebuilds only dependent layers."
+         :footer "Identity-bearing inputs determine ArtifactID."
          :primary-order [:sources :artifact-id :manifest :views]}]
     (validate-graph! context graph)))
 
@@ -281,21 +296,21 @@
          :direction "LR"
          :title (get-in metadata [:figures figure :title])
          :subtitle (get-in metadata [:figures figure :subtitle])
-         :description "A stable source-to-publication contract with the current AAT producer implementation shown as subordinate detail."
+         :description "A stable source-to-Parser-IR-to-manifest publication path, with the current AAT producer implementation shown as subordinate detail."
          :theme theme
-         :groups [{:id :producer :label "Sources and parser evidence · ab-validator"}
-                  {:id :abc :label "Publication contracts and materialization · ABC"}
-                  {:id :scholarship :label "Scholarly publication and analysis"}
+         :groups [{:id :producer :label "Source and parser evidence · ab-validator"}
+                  {:id :abc :label "Publication contract · ABC"}
+                  {:id :scholarship :label "Scholarly outputs"}
                   {:id :current-inset :label "Current producer implementation"
-                   :style :dashed}]
-         :nodes [(node :source :source :producer "Authoritative text and metadata")
-                 (node :parser-process :evidence :producer "Versioned parser evidence and configuration")
-                 (node :parser-ir :contract :abc "Stable publication-side interchange contract")
-                 (node :manifest :identity :abc "Exact identity, provenance, validation, and content")
-                 (node :outputs :output :scholarship "TEI, text, RDF, Linked Art, IIIF, annotations, and analysis")
+                   :style :dashed :label-location :bottom}]
+         :nodes [(node :source :source :producer "Text · metadata")
+                 (node :parser-process :evidence :producer "Versioned evidence · configuration")
+                 (node :parser-ir :contract :abc "Stable publication interchange")
+                 (node :manifest :identity :abc "Identity · provenance · validation · content")
+                 (node :outputs :output :scholarship "TEI · text · RDF · Linked Art · IIIF · annotation · analysis")
                  {:id :aat-detail
                   :label "AAT evidence + mapping gate"
-                  :subtitle "Current implementation detail"
+                  :subtitle nil
                   :role :implementation-detail :group :current-inset
                   :label-wrap 18
                   :subtitle-wrap 18

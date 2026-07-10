@@ -303,5 +303,5 @@ paths, provenance headers). No semantic edits. Gate evidence:
   30-vector official-docs seed; one shim CLI-surface gap — missing
   `inspect pairs` — was caught by the gate and fixed in `1fa0316c`
   before the confirming re-run)
-- Perf gate: <link perf parity report when Task 8 lands>
+- Perf gate: `PASS` — [2026-07-10 fork-parity perf report](docs/superpowers/reports/2026-07-10-fork-parity-perf.md) (workset `perf-workset-v1`, 6 works, 1+5 runs/bin; regression -0.07% vs 10% threshold; no new timeouts)
 - Gate A: <link corpus parity report when Task 9 lands>

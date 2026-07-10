@@ -297,6 +297,11 @@ lands.
 
 Phase 1 lifts are rename-only (package/lib names, intra-workspace dep
 paths, provenance headers). No semantic edits. Gate evidence:
-- Gate B: <link conformance comparison report when Task 7 lands>
+- Gate B: `FORK_CONFORMANCE_PARITY_CONFIRMED` —
+  `docs/superpowers/reports/2026-07-10-fork-parity-conformance.md`
+  (byte-identical scoring on the 127-vector P4suta suite and the
+  30-vector official-docs seed; one shim CLI-surface gap — missing
+  `inspect pairs` — was caught by the gate and fixed in `1fa0316c`
+  before the confirming re-run)
 - Perf gate: <link perf parity report when Task 8 lands>
 - Gate A: <link corpus parity report when Task 9 lands>

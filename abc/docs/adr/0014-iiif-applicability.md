@@ -4,6 +4,13 @@ Status: Accepted
 Date: 2026-04-28
 Accepted: 2026-04-29
 
+## Implementation Status
+
+As of 2026-07-09, `schemas/iiif-applicability.schema.json` and
+`abc.tools.iiif/validate-applicability!` are the live applicability contract and
+validator used by the design-bundle gate. Their contract cases are covered by
+`test/abc/tools/iiif_test.clj`.
+
 ## Context
 
 ABC v0 is primarily a text artifact pipeline. Some Aozora-derived works may
@@ -67,7 +74,7 @@ derived and must not feed `manifest_identity_object`.
   text-only example.
 - `validate-design-bundle` calls `abc.tools.iiif/validate-applicability!`
   on the example record; failure aborts the bundle gate.
-- `abc.tools.iiif-test` covers the example record plus four contract
+- `test/abc/tools/iiif_test.clj` covers the example record plus four contract
   cases: an `applicable` record with a `derived_manifest` path, a
   `rights_blocker` record, a missing `work_id`, an `applicable` record
   with `derived_manifest=null` (must fail), and a non-applicable record

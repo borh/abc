@@ -1,6 +1,10 @@
 { pkgs, tei-p5 }:
 
 let
+  # TEI P5 version. Deliberately duplicated in abc/nix/tei-profile-artifacts.nix
+  # (separate flake — no shared constant across the path: boundary). Drift between
+  # the two is caught by the `monorepo-tei-version-coherence` check, which is the
+  # single source of truth for coherence. Bump both together.
   teiP5Version = "4.11.0";
   teiP5ReleaseTag = "P5_Release_${teiP5Version}";
 in

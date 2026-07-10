@@ -8,6 +8,22 @@ Amends: ADR 0030
 Depends on: ADR 0030
 Source: `ab-validator/docs/superpowers/specs/2026-07-10-consolidated-parser-design.md`
 
+## Implementation Status
+
+Accepted and implemented as of 2026-07-10. The `ab-aozora-*` crates are
+lifted into `ab-validator/crates/` with provenance headers recording the
+upstream pin and this ADR; the parity shim in `ab-aozora-cli` reimplements
+upstream's `aozora inspect` dispatch over the lifted `ab-aozora-facade`.
+Gate B (`FORK_CONFORMANCE_PARITY_CONFIRMED`) and Gate A
+(`FORK_PARITY_CONFIRMED`) confirm byte/semantic parity with the pinned
+upstream at rev `1a4f864603970983719655aa4af4525958ac2d38`, and the perf
+gate confirms no regression beyond threshold; see
+`ab-validator/docs/superpowers/reports/2026-07-10-fork-parity-conformance.md`,
+`ab-validator/docs/superpowers/reports/2026-07-10-fork-parity-perf.md`, and
+`ab-validator/docs/superpowers/reports/2026-07-10-fork-parity-corpus.md`.
+`ab-validator/docs/handoffs/2026-07-10-parser-fork-provenance.md` records
+the detach-rev provenance, lifted-crate closure, and test inventory.
+
 ## Context
 
 ADR 0030 selected `aozora-pipeline` (`P4suta/aozora`) as the consolidated

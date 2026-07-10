@@ -6,7 +6,25 @@
 ;; schema-contracts.json carry :schema nil: metadata-record, tei-validation-result
 ;; and iiif-applicability exist under schemas/ but are absent from the contracts
 ;; manifest, so registering them here would fail the manifest cross-check.
-{:stages
+{:manifest-identity-contract
+ {:schema "schemas/manifest.schema.json"
+  :coordinates
+  {"manifest_schema_hash" [1 10]
+   "corpus_snapshot_hash" [1]
+   "work_content_hash" [1]
+   "metadata_record_hash" [1]
+   "parser_build_hash" [1]
+   "parser_config_hash" [1]
+   "aat_parser_ir_mapping_hash" [23]
+   "parser_ir_schema_hash" [1]
+   "tei_profile_hash" [1]
+   "tokenizer_build_hash" [1]
+   "tokenizer_dictionary_hash" [1]
+   "tokenizer_profile_hash" [27]
+   "analysis_recipe_hash" [1]
+   "annotation_policy_hash" [28]
+   "output_format_spec_hash" [1]}}
+ :stages
  [{:id :aozora-snapshot :label "Aozora source snapshot"
    :schema "schemas/snapshot-index.schema.json" :adr [1 3] :inputs []}
   {:id :aat :label "AAT evidence (ab-validator)"
@@ -16,7 +34,8 @@
   {:id :metadata :label "Metadata + person records"
    :schema nil :adr [1 15 16 20] :inputs [:aozora-snapshot]}
   {:id :manifest :label "Artifact manifest (identity)"
-   :schema "schemas/manifest.schema.json" :adr [1 10] :inputs [:parser-ir :metadata]}
+   :schema "schemas/manifest.schema.json" :adr [1 10 23 27 28]
+   :inputs [:parser-ir :metadata]}
   {:id :tei :label "TEI publication view"
    :schema nil :adr [12 25] :inputs [:parser-ir :manifest]}
   {:id :rdf :label "RDF / PROV-O / Linked Art"

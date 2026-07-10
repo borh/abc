@@ -4,7 +4,8 @@ Status: Accepted
 Date: 2026-07-02
 Accepted: 2026-07-03
 Supersedes: none
-Depends on: ADR 0002 (source_span_coverage gate), `docs/handoffs/review-reflection.md` §1.3/§1.5, `docs/handoffs/full-corpus-probe.md`
+Depends on: ADR 0002 [scope: source_span_coverage gate]
+Source: `docs/handoffs/review-reflection.md` §1.3/§1.5, `docs/handoffs/full-corpus-probe.md`
 
 ## Implementation Status
 

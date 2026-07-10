@@ -4,6 +4,13 @@ Status: Accepted
 Date: 2026-04-28
 Accepted: 2026-04-29
 
+## Implementation Status
+
+As of 2026-07-09, `abc.tools.linked-art` generates the live Linked Art JSON-LD
+view under the policy in `contexts/abc-v0.jsonld`; the design-bundle gate checks
+the committed LOD fixtures. `test/abc/tools/linked_art_test.clj` covers
+determinism, context isolation, and the artifact identity invariant.
+
 ## Context
 
 ABC already has a canonical JSON manifest and a derived PROV-O RDF view for
@@ -91,7 +98,7 @@ that value.
   jsonld-context-validation-result.json}`. Any drift fails the bundle.
 - `validation-result.json` records `status: "ok"` and the recomputed
   context hash.
-- `abc.tools.linked-art-test` covers determinism, byte-parity with
+- `test/abc/tools/linked_art_test.clj` covers determinism, byte-parity with
   the committed fixtures, the recomputed context hash, the identity
   invariant, and the loader's refusal to fetch external JSON-LD
   contexts.

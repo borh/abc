@@ -5,8 +5,7 @@ Date: 2026-04-26
 Accepted: 2026-07-03
 Supersedes: none
 Amends: ADR 0001, ADR 0009
-Source: `docs/adr/0001-manifest-identity.md` and
-`docs/adr/0009-imported-output-materialization.md`
+Source: `docs/adr/0001-manifest-identity.md` and `docs/adr/0009-imported-output-materialization.md`
 
 ## Implementation Status
 
@@ -77,8 +76,8 @@ algorithm.
   SHA-256/JCS hash of the bundled manifest schema JSON value.
 - Parser IR and warning materialized manifests have distinct `artifact_id`
   values.
-- Tests cover `v0-identity-json`, schema hashing, and generated manifest
-  identity fields.
+- `test/abc/tools/materialize_import_test.clj` covers `v0-identity-json`,
+  schema hashing, and generated manifest identity fields.
 - Validation fails if producer-supplied parser IR or diagnostic schema hashes
   disagree with the checked-in ABC schemas and no compatibility rule exists.
 - `nix run .#validate-design-bundle` still validates materialized manifests.

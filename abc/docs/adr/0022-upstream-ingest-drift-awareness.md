@@ -4,6 +4,13 @@ Status: Accepted
 Date: 2026-04-30
 Accepted: 2026-04-30
 
+## Implementation Status
+
+As of 2026-07-09, `abc.tools.aozora-history-audit` implements the live
+drift-participant update report and failure gate while leaving
+`abc.tools.aozora-csv` source-faithful. The audit contract is covered by
+`test/abc/tools/aozora_history_audit_test.clj`.
+
 ## Context
 
 ADR 0020 and ADR 0021 define person identity drift as validated audit
@@ -137,7 +144,8 @@ still be possible. The failure mode belongs behind an explicit audit flag.
 ## Acceptance Criteria
 
 - `aozora-history-audit --drift-persons-dir examples/v0/example-persons`
-  includes `drift_participant_updates` in the JSON report.
+  includes `drift_participant_updates` in the JSON report, covered by
+  `test/abc/tools/aozora_history_audit_test.clj`.
 - Invalid drift sidecars under `--drift-persons-dir` make the audit fail before
   reporting participant updates.
 - With no drift artifacts present, the report contains an empty

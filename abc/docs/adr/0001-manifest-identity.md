@@ -129,8 +129,10 @@ sha256-rfc8785-jcs-bundled-json-schema-v0
 
 ## Acceptance Criteria
 
-- `schemas/manifest.schema.json` validates success and failure manifests.
-- A canonicalization fixture demonstrates null dimensions and array ordering.
+- `schemas/manifest.schema.json` validates success and failure manifests, as
+  covered by `test/abc/tools/materialize_import_test.clj`.
+- A canonicalization fixture demonstrates null dimensions and array ordering;
+  `test/abc/tools/jcs_test.clj` proves its canonical byte contract.
 - Example manifests keep `artifact_id` outside `manifest_identity_object`.
 - Failure manifests include input identity, attempted recipe identity,
   validation status, and error sidecar references.

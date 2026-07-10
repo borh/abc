@@ -4,6 +4,14 @@ Status: Accepted
 Date: 2026-04-29
 Accepted: 2026-04-30
 
+## Implementation Status
+
+As of 2026-07-09, the lineage-only model is live in
+`schemas/person-drift-event.schema.json`,
+`schemas/person-drift-index.schema.json`, and `abc.tools.person-drift`; its
+identity, participant, and graph invariants are covered by
+`test/abc/tools/person_drift_test.clj`.
+
 ## Context
 
 The separated-person-records milestone handles bibliographic corrections to a
@@ -208,7 +216,8 @@ be verified as its own expected rotation.
   event-type set.
 - Drift events bind participant snapshots with `snapshot_id`, `person_id`, and
   `person_record_hash`; no historical snapshot hash is derived from the current
-  person record at validation time.
+  person record at validation time; this is covered by
+  `test/abc/tools/person_drift_test.clj`.
 - Participant `snapshot_id` values are unique, use the committed `pre-` /
   `post-` prefixes, and `participants[]` is stored in lexicographic
   `snapshot_id` order so `drift_event_id` derivation is stable.

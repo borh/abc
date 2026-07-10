@@ -67,7 +67,8 @@ run-summary checks, and external command reporting.
   validation logic.
 - `nix run .#validate-design-bundle` works locally.
 - CI continues to run the same validation command through Nix.
-- Pure validation helpers have Clojure tests.
+- Pure validation helpers are covered by
+  `test/abc/tools/validate_design_bundle_test.clj`.
 
 ## Rollback
 

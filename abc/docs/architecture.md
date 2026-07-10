@@ -87,6 +87,7 @@ are explicit `null` values so omission does not change identity.
 
 The current identity dimensions are:
 
+<!-- manifest-identity-coordinates:start -->
 ```text
 manifest_schema_hash
 corpus_snapshot_hash
@@ -99,9 +100,12 @@ parser_ir_schema_hash
 tei_profile_hash
 tokenizer_build_hash
 tokenizer_dictionary_hash
+tokenizer_profile_hash
 analysis_recipe_hash
+annotation_policy_hash
 output_format_spec_hash
 ```
+<!-- manifest-identity-coordinates:end -->
 
 The mapping document hash is identity-bearing when parser-IR is AAT-derived.
 The mapping schema hash is provenance, not an identity dimension. This follows

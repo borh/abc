@@ -2,7 +2,9 @@
   "Workflow-backed corpus run for annotation join statistics: samples an AAT
   dump, converts each sampled work to parser-IR with the pinned ab-validator
   converter, renders the annotation plaintext view, tokenizes it with the
-  pinned tokenizer, and computes join statistics via
+  pinned `ab-morph-run tokenize-plaintext` tool (all tokenization and token
+  parsing stay in the Rust analyzers; this side only consumes per-work
+  tokens.jsonl), and computes join statistics via
   abc.tools.annotation-join-stats. Every stage is a step of
   abc.tools.workflow, so the run leaves schema-valid workflow-plan.json and
   workflow-run.json provenance records beside its outputs.
@@ -21,10 +23,15 @@
             [clojure.string :as string]))
 
 (defn work-id-from-aat-filename
-  "AAT dump files are named <work-id>-<hash12>.json; return the work id."
+  "AAT dump files are named <work-id>-<hash12>.json; return the full file
+  stem (work id + content-hash suffix). A dump can contain several files
+  for one Aozora work (multi-file works, fragments) with distinct hashes,
+  so the bare work id is not a unique pipeline key — a full-corpus repin
+  dump has 236 work ids spanning 281 extra files. File-stem identity keeps
+  every dump entry distinct; work-level aggregation stays a follow-up."
   [filename]
-  (if-let [[_ work-id] (re-matches #"(.+)-[0-9a-f]{12}\.json" filename)]
-    work-id
+  (if-let [[_ stem] (re-matches #"((.+)-[0-9a-f]{12})\.json" filename)]
+    stem
     (throw (ex-info "AAT filename does not match <work-id>-<hash12>.json"
                     {:filename filename}))))
 
@@ -66,25 +73,10 @@
       (let [exit (.waitFor proc)]
         {:exit exit :out @out-fut :err @err-fut}))))
 
-(defn split-eos-groups
-  "Split MeCab-format tokenizer output into per-input-line surface groups.
-  The tokenizer emits one EOS line per input line (including blank input
-  lines); each token line is <surface>TAB<features>."
-  [tokenizer-output]
-  (loop [lines (string/split tokenizer-output #"\n" -1)
-         current []
-         groups []]
-    (if-let [line (first lines)]
-      (cond
-        (= line "EOS") (recur (next lines) [] (conj groups current))
-        (string/blank? line) (recur (next lines) current groups)
-        :else (recur (next lines)
-                     (conj current (first (string/split line #"\t" 2)))
-                     groups))
-      groups)))
-
-(defn- surface-json-line [surface]
-  (str (charred/write-json-str {"surface" surface}) "\n"))
+(defn- tokenize-summary
+  "Parse the tokenize-plaintext summary JSON line from the tool's stdout."
+  [stdout]
+  (charred/read-json (string/trim stdout)))
 
 (defn- annotation-join-stats-steps []
   [{:id :sample-aat
@@ -159,44 +151,57 @@
     :run (fn [{:keys [rendered-work-ids plaintext-dir tokenizer-bin
                       tokenizer-dict tokens-dir]}]
            (.mkdirs (io/file tokens-dir))
-           (let [works (mapv (fn [work-id]
-                               (let [text (slurp (io/file plaintext-dir
-                                                          (str work-id ".txt")))]
-                                 {:work-id work-id
-                                  :lines (string/split text #"\n" -1)}))
-                             rendered-work-ids)
-                 full-input (str (string/join "\n" (mapcat :lines works)) "\n")
-                 env (cond-> {"AB_VIBRATO_DICT" tokenizer-dict}
-                       (System/getenv "AB_VIBRATO_CACHE_DIR")
-                       (assoc "AB_VIBRATO_CACHE_DIR"
-                              (System/getenv "AB_VIBRATO_CACHE_DIR")))
-                 {:keys [exit out err]} (run-process! {:cmd [tokenizer-bin]
-                                                       :env env
-                                                       :stdin full-input})
-                 _ (when-not (zero? exit)
-                     (throw (ex-info "Tokenizer failed"
-                                     {:exit exit :stderr err})))
-                 groups (split-eos-groups out)
-                 expected (reduce + (map #(count (:lines %)) works))]
-             (when-not (= expected (count groups))
-               (throw (ex-info "Tokenizer line accounting mismatch"
-                               {:expected-lines expected
-                                :eos-groups (count groups)})))
-             (loop [remaining works
-                    groups groups]
-               (when-let [{:keys [work-id lines]} (first remaining)]
-                 (let [[work-groups rest-groups] (split-at (count lines)
-                                                           groups)]
-                   (spit (io/file tokens-dir (str work-id ".tokens.jsonl"))
-                         (apply str (map surface-json-line
-                                         (apply concat work-groups))))
-                   (recur (next remaining) rest-groups))))
-             {:state-updates {:tokenized-work-ids (mapv :work-id works)}
-              :inputs [{:role "tokenizer-bin" :path (str tokenizer-bin)}]
-              :outputs [{:role "tokens-dir" :path (str tokens-dir)}]
-              :messages [{:level "info"
-                          :message (str (count works) " works tokenized ("
-                                        tokenizer-dict ")")}]}))}
+           (let [{:keys [exit out err]}
+                 (run-process!
+                  {:cmd (cond-> [tokenizer-bin "tokenize-plaintext"
+                                 "--analyzer" tokenizer-dict
+                                 "--plaintext-dir" (str plaintext-dir)
+                                 "--out-dir" (str tokens-dir)]
+                          (System/getenv "AB_MORPH_TOKENIZE_JOBS")
+                          (into ["--jobs"
+                                 (System/getenv "AB_MORPH_TOKENIZE_JOBS")]))})]
+             (when-not (zero? exit)
+               (throw (ex-info "Tokenizer failed"
+                               {:exit exit :stderr err})))
+             (let [summary (tokenize-summary out)
+                   errors-file (io/file tokens-dir "tokenize-errors.jsonl")
+                   errored (if (.isFile errors-file)
+                             (mapv #(get % "work_id")
+                                   (files/read-json-lines errors-file))
+                             [])
+                   errored-set (set errored)
+                   missing (vec (remove #(or (contains? errored-set %)
+                                             (.isFile (io/file
+                                                       tokens-dir
+                                                       (str % ".tokens.jsonl"))))
+                                        rendered-work-ids))]
+               (when (seq missing)
+                 (throw (ex-info "Tokenizer output missing for works"
+                                 {:missing missing})))
+               (when-not (= (count rendered-work-ids)
+                            (+ (get summary "works")
+                               (get summary "errors" 0)))
+                 (throw (ex-info "Tokenizer work accounting mismatch"
+                                 {:expected-works (count rendered-work-ids)
+                                  :tokenized-works (get summary "works")
+                                  :errored-works (get summary "errors" 0)})))
+               {:state-updates {:tokenized-work-ids
+                                (vec (remove errored-set rendered-work-ids))}
+                :inputs [{:role "tokenizer-bin" :path (str tokenizer-bin)}]
+                :outputs [{:role "tokens-dir" :path (str tokens-dir)}]
+                :messages (cond-> [{:level "info"
+                                    :message (str (get summary "works")
+                                                  " works tokenized ("
+                                                  tokenizer-dict ", "
+                                                  (get summary "tokens")
+                                                  " tokens)")}]
+                            (seq errored)
+                            (conj {:level "warn"
+                                   :message (str (count errored)
+                                                 " works failed tokenization"
+                                                 " and join-stats will skip"
+                                                 " them (tokenize-errors"
+                                                 ".jsonl)")}))})))}
    {:id :join-stats
     :requires [:tokenized-work-ids :parser-ir-dir :tokens-dir :stats-dir]
     :produces [:aggregate]
@@ -238,7 +243,9 @@
 (defn run-annotation-join-stats-run!
   "Execute the full join-stats corpus run described by plan-file into
   out-root. External binary paths must be explicit; the CLI wrapper reads
-  them from AB_AAT_TO_PARSER_IR_BIN and AB_VIBRATO_TOKENIZE_BIN."
+  them from AB_AAT_TO_PARSER_IR_BIN and AB_MORPH_RUN_BIN. The plan's
+  tokenizer_dict is passed verbatim as the tool's --analyzer spec (e.g.
+  \"vibrato:unidic-novel-202512\")."
   [{:keys [plan-file out-root converter-bin tokenizer-bin]}]
   (doseq [[label value] {"converter-bin" converter-bin
                          "tokenizer-bin" tokenizer-bin}]

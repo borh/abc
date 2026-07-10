@@ -10,7 +10,7 @@
             [clojure.test :refer [deftest is testing]]))
 
 (deftest work-id-from-aat-filename-test
-  (is (= "000050_50770"
+  (is (= "000050_50770-ec42438f68c8"
          (run/work-id-from-aat-filename "000050_50770-ec42438f68c8.json"))))
 
 (deftest work-id-from-aat-filename-rejects-unexpected-test
@@ -48,11 +48,6 @@
         (is (= "AAT directory contains no .json files" (ex-message ex))))
       (finally
         (fixture/delete-tree! root)))))
-
-(deftest split-eos-groups-test
-  (is (= [["a"] [] ["b" "c"]]
-         (run/split-eos-groups
-          "a\t名詞\nEOS\nEOS\nb\t動詞\nc\t助詞\nEOS\n"))))
 
 (deftest run-rejects-missing-binaries-test
   (let [ex (try
@@ -139,8 +134,8 @@
                         "done\n"
                         "cp " parser-ir-fixture " \"$out\"\n"
                         "printf '{}' > \"$div\"\n"))
-        ;; dies without reading stdin — the run must surface the child's
-        ;; exit code and stderr, not a stdin write failure
+        ;; dies immediately — the run must surface the child's exit code
+        ;; and stderr
         tokenizer (write-stub!
                    (io/file root "stub-tokenizer.sh")
                    "#!/usr/bin/env bash\necho 'dictionary exploded' >&2\nexit 7\n")]
@@ -178,6 +173,162 @@
       (finally
         (fixture/delete-tree! root)))))
 
+(deftest run-surfaces-missing-tokenizer-output-test
+  (let [root (fixture/temp-dir "abc-join-stats-run-missing-tokens")
+        aat-dir (io/file root "aat")
+        out-root (io/file root "out")
+        plan-file (io/file root "plan.json")
+        parser-ir-fixture (.getAbsolutePath
+                           (io/file "examples/ab-validator-output/parser-ir.json"))
+        converter (write-stub!
+                   (io/file root "stub-converter.sh")
+                   (str "#!/usr/bin/env bash\nset -eu\n"
+                        "out=\"\"; div=\"\"\n"
+                        "while [ $# -gt 0 ]; do\n"
+                        "  case \"$1\" in\n"
+                        "    --parser-ir-out) out=\"$2\"; shift 2 ;;\n"
+                        "    --divergence-out) div=\"$2\"; shift 2 ;;\n"
+                        "    *) shift ;;\n"
+                        "  esac\n"
+                        "done\n"
+                        "cp " parser-ir-fixture " \"$out\"\n"
+                        "printf '{}' > \"$div\"\n"))
+        ;; exits 0 but silently skips one work's output file — the run must
+        ;; fail closed on the missing tokens.jsonl
+        tokenizer (write-stub!
+                   (io/file root "stub-tokenizer.sh")
+                   (str "#!/usr/bin/env bash\nset -eu\n"
+                        "pd=\"\"; od=\"\"\n"
+                        "while [ $# -gt 0 ]; do\n"
+                        "  case \"$1\" in\n"
+                        "    --plaintext-dir) pd=\"$2\"; shift 2 ;;\n"
+                        "    --out-dir) od=\"$2\"; shift 2 ;;\n"
+                        "    *) shift ;;\n"
+                        "  esac\n"
+                        "done\n"
+                        "mkdir -p \"$od\"\n"
+                        "works=0\n"
+                        "for f in \"$pd\"/*.txt; do\n"
+                        "  stem=$(basename \"$f\" .txt)\n"
+                        "  case \"$stem\" in 000002*) continue ;; esac\n"
+                        "  : > \"$od/$stem.tokens.jsonl\"\n"
+                        "  works=$((works+1))\n"
+                        "done\n"
+                        "printf '{\"works\":%d,\"tokens\":0,\"analyzer\":\"stub\",\"warnings\":0}\\n' \"$works\"\n"))]
+    (try
+      (.mkdirs aat-dir)
+      (spit (io/file aat-dir "000001_1-aaaaaaaaaaaa.json") "{}")
+      (spit (io/file aat-dir "000002_2-bbbbbbbbbbbb.json") "{}")
+      (manifest/write-json-file!
+       plan-file
+       {"label" "missing-tokens-test"
+        "aat_dir" (str aat-dir)
+        "mapping" parser-ir-fixture
+        "stride" 1
+        "tokenizer_dict" "vibrato:stub-dict"})
+      (let [ex (try
+                 (run/run-annotation-join-stats-run!
+                  {:plan-file (str plan-file)
+                   :out-root (str out-root)
+                   :converter-bin (str converter)
+                   :tokenizer-bin (str tokenizer)})
+                 nil
+                 (catch clojure.lang.ExceptionInfo e e))]
+        (is (some? ex))
+        (is (= "Tokenizer output missing for works" (ex-message ex)))
+        (is (= ["000002_2-bbbbbbbbbbbb"] (:missing (ex-data ex)))))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest run-tolerates-per-work-tokenizer-errors-test
+  (let [root (fixture/temp-dir "abc-join-stats-run-tok-errors")
+        aat-dir (io/file root "aat")
+        out-root (io/file root "out")
+        plan-file (io/file root "plan.json")
+        parser-ir-fixture (.getAbsolutePath
+                           (io/file "examples/ab-validator-output/parser-ir.json"))
+        converter (write-stub!
+                   (io/file root "stub-converter.sh")
+                   (str "#!/usr/bin/env bash\nset -eu\n"
+                        "out=\"\"; div=\"\"\n"
+                        "while [ $# -gt 0 ]; do\n"
+                        "  case \"$1\" in\n"
+                        "    --parser-ir-out) out=\"$2\"; shift 2 ;;\n"
+                        "    --divergence-out) div=\"$2\"; shift 2 ;;\n"
+                        "    *) shift ;;\n"
+                        "  esac\n"
+                        "done\n"
+                        "cp " parser-ir-fixture " \"$out\"\n"
+                        "printf '{}' > \"$div\"\n"))
+        ;; tokenizes 000001_* but records 000002_* as a per-work error, the
+        ;; way tokenize-plaintext reports span-reconstruction failures
+        tokenizer (write-stub!
+                   (io/file root "stub-tokenizer.sh")
+                   (str "#!/usr/bin/env bash\nset -eu\n"
+                        "pd=\"\"; od=\"\"\n"
+                        "while [ $# -gt 0 ]; do\n"
+                        "  case \"$1\" in\n"
+                        "    --plaintext-dir) pd=\"$2\"; shift 2 ;;\n"
+                        "    --out-dir) od=\"$2\"; shift 2 ;;\n"
+                        "    *) shift ;;\n"
+                        "  esac\n"
+                        "done\n"
+                        "mkdir -p \"$od\"\n"
+                        "works=0; tokens=0; errors=0\n"
+                        ": > \"$od/tokenize-errors.jsonl\"\n"
+                        "for f in \"$pd\"/*.txt; do\n"
+                        "  stem=$(basename \"$f\" .txt)\n"
+                        "  case \"$stem\" in\n"
+                        "    000002*)\n"
+                        "      printf '{\"work_id\":\"%s\",\"error\":\"surface mismatch\"}\\n' \"$stem\" >> \"$od/tokenize-errors.jsonl\"\n"
+                        "      errors=$((errors+1)); continue ;;\n"
+                        "  esac\n"
+                        "  out=\"$od/$stem.tokens.jsonl\"\n"
+                        "  : > \"$out\"\n"
+                        "  while IFS= read -r line || [ -n \"$line\" ]; do\n"
+                        "    if [ -n \"$line\" ]; then\n"
+                        "      printf '{\"surface\":\"%s\"}\\n' \"$line\" >> \"$out\"\n"
+                        "      tokens=$((tokens+1))\n"
+                        "    fi\n"
+                        "  done < \"$f\"\n"
+                        "  works=$((works+1))\n"
+                        "done\n"
+                        "printf '{\"works\":%d,\"tokens\":%d,\"analyzer\":\"stub\",\"warnings\":0,\"errors\":%d}\\n' \"$works\" \"$tokens\" \"$errors\"\n"))]
+    (try
+      (.mkdirs aat-dir)
+      (spit (io/file aat-dir "000001_1-aaaaaaaaaaaa.json") "{}")
+      (spit (io/file aat-dir "000002_2-bbbbbbbbbbbb.json") "{}")
+      (manifest/write-json-file!
+       plan-file
+       {"label" "tok-errors-test"
+        "aat_dir" (str aat-dir)
+        "mapping" parser-ir-fixture
+        "stride" 1
+        "tokenizer_dict" "vibrato:stub-dict"})
+      (let [exit (run/run-annotation-join-stats-run!
+                  {:plan-file (str plan-file)
+                   :out-root (str out-root)
+                   :converter-bin (str converter)
+                   :tokenizer-bin (str tokenizer)})
+            run-record (files/read-json (io/file out-root "workflow-run.json"))
+            aggregate (files/read-json
+                       (io/file out-root "stats" "aggregate.json"))]
+        (is (= 0 exit))
+        (is (= "passed" (get run-record "status")))
+        (testing "the errored work is excluded and lands in skipped_work_ids"
+          (is (= 1 (get aggregate "work_count")))
+          (is (= ["000002_2-bbbbbbbbbbbb"] (get aggregate "skipped_work_ids"))))
+        (testing "the tokenize step records a warning about errored works"
+          (let [tokenize-step (->> (get run-record "steps")
+                                   (filter #(= "tokenize" (get % "id")))
+                                   first)]
+            (is (some #(and (= "warn" (get % "level"))
+                            (re-find #"1 works failed tokenization"
+                                     (get % "message")))
+                      (get tokenize-step "messages"))))))
+      (finally
+        (fixture/delete-tree! root)))))
+
 (deftest run-annotation-join-stats-run-end-to-end-test
   (let [root (fixture/temp-dir "abc-join-stats-run-e2e")
         aat-dir (io/file root "aat")
@@ -200,17 +351,35 @@
                         "done\n"
                         "cp " parser-ir-fixture " \"$out\"\n"
                         "printf '{}' > \"$div\"\n"))
-        ;; stub tokenizer: MeCab-format protocol — the whole input line as
-        ;; one token, one EOS per input line (blank lines included)
+        ;; stub tokenize-plaintext: each non-blank plaintext line becomes one
+        ;; token in that work's tokens.jsonl, plus the summary line on stdout
         tokenizer (write-stub!
                    (io/file root "stub-tokenizer.sh")
                    (str "#!/usr/bin/env bash\nset -eu\n"
-                        "while IFS= read -r line; do\n"
-                        "  if [ -n \"$line\" ]; then\n"
-                        "    printf '%s\\t形容詞\\n' \"$line\"\n"
-                        "  fi\n"
-                        "  echo EOS\n"
-                        "done\n"))]
+                        "[ \"$1\" = tokenize-plaintext ]\n"
+                        "pd=\"\"; od=\"\"\n"
+                        "while [ $# -gt 0 ]; do\n"
+                        "  case \"$1\" in\n"
+                        "    --plaintext-dir) pd=\"$2\"; shift 2 ;;\n"
+                        "    --out-dir) od=\"$2\"; shift 2 ;;\n"
+                        "    *) shift ;;\n"
+                        "  esac\n"
+                        "done\n"
+                        "mkdir -p \"$od\"\n"
+                        "works=0; tokens=0\n"
+                        "for f in \"$pd\"/*.txt; do\n"
+                        "  stem=$(basename \"$f\" .txt)\n"
+                        "  out=\"$od/$stem.tokens.jsonl\"\n"
+                        "  : > \"$out\"\n"
+                        "  while IFS= read -r line || [ -n \"$line\" ]; do\n"
+                        "    if [ -n \"$line\" ]; then\n"
+                        "      printf '{\"surface\":\"%s\"}\\n' \"$line\" >> \"$out\"\n"
+                        "      tokens=$((tokens+1))\n"
+                        "    fi\n"
+                        "  done < \"$f\"\n"
+                        "  works=$((works+1))\n"
+                        "done\n"
+                        "printf '{\"works\":%d,\"tokens\":%d,\"analyzer\":\"stub\",\"warnings\":0}\\n' \"$works\" \"$tokens\"\n"))]
     (try
       (.mkdirs aat-dir)
       (spit (io/file aat-dir "000001_1-aaaaaaaaaaaa.json") "{}")
@@ -244,12 +413,25 @@
           (is (= (files/read-json plan-file)
                  (files/read-json (io/file out-root "join-stats-plan.json")))))
         (testing "pipeline artifacts exist per work"
-          (doseq [work-id ["000001_1" "000002_2"]]
+          (doseq [work-id ["000001_1-aaaaaaaaaaaa" "000002_2-bbbbbbbbbbbb"]]
             (is (.isFile (io/file out-root "parser-ir" work-id
                                   "parser-ir.json")))
             (is (.isFile (io/file out-root "plaintext" (str work-id ".txt"))))
             (is (.isFile (io/file out-root "tokens"
                                   (str work-id ".tokens.jsonl"))))))
+        (testing "streamed demux keeps each work's tokens aligned to its
+                  own plaintext lines"
+          (doseq [work-id ["000001_1-aaaaaaaaaaaa" "000002_2-bbbbbbbbbbbb"]]
+            (let [plain-lines (->> (string/split
+                                    (slurp (io/file out-root "plaintext"
+                                                    (str work-id ".txt")))
+                                    #"\n" -1)
+                                   (remove string/blank?))
+                  token-surfaces (->> (files/read-json-lines
+                                       (io/file out-root "tokens"
+                                                (str work-id ".tokens.jsonl")))
+                                      (mapv #(get % "surface")))]
+              (is (= (vec plain-lines) token-surfaces)))))
         (testing "stats cover both sampled works"
           (is (= 2 (get aggregate "work_count")))
           (is (= [] (get aggregate "skipped_work_ids")))))

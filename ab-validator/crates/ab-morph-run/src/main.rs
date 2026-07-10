@@ -401,6 +401,22 @@ Defaults to the old-kana set 新字旧仮名,旧字旧仮名 when --works-parque
         #[arg(long, default_value_t = 50)]
         k: usize,
     },
+    /// Tokenizes every `*.txt` file directly in --plaintext-dir with exactly
+    /// one analyzer, writing `<out-dir>/<work-id>.tokens.jsonl` (one compact
+    /// JSON object per morpheme: surface, char_start, char_end) and a one-line
+    /// JSON summary on stdout. Works whose analysis fails get no tokens file
+    /// and are recorded in `<out-dir>/tokenize-errors.jsonl` (always written,
+    /// zero-byte when clean); such per-work errors do not fail the run.
+    TokenizePlaintext {
+        #[arg(long, required = true)]
+        analyzer: Vec<String>,
+        #[arg(long)]
+        plaintext_dir: PathBuf,
+        #[arg(long)]
+        out_dir: PathBuf,
+        #[arg(long, default_value_t = 1)]
+        jobs: usize,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -942,6 +958,18 @@ fn main() -> Result<()> {
         Command::ScoreInterestingLabels { labels, mapping, k } => {
             let scores = ab_morph_run::run_score_labels(&labels, &mapping, k)?;
             serde_json::to_writer_pretty(std::io::stdout(), &scores)?;
+            println!();
+            Ok(())
+        }
+        Command::TokenizePlaintext {
+            analyzer,
+            plaintext_dir,
+            out_dir,
+            jobs,
+        } => {
+            let summary =
+                ab_morph_run::run_tokenize_plaintext(&analyzer, &plaintext_dir, &out_dir, jobs)?;
+            serde_json::to_writer(std::io::stdout(), &summary)?;
             println!();
             Ok(())
         }
@@ -2592,6 +2620,56 @@ mod tests {
             panic!("expected score-interesting-labels command");
         };
         assert_eq!(k, 10);
+    }
+
+    #[test]
+    fn parses_tokenize_plaintext_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "tokenize-plaintext",
+            "--analyzer",
+            "vibrato:unidic-novel-202512",
+            "--plaintext-dir",
+            "scratch/plain",
+            "--out-dir",
+            "scratch/tokens",
+            "--jobs",
+            "4",
+        ]);
+
+        let Command::TokenizePlaintext {
+            analyzer,
+            plaintext_dir,
+            out_dir,
+            jobs,
+        } = args.command
+        else {
+            panic!("expected tokenize-plaintext command");
+        };
+
+        assert_eq!(analyzer, vec!["vibrato:unidic-novel-202512".to_owned()]);
+        assert_eq!(plaintext_dir, PathBuf::from("scratch/plain"));
+        assert_eq!(out_dir, PathBuf::from("scratch/tokens"));
+        assert_eq!(jobs, 4);
+    }
+
+    #[test]
+    fn tokenize_plaintext_jobs_defaults_to_one() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "tokenize-plaintext",
+            "--analyzer",
+            "vibrato",
+            "--plaintext-dir",
+            "scratch/plain",
+            "--out-dir",
+            "scratch/tokens",
+        ]);
+
+        let Command::TokenizePlaintext { jobs, .. } = args.command else {
+            panic!("expected tokenize-plaintext command");
+        };
+        assert_eq!(jobs, 1);
     }
 
     #[test]

@@ -148,6 +148,30 @@ impl Drop for LiveRootGuard {
     }
 }
 
+struct LoadedAatRoot {
+    root: AatRoot,
+    #[cfg(test)]
+    _live_root: LiveRootGuard,
+}
+
+impl LoadedAatRoot {
+    fn new(root: AatRoot) -> Self {
+        Self {
+            root,
+            #[cfg(test)]
+            _live_root: LiveRootGuard::new(),
+        }
+    }
+
+    fn work_id(&self) -> &str {
+        &self.root.work_id
+    }
+
+    fn summarize(self) -> Result<AatSummary> {
+        summarize(self.root)
+    }
+}
+
 /// Compare AAT summary trees from two directories.
 ///
 /// # Errors
@@ -356,10 +380,9 @@ fn read_aat_summaries(root: &Path) -> Result<BTreeMap<String, AatSummary>> {
                 fs::read(path).with_context(|| format!("failed to read {}", path.display()))?;
             let root: AatRoot = serde_json::from_slice(&bytes)
                 .with_context(|| format!("failed to parse {}", path.display()))?;
-            #[cfg(test)]
-            let _live_root = LiveRootGuard::new();
-            let work_id = root.work_id.clone();
-            let summary = summarize(root)?;
+            let root = LoadedAatRoot::new(root);
+            let work_id = root.work_id().to_owned();
+            let summary = root.summarize()?;
             Ok::<_, anyhow::Error>(PathSummary {
                 path: path.to_owned(),
                 work_id,

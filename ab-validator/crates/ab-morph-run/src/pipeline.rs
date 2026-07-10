@@ -20,6 +20,9 @@ impl ab_ortho_detect::OrthoTokenizer for SharedVibratoOrthoTokenizer {
 #[cfg(test)]
 thread_local! {
     static DETECTOR_BUILD_COUNT: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    static TEST_ORTHO_DETECTOR: std::cell::RefCell<Option<PreparedOrthoDetector>> = const {
+        std::cell::RefCell::new(None)
+    };
 }
 
 fn build_heuristic_detector(analyzers: &[Arc<LoadedAnalyzer>]) -> Result<Arc<dyn OrthoDetector>> {
@@ -68,6 +71,10 @@ fn prepare_ortho_detector(
 ) -> Result<PreparedOrthoDetector> {
     #[cfg(test)]
     DETECTOR_BUILD_COUNT.with(|count| count.set(count.get() + 1));
+    #[cfg(test)]
+    if let Some(detector) = TEST_ORTHO_DETECTOR.with(|slot| slot.borrow().clone()) {
+        return Ok(detector);
+    }
 
     let detector = match mode {
         OrthoDetectMode::Off => None,
@@ -86,6 +93,13 @@ pub(crate) fn reset_detector_build_count() {
 #[cfg(test)]
 pub(crate) fn detector_build_count() -> usize {
     DETECTOR_BUILD_COUNT.with(std::cell::Cell::get)
+}
+
+#[cfg(test)]
+pub(crate) fn set_test_ortho_detector(detector: Option<Arc<dyn OrthoDetector>>) {
+    TEST_ORTHO_DETECTOR.with(|slot| {
+        *slot.borrow_mut() = detector.map(|detector| PreparedOrthoDetector(Some(detector)));
+    });
 }
 
 /// Wall-time split for a serial analyze run: time spent in the per-document
@@ -1421,8 +1435,6 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
                                 total: batch_len,
                             }),
                             ortho_detect,
-                            // Rebuilt per batch; the model file is re-read once per
-                            // batch when ortho_detect == Ml (heuristic has no file).
                             ortho_ml_model: ortho_ml_model.clone(),
                             prepared_ortho_detector: Some(prepared_ortho_detector.clone()),
                         },

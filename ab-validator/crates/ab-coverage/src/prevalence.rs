@@ -95,8 +95,10 @@ pub fn run_prevalence(
                                 source: &source,
                             });
                             for counter in &mut local.rows {
-                                counter
-                                    .observe(work_id.clone(), occurrences[counter.row_id.as_str()]);
+                                let count = occurrences[counter.row_id.as_str()];
+                                if count > 0 {
+                                    counter.observe(work_id.clone(), count);
+                                }
                             }
                             local.processed += 1;
                         }

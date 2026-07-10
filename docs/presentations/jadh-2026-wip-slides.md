@@ -589,6 +589,6 @@ Class: bounded live query plus checked-in corpus report
 - Mapping rule A-06:
   `jq '.transform_rule_descriptions[] | select(.rule_id == "A-06")' ab-validator/data/aat-to-parser-ir-mapping-v1.json`
 - Publication fixture:
-  `nix run .#abc-materialize-publication -- abc/examples/v0/example-work/parser-ir.json abc/examples/v0/example-work/metadata-record.json abc/examples/v0/example-persons /tmp/jadh-publication --generated-at 2026-07-03T00:00:00Z`
+  `nix run .#abc-materialize-publication -- examples/v0/example-work/parser-ir.json examples/v0/example-work/metadata-record.json examples/v0/example-persons /tmp/jadh-publication --generated-at 2026-07-03T00:00:00Z`
 
 The publication command demonstrates the reproducible fixture—not the gated real Melos comparison.

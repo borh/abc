@@ -1305,6 +1305,18 @@
               touch "$out"
             '';
 
+        # Shared body for the aozora2html Rust-mapper parity smoke: build the
+        # mapper offline from the vendored deps, then run the pytest oracle.
+        # `root` is the shell expression naming the checked-out repo root.
+        aozora2htmlParityText = root: ''
+          export AB_AOZORA2HTML_BIN="${aozora2htmlParser}/bin/aozora2html"
+          cargo \
+            --config "source.crates-io.replace-with='vendored-sources'" \
+            --config "source.vendored-sources.directory='${aozora2htmlCargoDeps}'" \
+            build --manifest-path "${root}/adapters/aozora2html/Cargo.toml" --release --offline
+          python -m pytest "${root}/adapters/aozora2html/tests/test_mapper.py" -vv
+        '';
+
         aozora2htmlRustParityShell = pkgs.writeShellApplication {
           name = "aozora2html-rust-parity";
           runtimeInputs = [
@@ -1317,13 +1329,8 @@
             if [ ! -d "$repo_root/adapters/aozora2html" ]; then
               repo_root="${source}"
             fi
-            export AB_AOZORA2HTML_BIN="${aozora2htmlParser}/bin/aozora2html"
-            cargo \
-              --config "source.crates-io.replace-with='vendored-sources'" \
-              --config "source.vendored-sources.directory='${aozora2htmlCargoDeps}'" \
-              build --manifest-path "$repo_root/adapters/aozora2html/Cargo.toml" --release --offline
-            python -m pytest "$repo_root/adapters/aozora2html/tests/test_mapper.py" -vv
-          '';
+          ''
+          + aozora2htmlParityText "$repo_root";
         };
 
         aozora2htmlRustParityCheck =
@@ -1335,19 +1342,18 @@
                 pythonWithAatSchemaDeps
               ];
             }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
-              export AB_AOZORA2HTML_BIN="${aozora2htmlParser}/bin/aozora2html"
-              cargo \
-                --config "source.crates-io.replace-with='vendored-sources'" \
-                --config "source.vendored-sources.directory='${aozora2htmlCargoDeps}'" \
-                build --manifest-path "$work_dir/source/adapters/aozora2html/Cargo.toml" --release --offline
-              python -m pytest "$work_dir/source/adapters/aozora2html/tests/test_mapper.py" -vv
-              touch "$out"
-            '';
+            (
+              ''
+                work_dir="$(mktemp -d)"
+                cp -R "${source}" "$work_dir/source"
+                chmod -R +w "$work_dir/source"
+                cd "$work_dir/source"
+              ''
+              + aozora2htmlParityText "$work_dir/source"
+              + ''
+                touch "$out"
+              ''
+            );
 
         aatOracleDataSchemaSmokeShell = pkgs.writeShellApplication {
           name = "aat-oracle-data-schema-smoke";

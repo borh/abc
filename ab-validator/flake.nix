@@ -676,8 +676,14 @@
             manifestPath,
             cargoDeps,
             extraEnv ? { },
+            checkSuffix ? "cargo-quality-check",
+            cargoCommand ? ''
+              cargo fmt --manifest-path "$manifest" -- --check
+              cargo clippy --manifest-path "$manifest" \
+                --all-targets --offline --locked -- -D warnings
+            '',
           }:
-          pkgs.runCommand "${name}-cargo-quality-check"
+          pkgs.runCommand "${name}-${checkSuffix}"
             (
               {
                 nativeBuildInputs = [ rustToolchain ];
@@ -694,9 +700,7 @@
               substituteInPlace "$CARGO_HOME/config.toml" \
                 --replace-fail 'directory = "cargo-vendor-dir"' 'directory = "${cargoDeps}"'
               manifest="$work_dir/source/${manifestPath}"
-              cargo fmt --manifest-path "$manifest" -- --check
-              cargo clippy --manifest-path "$manifest" \
-                --all-targets --offline --locked -- -D warnings
+              ${cargoCommand}
               touch "$out"
             '';
 
@@ -735,6 +739,69 @@
 
         adapterCargoQualityCheck = pkgs.runCommand "adapter-cargo-quality-check" { } ''
           ${pkgs.lib.concatMapStringsSep "\n" (check: "test -e ${check}") adapterCargoQualityChecks}
+          touch "$out"
+        '';
+
+        adapterDecodingContractChecks = [
+          (mkAdapterCargoQualityCheck {
+            name = "aozora";
+            manifestPath = "adapters/aozora/Cargo.toml";
+            cargoDeps = aozoraCargoDeps;
+            checkSuffix = "decoding-contract-check";
+            cargoCommand = ''
+              cargo test --manifest-path "$manifest" \
+                --offline --locked source_decoding_contract
+            '';
+          })
+          (mkAdapterCargoQualityCheck {
+            name = "aozora2";
+            manifestPath = "adapters/aozora2/Cargo.toml";
+            cargoDeps = aozora2AdapterCargoDeps;
+            checkSuffix = "decoding-contract-check";
+            cargoCommand = ''
+              cargo test --manifest-path "$manifest" \
+                --offline --locked source_decoding_contract
+            '';
+          })
+          (mkAdapterCargoQualityCheck {
+            name = "aozora2html";
+            manifestPath = "adapters/aozora2html/Cargo.toml";
+            cargoDeps = aozora2htmlCargoDeps;
+            checkSuffix = "decoding-contract-check";
+            cargoCommand = ''
+              cargo test --manifest-path "$manifest" \
+                --offline --locked source_decoding_contract
+            '';
+          })
+          (mkAdapterCargoQualityCheck {
+            name = "aozora-rs";
+            manifestPath = "adapters/aozora-rs/Cargo.toml";
+            cargoDeps = aozoraRsAdapterCargoDeps;
+            checkSuffix = "decoding-contract-check";
+            extraEnv = {
+              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
+              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
+              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
+            };
+            cargoCommand = ''
+              cargo test --manifest-path "$manifest" \
+                --offline --locked source_decoding_contract
+            '';
+          })
+          (mkAdapterCargoQualityCheck {
+            name = "aozora-epub3";
+            manifestPath = "adapters/aozora-epub3/Cargo.toml";
+            cargoDeps = aozoraEpub3CargoDeps;
+            checkSuffix = "decoding-contract-check";
+            cargoCommand = ''
+              cargo test --manifest-path "$manifest" \
+                --offline --locked source_decoding_contract
+            '';
+          })
+        ];
+
+        adapterDecodingContractCheck = pkgs.runCommand "adapter-decoding-contract-check" { } ''
+          ${pkgs.lib.concatMapStringsSep "\n" (check: "test -e ${check}") adapterDecodingContractChecks}
           touch "$out"
         '';
 
@@ -1927,6 +1994,7 @@
           aozora-smoke = aozoraAdapterSmokeCheck;
           aozora-integration = aozoraAdapterIntegrationCheck;
           adapters-cargo-quality = adapterCargoQualityCheck;
+          adapter-decoding-contract = adapterDecodingContractCheck;
           aozora-notation-spec-comparator-smoke = aozoraNotationSpecComparatorSmokeCheck;
           aozora-epub3-smoke = aozoraEpub3SmokeCheck;
           adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;

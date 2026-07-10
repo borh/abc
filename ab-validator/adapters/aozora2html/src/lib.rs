@@ -161,3 +161,35 @@ pub fn map_with_error_message(
         parser_error_message,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(serde::Deserialize)]
+    struct SourceDecodingVector {
+        name: String,
+        bytes: Vec<u8>,
+        text: String,
+        encoding: String,
+        sha256: String,
+    }
+
+    #[test]
+    fn source_decoding_contract() {
+        let vectors: Vec<SourceDecodingVector> = serde_json::from_str(include_str!(
+            "../../../data/fixtures/source-decoding-contract.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            let decoded = decode_source_bytes(&vector.bytes).unwrap();
+            assert_eq!(decoded.text, vector.text, "{} text", vector.name);
+            assert_eq!(
+                decoded.encoding, vector.encoding,
+                "{} encoding",
+                vector.name
+            );
+            assert_eq!(decoded.source_hash, vector.sha256, "{} hash", vector.name);
+        }
+    }
+}

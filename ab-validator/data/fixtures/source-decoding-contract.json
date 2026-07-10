@@ -1,0 +1,30 @@
+[
+  {
+    "name": "utf8",
+    "bytes": [97, 98, 99],
+    "text": "abc",
+    "encoding": "utf-8",
+    "sha256": "sha256:ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+  },
+  {
+    "name": "utf8-bom",
+    "bytes": [239, 187, 191, 97, 98, 99],
+    "text": "abc",
+    "encoding": "utf-8-bom",
+    "sha256": "sha256:1c28dc3f1f804a1ad9c9b4b4cf5e2658d16ad4ed08e3020d04a8d2865018947c"
+  },
+  {
+    "name": "windows-31j",
+    "bytes": [140, 225, 148, 121],
+    "text": "吾輩",
+    "encoding": "windows-31j",
+    "sha256": "sha256:75b97809c3a81e813199db4c45e929f442f7660105a23fb8fe8da6555a2c161b"
+  },
+  {
+    "name": "windows-31j-lossy",
+    "bytes": [130, 160, 255],
+    "text": "あ�",
+    "encoding": "windows-31j-lossy",
+    "sha256": "sha256:81e29c40b6c9dd61f2d6f80a5ade5851d78ff1965fbd6ad9927cff5464c3aca0"
+  }
+]

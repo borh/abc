@@ -101,8 +101,11 @@ def check(warehouse_dir: str | Path, input_set_hash: str) -> dict[str, Any]:
     except (ValueError, OSError):
         return {"status": "invalid", "reason": "malformed run manifest", "run_dir": str(run_dir)}
     if not isinstance(manifest, dict):
-        return {"status": "invalid", "reason": "run manifest is not an object",
-                "run_dir": str(run_dir)}
+        return {
+            "status": "invalid",
+            "reason": "run manifest is not an object",
+            "run_dir": str(run_dir),
+        }
     # Outputs may have vanished/been corrupted since publish (only the manifest
     # survives, or the run dir is gone); classify fails toward recompute inside its
     # own try/except, not an uncaught exception.
@@ -113,13 +116,23 @@ def check(warehouse_dir: str | Path, input_set_hash: str) -> dict[str, Any]:
         lambda: hash_run_dir(run_dir),
     )
     if decision.verdict is freshness.Verdict.INPUT_MISMATCH:
-        return {"status": "invalid", "reason": "manifest input_set_hash mismatch",
-                "run_dir": str(run_dir)}
+        return {
+            "status": "invalid",
+            "reason": "manifest input_set_hash mismatch",
+            "run_dir": str(run_dir),
+        }
     if decision.verdict is freshness.Verdict.OUTPUT_UNREADABLE:
-        return {"status": "stale", "reason": "run outputs missing or unreadable",
-                "run_dir": str(run_dir)}
+        return {
+            "status": "stale",
+            "reason": "run outputs missing or unreadable",
+            "run_dir": str(run_dir),
+        }
     if decision.verdict is freshness.Verdict.OUTPUT_MISMATCH:
-        return {"status": "stale", "reason": "output content hash mismatch",
-                "recorded": decision.recorded, "actual": decision.actual,
-                "run_dir": str(run_dir)}
+        return {
+            "status": "stale",
+            "reason": "output content hash mismatch",
+            "recorded": decision.recorded,
+            "actual": decision.actual,
+            "run_dir": str(run_dir),
+        }
     return {"status": "fresh", "run_dir": str(run_dir), "run_id": run_dir.name}

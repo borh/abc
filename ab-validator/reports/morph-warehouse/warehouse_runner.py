@@ -68,9 +68,7 @@ def resolve_compute_record(
     compute()  # raises on failure -> nothing recorded
 
     run_dir = Path(warehouse_dir) / "runs" / run_id
-    warehouse_index.write_run_manifest(
-        run_dir, identity_object=identity_object, input_set_hash=ish
-    )
+    warehouse_index.write_run_manifest(run_dir, identity_object=identity_object, input_set_hash=ish)
     warehouse_index.link_by_input(warehouse_dir, ish, run_id)
     return {
         "action": "computed",
@@ -107,22 +105,30 @@ def main(argv: list[str] | None = None) -> int:
     raw = list(sys.argv[1:] if argv is None else argv)
     if "--" in raw:
         cut = raw.index("--")
-        wrapper_argv, command = raw[:cut], raw[cut + 1:]
+        wrapper_argv, command = raw[:cut], raw[cut + 1 :]
     else:
         wrapper_argv, command = raw, []
 
     ap = argparse.ArgumentParser(description="Gate a morph-warehouse run on input-set identity.")
     ap.add_argument("--aat-dir", required=True)
-    ap.add_argument("--engine-binary", required=True,
-                    help="the built ab-morph-run binary (hashed into identity)")
+    ap.add_argument(
+        "--engine-binary",
+        required=True,
+        help="the built ab-morph-run binary (hashed into identity)",
+    )
     ap.add_argument("--warehouse-dir", required=True)
     ap.add_argument("--run-id", required=True)
     ap.add_argument("--warehouse-profile", required=True)
     ap.add_argument("--analyzer", action="append", default=[], dest="analyzers")
     ap.add_argument("--ortho-detect", default=None)
     ap.add_argument("--works-parquet", default=None)
-    ap.add_argument("--dict", action="append", default=[], dest="dicts",
-                    help="name=store_path (repeatable); nix store paths are content ids")
+    ap.add_argument(
+        "--dict",
+        action="append",
+        default=[],
+        dest="dicts",
+        help="name=store_path (repeatable); nix store paths are content ids",
+    )
     ap.add_argument("--schema-file", action="append", default=[], dest="schema_files")
     ap.add_argument("--force", action="store_true")
     args = ap.parse_args(wrapper_argv)
@@ -158,8 +164,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"compute command failed (exit {exc.returncode})", file=sys.stderr)
         return exc.returncode
     if result["action"] == "skip":
-        print(f"SKIP {result['run_id']}: fresh run already indexed for these inputs "
-              f"({result['input_set_hash']}); pass --force to recompute.", file=sys.stderr)
+        print(
+            f"SKIP {result['run_id']}: fresh run already indexed for these inputs "
+            f"({result['input_set_hash']}); pass --force to recompute.",
+            file=sys.stderr,
+        )
     print(json.dumps(result))
     return 0
 

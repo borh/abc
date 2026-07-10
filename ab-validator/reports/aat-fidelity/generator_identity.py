@@ -73,9 +73,7 @@ def build_identity_object(
         "feature_patterns_hash": hashing.file_sha256(Path(feature_patterns_file)),
         "timeout": timeout,
         "features": features,
-        "work_ids_hash": (
-            hashing.file_sha256(Path(work_ids)) if work_ids is not None else None
-        ),
+        "work_ids_hash": (hashing.file_sha256(Path(work_ids)) if work_ids is not None else None),
     }
 
 
@@ -121,16 +119,23 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--timeout", default=None)
     ap.add_argument("--features", default=None)
     ap.add_argument("--work-ids", default=None)
-    ap.add_argument("--emit-identity", default=None,
-                     help="write {input_set_hash, identity_object} JSON to this path")
+    ap.add_argument(
+        "--emit-identity",
+        default=None,
+        help="write {input_set_hash, identity_object} JSON to this path",
+    )
     a = ap.parse_args(sys.argv[1:] if argv is None else argv)
     pay = identity_payload(
-        corpus_dir=a.corpus_dir, adapter_version=a.adapter_version,
+        corpus_dir=a.corpus_dir,
+        adapter_version=a.adapter_version,
         adapter_binary=a.adapter_binary,
-        ab_index_binary=a.ab_index_binary, ab_check_binary=a.ab_check_binary,
+        ab_index_binary=a.ab_index_binary,
+        ab_check_binary=a.ab_check_binary,
         feature_patterns_file=a.feature_patterns,
         renderer_dir=a.renderer_dir,
-        timeout=a.timeout, features=a.features, work_ids=a.work_ids,
+        timeout=a.timeout,
+        features=a.features,
+        work_ids=a.work_ids,
     )
     if a.emit_identity:
         Path(a.emit_identity).write_text(json.dumps(pay) + "\n", encoding="utf-8")

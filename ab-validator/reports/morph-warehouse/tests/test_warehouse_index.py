@@ -50,6 +50,7 @@ class WarehouseIndex(unittest.TestCase):
 
     def test_hash_run_dir_matches_tree_hash(self) -> None:
         import tree_hash
+
         # same exclude the runner uses for the manifest
         self.assertEqual(
             wix.hash_run_dir(self.run, exclude_names=("run-manifest.json",)),
@@ -120,9 +121,7 @@ class WarehouseIndex(unittest.TestCase):
         self.assertEqual(wix.check(self.wh, self.ish)["status"], "fresh")
 
     def test_manifest_records_identity_and_output_hash(self) -> None:
-        path = wix.write_run_manifest(
-            self.run, identity_object=self.ident, input_set_hash=self.ish
-        )
+        path = wix.write_run_manifest(self.run, identity_object=self.ident, input_set_hash=self.ish)
         m = json.loads(path.read_text(encoding="utf-8"))
         self.assertEqual(m["manifest_format"], wix.MANIFEST_FORMAT)
         self.assertEqual(m["input_set_hash"], self.ish)

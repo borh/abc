@@ -58,7 +58,12 @@ class WarehouseIdentity(unittest.TestCase):
     def test_dictionary_path_change_changes_hash(self) -> None:
         self.assertNotEqual(
             self.h(),
-            self.h(dictionaries={"sudachi": "/nix/store/ZZZ-sudachi", "vibrato": "/nix/store/bbb-vibrato"}),
+            self.h(
+                dictionaries={
+                    "sudachi": "/nix/store/ZZZ-sudachi",
+                    "vibrato": "/nix/store/bbb-vibrato",
+                }
+            ),
         )
 
     def test_profile_change_changes_hash(self) -> None:
@@ -89,8 +94,16 @@ class WarehouseIdentity(unittest.TestCase):
         obj = wi.build_identity_object(**self.base)
         self.assertEqual(
             set(obj),
-            {"aat_content_hash", "engine_binary_hash", "dictionaries", "analyzers",
-             "warehouse_profile", "ortho_detect", "works_parquet_hash", "schema_version"},
+            {
+                "aat_content_hash",
+                "engine_binary_hash",
+                "dictionaries",
+                "analyzers",
+                "warehouse_profile",
+                "ortho_detect",
+                "works_parquet_hash",
+                "schema_version",
+            },
         )
         self.assertIsNone(obj["ortho_detect"])
         self.assertIsNone(obj["works_parquet_hash"])

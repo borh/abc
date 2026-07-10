@@ -50,9 +50,7 @@ class LegacyJsonC14n(unittest.TestCase):
         # output to the shared one across the golden inputs, proving the
         # extraction is behavior-preserving for every current caller.
         reports = Path(__file__).resolve().parents[2]  # ab-validator/reports
-        c14n = _load(
-            reports / "aat-fidelity/aat_parser_ir_mapping/c14n.py", "c14n_legacy"
-        )
+        c14n = _load(reports / "aat-fidelity/aat_parser_ir_mapping/c14n.py", "c14n_legacy")
         level3 = _load(reports / "parser-ir/level3-admission.py", "level3_legacy")
         pub = _load(reports / "parser-ir/publication-coverage.py", "pub_legacy")
         for value, _ in GOLDEN:

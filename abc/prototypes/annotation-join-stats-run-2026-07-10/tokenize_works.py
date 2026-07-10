@@ -11,6 +11,7 @@ Output contract (abc annotation-join-stats token handoff):
   <tokens-dir>/<work-id>.tokens.jsonl — one {"surface": ...} per token line,
   in text order.
 """
+
 import json
 import subprocess
 import sys
@@ -53,10 +54,7 @@ for raw in proc.stdout.decode("utf-8").split("\n"):
 
 expected_lines = sum(n for _, n in line_counts)
 if len(lines_tokens) != expected_lines:
-    sys.exit(
-        f"line-count mismatch: fed {expected_lines} lines, "
-        f"got {len(lines_tokens)} EOS groups"
-    )
+    sys.exit(f"line-count mismatch: fed {expected_lines} lines, got {len(lines_tokens)} EOS groups")
 
 offset = 0
 for work_id, n_lines in line_counts:

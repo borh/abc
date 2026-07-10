@@ -52,14 +52,24 @@ class RunnerCLI(unittest.TestCase):
 
     def _argv(self, force: bool = False) -> list[str]:
         argv = [
-            "--aat-dir", str(self.aat),
-            "--engine-binary", str(self.engine),
-            "--warehouse-dir", str(self.wh),
-            "--run-id", self.run_id,
-            "--warehouse-profile", "full",
-            "--analyzer", "vibrato", "--analyzer", "sudachi-a",
-            "--dict", "sudachi=/nix/store/aaa",
-            "--schema-file", str(self.schema),
+            "--aat-dir",
+            str(self.aat),
+            "--engine-binary",
+            str(self.engine),
+            "--warehouse-dir",
+            str(self.wh),
+            "--run-id",
+            self.run_id,
+            "--warehouse-profile",
+            "full",
+            "--analyzer",
+            "vibrato",
+            "--analyzer",
+            "sudachi-a",
+            "--dict",
+            "sudachi=/nix/store/aaa",
+            "--schema-file",
+            str(self.schema),
         ]
         if force:
             argv.append("--force")
@@ -78,8 +88,11 @@ class RunnerCLI(unittest.TestCase):
 
     def _expected_hash(self) -> str:
         return wi.warehouse_input_set_hash(
-            aat_dir=self.aat, engine_binary=self.engine, dictionaries={"sudachi": "/nix/store/aaa"},
-            analyzers=["vibrato", "sudachi-a"], warehouse_profile="full",
+            aat_dir=self.aat,
+            engine_binary=self.engine,
+            dictionaries={"sudachi": "/nix/store/aaa"},
+            analyzers=["vibrato", "sudachi-a"],
+            warehouse_profile="full",
             schema_files=[self.schema],
         )
 
@@ -105,27 +118,57 @@ class RunnerCLI(unittest.TestCase):
 
     def test_missing_command_after_dashdash_errors(self) -> None:
         with self.assertRaises(SystemExit):
-            wr.main([
-                "--aat-dir", str(self.aat), "--engine-binary", str(self.engine),
-                "--warehouse-dir", str(self.wh),
-                "--run-id", self.run_id, "--warehouse-profile", "full",
-            ])
+            wr.main(
+                [
+                    "--aat-dir",
+                    str(self.aat),
+                    "--engine-binary",
+                    str(self.engine),
+                    "--warehouse-dir",
+                    str(self.wh),
+                    "--run-id",
+                    self.run_id,
+                    "--warehouse-profile",
+                    "full",
+                ]
+            )
 
     def test_empty_command_after_dashdash_errors(self) -> None:
         with self.assertRaises(SystemExit):
-            wr.main([
-                "--aat-dir", str(self.aat), "--engine-binary", str(self.engine),
-                "--warehouse-dir", str(self.wh),
-                "--run-id", self.run_id, "--warehouse-profile", "full", "--",
-            ])
+            wr.main(
+                [
+                    "--aat-dir",
+                    str(self.aat),
+                    "--engine-binary",
+                    str(self.engine),
+                    "--warehouse-dir",
+                    str(self.wh),
+                    "--run-id",
+                    self.run_id,
+                    "--warehouse-profile",
+                    "full",
+                    "--",
+                ]
+            )
 
     def test_compute_failure_propagates_exit_code(self) -> None:
         argv = [
-            "--aat-dir", str(self.aat), "--engine-binary", str(self.engine),
-            "--warehouse-dir", str(self.wh),
-            "--run-id", self.run_id, "--warehouse-profile", "full",
-            "--schema-file", str(self.schema),
-            "--", sys.executable, "-c", "import sys; sys.exit(3)",
+            "--aat-dir",
+            str(self.aat),
+            "--engine-binary",
+            str(self.engine),
+            "--warehouse-dir",
+            str(self.wh),
+            "--run-id",
+            self.run_id,
+            "--warehouse-profile",
+            "full",
+            "--schema-file",
+            str(self.schema),
+            "--",
+            sys.executable,
+            "-c",
+            "import sys; sys.exit(3)",
         ]
         buf = io.StringIO()
         with redirect_stdout(buf):
@@ -135,13 +178,24 @@ class RunnerCLI(unittest.TestCase):
 
     def test_bad_dict_pair_errors(self) -> None:
         with self.assertRaises(SystemExit):
-            wr.main([
-                "--aat-dir", str(self.aat), "--engine-binary", str(self.engine),
-                "--warehouse-dir", str(self.wh),
-                "--run-id", self.run_id, "--warehouse-profile", "full",
-                "--dict", "no-equals-sign",
-                "--", "true",
-            ])
+            wr.main(
+                [
+                    "--aat-dir",
+                    str(self.aat),
+                    "--engine-binary",
+                    str(self.engine),
+                    "--warehouse-dir",
+                    str(self.wh),
+                    "--run-id",
+                    self.run_id,
+                    "--warehouse-profile",
+                    "full",
+                    "--dict",
+                    "no-equals-sign",
+                    "--",
+                    "true",
+                ]
+            )
 
 
 if __name__ == "__main__":

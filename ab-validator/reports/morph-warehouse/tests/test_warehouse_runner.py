@@ -37,8 +37,10 @@ class WarehouseRunner(unittest.TestCase):
 
     def test_missing_computes_and_records(self) -> None:
         res = wr.resolve_compute_record(
-            warehouse_dir=self.wh, run_id=self.run_id,
-            identity_object=self.ident, compute=self._make_compute(),
+            warehouse_dir=self.wh,
+            run_id=self.run_id,
+            identity_object=self.ident,
+            compute=self._make_compute(),
         )
         self.assertEqual(res["action"], "computed")
         self.assertEqual(res["reason"], "missing")
@@ -48,13 +50,17 @@ class WarehouseRunner(unittest.TestCase):
 
     def test_second_run_unchanged_skips_without_computing(self) -> None:
         wr.resolve_compute_record(
-            warehouse_dir=self.wh, run_id=self.run_id,
-            identity_object=self.ident, compute=self._make_compute(),
+            warehouse_dir=self.wh,
+            run_id=self.run_id,
+            identity_object=self.ident,
+            compute=self._make_compute(),
         )
         self.calls = 0
         res = wr.resolve_compute_record(
-            warehouse_dir=self.wh, run_id=self.run_id,
-            identity_object=self.ident, compute=self._make_compute(),
+            warehouse_dir=self.wh,
+            run_id=self.run_id,
+            identity_object=self.ident,
+            compute=self._make_compute(),
         )
         self.assertEqual(res["action"], "skip")
         self.assertEqual(res["reason"], "fresh")
@@ -62,13 +68,18 @@ class WarehouseRunner(unittest.TestCase):
 
     def test_force_recomputes_even_when_fresh(self) -> None:
         wr.resolve_compute_record(
-            warehouse_dir=self.wh, run_id=self.run_id,
-            identity_object=self.ident, compute=self._make_compute(),
+            warehouse_dir=self.wh,
+            run_id=self.run_id,
+            identity_object=self.ident,
+            compute=self._make_compute(),
         )
         self.calls = 0
         res = wr.resolve_compute_record(
-            warehouse_dir=self.wh, run_id=self.run_id,
-            identity_object=self.ident, compute=self._make_compute(), force=True,
+            warehouse_dir=self.wh,
+            run_id=self.run_id,
+            identity_object=self.ident,
+            compute=self._make_compute(),
+            force=True,
         )
         self.assertEqual(res["action"], "computed")
         self.assertEqual(res["reason"], "forced")
@@ -76,16 +87,20 @@ class WarehouseRunner(unittest.TestCase):
 
     def test_stale_outputs_recompute(self) -> None:
         first = wr.resolve_compute_record(
-            warehouse_dir=self.wh, run_id=self.run_id,
-            identity_object=self.ident, compute=self._make_compute(),
+            warehouse_dir=self.wh,
+            run_id=self.run_id,
+            identity_object=self.ident,
+            compute=self._make_compute(),
         )
         # corrupt an output after publish
         (self.wh / "runs" / self.run_id / "runs.parquet").write_bytes(b"CORRUPT")
         self.assertEqual(wix.check(self.wh, first["input_set_hash"])["status"], "stale")
         self.calls = 0
         res = wr.resolve_compute_record(
-            warehouse_dir=self.wh, run_id=self.run_id,
-            identity_object=self.ident, compute=self._make_compute(),
+            warehouse_dir=self.wh,
+            run_id=self.run_id,
+            identity_object=self.ident,
+            compute=self._make_compute(),
         )
         self.assertEqual(res["action"], "computed")
         self.assertEqual(res["reason"], "stale")
@@ -94,12 +109,15 @@ class WarehouseRunner(unittest.TestCase):
 
     def test_changed_identity_computes_new(self) -> None:
         wr.resolve_compute_record(
-            warehouse_dir=self.wh, run_id=self.run_id,
-            identity_object=self.ident, compute=self._make_compute(),
+            warehouse_dir=self.wh,
+            run_id=self.run_id,
+            identity_object=self.ident,
+            compute=self._make_compute(),
         )
         self.calls = 0
         res = wr.resolve_compute_record(
-            warehouse_dir=self.wh, run_id=self.run_id,
+            warehouse_dir=self.wh,
+            run_id=self.run_id,
             identity_object={**self.ident, "warehouse_profile": "triage"},
             compute=self._make_compute(),
         )
@@ -114,8 +132,10 @@ class WarehouseRunner(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             wr.resolve_compute_record(
-                warehouse_dir=self.wh, run_id=self.run_id,
-                identity_object=self.ident, compute=boom,
+                warehouse_dir=self.wh,
+                run_id=self.run_id,
+                identity_object=self.ident,
+                compute=boom,
             )
         # no by-input index entry written on failure
         self.assertFalse((self.wh / "by-input").exists())

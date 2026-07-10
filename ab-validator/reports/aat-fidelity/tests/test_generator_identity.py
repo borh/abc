@@ -33,9 +33,11 @@ class GeneratorIdentity(unittest.TestCase):
         (self.renderer / "lib").mkdir(parents=True)
         (self.renderer / "lib" / "engine.rb").write_text("render v1", encoding="utf-8")
         self.base = dict(
-            corpus_dir=self.corpus, adapter_version="1.2.3",
+            corpus_dir=self.corpus,
+            adapter_version="1.2.3",
             adapter_binary=self.adapter,
-            ab_index_binary=self.ab_index, ab_check_binary=self.ab_check,
+            ab_index_binary=self.ab_index,
+            ab_check_binary=self.ab_check,
             feature_patterns_file=self.fp,
         )
 
@@ -91,9 +93,18 @@ class GeneratorIdentity(unittest.TestCase):
         obj = gi.build_identity_object(**self.base)
         self.assertEqual(
             set(obj),
-            {"corpus_content_hash", "adapter_version", "adapter_binary_hash",
-             "ab_index_binary_hash", "ab_check_binary_hash", "renderer_content_hash",
-             "feature_patterns_hash", "timeout", "features", "work_ids_hash"},
+            {
+                "corpus_content_hash",
+                "adapter_version",
+                "adapter_binary_hash",
+                "ab_index_binary_hash",
+                "ab_check_binary_hash",
+                "renderer_content_hash",
+                "feature_patterns_hash",
+                "timeout",
+                "features",
+                "work_ids_hash",
+            },
         )
         self.assertIsNone(obj["timeout"])
         self.assertIsNone(obj["features"])
@@ -132,6 +143,7 @@ class GeneratorIdentity(unittest.TestCase):
 
     def test_identity_payload_hash_is_of_its_own_object(self) -> None:
         import run_identity
+
         pay = gi.identity_payload(**self.base)
         self.assertEqual(pay["input_set_hash"], run_identity.input_set_hash(pay["identity_object"]))
 
@@ -139,22 +151,41 @@ class GeneratorIdentity(unittest.TestCase):
         import io
         import json as _json
         from contextlib import redirect_stdout
+
         out = self.d / "id.json"
-        argv = ["--corpus-dir", str(self.corpus), "--adapter-version", "1.2.3",
-                "--adapter-binary", str(self.adapter), "--ab-index-binary", str(self.ab_index),
-                "--ab-check-binary", str(self.ab_check),
-                "--feature-patterns", str(self.fp),
-                "--emit-identity", str(out)]
+        argv = [
+            "--corpus-dir",
+            str(self.corpus),
+            "--adapter-version",
+            "1.2.3",
+            "--adapter-binary",
+            str(self.adapter),
+            "--ab-index-binary",
+            str(self.ab_index),
+            "--ab-check-binary",
+            str(self.ab_check),
+            "--feature-patterns",
+            str(self.fp),
+            "--emit-identity",
+            str(out),
+        ]
         buf = io.StringIO()
         with redirect_stdout(buf):
             gi.main(argv)
         printed = buf.getvalue().strip()
         payload = _json.loads(out.read_text())
         self.assertEqual(printed, payload["input_set_hash"])
-        self.assertEqual(payload["input_set_hash"], gi.generator_input_set_hash(
-            corpus_dir=self.corpus, adapter_version="1.2.3", adapter_binary=self.adapter,
-            ab_index_binary=self.ab_index, ab_check_binary=self.ab_check,
-            feature_patterns_file=self.fp))
+        self.assertEqual(
+            payload["input_set_hash"],
+            gi.generator_input_set_hash(
+                corpus_dir=self.corpus,
+                adapter_version="1.2.3",
+                adapter_binary=self.adapter,
+                ab_index_binary=self.ab_index,
+                ab_check_binary=self.ab_check,
+                feature_patterns_file=self.fp,
+            ),
+        )
 
 
 if __name__ == "__main__":

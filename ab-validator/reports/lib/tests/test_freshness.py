@@ -39,6 +39,7 @@ import warehouse_index as wix  # noqa: E402
 class Classify(unittest.TestCase):
     def test_input_mismatch(self):
         import freshness  # noqa: E402
+
         d = freshness.classify("sha256:a", "sha256:b", "sha256:o", lambda: "unused")
         self.assertEqual(d.verdict, freshness.Verdict.INPUT_MISMATCH)
 
@@ -47,6 +48,7 @@ class Classify(unittest.TestCase):
 
         def boom():
             raise OSError("gone")
+
         d = freshness.classify("sha256:a", "sha256:a", "sha256:o", boom)
         self.assertEqual(d.verdict, freshness.Verdict.OUTPUT_UNREADABLE)
 
@@ -55,11 +57,13 @@ class Classify(unittest.TestCase):
 
         def boom():
             raise ValueError("bad")
+
         d = freshness.classify("sha256:a", "sha256:a", "sha256:o", boom)
         self.assertEqual(d.verdict, freshness.Verdict.OUTPUT_UNREADABLE)
 
     def test_output_mismatch_carries_hashes(self):
         import freshness  # noqa: E402
+
         d = freshness.classify("sha256:a", "sha256:a", "sha256:o", lambda: "sha256:x")
         self.assertEqual(d.verdict, freshness.Verdict.OUTPUT_MISMATCH)
         self.assertEqual(d.recorded, "sha256:o")
@@ -67,6 +71,7 @@ class Classify(unittest.TestCase):
 
     def test_fresh(self):
         import freshness  # noqa: E402
+
         d = freshness.classify("sha256:a", "sha256:a", "sha256:o", lambda: "sha256:o")
         self.assertEqual(d.verdict, freshness.Verdict.FRESH)
 
@@ -156,8 +161,11 @@ class WarehouseCheckCharacterization(unittest.TestCase):
         mp.write_text(json.dumps(m), encoding="utf-8")
         self.assertEqual(
             wix.check(self.wh, self.ish),
-            {"status": "invalid", "reason": "manifest input_set_hash mismatch",
-             "run_dir": str(self.run_dir)},
+            {
+                "status": "invalid",
+                "reason": "manifest input_set_hash mismatch",
+                "run_dir": str(self.run_dir),
+            },
         )
 
     def test_output_unreadable_stale(self) -> None:
@@ -166,20 +174,28 @@ class WarehouseCheckCharacterization(unittest.TestCase):
         shutil.rmtree(self.run / "analyses.parquet")
         self.assertEqual(
             wix.check(self.wh, self.ish),
-            {"status": "stale", "reason": "run outputs missing or unreadable",
-             "run_dir": str(self.run_dir)},
+            {
+                "status": "stale",
+                "reason": "run outputs missing or unreadable",
+                "run_dir": str(self.run_dir),
+            },
         )
 
     def test_output_mismatch_stale_carries_hashes(self) -> None:
-        recorded = json.loads(
-            (self.run / wix.MANIFEST_NAME).read_text(encoding="utf-8")
-        )["output_content_hash"]
+        recorded = json.loads((self.run / wix.MANIFEST_NAME).read_text(encoding="utf-8"))[
+            "output_content_hash"
+        ]
         (self.run / "runs.parquet").write_bytes(b"CORRUPT-DIFFERENT-LEN")
         actual = wix.hash_run_dir(self.run)
         self.assertEqual(
             wix.check(self.wh, self.ish),
-            {"status": "stale", "reason": "output content hash mismatch",
-             "recorded": recorded, "actual": actual, "run_dir": str(self.run_dir)},
+            {
+                "status": "stale",
+                "reason": "output content hash mismatch",
+                "recorded": recorded,
+                "actual": actual,
+                "run_dir": str(self.run_dir),
+            },
         )
 
 

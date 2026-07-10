@@ -14,6 +14,7 @@ Approximates the plaintext view by stripping Aozora markup directly (the real
 renderer keeps ruby base text, resolved gaiji, drops annotations) — good
 enough for a probe, not identity-faithful.
 """
+
 import csv, io, json, re, subprocess, sys, unicodedata, zipfile
 from pathlib import Path
 
@@ -26,6 +27,8 @@ DICTS = {
 }
 
 KANJI_EXTRA = set("々〆〻ヶ仝〇")
+
+
 def char_class(c):
     o = ord(c)
     if 0x4E00 <= o <= 0x9FFF or 0x3400 <= o <= 0x4DBF or 0xF900 <= o <= 0xFAFF or c in KANJI_EXTRA:
@@ -35,6 +38,7 @@ def char_class(c):
     if c.isascii() and c.isalpha() or 0xFF21 <= o <= 0xFF5A:
         return "latin"
     return None  # hiragana etc.: implicit ruby base not allowed without ｜
+
 
 def hira_to_kata(s):
     out = []
@@ -46,14 +50,28 @@ def hira_to_kata(s):
             out.append(c)
     return "".join(out)
 
+
 LOOSE = str.maketrans({"ヂ": "ジ", "ヅ": "ズ", "ヰ": "イ", "ヱ": "エ", "ヲ": "オ"})
 
 SMALL_DEMOTE = str.maketrans({"ャ": "ヤ", "ュ": "ユ", "ョ": "ヨ", "ッ": "ツ"})
 MEDIAL_H = {"ハ": "ワ", "ヒ": "イ", "フ": "ウ", "ヘ": "エ", "ホ": "オ"}
 A_TO_O = str.maketrans("アカサタナハマヤラワガザダバパ", "オコソトノホモヨロヲゴゾドボポ")
-E_TO_IYO = {"エ": "ヨ", "ケ": "キヨ", "セ": "シヨ", "テ": "チヨ", "ネ": "ニヨ",
-            "ヘ": "ヒヨ", "メ": "ミヨ", "レ": "リヨ", "ゲ": "ギヨ", "ゼ": "ジヨ",
-            "デ": "ジヨ", "ベ": "ビヨ", "ペ": "ピヨ"}
+E_TO_IYO = {
+    "エ": "ヨ",
+    "ケ": "キヨ",
+    "セ": "シヨ",
+    "テ": "チヨ",
+    "ネ": "ニヨ",
+    "ヘ": "ヒヨ",
+    "メ": "ミヨ",
+    "レ": "リヨ",
+    "ゲ": "ギヨ",
+    "ゼ": "ジヨ",
+    "デ": "ジヨ",
+    "ベ": "ビヨ",
+    "ペ": "ピヨ",
+}
+
 
 def hist_kana_normalize(s):
     """Crude historical→modern kana comparison key (katakana input).
@@ -62,7 +80,7 @@ def hist_kana_normalize(s):
     while "／＼" in s or "／″＼" in s:
         mark = "／″＼" if "／″＼" in s else "／＼"
         i = s.index(mark)
-        s = s[:i] + s[:i] + s[i + len(mark):]
+        s = s[:i] + s[:i] + s[i + len(mark) :]
     s = s.translate(LOOSE).translate(SMALL_DEMOTE)
     s = s.replace("クヮ", "カ").replace("グヮ", "ガ")
     out = []
@@ -87,6 +105,7 @@ def hist_kana_normalize(s):
         i += 1
     return "".join(out)
 
+
 def extract_body(raw):
     text = raw.replace("\r\n", "\n").replace("\r", "\n")
     lines = text.split("\n")
@@ -101,26 +120,30 @@ def extract_body(raw):
             break
     return "\n".join(lines[start:end])
 
+
 def parse_aozora(body):
     """Return (plaintext, ruby_spans, counters). Spans are [start,end) in
     plaintext unicode-scalar offsets, matching token-index-v1 span semantics."""
-    out = []          # chars
+    out = []  # chars
     rubies = []
     pending_bar = None  # output offset where ｜ base started
     counters = {"gaiji_markers": 0, "orphan_ruby": 0, "annotations": 0}
     i, n = 0, len(body)
     while i < n:
         c = body[i]
-        if c == "［" and body[i:i+2] == "［＃":
+        if c == "［" and body[i : i + 2] == "［＃":
             j = body.find("］", i)
             if j == -1:
-                out.append(c); i += 1; continue
+                out.append(c)
+                i += 1
+                continue
             counters["annotations"] += 1
             i = j + 1
             continue
         if c == "※":
             counters["gaiji_markers"] += 1
-            out.append(c); i += 1
+            out.append(c)
+            i += 1
             continue
         if c == "｜":
             pending_bar = len(out)
@@ -129,26 +152,34 @@ def parse_aozora(body):
         if c == "《":
             j = body.find("》", i)
             if j == -1:
-                out.append(c); i += 1; continue
-            reading = body[i+1:j]
+                out.append(c)
+                i += 1
+                continue
+            reading = body[i + 1 : j]
             if pending_bar is not None:
                 start = pending_bar
                 pending_bar = None
             else:
                 # implicit base: maximal same-class run at end of out
                 k = len(out)
-                cls = char_class(out[k-1]) if k else None
+                cls = char_class(out[k - 1]) if k else None
                 if cls is None:
                     counters["orphan_ruby"] += 1
                     i = j + 1
                     continue
-                while k > 0 and char_class(out[k-1]) == cls:
+                while k > 0 and char_class(out[k - 1]) == cls:
                     k -= 1
                 start = k
             end = len(out)
             if end > start:
-                rubies.append({"start": start, "end": end,
-                               "base": "".join(out[start:end]), "reading": reading})
+                rubies.append(
+                    {
+                        "start": start,
+                        "end": end,
+                        "base": "".join(out[start:end]),
+                        "reading": reading,
+                    }
+                )
             else:
                 counters["orphan_ruby"] += 1
             i = j + 1
@@ -157,10 +188,16 @@ def parse_aozora(body):
         i += 1
     return "".join(out), rubies, counters
 
+
 def tokenize(text, dicdir):
     """Return list of (start, end, surface, kana_or_None) in text offsets."""
-    proc = subprocess.run(["mecab", "-d", dicdir, "-b", "1048576"], input=text,
-                          capture_output=True, text=True, check=True)
+    proc = subprocess.run(
+        ["mecab", "-d", dicdir, "-b", "1048576"],
+        input=text,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
     tokens = []
     pos = 0
     misaligned = 0
@@ -170,18 +207,21 @@ def tokenize(text, dicdir):
         surface, _, feat = line.partition("\t")
         if not surface:
             continue
-        if text[pos:pos+len(surface)] != surface:
+        if text[pos : pos + len(surface)] != surface:
             idx = text.find(surface, pos, pos + 200)
             if idx == -1 or not all(c in " 　\t\n" for c in text[pos:idx]):
                 misaligned += 1
                 continue
             pos = idx
         fields = next(csv.reader([feat]))
-        kana = fields[KANA_FIELD] if len(fields) > KANA_FIELD and fields[KANA_FIELD] != "*" else None
+        kana = (
+            fields[KANA_FIELD] if len(fields) > KANA_FIELD and fields[KANA_FIELD] != "*" else None
+        )
         pron = fields[9] if len(fields) > 9 and fields[9] != "*" else None
         tokens.append((pos, pos + len(surface), surface, kana, pron))
         pos += len(surface)
     return tokens, misaligned
+
 
 def analyze_work(path, dicdir):
     with zipfile.ZipFile(path) as z:
@@ -196,11 +236,21 @@ def analyze_work(path, dicdir):
     ends = {t[1] for t in tokens}
     # token lookup by position: build boundary set + interval index
     bounds = sorted(set(t[0] for t in tokens) | ends)
-    stats = {"rubies": 0, "aligned_single": 0, "aligned_multi": 0,
-             "straddle": 0, "straddle_end_only": 0, "straddle_start": 0,
-             "read_cmp": 0, "read_eq": 0, "read_eq_loose": 0,
-             "prefix_cmp": 0, "prefix_eq": 0, "no_kana": 0,
-             "misaligned_tokens": misaligned}
+    stats = {
+        "rubies": 0,
+        "aligned_single": 0,
+        "aligned_multi": 0,
+        "straddle": 0,
+        "straddle_end_only": 0,
+        "straddle_start": 0,
+        "read_cmp": 0,
+        "read_eq": 0,
+        "read_eq_loose": 0,
+        "prefix_cmp": 0,
+        "prefix_eq": 0,
+        "no_kana": 0,
+        "misaligned_tokens": misaligned,
+    }
     disagreements = []
     tok_i = 0
     for r in rubies:
@@ -236,12 +286,13 @@ def analyze_work(path, dicdir):
                     stats["read_eq"] += 1
                 elif got.translate(LOOSE) == rl or (got_pron and got_pron.translate(LOOSE) == rl):
                     stats["read_eq_loose"] += 1
-                elif hist_kana_normalize(got) == rh or (got_pron and hist_kana_normalize(got_pron) == rh):
+                elif hist_kana_normalize(got) == rh or (
+                    got_pron and hist_kana_normalize(got_pron) == rh
+                ):
                     stats["read_eq_histkana"] = stats.get("read_eq_histkana", 0) + 1
                 else:
                     if len(disagreements) < 8:
-                        disagreements.append(
-                            {"base": r["base"], "ruby": ruby_kata, "unidic": got})
+                        disagreements.append({"base": r["base"], "ruby": ruby_kata, "unidic": got})
         else:
             stats["straddle"] += 1
             if start_ok and not end_ok:
@@ -253,12 +304,21 @@ def analyze_work(path, dicdir):
                     inner = [t[3] for t in cover[:-1]]
                     if all(inner):
                         got = "".join(inner) + last[3]
-                        if got.startswith(ruby_kata) or got.translate(LOOSE).startswith(ruby_kata.translate(LOOSE)):
+                        if got.startswith(ruby_kata) or got.translate(LOOSE).startswith(
+                            ruby_kata.translate(LOOSE)
+                        ):
                             stats["prefix_eq"] += 1
             if not start_ok:
                 stats["straddle_start"] += 1
-    return {"path": str(path), "chars": len(plain), "tokens": len(tokens),
-            "counters": counters, "stats": stats, "disagreements": disagreements}
+    return {
+        "path": str(path),
+        "chars": len(plain),
+        "tokens": len(tokens),
+        "counters": counters,
+        "stats": stats,
+        "disagreements": disagreements,
+    }
+
 
 def main():
     zips = sorted(CORPUS.glob("*/files/*_ruby_*.zip"))
@@ -286,7 +346,9 @@ def main():
     ex = [d for w in all_works["unidic-novel"] for d in w["disagreements"]][:40]
     print(json.dumps(ex, ensure_ascii=False))
     Path(sys.argv[1] if len(sys.argv) > 1 else "ruby_probe_works.json").write_text(
-        json.dumps(all_works, ensure_ascii=False, indent=1))
+        json.dumps(all_works, ensure_ascii=False, indent=1)
+    )
+
 
 if __name__ == "__main__":
     main()

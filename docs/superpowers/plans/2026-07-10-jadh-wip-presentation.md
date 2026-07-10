@@ -1,474 +1,509 @@
-# JADH WIP Presentation Implementation Plan
+# JADH WIP Presentation Revision Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Produce a 26-slide English Pandoc deck, plus three appendix slides, presenting Soranoha's source-authority mapping, measured parser comparison, publication evidence chain, and tokenizer comparison to a DH/linguistics audience.
+**Goal:** Revise the existing JADH reveal.js deck into a 27-slide main talk plus eight to ten appendix slides that positions TEI-EAJ as parallel work, shows reproducible real XML comparisons, and gives every displayed Soranoha datum an exact repository-backed inspection or regeneration recipe.
 
-**Architecture:** The deck is a checked repository projection of the archived JADH abstract and current July 2026 reports. It vendors citation inputs, consumes two separately generated ABC SVGs, and keeps evidence provenance, demo commands, and fallback instructions in HTML comments beside the claims they support.
+**Architecture:** Keep the existing vendored bibliography and evidence-disciplined parser narrative. Restructure the deck around Pandoc's generated metadata title slide, add one early TEI-EAJ positioning slide, return to TEI-EAJ at a two-slide real XML comparison, and move high-density examples into a large appendix. A committed CSS file hides author/date only on the rendered title slide and prevents dense tables/XML from overflowing reveal.js.
 
-**Tech Stack:** Pandoc 3.7 with citeproc, Pandoc Markdown, BibTeX, CSL, SVG, repository reports and JSON evidence.
+**Tech Stack:** Pandoc 3.7 reveal.js writer with citeproc, Pandoc Markdown, BibTeX, CSL, CSS, pinned Nix flake inputs, TEI XML, checked-in reports and generated SVGs.
 
 ## Global Constraints
 
-- Create `docs/presentations/jadh-2026-wip-slides.md`.
-- English slide text; Japanese examples remain untranslated.
-- YAML includes `type: slides`, `aspect-ratio: 16-9`, and author `Bor Hodošček`.
-- Exactly 26 timed main slides and 29 total slides.
-- Budget: 18 minutes prepared talk, 5 minutes bounded demo, 2 minutes buffer.
-- Vendor BibTeX and CSL byte-for-byte; the sibling archive is provenance, not a build dependency.
-- Distinguish source authority from parser evidence.
-- Keep conformance breadth, weighted coverage, fidelity, robustness, and speed separate.
-- Present `aozora-pipeline` as the measured `P4suta/aozora` candidate and recommended future base, not completed Soranoha consolidation.
-- Keep commands, detailed provenance, and speaker cues in HTML comments.
-- Do not declare completion until both generated SVGs resolve and pass their own checks.
-- Do not commit rendered HTML/PDF, corpus dumps, or demo output.
+- Work in `feat/jadh-wip-presentation` at `.worktrees/jadh-wip-presentation`.
+- Preserve the vendored BibTeX/CSL bytes and provenance hashes.
+- Retain YAML `author: Bor Hodošček` and `date` for the website generator.
+- Hide author/date only on reveal.js `#title-slide`; remove the duplicate manual title heading.
+- Produce exactly 27 rendered main slides.
+- Produce 35–37 rendered slides total, including eight to ten appendix slides.
+- Budget 22 minutes prepared talk, 5 minutes bounded demo, 3 minutes buffer.
+- Use one early TEI-EAJ positioning slide; place detailed TEI-EAJ discussion beside the real XML comparison.
+- Frame TEI-EAJ and Soranoha as parallel, complementary programs.
+- Cite TEI-EAJ scholarship with `[@teieaj2023; @okada2023]` and use labeled Markdown links for web resources.
+- Preserve the corrected `aozora2html` wording: 302 ruby-heavy failures, 24.7% of ruby mass missed, and 0.983 work-count completion hiding mass concentration.
+- Every displayed Soranoha number/table/XML/example has an adjacent HTML comment with `Evidence path`, `Inspect/regenerate`, `Inputs`, `Expected`, and `Class`.
+- Do not use sibling-archive, `/db`, `/home/bor`, or untracked `references/` paths as active evidence/demo inputs.
+- Do not substitute reduced fixtures for a claimed real XML comparison.
+- Do not declare completion until the figure, XML, and demo gates all pass.
 
 ---
 
-## File Structure
+## Existing Completed Foundation
 
-- `docs/presentations/jadh-2026-wip-slides.md` — canonical deck and comment-only demo runbook.
-- `docs/presentations/references/abstract-refs.bib` — vendored bibliography.
-- `docs/presentations/references/digital_humanities_abstracts.csl` — vendored CSL.
-- `abc/docs/figures/soranoha-reproducibility-architecture.svg` — slide 10 input.
-- `abc/docs/figures/soranoha-publication-pipeline.svg` — slide 17 input.
+Do not redo these commits:
 
-## Authoritative Evidence Map
+- `57c60650` — vendored citation inputs and deck foundation.
+- `ab5a7b25` — source-authority opening.
+- `84690447` — parser/publication evidence.
+- `8dbc4dad` — textual deck.
+- `7129b3bb` — corrected mass-weighted robustness evidence.
 
-| Topic | Evidence |
-| --- | --- |
-| Original framing/inventory/tokenizer examples | `../archive/abc/paper/jadh-2026-updated-abstract.md` |
-| Parser study and 傍点 example | `ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md` |
-| Current denominators | `ab-validator/docs/superpowers/reports/2026-07-09-full-nix-denominator-recompute.md` |
-| Fidelity/robustness | `ab-validator/docs/superpowers/reports/2026-07-08-fidelity-robustness-split.md` |
-| AAT→IR rules | `ab-validator/data/aat-to-parser-ir-mapping-v1.json` |
-| Publication policy | `abc/data/parser-ir-publication-policy-v0.json` |
-| Source admission | `ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md` |
-| Publication evidence | `ab-validator/docs/superpowers/reports/2026-07-06-ir-publication-coverage.md` |
-| Tokenizer/demo evidence | `../archive/abc/paper/tokenizer-comparison-view.md`, `../archive/abc/paper/demo-trace.md` |
+## Files
+
+- Modify: `docs/presentations/jadh-2026-wip-slides.md`
+- Create: `docs/presentations/jadh-2026-wip-slides.css`
+- Preserve: `docs/presentations/references/abstract-refs.bib`
+- Preserve: `docs/presentations/references/digital_humanities_abstracts.csl`
+- Consume when ready: `abc/docs/figures/soranoha-reproducibility-architecture.svg`
+- Consume when ready: `abc/docs/figures/soranoha-publication-pipeline.svg`
+- Consume: pinned `TEI-EAJ/aozora_tei` commit `77a675fc2771936f9544505d922d4cd45075338c`
 
 ---
 
-### Task 1: Vendor Citation Inputs and Establish a Parseable Deck
+### Task 1: Make Title Metadata, Slide Counting, CSS, and Links Deterministic
 
 **Files:**
-- Create: `docs/presentations/references/abstract-refs.bib`
-- Create: `docs/presentations/references/digital_humanities_abstracts.csl`
-- Create: `docs/presentations/jadh-2026-wip-slides.md`
+- Modify: `docs/presentations/jadh-2026-wip-slides.md`
+- Create: `docs/presentations/jadh-2026-wip-slides.css`
 
 **Interfaces:**
-- Consumes: the two corresponding files in `../archive/abc/paper/`.
-- Produces: self-contained citation resources and a 26-heading deck skeleton.
+- Consumes: current 29-heading deck.
+- Produces: one Pandoc-generated title slide, a canonical reveal.js stylesheet, and no bare visible URLs.
 
-- [ ] **Step 1: Verify source hashes**
+- [ ] **Step 1: Keep metadata and remove the duplicate manual title**
 
-```bash
-sha256sum ../archive/abc/paper/abstract-refs.bib ../archive/abc/paper/digital_humanities_abstracts.csl
-```
+Keep this YAML:
 
-Expected hashes:
-
-```text
-ecac6b1d04171239d5cd1467a37802ff8e9fe8a5820f03ebbdb05cec196ae897
-51537ae9dd3a3a77a971757942c3769c722379aa78d7f2a0bec442e57197c1c9
-```
-
-- [ ] **Step 2: Add byte-identical vendored files**
-
-Use `apply_patch` to add the exact source bytes. Do not reorder BibTeX, normalize XML, or change line endings. Verify:
-
-```bash
-cmp ../archive/abc/paper/abstract-refs.bib docs/presentations/references/abstract-refs.bib
-cmp ../archive/abc/paper/digital_humanities_abstracts.csl docs/presentations/references/digital_humanities_abstracts.csl
-```
-
-Expected: both exit 0.
-
-- [ ] **Step 3: Create YAML and 26-heading skeleton**
-
-Start the deck with:
-
-```markdown
----
+```yaml
 title: "Sustaining Aozora Bunko as Versioned Corpus Infrastructure"
 subtitle: "Evidence-driven source mapping, parser comparison, and analytical views"
 author: Bor Hodošček
 date: July 2026
 type: slides
 aspect-ratio: 16-9
-bibliography: references/abstract-refs.bib
-csl: references/digital_humanities_abstracts.csl
-link-citations: true
----
-
-<!--
-Citation provenance:
-- abstract-refs.bib sha256:ecac6b1d04171239d5cd1467a37802ff8e9fe8a5820f03ebbdb05cec196ae897
-- digital_humanities_abstracts.csl sha256:51537ae9dd3a3a77a971757942c3769c722379aa78d7f2a0bec442e57197c1c9
-Budget: 18 min talk + 5 min demo + 2 min buffer.
--->
+css: jadh-2026-wip-slides.css
 ```
 
-Append these headings in order:
+Delete the manual `# Sustaining Aozora Bunko as Versioned Corpus Infrastructure` section and its visible author line. Pandoc's generated `#title-slide` is the only title slide.
+
+- [ ] **Step 2: Add reveal.js CSS**
+
+Create:
+
+```css
+.reveal #title-slide .author,
+.reveal #title-slide .date {
+  display: none;
+}
+
+.reveal .compact table {
+  font-size: 0.72em;
+}
+
+.reveal .compact th,
+.reveal .compact td {
+  padding: 0.18em 0.35em;
+}
+
+.reveal .xml-example pre {
+  max-height: 58vh;
+  overflow-y: auto;
+  font-size: 0.55em;
+  line-height: 1.25;
+}
+
+.reveal .evidence-links {
+  font-size: 0.68em;
+}
+```
+
+- [ ] **Step 3: Replace every visible bare URL**
+
+Use labeled links, including:
 
 ```markdown
-# Sustaining Aozora Bunko as Versioned Corpus Infrastructure
-# Aozora Bunko Is Shared Research Infrastructure
-# One Source, Many Derived Corpora
-# Readable Does Not Mean Plain
-# Research Questions
-# What Counts as Evidence?
-# Building the Source-Authority Inventory
-# What Is in the Corpus?
-# Rare Syntax Still Matters
-# What Makes a Corpus Version Reproducible?
-# Why Compare Multiple Parsers?
-# Three Measurements, Three Questions
-# Conformance Breadth
-# Frequency-Weighted Corpus Coverage
-# Fidelity and Robustness Are Different
-# Parser Comparison: What We Can Conclude
-# From Authoritative Source to Scholarly Views
-# Two Representation Boundaries
-# Worked Mapping: 傍点
-# Transformation Records Make Decisions Inspectable
-# Publication Is Plural
-# Tokenization Is a Scholarly Choice
-# Two Regions, Different Analyses
-# Live Demo: Follow the Evidence
-# Current Limits and Next Work
-# Versioned, Inspectable, Comparable, Reproducible
+[Soranoha repository](https://github.com/borh/soranoha)
+[TEI-EAJ aozora_tei](https://github.com/TEI-EAJ/aozora_tei)
+[TEI-EAJ aozora_tei wiki](https://github.com/TEI-EAJ/aozora_tei/wiki)
 ```
 
-- [ ] **Step 4: Verify the foundation**
+HTML comments may contain command text but should also prefer logical paths over URLs.
+
+- [ ] **Step 4: Verify title behavior and link syntax**
 
 ```bash
-test "$(rg -c '^# ' docs/presentations/jadh-2026-wip-slides.md)" -eq 26
-(cd docs/presentations && pandoc jadh-2026-wip-slides.md --from markdown --to revealjs --standalone --citeproc -o /tmp/jadh-skeleton.html)
-test -s /tmp/jadh-skeleton.html
-rm /tmp/jadh-skeleton.html
+(cd docs/presentations && pandoc jadh-2026-wip-slides.md --to revealjs --standalone --citeproc --css jadh-2026-wip-slides.css -o /tmp/jadh-title.html)
+test "$(rg -c 'id="title-slide"' /tmp/jadh-title.html)" -eq 1
+rg -n '#title-slide \.author|#title-slide \.date' docs/presentations/jadh-2026-wip-slides.css
+! rg -n '^# Sustaining Aozora Bunko' docs/presentations/jadh-2026-wip-slides.md
+! rg -n '(^|[[:space:]])https?://' docs/presentations/jadh-2026-wip-slides.md
+rm /tmp/jadh-title.html
 ```
 
-Expected: 26 slides and successful Pandoc output.
+Expected: one generated title slide; CSS hides author/date; no duplicate title; no visible bare URL.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add docs/presentations
-git commit -m "docs(presentation): add reproducible JADH deck foundation"
+git add docs/presentations/jadh-2026-wip-slides.md docs/presentations/jadh-2026-wip-slides.css
+git commit -m "docs(presentation): normalize reveal title and dense-slide styling"
 ```
 
 ---
 
-### Task 2: Write Slides 1–10 — Problem, Authority, and Inventory
+### Task 2: Reframe and Resequence TEI-EAJ as Parallel Work
 
 **Files:**
 - Modify: `docs/presentations/jadh-2026-wip-slides.md`
 
 **Interfaces:**
-- Consumes: abstract, source-authority report, citations, and final reproducibility SVG path.
-- Produces: the evidence-led opening.
+- Consumes: TEI-EAJ repository/wiki, vendored citations, approved 27-slide outline.
+- Produces: one early positioning slide and a contribution slide that does not imply succession.
 
-- [ ] **Step 1: Write slides 1–5**
+- [ ] **Step 1: Insert the early TEI-EAJ positioning slide after “One Source, Many Derived Corpora”**
 
-Use these headings and claims:
-
-| Slide | Required content |
-| ---: | --- |
-| 1 | Title, subtitle, author, “Soranoha — work in progress,” repository in comment |
-| 2 | Aozora uses across DH, linguistics, NLP; infrastructure question; `[@aozorabunko2026; @iwata2025]` |
-| 3 | One source fans out to reading, parsers, TEI, plaintext, tokenized data, LLM/RAG; transformation is scholarly process |
-| 4 | Show `吾輩《わがはい》`, gaiji, 傍点, and indentation; readable is not plain |
-| 5 | Three questions: source syntax, parser preservation/loss, downstream publication/tokenizer effects |
-
-Keep each slide to one claim and no more than five bullets.
-
-- [ ] **Step 2: Write slides 6–9**
-
-Required content:
-
-| Slide | Required content |
-| ---: | --- |
-| 6 | Source authority = official docs + works; supporting evidence = community specs + parser measurements + TEI-EAJ |
-| 7 | Extract, reconcile, group, map, gate; cite source-authority report in comment |
-| 8 | 17,894 works; 4.3M de-duplicated occurrences; 50 rows; 10 families; 3,607,926 ruby; counts overlap |
-| 9 | Multicolumn 26 works, tables 7, quote blocks 6; rarity is not semantic unimportance |
-
-- [ ] **Step 3: Write slide 10 with the final path**
+Use:
 
 ```markdown
-# What Makes a Corpus Version Reproducible?
+# Parallel Work: TEI-EAJ aozora_tei
 
-![Soranoha Reproducibility Architecture](../../abc/docs/figures/soranoha-reproducibility-architecture.svg){width=100%}
+- Curated human encoding of Aozora works in TEI P5
+- Encoding depth organized through Levels 2–5
+- Shared workflow for headers, drafts, completed files, and enrichment
+- Guidelines and visualization experiments that make TEI useful beyond XML
+
+[Project repository](https://github.com/TEI-EAJ/aozora_tei) ·
+[Project wiki](https://github.com/TEI-EAJ/aozora_tei/wiki)
+[@teieaj2023; @okada2023]
 
 <!--
-FINAL GATE: generated by abc/docs/superpowers/plans/2026-07-10-academic-presentation-diagrams.md.
-Focus: identity binds sources, evidence, contracts, profiles, and recipes.
-ArtifactID is not a materialized-file byte hash.
+Evidence path: abc/flake.nix; pinned input tei-eaj-aozora-tei.
+Inspect/regenerate: nix run .#abc-tei-eaj-aozora-tei-source
+Inputs: TEI-EAJ/aozora_tei@77a675fc2771936f9544505d922d4cd45075338c
+Expected: store path containing README.md and data/complete/tei_lib_lv4/1567_tei.xml
+Class: pinned upstream comparison source
 -->
 ```
 
-- [ ] **Step 4: Verify and commit**
+- [ ] **Step 2: Move research questions immediately after the positioning slide**
 
-```bash
-rg -n 'Source authority|17,894|3,607,926|FINAL GATE' docs/presentations/jadh-2026-wip-slides.md
-test "$(rg -c '^# ' docs/presentations/jadh-2026-wip-slides.md)" -eq 26
-(cd docs/presentations && pandoc jadh-2026-wip-slides.md --from markdown --to native --citeproc >/tmp/jadh-opening.native)
-test -s /tmp/jadh-opening.native
-rm /tmp/jadh-opening.native
-git add docs/presentations/jadh-2026-wip-slides.md
-git commit -m "docs(presentation): add source-authority opening"
-```
-
----
-
-### Task 3: Write Slides 11–21 — Parser and Publication Evidence
-
-**Files:**
-- Modify: `docs/presentations/jadh-2026-wip-slides.md`
-
-**Interfaces:**
-- Consumes: parser study, denominator recompute, split report, mapping, publication policy, second SVG.
-- Produces: measurement-separated conclusions and the 傍点 chain.
-
-- [ ] **Step 1: Write slides 11–12**
-
-Slide 11 includes the crosswalk:
-
-| Slide label | Measurement/native label |
-| --- | --- |
-| `aozora-pipeline` | `aozora` / `ab-aozora` |
-| `aozora2` | `aozora-core` |
-| `aozora-rs` | `aozora-rs-core` when measured natively |
-| `aozora2html` | unchanged |
-| `AozoraEpub3` | `aozora-epub3` |
-
-Its comment says `aozora-pipeline` is `P4suta/aozora`, not completed consolidation. Slide 12 defines breadth, weighted mass, fidelity, robustness, and speed as separate questions.
-
-- [ ] **Step 2: Write slides 13–16**
-
-Use these exact headline values:
-
-- Breadth: 127 vectors, 24 families, no parser passes all 25 `must`; `aozora-pipeline` 22/25 with diagnostic-only residuals.
-- Weighted coverage: `aozora-pipeline` 0.969, `aozora-rs` 0.938, `AozoraEpub3` 0.926, `aozora2` 0.855, `aozora2html` 0.743.
-- Explain ruby is about 90% of measured mass.
-- Robustness over pinned 17,886 works: `aozora-pipeline` and `aozora-rs` 1.000.
-- Highest isolated fidelity: `aozora2html` 0.974; robustness 0.983.
-- Conclusion slide names per-axis leaders and ends: “This is a multi-criterion recommendation—not one overall scholarly score.”
-
-Comments must point to the exact report sections and warn against mixing 17,894 and 17,886 denominators.
-
-- [ ] **Step 3: Write slide 17**
+The contribution language is:
 
 ```markdown
-# From Authoritative Source to Scholarly Views
-
-![Soranoha Publication Pipeline](../../abc/docs/figures/soranoha-publication-pipeline.svg){width=100%}
-
-<!--
-FINAL GATE: generated by abc/docs/superpowers/plans/2026-07-10-academic-presentation-diagrams.md.
-Stable contract: source -> validated parser process -> Parser-IR -> manifest -> scholarly outputs.
-AAT is current producer detail.
--->
+**Parallel emphasis:** TEI-EAJ develops curated scholarly encodings; Soranoha measures and versions corpus-scale transformations.
 ```
 
-- [ ] **Step 4: Write slides 18–21**
+Do not use “extends,” “replaces,” “successor,” or “supersedes.”
 
-- Slide 18: AAT is descriptive/parser-shaped/raw-preserving; Parser-IR is decisional/publication-laned/loss-accounted.
-- Slide 19: table with source `青空［＃「青空」に傍点］`, AAT `style_type: boten`, rule `A-06` to `emphasis`, TEI `<hi>` plus preservation evidence.
-- Slide 19 comment: A-06 records 130 style mappings; do not claim all are 傍点; `AMBIGUITY` records a sidecar by taxonomy default.
-- Slide 20: define `LOSS`, `INVENTION`, `AMBIGUITY`, `UNSUPPORTED`, `STRUCTURAL`.
-- Slide 21: TEI, visible plaintext, sidecars, tokenizer artifacts, manifest; cite `[@okada2023]`; do not conflate ArtifactID and content hash.
+- [ ] **Step 3: Reconcile the main sequence to 26 level-one headings plus generated title**
 
-- [ ] **Step 5: Verify and commit**
+Before the appendix marker there must be 26 `# ` headings. Merge:
 
-```bash
-rg -n '22/25|0\.969|0\.974|1\.000|multi-criterion|A-06' docs/presentations/jadh-2026-wip-slides.md
-! rg -n 'leads overall|best parser|authoritative parser' docs/presentations/jadh-2026-wip-slides.md
-test "$(rg -c '^# ' docs/presentations/jadh-2026-wip-slides.md)" -eq 26
-(cd docs/presentations && pandoc jadh-2026-wip-slides.md --from markdown --to native --citeproc >/tmp/jadh-parser.native)
-test -s /tmp/jadh-parser.native
-rm /tmp/jadh-parser.native
-git add docs/presentations/jadh-2026-wip-slides.md
-git commit -m "docs(presentation): add parser and publication evidence"
-```
+- “Why Compare Multiple Parsers?” with “Three Measurements, Three Questions.”
+- “Worked Mapping: 傍点” with the transformation taxonomy.
+- “What Is in the Corpus?” with “Rare Syntax Still Matters.”
 
----
+Keep the corrected fidelity/robustness slide unchanged except for reproduction comments.
 
-### Task 4: Write Slides 22–29 — Tokenizers, Demo, Close, Appendices
+- [ ] **Step 4: Add evidence-contract comments to current quantitative slides**
 
-**Files:**
-- Modify: `docs/presentations/jadh-2026-wip-slides.md`
-
-**Interfaces:**
-- Consumes: tokenizer comparison view, demo trace, current limitation reports.
-- Produces: complete 29-slide textual deck and bounded demo fallback.
-
-- [ ] **Step 1: Write slides 22–23**
-
-Slide 22 says segmentation, lemma, POS, dictionary, and literary-language support are scholarly choices; publish parallel views; cite `[@kanda2025; @worksapplications2026]`.
-
-Slide 23 uses:
-
-| Region | Sudachi A/B | Sudachi C | Vibrato + UniDic CWJ |
-| --- | --- | --- | --- |
-| 求むる | 求むる（動詞） | 求むる（動詞） | 求｜む｜る（名詞／名詞／助動詞） |
-| 竹馬の友 | 竹馬｜の｜友 | 竹馬の友（固有名詞） | 竹馬｜の｜友 |
-
-Cite `[@den2008; @daactools2026]`; comment records `sudachi-20260116` and `unidic-cwj-202512`.
-
-- [ ] **Step 2: Write slide 24 and demo comments**
-
-Audience-facing list: inspect source mapping; compare parsers; inspect AAT→IR; materialize TEI/plaintext; compare tokenizer region.
-
-HTML comment requirements:
+For each displayed Soranoha datum, use this exact field vocabulary:
 
 ```text
-DEMO BUDGET: 5:00; never run corpus-scale work live.
-Preflight tracked Rashōmon and Run, Melos! artifacts with rg --files.
-Never use /db, /home/bor, or an untracked references/ path.
-Each live read-only jq/rg/display command must complete under five seconds.
-Fallback: narrate slides 19, 20, 21, and 23; do not improvise a full run.
+Evidence path:
+Inspect/regenerate:
+Inputs:
+Expected:
+Class:
 ```
 
-- [ ] **Step 3: Write slides 25–26**
+Commands are read-only and repository-root-relative. For example, the coverage slide uses:
 
-Slide 25: 字詰め and 横組 gaps; consolidation incomplete; TEI Levels 4–5 future; genre-aware tokenizer evaluation future; remeasure changed inputs.
+```text
+Evidence path: ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
+Inspect/regenerate: sed -n '219,345p' ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
+Inputs: checked-in July 2026 parser study; pinned-denominator reconciliation report
+Expected: coverage 0.969/0.938/0.926/0.855/0.743; robustness interpretation over 17,886 works
+Class: checked-in report
+```
 
-Slide 26: inventory, measure, record loss, publish parallel views, bind identity; close with “Corpus transformation is part of the scholarly method” and repository URL.
-
-- [ ] **Step 4: Append slides 27–29**
-
-- Slide 27: full 10-family source inventory table copied from abstract Table 1, with overlap caveat.
-- Slide 28: definitions of breadth, mass, fidelity, robustness, speed; “No single column answers every research question.”
-- Slide 29: references/artifacts with citations for Aozora, TEI-EAJ, Sudachi, UniDic/Vibrato, and repository URL.
-
-- [ ] **Step 5: Verify citation keys, count, and path hygiene**
+- [ ] **Step 5: Verify wording, citations, and count**
 
 ```bash
-test "$(rg -c '^# ' docs/presentations/jadh-2026-wip-slides.md)" -eq 29
-! rg -n '/db/|/home/bor/' docs/presentations/jadh-2026-wip-slides.md
+rg -n 'Parallel Work: TEI-EAJ|parallel emphasis|@teieaj2023|@okada2023' docs/presentations/jadh-2026-wip-slides.md
+! rg -ni 'extends TEI-EAJ|replaces TEI-EAJ|successor|supersedes' docs/presentations/jadh-2026-wip-slides.md
 python - <<'PY'
-import re
 from pathlib import Path
-deck = Path("docs/presentations/jadh-2026-wip-slides.md").read_text()
-bib = Path("docs/presentations/references/abstract-refs.bib").read_text()
-used = set()
-for group in re.findall(r"\[@([^]]+)\]", deck):
-    used.update(part.strip().lstrip("@").split()[0] for part in group.split(";"))
-available = set(re.findall(r"@[A-Za-z]+\{([^,]+),", bib))
-assert not used - available, sorted(used - available)
-print(f"{len(used)} citation keys resolved")
+p = Path("docs/presentations/jadh-2026-wip-slides.md").read_text()
+main = p.split("# Appendix:", 1)[0]
+assert sum(line.startswith("# ") for line in main.splitlines()) == 26
+print("26 Markdown main headings + 1 generated title = 27 main slides")
 PY
 ```
-
-Expected: 29 slides, no machine-local paths, all keys resolved.
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add docs/presentations/jadh-2026-wip-slides.md
-git commit -m "docs(presentation): complete JADH WIP narrative"
+git commit -m "docs(presentation): position TEI-EAJ as parallel work"
 ```
 
 ---
 
-### Task 5: Integrate Figures, Preflight Demo, and Validate Delivery
+### Task 3: Add Draft-Gated Real TEI XML Comparison Slides
 
 **Files:**
-- Modify: `docs/presentations/jadh-2026-wip-slides.md` only for verified path/claim corrections.
-- Consume: both `abc/docs/figures/soranoha-*.svg` files.
+- Modify: `docs/presentations/jadh-2026-wip-slides.md`
 
 **Interfaces:**
-- Consumes: completed diagram branch, textual deck, bounded tracked demo artifacts.
-- Produces: renderable and rehearsed delivery source.
+- Consumes: pinned TEI-EAJ Melos Level 4 XML and a work-matched generated Soranoha Melos publication bundle.
+- Produces: two main slides with actual XML and exact provenance, or an explicitly blocked draft with no fixture substitution.
 
-- [ ] **Step 1: Enforce the figure gate**
+- [ ] **Step 1: Resolve and inspect the pinned TEI-EAJ file**
+
+```bash
+tei_root="$(nix run .#abc-tei-eaj-aozora-tei-source)"
+test -f "$tei_root/data/complete/tei_lib_lv4/1567_tei.xml"
+sha256sum "$tei_root/data/complete/tei_lib_lv4/1567_tei.xml"
+rg -n '<teiHeader|<text|<body|<p|<ruby|<note|<persName|<said' "$tei_root/data/complete/tei_lib_lv4/1567_tei.xml" | head -40
+```
+
+Expected: real TEI-EAJ work 1567 at pinned commit `77a675f…`.
+
+- [ ] **Step 2: Enforce the Soranoha counterpart gate**
+
+The selected Soranoha bundle must contain:
+
+```text
+parser-ir.json
+metadata-record.json
+source.manifest.json
+tei.xml
+tei.manifest.json
+tei-validation-result.json
+```
+
+Locate only tracked or reproducibly generated candidates:
+
+```bash
+rg --files abc | rg 'demo-melos-real/(parser-ir|metadata-record|source\.manifest|tei\.xml|tei\.manifest|tei-validation-result)'
+```
+
+Expected for readiness: all six logical artifact classes. If absent, retain `DRAFT XML GATE` comments and do not show a Soranoha fixture as a real edition.
+
+- [ ] **Step 3: Validate a ready Soranoha counterpart**
+
+When the six files exist, regenerate into a temporary directory using the exact source bundle command recorded with those artifacts:
+
+```bash
+nix run .#abc-materialize-publication -- \
+  abc/paper/demo-melos-real/parser-ir.aozora2html.json \
+  abc/paper/demo-melos-real/metadata-record.json \
+  abc/paper/demo-melos-real/persons \
+  /tmp/jadh-melos-publication \
+  --source-manifest abc/paper/demo-melos-real/source.manifest.json \
+  --generated-at 2026-07-04T00:00:00Z
+cmp abc/paper/demo-melos-real/tei.xml /tmp/jadh-melos-publication/tei.xml
+jq -e '.findings | length == 0' /tmp/jadh-melos-publication/tei-validation-result.json
+```
+
+These are the canonical monorepo target paths recorded by the paper demo trace.
+If they have not landed as tracked files, the gate remains closed.
+
+- [ ] **Step 4: Add the two XML slides only with honest status**
+
+Slide 1 uses two short verbatim excerpts labeled:
+
+```markdown
+## Curated TEI-EAJ — 走れメロス, Level 4
+## Generated Soranoha — 走れメロス, validated publication view
+```
+
+Slide 2 annotates paragraph boundaries, ruby, notes, headers, and enrichment. Put code inside `::: {.xml-example}` fenced divs. Include pinned TEI-EAJ commit, work ID `1567`, Soranoha ArtifactID/manifest identity, materialization command, and validation result in HTML comments.
+
+If the Soranoha gate is closed, add the headings and `DRAFT XML GATE` comments but do not fabricate audience-facing XML.
+
+- [ ] **Step 5: Verify XML provenance**
+
+```bash
+rg -n '77a675fc2771936f9544505d922d4cd45075338c|work ID.*1567|DRAFT XML GATE|tei-validation-result' docs/presentations/jadh-2026-wip-slides.md
+! rg -n 'abc-melos-single-p\.xml.*generated Soranoha|tei-eaj-melos-split-p\.xml.*curated' docs/presentations/jadh-2026-wip-slides.md
+```
+
+Expected: provenance/gate text present; reduced fixtures are not mislabeled.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add docs/presentations/jadh-2026-wip-slides.md
+git commit -m "docs(presentation): add gated TEI XML comparison"
+```
+
+---
+
+### Task 4: Expand Examples, Tokenizer Data, and the Eight-to-Ten-Slide Appendix
+
+**Files:**
+- Modify: `docs/presentations/jadh-2026-wip-slides.md`
+
+**Interfaces:**
+- Consumes: current source inventory, parser reports, tokenizer reports, mapping taxonomy.
+- Produces: 35–37 rendered slides with richer examples and a reproduction appendix.
+
+- [ ] **Step 1: Add one corpus-scale tokenizer slide to the main sequence**
+
+Use checked-in values from `ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md`: 17,894 inputs, no analyzer/comparison failures, 7,358,000 segmentation regions, boundary-F1 median `0.972972972972973`, minimum `0.6884927066450566`. Include the full evidence-contract comment and do not imply the median erases local differences.
+
+- [ ] **Step 2: Build eight core appendix slides**
+
+The core appendix headings are:
+
+```markdown
+# Appendix: Source Markup Inventory
+# Appendix: More Aozora Syntax Examples
+# Appendix: Parser Names and Measurement Lenses
+# Appendix: Parser Coverage by Construct
+# Appendix: Transformation Taxonomy
+# Appendix: Additional Tokenizer Regions
+# Appendix: Reproducing the Evidence
+```
+
+Do not add a manual References heading; citeproc's generated bibliography is the eighth appendix slide.
+
+- [ ] **Step 3: Add up to two optional appendices only when they carry real evidence**
+
+Allowed headings:
+
+```markdown
+# Appendix: Fuller TEI XML Excerpts
+# Appendix: Additional Parser Divergences
+```
+
+Use them if the XML gate is ready or if the cited checked-in report provides enough examples. Total rendered slides must remain 35–37.
+
+- [ ] **Step 4: Make the reproduction appendix operational**
+
+Include labeled links and copyable commands:
+
+```markdown
+- [Pinned TEI-EAJ source](https://github.com/TEI-EAJ/aozora_tei):
+  `nix run .#abc-tei-eaj-aozora-tei-source`
+- Parser study:
+  `sed -n '219,345p' ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md`
+- Mapping rule A-06:
+  `jq '.mapping_rules[] | select(.rule_id == "A-06")' ab-validator/data/aat-to-parser-ir-mapping-v1.json`
+- Publication fixture:
+  `nix run .#abc-materialize-publication -- abc/examples/v0/example-work/parser-ir.json abc/examples/v0/example-work/metadata-record.json abc/examples/v0/example-persons /tmp/jadh-publication --generated-at 2026-07-03T00:00:00Z`
+```
+
+Label the publication command as a reproducible fixture demonstration, not the real Melos XML comparison.
+
+- [ ] **Step 5: Verify rendered count and evidence comments**
+
+```bash
+(cd docs/presentations && pandoc jadh-2026-wip-slides.md --to revealjs --standalone --citeproc --css jadh-2026-wip-slides.css -o /tmp/jadh-count.html)
+sections="$(rg -c '^<section' /tmp/jadh-count.html)"
+test "$sections" -ge 35
+test "$sections" -le 37
+python - <<'PY'
+from pathlib import Path
+p = Path("docs/presentations/jadh-2026-wip-slides.md").read_text()
+for marker in ["Evidence path:", "Inspect/regenerate:", "Inputs:", "Expected:", "Class:"]:
+    assert marker in p, marker
+print("evidence comment vocabulary present")
+PY
+rm /tmp/jadh-count.html
+```
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add docs/presentations/jadh-2026-wip-slides.md
+git commit -m "docs(presentation): expand reproducible examples and appendix"
+```
+
+---
+
+### Task 5: Close Figure, XML, Demo, Render, and Timing Gates
+
+**Files:**
+- Modify: `docs/presentations/jadh-2026-wip-slides.md` only for verified final locators or timing cuts.
+- Consume: generated figures and tracked demo/XML bundle.
+
+**Interfaces:**
+- Consumes: Tasks 1–4 and external in-flight artifacts.
+- Produces: delivery-ready source, or a clearly reported draft blocked at named gates.
+
+- [ ] **Step 1: Close the figure gate**
 
 ```bash
 test -f abc/docs/figures/soranoha-reproducibility-architecture.svg
 test -f abc/docs/figures/soranoha-publication-pipeline.svg
 rg -n 'viewBox="0 0 1920 1080"' abc/docs/figures/soranoha-*.svg
-```
-
-Expected: both files and both exact view boxes. If absent, stop Task 5; the deck is a draft, not complete.
-
-- [ ] **Step 2: Run diagram verification**
-
-From `abc/`, run:
-
-```bash
-clojure -M:abc/presentation-diagrams --check
-```
-
-From the monorepo root, run the pinned checks named by the diagram plan:
-
-```bash
 nix build .#checks.x86_64-linux.presentation-diagram-renderer --no-link
 nix build .#checks.x86_64-linux.presentation-diagram-drift --no-link
 ```
 
-Expected: both builds exit 0 and neither changes the committed SVGs.
+- [ ] **Step 2: Close the XML gate**
 
-- [ ] **Step 3: Resolve and preflight bounded demo commands**
+Repeat Task 3 Steps 1–3. Expected: pinned TEI-EAJ XML, tracked/generated Soranoha counterpart, byte-reproducible materialization, zero validation findings.
+
+- [ ] **Step 3: Close the demo gate**
 
 ```bash
 rg --files abc | rg 'demo-(rashomon|melos)-real/(parser-ir|divergence|tei|plain)'
 ```
 
-Update HTML comments to actual tracked paths. Run the selected read-only `jq`, `rg`, or display commands. Each must finish in under five seconds and use no machine-local inputs.
+Every chosen demo command must use tracked/pinned input, complete in under five seconds, and have its expected output in the adjacent HTML comment. If absent, retain the narrated fallback and report that the live demo is not ready.
 
-- [ ] **Step 4: Render using only repository inputs**
-
-```bash
-(cd docs/presentations && pandoc jadh-2026-wip-slides.md --from markdown --to revealjs --standalone --citeproc -o /tmp/jadh-2026-wip-slides.html)
-test -s /tmp/jadh-2026-wip-slides.html
-rg -n 'Soranoha Reproducibility Architecture|Soranoha Publication Pipeline|References' /tmp/jadh-2026-wip-slides.html
-rm /tmp/jadh-2026-wip-slides.html
-```
-
-Expected: exit 0, non-empty HTML, both figures, resolved references.
-
-- [ ] **Step 5: Run final invariants**
+- [ ] **Step 4: Run citation, link, path, and claim checks**
 
 ```bash
-test "$(rg -c '^# ' docs/presentations/jadh-2026-wip-slides.md)" -eq 29
-cmp ../archive/abc/paper/abstract-refs.bib docs/presentations/references/abstract-refs.bib
-cmp ../archive/abc/paper/digital_humanities_abstracts.csl docs/presentations/references/digital_humanities_abstracts.csl
+cmp ../../../archive/abc/paper/abstract-refs.bib docs/presentations/references/abstract-refs.bib
+cmp ../../../archive/abc/paper/digital_humanities_abstracts.csl docs/presentations/references/digital_humanities_abstracts.csl
 ! rg -n 'leads overall|best parser|authoritative parser|/db/|/home/bor/' docs/presentations/jadh-2026-wip-slides.md
-git diff --check
+! rg -n '(^|[[:space:]])https?://' docs/presentations/jadh-2026-wip-slides.md
+rg -n '302 ruby-heavy|24\.7% of ruby mass|0\.983 work completion' docs/presentations/jadh-2026-wip-slides.md
 ```
 
-- [ ] **Step 6: Rehearse against the fixed budget**
+- [ ] **Step 5: Render and inspect overflow at 1920×1080**
+
+```bash
+(cd docs/presentations && pandoc jadh-2026-wip-slides.md --to revealjs --standalone --citeproc --css jadh-2026-wip-slides.css -o /tmp/jadh-final.html)
+test -s /tmp/jadh-final.html
+test "$(rg -c 'id="title-slide"' /tmp/jadh-final.html)" -eq 1
+sections="$(rg -c '^<section' /tmp/jadh-final.html)"
+test "$sections" -ge 35
+test "$sections" -le 37
+```
+
+Open the HTML at a 1920×1080 viewport. Verify the parser coverage table, both XML slides, tokenizer table, and appendix inventory without scrolling the whole slide; only the bounded XML code region may scroll.
+
+- [ ] **Step 6: Rehearse**
 
 ```text
-prepared slides <= 18:00
+prepared slides <= 22:00
 demo            <= 05:00
-total           <= 23:00
-buffer          >= 02:00
+total           <= 27:00
+buffer          >= 03:00
 ```
 
-If over budget, remove commentary or bullets. Do not add slides or move appendix content into the timed sequence.
+If over budget, mark example slides as optional or move them to the appendix. Do not remove TEI-EAJ attribution, the mass-weighted robustness explanation, or reproduction metadata.
 
-- [ ] **Step 7: Commit only if integration required tracked corrections**
+- [ ] **Step 7: Run repository validation and commit final corrections**
 
 ```bash
-git add docs/presentations/jadh-2026-wip-slides.md
-git commit -m "docs(presentation): finalize demo and figure integration"
+just validate-migration
+git diff --check
+git add docs/presentations/jadh-2026-wip-slides.md docs/presentations/jadh-2026-wip-slides.css
+git commit -m "docs(presentation): finalize TEI-EAJ and evidence-rich deck"
 ```
 
-Do not create an empty commit.
+Do not make an empty commit. If any readiness gate remains open, do not claim delivery completion.
 
 ---
 
 ## Completion Evidence
 
-The implementation handoff reports:
+Report:
 
-- main/appendix/total slide counts;
-- Pandoc version and render command;
-- citation-key resolution result and vendored hashes;
+- rendered main/appendix/total slide counts;
+- Pandoc version and exact reveal.js render command;
+- CSS overflow inspection result;
+- citation-key and vendored-file checks;
+- TEI-EAJ pinned revision and selected XML path;
+- Soranoha XML ArtifactID, materialization command, and validation result;
 - figure drift/rasterization results;
-- exact bounded demo commands and preflight status;
-- timed rehearsal duration; and
-- any numerical claim updated because a newer reproducible report superseded this plan.
+- exact demo commands and timings;
+- rehearsal duration; and
+- any gate that remains open.

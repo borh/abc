@@ -195,8 +195,8 @@ pub const FEATURE_NAMES: &[&str] = &[
 /// Project `CharFeatures` into the canonical ML feature vector.
 /// `katakana_at_sentence_end` (bool) becomes 0.0/1.0 so the vector is `f64`-uniform.
 #[must_use]
-pub fn features_to_vector(f: &CharFeatures) -> Vec<f64> {
-    vec![
+pub fn features_to_vector(f: &CharFeatures) -> [f64; 9] {
+    [
         f.total_chars as f64,
         f.hiragana_ratio,
         f.katakana_ratio,

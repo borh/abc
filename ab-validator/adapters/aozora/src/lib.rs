@@ -3,6 +3,7 @@ use std::{
     env,
     io::Write,
     process::{Command, Stdio},
+    sync::LazyLock,
 };
 
 use anyhow::{Context, Result, bail};
@@ -14,6 +15,9 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 pub const VERSION_PREFIX: &str = "aozora-adapter 0.1.0";
+
+static RUBY_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap());
 
 #[derive(Debug)]
 pub struct DecodedSource {
@@ -738,8 +742,7 @@ fn contains_aozora_markup(source: &str) -> bool {
 
 fn ruby_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
     let source = source_slice(&decoded.span_text, &node.span);
-    let re = Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap();
-    if let Some(caps) = re.captures(source) {
+    if let Some(caps) = RUBY_RE.captures(source) {
         json!({
             "kind": "ruby",
             "base": caps.name("base").unwrap().as_str(),

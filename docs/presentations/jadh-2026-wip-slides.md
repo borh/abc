@@ -198,11 +198,23 @@ aozora-pipeline is P4suta/aozora, a measured candidate—not completed Soranoha 
 
 # Conformance Breadth
 
-- 127 third-party test cases across 24 feature families
-- No parser passes all 25 required cases
-- `aozora-pipeline`: **22/25 required cases**; the three failures affect diagnostic messages, not parsed structure
-- A wrapper can omit detail that the underlying parser recognized
-- A small independent set derived from official documentation confirms the family-level findings
+The pinned [P4suta `aozora` conformance suite](https://github.com/P4suta/aozora)
+provides **127 canonical source-and-expected-output cases** in 24 syntax families.
+It is a comparison instrument, not source authority.
+
+`［＃「青空」に傍点］`　 `［＃ここから表］`　 `［＃改ページ］`
+
+| Syntax family | Cases | `aozora2` | `aozora2html` | `aozora-rs` | `AozoraEpub3` |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Emphasis and 傍線 | 40 | 10 | **29** | 3 | 0 |
+| Annotation | 7 | **7** | 0 | 0 | 0 |
+| Containers | 15 | **8** | 3 | 2 | 0 |
+| Gaiji | 7 | **6** | 5 | **6** | 0 |
+| Ruby | 3 | **3** | **3** | **3** | 0 |
+
+`aozora-pipeline` passes **22 of 25 required cases**. Across the four comparison
+adapters in the table, no case passes in eight families — break, structural
+marker, 縦中横, 割注, composite, table/column, angle quote, and 返り点.
 
 **A conformance ranking is not a capability ranking.**
 
@@ -210,7 +222,7 @@ aozora-pipeline is P4suta/aozora, a measured candidate—not completed Soranoha 
 Evidence path: ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
 Inspect/regenerate: sed -n '85,175p' ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
 Inputs: 127 P4suta vectors; independent official-doc seed
-Expected: 24 families; 25 must vectors; aozora-pipeline 22/25; no parser passes all must vectors
+Expected: 24 families; 25 must vectors; aozora-pipeline 22/25; per-family pass counts shown in the table
 Class: checked-in comparison report; supporting evidence, not source authority
 -->
 
@@ -236,11 +248,15 @@ Class: checked-in report
 
 # Fidelity and Robustness Are Different
 
-- `aozora2html`: highest per-work fidelity (**0.974**) on works completed by every parser
-- It fails on **302 ruby-heavy works**, missing **24.7% of ruby occurrences**
-- Its 0.983 work completion rate hides a frequency-weighted robustness failure
-- `aozora-pipeline` and `aozora-rs` complete all 17,886 pinned works—but `aozora-rs` has the lowest per-work fidelity
-- In **ア、秋**: `aozora2` matches the one-paragraph reference; `aozora2html` produces **29 paragraph fragments**
+| Evidence | Result |
+| --- | --- |
+| Highest completed-work fidelity | `aozora2html` **0.974** |
+| Hidden robustness loss | **302** ruby-heavy failures; **24.7%** of ruby occurrences |
+| Complete over 17,886 works | `aozora-pipeline`, `aozora-rs` |
+
+In [**ア、秋**](https://www.aozora.gr.jp/cards/000035/card236.html), `aozora2`
+matches the one-paragraph reference. `aozora2html` produces **29 paragraph
+fragments**, treating line breaks as paragraph boundaries.
 
 **Per-work quality cannot compensate for systematically missing difficult works.**
 
@@ -254,11 +270,15 @@ Class: checked-in report
 
 # What the Parser Comparison Supports
 
-- Highest frequency-weighted coverage: `aozora-pipeline`
-- Highest per-work fidelity: `aozora2html`
-- Fastest parser system: `aozora-rs`
-- Complementary strengths remain across feature families
-- Engineering recommendation: use `aozora-pipeline` as the future parser base
+| Question | Result |
+| --- | --- |
+| Most real-corpus markup represented | `aozora-pipeline` |
+| Highest fidelity when parsing succeeds | `aozora2html` |
+| Fastest measured parser | `aozora-rs` |
+| Broadest future base | `aozora-pipeline` |
+
+The syntax table shows why consolidation still matters — parser strengths are
+complementary rather than nested.
 
 **This is a multi-criterion recommendation—not one overall scholarly score.**
 
@@ -323,7 +343,7 @@ Each category has an explicit action and says whether detail moves to a separate
 
 # Actual TEI XML from TEI-EAJ
 
-## 走れメロス — Level 4
+## [走れメロス](https://www.aozora.gr.jp/cards/000035/card1567.html) — Level 4
 
 ```xml
 <p>
@@ -491,7 +511,7 @@ Provenance narrative: sibling archive paper/demo-trace.md; it is not a build inp
 
 [Soranoha repository](https://github.com/borh/soranoha)
 
-# Appendix — Source Markup Inventory
+# Appendix — Corpus Syntax Highlights
 
 | Family | Occurrences | Example |
 | --- | ---: | --- |
@@ -512,6 +532,35 @@ Inspect/regenerate: jq '{works_scanned,markers_total,row_count:(.rows|length),ro
 Inputs: 17,894-work source-authority extraction
 Expected: 4,323,915 de-duplicated markers and 50 rows; presentation-family totals overlap
 Class: checked-in generated source-authority summary
+-->
+
+# Appendix — Complete Syntax Coverage Catalog
+
+The checked-in TOML matrix enumerates **all 56 modeled syntax rows**. Each row
+records source examples, authority references, corpus prevalence, parser
+recognition, AAT fidelity, TEI/plaintext projections, and validation properties.
+
+| Category | Syntax IDs |
+| --- | --- |
+| Block | `heading.basic`, `heading.dogyo`, `heading.inline_form`, `heading.mado` |
+| Glyph | `accent.diacritic`, `accent.dotted_letter`, `gaiji.dakuten_katakana`, `gaiji.jis_code`, `gaiji.marker`, `gaiji.un_embed`, `gaiji.unicode_codepoint`, `glyph.variant_note`, `iteration.kunoji` |
+| Inline annotation | `annotation.bouki`, `annotation.chuuki`, `decoration.bold_italic`, `decoration.boten`, `decoration.bousen`, `decoration.direction_override`, `decoration.font_size`, `decoration.keigakomi`, `decoration.typeface`, `emphasis.basic`, `gaiji_ruby.inline_base`, `kunten.kaeriten`, `kunten.okurigana`, `ruby.basic`, `ruby.double`, `ruby.nested_forbidden`, `ruby.placement_directional`, `warichu.basic`, `warigaki.parenthetical` |
+| Layout | `indentation.basic`, `indentation.burasage`, `indentation.chitsuki`, `indentation.jisage_block`, `indentation.jisage_oneline`, `indentation.jizume`, `layout.center_page`, `layout.multicolumn`, `layout.tcy`, `layout.yokogumi` |
+| Media | `caption.block`, `caption.inline`, `figure.image_caption`, `figure.image_inline` |
+| Milestone | `break.line_explicit`, `break.page_line` |
+| Reference | `editor_note.unmapped`, `reference.frontref` |
+| Source annotation | `annotation.layout_note`, `source.note_label`, `source.page_reference`, `source.reviewed_residual_command` |
+| Structure | `structure.quote_block`, `structure.table` |
+
+The 24-family P4suta suite is a narrower conformance instrument over part of
+this catalog. It does not define Soranoha's source syntax authority.
+
+<!--
+Evidence path: ab-validator/data/aozora-syntax-coverage.toml
+Inspect/regenerate: rg -c '^\[\[syntax\]\]' ab-validator/data/aozora-syntax-coverage.toml; rg -n '^id =|^category =|^source_examples =|^reference_sources =|^status =' ab-validator/data/aozora-syntax-coverage.toml
+Inputs: checked-in syntax coverage matrix; authority references and evidence paths recorded per row
+Expected: 56 syntax rows across 9 categories; each row has source, parser, adapter, projection, validation, prevalence, and representability fields
+Class: checked-in evidence matrix backed by official documentation and corpus observation
 -->
 
 # Appendix — More Aozora Syntax Examples

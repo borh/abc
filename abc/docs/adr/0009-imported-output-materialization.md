@@ -4,6 +4,7 @@ Status: Accepted
 Date: 2026-04-26
 Accepted: 2026-07-03
 Supersedes: none
+Amended by: ADR 0010
 Source: `docs/adr/0007-external-parser-validation-boundary.md` and
 `docs/adr/0008-abc-tools-runtime.md`
 

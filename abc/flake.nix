@@ -396,6 +396,36 @@
                 echo "ABC Clojure tests passed with clj-nix dependency cache (kaocha auto-discovery)." > "$out/result.txt"
               '';
 
+          diagram-drift =
+            pkgs.runCommand "abc-diagram-drift"
+              {
+                nativeBuildInputs = [
+                  pkgs.clojure
+                  pkgs.git-cliff
+                  pkgs.libxml2
+                ];
+              }
+              ''
+                cp -R ${./.} source
+                chmod -R u+w source
+                cd source
+
+                export HOME="${cljDepsCache}"
+                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+                export CLJ_CONFIG="$HOME/.clojure"
+                export CLJ_CACHE="$TMPDIR/cp-cache"
+                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
+                export GITLIBS="$HOME/.gitlibs"
+
+                # Regenerate the two committed diagrams in memory and byte-compare
+                # to the checked-in files; also runs the ADR header-hygiene and
+                # architecture-stage lints. Any drift or lint problem exits non-zero.
+                clojure -M:abc/diagrams --check
+
+                mkdir -p "$out"
+                echo "ADR + architecture diagrams current; header/sidecar/stage lints clean." > "$out/result.txt"
+              '';
+
           clj-kondo =
             pkgs.runCommand "abc-clj-kondo"
               {

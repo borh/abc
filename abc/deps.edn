@@ -79,5 +79,7 @@
   :abc/person-drift-history {:main-opts ["-m" "abc.tools.person-drift-history"]}
   :abc/aozora-history-audit {:main-opts ["-m" "abc.tools.aozora-history-audit"]}
   :abc/aat-compat-admission {:main-opts ["-m" "abc.tools.aat-parser-ir-compat"]}
+  :abc/diagrams {:main-opts ["-m" "abc.tools.diagram.registry"]}
+  :abc/workflow-graph {:main-opts ["-m" "abc.tools.diagram.workflow-graph"]}
   :update {:deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
            :main-opts ["-m" "antq.core"]}}}

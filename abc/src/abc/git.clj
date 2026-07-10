@@ -1,6 +1,6 @@
 (ns abc.git
   (:require [clj-jgit.porcelain :as git :refer
-             [load-repo git-log git-blame]]
+             [load-repo git-blame]]
             [clojure.java.io :as io]
             [clojure.spec.alpha :as s])
   (:import [java.util Date]
@@ -106,7 +106,7 @@
 ;;
 (defn to-conventional-commit
   "https://www.conventionalcommits.org/en/v1.0.0-beta.3/"
-  [msg])
+  [_msg])
 
 (comment
   ;; Look into custom formatters: word formatters

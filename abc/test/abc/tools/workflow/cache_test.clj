@@ -45,8 +45,7 @@
       (is (not= key1 key2))))
 
   (testing "reordering input-value-hashes yields the same key (canonical)"
-    (let [key1 (cache/node-cache-key comps)
-          reordered (assoc comps :input-value-hashes
+    (let [reordered (assoc comps :input-value-hashes
                            {"request-set" "sha256:1111111111111111111111111111111111111111111111111111111111111111"
                             "other-input" "sha256:4444444444444444444444444444444444444444444444444444444444444444"})
           key2 (cache/node-cache-key reordered)

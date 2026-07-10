@@ -1,7 +1,5 @@
 (ns abc.html-test
-  (:require [clojure.test :as t :refer [deftest testing is use-fixtures]]
-            [babashka.fs :as fs]
-            [babashka.process :refer [process check sh pipeline pb]]))
+  (:require [clojure.test :refer [deftest testing]]))
 
 ;; Skipped: Aozora text parsing moves out of Clojure; consumed as JSON AST
 ;; from an external parser per the parser-IR contract.

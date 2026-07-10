@@ -3,18 +3,21 @@
    Pure functions answering 'why did this target realize these nodes?'"
   (:require [abc.tools.files :as files]))
 
-(defn read-run-nodes [path]
+(defn read-run-nodes
   "Read workflow nodes from a JSONL file."
+  [path]
   (files/read-json-lines path))
 
-(defn realization-summary [records]
+(defn realization-summary
   "Summarize realization counts across node records."
+  [records]
   {:node_count (count records)
    :realized_count (count (filter #(get % "realized") records))
    :skipped_count (count (filter #(= "skipped" (get % "status")) records))})
 
-(defn explain-realization [records]
+(defn explain-realization
   "Partition realized and skipped nodes, with per-realized-node realization reasons."
+  [records]
   {:realized (->> records (filter #(get % "realized")) (mapv #(get % "key")))
    :skipped  (->> records (filter #(= "skipped" (get % "status")))
                   (mapv #(get % "key")))

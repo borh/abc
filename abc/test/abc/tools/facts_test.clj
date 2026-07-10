@@ -42,7 +42,7 @@
   (let [content (slurp (str @tmp-dir "/manifest_identity.pl"))
         m (files/read-json "examples/v0/example-work/manifest.json")
         expected-hash (manifest/artifact-id (get m "manifest_identity_object"))]
-    (is (re-find (re-pattern (str "sha256:[0-9a-f]{64}")) content)
+    (is (re-find (re-pattern "sha256:[0-9a-f]{64}") content)
         "emitted hash is the real artifact-id shape")
     (is (str/includes? content (str "'" expected-hash "'"))
         "emitted hash must equal manifest/artifact-id on the real identity object")))

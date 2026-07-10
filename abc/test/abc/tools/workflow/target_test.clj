@@ -1,6 +1,6 @@
 (ns abc.tools.workflow.target-test
   (:require [abc.tools.workflow.target :as target]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.test :refer [deftest is]]))
 
 (deftest validate-graph-accepts-valid-dag-test
   (let [g {:x (target/value-node)

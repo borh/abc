@@ -44,7 +44,7 @@
 
 (deftest work-stats-classifies-fixture-annotations-test
   (let [parser-ir (files/read-json "examples/ab-validator-output/parser-ir.json")
-        {:keys [text annotations]} (plaintext/render-with-annotations parser-ir)
+        {:keys [annotations]} (plaintext/render-with-annotations parser-ir)
         ;; one token exactly covering the ruby base = aligned-single; the
         ;; rest of the text as whatever tokens the walk yields
         ruby-span (get-in (first (filter #(= "ruby" (get % "annotation_kind"))
@@ -86,7 +86,7 @@
         tokens-dir (io/file root "tokens")
         out-dir (io/file root "out")
         parser-ir (files/read-json "examples/ab-validator-output/parser-ir.json")
-        {:keys [text annotations]} (plaintext/render-with-annotations parser-ir)]
+        {:keys [text]} (plaintext/render-with-annotations parser-ir)]
     (try
       (.mkdirs (io/file parser-ir-dir "work-a"))
       (.mkdirs tokens-dir)

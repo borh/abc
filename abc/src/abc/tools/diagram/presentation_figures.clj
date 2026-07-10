@@ -47,7 +47,7 @@
              :group :identity-contract
              :coordinates coordinates
              :backing {:coordinates (mapv :id coordinates) :adrs owners}}
-      (#{:source :parsing :analysis} family)
+      (= :parsing family)
       (assoc :coordinate-columns 2))))
 
 (defn- path-valid? [context path]
@@ -208,7 +208,7 @@
          :theme theme
          :groups [{:id :inputs :label "Sources and computational evidence"
                    :cluster? false}
-                  {:id :identity-contract :label "Versioned identity contract"}
+                  {:id :identity-contract :label "Canonical identity contract"}
                   {:id :record :label "Scholarly record"}
                   {:id :derived :label "Derived views"}]
          :nodes (vec
@@ -253,30 +253,32 @@
                   :tail-port :n
                   :backing {:coordinates ["output_format_spec_hash"]}}
                  {:from :source :to :artifact-id :role :identity :style :solid
-                  :head-port :w
+                  :head-port :nw
                   :backing {:coordinates ["corpus_snapshot_hash" "work_content_hash"
                                           "metadata_record_hash"]}}
                  {:from :parsing :to :artifact-id :role :identity :style :solid
-                  :head-port :w
+                  :head-port :nw
                   :backing {:coordinates ["parser_build_hash" "parser_config_hash"
                                           "aat_parser_ir_mapping_hash"
                                           "parser_ir_schema_hash"]}}
                  {:from :publication :to :artifact-id :role :identity :style :solid
-                  :head-port :w
+                  :head-port :nw
                   :backing {:coordinates ["manifest_schema_hash" "tei_profile_hash"]}}
                  {:from :analysis :to :artifact-id :role :identity :style :solid
-                  :head-port :w
+                  :head-port :nw
                   :backing {:coordinates ["tokenizer_build_hash"
                                           "tokenizer_dictionary_hash"
                                           "tokenizer_profile_hash"
                                           "analysis_recipe_hash"
                                           "annotation_policy_hash"]}}
                  {:from :output :to :artifact-id :role :identity :style :solid
-                  :head-port :w
+                  :head-port :nw
                   :backing {:coordinates ["output_format_spec_hash"]}}
                  {:from :artifact-id :to :manifest :role :identity :style :thick
+                  :tail-port :ne :head-port :nw
                   :backing {:stages [:manifest] :adrs (stage-adrs context [:manifest])}}
                  {:from :manifest :to :views :role :derived-view :style :solid
+                  :tail-port :ne :head-port :nw
                   :backing {:path [:manifest :tei]
                             :reachable-targets [:tei :rdf :iiif :tokenized :analysis :annotation]}}]
          :footer "Identity-bearing inputs determine ArtifactID."
@@ -300,7 +302,7 @@
                   {:id :abc :label "Publication contract · ABC"}
                   {:id :scholarship :label "Scholarly outputs"}
                   {:id :current-inset :label "Current producer implementation"
-                   :style :dashed}]
+                   :style :dashed :label-location :bottom}]
          :nodes [(node :source :source :producer "Text · metadata")
                  (node :parser-process :evidence :producer "Versioned evidence · configuration")
                  (node :parser-ir :contract :abc "Stable publication interchange")

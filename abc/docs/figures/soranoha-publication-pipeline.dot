@@ -4,16 +4,16 @@ digraph "publication" {
   node [fontname="Noto Sans CJK JP",margin="0.04,0.02"];
   edge [arrowsize="0.75"];
   subgraph "cluster_abc" {
-    label="Publication contracts and materialization · ABC";
+    label="Publication contract · ABC";
     color="#A7B0BE";
     penwidth="2";
     fontname="Noto Sans CJK JP";
     fontcolor="#A7B0BE";
-    fontsize="22";
+    fontsize="24";
     margin="0";
     style="rounded";
-    "manifest" [color="#48CAE4",fontcolor="#F5F7FA",group="primary",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="30"><B>Identity and<BR/>provenance<BR/>manifest</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="22">Exact identity,<BR/>provenance,<BR/>validation, and<BR/>content</FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
-    "parser_ir" [color="#A7B0BE",fontcolor="#F5F7FA",group="primary",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="30"><B>Parser-IR</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="22">Stable<BR/>publication-side<BR/>interchange<BR/>contract</FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
+    "manifest" [color="#48CAE4",fontcolor="#F5F7FA",group="primary",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="34"><B>Validated manifest</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="24">Identity ·<BR/>provenance ·<BR/>validation ·<BR/>content</FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
+    "parser_ir" [color="#A7B0BE",fontcolor="#F5F7FA",group="primary",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="34"><B>Parser-IR</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="24">Stable publication<BR/>interchange</FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
   }
   subgraph "cluster_current_inset" {
     label="Current producer implementation";
@@ -21,42 +21,42 @@ digraph "publication" {
     penwidth="2";
     fontname="Noto Sans CJK JP";
     fontcolor="#A7B0BE";
-    fontsize="22";
+    fontsize="24";
     margin="0";
     style="rounded,dashed";
-    "aat_detail" [color="#A7B0BE",fontcolor="#F5F7FA",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="30"><B>AAT evidence +<BR/>mapping gate</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="22">Current<BR/>implementation<BR/>detail</FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
+    "aat_detail" [color="#A7B0BE",fontcolor="#F5F7FA",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="34"><B>AAT evidence +<BR/>mapping gate</B></FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
   }
   subgraph "cluster_producer" {
-    label="Sources and parser evidence · ab-validator";
+    label="Source and parser evidence · ab-validator";
     color="#A7B0BE";
     penwidth="2";
     fontname="Noto Sans CJK JP";
     fontcolor="#A7B0BE";
-    fontsize="22";
+    fontsize="24";
     margin="0";
     style="rounded";
-    "parser_process" [color="#F2B84B",fontcolor="#F5F7FA",group="primary",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="30"><B>Validated parser<BR/>process</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="22">Versioned parser<BR/>evidence and<BR/>configuration</FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
-    "source" [color="#A7B0BE",fontcolor="#F5F7FA",group="primary",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="30"><B>Aozora source</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="22">Authoritative text<BR/>and metadata</FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
+    "parser_process" [color="#F2B84B",fontcolor="#F5F7FA",group="primary",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="34"><B>Validated parser<BR/>process</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="24">Versioned evidence<BR/>· configuration</FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
+    "source" [color="#A7B0BE",fontcolor="#F5F7FA",group="primary",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="34"><B>Aozora source</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="24">Text · metadata</FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
   }
   subgraph "cluster_scholarship" {
-    label="Scholarly publication and analysis";
+    label="Scholarly outputs";
     color="#A7B0BE";
     penwidth="2";
     fontname="Noto Sans CJK JP";
     fontcolor="#A7B0BE";
-    fontsize="22";
+    fontsize="24";
     margin="0";
     style="rounded";
-    "outputs" [color="#7BC47F",fontcolor="#F5F7FA",group="primary",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="30"><B>Scholarly outputs</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="22">TEI, text, RDF,<BR/>Linked Art, IIIF,<BR/>annotations, and<BR/>analysis</FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
+    "outputs" [color="#7BC47F",fontcolor="#F5F7FA",group="primary",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="34"><B>Scholarly outputs</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="24">TEI · text · RDF ·<BR/>Linked Art · IIIF<BR/>· annotation ·<BR/>analysis</FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
   }
   "source" -> "parser_process" [style="invis",weight="100"];
   "parser_process" -> "parser_ir" [style="invis",weight="100"];
   "parser_ir" -> "manifest" [style="invis",weight="100"];
   "manifest" -> "outputs" [style="invis",weight="100"];
-  "aat_detail" -> "parser_ir" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",penwidth="2",style="dashed"];
-  "manifest" -> "outputs" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",penwidth="2",style="solid"];
-  "parser_ir" -> "manifest" [color="#F2B84B",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",penwidth="4",style="solid"];
-  "parser_process" -> "aat_detail" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",headport="w",penwidth="2",style="dashed"];
-  "parser_process" -> "parser_ir" [color="#F2B84B",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",penwidth="2",style="solid"];
-  "source" -> "parser_process" [color="#F2B84B",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",penwidth="2",style="solid"];
+  "aat_detail" -> "parser_ir" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",penwidth="2",style="dashed"];
+  "manifest" -> "outputs" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",penwidth="2",style="solid"];
+  "parser_ir" -> "manifest" [color="#F2B84B",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",penwidth="4",style="solid"];
+  "parser_process" -> "aat_detail" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="w",penwidth="2",style="dashed"];
+  "parser_process" -> "parser_ir" [color="#F2B84B",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",penwidth="2",style="solid"];
+  "source" -> "parser_process" [color="#F2B84B",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",penwidth="2",style="solid"];
 }

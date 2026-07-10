@@ -31,7 +31,9 @@ without constituting topology changes.
 ### Reproducibility architecture
 
 - Rename the identity cluster from **15-coordinate identity contract** to
-  **Versioned identity contract**.
+  **Canonical identity contract**. This matches the aggregate label in
+  `abc/docs/architecture-presentation.edn` and describes content-addressed
+  identity without implying a separate versioning mechanism.
 - Preserve exactly fifteen visible and unique coordinate labels across the five
   identity-family boxes: fourteen coordinate bullets plus the single
   **Output format** family label.
@@ -109,9 +111,10 @@ Projection data remains the source of figure wording and semantic structure.
 DOT and SVG files remain generated artifacts. The pinned Nix application
 continues to render and check both figures atomically and byte-deterministically.
 Editorial changes alter the font-subset glyph set and therefore legitimately
-change the committed WOFF2 payload and SVG bytes once. Byte reproducibility means
-that repeated pinned generation after this revision produces those new bytes
-identically; it does not mean byte invariance across the editorial edit.
+change the committed WOFF2 payload and SVG bytes exactly once, on this revision.
+Byte reproducibility means that repeated pinned generation after this revision
+produces those new bytes identically; it does not mean byte invariance across
+the editorial edit.
 
 The editorial change must not alter manifest identity, canonical architecture
 stage data, ADR ownership, or the established palette. Presentation metadata
@@ -126,10 +129,10 @@ Automated tests and generated-artifact checks must enforce:
    the **Output format** family heading standing for
    `output_format_spec_hash`. Projection tests continue to count fifteen
    coordinates; rendering tests verify the heading-equals-single-coordinate
-   suppression rule and the resulting fifteen visible labels.
+   suppression rule and the resulting fifteen visible coordinate labels.
 2. The same semantic nodes and semantic edges as the pre-revision figures.
 3. The same palette and ownership-color assignments.
-4. The exact cluster heading **Versioned identity contract**.
+4. The exact cluster heading **Canonical identity contract**.
 5. **Output format** appearing exactly once in visible reproducibility-figure
    text; accessibility metadata is evaluated for accuracy rather than counted as
    a visible label.

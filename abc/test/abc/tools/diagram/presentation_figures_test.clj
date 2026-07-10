@@ -43,7 +43,7 @@
   (let [g (graph :reproducibility)
         group (some #(when (= :identity-contract (:id %)) %) (:groups g))
         nodes (into {} (map (juxt :id identity) (:nodes g)))]
-    (is (= "Versioned identity contract" (:label group)))
+    (is (= "Canonical identity contract" (:label group)))
     (is (= "Identity-bearing inputs determine ArtifactID." (:footer g)))
     (is (not (str/includes? (:footer g) "rebuilds only dependent layers")))
     (is (= [{:id "output_format_spec_hash" :label "Output format"}]
@@ -80,12 +80,29 @@
                              (filter #(= :coordinate-family (:role %))
                                      (:nodes g))))]
     (is (:concentrate? g))
-    (is (= 2 (:coordinate-columns (:source family))))
+    (is (nil? (:coordinate-columns (:source family))))
     (is (= 2 (:coordinate-columns (:parsing family))))
-    (is (= 2 (:coordinate-columns (:analysis family))))
+    (is (nil? (:coordinate-columns (:analysis family))))
     (is (= (:reproducibility expected-topology) (semantic-topology g)))
-    (is (every? #(= :w (:head-port %))
+    (is (every? #(= :nw (:head-port %))
                 (filter #(= :artifact-id (:to %)) (:edges g))))))
+
+(deftest spine-ports-avoid-node-copy
+  (let [graphs (into {} (map (juxt :id identity) (figures/graphs)))
+        reproducibility (:reproducibility graphs)
+        publication (:publication graphs)
+        edge (fn [graph from to]
+               (some #(when (and (= from (:from %)) (= to (:to %))) %)
+                     (:edges graph)))]
+    (is (= {:tail-port :ne :head-port :nw}
+           (select-keys (edge reproducibility :artifact-id :manifest)
+                        [:tail-port :head-port])))
+    (is (= {:tail-port :ne :head-port :nw}
+           (select-keys (edge reproducibility :manifest :views)
+                        [:tail-port :head-port])))
+    (is (= :bottom
+           (:label-location
+            (some #(when (= :current-inset (:id %)) %) (:groups publication)))))))
 
 (deftest all-fifteen-coordinate-labels-render-once
   (let [g (graph :reproducibility)

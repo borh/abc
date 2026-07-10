@@ -5,8 +5,7 @@ Date: 2026-04-26
 Accepted: 2026-07-03
 Supersedes: none
 Amended by: ADR 0010
-Source: `docs/adr/0007-external-parser-validation-boundary.md` and
-`docs/adr/0008-abc-tools-runtime.md`
+Source: `docs/adr/0007-external-parser-validation-boundary.md` and `docs/adr/0008-abc-tools-runtime.md`
 
 ## Implementation Status
 
@@ -81,7 +80,8 @@ not the ArtifactID canonicalization algorithm.
 ## Acceptance Criteria
 
 - Generated parser IR and warnings manifests validate against
-  `schemas/manifest.schema.json`.
+  `schemas/manifest.schema.json`, covered by
+  `test/abc/tools/materialize_import_test.clj`.
 - Generated content hashes match the actual imported files.
 - The parser-IR manifest includes `divergence.json` as a
   `mapping-divergence` sidecar when present, falling back to legacy

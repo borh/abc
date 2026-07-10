@@ -30,6 +30,7 @@ flowchart LR
   ADR0028["0028 Ruby Annotation View for the Token and Analysis Chain"]:::proposed
   ADR0029["0029 Diagrams as Gated Derived Views"]:::proposed
   ADR0030["0030 Aozora Parser Selection and Fork Base"]:::accepted
+  ADR0031["0031 Uniform ADR Governance Validation"]:::proposed
   ADR0008 -->|"amends"| ADR0006
   ADR0010 -->|"amends"| ADR0001
   ADR0010 -->|"amends"| ADR0009
@@ -37,7 +38,7 @@ flowchart LR
   ADR0011 -.->|"depends on"| ADR0008
   ADR0011 -.->|"depends on"| ADR0009
   ADR0011 -.->|"depends on"| ADR0010
-  ADR0012 ==>|"supersedes"| ADR0006
+  ADR0012 ==>|"supersedes — TEI stub language"| ADR0006
   ADR0013 -.->|"restates hard rule"| ADR0001
   ADR0014 -.->|"restates hard rule"| ADR0001
   ADR0015 -.->|"restates hard rule"| ADR0001
@@ -59,7 +60,7 @@ flowchart LR
   ADR0023 -.->|"depends on"| ADR0007
   ADR0023 -.->|"depends on"| ADR0009
   ADR0023 -.->|"depends on"| ADR0024
-  ADR0024 -.->|"depends on"| ADR0002
+  ADR0024 -.->|"depends on — source_span_coverage gate"| ADR0002
   ADR0025 -.->|"depends on"| ADR0007
   ADR0025 -.->|"depends on"| ADR0012
   ADR0025 -.->|"depends on"| ADR0023
@@ -86,6 +87,8 @@ flowchart LR
   ADR0030 -.->|"depends on"| ADR0002
   ADR0030 -.->|"depends on"| ADR0007
   ADR0030 -.->|"depends on"| ADR0023
+  ADR0031 -->|"amends — ADR header and decision-graph source validation"| ADR0029
+  ADR0031 -.->|"depends on — generated decision graph contract"| ADR0029
   classDef accepted fill:#1b5e20,stroke:#a5d6a7,color:#fff
   classDef draft fill:#37474f,stroke:#b0bec5,color:#fff
   classDef proposed fill:#e65100,stroke:#ffcc80,color:#fff

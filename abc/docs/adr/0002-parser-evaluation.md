@@ -187,7 +187,8 @@ recommendation:
 - A candidate report exists for each serious parser option.
 - Parser-selection reports cited by ABC have a logical workspace-relative path,
   SHA-256 hash, exact parser/adapter version, corpus label, success/failure
-  counts, and explicit caveats.
+  counts, and explicit caveats; `test/abc/tools/parser_evidence_test.clj`
+  validates the accepted citation index.
 - Conversion-compatibility reports are cited as compatibility evidence, not as
   parser-selection acceptance.
 - Comparator/oracle reports are cited as explanatory evidence, not as direct

@@ -4,8 +4,7 @@ Status: Accepted
 Date: 2026-04-26
 Accepted: 2026-07-03
 Supersedes: none
-Source: `docs/high-level-architecture-note.md` v0.5,
-`docs/adr/0002-parser-evaluation.md`, and `../ab-validator`
+Source: `docs/high-level-architecture-note.md` v0.5, `docs/adr/0002-parser-evaluation.md`, and `../ab-validator`
 
 ## Implementation Status
 
@@ -89,7 +88,8 @@ ABC owns:
 ## Acceptance Criteria
 
 - `nix run .#validate-design-bundle` validates the imported
-  `examples/ab-validator-output/` fixture.
+  `examples/ab-validator-output/` fixture, covered by
+  `test/abc/tools/validate_design_bundle_test.clj`.
 - ABC validation does not require `../ab-validator` to exist.
 - Warning JSON Lines are checked against `schemas/diagnostic.schema.json`.
 - Run summary JSON Lines are at least structurally checked for one start event,

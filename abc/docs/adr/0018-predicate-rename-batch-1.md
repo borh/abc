@@ -5,6 +5,13 @@ Date: 2026-04-29
 Accepted: 2026-04-29
 Amends: ADR 0017
 
+## Implementation Status
+
+As of 2026-07-09, `abc.tools.metadata-record/record->graph` emits the renamed
+DCNDL and DCTERMS predicates and `schemas/manifest.shacl.ttl` enforces the live
+rights contract. `test/abc/tools/metadata_record_test.clj` and
+`test/abc/tools/shacl_test.clj` cover the implementation.
+
 ## Context
 
 ADR 0017's audit identified two `abc:` predicates whose semantics map
@@ -82,10 +89,12 @@ What rotates:
 - `abc.tools.metadata-record/record->graph` emits
   `:dcndl/titleTranscription` inside the title blank node and
   `:dcterms/rights <IRI>` at the work IRI; no `:abc/reading` or
-  `:abc/copyrightExpired` triples remain in the work view.
+  `:abc/copyrightExpired` triples remain in the work view, covered by
+  `test/abc/tools/metadata_record_test.clj`.
 - The SHACL shape `MetadataRecordWorkShape` requires exactly one
   `dcterms:rights` whose value is an IRI from the closed set
   `{<.../publicdomain/mark/1.0/>, <.../InC/1.0/>}`.
+  `test/abc/tools/shacl_test.clj` covers the shape.
 - `validate-design-bundle` passes — including the `metadata-record.ttl`
   byte-parity test and the metadata-record SHACL pass.
 - `nix flake check` passes.

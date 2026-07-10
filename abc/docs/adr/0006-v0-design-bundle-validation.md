@@ -4,9 +4,9 @@ Status: Accepted
 Date: 2026-04-26
 Accepted: 2026-04-28
 Supersedes: none
+Superseded by: ADR 0012 [scope: TEI stub language]
 Amended by: ADR 0008
-Source: `docs/high-level-architecture-note.md` v0.5 and
-`docs/v0-design-bundle/README.md`
+Source: `docs/high-level-architecture-note.md` v0.5 and `docs/v0-design-bundle/README.md`
 
 ## Implementation Status
 
@@ -144,7 +144,8 @@ remain a smoke gate, not a full corpus build:
 
 ## Acceptance Criteria
 
-- `nix run .#validate-design-bundle` exits `0` on the committed v0 bundle.
+- `nix run .#validate-design-bundle` exits `0` on the committed v0 bundle;
+  `test/abc/tools/validate_design_bundle_test.clj` covers the gate.
 - `bin/validate-design-bundle.sh` delegates to the supported command rather
   than duplicating validation logic.
 - A broken example manifest causes the script to exit non-zero.

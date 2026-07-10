@@ -1,15 +1,10 @@
 # ADR 0028: Ruby Annotation View for the Token and Analysis Chain
 
-Status: Proposed (first slice implemented — schema, policy, renderer
-instrumentation, materializer, manifest-index validators, join, and
-design-bundle wiring landed; open questions D1-D6 and D8 settled per
-`docs/superpowers/specs/2026-07-09-ruby-annotation-view-design.md`; D7 and D9
-remain deferred; ratification to Accepted is a separate step)
+Status: Proposed
 Date: 2026-07-09
 Supersedes: none
 Depends on: ADR 0023, ADR 0024, ADR 0025, ADR 0026, ADR 0027
-Source: `docs/handoffs/ruby-annotation-probe-2026-07-09.md`,
-`docs/superpowers/specs/2026-07-09-ruby-annotation-view-design.md`
+Source: `docs/handoffs/ruby-annotation-probe-2026-07-09.md`, `docs/superpowers/specs/2026-07-09-ruby-annotation-view-design.md`
 
 ## Implementation Status
 

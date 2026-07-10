@@ -332,3 +332,6 @@
                    (update-in adrs [0 :relations] dissoc :amended-by)
                    dir))
            :missing-amended-by)))))
+
+(deftest current-repository-satisfies-governance
+  (is (= [] (adr/validate-repository "."))))

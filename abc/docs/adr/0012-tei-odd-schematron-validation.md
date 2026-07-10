@@ -3,7 +3,14 @@
 Status: Accepted
 Date: 2026-04-28
 Accepted: 2026-04-29
-Supersedes: TEI stub language in ADR 0006
+Supersedes: ADR 0006 [scope: TEI stub language]
+
+## Implementation Status
+
+As of 2026-07-09, `schemas/tei-profile.odd` is the live TEI policy source and
+its `schemas/tei-profile.rng` and `schemas/tei-profile.sch` derived contracts
+are enforced by `abc.tools.tei` and `abc.tools.schematron`. Coverage lives in
+`test/abc/tools/tei_test.clj` and `test/abc/tools/schematron_test.clj`.
 
 ## Context
 
@@ -73,7 +80,8 @@ The first Schematron rules are deliberately narrow:
 ## Acceptance Criteria
 
 - `validate-design-bundle` verifies ODD-derived Relax NG and Schematron
-  artifacts.
+  artifacts; `test/abc/tools/tei_test.clj` and
+  `test/abc/tools/schematron_test.clj` cover both layers.
 - Valid TEI fixture passes both layers.
 - Invalid title, gaiji, and ruby fixtures fail with expected rule IDs.
 - Warning fixtures materialize reports with expected rule IDs.

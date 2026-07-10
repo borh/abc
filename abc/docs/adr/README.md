@@ -19,21 +19,29 @@ Each ADR begins with:
 ```markdown
 # ADR NNNN: Title
 
-Status: <one of the statuses below>
+Status: <Draft | Proposed | Accepted | Superseded | Withdrawn>
 Date: YYYY-MM-DD
-Accepted: YYYY-MM-DD          # present once Accepted; omitted while Draft/Proposed
-Supersedes: none | ADR NNNN
-Amends: ADR NNNN, ...          # optional; present when the ADR modifies a prior ADR's contract
-Depends on: ADR NNNN, ...      # optional
-Source: `path/to/source.md`    # optional
+Accepted: YYYY-MM-DD
+Supersedes: none | ADR NNNN [scope: non-empty text], ADR MMMM
+Superseded by: ADR NNNN [scope: non-empty text], ADR MMMM
+Amends: ADR NNNN [scope: non-empty text], ADR MMMM
+Amended by: ADR NNNN [scope: non-empty text], ADR MMMM
+Depends on: ADR NNNN [scope: non-empty text], ADR MMMM
+Source: <one physical line>
 ```
 
-When an ADR amends a prior one, the prior ADR's header SHOULD also record the
-reverse link for navigability:
+Header fields are closed and single-line: each physical line is one recognized
+field with a non-empty value, and wrapped continuations are invalid. `Accepted:`
+is required exactly when `Status: Accepted`. Relation values contain only ADR
+references separated by commas; optional scopes use the exact bracketed form
+`[scope: non-empty text]`. `Supersedes: none` is the only non-reference relation
+value. `Source:` may contain prose and code-spanned paths, but stays on one
+physical line.
 
-```markdown
-Amended by: ADR NNNN, ...      # optional; added to the amended ADR when a later ADR Amends it
-```
+`Amends`/`Amended by` and `Supersedes`/`Superseded by` links are reciprocal,
+including matching scopes. An unscoped supersession replaces the whole target
+decision and requires the target status to be `Superseded`; a scoped
+supersession leaves the target's other accepted scopes active.
 
 ## Status vocabulary
 
@@ -54,9 +62,11 @@ Both mean "not yet `Accepted`". `Draft` signals the design is still being
 shaped and is not the target contract anyone should build to yet. `Proposed`
 signals the design is the agreed target and implementation is in progress, but
 the gates that make it canonical (e.g. remaining materialization, validation,
-or publication acceptance criteria) are not yet met. Don't use `Proposed` for a
-design that is still contested or `Draft` for one that code is already being
-written against as the intended contract.
+or publication acceptance criteria) are not yet met. For both statuses,
+Acceptance Criteria are promotion conditions rather than claims of current
+completion. Don't use `Proposed` for a design that is still contested or
+`Draft` for one that code is already being written against as the intended
+contract.
 
 A `Proposed` ADR MUST use target/proposal language ("this ADR proposes …",
 "the target contract is …", "the accepted slice will be …") rather than
@@ -121,20 +131,17 @@ records the *rule* for each field's introduction and nullability semantics.
 
 ## Acceptance Criteria gate
 
-`nix/check-acceptance-criteria.sh` requires that every ADR with an
-`## Acceptance Criteria` section name an executable check: a `fixtures/`
-reference (typically a negative fixture that the harness proves is rejected), a
-`test/...` path, or a committed Prolog fact/query under
-`fixtures/v0/facts/prolog/`. The gate is status-independent: a `Draft` ADR with
-an Acceptance Criteria section is held to the same rule. Pre-existing ADRs
-listed in `.acceptance-legacy-allowlist` are exempt because their Acceptance
-Criteria pre-date this gate. New/changed ADRs are ratcheted: cite a real test or
-fixture path, not just a prose statement.
+The Clojure governance command, `clojure -M:abc/adr-governance`, parses the
+closed header grammar and validates the complete ADR corpus. It replaces the
+shell allowlist ratchet: there are no permanent legacy evidence exceptions.
 
-An Accepted ADR without an Acceptance Criteria section is allowed but weaker:
-it has no executable gate readers can point at. New Accepted ADRs SHOULD include
-an Acceptance Criteria section with at least one `test/` or `fixtures/`
-reference.
+Every Accepted ADR requires `## Decision`, `## Implementation Status`, and
+`## Acceptance Criteria`. Its Acceptance Criteria must attach at least one
+existing executable evidence path (`test/...`, `nix/...`, or a verified
+`fixtures/...` reference) to the criterion it proves. Draft and Proposed ADRs
+may record criteria without executable evidence because those criteria are
+promotion conditions; they become mandatory executable evidence before the ADR
+is promoted to Accepted.
 
 ## Known open questions
 

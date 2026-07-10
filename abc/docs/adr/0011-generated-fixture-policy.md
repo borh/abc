@@ -54,8 +54,10 @@ Byte-for-byte comparison between two generated outputs is stricter than structur
 ## Acceptance Criteria
 
 - `nix run .#validate-design-bundle` materializes parser IR and warning manifests into a temporary directory and validates both against `schemas/manifest.schema.json`.
-- `clojure -M:test` includes a focused test proving deterministic JSON output for maps with differently ordered input keys.
-- `clojure -M:test` includes a focused test proving two materialization runs with the same inputs produce byte-identical manifest files.
+- `test/abc/tools/materialize_import_test.clj` proves deterministic JSON output
+  for maps with differently ordered input keys.
+- `test/abc/tools/materialize_import_test.clj` proves two materialization runs
+  with the same inputs produce byte-identical manifest files.
 
 ## Rollback
 

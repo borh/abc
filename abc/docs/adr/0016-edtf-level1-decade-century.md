@@ -2,6 +2,16 @@
 
 Status: Accepted
 Date: 2026-04-29
+Accepted: 2026-04-29
+
+## Implementation Status
+
+Repository history establishes Accepted status by import and the 2026-07-09
+evidence backfill, while no distinct acceptance date survives, so the decision
+date is used. The live contracts are `schemas/person-record.schema.json`,
+`abc.tools.aozora-csv/parse-date`, and `abc.tools.person-record/record->graph`;
+`test/abc/tools/aozora_csv_test.clj` and
+`test/abc/tools/person_record_test.clj` cover them.
 
 ## Context
 

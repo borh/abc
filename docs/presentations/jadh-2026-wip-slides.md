@@ -307,6 +307,58 @@ Each category has an explicit action and sidecar policy.
 
 <!-- Evidence: ab-validator/data/aat-to-parser-ir-mapping-v1.json loss_taxonomy. -->
 
+# Actual TEI XML: Curated TEI-EAJ
+
+## 走れメロス — Level 4
+
+::: {.xml-example}
+```xml
+<p>
+  <persName corresp="#メロス">メロス</persName>は激怒した。
+  必ず、かの<persName corresp="#ディオニス">
+    <ruby>
+      <rb>邪智暴虐</rb>
+      <rt>じゃちぼうぎゃく</rt>
+    </ruby> の王
+  </persName>を除かなければならぬと決意した。
+  <persName corresp="#メロス">メロス</persName>には政治がわからぬ。
+  <persName corresp="#メロス">メロス</persName>は、
+  <roleName>村の牧人</roleName>である。
+</p>
+```
+:::
+
+[Pinned TEI-EAJ project source](https://github.com/TEI-EAJ/aozora_tei) [@teieaj2023; @okada2023]
+
+<!--
+Evidence path: pinned input data/complete/tei_lib_lv4/1567_tei.xml
+Inspect/regenerate: tei_root="$(nix run .#abc-tei-eaj-aozora-tei-source)"; sed -n '57,67p' "$tei_root/data/complete/tei_lib_lv4/1567_tei.xml"
+Inputs: TEI-EAJ/aozora_tei@77a675fc2771936f9544505d922d4cd45075338c
+Expected: SHA-256 c2f6e43fbc3235e832feccf47e5b06c896959d8aa2a9798132e8dca12df5c7be; work 1567; curated Level 4
+Class: pinned upstream curated TEI
+-->
+
+# Work-Matched XML Comparison: Readiness Gate
+
+## What the paired excerpts will test
+
+- Paragraph boundaries: curated structure versus parser-derived structure
+- Ruby: shared TEI vocabulary and source-preserving detail
+- Notes: body, back matter, and source-apparatus routing
+- Headers: human enrichment versus generated provenance
+- Named entities and speech: curated Level 4 depth versus transcription baseline
+
+**Draft gate:** the real Soranoha 走れメロス publication bundle has not yet landed as tracked, reproducible evidence.
+
+<!--
+DRAFT XML GATE
+Evidence path: target abc/paper/demo-melos-real/{parser-ir.aozora2html.json,metadata-record.json,source.manifest.json,tei.xml,tei.manifest.json,tei-validation-result.json}
+Inspect/regenerate: rg --files abc | rg 'demo-melos-real/(parser-ir|metadata-record|source\.manifest|tei\.xml|tei\.manifest|tei-validation-result)'
+Inputs: work ID 1567; tracked Parser-IR, metadata/persons, source manifest; generated-at 2026-07-04T00:00:00Z
+Expected: work-matched TEI plus manifest identity and zero validation findings
+Class: readiness gate; no Soranoha fixture is shown as a real edition
+-->
+
 # Publication Is Plural
 
 - **TEI:** structured scholarly transcription and validation [@okada2023]

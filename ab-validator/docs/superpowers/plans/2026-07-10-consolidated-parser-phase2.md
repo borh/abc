@@ -53,10 +53,51 @@ flake packaging, Clojure/EDN on the abc side (registry row only).
 - Frozen evidence reports (`docs/superpowers/reports/**`) are never
   rewritten. Tasks 8–10 create new ones; Task 11 verifies them; a re-run
   after a fix produces a NEW report superseding the old by reference.
+- **Candidate identity (binding for Tasks 8–12):** `CANDIDATE_COMMIT` is
+  the branch HEAD after Task 7's commit — the last implementation commit
+  before any evidence lands. Record it in the progress ledger when Task 7
+  completes. Evidence commits (Tasks 8–10) land on the branch afterwards
+  and are NOT part of the tested source identity: every gate builds the
+  candidate from a **detached checkout of `CANDIDATE_COMMIT`** with a clean
+  tree (`git status --porcelain` empty), never from the branch tip. If a
+  gate fails and code changes, the fix commit becomes the new
+  `CANDIDATE_COMMIT` and all three gates re-run against it.
+- **Every candidate build injects the source revision:**
+  `AB_AOZORA_GIT_REV="$CANDIDATE_COMMIT" cargo build --package ab-aozora --release`
+  (the `ab-aozora-aat` build script bakes it into `--version`, Task 3).
+  After building, assert `./target/release/ab-aozora --version | grep -F
+  "$CANDIDATE_COMMIT"` — a `git unknown` binary is not gate evidence.
 - **Checkpoint contract (binding for Task 11+):** no deletion, exclude-list,
-  or identity-rotation change is committed until the three gate reports
-  exist in the tree, each states its passing verdict, and all three cite the
-  same candidate commit and `--version` identity.
+  or identity-rotation change is committed until the three gate summary
+  JSONs (schema below, one per gate) exist in the tree and
+  `reports/aat-fidelity/verify-phase2-checkpoint.py` passes over them —
+  same `CANDIDATE_COMMIT`, identical `--version` embedding that commit,
+  all verdicts PASS, gate-specific counts clean.
+
+## Gate evidence schema (Tasks 8–10 write it, Task 11 verifies it)
+
+Each gate freezes `docs/superpowers/reports/2026-07-10-phase2-<gate>.summary.json`:
+
+```json
+{
+  "gate": "absorption-parity | perf | conformance-echo",
+  "candidate": {
+    "commit": "<full 40-hex CANDIDATE_COMMIT>",
+    "bin_sha256": "<sha256 of the ab-aozora binary the gate executed>",
+    "version": "<verbatim --version line>"
+  },
+  "verdict": "PASS",
+  "details": { }
+}
+```
+
+`details` per gate — parity: `compared`, `missing_count`,
+`bytes_diverged_count`, `semantic_diverged_count`, `reference_run_set`,
+`reference_content_hash`, `dump_path`; perf: `runner_report` (path),
+`new_timeouts`, `median_regression_pct`, `machine`; echo:
+`vectors_compared`, `differing_count`, `suites` (list of the per-suite
+recipe summary paths). The prose report MD accompanies the JSON; the JSON
+is what the verifier reads.
 - Commit message style: conventional commits as in recent history.
 
 ---
@@ -454,18 +495,37 @@ Adapt the exact signatures the shim shows if they differ (e.g.
 against these APIs — match it, don't guess.
 
 3. Replace identity. Delete the `AB_AOZORA_BIN`-shelling
-   `adapter_version()` (line ~893) and `VERSION_PREFIX`; add:
+   `adapter_version()` (line ~893) and `VERSION_PREFIX`. Add
+   `crates/ab-aozora-aat/build.rs`:
+
+```rust
+fn main() {
+    // Bakes the source revision into --version so gate evidence and the
+    // registry row identify the measured code. Gate builds MUST set
+    // AB_AOZORA_GIT_REV (Global Constraints); absent -> "unknown", never a
+    // build failure (dev builds). rerun-if-env-changed makes cargo rebuild
+    // when the rev changes despite an otherwise-clean cache.
+    println!("cargo:rerun-if-env-changed=AB_AOZORA_GIT_REV");
+    let rev = std::env::var("AB_AOZORA_GIT_REV").unwrap_or_else(|_| "unknown".into());
+    println!("cargo:rustc-env=AB_AOZORA_GIT_REV={rev}");
+}
+```
+
+and in `src/lib.rs`:
 
 ```rust
 /// Identity fields per the executable-boundary contract: adapter id,
-/// adapter version, AAT schema version, build identity.
+/// adapter version, AAT schema version, build identity. The git rev is
+/// injected by build.rs from AB_AOZORA_GIT_REV and is part of the
+/// registry's exact-match coordinate — a "git unknown" build must never
+/// become gate evidence or a registry row.
 pub fn adapter_version() -> String {
-    let git_rev = option_env!("AB_AOZORA_GIT_REV").unwrap_or("unknown");
     format!(
-        "ab-aozora {} aat-schema 1 facade {} wire-schema {} (git {git_rev})",
+        "ab-aozora {} aat-schema 1 facade {} wire-schema {} (git {})",
         env!("CARGO_PKG_VERSION"),
         ab_aozora_facade_version(),
         ab_aozora_facade::json::SCHEMA_VERSION,
+        env!("AB_AOZORA_GIT_REV"),
     )
 }
 
@@ -475,9 +535,6 @@ fn ab_aozora_facade_version() -> &'static str {
     "0.1.0"
 }
 ```
-
-(`AB_AOZORA_GIT_REV` is optional build env; absent → `unknown`, never a
-build failure.)
 
 4. In `build_aat` (line ~211 region), change exactly one string:
    `"adapter": "aozora"` → `"adapter": "ab-aozora"`. `adapter_version` now
@@ -748,17 +805,26 @@ In `flake.nix`, next to the `abCheck = mkRustBin { … }` definition
 ```nix
         # Permanent stdin→AAT fork adapter binary (Phase 2). Packaged so
         # run-aat-full.sh can pin it by content as a first-class lane.
+        # AB_AOZORA_GIT_REV: bake the flake source rev into --version so a
+        # nix-built binary identifies its code (dirty tree -> "unknown",
+        # which the gates reject — gates build via cargo with the rev
+        # passed explicitly).
         abAozora = mkRustBin {
           pname = "ab-aozora";
           cargoBuildFlags = [
             "--package"
             "ab-aozora"
           ];
+          env = {
+            AB_AOZORA_GIT_REV = self.rev or "unknown";
+          };
         };
 ```
 
-(drop the `env` attr `abCheck` has — `ab-aozora` needs no `AB_ABC_ROOT`; if
-`mkRustBin` requires the attr, pass an empty set matching its signature).
+(match `mkRustBin`'s actual env-attr convention — `abCheck` sets
+`env.AB_ABC_ROOT` the same way; if `self` is not in scope at that point in
+the flake, thread the rev the way the flake already exposes source
+metadata).
 In the `packages` attrset (~line 1809, next to `ab-check = abCheck;`), add
 `ab-aozora = abAozora;`.
 
@@ -955,9 +1021,15 @@ def test_bytes_fail_on_key_order_drift_that_semantic_misses(tmp_path):
     assert summary["bytes"]["diverged_count"] == 1
 
 
-def test_bytes_fail_closed_when_identity_value_repeats(tmp_path):
-    # the adapter_version string also appears in body text -> count 2 -> exit 2
-    doc = _doc(extra=',"warnings":[{"message":"\\"adapter_version\\":\\"v1\\""}]')
+def test_bytes_fail_closed_when_identity_pattern_repeats(tmp_path):
+    # a block object legitimately carrying an "adapter" key duplicates the
+    # serialized needle "adapter":"aozora" at the raw-byte level (a value
+    # INSIDE a JSON string would be escaped and would not match) -> the
+    # exactly-once check must refuse to substitute -> exit 2
+    doc = (
+        '{"blocks":[{"adapter":"aozora"}],"meta":{"adapter":"aozora",'
+        '"adapter_version":"v1","parse_complete":true},"version":1,"work_id":"w"}'
+    )
     a, b = _mkdumps(tmp_path, doc, doc)
     assert _run(a, b, "--bytes").returncode == 2
 
@@ -1177,11 +1249,21 @@ git commit -m "feat(harness): first-class ab-aozora adapter lane with explicit -
 - Modify: `reports/parser-conformance/run-aozora-notation-spec.py:72`
 - Modify: `justfile` (recipe `aozora-notation-spec-comparison`, lines
   91-121)
+- Create: `reports/parser-conformance/compare-echo-lanes.py`
+- Create: `reports/parser-conformance/tests/test_compare_echo_lanes.py`
+- Modify: `flake.nix` (add `reports/parser-conformance/tests` to Task 5's
+  `reports-pytest-check` path list)
 
 **Interfaces:**
-- Consumes: `.#ab-aozora` (Task 4); facade wire `SCHEMA_VERSION == 2`.
+- Consumes: `.#ab-aozora` (Task 4); facade wire `SCHEMA_VERSION == 2`; the
+  runner's summary shape (`{"rows": [{"vector", "adapter", "status",
+  "failures", "skips", "warnings", …}]}` — see the frozen
+  `docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.summary.json`).
 - Produces: justfile lane labels Task 10 depends on: `aozora-adapter`
-  (frozen adapter, aat mode), `ab-aozora` (the new binary, aat mode).
+  (frozen adapter, aat mode), `ab-aozora` (the new binary, aat mode); and
+  `compare-echo-lanes.py SUMMARY... --lane-a A --lane-b B [--out FILE]` —
+  exit 0 echo / 1 divergence / 2 structural error (Task 10's gate
+  instrument).
 
 - [ ] **Step 1: Fix the schemaVersion drift** (working directory:
   `ab-validator/`)
@@ -1258,11 +1340,165 @@ Also negative-test the guard:
 `just aozora-notation-spec-comparison AOZORA_BIN=/nonexistent` → exits 2
 with the clear error.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 4: Echo-lane comparator script + unit tests**
+
+Create `reports/parser-conformance/compare-echo-lanes.py` (755):
+
+```python
+#!/usr/bin/env python3
+"""Vector-for-vector echo between two adapter lanes of one or more
+run-aozora-notation-spec.py summary JSONs.
+
+Two lanes echo when, for EVERY vector, status + failures + skips +
+warnings are identical. Structural problems (a lane label absent, vector
+sets differing between lanes, duplicate vector rows) are exit 2, never a
+silent pass.
+
+Exit 0 = echo; 1 = divergence; 2 = structural/usage error."""
+
+import argparse
+import json
+import sys
+
+FIELDS = ("status", "failures", "skips", "warnings")
+
+
+def lane(rows, label, path):
+    out = {}
+    for row in rows:
+        if row.get("adapter") != label:
+            continue
+        vector = row["vector"]
+        if vector in out:
+            print(f"ERROR: {path}: duplicate vector {vector!r} for "
+                  f"adapter {label!r}", file=sys.stderr)
+            raise SystemExit(2)
+        out[vector] = json.dumps(
+            {f: row.get(f) for f in FIELDS}, sort_keys=True
+        )
+    if not out:
+        print(f"ERROR: {path}: adapter label {label!r} absent",
+              file=sys.stderr)
+        raise SystemExit(2)
+    return out
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("summaries", nargs="+")
+    ap.add_argument("--lane-a", required=True)
+    ap.add_argument("--lane-b", required=True)
+    ap.add_argument("--out")
+    args = ap.parse_args()
+    compared, differing = 0, []
+    for path in args.summaries:
+        rows = json.load(open(path))["rows"]
+        a = lane(rows, args.lane_a, path)
+        b = lane(rows, args.lane_b, path)
+        mismatched = sorted(set(a) ^ set(b))
+        if mismatched:
+            print(f"ERROR: {path}: vector sets differ between lanes: "
+                  f"{mismatched[:10]}", file=sys.stderr)
+            raise SystemExit(2)
+        for vector in sorted(a):
+            compared += 1
+            if a[vector] != b[vector]:
+                differing.append({"summary": path, "vector": vector,
+                                  args.lane_a: json.loads(a[vector]),
+                                  args.lane_b: json.loads(b[vector])})
+    result = {
+        "lane_a": args.lane_a,
+        "lane_b": args.lane_b,
+        "vectors_compared": compared,
+        "differing_count": len(differing),
+        "differing": differing[:50],
+    }
+    text = json.dumps(result, indent=2, ensure_ascii=False)
+    print(text)
+    if args.out:
+        with open(args.out, "w") as handle:
+            handle.write(text + "\n")
+    return 0 if not differing else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+```
+
+Create `reports/parser-conformance/tests/test_compare_echo_lanes.py`:
+
+```python
+import json
+import pathlib
+import subprocess
+import sys
+
+SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "compare-echo-lanes.py"
+
+
+def row(vector, adapter, status="pass", failures=(), skips=(), warnings=()):
+    return {"vector": vector, "adapter": adapter, "status": status,
+            "failures": list(failures), "skips": list(skips),
+            "warnings": list(warnings), "feature": "x", "level": "must"}
+
+
+def run(tmp_path, rows, *args):
+    summary = tmp_path / "summary.json"
+    summary.write_text(json.dumps({"rows": rows}))
+    return subprocess.run(
+        [sys.executable, str(SCRIPT), str(summary),
+         "--lane-a", "aozora-adapter", "--lane-b", "ab-aozora", *args],
+        capture_output=True, text=True)
+
+
+def test_echo_passes(tmp_path):
+    rows = [row("v1", "aozora-adapter"), row("v1", "ab-aozora"),
+            row("v2", "aozora-adapter", "fail", failures=["nodes: x"]),
+            row("v2", "ab-aozora", "fail", failures=["nodes: x"])]
+    proc = run(tmp_path, rows)
+    assert proc.returncode == 0
+    assert json.loads(proc.stdout)["vectors_compared"] == 2
+
+
+def test_status_divergence_fails(tmp_path):
+    rows = [row("v1", "aozora-adapter", "pass"),
+            row("v1", "ab-aozora", "fail", failures=["nodes: y"])]
+    proc = run(tmp_path, rows)
+    assert proc.returncode == 1
+    assert json.loads(proc.stdout)["differing_count"] == 1
+
+
+def test_vector_missing_in_one_lane_is_structural(tmp_path):
+    rows = [row("v1", "aozora-adapter"), row("v1", "ab-aozora"),
+            row("v2", "aozora-adapter")]
+    assert run(tmp_path, rows).returncode == 2
+
+
+def test_duplicate_vector_is_structural(tmp_path):
+    rows = [row("v1", "aozora-adapter"), row("v1", "aozora-adapter"),
+            row("v1", "ab-aozora")]
+    assert run(tmp_path, rows).returncode == 2
+
+
+def test_absent_lane_label_is_structural(tmp_path):
+    rows = [row("v1", "aozora-adapter")]
+    assert run(tmp_path, rows).returncode == 2
+```
+
+Add `ab-validator/reports/parser-conformance/tests` to the
+`reports-pytest-check` path list in `flake.nix` (Task 5 created it). Run:
 
 ```bash
-git add reports/parser-conformance/run-aozora-notation-spec.py justfile
-git commit -m "fix(conformance): accept wire schemaVersion 2; real ab-aozora lane and AOZORA_BIN guard in justfile"
+python -m pytest reports/parser-conformance/tests -q
+```
+
+Expected: 5/5 PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add reports/parser-conformance/run-aozora-notation-spec.py reports/parser-conformance/compare-echo-lanes.py reports/parser-conformance/tests justfile flake.nix
+git commit -m "fix(conformance): accept wire schemaVersion 2; ab-aozora lane, AOZORA_BIN guard, echo-lane comparator"
 ```
 
 ---
@@ -1280,22 +1516,34 @@ git commit -m "fix(conformance): accept wire schemaVersion 2; real ab-aozora lan
   `--version` (checkpoint contract input for Task 11). The candidate dump
   stays on hinoki until Phase 4 (do not delete it).
 
-- [ ] **Step 1: Record the candidate identity** (working directory:
+- [ ] **Step 1: Fix the candidate identity** (working directory:
   `ab-validator/`, then hinoki via ssh)
 
+`CANDIDATE_COMMIT` = the ledger-recorded HEAD after Task 7 (Global
+Constraints). Evidence commits from this task onward do NOT move it.
+
 ```bash
-git rev-parse HEAD   # CANDIDATE_COMMIT — cite this everywhere
+CANDIDATE_COMMIT=<from the ledger>   # full 40-hex sha
 git push origin feat/parser-fork-phase2
 ```
 
-- [ ] **Step 2: Build the candidate on hinoki**
+- [ ] **Step 2: Build the candidate on hinoki — detached at
+  CANDIDATE_COMMIT, rev injected**
 
 ```bash
-ssh hinoki.hyakutake-barbel.ts.net 'cd ~/Projects/soranoha && git fetch origin && git worktree add -f ~/Projects/soranoha/.worktrees/parser-fork-phase2 origin/feat/parser-fork-phase2 2>/dev/null || git -C ~/Projects/soranoha/.worktrees/parser-fork-phase2 reset --hard origin/feat/parser-fork-phase2'
-ssh hinoki.hyakutake-barbel.ts.net 'cd ~/Projects/soranoha/.worktrees/parser-fork-phase2/ab-validator && export RUSTC_WRAPPER= SCCACHE_DISABLE=1 && cargo build --package ab-aozora --release && ./target/release/ab-aozora --version && sha256sum ./target/release/ab-aozora'
+ssh hinoki.hyakutake-barbel.ts.net "cd ~/Projects/soranoha && git fetch origin && (git worktree add --detach ~/Projects/soranoha/.worktrees/parser-fork-phase2 $CANDIDATE_COMMIT 2>/dev/null || git -C ~/Projects/soranoha/.worktrees/parser-fork-phase2 checkout --detach $CANDIDATE_COMMIT)"
+ssh hinoki.hyakutake-barbel.ts.net "cd ~/Projects/soranoha/.worktrees/parser-fork-phase2 && test -z \"\$(git status --porcelain)\" && git rev-parse HEAD"
 ```
 
-Record sha256 + `--version` verbatim (they go in the report).
+The second command must print exactly `CANDIDATE_COMMIT` (clean detached
+tree). Then build with the rev baked in and assert it surfaced:
+
+```bash
+ssh hinoki.hyakutake-barbel.ts.net "cd ~/Projects/soranoha/.worktrees/parser-fork-phase2/ab-validator && export RUSTC_WRAPPER= SCCACHE_DISABLE=1 AB_AOZORA_GIT_REV=$CANDIDATE_COMMIT && cargo build --package ab-aozora --release && ./target/release/ab-aozora --version | grep -F $CANDIDATE_COMMIT && sha256sum ./target/release/ab-aozora"
+```
+
+Record sha256 + the full `--version` line verbatim (they go in the summary
+JSON). A `git unknown` version = the env did not reach the build: STOP.
 
 - [ ] **Step 3: Resolve the reference fail-closed**
 
@@ -1330,13 +1578,40 @@ Required: exit 0; `compared` = 17886 (or the run-set's exact work count);
 named work's two files, diff, fix the port (Task 3 discipline), re-run from
 Step 2 (new candidate commit → all three gates re-cite it).
 
-- [ ] **Step 6: Freeze the report**
+- [ ] **Step 6: Freeze the report (gate evidence schema)**
 
-Write `docs/superpowers/reports/2026-07-10-phase2-absorption-parity.md`
-(+ copy the summary JSON alongside as `….summary.json`): candidate commit,
-binary sha256, verbatim `--version`, reference run-set id + content hash,
-comparator invocation, result block, dump retention path. Model the
-structure on `2026-07-10-fork-parity-corpus.md`.
+Build `docs/superpowers/reports/2026-07-10-phase2-absorption-parity.summary.json`
+per the Gate evidence schema — `gate` `"absorption-parity"`, the recorded
+`candidate` triple, `verdict` `"PASS"`, and `details` embedding the
+comparator output fields plus reference identity:
+
+```bash
+python3 - <<PY > docs/superpowers/reports/2026-07-10-phase2-absorption-parity.summary.json
+import json
+comparison = json.load(open("<fetched ~/phase2-parity-summary.json>"))
+print(json.dumps({
+    "gate": "absorption-parity",
+    "candidate": {"commit": "$CANDIDATE_COMMIT",
+                  "bin_sha256": "<recorded sha256>",
+                  "version": "<recorded --version line>"},
+    "verdict": "PASS",
+    "details": {
+        "compared": comparison["compared"],
+        "missing_count": comparison["missing_count"],
+        "bytes_diverged_count": comparison["bytes"]["diverged_count"],
+        "semantic_diverged_count": comparison["semantic"]["diverged_count"],
+        "reference_run_set": "<run-set id>",
+        "reference_content_hash": "<verified hash>",
+        "dump_path": "/db/ab-validator/aat-corpus/ab-aozora-phase2-<COMMIT7>",
+    },
+}, indent=2))
+PY
+```
+
+(`verdict` is only written after the required result held; on failure no
+summary is written — fix, new candidate, re-run.) Write the prose MD
+alongside (model: `2026-07-10-fork-parity-corpus.md`), citing the same
+values plus the comparator invocation and dump retention note.
 
 ```bash
 git add docs/superpowers/reports/2026-07-10-phase2-absorption-parity.*
@@ -1391,14 +1666,25 @@ investigate before proceeding (expected direction is faster — subprocess
 hops removed); a slowdown under threshold is not a formal block but must be
 explained in the report.
 
-- [ ] **Step 3: Freeze the report**
+- [ ] **Step 3: Freeze the report (gate evidence schema)**
 
-`docs/superpowers/reports/2026-07-10-phase2-perf.md` + the JSON: candidate
-commit + sha256 + `--version`, baseline argv + adapter sha256 + upstream
-store path, machine identity, per-work medians, verdict, and the explicit
-note that this is an end-to-end AAT-production comparison (mode change vs
-the Phase 1 inner-binary `inspect nodes` measurement — not comparable
-across reports). Commit:
+Fetch `~/phase2-perf.json` (the runner's full report — commit it as
+`docs/superpowers/reports/2026-07-10-phase2-perf.runner.json`), then build
+`docs/superpowers/reports/2026-07-10-phase2-perf.summary.json` per the Gate
+evidence schema: `gate` `"perf"`, the SAME candidate triple as Task 8
+(same binary — sha verified in Step 1), `verdict` `"PASS"` (only if the
+runner's own verdict is PASS), `details` =
+`{"runner_report": "docs/superpowers/reports/2026-07-10-phase2-perf.runner.json",
+"new_timeouts": <from runner>, "median_regression_pct": <from runner>,
+"machine": <runner's machine identity block>}` — extract with a
+python one-liner reading the runner JSON's actual field names.
+
+The prose MD (`2026-07-10-phase2-perf.md`) adds: baseline argv + adapter
+sha256 + upstream store path, per-work medians, the spec tripwire
+disposition (if the candidate median was slower at all: the
+investigation's finding), and the explicit note that this is an end-to-end
+AAT-production comparison (mode change vs the Phase 1 inner-binary
+`inspect nodes` measurement — not comparable across reports). Commit:
 
 ```bash
 git add docs/superpowers/reports/2026-07-10-phase2-perf.*
@@ -1410,59 +1696,86 @@ git commit -m "test(parser): Phase 2 end-to-end perf gate evidence"
 ### Task 10: Conformance echo gate (local)
 
 **Files:**
-- Create: `docs/superpowers/reports/2026-07-10-phase2-conformance-echo.md`
-  and `….summary.json`
+- Create: `docs/superpowers/reports/2026-07-10-phase2-conformance-echo.md`,
+  `….summary.json` (gate schema), plus the per-suite artifacts
+  `…-p4suta.{md,summary.json}`, `…-official-seed.{md,summary.json}`,
+  `…-lanes.json`
 
 **Interfaces:**
-- Consumes: Task 7's justfile lanes; the same CANDIDATE_COMMIT checked out
-  locally (verify `git rev-parse HEAD` matches Tasks 8/9; the locally built
-  `ab-aozora` sha256 may differ from hinoki's — record BOTH the local
-  sha256 and the commit, the commit is the cross-gate join key, and
-  `--version` must match verbatim).
-- Produces: frozen echo report (checkpoint input for Task 11).
+- Consumes: Task 7's justfile lanes and `compare-echo-lanes.py`; a local
+  **detached worktree at CANDIDATE_COMMIT** (evidence commits have moved
+  the branch tip — the tip is NOT the candidate). The locally built
+  `ab-aozora` sha256 may differ from hinoki's; the cross-gate join keys
+  are the commit and the verbatim `--version` line (which embeds it).
+- Produces: frozen echo report + gate summary JSON (checkpoint input for
+  Task 11).
 
-- [ ] **Step 1: Run the recipe with explicit identity** (working
-  directory: `ab-validator/`)
+- [ ] **Step 1: Detached candidate checkout, build with rev injected**
+
+```bash
+CANDIDATE_COMMIT=<from the ledger>
+git worktree add --detach /home/bor/Projects/soranoha/.worktrees/phase2-candidate "$CANDIDATE_COMMIT"
+cd /home/bor/Projects/soranoha/.worktrees/phase2-candidate/ab-validator
+test -z "$(git status --porcelain)" && git rev-parse HEAD   # must print CANDIDATE_COMMIT
+export RUSTC_WRAPPER= SCCACHE_DISABLE=1 AB_AOZORA_GIT_REV="$CANDIDATE_COMMIT"
+cargo build --package ab-aozora --release
+./target/release/ab-aozora --version | grep -F "$CANDIDATE_COMMIT"
+sha256sum ./target/release/ab-aozora   # record: the echo gate's bin_sha256
+```
+
+- [ ] **Step 2: Run the recipe over BOTH suites from the candidate tree**
+
+Still inside the candidate tree's `ab-validator/` (the candidate's own
+justfile/harness code runs; REPORT_MD/SUMMARY_JSON are repo-root-relative,
+so the outputs land in the candidate tree and are copied out in Step 4):
 
 ```bash
 upstream="$(nix build .#upstream-parser-aozora --no-link --print-out-paths)/bin/aozora"
-just aozora-notation-spec-comparison \
-  AOZORA_BIN="$upstream" \
-  REPORT_MD=docs/superpowers/reports/2026-07-10-phase2-conformance-echo.md \
-  SUMMARY_JSON=docs/superpowers/reports/2026-07-10-phase2-conformance-echo.summary.json
+just aozora-notation-spec-comparison AOZORA_BIN="$upstream" \
+  REPORT_MD=echo-p4suta.md SUMMARY_JSON=echo-p4suta.summary.json
+just aozora-notation-spec-comparison AOZORA_BIN="$upstream" \
+  VECTORS="$PWD/reports/parser-conformance/official-docs-seed" \
+  REPORT_MD=echo-official-seed.md SUMMARY_JSON=echo-official-seed.summary.json
 ```
 
-- [ ] **Step 2: Assert the echo**
+(`VECTORS` must be the directory containing `*/vector.json` — if the seed
+vectors live one level deeper, point at that subdirectory; the Phase 1
+Gate B report documents the path it used.)
 
-Compare, vector-for-vector across both suites (127 P4suta + 30
-official-docs seed), the `aozora-adapter` lane vs the `ab-aozora` lane in
-the summary JSON:
+- [ ] **Step 3: Assert the echo with the tracked comparator**
 
 ```bash
-python3 - docs/superpowers/reports/2026-07-10-phase2-conformance-echo.summary.json <<'PY'
-import json, sys
-summary = json.load(open(sys.argv[1]))
-# The per-adapter/per-vector shape is the same one the frozen
-# docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.summary.json
-# uses — open that file first and write the extraction against it: pull the
-# per-vector outcome lists for labels "aozora-adapter" and "ab-aozora",
-# diff them, print every differing vector name, exit 1 if any.
-PY
+python3 reports/parser-conformance/compare-echo-lanes.py \
+  echo-p4suta.summary.json echo-official-seed.summary.json \
+  --lane-a aozora-adapter --lane-b ab-aozora \
+  --out echo-lanes.json
 ```
 
-Required: zero differing vectors (script exits 0 printing a count line). The two lanes run the same ported logic; any difference is a port
-defect → fix, new candidate commit, re-run Tasks 8–10.
+Required: exit 0, `differing_count` 0, `vectors_compared` > 0. The two
+lanes run the same ported logic; any difference is a port defect → fix,
+new candidate commit, re-run Tasks 8–10.
 
-- [ ] **Step 3: Freeze**
+- [ ] **Step 4: Freeze (gate evidence schema), clean up the candidate tree**
 
-Append to the report MD (or a companion section): candidate commit, local
-`ab-aozora` sha256, verbatim `--version` (must equal Task 8/9's), the echo
-verdict (identical vector-for-vector), and the schemaVersion-drift
-paragraph from Task 7 Step 1 if upstream inspect scores moved vs the frozen
-2026-07-08 summary. Commit:
+Copy the five artifacts into the BRANCH worktree under
+`docs/superpowers/reports/` with the `2026-07-10-phase2-conformance-echo-`
+prefix (Files list above). Build
+`docs/superpowers/reports/2026-07-10-phase2-conformance-echo.summary.json`
+per the Gate evidence schema: `gate` `"conformance-echo"`, candidate
+`{commit, bin_sha256 (this task's local build), version}`, `verdict`
+`"PASS"`, `details` = `{"vectors_compared": <from echo-lanes.json>,
+"differing_count": 0, "suites": [the two committed per-suite summary
+paths]}`.
+
+Write the prose MD (`2026-07-10-phase2-conformance-echo.md`): identity
+block, echo verdict, and — if Task 7 Step 1 found the upstream inspect
+scores moved vs the frozen 2026-07-08 summary — the schemaVersion-drift
+paragraph explaining the delta. Then:
 
 ```bash
-git add docs/superpowers/reports/2026-07-10-phase2-conformance-echo.*
+cd /home/bor/Projects/soranoha/.worktrees/parser-fork-phase2/ab-validator
+git worktree remove /home/bor/Projects/soranoha/.worktrees/phase2-candidate
+git add docs/superpowers/reports/2026-07-10-phase2-conformance-echo*
 git commit -m "test(parser): Phase 2 conformance echo gate evidence"
 ```
 
@@ -1482,22 +1795,146 @@ git commit -m "test(parser): Phase 2 conformance echo gate evidence"
 - Produces: a workspace with no shim; the provenance handoff as the
   narrowed-hazard + facade-divergence record Phase 3 reads.
 
-- [ ] **Step 1: Verify the checkpoint — do not proceed on any failure**
+- [ ] **Step 1: Write the checkpoint verifier + unit tests**
   (working directory: `ab-validator/`)
 
-```bash
-set -o pipefail
-ls docs/superpowers/reports/2026-07-10-phase2-absorption-parity.md \
-   docs/superpowers/reports/2026-07-10-phase2-perf.md \
-   docs/superpowers/reports/2026-07-10-phase2-conformance-echo.md
-grep -l "CANDIDATE_COMMIT_FULL_SHA" docs/superpowers/reports/2026-07-10-phase2-*.md | wc -l   # must be 3
-grep -h "ab-aozora 0" docs/superpowers/reports/2026-07-10-phase2-*.md | sort -u | wc -l       # verbatim --version identical => 1
+Create `reports/aat-fidelity/verify-phase2-checkpoint.py` (755):
+
+```python
+#!/usr/bin/env python3
+"""Fail-closed Phase 2 checkpoint: three PASS gate summaries, one candidate.
+
+Reads the three gate summary JSONs (Gate evidence schema in the Phase 2
+plan) and verifies, dying on the first violation:
+- every file parses and carries gate/candidate/verdict/details fields
+- gate names are absorption-parity / perf / conformance-echo respectively
+- all verdicts are exactly "PASS"
+- all three candidate.commit equal --candidate-commit (full 40-hex)
+- all three candidate.version strings are identical AND embed the commit
+  (proves AB_AOZORA_GIT_REV reached every gate build)
+- parity and perf attest the same bin_sha256 (same hinoki binary)
+- parity: compared > 0, missing_count == 0, bytes_diverged_count == 0
+- perf: new_timeouts == 0
+- echo: vectors_compared > 0, differing_count == 0
+
+Exit 0 = checkpoint holds; 1 = any violation (message on stderr)."""
+
+import argparse
+import json
+import re
+import sys
+
+
+def die(msg):
+    print(f"CHECKPOINT FAIL: {msg}", file=sys.stderr)
+    raise SystemExit(1)
+
+
+def field(doc, dotted, source):
+    node = doc
+    for part in dotted.split("."):
+        if not isinstance(node, dict) or part not in node:
+            die(f"{source}: missing field {dotted}")
+        node = node[part]
+    return node
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("parity")
+    ap.add_argument("perf")
+    ap.add_argument("echo")
+    ap.add_argument("--candidate-commit", required=True)
+    args = ap.parse_args()
+    if not re.fullmatch(r"[0-9a-f]{40}", args.candidate_commit):
+        die("--candidate-commit must be a full 40-hex sha")
+    expected = {"parity": "absorption-parity", "perf": "perf",
+                "echo": "conformance-echo"}
+    docs, versions, commits = {}, set(), set()
+    for name in ("parity", "perf", "echo"):
+        path = getattr(args, name)
+        try:
+            doc = json.load(open(path))
+        except (OSError, json.JSONDecodeError) as err:
+            die(f"{path}: unreadable ({err})")
+        docs[name] = (path, doc)
+        if field(doc, "gate", path) != expected[name]:
+            die(f"{path}: gate is not {expected[name]!r}")
+        if field(doc, "verdict", path) != "PASS":
+            die(f"{path}: verdict is not PASS")
+        commits.add(field(doc, "candidate.commit", path))
+        versions.add(field(doc, "candidate.version", path))
+        if not field(doc, "candidate.bin_sha256", path):
+            die(f"{path}: empty candidate.bin_sha256")
+    if commits != {args.candidate_commit}:
+        die(f"candidate commits disagree/mismatch: {sorted(commits)}")
+    if len(versions) != 1:
+        die(f"--version strings disagree: {sorted(versions)}")
+    if args.candidate_commit not in next(iter(versions)):
+        die("--version does not embed the candidate commit "
+            "(AB_AOZORA_GIT_REV not injected?)")
+    p_path, p = docs["parity"]
+    q_path, q = docs["perf"]
+    e_path, e = docs["echo"]
+    if field(p, "candidate.bin_sha256", p_path) != field(
+        q, "candidate.bin_sha256", q_path
+    ):
+        die("parity and perf attest different binaries")
+    if field(p, "details.compared", p_path) <= 0:
+        die("parity: compared not > 0")
+    if field(p, "details.missing_count", p_path) != 0:
+        die("parity: missing_count != 0")
+    if field(p, "details.bytes_diverged_count", p_path) != 0:
+        die("parity: bytes_diverged_count != 0")
+    if field(q, "details.new_timeouts", q_path) != 0:
+        die("perf: new_timeouts != 0")
+    if field(e, "details.vectors_compared", e_path) <= 0:
+        die("echo: vectors_compared not > 0")
+    if field(e, "details.differing_count", e_path) != 0:
+        die("echo: differing_count != 0")
+    print(f"CHECKPOINT OK: three PASS gates attest {args.candidate_commit}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 ```
 
-(Substitute the real candidate sha; the three reports must each state
-their passing verdict — read them.) Record the verification in the
-progress ledger. Any mismatch = a gate ran against a different candidate:
-STOP and re-run the stale gate.
+Create `reports/aat-fidelity/tests/test_verify_phase2_checkpoint.py`
+(lands in the directory Task 5's nix check already runs): a `_summaries()`
+helper building three valid docs for a fixed sha, a `_run(...)` helper
+invoking the script via `subprocess`, and one test per outcome — all-valid
+→ exit 0; each single violation → exit 1 with the matching `CHECKPOINT
+FAIL` fragment on stderr: wrong verdict, commit mismatch between files,
+version not embedding the commit, differing parity/perf bin_sha256,
+nonzero `bytes_diverged_count`, nonzero `differing_count`, missing field
+(delete `details.new_timeouts`), malformed `--candidate-commit`. Run:
+
+```bash
+python -m pytest reports/aat-fidelity/tests/test_verify_phase2_checkpoint.py -q
+```
+
+Expected: PASS. Commit the pair before using it:
+
+```bash
+git add reports/aat-fidelity/verify-phase2-checkpoint.py reports/aat-fidelity/tests/test_verify_phase2_checkpoint.py
+git commit -m "feat(harness): fail-closed Phase 2 gate checkpoint verifier"
+```
+
+- [ ] **Step 1b: Run the checkpoint — do not proceed on any failure**
+
+```bash
+python3 reports/aat-fidelity/verify-phase2-checkpoint.py \
+  docs/superpowers/reports/2026-07-10-phase2-absorption-parity.summary.json \
+  docs/superpowers/reports/2026-07-10-phase2-perf.summary.json \
+  docs/superpowers/reports/2026-07-10-phase2-conformance-echo.summary.json \
+  --candidate-commit "$CANDIDATE_COMMIT"
+```
+
+Required: `CHECKPOINT OK` + exit 0. Record the invocation and output in
+the progress ledger. Any failure = a gate ran against a different
+candidate or did not pass: STOP and re-run the stale gate; do not touch
+the shim.
 
 - [ ] **Step 2: Delete the shim**
 

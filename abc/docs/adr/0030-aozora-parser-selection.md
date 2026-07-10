@@ -8,6 +8,15 @@ Amends: ADR 0002
 Depends on: ADR 0002, ADR 0007, ADR 0023
 Source: `ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md`
 
+## Implementation Status
+
+As of 2026-07-10, the accepted parser-selection citations are live in
+`data/parser-evidence-citations.edn` and are validated by
+`abc.tools.parser-evidence` without changing registry admission.
+`test/abc/tools/parser_evidence_test.clj` and
+`test/abc/tools/validate_design_bundle_test.clj` cover the citation index and
+admission boundary.
+
 ## Context
 
 ADR 0002 defined parser evaluation gates but stayed Draft because no candidate

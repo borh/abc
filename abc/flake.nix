@@ -571,14 +571,28 @@
                 echo "TEI-EAJ comparison reports regenerate against the pinned source." > "$out/result.txt"
               '';
 
-          adr-acceptance-criteria = pkgs.runCommand "abc-adr-acceptance-criteria" { } ''
-            cp -R ${./.} source
-            chmod -R u+w source
-            cd source
-            bash nix/check-acceptance-criteria.sh
-            mkdir -p "$out"
-            echo "ADR acceptance-criteria lint passed (ratcheted)." > "$out/result.txt"
-          '';
+          adr-governance =
+            pkgs.runCommand "abc-adr-governance"
+              {
+                nativeBuildInputs = [ pkgs.clojure ];
+              }
+              ''
+                cp -R ${./.} source
+                chmod -R u+w source
+                cd source
+
+                export HOME="${cljDepsCache}"
+                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+                export CLJ_CONFIG="$HOME/.clojure"
+                export CLJ_CACHE="$TMPDIR/cp-cache"
+                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
+                export GITLIBS="$HOME/.gitlibs"
+
+                clojure -M:abc/adr-governance
+
+                mkdir -p "$out"
+                echo "ADR lifecycle, relation, dependency, and evidence governance passed." > "$out/result.txt"
+              '';
           swi-prolog-smoke =
             pkgs.runCommand "abc-swi-prolog-smoke" { nativeBuildInputs = [ pkgs.swi-prolog ]; }
               ''

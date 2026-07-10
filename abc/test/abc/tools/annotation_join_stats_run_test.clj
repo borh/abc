@@ -6,6 +6,7 @@
             [abc.tools.source-snapshot-fixture :as fixture]
             [abc.tools.workflow :as workflow]
             [clojure.java.io :as io]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]))
 
 (deftest work-id-from-aat-filename-test
@@ -85,10 +86,38 @@
       (finally
         (fixture/delete-tree! root)))))
 
+(defn- absolute-bash-path []
+  (let [process (.start (ProcessBuilder. ^java.util.List
+                         ["bash" "-c" "command -v bash"]))
+        stdout (string/trim (slurp (.getInputStream process)))
+        stderr (string/trim (slurp (.getErrorStream process)))
+        exit (.waitFor process)]
+    (when (or (not (zero? exit)) (string/blank? stdout))
+      (throw (ex-info "Unable to resolve an absolute Bash path"
+                      {:exit exit :stderr stderr})))
+    stdout))
+
 (defn- write-stub! [file content]
-  (spit file content)
+  (spit file (string/replace-first content
+                                   #"^#!/usr/bin/env bash"
+                                   (str "#!" (absolute-bash-path))))
   (.setExecutable ^java.io.File file true)
   file)
+
+(deftest write-stub-resolves-portable-bash-shebang-test
+  (let [root (fixture/temp-dir "abc-join-stats-run-stub")
+        stub (io/file root "stub.sh")]
+    (try
+      (write-stub! stub "#!/usr/bin/env bash\nexit 0\n")
+      (let [first-line (first (string/split-lines (slurp stub)))
+            bash-path (subs first-line 2)
+            bash-file (io/file bash-path)]
+        (is (not= "#!/usr/bin/env bash" first-line))
+        (is (.isAbsolute bash-file))
+        (is (.canExecute bash-file))
+        (is (= "bash" (.getName bash-file))))
+      (finally
+        (fixture/delete-tree! root)))))
 
 (deftest run-surfaces-tokenizer-failure-with-stderr-test
   (let [root (fixture/temp-dir "abc-join-stats-run-tokfail")

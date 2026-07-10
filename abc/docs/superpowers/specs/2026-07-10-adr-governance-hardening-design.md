@@ -269,9 +269,10 @@ The migration repairs all current violations before removing the old gate:
 - Add real evidence references to every Accepted ADR's Acceptance Criteria
   section currently covered by the legacy allowlist. Where no executable
   evidence exists for an Accepted contract, add the missing characterization
-  test or fixture rather than inventing a reference. Draft ADRs 0002–0005 keep
-  their criteria as future promotion conditions and do not receive fictional
-  evidence.
+  test or fixture rather than inventing a reference. The user independently
+  accepted ADR 0030, which amended and accepted ADR 0002; this is not an
+  incidental governance promotion. Only ADRs 0003–0005 remain Draft and keep
+  their criteria as future promotion conditions without fictional evidence.
 - Add explicit scopes to Accepted-to-non-Accepted dependencies, including ADR
   0024's dependency on ADR 0002.
 - Rewrite ADR 0023 and ADR 0024 relation headers to contain only structured ADR

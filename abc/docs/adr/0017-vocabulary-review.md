@@ -63,7 +63,7 @@ never touches the JSON-LD context. But by RDF semantics these are two
 unrelated predicates, which violates the v0 contract that "the manifest
 RDF view and the LOD publication view describe the same entities."
 
-### Decision
+## Decision
 
 The canonical namespace for `abc:` is `https://w3id.org/abc/` (the form
 used by the SHACL shapes, RDF generators, and every committed `*.ttl`
@@ -140,14 +140,16 @@ v0 contract surface for `abc:` predicates.
 
 - `contexts/abc-v0.jsonld` declares `abc:` as `https://w3id.org/abc/`.
 - The harness `abc.tools.linked-art` extracts the identity invariant at
-  `https://w3id.org/abc/artifactId`.
+  `https://w3id.org/abc/artifactId`, covered by
+  `test/abc/tools/linked_art_test.clj`.
 - The three LOD fixtures regenerate byte-identically under the new
   context, with a rotated `context_hash`, and `validate-design-bundle`
   passes its drift gate.
 - `nix flake check` passes.
 - All `*.ttl` fixtures keep `@prefix abc: <https://w3id.org/abc/>` and
   do not regenerate. `manifest_identity_object` and every committed
-  `*.ttl` byte-parity test continues to pass.
+  `*.ttl` byte-parity test in `test/abc/tools/manifest_to_rdf_test.clj`
+  continues to pass.
 
 ## Consequences
 

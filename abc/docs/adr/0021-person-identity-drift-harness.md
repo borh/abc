@@ -4,6 +4,13 @@ Status: Accepted
 Date: 2026-04-29
 Accepted: 2026-04-30
 
+## Implementation Status
+
+As of 2026-07-09, `abc.tools.person-drift/validate-drift-events!` validates the
+live event and index schemas and materializes their PROV graph against
+`schemas/manifest.shacl.ttl`. `test/abc/tools/person_drift_test.clj` covers the
+schema, referential-integrity, ordering, and RDF/SHACL behavior.
+
 ## Context
 
 ADR 0020 chooses a lineage-only drift model: drift events are audit sidecars,
@@ -366,7 +373,7 @@ the drift-artifact byte-identity rule.
 - `validate-drift-events!` proves `prov.used` / `prov.was_generated_by` values
   resolve to participant `snapshot_id`s, every participant is covered exactly
   once, no participant appears as both predecessor and successor, and canonical
-  ordering is enforced.
+  ordering is enforced by `test/abc/tools/person_drift_test.clj`.
 - `validate-drift-events!` rejects any `had_role` other than
   `abc:DriftEditor`, any unresolved CURIE prefix, and any syntactically invalid
   `qualified_association.agent` IRI.

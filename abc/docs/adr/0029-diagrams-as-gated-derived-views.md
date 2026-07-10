@@ -3,6 +3,7 @@
 Status: Proposed
 Date: 2026-07-10
 Supersedes: none
+Amended by: ADR 0031 [scope: ADR header and decision-graph source validation]
 Depends on: ADR 0006
 Source: `docs/superpowers/plans/2026-07-10-adr-and-system-diagrams.md`
 

@@ -5,9 +5,16 @@ Date: 2026-07-03
 Accepted: 2026-07-03
 Supersedes: none
 Amends: ADR 0001
-Depends on: ADR 0001, ADR 0006, ADR 0007, ADR 0009, ADR 0024,
-`docs/handoffs/owned-mapping-design.md`,
-`docs/handoffs/full-corpus-probe.md`
+Depends on: ADR 0001, ADR 0006, ADR 0007, ADR 0009, ADR 0024
+Source: `docs/handoffs/owned-mapping-design.md`, `docs/handoffs/full-corpus-probe.md`
+
+## Implementation Status
+
+As of 2026-07-09, `schemas/aat-parser-ir-mapping.schema.json` and
+`data/aat-parser-ir-compatibility.edn` are the live mapping and admission
+contracts enforced by `abc.tools.aat-parser-ir-compat` and the design-bundle
+validator. `test/abc/tools/validate_design_bundle_test.clj` covers schema,
+registry, admission, and conflict behavior.
 
 ## Context
 

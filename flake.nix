@@ -53,21 +53,15 @@
 
       forAllSystems = nixpkgs.lib.genAttrs systems;
 
-      prefixAttrs =
-        prefix: attrs:
-        builtins.listToAttrs (
-          map (name: {
-            name = "${prefix}${name}";
-            value = attrs.${name};
-          }) (builtins.attrNames attrs)
-        );
+      lib = nixpkgs.lib;
+
+      pkgsFor = system: import nixpkgs { inherit system; };
+
+      prefixAttrs = prefix: lib.mapAttrs' (name: value: lib.nameValuePair "${prefix}${name}" value);
 
       optionalOutputAttrs =
         flake: outputName: system:
-        if builtins.hasAttr outputName flake && builtins.hasAttr system flake.${outputName} then
-          flake.${outputName}.${system}
-        else
-          { };
+        lib.attrByPath [ outputName system ] { } flake;
 
       monorepoScripts =
         pkgs:
@@ -79,32 +73,24 @@
             pkgs.nix
             pkgs.python3
           ];
+
+          mkWrappedScript =
+            name: body:
+            pkgs.writeShellScript name ''
+              set -euo pipefail
+              export PATH="${runtimePath}:$PATH"
+              ${body}
+            '';
         in
         {
-          schema-drift = pkgs.writeShellScript "soranoha-schema-drift" ''
-            set -euo pipefail
-            export PATH="${runtimePath}:$PATH"
-            exec bash scripts/monorepo-schema-drift.sh "$@"
-          '';
+          schema-drift = mkWrappedScript "soranoha-schema-drift" ''exec bash scripts/monorepo-schema-drift.sh "$@"'';
+          tei-version-coherence = mkWrappedScript "soranoha-tei-version-coherence" ''exec bash scripts/monorepo-tei-version-coherence.sh "$@"'';
+          flake-input-policy = mkWrappedScript "soranoha-flake-input-policy" ''exec python scripts/monorepo-flake-input-policy.py "$@"'';
+          python-quality = mkWrappedScript "soranoha-python-quality" ''exec bash scripts/python-quality.sh "$@"'';
 
-          tei-version-coherence = pkgs.writeShellScript "soranoha-tei-version-coherence" ''
-            set -euo pipefail
-            export PATH="${runtimePath}:$PATH"
-            exec bash scripts/monorepo-tei-version-coherence.sh "$@"
-          '';
-
-          flake-input-policy = pkgs.writeShellScript "soranoha-flake-input-policy" ''
-            set -euo pipefail
-            export PATH="${runtimePath}:$PATH"
-            exec python scripts/monorepo-flake-input-policy.py "$@"
-          '';
-
-          python-quality = pkgs.writeShellScript "soranoha-python-quality" ''
-            set -euo pipefail
-            export PATH="${runtimePath}:$PATH"
-            exec bash scripts/python-quality.sh "$@"
-          '';
-
+          # Kept explicit (not via mkWrappedScript): its multi-line body, when
+          # spliced through the helper's ''-string, re-dedents to a different
+          # script text and changes the derivation hash. Explicit form preserves it.
           validate-migration = pkgs.writeShellScript "soranoha-validate-migration" ''
             set -euo pipefail
             export PATH="${runtimePath}:$PATH"
@@ -120,7 +106,7 @@
       formatter = forAllSystems (
         system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = pkgsFor system;
         in
         pkgs.nixfmt
       );
@@ -128,7 +114,7 @@
       apps = forAllSystems (
         system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = pkgsFor system;
           scripts = monorepoScripts pkgs;
           abcApps = optionalOutputAttrs abc "apps" system;
           abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
@@ -163,7 +149,7 @@
       checks = forAllSystems (
         system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = pkgsFor system;
           tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
           abcApps = optionalOutputAttrs abc "apps" system;
           abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
@@ -383,7 +369,7 @@
       packages = forAllSystems (
         system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = pkgsFor system;
           tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
         in
         prefixAttrs "abc-" (optionalOutputAttrs abc "packages" system)
@@ -396,10 +382,9 @@
       devShells = forAllSystems (
         system:
         let
-          pkgs = import nixpkgs { inherit system; };
+          pkgs = pkgsFor system;
           abcShells = optionalOutputAttrs abc "devShells" system;
           abValidatorShells = optionalOutputAttrs ab-validator "devShells" system;
-          inherit (nixpkgs) lib;
         in
         prefixAttrs "abc-" abcShells
         // prefixAttrs "ab-validator-" abValidatorShells

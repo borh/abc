@@ -1,7 +1,7 @@
 # JADH WIP Presentation Design
 
 Date: 2026-07-10
-Status: Approved for slide implementation planning
+Status: Revised after review; pending approval for implementation planning
 
 ## Purpose
 
@@ -17,16 +17,33 @@ It gives equal scholarly weight to source-authority markup mapping, measured
 parser comparison, and tokenizer-dependent analytical views, while using the
 publication system as the connective infrastructure between them.
 
+The committed deck path is:
+
+`docs/presentations/jadh-2026-wip-slides.md`
+
+This root-level documentation location is intentional: the deck spans both ABC
+and `ab-validator`, while the presentation-diagram design remains under `abc/`
+because ABC owns that publication projection. Every resource path written into
+the deck is relative to the deck file, not to the repository root or shell
+working directory. Paths mentioned by this design document itself are
+repository-root-relative unless a passage explicitly identifies them as paths
+written into the deck.
+
 ## Medium and Scope
 
 - English slide text with untranslated Japanese examples.
 - Standard Pandoc slide Markdown.
 - YAML metadata includes `type: slides` and `aspect-ratio: 16-9`.
-- Approximately 26 main slides and no more than 30 slides including appendices.
+- Exactly 26 main slides, with zero to four appendix slides and no more than 30
+  slides in total.
 - Dedicated time for a live demonstration.
 - Level-one headings start slides; level-two headings structure content within a
   slide.
 - Most slides communicate one claim with no more than approximately five bullets.
+
+The planning budget is 25 minutes: approximately 18 minutes of prepared talk,
+5 minutes of bounded live demonstration, and 2 minutes of transition/buffer.
+Appendix slides are not part of the timed sequence.
 
 ## Scholarly Argument
 
@@ -62,8 +79,11 @@ The slide deck updates claims from the archived abstract using checked-in July
 - preserve the source-authority inventory figures of approximately 17,894 works,
   4.3 million de-duplicated markup occurrences, 50 inventory rows, and 10
   presentation families where the underlying evidence still supports them;
-- retain the five measured parser lanes, while replacing a neutral comparison
-  framing with the current finding that `aozora-pipeline` leads overall;
+- retain the five measured parser lanes and report leadership per measurement,
+  without inventing an overall score: the `aozora-pipeline` candidate has the
+  highest measured frequency-weighted coverage (0.969), passes 22/25 `must`
+  conformance vectors, and has 1.000 robustness; `aozora2html` has the highest
+  isolated fidelity measurement (0.974), and `aozora-rs` is the speed leader;
 - distinguish curated conformance breadth from real-corpus frequency-weighted
   coverage;
 - report the current weighted-coverage ordering and explain that ruby dominates
@@ -77,6 +97,29 @@ The slide deck updates claims from the archived abstract using checked-in July
   capabilities as measured infrastructure rather than future intent; and
 - retain Levels 4 and 5 editorial enrichment and broader tokenizer suitability
   evaluation as future work.
+
+The deck may state that the checked-in comparison study recommends
+`aozora-pipeline` as the base for future parser work because it is the only
+candidate measured as top-tier on both fidelity and robustness while also
+leading frequency-weighted coverage. It must present that as a multi-criterion
+engineering recommendation, not a collapsed scholarly score, and it must not
+imply that Soranoha's consolidated parser is complete.
+
+### Parser lane crosswalk
+
+The slides use stable audience-facing names and introduce current report names
+once:
+
+| Slide label | Current report/native label | Upstream or role |
+| --- | --- | --- |
+| `aozora-pipeline` | `aozora`, `ab-aozora`, or `aozora-pipeline` according to measurement path | `P4suta/aozora`; reference candidate and recommended future base, not completed Soranoha consolidation |
+| `aozora2` | `aozora-core` for native parser measurements | `takahashim/aozora2` |
+| `aozora-rs` | `aozora-rs-core` for native token-stream measurements | `kinoko0518/aozora-rs` |
+| `aozora2html` | `aozora2html` | Ruby parser lane |
+| `AozoraEpub3` | `aozora-epub3` | Java/EPUB parser lane |
+
+Tables must not mix labels from different columns without explaining the
+measurement path.
 
 Exact values used on slides must be traced to current checked-in reports during
 implementation. Conflicting snapshots or denominators must be resolved in favor
@@ -132,19 +175,41 @@ The deck reserves two dedicated slides for figures being implemented from
    validated parser process → Parser-IR → manifest → scholarly outputs; the AAT
    path is explicitly current producer detail.
 
-The slide Markdown references the expected generated SVG files:
+From the deck file, the slide Markdown references the expected generated SVG
+files using these paths:
 
-- `abc/docs/figures/soranoha-reproducibility-architecture.svg`
-- `abc/docs/figures/soranoha-publication-pipeline.svg`
+- `../../abc/docs/figures/soranoha-reproducibility-architecture.svg`
+- `../../abc/docs/figures/soranoha-publication-pipeline.svg`
 
 If the SVG files are unfinished at drafting time, the Markdown retains the final
 paths and marks their status in non-rendered HTML comments. It does not create
 substitute figures or claim that in-progress work is complete.
 
+The figure-producing branch is a hard sequencing dependency for final deck
+validation. Slide drafting and non-image validation may proceed before it lands,
+but the deck cannot be declared complete or rendered for delivery until both SVG
+paths resolve from the committed deck and the imported figures have passed their
+own drift/rasterization checks.
+
 ## Worked Evidence and Demo
 
-The principal worked mapping uses 傍点 because it demonstrates the complete
-evidence chain:
+The principal worked mapping deliberately uses 傍点 instead of the abstract's
+three-nested-ruby example because it demonstrates policy-bearing normalization
+across the complete publication chain rather than only structural collapse. Its
+checked-in evidence is:
+
+- `ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md`,
+  section 2, worked example;
+- `ab-validator/data/aat-to-parser-ir-mapping-v1.json`, rule `A-06`, where AAT
+  `style` projects to Parser-IR `emphasis` under the `AMBIGUITY` taxonomy; and
+- `abc/data/parser-ir-publication-policy-v0.json`, where Parser-IR `emphasis`
+  becomes TEI `<hi>` and visible plaintext retains only visible text.
+
+The ambiguity taxonomy records a sidecar by default. The slide must distinguish
+this taxonomy-level preservation contract from the observed 130 `A-06` mappings;
+it must not claim that every observed style instance is specifically 傍点.
+
+The evidence chain shown is:
 
 ```text
 source marker
@@ -185,13 +250,20 @@ The section must avoid implying that one tokenizer is universally correct.
 The slide source uses Pandoc citation syntax such as `[@aozorabunko2026]` and the
 same citation keys as the JADH paper. Its YAML front matter reuses:
 
-- `../archive/abc/paper/abstract-refs.bib`; and
-- `../archive/abc/paper/digital_humanities_abstracts.csl`.
+- `references/abstract-refs.bib`; and
+- `references/digital_humanities_abstracts.csl`.
 
-Paths are written relative to the final slide file location. Citations appear on
-the slides where their claims are introduced. A final references or links slide
-may complement Pandoc's generated bibliography but must not replace citations in
-the argument.
+These files are committed vendored copies of
+`../../../archive/abc/paper/abstract-refs.bib` and
+`../../../archive/abc/paper/digital_humanities_abstracts.csl`, respectively,
+where the provenance paths are expressed relative to the deck. The external
+archive is provenance only and is not a build dependency. Implementation copies
+the two files byte-for-byte into `docs/presentations/references/` and records
+their source SHA-256 values in an HTML comment near the YAML metadata.
+
+Citations appear on the slides where their claims are introduced. A final
+references or links slide may complement Pandoc's generated bibliography but
+must not replace citations in the argument.
 
 ## Content and Authoring Conventions
 
@@ -215,11 +287,14 @@ Before the deck is considered complete:
 
 - all cited keys resolve against the reused BibTeX file;
 - the Markdown parses through Pandoc as slides;
-- image paths resolve, or in-progress image status is explicitly documented in
-  HTML comments;
+- both final image paths resolve from the deck; a draft with unresolved images
+  may be reviewed but cannot pass completion validation;
+- the vendored BibTeX and CSL files match their recorded provenance SHA-256
+  values and the external archive is not required for rendering;
 - every quantitative headline is checked against the latest authoritative
   checked-in report;
-- the main deck remains between 20 and 30 slides;
+- the main sequence contains exactly 26 slides and the complete source contains
+  between 26 and 30 slides including appendices;
 - the demo commands are preflighted on bounded inputs; and
 - the rendered outline remains coherent when the live demo is skipped.
 

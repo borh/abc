@@ -332,8 +332,7 @@
               nativeBuildInputs = [ pkgs.unzip ];
             }
             ''
-                runHook preInstall
-                mkdir -p "$out/share/sudachi"
+              mkdir -p "$out/share/sudachi"
               unzip -j ${sudachiDictionaryFullZip} '*.dic' -d "$out/share/sudachi"
               dic="$(find "$out/share/sudachi" -maxdepth 1 -type f -name '*.dic' | head -n 1)"
               test -n "$dic"
@@ -341,7 +340,6 @@
                 mv "$dic" "$out/share/sudachi/system_full.dic"
               fi
               ln -s system_full.dic "$out/share/sudachi/system.dic"
-              runHook postInstall
             '';
 
         # ── mecab-dic-converter: MeCab compiled dict → vibrato .dic.zst ──
@@ -1775,19 +1773,19 @@
               ];
             }
             ''
-                            work_dir="$(mktemp -d)"
-                            cp -R "${source}" "$work_dir/source"
-                            chmod -R +w "$work_dir/source"
-                            cd "$work_dir/source"
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
 
-                            cargo \
-                              --config "source.crates-io.replace-with='vendored-sources'" \
-                              --config "source.vendored-sources.directory='${aozoraEpub3CargoDeps}'" \
-                              build --manifest-path "$work_dir/source/adapters/aozora-epub3/Cargo.toml" --release --offline
+              cargo \
+                --config "source.crates-io.replace-with='vendored-sources'" \
+                --config "source.vendored-sources.directory='${aozoraEpub3CargoDeps}'" \
+                build --manifest-path "$work_dir/source/adapters/aozora-epub3/Cargo.toml" --release --offline
 
-                            bin="$work_dir/source/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
-                            printf 'test' > "$work_dir/src.txt"
-                            python - "$bin" "$work_dir/src.txt" "$work_dir/source/data/aat-schema.json" "$work_dir/source/adapters/aozora-epub3/tests/fixtures" <<'PY'
+              bin="$work_dir/source/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
+              printf 'test' > "$work_dir/src.txt"
+              python - "$bin" "$work_dir/src.txt" "$work_dir/source/data/aat-schema.json" "$work_dir/source/adapters/aozora-epub3/tests/fixtures" <<'PY'
               import json, subprocess, sys, glob
               from pathlib import Path
               bin_p, src, schema_p, fx_dir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
@@ -1806,11 +1804,11 @@
               print(f"aozora-epub3 smoke: {len(fixtures)} fixtures schema-valid")
               PY
 
-                            export AB_AOZORAEPUB3_JAR="${upstreamParserAozoraEpub3}/lib/AozoraEpub3.jar"
-                            printf 'テスト作品\nテスト著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n\n吾輩《わがはい》は猫である。\n\n底本：テスト出版\n' \
-                              | ${pkgs.bash}/bin/bash "$work_dir/source/adapters/aozora-epub3/aozora-epub3-adapter" --mode aat \
-                              | jq -e '.meta.adapter == "aozora-epub3" and .meta.parse_complete == true and (.blocks | length >= 1)' >/dev/null
-                            touch "$out"
+              export AB_AOZORAEPUB3_JAR="${upstreamParserAozoraEpub3}/lib/AozoraEpub3.jar"
+              printf 'テスト作品\nテスト著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n\n吾輩《わがはい》は猫である。\n\n底本：テスト出版\n' \
+                | ${pkgs.bash}/bin/bash "$work_dir/source/adapters/aozora-epub3/aozora-epub3-adapter" --mode aat \
+                | jq -e '.meta.adapter == "aozora-epub3" and .meta.parse_complete == true and (.blocks | length >= 1)' >/dev/null
+              touch "$out"
             '';
       in
       {

@@ -2,7 +2,9 @@
   "Workflow-backed corpus run for annotation join statistics: samples an AAT
   dump, converts each sampled work to parser-IR with the pinned ab-validator
   converter, renders the annotation plaintext view, tokenizes it with the
-  pinned tokenizer, and computes join statistics via
+  pinned `ab-morph-run tokenize-plaintext` tool (all tokenization and token
+  parsing stay in the Rust analyzers; this side only consumes per-work
+  tokens.jsonl), and computes join statistics via
   abc.tools.annotation-join-stats. Every stage is a step of
   abc.tools.workflow, so the run leaves schema-valid workflow-plan.json and
   workflow-run.json provenance records beside its outputs.
@@ -66,101 +68,10 @@
       (let [exit (.waitFor proc)]
         {:exit exit :out @out-fut :err @err-fut}))))
 
-(defn- surface-json-line [surface]
-  (str (charred/write-json-str {"surface" surface}) "\n"))
-
-(defn- plaintext-line-count
-  "Line count of a plaintext file under `split \"\\n\" -1` semantics (the
-  count the tokenizer's one-EOS-per-input-line protocol produces when the
-  file is streamed with one trailing newline appended): newlines + 1."
-  [file]
-  (with-open [r (io/reader file :encoding "UTF-8")]
-    (let [buf (char-array 65536)]
-      (loop [lines 1]
-        (let [n (.read r buf)]
-          (if (neg? n)
-            lines
-            (recur (loop [i 0 acc lines]
-                     (if (< i n)
-                       (recur (inc i)
-                              (if (= \newline (aget buf i)) (inc acc) acc))
-                       acc)))))))))
-
-(defn- demux-token-groups!
-  "Consume MeCab-format tokenizer stdout from rdr, writing each work's token
-  surfaces to tokens-dir as its EOS groups complete, so memory stays
-  O(line) no matter the corpus size. Blank output lines are skipped; a
-  trailing partial group without EOS is dropped, matching the historical
-  whole-output split. Returns the total number of EOS groups seen,
-  including any beyond the expected total, so accounting mismatches surface
-  with real numbers."
-  [^java.io.BufferedReader rdr works tokens-dir]
-  (letfn [(consume-group [^java.io.Writer w]
-            (loop []
-              (let [line (.readLine rdr)]
-                (cond
-                  (nil? line) :eof
-                  (= line "EOS") :eos
-                  (string/blank? line) (recur)
-                  :else (do (when w
-                              (.write w ^String (surface-json-line
-                                                 (first (string/split line
-                                                                      #"\t"
-                                                                      2)))))
-                            (recur))))))]
-    (loop [remaining works
-           eos-total 0]
-      (if-let [{:keys [work-id line-count]} (first remaining)]
-        (let [consumed
-              (with-open [w (io/writer (io/file tokens-dir
-                                                (str work-id ".tokens.jsonl"))
-                                       :encoding "UTF-8")]
-                (loop [i 0]
-                  (if (or (= i line-count) (= :eof (consume-group w)))
-                    i
-                    (recur (inc i)))))]
-          (if (< consumed line-count)
-            (+ eos-total consumed)
-            (recur (next remaining) (+ eos-total consumed))))
-        (loop [eos-total eos-total]
-          (if (= :eos (consume-group nil))
-            (recur (inc eos-total))
-            eos-total))))))
-
-(defn- stream-tokenize!
-  "Run the tokenizer once over every work's plaintext, streaming stdin from
-  the plaintext files (each file's content plus one trailing newline — byte
-  identical to joining all `split \"\\n\" -1` lines) and demultiplexing
-  stdout into per-work tokens.jsonl files as it arrives. Nothing corpus-sized
-  is ever held in memory; the historical whole-string approach hit the JVM's
-  2 GiB array cap on full-corpus token output. Returns {:exit :err
-  :eos-groups}. A broken pipe while writing stdin (the child died early) is
-  tolerated so the child's exit code and stderr survive to the caller."
-  [{:keys [works plaintext-dir tokenizer-bin env tokens-dir]}]
-  (let [pb (ProcessBuilder. ^java.util.List [(str tokenizer-bin)])]
-    (doseq [[k v] env]
-      (.put (.environment pb) (str k) (str v)))
-    (let [proc (.start pb)
-          err-fut (future (slurp (io/reader (.getErrorStream proc)
-                                            :encoding "UTF-8")))
-          stdin-fut (future
-                      (try
-                        (with-open [w (io/writer (.getOutputStream proc)
-                                                 :encoding "UTF-8")]
-                          (doseq [{:keys [work-id]} works]
-                            (with-open [r (io/reader
-                                           (io/file plaintext-dir
-                                                    (str work-id ".txt"))
-                                           :encoding "UTF-8")]
-                              (io/copy r w))
-                            (.write w "\n")))
-                        (catch java.io.IOException _)))
-          eos-groups (with-open [rdr (io/reader (.getInputStream proc)
-                                                :encoding "UTF-8")]
-                       (demux-token-groups! rdr works tokens-dir))
-          exit (.waitFor proc)]
-      @stdin-fut
-      {:exit exit :err @err-fut :eos-groups eos-groups})))
+(defn- tokenize-summary
+  "Parse the tokenize-plaintext summary JSON line from the tool's stdout."
+  [stdout]
+  (charred/read-json (string/trim stdout)))
 
 (defn- annotation-join-stats-steps []
   [{:id :sample-aat
@@ -235,36 +146,39 @@
     :run (fn [{:keys [rendered-work-ids plaintext-dir tokenizer-bin
                       tokenizer-dict tokens-dir]}]
            (.mkdirs (io/file tokens-dir))
-           (let [works (mapv (fn [work-id]
-                               {:work-id work-id
-                                :line-count (plaintext-line-count
-                                             (io/file plaintext-dir
-                                                      (str work-id ".txt")))})
-                             rendered-work-ids)
-                 env (cond-> {"AB_VIBRATO_DICT" tokenizer-dict}
-                       (System/getenv "AB_VIBRATO_CACHE_DIR")
-                       (assoc "AB_VIBRATO_CACHE_DIR"
-                              (System/getenv "AB_VIBRATO_CACHE_DIR")))
-                 {:keys [exit err eos-groups]}
-                 (stream-tokenize! {:works works
-                                    :plaintext-dir plaintext-dir
-                                    :tokenizer-bin tokenizer-bin
-                                    :env env
-                                    :tokens-dir tokens-dir})
-                 expected (reduce + (map :line-count works))]
+           (let [{:keys [exit out err]}
+                 (run-process!
+                  {:cmd (cond-> [tokenizer-bin "tokenize-plaintext"
+                                 "--analyzer" tokenizer-dict
+                                 "--plaintext-dir" (str plaintext-dir)
+                                 "--out-dir" (str tokens-dir)]
+                          (System/getenv "AB_MORPH_TOKENIZE_JOBS")
+                          (into ["--jobs"
+                                 (System/getenv "AB_MORPH_TOKENIZE_JOBS")]))})]
              (when-not (zero? exit)
                (throw (ex-info "Tokenizer failed"
                                {:exit exit :stderr err})))
-             (when-not (= expected eos-groups)
-               (throw (ex-info "Tokenizer line accounting mismatch"
-                               {:expected-lines expected
-                                :eos-groups eos-groups})))
-             {:state-updates {:tokenized-work-ids (mapv :work-id works)}
-              :inputs [{:role "tokenizer-bin" :path (str tokenizer-bin)}]
-              :outputs [{:role "tokens-dir" :path (str tokens-dir)}]
-              :messages [{:level "info"
-                          :message (str (count works) " works tokenized ("
-                                        tokenizer-dict ")")}]}))}
+             (let [summary (tokenize-summary out)
+                   missing (vec (remove #(.isFile (io/file
+                                                   tokens-dir
+                                                   (str % ".tokens.jsonl")))
+                                        rendered-work-ids))]
+               (when (seq missing)
+                 (throw (ex-info "Tokenizer output missing for works"
+                                 {:missing missing})))
+               (when-not (= (count rendered-work-ids) (get summary "works"))
+                 (throw (ex-info "Tokenizer work accounting mismatch"
+                                 {:expected-works (count rendered-work-ids)
+                                  :tokenized-works (get summary "works")})))
+               {:state-updates {:tokenized-work-ids (vec rendered-work-ids)}
+                :inputs [{:role "tokenizer-bin" :path (str tokenizer-bin)}]
+                :outputs [{:role "tokens-dir" :path (str tokens-dir)}]
+                :messages [{:level "info"
+                            :message (str (count rendered-work-ids)
+                                          " works tokenized ("
+                                          tokenizer-dict ", "
+                                          (get summary "tokens")
+                                          " tokens)")}]})))}
    {:id :join-stats
     :requires [:tokenized-work-ids :parser-ir-dir :tokens-dir :stats-dir]
     :produces [:aggregate]
@@ -306,7 +220,9 @@
 (defn run-annotation-join-stats-run!
   "Execute the full join-stats corpus run described by plan-file into
   out-root. External binary paths must be explicit; the CLI wrapper reads
-  them from AB_AAT_TO_PARSER_IR_BIN and AB_VIBRATO_TOKENIZE_BIN."
+  them from AB_AAT_TO_PARSER_IR_BIN and AB_MORPH_RUN_BIN. The plan's
+  tokenizer_dict is passed verbatim as the tool's --analyzer spec (e.g.
+  \"vibrato:unidic-novel-202512\")."
   [{:keys [plan-file out-root converter-bin tokenizer-bin]}]
   (doseq [[label value] {"converter-bin" converter-bin
                          "tokenizer-bin" tokenizer-bin}]

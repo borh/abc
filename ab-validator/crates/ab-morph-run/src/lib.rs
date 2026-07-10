@@ -12,6 +12,7 @@ mod pipeline;
 mod script;
 mod select;
 mod summary;
+mod tokenize_plaintext;
 mod warehouse;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
@@ -85,6 +86,7 @@ pub use summary::{
     write_warehouse_nway_patterns_duckdb_tsv, write_warehouse_pattern_examples_duckdb_tsv,
     write_warehouse_regions_duckdb_tsv,
 };
+pub use tokenize_plaintext::{TokenizePlaintextSummary, run_tokenize_plaintext};
 
 /// Run the selected analysis pipeline over AAT input(s).
 ///

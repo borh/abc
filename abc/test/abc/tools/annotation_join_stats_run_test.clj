@@ -134,8 +134,8 @@
                         "done\n"
                         "cp " parser-ir-fixture " \"$out\"\n"
                         "printf '{}' > \"$div\"\n"))
-        ;; dies without reading stdin — the run must surface the child's
-        ;; exit code and stderr, not a stdin write failure
+        ;; dies immediately — the run must surface the child's exit code
+        ;; and stderr
         tokenizer (write-stub!
                    (io/file root "stub-tokenizer.sh")
                    "#!/usr/bin/env bash\necho 'dictionary exploded' >&2\nexit 7\n")]
@@ -173,8 +173,8 @@
       (finally
         (fixture/delete-tree! root)))))
 
-(deftest run-surfaces-eos-accounting-mismatch-test
-  (let [root (fixture/temp-dir "abc-join-stats-run-eosmismatch")
+(deftest run-surfaces-missing-tokenizer-output-test
+  (let [root (fixture/temp-dir "abc-join-stats-run-missing-tokens")
         aat-dir (io/file root "aat")
         out-root (io/file root "out")
         plan-file (io/file root "plan.json")
@@ -193,25 +193,39 @@
                         "done\n"
                         "cp " parser-ir-fixture " \"$out\"\n"
                         "printf '{}' > \"$div\"\n"))
-        ;; one EOS per input line plus one spurious trailing EOS — the run
-        ;; must fail accounting with the real observed group count
+        ;; exits 0 but silently skips one work's output file — the run must
+        ;; fail closed on the missing tokens.jsonl
         tokenizer (write-stub!
                    (io/file root "stub-tokenizer.sh")
                    (str "#!/usr/bin/env bash\nset -eu\n"
-                        "while IFS= read -r line; do\n"
-                        "  echo EOS\n"
+                        "pd=\"\"; od=\"\"\n"
+                        "while [ $# -gt 0 ]; do\n"
+                        "  case \"$1\" in\n"
+                        "    --plaintext-dir) pd=\"$2\"; shift 2 ;;\n"
+                        "    --out-dir) od=\"$2\"; shift 2 ;;\n"
+                        "    *) shift ;;\n"
+                        "  esac\n"
                         "done\n"
-                        "echo EOS\n"))]
+                        "mkdir -p \"$od\"\n"
+                        "works=0\n"
+                        "for f in \"$pd\"/*.txt; do\n"
+                        "  stem=$(basename \"$f\" .txt)\n"
+                        "  case \"$stem\" in 000002*) continue ;; esac\n"
+                        "  : > \"$od/$stem.tokens.jsonl\"\n"
+                        "  works=$((works+1))\n"
+                        "done\n"
+                        "printf '{\"works\":%d,\"tokens\":0,\"analyzer\":\"stub\",\"warnings\":0}\\n' \"$works\"\n"))]
     (try
       (.mkdirs aat-dir)
       (spit (io/file aat-dir "000001_1-aaaaaaaaaaaa.json") "{}")
+      (spit (io/file aat-dir "000002_2-bbbbbbbbbbbb.json") "{}")
       (manifest/write-json-file!
        plan-file
-       {"label" "eos-mismatch-test"
+       {"label" "missing-tokens-test"
         "aat_dir" (str aat-dir)
         "mapping" parser-ir-fixture
         "stride" 1
-        "tokenizer_dict" "stub-dict"})
+        "tokenizer_dict" "vibrato:stub-dict"})
       (let [ex (try
                  (run/run-annotation-join-stats-run!
                   {:plan-file (str plan-file)
@@ -221,9 +235,8 @@
                  nil
                  (catch clojure.lang.ExceptionInfo e e))]
         (is (some? ex))
-        (is (= "Tokenizer line accounting mismatch" (ex-message ex)))
-        (is (= (inc (:expected-lines (ex-data ex)))
-               (:eos-groups (ex-data ex)))))
+        (is (= "Tokenizer output missing for works" (ex-message ex)))
+        (is (= ["000002_2"] (:missing (ex-data ex)))))
       (finally
         (fixture/delete-tree! root)))))
 
@@ -249,17 +262,35 @@
                         "done\n"
                         "cp " parser-ir-fixture " \"$out\"\n"
                         "printf '{}' > \"$div\"\n"))
-        ;; stub tokenizer: MeCab-format protocol — the whole input line as
-        ;; one token, one EOS per input line (blank lines included)
+        ;; stub tokenize-plaintext: each non-blank plaintext line becomes one
+        ;; token in that work's tokens.jsonl, plus the summary line on stdout
         tokenizer (write-stub!
                    (io/file root "stub-tokenizer.sh")
                    (str "#!/usr/bin/env bash\nset -eu\n"
-                        "while IFS= read -r line; do\n"
-                        "  if [ -n \"$line\" ]; then\n"
-                        "    printf '%s\\t形容詞\\n' \"$line\"\n"
-                        "  fi\n"
-                        "  echo EOS\n"
-                        "done\n"))]
+                        "[ \"$1\" = tokenize-plaintext ]\n"
+                        "pd=\"\"; od=\"\"\n"
+                        "while [ $# -gt 0 ]; do\n"
+                        "  case \"$1\" in\n"
+                        "    --plaintext-dir) pd=\"$2\"; shift 2 ;;\n"
+                        "    --out-dir) od=\"$2\"; shift 2 ;;\n"
+                        "    *) shift ;;\n"
+                        "  esac\n"
+                        "done\n"
+                        "mkdir -p \"$od\"\n"
+                        "works=0; tokens=0\n"
+                        "for f in \"$pd\"/*.txt; do\n"
+                        "  stem=$(basename \"$f\" .txt)\n"
+                        "  out=\"$od/$stem.tokens.jsonl\"\n"
+                        "  : > \"$out\"\n"
+                        "  while IFS= read -r line || [ -n \"$line\" ]; do\n"
+                        "    if [ -n \"$line\" ]; then\n"
+                        "      printf '{\"surface\":\"%s\"}\\n' \"$line\" >> \"$out\"\n"
+                        "      tokens=$((tokens+1))\n"
+                        "    fi\n"
+                        "  done < \"$f\"\n"
+                        "  works=$((works+1))\n"
+                        "done\n"
+                        "printf '{\"works\":%d,\"tokens\":%d,\"analyzer\":\"stub\",\"warnings\":0}\\n' \"$works\" \"$tokens\"\n"))]
     (try
       (.mkdirs aat-dir)
       (spit (io/file aat-dir "000001_1-aaaaaaaaaaaa.json") "{}")

@@ -1165,7 +1165,7 @@
     "  publication-rehearsal <materialized-root> <output-root> <request-set-label> <snapshot-scope> <snapshot-date>"
     "  build-publication --aozora-root DIR --config FILE --snapshot-date YYYY-MM-DD --output-root DIR [--replace]"
     "  annotation-join-stats <parser-ir-dir> <tokens-dir> <out-dir>"
-    "  annotation-join-stats-run <plan-json> <out-root>  (env: AB_AAT_TO_PARSER_IR_BIN, AB_VIBRATO_TOKENIZE_BIN)"]))
+    "  annotation-join-stats-run <plan-json> <out-root>  (env: AB_AAT_TO_PARSER_IR_BIN, AB_MORPH_RUN_BIN)"]))
 
 (def commands
   {"list-request-sets" {:args 0
@@ -1210,7 +1210,7 @@
             {:plan-file plan-file
              :out-root out-root
              :converter-bin (System/getenv "AB_AAT_TO_PARSER_IR_BIN")
-             :tokenizer-bin (System/getenv "AB_VIBRATO_TOKENIZE_BIN")}))}})
+             :tokenizer-bin (System/getenv "AB_MORPH_RUN_BIN")}))}})
 
 (defn run! [args]
   (let [[command & rest-args] args]

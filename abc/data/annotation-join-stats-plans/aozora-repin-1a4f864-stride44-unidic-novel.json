@@ -1,0 +1,7 @@
+{
+  "label": "aozora-repin-1a4f864-stride44-unidic-novel",
+  "aat_dir": "/db/ab-validator/aat-corpus/aozora-full-repin-1a4f864/aat/aozora-adapter",
+  "mapping": "../ab-validator/data/aat-to-parser-ir-mapping-v1.json",
+  "stride": 44,
+  "tokenizer_dict": "unidic-novel"
+}

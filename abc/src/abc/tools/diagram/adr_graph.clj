@@ -36,26 +36,40 @@
        (take-while #(not (str/starts-with? % "## ")))
        (str/join "\n")))
 
-(defn- adr-refs [s]
-  (->> (re-seq #"ADR\s+(\d{4})" (or s ""))
-       (map (comp #(Integer/parseInt %) second)) distinct vec))
+(defn- adr-ref-tokens [s]
+  (mapv second (re-seq #"ADR\s+(\d+)" (or s ""))))
 
 (defn- field [header field-name]
   (some (fn [l] (when (str/starts-with? l (str field-name ":"))
                   (str/trim (subs l (inc (count field-name))))))
         (str/split-lines header)))
 
+(defn- parse-adr-ref-field [header field-name]
+  (let [tokens (adr-ref-tokens (field header field-name))]
+    {:refs (->> tokens
+                (filter #(re-matches #"\d{4}" %))
+                (map #(Integer/parseInt %))
+                distinct
+                vec)
+     :malformed-refs (->> tokens
+                          (remove #(re-matches #"\d{4}" %))
+                          (mapv (fn [token] {:field field-name :token token})))}))
+
 (defn parse-adr [dir filename]
   (let [content (slurp (io/file dir filename))
         header (header-block content)
         title (-> (first (str/split-lines content))
-                  (str/replace #"^# ADR \d{4}:" "") str/trim)]
+                  (str/replace #"^# ADR \d{4}:" "") str/trim)
+        field-names ["Supersedes" "Amends" "Amended by" "Depends on"]
+        parsed-fields (mapv #(parse-adr-ref-field header %) field-names)
+        by-field (zipmap field-names parsed-fields)]
     {:num (adr-number filename) :file filename :title title
      :status (some-> (field header "Status") (str/split #"\s+") first)
-     :supersedes (adr-refs (field header "Supersedes"))
-     :amends (adr-refs (field header "Amends"))
-     :amended-by (adr-refs (field header "Amended by"))
-     :depends-on (adr-refs (field header "Depends on"))}))
+     :supersedes (get-in by-field ["Supersedes" :refs])
+     :amends (get-in by-field ["Amends" :refs])
+     :amended-by (get-in by-field ["Amended by" :refs])
+     :depends-on (get-in by-field ["Depends on" :refs])
+     :malformed-refs (vec (mapcat :malformed-refs parsed-fields))}))
 
 (defn parse-all [dir] (mapv #(parse-adr dir %) (adr-files dir)))
 
@@ -82,6 +96,9 @@
      (concat
       (for [a adrs :when (not (statuses (:status a)))]
         (format "ADR %04d has non-vocabulary Status %s" (:num a) (pr-str (:status a))))
+      (for [a adrs {:keys [field token]} (:malformed-refs a)]
+        (format "ADR %04d %s reference ADR %s must use exactly four digits"
+                (:num a) field token))
       (for [a adrs t (concat (:amends a) (:depends-on a)) :when (not (exists? t))]
         (format "ADR %04d references non-existent ADR %04d" (:num a) t))
       (for [a adrs t (:amends a)

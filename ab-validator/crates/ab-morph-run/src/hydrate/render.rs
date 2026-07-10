@@ -173,7 +173,7 @@ fn render_body(
     match &example.snippet {
         Some(snippet) => writeln!(out, "> {}", snippet.marked())?,
         None => {
-            let error = layer_error(&example.errors, &["snippet:"]);
+            let error = layer_error(&example.errors, &["projection-mismatch"]);
             writeln!(out, "_snippet unavailable: {error}_")?;
         }
     }
@@ -196,7 +196,7 @@ fn render_body(
     writeln!(out)?;
     match &example.aozora_markup {
         Some(markup) => {
-            let header = if markup.approximate_pointers.is_empty() {
+            let header = if markup.approximate_pointers.is_empty() && markup.gaps.is_empty() {
                 "Aozora markup:"
             } else {
                 "Aozora markup (approximate):"
@@ -260,6 +260,12 @@ fn render_analyzer_ids(
 }
 
 fn render_segmentation(analysis: &AnalyzerAnalysis) -> String {
+    // Spec §Layer 2: segmentation comes from nway_region_analyzers'
+    // surfaces; tokens (morphemes join) are only a fallback for rows
+    // written without surfaces.
+    if !analysis.surfaces.is_empty() {
+        return analysis.surfaces.join("｜");
+    }
     analysis
         .tokens
         .iter()
@@ -298,6 +304,18 @@ fn escape_cell(cell: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn segmentation_cell_prefers_region_analyzer_surfaces() {
+        use crate::hydrate::analyses::AnalyzerAnalysis;
+        let analysis = AnalyzerAnalysis {
+            analyzer_ids: vec!["vibrato".to_owned()],
+            covers_exactly: true,
+            surfaces: vec!["今日".to_owned(), "は".to_owned()],
+            tokens: vec![],
+        };
+        assert_eq!(super::render_segmentation(&analysis), "今日｜は");
+    }
+
     #[test]
     fn markdown_renders_all_layers() {
         let (_dir, opts) = crate::hydrate::tests::write_e2e_fixture();

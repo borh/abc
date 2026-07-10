@@ -66,7 +66,10 @@ impl SourceContext {
         let snippet = match snippet_window(&self.text, char_start, char_end, context_chars) {
             Ok(snippet) => Some(snippet),
             Err(err) => {
-                errors.push(format!("snippet: {err}"));
+                // An example span the projected text cannot contain is a
+                // projection disagreement (closed vocabulary) — same code
+                // as the source-level char-count gate.
+                errors.push(format!("projection-mismatch: {err}"));
                 None
             }
         };
@@ -168,15 +171,26 @@ pub struct AatNodeRef {
     pub is_gaiji: bool,
 }
 
-/// The reconstructed markup slice (spec §Layer 3). `approximate_pointers`
-/// lists nodes rendered semantically rather than byte-verified; empty means
-/// the slice is verbatim sanitized-source markup.
+/// A byte range inside the covering span that no contributing node
+/// rendered (a non-projecting marker sits there); shown as `…` in the
+/// slice text.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ByteGap {
+    pub byte_start: u64,
+    pub byte_end: u64,
+}
+
+/// The reconstructed markup slice (spec §Layer 3). `gaps` records unrendered
+/// byte ranges (non-projecting markers inside the region); `approximate_pointers`
+/// lists nodes rendered semantically rather than byte-verified; empty lists
+/// mean the slice is verbatim sanitized-source markup.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AozoraMarkup {
     pub text: String,
     pub byte_start: u64,
     pub byte_end: u64,
     pub approximate_pointers: Vec<String>,
+    pub gaps: Vec<ByteGap>,
 }
 
 /// Reconstructs the Aozora-markup slice covering projected chars
@@ -201,6 +215,7 @@ pub fn reconstruct_markup(
 
     let mut rendered = String::new();
     let mut approximate = Vec::new();
+    let mut gaps = Vec::new();
     let mut byte_start = u64::MAX;
     let mut byte_end = 0u64;
     let mut prev_byte_end: Option<u64> = None;
@@ -220,12 +235,15 @@ pub fn reconstruct_markup(
         })?;
         // Coverage check: a gap between consecutive contributing nodes means
         // a non-projecting marker sits inside the region — render "…" and
-        // flag the slice approximate (spec §Layer 3 step 3).
+        // record as a byte range (spec §Layer 3 step 3).
         if let Some(prev) = prev_byte_end
             && node_start > prev
         {
             rendered.push('…');
-            approximate.push(node_ref.pointer.clone());
+            gaps.push(ByteGap {
+                byte_start: prev,
+                byte_end: node_start,
+            });
         }
         let piece = render_node(node, node_end - node_start).ok_or_else(|| {
             anyhow::anyhow!(
@@ -253,6 +271,7 @@ pub fn reconstruct_markup(
             byte_start,
             byte_end,
             approximate_pointers: approximate,
+            gaps,
         },
         contributing,
     ))
@@ -319,6 +338,25 @@ fn node_byte_span(node: &serde_json::Value) -> Option<(u64, u64)> {
     ))
 }
 
+/// The Aozora marker form of a gaiji node — `※［＃description］` when a
+/// description is present, else the resolved character. Both callers use
+/// this so gaiji renders identically at top level and nested inside
+/// style/tcy; byte-length verification (top level only) decides
+/// verbatim-vs-approximate.
+fn gaiji_markup(node: &serde_json::Value) -> Option<String> {
+    if let Some(description) = node
+        .get("description")
+        .and_then(serde_json::Value::as_str)
+        .filter(|description| !description.is_empty())
+    {
+        return Some(format!("※［＃{description}］"));
+    }
+    node.get("resolved")
+        .and_then(serde_json::Value::as_str)
+        .filter(|resolved| !resolved.is_empty())
+        .map(str::to_owned)
+}
+
 /// Extracts text content from a node, handling nested typed children
 /// (e.g. ruby, gaiji) when recursing into style/tcy. Returns None if the
 /// node has no renderable text.
@@ -330,14 +368,7 @@ fn inline_child_text(node: &serde_json::Value) -> Option<String> {
             let reading = node.get("reading")?.as_str()?;
             Some(format!("{base}《{reading}》"))
         }
-        "gaiji" => match node.get("resolved").and_then(serde_json::Value::as_str) {
-            Some(resolved) if !resolved.is_empty() => Some(resolved.to_owned()),
-            _ => node
-                .get("description")
-                .and_then(serde_json::Value::as_str)
-                .filter(|description| !description.is_empty())
-                .map(|description| format!("※［＃{description}］")),
-        },
+        "gaiji" => gaiji_markup(node),
         "style" | "tcy" => {
             let inner: String = node
                 .get("content")?
@@ -382,14 +413,16 @@ fn render_node(node: &serde_json::Value, span_len: u64) -> Option<Rendered> {
             }
         }
         "gaiji" => {
-            let description = node
-                .get("description")
-                .and_then(serde_json::Value::as_str)
-                .unwrap_or("");
-            if description.is_empty() {
-                return None;
+            let rendered = gaiji_markup(node)?;
+            // Same byte-length rule as ruby: a marker that tiles its span
+            // exactly is verbatim sanitized-source markup; anything else
+            // (elided code suffix, resolved-character fallback) is a
+            // semantic approximation.
+            if rendered.len() as u64 == span_len {
+                Some(Rendered::Verbatim(rendered))
+            } else {
+                Some(Rendered::Approximate(rendered))
             }
-            Some(Rendered::Approximate(format!("※［＃{description}］")))
         }
         // style/tcy: render inner text content, including nested typed nodes
         // (ruby, gaiji, etc.), always approximate (the surrounding marker form
@@ -507,6 +540,7 @@ pub(crate) mod tests {
         assert_eq!(markup.byte_start, 2);
         assert_eq!(markup.byte_end, 32);
         assert!(markup.approximate_pointers.is_empty());
+        assert!(markup.gaps.is_empty());
         assert_eq!(nodes.len(), 1);
         assert_eq!(nodes[0].pointer, "/blocks/0/content/1");
         assert!(nodes[0].is_ruby_base);
@@ -524,6 +558,7 @@ pub(crate) mod tests {
             markup.approximate_pointers,
             vec!["/blocks/0/content/4".to_owned()]
         );
+        assert!(markup.gaps.is_empty());
         assert_eq!(nodes.len(), 2);
     }
 
@@ -602,6 +637,7 @@ pub(crate) mod tests {
             markup.approximate_pointers,
             vec!["/blocks/0/content/0".to_owned()]
         );
+        assert!(markup.gaps.is_empty());
         assert_eq!(nodes.len(), 1);
         assert_eq!(nodes[0].pointer, "/blocks/0/content/0");
         assert_eq!(nodes[0].inline_kind, "style");
@@ -644,5 +680,122 @@ pub(crate) mod tests {
         assert!(layers.aozora_markup.is_none());
         assert!(!layers.errors.is_empty());
         assert!(!layers.aat_nodes.is_empty());
+
+        // Every error uses the closed vocabulary — the snippet failure is a
+        // projection disagreement, not its own ad-hoc code.
+        for error in &layers.errors {
+            let code = error.split(':').next().unwrap();
+            assert!(
+                ["projection-mismatch", "markup-unreconstructable"].contains(&code),
+                "unexpected error code in {error:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn gaiji_renders_marker_form_at_every_nesting_level_and_byte_verifies() {
+        // Top level, span length exactly equal to the rendered marker
+        // (`※［＃小書き片仮名ン］` = 4 marker chars + 7 description chars,
+        // all 3-byte UTF-8 = 33 bytes) ⇒ Verbatim, not approximate.
+        let aat = json!({
+            "version": 1, "work_id": "src-gaiji",
+            "blocks": [{"kind": "paragraph", "content": [
+                {"kind": "gaiji", "description": "小書き片仮名ン", "resolved": "ン",
+                 "span": {"byte_start": 0, "byte_end": 33, "line_start": 1, "line_end": 1}}
+            ]}],
+            "meta": {"adapter": "aozora", "adapter_version": "fixture",
+                     "source_encoding": "windows-31j", "parse_complete": true,
+                     "source_hash": "sha256:00", "warnings": []}
+        });
+        let (text, spans) = ab_plaintext::visible_text_projection_with_spans(&aat);
+        assert_eq!(text, "ン");
+        let (markup, _) = reconstruct_markup(&aat, &spans, 0, 1).unwrap();
+        assert_eq!(markup.text, "※［＃小書き片仮名ン］");
+        assert!(
+            markup.approximate_pointers.is_empty(),
+            "byte-exact gaiji marker must be verbatim"
+        );
+        assert!(markup.gaps.is_empty());
+
+        // Nested inside a style node: same marker form (previously the
+        // nested arm preferred `resolved`, diverging from the top level).
+        let aat = json!({
+            "version": 1, "work_id": "src-style-gaiji",
+            "blocks": [{"kind": "paragraph", "content": [
+                {"kind": "style", "class": "bouten", "content": [
+                    {"kind": "gaiji", "description": "小書き片仮名ン", "resolved": "ン"}
+                ],
+                 "span": {"byte_start": 0, "byte_end": 39, "line_start": 1, "line_end": 1}}
+            ]}],
+            "meta": {"adapter": "aozora", "adapter_version": "fixture",
+                     "source_encoding": "windows-31j", "parse_complete": true,
+                     "source_hash": "sha256:00", "warnings": []}
+        });
+        let span = ab_plaintext::ProjectionSpan {
+            projected_char_start: 0,
+            projected_char_end: 1,
+            aat_pointer: "/blocks/0/content/0".to_owned(),
+            inline_kind: "style".to_owned(),
+            is_ruby_base: false,
+            is_gaiji: false,
+            is_note: false,
+        };
+        let (markup, _) = reconstruct_markup(&aat, &[span], 0, 1).unwrap();
+        assert_eq!(markup.text, "※［＃小書き片仮名ン］");
+        assert!(markup.gaps.is_empty());
+    }
+
+    #[test]
+    fn gaiji_without_description_falls_back_to_resolved_as_approximate() {
+        let aat = json!({
+            "version": 1, "work_id": "src-gaiji-resolved",
+            "blocks": [{"kind": "paragraph", "content": [
+                {"kind": "gaiji", "description": "", "resolved": "ン",
+                 "span": {"byte_start": 0, "byte_end": 20, "line_start": 1, "line_end": 1}}
+            ]}],
+            "meta": {"adapter": "aozora", "adapter_version": "fixture",
+                     "source_encoding": "windows-31j", "parse_complete": true,
+                     "source_hash": "sha256:00", "warnings": []}
+        });
+        let (_, spans) = ab_plaintext::visible_text_projection_with_spans(&aat);
+        let (markup, _) = reconstruct_markup(&aat, &spans, 0, 1).unwrap();
+        assert_eq!(markup.text, "ン");
+        assert_eq!(
+            markup.approximate_pointers,
+            vec!["/blocks/0/content/0".to_owned()]
+        );
+        assert!(markup.gaps.is_empty());
+    }
+
+    #[test]
+    fn markup_gap_is_recorded_as_byte_range_not_pointer() {
+        // Two text nodes with a 10-byte hole (a non-projecting marker)
+        // between them.
+        let aat = json!({
+            "version": 1, "work_id": "src-gap",
+            "blocks": [{"kind": "paragraph", "content": [
+                {"kind": "text", "value": "AB",
+                 "span": {"byte_start": 0, "byte_end": 2, "line_start": 1, "line_end": 1}},
+                {"kind": "text", "value": "CD",
+                 "span": {"byte_start": 12, "byte_end": 14, "line_start": 1, "line_end": 1}}
+            ]}],
+            "meta": {"adapter": "aozora", "adapter_version": "fixture",
+                     "source_encoding": "windows-31j", "parse_complete": true,
+                     "source_hash": "sha256:00", "warnings": []}
+        });
+        let (text, spans) = ab_plaintext::visible_text_projection_with_spans(&aat);
+        assert_eq!(text, "ABCD");
+        let (markup, _) = reconstruct_markup(&aat, &spans, 0, 4).unwrap();
+        assert_eq!(markup.text, "AB…CD");
+        assert_eq!(
+            markup.gaps,
+            vec![ByteGap {
+                byte_start: 2,
+                byte_end: 12
+            }]
+        );
+        // The node after the gap rendered verbatim — it must NOT be listed
+        // as approximate just because a gap precedes it.
+        assert!(markup.approximate_pointers.is_empty());
     }
 }

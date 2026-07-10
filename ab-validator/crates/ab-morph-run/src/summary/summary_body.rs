@@ -28,18 +28,90 @@ use crate::output::for_each_jsonl_or_zst_line;
 use crate::script::{ScriptCategory, classify_text};
 use crate::warehouse::schema::WarehouseTable;
 
-/// Renders a `nway_feature_diffs` source relation that re-expands the collapsed
-/// `analyzers` list into a scalar `analyzer_id` column, so SQL written against
-/// the pre-v3 per-analyzer shape keeps working. `features_sql` is the
-/// already-quoted argument to `read_parquet(...)`.
-pub(super) fn nway_feature_diffs_expanded_source(features_sql: &str) -> String {
-    format!(
-        "(SELECT src.run_id, src.source_id, src.text_id, src.region_index, \
-                 src.feature_key, src.scope_type, src.scope_position, \
-                 src.scope_surface, src.feature_value, u.analyzer_id \
-          FROM read_parquet({features_sql}) AS src, \
-               UNNEST(src.analyzers) AS u(analyzer_id))"
-    )
+/// The on-disk shape of `nway_feature_diffs`'s analyzer column. Schema v3
+/// (2026-07-08) collapsed per-analyzer rows into one row per feature
+/// value-group with an `analyzers: List<Utf8>` column; runs written before
+/// that carry one row per analyzer with a scalar `analyzer_id` column.
+/// Real pre-v3 runs remain on disk, so every reader handles both.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum FeatureDiffsShape {
+    /// Schema >= 3: `analyzers: List<Utf8>`, one row per value-group.
+    CollapsedAnalyzers,
+    /// Pre-v3: scalar `analyzer_id: Utf8`, one row per analyzer.
+    ScalarAnalyzerId,
+}
+
+/// Sniffs the parquet footer of `nway_feature_diffs` (single file or first
+/// sorted part of a directory-of-parts) for the analyzer column shape. The
+/// footer is authoritative — `runs.schema_version` is never consulted, so a
+/// run dir whose version metadata disagrees with its actual files still
+/// reads correctly.
+pub(crate) fn nway_feature_diffs_shape(run_dir: &Path) -> Result<FeatureDiffsShape> {
+    let path = run_dir.join(WarehouseTable::NwayFeatureDiffs.file_name());
+    let file_path = if path.is_dir() {
+        let mut parts = fs::read_dir(&path)
+            .with_context(|| format!("failed to read {}", path.display()))?
+            .map(|entry| entry.map(|entry| entry.path()))
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .with_context(|| format!("failed to read {}", path.display()))?;
+        parts.retain(|part| {
+            part.extension()
+                .is_some_and(|extension| extension == "parquet")
+        });
+        parts.sort();
+        parts
+            .into_iter()
+            .next()
+            .with_context(|| format!("{} contains no parquet parts", path.display()))?
+    } else {
+        path
+    };
+    let file = File::open(&file_path)
+        .with_context(|| format!("failed to open {}", file_path.display()))?;
+    let builder = ParquetRecordBatchReaderBuilder::try_new(file).with_context(|| {
+        format!(
+            "failed to read parquet metadata from {}",
+            file_path.display()
+        )
+    })?;
+    let schema = builder.schema();
+    if schema.field_with_name("analyzers").is_ok() {
+        Ok(FeatureDiffsShape::CollapsedAnalyzers)
+    } else if schema.field_with_name("analyzer_id").is_ok() {
+        Ok(FeatureDiffsShape::ScalarAnalyzerId)
+    } else {
+        bail!(
+            "{} has neither an `analyzers` list column (schema v3) nor a scalar `analyzer_id` column (pre-v3)",
+            file_path.display()
+        )
+    }
+}
+
+/// Renders a `nway_feature_diffs` source relation exposing a scalar
+/// `analyzer_id` column regardless of on-disk shape: pre-v3 files already
+/// store one row per analyzer and pass through; v3 files re-expand the
+/// collapsed `analyzers` list. SQL written against the pre-v3 per-analyzer
+/// shape keeps working either way. `features_sql` is the already-quoted
+/// argument to `read_parquet(...)`.
+pub(super) fn nway_feature_diffs_expanded_source(
+    features_sql: &str,
+    shape: FeatureDiffsShape,
+) -> String {
+    match shape {
+        FeatureDiffsShape::CollapsedAnalyzers => format!(
+            "(SELECT src.run_id, src.source_id, src.text_id, src.region_index, \
+                     src.feature_key, src.scope_type, src.scope_position, \
+                     src.scope_surface, src.feature_value, u.analyzer_id \
+              FROM read_parquet({features_sql}) AS src, \
+                   UNNEST(src.analyzers) AS u(analyzer_id))"
+        ),
+        FeatureDiffsShape::ScalarAnalyzerId => format!(
+            "(SELECT src.run_id, src.source_id, src.text_id, src.region_index, \
+                     src.feature_key, src.scope_type, src.scope_position, \
+                     src.scope_surface, src.feature_value, src.analyzer_id \
+              FROM read_parquet({features_sql}) AS src)"
+        ),
+    }
 }
 
 #[derive(Debug, Default)]
@@ -1136,6 +1208,7 @@ pub fn materialize_warehouse_core_feature_pattern_counts(
                 .map(|key| (*key).to_owned())
                 .collect()
         });
+    let shape = nway_feature_diffs_shape(run_dir)?;
     let mut used_duckdb = false;
     for feature_key in &feature_keys {
         let part_path = output_path.join(format!("{feature_key}.parquet"));
@@ -1147,6 +1220,7 @@ pub fn materialize_warehouse_core_feature_pattern_counts(
             run_dir,
             &part_path,
             feature_key.as_str(),
+            shape,
         );
         if !run_duckdb_statement(run_dir, sql, "warehouse feature pattern materialization")? {
             break;
@@ -1566,7 +1640,7 @@ impl MaterializedFeatureIter {
                 && self.row < batch.num_rows()
             {
                 let row = self.row;
-                let analyzers = batch_string_list_value(batch, "analyzers", row)?;
+                let analyzers = batch_analyzer_ids_value(batch, row)?;
                 if self.analyzer_pos < analyzers.len() {
                     let analyzer_id = analyzers[self.analyzer_pos].clone();
                     self.analyzer_pos += 1;
@@ -1637,13 +1711,21 @@ fn batch_string_value(batch: &RecordBatch, name: &str, row: usize) -> Result<Str
     Ok(string_column(batch, index)?.value(row).to_owned())
 }
 
-fn batch_string_list_value(batch: &RecordBatch, name: &str, row: usize) -> Result<Vec<String>> {
-    let idx = batch
-        .schema()
-        .index_of(name)
-        .with_context(|| format!("missing column {name}"))?;
-    let list = list_string_column(batch, idx)?;
-    list_string_value(list, row)
+/// Reads the analyzer id(s) for a `nway_feature_diffs` row, adapting to
+/// whichever on-disk shape the batch carries (see `FeatureDiffsShape`):
+/// the v3 collapsed `analyzers` list (zero or more analyzers per row) or
+/// the pre-v3 scalar `analyzer_id` column (exactly one analyzer per row,
+/// returned as a single-element vec so callers can iterate uniformly).
+fn batch_analyzer_ids_value(batch: &RecordBatch, row: usize) -> Result<Vec<String>> {
+    let schema = batch.schema();
+    if let Ok(idx) = schema.index_of("analyzers") {
+        let list = list_string_column(batch, idx)?;
+        return list_string_value(list, row);
+    }
+    if let Ok(idx) = schema.index_of("analyzer_id") {
+        return Ok(vec![string_column(batch, idx)?.value(row).to_owned()]);
+    }
+    bail!("nway_feature_diffs has neither `analyzers` nor `analyzer_id` column")
 }
 
 fn batch_nullable_string_value(
@@ -1699,11 +1781,12 @@ pub(super) fn run_duckdb_statement(run_dir: &Path, sql: String, context: &str) -
 pub(crate) fn warehouse_pattern_duckdb_sql(
     run_dir: &Path,
     options: &WarehousePatternOptions,
+    shape: FeatureDiffsShape,
 ) -> String {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
-    let source = nway_feature_diffs_expanded_source(&features);
+    let source = nway_feature_diffs_expanded_source(&features, shape);
     let region_filter = warehouse_duckdb_region_filter(options);
     let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
     let text_exclusion = sql_not_in_clause("text_id", &options.exclusions.text_ids);
@@ -1728,6 +1811,7 @@ pub(crate) fn warehouse_pattern_duckdb_sql(
                         &excluded_values,
                         "TRUE",
                         limit,
+                        shape,
                     )
                 )
             })
@@ -1881,6 +1965,7 @@ patterns AS (
                     &excluded_values,
                     profile_filter,
                     limit,
+                    shape,
                 )
             }
         }
@@ -1939,10 +2024,11 @@ fn materialize_core_feature_pattern_counts_duckdb_sql(
     run_dir: &Path,
     output_path: &Path,
     feature_key: &str,
+    shape: FeatureDiffsShape,
 ) -> String {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
-    let source = nway_feature_diffs_expanded_source(&features);
+    let source = nway_feature_diffs_expanded_source(&features, shape);
     let output = sql_literal(&output_path.display().to_string());
     let feature_key = sql_literal(feature_key);
     let body = format!(
@@ -2030,8 +2116,9 @@ fn warehouse_feature_pattern_select_sql(
     excluded_values: &str,
     profile_filter: &str,
     limit: usize,
+    shape: FeatureDiffsShape,
 ) -> String {
-    let source = nway_feature_diffs_expanded_source(features);
+    let source = nway_feature_diffs_expanded_source(features, shape);
     format!(
         r#"
 WITH regions AS (
@@ -2129,11 +2216,12 @@ fn warehouse_duckdb_region_filter(options: &WarehousePatternOptions) -> &'static
 pub(crate) fn warehouse_region_examples_duckdb_sql(
     run_dir: &Path,
     options: &WarehouseRegionOptions,
+    shape: FeatureDiffsShape,
 ) -> String {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
-    let source = nway_feature_diffs_expanded_source(&features);
+    let source = nway_feature_diffs_expanded_source(&features, shape);
     let kind_filter = warehouse_region_kind_filter(options.kind);
     let text_filter = warehouse_text_filter_sql(options.text_filter);
     let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
@@ -2221,11 +2309,12 @@ ORDER BY r.source_id, r.text_id, r.region_index
 pub(crate) fn warehouse_pattern_examples_duckdb_sql(
     run_dir: &Path,
     options: &WarehousePatternExampleOptions,
+    shape: FeatureDiffsShape,
 ) -> String {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
-    let source = nway_feature_diffs_expanded_source(&features);
+    let source = nway_feature_diffs_expanded_source(&features, shape);
     let text_filter = warehouse_text_filter_sql(options.text_filter);
     let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
     let text_exclusion = sql_not_in_clause("text_id", &options.exclusions.text_ids);
@@ -3412,7 +3501,22 @@ pub(super) fn read_warehouse_feature_diffs(
         let scope_position = u64_column(&batch, 6)?;
         let scope_surface = string_column(&batch, 7)?;
         let feature_value = string_column(&batch, 8)?;
-        let analyzers = list_string_column(&batch, 9)?;
+        // The analyzer column differs by schema era (see FeatureDiffsShape):
+        // v3 collapsed `analyzers` list vs pre-v3 scalar `analyzer_id`.
+        let schema = batch.schema();
+        let analyzers_list = match schema.index_of("analyzers") {
+            Ok(index) => Some(list_string_column(&batch, index)?),
+            Err(_) => None,
+        };
+        let analyzer_scalar = match analyzers_list {
+            Some(_) => None,
+            None => {
+                let index = schema.index_of("analyzer_id").context(
+                    "nway_feature_diffs has neither `analyzers` nor `analyzer_id` column",
+                )?;
+                Some(string_column(&batch, index)?)
+            }
+        };
         for row in 0..batch.num_rows() {
             let key = WarehouseFeatureGroupKey {
                 region: WarehouseRegionKey {
@@ -3427,11 +3531,19 @@ pub(super) fn read_warehouse_feature_diffs(
                 scope_surface: nullable_string_value(scope_surface, row),
             };
             let feature_value_row = nullable_string_value(feature_value, row);
-            for analyzer_id in list_string_value(analyzers, row)? {
+            if let Some(list) = analyzers_list {
+                for analyzer_id in list_string_value(list, row)? {
+                    facts.push(WarehouseFeatureDiffFact {
+                        key: key.clone(),
+                        feature_value: feature_value_row.clone(),
+                        analyzer_id,
+                    });
+                }
+            } else if let Some(scalar) = analyzer_scalar {
                 facts.push(WarehouseFeatureDiffFact {
-                    key: key.clone(),
-                    feature_value: feature_value_row.clone(),
-                    analyzer_id,
+                    key,
+                    feature_value: feature_value_row,
+                    analyzer_id: scalar.value(row).to_owned(),
                 });
             }
         }
@@ -4933,6 +5045,7 @@ mod tests {
                 ),
                 limit: 7,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(
@@ -4956,10 +5069,35 @@ mod tests {
                 exclusions: SummaryExclusions::default(),
                 limit: 7,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(feature_sql.contains("feature_key = 'pos''1'"));
         assert!(feature_sql.contains("feature_value NOT IN ('空''白')"));
+    }
+
+    #[test]
+    fn warehouse_pattern_sql_adapts_to_scalar_shape() {
+        let dir = tempfile::tempdir().unwrap();
+        let options = WarehousePatternOptions {
+            kind: NwayPatternKind::Feature,
+            feature_key: None,
+            feature_profile: WarehouseFeatureProfile::Raw,
+            text_filter: WarehouseTextFilter::All,
+            excluded_feature_values: BTreeSet::new(),
+            exclusions: SummaryExclusions::default(),
+            limit: 5,
+        };
+        let collapsed = warehouse_pattern_duckdb_sql(
+            dir.path(),
+            &options,
+            FeatureDiffsShape::CollapsedAnalyzers,
+        );
+        assert!(collapsed.contains("UNNEST(src.analyzers)"));
+        let scalar =
+            warehouse_pattern_duckdb_sql(dir.path(), &options, FeatureDiffsShape::ScalarAnalyzerId);
+        assert!(!scalar.contains("UNNEST"));
+        assert!(scalar.contains("src.analyzer_id"));
     }
 
     #[test]
@@ -4975,6 +5113,7 @@ mod tests {
                 ),
                 limit: 11,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.contains("read_parquet('scratch/warehouse/runs/run''s/nway_regions.parquet')"));
@@ -5015,6 +5154,7 @@ mod tests {
                 exclusions: SummaryExclusions::default(),
                 limit: 3,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.contains("pattern = 'pos''1 whole_region 名詞=>vibrato ; 空白=>sudachi-c'"));
@@ -5040,6 +5180,7 @@ mod tests {
                 exclusions: SummaryExclusions::default(),
                 limit: 1,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.contains("nway_regions.parquet/*.parquet"));
@@ -5062,6 +5203,7 @@ mod tests {
                 exclusions: SummaryExclusions::default(),
                 limit: 5,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.starts_with("SET temp_directory = "));
@@ -5085,6 +5227,7 @@ mod tests {
                 exclusions: SummaryExclusions::default(),
                 limit: 5,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.contains("UNION ALL"));
@@ -5147,6 +5290,7 @@ mod tests {
             Path::new("scratch/warehouse/runs/run-a"),
             Path::new("scratch/warehouse/runs/run-a/feature_pattern_counts.parquet"),
             "pos1",
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.contains("COPY ("));
@@ -5284,6 +5428,104 @@ mod tests {
     }
 
     #[test]
+    fn materialized_feature_iter_reads_pre_v3_scalar_analyzer_id_column() {
+        use crate::warehouse::schema::{NwayFeatureDiffRow, NwayRegionRow, RunRow, WarehousePaths};
+        use crate::warehouse::writer::WarehouseWriter;
+
+        let root = temp_dir("warehouse-materialized-feature-iter-scalar");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_runs(&[RunRow {
+                schema_version: crate::warehouse::schema::SCHEMA_VERSION,
+                run_id: "run-a".to_owned(),
+                created_at_utc: "2026-05-01T00:00:00Z".to_owned(),
+                input_mode: "aat_dir".to_owned(),
+                input_path: "scratch/aats".to_owned(),
+                source_count: 1,
+                analyzer_count: 2,
+                error_count: 0,
+                ortho_detect_mode: "off".to_owned(),
+                input_normalization_detector_id: None,
+                input_normalization_policy_hash: "sha256:identity".to_owned(),
+            }])
+            .unwrap();
+        writer
+            .append_nway_regions(&[NwayRegionRow {
+                run_id: "run-a".into(),
+                source_id: "source-a".into(),
+                text_id: "work-a".into(),
+                region_index: 0,
+                byte_start: 0,
+                byte_end: 6,
+                char_start: 0,
+                char_end: 2,
+                is_nonempty_whitespace: false,
+                is_agreement: false,
+                has_coverage_mismatch: false,
+                has_segmentation_disagreement: false,
+                has_feature_disagreement: true,
+            }])
+            .unwrap();
+        writer
+            .append_nway_feature_diffs(&[
+                NwayFeatureDiffRow {
+                    run_id: "run-a".into(),
+                    source_id: "source-a".into(),
+                    text_id: "work-a".into(),
+                    region_index: 0,
+                    feature_key: "pos1".into(),
+                    scope_type: "whole_region".into(),
+                    scope_position: None,
+                    scope_surface: None,
+                    feature_value: Some("名詞".into()),
+                    analyzers: vec!["vibrato".into()],
+                },
+                NwayFeatureDiffRow {
+                    run_id: "run-a".into(),
+                    source_id: "source-a".into(),
+                    text_id: "work-a".into(),
+                    region_index: 0,
+                    feature_key: "pos1".into(),
+                    scope_type: "whole_region".into(),
+                    scope_position: None,
+                    scope_surface: None,
+                    feature_value: Some("空白".into()),
+                    analyzers: vec!["sudachi-c".into()],
+                },
+            ])
+            .unwrap();
+        writer.finalize().unwrap();
+
+        // Rewrite the on-disk nway_feature_diffs from the v3 collapsed
+        // `analyzers` list shape into the pre-v3 scalar `analyzer_id` shape,
+        // exactly as a run produced before the v3 collapse migration would
+        // look. This drives the exact bug in MaterializedFeatureIter::next_row,
+        // independent of whether a `duckdb` binary happens to be on PATH.
+        crate::summary::interesting::rewrite_feature_diffs_as_scalar(&paths.final_dir);
+
+        let mut accumulator = FeaturePatternMaterializer::default();
+        for (regions, features) in paired_region_feature_part_paths(&paths.final_dir).unwrap() {
+            materialize_core_feature_pattern_counts_part(
+                &regions,
+                &features,
+                &[String::from("pos1")],
+                &mut accumulator,
+            )
+            .unwrap();
+        }
+
+        assert_eq!(accumulator.patterns.len(), 1);
+        let (key, entry) = accumulator.patterns.iter().next().unwrap();
+        assert_eq!(key.feature_key, "pos1");
+        assert!(key.pattern.contains("名詞=>vibrato"));
+        assert!(key.pattern.contains("空白=>sudachi-c"));
+        assert_eq!(entry.examples, 1);
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn warehouse_feature_profile_schema_requires_same_schema_disagreement() {
         let sql = warehouse_pattern_duckdb_sql(
             Path::new("scratch/warehouse/runs/run-a"),
@@ -5296,6 +5538,7 @@ mod tests {
                 exclusions: SummaryExclusions::default(),
                 limit: 5,
             },
+            FeatureDiffsShape::CollapsedAnalyzers,
         );
 
         assert!(sql.contains("schema_value_counts"));
@@ -5944,6 +6187,113 @@ mod tests {
         };
 
         assert_eq!(nway_pattern_display(&key), r#"a:[\n|\t]"#);
+    }
+
+    fn scalar_feature_diffs_schema() -> Arc<Schema> {
+        Arc::new(Schema::new(vec![
+            Field::new("run_id", DataType::Utf8, false),
+            Field::new("source_id", DataType::Utf8, false),
+            Field::new("text_id", DataType::Utf8, false),
+            Field::new("region_index", DataType::UInt64, false),
+            Field::new("feature_key", DataType::Utf8, false),
+            Field::new("scope_type", DataType::Utf8, false),
+            Field::new("scope_position", DataType::UInt64, true),
+            Field::new("scope_surface", DataType::Utf8, true),
+            Field::new("feature_value", DataType::Utf8, true),
+            Field::new("analyzer_id", DataType::Utf8, false),
+        ]))
+    }
+
+    fn write_empty_parquet(path: &Path, schema: Arc<Schema>) {
+        let batch = RecordBatch::new_empty(schema.clone());
+        let file = File::create(path).unwrap();
+        let mut writer = ArrowWriter::try_new(file, schema, None).unwrap();
+        writer.write(&batch).unwrap();
+        writer.close().unwrap();
+    }
+
+    #[test]
+    fn feature_diffs_shape_detects_scalar_and_collapsed() {
+        use crate::warehouse::schema::WarehouseTable;
+        // Scalar (pre-v3) single file.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir
+            .path()
+            .join(WarehouseTable::NwayFeatureDiffs.file_name());
+        write_empty_parquet(&path, scalar_feature_diffs_schema());
+        assert_eq!(
+            nway_feature_diffs_shape(dir.path()).unwrap(),
+            FeatureDiffsShape::ScalarAnalyzerId
+        );
+
+        // Collapsed (v3) directory-of-parts: shape read from the first part.
+        let dir = tempfile::tempdir().unwrap();
+        let parts = dir
+            .path()
+            .join(WarehouseTable::NwayFeatureDiffs.file_name());
+        fs::create_dir_all(&parts).unwrap();
+        let collapsed = Arc::new(Schema::new(vec![
+            Field::new("run_id", DataType::Utf8, false),
+            Field::new(
+                "analyzers",
+                DataType::List(Arc::new(Field::new("item", DataType::Utf8, true))),
+                false,
+            ),
+        ]));
+        write_empty_parquet(&parts.join("part-000.parquet"), collapsed);
+        assert_eq!(
+            nway_feature_diffs_shape(dir.path()).unwrap(),
+            FeatureDiffsShape::CollapsedAnalyzers
+        );
+
+        // Neither column: descriptive error.
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir
+            .path()
+            .join(WarehouseTable::NwayFeatureDiffs.file_name());
+        let bogus = Arc::new(Schema::new(vec![Field::new(
+            "run_id",
+            DataType::Utf8,
+            false,
+        )]));
+        write_empty_parquet(&path, bogus);
+        let err = nway_feature_diffs_shape(dir.path())
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("neither"), "unexpected error: {err}");
+
+        // Missing file: error, not a silent default.
+        let dir = tempfile::tempdir().unwrap();
+        assert!(nway_feature_diffs_shape(dir.path()).is_err());
+    }
+
+    #[test]
+    fn expanded_source_passes_scalar_shape_through_without_unnest() {
+        let collapsed = nway_feature_diffs_expanded_source(
+            "'/x.parquet'",
+            FeatureDiffsShape::CollapsedAnalyzers,
+        );
+        assert!(collapsed.contains("UNNEST(src.analyzers)"));
+        let scalar =
+            nway_feature_diffs_expanded_source("'/x.parquet'", FeatureDiffsShape::ScalarAnalyzerId);
+        assert!(!scalar.contains("UNNEST"));
+        assert!(scalar.contains("src.analyzer_id"));
+        // Both expose the same 10-column relation shape.
+        for source in [&collapsed, &scalar] {
+            for column in [
+                "run_id",
+                "source_id",
+                "text_id",
+                "region_index",
+                "feature_key",
+                "scope_type",
+                "scope_position",
+                "scope_surface",
+                "feature_value",
+            ] {
+                assert!(source.contains(column), "{column} missing from {source}");
+            }
+        }
     }
 
     fn temp_dir(label: &str) -> std::path::PathBuf {

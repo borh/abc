@@ -68,8 +68,8 @@ The corpora the dictionary-comparison runs use (e.g. `aozora-full-repin-1a4f864`
 2. Render each contributing node, deduped by pointer, in document order:
    - `text` → `value`; `raw` → `source` (both verbatim);
    - `ruby` → `base《reading》`, prepending `｜` when the node's byte-span length exceeds the rendered form by exactly its 3 bytes (**byte-length verification**: rendered UTF-8 length must equal the span length, else the node is flagged approximate);
-   - `gaiji` → `※［＃description］`, `style`/`tcy` → inner text — semantic forms, always flagged approximate.
-3. **Coverage check:** the sum of rendered nodes' span lengths must tile the covering `[min byte_start, max byte_end)`; gaps (non-projecting markers inside the region) render as `…` and flag the slice approximate.
+   - `gaiji` → `※［＃description］` (falling back to the resolved character when the description is empty) at every nesting level; byte-length-verified like ruby, so an exactly-tiling marker is verbatim and anything else is flagged approximate. `style`/`tcy` → inner text — semantic, always approximate.
+3. **Coverage check:** the sum of rendered nodes' span lengths must tile the covering `[min byte_start, max byte_end)`; gaps (non-projecting markers inside the region) render as `…` and are recorded per-slice as `gaps: [{byte_start, byte_end}]`; a slice with gaps is approximate as a whole, but the nodes around a gap keep their own byte-verified status.
 
 The JSON records per-slice fidelity: `approximate_pointers` lists the nodes whose rendering is semantic rather than byte-verified; an empty list means the slice is verbatim sanitized-source markup. A fully-verbatim original-file mode (corpus index → zip → windows-31j decode → sanitize → slice) was considered and deliberately dropped: it adds an external parser dependency and a corpus-checkout requirement for marginal gain, and can be revisited if approximate gaiji/style rendering proves insufficient.
 
@@ -92,8 +92,8 @@ The contributing nodes' RFC 6901 pointers (`/blocks/41/content/3`) plus `inline_
   "source_id": "…", "text_id": "…", "region_index": 526,
   "char_start": 769, "char_end": 784,
   "snippet": { "before": "…", "region": "…", "after": "…" },
-  "analyzer_analyses": [ { "analyzer_ids": ["…"], "tokens": [ { "surface": "…", "features": {…} } ] } ],
-  "aozora_markup": { "text": "…《…》…", "byte_start": 123, "byte_end": 456, "approximate_pointers": [] },
+  "analyzer_analyses": [ { "analyzer_ids": ["…"], "surfaces": ["…"], "tokens": [ { "surface": "…", "features": {…} } ] } ],
+  "aozora_markup": { "text": "…《…》…", "byte_start": 123, "byte_end": 456, "approximate_pointers": [], "gaps": [] },
   "aat_nodes": [ { "pointer": "/blocks/41/content/3", "inline_kind": "ruby", "is_ruby_base": true, "is_gaiji": false } ],
   "work": { "work_id": "…", "title": "…", "author": { "person_id": "…", "family_name": "…", … },
             "first_published": "…", "orthographic_style": "…", "ndc": "…", "card_url": "…" },
@@ -110,7 +110,7 @@ Per-example degradation, never build failure. Error vocabulary:
 | code | meaning | effect |
 |---|---|---|
 | `aat-missing` | `sources.aat_path` unreadable | example has metadata layer only |
-| `projection-mismatch` | re-projected char count ≠ `sources.source_chars` | snippet/markup/AAT layers omitted for that source |
+| `projection-mismatch` | re-projected char count ≠ `sources.source_chars`, or an example span outside the projected text | snippet/markup/AAT layers omitted for that source |
 | `markup-unreconstructable` | a contributing node has no renderable content (e.g. legacy raw node with empty `source`) | markup layer omitted |
 | `work-record-missing` | no ABC `works/<work_id>.json` | metadata from `aozora_works` only |
 | `person-record-missing` | no ABC `persons/<person_id>.json` | author shown as person id |

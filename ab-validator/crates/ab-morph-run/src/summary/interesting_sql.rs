@@ -28,8 +28,8 @@ use super::interesting::{
 };
 use super::pattern_id::pattern_id;
 use super::summary_body::{
-    NwayPatternKey, duckdb_table_path_literal, read_warehouse_parquet_file, run_duckdb_statement,
-    sql_literal,
+    FeatureDiffsShape, NwayPatternKey, duckdb_table_path_literal, nway_feature_diffs_shape,
+    read_warehouse_parquet_file, run_duckdb_statement, sql_literal,
 };
 use super::summary_body::{canonicalize_feature_values, canonicalize_segmentation_groups};
 use crate::nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
@@ -378,9 +378,10 @@ fn feature_stage_query(
     filter: InterestingTextFilter,
     feature_predicate: &str,
     analyzer_ids: &[String],
+    shape: FeatureDiffsShape,
 ) -> String {
     let base = base_regions_cte(regions, analyzers, filter, "r.has_feature_disagreement");
-    let source = crate::summary::summary_body::nway_feature_diffs_expanded_source(features);
+    let source = crate::summary::summary_body::nway_feature_diffs_expanded_source(features, shape);
     let analyzer_flags = analyzer_ids
         .iter()
         .enumerate()
@@ -747,6 +748,7 @@ pub(super) fn collect_patterns_duckdb(
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
+    let shape = nway_feature_diffs_shape(run_dir)?;
     let (works_join, rarity_key) = rarity_sql(run_dir, rarity);
     let analyzer_ids = analyzer_ids.iter().cloned().collect::<Vec<_>>();
 
@@ -787,6 +789,7 @@ pub(super) fn collect_patterns_duckdb(
             options.filter,
             &feature_key_in_predicate(batch_keys),
             &analyzer_ids,
+            shape,
         );
         let sql = format!(
             "{settings}\nCOPY ({feat_body}) TO {feat_out} (FORMAT PARQUET, COMPRESSION ZSTD);",
@@ -876,6 +879,7 @@ pub(super) fn anomalies_duckdb(
             .filter_map(|key| key.feature_key.clone())
             .collect::<Vec<_>>();
         let analyzer_ids = analyzer_ids.iter().cloned().collect::<Vec<_>>();
+        let shape = nway_feature_diffs_shape(run_dir)?;
         let stage_out = temp_output_path(run_dir, "top-feature-stage");
         let stage_body = feature_stage_query(
             &regions,
@@ -884,6 +888,7 @@ pub(super) fn anomalies_duckdb(
             options.filter,
             &feature_key_in_predicate(&key_names),
             &analyzer_ids,
+            shape,
         );
         let sql = format!(
             "{settings}\nCOPY ({stage_body}) TO {stage_out} (FORMAT PARQUET, COMPRESSION ZSTD);",

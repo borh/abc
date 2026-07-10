@@ -70,6 +70,7 @@ dependencies = [
  "ab-source-syntax",
  "anyhow",
  "clap",
+ "criterion",
  "encoding_rs",
  "flate2",
  "rayon",

@@ -116,6 +116,62 @@ struct AatSummary {
     source_bytes: Option<usize>,
 }
 
+#[derive(Debug)]
+struct PathSummary {
+    path: std::path::PathBuf,
+    work_id: String,
+    summary: AatSummary,
+}
+
+#[cfg(test)]
+static LIVE_ROOTS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+#[cfg(test)]
+static MAX_LIVE_ROOTS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+#[cfg(test)]
+struct LiveRootGuard;
+
+#[cfg(test)]
+impl LiveRootGuard {
+    fn new() -> Self {
+        use std::sync::atomic::Ordering;
+        let live = LIVE_ROOTS.fetch_add(1, Ordering::SeqCst) + 1;
+        MAX_LIVE_ROOTS.fetch_max(live, Ordering::SeqCst);
+        Self
+    }
+}
+
+#[cfg(test)]
+impl Drop for LiveRootGuard {
+    fn drop(&mut self) {
+        LIVE_ROOTS.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
+struct LoadedAatRoot {
+    root: AatRoot,
+    #[cfg(test)]
+    _live_root: LiveRootGuard,
+}
+
+impl LoadedAatRoot {
+    fn new(root: AatRoot) -> Self {
+        Self {
+            root,
+            #[cfg(test)]
+            _live_root: LiveRootGuard::new(),
+        }
+    }
+
+    fn work_id(&self) -> &str {
+        &self.root.work_id
+    }
+
+    fn summarize(self) -> Result<AatSummary> {
+        summarize(self.root)
+    }
+}
+
 /// Compare AAT summary trees from two directories.
 ///
 /// # Errors
@@ -317,29 +373,38 @@ fn read_aat_summaries(root: &Path) -> Result<BTreeMap<String, AatSummary>> {
         .map(|entry| entry.path().to_owned())
         .collect();
 
-    let loaded: Vec<(std::path::PathBuf, AatRoot)> = entries
+    let loaded: Vec<PathSummary> = entries
         .par_iter()
         .map(|path| {
             let bytes =
                 fs::read(path).with_context(|| format!("failed to read {}", path.display()))?;
             let root: AatRoot = serde_json::from_slice(&bytes)
                 .with_context(|| format!("failed to parse {}", path.display()))?;
-            Ok::<_, anyhow::Error>((path.to_owned(), root))
+            let root = LoadedAatRoot::new(root);
+            let work_id = root.work_id().to_owned();
+            let summary = root.summarize()?;
+            Ok::<_, anyhow::Error>(PathSummary {
+                path: path.to_owned(),
+                work_id,
+                summary,
+            })
         })
         .collect::<Result<_>>()?;
 
     let mut work_id_counts = BTreeMap::new();
-    for (_, root) in &loaded {
-        *work_id_counts.entry(root.work_id.clone()).or_insert(0usize) += 1;
+    for loaded in &loaded {
+        *work_id_counts
+            .entry(loaded.work_id.clone())
+            .or_insert(0usize) += 1;
     }
 
-    let summaries: Vec<(String, AatSummary)> = loaded
-        .into_par_iter()
-        .map(|(path, root)| {
-            let key = aat_key(&work_id_counts, &path, &root);
-            summarize(root).map(|summary| (key, summary))
+    let summaries = loaded
+        .into_iter()
+        .map(|loaded| {
+            let key = aat_key(&work_id_counts, &loaded.path, &loaded.work_id);
+            (key, loaded.summary)
         })
-        .collect::<Result<_>>()?;
+        .collect::<Vec<_>>();
 
     let mut out = BTreeMap::new();
     for (key, summary) in summaries {
@@ -348,20 +413,15 @@ fn read_aat_summaries(root: &Path) -> Result<BTreeMap<String, AatSummary>> {
     Ok(out)
 }
 
-fn aat_key(work_id_counts: &BTreeMap<String, usize>, path: &Path, root: &AatRoot) -> String {
-    if work_id_counts
-        .get(&root.work_id)
-        .copied()
-        .unwrap_or_default()
-        <= 1
-    {
-        return root.work_id.clone();
+fn aat_key(work_id_counts: &BTreeMap<String, usize>, path: &Path, work_id: &str) -> String {
+    if work_id_counts.get(work_id).copied().unwrap_or_default() <= 1 {
+        return work_id.to_owned();
     }
     let filename = path
         .file_name()
         .and_then(|name| name.to_str())
         .unwrap_or("duplicate");
-    format!("{}::{filename}", root.work_id)
+    format!("{work_id}::{filename}")
 }
 
 fn summarize(root: AatRoot) -> Result<AatSummary> {
@@ -680,4 +740,38 @@ fn kind(value: &Value) -> Option<&str> {
 
 fn normalize_visible(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::atomic::Ordering;
+
+    use super::*;
+
+    #[test]
+    fn summarization_does_not_retain_the_corpus_of_parsed_roots() {
+        let dir = tempfile::tempdir().unwrap();
+        for index in 0..200 {
+            let aat = serde_json::json!({
+                "work_id": format!("work-{index:03}"),
+                "blocks": [{"kind": "paragraph", "content": [
+                    {"kind": "text", "value": "本文"}
+                ]}],
+                "meta": {}
+            });
+            fs::write(
+                dir.path().join(format!("{index:03}.json")),
+                serde_json::to_vec(&aat).unwrap(),
+            )
+            .unwrap();
+        }
+        LIVE_ROOTS.store(0, Ordering::SeqCst);
+        MAX_LIVE_ROOTS.store(0, Ordering::SeqCst);
+
+        let summaries = read_aat_summaries(dir.path()).unwrap();
+
+        assert_eq!(summaries.len(), 200);
+        assert!(MAX_LIVE_ROOTS.load(Ordering::SeqCst) < 200);
+        assert_eq!(LIVE_ROOTS.load(Ordering::SeqCst), 0);
+    }
 }

@@ -132,6 +132,42 @@ fn kunten_rows_detect_real_fixture_spellings() {
 }
 
 #[test]
+fn shared_detector_traversal_matches_per_row_detection() {
+    use ab_coverage::detectors::{DetectorContext, DetectorRegistry};
+
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let registry = DetectorRegistry::from_matrix(matrix.rows());
+    let aat = serde_json::json!({
+        "version": 1,
+        "work_id": "detector-equivalence",
+        "blocks": [
+            {"kind": "heading", "content": [{"kind": "text", "value": "見出し"}]},
+            {"kind": "paragraph", "content": [
+                {"kind": "ruby", "base": "山", "reading": "やま", "direction": "left"},
+                {"kind": "gaiji", "description": "U+4E00、第1水準", "jis_code": "1-16-01"},
+                {"kind": "style", "style_type": "boten", "content": []},
+                {"kind": "tcy", "content": []},
+                {"kind": "warichu", "content": []}
+            ]},
+            {"kind": "figure", "caption": "図", "content": []},
+            {"kind": "caption_block", "content": [{"kind": "caption"}]}
+        ],
+        "meta": {"adapter": "fixture", "adapter_version": "fixture"}
+    });
+    let source = "｜山《やま》※［＃U+4E00］［＃傍点］［＃改ページ］";
+    let ctx = DetectorContext { aat: &aat, source };
+    let all = registry.detect_all(&ctx);
+
+    for row_id in registry.rows() {
+        assert_eq!(
+            registry.detect(row_id, &ctx),
+            all[row_id],
+            "shared traversal diverged for {row_id}"
+        );
+    }
+}
+
+#[test]
 fn source_inventory_classifies_kunten_source_note_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

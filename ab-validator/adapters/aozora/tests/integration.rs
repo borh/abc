@@ -4,13 +4,7 @@ use std::{
 };
 
 fn adapter_bin() -> PathBuf {
-    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.push("target/debug/aozora-adapter");
-    if !path.exists() {
-        path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        path.push("target/release/aozora-adapter");
-    }
-    path
+    PathBuf::from(env!("CARGO_BIN_EXE_aozora-adapter"))
 }
 
 fn run_mode(source: &str, mode: &str) -> Vec<u8> {

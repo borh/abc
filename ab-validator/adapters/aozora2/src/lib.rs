@@ -687,18 +687,16 @@ fn normalize_inline_content(content: &mut Vec<Value>) {
         if node.get("kind").and_then(Value::as_str) == Some("figure")
             && idx + 1 < original.len()
             && original[idx + 1].get("kind").and_then(Value::as_str) == Some("caption")
+            && let Some(caption) = original[idx + 1].get("content").cloned()
+            && let Some(object) = node.as_object_mut()
         {
-            if let Some(caption) = original[idx + 1].get("content").cloned()
-                && let Some(object) = node.as_object_mut()
-            {
-                if let Some(caption_text) = caption_visible_text(&caption) {
-                    object.insert("alt".to_owned(), json!(caption_text));
-                }
-                object.insert("caption".to_owned(), caption);
-                normalized.push(node);
-                idx += 2;
-                continue;
+            if let Some(caption_text) = caption_visible_text(&caption) {
+                object.insert("alt".to_owned(), json!(caption_text));
             }
+            object.insert("caption".to_owned(), caption);
+            normalized.push(node);
+            idx += 2;
+            continue;
         }
 
         if let Some(source) = raw_node_source(&node) {
@@ -723,11 +721,11 @@ fn normalize_inline_content(content: &mut Vec<Value>) {
                     continue;
                 }
             }
-            if let Some((target, frontref)) = parse_frontref_boten_note(source) {
-                if apply_frontref_boten(&mut normalized, target, frontref) {
-                    idx += 1;
-                    continue;
-                }
+            if let Some((target, frontref)) = parse_frontref_boten_note(source)
+                && apply_frontref_boten(&mut normalized, target, frontref)
+            {
+                idx += 1;
+                continue;
             }
             if source == "改行" {
                 apply_line_break(&mut normalized, original.get(idx + 1));
@@ -1410,6 +1408,33 @@ pub fn html_escape(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[derive(serde::Deserialize)]
+    struct SourceDecodingVector {
+        name: String,
+        bytes: Vec<u8>,
+        text: String,
+        encoding: String,
+        sha256: String,
+    }
+
+    #[test]
+    fn source_decoding_contract() {
+        let vectors: Vec<SourceDecodingVector> = serde_json::from_str(include_str!(
+            "../../../data/fixtures/source-decoding-contract.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            let decoded = decode_source_bytes(&vector.bytes).unwrap();
+            assert_eq!(decoded.text, vector.text, "{} text", vector.name);
+            assert_eq!(
+                decoded.encoding, vector.encoding,
+                "{} encoding",
+                vector.name
+            );
+            assert_eq!(decoded.source_hash, vector.sha256, "{} hash", vector.name);
+        }
+    }
     use aozora_core::node::FontSizeType;
     use aozora_core::{BlockParams, BlockType, MidashiLevel, MidashiStyle};
 

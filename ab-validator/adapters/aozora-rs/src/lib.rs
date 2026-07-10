@@ -10,9 +10,9 @@ mod parser;
 mod projection;
 mod source;
 
+pub use dump::retokenized_dump_json;
 use metrics::{AdapterMetrics, AdapterMetricsParts, FallbackDecision, FallbackReason};
 use parser::ParsedSource;
-pub use dump::retokenized_dump_json;
 pub use source::{DecodedSource, decode_source_bytes};
 
 const LARGE_BODY_BYTES: usize = 500_000;
@@ -179,10 +179,10 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
     let mut projection_check = Duration::ZERO;
     let source_artifacts: Option<source::SourceArtifacts<'_>> =
         if (has_markup || needs_structured_source) && !large_body {
-        Some(source::SourceArtifacts::collect(validation_body))
-    } else {
-        None
-    };
+            Some(source::SourceArtifacts::collect(validation_body))
+        } else {
+            None
+        };
     let mut fallback = FallbackDecision::none();
     let mut fallback_source_visible = None;
     let mut initial = None;
@@ -297,9 +297,12 @@ fn needs_structured_source_fallback(body: &str) -> bool {
     body.contains("／＼")
         || body.contains('〔')
         || body.contains("）入る")
-        || ab_source_syntax::source_events(body)
-            .iter()
-            .any(|event| matches!(event.kind, ab_source_syntax::SourceEventKind::Command { .. }))
+        || ab_source_syntax::source_events(body).iter().any(|event| {
+            matches!(
+                event.kind,
+                ab_source_syntax::SourceEventKind::Command { .. }
+            )
+        })
 }
 
 #[cfg(test)]

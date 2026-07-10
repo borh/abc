@@ -32,8 +32,8 @@ use ab_plaintext::{PlainTextDocument, from_aat_value, from_aat_value_with_spans}
 use anyhow::{Context, Result, bail};
 pub use options::{OrthoDetectMode, OutputProfile, WarehouseProfile};
 use options::{
-    RunNormalizationProvenance, SerialProgress, SerialRunOptions, WarehouseParallelOptions,
-    WarehouseRunOptions,
+    PreparedOrthoDetector, RunNormalizationProvenance, SerialProgress, SerialRunOptions,
+    WarehouseParallelOptions, WarehouseRunOptions,
 };
 use output::{open_output_writer, read_jsonl_or_zst_to_string};
 use serde::Serialize;
@@ -2034,6 +2034,68 @@ mod tests {
     }
 
     #[test]
+    fn warehouse_prepares_ortho_detector_once_across_batches() {
+        struct CountingDetector(Arc<std::sync::atomic::AtomicUsize>);
+
+        impl OrthoDetector for CountingDetector {
+            fn detector_id(&self) -> ab_ortho_detect::OrthoDetectorId {
+                ab_ortho_detect::OrthoDetectorId::HeuristicV1
+            }
+
+            fn detect(
+                &self,
+                _sentences: &[ab_plaintext::SentenceSpan<'_>],
+            ) -> Vec<ab_ortho_detect::OrthoAnnotation> {
+                self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                Vec::new()
+            }
+        }
+
+        struct DetectorReset;
+
+        impl Drop for DetectorReset {
+            fn drop(&mut self) {
+                pipeline::set_test_ortho_detector(None);
+            }
+        }
+
+        let dir = temp_dir("warehouse-detector-lifetime");
+        let aat_dir = dir.join("aats");
+        let warehouse_dir = dir.join("warehouse");
+        fs::create_dir_all(&aat_dir).unwrap();
+        for index in 0..65 {
+            fs::write(
+                aat_dir.join(format!("source-{index:03}.json")),
+                tiny_aat(&format!("work-{index:03}")),
+            )
+            .unwrap();
+        }
+
+        pipeline::reset_detector_build_count();
+        let detect_calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        pipeline::set_test_ortho_detector(Some(Arc::new(CountingDetector(detect_calls.clone()))));
+        let _detector_reset = DetectorReset;
+        run_analyze_aat_warehouse(
+            None,
+            Some(&aat_dir),
+            &["test:single".to_owned()],
+            &warehouse_dir,
+            "run-detector-lifetime",
+            2,
+            WarehouseProfile::Triage,
+            1,
+            OrthoDetectMode::Heuristic,
+            None,
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(pipeline::detector_build_count(), 1);
+        assert_eq!(detect_calls.load(std::sync::atomic::Ordering::SeqCst), 65);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
     fn warehouse_eligibility_filter_narrows_run_to_selected_source_ids() {
         // Lane A: only works in the eligible set are analyzed; the rest are
         // dropped before analysis (run-eligibility filter, outside normalization).
@@ -2736,6 +2798,7 @@ mod tests {
             zstd_level: 3,
             ortho_detect: OrthoDetectMode::Off,
             ortho_ml_model: None,
+            prepared_ortho_detector: PreparedOrthoDetector(None),
             normalization: RunNormalizationProvenance {
                 mode: "off".to_owned(),
                 detector_id: None,

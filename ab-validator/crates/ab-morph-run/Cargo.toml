@@ -49,3 +49,7 @@ harness = false
 [[bench]]
 name = "warehouse_feature_pattern_accumulator"
 harness = false
+
+[[bench]]
+name = "warehouse_detector_lifetime"
+harness = false

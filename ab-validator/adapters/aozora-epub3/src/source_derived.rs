@@ -13,7 +13,20 @@
 //! reconstructed from rendered split spans here. Recovery is left as a
 //! documented gap rather than emitting schema-invalid nodes.
 
+use std::sync::LazyLock;
+
+use regex::Regex;
 use serde_json::Value;
+
+static GAIJI_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"※［＃(?P<desc>[^］]+)、U\+(?P<code>[0-9A-Fa-f]{4,6})］").unwrap()
+});
+static FIGURE_RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"挿絵（(?P<filename>[^、]+)、横(?P<width>[０-９0-9]+)×縦(?P<height>[０-９0-9]+)）入る",
+    )
+    .unwrap()
+});
 
 /// Run all recovery passes over `blocks` using `source_text`.
 pub fn apply_source_derived_recovery(blocks: &mut Vec<Value>, source_text: &str) {
@@ -25,8 +38,7 @@ pub fn apply_source_derived_recovery(blocks: &mut Vec<Value>, source_text: &str)
 fn recover_gaiji(blocks: &mut [Value], source_text: &str) {
     // Matches markers like `※［＃「口＋世」、U+546D］`. Captures the inner
     // description and the resolved code point `U+XXXX`.
-    let re = regex::Regex::new(r"※［＃(?P<desc>[^］]+)、U\+(?P<code>[0-9A-Fa-f]{4,6})］").unwrap();
-    for caps in re.captures_iter(source_text) {
+    for caps in GAIJI_RE.captures_iter(source_text) {
         let desc = caps
             .name("desc")
             .map(|m| m.as_str())
@@ -80,11 +92,7 @@ fn swap_first_matching_text(blocks: &mut [Value], needle: &str, replacement: Val
 fn recover_figures(blocks: &mut Vec<Value>, source_text: &str) {
     // Note: takes &mut Vec (not &[Value]) because the figure-insert path may push a new paragraph onto blocks.
     // Matches `挿絵（filename.png、横123×縦456）入る` style markers.
-    let re = regex::Regex::new(
-        r"挿絵（(?P<filename>[^、]+)、横(?P<width>[０-９0-9]+)×縦(?P<height>[０-９0-9]+)）入る",
-    )
-    .unwrap();
-    for caps in re.captures_iter(source_text) {
+    for caps in FIGURE_RE.captures_iter(source_text) {
         let filename = caps.name("filename").map(|m| m.as_str()).unwrap_or("");
         let width = caps.name("width").map(|m| parse_aozora_int(m.as_str()));
         let height = caps.name("height").map(|m| parse_aozora_int(m.as_str()));

@@ -26,6 +26,13 @@ toml_edit.workspace = true
 walkdir.workspace = true
 zip.workspace = true
 
+[dev-dependencies]
+criterion.workspace = true
+
+[[bench]]
+name = "prevalence_detectors"
+harness = false
+
 [[bin]]
 name = "ab-coverage-merge"
 path = "src/bin/merge.rs"

@@ -178,18 +178,23 @@ fn strip_orphaned_command_tails(text: &str) -> Option<String> {
             }
         }
 
-        if idx + 1 < chars.len() && chars[idx] == '［' && chars[idx + 1] == '＃' {
-            if !chars[idx + 2..].contains(&'］') && !chars[idx + 2..].contains(&']') {
-                changed = true;
-                break;
-            }
+        if idx + 1 < chars.len()
+            && chars[idx] == '［'
+            && chars[idx + 1] == '＃'
+            && !chars[idx + 2..].contains(&'］')
+            && !chars[idx + 2..].contains(&']')
+        {
+            changed = true;
+            break;
         }
 
-        if idx + 1 < chars.len() && chars[idx] == '[' && chars[idx + 1] == '#' {
-            if !chars[idx + 2..].contains(&']') {
-                changed = true;
-                break;
-            }
+        if idx + 1 < chars.len()
+            && chars[idx] == '['
+            && chars[idx + 1] == '#'
+            && !chars[idx + 2..].contains(&']')
+        {
+            changed = true;
+            break;
         }
 
         out.push(chars[idx]);
@@ -208,6 +213,33 @@ fn hex_sha256(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[derive(serde::Deserialize)]
+    struct SourceDecodingVector {
+        name: String,
+        bytes: Vec<u8>,
+        text: String,
+        encoding: String,
+        sha256: String,
+    }
+
+    #[test]
+    fn source_decoding_contract() {
+        let vectors: Vec<SourceDecodingVector> = serde_json::from_str(include_str!(
+            "../../../data/fixtures/source-decoding-contract.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            let decoded = decode_source_bytes(&vector.bytes).unwrap();
+            assert_eq!(decoded.text, vector.text, "{} text", vector.name);
+            assert_eq!(
+                decoded.encoding, vector.encoding,
+                "{} encoding",
+                vector.name
+            );
+            assert_eq!(decoded.source_hash, vector.sha256, "{} hash", vector.name);
+        }
+    }
 
     #[test]
     fn decodes_utf8_and_records_source_bytes() {

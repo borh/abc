@@ -9,8 +9,8 @@ mod source_derived;
 mod xhtml_mapper;
 
 pub use model::{
-    parse_failure_envelope, AtBlock, AtInline, DecodedSource, MappingError, MappingInput,
-    MappingResult, SourceDerivedContext, SourceDerivedSummary,
+    AtBlock, AtInline, DecodedSource, MappingError, MappingInput, MappingResult,
+    SourceDerivedContext, SourceDerivedSummary, parse_failure_envelope,
 };
 
 pub use model::{ADAPTER_NAME, ADAPTER_VERSION};
@@ -120,7 +120,11 @@ pub fn map_with_protocol(input: MappingInput) -> anyhow::Result<serde_json::Valu
     warnings.extend(ctx.warnings);
 
     let mut semantic_summary = ctx.summary.as_json();
-    if semantic_summary.is_object() && semantic_summary.as_object().is_some_and(|obj| obj.is_empty()) {
+    if semantic_summary.is_object()
+        && semantic_summary
+            .as_object()
+            .is_some_and(|obj| obj.is_empty())
+    {
         semantic_summary = serde_json::Value::Null;
     }
 
@@ -156,4 +160,36 @@ pub fn map_with_error_message(
         parse_complete: !parser_failed,
         parser_error_message,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(serde::Deserialize)]
+    struct SourceDecodingVector {
+        name: String,
+        bytes: Vec<u8>,
+        text: String,
+        encoding: String,
+        sha256: String,
+    }
+
+    #[test]
+    fn source_decoding_contract() {
+        let vectors: Vec<SourceDecodingVector> = serde_json::from_str(include_str!(
+            "../../../data/fixtures/source-decoding-contract.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            let decoded = decode_source_bytes(&vector.bytes).unwrap();
+            assert_eq!(decoded.text, vector.text, "{} text", vector.name);
+            assert_eq!(
+                decoded.encoding, vector.encoding,
+                "{} encoding",
+                vector.name
+            );
+            assert_eq!(decoded.source_hash, vector.sha256, "{} hash", vector.name);
+        }
+    }
 }

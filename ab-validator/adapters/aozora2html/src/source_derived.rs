@@ -1,7 +1,7 @@
 use crate::jis2ucs::resolve_jis2ucs;
 use crate::model::{AtBlock, SourceDerivedContext, SourceDerivedSummary};
 use regex::Regex;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
@@ -31,7 +31,10 @@ fn normalize_optional_int(value: Option<&str>) -> Option<i64> {
 }
 
 fn value_text(node: &Value) -> String {
-    node.get("value").and_then(Value::as_str).unwrap_or_default().to_string()
+    node.get("value")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string()
 }
 
 fn node_kind(node: &Value) -> &str {
@@ -70,7 +73,9 @@ fn compact_inline(nodes: Vec<Value>) -> Vec<Value> {
     nodes
         .into_iter()
         .filter(|node| {
-            node_kind(node) != "text" || !value_text(node).is_empty() || node.get("x-editor-note").is_some()
+            node_kind(node) != "text"
+                || !value_text(node).is_empty()
+                || node.get("x-editor-note").is_some()
         })
         .collect()
 }
@@ -81,12 +86,13 @@ fn paragraph_with_single(node: Value) -> Value {
 
 fn normalize_figure_alt(raw: &str) -> String {
     let trimmed = raw.trim();
-    if let Some(end) = trimmed.find('」') {
-        if trimmed.starts_with('「') && end > 0 {
-            // '「' is a multibyte char; slice from after it (byte 3) up to the first
-            // '」' byte offset. Both bounds are char boundaries, so the slice is safe.
-            return trimmed['「'.len_utf8()..end].trim().to_string();
-        }
+    if let Some(end) = trimmed.find('」')
+        && trimmed.starts_with('「')
+        && end > 0
+    {
+        // '「' is a multibyte char; slice from after it (byte 3) up to the first
+        // '」' byte offset. Both bounds are char boundaries, so the slice is safe.
+        return trimmed['「'.len_utf8()..end].trim().to_string();
     }
     let normalized = figure_alt_suffix_re().replace_all(trimmed, "").to_string();
     normalized
@@ -199,11 +205,7 @@ fn record_source_derived_gaiji(
     }
 }
 
-fn record_ruby_summary(
-    summary: &mut SourceDerivedSummary,
-    node: &Value,
-    provenance: &str,
-) {
+fn record_ruby_summary(summary: &mut SourceDerivedSummary, node: &Value, provenance: &str) {
     summary.push_syntax(
         "ruby.basic",
         json!({
@@ -270,10 +272,16 @@ fn ruby_node(base: &str, reading: &str, direction: &str) -> Value {
 
 fn heading_style_from_class(cls: &str) -> &'static str {
     let tokens = cls.split_whitespace().collect::<Vec<_>>();
-    if tokens.iter().any(|it| *it == "mado" || it.starts_with("mado-")) {
+    if tokens
+        .iter()
+        .any(|it| *it == "mado" || it.starts_with("mado-"))
+    {
         return "mado";
     }
-    if tokens.iter().any(|it| *it == "dogyo" || it.starts_with("dogyo-")) {
+    if tokens
+        .iter()
+        .any(|it| *it == "dogyo" || it.starts_with("dogyo-"))
+    {
         return "dogyo";
     }
     "normal"
@@ -287,9 +295,7 @@ fn heading_from_source_note(source_text: &str, block: &Value) -> Option<Value> {
             .map(|content| content.as_slice())
             .unwrap_or(&[]),
     );
-    let Some(capture) = heading_note_re().captures(source_text) else {
-        return None;
-    };
+    let capture = heading_note_re().captures(source_text)?;
     if capture.name("target").map(|it| it.as_str()) != Some(content_text.as_str()) {
         return None;
     }
@@ -342,63 +348,67 @@ fn source_derived_split_gaiji_notes(
         let next = content.get(index + 1);
 
         if node_kind(node) == "text"
-            && node.get("value").and_then(Value::as_str).is_some_and(|it| it.ends_with("※"))
+            && node
+                .get("value")
+                .and_then(Value::as_str)
+                .is_some_and(|it| it.ends_with("※"))
             && let Some(next_node) = next
+            && let Some(body) = gaiji_note_body(next_node)
+            && let Some(mut gaiji) = parse_source_gaiji_marker(&body, &format!("※［＃{}］", body))
         {
-            if let Some(body) = gaiji_note_body(next_node) {
-                if let Some(mut gaiji) = parse_source_gaiji_marker(
-                    &body,
-                    &format!("※［＃{}］", body),
-                ) {
-                    let mut text = value_text(node);
-                    text = text.trim_end_matches('※').to_string();
-                    if !text.is_empty() {
-                        out.push(json!({"kind":"text","value":text}));
-                    }
-                    let source = gaiji
-                        .get("x-source")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default()
-                        .to_string();
-                    let kind = source_derived_gaiji_kind(&gaiji);
-                    record_source_derived_gaiji(summary, &mut gaiji, &source, kind);
-                    out.push(gaiji);
-                    index += 2;
-                    changed = true;
-                    continue;
-                }
+            let mut text = value_text(node);
+            text = text.trim_end_matches('※').to_string();
+            if !text.is_empty() {
+                out.push(json!({"kind":"text","value":text}));
             }
+            let source = gaiji
+                .get("x-source")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let kind = source_derived_gaiji_kind(&gaiji);
+            record_source_derived_gaiji(summary, &mut gaiji, &source, kind);
+            out.push(gaiji);
+            index += 2;
+            changed = true;
+            continue;
         }
 
         if node_kind(node) == "ruby"
             && node.get("base").and_then(Value::as_str) == Some("※")
             && let Some(next_node) = next
+            && let Some(body) = gaiji_note_body(next_node)
+            && let Some(mut gaiji) = parse_source_gaiji_marker(&body, &format!("※［＃{}］", body))
         {
-            if let Some(body) = gaiji_note_body(next_node) {
-                if let Some(mut gaiji) =
-                    parse_source_gaiji_marker(&body, &format!("※［＃{}］", body))
-                {
-                    let resolved = gaiji.get("resolved").and_then(Value::as_str).unwrap_or_default().to_string();
-                    let mut ruby = node.clone();
-                    let source = gaiji
-                        .get("x-source")
-                        .and_then(Value::as_str)
-                        .unwrap_or_default()
-                        .to_string();
-                    let kind = source_derived_gaiji_kind(&gaiji);
-                    record_source_derived_gaiji(summary, &mut gaiji, &source, kind);
-                    if let Some(obj) = ruby.as_object_mut() {
-                        obj.insert("base".to_string(), Value::String(resolved));
-                        obj.insert("base_content".to_string(), Value::Array(vec![gaiji.clone()]));
-                        obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
-                    }
-                    record_ruby_summary(summary, &ruby, "source-derived");
-                    out.push(ruby);
-                    index += 2;
-                    changed = true;
-                    continue;
-                }
+            let resolved = gaiji
+                .get("resolved")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let mut ruby = node.clone();
+            let source = gaiji
+                .get("x-source")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let kind = source_derived_gaiji_kind(&gaiji);
+            record_source_derived_gaiji(summary, &mut gaiji, &source, kind);
+            if let Some(obj) = ruby.as_object_mut() {
+                obj.insert("base".to_string(), Value::String(resolved));
+                obj.insert(
+                    "base_content".to_string(),
+                    Value::Array(vec![gaiji.clone()]),
+                );
+                obj.insert(
+                    "x-provenance".to_string(),
+                    Value::String("source-derived".to_string()),
+                );
             }
+            record_ruby_summary(summary, &ruby, "source-derived");
+            out.push(ruby);
+            index += 2;
+            changed = true;
+            continue;
         }
 
         out.push(node.clone());
@@ -483,7 +493,8 @@ fn split_gaiji_placeholders(
 }
 
 fn gaiji_note_body(node: &Value) -> Option<String> {
-    if node_kind(node) != "style" || node.get("style_type").and_then(Value::as_str) != Some("notes") {
+    if node_kind(node) != "style" || node.get("style_type").and_then(Value::as_str) != Some("notes")
+    {
         return None;
     }
     let text = inline_visible_text(
@@ -493,7 +504,7 @@ fn gaiji_note_body(node: &Value) -> Option<String> {
             .unwrap_or(&[]),
     );
     let captures = note_body_re().captures(&text)?;
-    Some(captures.name("body").map(|it| it.as_str().to_string())?)
+    captures.name("body").map(|it| it.as_str().to_string())
 }
 
 fn source_derived_gaiji_content(
@@ -508,13 +519,10 @@ fn source_derived_gaiji_content(
     if !source.contains("※［＃") {
         return None;
     }
-    if content
-        .iter()
-        .any(|node| {
-            let kind = node_kind(node);
-            kind != "text" && kind != "gaiji"
-        })
-    {
+    if content.iter().any(|node| {
+        let kind = node_kind(node);
+        kind != "text" && kind != "gaiji"
+    }) {
         return None;
     }
 
@@ -580,7 +588,10 @@ fn source_derived_inlined_gaiji_content(
                     if let Some(obj) = ruby.as_object_mut() {
                         obj.insert("base".to_string(), Value::String(base));
                         obj.insert("base_content".to_string(), Value::Array(base_content));
-                        obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+                        obj.insert(
+                            "x-provenance".to_string(),
+                            Value::String("source-derived".to_string()),
+                        );
                     }
                     record_ruby_summary(summary, &ruby, "source-derived");
                     out.push(ruby);
@@ -635,10 +646,10 @@ fn paragraph_line_break_text(content: &[Value]) -> Option<String> {
 fn split_warigaki_inner_text(inner: &str) -> (String, String) {
     let mut split = None;
     for marker in ["［＃改行］", "／", "/"] {
-        if let Some(idx) = inner.find(marker) {
-            if split.is_none_or(|(best, _): (usize, &str)| idx < best) {
-                split = Some((idx, marker));
-            }
+        if let Some(idx) = inner.find(marker)
+            && split.is_none_or(|(best, _): (usize, &str)| idx < best)
+        {
+            split = Some((idx, marker));
         }
     }
 
@@ -687,14 +698,18 @@ fn source_derived_warigaki_content(
     ];
 
     for (start_marker, end_marker) in markers {
-        let Some(start) = content.iter().position(|node| node_is_note(node, start_marker)) else {
+        let Some(start) = content
+            .iter()
+            .position(|node| node_is_note(node, start_marker))
+        else {
             continue;
         };
         let Some(end) = content
             .iter()
             .enumerate()
             .skip(start + 1)
-            .find_map(|(idx, node)| node_is_note(node, end_marker).then_some(idx)) else {
+            .find_map(|(idx, node)| node_is_note(node, end_marker).then_some(idx))
+        else {
             continue;
         };
 
@@ -730,10 +745,7 @@ fn normalize_inline_container_warigaki_notes(
     source_derived_warigaki_content(&normalized, summary).unwrap_or(normalized)
 }
 
-fn normalize_inline_node_warigaki_notes(
-    node: Value,
-    summary: &mut SourceDerivedSummary,
-) -> Value {
+fn normalize_inline_node_warigaki_notes(node: Value, summary: &mut SourceDerivedSummary) -> Value {
     let Some(content) = node.get("content").and_then(Value::as_array) else {
         return node;
     };
@@ -773,25 +785,28 @@ fn strip_text_after_page_break(blocks: &[Value]) -> Vec<Value> {
             && current.get("kind").and_then(Value::as_str) == Some("paragraph")
         {
             let content = current.get("content").and_then(Value::as_array);
-            if let Some(content) = content {
-                if let Some(first) = content.first() {
-                    if node_kind(first) == "text" {
-                        let mut next = content.clone();
-                        let mut first_node = next[0].clone();
-                        let value = first_node.get("value").and_then(Value::as_str).unwrap_or_default().to_string();
-                        if !value.is_empty() {
-                            if let Some(obj) = first_node.as_object_mut() {
-                                obj.insert(
-                                    "value".to_string(),
-                                    Value::String(value.trim_start().to_string()),
-                                );
-                            }
-                        }
-                        next[0] = first_node;
-                        if let Some(obj) = current.as_object_mut() {
-                            obj.insert("content".to_string(), Value::Array(next));
-                        }
-                    }
+            if let Some(content) = content
+                && let Some(first) = content.first()
+                && node_kind(first) == "text"
+            {
+                let mut next = content.clone();
+                let mut first_node = next[0].clone();
+                let value = first_node
+                    .get("value")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_string();
+                if !value.is_empty()
+                    && let Some(obj) = first_node.as_object_mut()
+                {
+                    obj.insert(
+                        "value".to_string(),
+                        Value::String(value.trim_start().to_string()),
+                    );
+                }
+                next[0] = first_node;
+                if let Some(obj) = current.as_object_mut() {
+                    obj.insert("content".to_string(), Value::Array(next));
                 }
             }
         }
@@ -818,7 +833,7 @@ fn normalize_source_derived_paragraph(
         content = split;
     }
 
-    if content.iter().any(|node| is_source_derived_decoration(node)) {
+    if content.iter().any(is_source_derived_decoration) {
         content = strip_newline_only_text(&content);
     }
 
@@ -837,42 +852,43 @@ fn normalize_source_derived_paragraph(
         .filter(|node| node_kind(node) != "text" || !value_text(node).trim().is_empty())
         .collect();
 
-    if meaningful.len() == 1 && node_kind(meaningful[0]) == "style" {
-        if let Some(style_type) = meaningful[0].get("style_type").and_then(Value::as_str) {
-            if style_type.starts_with("unmapped-h") {
-                let heading = heading_from_source_note(
-                    source_text,
-                    &json!({
-                        "kind": "heading",
-                        "level": 1,
-                        "style": "normal",
-                        "content": meaningful[0].get("content").cloned().unwrap_or_else(|| json!([])),
-                    }),
-                );
-                if let Some(heading) = heading {
-                    return vec![heading];
-                }
-            }
+    if meaningful.len() == 1
+        && node_kind(meaningful[0]) == "style"
+        && let Some(style_type) = meaningful[0].get("style_type").and_then(Value::as_str)
+        && style_type.starts_with("unmapped-h")
+    {
+        let heading = heading_from_source_note(
+            source_text,
+            &json!({
+                "kind": "heading",
+                "level": 1,
+                "style": "normal",
+                "content": meaningful[0].get("content").cloned().unwrap_or_else(|| json!([])),
+            }),
+        );
+        if let Some(heading) = heading {
+            return vec![heading];
         }
     }
 
-    if meaningful.len() == 1 && node_kind(meaningful[0]) == "text" {
-        if let Some(figure) = source_text_figure(value_text(meaningful[0]).as_str()) {
-            summary.push_syntax(
-                "figure.image_inline",
-                json!({
-                    "kind": "figure",
-                    "value": {
-                        "filename": figure.get("filename").and_then(Value::as_str).unwrap_or(""),
-                        "alt": figure.get("alt").and_then(Value::as_str).unwrap_or(""),
-                        "width": figure.get("width").and_then(Value::as_i64),
-                        "height": figure.get("height").and_then(Value::as_i64),
-                    },
-                    "provenance": "source-derived",
-                }),
-            );
-            return vec![paragraph_with_single(figure)];
-        }
+    if meaningful.len() == 1
+        && node_kind(meaningful[0]) == "text"
+        && let Some(figure) = source_text_figure(value_text(meaningful[0]).as_str())
+    {
+        summary.push_syntax(
+            "figure.image_inline",
+            json!({
+                "kind": "figure",
+                "value": {
+                    "filename": figure.get("filename").and_then(Value::as_str).unwrap_or(""),
+                    "alt": figure.get("alt").and_then(Value::as_str).unwrap_or(""),
+                    "width": figure.get("width").and_then(Value::as_i64),
+                    "height": figure.get("height").and_then(Value::as_i64),
+                },
+                "provenance": "source-derived",
+            }),
+        );
+        return vec![paragraph_with_single(figure)];
     }
 
     if let Some(text) = paragraph_line_break_text(&content) {
@@ -903,24 +919,34 @@ fn source_derived_ruby_and_reference_content(
     summary: &mut SourceDerivedSummary,
 ) -> Option<Vec<Value>> {
     if source.contains("》［＃「")
-        && source.split_once("［＃").is_some_and(|(_, tail)| tail.contains("《"))
+        && source
+            .split_once("［＃")
+            .is_some_and(|(_, tail)| tail.contains("《"))
         && source.contains("》")
+        && let Some(captures) = nested_ruby_note_re().captures(source)
     {
-        if let Some(captures) = nested_ruby_note_re().captures(source) {
-            let base = captures.name("base").map(|m| m.as_str()).unwrap_or_default();
-            let reading = captures.name("reading").map(|m| m.as_str()).unwrap_or_default();
-            let note = captures.name("note").map(|m| m.as_str()).unwrap_or_default();
-            let node = ruby_node(base, reading, "right");
-            return Some(vec![
-                node,
-                json!({
-                    "kind":"raw",
-                    "source": note,
-                    "x-error-kind":"nested_ruby_forbidden",
-                    "x-provenance":"source-derived",
-                }),
-            ]);
-        }
+        let base = captures
+            .name("base")
+            .map(|m| m.as_str())
+            .unwrap_or_default();
+        let reading = captures
+            .name("reading")
+            .map(|m| m.as_str())
+            .unwrap_or_default();
+        let note = captures
+            .name("note")
+            .map(|m| m.as_str())
+            .unwrap_or_default();
+        let node = ruby_node(base, reading, "right");
+        return Some(vec![
+            node,
+            json!({
+                "kind":"raw",
+                "source": note,
+                "x-error-kind":"nested_ruby_forbidden",
+                "x-provenance":"source-derived",
+            }),
+        ]);
     }
 
     if let Some(m) = ruby_with_left_note_re().captures(source) {
@@ -931,8 +957,14 @@ fn source_derived_ruby_and_reference_content(
             let left = m.name("left").map(|it| it.as_str()).unwrap_or_default();
             let mut node = ruby_node(base, reading, "right");
             if let Some(obj) = node.as_object_mut() {
-                obj.insert("x-left-reading".to_string(), Value::String(left.to_string()));
-                obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+                obj.insert(
+                    "x-left-reading".to_string(),
+                    Value::String(left.to_string()),
+                );
+                obj.insert(
+                    "x-provenance".to_string(),
+                    Value::String("source-derived".to_string()),
+                );
             }
             record_ruby_summary(summary, &node, "source-derived");
             return Some(vec![node]);
@@ -946,7 +978,10 @@ fn source_derived_ruby_and_reference_content(
             let reading = m.name("reading").map(|it| it.as_str()).unwrap_or_default();
             let mut node = ruby_node(base, reading, "left");
             if let Some(obj) = node.as_object_mut() {
-                obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+                obj.insert(
+                    "x-provenance".to_string(),
+                    Value::String("source-derived".to_string()),
+                );
             }
             record_ruby_summary(summary, &node, "source-derived");
             return Some(vec![node]);
@@ -956,7 +991,10 @@ fn source_derived_ruby_and_reference_content(
     if let Some(m) = ruby_marker_re().captures(source) {
         let body = m.name("body").map(|it| it.as_str()).unwrap_or_default();
         if let Some(mut gaiji) = parse_source_gaiji_marker(body, &format!("※［＃{}］", body)) {
-            let base = gaiji.get("resolved").and_then(Value::as_str).unwrap_or_default();
+            let base = gaiji
+                .get("resolved")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
             let reading = m.name("reading").map(|it| it.as_str()).unwrap_or_default();
             let mut node = ruby_node(base, reading, "right");
             let source = gaiji
@@ -971,7 +1009,10 @@ fn source_derived_ruby_and_reference_content(
                     "base_content".to_string(),
                     Value::Array(vec![gaiji.clone()]),
                 );
-                obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+                obj.insert(
+                    "x-provenance".to_string(),
+                    Value::String("source-derived".to_string()),
+                );
             }
             record_ruby_summary(summary, &node, "source-derived");
             return Some(vec![
@@ -984,13 +1025,22 @@ fn source_derived_ruby_and_reference_content(
     if let Some(m) = ruby_annotation_re().captures(source) {
         let before = m.name("before").map(|it| it.as_str()).unwrap_or_default();
         let base = m.name("base").map(|it| it.as_str()).unwrap_or_default();
-        if before.ends_with(base) {
-            let prefix = &before[..before.len() - base.len()];
-            let node = ruby_node(base, m.name("reading").map(|it| it.as_str()).unwrap_or_default(), "right");
+        if let Some(prefix) = before.strip_suffix(base) {
+            let node = ruby_node(
+                base,
+                m.name("reading").map(|it| it.as_str()).unwrap_or_default(),
+                "right",
+            );
             let mut node = node;
             if let Some(obj) = node.as_object_mut() {
-                obj.insert("x-annotation-type".to_string(), Value::String("chuuki".to_string()));
-                obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+                obj.insert(
+                    "x-annotation-type".to_string(),
+                    Value::String("chuuki".to_string()),
+                );
+                obj.insert(
+                    "x-provenance".to_string(),
+                    Value::String("source-derived".to_string()),
+                );
             }
             return Some(compact_inline(vec![
                 json!({"kind":"text","value":prefix}),
@@ -1002,17 +1052,18 @@ fn source_derived_ruby_and_reference_content(
     if let Some(m) = ruby_bouki_re().captures(source) {
         let before = m.name("before").map(|it| it.as_str()).unwrap_or_default();
         let base = m.name("base").map(|it| it.as_str()).unwrap_or_default();
-        if before.ends_with(base) {
-            let prefix = &before[..before.len() - base.len()];
+        if let Some(prefix) = before.strip_suffix(base) {
             let mark = m.name("mark").map(|it| it.as_str()).unwrap_or_default();
-            let mut node = ruby_node(
-                base,
-                &mark.repeat(base.chars().count()),
-                "right",
-            );
+            let mut node = ruby_node(base, &mark.repeat(base.chars().count()), "right");
             if let Some(obj) = node.as_object_mut() {
-                obj.insert("x-annotation-type".to_string(), Value::String("bouki".to_string()));
-                obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+                obj.insert(
+                    "x-annotation-type".to_string(),
+                    Value::String("bouki".to_string()),
+                );
+                obj.insert(
+                    "x-provenance".to_string(),
+                    Value::String("source-derived".to_string()),
+                );
             }
             record_ruby_summary(summary, &node, "source-derived");
             return Some(compact_inline(vec![
@@ -1029,8 +1080,14 @@ fn source_derived_ruby_and_reference_content(
         let post = m.name("post").map(|it| it.as_str()).unwrap_or_default();
         let mut node = ruby_node("", reading, "right");
         if let Some(obj) = node.as_object_mut() {
-            obj.insert("x-annotation-type".to_string(), Value::String("okurigana".to_string()));
-            obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+            obj.insert(
+                "x-annotation-type".to_string(),
+                Value::String("okurigana".to_string()),
+            );
+            obj.insert(
+                "x-provenance".to_string(),
+                Value::String("source-derived".to_string()),
+            );
         }
         record_ruby_summary(summary, &node, "source-derived");
         return Some(compact_inline(vec![
@@ -1063,8 +1120,7 @@ fn source_derived_ruby_and_reference_content(
     if let Some(m) = ruby_basic_bouten_re().captures(source) {
         let before = m.name("before").map(|it| it.as_str()).unwrap_or_default();
         let target = m.name("target").map(|it| it.as_str()).unwrap_or_default();
-        if before.ends_with(target) {
-            let prefix = &before[..before.len() - target.len()];
+        if let Some(prefix) = before.strip_suffix(target) {
             let node = record_source_derived_decoration(
                 summary,
                 &json!({
@@ -1149,10 +1205,7 @@ fn source_derived_inline_content(
             record_source_derived_gaiji(
                 summary,
                 &mut node,
-                captures
-                    .get(0)
-                    .map(|m| m.as_str())
-                    .unwrap_or(""),
+                captures.get(0).map(|m| m.as_str()).unwrap_or(""),
                 "DescriptionOnly",
             );
             return Some(compact_inline(vec![
@@ -1209,32 +1262,34 @@ fn source_derived_inline_content(
         ]);
     }
 
-    if let Some(m) = yokogumi_inline_re().captures(source) {
-        if m.name("quoted").map(|it| it.as_str()).unwrap_or("") == m.name("target").map(|it| it.as_str()).unwrap_or("") {
-            return Some(vec![record_source_derived_decoration(
-                summary,
-                &json!({
-                    "kind":"yokogumi",
-                    "content":[{"kind":"text","value":m.name("target").map(|it| it.as_str()).unwrap_or_default()}],
-                    "x-provenance":"source-derived",
-                }),
-                "layout.yokogumi",
-            )]);
-        }
+    if let Some(m) = yokogumi_inline_re().captures(source)
+        && m.name("quoted").map(|it| it.as_str()).unwrap_or("")
+            == m.name("target").map(|it| it.as_str()).unwrap_or("")
+    {
+        return Some(vec![record_source_derived_decoration(
+            summary,
+            &json!({
+                "kind":"yokogumi",
+                "content":[{"kind":"text","value":m.name("target").map(|it| it.as_str()).unwrap_or_default()}],
+                "x-provenance":"source-derived",
+            }),
+            "layout.yokogumi",
+        )]);
     }
 
-    if let Some(m) = tcy_inline_re().captures(source) {
-        if m.name("quoted").map(|it| it.as_str()).unwrap_or("") == m.name("target").map(|it| it.as_str()).unwrap_or("") {
-            return Some(vec![record_source_derived_decoration(
-                summary,
-                &json!({
-                    "kind":"tcy",
-                    "content":[{"kind":"text","value":m.name("target").map(|it| it.as_str()).unwrap_or_default()}],
-                    "x-provenance":"source-derived",
-                }),
-                "layout.tcy",
-            )]);
-        }
+    if let Some(m) = tcy_inline_re().captures(source)
+        && m.name("quoted").map(|it| it.as_str()).unwrap_or("")
+            == m.name("target").map(|it| it.as_str()).unwrap_or("")
+    {
+        return Some(vec![record_source_derived_decoration(
+            summary,
+            &json!({
+                "kind":"tcy",
+                "content":[{"kind":"text","value":m.name("target").map(|it| it.as_str()).unwrap_or_default()}],
+                "x-provenance":"source-derived",
+            }),
+            "layout.tcy",
+        )]);
     }
 
     if let Some(content) = source_derived_warigaki_from_text(source, summary) {
@@ -1285,17 +1340,27 @@ fn source_gaiji_markers(source_text: &str) -> Vec<Value> {
     let mut markers = Vec::new();
     for capture in gaiji_marker_re().captures_iter(source_text) {
         let body = capture.name("body").map(|it| it.as_str()).unwrap_or("");
-        if let Some(gaiji) = parse_source_gaiji_marker(body, capture.get(0).map(|it| it.as_str()).unwrap_or("")) {
+        if let Some(gaiji) =
+            parse_source_gaiji_marker(body, capture.get(0).map(|it| it.as_str()).unwrap_or(""))
+        {
             markers.push(gaiji);
         }
     }
     markers
 }
 
-fn source_derived_block_scope(source: &str, summary: &mut SourceDerivedSummary) -> Option<Vec<Value>> {
+fn source_derived_block_scope(
+    source: &str,
+    summary: &mut SourceDerivedSummary,
+) -> Option<Vec<Value>> {
     if let Some(captures) = indent_block_re().captures(source) {
         let indent = parse_aozora_int(captures.name("indent").map(|it| it.as_str()).unwrap_or("0"));
-        let text = captures.name("text").map(|it| it.as_str()).unwrap_or_default().trim().to_string();
+        let text = captures
+            .name("text")
+            .map(|it| it.as_str())
+            .unwrap_or_default()
+            .trim()
+            .to_string();
         return Some(vec![json!({
             "kind":"jisage_block",
             "children":[paragraph_with_single(json!({"kind":"text","value":text}))],
@@ -1305,7 +1370,12 @@ fn source_derived_block_scope(source: &str, summary: &mut SourceDerivedSummary) 
 
     if let Some(captures) = jizume_block_re().captures(source) {
         let width = parse_aozora_int(captures.name("width").map(|it| it.as_str()).unwrap_or("0"));
-        let text = captures.name("text").map(|it| it.as_str()).unwrap_or_default().trim().to_string();
+        let text = captures
+            .name("text")
+            .map(|it| it.as_str())
+            .unwrap_or_default()
+            .trim()
+            .to_string();
         let node = json!({
             "kind":"style",
             "style_type":"jizume",
@@ -1313,15 +1383,18 @@ fn source_derived_block_scope(source: &str, summary: &mut SourceDerivedSummary) 
             "x-width": width,
             "x-provenance":"source-derived",
         });
-        return Some(vec![paragraph_with_single(record_source_derived_decoration(
-            summary,
-            &node,
-            "indentation.jizume",
-        ))]);
+        return Some(vec![paragraph_with_single(
+            record_source_derived_decoration(summary, &node, "indentation.jizume"),
+        )]);
     }
 
     if let Some(captures) = burasage_block_re().captures(source) {
-        let text = captures.name("text").map(|it| it.as_str()).unwrap_or_default().trim().to_string();
+        let text = captures
+            .name("text")
+            .map(|it| it.as_str())
+            .unwrap_or_default()
+            .trim()
+            .to_string();
         let first = parse_aozora_int(captures.name("first").map(|it| it.as_str()).unwrap_or("0"));
         let rest = parse_aozora_int(captures.name("rest").map(|it| it.as_str()).unwrap_or("0"));
         let node = json!({
@@ -1332,29 +1405,35 @@ fn source_derived_block_scope(source: &str, summary: &mut SourceDerivedSummary) 
             "x-indent-rest": rest,
             "x-provenance":"source-derived",
         });
-        return Some(vec![paragraph_with_single(record_source_derived_decoration(
-            summary,
-            &node,
-            "indentation.burasage",
-        ))]);
+        return Some(vec![paragraph_with_single(
+            record_source_derived_decoration(summary, &node, "indentation.burasage"),
+        )]);
     }
 
     if let Some(captures) = tcy_block_re().captures(source) {
-        let text = captures.name("text").map(|it| it.as_str()).unwrap_or_default().trim().to_string();
+        let text = captures
+            .name("text")
+            .map(|it| it.as_str())
+            .unwrap_or_default()
+            .trim()
+            .to_string();
         let node = json!({
             "kind":"tcy",
             "content":[{"kind":"text","value":text}],
             "x-provenance":"source-derived",
         });
-        return Some(vec![paragraph_with_single(record_source_derived_decoration(
-            summary,
-            &node,
-            "layout.tcy",
-        ))]);
+        return Some(vec![paragraph_with_single(
+            record_source_derived_decoration(summary, &node, "layout.tcy"),
+        )]);
     }
 
     if let Some(captures) = caption_block_re().captures(source) {
-        let text = captures.name("text").map(|it| it.as_str()).unwrap_or_default().trim().to_string();
+        let text = captures
+            .name("text")
+            .map(|it| it.as_str())
+            .unwrap_or_default()
+            .trim()
+            .to_string();
         summary.push_syntax(
             "caption.block",
             json!({
@@ -1402,7 +1481,10 @@ fn normalize_source_derived_block(
 
     if kind == "heading" {
         let heading = heading_from_source_note(source_text, block).unwrap_or_else(|| {
-            let style = block.get("style").and_then(Value::as_str).unwrap_or_default();
+            let style = block
+                .get("style")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
             let mut cloned = block.clone();
             if let Some(obj) = cloned.as_object_mut() {
                 obj.insert(
@@ -1447,11 +1529,8 @@ pub fn apply_source_derived_recovery(
     source_text: &str,
     ctx: &mut SourceDerivedContext,
 ) {
-    let normalized = normalize_source_derived_blocks(
-        blocks.as_slice(),
-        &mut ctx.summary,
-        source_text,
-    );
+    let normalized =
+        normalize_source_derived_blocks(blocks.as_slice(), &mut ctx.summary, source_text);
     *blocks = normalized;
 }
 
@@ -1490,7 +1569,8 @@ fn first_caption_and_remainder(block: &Value) -> (Option<Value>, Option<Value>) 
                 .iter()
                 .enumerate()
                 .filter(|(i, other)| {
-                    *i != index && (node_kind(other) != "text" || !value_text(other).trim().is_empty())
+                    *i != index
+                        && (node_kind(other) != "text" || !value_text(other).trim().is_empty())
                 })
                 .map(|(_, other)| other.clone())
                 .collect::<Vec<_>>();
@@ -1516,19 +1596,20 @@ pub fn attach_following_captions(
         let figure = single_figure(block);
         if figure.is_some() && index + 1 < blocks.len() {
             let (caption, remainder) = first_caption_and_remainder(&blocks[index + 1]);
-            if let (Some(mut figure), Some(caption)) = (figure, caption) {
-                if figure.get("caption") == Some(&Value::Null) {
-                    if let Some(obj) = figure.as_object_mut() {
-                        obj.insert(
-                            "caption".to_string(),
-                            caption.get("content").cloned().unwrap_or_else(|| json!([])),
-                        );
-                        obj.insert(
-                            "x-caption-provenance".to_string(),
-                            Value::String("source-derived".to_string()),
-                        );
-                    }
-                    context.summary.push_syntax(
+            if let (Some(mut figure), Some(caption)) = (figure, caption)
+                && figure.get("caption") == Some(&Value::Null)
+            {
+                if let Some(obj) = figure.as_object_mut() {
+                    obj.insert(
+                        "caption".to_string(),
+                        caption.get("content").cloned().unwrap_or_else(|| json!([])),
+                    );
+                    obj.insert(
+                        "x-caption-provenance".to_string(),
+                        Value::String("source-derived".to_string()),
+                    );
+                }
+                context.summary.push_syntax(
                         "figure.image_caption",
                         json!({
                             "kind": "figure_caption",
@@ -1546,16 +1627,15 @@ pub fn attach_following_captions(
                         }),
                     );
 
-                    if let Some(mut current) = blocks[index].as_object().cloned() {
-                        current.insert("content".to_string(), Value::Array(vec![figure]));
-                        out.push(Value::Object(current));
-                    }
-                    if let Some(remainder) = remainder {
-                        out.push(remainder);
-                    }
-                    index += 2;
-                    continue;
+                if let Some(mut current) = blocks[index].as_object().cloned() {
+                    current.insert("content".to_string(), Value::Array(vec![figure]));
+                    out.push(Value::Object(current));
                 }
+                if let Some(remainder) = remainder {
+                    out.push(remainder);
+                }
+                index += 2;
+                continue;
             }
         }
         out.push(block.clone());
@@ -1582,7 +1662,8 @@ fn unicode_gaiji_marker_re() -> &'static Regex {
 fn jis_gaiji_marker_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"(?:第[34]水準)?(?P<plane>[12])-(?P<row>[0-9０-９]+)-(?P<cell>[0-9０-９]+)").unwrap()
+        Regex::new(r"(?:第[34]水準)?(?P<plane>[12])-(?P<row>[0-9０-９]+)-(?P<cell>[0-9０-９]+)")
+            .unwrap()
     })
 }
 
@@ -1599,7 +1680,8 @@ fn description_with_resolvable_jis_re() -> &'static Regex {
 fn heading_note_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"［＃「(?P<target>.+?)」(?:は|の)(?P<style>同行|窓)?(?P<size>大|中|小)見出し］").unwrap()
+        Regex::new(r"［＃「(?P<target>.+?)」(?:は|の)(?P<style>同行|窓)?(?P<size>大|中|小)見出し］")
+            .unwrap()
     })
 }
 
@@ -1620,17 +1702,24 @@ fn burasage_block_re() -> &'static Regex {
 
 fn tcy_block_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"^［＃ここから縦中横］\n(?P<text>.+?)\n［＃ここで縦中横終わり］$").unwrap())
+    RE.get_or_init(|| {
+        Regex::new(r"^［＃ここから縦中横］\n(?P<text>.+?)\n［＃ここで縦中横終わり］$").unwrap()
+    })
 }
 
 fn caption_block_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"^［＃ここからキャプション］\n(?P<text>.+?)\n［＃ここでキャプション終わり］$").unwrap())
+    RE.get_or_init(|| {
+        Regex::new(r"^［＃ここからキャプション］\n(?P<text>.+?)\n［＃ここでキャプション終わり］$")
+            .unwrap()
+    })
 }
 
 fn line_indent_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"^(?P<text>.+?)［＃この行(?P<indent>[０-９0-9]+)字下げ］$").unwrap())
+    RE.get_or_init(|| {
+        Regex::new(r"^(?P<text>.+?)［＃この行(?P<indent>[０-９0-9]+)字下げ］$").unwrap()
+    })
 }
 
 fn line_chitsuki_re() -> &'static Regex {
@@ -1645,7 +1734,9 @@ fn unmatched_gaiji_re() -> &'static Regex {
 
 fn kaeriten_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"^(?P<pre>.*?)［＃返り点(?P<marker>[^］]+)］(?P<post>.*)$").unwrap())
+    RE.get_or_init(|| {
+        Regex::new(r"^(?P<pre>.*?)［＃返り点(?P<marker>[^］]+)］(?P<post>.*)$").unwrap()
+    })
 }
 
 fn left_page_re() -> &'static Regex {
@@ -1657,7 +1748,6 @@ fn yokogumi_inline_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| Regex::new(r#"^(?P<target>.+?)［＃「(?P<quoted>.+?)」の横組み］$"#).unwrap())
 }
-
 
 fn tcy_inline_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
@@ -1690,7 +1780,8 @@ fn source_derived_warigaki_from_text(
         let pre = &source[..start];
         let inner = &source[inner_start..end];
         let post = &source[end + end_marker.len()..];
-        if pre.contains('《') || pre.contains('》') || post.contains('《') || post.contains('》') {
+        if pre.contains('《') || pre.contains('》') || post.contains('《') || post.contains('》')
+        {
             continue;
         }
         let (upper, lower) = split_warigaki_inner_text(inner);
@@ -1706,7 +1797,9 @@ fn source_derived_warigaki_from_text(
 
 fn nested_ruby_note_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"^(?P<base>.+?)《(?P<reading>.+?)》(?P<note>［＃.+］)$"#).unwrap())
+    RE.get_or_init(|| {
+        Regex::new(r#"^(?P<base>.+?)《(?P<reading>.+?)》(?P<note>［＃.+］)$"#).unwrap()
+    })
 }
 
 fn ruby_with_left_note_re() -> &'static Regex {
@@ -1719,38 +1812,48 @@ fn ruby_with_left_note_re() -> &'static Regex {
 fn ruby_left_note_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r#"^(?P<base>.+?)［＃「(?P<quoted>.+?)」の左に「(?P<reading>.+?)」のルビ］$"#).unwrap()
+        Regex::new(r#"^(?P<base>.+?)［＃「(?P<quoted>.+?)」の左に「(?P<reading>.+?)」のルビ］$"#)
+            .unwrap()
     })
 }
 
 fn ruby_marker_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"^※［＃(?P<body>.+?)］《(?P<reading>.+?)》(?P<tail>.*)$"#).unwrap())
+    RE.get_or_init(|| {
+        Regex::new(r#"^※［＃(?P<body>.+?)］《(?P<reading>.+?)》(?P<tail>.*)$"#).unwrap()
+    })
 }
 
 fn ruby_annotation_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r#"^(?P<before>.*?)［＃「(?P<base>.+?)」の「(?P<reading>.+?)」の注記］$"#).unwrap()
+        Regex::new(r#"^(?P<before>.*?)［＃「(?P<base>.+?)」の「(?P<reading>.+?)」の注記］$"#)
+            .unwrap()
     })
 }
 
 fn ruby_bouki_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r#"^(?P<before>.*?)［＃「(?P<base>.+?)」に「(?P<mark>.+?)」の傍記］(?P<post>.*)$"#).unwrap()
+        Regex::new(
+            r#"^(?P<before>.*?)［＃「(?P<base>.+?)」に「(?P<mark>.+?)」の傍記］(?P<post>.*)$"#,
+        )
+        .unwrap()
     })
 }
 
 fn ruby_okurigana_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"^(?P<pre>.*?)［＃訓点送り仮名「(?P<reading>.+?)」］(?P<post>.*)$"#).unwrap())
+    RE.get_or_init(|| {
+        Regex::new(r#"^(?P<pre>.*?)［＃訓点送り仮名「(?P<reading>.+?)」］(?P<post>.*)$"#).unwrap()
+    })
 }
 
 fn ruby_front_note_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r#"^(?P<target>.+?)［＃「(?P<quoted>.+?)」に「(?P<mark>.+?)」の傍点］$"#).unwrap()
+        Regex::new(r#"^(?P<target>.+?)［＃「(?P<quoted>.+?)」に「(?P<mark>.+?)」の傍点］$"#)
+            .unwrap()
     })
 }
 
@@ -1995,7 +2098,8 @@ mod tests {
                 {"kind":"text","value":"けて"},
             ],
         })];
-        let source = "沙漠の砂《すな》の※［＃「檄」の「木」に代えて「火」、U+71E9、35-3］《や》けて";
+        let source =
+            "沙漠の砂《すな》の※［＃「檄」の「木」に代えて「火」、U+71E9、35-3］《や》けて";
 
         assert_eq!(
             normalize(&blocks, source),

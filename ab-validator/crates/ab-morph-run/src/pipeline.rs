@@ -17,6 +17,91 @@ impl ab_ortho_detect::OrthoTokenizer for SharedVibratoOrthoTokenizer {
     }
 }
 
+#[cfg(test)]
+thread_local! {
+    static DETECTOR_BUILD_COUNT: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    static TEST_ORTHO_DETECTOR: std::cell::RefCell<Option<PreparedOrthoDetector>> = const {
+        std::cell::RefCell::new(None)
+    };
+}
+
+fn build_heuristic_detector(analyzers: &[Arc<LoadedAnalyzer>]) -> Result<Arc<dyn OrthoDetector>> {
+    let shared_vibrato = analyzers
+        .iter()
+        .find(|analyzer| {
+            matches!(analyzer.as_ref(), LoadedAnalyzer::Vibrato(_))
+                && analyzer.analyzer_id() == ab_morph_analyzers::DEFAULT_VIBRATO_ANALYZER_ID
+        })
+        .cloned();
+    let vibrato: Arc<dyn ab_ortho_detect::OrthoTokenizer> = match shared_vibrato {
+        Some(analyzer) => Arc::new(SharedVibratoOrthoTokenizer(analyzer)),
+        None => Arc::new(ab_morph_analyzers::VibratoAnalyzer::unidic_cwj_default()?),
+    };
+    Ok(Arc::new(ab_ortho_detect::heuristic::HeuristicV1::new(
+        vibrato,
+        ab_ortho_detect::heuristic::HeuristicConfig::default(),
+    )))
+}
+
+fn build_ml_detector(ml_model: Option<&Path>) -> Result<Arc<dyn OrthoDetector>> {
+    let path = ml_model.ok_or_else(|| {
+        anyhow::anyhow!(
+            "--ortho-ml-model is required for --ortho-detect=ml (this should have been caught at CLI parse)"
+        )
+    })?;
+    let model = ab_ortho_detect::ml::MlLogisticRegression::load(path).map_err(|error| {
+        anyhow::anyhow!("failed to load ML model from {}: {error}", path.display())
+    })?;
+    Ok(Arc::new(model))
+}
+
+fn build_historical_detector() -> Result<Arc<dyn OrthoDetector>> {
+    let oracle = Arc::new(ab_morph_analyzers::VibratoAnalyzer::from_dictionary_name(
+        crate::M2_ORACLE_DICTIONARY,
+    )?);
+    let detector = ab_morph_analyzers::historical_rewrite_detector(oracle)
+        .context("failed to build M2 historical detector")?;
+    Ok(Arc::new(detector))
+}
+
+fn prepare_ortho_detector(
+    analyzers: &[Arc<LoadedAnalyzer>],
+    mode: OrthoDetectMode,
+    ml_model: Option<&Path>,
+) -> Result<PreparedOrthoDetector> {
+    #[cfg(test)]
+    DETECTOR_BUILD_COUNT.with(|count| count.set(count.get() + 1));
+    #[cfg(test)]
+    if let Some(detector) = TEST_ORTHO_DETECTOR.with(|slot| slot.borrow().clone()) {
+        return Ok(detector);
+    }
+
+    let detector = match mode {
+        OrthoDetectMode::Off => None,
+        OrthoDetectMode::Heuristic => Some(build_heuristic_detector(analyzers)?),
+        OrthoDetectMode::Ml => Some(build_ml_detector(ml_model)?),
+        OrthoDetectMode::Historical => Some(build_historical_detector()?),
+    };
+    Ok(PreparedOrthoDetector(detector))
+}
+
+#[cfg(test)]
+pub(crate) fn reset_detector_build_count() {
+    DETECTOR_BUILD_COUNT.with(|count| count.set(0));
+}
+
+#[cfg(test)]
+pub(crate) fn detector_build_count() -> usize {
+    DETECTOR_BUILD_COUNT.with(std::cell::Cell::get)
+}
+
+#[cfg(test)]
+pub(crate) fn set_test_ortho_detector(detector: Option<Arc<dyn OrthoDetector>>) {
+    TEST_ORTHO_DETECTOR.with(|slot| {
+        *slot.borrow_mut() = detector.map(|detector| PreparedOrthoDetector(Some(detector)));
+    });
+}
+
 /// Wall-time split for a serial analyze run: time spent in the per-document
 /// analyzer loop, time spent building adjudication rows (oracle evidence +
 /// n-way row construction), time spent in the warehouse parquet write/encode
@@ -296,6 +381,8 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
     let analyzers = load_analyzers(&specs)?;
     let analyzer_rows = warehouse_analyzer_rows(run_id, &specs, &analyzers)?;
     let normalization = resolve_run_normalization(ortho_detect, ortho_ml_model.as_deref())?;
+    let prepared_ortho_detector =
+        prepare_ortho_detector(&analyzers, ortho_detect, ortho_ml_model.as_deref())?;
     if jobs == 1 {
         let input_count = inputs.len();
         let (_string_stats, timings) = run_analyze_aat_serial(
@@ -328,6 +415,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
                 }),
                 ortho_detect,
                 ortho_ml_model,
+                prepared_ortho_detector: Some(prepared_ortho_detector),
             },
         )?;
         log_phase_timings(1, &timings);
@@ -346,6 +434,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
                 zstd_level,
                 ortho_detect,
                 ortho_ml_model,
+                prepared_ortho_detector,
                 normalization,
             },
         )?;
@@ -523,6 +612,7 @@ pub(crate) fn run_analyze_aat_inputs(
                 progress: None,
                 ortho_detect,
                 ortho_ml_model,
+                prepared_ortho_detector: None,
             },
         )?;
         log_phase_timings(1, &timings);
@@ -626,76 +716,16 @@ pub(crate) fn run_analyze_aat_serial(
     let mut string_stats = StringStatsReport::default();
     let progress = options.progress.clone();
 
-    // Construct the ortho detector ONCE per pipeline invocation.
-    // Both `Heuristic` and `Ml` end up as `Arc<dyn OrthoDetector>` so the
-    // per-document detection dispatch is uniform (the Phase 1 inlined
-    // `HeuristicV1` special-case is removed).
-    let detector: Option<Arc<dyn OrthoDetector>> = match options.ortho_detect {
-        OrthoDetectMode::Off => None,
-        OrthoDetectMode::Heuristic => {
-            // Reuse an already-loaded default vibrato analyzer when the run
-            // also selected it; loading the dictionary a second time would
-            // duplicate hundreds of MB of resident memory.
-            let shared_vibrato = analyzers
-                .iter()
-                .find(|analyzer| {
-                    matches!(analyzer.as_ref(), LoadedAnalyzer::Vibrato(_))
-                        && analyzer.analyzer_id() == ab_morph_analyzers::DEFAULT_VIBRATO_ANALYZER_ID
-                })
-                .cloned();
-            let vibrato: Arc<dyn ab_ortho_detect::OrthoTokenizer> = match shared_vibrato {
-                Some(analyzer) => Arc::new(SharedVibratoOrthoTokenizer(analyzer)),
-                None => match ab_morph_analyzers::VibratoAnalyzer::unidic_cwj_default() {
-                    Ok(v) => Arc::new(v) as Arc<dyn ab_ortho_detect::OrthoTokenizer>,
-                    Err(error) => {
-                        if let Some(writer) = &mut errors_writer {
-                            write_error_row(
-                                &mut **writer,
-                                &RunErrorRow {
-                                    input_path: String::new(),
-                                    source_id: None,
-                                    text_id: None,
-                                    analyzer: None,
-                                    stage: "ortho_detect_load".to_owned(),
-                                    error: error.to_string(),
-                                },
-                            )?;
-                        } else {
-                            eprintln!(
-                                "ab-morph-run: failed to load Vibrato for ortho detection: {error}"
-                            );
-                        }
-                        return Err(error.into());
-                    }
-                },
-            };
-            Some(Arc::new(ab_ortho_detect::heuristic::HeuristicV1::new(
-                vibrato,
-                ab_ortho_detect::heuristic::HeuristicConfig::default(),
-            )))
-        }
-        OrthoDetectMode::Ml => {
-            let path = options.ortho_ml_model.as_ref().ok_or_else(|| {
-                anyhow::anyhow!(
-                    "--ortho-ml-model is required for --ortho-detect=ml (this should have been caught at CLI parse)"
-                )
-            })?;
-            let model = ab_ortho_detect::ml::MlLogisticRegression::load(path).map_err(|e| {
-                anyhow::anyhow!("failed to load ML model from {}: {}", path.display(), e)
-            })?;
-            Some(Arc::new(model))
-        }
-        OrthoDetectMode::Historical => {
-            // Lane B (M2): load the kindai-bungo oracle and build the historical
-            // surface modernizer. The detector binds the analyzer's own archive
-            // hash, matching the runs-row policy from `resolve_run_normalization`.
-            // The oracle is a distinct dictionary from the run's target analyzers
-            // (it may not be in `analyzers`), so it is always loaded here.
-            let oracle = match ab_morph_analyzers::VibratoAnalyzer::from_dictionary_name(
-                crate::M2_ORACLE_DICTIONARY,
-            ) {
-                Ok(v) => Arc::new(v),
-                Err(error) => {
+    let detector = match options.prepared_ortho_detector {
+        Some(prepared) => prepared.0,
+        None => match prepare_ortho_detector(
+            analyzers,
+            options.ortho_detect,
+            options.ortho_ml_model.as_deref(),
+        ) {
+            Ok(prepared) => prepared.0,
+            Err(error) => {
+                if options.ortho_detect != OrthoDetectMode::Ml {
                     if let Some(writer) = &mut errors_writer {
                         write_error_row(
                             &mut **writer,
@@ -709,18 +739,12 @@ pub(crate) fn run_analyze_aat_serial(
                             },
                         )?;
                     } else {
-                        eprintln!(
-                            "ab-morph-run: failed to load {} for M2 historical normalization: {error}",
-                            crate::M2_ORACLE_DICTIONARY
-                        );
+                        eprintln!("ab-morph-run: failed to load ortho detector: {error}");
                     }
-                    return Err(error.into());
                 }
-            };
-            let detector = ab_morph_analyzers::historical_rewrite_detector(oracle)
-                .context("failed to build M2 historical detector")?;
-            Some(Arc::new(detector))
-        }
+                return Err(error);
+            }
+        },
     };
 
     for (input_index, input) in inputs.into_iter().enumerate() {
@@ -1367,6 +1391,7 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
             let analyzer_rows = options.analyzer_rows.clone();
             let ortho_detect = options.ortho_detect;
             let ortho_ml_model = options.ortho_ml_model.clone();
+            let prepared_ortho_detector = options.prepared_ortho_detector.clone();
             let normalization = options.normalization.clone();
             let queue = Arc::clone(&queue);
             handles.push(scope.spawn(move || -> Result<WarehouseShardOutput> {
@@ -1410,9 +1435,8 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
                                 total: batch_len,
                             }),
                             ortho_detect,
-                            // Rebuilt per batch; the model file is re-read once per
-                            // batch when ortho_detect == Ml (heuristic has no file).
                             ortho_ml_model: ortho_ml_model.clone(),
+                            prepared_ortho_detector: Some(prepared_ortho_detector.clone()),
                         },
                     );
                     complete_warehouse_work_batch(&queue, batch_is_large);
@@ -1893,6 +1917,7 @@ pub(crate) fn run_analyze_aat_parallel(
                         // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
                         ortho_detect: OrthoDetectMode::Off,
                         ortho_ml_model: None,
+                        prepared_ortho_detector: None,
                     },
                 )?;
                 Ok(ShardOutput {

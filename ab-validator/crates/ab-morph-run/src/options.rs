@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
@@ -103,6 +106,18 @@ pub(crate) struct SerialRunOptions<'a> {
     pub(crate) ortho_detect: OrthoDetectMode,
     /// Path to a trained ML model file (bincode). Required when `ortho_detect == Ml`.
     pub(crate) ortho_ml_model: Option<std::path::PathBuf>,
+    pub(crate) prepared_ortho_detector: Option<PreparedOrthoDetector>,
+}
+
+#[derive(Clone)]
+pub(crate) struct PreparedOrthoDetector(pub(crate) Option<Arc<dyn ab_ortho_detect::OrthoDetector>>);
+
+impl std::fmt::Debug for PreparedOrthoDetector {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("PreparedOrthoDetector")
+            .field(&self.0.as_ref().map(|detector| detector.detector_id()))
+            .finish()
+    }
 }
 
 /// Run-level orthographic-normalization provenance, persisted on the `runs`
@@ -148,5 +163,6 @@ pub(crate) struct WarehouseParallelOptions {
     pub(crate) ortho_detect: OrthoDetectMode,
     /// Path to a trained ML model file (bincode). Required when `ortho_detect == Ml`.
     pub(crate) ortho_ml_model: Option<PathBuf>,
+    pub(crate) prepared_ortho_detector: PreparedOrthoDetector,
     pub(crate) normalization: RunNormalizationProvenance,
 }

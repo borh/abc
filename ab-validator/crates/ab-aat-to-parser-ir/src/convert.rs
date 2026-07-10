@@ -786,7 +786,7 @@ fn map_text_node_with_quotes(
         } else {
             "close"
         };
-        let ch_len = utf8_len(ch.to_string().as_str());
+        let ch_len = ch.len_utf8() as u64;
         let span = synthetic_span(pos, pos + ch_len);
         nodes.push(json!({
             "type": "quote",

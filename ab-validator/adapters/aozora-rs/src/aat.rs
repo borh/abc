@@ -512,7 +512,10 @@ fn strip_commands_in_inline(
                 strip_commands_in_inline(child, command_depth, pending_split_marker);
             }
         }
-        Inline::GaijiRef(_) | Inline::Accent { .. } | Inline::EditorNote { .. } | Inline::Raw { .. } => {}
+        Inline::GaijiRef(_)
+        | Inline::Accent { .. }
+        | Inline::EditorNote { .. }
+        | Inline::Raw { .. } => {}
     }
 }
 
@@ -527,10 +530,7 @@ fn strip_string(text: &mut String, command_depth: &mut usize, pending_split_mark
     let mut changed = false;
 
     if *pending_split_marker && chars.len() >= 2 {
-        let starts_with_command = match (chars[0], chars[1]) {
-            ('［', '＃') | ('[', '#') => true,
-            _ => false,
-        };
+        let starts_with_command = matches!((chars[0], chars[1]), ('［', '＃') | ('[', '#'));
         if starts_with_command {
             *command_depth = 1;
             idx += 2;
@@ -947,7 +947,10 @@ fn handle_source_command(
     }
 
     if let Some(kind) = start_frame_kind(body) {
-        if matches!(kind, SourceFrameKind::Jisage(_) | SourceFrameKind::CaptionBlock) {
+        if matches!(
+            kind,
+            SourceFrameKind::Jisage(_) | SourceFrameKind::CaptionBlock
+        ) {
             trim_boundary_newlines(content);
             flush_paragraph(blocks, content);
         }
@@ -1136,8 +1139,7 @@ fn start_frame_kind(body: &str) -> Option<SourceFrameKind> {
             if let Some(rest) = body.strip_prefix("ここから")
                 && let Some((first, rest)) = rest.split_once("字下げ、折り返して")
                 && let Some(rest) = rest.strip_suffix("字下げ")
-                && let (Some(first), Some(rest)) =
-                    (parse_i64_loose(first), parse_i64_loose(rest))
+                && let (Some(first), Some(rest)) = (parse_i64_loose(first), parse_i64_loose(rest))
             {
                 return Some(SourceFrameKind::Style(
                     "burasage",
@@ -1176,7 +1178,7 @@ fn heading_command(body: &str) -> Option<(u8, &'static str)> {
     }
 }
 
-fn parse_left_ruby_command<'a>(body: &'a str) -> Option<(&'a str, &'a str)> {
+fn parse_left_ruby_command(body: &str) -> Option<(&str, &str)> {
     let rest = body.strip_prefix('「')?;
     let (target, rest) = rest.split_once("」の左に「")?;
     let reading = rest.strip_suffix("」のルビ")?;
@@ -1190,7 +1192,7 @@ fn parse_quoted_annotation<'a>(body: &'a str, suffix: &str) -> Option<(&'a str, 
     Some((target, reading))
 }
 
-fn parse_chuuki_command<'a>(body: &'a str) -> Option<(&'a str, &'a str)> {
+fn parse_chuuki_command(body: &str) -> Option<(&str, &str)> {
     let rest = body.strip_prefix('「')?;
     let (target, rest) = rest.split_once("」の「")?;
     let reading = rest.strip_suffix("」の注記")?;
@@ -1210,7 +1212,11 @@ fn inline_style_command(body: &str) -> Option<(&str, &'static str, Vec<StyleAttr
     }
     let target = first_quoted_target(body)?;
     if body.ends_with("に白ゴマ傍点") {
-        Some((target, "boten", vec![attr_text("x-boten-kind", "white_sesame")]))
+        Some((
+            target,
+            "boten",
+            vec![attr_text("x-boten-kind", "white_sesame")],
+        ))
     } else if body.ends_with("に二重傍線") {
         Some((target, "bousen", vec![attr_text("x-line-kind", "double")]))
     } else if body.ends_with("の左に傍点") {
@@ -1357,9 +1363,10 @@ fn wrap_target(
 
     for idx in (0..content.len()).rev() {
         let (value, provenance) = match &content[idx] {
-            Inline::Text { value, provenance } | Inline::TextMeta { value, provenance, .. } => {
-                (value.clone(), *provenance)
-            }
+            Inline::Text { value, provenance }
+            | Inline::TextMeta {
+                value, provenance, ..
+            } => (value.clone(), *provenance),
             _ => continue,
         };
         let Some(start) = value.rfind(target) else {
@@ -1449,7 +1456,7 @@ fn close_source_frame(
     mut frame: SourceFrame,
     blocks: &mut Vec<Block>,
     content: &mut Vec<Inline>,
-    frames: &mut Vec<SourceFrame>,
+    frames: &mut [SourceFrame],
 ) {
     trim_boundary_newlines(&mut frame.content);
     match frame.kind {
@@ -1615,9 +1622,7 @@ fn inline_visible_len(node: &Inline) -> usize {
         Inline::Ruby { base, .. }
         | Inline::Style { content: base, .. }
         | Inline::Scope { content: base, .. }
-        | Inline::FontSize { content: base, .. } => {
-            base.iter().map(inline_visible_len).sum()
-        }
+        | Inline::FontSize { content: base, .. } => base.iter().map(inline_visible_len).sum(),
         Inline::Warigaki { upper, lower, .. } => upper
             .iter()
             .chain(lower.iter())
@@ -1724,9 +1729,7 @@ fn push_source_fallback_text_with_state(
             rest = &rest[pos..];
             continue;
         }
-        if is_accent
-            && let Some((accent, tail)) = parse_accent_prefix(rest)
-        {
+        if is_accent && let Some((accent, tail)) = parse_accent_prefix(rest) {
             content.push(accent);
             push_source_fallback_text(content, tail.0);
             rest = tail.1;

@@ -3,6 +3,7 @@ use std::{
     env,
     io::Write,
     process::{Command, Stdio},
+    sync::LazyLock,
 };
 
 use anyhow::{Context, Result, bail};
@@ -14,6 +15,9 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 pub const VERSION_PREFIX: &str = "aozora-adapter 0.1.0";
+
+static RUBY_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap());
 
 #[derive(Debug)]
 pub struct DecodedSource {
@@ -153,9 +157,7 @@ fn skip_blank_lines(source: &str, mut offset: usize) -> usize {
 }
 
 fn trim_trailing_blank_lines(source: &str, offset: usize) -> usize {
-    source[..offset]
-        .trim_end_matches(|ch| ch == '\n' || ch == '\r')
-        .len()
+    source[..offset].trim_end_matches(['\n', '\r']).len()
 }
 
 fn lines_from(source: &str, offset: usize) -> impl Iterator<Item = (usize, &str)> {
@@ -740,8 +742,7 @@ fn contains_aozora_markup(source: &str) -> bool {
 
 fn ruby_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
     let source = source_slice(&decoded.span_text, &node.span);
-    let re = Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap();
-    if let Some(caps) = re.captures(source) {
+    if let Some(caps) = RUBY_RE.captures(source) {
         json!({
             "kind": "ruby",
             "base": caps.name("base").unwrap().as_str(),
@@ -910,4 +911,36 @@ fn hex_sha256(bytes: &[u8]) -> String {
         let _ = write!(out, "{byte:02x}");
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(serde::Deserialize)]
+    struct SourceDecodingVector {
+        name: String,
+        bytes: Vec<u8>,
+        text: String,
+        encoding: String,
+        sha256: String,
+    }
+
+    #[test]
+    fn source_decoding_contract() {
+        let vectors: Vec<SourceDecodingVector> = serde_json::from_str(include_str!(
+            "../../../data/fixtures/source-decoding-contract.json"
+        ))
+        .unwrap();
+        for vector in vectors {
+            let decoded = decode_source_bytes(&vector.bytes).unwrap();
+            assert_eq!(decoded.text, vector.text, "{} text", vector.name);
+            assert_eq!(
+                decoded.encoding, vector.encoding,
+                "{} encoding",
+                vector.name
+            );
+            assert_eq!(decoded.source_hash, vector.sha256, "{} hash", vector.name);
+        }
+    }
 }

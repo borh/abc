@@ -670,6 +670,141 @@
           };
         };
 
+        mkAdapterCargoQualityCheck =
+          {
+            name,
+            manifestPath,
+            cargoDeps,
+            extraEnv ? { },
+            checkSuffix ? "cargo-quality-check",
+            cargoCommand ? ''
+              cargo fmt --manifest-path "$manifest" -- --check
+              cargo clippy --manifest-path "$manifest" \
+                --all-targets --offline --locked -- -D warnings
+            '',
+          }:
+          pkgs.runCommand "${name}-${checkSuffix}"
+            (
+              {
+                nativeBuildInputs = [ rustToolchain ];
+              }
+              // extraEnv
+            )
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              export CARGO_HOME="$work_dir/cargo-home"
+              mkdir -p "$CARGO_HOME"
+              cp "${cargoDeps}/.cargo/config.toml" "$CARGO_HOME/config.toml"
+              substituteInPlace "$CARGO_HOME/config.toml" \
+                --replace-fail 'directory = "cargo-vendor-dir"' 'directory = "${cargoDeps}"'
+              manifest="$work_dir/source/${manifestPath}"
+              ${cargoCommand}
+              touch "$out"
+            '';
+
+        adapterCargoQualityChecks = [
+          (mkAdapterCargoQualityCheck {
+            name = "aozora";
+            manifestPath = "adapters/aozora/Cargo.toml";
+            cargoDeps = aozoraCargoDeps;
+          })
+          (mkAdapterCargoQualityCheck {
+            name = "aozora2";
+            manifestPath = "adapters/aozora2/Cargo.toml";
+            cargoDeps = aozora2AdapterCargoDeps;
+          })
+          (mkAdapterCargoQualityCheck {
+            name = "aozora2html";
+            manifestPath = "adapters/aozora2html/Cargo.toml";
+            cargoDeps = aozora2htmlCargoDeps;
+          })
+          (mkAdapterCargoQualityCheck {
+            name = "aozora-rs";
+            manifestPath = "adapters/aozora-rs/Cargo.toml";
+            cargoDeps = aozoraRsAdapterCargoDeps;
+            extraEnv = {
+              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
+              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
+              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
+            };
+          })
+          (mkAdapterCargoQualityCheck {
+            name = "aozora-epub3";
+            manifestPath = "adapters/aozora-epub3/Cargo.toml";
+            cargoDeps = aozoraEpub3CargoDeps;
+          })
+        ];
+
+        adapterCargoQualityCheck = pkgs.runCommand "adapter-cargo-quality-check" { } ''
+          ${pkgs.lib.concatMapStringsSep "\n" (check: "test -e ${check}") adapterCargoQualityChecks}
+          touch "$out"
+        '';
+
+        adapterDecodingContractChecks = [
+          (mkAdapterCargoQualityCheck {
+            name = "aozora";
+            manifestPath = "adapters/aozora/Cargo.toml";
+            cargoDeps = aozoraCargoDeps;
+            checkSuffix = "decoding-contract-check";
+            cargoCommand = ''
+              cargo test --manifest-path "$manifest" \
+                --offline --locked source_decoding_contract
+            '';
+          })
+          (mkAdapterCargoQualityCheck {
+            name = "aozora2";
+            manifestPath = "adapters/aozora2/Cargo.toml";
+            cargoDeps = aozora2AdapterCargoDeps;
+            checkSuffix = "decoding-contract-check";
+            cargoCommand = ''
+              cargo test --manifest-path "$manifest" \
+                --offline --locked source_decoding_contract
+            '';
+          })
+          (mkAdapterCargoQualityCheck {
+            name = "aozora2html";
+            manifestPath = "adapters/aozora2html/Cargo.toml";
+            cargoDeps = aozora2htmlCargoDeps;
+            checkSuffix = "decoding-contract-check";
+            cargoCommand = ''
+              cargo test --manifest-path "$manifest" \
+                --offline --locked source_decoding_contract
+            '';
+          })
+          (mkAdapterCargoQualityCheck {
+            name = "aozora-rs";
+            manifestPath = "adapters/aozora-rs/Cargo.toml";
+            cargoDeps = aozoraRsAdapterCargoDeps;
+            checkSuffix = "decoding-contract-check";
+            extraEnv = {
+              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
+              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
+              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
+            };
+            cargoCommand = ''
+              cargo test --manifest-path "$manifest" \
+                --offline --locked source_decoding_contract
+            '';
+          })
+          (mkAdapterCargoQualityCheck {
+            name = "aozora-epub3";
+            manifestPath = "adapters/aozora-epub3/Cargo.toml";
+            cargoDeps = aozoraEpub3CargoDeps;
+            checkSuffix = "decoding-contract-check";
+            cargoCommand = ''
+              cargo test --manifest-path "$manifest" \
+                --offline --locked source_decoding_contract
+            '';
+          })
+        ];
+
+        adapterDecodingContractCheck = pkgs.runCommand "adapter-decoding-contract-check" { } ''
+          ${pkgs.lib.concatMapStringsSep "\n" (check: "test -e ${check}") adapterDecodingContractChecks}
+          touch "$out"
+        '';
+
         aozoraAdapter = rustPlatform.buildRustPackage {
           pname = "aozora-adapter";
           version = "0.1.0";
@@ -1646,6 +1781,26 @@
           '';
         };
 
+        aozoraAdapterIntegrationCheck = mkSmokeCheck {
+          name = "aozora-adapter-integration-check";
+          testScript = "tests/aozora-adapter-integration.sh";
+          nativeBuildInputs = [ rustToolchain ];
+          extraEnv = {
+            AB_AOZORA_BIN = "${upstreamParserAozora}/bin/aozora";
+          };
+          extraPreScript = ''
+            export CARGO_HOME="$work_dir/cargo-home"
+            mkdir -p "$CARGO_HOME"
+            cat > "$CARGO_HOME/config.toml" <<'EOF'
+            [source.crates-io]
+            replace-with = "vendored-sources"
+
+            [source.vendored-sources]
+            directory = "${aozoraCargoDeps}"
+            EOF
+          '';
+        };
+
         aozoraNotationSpecComparatorSmokeCheck = mkSmokeCheck {
           name = "aozora-notation-spec-comparator-smoke-check";
           testScript = "tests/aozora-notation-spec-comparator-smoke.sh";
@@ -1837,6 +1992,9 @@
           aat-oracle-data-schema-smoke = aatOracleDataSchemaSmokeCheck;
           aozora2html-rust-parity = aozora2htmlRustParityCheck;
           aozora-smoke = aozoraAdapterSmokeCheck;
+          aozora-integration = aozoraAdapterIntegrationCheck;
+          adapters-cargo-quality = adapterCargoQualityCheck;
+          adapter-decoding-contract = adapterDecodingContractCheck;
           aozora-notation-spec-comparator-smoke = aozoraNotationSpecComparatorSmokeCheck;
           aozora-epub3-smoke = aozoraEpub3SmokeCheck;
           adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
@@ -1867,6 +2025,7 @@
             AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
             AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
             AB_DUCKDB_BIN = "${pkgs.duckdb}/bin/duckdb";
+            AB_AOZORA_BIN = "${upstreamParserAozora}/bin/aozora";
 
             shellHook = ''
               export CARGO_HOME="''${CARGO_HOME:-$PWD/.cargo}"

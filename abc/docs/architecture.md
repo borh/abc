@@ -125,6 +125,19 @@ The drift-checked pipeline topology is the generated
 `architecture-stages.edn` and cross-checked against registered schemas and
 ADRs. The diagram is a documentation view, not a competing source of truth.
 
+For academic presentations, two source-validated SVG projections provide a
+larger-type, audience-facing view of the same contracts:
+
+- [Soranoha Reproducibility Architecture](figures/soranoha-reproducibility-architecture.svg)
+- [Soranoha Publication Pipeline](figures/soranoha-publication-pipeline.svg)
+
+They are generated presentation views, not additional architecture sources.
+Regenerate them from the monorepo root with
+`nix run .#abc-presentation-diagrams`; verify drift with
+`nix run .#abc-presentation-diagrams -- --check`. The pipeline figure keeps the
+stable Parser-IR publication contract prominent and marks the current AAT path
+as implementation detail so parser consolidation can simplify it honestly.
+
 Each layer records the identity inputs that can invalidate it. A text-only
 change invalidates that work's downstream artifacts. A parser, mapping, TEI
 profile, tokenizer, dictionary, metadata, schema, or analysis-recipe change

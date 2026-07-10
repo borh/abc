@@ -9,8 +9,8 @@ mod source_derived;
 mod xhtml_mapper;
 
 pub use model::{
-    parse_failure_envelope, AtBlock, AtInline, DecodedSource, MappingError, MappingInput,
-    MappingResult, SourceDerivedContext, SourceDerivedSummary,
+    AtBlock, AtInline, DecodedSource, MappingError, MappingInput, MappingResult,
+    SourceDerivedContext, SourceDerivedSummary, parse_failure_envelope,
 };
 
 pub use model::{ADAPTER_NAME, ADAPTER_VERSION};
@@ -120,7 +120,11 @@ pub fn map_with_protocol(input: MappingInput) -> anyhow::Result<serde_json::Valu
     warnings.extend(ctx.warnings);
 
     let mut semantic_summary = ctx.summary.as_json();
-    if semantic_summary.is_object() && semantic_summary.as_object().is_some_and(|obj| obj.is_empty()) {
+    if semantic_summary.is_object()
+        && semantic_summary
+            .as_object()
+            .is_some_and(|obj| obj.is_empty())
+    {
         semantic_summary = serde_json::Value::Null;
     }
 

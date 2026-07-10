@@ -178,18 +178,23 @@ fn strip_orphaned_command_tails(text: &str) -> Option<String> {
             }
         }
 
-        if idx + 1 < chars.len() && chars[idx] == '［' && chars[idx + 1] == '＃' {
-            if !chars[idx + 2..].contains(&'］') && !chars[idx + 2..].contains(&']') {
-                changed = true;
-                break;
-            }
+        if idx + 1 < chars.len()
+            && chars[idx] == '［'
+            && chars[idx + 1] == '＃'
+            && !chars[idx + 2..].contains(&'］')
+            && !chars[idx + 2..].contains(&']')
+        {
+            changed = true;
+            break;
         }
 
-        if idx + 1 < chars.len() && chars[idx] == '[' && chars[idx + 1] == '#' {
-            if !chars[idx + 2..].contains(&']') {
-                changed = true;
-                break;
-            }
+        if idx + 1 < chars.len()
+            && chars[idx] == '['
+            && chars[idx + 1] == '#'
+            && !chars[idx + 2..].contains(&']')
+        {
+            changed = true;
+            break;
         }
 
         out.push(chars[idx]);

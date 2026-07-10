@@ -153,9 +153,7 @@ fn skip_blank_lines(source: &str, mut offset: usize) -> usize {
 }
 
 fn trim_trailing_blank_lines(source: &str, offset: usize) -> usize {
-    source[..offset]
-        .trim_end_matches(|ch| ch == '\n' || ch == '\r')
-        .len()
+    source[..offset].trim_end_matches(['\n', '\r']).len()
 }
 
 fn lines_from(source: &str, offset: usize) -> impl Iterator<Item = (usize, &str)> {

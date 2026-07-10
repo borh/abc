@@ -1,11 +1,13 @@
-use crate::{decode_source_bytes, model::DecodedSource, model::MappingError, AtBlock, SourceDerivedSummary};
+use crate::{
+    AtBlock, SourceDerivedSummary, decode_source_bytes, model::DecodedSource, model::MappingError,
+};
 use regex::Regex;
 use roxmltree::{Document, Node};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::OnceLock;
 
 fn parser_text(value: &str) -> String {
-    value.replace('｜', "").replace('|', "")
+    value.replace(['｜', '|'], "")
 }
 
 fn strip_dtd_block(xml: &str) -> String {
@@ -62,8 +64,16 @@ fn inline_visible_text(nodes: &[Value]) -> String {
     for node in nodes {
         let kind = node.get("kind").and_then(Value::as_str);
         match kind {
-            Some("text") => out.push_str(node.get("value").and_then(Value::as_str).unwrap_or_default()),
-            Some("gaiji") => out.push_str(node.get("resolved").and_then(Value::as_str).unwrap_or_default()),
+            Some("text") => out.push_str(
+                node.get("value")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default(),
+            ),
+            Some("gaiji") => out.push_str(
+                node.get("resolved")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default(),
+            ),
             Some("style") => {
                 let style_type = node.get("style_type").and_then(Value::as_str);
                 if style_type == Some("notes") || style_type == Some("kaeriten") {
@@ -86,7 +96,12 @@ fn inline_visible_text(nodes: &[Value]) -> String {
 fn paragraph_has_content(nodes: &[Value]) -> bool {
     nodes.iter().any(|node| {
         node.get("kind").and_then(Value::as_str) != Some("text")
-            || !node.get("value").and_then(Value::as_str).unwrap_or_default().trim().is_empty()
+            || !node
+                .get("value")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .trim()
+                .is_empty()
     })
 }
 
@@ -183,7 +198,11 @@ fn source_derived_decoration_node(
         }
         _ => {
             if let Some(font) = font_size_from_class(primary, content.clone()) {
-                return Some(record_source_derived_decoration(summary, "decoration.font_size", font));
+                return Some(record_source_derived_decoration(
+                    summary,
+                    "decoration.font_size",
+                    font,
+                ));
             }
             return None;
         }
@@ -260,7 +279,11 @@ fn clean_decoration_content(nodes: Vec<Value>) -> Vec<Value> {
             continue;
         }
         if kind == "text" {
-            let mut value = node.get("value").and_then(Value::as_str).unwrap_or_default().to_string();
+            let mut value = node
+                .get("value")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_string();
             if value.contains('\n') {
                 value = value.trim().to_string();
             }
@@ -273,13 +296,16 @@ fn clean_decoration_content(nodes: Vec<Value>) -> Vec<Value> {
             out.push(node);
             continue;
         }
-        if let Some(content) = node.get("content").and_then(Value::as_array).map(|nodes| nodes.to_vec()) {
-            if let Some(obj) = node.as_object_mut() {
-                obj.insert(
-                    "content".to_string(),
-                    Value::Array(clean_decoration_content(content)),
-                );
-            }
+        if let Some(content) = node
+            .get("content")
+            .and_then(Value::as_array)
+            .map(|nodes| nodes.to_vec())
+            && let Some(obj) = node.as_object_mut()
+        {
+            obj.insert(
+                "content".to_string(),
+                Value::Array(clean_decoration_content(content)),
+            );
         }
         out.push(node);
     }
@@ -328,14 +354,20 @@ fn normalize_figure_alt(raw: &str) -> String {
     }
     let re = figure_alt_suffix_re();
     let normalized = re.replace_all(text, "").to_string();
-    normalized.trim().trim_matches('「').trim_matches('」').to_string()
+    normalized
+        .trim()
+        .trim_matches('「')
+        .trim_matches('」')
+        .to_string()
 }
 
 fn source_note_figure(note: &str) -> Option<Value> {
     let re = source_note_figure_re();
     let captures = re.captures(note)?;
     let width = captures.name("width").map(|m| parse_aozora_int(m.as_str()));
-    let height = captures.name("height").map(|m| parse_aozora_int(m.as_str()));
+    let height = captures
+        .name("height")
+        .map(|m| parse_aozora_int(m.as_str()));
     Some(json!({
         "kind": "figure",
         "filename": captures.name("filename")?.as_str().to_string(),
@@ -358,7 +390,11 @@ fn source_note_inline_caption(note: &str) -> Option<Value> {
     }))
 }
 
-fn map_warichu(node: Node<'_, '_>, warnings: &mut Vec<Value>, summary: &mut SourceDerivedSummary) -> Value {
+fn map_warichu(
+    node: Node<'_, '_>,
+    warnings: &mut Vec<Value>,
+    summary: &mut SourceDerivedSummary,
+) -> Value {
     let _ = warnings;
     let text = text_only(node).trim().to_string();
     let inner = if text.starts_with('（') && text.ends_with('）') {
@@ -445,7 +481,11 @@ fn map_source_note(
     })]
 }
 
-fn map_caption_span(node: Node<'_, '_>, warnings: &mut Vec<Value>, summary: &mut SourceDerivedSummary) -> Value {
+fn map_caption_span(
+    node: Node<'_, '_>,
+    warnings: &mut Vec<Value>,
+    summary: &mut SourceDerivedSummary,
+) -> Value {
     let _ = warnings;
     let content = walk_inline_children(node, warnings, summary, None);
     summary.push_syntax(
@@ -567,8 +607,8 @@ fn map_img_gaiji(
         "filename": filename,
         "alt": normalize_figure_alt(alt),
         "css_class": node_class(node),
-        "width": node.attribute("width").and_then(|value| normalize_optional_int(value)),
-        "height": node.attribute("height").and_then(|value| normalize_optional_int(value)),
+        "width": node.attribute("width").and_then(normalize_optional_int),
+        "height": node.attribute("height").and_then(normalize_optional_int),
         "caption": Value::Null,
     });
     summary.push_syntax(
@@ -607,7 +647,10 @@ fn map_ruby(
     let mut placement = "right";
     if let Some(rt) = rt_nodes.first() {
         reading = text_only(*rt);
-        if node_class(*rt).split_whitespace().any(|token| token == "left") {
+        if node_class(*rt)
+            .split_whitespace()
+            .any(|token| token == "left")
+        {
             placement = "left";
         }
     }
@@ -676,7 +719,11 @@ fn map_ruby(
         let mut proj = String::new();
         for node in &base_inline {
             match node.get("kind").and_then(Value::as_str) {
-                Some("text") => proj.push_str(node.get("value").and_then(Value::as_str).unwrap_or_default()),
+                Some("text") => proj.push_str(
+                    node.get("value")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default(),
+                ),
                 Some("gaiji") => {
                     if let Some(resolved) = node.get("resolved").and_then(Value::as_str) {
                         proj.push_str(resolved);
@@ -705,10 +752,8 @@ fn map_ruby(
         "reading": reading,
         "direction": placement,
     });
-    if has_structured_base {
-        if let Some(obj) = out.as_object_mut() {
-            obj.insert("base_content".to_string(), Value::Array(base_inline));
-        }
+    if has_structured_base && let Some(obj) = out.as_object_mut() {
+        obj.insert("base_content".to_string(), Value::Array(base_inline));
     }
     out
 }
@@ -928,7 +973,8 @@ fn map_from_container(
         let name = node_name(child);
         let class = node_class(child);
         let is_block = matches!(name, "h1" | "h2" | "h3" | "p")
-            || (name == "div" && (map_jisage_re().is_match(class) || midashi_kind_from_class(class).is_some()));
+            || (name == "div"
+                && (map_jisage_re().is_match(class) || midashi_kind_from_class(class).is_some()));
         if is_block {
             flush(&mut blocks, &mut current);
             blocks.extend(map_block(child, warnings, summary));
@@ -966,7 +1012,9 @@ fn find_main_text<'a>(root: Node<'a, 'a>) -> Option<Node<'a, 'a>> {
     root.descendants().find(|node| {
         node.is_element()
             && node.tag_name().name() == "div"
-            && node_class(*node).split_whitespace().any(|token| token == "main_text")
+            && node_class(*node)
+                .split_whitespace()
+                .any(|token| token == "main_text")
     })
 }
 
@@ -987,9 +1035,15 @@ fn midashi_kind_from_class(class: &str) -> Option<&str> {
 
 fn heading_style_from_class(class: &str) -> &'static str {
     let tokens = class.split_whitespace().collect::<Vec<_>>();
-    if tokens.iter().any(|token| *token == "mado" || token.starts_with("mado-")) {
+    if tokens
+        .iter()
+        .any(|token| *token == "mado" || token.starts_with("mado-"))
+    {
         "mado"
-    } else if tokens.iter().any(|token| *token == "dogyo" || token.starts_with("dogyo-")) {
+    } else if tokens
+        .iter()
+        .any(|token| *token == "dogyo" || token.starts_with("dogyo-"))
+    {
         "dogyo"
     } else {
         "normal"
@@ -1046,11 +1100,7 @@ pub fn map_blocks_from_xhtml_bytes(
     summary: &mut SourceDerivedSummary,
 ) -> Result<(Vec<AtBlock>, bool), MappingError> {
     let decoded: DecodedSource = decode_source_bytes(xhtml).map_err(|err| {
-        MappingError::parse_error(
-            format!("invalid XHTML bytes: {}", err.to_string()),
-            Vec::new(),
-            false,
-        )
+        MappingError::parse_error(format!("invalid XHTML bytes: {}", err), Vec::new(), false)
     })?;
     let mut xml = normalize_xml_entities(&decoded.text);
     let doc = match Document::parse(&xml) {
@@ -1060,11 +1110,7 @@ pub fn map_blocks_from_xhtml_bytes(
             if msg.contains("XML with DTD detected") {
                 xml = normalize_xml_entities(&strip_dtd_block(&xml));
                 Document::parse(&xml).map_err(|err| {
-                    MappingError::parse_error(
-                        format!("invalid XHTML: {err}"),
-                        Vec::new(),
-                        false,
-                    )
+                    MappingError::parse_error(format!("invalid XHTML: {err}"), Vec::new(), false)
                 })?
             } else {
                 return Err(MappingError::parse_error(

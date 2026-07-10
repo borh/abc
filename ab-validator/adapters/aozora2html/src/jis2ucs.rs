@@ -18,12 +18,11 @@ fn load_map() -> HashMap<String, String> {
             let mut parts = rest.splitn(2, ": ");
             let jis = parts.next().unwrap_or_default();
             let rhs = parts.next().unwrap_or_default().trim().trim_matches('"');
-            if let Some(hex) = rhs.strip_prefix("&#x").and_then(|it| it.strip_suffix(';')) {
-                if let Ok(codepoint) = u32::from_str_radix(hex, 16) {
-                    if let Some(ch) = std::char::from_u32(codepoint) {
-                        table.insert(normalize_jis_code(jis), ch.to_string());
-                    }
-                }
+            if let Some(hex) = rhs.strip_prefix("&#x").and_then(|it| it.strip_suffix(';'))
+                && let Ok(codepoint) = u32::from_str_radix(hex, 16)
+                && let Some(ch) = std::char::from_u32(codepoint)
+            {
+                table.insert(normalize_jis_code(jis), ch.to_string());
             }
         }
     }

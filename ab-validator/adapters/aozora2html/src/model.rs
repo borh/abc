@@ -1,4 +1,4 @@
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
 pub const ADAPTER_NAME: &str = "aozora2html";
@@ -50,6 +50,7 @@ pub struct MappingResult {
 }
 
 #[derive(Debug)]
+#[allow(clippy::enum_variant_names)]
 pub enum MappingErrorKind {
     DecodeError,
     ParseError,
@@ -66,7 +67,11 @@ pub struct MappingError {
 }
 
 impl MappingError {
-    pub fn parse_error(message: impl Into<String>, warnings: Vec<Value>, parse_complete: bool) -> Self {
+    pub fn parse_error(
+        message: impl Into<String>,
+        warnings: Vec<Value>,
+        parse_complete: bool,
+    ) -> Self {
         Self {
             kind: MappingErrorKind::ParseError,
             message: message.into(),

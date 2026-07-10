@@ -687,18 +687,16 @@ fn normalize_inline_content(content: &mut Vec<Value>) {
         if node.get("kind").and_then(Value::as_str) == Some("figure")
             && idx + 1 < original.len()
             && original[idx + 1].get("kind").and_then(Value::as_str) == Some("caption")
+            && let Some(caption) = original[idx + 1].get("content").cloned()
+            && let Some(object) = node.as_object_mut()
         {
-            if let Some(caption) = original[idx + 1].get("content").cloned()
-                && let Some(object) = node.as_object_mut()
-            {
-                if let Some(caption_text) = caption_visible_text(&caption) {
-                    object.insert("alt".to_owned(), json!(caption_text));
-                }
-                object.insert("caption".to_owned(), caption);
-                normalized.push(node);
-                idx += 2;
-                continue;
+            if let Some(caption_text) = caption_visible_text(&caption) {
+                object.insert("alt".to_owned(), json!(caption_text));
             }
+            object.insert("caption".to_owned(), caption);
+            normalized.push(node);
+            idx += 2;
+            continue;
         }
 
         if let Some(source) = raw_node_source(&node) {
@@ -723,11 +721,11 @@ fn normalize_inline_content(content: &mut Vec<Value>) {
                     continue;
                 }
             }
-            if let Some((target, frontref)) = parse_frontref_boten_note(source) {
-                if apply_frontref_boten(&mut normalized, target, frontref) {
-                    idx += 1;
-                    continue;
-                }
+            if let Some((target, frontref)) = parse_frontref_boten_note(source)
+                && apply_frontref_boten(&mut normalized, target, frontref)
+            {
+                idx += 1;
+                continue;
             }
             if source == "改行" {
                 apply_line_break(&mut normalized, original.get(idx + 1));

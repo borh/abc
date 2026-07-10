@@ -1,8 +1,5 @@
 use anyhow::Result;
-use aozora2html_adapter::{
-    map_with_error_message, map_with_protocol_bytes,
-    ADAPTER_VERSION,
-};
+use aozora2html_adapter::{ADAPTER_VERSION, map_with_error_message, map_with_protocol_bytes};
 use clap::{Parser, ValueEnum};
 use std::io::{self, Read, Write};
 use std::path::PathBuf;
@@ -60,7 +57,7 @@ fn main() -> Result<()> {
             let xhtml_path = args.xhtml.unwrap();
             let bytes = read_file(&xhtml_path)?;
             io::stdout().write_all(&bytes)?;
-            return Ok(());
+            Ok(())
         }
         Mode::Aat => {
             let source_path = args
@@ -77,8 +74,7 @@ fn main() -> Result<()> {
             let parser_error_message = args
                 .parser_error_file
                 .as_ref()
-                .map(|path| std::fs::read_to_string(path).ok())
-                .flatten();
+                .and_then(|path| std::fs::read_to_string(path).ok());
 
             let message = if args.parser_failed {
                 parser_error_message.unwrap_or_else(|| "aozora2html parser aborted".to_string())
@@ -93,7 +89,7 @@ fn main() -> Result<()> {
             };
 
             println!("{}", serde_json::to_string(&out)?);
-            return Ok(());
+            Ok(())
         }
     }
 }

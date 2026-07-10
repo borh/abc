@@ -57,11 +57,14 @@
         stages (vec stages)
         missing (sort (remove stage-ids stages))
         allowed-adrs (canonical-stage-adrs context stages)
+        nonexistent-adrs (sort (remove (:adr-nums context) adrs))
         invalid-adrs (sort (remove allowed-adrs adrs))]
     (cond-> []
       (empty? stages) (conj "aggregate backing must name at least one stage")
       (seq missing) (conj (format "aggregate backing references missing stages %s"
                                   missing))
+      (seq nonexistent-adrs) (conj (format "aggregate citations reference non-existent ADRs: %s"
+                                           nonexistent-adrs))
       (seq invalid-adrs) (conj (format "aggregate citations are not canonical for backing stages: %s"
                                        invalid-adrs)))))
 

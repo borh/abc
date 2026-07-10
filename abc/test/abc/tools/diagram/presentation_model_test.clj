@@ -39,6 +39,15 @@
                context
                {:stages [:manifest] :adrs [1 10 23 27 28]})))))
 
+(deftest staged-citations-must-also-exist-in-the-live-adr-set
+  (let [context (-> (model/canonical-context)
+                    (assoc-in [:stages :manifest :adr] [9999])
+                    (update :adr-nums disj 9999))]
+    (is (some #(str/includes? % "non-existent ADR")
+              (model/backing-problems
+               context
+               {:stages [:manifest] :adrs [9999]})))))
+
 (deftest current-parser-inset-must-resolve-the-live-path
   (let [metadata (assoc-in (model/load-metadata)
                            [:figures :publication :current-inset :path]

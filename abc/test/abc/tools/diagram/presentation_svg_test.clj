@@ -3,7 +3,8 @@
             [abc.tools.diagram.presentation-svg :as svg]
             [clojure.data.xml :as xml]
             [clojure.string :as str]
-            [clojure.test :refer [deftest is]]))
+            [clojure.test :refer [deftest is]])
+  (:import [java.util Locale]))
 
 (def raw-svg
   "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200pt\" height=\"100pt\" viewBox=\"0 0 200 100\"><g id=\"graph0\"><text font-size=\"30\">Example</text><path fill=\"none\" stroke=\"#48CAE4\" stroke-width=\"2\" d=\"M0,0 L10,10\"/></g></svg>")
@@ -98,6 +99,21 @@
     (is (= "1.000000" (element-attr graph-wrapper "data-graph-scale")))
     (is (= "translate(96.0000 195.0000) scale(1.000000)"
            (element-attr graph-wrapper "transform")))))
+
+(deftest normalization-is-byte-stable-and-valid-across-format-locales
+  (let [original-locale (Locale/getDefault)
+        normalize-under (fn [locale]
+                          (Locale/setDefault locale)
+                          (svg/normalize-svg graph raw-svg
+                                             (.getBytes "woff2" "UTF-8")))]
+    (try
+      (let [root-locale-svg (normalize-under Locale/ROOT)
+            german-locale-svg (normalize-under Locale/GERMANY)]
+        (is (= root-locale-svg german-locale-svg))
+        (is (map? (xml/parse-str german-locale-svg)))
+        (is (= [] (svg/svg-problems german-locale-svg))))
+      (finally
+        (Locale/setDefault original-locale)))))
 
 (deftest normalization-rejects-a-graph-that-requires-downscaling
   (is (thrown-with-msg?

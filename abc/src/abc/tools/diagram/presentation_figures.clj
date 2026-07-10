@@ -1,5 +1,6 @@
 (ns abc.tools.diagram.presentation-figures
-  (:require [abc.tools.diagram.presentation-model :as model]))
+  (:require [abc.tools.diagram.presentation-model :as model]
+            [clojure.set :as set]))
 
 (def theme
   {:canvas "#000000"
@@ -47,28 +48,93 @@
      :backing {:coordinates (mapv :id coordinates) :adrs owners}}))
 
 (defn- path-valid? [context path]
-  (and (<= 2 (count path))
+  (and (sequential? path)
+       (<= 2 (count path))
        (every? (fn [[from to]]
                  (model/reachable? (:stage-edges context) from to))
                (partition 2 1 path))))
 
-(defn- item-backing-problems [context {:keys [coordinates stages path
-                                              reachable-targets adrs]}]
-  (let [coordinate-set (:coordinates context)
+(def ^:private backing-keys
+  #{:coordinates :stages :path :reachable-targets :adrs})
+
+(def ^:private relation-keys #{:coordinates :stages :path})
+
+(def ^:private edge-relations
+  {:identity-input #{:coordinates}
+   :identity #{:coordinates :stages}
+   :derived-view #{:path}
+   :evidence #{:path}
+   :validation #{:path}
+   :implementation-detail #{:stages :path}})
+
+(defn- valid-list? [value predicate]
+  (and (sequential? value) (seq value) (every? predicate value)))
+
+(defn- relation-shape-problems [{:keys [coordinates stages path
+                                        reachable-targets adrs]
+                                 :as backing}]
+  (vec
+   (concat
+    (for [key (sort-by pr-str
+                       (set/difference (set (keys backing)) backing-keys))]
+      (str "unknown backing key " key))
+    (when-not (seq (set/intersection relation-keys (set (keys backing))))
+      ["backing must contain at least one recognized relation"])
+    (when (and (contains? backing :coordinates)
+               (not (valid-list? coordinates string?)))
+      ["backing coordinates must be a non-empty sequential collection of strings"])
+    (when (and (contains? backing :stages)
+               (not (valid-list? stages keyword?)))
+      ["backing stages must be a non-empty sequential collection of keywords"])
+    (when (and (contains? backing :path)
+               (not (and (valid-list? path keyword?) (<= 2 (count path)))))
+      ["backing path must contain at least two stage keywords"])
+    (when (and (contains? backing :reachable-targets)
+               (not (valid-list? reachable-targets keyword?)))
+      ["reachable targets must be a non-empty sequential collection of stage keywords"])
+    (when (and (contains? backing :reachable-targets)
+               (not (contains? backing :path)))
+      ["reachable targets require a backing path"])
+    (when (and (contains? backing :adrs)
+               (not (and (sequential? adrs) (every? integer? adrs))))
+      ["backing ADRs must be a sequential collection of integers"]))))
+
+(defn- item-relation-problems [item-type role backing]
+  (let [actual (set/intersection relation-keys (set (keys backing)))
+        allowed (if (= :node item-type)
+                  #{:coordinates :stages}
+                  (get edge-relations role #{}))]
+    (when (seq (set/difference actual allowed))
+      [(str (name item-type) " backing relation is invalid for role " role
+            ": " (sort actual))])))
+
+(defn- item-backing-problems [context item-type role
+                              {:keys [coordinates stages path
+                                      reachable-targets adrs]
+                               :as backing}]
+  (let [shapes (relation-shape-problems backing)
+        coordinate-values (if (valid-list? coordinates string?) coordinates [])
+        stage-values (if (valid-list? stages keyword?) stages [])
+        target-values (if (valid-list? reachable-targets keyword?)
+                        reachable-targets [])
+        adr-values (if (and (sequential? adrs) (every? integer? adrs)) adrs [])
+        coordinate-set (:coordinates context)
         stage-set (set (keys (:stages context)))
-        missing-coordinates (sort (remove coordinate-set coordinates))
-        missing-stages (sort (remove stage-set stages))
-        missing-targets (sort (remove stage-set reachable-targets))
+        missing-coordinates (sort (remove coordinate-set coordinate-values))
+        missing-stages (sort (remove stage-set stage-values))
+        missing-targets (sort (remove stage-set target-values))
         allowed-adrs (set (concat
-                           (mapcat #(get-in context [:stages % :adr]) stages)
-                           (mapcat #((:coordinate-owners context) %) coordinates)))
-        invalid-adrs (sort (remove allowed-adrs adrs))
-        path-source (first path)
+                           (mapcat #(get-in context [:stages % :adr]) stage-values)
+                           (mapcat #(get (:coordinate-owners context) %)
+                                   coordinate-values)))
+        invalid-adrs (sort (remove allowed-adrs adr-values))
+        nonexistent-adrs (sort (remove (:adr-nums context) adr-values))
+        path-source (when (valid-list? path keyword?) (first path))
         unreachable (sort (remove #(and path-source
                                         (model/reachable? (:stage-edges context)
                                                           path-source %))
-                                  reachable-targets))]
-    (cond-> []
+                                  target-values))]
+    (cond-> (into shapes (item-relation-problems item-type role backing))
       (seq missing-coordinates)
       (conj (str "unknown backing coordinates " missing-coordinates))
       (seq missing-stages)
@@ -77,7 +143,11 @@
       (conj (str "unknown reachable targets " missing-targets))
       (seq invalid-adrs)
       (conj (str "citations are not canonical for backing " invalid-adrs))
-      (and path (not (path-valid? context path)))
+      (seq nonexistent-adrs)
+      (conj (str "citations reference non-existent ADRs " nonexistent-adrs))
+      (and (contains? backing :path)
+           (valid-list? path keyword?)
+           (not (path-valid? context path)))
       (conj (str "backing path does not resolve " path))
       (seq unreachable)
       (conj (str "backing targets are unreachable " unreachable)))))
@@ -90,11 +160,14 @@
       (throw (ex-info "presentation edge references undeclared node"
                       {:figure (:id graph) :edge edge
                        :endpoint endpoint :node-ids node-ids}))))
-  (doseq [item (concat (:nodes graph) (:edges graph))]
+  (doseq [[item-type item]
+          (concat (map #(vector :node %) (:nodes graph))
+                  (map #(vector :edge %) (:edges graph)))]
     (when-not (map? (:backing item))
       (throw (ex-info "presentation item has no canonical backing"
                       {:figure (:id graph) :item item})))
-    (when-let [failures (seq (item-backing-problems context (:backing item)))]
+    (when-let [failures (seq (item-backing-problems context item-type (:role item)
+                                                    (:backing item)))]
       (throw (ex-info "presentation item backing is invalid"
                       {:figure (:id graph) :item item :problems failures}))))
   graph)

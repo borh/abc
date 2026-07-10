@@ -60,6 +60,53 @@
            :edges [{:from :declared :to :typo
                     :backing {:stages [:manifest]}}]})))))
 
+(deftest graph-validation-requires-recognized-non-empty-well-formed-backing
+  (let [context (:context (model/validated-model))
+        valid-node {:id :declared :backing {:stages [:manifest]}}
+        valid-edge {:from :declared :to :other :role :validation
+                    :backing {:path [:parser-ir :manifest]}}
+        graph-with-node-backing
+        (fn [backing]
+          {:id :broken-node
+           :nodes [(assoc valid-node :backing backing)
+                   {:id :other :backing {:stages [:manifest]}}]
+           :edges [valid-edge]})
+        graph-with-edge-backing
+        (fn [role backing]
+          {:id :broken-edge
+           :nodes [valid-node
+                   {:id :other :backing {:stages [:manifest]}}]
+           :edges [(assoc valid-edge :role role :backing backing)]})]
+    (doseq [[label graph]
+            [["empty map" (graph-with-node-backing {})]
+             ["unknown key" (graph-with-node-backing {:unknown [:manifest]})]
+             ["unknown key alongside a relation"
+              (graph-with-node-backing {:stages [:manifest] :unknown true})]
+             ["empty relation" (graph-with-node-backing {:stages []})]
+             ["malformed relation" (graph-with-node-backing {:stages :manifest})]
+             ["malformed citations"
+              (graph-with-node-backing {:stages [:manifest] :adrs "0001"})]
+             ["node path" (graph-with-node-backing {:path [:parser-ir :manifest]})]
+             ["edge stages for a validation relation"
+              (graph-with-edge-backing :validation {:stages [:manifest]})]
+             ["edge coordinates for a path relation"
+              (graph-with-edge-backing :validation
+                                       {:coordinates ["manifest_schema_hash"]})]
+             ["reachable targets without a path"
+              (graph-with-edge-backing :derived-view
+                                       {:reachable-targets [:tei]})]
+             ["malformed path"
+              (graph-with-edge-backing :validation {:path :manifest})]]]
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo #"backing is invalid"
+           (figures/validate-graph! context graph))
+          label))))
+
+(deftest canonical-graphs-satisfy-strict-backing-validation
+  (let [context (:context (model/validated-model))]
+    (doseq [graph (figures/graphs)]
+      (is (= graph (figures/validate-graph! context graph))))))
+
 (deftest publication-output-summary-is-backed-by-live-output-stages
   (let [g (graph :publication)
         outputs (some #(when (= :outputs (:id %)) %) (:nodes g))]

@@ -74,7 +74,7 @@
     (is (= 2 (count (re-seq #"group=\"primary\"" out))))
     (is (str/includes? out
                        "\"a\" -> \"z\" [style=\"invis\",weight=\"100\"]"))
-    (is (str/ends-with? out "\n"))))
+    (is (re-find #"[^\r\n]\n\z" out))))
 
 (deftest dot-rejects-sanitized-node-id-collisions
   (is (thrown-with-msg?

@@ -4,7 +4,7 @@
             [clojure.java.io :as io]
             [clojure.string :as str])
   (:import [java.nio.file Files]
-           [java.util Base64]))
+           [java.util Base64 Locale]))
 
 (def allowed-colors
   #{"#000000" "#F5F7FA" "#A7B0BE" "#48CAE4" "#F2B84B" "#7BC47F"
@@ -44,6 +44,9 @@
        (.encodeToString (Base64/getEncoder) woff2-bytes)
        ") format('woff2');}text{font-family:'Noto Sans CJK JP',sans-serif;}"))
 
+(defn- root-format [pattern & arguments]
+  (String/format Locale/ROOT pattern (to-array arguments)))
+
 (defn normalize-svg [graph raw-svg woff2-bytes]
   (let [raw-root (parse-xml "Graphviz SVG" raw-svg)
         [_ _ raw-width raw-height] (parse-view-box raw-root)
@@ -80,9 +83,10 @@
                           (:subtitle graph))
                  (apply element :g
                         {:class "figure-graph"
-                         :data-graph-scale (format "%.6f" scale)
-                         :transform (format "translate(%.4f %.4f) scale(%.6f)"
-                                            tx ty scale)}
+                         :data-graph-scale (root-format "%.6f" scale)
+                         :transform (root-format
+                                     "translate(%.4f %.4f) scale(%.6f)"
+                                     tx ty scale)}
                         graph-content)
                  (element :text {:x "96" :y "976" :fill "#A7B0BE"
                                  :font-size "16" :font-weight "400"

@@ -35,8 +35,8 @@ written into the deck.
 - English slide text with untranslated Japanese examples.
 - Standard Pandoc slide Markdown.
 - YAML metadata includes `type: slides` and `aspect-ratio: 16-9`.
-- Exactly 27 rendered main slides and 35–37 rendered slides including eight to
-  ten appendix slides.
+- Exactly 27 rendered main slides and 37 rendered slides including ten appendix
+  slides.
 - Dedicated time for a live demonstration.
 - Level-one headings start slides; level-two headings structure content within a
   slide.
@@ -148,17 +148,17 @@ the deeper comparison when actual XML is on screen:
 11. Why and how five parsers are compared.
 12. Conformance results—and why naive rankings mislead.
 13. Corpus-weighted coverage.
-14. Fidelity versus robustness, including ア、秋.
-15. Parser comparison: current conclusion and remaining trade-offs.
-16. Figure: Soranoha Publication Pipeline.
-17. Two representation boundaries: AAT and Parser-IR.
-18. Worked mapping: 傍点 plus the transformation taxonomy.
-19. Actual TEI XML: curated TEI-EAJ and generated Soranoha excerpts.
-20. Annotated XML comparison: paragraphs, ruby, notes, headers, enrichment.
-21. TEI, visible plaintext, and sidecars.
-22. Tokenization is not a neutral preprocessing step.
-23. 求むる and 竹馬の友 across tokenizer configurations.
-24. Corpus-scale tokenizer comparison data and an additional example.
+14. Fidelity versus robustness, including ア、秋 and the parser conclusion.
+15. Figure: Soranoha Publication Pipeline.
+16. Two representation boundaries: AAT and Parser-IR.
+17. Worked mapping: 傍点 plus the transformation taxonomy.
+18. Actual TEI XML: curated TEI-EAJ and generated Soranoha excerpts.
+19. Annotated XML comparison: paragraphs, ruby, notes, headers, enrichment.
+20. TEI, visible plaintext, and preservation files.
+21. Tokenization is not a neutral preprocessing step.
+22. 求むる and 竹馬の友 across tokenizer configurations.
+23. Old orthography detection results and a concrete heuristic miss.
+24. Source-preserving normalization, TEI Levels, and concrete transformations.
 25. Live demo: evidence chain.
 26. Current limitations and next work.
 27. Conclusion.
@@ -168,13 +168,87 @@ excerpt and one annotated structural comparison covering paragraph boundaries,
 ruby, notes, headers, and enrichment. ア、秋 becomes the principal concrete
 paragraph-structure example.
 
-The appendix targets eight slides and may grow to ten when additional examples
-or reproduction detail materially help the audience. It contains the fuller
-markup inventory, parser crosswalk and measurement details, additional
+The appendix contains ten slides. It includes the moved corpus-scale tokenizer
+statistics and a detailed orthography-evaluation appendix in addition to the
+existing evidence. It contains the fuller markup inventory, parser crosswalk
+and measurement details, additional
 divergences, transformation taxonomy, extra tokenizer regions, fuller TEI XML
 excerpts, evidence reproduction commands, and linked resources.
 Dense tables belong in the appendix unless the main argument depends on reading
 the individual rows.
+
+## Old Orthography Detection and Normalization
+
+Two main slides present the complete source-preserving chain.
+
+### Detection results
+
+The first slide compares two detectors without implying that they share one
+evaluation set:
+
+- heuristic detector over a 50-sentence human/assistant probe: F1 `0.750`,
+  recall `0.636`, precision `0.913`;
+- ML character-only logistic regression over **300 author-labeled sentences**:
+  deterministic 5-fold held-out mean F1 `0.9629`, recall `0.9590`,
+  precision `0.9673`.
+
+The deck must say **author-labeled**, correcting the stale “LLM-labeled” wording
+in the current report. It retains the report path and explains the provenance
+correction in an HTML comment.
+
+The main slide includes a concrete heuristic false negative:
+
+```text
+スベテハ豫期ノゴトクニ行ッタ。
+```
+
+It explains that kanji-heavy pre-war prose can fall below the strict katakana
+ratio threshold even when katakana is serving grammatical functions.
+
+### Source-preserving normalization
+
+The second slide shows:
+
+```text
+ゐる → いる
+なほ → なお
+いふ → いう
+やう → よう
+```
+
+It reports `94.8%` modern-vocabulary agreement over `10,444` historical
+tokens from `25` parallel old/new orthography editions. This is a third,
+distinct evaluation set and must not be compared directly to detector F1.
+
+The end-to-end chain is:
+
+```text
+original source preserved
+  -> sentence-level orthography annotation
+  -> TEI evidence on the source transcription
+  -> optional normalized tokenizer input
+  -> spans remapped to source coordinates
+  -> normalization policy hash recorded in artifact identity
+```
+
+The TEI Levels connection is stated as:
+
+- Level 2 preserves the original orthography;
+- Level 3 can carry sentence-level
+  `<s type="orthographic-katakana">` evidence; and
+- Levels 4–5 may add linguistic annotation and normalized analytical views,
+  without rewriting the transcription.
+
+The detailed appendix includes:
+
+- all detector metrics and fold scores;
+- the distinct labeling/evaluation-set caveats;
+- the six-work workload probe: `11,059` genuinely historical tokens among
+  `348,814` all-kana tokens;
+- particle protection: approximately `40,000` は／を／へ cases must remain
+  unchanged;
+- transformation-class counts and examples; and
+- exact repository paths and commands for inspecting each result.
 
 ## Relationship to TEI-EAJ
 
@@ -401,7 +475,7 @@ Before the deck is considered complete:
 - every quantitative headline is checked against the latest authoritative
   checked-in report;
 - the rendered main sequence contains exactly 27 slides and the complete rendered
-  deck contains between 35 and 37 slides including eight to ten appendices;
+  deck contains exactly 37 slides including ten appendices;
 - slide-count validation accounts for the downstream generator's metadata title
   view; it does not blindly equate level-one Markdown headings with rendered
   slide count;

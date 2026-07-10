@@ -123,8 +123,8 @@ hop with direct facade calls:
   (`aozora_body_text` body selection, `blocks_from_inline_content`, gaiji,
   warnings, meta) ported verbatim. Because `serde_json::Value` maps are
   BTreeMap-backed without `preserve_order`, verbatim porting yields
-  byte-identical AAT except `/meta/adapter_version` — the parity gate's
-  expectation.
+  byte-identical AAT except the two identity pointers (`/meta/adapter`,
+  `/meta/adapter_version`) — the parity gate's expectation.
 - Public seam mirrors the adapter:
   `pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>>` plus an
   outcome type that distinguishes success / success-with-warnings / fatal so
@@ -145,17 +145,24 @@ Boundary contract:
 
 - stdin: raw source bytes (Shift_JIS/CP932 as in the corpus); stdout: one
   AAT JSON document; nothing else on stdout.
-- Exit codes: `0` success, `2` success-with-warnings, `1` fatal — the
-  existing adapter wire contract
-  (`docs/handoffs/adding-aozora2-aozoraepub3-parser-support.md`).
+- Flags — the actual wire surface the harness uses (verified in code):
+  `ab-check` spawns adapters as `<bin> --mode aat` and probes identity with
+  `<bin> --version`. `ab-aozora` therefore accepts `--mode aat` (and
+  defaults to AAT with no flags) and `--version`; any other flag or mode is
+  a usage error (exit `1`). Argument parsing stays std-only; CLI
+  dependencies must not enter the library.
+- Exit codes: `0` success, `1` fatal — exactly the frozen adapter's
+  observable behavior. The wire contract reserves `2` for
+  success-with-warnings (`ab-check` accepts `0|2`), but the conformance
+  harness treats any nonzero exit as adapter error and the frozen adapter
+  never emits `2`; Phase 2 must not emit it either or the echo gate breaks.
+  Warnings ride inside AAT `/meta/warnings`, as today.
 - Errors structured on stderr; no partial AAT on stdout after a fatal (build
   the full output in memory before writing).
 - `--version` emits: adapter id (`ab-aozora`), adapter version (the
   `ab-aozora-aat` crate version), AAT schema version, and build identity
   (constituent `ab-aozora-*` crate versions; git rev when available at build
   time, `unknown` otherwise — never a build failure).
-- No other flags or subcommands. Argument parsing stays std-only; CLI
-  dependencies must not enter the library.
 
 Binary name and crate name are both `ab-aozora`; a separate crate (not a
 `[[bin]]` target inside `ab-aozora-aat`) keeps the library's dependency
@@ -224,15 +231,19 @@ repoint, shim deletion, and identity rotation.
 - Candidate: full-corpus AAT via `--adapter ab-aozora --adapter-bin PATH`
   (the branch-built binary), on hinoki, with the binary's sha256 and
   `--version` recorded in the dump metadata.
+- Allowlist — exactly **two** pointers, `/meta/adapter` and
+  `/meta/adapter_version`: the rotated identity means the candidate emits
+  `"adapter": "ab-aozora"` where the reference says `"aozora"`, and both
+  fields are sanctioned identity coordinates. Nothing else may differ.
 - Comparator — **byte parity is the gate**. The existing
   `compare-aat-dumps.py` is semantic: it parses JSON and ignores key order
   and numeric formatting, so it cannot enforce the port-fidelity claim on
   its own. It gains a byte-parity mode (or a sibling comparator, decided at
-  plan time) that, per work: parses each dump only to extract the
-  `/meta/adapter_version` value, requires the exact serialized occurrence
-  `"adapter_version":"<escaped value>"` to appear exactly once in the raw
-  bytes (fail closed otherwise), substitutes a fixed placeholder in both
-  documents, then compares the remaining bytes. Byte and semantic results
+  plan time) that, per work: parses each dump only to extract the two
+  allowlisted values, requires each exact serialized occurrence
+  (`"adapter":"<escaped value>"`, `"adapter_version":"<escaped value>"`) to
+  appear exactly once in the raw bytes (fail closed otherwise), substitutes
+  fixed placeholders in both documents, then compares the remaining bytes. Byte and semantic results
   are reported separately: byte parity across all works is the blocking
   requirement; the semantic comparator runs as the localization diagnostic
   when byte parity fails. Unit tests cover the substitution edge cases

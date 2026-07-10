@@ -1679,6 +1679,23 @@
           };
         };
 
+        # Permanent stdin→AAT fork adapter binary (Phase 2). Packaged so
+        # run-aat-full.sh can pin it by content as a first-class lane.
+        # AB_AOZORA_GIT_REV: bake the flake source rev into --version so a
+        # nix-built binary identifies its code (dirty tree -> "unknown",
+        # which the gates reject — gates build via cargo with the rev
+        # passed explicitly).
+        abAozora = mkRustBin {
+          pname = "ab-aozora";
+          cargoBuildFlags = [
+            "--package"
+            "ab-aozora"
+          ];
+          env = {
+            AB_AOZORA_GIT_REV = self.rev or "unknown";
+          };
+        };
+
         abAatToParserIrCheck = mkSmokeCheck {
           name = "ab-aat-to-parser-ir-smoke-check";
           testScript = "tests/aat-to-parser-ir-cli-smoke.sh";
@@ -1807,6 +1824,7 @@
           ab-morph-run = abMorphRun;
           ab-index = abIndex;
           ab-check = abCheck;
+          ab-aozora = abAozora;
           aat-triage-python = pythonWithAatDuckdb;
           ab-source-inventory = sourceInventoryBin;
           ab-oracle = abOracleBin;

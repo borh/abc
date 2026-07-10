@@ -1,11 +1,13 @@
 (ns abc.tools.soranoha-test
   (:require [abc.tools.files :as files]
+            [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.request-set-resolver :as resolver]
             [abc.tools.source-snapshot-fixture :as fixture]
             [abc.tools.snapshot-index :as snapshot-index]
             [abc.tools.soranoha :as soranoha]
+            [abc.tools.soranoha-build-publication :as build-publication]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is]])
@@ -71,6 +73,35 @@
     (.mkdirs (io/file root ".git"))
     (spit (io/file root ".git" "HEAD") "fixture-head\n")
     root))
+
+(defn- stub-derive-parser-ir!
+  "Test double for the adapter chain: writes a minimal, schema-valid parser-IR
+  (empty body) so build-publication can be exercised without the aozora2html /
+  ab-aat-to-parser-ir binaries."
+  [{:keys [aat-file parser-ir-file divergence-file]}]
+  (abc-json/write-deterministic-json-file!
+   aat-file
+   {"version" 1 "work_id" "stub" "blocks" []
+    "meta" {"adapter" "stub" "adapter_version" "test"
+            "source_encoding" "utf-8" "source_hash" (files/example-hash "aa")
+            "parse_complete" true "warnings" []}})
+  (abc-json/write-deterministic-json-file!
+   parser-ir-file
+   {"schema_hash" (manifest/schema-hash "schemas/parser-ir.schema.json")
+    "source" {"work_content_hash" (files/example-hash "17")
+              "encoding" "Shift_JIS" "normalization" "source"}
+    "derived_from" {"aat_adapter" "stub" "aat_adapter_version" "test-stub"
+                    "aat_version" 1
+                    "mapping_id" (str "https://w3id.org/abc/mappings/"
+                                      "aat-v1-to-parser-ir-v1/generated-probe")
+                    "mapping_schema_hash" (files/example-hash "38")
+                    "mapping_version" "0.2.0"}
+    "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
+                             "splitter_id" "ab-plaintext-japanese-v1"
+                             "coordinate_system" "decoded_utf8"
+                             "coverage" "body-paragraphs"}
+    "nodes" [] "warnings" [] "errors" []})
+  (abc-json/write-deterministic-json-file! divergence-file {"stub" true}))
 
 (defn- write-generated-source-request-set!
   [root label]
@@ -700,48 +731,49 @@
       (finally
         (delete-tree! root)))))
 
-(deftest build-publication-command-materializes-and-delegates-to-rehearsal-test
+(deftest build-publication-command-materializes-real-publications-test
   (let [root (fixture/temp-dir "abc-soranoha-build-publication")
         aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
         output-root (io/file root "build-output")]
     (try
-      (let [out (with-out-str
-                  (is (zero? (soranoha/run!
-                              ["build-publication"
-                               "--aozora-root" (str aozora-root)
-                               "--config" "abc/config/publication-basic-ja.json"
-                               "--snapshot-date" "2026-07-08"
-                               "--output-root" (str output-root)]))))
+      (let [out (binding [build-publication/*derive-parser-ir!*
+                          stub-derive-parser-ir!]
+                  (with-out-str
+                    (is (zero? (soranoha/run!
+                                ["build-publication"
+                                 "--aozora-root" (str aozora-root)
+                                 "--config" "abc/config/publication-basic-ja.json"
+                                 "--snapshot-date" "2026-07-08"
+                                 "--output-root" (str output-root)])))))
             slug "000001_000879_000001_ruby_fixture"
-            official-source-file (io/file output-root
-                                          "materialized-root"
-                                          "works"
-                                          slug
-                                          "official-source.json")
+            work-dir (io/file output-root "materialized-root" "works" slug)
+            official-source-file (io/file work-dir "official-source.json")
+            parser-ir-file (io/file work-dir "parser-ir.json")
+            source-manifest-file (io/file work-dir "source.manifest.json")
             source-selection-report-file (io/file output-root
                                                   "source-selection-report.json")
-            rehearsal-report-file (io/file output-root
-                                           "rehearsal"
-                                           "rehearsal-report.json")
-            workflow-run-file (io/file output-root
-                                       "rehearsal"
-                                       "workflow-run.json")
             build-workflow-run-file (io/file output-root "workflow-run.json")
-            tei-file (io/file output-root
-                              "rehearsal"
-                              "snapshot-root"
-                              "artifacts"
-                              "works"
-                              slug
-                              "tei"
-                              "tei.xml")]
+            pub-dir (io/file output-root "publications" slug)
+            tei-file (io/file pub-dir "tei.xml")
+            tei-validation-file (io/file pub-dir "tei-validation-result.json")
+            publications-report-file (io/file output-root "publications"
+                                              "publications-report.json")]
         (is (string/includes? out "build_publication_root:"))
         (is (.exists official-source-file))
+        (is (.exists parser-ir-file))
+        (is (.exists source-manifest-file))
         (is (.exists source-selection-report-file))
-        (is (.exists rehearsal-report-file))
-        (is (.exists workflow-run-file))
         (is (.exists build-workflow-run-file))
         (is (.exists tei-file))
+        ;; The source manifest publication materialization requires now exists.
+        (let [source-manifest (files/read-json source-manifest-file)]
+          (is (string/starts-with?
+               (get-in source-manifest
+                       ["manifest_identity_object" "corpus_snapshot_hash"])
+               "sha256:")))
+        ;; The TEI is really validated, not stubbed away.
+        (let [validation (files/read-json tei-validation-file)]
+          (is (= "passed" (get validation "status"))))
         (let [report (files/read-json source-selection-report-file)
               official-source (files/read-json official-source-file)]
           (is (= 1 (get report "selected_source_count")))
@@ -751,24 +783,22 @@
                        (get report "selected_sources"))))
           (is (= "cards/000879/files/000001_ruby_fixture.zip"
                  (get official-source "text_zip_relpath"))))
+        (let [publications-report (files/read-json publications-report-file)]
+          (is (= 1 (get publications-report "publication_count")))
+          (is (= 1 (get publications-report "passed")))
+          (is (= 0 (get publications-report "failed"))))
         (let [workflow-run (files/read-json build-workflow-run-file)]
           (is (= "soranoha.build-publication.v1"
                  (get workflow-run "workflow_id")))
           (is (= "passed" (get workflow-run "status")))
           (is (= ["materialize-source-selection"
                   "write-build-records"
-                  "publication-rehearsal"]
+                  "materialize-publications"]
                  (mapv #(get % "id") (get workflow-run "steps"))))
           (with-out-str
             (is (zero? (soranoha/run!
                         ["validate-workflow"
-                         (str build-workflow-run-file)])))))
-        (with-out-str
-          (is (zero? (soranoha/run!
-                      ["validate"
-                       (str (io/file output-root
-                                     "rehearsal"
-                                     "publication"))])))))
+                         (str build-workflow-run-file)]))))))
       (finally
         (delete-tree! root)))))
 

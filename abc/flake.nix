@@ -77,6 +77,44 @@
           cljDepsCache = pkgs.mk-deps-cache {
             lockfile = ./deps-lock.json;
           };
+          presentationFontTools = pkgs.python3.withPackages (ps: [
+            ps.fonttools
+            ps.brotli
+          ]);
+          presentationFontConfig = pkgs.makeFontsConf {
+            fontDirectories = [ pkgs.noto-fonts-cjk-sans ];
+            impureFontDirectories = [ ];
+            includes = [ ];
+          };
+          presentationLauncher = pkgs.writeShellScript "abc-presentation-diagrams" ''
+            set -euo pipefail
+            export HOME="${cljDepsCache}"
+            export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+            export CLJ_CONFIG="${cljDepsCache}/.clojure"
+            export GITLIBS="${cljDepsCache}/.gitlibs"
+            presentationCache="$(mktemp -d)"
+            trap 'rm -rf "$presentationCache"' EXIT
+            export CLJ_CACHE="$presentationCache/clojure"
+            export FONTCONFIG_FILE="${presentationFontConfig}"
+            unset FONTCONFIG_PATH XDG_CONFIG_HOME XDG_CONFIG_DIRS XDG_DATA_DIRS
+            export XDG_CACHE_HOME="$presentationCache/xdg-cache"
+            export XDG_DATA_HOME="$presentationCache/xdg-data"
+            mkdir -p "$CLJ_CACHE" "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
+            if [ -f abc/deps.edn ] && [ -f abc/docs/architecture-stages.edn ]; then
+              cd abc
+            elif [ -f deps.edn ] && [ -f docs/architecture-stages.edn ]; then
+              :
+            else
+              echo "presentation-diagrams: run from the monorepo root or abc/" >&2
+              exit 2
+            fi
+            export ABC_GRAPHVIZ_DOT="${pkgs.graphviz}/bin/dot"
+            export ABC_FONTTOOLS_SUBSET="${presentationFontTools}/bin/pyftsubset"
+            export ABC_PRESENTATION_FONT="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc"
+            export ABC_PRESENTATION_FONT_DIR="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk"
+            export DOTFONTPATH="$ABC_PRESENTATION_FONT_DIR"
+            ${pkgs.clojure}/bin/clojure -M:abc/presentation-diagrams "$@"
+          '';
           # Reliable, CWD-independent launcher for a `-M:<alias>` Clojure tool.
           # Resolves deps.edn + the abc `src` classpath from the pinned flake
           # source (not the caller's working directory), points Clojure at the
@@ -95,9 +133,27 @@
               export GITLIBS="${cljDepsCache}/.gitlibs"
               export CLJ_CACHE="$(mktemp -d)"
               ${env}
+              # Preserve the caller's working directory before cd'ing to the
+              # pinned source root, so commands can resolve relative path args
+              # (e.g. build-publication --output-root) against where the user ran.
+              export ABC_INVOCATION_PWD="$PWD"
               cd ${./.}
               exec ${pkgs.clojure}/bin/clojure -M:${alias} "$@"
             '';
+          mkCljApp =
+            {
+              name,
+              alias,
+              description,
+              env ? "",
+            }:
+            {
+              type = "app";
+              program = toString (mkCljLauncher {
+                inherit name alias env;
+              });
+              meta.description = description;
+            };
           tei = import ./nix/tei-profile-artifacts.nix {
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
@@ -123,119 +179,89 @@
             };
         in
         {
-          validate-design-bundle = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-validate-design-bundle";
-              alias = "abc/validate-design-bundle";
-              env = ''
-                export PATH="${
-                  pkgs.lib.makeBinPath [
-                    pkgs.git-cliff
-                    pkgs.libxml2
-                  ]
-                }:''${PATH:-}"
-                export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
-              '';
-            });
-            meta.description = "Validate ABC v0 design-bundle schemas and fixtures";
+          validate-design-bundle = mkCljApp {
+            name = "abc-validate-design-bundle";
+            alias = "abc/validate-design-bundle";
+            description = "Validate ABC v0 design-bundle schemas and fixtures";
+            env = ''
+              export PATH="${
+                pkgs.lib.makeBinPath [
+                  pkgs.git-cliff
+                  pkgs.libxml2
+                ]
+              }:''${PATH:-}"
+              export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
+            '';
           };
 
-          soranoha = {
+          presentation-diagrams = {
             type = "app";
-            program = toString (mkCljLauncher {
-              name = "soranoha";
-              alias = "abc/soranoha";
-            });
-            meta.description = "Soranoha snapshot publication command dispatcher";
+            program = toString presentationLauncher;
+            meta.description = "Generate or drift-check academic presentation SVG diagrams";
           };
 
-          materialize-import = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-materialize-import";
-              alias = "abc/materialize-import";
-            });
-            meta.description = "Materialize imported ab-validator output as ABC manifests";
+          soranoha = mkCljApp {
+            name = "soranoha";
+            alias = "abc/soranoha";
+            description = "Soranoha snapshot publication command dispatcher";
           };
 
-          materialize-publication = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-materialize-publication";
-              alias = "abc/materialize-publication";
-            });
-            meta.description = "Materialize parser-IR publication plaintext and TEI artifacts";
+          materialize-import = mkCljApp {
+            name = "abc-materialize-import";
+            alias = "abc/materialize-import";
+            description = "Materialize imported ab-validator output as ABC manifests";
           };
 
-          materialize-publications-batch = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-materialize-publications-batch";
-              alias = "abc/materialize-publication";
-            });
-            meta.description = "Materialize parser-IR publication plaintext and TEI artifacts from a batch JSON";
+          materialize-publication = mkCljApp {
+            name = "abc-materialize-publication";
+            alias = "abc/materialize-publication";
+            description = "Materialize parser-IR publication plaintext and TEI artifacts";
           };
 
-          materialize-source-snapshot = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-materialize-source-snapshot";
-              alias = "abc/materialize-source-snapshot";
-            });
-            meta.description = "Materialize a source corpus snapshot and source manifests";
+          materialize-publications-batch = mkCljApp {
+            name = "abc-materialize-publications-batch";
+            alias = "abc/materialize-publication";
+            description = "Materialize parser-IR publication plaintext and TEI artifacts from a batch JSON";
           };
 
-          manifest-to-rdf = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-manifest-to-rdf";
-              alias = "abc/manifest-to-rdf";
-            });
-            meta.description = "Generate deterministic RDF/Turtle view from an ABC manifest";
+          materialize-source-snapshot = mkCljApp {
+            name = "abc-materialize-source-snapshot";
+            alias = "abc/materialize-source-snapshot";
+            description = "Materialize a source corpus snapshot and source manifests";
           };
 
-          aozora-ingest = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-aozora-ingest";
-              alias = "abc/aozora-ingest";
-              # Default the catalog to the pinned canonical Aozora source, so
-              # `--zip`/`--source-url` may be omitted (the tool falls back to
-              # these env vars). An explicit --zip on the command line wins.
-              env = ''
-                export ABC_AOZORA_CATALOG_ZIP="${aozorabunko-src}/index_pages/list_person_all_extended_utf8.zip"
-                export ABC_AOZORA_CATALOG_URL="github:aozorabunko/aozorabunko/0e9ea3e586eb0aa34039fabfc85a407d2f98b165"
-              '';
-            });
-            meta.description = "Build a metadata-record JSON from the canonical (pinned) Aozora catalog, or a --zip slice";
+          manifest-to-rdf = mkCljApp {
+            name = "abc-manifest-to-rdf";
+            alias = "abc/manifest-to-rdf";
+            description = "Generate deterministic RDF/Turtle view from an ABC manifest";
           };
 
-          validate-corpus = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-validate-corpus";
-              alias = "abc/validate-corpus";
-            });
-            meta.description = "Validate an ingested corpus directory through SHACL";
+          aozora-ingest = mkCljApp {
+            name = "abc-aozora-ingest";
+            alias = "abc/aozora-ingest";
+            description = "Build a metadata-record JSON from the canonical (pinned) Aozora catalog, or a --zip slice";
+            env = ''
+              export ABC_AOZORA_CATALOG_ZIP="${aozorabunko-src}/index_pages/list_person_all_extended_utf8.zip"
+              export ABC_AOZORA_CATALOG_URL="github:aozorabunko/aozorabunko/0e9ea3e586eb0aa34039fabfc85a407d2f98b165"
+            '';
           };
 
-          person-drift-history = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-person-drift-history";
-              alias = "abc/person-drift-history";
-            });
-            meta.description = "Audit generated corpus snapshots for conservative person split/merge candidates";
+          validate-corpus = mkCljApp {
+            name = "abc-validate-corpus";
+            alias = "abc/validate-corpus";
+            description = "Validate an ingested corpus directory through SHACL";
           };
 
-          aozora-history-audit = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-aozora-history-audit";
-              alias = "abc/aozora-history-audit";
-            });
-            meta.description = "Extract two Aozora git refs, ingest them, validate current corpus, and report person drift candidates";
+          person-drift-history = mkCljApp {
+            name = "abc-person-drift-history";
+            alias = "abc/person-drift-history";
+            description = "Audit generated corpus snapshots for conservative person split/merge candidates";
+          };
+
+          aozora-history-audit = mkCljApp {
+            name = "abc-aozora-history-audit";
+            alias = "abc/aozora-history-audit";
+            description = "Extract two Aozora git refs, ingest them, validate current corpus, and report person drift candidates";
           };
 
           aozora-upstream-audit = {
@@ -331,6 +357,15 @@
           cljDepsCache = pkgs.mk-deps-cache {
             lockfile = ./deps-lock.json;
           };
+          presentationFontTools = pkgs.python3.withPackages (ps: [
+            ps.fonttools
+            ps.brotli
+          ]);
+          presentationFontConfig = pkgs.makeFontsConf {
+            fontDirectories = [ pkgs.noto-fonts-cjk-sans ];
+            impureFontDirectories = [ ];
+            includes = [ ];
+          };
           tei = import ./nix/tei-profile-artifacts.nix {
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
@@ -341,6 +376,21 @@
               pkgs.lib.splitString "\n" (builtins.readFile path)
             );
           contractSurfacePaths = manifestLines ./nix/contract-surface.txt;
+
+          copyWritableSource = ''
+            cp -R ${./.} source
+            chmod -R u+w source
+            cd source
+          '';
+
+          cljSandboxEnv = ''
+            export HOME="${cljDepsCache}"
+            export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+            export CLJ_CONFIG="$HOME/.clojure"
+            export CLJ_CACHE="$TMPDIR/cp-cache"
+            export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
+            export GITLIBS="$HOME/.gitlibs"
+          '';
         in
         {
           clj-nix-focused-tests =
@@ -353,17 +403,8 @@
                 ];
               }
               ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                export GITLIBS="$HOME/.gitlibs"
-
+                ${copyWritableSource}
+                ${cljSandboxEnv}
                 # Keep TEI schema-backed tests active in the sandbox. The schema is
                 # a pinned fixed-output artifact, so tests do not need network access.
                 export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
@@ -384,17 +425,8 @@
                 ];
               }
               ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                export GITLIBS="$HOME/.gitlibs"
-
+                ${copyWritableSource}
+                ${cljSandboxEnv}
                 # Regenerate the two committed diagrams in memory and byte-compare
                 # to the checked-in files; also runs the ADR header-hygiene and
                 # architecture-stage lints. Any drift or lint problem exits non-zero.
@@ -402,6 +434,80 @@
 
                 mkdir -p "$out"
                 echo "ADR + architecture diagrams current; header/sidecar/stage lints clean." > "$out/result.txt"
+              '';
+
+          presentation-diagram-drift =
+            pkgs.runCommand "abc-presentation-diagram-drift"
+              {
+                nativeBuildInputs = [
+                  pkgs.clojure
+                  pkgs.graphviz
+                  pkgs.imagemagick
+                  pkgs.librsvg
+                  pkgs.noto-fonts-cjk-sans
+                  presentationFontTools
+                ];
+              }
+              ''
+                cp -R ${./.} source
+                chmod -R u+w source
+                cd source
+                export HOME="${cljDepsCache}"
+                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+                export CLJ_CONFIG="$HOME/.clojure"
+                export CLJ_CACHE="$TMPDIR/cp-cache"
+                export GITLIBS="$HOME/.gitlibs"
+                export FONTCONFIG_FILE="${presentationFontConfig}"
+                unset FONTCONFIG_PATH XDG_CONFIG_HOME XDG_CONFIG_DIRS XDG_DATA_DIRS
+                export XDG_CACHE_HOME="$TMPDIR/font-cache"
+                export XDG_DATA_HOME="$TMPDIR/xdg-data"
+                mkdir -p "$CLJ_CACHE" "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
+                grep -Fq \
+                  '<dir>${pkgs.noto-fonts-cjk-sans}</dir>' \
+                  "$FONTCONFIG_FILE"
+                activeFontPaths="$TMPDIR/fontconfig-active-paths"
+                sed -n \
+                  -e '/^[[:space:]]*<dir[ >]/p' \
+                  -e '/^[[:space:]]*<include[ >]/p' \
+                  "$FONTCONFIG_FILE" > "$activeFontPaths"
+                for forbidden in \
+                  /etc/fonts \
+                  /usr/share/fonts \
+                  /usr/local/share/fonts \
+                  '~/.nix-profile' \
+                  /nix/var/nix/profiles
+                do
+                  if grep -Fq "$forbidden" "$activeFontPaths"; then
+                    echo "presentation Fontconfig contains forbidden path: $forbidden" >&2
+                    exit 1
+                  fi
+                done
+                while IFS= read -r fontPath; do
+                  fontPath="$(printf '%s\n' "$fontPath" | sed 's/^[[:space:]]*//')"
+                  case "$fontPath" in
+                    '<dir>/nix/store/'*'</dir>' | '<dir prefix="xdg">fonts</dir>')
+                      ;;
+                    *)
+                      echo "presentation Fontconfig contains non-store path: $fontPath" >&2
+                      exit 1
+                      ;;
+                  esac
+                done < "$activeFontPaths"
+                test -z "$(find "$XDG_DATA_HOME" -mindepth 1 -print -quit)"
+                export ABC_GRAPHVIZ_DOT="${pkgs.graphviz}/bin/dot"
+                export ABC_FONTTOOLS_SUBSET="${presentationFontTools}/bin/pyftsubset"
+                export ABC_PRESENTATION_FONT="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc"
+                export ABC_PRESENTATION_FONT_DIR="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk"
+                export DOTFONTPATH="$ABC_PRESENTATION_FONT_DIR"
+                clojure -M:abc/presentation-diagrams --check
+                for svg in docs/figures/*.svg; do
+                  png="$TMPDIR/$(basename "$svg" .svg).png"
+                  rsvg-convert --width 1920 --height 1080 "$svg" --output "$png"
+                  test "$(magick identify -format '%wx%h' "$png")" = "1920x1080"
+                  test "$(magick identify -format '%k' "$png")" -gt 1
+                done
+                mkdir -p "$out"
+                echo "Academic presentation DOT and SVG artifacts are current." > "$out/result.txt"
               '';
 
           clj-kondo =
@@ -430,10 +536,7 @@
                 ];
               }
               ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-
+                ${copyWritableSource}
                 python -m unittest prototypes/aat-to-parser-ir-probe/test_probe_mapping.py
 
                 mkdir -p "$out"
@@ -577,17 +680,8 @@
                 nativeBuildInputs = [ pkgs.clojure ];
               }
               ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                export GITLIBS="$HOME/.gitlibs"
-
+                ${copyWritableSource}
+                ${cljSandboxEnv}
                 clojure -M:abc/adr-governance
 
                 mkdir -p "$out"
@@ -648,19 +742,45 @@
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
           };
+          presentationFontTools = pkgs.python3.withPackages (ps: [
+            ps.fonttools
+            ps.brotli
+          ]);
+          presentationFontConfig = pkgs.makeFontsConf {
+            fontDirectories = [ pkgs.noto-fonts-cjk-sans ];
+            impureFontDirectories = [ ];
+            includes = [ ];
+          };
 
         in
         {
           default = pkgs.mkShell {
             TEI_SCHEMA_PATH = "${tei.teiAllSchema}";
+            ABC_GRAPHVIZ_DOT = "${pkgs.graphviz}/bin/dot";
+            ABC_FONTTOOLS_SUBSET = "${presentationFontTools}/bin/pyftsubset";
+            ABC_PRESENTATION_FONT = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc";
+            ABC_PRESENTATION_FONT_DIR = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk";
+            DOTFONTPATH = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk";
+            FONTCONFIG_FILE = "${presentationFontConfig}";
+            shellHook = ''
+              unset FONTCONFIG_PATH XDG_CONFIG_HOME XDG_CONFIG_DIRS XDG_DATA_DIRS
+              presentationFontCache="$(mktemp -d)"
+              export XDG_CACHE_HOME="$presentationFontCache/xdg-cache"
+              export XDG_DATA_HOME="$presentationFontCache/xdg-data"
+              mkdir -p "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
+              trap 'rm -rf "$presentationFontCache"' EXIT
+            '';
             packages = with pkgs; [
               cljfmt
               clojure
               git
               git-cliff
+              graphviz
               jdk21
               jq
               libxml2
+              noto-fonts-cjk-sans
+              presentationFontTools
             ];
           };
 

@@ -16,15 +16,24 @@ work_ids=""
 features=""
 force=0
 print_plan=0
+aozora_bin_override=""
 
 usage() {
   cat >&2 <<'EOF'
 usage: run-aat-full.sh --adapter ADAPTER [--corpus DIR] [--out-dir DIR]
                        [--jobs N] [--timeout DURATION] [--report-id ID]
                        [--work-ids IDS] [--features TAGS] [--force]
-                       [--print-plan]
+                       [--print-plan] [--aozora-bin PATH]
 
 ADAPTER: aozora | aozora2html | aozora-epub3
+
+--aozora-bin PATH: only valid with --adapter aozora. Overrides the pinned
+  nix-store upstream `aozora` parser with an explicit binary: it is what
+  actually runs (exported as AB_AOZORA_BIN) AND what is recorded as the
+  run's generator identity (hashed into input_set_hash, plus its path,
+  sha256, and --version output recorded verbatim in metadata.json). Fails
+  (exit 2) if PATH does not exist or `PATH --version` fails. Without it,
+  behavior is unchanged: the pinned upstream-parser-aozora store binary.
 EOF
 }
 
@@ -70,6 +79,10 @@ while [[ $# -gt 0 ]]; do
       print_plan=1
       shift
       ;;
+    --aozora-bin)
+      aozora_bin_override="$2"
+      shift 2
+      ;;
     -h|--help)
       usage
       exit 0
@@ -84,6 +97,12 @@ done
 
 if [[ -z "$adapter_id" ]]; then
   echo "--adapter is required" >&2
+  usage
+  exit 2
+fi
+
+if [[ -n "$aozora_bin_override" && "$adapter_id" != "aozora" ]]; then
+  echo "--aozora-bin only applies to --adapter aozora" >&2
   usage
   exit 2
 fi
@@ -259,15 +278,38 @@ fi
 # aozora2html Ruby gem, the AozoraEpub3.jar, or — for the aozora adapter — the
 # upstream `aozora` parser it spawns. Each is exported under the env var its
 # adapter reads, so ab-check runs the SAME store binary that identity pins.
+#
+# --aozora-bin PATH (aozora adapter only) overrides this resolution entirely:
+# no nix build happens, AB_AOZORA_BIN is exported straight to PATH (so it is
+# both the recorded and the executed binary — never silently diverging), and
+# PATH's containing directory stands in for renderer_dir below so the
+# existing tree_hash-based identity/staleness plumbing picks up its content
+# unchanged (a differing override binary is a differing renderer_content_hash,
+# so a stale dump against a NEW override is never served as fresh).
 renderer_dir=""
-if [[ -n "$renderer_attr" ]]; then
+aozora_bin_override_sha256=""
+aozora_bin_override_version=""
+if [[ "$adapter_id" == "aozora" && -n "$aozora_bin_override" ]]; then
+  if [[ ! -x "$aozora_bin_override" ]]; then
+    printf -- '--aozora-bin not found or not executable: %s\n' "$aozora_bin_override" >&2
+    exit 2
+  fi
+  aozora_bin_override="$(cd "$(dirname "$aozora_bin_override")" && pwd)/$(basename "$aozora_bin_override")"
+  if ! aozora_bin_override_version="$("$aozora_bin_override" --version)"; then
+    printf -- '--aozora-bin --version failed: %s\n' "$aozora_bin_override" >&2
+    exit 2
+  fi
+  aozora_bin_override_sha256="$(sha256sum "$aozora_bin_override" | cut -d' ' -f1)"
+  renderer_dir="$(cd "$(dirname "$aozora_bin_override")" && pwd)"
+  export AB_AOZORA_BIN="$aozora_bin_override"
+elif [[ -n "$renderer_attr" ]]; then
   renderer_dir="$(nix build "$repo_root#$renderer_attr" --no-link --print-out-paths)"
 fi
 if [[ "$adapter_id" == "aozora2html" ]]; then
   export AB_AOZORA2HTML_BIN="$renderer_dir/bin/aozora2html"
 elif [[ "$adapter_id" == "aozora-epub3" ]]; then
   export AB_AOZORAEPUB3_JAR="$renderer_dir/lib/AozoraEpub3.jar"
-elif [[ "$adapter_id" == "aozora" ]]; then
+elif [[ "$adapter_id" == "aozora" && -z "$aozora_bin_override" ]]; then
   export AB_AOZORA_BIN="$renderer_dir/bin/aozora"
 fi
 if [[ ! "$jobs" =~ ^[0-9]+$ || "$jobs" == "0" ]]; then
@@ -370,7 +412,7 @@ run_step build-triage "$triage_dir" "$triage_python" \
   --report-id "$report_id" \
   --out-dir "$triage_dir"
 
-python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" "$features" "$work_ids" "$ab_index_bin" "$ab_check_bin" "$adapter_hash_target" "$renderer_dir" "$identity_file" "$adapter_version" <<'PY'
+python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" "$features" "$work_ids" "$ab_index_bin" "$ab_check_bin" "$adapter_hash_target" "$renderer_dir" "$identity_file" "$adapter_version" "$aozora_bin_override" "$aozora_bin_override_sha256" "$aozora_bin_override_version" <<'PY'
 import json
 import os
 import pathlib
@@ -378,7 +420,27 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-repo_root, corpus, out_dir, report_id, jobs, timeout, adapter, adapter_id, features, work_ids, ab_index_bin, ab_check_bin, adapter_hash_target, renderer_dir, identity_file, adapter_version = sys.argv[1:]
+(
+    repo_root,
+    corpus,
+    out_dir,
+    report_id,
+    jobs,
+    timeout,
+    adapter,
+    adapter_id,
+    features,
+    work_ids,
+    ab_index_bin,
+    ab_check_bin,
+    adapter_hash_target,
+    renderer_dir,
+    identity_file,
+    adapter_version,
+    aozora_bin_override,
+    aozora_bin_override_sha256,
+    aozora_bin_override_version,
+) = sys.argv[1:]
 repo = pathlib.Path(repo_root)
 out = pathlib.Path(out_dir)
 
@@ -418,6 +480,17 @@ metadata = {
     "db_path": str(out / "fidelity.duckdb"),
     "workflow_run_path": str(out / "workflow-run.json"),
 }
+
+# Explicit --aozora-bin override identity (Task 6): recorded verbatim, never
+# derived from AB_AOZORA_BIN, so this is proof the override reached the
+# adapter subprocess (not merely that a flag was passed) — the override path,
+# its content hash, and the binary's own --version output.
+if aozora_bin_override:
+    metadata["aozora_bin_override"] = {
+        "path": aozora_bin_override,
+        "sha256": aozora_bin_override_sha256,
+        "version": aozora_bin_override_version,
+    }
 
 # F6: record the dump's input identity and its own output content hash, so
 # staleness is decidable (a dump is stale exactly when a freshly-computed

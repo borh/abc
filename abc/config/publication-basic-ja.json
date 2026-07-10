@@ -2,7 +2,7 @@
   "config_schema_id": "https://w3id.org/abc/schemas/soranoha-publication-build-config.schema.json",
   "request_set_label": "full-corpus-publication-basic-ja",
   "snapshot_scope": "full-corpus-publication-basic-ja",
-  "parser_profile": "parser-ir-publication-basic-ja-v1",
+  "parser_profile": "aozora2html",
   "publication_profile": "tei-publication-basic-ja-v1",
   "continue_on_failure": true,
   "materialization_scope": "smoke"

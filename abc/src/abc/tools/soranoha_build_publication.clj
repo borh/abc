@@ -6,6 +6,7 @@
             [abc.tools.hash :as hash]
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
+            [abc.tools.materialize-publication :as materialize-publication]
             [abc.tools.schema :as schema]
             [abc.tools.workflow :as workflow]
             [clojure.java.io :as io]
@@ -37,10 +38,17 @@
   (and (.isFile file)
        (string/ends-with? (.getName file) ".zip")))
 
+(defn- normalized-abs-path
+  "Absolute, `.`/`..`-normalized path that does NOT resolve symlinks — unlike
+  getCanonicalFile. Keeps files under a symlinked root (e.g. the zero-copy
+  aozorabunko-corpus symlinkJoin) instead of escaping to the symlink targets."
+  [f]
+  (.normalize (.toAbsolutePath (.toPath (io/file f)))))
+
 (defn- aozora-work-zip? [root file]
   (let [rel (normalized-path
-             (.relativize (.toPath (.getCanonicalFile (io/file root)))
-                          (.toPath (.getCanonicalFile (io/file file)))))]
+             (.relativize (normalized-abs-path root)
+                          (normalized-abs-path file)))]
     (when (re-matches #"^cards/[0-9]{6}/files/[^/]+\.zip$" rel)
       rel)))
 
@@ -112,24 +120,130 @@
         stem (subs basename 0 (- (count basename) (count ".zip")))]
     (str work-id "_" person-id "_" stem)))
 
-(defn- parser-ir [work-hash]
-  {"schema_hash" (manifest/schema-hash "schemas/parser-ir.schema.json")
-   "source" {"work_content_hash" work-hash
-             "encoding" "Shift_JIS"
-             "normalization" "source"}
-   "derived_from" {"aat_adapter" "aozora2html"
-                   "aat_adapter_version" "soranoha-build-publication-smoke-v1"
-                   "aat_version" 1
-                   "mapping_id" "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
-                   "mapping_schema_hash" (files/example-hash "38")
-                   "mapping_version" "0.2.0"}
-   "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
-                            "splitter_id" "ab-plaintext-japanese-v1"
-                            "coordinate_system" "decoded_utf8"
-                            "coverage" "body-paragraphs"}
-   "nodes" []
-   "warnings" []
-   "errors" []})
+;; ── Real source→parser-IR derivation via the owned, Nix-built adapters ──
+;; The adapter/converter binaries are provided by the flake through env vars
+;; (mirroring the existing AB_AAT_TO_PARSER_IR_BIN wiring used by
+;; annotation-join-stats-run). Keeping them as an injected boundary keeps
+;; build-publication hermetic and lets parser_profile select the adapter.
+
+(defn- env-value [k]
+  (let [v (System/getenv k)]
+    (when-not (string/blank? v) v)))
+
+(defn- require-env [k what]
+  (or (env-value k)
+      (throw (ex-info (str what " unavailable; set " k)
+                      {:env_var k}))))
+
+(defn- resolve-adapter
+  "Resolve the source→AAT adapter for the configured parser_profile. Only
+  aozora2html is wired today; any other profile is an explicit, loud error so a
+  build never silently falls back to a stub."
+  [parser-profile]
+  (case parser-profile
+    ("aozora2html" "aozora2html-v1" "aozora2html-smoke-v1")
+    {:adapter-id "aozora2html"
+     :wrapper (require-env "AB_AOZORA2HTML_ADAPTER" "aozora2html adapter wrapper")
+     :extra-env {"AB_AOZORA2HTML_BIN"
+                 (require-env "AB_AOZORA2HTML_BIN" "aozora2html parser")
+                 "AB_AOZORA2HTML_MAPPER_BIN"
+                 (require-env "AB_AOZORA2HTML_MAPPER_BIN" "aozora2html rust mapper")}}
+    (throw (ex-info "unsupported parser_profile for real materialization"
+                    {:parser_profile parser-profile
+                     :supported ["aozora2html"]}))))
+
+(defn- zip-member-bytes [zip-file zip-member]
+  (with-open [zf (ZipFile. (io/file zip-file))]
+    (if-let [entry (.getEntry zf zip-member)]
+      (with-open [in (.getInputStream zf entry)]
+        (.readAllBytes in))
+      (throw (ex-info "zip member missing"
+                      {:zip (str zip-file) :member zip-member})))))
+
+(defn- run-process!
+  "Run a subprocess inheriting the current environment plus extra-env, feeding
+  stdin-bytes, returning {:exit :out-bytes :err}."
+  [{:keys [args stdin-bytes extra-env]}]
+  (let [pb (ProcessBuilder. ^java.util.List (mapv str args))]
+    (doseq [[k v] extra-env]
+      (.put (.environment pb) (str k) (str v)))
+    (let [proc (.start pb)]
+      (with-open [os (.getOutputStream proc)]
+        (when stdin-bytes (.write os ^bytes stdin-bytes)))
+      (let [out (.readAllBytes (.getInputStream proc))
+            err (slurp (.getErrorStream proc))
+            exit (.waitFor proc)]
+        {:exit exit :out-bytes out :err err}))))
+
+(defn- write-aat!
+  "Run the aozora2html adapter wrapper (parse + align) over the raw source
+  bytes, writing the AAT JSON to aat-file."
+  [aat-file {:keys [adapter source-bytes]}]
+  (let [{:keys [wrapper extra-env]} adapter
+        {:keys [exit out-bytes err]}
+        (run-process! {:args [wrapper "--mode" "aat"]
+                       :stdin-bytes source-bytes
+                       :extra-env extra-env})]
+    (when-not (zero? exit)
+      (throw (ex-info "aozora2html adapter failed" {:exit exit :stderr err})))
+    (io/make-parents aat-file)
+    (with-open [os (io/output-stream aat-file)]
+      (.write os ^bytes out-bytes))
+    aat-file))
+
+(defn- convert-aat->parser-ir!
+  "Run ab-aat-to-parser-ir convert, emitting parser-IR + divergence sidecar."
+  [{:keys [aat-file parser-ir-file divergence-file]}]
+  (let [convert-bin (require-env "AB_AAT_TO_PARSER_IR_BIN" "ab-aat-to-parser-ir")
+        mapping (require-env "AB_AAT_TO_PARSER_IR_MAPPING"
+                             "aat→parser-IR mapping document")
+        {:keys [exit err]}
+        (run-process! {:args [convert-bin "convert"
+                              "--aat" aat-file
+                              "--mapping" mapping
+                              "--parser-ir-out" parser-ir-file
+                              "--divergence-out" divergence-file]})]
+    (when-not (zero? exit)
+      (throw (ex-info "ab-aat-to-parser-ir convert failed"
+                      {:exit exit :stderr err})))
+    parser-ir-file))
+
+(defn- real-derive-parser-ir!
+  "Production source→parser-IR: resolve the adapter for the profile, run the
+  aozora2html adapter to AAT, then ab-aat-to-parser-ir convert. Adapter
+  resolution is lazy here so the injectable boundary below can be stubbed
+  without the adapter binaries present."
+  [{:keys [parser-profile source-bytes aat-file parser-ir-file
+           divergence-file]}]
+  (let [adapter (resolve-adapter parser-profile)]
+    (write-aat! aat-file {:adapter adapter :source-bytes source-bytes})
+    (convert-aat->parser-ir! {:aat-file (str aat-file)
+                              :parser-ir-file (str parser-ir-file)
+                              :divergence-file (str divergence-file)})))
+
+(def ^{:dynamic true
+       :doc "Injectable source→parser-IR boundary. Bound to a stub in tests so
+             the workflow can be exercised without the adapter binaries."}
+  *derive-parser-ir!* real-derive-parser-ir!)
+
+(defn- corpus-snapshot-hash
+  "Content-addressed identity of this build's source snapshot: the pinned
+  catalog + git commit + snapshot date. Shared by every work in the build so
+  publication manifests share one corpus_snapshot_hash."
+  [{:keys [snapshot-date catalog-csv-hash aozora-git-commit]}]
+  (analysis-identity/hash-json-value
+   {"kind" "soranoha-build-publication-source-snapshot-v1"
+    "snapshot_date" snapshot-date
+    "catalog_csv_hash" catalog-csv-hash
+    "aozora_git_commit" aozora-git-commit}))
+
+(defn- work-source-manifest [work-hash corpus-hash]
+  {"manifest_schema_id" "https://w3id.org/abc/schemas/manifest.schema.json"
+   "artifact_kind" "source"
+   "manifest_identity_object" {"corpus_snapshot_hash" corpus-hash
+                               "work_content_hash" work-hash}
+   "notes" (str "Source manifest emitted by soranoha build-publication real "
+                "materialization.")})
 
 (defn- official-source [row relpath zip-member source-file source-hash]
   {"work_id" (row-work-id row)
@@ -141,33 +255,43 @@
    "source_bytes" (hash/byte-length source-file)})
 
 (defn- write-materialized-work!
-  [{:keys [rows catalog-provenance materialized-root selected]}]
+  [{:keys [rows catalog-provenance materialized-root selected parser-profile
+           corpus-hash]}]
   (let [{:keys [row file relpath]} selected
         work-id (row-work-id row)
         person-id (row-person-id row)
         work-hash (hash/format-sha256 (files/sha256-file file))
         zip-member (first-text-member file)
+        source-bytes (zip-member-bytes file zip-member)
         work-dir (io/file materialized-root "works"
                           (slug work-id person-id relpath))
+        aat-file (io/file work-dir "aat.json")
+        parser-ir-file (io/file work-dir "parser-ir.json")
+        divergence-file (io/file work-dir "divergence.json")
+        source-manifest-file (io/file work-dir "source.manifest.json")
+        persons-dir (io/file materialized-root "persons")
         metadata-file (io/file work-dir "metadata-record.json")]
     (.mkdirs work-dir)
-    (abc-json/write-deterministic-json-file!
-     (io/file work-dir "aat.json")
-     {"version" 1
-      "work_id" work-id
-      "blocks" []})
-    (abc-json/write-deterministic-json-file!
-     (io/file work-dir "parser-ir.json")
-     (parser-ir work-hash))
+    ;; Real AAT + parser-IR from the owned adapters (replaces the former stub),
+    ;; through the injectable boundary so tests can stub it.
+    (*derive-parser-ir!* {:parser-profile parser-profile
+                          :source-bytes source-bytes
+                          :aat-file aat-file
+                          :parser-ir-file parser-ir-file
+                          :divergence-file divergence-file})
+    ;; Source truth + the source manifest publication materialization requires.
     (abc-json/write-deterministic-json-file!
      (io/file work-dir "official-source.json")
      (official-source row relpath zip-member file work-hash))
+    (abc-json/write-deterministic-json-file!
+     source-manifest-file
+     (work-source-manifest work-hash corpus-hash))
     (spit (io/file work-dir "warnings.jsonl") "")
     (aozora-ingest/run-from-rows!
      {:rows rows
       :work-id work-id
       :output (str metadata-file)
-      :persons-output-dir (str (io/file materialized-root "persons"))
+      :persons-output-dir (str persons-dir)
       :overwrite true
       :source-csv-provenance catalog-provenance})
     {:work_id work-id
@@ -175,7 +299,12 @@
      :slug (.getName work-dir)
      :text_zip_relpath relpath
      :source_hash work-hash
-     :zip_member zip-member}))
+     :zip_member zip-member
+     :aat_path (str aat-file)
+     :parser_ir_path (str parser-ir-file)
+     :source_manifest_path (str source-manifest-file)
+     :metadata_record_path (str metadata-file)
+     :persons_dir (str persons-dir)}))
 
 (defn- selection-report [selected rejected]
   {"selected_source_count" (count selected)
@@ -191,11 +320,15 @@
    "rejected_sources" (mapv identity rejected)})
 
 (defn- materialize-selected-sources!
-  [{:keys [aozora-root output-root]}]
+  [{:keys [aozora-root output-root parser-profile snapshot-date
+           aozora-git-commit continue-on-failure]}]
   (let [{:keys [csv-text catalog-csv-hash]} (read-catalog-zip aozora-root)
         rows (aozora-csv/read-rows-from-string csv-text)
         rows-by-basename (catalog-index rows)
         materialized-root (io/file output-root "materialized-root")
+        corpus-hash (corpus-snapshot-hash {:snapshot-date snapshot-date
+                                           :catalog-csv-hash catalog-csv-hash
+                                           :aozora-git-commit aozora-git-commit})
         catalog-provenance {"source_url" nil
                             "retrieved_at" nil
                             "original_file_hash" catalog-csv-hash}
@@ -210,12 +343,31 @@
                                               :row row}))))
                                  (sort-by :relpath)
                                  vec)
-        selected (mapv #(write-materialized-work!
-                         {:rows rows
-                          :catalog-provenance catalog-provenance
-                          :materialized-root materialized-root
-                          :selected %})
-                       selected-candidates)
+        derive-one (fn [candidate]
+                     (write-materialized-work!
+                      {:rows rows
+                       :catalog-provenance catalog-provenance
+                       :materialized-root materialized-root
+                       :parser-profile parser-profile
+                       :corpus-hash corpus-hash
+                       :selected candidate}))
+        ;; A single corrupt/unreadable work ZIP (e.g. a zip Java's reader
+        ;; rejects with "invalid CEN header") must not abort a whole-corpus
+        ;; derive. With continue_on_failure, record and skip it; otherwise fail
+        ;; loudly as before.
+        results (mapv (fn [candidate]
+                        (if continue-on-failure
+                          (try
+                            {:ok (derive-one candidate)}
+                            (catch Throwable t
+                              {:failed {"work_id" (row-work-id (:row candidate))
+                                        "person_id" (row-person-id (:row candidate))
+                                        "text_zip_relpath" (:relpath candidate)
+                                        "error" (.getMessage t)}}))
+                          {:ok (derive-one candidate)}))
+                      selected-candidates)
+        selected (vec (keep :ok results))
+        derive-failures (vec (keep :failed results))
         selected-relpaths (set (map :relpath selected-candidates))
         rejected (->> candidates
                       (remove #(contains? selected-relpaths (:relpath %)))
@@ -223,9 +375,8 @@
                               {"path" (or relpath
                                           (normalized-path
                                            (.relativize
-                                            (.toPath (.getCanonicalFile
-                                                      (io/file aozora-root)))
-                                            (.toPath (.getCanonicalFile file)))))
+                                            (normalized-abs-path aozora-root)
+                                            (normalized-abs-path file))))
                                "reason" (cond
                                           (nil? relpath)
                                           "not-under-cards-files"
@@ -237,13 +388,17 @@
                                           :else
                                           "not-selected")})))]
     (when-not (seq selected)
-      (throw (ex-info "no catalog-backed work ZIPs were selected"
-                      {:aozora_root (str aozora-root)})))
-    (let [report (selection-report selected rejected)]
+      (throw (ex-info "no catalog-backed work ZIPs were successfully derived"
+                      {:aozora_root (str aozora-root)
+                       :derive_failed_count (count derive-failures)})))
+    (let [report (-> (selection-report selected rejected)
+                     (assoc "derive_failed_count" (count derive-failures)
+                            "derive_failures" derive-failures))]
       (abc-json/write-deterministic-json-file!
        (io/file output-root "source-selection-report.json")
        report)
       {:materialized-root materialized-root
+       :corpus-snapshot-hash corpus-hash
        :report report
        :selected selected})))
 
@@ -298,6 +453,21 @@
    "selected_source_count" (get-in materialization-result
                                    [:report "selected_source_count"])})
 
+(defn- resolve-invocation-path
+  "Resolve a relative path arg against the caller's working directory. The app
+  launcher cd's to the pinned source root before Clojure starts, so relative
+  paths would otherwise resolve there (and fail); ABC_INVOCATION_PWD carries the
+  original cwd. Absolute paths and the no-env case (tests, direct clojure -M)
+  pass through unchanged."
+  [path]
+  (if (string/blank? path)
+    path
+    (let [file (io/file path)
+          base (System/getenv "ABC_INVOCATION_PWD")]
+      (if (or (.isAbsolute file) (string/blank? base))
+        path
+        (str (io/file base path))))))
+
 (defn- parse-args [args]
   (let [{:keys [options errors]} (cli/parse-opts args cli-options)]
     (when (seq errors)
@@ -306,7 +476,9 @@
       (when (string/blank? (get options required))
         (throw (ex-info (str (name required) " is required")
                         {:missing required}))))
-    options))
+    (reduce (fn [opts k] (update opts k resolve-invocation-path))
+            options
+            [:aozora-root :config :output-root])))
 
 (defn- prepare-output-root! [output-root replace?]
   (let [output-root-file (io/file output-root)]
@@ -326,14 +498,111 @@
                             [StandardCopyOption/ATOMIC_MOVE]))
     target))
 
-(defn- build-publication-steps [publication-rehearsal-fn]
+(defn- generated-at-for [snapshot-date]
+  (str snapshot-date "T00:00:00Z"))
+
+(defn- publication-up-to-date?
+  "Content-addressed skip: a work's publication is reusable when a prior run
+  materialized it from the identical source (work_content_hash). Prevents
+  recomputation and makes drift observable as a hash mismatch."
+  [pub-dir work-hash]
+  (let [marker (io/file pub-dir "source_work_content_hash.txt")]
+    (and (.isFile (io/file pub-dir "tei.manifest.json"))
+         (.isFile marker)
+         (= work-hash (string/trim (slurp marker))))))
+
+(defn- copy-dir-files!
+  "Copy the flat set of publication artifacts from one dir to another."
+  [from to]
+  (.mkdirs (io/file to))
+  (doseq [f (.listFiles (io/file from))
+          :when (.isFile f)]
+    (files/copy-file! (str f) (io/file to (.getName f))))
+  to)
+
+(defn- materialize-one-publication!
+  [{:keys [output-root prior-output-root generated-at continue-on-failure work]}]
+  (let [{:keys [slug source_hash parser_ir_path source_manifest_path
+                metadata_record_path persons_dir]} work
+        pub-dir (io/file output-root "publications" slug)
+        prior-pub-dir (when prior-output-root
+                        (io/file prior-output-root "publications" slug))]
+    (cond
+      ;; Already materialized in this output-root from identical source.
+      (publication-up-to-date? pub-dir source_hash)
+      {:slug slug :status "skipped"
+       :tei_manifest (str (io/file pub-dir "tei.manifest.json"))}
+
+      ;; A prior promoted build holds a byte-identical-source publication —
+      ;; copy it forward instead of recomputing (content-addressed cache hit).
+      (and prior-pub-dir (publication-up-to-date? prior-pub-dir source_hash))
+      (do (copy-dir-files! prior-pub-dir pub-dir)
+          {:slug slug :status "reused"
+           :tei_manifest (str (io/file pub-dir "tei.manifest.json"))})
+
+      :else
+      (try
+        (let [result (materialize-publication/materialize-publication!
+                      {:parser-ir-path parser_ir_path
+                       :source-manifest-path source_manifest_path
+                       :metadata-record-path metadata_record_path
+                       :persons-dir persons_dir
+                       :output-dir (str pub-dir)
+                       :generated-at generated-at})]
+          (spit (io/file pub-dir "source_work_content_hash.txt") source_hash)
+          {:slug slug :status "passed"
+           :tei (str (:tei result))
+           :tei_manifest (str (:tei-manifest result))
+           :tei_validation_result (str (:tei-validation-result result))})
+        (catch Throwable t
+          (if continue-on-failure
+            {:slug slug :status "failed" :error (.getMessage t)}
+            (throw t)))))))
+
+(defn- materialize-publications!
+  [{:keys [output-root prior-output-root materialization-result config-value
+           snapshot-date]}]
+  (let [continue-on-failure (boolean (get config-value "continue_on_failure"))
+        generated-at (generated-at-for snapshot-date)
+        results (mapv (fn [work]
+                        (materialize-one-publication!
+                         {:output-root output-root
+                          :prior-output-root prior-output-root
+                          :generated-at generated-at
+                          :continue-on-failure continue-on-failure
+                          :work work}))
+                      (:selected materialization-result))]
+    {:results results
+     :report {"schema_version" "soranoha-build-publication-publications-v1"
+              "corpus_snapshot_hash" (:corpus-snapshot-hash
+                                      materialization-result)
+              "publication_count" (count results)
+              "passed" (count (filter #(= "passed" (:status %)) results))
+              "reused" (count (filter #(= "reused" (:status %)) results))
+              "skipped" (count (filter #(= "skipped" (:status %)) results))
+              "failed" (count (filter #(= "failed" (:status %)) results))
+              "publications" (mapv (fn [r]
+                                     {"slug" (:slug r)
+                                      "status" (:status r)
+                                      "tei" (:tei r)
+                                      "tei_manifest" (:tei_manifest r)
+                                      "error" (:error r)})
+                                   results)}}))
+
+(defn- build-publication-steps []
   [{:id :materialize-source-selection
-    :requires [:aozora-root :output-root]
+    :requires [:aozora-root :output-root :config-value :snapshot-date]
     :produces [:materialization-result]
-    :run (fn [{:keys [aozora-root output-root]}]
+    :run (fn [{:keys [aozora-root output-root config-value snapshot-date]}]
            (let [result (materialize-selected-sources!
                          {:aozora-root aozora-root
-                          :output-root output-root})
+                          :output-root output-root
+                          :parser-profile (get config-value "parser_profile")
+                          :snapshot-date snapshot-date
+                          :aozora-git-commit (get (git-provenance aozora-root)
+                                                  "aozora_git_commit")
+                          :continue-on-failure
+                          (boolean (get config-value "continue_on_failure"))})
                  selection-report-file (io/file output-root
                                                 "source-selection-report.json")]
              {:state-updates {:materialization-result result}
@@ -357,38 +626,41 @@
                         {:role "build-plan"
                          :path (str plan-file)
                          :content_hash (manifest/file-hash plan-file)}]}))}
-   {:id :publication-rehearsal
+   {:id :materialize-publications
     :requires [:build-plan :config-value :materialization-result :output-root
-               :snapshot-date]
-    :produces [:rehearsal-result]
+               :prior-output-root :snapshot-date]
+    :produces [:publication-result]
     :run (fn [{:keys [config-value materialization-result output-root
-                      snapshot-date]}]
-           (let [rehearsal-root (io/file output-root "rehearsal")
-                 exit-code (publication-rehearsal-fn
-                            (str (:materialized-root materialization-result))
-                            (str rehearsal-root)
-                            (get config-value "request_set_label")
-                            (get config-value "snapshot_scope")
-                            snapshot-date)]
-             (when-not (zero? exit-code)
-               (throw (ex-info "publication rehearsal failed"
-                               {:exit_code exit-code
-                                :rehearsal_root (str rehearsal-root)})))
-             {:state-updates {:rehearsal-result {:exit-code exit-code
-                                                 :rehearsal-root rehearsal-root}}
-              :outputs [{:role "rehearsal-workflow-run"
-                         :path (str (io/file rehearsal-root
-                                             "workflow-run.json"))}]}))}])
+                      prior-output-root snapshot-date]}]
+           (let [{:keys [results report]}
+                 (materialize-publications!
+                  {:output-root output-root
+                   :prior-output-root prior-output-root
+                   :materialization-result materialization-result
+                   :config-value config-value
+                   :snapshot-date snapshot-date})
+                 report-file (io/file output-root "publications"
+                                      "publications-report.json")]
+             (abc-json/write-deterministic-json-file! report-file report)
+             {:status (if (some #(= "failed" (:status %)) results)
+                        :partial
+                        :passed)
+              :state-updates {:publication-result report}
+              :outputs [{:role "publications-report"
+                         :path (str report-file)
+                         :content_hash (manifest/file-hash report-file)}]}))}])
 
 (defn build-publication!
-  [publication-rehearsal-fn args]
+  [args]
   (let [{:keys [aozora-root config snapshot-date output-root replace]
          :as opts} (parse-args args)
         config-value (read-config config)]
     (when (string/blank? snapshot-date)
       (throw (ex-info "snapshot-date is required for build-publication"
                       {:config config})))
-    (let [tmp-root (prepare-output-root! output-root replace)]
+    (let [prior-output-root (let [f (io/file output-root)]
+                              (when (.isDirectory f) (str f)))
+          tmp-root (prepare-output-root! output-root replace)]
       (.mkdirs tmp-root)
       (let [opts (assoc opts :output-root tmp-root)
             _ (workflow/run-workflow!
@@ -399,12 +671,13 @@
                                 :config-value config-value
                                 :snapshot-date snapshot-date
                                 :output-root tmp-root
+                                :prior-output-root prior-output-root
                                 :opts opts}
-                :steps (build-publication-steps publication-rehearsal-fn)})
+                :steps (build-publication-steps)})
             final-root (promote-output-root! tmp-root output-root replace)]
         (println "build_publication_root:" (str final-root))
         (println "materialized_root:" (str (io/file final-root
                                                     "materialized-root")))
-        (println "rehearsal_root:" (str (io/file final-root
-                                                 "rehearsal")))
+        (println "publications_root:" (str (io/file final-root
+                                                    "publications")))
         0))))

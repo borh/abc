@@ -9,6 +9,9 @@
 .claude/
 scratch/
 out/
+# Derived build/publication artifacts (e.g. build-publication --output-root
+# target/soranoha/...). Mirrors abc/.gitignore's /target for the repo root.
+/target/
 result
 result-*
 

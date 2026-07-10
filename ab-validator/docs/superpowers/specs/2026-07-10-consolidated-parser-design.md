@@ -34,7 +34,7 @@ The parser consumes the next-work ledger; it does not replace it.
 4. **Upstream relationship: hard detach at `1a4f864`.** No future merges from
    `P4suta/aozora`; the fork is fully ours from the measured pin. This
    replaces ADR 0030's upstream-first engagement model and requires a short
-   amending ADR (ADR 0031) — folded into the implementation plan as its first
+   amending ADR (ADR 0032) — folded into the implementation plan as its first
    task, not a design prerequisite.
 5. **Placement and naming: `ab-validator/crates/`, `ab-*` names.** Lifted
    crates are renamed (`ab-aozora-encoding`, `ab-aozora-syntax`,
@@ -168,7 +168,7 @@ Each phase lands independently on `main` with its gate evidence committed.
 
 ### Phase 0 — governance (first task of the implementation plan)
 
-- ADR 0031 (abc ADR series): amends ADR 0030 — hard detach at `1a4f864`
+- ADR 0032 (abc ADR series): amends ADR 0030 — hard detach at `1a4f864`
   replaces upstream-first; fork provenance, attribution, and naming policy
   recorded.
 - Fork-provenance handoff note in `ab-validator/docs/handoffs/`.
@@ -341,4 +341,4 @@ Incorporated from the post-draft design review:
    registry activation is the atomic cutover.
 6. Replaced the any-median-regression perf rule with a repetition/threshold
    protocol; new timeouts stay unconditionally blocking.
-7. ADR 0031 folded into the implementation plan as its first task.
+7. ADR 0032 folded into the implementation plan as its first task.

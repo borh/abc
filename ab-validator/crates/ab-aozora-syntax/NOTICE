@@ -1,0 +1,54 @@
+aozora — 青空文庫記法 (Aozora Bunko notation) parser
+Copyright (c) the aozora contributors
+
+This NOTICE file is a convenience index of third-party material
+incorporated into the aozora source repository. It does not replace the
+individual license files and source-level attributions; those remain the
+authoritative record. Unless specified otherwise in one of the sections
+below, everything in this repository is original aozora code and is
+dual-licensed under Apache-2.0 OR MIT (see LICENSE-APACHE and LICENSE-MIT).
+
+
+================================================================================
+1. Aozora Bunko annotation specification snapshots (fair use / quotation)
+================================================================================
+
+HTML snapshots of the Aozora Bunko (青空文庫) annotation specification
+are reproduced under docs/specs/aozora/ verbatim for offline technical
+reference during aozora development. The material is (c) Aozora Bunko
+volunteers and remains their property; aozora includes the snapshots
+under a limited fair-use / quotation exception grounded in the fact that
+the text is short, stable, and central to an interoperability effort.
+
+See docs/specs/aozora/README.md for the full list of upstream URLs, the
+snapshot date, and the rights-holder removal policy: if a rights-holder
+requests removal, the files will be dropped and offline access will fall
+back to fetching against the live site.
+
+
+================================================================================
+2. Aozora Bunko sample works (public domain)
+================================================================================
+
+Sample works under spec/aozora/fixtures/ are sourced from Aozora Bunko
+(https://www.aozora.gr.jp/). Aozora Bunko distributes works whose
+copyrights have expired under Japanese law, making them public domain in
+Japan. Each fixture directory carries its own README naming the author,
+translator (if any), and the relevant public-domain rationale.
+
+The flagship fixture spec/aozora/fixtures/56656/ is Fyodor M. Dostoyevsky's
+『罪と罰』 (Crime and Punishment) in the Japanese translation by 米川正夫
+(Masao Yonekawa). Aozora Bunko card number 56656
+(https://www.aozora.gr.jp/cards/001485/card56656.html). Public domain: the
+author died in 1881 and the translator in 1966; the Japanese translation
+copyright has lapsed under Japanese law.
+
+
+================================================================================
+3. aozora (Apache-2.0 OR MIT)
+================================================================================
+
+All original aozora source code is dual-licensed under Apache-2.0 OR MIT
+at the user's option. See LICENSE-APACHE and LICENSE-MIT for the full
+license texts. By contributing to aozora you agree that your contribution
+is dual-licensed under the same terms (see CONTRIBUTING.md).

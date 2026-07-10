@@ -1,0 +1,517 @@
+# JADH WIP Presentation Design
+
+Date: 2026-07-10
+Status: Revised for TEI-EAJ and evidence expansion; pending review
+
+## Purpose
+
+Convert the argument of
+`../archive/abc/paper/jadh-2026-updated-abstract.md` into an English,
+Pandoc-flavored academic slide deck that reflects the current Soranoha system
+rather than freezing the February abstract's earlier work-in-progress state.
+The presentation is for digital-humanities and linguistics academics who are
+fluent or native readers of Japanese.
+
+The deck presents Soranoha as evidence-driven, versioned corpus infrastructure.
+Its main research spine connects source-authority markup mapping to measured
+parser comparison and plural publication. TEI-EAJ provides essential parallel
+work and comparison evidence; tokenizer-dependent views show why the same
+versioning discipline must continue into linguistic analysis.
+
+The committed deck path is:
+
+`docs/presentations/jadh-2026-wip-slides.md`
+
+This root-level documentation location is intentional: the deck spans both ABC
+and `ab-validator`, while the presentation-diagram design remains under `abc/`
+because ABC owns that publication projection. Every resource path written into
+the deck is relative to the deck file, not to the repository root or shell
+working directory. Paths mentioned by this design document itself are
+repository-root-relative unless a passage explicitly identifies them as paths
+written into the deck.
+
+## Medium and Scope
+
+- English slide text with untranslated Japanese examples.
+- Standard Pandoc slide Markdown.
+- YAML metadata includes `type: slides` and `aspect-ratio: 16-9`.
+- About 27 rendered main slides, with permission to split a dense claim rather
+  than preserve an exact count. The appendix may grow to ten slides.
+- Dedicated time for a live demonstration.
+- Level-one headings start slides; level-two headings structure content within a
+  slide.
+- Most slides communicate one claim with no more than approximately five bullets.
+
+The planning budget is 30 minutes: approximately 22 minutes of prepared talk,
+5 minutes of bounded live demonstration, and 3 minutes of transition/buffer.
+Appendix slides are not part of the timed sequence.
+
+## Scholarly Argument
+
+The talk follows an evidence-driven narrative:
+
+1. Aozora Bunko is widely reused research infrastructure, but its readable source
+   is not merely plain text: it encodes a rich publication syntax.
+2. Sustainable transformation requires an explicit authority model. Official
+   documentation and corpus observation define the source evidence; parser output
+   is supporting evidence rather than source authority.
+3. That evidence makes parser behavior measurable. Conformance breadth,
+   corpus-weighted coverage, and fidelity versus robustness answer different
+   questions and must not be collapsed into one score.
+4. AAT records descriptive parser evidence, while Parser-IR records policy-bearing
+   publication decisions. Their separation makes preservation, normalization,
+   ambiguity, and loss inspectable.
+5. Versioned manifests connect those decisions to plural scholarly outputs,
+   including TEI, visible plaintext, sidecars, and analytical data.
+6. Tokenizer and dictionary selection is likewise a scholarly choice, so the
+   system publishes parallel analytical views rather than one authoritative
+   tokenized corpus.
+7. The conclusion reports completed measured infrastructure separately from
+   limitations and planned work.
+
+The phrase **versioned, inspectable, comparable, and reproducible** closes the
+talk and unifies the three evidence pillars.
+
+## Current-System Reconciliation
+
+The slide deck updates claims from the archived abstract using checked-in July
+2026 evidence. In particular, it must:
+
+- preserve the source-authority inventory figures of approximately 17,894 works,
+  4.3 million de-duplicated markup occurrences, 50 inventory rows, and 10
+  presentation families where the underlying evidence still supports them;
+- retain the five measured parser lanes and report leadership per measurement,
+  without inventing an overall score: the `aozora-pipeline` candidate has the
+  highest measured frequency-weighted coverage (0.969), passes 22/25 `must`
+  conformance vectors, and has 1.000 robustness; `aozora2html` has the highest
+  isolated fidelity measurement (0.974), and `aozora-rs` is the speed leader;
+- distinguish curated conformance breadth from real-corpus frequency-weighted
+  coverage;
+- report the current weighted-coverage ordering and explain that ruby dominates
+  the mass-weighted result;
+- distinguish fidelity on completed works from mass-weighted robustness:
+  `aozora2html` has the highest isolated per-work fidelity (0.974), but fails
+  on 302 ruby-heavy works and misses 24.7% of ruby mass; its 0.983 work-count
+  completion rate hides the disqualifying concentration of missing evidence;
+- describe AAT as the descriptive adapter waist and Parser-IR as the decisional
+  publication waist;
+- present current publication-bundle, TEI-admission, and transformation-record
+  capabilities as measured infrastructure rather than future intent; and
+- retain Levels 4 and 5 editorial enrichment and broader tokenizer suitability
+  evaluation as future work.
+
+The deck may state that the checked-in comparison study recommends
+`aozora-pipeline` as the base for future parser work because it is the only
+candidate measured as top-tier on both fidelity and robustness while also
+leading frequency-weighted coverage. It must present that as a multi-criterion
+engineering recommendation, not a collapsed scholarly score, and it must not
+imply that Soranoha's consolidated parser is complete.
+
+### Parser lane crosswalk
+
+The slides use stable audience-facing names and introduce current report names
+once:
+
+| Slide label | Current report/native label | Upstream or role |
+| --- | --- | --- |
+| `aozora-pipeline` | `aozora`, `ab-aozora`, or `aozora-pipeline` according to measurement path | `P4suta/aozora`; reference candidate and recommended future base, not completed Soranoha consolidation |
+| `aozora2` | `aozora-core` for native parser measurements | `takahashim/aozora2` |
+| `aozora-rs` | `aozora-rs-core` for native token-stream measurements | `kinoko0518/aozora-rs` |
+| `aozora2html` | `aozora2html` | Ruby parser lane |
+| `AozoraEpub3` | `aozora-epub3` | Java/EPUB parser lane |
+
+Tables must not mix labels from different columns without explaining the
+measurement path.
+
+Exact values used on slides must be traced to current checked-in reports during
+implementation. Conflicting snapshots or denominators must be resolved in favor
+of the latest explicitly reproducible report, and the slide source should cite
+that evidence in a speaker comment.
+
+## Slide Structure
+
+The main sequence uses one early positioning slide for TEI-EAJ, then returns to
+the deeper comparison when actual XML is on screen:
+
+1. Metadata-driven title slide, with no manually duplicated author, date,
+   affiliation, or repository line in the Markdown body.
+2. Aozora Bunko as shared research infrastructure.
+3. The same source becomes many incompatible derived corpora.
+4. TEI-EAJ `aozora_tei` as essential parallel work, including its Levels
+   model, workflow, and linked ecosystem.
+5. Research questions and contribution.
+6. Define the load-bearing terms: source authority, conformance, coverage,
+   fidelity, robustness, AAT, Parser-IR, and manifest.
+7. Aozora source is readable—but not plain.
+8. What counts as evidence?
+9. Building the source-authority notation inventory and showing its results.
+10. Figure: Soranoha Reproducibility Architecture.
+11. Why and how five parsers are compared.
+12. Conformance results—and why naive rankings mislead.
+13. Corpus-weighted coverage.
+14. Fidelity versus robustness, including ア、秋 and the parser conclusion.
+15. Figure: Soranoha Publication Pipeline.
+16. Two representation boundaries: AAT and Parser-IR.
+17. Worked mapping: 傍点 plus the transformation taxonomy.
+18. Actual TEI XML: curated TEI-EAJ and generated Soranoha excerpts.
+19. Annotated XML comparison: paragraphs, ruby, notes, headers, enrichment.
+20. TEI, visible plaintext, and preservation files.
+21. Tokenization is not a neutral preprocessing step.
+22. 求むる and 竹馬の友 across tokenizer configurations.
+23. Old orthography detection results and a concrete heuristic miss.
+24. Source-preserving normalization, TEI Levels, and concrete transformations.
+25. Live demo: evidence chain.
+26. Current limitations and next work.
+27. Conclusion.
+
+The main sequence also includes two XML comparison slides: one side-by-side
+excerpt and one annotated structural comparison covering paragraph boundaries,
+ruby, notes, headers, and enrichment. ア、秋 becomes the principal concrete
+paragraph-structure example.
+
+The appendix may contain up to ten slides. It includes the moved corpus-scale
+tokenizer statistics and a detailed orthography-evaluation appendix in addition
+to the existing evidence. It contains the fuller markup inventory, parser
+crosswalk and measurement details, additional
+divergences, transformation taxonomy, extra tokenizer regions, fuller TEI XML
+excerpts, evidence reproduction commands, and linked resources.
+Dense tables belong in the appendix unless the main argument depends on reading
+the individual rows.
+
+## Old Orthography Detection and Normalization
+
+Two main slides present the complete source-preserving chain.
+
+### Detection results
+
+The first slide compares both detectors on one shared 300-sentence evaluation
+set. Candidate sampling was LLM-assisted and stratified across the corpus; the
+author hand-assigned the final three-way classification of `accept` 197,
+`normalize` 22, and `reject` 81. Sampling and label provenance must be described
+separately. The slide reports:
+
+- heuristic detector — F1 `0.9171`, recall `0.9087`, precision `0.9256`;
+- ML character-only logistic regression — deterministic 5-fold mean F1
+  `0.9586`, recall `0.9468`, precision `0.9718`.
+
+These are the human three-way-label results in
+`ab-validator/reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md`.
+The positive class combines `accept` and `normalize`, because both benefit from
+normalization for tokenization even though only `accept` records historical
+orthography.
+
+The appendix distinguishes the earlier evaluation sets rather than presenting
+them as a performance progression:
+
+- the 50-sentence human-labeled probe gave the heuristic F1 `0.750`, recall
+  `0.636`, and precision `0.913`;
+- the earlier 300-sentence binary set was labeled by one LLM annotator and gave
+  ML 5-fold mean F1 `0.9629`, recall `0.9590`, and precision `0.9673`;
+- the LLM-labeled result is not human ground truth and does not establish
+  human-label generalization.
+
+The main slide includes a concrete heuristic false negative:
+
+```text
+スベテハ豫期ノゴトクニ行ッタ。
+```
+
+It explains that kanji-heavy pre-war prose can fall below the strict katakana
+ratio threshold even when katakana is serving grammatical functions.
+
+### Source-preserving normalization
+
+The second slide shows:
+
+```text
+ゐる → いる
+なほ → なお
+いふ → いう
+やう → よう
+```
+
+It reports `94.8%` modern-vocabulary agreement over `10,444` historical
+tokens from `25` parallel old/new orthography editions. This is a third,
+distinct evaluation set and must not be compared directly to detector F1.
+
+The end-to-end chain is:
+
+```text
+original source preserved
+  -> sentence-level orthography annotation
+  -> TEI evidence on the source transcription
+  -> optional normalized tokenizer input
+  -> spans remapped to source coordinates
+  -> normalization policy hash recorded in artifact identity
+```
+
+The TEI Levels connection is stated as:
+
+- Level 2 preserves the original orthography;
+- Level 3 can carry sentence-level
+  `<s type="orthographic-katakana">` evidence; and
+- Levels 4–5 may add linguistic annotation and normalized analytical views,
+  without rewriting the transcription.
+
+The detailed appendix includes:
+
+- all detector metrics and fold scores;
+- the distinct labeling/evaluation-set caveats;
+- the six-work workload probe: `11,059` genuinely historical tokens among
+  `348,814` all-kana tokens;
+- particle protection: `39,618` standalone は／を／へ cases must remain
+  unchanged;
+- transformation-class counts and examples; and
+- exact repository paths and commands for inspecting each result.
+
+## Relationship to TEI-EAJ
+
+Soranoha and [TEI-EAJ aozora_tei](https://github.com/TEI-EAJ/aozora_tei)
+are parallel, complementary publication programs. The deck must not describe
+Soranoha as replacing, succeeding, or simply extending TEI-EAJ.
+
+TEI-EAJ contributes curated human encoding, practical guidance, a Levels 2–5
+model, work-selection and progress infrastructure, and visualization
+experiments. Soranoha concentrates on corpus-scale source measurement, parser
+comparison, explicit transformation records, versioned identity, and
+reproducible materialization. Versioned TEI-EAJ works are an important
+comparison source for evaluating generated Soranoha structures.
+
+The TEI-EAJ project and its
+[wiki](https://github.com/TEI-EAJ/aozora_tei/wiki) appear front and center.
+Relevant progress, search, automatic-conversion, guideline, and visualization
+resources are linked using labeled Markdown links. The positioning and XML
+slides also cite `[@teieaj2023; @okada2023]`.
+
+## TEI XML Comparisons
+
+The deck shows actual XML from both programs. Every excerpt identifies its
+status as a curated TEI-EAJ file, generated Soranoha TEI, or deliberately
+reduced test fixture.
+
+The main comparison uses versioned real files when available. Reduced Melos
+alignment fixtures may explain a test but must not be presented as full
+editions. TEI-EAJ excerpts record upstream repository path and commit/revision.
+Soranoha excerpts record source work, Parser-IR path, manifest path, renderer
+command, and validation result.
+
+The TEI-EAJ comparison source is the pinned `abc/flake.nix` input
+`TEI-EAJ/aozora_tei` at commit
+`77a675fc2771936f9544505d922d4cd45075338c`. Its path is obtained with:
+
+```sh
+nix run .#abc-tei-eaj-aozora-tei-source
+```
+
+The main XML comparison is a hard readiness gate. It cannot pass final deck
+validation until the selected TEI-EAJ file and a work-matched Soranoha TEI have
+versioned access paths, and the Soranoha side has a source identity, Parser-IR,
+manifest, materialization command, and passing validation result. Until then,
+slides 19–20 remain explicitly draft-gated; fixture XML may not silently replace
+the missing real comparison.
+
+An unready comparison is not shown as an audience-facing “readiness gate” slide.
+Its status remains in HTML comments and the limitations slide. Until the real
+Soranoha counterpart lands, the main deck shows only the genuine pinned TEI-EAJ
+excerpt.
+
+Short XML excerpts foreground specific differences rather than reproduce whole
+documents. Suitable targets are paragraph boundaries, ruby, notes, headers,
+and editorial enrichment.
+
+## Presentation Figures
+
+The deck reserves two dedicated slides for figures being implemented from
+`abc/docs/superpowers/plans/2026-07-10-academic-presentation-diagrams.md`:
+
+1. **Soranoha Reproducibility Architecture** follows the source-evidence model.
+   It explains how sources, parser evidence, contracts, profiles, recipes, and
+   manifest identity bind reproducible scholarly views.
+2. **Soranoha Publication Pipeline** follows the parser-comparison findings and
+   precedes the AAT/Parser-IR worked example. Its stable argument is source →
+   validated parser process → Parser-IR → manifest → scholarly outputs; the AAT
+   path is explicitly current producer detail.
+
+From the deck file, the slide Markdown references the expected generated SVG
+files using these paths:
+
+- `../../abc/docs/figures/soranoha-reproducibility-architecture.svg`
+- `../../abc/docs/figures/soranoha-publication-pipeline.svg`
+
+If the SVG files are unfinished at drafting time, the Markdown retains the final
+paths and marks their status in non-rendered HTML comments. It does not create
+substitute figures or claim that in-progress work is complete.
+
+The figure-producing branch is a hard sequencing dependency for final deck
+validation. Slide drafting and non-image validation may proceed before it lands,
+but the deck cannot be declared complete or rendered for delivery until both SVG
+paths resolve from the committed deck and the imported figures have passed their
+own drift/rasterization checks.
+
+## Worked Evidence and Demo
+
+The principal worked mapping deliberately uses 傍点 instead of the abstract's
+three-nested-ruby example because it demonstrates policy-bearing normalization
+across the complete publication chain rather than only structural collapse. Its
+checked-in evidence is:
+
+- `ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md`,
+  section 2, worked example;
+- `ab-validator/data/aat-to-parser-ir-mapping-v1.json`, rule `A-06`, where AAT
+  `style` projects to Parser-IR `emphasis` under the `AMBIGUITY` taxonomy; and
+- `abc/data/parser-ir-publication-policy-v0.json`, where Parser-IR `emphasis`
+  becomes TEI `<hi>` and visible plaintext retains only visible text.
+
+The ambiguity taxonomy records a sidecar by default. The slide must distinguish
+this taxonomy-level preservation contract from the observed 130 `A-06` mappings;
+it must not claim that every observed style instance is specifically 傍点.
+
+The evidence chain shown is:
+
+```text
+source marker
+  -> descriptive AAT style identity
+  -> AAT-to-IR ambiguity decision and sidecar record
+  -> TEI <hi> plus recoverable source-marker specificity
+```
+
+The live demo uses a small, preselected work or excerpt containing ruby and one
+or two additional constructs. It should complete quickly and visibly perform:
+
+1. source-construct detection with authority-backed mappings;
+2. comparison of two or three parser lanes;
+3. inspection of AAT-to-Parser-IR transformation records;
+4. materialization of TEI and visible-text views; and
+5. comparison of tokenizer configurations over one selected region.
+
+The demo slide is a short audience-facing runbook. Exact commands, expected
+outputs, preflight requirements, and a failure-safe fallback sequence live in
+HTML comments. Corpus-scale computation is prepared in advance; the live path
+uses bounded inputs and checked-in or reproducibly generated evidence.
+
+## Tokenizer Comparison
+
+The tokenizer section retains the abstract's examples 求むる and 竹馬の友. No
+Japanese translation is required. The slides emphasize analytical consequences:
+
+- Sudachi split modes can preserve 求むる as one verbal unit while a UniDic-backed
+  lane segments 求 | む | る and assigns different parts of speech;
+- Sudachi C can treat 竹馬の友 as one named entity while other configurations
+  produce three tokens; and
+- dictionary and mode identities belong in the versioned artifact description.
+
+The section must avoid implying that one tokenizer is universally correct.
+
+## Citations and Bibliography
+
+The slide source uses Pandoc citation syntax such as `[@aozorabunko2026]` and the
+same citation keys as the JADH paper. Its YAML front matter reuses:
+
+- `references/abstract-refs.bib`; and
+- `references/digital_humanities_abstracts.csl`.
+
+These files are committed vendored copies of
+`../../../archive/abc/paper/abstract-refs.bib` and
+`../../../archive/abc/paper/digital_humanities_abstracts.csl`, respectively,
+where the provenance paths are expressed relative to the deck. The external
+archive is provenance only and is not a build dependency. Implementation copies
+the two files byte-for-byte into `docs/presentations/references/` and records
+their source SHA-256 values in an HTML comment near the YAML metadata.
+
+Citations appear on the slides where their claims are introduced. A final
+references or links slide may complement Pandoc's generated bibliography but
+must not replace citations in the argument.
+
+## Content and Authoring Conventions
+
+- Retain `author: Bor Hodošček` and the presentation `date` in YAML because a
+  downstream website generator consumes them. Do not duplicate the title as a
+  manual level-one slide. Whether metadata appears in the generated title view
+  is owned by that downstream generator.
+- Use Pandoc YAML and citation syntax rather than renderer-specific extensions.
+- Keep repository paths, commands, detailed provenance, and speaker cues in HTML
+  comments unless the audience needs them.
+- Prefer short source examples, highlighted values, and direct comparisons over
+  full report tables.
+- Use colons sparingly in visible slide prose. Bold and italic emphasis may be
+  used within normal sentences when that reads more naturally than a label-value
+  construction.
+- Do not translate Japanese examples for this audience.
+- Use current component names consistently: AAT, Parser-IR, ABC, and
+  `ab-validator`.
+- Do not describe parser output as source authority.
+- Do not conflate ArtifactID with the byte hash of a materialized artifact.
+- Do not present in-progress parser consolidation, diagram generation, editorial
+  enrichment, or tokenizer evaluation as completed.
+- Use labeled Markdown links for every visible web resource; do not display bare
+  URLs.
+- Keep the Pandoc-flavored Markdown backend-neutral; do not add a stylesheet or
+  renderer-specific slide configuration.
+- If a dense slide does not fit the downstream renderer, split it or move detail
+  to the appendix rather than relying on renderer-specific auto-scaling.
+
+## Evidence Reproduction Contract
+
+Every Soranoha number, table, XML excerpt, and worked example shown in the deck
+has an adjacent HTML comment containing:
+
+1. authoritative repository path;
+2. exact command to regenerate or inspect the value;
+3. required pinned input, flake output, profile, or bounded fixture;
+4. expected identifying value or output; and
+5. evidence class: checked-in report, generated output, or bounded live query.
+
+Evidence that exists only in the sibling archive, a machine-local database, or
+an untracked corpus path cannot be presented as demonstrated Soranoha output.
+It may appear only as historical provenance or planned demo material, clearly
+labeled as such.
+
+The appendix includes a **Reproducing the Evidence** slide with the principal
+commands and labeled repository paths. Live commands use tracked files or pinned
+flake inputs and are preflighted before presentation.
+
+## Validation
+
+The existing 29-heading draft predates this revision. Implementation must bring
+it into conformance by retaining YAML author/date, removing the duplicate manual
+title, adding the single
+early TEI-EAJ positioning slide, adding draft-gated real XML comparisons,
+expanding the tokenizer/data appendix, converting bare URLs to labeled Markdown
+links, and adding reproduction comments. The draft's corrected mass-weighted
+`aozora2html` wording is already authoritative and must not be reverted to the
+older completion-only framing.
+
+Before the deck is considered complete:
+
+- all cited keys resolve against the reused BibTeX file;
+- the Markdown parses through Pandoc as slides;
+- both final image paths resolve from the deck; a draft with unresolved images
+  may be reviewed but cannot pass completion validation;
+- the vendored BibTeX and CSL files match their recorded provenance SHA-256
+  values and the external archive is not required for rendering;
+- every quantitative headline is checked against the latest authoritative
+  checked-in report;
+- the rendered main sequence remains close to 27 slides and the complete deck
+  contains no more than ten appendix slides;
+- slide-count validation accounts for the downstream generator's metadata title
+  view; it does not blindly equate level-one Markdown headings with rendered
+  slide count;
+- every visible web resource is a labeled Markdown link;
+- every displayed Soranoha datum satisfies the evidence reproduction contract;
+- real TEI comparison excerpts identify their upstream revision, work identity,
+  renderer/materialization path, and validation status;
+- the current 302-work/24.7%-ruby-mass robustness wording in the deck is
+  preserved while the rest of the deck is brought into conformance with this
+  revision;
+- the demo commands are preflighted on bounded inputs; and
+- the rendered outline remains coherent when the live demo is skipped.
+
+## Non-Goals
+
+- Reproducing the abstract paragraph by paragraph.
+- Explaining every manifest coordinate, schema, adapter, or TEI profile detail.
+- Presenting a complete parser benchmark paper in slide form.
+- Running corpus-scale measurement live.
+- Creating replacement diagrams while the dedicated presentation-figure work is
+  in progress.
+- Claiming that one parser or tokenizer is an unqualified scholarly authority.

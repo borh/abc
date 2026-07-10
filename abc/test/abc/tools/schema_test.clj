@@ -105,6 +105,12 @@
     (is (nil? (schema/validation-errors manifest-schema manifest)))
     (is (seq (schema/validation-errors
               manifest-schema
+              (assoc-in manifest
+                        ["manifest_identity_object" "presentation_diagram"]
+                        "docs/figures/soranoha-publication-pipeline.svg")))
+        "presentation metadata and figures are not manifest identity coordinates")
+    (is (seq (schema/validation-errors
+              manifest-schema
               (update manifest
                       "manifest_identity_object"
                       dissoc

@@ -332,8 +332,7 @@
               nativeBuildInputs = [ pkgs.unzip ];
             }
             ''
-                runHook preInstall
-                mkdir -p "$out/share/sudachi"
+              mkdir -p "$out/share/sudachi"
               unzip -j ${sudachiDictionaryFullZip} '*.dic' -d "$out/share/sudachi"
               dic="$(find "$out/share/sudachi" -maxdepth 1 -type f -name '*.dic' | head -n 1)"
               test -n "$dic"
@@ -341,7 +340,6 @@
                 mv "$dic" "$out/share/sudachi/system_full.dic"
               fi
               ln -s system_full.dic "$out/share/sudachi/system.dic"
-              runHook postInstall
             '';
 
         # ── mecab-dic-converter: MeCab compiled dict → vibrato .dic.zst ──
@@ -349,6 +347,11 @@
         mecabDicConverterCargoLock = {
           lockFile = mecab-dic-converter-src + "/Cargo.lock";
           outputHashes = {
+            # NOTE: this vibrato-rkyv-0.7.7 hash intentionally differs from the
+            # like-named key in `cargoGitOutputHashes` below — mecab-dic-converter
+            # pins a different rev/tree of the fork than the ab-validator
+            # workspace does, so the vendored source hashes are not the same key
+            # by coincidence. Do not "deduplicate" these two values.
             "vibrato-rkyv-0.7.7" = "sha256-M6ALFpSjs9M+6tvCmn2ZTevUS7NBL6RmnE5GB/qVMEo=";
             "crawdad-rkyv-0.4.0-rkyv.2" = "sha256-FlSXUYHNFUIuEK4sLhbCKJsgRm/EKnHDu7VPpdpvu10=";
           };
@@ -495,6 +498,75 @@
           # the crate source includes repo-root resources via ../../resources.
           cp -R ${sudachiRustSource}/resources "$out/resources"
         '';
+
+        # Shared gaiji provisioning for the CLIs/adapters whose build.rs (via
+        # third_party/aozora-rs-gaiji) needs the pinned JIS X 0213 menkuten
+        # table, the Aozora gaiji_chuki PDF, and a pdfium binary. See
+        # aozoraRsAdapter for the full rationale.
+        gaijiEnv = {
+          AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
+          AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
+          AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
+        };
+
+        gaijiBuildInputs = [
+          pkgs.pdfium-binaries
+        ]
+        ++ lib.optionals pkgs.stdenv.isDarwin [
+          pkgs.libiconv
+          pkgs.darwin.apple_sdk.frameworks.Security
+          pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+        ];
+
+        # Stub for a workspace CLI when the Rust workspace is not scaffolded
+        # (no Cargo.toml/Cargo.lock). Defined once instead of re-inlined per CLI.
+        mkUnscaffoldedStub =
+          name:
+          pkgs.writeShellApplication {
+            inherit name;
+            text = ''
+              echo 'Rust workspace not scaffolded' >&2
+              exit 1
+            '';
+          };
+
+        # Common skeleton for a workspace Rust binary built from `source` against
+        # the shared abCargoDeps vendor dir. Each call site passes only its real
+        # differences (package flags, extra deps, gaiji opt-in, doCheck).
+        mkRustBin =
+          {
+            pname,
+            cargoBuildFlags ? null,
+            # Defaults suit the gated workspace CLIs. An ungated simple bin must
+            # pass `nativeBuildInputs = [ ]` and `gated = false` explicitly, else
+            # it silently gains pkg-config and stub-on-unscaffolded behavior.
+            nativeBuildInputs ? [ pkgs.pkg-config ],
+            buildInputs ? [ ],
+            env ? { },
+            doCheck ? false,
+            gated ? true,
+            stub ? (mkUnscaffoldedStub pname),
+            extra ? { },
+          }:
+          let
+            drv = rustPlatform.buildRustPackage (
+              {
+                inherit
+                  pname
+                  nativeBuildInputs
+                  buildInputs
+                  doCheck
+                  ;
+                version = "0.1.0";
+                src = source;
+                cargoDeps = abCargoDeps;
+              }
+              // lib.optionalAttrs (cargoBuildFlags != null) { inherit cargoBuildFlags; }
+              // env
+              // extra
+            );
+          in
+          if gated then (if hasCargoManifest && hasCargoLock then drv else stub) else drv;
 
         # ── Tokenizer CLI runners ──
         #
@@ -724,11 +796,7 @@
             name = "aozora-rs";
             manifestPath = "adapters/aozora-rs/Cargo.toml";
             cargoDeps = aozoraRsAdapterCargoDeps;
-            extraEnv = {
-              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
-              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
-              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-            };
+            extraEnv = gaijiEnv;
           })
           (mkAdapterCargoQualityCheck {
             name = "aozora-epub3";
@@ -778,11 +846,7 @@
             manifestPath = "adapters/aozora-rs/Cargo.toml";
             cargoDeps = aozoraRsAdapterCargoDeps;
             checkSuffix = "decoding-contract-check";
-            extraEnv = {
-              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
-              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
-              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-            };
+            extraEnv = gaijiEnv;
             cargoCommand = ''
               cargo test --manifest-path "$manifest" \
                 --offline --locked source_decoding_contract
@@ -1005,94 +1069,60 @@
           ];
         };
 
-        abValidator =
-          if hasCargoManifest && hasCargoLock then
-            rustPlatform.buildRustPackage {
-              pname = "ab-validator";
-              version = "0.1.0";
+        abValidator = mkRustBin {
+          pname = "ab-validator";
+          nativeBuildInputs = [
+            pkgs.pkg-config
+            pkgs.python3
+            pkgs.zstd
+          ];
+          buildInputs = gaijiBuildInputs;
+          env = gaijiEnv // {
+            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+          };
+          doCheck = true;
+          stub = pkgs.writeShellApplication {
+            name = "ab-validator";
+            text = ''
+              cat >&2 <<'EOF'
+              The ab-validator Rust workspace has not been scaffolded yet.
+              Create Cargo.toml and Cargo.lock, then run:
 
-              src = source;
-              cargoDeps = abCargoDeps;
-
-              nativeBuildInputs = [
-                pkgs.pkg-config
-                pkgs.python3
-                pkgs.zstd
-              ];
-
-              buildInputs = [
-                pkgs.pdfium-binaries
-              ]
-              ++ lib.optionals pkgs.stdenv.isDarwin [
-                pkgs.libiconv
-                pkgs.darwin.apple_sdk.frameworks.Security
-                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-              ];
-
-              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
-              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
-              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-              AB_ABC_ROOT = "${abcSchemaRootForNix}";
-
-              preCheck = vibratoDictionaryPreCheck;
-              doCheck = true;
-            }
-          else
-            pkgs.writeShellApplication {
-              name = "ab-validator";
-              text = ''
-                cat >&2 <<'EOF'
-                The ab-validator Rust workspace has not been scaffolded yet.
-                Create Cargo.toml and Cargo.lock, then run:
-
-                  nix build .#ab-validator
-                  nix develop
-                EOF
-                exit 1
-              '';
-            };
-
-        workspaceCheck =
-          if hasCargoManifest && hasCargoLock then
-            rustPlatform.buildRustPackage {
-              pname = "ab-validator-check";
-              version = "0.1.0";
-
-              src = source;
-              cargoDeps = abCargoDeps;
-
-              nativeBuildInputs = [
-                pkgs.pkg-config
-                pkgs.python3
-                pkgs.zstd
-              ];
-
-              buildInputs = [
-                pkgs.pdfium-binaries
-              ]
-              ++ lib.optionals pkgs.stdenv.isDarwin [
-                pkgs.libiconv
-                pkgs.darwin.apple_sdk.frameworks.Security
-                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-              ];
-
-              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
-              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
-              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-              AB_ABC_ROOT = "${abcSchemaRootForNix}";
-
-              cargoBuildFlags = [ "--workspace" ];
-              cargoTestFlags = [
-                "--workspace"
-                "--features"
-                "ab-morph-run/test-analyzer"
-              ];
-              doCheck = true;
-            }
-          else
-            pkgs.runCommand "ab-validator-workspace-not-yet-scaffolded" { } ''
-              touch "$out"
+                nix build .#ab-validator
+                nix develop
+              EOF
+              exit 1
             '';
+          };
+          extra = {
+            preCheck = vibratoDictionaryPreCheck;
+          };
+        };
+
+        workspaceCheck = mkRustBin {
+          pname = "ab-validator-check";
+          nativeBuildInputs = [
+            pkgs.pkg-config
+            pkgs.python3
+            pkgs.zstd
+          ];
+          buildInputs = gaijiBuildInputs;
+          env = gaijiEnv // {
+            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+          };
+          cargoBuildFlags = [ "--workspace" ];
+          doCheck = true;
+          stub = pkgs.runCommand "ab-validator-workspace-not-yet-scaffolded" { } ''
+            touch "$out"
+          '';
+          extra = {
+            cargoTestFlags = [
+              "--workspace"
+              "--features"
+              "ab-morph-run/test-analyzer"
+            ];
+          };
+        };
 
         cargoQualityEnv = {
           nativeBuildInputs = [
@@ -1102,14 +1132,7 @@
             pkgs.zstd
           ];
 
-          buildInputs = [
-            pkgs.pdfium-binaries
-          ]
-          ++ lib.optionals pkgs.stdenv.isDarwin [
-            pkgs.libiconv
-            pkgs.darwin.apple_sdk.frameworks.Security
-            pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-          ];
+          buildInputs = gaijiBuildInputs;
 
           src = source;
         };
@@ -1268,6 +1291,18 @@
               touch "$out"
             '';
 
+        # Shared body for the aozora2html Rust-mapper parity smoke: build the
+        # mapper offline from the vendored deps, then run the pytest oracle.
+        # `root` is the shell expression naming the checked-out repo root.
+        aozora2htmlParityText = root: ''
+          export AB_AOZORA2HTML_BIN="${aozora2htmlParser}/bin/aozora2html"
+          cargo \
+            --config "source.crates-io.replace-with='vendored-sources'" \
+            --config "source.vendored-sources.directory='${aozora2htmlCargoDeps}'" \
+            build --manifest-path "${root}/adapters/aozora2html/Cargo.toml" --release --offline
+          python -m pytest "${root}/adapters/aozora2html/tests/test_mapper.py" -vv
+        '';
+
         aozora2htmlRustParityShell = pkgs.writeShellApplication {
           name = "aozora2html-rust-parity";
           runtimeInputs = [
@@ -1280,13 +1315,8 @@
             if [ ! -d "$repo_root/adapters/aozora2html" ]; then
               repo_root="${source}"
             fi
-            export AB_AOZORA2HTML_BIN="${aozora2htmlParser}/bin/aozora2html"
-            cargo \
-              --config "source.crates-io.replace-with='vendored-sources'" \
-              --config "source.vendored-sources.directory='${aozora2htmlCargoDeps}'" \
-              build --manifest-path "$repo_root/adapters/aozora2html/Cargo.toml" --release --offline
-            python -m pytest "$repo_root/adapters/aozora2html/tests/test_mapper.py" -vv
-          '';
+          ''
+          + aozora2htmlParityText "$repo_root";
         };
 
         aozora2htmlRustParityCheck =
@@ -1298,19 +1328,18 @@
                 pythonWithAatSchemaDeps
               ];
             }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
-              export AB_AOZORA2HTML_BIN="${aozora2htmlParser}/bin/aozora2html"
-              cargo \
-                --config "source.crates-io.replace-with='vendored-sources'" \
-                --config "source.vendored-sources.directory='${aozora2htmlCargoDeps}'" \
-                build --manifest-path "$work_dir/source/adapters/aozora2html/Cargo.toml" --release --offline
-              python -m pytest "$work_dir/source/adapters/aozora2html/tests/test_mapper.py" -vv
-              touch "$out"
-            '';
+            (
+              ''
+                work_dir="$(mktemp -d)"
+                cp -R "${source}" "$work_dir/source"
+                chmod -R +w "$work_dir/source"
+                cd "$work_dir/source"
+              ''
+              + aozora2htmlParityText "$work_dir/source"
+              + ''
+                touch "$out"
+              ''
+            );
 
         aatOracleDataSchemaSmokeShell = pkgs.writeShellApplication {
           name = "aat-oracle-data-schema-smoke";
@@ -1358,53 +1387,38 @@
           '';
         };
 
-        taxonomyGenerator = rustPlatform.buildRustPackage {
+        taxonomyGenerator = mkRustBin {
           pname = "ab-taxonomy-generator";
-          version = "0.1.0";
-
-          src = source;
-          cargoDeps = abCargoDeps;
-
+          nativeBuildInputs = [ ];
           cargoBuildFlags = [
             "--package"
             "ab-coverage"
             "--bin"
             "generate_taxonomy"
           ];
-
-          doCheck = false;
+          gated = false;
         };
 
-        sourceInventoryBin = rustPlatform.buildRustPackage {
+        sourceInventoryBin = mkRustBin {
           pname = "ab-source-inventory";
-          version = "0.1.0";
-
-          src = source;
-          cargoDeps = abCargoDeps;
-
+          nativeBuildInputs = [ ];
           cargoBuildFlags = [
             "--package"
             "ab-coverage"
             "--bin"
             "ab-source-inventory"
           ];
-
-          doCheck = false;
+          gated = false;
         };
 
-        abOracleBin = rustPlatform.buildRustPackage {
+        abOracleBin = mkRustBin {
           pname = "ab-oracle";
-          version = "0.1.0";
-
-          src = source;
-          cargoDeps = abCargoDeps;
-
+          nativeBuildInputs = [ ];
           cargoBuildFlags = [
             "--package"
             "ab-oracle"
           ];
-
-          doCheck = false;
+          gated = false;
         };
 
         sourceInventorySmokeCheck = mkSmokeCheck {
@@ -1599,151 +1613,71 @@
           '';
         };
 
-        abAatToParserIr =
-          if hasCargoManifest && hasCargoLock then
-            rustPlatform.buildRustPackage {
-              pname = "ab-aat-to-parser-ir";
-              version = "0.1.0";
-
-              src = source;
-              cargoDeps = abCargoDeps;
-
-              nativeBuildInputs = [
-                pkgs.pkg-config
-                pkgs.zstd
-              ];
-
-              buildInputs = [
-                pkgs.pdfium-binaries
-              ]
-              ++ lib.optionals pkgs.stdenv.isDarwin [
-                pkgs.libiconv
-                pkgs.darwin.apple_sdk.frameworks.Security
-                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-              ];
-
-              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
-              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
-              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-              AB_ABC_ROOT = "${abcSchemaRootForNix}";
-
-              cargoBuildFlags = [
-                "--package"
-                "ab-aat-to-parser-ir"
-              ];
-              doCheck = false;
-            }
-          else
-            pkgs.writeShellApplication {
-              name = "ab-aat-to-parser-ir";
-              text = ''
-                echo 'Rust workspace not scaffolded' >&2
-                exit 1
-              '';
-            };
+        abAatToParserIr = mkRustBin {
+          pname = "ab-aat-to-parser-ir";
+          nativeBuildInputs = [
+            pkgs.pkg-config
+            pkgs.zstd
+          ];
+          buildInputs = gaijiBuildInputs;
+          env = gaijiEnv // {
+            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+          };
+          cargoBuildFlags = [
+            "--package"
+            "ab-aat-to-parser-ir"
+          ];
+        };
 
         # The morphological-analysis engine (`ab-morph-run analyze-aat`). Built
         # through nix so the morph-warehouse skip gate can pin it by content
         # (store path / binary hash) — running it via `cargo` from live source
         # would leave the engine version out of the run's input identity.
-        abMorphRun =
-          if hasCargoManifest && hasCargoLock then
-            rustPlatform.buildRustPackage {
-              pname = "ab-morph-run";
-              version = "0.1.0";
-
-              src = source;
-              cargoDeps = abCargoDeps;
-
-              nativeBuildInputs = [
-                pkgs.pkg-config
-                pkgs.zstd
-              ];
-
-              buildInputs = [
-                pkgs.pdfium-binaries
-              ]
-              ++ lib.optionals pkgs.stdenv.isDarwin [
-                pkgs.libiconv
-                pkgs.darwin.apple_sdk.frameworks.Security
-                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-              ];
-
-              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
-              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
-              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-              AB_ABC_ROOT = "${abcSchemaRootForNix}";
-
-              cargoBuildFlags = [
-                "--package"
-                "ab-morph-run"
-              ];
-              doCheck = false;
-            }
-          else
-            pkgs.writeShellApplication {
-              name = "ab-morph-run";
-              text = ''
-                echo 'Rust workspace not scaffolded' >&2
-                exit 1
-              '';
-            };
+        abMorphRun = mkRustBin {
+          pname = "ab-morph-run";
+          nativeBuildInputs = [
+            pkgs.pkg-config
+            pkgs.zstd
+          ];
+          buildInputs = gaijiBuildInputs;
+          env = gaijiEnv // {
+            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+          };
+          cargoBuildFlags = [
+            "--package"
+            "ab-morph-run"
+          ];
+        };
 
         # ab-index: builds the corpus feature index (index.json) consumed by
         # ab-check. Packaged through nix so run-aat-full.sh can pin it by content
         # (store path) in the AAT dump's input identity — running it via cargo from
         # live source would leave the indexer's version out of the dump identity.
-        abIndex =
-          if hasCargoManifest && hasCargoLock then
-            rustPlatform.buildRustPackage {
-              pname = "ab-index";
-              version = "0.1.0";
-              src = source;
-              cargoDeps = abCargoDeps;
-              nativeBuildInputs = [ pkgs.pkg-config ];
-              AB_ABC_ROOT = "${abcSchemaRootForNix}";
-              cargoBuildFlags = [
-                "--package"
-                "ab-index"
-              ];
-              doCheck = false;
-            }
-          else
-            pkgs.writeShellApplication {
-              name = "ab-index";
-              text = ''
-                echo 'Rust workspace not scaffolded' >&2
-                exit 1
-              '';
-            };
+        abIndex = mkRustBin {
+          pname = "ab-index";
+          cargoBuildFlags = [
+            "--package"
+            "ab-index"
+          ];
+          env = {
+            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+          };
+        };
 
         # ab-check: the fidelity engine that produces the aat/ tree (runs the
         # adapter per work, emits AAT JSON). Packaged through nix so its version is
         # pinnable by content in the dump identity — it is the primary output
         # producer, so leaving it unpinned is the worst engine-hole.
-        abCheck =
-          if hasCargoManifest && hasCargoLock then
-            rustPlatform.buildRustPackage {
-              pname = "ab-check";
-              version = "0.1.0";
-              src = source;
-              cargoDeps = abCargoDeps;
-              nativeBuildInputs = [ pkgs.pkg-config ];
-              AB_ABC_ROOT = "${abcSchemaRootForNix}";
-              cargoBuildFlags = [
-                "--package"
-                "ab-check"
-              ];
-              doCheck = false;
-            }
-          else
-            pkgs.writeShellApplication {
-              name = "ab-check";
-              text = ''
-                echo 'Rust workspace not scaffolded' >&2
-                exit 1
-              '';
-            };
+        abCheck = mkRustBin {
+          pname = "ab-check";
+          cargoBuildFlags = [
+            "--package"
+            "ab-check"
+          ];
+          env = {
+            AB_ABC_ROOT = "${abcSchemaRootForNix}";
+          };
+        };
 
         abAatToParserIrCheck = mkSmokeCheck {
           name = "ab-aat-to-parser-ir-smoke-check";
@@ -1827,19 +1761,19 @@
               ];
             }
             ''
-                            work_dir="$(mktemp -d)"
-                            cp -R "${source}" "$work_dir/source"
-                            chmod -R +w "$work_dir/source"
-                            cd "$work_dir/source"
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
 
-                            cargo \
-                              --config "source.crates-io.replace-with='vendored-sources'" \
-                              --config "source.vendored-sources.directory='${aozoraEpub3CargoDeps}'" \
-                              build --manifest-path "$work_dir/source/adapters/aozora-epub3/Cargo.toml" --release --offline
+              cargo \
+                --config "source.crates-io.replace-with='vendored-sources'" \
+                --config "source.vendored-sources.directory='${aozoraEpub3CargoDeps}'" \
+                build --manifest-path "$work_dir/source/adapters/aozora-epub3/Cargo.toml" --release --offline
 
-                            bin="$work_dir/source/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
-                            printf 'test' > "$work_dir/src.txt"
-                            python - "$bin" "$work_dir/src.txt" "$work_dir/source/data/aat-schema.json" "$work_dir/source/adapters/aozora-epub3/tests/fixtures" <<'PY'
+              bin="$work_dir/source/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
+              printf 'test' > "$work_dir/src.txt"
+              python - "$bin" "$work_dir/src.txt" "$work_dir/source/data/aat-schema.json" "$work_dir/source/adapters/aozora-epub3/tests/fixtures" <<'PY'
               import json, subprocess, sys, glob
               from pathlib import Path
               bin_p, src, schema_p, fx_dir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
@@ -1858,11 +1792,11 @@
               print(f"aozora-epub3 smoke: {len(fixtures)} fixtures schema-valid")
               PY
 
-                            export AB_AOZORAEPUB3_JAR="${upstreamParserAozoraEpub3}/lib/AozoraEpub3.jar"
-                            printf 'テスト作品\nテスト著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n\n吾輩《わがはい》は猫である。\n\n底本：テスト出版\n' \
-                              | ${pkgs.bash}/bin/bash "$work_dir/source/adapters/aozora-epub3/aozora-epub3-adapter" --mode aat \
-                              | jq -e '.meta.adapter == "aozora-epub3" and .meta.parse_complete == true and (.blocks | length >= 1)' >/dev/null
-                            touch "$out"
+              export AB_AOZORAEPUB3_JAR="${upstreamParserAozoraEpub3}/lib/AozoraEpub3.jar"
+              printf 'テスト作品\nテスト著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n\n吾輩《わがはい》は猫である。\n\n底本：テスト出版\n' \
+                | ${pkgs.bash}/bin/bash "$work_dir/source/adapters/aozora-epub3/aozora-epub3-adapter" --mode aat \
+                | jq -e '.meta.adapter == "aozora-epub3" and .meta.parse_complete == true and (.blocks | length >= 1)' >/dev/null
+              touch "$out"
             '';
       in
       {

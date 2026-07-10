@@ -1196,9 +1196,7 @@
                             :run publication-rehearsal!}
    "build-publication" {:args :variadic
                         :run (fn [& args]
-                               (build-publication/build-publication!
-                                publication-rehearsal!
-                                args))}
+                               (build-publication/build-publication! args))}
    "annotation-join-stats" {:args 3
                             :run (fn [parser-ir-dir tokens-dir out-dir]
                                    (annotation-join-stats/run-join-stats!

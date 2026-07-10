@@ -1,8 +1,8 @@
-# Consolidated Parser Phase 0+1 (ADR 0031 + Lift + Shim + Parity) Implementation Plan
+# Consolidated Parser Phase 0+1 (ADR 0032 + Lift + Shim + Parity) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Land ADR 0031 (hard-detach governance), lift the aozora parser
+**Goal:** Land ADR 0032 (hard-detach governance), lift the aozora parser
 core into `ab-validator/crates/` as `ab-*` crates, ship the throwaway
 `ab-aozora-cli` inspect shim, and prove full parity (conformance + perf +
 full corpus) against the pinned upstream binary.
@@ -54,25 +54,25 @@ the abc side (ADR diagrams), Python report harnesses.
 
 ---
 
-### Task 1: ADR 0031 — hard-detach amendment (abc side)
+### Task 1: ADR 0032 — hard-detach amendment (abc side)
 
 **Files:**
 - Create: `abc/docs/adr/0031-parser-fork-hard-detach.md`
-- Modify: `abc/docs/adr/0030-aozora-parser-selection.md` (header: add `Amended by: ADR 0031`)
+- Modify: `abc/docs/adr/0030-aozora-parser-selection.md` (header: add `Amended by: ADR 0032`)
 - Modify (generated): `abc/docs/adr/adr-graph.mmd` (via `clojure -M:abc/diagrams`)
 
 **Interfaces:**
 - Consumes: ADR 0030 (Accepted, 2026-07-10), ADR README status vocabulary
   and edit policy (`abc/docs/adr/README.md`).
-- Produces: ADR 0031 (Accepted) that later tasks and the fork-provenance
+- Produces: ADR 0032 (Accepted) that later tasks and the fork-provenance
   handoff cite by number.
 
-- [ ] **Step 1: Write ADR 0031** (working directory: `abc/`)
+- [ ] **Step 1: Write ADR 0032** (working directory: `abc/`)
 
 Create `docs/adr/0031-parser-fork-hard-detach.md`:
 
 ```markdown
-# ADR 0031: Parser Fork Hard Detach
+# ADR 0032: Parser Fork Hard Detach
 
 Status: Accepted
 Date: 2026-07-10
@@ -147,7 +147,7 @@ timeouts). The porting lane stays open and cheap relative to merging.
 
 ## Acceptance Criteria
 
-- ADR 0030 carries the reciprocal `Amended by: ADR 0031` header link,
+- ADR 0030 carries the reciprocal `Amended by: ADR 0032` header link,
   enforced by the header-hygiene lint proven in
   `test/abc/tools/diagram/adr_graph_test.clj`.
 - The fork-provenance handoff
@@ -174,7 +174,7 @@ to
 
 ```markdown
 Supersedes: none
-Amended by: ADR 0031
+Amended by: ADR 0032
 Amends: ADR 0002
 ```
 
@@ -193,7 +193,7 @@ Expected: `wrote docs/adr/adr-graph.mmd`; gate exits 0; kaocha reports
 
 ```bash
 git add docs/adr/0031-parser-fork-hard-detach.md docs/adr/0030-aozora-parser-selection.md docs/adr/adr-graph.mmd
-git commit -m "docs(adr): ADR 0031 hard-detach amendment to parser selection"
+git commit -m "docs(adr): ADR 0032 hard-detach amendment to parser selection"
 ```
 
 ---
@@ -282,7 +282,7 @@ Create `docs/handoffs/2026-07-10-parser-fork-provenance.md`:
 # Parser fork provenance (hard detach)
 
 Date: 2026-07-10
-Authority: ADR 0030 (selection), ADR 0031 (hard detach),
+Authority: ADR 0030 (selection), ADR 0032 (hard detach),
 `docs/superpowers/specs/2026-07-10-consolidated-parser-design.md`.
 
 ## Detach point
@@ -415,7 +415,7 @@ Prepend to each `crates/ab-aozora-<new>/src/lib.rs`:
 
 ```rust
 //! Forked from https://github.com/P4suta/aozora
-//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (hard detach; ADR 0031).
+//! at rev 1a4f864603970983719655aa4af4525958ac2d38 (hard detach; ADR 0032).
 //! Upstream crate: <upstream name>. License: MIT OR Apache-2.0 (see NOTICE).
 ```
 
@@ -564,13 +564,13 @@ ab-aozora-facade = { path = "../ab-aozora-facade", features = ["json"] }
 //! Parity shim (Phase 1 only): reproduces `aozora inspect
 //! {nodes,diagnostics,gaiji} -` byte-for-byte over the lifted
 //! ab-aozora-facade (fork of P4suta/aozora at
-//! 1a4f864603970983719655aa4af4525958ac2d38; ADR 0031).
+//! 1a4f864603970983719655aa4af4525958ac2d38; ADR 0032).
 use std::io::{Read, Write};
 
 const VERSION_LINE: &str = concat!(
     "ab-aozora-cli ",
     env!("CARGO_PKG_VERSION"),
-    " (fork of P4suta/aozora @ 1a4f864, ADR 0031)"
+    " (fork of P4suta/aozora @ 1a4f864, ADR 0032)"
 );
 
 fn main() {
@@ -1300,7 +1300,7 @@ git commit -m "test(parser): Gate A full-corpus AAT parity for the lifted fork"
 
 ## Phase-exit checklist (Phase 1 done means)
 
-- ADR 0031 accepted with reciprocal link and the maintenance-economics
+- ADR 0032 accepted with reciprocal link and the maintenance-economics
   rationale + revisit trigger; ADR gates green (Task 1).
 - Nine `ab-aozora-*` crates build with **all** inherited tests green
   (benches dropped and inventoried; nothing else) inside workspace gates

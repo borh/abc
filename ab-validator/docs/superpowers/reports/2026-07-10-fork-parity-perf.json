@@ -1,0 +1,191 @@
+{
+  "workset_id": "perf-workset-v1",
+  "machine": {
+    "node": "hinoki",
+    "machine": "x86_64",
+    "processor": "",
+    "cpu_count": 32
+  },
+  "bins": {
+    "baseline": {
+      "path": "/nix/store/kps3xj67p1lvjvn55k62z2p2bsifjy8b-upstream-parser-aozora-0.1.0/bin/aozora",
+      "version": "aozora 0.4.1"
+    },
+    "candidate": {
+      "path": "/home/bor/Projects/soranoha/.worktrees/parser-fork-phase1/ab-validator/target/release/ab-aozora-cli",
+      "version": "ab-aozora-cli 0.1.0 (fork of P4suta/aozora @ 1a4f864, ADR 0031)"
+    }
+  },
+  "works": [
+    {
+      "work_id": "001529_50685",
+      "baseline": {
+        "median_s": 0.1157,
+        "stdev_s": 0.0003,
+        "runs_s": [
+          0.1159,
+          0.1153,
+          0.116,
+          0.1152,
+          0.1157
+        ],
+        "timeouts": 0
+      },
+      "candidate": {
+        "median_s": 0.1153,
+        "stdev_s": 0.0002,
+        "runs_s": [
+          0.1156,
+          0.1153,
+          0.1157,
+          0.1151,
+          0.1152
+        ],
+        "timeouts": 0
+      }
+    },
+    {
+      "work_id": "000311_2012",
+      "baseline": {
+        "median_s": 0.3157,
+        "stdev_s": 0.0001,
+        "runs_s": [
+          0.3155,
+          0.3157,
+          0.3157,
+          0.3157,
+          0.3157
+        ],
+        "timeouts": 0
+      },
+      "candidate": {
+        "median_s": 0.3153,
+        "stdev_s": 0.0002,
+        "runs_s": [
+          0.3153,
+          0.315,
+          0.3156,
+          0.3156,
+          0.3152
+        ],
+        "timeouts": 0
+      }
+    },
+    {
+      "work_id": "001562_56146",
+      "baseline": {
+        "median_s": 0.3657,
+        "stdev_s": 0.0001,
+        "runs_s": [
+          0.3658,
+          0.3658,
+          0.3654,
+          0.3657,
+          0.3656
+        ],
+        "timeouts": 0
+      },
+      "candidate": {
+        "median_s": 0.3654,
+        "stdev_s": 0.0002,
+        "runs_s": [
+          0.3654,
+          0.3657,
+          0.3654,
+          0.365,
+          0.3653
+        ],
+        "timeouts": 0
+      }
+    },
+    {
+      "work_id": "001562_56145",
+      "baseline": {
+        "median_s": 0.2652,
+        "stdev_s": 0.0003,
+        "runs_s": [
+          0.2651,
+          0.2656,
+          0.2652,
+          0.2656,
+          0.2651
+        ],
+        "timeouts": 0
+      },
+      "candidate": {
+        "median_s": 0.2649,
+        "stdev_s": 0.0002,
+        "runs_s": [
+          0.2649,
+          0.2649,
+          0.2648,
+          0.2655,
+          0.2651
+        ],
+        "timeouts": 0
+      }
+    },
+    {
+      "work_id": "000363_56656",
+      "baseline": {
+        "median_s": 0.165,
+        "stdev_s": 0.0002,
+        "runs_s": [
+          0.1647,
+          0.1652,
+          0.1653,
+          0.165,
+          0.1649
+        ],
+        "timeouts": 0
+      },
+      "candidate": {
+        "median_s": 0.165,
+        "stdev_s": 0.0002,
+        "runs_s": [
+          0.1651,
+          0.165,
+          0.165,
+          0.1653,
+          0.1647
+        ],
+        "timeouts": 0
+      }
+    },
+    {
+      "work_id": "001562_33224",
+      "baseline": {
+        "median_s": 0.1649,
+        "stdev_s": 0.0002,
+        "runs_s": [
+          0.165,
+          0.1649,
+          0.1648,
+          0.1653,
+          0.1646
+        ],
+        "timeouts": 0
+      },
+      "candidate": {
+        "median_s": 0.1648,
+        "stdev_s": 0.0001,
+        "runs_s": [
+          0.1647,
+          0.1649,
+          0.165,
+          0.1648,
+          0.1647
+        ],
+        "timeouts": 0
+      }
+    }
+  ],
+  "summary": {
+    "baseline_workset_median_s": 0.2151,
+    "candidate_workset_median_s": 0.215,
+    "regression_pct": -0.07,
+    "threshold_pct": 10,
+    "new_timeouts": false,
+    "verdict": "PASS"
+  }
+}

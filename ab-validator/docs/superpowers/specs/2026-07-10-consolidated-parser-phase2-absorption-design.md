@@ -171,6 +171,44 @@ wiring, and the root `Cargo.toml` `exclude` entry with its hazard comment
 handoff history) gates the removal — no dangling references in build files,
 nix packaging, justfile, or harness code.
 
+## Harness lane for the candidate (prerequisite for every gate)
+
+`run-aat-full.sh --aozora-bin` does **not** select the adapter executable: it
+exports `AB_AOZORA_BIN` — the inner inspect-protocol parser the nix-built
+`aozora-adapter` spawns (`aozora inspect {nodes,diagnostics,gaiji} -`) —
+while `ab-check` continues to invoke `aozora-adapter`. `ab-aozora` speaks no
+inspect protocol, so it cannot ride that option. The candidate needs its own
+adapter lane; this is a real harness-interface change:
+
+- `run-aat-full.sh` gains adapter id `ab-aozora` (ADAPTER enum becomes
+  `aozora | ab-aozora | aozora2html | aozora-epub3`). `ab-check --adapter`
+  invokes the `ab-aozora` binary directly — it already implements the
+  adapter wire contract (stdin bytes → AAT on stdout, exit 0/2/1).
+- Default resolution is the flake package (`$repo_root#ab-aozora`); a new
+  `--adapter-bin PATH` override (valid only with `--adapter ab-aozora`)
+  carries the same discipline as `--aozora-bin`: absolutized, `-x` checked,
+  `--version` and sha256 recorded verbatim in `metadata.json`, hashed into
+  `input_set_hash`, exit 2 on failure, and the binary's containing directory
+  standing in for the tree-hash staleness plumbing so a differing override
+  is never served a stale dump.
+- This lane has **no renderer identity**: the adapter binary is the complete
+  generator identity (`adapter_hash_target` is the `ab-aozora` binary;
+  renderer fields are absent for this adapter id). Metadata identifies the
+  directly invoked adapter.
+- `--aozora-bin` remains exclusively the legacy adapter's inner-parser
+  override; the two options are mutually exclusive by construction (each is
+  valid only with its own adapter id).
+- Tests: an `ab-aozora`-lane smoke in the pattern of
+  `tests/aozora-bin-override-smoke.sh` proving the override binary is what
+  actually executes and that a differing binary changes recorded identity
+  (staleness not served).
+
+`reports/aat-fidelity/run-perf-workset.py` has the same conflation: it
+hardcodes `<bin> inspect nodes -`. It gains per-lane invocation forms — each
+lane is an explicit argv (run with the work's bytes on stdin) plus optional
+env (e.g. `AB_AOZORA_BIN` for the adapter lane) — with its unit tests
+extended accordingly.
+
 ## Gates
 
 Gate order: absorption parity → perf → conformance echo → only then harness
@@ -183,14 +221,25 @@ repoint, shim deletion, and identity rotation.
   hash verified — the same discipline as Phase 1 Gate A. (If the current
   run-set already points at a verified adapter-lane dump, reuse it; never an
   unpinned directory.)
-- Candidate: full-corpus AAT via the `ab-aozora` binary under explicit
-  `--aozora-bin`, on hinoki, with the binary's sha256 and `--version`
-  recorded in the dump metadata.
-- Comparator: the existing `reports/aat-fidelity/compare-aat-dumps.py`
-  semantic comparator with its single allowlisted pointer
-  `/meta/adapter_version`. Expectation is byte-equality modulo that pointer;
-  any other divergence is a port defect. Required result: 0 missing,
-  0 diverged, 0 fatal-error works across all 17,886.
+- Candidate: full-corpus AAT via `--adapter ab-aozora --adapter-bin PATH`
+  (the branch-built binary), on hinoki, with the binary's sha256 and
+  `--version` recorded in the dump metadata.
+- Comparator — **byte parity is the gate**. The existing
+  `compare-aat-dumps.py` is semantic: it parses JSON and ignores key order
+  and numeric formatting, so it cannot enforce the port-fidelity claim on
+  its own. It gains a byte-parity mode (or a sibling comparator, decided at
+  plan time) that, per work: parses each dump only to extract the
+  `/meta/adapter_version` value, requires the exact serialized occurrence
+  `"adapter_version":"<escaped value>"` to appear exactly once in the raw
+  bytes (fail closed otherwise), substitutes a fixed placeholder in both
+  documents, then compares the remaining bytes. Byte and semantic results
+  are reported separately: byte parity across all works is the blocking
+  requirement; the semantic comparator runs as the localization diagnostic
+  when byte parity fails. Unit tests cover the substitution edge cases
+  (value occurring in text content, escaping) — these join the `reports/**`
+  pytest surface being wired into CI.
+- Required result: 0 missing, 0 byte-divergent, 0 fatal-error works across
+  all 17,886.
 - Legacy span semantics are deliberately preserved for this gate (sanitized
   byte offsets, `line_start`/`line_end` = 1); the span fix is Phase 3's
   identity-rotated step.
@@ -199,11 +248,19 @@ repoint, shim deletion, and identity rotation.
 
 Per the parent design's protocol: `perf-workset-v1` (hash-pinned, fail-closed
 sha256), `--release` with sccache disabled, 1 warm-up + ≥5 measured runs per
-binary, both lanes measured fresh in the same session on the same recorded
-machine identity (hinoki). Lanes: pinned upstream binary via the frozen
-adapter path vs `ab-aozora`. Blockers: any new timeout (unconditional), or
->10% median wall-time regression on the workset. `ab-aozora` should be
-*faster* (one process, no inspect subprocess round-trips); a slowdown
+lane, both lanes measured fresh in the same session on the same recorded
+machine identity (hinoki). Lanes, via the perf runner's new argv forms:
+
+- baseline: the frozen adapter end-to-end (`aozora-adapter` argv, stdin→AAT,
+  `AB_AOZORA_BIN` = pinned upstream) — the full legacy cost including its
+  three inspect subprocess round-trips;
+- candidate: `ab-aozora` argv, stdin→AAT.
+
+This is an end-to-end AAT-production comparison, deliberately different from
+the Phase 1 perf report's inner-binary `inspect nodes` measurement; the
+report records the mode change, and comparisons stay within this session.
+Blockers: any new timeout (unconditional), or >10% median wall-time
+regression. `ab-aozora` should be *faster* (no subprocess hops); a slowdown
 indicates a port defect even under threshold — record and investigate before
 proceeding.
 
@@ -218,13 +275,38 @@ measures, at negligible cost. The pinned upstream binary remains the
 `inspect`-mode comparator via the legacy lane; `inspect`-mode scoring of the
 fork ends with the shim.
 
+### Gate checkpoint contract (evidence before deletion)
+
+Prose ordering is not enforcement: a single branch could contain the shim
+deletion whether or not the hinoki evidence ever passed. The boundary is
+therefore an evidence-bearing checkpoint:
+
+- Each of the three gates freezes a report under
+  `docs/superpowers/reports/` recording: the candidate source commit, the
+  candidate binary's sha256 and verbatim `--version` output, the reference
+  identity (run-set id + content hash for parity; baseline argv + binary
+  identity for perf), and the verdict.
+- The three reports must be **committed** before any deletion, harness
+  default, or identity-rotation change is made, and all three must cite the
+  same candidate commit and `--version` identity — a mixed-candidate
+  evidence set is invalid.
+- The deletion/rotation work starts with an explicit verification step
+  (checked in the implementation plan, recorded in the progress ledger):
+  the three reports exist in the tree, each states its passing verdict, and
+  the cited candidate identities agree. The deletion/rotation commit
+  messages cite the three report paths.
+- Frozen reports are never rewritten (standing evidence rule); a re-run
+  after a fix produces a new report superseding the old one by reference.
+
 ## Harness repoint (after gates pass)
 
-- `reports/aat-fidelity/run-aat-full.sh`: `--aozora-bin` now names the
-  `ab-aozora` binary for the fork lane; identity recording (sha256 +
-  `--version`) unchanged. The default (no override) remains the legacy
-  pinned-upstream lane until Phase 4 activation — repointing the *default*
-  is part of the Phase 4 cutover, not Phase 2.
+- `reports/aat-fidelity/run-aat-full.sh`: the `ab-aozora` adapter id (added
+  as the gate prerequisite above) becomes a first-class measurement lane,
+  nix-resolved by default. `--aozora-bin` keeps its existing meaning (legacy
+  adapter's inner-parser override) untouched. `--adapter aozora` remains the
+  default comparison lane until Phase 4 activation — flipping which adapter
+  id publication measurement *defaults to* is part of the Phase 4 cutover,
+  not Phase 2.
 - `reports/aat-fidelity/measure-parser-performance.py`: gains the
   `ab-aozora` lane; its schemaVersion-1 drift (advertised handling that no
   longer matches any adapter) is fixed in the same change (folded Minor).
@@ -235,8 +317,9 @@ fork ends with the shim.
   runner's tests, and any added by this phase) are wired into the repository
   check gate so harness regressions fail pre-merge (folded Minor). Scope is
   unit tests only — corpus-scale runs stay manual/hinoki.
-- Evidence discipline is unchanged and binding: explicit
-  `AOZORA_BIN`/`--aozora-bin` everywhere (ambient env never trusted),
+- Evidence discipline is unchanged and binding: explicit binary parameters
+  everywhere (`AOZORA_BIN`/`--aozora-bin`/`--adapter-bin`; ambient env never
+  trusted),
   run-set fail-closed reference resolution, frozen evidence JSONs never
   rewritten (Phase 1 artifacts keep their historical version strings).
 
@@ -285,18 +368,21 @@ deleted from it.
   tests where adapter deserialization tests don't transfer directly.
 - `ab-aozora`: exit-code contract tests (success / warnings / fatal), no
   partial-output-on-fatal test, `--version` field presence test.
-- Gates: corpus parity (hinoki), perf protocol (hinoki), conformance echo
-  (local), each with a frozen evidence report under
-  `docs/superpowers/reports/`.
+- Harness: `ab-aozora`-lane smoke test (override executes + identity
+  changes), byte-parity comparator unit tests (substitution edge cases),
+  perf-runner lane-argv unit tests — all on the `reports/**` pytest / test
+  surface wired into CI this phase.
+- Gates: corpus byte parity (hinoki), perf protocol (hinoki), conformance
+  echo (local), each with a frozen evidence report under
+  `docs/superpowers/reports/` satisfying the checkpoint contract.
 - Post-deletion: full workspace suite + shim-reference grep gate.
 
 ## Risks and open points
 
 - **Port fidelity is the phase's central risk.** Mitigated by copy-not-move
   (the frozen original is always diffable), verbatim `json!` porting, and
-  the corpus-wide byte-level expectation — semantic-only divergences cannot
-  hide behind the comparator because the expectation is byte-equality modulo
-  one pointer.
+  the byte-parity comparator: serialization-order or formatting drift fails
+  the gate rather than hiding behind a semantic comparison.
 - **Facade type mapping.** The adapter's `AozoraNode`/`AozoraDiagnostic`/
   `AozoraGaiji` types were shaped by the wire JSON; the facade's entry types
   are shaped by upstream internals. Field-level mismatches (naming, optional

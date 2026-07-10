@@ -7,7 +7,7 @@
   (:import [java.util Locale]))
 
 (def raw-svg
-  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200pt\" height=\"100pt\" viewBox=\"0 0 200 100\"><g id=\"graph0\"><text font-size=\"30\">Example</text><path fill=\"none\" stroke=\"#48CAE4\" stroke-width=\"2\" d=\"M0,0 L10,10\"/></g></svg>")
+  "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200pt\" height=\"100pt\" viewBox=\"0 0 200 100\"><g id=\"graph0\"><text font-size=\"34\">Example</text><path fill=\"none\" stroke=\"#48CAE4\" stroke-width=\"2\" d=\"M0,0 L10,10\"/></g></svg>")
 
 (def graph
   {:id :test
@@ -49,7 +49,7 @@
   (str "<svg xmlns=\"http://www.w3.org/2000/svg\" "
        "width=\"200pt\" height=\"100pt\" viewBox=\"0 0 200 100\">"
        "<g id=\"graph0\"><g transform=\"" transform "\">"
-       "<text font-size=\"30\">Example</text>"
+       "<text font-size=\"34\">Example</text>"
        "<path fill=\"none\" stroke=\"#48CAE4\" stroke-width=\"2\" "
        "d=\"M0,0 L10,10\"/></g></g></svg>"))
 
@@ -81,6 +81,9 @@
     (is (= "184" (element-attr subtitle "y")))
     (is (= "96" (element-attr footer "x")))
     (is (= "976" (element-attr footer "y")))
+    (is (= "52" (element-attr title "font-size")))
+    (is (= "22" (element-attr subtitle "font-size")))
+    (is (= "16" (element-attr footer "font-size")))
     (is (some? graph-wrapper))
     (is (and graph-wrapper
              (<= 1.0
@@ -124,18 +127,18 @@
         (str/replace raw-svg "0 0 200 100" "0 0 2000 1000")
         (.getBytes "woff2" "UTF-8")))))
 
-(deftest graph-content-must-remain-legible-at-its-recorded-scale
+(deftest graph-content-must-meet-revised-body-floors
   (let [raw (str/replace
              raw-svg
-             "<text font-size=\"30\">Example</text>"
-             (str "<text font-size=\"29\" font-weight=\"bold\">Bold</text>"
-                  "<text font-size=\"21\">Small</text>"
+             "<text font-size=\"34\">Example</text>"
+             (str "<text font-size=\"33\" font-weight=\"bold\">Bold</text>"
+                  "<text font-size=\"23\">Small</text>"
                   "<path fill=\"none\" stroke=\"#48CAE4\" "
                   "stroke-width=\"1\" d=\"M0,0 L10,10\"/>"))
         problems (svg/svg-problems
                   (svg/normalize-svg graph raw (.getBytes "woff2" "UTF-8")))]
-    (is (some #(str/includes? % "bold graph text is smaller than 30 px") problems))
-    (is (some #(str/includes? % "graph text is smaller than 22 px") problems))
+    (is (some #(str/includes? % "bold graph text is smaller than 34 px") problems))
+    (is (some #(str/includes? % "graph text is smaller than 24 px") problems))
     (is (some #(str/includes? % "graph stroke is thinner than 2 px") problems))))
 
 (deftest graph-content-rejects-descendant-uniform-downscaling

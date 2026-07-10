@@ -198,11 +198,11 @@
                      (nil? size)
                      [(str "graph text has invalid font-size: " font-size)]
 
-                     (and (bold? font-weight) (< size 30.0))
-                     [(str "bold graph text is smaller than 30 px: " font-size)]
+                     (and (bold? font-weight) (< size 34.0))
+                     [(str "bold graph text is smaller than 34 px: " font-size)]
 
-                     (< size 22.0)
-                     [(str "graph text is smaller than 22 px: " font-size)]))
+                     (< size 24.0)
+                     [(str "graph text is smaller than 24 px: " font-size)]))
                  (when (and stroke (not= "none" stroke))
                    (cond
                      (nil? width)

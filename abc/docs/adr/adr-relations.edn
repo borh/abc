@@ -1,6 +1,7 @@
 ;; Typed ADR relationships headers cannot express. SOURCE OF TRUTH (see ADR 0029).
 ;; Ownership rule: this file may ONLY use the types in adr-graph/relation-types;
 ;; {amends, supersedes, depends-on} belong in ADR headers and are REJECTED here.
+;; Optional :note values are source-only human rationale and are not rendered.
 ;; Every :from/:to must resolve to an existing ADR. Edit here, then run
 ;; `clojure -M:abc/diagrams`.
 {:relations

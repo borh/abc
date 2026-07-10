@@ -109,6 +109,10 @@
       (for [r relations
             :when (not (and (integer? (:from r)) (integer? (:to r)) (keyword? (:type r))))]
         (format "adr-relations entry is malformed: %s" (pr-str r)))
+      (for [r relations
+            :when (and (contains? r :note) (not (string? (:note r))))]
+        (format "adr-relations edge %s->%s :note must be a string"
+                (:from r) (:to r)))
       ;; sidecar: single ownership — header-owned types forbidden here
       (for [r relations :when (header-owned-types (:type r))]
         (format "adr-relations edge %04d->%04d uses header-owned type %s; put it in the ADR header"

@@ -74,6 +74,13 @@
     (is (some #(str/includes? % "0099") (adr/lint-adrs adrs [{:from 1 :to 99 :type :extends}])))
     (is (some #(str/includes? % "unknown relation") (adr/lint-adrs adrs [{:from 1 :to 1 :type :bogus}])))))
 
+(deftest sidecar-note-must-be-a-string
+  (let [adrs [{:num 1 :title "A" :status "Accepted" :supersedes []
+               :amends [] :amended-by [] :depends-on []}]
+        relations [{:from 1 :to 1 :type :extends :note 42}]]
+    (is (some #(str/includes? % ":note must be a string")
+              (adr/lint-adrs adrs relations)))))
+
 (deftest sidecar-clean-and-committed-file-valid
   (is (= [] (adr/lint*)))                          ;; real edn passes all rules
   (let [g (adr/build)]                             ;; semantic edge present

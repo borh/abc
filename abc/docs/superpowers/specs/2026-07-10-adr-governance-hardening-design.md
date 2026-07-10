@@ -75,7 +75,9 @@ values so validation can describe them accurately.
 `abc.tools.diagram.adr-graph` consumes these ADR values for nodes and
 header-owned graph edges. It continues to own only graph construction and the
 `adr-relations.edn` semantic-edge rules. It must not maintain a second ADR
-header parser.
+header parser. This explicitly relocates the recently added malformed-reference
+width parsing and linting from `adr_graph.clj`; it does not reimplement that
+behavior in parallel.
 
 ### Governance check
 
@@ -94,21 +96,39 @@ diagram, but add checks for semantic completeness rather than existence alone.
 
 The manifest identity coordinate list in `docs/architecture.md` must equal the
 required property list of `schemas/manifest.schema.json`'s `identityObject`.
-The comparison is set-based for membership and separately verifies the
-documented order when order is part of the presentation contract.
+The comparison is set-based because JSON Schema's `required` array order is not
+semantic. `architecture.md` retains a human-readable presentation order without
+claiming that order as a second contract.
 
 The manifest stage must cite every ADR explicitly recorded as introducing or
-amending a manifest identity coordinate. Add this ownership to
+amending a manifest identity coordinate. Add per-coordinate ownership to
 `docs/architecture-stages.edn` as a top-level value:
 
 ```clojure
 :manifest-identity-contract
 {:schema "schemas/manifest.schema.json"
- :adrs [1 10 23 27 28]}
+ :coordinates
+ {"manifest_schema_hash" [1 10]
+  "corpus_snapshot_hash" [1]
+  "work_content_hash" [1]
+  "metadata_record_hash" [1]
+  "parser_build_hash" [1]
+  "parser_config_hash" [1]
+  "aat_parser_ir_mapping_hash" [23]
+  "parser_ir_schema_hash" [1]
+  "tei_profile_hash" [1]
+  "tokenizer_build_hash" [1]
+  "tokenizer_dictionary_hash" [1]
+  "tokenizer_profile_hash" [27]
+  "analysis_recipe_hash" [1]
+  "annotation_policy_hash" [28]
+  "output_format_spec_hash" [1]}}
 ```
 
-The architecture validator consumes that value and requires the manifest
-stage's ADR list to include it. Ownership must not be inferred from arbitrary
+The architecture validator requires the coordinate key-set to equal the
+manifest schema's required identity-property set, derives the owning ADR set
+from the union of all coordinate values, and requires the manifest stage's ADR
+list to equal that derived set. Ownership must not be inferred from arbitrary
 prose searches. Proposed ADRs 0027 and 0028 appear because their implemented
 schema changes are already present in the live manifest contract; inclusion in
 this metadata does not promote their lifecycle status.
@@ -127,6 +147,17 @@ committed diagram registry.
 
 ### Exact header rules
 
+The header grammar is closed and line-oriented. An ADR begins with exactly one
+`# ADR NNNN: Title` line, one blank line, and then a contiguous block of
+single-line `Field: value` entries. The first blank line after a field ends the
+header. Multi-line values are not legal; rationale belongs in the body.
+
+The recognized field vocabulary is `Status`, `Date`, `Accepted`, `Supersedes`,
+`Superseded by`, `Amends`, `Amended by`, `Depends on`, and `Source`. `Source`
+accepts one non-empty line of human-readable source references. Within the
+header block, an unknown field, a non-field line, duplicate field, or empty
+value is a validation problem rather than ignored input.
+
 - `Status:` equals exactly one of `Draft`, `Proposed`, `Accepted`,
   `Superseded`, or `Withdrawn`.
 - `Date:` is required and has `YYYY-MM-DD` shape.
@@ -139,10 +170,28 @@ committed diagram registry.
 - References use exactly `ADR NNNN` and resolve to an existing ADR.
 - `Amends` and `Amended by` are reciprocal in both directions.
 
-`Supersedes:` may continue to contain scoped prose, as ADR 0012 does. Any
-well-formed `ADR NNNN` token found there is treated as a graph reference and
-must resolve. A scoped supersession does not force the referenced ADR's entire
-status to `Superseded`.
+`Amends`, `Amended by`, `Depends on`, `Supersedes`, and `Superseded by` use a
+comma-separated relation grammar. Each item is exactly `ADR NNNN` optionally
+followed by `[scope: non-empty text]`; no other prose or document paths are
+legal in relation fields. `Supersedes: none` is the sole non-relation sentinel;
+the other relation fields are omitted when empty. Brackets make scope
+unambiguous rather than relying on parentheses that cannot be distinguished
+reliably from ordinary prose. Reciprocal relation items must carry identical
+scope text.
+
+Every `Supersedes` relation requires a reciprocal `Superseded by` entry with the
+same scope. A scoped supersession does not force the referenced ADR's entire
+status to `Superseded`. An unscoped supersession does: its target must have
+`Status: Superseded`. Every ADR with `Status: Superseded` must be the target of
+at least one unscoped `Supersedes` relation. ADR 0012's current free prose is
+migrated to the bracketed scoped form rather than grandfathered.
+
+`Amends` records an intended relationship at any lifecycle state, but it changes
+the canonical meaning of its Accepted target only when the amending ADR is also
+Accepted. A Proposed amendment is pending. Its reciprocal `Amended by` entry is
+navigational and does not make it effective. Live schema behavior introduced by
+a Proposed ADR is an implemented provisional surface, not implicit ratification;
+the architecture metadata records that implementation fact separately.
 
 ### Required sections
 
@@ -152,13 +201,15 @@ Every Accepted ADR has:
 - `## Implementation Status`; and
 - `## Acceptance Criteria` with executable evidence.
 
-Draft and Proposed ADRs may have Acceptance Criteria. When present, the same
-evidence rules apply.
+Draft and Proposed ADRs may state Acceptance Criteria as future promotion
+conditions. They are not required to cite already-existing executable evidence.
+Any evidence path they do cite is validated for existence under the same path
+grammar, so an explicit broken reference still fails.
 
 ### Dependency status and scope
 
-An Accepted ADR cannot depend on a non-Accepted ADR without an explicit scoped
-dependency annotation. The machine-readable syntax is:
+An Accepted ADR cannot depend on a Draft or Proposed ADR without an explicit
+scoped dependency annotation. The machine-readable syntax is:
 
 ```markdown
 Depends on: ADR 0002 [scope: source_span_coverage gate]
@@ -168,24 +219,32 @@ Each bracketed scope binds to the immediately preceding ADR reference. Scope is
 a non-empty human-readable string. The validator rejects unscoped
 Accepted-to-Draft and Accepted-to-Proposed dependencies.
 
-Draft and Proposed ADRs may depend on non-Accepted ADRs without a scope because
-their own contracts are not canonical. The graph label for a scoped dependency
-includes the scope so the generated view does not erase it.
+An Accepted ADR may not depend on a Withdrawn or wholly Superseded ADR, scoped or
+otherwise; it must depend on the current successor or restate the required
+contract. Draft and Proposed ADRs may depend on non-Accepted ADRs without a scope
+because their own contracts are not canonical. The graph label for a scoped
+dependency includes the scope so the generated view does not erase it.
 
 ### Acceptance evidence
 
-Each Acceptance Criteria section must contain at least one repository-relative
-evidence reference under an allowed executable surface:
+Each Accepted ADR's Acceptance Criteria section must contain at least one
+repository-relative evidence reference under an allowed executable surface:
 
 - `test/` for Clojure tests;
 - `fixtures/` for validated fixtures;
-- `nix/` for executable check scripts; or
-- `fixtures/v0/facts/prolog/` for committed Prolog evidence.
+- `nix/` for executable check scripts.
 
-Every referenced path must exist. Directory references are allowed only when
-the criterion names the executable harness that consumes the directory. A path
-substring in prose is not sufficient: references are extracted from Markdown
-code spans and validated as paths relative to `abc/`.
+Committed Prolog evidence under `fixtures/v0/facts/prolog/` is included by the
+`fixtures/` rule.
+
+Every referenced path must exist. A directory reference counts only when the
+same criterion item also cites an existing `test/` or `nix/` harness path that
+consumes it. A path substring in prose is not sufficient: references are
+extracted from Markdown code spans and validated as paths relative to `abc/`.
+Only code spans beginning with an allowed prefix are candidate evidence paths;
+code spans naming tests, functions, or other identifiers are ignored. A
+misspelled prefix is therefore not independently detectable, but an Accepted
+ADR still fails unless at least one allowed-prefix path resolves.
 
 The governance check proves evidence presence and addressability. Actual test
 execution remains the responsibility of the focused and full Clojure/Nix test
@@ -195,6 +254,9 @@ checks; the ADR check does not build a second test runner.
 
 The migration repairs all current violations before removing the old gate:
 
+- Update `docs/adr/README.md` to document the closed header grammar, structured
+  relation scopes, supersession reciprocity, status-sensitive evidence rule,
+  and removal of the legacy allowlist.
 - Move ADR 0028's status commentary into its existing Implementation Status
   section and leave its exact status `Proposed`.
 - Recover ADR 0016's acceptance date from repository history or contemporaneous
@@ -204,13 +266,21 @@ The migration repairs all current violations before removing the old gate:
 - Add Implementation Status sections to Accepted ADRs that lack one. These
   sections describe current repository evidence without rewriting immutable
   Decision or Hard Rule text.
-- Add real evidence references to every Acceptance Criteria section currently
-  covered by the legacy allowlist. Where no executable evidence exists, add the
-  missing characterization test or fixture rather than inventing a reference.
+- Add real evidence references to every Accepted ADR's Acceptance Criteria
+  section currently covered by the legacy allowlist. Where no executable
+  evidence exists for an Accepted contract, add the missing characterization
+  test or fixture rather than inventing a reference. Draft ADRs 0002–0005 keep
+  their criteria as future promotion conditions and do not receive fictional
+  evidence.
 - Add explicit scopes to Accepted-to-non-Accepted dependencies, including ADR
   0024's dependency on ADR 0002.
-- Synchronize `docs/architecture.md` with the manifest schema's current identity
-  coordinates and update the manifest-stage ADR attribution.
+- Rewrite ADR 0023 and ADR 0024 relation headers to contain only structured ADR
+  relations; move their handoff-document references to `Source` or body prose.
+- Rewrite ADR 0012's scoped supersession using `[scope: TEI stub language]` and
+  add the reciprocal scoped `Superseded by` entry to ADR 0006 without changing
+  ADR 0006's overall Accepted status.
+- Collapse every wrapped `Source` or other header value to one physical line and
+  repair any header that violates the closed field vocabulary.
 - Regenerate committed Mermaid after source repairs.
 - Delete the allowlist and shell-only acceptance gate only after the new
   repository-wide validator reports no problems.
@@ -240,12 +310,17 @@ The command exits zero only when the full repository is valid.
 Develop the validator with focused test-first cases for:
 
 - exact versus decorated status values;
+- unknown, duplicate, empty, and multi-line header fields;
 - required and forbidden acceptance dates;
 - acceptance-date ordering;
 - filename/title mismatch and duplicate numbers;
-- malformed, dangling, and reverse-only relations;
+- malformed, dangling, reverse-only, scoped, and unscoped relations;
+- scoped supersession versus whole-ADR supersession status behavior;
 - Accepted-to-Draft dependencies with and without scopes;
+- Accepted dependencies on Withdrawn and wholly Superseded ADRs;
+- pending Proposed amendments into Accepted ADRs;
 - missing Acceptance Criteria or Implementation Status;
+- Accepted versus Draft/Proposed evidence requirements;
 - missing, invalid, and existing evidence paths; and
 - accumulation of multiple problems from one repository scan.
 
@@ -270,11 +345,13 @@ Workflow diagram tests prove:
 Implement and review the work in this order:
 
 1. Introduce the ADR domain parser and validator with synthetic tests.
-2. Repair the existing ADR set and add the clean-repository test.
+2. Repair ADR lifecycle headers, relations, sections, and Accepted evidence;
+   then add the clean-repository test.
 3. Switch the flake governance check to the Clojure validator, then delete the
    shell gate and allowlist.
-4. Add architecture semantic-completeness checks and repair the architecture
-   sources.
+4. Add per-coordinate architecture ownership and semantic-completeness checks;
+   then repair `architecture.md`, `architecture-stages.edn`, and the generated
+   architecture view.
 5. Add workflow schema and semantic validation.
 6. Regenerate diagrams and run the complete verification matrix.
 

@@ -80,7 +80,12 @@ def main() -> int:
     }
     for work in ws["works"]:
         src_path = corpus / work["corpus_relpath"]
-        actual = sha256(src_path)
+        try:
+            actual = sha256(src_path)
+        except FileNotFoundError:
+            print(f"FAIL-CLOSED: {work['work_id']} source missing at {src_path} — "
+                  f"run extract-perf-workset-corpus.py first", file=sys.stderr)
+            return 2
         if actual != work["source_sha256"]:
             print(f"FAIL-CLOSED: {work['work_id']} sha256 {actual} != pinned", file=sys.stderr)
             return 2

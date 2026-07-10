@@ -33,9 +33,16 @@ The extracted raw texts live under the gitignored `scratch/` directory
 (`scratch/perf-workset-corpus/<work_id>.txt`) and are not committed — the
 committed artifact is the hash pin, which `run-perf-workset.py` verifies
 against whatever `--corpus` directory is supplied at run time. To
-reproduce the extraction: unzip each `zip_entry` from `archive` (paths
-above, relative to the corpus store path) into a flat file named
-`<work_id>.txt`.
+reproduce the extraction, run
+`reports/aat-fidelity/extract-perf-workset-corpus.py --workset
+data/perf-workset.json --corpus-root <resolved corpus> --out-dir
+scratch/perf-workset-corpus` (resolve the corpus root the same way as
+above, e.g. via `scripts/resolve-aozorabunko-corpus.sh`). The script
+opens each work's `_provenance.archive_relpath` zip, extracts
+`_provenance.zip_entry`, writes it to
+`<out-dir>/<work_id>.txt`, and fails closed (exit 2) if the freshly
+derived bytes don't hash to the pinned `source_sha256` — this is a
+verified derivation, not just a materialization.
 
 Protocol (`data/perf-workset.json` → `protocol`): release build, sccache
 disabled, 1 warm-up + 5 measured runs per work, 90s per-work timeout,

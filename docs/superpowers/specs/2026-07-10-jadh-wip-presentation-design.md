@@ -35,8 +35,8 @@ written into the deck.
 - English slide text with untranslated Japanese examples.
 - Standard Pandoc slide Markdown.
 - YAML metadata includes `type: slides` and `aspect-ratio: 16-9`.
-- Exactly 27 rendered main slides and 37 rendered slides including ten appendix
-  slides.
+- About 27 rendered main slides, with permission to split a dense claim rather
+  than preserve an exact count. The appendix may grow to ten slides.
 - Dedicated time for a live demonstration.
 - Level-one headings start slides; level-two headings structure content within a
   slide.
@@ -133,7 +133,8 @@ that evidence in a speaker comment.
 The main sequence uses one early positioning slide for TEI-EAJ, then returns to
 the deeper comparison when actual XML is on screen:
 
-1. Title only, with no visible author, date, affiliation, or repository.
+1. Metadata-driven title slide, with no manually duplicated author, date,
+   affiliation, or repository line in the Markdown body.
 2. Aozora Bunko as shared research infrastructure.
 3. The same source becomes many incompatible derived corpora.
 4. TEI-EAJ `aozora_tei` as essential parallel work, including its Levels
@@ -168,10 +169,10 @@ excerpt and one annotated structural comparison covering paragraph boundaries,
 ruby, notes, headers, and enrichment. ア、秋 becomes the principal concrete
 paragraph-structure example.
 
-The appendix contains ten slides. It includes the moved corpus-scale tokenizer
-statistics and a detailed orthography-evaluation appendix in addition to the
-existing evidence. It contains the fuller markup inventory, parser crosswalk
-and measurement details, additional
+The appendix may contain up to ten slides. It includes the moved corpus-scale
+tokenizer statistics and a detailed orthography-evaluation appendix in addition
+to the existing evidence. It contains the fuller markup inventory, parser
+crosswalk and measurement details, additional
 divergences, transformation taxonomy, extra tokenizer regions, fuller TEI XML
 excerpts, evidence reproduction commands, and linked resources.
 Dense tables belong in the appendix unless the main argument depends on reading
@@ -183,18 +184,31 @@ Two main slides present the complete source-preserving chain.
 
 ### Detection results
 
-The first slide compares two detectors without implying that they share one
-evaluation set:
+The first slide compares both detectors on one shared 300-sentence evaluation
+set. Candidate sampling was LLM-assisted and stratified across the corpus; the
+author hand-assigned the final three-way classification of `accept` 197,
+`normalize` 22, and `reject` 81. Sampling and label provenance must be described
+separately. The slide reports:
 
-- heuristic detector over a 50-sentence human/assistant probe: F1 `0.750`,
-  recall `0.636`, precision `0.913`;
-- ML character-only logistic regression over **300 author-labeled sentences**:
-  deterministic 5-fold held-out mean F1 `0.9629`, recall `0.9590`,
-  precision `0.9673`.
+- heuristic detector — F1 `0.9171`, recall `0.9087`, precision `0.9256`;
+- ML character-only logistic regression — deterministic 5-fold mean F1
+  `0.9586`, recall `0.9468`, precision `0.9718`.
 
-The deck must say **author-labeled**, correcting the stale “LLM-labeled” wording
-in the current report. It retains the report path and explains the provenance
-correction in an HTML comment.
+These are the human three-way-label results in
+`ab-validator/reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md`.
+The positive class combines `accept` and `normalize`, because both benefit from
+normalization for tokenization even though only `accept` records historical
+orthography.
+
+The appendix distinguishes the earlier evaluation sets rather than presenting
+them as a performance progression:
+
+- the 50-sentence human-labeled probe gave the heuristic F1 `0.750`, recall
+  `0.636`, and precision `0.913`;
+- the earlier 300-sentence binary set was labeled by one LLM annotator and gave
+  ML 5-fold mean F1 `0.9629`, recall `0.9590`, and precision `0.9673`;
+- the LLM-labeled result is not human ground truth and does not establish
+  human-label generalization.
 
 The main slide includes a concrete heuristic false negative:
 
@@ -245,7 +259,7 @@ The detailed appendix includes:
 - the distinct labeling/evaluation-set caveats;
 - the six-work workload probe: `11,059` genuinely historical tokens among
   `348,814` all-kana tokens;
-- particle protection: approximately `40,000` は／を／へ cases must remain
+- particle protection: `39,618` standalone は／を／へ cases must remain
   unchanged;
 - transformation-class counts and examples; and
 - exact repository paths and commands for inspecting each result.
@@ -419,6 +433,9 @@ must not replace citations in the argument.
   comments unless the audience needs them.
 - Prefer short source examples, highlighted values, and direct comparisons over
   full report tables.
+- Use colons sparingly in visible slide prose. Bold and italic emphasis may be
+  used within normal sentences when that reads more naturally than a label-value
+  construction.
 - Do not translate Japanese examples for this audience.
 - Use current component names consistently: AAT, Parser-IR, ABC, and
   `ab-validator`.
@@ -474,8 +491,8 @@ Before the deck is considered complete:
   values and the external archive is not required for rendering;
 - every quantitative headline is checked against the latest authoritative
   checked-in report;
-- the rendered main sequence contains exactly 27 slides and the complete rendered
-  deck contains exactly 37 slides including ten appendices;
+- the rendered main sequence remains close to 27 slides and the complete deck
+  contains no more than ten appendix slides;
 - slide-count validation accounts for the downstream generator's metadata title
   view; it does not blindly equate level-one Markdown headings with rendered
   slide count;

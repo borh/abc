@@ -56,7 +56,7 @@ digraph "publication" {
   "aat_detail" -> "parser_ir" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",penwidth="2",style="dashed"];
   "manifest" -> "outputs" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",penwidth="2",style="solid"];
   "parser_ir" -> "manifest" [color="#F2B84B",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",penwidth="4",style="solid"];
-  "parser_process" -> "aat_detail" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",penwidth="2",style="dashed"];
+  "parser_process" -> "aat_detail" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",headport="w",penwidth="2",style="dashed"];
   "parser_process" -> "parser_ir" [color="#F2B84B",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",penwidth="2",style="solid"];
   "source" -> "parser_process" [color="#F2B84B",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="22",penwidth="2",style="solid"];
 }

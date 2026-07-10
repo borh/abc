@@ -222,7 +222,8 @@
                                                 :analysis :annotation]}}
                  {:from :parser-process :to :aat-detail
                   :role :implementation-detail
-                  :style :dashed :backing {:stages [:aat]}}
+                  :style :dashed :head-port :w
+                  :backing {:stages [:aat]}}
                  {:from :aat-detail :to :parser-ir
                   :role :implementation-detail
                   :style :dashed :backing {:path [:aat :parser-ir]}}]

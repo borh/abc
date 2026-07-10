@@ -34,6 +34,13 @@
     (is (some #(= :aat-detail (:id %)) (:nodes g)))
     (is (= :dashed
            (:style (some #(when (= :current-inset (:id %)) %) (:groups g)))))
+    (is (= :w
+           (:head-port
+            (some #(when (and (= :parser-process (:from %))
+                              (= :aat-detail (:to %)))
+                     %)
+                  (:edges g))))
+        "the inset edge enters below the cluster heading")
     (is (every? (comp nil? :label) (:edges g))
         "edge xlabels must not obscure the presentation spine")))
 

@@ -34,6 +34,7 @@
    :edges [{:from :z
             :to :a
             :label "compatibility gate"
+            :head-port :w
             :role :validation
             :style :dashed
             :backing {}}
@@ -66,6 +67,7 @@
     (is (str/includes? out "margin=\"0\";"))
     (is (str/includes? out "margin=\"0.04,0.02\""))
     (is (str/includes? out "xlabel=\"compatibility\\ngate\""))
+    (is (str/includes? out "headport=\"w\""))
     (is (str/includes? out "style=\"dashed\""))
     (is (str/includes? out "style=\"rounded,dashed\""))
     (is (= 1 (count (re-seq #"    penwidth=\"2\";" out))))

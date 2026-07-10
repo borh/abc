@@ -106,6 +106,8 @@
                               4
                               (:stroke-width theme))
                   :style (if (= :dashed (:style edge)) "dashed" "solid")}
+                 (when-let [head-port (:head-port edge)]
+                   {:headport (name head-port)})
                  (when-let [label (:label edge)]
                    {:xlabel (str/join "\n" (wrap-lines label 14))})))
          ";")))

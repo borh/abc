@@ -1832,27 +1832,47 @@ fn take_implicit_ruby_base(content: &mut Vec<Inline>) -> String {
 }
 
 fn implicit_ruby_base_start(value: &str) -> usize {
+    let Some(class) = value.chars().next_back().and_then(implicit_ruby_base_class) else {
+        return value.len();
+    };
     value
         .char_indices()
         .rev()
-        .take_while(|(_, ch)| is_implicit_ruby_base_char(*ch))
+        .take_while(|(_, ch)| implicit_ruby_base_class(*ch) == Some(class))
         .last()
         .map(|(offset, _)| offset)
         .unwrap_or(value.len())
 }
 
-fn is_implicit_ruby_base_char(ch: char) -> bool {
-    matches!(
-        ch,
+/// Script class for the Aozora implicit-ruby rule: a bar-less ruby marker
+/// attaches to the trailing run of the same script class as the character
+/// immediately before 《 (kanji, katakana, hiragana, or Latin — digits and
+/// halfwidth kana do not take implicit ruby).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ImplicitRubyBaseClass {
+    Kanji,
+    Hiragana,
+    Katakana,
+    Latin,
+}
+
+fn implicit_ruby_base_class(ch: char) -> Option<ImplicitRubyBaseClass> {
+    match ch {
         '\u{3400}'..='\u{9fff}'
-            | '\u{f900}'..='\u{faff}'
-            | '\u{20000}'..='\u{2fa1f}'
-            | '々'
-            | '〻'
-            | '〆'
-            | 'ヶ'
-            | 'ヵ'
-    )
+        | '\u{f900}'..='\u{faff}'
+        | '\u{20000}'..='\u{2fa1f}'
+        | '々'
+        | '〻'
+        | '〆'
+        | 'ヶ'
+        | 'ヵ' => Some(ImplicitRubyBaseClass::Kanji),
+        'ぁ'..='ゖ' | 'ゝ' | 'ゞ' => Some(ImplicitRubyBaseClass::Hiragana),
+        // ー has no script of its own; katakana is where it overwhelmingly
+        // occurs, and classing it there keeps ビール-style runs whole.
+        'ァ'..='ヺ' | 'ヽ' | 'ヾ' | 'ー' => Some(ImplicitRubyBaseClass::Katakana),
+        'A'..='Z' | 'a'..='z' | 'Ａ'..='Ｚ' | 'ａ'..='ｚ' => Some(ImplicitRubyBaseClass::Latin),
+        _ => None,
+    }
 }
 
 fn append_ruby_supplements(
@@ -2416,6 +2436,47 @@ mod tests {
                 && node["description"] == "「筑」の「凡」に代えて「卩」、第3水準1-89-60"
         }));
         assert_eq!(ab_ir::provenance_counts(&blocks).source_supplement, 0);
+    }
+
+    #[test]
+    fn fallback_blocks_attach_implicit_ruby_to_non_kanji_script_runs() {
+        let body =
+            "窓のガラス《がらす》とビール《びーる》、かのＮＨＫ《エヌエイチケー》とpen《ペン》。";
+        let (blocks, _projected) = build_fallback(body);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+        let content = json[0]["content"].as_array().unwrap();
+
+        for (base, reading) in [
+            ("ガラス", "がらす"),
+            ("ビール", "びーる"),
+            ("ＮＨＫ", "エヌエイチケー"),
+            ("pen", "ペン"),
+        ] {
+            assert!(
+                content.iter().any(|node| {
+                    node["kind"] == "ruby" && node["base"] == base && node["reading"] == reading
+                }),
+                "missing ruby {base} ← {reading}"
+            );
+        }
+    }
+
+    #[test]
+    fn fallback_blocks_stop_implicit_ruby_base_at_script_class_boundary() {
+        let body = "窓ガラス《がらす》とガラス窓《まど》と大人しい《おとなしい》。";
+        let (blocks, _projected) = build_fallback(body);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+        let content = json[0]["content"].as_array().unwrap();
+
+        for (base, reading) in [("ガラス", "がらす"), ("窓", "まど"), ("しい", "おとなしい")]
+        {
+            assert!(
+                content.iter().any(|node| {
+                    node["kind"] == "ruby" && node["base"] == base && node["reading"] == reading
+                }),
+                "missing ruby {base} ← {reading}"
+            );
+        }
     }
 
     #[test]

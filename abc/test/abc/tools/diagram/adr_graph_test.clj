@@ -1,5 +1,6 @@
 (ns abc.tools.diagram.adr-graph-test
   (:require [clojure.test :refer [deftest is]]
+            [clojure.java.io :as io]
             [clojure.string :as str]
             [abc.tools.diagram.adr-graph :as adr]))
 
@@ -17,7 +18,7 @@
   (let [dir (.toFile (java.nio.file.Files/createTempDirectory
                       "abc-adr-graph-test"
                       (make-array java.nio.file.attribute.FileAttribute 0)))
-        file (clojure.java.io/file dir "0001-test.md")]
+        file (io/file dir "0001-test.md")]
     (try
       (spit file (str "# ADR 0001: Test\n\n"
                       "Status: Accepted\n"

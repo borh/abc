@@ -40,5 +40,5 @@
                            (sort-by (comp name key))
                            (map (fn [[k v]] (str "  classDef " (name k) " " v))))]
       (str (str/join "\n" (concat [(str "flowchart " dir)]
-                                    node-lines edge-lines class-lines))
+                                  node-lines edge-lines class-lines))
            "\n"))))

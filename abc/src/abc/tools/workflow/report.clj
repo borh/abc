@@ -6,7 +6,6 @@
    from the sidecar write; does not require the runner namespace."
   (:require [abc.tools.json :as json]
             [abc.tools.workflow.target :as target]
-            [charred.api :as charred]
             [clojure.java.io :as io]))
 
 (def node-summary-schema-version
@@ -46,7 +45,7 @@
   (io/make-parents file)
   (with-open [writer (io/writer file)]
     (doseq [record records]
-      (.write writer (charred/write-json-str (json/prepare-deterministic-json record)))
+      (.write writer (json/write-deterministic-jsonl-line record))
       (.write writer "\n")))
   file)
 

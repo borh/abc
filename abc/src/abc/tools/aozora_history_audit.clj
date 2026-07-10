@@ -8,7 +8,6 @@
             [abc.tools.person-drift :as drift]
             [abc.tools.person-drift-history :as drift-history]
             [abc.tools.validate-corpus :as validate-corpus]
-            [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]])
@@ -356,8 +355,7 @@
 (defn- write-or-print! [result output]
   (if output
     (abc-json/write-deterministic-json-file! output result)
-    (println (json/write-json-str (abc-json/prepare-deterministic-json result)
-                                  :indent-str "  ")))
+    (println (abc-json/write-deterministic-json-str result)))
   result)
 
 (defn -main [& args]

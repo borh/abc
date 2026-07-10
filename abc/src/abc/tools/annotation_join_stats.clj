@@ -10,7 +10,6 @@
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.parser-ir-plaintext :as plaintext]
-            [charred.api :as charred]
             [clojure.java.io :as io]
             [clojure.string :as string]))
 
@@ -133,7 +132,7 @@
                      "\n")))))
 
 (defn- row-json-str [row]
-  (charred/write-json-str (abc-json/prepare-deterministic-json row)))
+  (abc-json/write-deterministic-jsonl-line row))
 
 (defn run-join-stats!
   "CLI body for `soranoha annotation-join-stats` (spec B4/B5). Reads

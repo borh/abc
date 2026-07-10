@@ -8,7 +8,6 @@
   (:require [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.person-record :as person-record]
-            [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as string]
@@ -278,8 +277,7 @@
   (let [result (report opts)]
     (if output
       (abc-json/write-deterministic-json-file! output result)
-      (println (json/write-json-str (abc-json/prepare-deterministic-json result)
-                                    :indent-str "  ")))
+      (println (abc-json/write-deterministic-json-str result)))
     result))
 
 (defn -main [& args]

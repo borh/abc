@@ -88,15 +88,20 @@ aozora-notation-spec-comparator-flake-smoke:
 	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
 	nix build "{{repo_root}}#checks.$system.aozora-notation-spec-comparator-smoke" --print-build-logs
 
-aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.summary.json":
+aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.summary.json" AOZORA_BIN="":
 	@vectors="{{VECTORS}}"; if [ -z "$vectors" ]; then vectors="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-aozora-notation-spec')/conformance/vectors"; fi; \
-	aozora_pkg="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora')"; \
+	aozora_bin="{{AOZORA_BIN}}"; \
+	if [ -z "$aozora_bin" ]; then \
+	  aozora_pkg="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora')"; \
+	  aozora_bin="$aozora_pkg/bin/aozora"; \
+	fi; \
+	if [ -n "$aozora_bin" ]; then aozora_bin="$(cd "$(dirname "$aozora_bin")" && pwd)/$(basename "$aozora_bin")"; fi; \
 	aozora2html_pkg="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora2html')"; \
 	epub3_pkg="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora-epub3')"; \
 	epub3_jar="${AB_AOZORAEPUB3_JAR:-$epub3_pkg/lib/AozoraEpub3.jar}"; \
 	test -f "$epub3_jar" || { echo "AozoraEpub3.jar not found: $epub3_jar" >&2; exit 2; }; \
 	q() { python -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$1"; }; \
-	aozora_bin_q="$(q "$aozora_pkg/bin/aozora")"; \
+	aozora_bin_q="$(q "$aozora_bin")"; \
 	epub3_jar_q="$(q "$epub3_jar")"; \
 	a2h_bin_q="$(q "$aozora2html_pkg/bin/aozora2html")"; \
 	a2h_gem_q="$(q "$aozora2html_pkg/lib/ruby/gems")"; \

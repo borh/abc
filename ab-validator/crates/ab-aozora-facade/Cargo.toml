@@ -1,0 +1,116 @@
+[package]
+name = "ab-aozora-facade"
+description = "Aozora Bunko notation parser — single front door (Document + Tree)"
+version = "0.1.0"
+edition.workspace = true
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+# Document wraps the lex pipeline and returns a `Tree<'_>` whose
+# lifetime borrows only the source; the parsed AST is owned. The five
+# building-block crates below are published in their own right (the
+# umbrella is on crates.io, so its transitive deps must be too); this
+# meta crate is the recommended single front door, re-exposing them via
+# the `aozora::pipeline` / `aozora::syntax` / `aozora::render` /
+# `aozora::encoding` modules so most consumers depend on just `aozora`.
+ab-aozora-render = { path = "../ab-aozora-render" }
+ab-aozora-pipeline = { path = "../ab-aozora-pipeline" }
+ab-aozora-syntax = { path = "../ab-aozora-syntax" }
+ab-aozora-spec = { path = "../ab-aozora-spec" }
+ab-aozora-encoding = { path = "../ab-aozora-encoding" }
+
+# Driver-shared wire format (see `aozora::json`). Optional so library
+# consumers that only use the owned-AST surface do not have to
+# compile serde / serde_json. Drivers (aozora-ffi / aozora-wasm /
+# aozora-py) enable `aozora/json` to project the AST into JSON.
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+# JSON Schema generation for the wire format. Optional, enabled by
+# the `schema` feature only — most wire consumers don't need
+# `schema_*()` functions and shouldn't pull schemars into their
+# dep tree.
+schemars = { version = "1.0", features = ["preserve_order"], optional = true }
+# Phase N4 — Aozora-shaped proptest generators. Optional, enabled
+# only by the `proptest` feature so library consumers don't pay
+# the proptest dep cost unless they're writing property tests
+# themselves.
+ab-aozora-proptest = { path = "../ab-aozora-proptest", optional = true }
+proptest = { version = "1.11", optional = true }
+# NOTE (Task 3 lift): upstream also declares optional deps on
+# `aozora-cst` / `aozora-query` gating the `cst` / `query` features.
+# Neither crate is in the Task-2-confirmed LIFT_SET (both are
+# feature-gated off by default upstream and excluded per the
+# minimal-core decision — see
+# docs/handoffs/2026-07-10-parser-fork-provenance.md). Their
+# `[dependencies]` entries and the `cst`/`query` feature lines are
+# therefore dropped here rather than pointed at a non-existent
+# `ab-aozora-cst` / `ab-aozora-query` path.
+
+[features]
+default = []
+# JSON wire format projection used by FFI / WASM / PyO3 drivers.
+# Enables `aozora::json::diagnostics` /
+# `nodes` / `pairs` and the `SCHEMA_VERSION`
+# constant — the single authority for cross-language wire output.
+#
+# `serde_json/preserve_order` makes `serde_json::Value` keep insertion
+# order (IndexMap, not the default sorted BTreeMap). The wire functions
+# emit from structs, so their field order is already canonical; this
+# only matters for callers (and the `property_json_round_trip` test)
+# that round-trip the envelope through `Value` and rely on byte-stable
+# key order. Pinning it to `json` makes the byte-canonical contract
+# self-contained instead of silently depending on `schema` pulling in
+# schemars (which also enables `preserve_order`).
+json = ["dep:serde", "dep:serde_json", "serde_json/preserve_order"]
+# JSON Schema introspection for the wire format. Enables
+# `aozora::json::schema_diagnostics` / `schema_nodes` /
+# `schema_pairs` / `schema_container_pairs` (one per envelope).
+# Used by `xtask schema dump` and the introspection CLI subcommand.
+schema = ["json", "dep:schemars"]
+# Aozora-shaped proptest generators (`aozora::proptest::*`).
+# Downstream renderer authors enable this when writing property
+# tests over their own `AozoraVisitor` impls.
+proptest = ["dep:proptest", "dep:ab-aozora-proptest"]
+# Stub features (Task 3 lift): upstream's `cst` / `query` features gate
+# `dep:aozora-cst` / `dep:aozora-query`, neither of which is lifted (see the
+# NOTE above [dependencies]). Declared here as empty, dependency-less
+# features — matching upstream's feature *names* exactly, satisfying the
+# `#[cfg(feature = "cst")]` / `#[cfg(feature = "query")]` gates already
+# present in src/lib.rs (rustc's `unexpected_cfgs` check otherwise flags
+# them as unknown values) — while enabling either from the command line
+# correctly fails to compile (the gated `pub use aozora_cst::*` /
+# `aozora_query::*` re-exports have no crate to resolve), honestly
+# reflecting that this fork does not carry cst/query support.
+cst = []
+query = []
+
+[dev-dependencies]
+# Used by `tests/corpus_sweep.rs`, `tests/corpus_incremental_merge.rs`, and
+# `tests/corpus_splice_tiling.rs` to walk `AOZORA_CORPUS_ROOT` and verify
+# parse / round-trip / incremental-reparse invariants over a real corpus.
+# Declared path-only (no version) on purpose: ab-aozora-corpus is a
+# dev-only corpus loader that stays `publish = false`.
+#
+# Escalation resolved (2026-07-10): LIFT_SET extended with `aozora-corpus`
+# as a 10th, dev-only, test-support crate (`ab-aozora-corpus`) — see
+# docs/handoffs/2026-07-10-parser-fork-provenance.md. Restores this
+# dependency and the 3 corpus_*.rs test targets it gates.
+ab-aozora-corpus = { path = "../ab-aozora-corpus" }
+proptest = "1.11"
+ab-aozora-proptest = { path = "../ab-aozora-proptest" }
+
+[package.metadata.cargo-shear]
+# `proptest` is an intentional optional dependency exposed via the
+# `proptest` feature (aozora::proptest::*) for downstream property tests.
+# It also appears in dev-dependencies for this crate's own tests, so
+# cargo-shear sees only the dev usage and flags the optional [dependencies]
+# entry as misplaced — but the feature gate is the supported public surface.
+ignored = ["proptest"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

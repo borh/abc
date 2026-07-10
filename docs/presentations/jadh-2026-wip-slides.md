@@ -45,7 +45,7 @@ The transformation can be treated as disposable preprocessing.
 
 **Our system, Soranoha, treats it as a versioned scholarly process.**
 
-# Parallel Work: TEI-EAJ aozora_tei
+# Parallel Work — TEI-EAJ aozora_tei
 
 - Curated human encoding of Aozora works in TEI P5
 - Encoding depth organized through Levels 2–5
@@ -252,7 +252,7 @@ Expected: aozora2html fidelity 0.974; 302 ruby-heavy failures; 24.7% ruby mass m
 Class: checked-in report
 -->
 
-# Parser Comparison: What We Can Conclude
+# What the Parser Comparison Supports
 
 - Highest frequency-weighted coverage: `aozora-pipeline`
 - Highest per-work fidelity: `aozora2html`
@@ -288,7 +288,7 @@ AAT is current producer detail.
 - Records every ambiguity, addition, unsupported feature, and structural loss
 - Feeds TEI, visible plaintext, preservation records, and analytical data
 
-# Worked Mapping: 傍点
+# A Worked Mapping for 傍点
 
 | Stage | Representation | Decision |
 | --- | --- | --- |
@@ -321,7 +321,7 @@ Each category has an explicit action and says whether detail moves to a separate
 
 <!-- Evidence: ab-validator/data/aat-to-parser-ir-mapping-v1.json loss_taxonomy. -->
 
-# Actual TEI XML: Curated TEI-EAJ
+# Actual TEI XML from TEI-EAJ
 
 ## 走れメロス — Level 4
 
@@ -359,11 +359,11 @@ Class: readiness gate; no Soranoha fixture is shown as a real edition
 
 # Publication Is Plural
 
-- **TEI:** structured scholarly transcription and validation [@okada2023]
-- **Visible plaintext:** body text only
-- **Preservation files:** source apparatus, provenance, and policy-specific detail
-- **Tokenized artifacts:** identified analytical views
-- **Manifest:** records which versioned inputs and rules produced each artifact
+- **TEI** provides structured scholarly transcription and validation [@okada2023].
+- **Visible plaintext** contains body text only.
+- **Preservation files** retain source apparatus, provenance, and policy-specific detail.
+- **Tokenized artifacts** are identified analytical views.
+- **The manifest** records which versioned inputs and rules produced each artifact.
 
 Parser-IR is a publication boundary, not a claim that every output should contain the same information.
 
@@ -395,25 +395,58 @@ Expected: Sudachi A keeps 求むる and splits 竹馬/の/友; Vibrato splits �
 Class: bounded live query over pinned analyzers
 -->
 
-# Corpus Scale Does Not Remove Local Differences
+# Detecting Old Orthography
 
-- **17,894** works analyzed with Vibrato and Sudachi
-- **0** analyzer failures and **0** comparison failures
-- **7,358,000** segmentation-difference regions
-- Boundary-agreement score (0–1), median: **0.973**
-- Boundary-agreement score (0–1), minimum: **0.688** — work `000081_43733`, containing 求むる
+The author hand-labeled three outcomes on an **LLM-assisted, stratified sample**
+of 300 sentences — 197 `accept`, 22 `normalize`, and 81 `reject`.
 
-The median establishes broad agreement; the regions identify analytically consequential disagreement.
+| Detector | Recall | Precision | F1 |
+| --- | ---: | ---: | ---: |
+| Heuristic | 0.9087 | 0.9256 | 0.9171 |
+| Character-only ML, 5-fold mean | 0.9468 | 0.9718 | 0.9586 |
+
+`同時ニ僕モ、ココマデ来テハ後戻リハデキナイ。` → `accept`
+
+The ML model recovers more short `normalize` cases, but neither score is a claim
+about semantic interpretation beyond this labeled set.
 
 <!--
-Evidence path: ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md and pinned Aozora corpus work 000081/card43733
-Inspect/regenerate: sed -n '35,100p' ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md; corpus="$(nix build .#ab-validator-aozorabunko-corpus --no-link --print-out-paths)"; rg -L -n '求むる' "$corpus/cards/000081/card43733.html"
-Inputs: 17,894 AAT files; Vibrato unidic-cwj-202512; Sudachi C; pinned corpus
-Expected: 0 failures; 7,358,000 regions; median 0.972972972972973; minimum 0.6884927066450566 for 000081_43733; source contains 求むる
-Class: checked-in full-corpus report
+Evidence path: ab-validator/reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md; ab-validator/data/ortho-gold/sample-300-unlabeled.jsonl
+Inspect/regenerate: sed -n '186,245p' ab-validator/reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md; jq -r '.label' ab-validator/data/ortho-gold/sample-300-unlabeled.jsonl | sort | uniq -c; jq -c 'select(.work_id == "Tanizaki_J_Kagi" and .char_offset == 49666)' ab-validator/data/ortho-gold/sample-300-unlabeled.jsonl
+Inputs: 300 corpus-stratified candidates; final author-assigned three-way labels; deterministic strided 5-fold evaluation
+Expected: accept 197, normalize 22, reject 81; heuristic R/P/F1 0.9087/0.9256/0.9171; ML mean R/P/F1 0.9468/0.9718/0.9586
+Class: checked-in human-label evaluation report and label file
 -->
 
-# Live Demo: Follow the Evidence
+# Preserve the Source, Normalize the View
+
+`ゐる → いる`　 `なほ → なお`　 `いふ → いう`　 `やう → よう`
+
+**The transcription remains unchanged.** Sentence-level TEI records the
+orthography evidence; an optional analytical view normalizes tokenizer input
+and maps token spans back to source coordinates.
+
+```xml
+<s type="orthographic-katakana">吾輩ハ猫デアル。</s>
+```
+
+- TEI-EAJ Level 2 preserves the original orthography.
+- Level 3 can carry sentence-level evidence.
+- Levels 4–5 can add linguistic annotation and normalized analytical views.
+
+Across 25 parallel old/new editions, reconstruction matched modern vocabulary
+for **94.8% of 10,444 historical tokens**. The normalization policy hash is part
+of the analytical artifact's identity.
+
+<!--
+Evidence path: ab-validator/reports/ortho-detect/2026-07-08-lane-b-coverage-probe.md; ab-validator/tests/parser-ir-ortho-publication-smoke.sh; abc/data/analysis-recipes/token-basic-ja-v1.json
+Inspect/regenerate: sed -n '109,145p' ab-validator/reports/ortho-detect/2026-07-08-lane-b-coverage-probe.md; nix build .#checks.x86_64-linux.parser-ir-ortho-publication-smoke --no-link; jq '.normalization_policy' abc/data/analysis-recipes/token-basic-ja-v1.json
+Inputs: 25 pinned parallel editions; 10,444 historical old tokens; parser-IR orthography smoke fixture; checked-in analysis recipe
+Expected: 94.8% pron-reconstruction agreement; TEI contains s type="orthographic-katakana"; normalization policy is explicit and versioned
+Class: checked-in evaluation report, executable smoke test, and policy data
+-->
+
+# Live Demo — Follow the Evidence
 
 1. Inspect source constructs and authority-backed mappings.
 2. Compare selected parsers.
@@ -458,7 +491,7 @@ Provenance narrative: sibling archive paper/demo-trace.md; it is not a build inp
 
 [Soranoha repository](https://github.com/borh/soranoha)
 
-# Appendix: Source Markup Inventory
+# Appendix — Source Markup Inventory
 
 | Family | Occurrences | Example |
 | --- | ---: | --- |
@@ -481,7 +514,7 @@ Expected: 4,323,915 de-duplicated markers and 50 rows; presentation-family total
 Class: checked-in generated source-authority summary
 -->
 
-# Appendix: More Aozora Syntax Examples
+# Appendix — More Aozora Syntax Examples
 
 | Function | Source example | Corpus evidence |
 | --- | --- | ---: |
@@ -499,13 +532,13 @@ Expected: directional ruby 318; tcy 19794; keigakomi 717; quote 21; warichu 6605
 Class: checked-in generated source-authority report
 -->
 
-# Appendix: Parser Names and Measurement Lenses
+# Appendix — Parser Names and Measurement Lenses
 
-- **Breadth:** documented test cases, each weighted equally
-- **Coverage weight:** real-corpus occurrences, dominated by ruby
-- **Fidelity:** representation quality on works completed by every parser
-- **Robustness:** completion over the pinned corpus
-- **Speed:** operational feasibility
+- **Breadth** uses documented test cases, each weighted equally.
+- **Coverage weight** uses real-corpus occurrences and is dominated by ruby.
+- **Fidelity** measures representation quality on works completed by every parser.
+- **Robustness** measures completion over the pinned corpus.
+- **Speed** measures operational feasibility.
 
 No single column answers every research question.
 
@@ -517,7 +550,7 @@ Expected: separate conformance, capability, mass, fidelity, robustness, and spee
 Class: checked-in comparison methodology
 -->
 
-# Appendix: Parser Coverage by Construct
+# Appendix — Parser Coverage by Construct
 
 | Construct | Source occurrences | aozora-pipeline | aozora-rs | aozora2 | aozora2html | AozoraEpub3 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -535,7 +568,7 @@ Expected: construct rows and normalized rates shown above
 Class: checked-in frequency-weighted coverage report
 -->
 
-# Appendix: Transformation Taxonomy
+# Appendix — Transformation Taxonomy
 
 | Category | Default meaning | Sidecar |
 | --- | --- | --- |
@@ -553,7 +586,7 @@ Expected: five categories with default action and records_sidecar flag
 Class: checked-in mapping contract
 -->
 
-# Appendix: Additional Tokenizer Regions
+# Appendix — Additional Tokenizer Regions
 
 | Region | Sudachi | Vibrato + CWJ | Research consequence |
 | --- | --- | --- | --- |
@@ -569,7 +602,49 @@ Expected: bounded region differences shown above; dictionary identity recorded w
 Class: bounded live query plus checked-in corpus report
 -->
 
-# Appendix: Reproducing the Evidence
+# Appendix — Corpus-scale Tokenizer Results
+
+- **17,894** works analyzed with Vibrato and Sudachi
+- **0** analyzer failures and **0** comparison failures
+- **7,358,000** segmentation-difference regions
+- Median boundary-agreement F1 **0.973**
+- Minimum boundary-agreement F1 **0.688** in one work
+
+The median establishes broad agreement. The individual regions remain the
+evidence for analytically consequential differences.
+
+<!--
+Evidence path: ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md
+Inspect/regenerate: sed -n '35,100p' ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md
+Inputs: 17,894 AAT files; Vibrato unidic-cwj-202512; Sudachi C
+Expected: 0 failures; 7,358,000 regions; median 0.972972972972973; minimum 0.6884927066450566 for one work, 000081_43733
+Class: checked-in full-corpus report
+-->
+
+# Appendix — Orthography Evaluation Sets
+
+The detector results answer different questions only when their labels are kept
+distinct.
+
+| Evaluation evidence | Result | Limitation |
+| --- | --- | --- |
+| 50 human-labeled sentences | Heuristic F1 0.750 | Small first probe |
+| 300 binary LLM labels | ML 5-fold F1 0.9629 | One LLM annotator, not human ground truth |
+| 300 author hand-labeled, three-way | Heuristic 0.9171; ML 0.9586 | Shared main-slide comparison |
+
+The workload probe found **11,059 historical tokens** among **348,814 all-kana
+tokens**. It also found **39,618 standalone は／を／へ particles** that must not
+be rewritten.
+
+<!--
+Evidence path: ab-validator/reports/ortho-detect/2026-07-05-phase2-human-recall.md; ab-validator/reports/ortho-detect/2026-07-05-phase2.5-ml-cv.md; ab-validator/reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md; ab-validator/reports/ortho-detect/2026-07-08-lane-b-coverage-probe.md
+Inspect/regenerate: sed -n '35,70p' ab-validator/reports/ortho-detect/2026-07-05-phase2-human-recall.md; sed -n '65,105p' ab-validator/reports/ortho-detect/2026-07-05-phase2.5-ml-cv.md; sed -n '186,245p' ab-validator/reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md; sed -n '30,48p' ab-validator/reports/ortho-detect/2026-07-08-lane-b-coverage-probe.md
+Inputs: three distinct evaluation sets; six-work workload probe
+Expected: 0.750 human-probe heuristic F1; 0.9629 LLM-label ML F1; 0.9171/0.9586 shared human-label F1; 11,059 historical, 348,814 all-kana, 39,618 particles
+Class: checked-in evaluation and corpus-probe reports
+-->
+
+# Appendix — Reproducing the Evidence
 
 - [Pinned TEI-EAJ source](https://github.com/TEI-EAJ/aozora_tei):
   `nix run .#abc-tei-eaj-aozora-tei-source`

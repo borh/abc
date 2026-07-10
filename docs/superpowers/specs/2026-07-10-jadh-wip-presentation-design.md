@@ -35,7 +35,8 @@ written into the deck.
 - English slide text with untranslated Japanese examples.
 - Standard Pandoc slide Markdown.
 - YAML metadata includes `type: slides` and `aspect-ratio: 16-9`.
-- Exactly 27 main slides and 35 slides including appendices.
+- Exactly 27 rendered main slides and 35–37 rendered slides including eight to
+  ten appendix slides.
 - Dedicated time for a live demonstration.
 - Level-one headings start slides; level-two headings structure content within a
   slide.
@@ -166,10 +167,11 @@ excerpt and one annotated structural comparison covering paragraph boundaries,
 ruby, notes, headers, and enrichment. ア、秋 becomes the principal concrete
 paragraph-structure example.
 
-The eight appendix slides contain the fuller markup inventory, parser crosswalk
-and measurement details, additional divergences, transformation taxonomy, extra
-tokenizer regions, fuller TEI XML excerpts, evidence reproduction commands, and
-linked resources.
+The appendix targets eight slides and may grow to ten when additional examples
+or reproduction detail materially help the audience. It contains the fuller
+markup inventory, parser crosswalk and measurement details, additional
+divergences, transformation taxonomy, extra tokenizer regions, fuller TEI XML
+excerpts, evidence reproduction commands, and linked resources.
 Dense tables belong in the appendix unless the main argument depends on reading
 the individual rows.
 
@@ -328,9 +330,10 @@ must not replace citations in the argument.
 
 ## Content and Authoring Conventions
 
-- The title slide contains only title and subtitle. Remove `author` and `date`
-  from YAML as well as from visible slide content. This is a deliberate
-  presenter preference; the venue template is not assumed to supply them.
+- Retain `author: Bor Hodošček` and the presentation `date` in YAML because a
+  downstream website generator consumes them. The reveal.js stylesheet hides
+  the rendered author and date elements only on `#title-slide`, leaving title
+  and subtitle visible. Do not duplicate the title as a manual level-one slide.
 - Use Pandoc YAML and citation syntax rather than renderer-specific extensions.
 - Keep repository paths, commands, detailed provenance, and speaker cues in HTML
   comments unless the audience needs them.
@@ -374,8 +377,9 @@ flake inputs and are preflighted before presentation.
 
 ## Validation
 
-The existing 29-slide draft predates this revision. Implementation must bring it
-into conformance by removing YAML/visible author and date, adding the single
+The existing 29-heading draft predates this revision. Implementation must bring
+it into conformance by retaining YAML author/date while suppressing their
+reveal.js title-slide display, removing the duplicate manual title, adding the single
 early TEI-EAJ positioning slide, adding draft-gated real XML comparisons,
 expanding the tokenizer/data appendix, converting bare URLs to labeled Markdown
 links, and adding reproduction comments. The draft's corrected mass-weighted
@@ -392,8 +396,11 @@ Before the deck is considered complete:
   values and the external archive is not required for rendering;
 - every quantitative headline is checked against the latest authoritative
   checked-in report;
-- the main sequence contains exactly 27 slides and the complete source contains
-  exactly 35 slides including appendices;
+- the rendered main sequence contains exactly 27 slides and the complete rendered
+  deck contains between 35 and 37 slides including eight to ten appendices;
+- slide-count validation parses Pandoc/reveal.js output and includes the
+  generated metadata title slide; it does not equate the number of level-one
+  Markdown headings with the rendered slide count;
 - every visible web resource is a labeled Markdown link;
 - every displayed Soranoha datum satisfies the evidence reproduction contract;
 - real TEI comparison excerpts identify their upstream revision, work identity,

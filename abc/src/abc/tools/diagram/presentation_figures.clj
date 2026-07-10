@@ -120,8 +120,9 @@
                   (map #(family-node metadata context %)
                        [:source :parsing :publication :analysis :output])
                   [{:id :artifact-id
-                    :label "ArtifactID = SHA-256(JCS(manifest_identity_object))"
-                    :subtitle "Canonical identity; distinct from the output byte hash"
+                    :label "ArtifactID"
+                    :subtitle "SHA-256(JCS(manifest_identity_object)) · canonical identity; distinct from the output byte hash"
+                    :subtitle-wrap 42
                     :role :identity-formula :group :identity-contract
                     :backing {:coordinates (vec (sort (:coordinates context)))
                               :adrs (vec (sort (set (mapcat val (:coordinate-owners context)))))}}
@@ -205,25 +206,25 @@
                   :subtitle-wrap 18
                   :backing {:stages [:aat]
                             :adrs (stage-adrs context [:aat])}}]
-         :edges [{:from :source :to :parser-process :label "parse + measure"
+         :edges [{:from :source :to :parser-process
                   :role :evidence :style :solid
                   :backing {:path [:aozora-snapshot :aat]}}
-                 {:from :parser-process :to :parser-ir :label "compatibility gate"
+                 {:from :parser-process :to :parser-ir
                   :role :validation :style :solid
                   :backing {:path [:aat :parser-ir]}}
-                 {:from :parser-ir :to :manifest :label "identity + schema gate"
+                 {:from :parser-ir :to :manifest
                   :role :validation :style :thick
                   :backing {:path [:parser-ir :manifest]}}
-                 {:from :manifest :to :outputs :label "validated materialization"
+                 {:from :manifest :to :outputs
                   :role :derived-view :style :solid
                   :backing {:path [:manifest :tei]
                             :reachable-targets [:tei :rdf :iiif :tokenized
                                                 :analysis :annotation]}}
                  {:from :parser-process :to :aat-detail
-                  :label "current detail" :role :implementation-detail
+                  :role :implementation-detail
                   :style :dashed :backing {:stages [:aat]}}
                  {:from :aat-detail :to :parser-ir
-                  :label "mapping compatibility" :role :implementation-detail
+                  :role :implementation-detail
                   :style :dashed :backing {:path [:aat :parser-ir]}}]
          :current-inset (get-in metadata [:figures figure :current-inset])
          :identity-spine [:source :parser-process :parser-ir :manifest :outputs]

@@ -8,15 +8,17 @@
 
 (deftest reproducibility-figure-has-approved-title-and-five-coordinate-families
   (let [g (graph :reproducibility)
-        family-nodes (filter #(= :coordinate-family (:role %)) (:nodes g))]
+        family-nodes (filter #(= :coordinate-family (:role %)) (:nodes g))
+        artifact-id (some #(when (= :artifact-id (:id %)) %) (:nodes g))]
     (is (= "Soranoha Reproducibility Architecture" (:title g)))
     (is (false? (:cluster? (some #(when (= :inputs (:id %)) %) (:groups g)))))
     (is (= #{:source :parsing :publication :analysis :output}
            (set (map :id family-nodes))))
     (is (= 15 (reduce + (map #(count (:coordinates %)) family-nodes))))
-    (is (some #(= "ArtifactID = SHA-256(JCS(manifest_identity_object))"
-                  (:label %))
-              (:nodes g)))))
+    (is (= "ArtifactID" (:label artifact-id)))
+    (is (= "SHA-256(JCS(manifest_identity_object)) · canonical identity; distinct from the output byte hash"
+           (:subtitle artifact-id)))
+    (is (= 42 (:subtitle-wrap artifact-id)))))
 
 (deftest publication-figure-keeps-stable-path-and-current-inset-separate
   (let [g (graph :publication)]
@@ -31,7 +33,9 @@
     (is (every? #(= 18 (:subtitle-wrap %)) (:nodes g)))
     (is (some #(= :aat-detail (:id %)) (:nodes g)))
     (is (= :dashed
-           (:style (some #(when (= :current-inset (:id %)) %) (:groups g)))))))
+           (:style (some #(when (= :current-inset (:id %)) %) (:groups g)))))
+    (is (every? (comp nil? :label) (:edges g))
+        "edge xlabels must not obscure the presentation spine")))
 
 (deftest every-node-and-semantic-edge-has-canonical-backing
   (doseq [g (figures/graphs)

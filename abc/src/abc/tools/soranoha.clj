@@ -1,10 +1,13 @@
 (ns abc.tools.soranoha
   (:refer-clojure :exclude [run!])
   (:require [abc.tools.analysis-identity :as analysis-identity]
+            [abc.tools.annotation-join-stats :as annotation-join-stats]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.manifest :as manifest]
+            [abc.tools.manifest-index :as manifest-index]
             [abc.tools.materialize-analysis :as materialize-analysis]
+            [abc.tools.materialize-annotations :as materialize-annotations]
             [abc.tools.materialize-publication :as materialize-publication]
             [abc.tools.materialize-source-snapshot :as materialize-source-snapshot]
             [abc.tools.parser-evidence :as parser-evidence]
@@ -83,7 +86,7 @@
     0))
 
 (def generated-snapshot-layout-policy
-  {"loose_artifact_kinds" ["tei" "plaintext"]
+  {"loose_artifact_kinds" ["tei" "plaintext" "annotation"]
    "batched_artifact_kinds" ["analysis" "tokenized"]
    "batch_target_work_count" 250
    "archive_format" "tar.zst"})
@@ -403,6 +406,23 @@
     {:analysis-result-file (:analysis-result result)
      :analysis-manifest-file (:manifest result)}))
 
+(def ^:private annotation-policies-dir "data/annotation-policies")
+
+(defn- write-annotation-artifacts!
+  [{:keys [artifact-base annotation-materialization producer-manifest-file
+           parser-ir-file generated-at]}]
+  (let [annotations-dir (io/file artifact-base "annotations")
+        result (materialize-annotations/materialize-annotations!
+                {:producer-manifest (files/read-json producer-manifest-file)
+                 :parser-ir (files/read-json parser-ir-file)
+                 :annotation-policy (:policy annotation-materialization)
+                 :input-plaintext-policy-hash (:input-plaintext-policy-hash
+                                               annotation-materialization)
+                 :output-dir annotations-dir
+                 :generated-at generated-at})]
+    {:annotations-file (:annotations result)
+     :annotation-manifest-file (:manifest result)}))
+
 (defn- materialization-entries [label plan]
   (cond
     (seq (get plan "materializations"))
@@ -453,7 +473,8 @@
   path)
 
 (defn- materialize-entry!
-  [{:keys [root materialization request-set generated-at]}]
+  [{:keys [root materialization request-set annotation-materialization
+           generated-at]}]
   (let [artifact-base (artifact-base root materialization)
         parser-result (write-parser-ir-artifacts!
                        {:artifact-base artifact-base
@@ -473,29 +494,56 @@
                             :request-set request-set
                             :producer-manifest-file (:manifest-file
                                                      parser-result)
-                            :generated-at generated-at}))]
+                            :generated-at generated-at}))
+        annotation-result (when annotation-materialization
+                            (write-annotation-artifacts!
+                             {:artifact-base artifact-base
+                              :annotation-materialization annotation-materialization
+                              :producer-manifest-file (:manifest-file
+                                                       parser-result)
+                              :parser-ir-file (:parser-ir-file parser-result)
+                              :generated-at generated-at}))]
     (cond-> [(:manifest-file parser-result)
              (:plaintext-manifest-file publication-result)
              (:tei-manifest-file publication-result)]
       analysis-result
-      (conj (:analysis-manifest-file analysis-result)))))
+      (conj (:analysis-manifest-file analysis-result))
 
-(defn- materialize-snapshot-root! [label-or-path root]
+      annotation-result
+      (conj (:annotation-manifest-file annotation-result)))))
+
+(defn validate-annotation-manifests!
+  "Release guardrails for annotation manifests in the batch path (spec A6):
+  indexes the produced manifests and applies the annotation release
+  guardrail + copied-field validators. A distinct step (not braided into
+  materialize-entry!) so it stays cheap to widen to other kinds later."
+  [manifest-files]
+  (let [entries (manifest-index/index-manifest-files manifest-files)]
+    (manifest-index/validate-annotation-release-guardrail! entries)
+    (manifest-index/validate-annotation-copied-fields! entries)
+    nil))
+
+(defn materialize-snapshot-root! [label-or-path root]
   (let [request-set (read-request-set label-or-path)
         label (get request-set "label")
         plan (snapshot-plan request-set)
-        materializations (materialization-entries label plan)]
+        materializations (materialization-entries label plan)
+        annotation-materialization (materialize-annotations/resolve-annotation-materialization
+                                    {:request-set request-set
+                                     :registry-dir annotation-policies-dir})]
     (files/delete-tree! root)
     (.mkdirs (io/file root))
     (let [generated-at (get plan "generated_at")
-          manifest-files (mapcat
-                          (fn [materialization]
-                            (materialize-entry!
-                             {:root root
-                              :materialization materialization
-                              :request-set request-set
-                              :generated-at generated-at}))
-                          materializations)
+          manifest-files (vec (mapcat
+                               (fn [materialization]
+                                 (materialize-entry!
+                                  {:root root
+                                   :materialization materialization
+                                   :request-set request-set
+                                   :annotation-materialization annotation-materialization
+                                   :generated-at generated-at}))
+                               materializations))
+          _guardrails (validate-annotation-manifests! (map str manifest-files))
           generated-plan (assoc plan
                                 "manifest_references"
                                 (mapv #(loose-manifest-reference root %)
@@ -1112,7 +1160,8 @@
     "  stage-publication <snapshot-root> <output-root>"
     "  source-snapshot <materialized-root> <output-root> <snapshot-scope> <snapshot-date>"
     "  publication-rehearsal <materialized-root> <output-root> <request-set-label> <snapshot-scope> <snapshot-date>"
-    "  build-publication --aozora-root DIR --config FILE --snapshot-date YYYY-MM-DD --output-root DIR [--replace]"]))
+    "  build-publication --aozora-root DIR --config FILE --snapshot-date YYYY-MM-DD --output-root DIR [--replace]"
+    "  annotation-join-stats <parser-ir-dir> <tokens-dir> <out-dir>"]))
 
 (def commands
   {"list-request-sets" {:args 0
@@ -1145,7 +1194,11 @@
                         :run (fn [& args]
                                (build-publication/build-publication!
                                 publication-rehearsal!
-                                args))}})
+                                args))}
+   "annotation-join-stats" {:args 3
+                            :run (fn [parser-ir-dir tokens-dir out-dir]
+                                   (annotation-join-stats/run-join-stats!
+                                    parser-ir-dir tokens-dir out-dir))}})
 
 (defn run! [args]
   (let [[command & rest-args] args]

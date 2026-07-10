@@ -522,7 +522,7 @@
           (is (= 4 (get-in report ["actual_root" "referenced_manifest_count"])))
           (is (pos? (get-in report ["actual_root" "file_count"])))
           (is (pos? (get-in report ["actual_root" "byte_count"])))
-          (is (= {"loose_artifact_kinds" ["plaintext" "tei"]
+          (is (= {"loose_artifact_kinds" ["annotation" "plaintext" "tei"]
                   "batched_artifact_kinds" ["analysis" "tokenized"]}
                  (select-keys (get strategies "mixed-default-v1")
                               ["loose_artifact_kinds"

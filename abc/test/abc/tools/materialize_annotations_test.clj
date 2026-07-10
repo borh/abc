@@ -4,6 +4,7 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-annotations :as mat-ann]
             [abc.tools.schema :as schema]
+            [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
@@ -116,3 +117,100 @@
       (finally
         (doseq [file (reverse (file-seq out-dir))]
           (.delete file))))))
+
+;; --- resolve-annotation-materialization (spec A1-A3: per-run resolution,
+;; content-hash registry lookup, aligned-view requirement, all fail closed) ---
+
+(def ^:private ruby-gaiji-policy-hash
+  "sha256:6b2b9f29b742d434a2a114ace68549c3ad2611454785cb7a6924f5eaf95babde")
+
+(def ^:private plaintext-policy-hash
+  "sha256:df21c590fd8d5b934fd426e632a3d8a09c2bd3fa299ca6b4c8fe4c797e1d1391")
+
+(defn- request-set-with-views [views]
+  {"label" "unit-annotation"
+   "request_set_identity_object" {"input_views" views}})
+
+(def ^:private plaintext-view
+  {"input_view_kind" "parser-ir-plaintext-body-v1"
+   "policy_hash" plaintext-policy-hash
+   "input_normalization_policy_hash"
+   "sha256:530c59689dd909c171790036cddc7916f8685897b6342bfa794d4611816d3813"})
+
+(def ^:private annotation-view
+  {"input_view_kind" "parser-ir-body-annotations-v1"
+   "policy_hash" ruby-gaiji-policy-hash})
+
+(deftest resolve-annotation-materialization-resolves-demo-shape-test
+  (let [resolved (mat-ann/resolve-annotation-materialization
+                  {:request-set (request-set-with-views
+                                 [annotation-view plaintext-view])
+                   :registry-dir "data/annotation-policies"})]
+    (is (= annotation-view (:view resolved)))
+    (is (= "ruby-gaiji-v1" (get-in resolved [:policy "policy_id"])))
+    (is (= plaintext-policy-hash (:input-plaintext-policy-hash resolved)))))
+
+(deftest resolve-annotation-materialization-nil-without-annotation-view-test
+  (is (nil? (mat-ann/resolve-annotation-materialization
+             {:request-set (request-set-with-views [plaintext-view])
+              :registry-dir "data/annotation-policies"}))))
+
+(deftest resolve-annotation-materialization-rejects-unknown-policy-test
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"Unknown annotation policy hash"
+       (mat-ann/resolve-annotation-materialization
+        {:request-set (request-set-with-views
+                       [(assoc annotation-view "policy_hash"
+                               "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+                        plaintext-view])
+         :registry-dir "data/annotation-policies"}))))
+
+(deftest resolve-annotation-materialization-rejects-duplicate-registry-test
+  (let [dir (Files/createTempDirectory
+             "abc-annotation-registry" (make-array FileAttribute 0))
+        dir-file (.toFile dir)]
+    (try
+      (doseq [name ["a.json" "b.json"]]
+        (io/copy (io/file "data/annotation-policies/ruby-gaiji-v1.json")
+                 (io/file dir-file name)))
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo
+           #"Duplicate annotation policy hash in registry"
+           (mat-ann/resolve-annotation-materialization
+            {:request-set (request-set-with-views [annotation-view plaintext-view])
+             :registry-dir (str dir-file)})))
+      (finally
+        (doseq [f (reverse (file-seq dir-file))] (.delete f))))))
+
+(deftest resolve-annotation-materialization-rejects-missing-aligned-view-test
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"Annotation view requires exactly one aligned input view"
+       (mat-ann/resolve-annotation-materialization
+        {:request-set (request-set-with-views [annotation-view])
+         :registry-dir "data/annotation-policies"}))))
+
+(deftest resolve-annotation-materialization-rejects-ambiguous-aligned-view-test
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"Annotation view requires exactly one aligned input view"
+       (mat-ann/resolve-annotation-materialization
+        {:request-set (request-set-with-views
+                       [annotation-view
+                        plaintext-view
+                        (assoc plaintext-view "policy_hash"
+                               "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")])
+         :registry-dir "data/annotation-policies"}))))
+
+(deftest resolve-annotation-materialization-rejects-multiple-annotation-views-test
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo
+       #"Multiple annotation input views are not supported"
+       (mat-ann/resolve-annotation-materialization
+        {:request-set (request-set-with-views
+                       [annotation-view
+                        (assoc annotation-view "policy_hash"
+                               "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
+                        plaintext-view])
+         :registry-dir "data/annotation-policies"}))))

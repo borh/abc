@@ -1,0 +1,99 @@
+{
+  "request_set_label": "demo-annotation-ja",
+  "snapshot_label": "soranoha-snapshot-2026-07-07-03",
+  "generated_at": "2026-07-07T00:00:00Z",
+  "manifest_index_hash": "sha256:4545454545454545454545454545454545454545454545454545454545454545",
+  "failure_policy": {
+    "allow_nonzero_failures": true,
+    "max_failure_rate": null,
+    "per_diagnostic_tolerances": {}
+  },
+  "layout_policy": {
+    "loose_artifact_kinds": [
+      "tei",
+      "plaintext",
+      "annotation"
+    ],
+    "batched_artifact_kinds": [
+      "analysis",
+      "tokenized"
+    ],
+    "batch_target_work_count": 250,
+    "archive_format": "tar.zst"
+  },
+  "schema_hash_paths": [
+    "schemas/manifest.schema.json",
+    "schemas/request-set.schema.json",
+    "schemas/snapshot-index.schema.json",
+    "schemas/analysis-result.schema.json"
+  ],
+  "schema_hashes": [],
+  "parser_evidence_hashes": [],
+  "materializations": [
+    {
+      "artifact_subdir": "demo-fixture-a",
+      "subject_index": 0,
+      "parser_ir_path": "examples/v0/example-work/parser-ir.json",
+      "warnings_path": "examples/v0/example-work/warnings.jsonl",
+      "source_manifest_path": "examples/v0/example-work/source.manifest.json",
+      "metadata_record_path": "examples/v0/example-work/metadata-record.json",
+      "persons_dir": "examples/v0/example-persons",
+      "parser_ir_source": {
+        "work_content_hash": "sha256:2323232323232323232323232323232323232323232323232323232323232323",
+        "source_path": "cards/demo-fixture-a/files/demo-a.txt"
+      },
+      "parser_identity": {
+        "parser_build_hash": null,
+        "parser_config_hash": null,
+        "aat_parser_ir_mapping_hash": null
+      },
+      "analysis_subject": {
+        "logical_path": "cards/demo-fixture-a/files/demo-a.txt",
+        "git_ref": "fixture-demo-2026-07-07"
+      },
+      "analysis_metrics": [
+        {
+          "metric_id": "fixture-line-count",
+          "value": 3,
+          "value_type": "integer",
+          "denominator": null,
+          "unit": "line",
+          "status": "passed"
+        }
+      ]
+    },
+    {
+      "artifact_subdir": "demo-fixture-b",
+      "subject_index": 1,
+      "parser_ir_path": "examples/v0/example-work/parser-ir.json",
+      "warnings_path": "examples/v0/example-work/warnings.jsonl",
+      "source_manifest_path": "examples/v0/example-work/source.manifest.json",
+      "metadata_record_path": "examples/v0/example-work/metadata-record.json",
+      "persons_dir": "examples/v0/example-persons",
+      "parser_ir_source": {
+        "work_content_hash": "sha256:2424242424242424242424242424242424242424242424242424242424242424",
+        "source_path": "cards/demo-fixture-b/files/demo-b.txt"
+      },
+      "parser_identity": {
+        "parser_build_hash": null,
+        "parser_config_hash": null,
+        "aat_parser_ir_mapping_hash": null
+      },
+      "analysis_subject": {
+        "logical_path": "cards/demo-fixture-b/files/demo-b.txt",
+        "git_ref": "fixture-demo-2026-07-07"
+      },
+      "analysis_metrics": [
+        {
+          "metric_id": "fixture-line-count",
+          "value": 3,
+          "value_type": "integer",
+          "denominator": null,
+          "unit": "line",
+          "status": "passed"
+        }
+      ]
+    }
+  ],
+  "manifest_references": []
+}

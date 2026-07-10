@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/snapshot-index.schema.json",
   "title": "ABC Snapshot Index",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -118,7 +118,7 @@
       "properties": {
         "loose_artifact_kinds": {
           "type": "array",
-          "items": { "enum": ["tei", "plaintext"] },
+          "items": { "enum": ["tei", "plaintext", "annotation"] },
           "uniqueItems": true
         },
         "batched_artifact_kinds": {
@@ -159,6 +159,7 @@
             "rdf-view",
             "tokenized",
             "analysis",
+            "annotation",
             "failure"
           ]
         },

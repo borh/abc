@@ -7,7 +7,6 @@
 use std::{
     collections::BTreeMap,
     path::{Path, PathBuf},
-    sync::Mutex,
     time::Duration,
 };
 
@@ -74,53 +73,46 @@ pub fn run_prevalence(
             rayon::current_num_threads()
         );
 
-        let counters: Vec<Mutex<RowCounter>> = row_ids
-            .iter()
-            .map(|id| Mutex::new(RowCounter::new(id.clone())))
-            .collect();
-        let processed = Mutex::new(0u64);
-        let failed = Mutex::new(0u64);
-
-        cfg.work_ids.par_iter().for_each(|work_id| {
-            match process_work(
-                work_id,
-                &cfg.corpus_root,
-                &adapter,
-                &cache,
-                &adapter_sha,
-                cfg.adapter_timeout,
-                cfg.use_cache,
-                index_resolver,
-            ) {
-                Ok((aat, source)) => {
-                    for (idx, rid) in row_ids.iter().enumerate() {
-                        let occurrences = registry.detect(
-                            rid,
-                            &DetectorContext {
+        let counters = cfg
+            .work_ids
+            .par_iter()
+            .fold(
+                || LocalPrevalence::new(&row_ids),
+                |mut local, work_id| {
+                    match process_work(
+                        work_id,
+                        &cfg.corpus_root,
+                        &adapter,
+                        &cache,
+                        &adapter_sha,
+                        cfg.adapter_timeout,
+                        cfg.use_cache,
+                        index_resolver,
+                    ) {
+                        Ok((aat, source)) => {
+                            let occurrences = registry.detect_all(&DetectorContext {
                                 aat: &aat,
                                 source: &source,
-                            },
-                        );
-                        if occurrences > 0 {
-                            counters[idx]
-                                .lock()
-                                .unwrap()
-                                .observe(work_id.clone(), occurrences);
+                            });
+                            for counter in &mut local.rows {
+                                counter
+                                    .observe(work_id.clone(), occurrences[counter.row_id.as_str()]);
+                            }
+                            local.processed += 1;
+                        }
+                        Err(err) => {
+                            eprintln!("[ab-coverage] {parser_id}: {work_id}: {err:#}");
+                            local.failed += 1;
                         }
                     }
-                    *processed.lock().unwrap() += 1;
-                }
-                Err(err) => {
-                    eprintln!("[ab-coverage] {parser_id}: {work_id}: {err:#}");
-                    *failed.lock().unwrap() += 1;
-                }
-            }
-        });
+                    local
+                },
+            )
+            .reduce(|| LocalPrevalence::new(&row_ids), LocalPrevalence::merge);
 
         let basis = "full_corpus".to_string();
         let mut rows = BTreeMap::new();
-        for counter in counters {
-            let counter = counter.into_inner().unwrap();
+        for counter in counters.rows {
             rows.insert(
                 counter.row_id.clone(),
                 RowPrevalence {
@@ -135,8 +127,8 @@ pub fn run_prevalence(
             parser_id: parser_id.clone(),
             adapter_sha,
             rows,
-            works_processed: processed.into_inner().unwrap(),
-            works_failed: failed.into_inner().unwrap(),
+            works_processed: counters.processed,
+            works_failed: counters.failed,
         });
     }
     Ok(results)
@@ -210,6 +202,32 @@ struct RowCounter {
     samples: Vec<(u64, String)>,
 }
 
+#[derive(Debug)]
+struct LocalPrevalence {
+    rows: Vec<RowCounter>,
+    processed: u64,
+    failed: u64,
+}
+
+impl LocalPrevalence {
+    fn new(row_ids: &[String]) -> Self {
+        Self {
+            rows: row_ids.iter().cloned().map(RowCounter::new).collect(),
+            processed: 0,
+            failed: 0,
+        }
+    }
+
+    fn merge(mut self, other: Self) -> Self {
+        for (counter, incoming) in self.rows.iter_mut().zip(other.rows) {
+            counter.merge(incoming);
+        }
+        self.processed += other.processed;
+        self.failed += other.failed;
+        self
+    }
+}
+
 impl RowCounter {
     fn new(row_id: String) -> Self {
         Self {
@@ -228,6 +246,16 @@ impl RowCounter {
         self.total_occurrences += count;
         self.samples.push((count, work_id));
         // Keep top 5 by occurrence (desc), ties broken by lex work_id ASC.
+        self.samples
+            .sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
+        self.samples.truncate(5);
+    }
+
+    fn merge(&mut self, other: Self) {
+        debug_assert_eq!(self.row_id, other.row_id);
+        self.works_with_feature += other.works_with_feature;
+        self.total_occurrences += other.total_occurrences;
+        self.samples.extend(other.samples);
         self.samples
             .sort_by(|a, b| b.0.cmp(&a.0).then_with(|| a.1.cmp(&b.1)));
         self.samples.truncate(5);

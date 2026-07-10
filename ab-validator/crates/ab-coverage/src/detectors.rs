@@ -9,7 +9,7 @@
 //! signature produce different counts. Source-side regexes from
 //! `source_patterns` are always added on top.
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use regex::Regex;
 use serde_json::Value;
@@ -18,13 +18,13 @@ use crate::matrix::Row;
 
 #[derive(Debug)]
 pub struct DetectorRegistry {
-    detectors: HashMap<String, Detector>,
+    detectors: BTreeMap<String, Detector>,
 }
 
 impl DetectorRegistry {
     #[must_use]
     pub fn from_matrix(rows: &[Row]) -> Self {
-        let mut detectors = HashMap::new();
+        let mut detectors = BTreeMap::new();
         for row in rows {
             let detector = build_detector_for_row(row);
             detectors.insert(row.id.clone(), detector);
@@ -42,6 +42,44 @@ impl DetectorRegistry {
 
     pub fn rows(&self) -> impl Iterator<Item = &str> {
         self.detectors.keys().map(|s| s.as_str())
+    }
+
+    #[must_use]
+    pub fn detect_all<'a>(&'a self, ctx: &DetectorContext<'_>) -> BTreeMap<&'a str, u64> {
+        let mut counts = self
+            .detectors
+            .keys()
+            .map(|row_id| (row_id.as_str(), 0))
+            .collect::<BTreeMap<_, _>>();
+
+        walk(ctx.aat, &mut |node| {
+            for (row_id, detector) in &self.detectors {
+                for rule in &detector.rules {
+                    let matched = match rule {
+                        Rule::AatKindCount(kinds) => node
+                            .get("kind")
+                            .and_then(Value::as_str)
+                            .is_some_and(|kind| kinds.iter().any(|candidate| candidate == kind)),
+                        Rule::AatNode(predicate) => predicate(node),
+                        Rule::SourceRegex(_) | Rule::WholeAat(_) => false,
+                    };
+                    if matched {
+                        *counts.get_mut(row_id.as_str()).expect("initialized row") += 1;
+                    }
+                }
+            }
+        });
+
+        for (row_id, detector) in &self.detectors {
+            for rule in &detector.rules {
+                *counts.get_mut(row_id.as_str()).expect("initialized row") += match rule {
+                    Rule::SourceRegex(regex) => regex.find_iter(ctx.source).count() as u64,
+                    Rule::WholeAat(detect) => detect(ctx.aat),
+                    Rule::AatKindCount(_) | Rule::AatNode(_) => 0,
+                };
+            }
+        }
+        counts
     }
 }
 
@@ -61,11 +99,12 @@ enum Rule {
     AatKindCount(Vec<String>),
     /// Match a regex against the decoded source text.
     SourceRegex(Regex),
-    /// Hand-written AAT predicate; resolved from `corpus_prevalence.detector_id`.
-    Named(NamedFn),
+    AatNode(NodePredicate),
+    WholeAat(WholeAatFn),
 }
 
-type NamedFn = fn(&Value) -> u64;
+type NodePredicate = fn(&Value) -> bool;
+type WholeAatFn = fn(&Value) -> u64;
 
 impl Detector {
     fn run(&self, ctx: &DetectorContext<'_>) -> u64 {
@@ -74,7 +113,8 @@ impl Detector {
             total += match rule {
                 Rule::AatKindCount(kinds) => count_aat_kinds(ctx.aat, kinds),
                 Rule::SourceRegex(re) => re.find_iter(ctx.source).count() as u64,
-                Rule::Named(f) => f(ctx.aat),
+                Rule::AatNode(predicate) => count_with(ctx.aat, *predicate),
+                Rule::WholeAat(detect) => detect(ctx.aat),
             };
         }
         total
@@ -92,9 +132,9 @@ fn build_detector_for_row(row: &Row) -> Detector {
     // Named detector takes precedence over the generic `aat_nodes` matcher.
     // Source patterns are always added on top.
     if !detector_id.is_empty()
-        && let Some(f) = lookup_named_detector(detector_id)
+        && let Some(rule) = lookup_named_detector(detector_id)
     {
-        rules.push(Rule::Named(f));
+        rules.push(rule);
     } else {
         // Default: count any AAT node whose kind matches the row's `aat_nodes`.
         // Generic kinds like "text" / "paragraph" are dropped because they match
@@ -162,81 +202,72 @@ where
 // Convention: detector id is the row id with `.` replaced by `_`.
 // ---------------------------------------------------------------------------
 
-fn lookup_named_detector(id: &str) -> Option<NamedFn> {
+fn lookup_named_detector(id: &str) -> Option<Rule> {
+    let node = |predicate| Rule::AatNode(predicate);
     Some(match id {
         // ---- gaiji.* group ----
-        "gaiji_marker" => d_gaiji_any,
-        "gaiji_unicode_codepoint" => d_gaiji_unicode_codepoint,
-        "gaiji_jis_code" => d_gaiji_with_jis_code,
-        "gaiji_dakuten_katakana" => d_gaiji_dakuten_katakana,
-        "gaiji_un_embed" => d_gaiji_un_embed,
-        "iteration_kunoji" => d_source_only,
-        "accent_diacritic" => d_accent_kind,
-        "figure_image_inline" => d_figure_image,
+        "gaiji_marker" => node(d_gaiji_any),
+        "gaiji_unicode_codepoint" => node(d_gaiji_unicode_codepoint),
+        "gaiji_jis_code" => node(d_gaiji_with_jis_code),
+        "gaiji_dakuten_katakana" => node(d_gaiji_dakuten_katakana),
+        "gaiji_un_embed" => node(d_gaiji_un_embed),
+        "iteration_kunoji" => node(d_source_only),
+        "accent_diacritic" => node(d_accent_kind),
+        "figure_image_inline" => node(d_figure_image),
 
         // ---- ruby.* + annotation.* + kunten.okurigana group ----
-        "ruby_basic" => d_ruby_any,
-        "ruby_double" => d_source_only,
-        "ruby_placement_directional" => d_ruby_directional,
-        "annotation_chuuki" => d_source_only,
-        "annotation_bouki" => d_source_only,
-        "kunten_okurigana" => d_source_only,
+        "ruby_basic" => node(d_ruby_any),
+        "ruby_double" => node(d_source_only),
+        "ruby_placement_directional" => node(d_ruby_directional),
+        "annotation_chuuki" => node(d_source_only),
+        "annotation_bouki" => node(d_source_only),
+        "kunten_okurigana" => node(d_source_only),
 
         // ---- heading.* group ----
-        "heading_basic" => d_heading_any,
-        "heading_inline_form" => d_source_only,
-        "heading_dogyo" => d_source_only,
-        "heading_mado" => d_source_only,
+        "heading_basic" => node(d_heading_any),
+        "heading_inline_form" => node(d_source_only),
+        "heading_dogyo" => node(d_source_only),
+        "heading_mado" => node(d_source_only),
 
         // ---- caption.* group ----
-        "caption_inline" => d_caption_inline,
-        "caption_block" => d_caption_block,
+        "caption_inline" => node(d_caption_inline),
+        "caption_block" => node(d_caption_block),
 
         // ---- style group: decoration / indentation / layout / etc. ----
-        "decoration_boten" => d_style_boten,
-        "decoration_bousen" => d_style_bousen,
-        "decoration_bold_italic" => d_style_bold_italic,
-        "decoration_font_size" => d_font_size,
-        "decoration_keigakomi" => d_keigakomi,
-        "decoration_direction_override" => d_source_only,
-        "indentation_basic" => d_source_only,
-        "indentation_jisage_block" => d_jisage_block,
-        "indentation_jisage_oneline" => d_source_only,
-        "indentation_chitsuki" => d_source_only,
-        "indentation_jizume" => d_source_only,
-        "indentation_burasage" => d_source_only,
-        "layout_yokogumi" => d_yokogumi,
-        "layout_tcy" => d_tcy,
-        "warigaki_parenthetical" => d_warigaki,
-        "warichu_basic" => d_warichu,
-        "kunten_kaeriten" => d_source_only,
-        "reference_frontref" => d_source_only,
-        "emphasis_basic" => d_emphasis_any,
+        "decoration_boten" => node(d_style_boten),
+        "decoration_bousen" => node(d_style_bousen),
+        "decoration_bold_italic" => node(d_style_bold_italic),
+        "decoration_font_size" => node(d_font_size),
+        "decoration_keigakomi" => node(d_keigakomi),
+        "decoration_direction_override" => node(d_source_only),
+        "indentation_basic" => node(d_source_only),
+        "indentation_jisage_block" => node(d_jisage_block),
+        "indentation_jisage_oneline" => node(d_source_only),
+        "indentation_chitsuki" => node(d_source_only),
+        "indentation_jizume" => node(d_source_only),
+        "indentation_burasage" => node(d_source_only),
+        "layout_yokogumi" => node(d_yokogumi),
+        "layout_tcy" => node(d_tcy),
+        "warigaki_parenthetical" => node(d_warigaki),
+        "warichu_basic" => node(d_warichu),
+        "kunten_kaeriten" => node(d_source_only),
+        "reference_frontref" => node(d_source_only),
+        "emphasis_basic" => node(d_emphasis_any),
 
         // ---- text-anchor group: source-only ----
-        "break_page_line" | "break_line_explicit" | "editor_note_unmapped" => d_source_only,
+        "break_page_line" | "break_line_explicit" | "editor_note_unmapped" => node(d_source_only),
 
         // ---- composite ad-hoc rows ----
-        "gaiji_ruby_inline_base" => d_gaiji_ruby_inline_base,
-        "figure_image_caption" => d_figure_image_caption,
-        "ruby_nested_forbidden" => d_source_only,
+        "gaiji_ruby_inline_base" => Rule::WholeAat(d_gaiji_ruby_inline_base),
+        "figure_image_caption" => Rule::WholeAat(d_figure_image_caption),
+        "ruby_nested_forbidden" => node(d_source_only),
 
         _ => return None,
     })
 }
 
-fn d_source_only(_aat: &Value) -> u64 {
-    0
-}
-
-fn count_kind(aat: &Value, kind: &str) -> u64 {
-    let mut n = 0u64;
-    walk(aat, &mut |node| {
-        if node.get("kind").and_then(Value::as_str) == Some(kind) {
-            n += 1;
-        }
-    });
-    n
+fn d_source_only(_node: &Value) -> bool {
+    false
 }
 
 fn count_with<F: FnMut(&Value) -> bool>(aat: &Value, mut pred: F) -> u64 {
@@ -255,57 +286,49 @@ fn style_type_of(node: &Value) -> Option<&str> {
 
 // ---- gaiji ----
 
-fn d_gaiji_any(aat: &Value) -> u64 {
-    count_kind(aat, "gaiji")
+fn d_gaiji_any(node: &Value) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("gaiji")
 }
 
-fn d_gaiji_unicode_codepoint(aat: &Value) -> u64 {
+fn d_gaiji_unicode_codepoint(n: &Value) -> bool {
     // adapter encodes either via `value` (a single char) or by U+ in description.
-    count_with(aat, |n| {
-        if n.get("kind").and_then(Value::as_str) != Some("gaiji") {
-            return false;
-        }
-        if let Some(desc) = n.get("description").and_then(Value::as_str)
-            && desc.contains("U+")
-        {
-            return true;
-        }
-        n.get("value")
-            .and_then(Value::as_str)
-            .is_some_and(|v| v.chars().next().map(|c| (c as u32) > 0x7F).unwrap_or(false))
-            && n.get("jis_code").map(|j| j.is_null()).unwrap_or(true)
-    })
+    if n.get("kind").and_then(Value::as_str) != Some("gaiji") {
+        return false;
+    }
+    if let Some(desc) = n.get("description").and_then(Value::as_str)
+        && desc.contains("U+")
+    {
+        return true;
+    }
+    n.get("value")
+        .and_then(Value::as_str)
+        .is_some_and(|v| v.chars().next().map(|c| (c as u32) > 0x7F).unwrap_or(false))
+        && n.get("jis_code").map(|j| j.is_null()).unwrap_or(true)
 }
 
-fn d_gaiji_with_jis_code(aat: &Value) -> u64 {
-    count_with(aat, |n| {
-        if n.get("kind").and_then(Value::as_str) != Some("gaiji") {
-            return false;
-        }
-        // Either a structured `jis_code` field, or a 1-NN-NN reference inside the description.
-        if n.get("jis_code")
-            .and_then(Value::as_str)
-            .is_some_and(|s| !s.is_empty())
-        {
-            return true;
-        }
-        n.get("description")
-            .and_then(Value::as_str)
-            .is_some_and(|d| {
-                d.contains("第3水準")
-                    || d.contains("第4水準")
-                    || d.contains("第1水準")
-                    || d.contains("第2水準")
-            })
-    })
+fn d_gaiji_with_jis_code(n: &Value) -> bool {
+    if n.get("kind").and_then(Value::as_str) != Some("gaiji") {
+        return false;
+    }
+    if n.get("jis_code")
+        .and_then(Value::as_str)
+        .is_some_and(|s| !s.is_empty())
+    {
+        return true;
+    }
+    n.get("description")
+        .and_then(Value::as_str)
+        .is_some_and(|d| {
+            d.contains("第3水準")
+                || d.contains("第4水準")
+                || d.contains("第1水準")
+                || d.contains("第2水準")
+        })
 }
 
-fn d_gaiji_dakuten_katakana(aat: &Value) -> u64 {
-    count_with(aat, |n| {
-        if n.get("kind").and_then(Value::as_str) != Some("gaiji") {
-            return false;
-        }
-        n.get("description")
+fn d_gaiji_dakuten_katakana(n: &Value) -> bool {
+    n.get("kind").and_then(Value::as_str) == Some("gaiji")
+        && n.get("description")
             .and_then(Value::as_str)
             .is_some_and(|d| {
                 d.contains("濁点")
@@ -313,80 +336,69 @@ fn d_gaiji_dakuten_katakana(aat: &Value) -> u64 {
                     || d.contains("小書き片仮名")
                     || (d.contains("1-07-8") || d.contains("1-7-8"))
             })
-    })
 }
 
-fn d_gaiji_un_embed(aat: &Value) -> u64 {
+fn d_gaiji_un_embed(n: &Value) -> bool {
     // unresolved gaiji marker: kind=gaiji and resolved is empty/null AND no jis code.
-    count_with(aat, |n| {
-        if n.get("kind").and_then(Value::as_str) != Some("gaiji") {
-            return false;
-        }
-        let resolved_empty = match n.get("resolved") {
-            None => true,
-            Some(Value::Null) => true,
-            Some(Value::String(s)) => s.is_empty(),
-            _ => false,
-        };
-        let no_jis = n
-            .get("jis_code")
-            .map(|j| j.is_null() || j.as_str().is_some_and(str::is_empty))
-            .unwrap_or(true);
-        resolved_empty && no_jis
-    })
+    if n.get("kind").and_then(Value::as_str) != Some("gaiji") {
+        return false;
+    }
+    let resolved_empty = match n.get("resolved") {
+        None => true,
+        Some(Value::Null) => true,
+        Some(Value::String(s)) => s.is_empty(),
+        _ => false,
+    };
+    let no_jis = n
+        .get("jis_code")
+        .map(|j| j.is_null() || j.as_str().is_some_and(str::is_empty))
+        .unwrap_or(true);
+    resolved_empty && no_jis
 }
 
-fn d_accent_kind(aat: &Value) -> u64 {
-    count_kind(aat, "accent")
+fn d_accent_kind(node: &Value) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("accent")
 }
 
-fn d_figure_image(aat: &Value) -> u64 {
+fn d_figure_image(n: &Value) -> bool {
     // Image kind in aozora2html output uses capitalized "Image"; aozora2 emits
     // a `figure` kind. Match either.
-    count_with(aat, |n| {
-        matches!(
-            n.get("kind").and_then(Value::as_str),
-            Some("Image" | "figure")
-        )
-    })
+    matches!(
+        n.get("kind").and_then(Value::as_str),
+        Some("Image" | "figure")
+    )
 }
 
 // ---- ruby ----
 
-fn d_ruby_any(aat: &Value) -> u64 {
-    count_kind(aat, "ruby")
+fn d_ruby_any(node: &Value) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("ruby")
 }
 
-fn d_ruby_directional(aat: &Value) -> u64 {
-    count_with(aat, |n| {
-        if n.get("kind").and_then(Value::as_str) != Some("ruby") {
-            return false;
-        }
-        matches!(
+fn d_ruby_directional(n: &Value) -> bool {
+    n.get("kind").and_then(Value::as_str) == Some("ruby")
+        && matches!(
             n.get("direction").and_then(Value::as_str),
             Some("left" | "below")
         )
-    })
 }
 
 // ---- heading ----
 
-fn d_heading_any(aat: &Value) -> u64 {
-    count_kind(aat, "heading")
+fn d_heading_any(node: &Value) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("heading")
 }
 
 // ---- caption ----
 
-fn d_caption_inline(aat: &Value) -> u64 {
-    count_with(aat, |n| {
-        n.get("kind").and_then(Value::as_str) == Some("caption")
-            || (n.get("kind").and_then(Value::as_str) == Some("style")
-                && style_type_of(n) == Some("caption"))
-    })
+fn d_caption_inline(n: &Value) -> bool {
+    n.get("kind").and_then(Value::as_str) == Some("caption")
+        || (n.get("kind").and_then(Value::as_str) == Some("style")
+            && style_type_of(n) == Some("caption"))
 }
 
-fn d_caption_block(aat: &Value) -> u64 {
-    count_kind(aat, "caption_block")
+fn d_caption_block(node: &Value) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("caption_block")
 }
 
 // ---- style group ----
@@ -413,84 +425,68 @@ const BOUSEN_TYPES: &[&str] = &[
 
 const BOLD_ITALIC_TYPES: &[&str] = &["bold", "italic", "shatai", "futoji"];
 
-fn count_style_with(aat: &Value, types: &[&str]) -> u64 {
-    count_with(aat, |n| {
-        if n.get("kind").and_then(Value::as_str) != Some("style") {
-            return false;
-        }
-        style_type_of(n).is_some_and(|t| types.contains(&t))
-    })
+fn is_style_with(node: &Value, types: &[&str]) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("style")
+        && style_type_of(node).is_some_and(|style| types.contains(&style))
 }
 
-fn d_style_boten(aat: &Value) -> u64 {
-    count_style_with(aat, BOTEN_TYPES)
+fn d_style_boten(node: &Value) -> bool {
+    is_style_with(node, BOTEN_TYPES)
 }
 
-fn d_style_bousen(aat: &Value) -> u64 {
-    count_style_with(aat, BOUSEN_TYPES)
+fn d_style_bousen(node: &Value) -> bool {
+    is_style_with(node, BOUSEN_TYPES)
 }
 
-fn d_style_bold_italic(aat: &Value) -> u64 {
-    count_style_with(aat, BOLD_ITALIC_TYPES)
+fn d_style_bold_italic(node: &Value) -> bool {
+    is_style_with(node, BOLD_ITALIC_TYPES)
 }
 
-fn d_font_size(aat: &Value) -> u64 {
+fn d_font_size(n: &Value) -> bool {
     // Either a dedicated kind=font_size container, or a style with size markers.
-    count_with(aat, |n| {
-        let kind = n.get("kind").and_then(Value::as_str);
-        if kind == Some("font_size") {
-            return true;
-        }
-        if kind == Some("style")
-            && let Some(t) = style_type_of(n)
-        {
-            return t.contains("smaller")
-                || t.contains("larger")
-                || t.starts_with("size_")
-                || t.starts_with("sho")
-                || t.starts_with("dai");
-        }
-        false
-    })
+    let kind = n.get("kind").and_then(Value::as_str);
+    if kind == Some("font_size") {
+        return true;
+    }
+    kind == Some("style")
+        && style_type_of(n).is_some_and(|style| {
+            style.contains("smaller")
+                || style.contains("larger")
+                || style.starts_with("size_")
+                || style.starts_with("sho")
+                || style.starts_with("dai")
+        })
 }
 
-fn d_keigakomi(aat: &Value) -> u64 {
-    count_with(aat, |n| {
-        let kind = n.get("kind").and_then(Value::as_str);
-        kind == Some("keigakomi_block")
-            || (kind == Some("style") && style_type_of(n) == Some("keigakomi"))
-    })
+fn d_keigakomi(n: &Value) -> bool {
+    let kind = n.get("kind").and_then(Value::as_str);
+    kind == Some("keigakomi_block")
+        || (kind == Some("style") && style_type_of(n) == Some("keigakomi"))
 }
 
-fn d_jisage_block(aat: &Value) -> u64 {
-    count_kind(aat, "jisage_block")
+fn d_jisage_block(node: &Value) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("jisage_block")
 }
 
-fn d_yokogumi(aat: &Value) -> u64 {
-    count_with(aat, |n| {
-        let kind = n.get("kind").and_then(Value::as_str);
-        kind == Some("yokogumi")
-            || kind == Some("yokogumi_block")
-            || (kind == Some("style") && style_type_of(n) == Some("yokogumi"))
-    })
+fn d_yokogumi(n: &Value) -> bool {
+    let kind = n.get("kind").and_then(Value::as_str);
+    kind == Some("yokogumi")
+        || kind == Some("yokogumi_block")
+        || (kind == Some("style") && style_type_of(n) == Some("yokogumi"))
 }
 
-fn d_tcy(aat: &Value) -> u64 {
-    count_with(aat, |n| {
-        let kind = n.get("kind").and_then(Value::as_str);
-        kind == Some("tcy") || (kind == Some("style") && style_type_of(n) == Some("tcy"))
-    })
+fn d_tcy(n: &Value) -> bool {
+    let kind = n.get("kind").and_then(Value::as_str);
+    kind == Some("tcy") || (kind == Some("style") && style_type_of(n) == Some("tcy"))
 }
 
-fn d_warigaki(aat: &Value) -> u64 {
-    count_kind(aat, "warigaki")
+fn d_warigaki(node: &Value) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("warigaki")
 }
 
-fn d_warichu(aat: &Value) -> u64 {
-    count_with(aat, |n| {
-        let kind = n.get("kind").and_then(Value::as_str);
-        kind == Some("warichu") || (kind == Some("style") && style_type_of(n) == Some("warichu"))
-    })
+fn d_warichu(n: &Value) -> bool {
+    let kind = n.get("kind").and_then(Value::as_str);
+    kind == Some("warichu") || (kind == Some("style") && style_type_of(n) == Some("warichu"))
 }
 
 fn d_gaiji_ruby_inline_base(aat: &Value) -> u64 {
@@ -538,18 +534,18 @@ fn d_figure_image_caption(aat: &Value) -> u64 {
     })
 }
 
-fn d_emphasis_any(aat: &Value) -> u64 {
+fn d_emphasis_any(n: &Value) -> bool {
     // Umbrella row: count any `style` container that carries one of the
     // recognised decoration types (boten/bousen/bold/italic/...).
-    count_with(aat, |n| {
-        if n.get("kind").and_then(Value::as_str) != Some("style") {
-            return false;
-        }
-        let Some(t) = style_type_of(n) else {
-            return false;
-        };
-        BOTEN_TYPES.contains(&t) || BOUSEN_TYPES.contains(&t) || BOLD_ITALIC_TYPES.contains(&t)
-    })
+    if n.get("kind").and_then(Value::as_str) != Some("style") {
+        return false;
+    }
+    let Some(style) = style_type_of(n) else {
+        return false;
+    };
+    BOTEN_TYPES.contains(&style)
+        || BOUSEN_TYPES.contains(&style)
+        || BOLD_ITALIC_TYPES.contains(&style)
 }
 
 #[cfg(test)]
@@ -574,13 +570,17 @@ mod tests {
                 {"kind": "style", "style_type": "shatai", "content": []},
             ]
         });
-        assert_eq!(d_style_boten(&aat), 1, "boten counts only boten styles");
         assert_eq!(
-            d_style_bold_italic(&aat),
+            count_with(&aat, d_style_boten),
+            1,
+            "boten counts only boten styles"
+        );
+        assert_eq!(
+            count_with(&aat, d_style_bold_italic),
             1,
             "bold_italic counts only italic styles"
         );
-        assert_eq!(d_style_bousen(&aat), 0);
+        assert_eq!(count_with(&aat, d_style_bousen), 0);
     }
 
     #[test]
@@ -592,8 +592,8 @@ mod tests {
                 {"kind": "ruby", "base": "山", "reading": "やま", "direction": "left"},
             ]
         });
-        assert_eq!(d_ruby_directional(&aat), 1);
-        assert_eq!(d_ruby_any(&aat), 2);
+        assert_eq!(count_with(&aat, d_ruby_directional), 1);
+        assert_eq!(count_with(&aat, d_ruby_any), 2);
     }
 
     #[test]
@@ -606,8 +606,8 @@ mod tests {
                 {"kind": "gaiji", "description": "ふつう", "jis_code": null, "resolved": null, "unresolved_reason": null},
             ]
         });
-        assert_eq!(d_gaiji_with_jis_code(&aat), 2);
-        assert_eq!(d_gaiji_any(&aat), 3);
+        assert_eq!(count_with(&aat, d_gaiji_with_jis_code), 2);
+        assert_eq!(count_with(&aat, d_gaiji_any), 3);
     }
 
     #[test]
@@ -620,7 +620,7 @@ mod tests {
                 {"kind": "style", "style_type": "boten", "content": []},
             ]
         });
-        assert_eq!(d_keigakomi(&aat), 2);
+        assert_eq!(count_with(&aat, d_keigakomi), 2);
     }
 
     #[test]

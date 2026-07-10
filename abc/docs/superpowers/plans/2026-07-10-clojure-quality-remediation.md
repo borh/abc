@@ -2,7 +2,16 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> **STATUS: DRAFT FOR REVIEW — not yet approved for execution.**
+> **STATUS: IN PROGRESS (2026-07-10).** Executed on branch
+> `worktree-clojure-quality-remediation`: G0 audit (see the malli-reconciliation
+> doc) + C1/C2, B1/B2, D1, A1+pilot+family, E1 all landed with the full suite
+> green. charred bumped 1.039→1.041 (out-of-plan, user request). Batch F
+> partially landed: the JVM-only `test/abc/test_fs.clj` helper + the genuine
+> exception-safety fix (`facts_test`) + `linked_art_test` migration. **F
+> follow-up (deferred):** migrate `workflow/report_test`, the workflow trio,
+> `acceptance_criteria_lint_test`, and the ~20 after-body-cleanup files onto
+> `abc.test-fs/with-temp-dir` — mechanical, low-value (minor /tmp leaks, only on
+> failure). Batches B4/B5/E2/E3/F3/G remain deferred as documented below.
 
 **Goal:** Remove three systemic quality problems in `abc/src` (+ tests) found in the 2026-07-10 review: an unused `babashka.fs` dependency (with silent-failure `java.io` interop in its place), mechanical duplication (CLI entry points, deterministic-JSON emission, temp-dir/delete helpers), and a malli foundation whose marquee capabilities are wired but never driven.
 

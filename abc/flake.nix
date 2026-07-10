@@ -133,6 +133,10 @@
               export GITLIBS="${cljDepsCache}/.gitlibs"
               export CLJ_CACHE="$(mktemp -d)"
               ${env}
+              # Preserve the caller's working directory before cd'ing to the
+              # pinned source root, so commands can resolve relative path args
+              # (e.g. build-publication --output-root) against where the user ran.
+              export ABC_INVOCATION_PWD="$PWD"
               cd ${./.}
               exec ${pkgs.clojure}/bin/clojure -M:${alias} "$@"
             '';

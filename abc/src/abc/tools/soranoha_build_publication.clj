@@ -433,6 +433,21 @@
    "selected_source_count" (get-in materialization-result
                                    [:report "selected_source_count"])})
 
+(defn- resolve-invocation-path
+  "Resolve a relative path arg against the caller's working directory. The app
+  launcher cd's to the pinned source root before Clojure starts, so relative
+  paths would otherwise resolve there (and fail); ABC_INVOCATION_PWD carries the
+  original cwd. Absolute paths and the no-env case (tests, direct clojure -M)
+  pass through unchanged."
+  [path]
+  (if (string/blank? path)
+    path
+    (let [file (io/file path)
+          base (System/getenv "ABC_INVOCATION_PWD")]
+      (if (or (.isAbsolute file) (string/blank? base))
+        path
+        (str (io/file base path))))))
+
 (defn- parse-args [args]
   (let [{:keys [options errors]} (cli/parse-opts args cli-options)]
     (when (seq errors)
@@ -441,7 +456,9 @@
       (when (string/blank? (get options required))
         (throw (ex-info (str (name required) " is required")
                         {:missing required}))))
-    options))
+    (reduce (fn [opts k] (update opts k resolve-invocation-path))
+            options
+            [:aozora-root :config :output-root])))
 
 (defn- prepare-output-root! [output-root replace?]
   (let [output-root-file (io/file output-root)]

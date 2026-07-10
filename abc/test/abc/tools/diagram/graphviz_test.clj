@@ -94,6 +94,11 @@
                  out))
     (is (str/includes? out "tailport=\"n\""))))
 
+(deftest group-label-location-is-layout-only
+  (let [out (graphviz/dot
+             (assoc-in sample [:groups 1 :label-location] :bottom))]
+    (is (str/includes? out "labelloc=\"b\""))))
+
 (deftest ownership-role-colors-remain-stable
   (doseq [[role color] [[:coordinate-family "#48CAE4"]
                         [:identity "#48CAE4"]

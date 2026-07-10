@@ -31,9 +31,7 @@ without constituting topology changes.
 ### Reproducibility architecture
 
 - Rename the identity cluster from **15-coordinate identity contract** to
-  **Canonical identity contract**. This matches the aggregate label in
-  `abc/docs/architecture-presentation.edn` and describes content-addressed
-  identity without implying a separate versioning mechanism.
+  **Versioned identity contract**.
 - Preserve exactly fifteen visible and unique coordinate labels across the five
   identity-family boxes: fourteen coordinate bullets plus the single
   **Output format** family label.
@@ -132,7 +130,7 @@ Automated tests and generated-artifact checks must enforce:
    suppression rule and the resulting fifteen visible coordinate labels.
 2. The same semantic nodes and semantic edges as the pre-revision figures.
 3. The same palette and ownership-color assignments.
-4. The exact cluster heading **Canonical identity contract**.
+4. The exact cluster heading **Versioned identity contract**.
 5. **Output format** appearing exactly once in visible reproducibility-figure
    text; accessibility metadata is evaluated for accuracy rather than counted as
    a visible label.

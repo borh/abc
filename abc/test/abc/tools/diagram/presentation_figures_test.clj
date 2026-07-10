@@ -43,7 +43,7 @@
   (let [g (graph :reproducibility)
         group (some #(when (= :identity-contract (:id %)) %) (:groups g))
         nodes (into {} (map (juxt :id identity) (:nodes g)))]
-    (is (= "Canonical identity contract" (:label group)))
+    (is (= "Versioned identity contract" (:label group)))
     (is (= "Identity-bearing inputs determine ArtifactID." (:footer g)))
     (is (not (str/includes? (:footer g) "rebuilds only dependent layers")))
     (is (= [{:id "output_format_spec_hash" :label "Output format"}]

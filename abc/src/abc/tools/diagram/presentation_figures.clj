@@ -208,7 +208,7 @@
          :theme theme
          :groups [{:id :inputs :label "Sources and computational evidence"
                    :cluster? false}
-                  {:id :identity-contract :label "Canonical identity contract"}
+                  {:id :identity-contract :label "Versioned identity contract"}
                   {:id :record :label "Scholarly record"}
                   {:id :derived :label "Derived views"}]
          :nodes (vec

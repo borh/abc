@@ -143,7 +143,7 @@
         flat-group-ids (set (map :id (filter #(false? (:cluster? %)) groups)))
         group-lines
         (mapcat
-         (fn [{:keys [id label style]}]
+         (fn [{:keys [id label style label-location]}]
            (concat
             [(str "  subgraph \"cluster_" (id-string id) "\" {")
              (str "    label=\"" (escape-dot label) "\";")
@@ -155,6 +155,10 @@
              "    margin=\"0\";"
              (str "    style=\"rounded"
                   (when (= :dashed style) ",dashed") "\";")]
+            (when label-location
+              [(str "    labelloc=\""
+                    ({:top "t" :bottom "b"} label-location)
+                    "\";")])
             (map #(node-line % theme primary-ids)
                  (sort-by (comp id-string :id) (get grouped id)))
             ["  }"]))

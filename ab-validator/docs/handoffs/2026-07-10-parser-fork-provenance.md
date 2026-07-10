@@ -304,4 +304,4 @@ paths, provenance headers). No semantic edits. Gate evidence:
   `inspect pairs` — was caught by the gate and fixed in `1fa0316c`
   before the confirming re-run)
 - Perf gate: `PASS` — [2026-07-10 fork-parity perf report](docs/superpowers/reports/2026-07-10-fork-parity-perf.md) (workset `perf-workset-v1`, 6 works, 1+5 runs/bin; regression -0.07% vs 10% threshold; no new timeouts)
-- Gate A: <link corpus parity report when Task 9 lands>
+- Gate A: `FORK_PARITY_CONFIRMED` — [2026-07-10 fork-parity corpus report](docs/superpowers/reports/2026-07-10-fork-parity-corpus.md) (all 17,886 works: reference resolved fail-closed via run-set `current-aat-fidelity-2026-07-09` with content hash verified, fork dump generated under explicit `--aozora-bin` at rev `2263b92a` on hinoki, semantic JSON parity with the single allowlisted pointer `/meta/adapter_version`; 0 missing, 0 diverged, 0 `fatal_error`)

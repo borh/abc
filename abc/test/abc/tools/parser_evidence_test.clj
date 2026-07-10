@@ -1,9 +1,16 @@
 (ns abc.tools.parser-evidence-test
   (:require [abc.tools.malli :as am]
             [abc.tools.parser-evidence :as parser-evidence]
-            [clojure.test :refer [deftest is testing]]
+            [clojure.edn :as edn]
+            [clojure.test :refer [deftest is testing use-fixtures]]
+            [clojure.test.check :as tc]
+            [clojure.test.check.properties :as prop]
             [malli.core :as m]
             [malli.generator :as mg]))
+
+;; Install (compose registry + instrument m/=> contracts) once for the whole
+;; namespace so the instrumentation-activation test below actually bites.
+(use-fixtures :once (fn [f] (am/install!) (f)))
 
 (def valid-entry
   {:evidence_id "ab-validator/example"
@@ -75,15 +82,31 @@
                     (parser-evidence/index-errors
                      {:entries [(assoc valid-entry :current_external_path "")]})))))
 
-(deftest parser-evidence-generator-backed-validation-test
-  (am/install!)
-  (testing "generated parser evidence entries pass the public validator"
-    (let [entry (mg/generate ::am/parser-evidence-entry)]
-      (is (m/validate ::am/parser-evidence-entry entry))
-      (is (empty? (parser-evidence/index-errors {:entries [entry]})))))
-  (testing "mutating a generated entry to violate a scalar contract is rejected"
-    (let [entry (mg/generate ::am/parser-evidence-entry)
-          invalid-entry (assoc entry :sha256 "sha256:not-real")]
-      (is (has-error? #":sha256 must be a sha256 hash"
-                      (parser-evidence/index-errors
-                       {:entries [invalid-entry]}))))))
+(deftest parser-evidence-entry-round-trips-and-validates-property-test
+  (testing "every generated entry validates, EDN-round-trips, and is accepted"
+    (let [result (tc/quick-check
+                  100
+                  (prop/for-all [entry (mg/generator ::am/parser-evidence-entry)]
+                                (and (m/validate ::am/parser-evidence-entry entry)
+                                     (= entry (edn/read-string (pr-str entry)))
+                                     (empty? (parser-evidence/index-errors
+                                              {:entries [entry]})))))]
+      (is (:pass? result) (pr-str result)))))
+
+(deftest parser-evidence-mutation-rejected-property-test
+  (testing "mutating any generated entry's :sha256 is rejected by the validator"
+    (let [result (tc/quick-check
+                  50
+                  (prop/for-all [entry (mg/generator ::am/parser-evidence-entry)]
+                                (has-error? #":sha256 must be a sha256 hash"
+                                            (parser-evidence/index-errors
+                                             {:entries [(assoc entry :sha256 "sha256:not-real")]}))))]
+      (is (:pass? result) (pr-str result)))))
+
+(deftest instrumented-citable-hashes-rejects-invalid-index-test
+  (testing "install!/instrument! is active: the m/=> input contract bites"
+    (is (thrown? Exception
+                 (parser-evidence/citable-hashes {:entries [{:not-valid true}]}))))
+  (testing "and a valid index still returns its citable hashes"
+    (is (= [(:sha256 valid-entry)]
+           (parser-evidence/citable-hashes {:entries [valid-entry]})))))

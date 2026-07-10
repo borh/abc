@@ -1,11 +1,22 @@
 """Tests for run-perf-workset.py's per-lane argv interface (Task 6).
 
-Hermetic: no nix, no network, no git — a stub bash executable stands in for
+Hermetic: no nix, no network, no git — a stub executable stands in for
 both lanes' argv and --*-id-bin, and a tiny workset JSON + matching-sha256
 corpus file replace the real pinned perf-workset.json. Runs the script as a
 real subprocess (not imported as a module) so the CLI parsing and full
 resolve-lane-identity/fail-closed behavior are exercised end-to-end, exactly
 as Task 9's real invocation will use it.
+
+The stub is invoked two ways by run-perf-workset.py: as a lane's argv[0]
+(subprocess.run(argv, ...)) and, separately, resolve_lane_identity() execs
+the --*-id-bin path directly (`subprocess.run([str(path), "--version"])`,
+no shell) to verify its identity. Both are direct execve()s, so the stub
+must be self-executable via its own shebang — it cannot be invoked as
+`sys.executable stub.py` because the id-bin argument is a single path that
+the runner -x checks and execs itself. `#!/usr/bin/env bash` fails ENOENT
+under the nix build sandbox, which has no FHS `/usr/bin/env`; `#!/bin/sh`
+works because the sandbox maps /bin/sh (to busybox). The stub body below is
+plain POSIX sh, so this shebang is the only change needed.
 """
 
 from __future__ import annotations
@@ -18,7 +29,7 @@ from pathlib import Path
 
 _SCRIPT = Path(__file__).resolve().parents[1] / "run-perf-workset.py"
 
-_STUB = """#!/usr/bin/env bash
+_STUB = """#!/bin/sh
 if [ "${1:-}" = "--version" ]; then
   echo "stub-perf-lane 1.2.3"
   exit 0

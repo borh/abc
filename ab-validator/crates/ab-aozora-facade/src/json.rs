@@ -555,9 +555,11 @@ impl From<gaiji::GaijiResolution> for GaijiResolution {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "json")]
     use crate::Document;
 
     #[test]
+    #[cfg(feature = "json")]
     fn slugs_envelope_lists_catalogue_with_known_families() {
         let json = slugs();
         assert!(json.contains(r#""schemaVersion":2"#));
@@ -572,11 +574,13 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn gaiji_resolutions_empty_envelope_for_plain_text() {
         assert_eq!(gaiji("no gaiji here"), r#"{"schemaVersion":2,"data":[]}"#);
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn gaiji_resolutions_emits_resolved_entry_in_source_coords() {
         let json = gaiji("※［＃「々」］");
         assert!(json.contains(r#""schemaVersion":2"#));
@@ -591,6 +595,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn gaiji_resolution_at_returns_object_inside_span_else_null() {
         let src = "あ※［＃「々」］い";
         let inside = src.find('※').unwrap() + "※".len();
@@ -607,12 +612,14 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn empty_diagnostics_round_trip_envelope() {
         let json = diagnostics(&[]);
         assert_eq!(json, r#"{"schemaVersion":2,"data":[]}"#);
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn empty_nodes_round_trip_envelope() {
         let doc = Document::new("plain");
         let tree = doc.parse();
@@ -621,6 +628,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn empty_pairs_round_trip_envelope() {
         let doc = Document::new("plain");
         let tree = doc.parse();
@@ -629,6 +637,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn pua_collision_serialises_as_warning_kind() {
         let doc = Document::new("abc\u{E001}def");
         let tree = doc.parse();
@@ -639,6 +648,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn ruby_serialises_with_kind_ruby_in_nodes() {
         let doc = Document::new("｜青梅《おうめ》");
         let tree = doc.parse();
@@ -648,6 +658,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn ruby_serialises_in_pairs() {
         let doc = Document::new("｜青梅《おうめ》");
         let tree = doc.parse();

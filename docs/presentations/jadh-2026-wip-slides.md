@@ -15,6 +15,7 @@ Citation provenance:
 - abstract-refs.bib sha256:ecac6b1d04171239d5cd1467a37802ff8e9fe8a5820f03ebbdb05cec196ae897
 - digital_humanities_abstracts.csl sha256:51537ae9dd3a3a77a971757942c3769c722379aa78d7f2a0bec442e57197c1c9
 Budget: 18 min talk + 5 min demo + 2 min buffer.
+Canonical Pandoc backend: reveal.js (`--to revealjs --standalone --citeproc`).
 -->
 
 # Sustaining Aozora Bunko as Versioned Corpus Infrastructure
@@ -138,17 +139,19 @@ ArtifactID is not a materialized-file byte hash.
 
 # Why Compare Multiple Parsers?
 
-| Slide label | Measurement / native label |
-| --- | --- |
-| `aozora-pipeline` | `aozora` / `ab-aozora` |
-| `aozora2` | `aozora-core` |
-| `aozora-rs` | `aozora-rs-core` when measured natively |
-| `aozora2html` | `aozora2html` |
-| `AozoraEpub3` | `aozora-epub3` |
+- `aozora-pipeline`: measured reference candidate
+- `aozora2html`: official XHTML converter [@aozorahack2026]
+- `aozora2`: Rust format converter [@takahashi2026]
+- `aozora-rs`: Rust parser [@kinokov2026]
+- `AozoraEpub3`: Java/EPUB converter [@aozoraepub32026]
 
 No parser is assumed correct because of its name or output format.
 
-<!-- aozora-pipeline is P4suta/aozora, a measured candidate—not completed Soranoha consolidation. -->
+<!--
+Crosswalk: aozora-pipeline = aozora / ab-aozora; aozora2 = aozora-core;
+aozora-rs = aozora-rs-core when measured natively; AozoraEpub3 = aozora-epub3.
+aozora-pipeline is P4suta/aozora, a measured candidate—not completed Soranoha consolidation.
+-->
 
 # Three Measurements, Three Questions
 
@@ -182,20 +185,21 @@ No parser is assumed correct because of its name or output format.
 | `aozora2` | 0.855 |
 | `aozora2html` | 0.743 |
 
-Ruby is about 90% of measured markup mass: read the total as **ruby coverage adjusted by the long tail**.
+Ruby is about 90% of **coverage-weighted mass**: read the total as **ruby coverage adjusted by the long tail**.
 
 <!-- Evidence: parser study §4.7. Do not mix the 17,894 source snapshot and pinned 17,886 denominator. -->
 
 # Fidelity and Robustness Are Different
 
-- `aozora-pipeline` and `aozora-rs`: **1.000 robustness** over 17,886 pinned works
-- `aozora2html`: **0.974 isolated fidelity**, but 0.983 robustness
-- `aozora-rs`: perfect completion, but the lowest isolated fidelity in the comparison
-- Coverage can hide representational loss or failure to complete
+- `aozora2html`: highest per-work fidelity (**0.974**) on the common intersection
+- It fails on **302 ruby-heavy works**, missing **24.7% of ruby mass**
+- Its 0.983 work completion rate hides a mass-weighted robustness failure
+- `aozora-pipeline` and `aozora-rs` complete all 17,886 pinned works—but `aozora-rs` has the lowest isolated fidelity
+- In **ア、秋**: `aozora2` matches the one-paragraph reference; `aozora2html` produces **29 fragments**
 
-**The axes diagnose different engineering and scholarly risks.**
+**Per-work quality cannot compensate for systematically missing difficult works.**
 
-<!-- Evidence: 2026-07-08-fidelity-robustness-split.md and 2026-07-09-full-nix-denominator-recompute.md. -->
+<!-- Evidence: 2026-07-08-fidelity-robustness-split.md; updated abstract paragraph 5; 2026-07-09-full-nix-denominator-recompute.md. -->
 
 # Parser Comparison: What We Can Conclude
 

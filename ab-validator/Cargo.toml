@@ -40,6 +40,9 @@ exclude = [
     # feature unification must not leak insertion-order JSON into production
     # crates (see 2026-07-10 provenance handoff)
     "crates/ab-aozora-cli",
+    # excluded: enables serde_json/preserve_order deliberately, to prove
+    # converter canonicalization; must never join the root workspace.
+    "tools/preserve-order-canary",
 ]
 
 [workspace.package]

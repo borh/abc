@@ -92,10 +92,15 @@ pub fn abc_legacy_json_c14n_v0(value: &Value) -> Result<Vec<u8>> {
 }
 
 fn sorted_json_text(value: &Value) -> Result<String> {
+    // Explicit key sort, independent of whichever `serde_json::Map` backend
+    // (`BTreeMap` default, `IndexMap` under `preserve_order`) the compiling
+    // workspace's unified feature graph happens to select — see
+    // `crate::canonical_json` for why this can't be left to the map type.
+    let sorted = crate::canonical_json::sort_keys_deep(value.clone());
     let mut bytes = Vec::new();
     let formatter = serde_json::ser::CompactFormatter;
     let mut serializer = serde_json::Serializer::with_formatter(&mut bytes, formatter);
-    value.serialize(&mut serializer)?;
+    sorted.serialize(&mut serializer)?;
     Ok(String::from_utf8(bytes)?)
 }
 

@@ -1,0 +1,17 @@
+# Standalone workspace ON PURPOSE (mirrors the adapters/ pattern): this
+# crate exists to turn serde_json/preserve_order ON and prove that
+# ab-aat-to-parser-ir's canonical JSON output does not depend on
+# serde_json's map ordering. It must NEVER join the root workspace — that
+# would leak preserve_order into every root-workspace crate (the exact
+# hazard it guards; see docs/handoffs/2026-07-10-parser-fork-provenance.md).
+[package]
+name = "preserve-order-canary"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+ab-aat-to-parser-ir = { path = "../../crates/ab-aat-to-parser-ir" }
+serde_json = { version = "1.0", features = ["preserve_order"] }

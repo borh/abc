@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [run!])
   (:require [abc.tools.analysis-identity :as analysis-identity]
             [abc.tools.annotation-join-stats :as annotation-join-stats]
+            [abc.tools.annotation-join-stats-run :as annotation-join-stats-run]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.manifest :as manifest]
@@ -1163,7 +1164,8 @@
     "  source-snapshot <materialized-root> <output-root> <snapshot-scope> <snapshot-date>"
     "  publication-rehearsal <materialized-root> <output-root> <request-set-label> <snapshot-scope> <snapshot-date>"
     "  build-publication --aozora-root DIR --config FILE --snapshot-date YYYY-MM-DD --output-root DIR [--replace]"
-    "  annotation-join-stats <parser-ir-dir> <tokens-dir> <out-dir>"]))
+    "  annotation-join-stats <parser-ir-dir> <tokens-dir> <out-dir>"
+    "  annotation-join-stats-run <plan-json> <out-root>  (env: AB_AAT_TO_PARSER_IR_BIN, AB_VIBRATO_TOKENIZE_BIN)"]))
 
 (def commands
   {"list-request-sets" {:args 0
@@ -1200,7 +1202,15 @@
    "annotation-join-stats" {:args 3
                             :run (fn [parser-ir-dir tokens-dir out-dir]
                                    (annotation-join-stats/run-join-stats!
-                                    parser-ir-dir tokens-dir out-dir))}})
+                                    parser-ir-dir tokens-dir out-dir))}
+   "annotation-join-stats-run"
+   {:args 2
+    :run (fn [plan-file out-root]
+           (annotation-join-stats-run/run-annotation-join-stats-run!
+            {:plan-file plan-file
+             :out-root out-root
+             :converter-bin (System/getenv "AB_AAT_TO_PARSER_IR_BIN")
+             :tokenizer-bin (System/getenv "AB_VIBRATO_TOKENIZE_BIN")}))}})
 
 (defn run! [args]
   (let [[command & rest-args] args]

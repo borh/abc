@@ -38,12 +38,11 @@ exclude = [
     "adapters/aozora-rs",
     "adapters/aozora-epub3",
     "references",
-    # excluded: enables ab-aozora-facade/json -> serde_json/preserve_order;
-    # feature unification must not leak insertion-order JSON into production
-    # crates (see 2026-07-10 provenance handoff)
-    "crates/ab-aozora-cli",
     # excluded: enables serde_json/preserve_order deliberately, to prove
-    # converter canonicalization; must never join the root workspace.
+    # converter canonicalization; must never join the root workspace. This is
+    # now the deliberate preserve_order consumer in this workspace, following
+    # the Phase 2 shim deletion (checkpoint contract); the narrowed
+    # feature-unification rule lives in the 2026-07-10 provenance handoff.
     "tools/preserve-order-canary",
 ]
 

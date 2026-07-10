@@ -116,16 +116,10 @@ hash; changes to the parsed bundled schema value do.
 
 ABC models the corpus as layered, content-addressed artifacts:
 
-```text
-Aozora source snapshot
-  -> source manifests and work content identity
-  -> AAT evidence and adapter compatibility
-  -> parser-IR accepted through mapping/registry gates
-  -> metadata join using hashed metadata and person records
-  -> plaintext, TEI, RDF/PROV-O, Linked Art, and IIIF applicability views
-  -> tokenizer-specific analytical artifacts
-  -> features, embeddings, models, visualizations, and publications
-```
+The drift-checked pipeline topology is the generated
+[system architecture diagram](architecture.mmd), derived from
+`architecture-stages.edn` and cross-checked against registered schemas and
+ADRs. The diagram is a documentation view, not a competing source of truth.
 
 Each layer records the identity inputs that can invalidate it. A text-only
 change invalidates that work's downstream artifacts. A parser, mapping, TEI

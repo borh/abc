@@ -1,0 +1,10 @@
+[package]
+name = "ab-aozora-cli"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+description = "Throwaway parity shim: upstream `aozora inspect` protocol over the lifted ab-aozora-facade. Deleted at Phase 2."
+
+[dependencies]
+ab-aozora-facade = { path = "../ab-aozora-facade", features = ["json"] }

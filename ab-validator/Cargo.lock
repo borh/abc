@@ -26,6 +26,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ab-aozora-cli"
+version = "0.1.0"
+dependencies = [
+ "ab-aozora-facade",
+]
+
+[[package]]
 name = "ab-aozora-corpus"
 version = "0.1.0"
 dependencies = [

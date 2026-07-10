@@ -53,6 +53,7 @@
     (is (str/includes? out "label=<<TABLE"))
     (is (str/includes? out "style=\"dashed\""))
     (is (str/includes? out "style=\"rounded,dashed\""))
+    (is (= 2 (count (re-seq #"    penwidth=\"2\";" out))))
     (is (str/includes? out
                        "\"a\" -> \"z\" [style=\"invis\",weight=\"100\"]"))
     (is (str/ends-with? out "\n"))))

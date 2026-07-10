@@ -108,6 +108,7 @@
             [(str "  subgraph \"cluster_" (id-string id) "\" {")
              (str "    label=\"" (escape-dot label) "\";")
              (str "    color=\"" (:secondary theme) "\";")
+             (str "    penwidth=\"" (:stroke-width theme) "\";")
              "    fontname=\"Noto Sans CJK JP\";"
              (str "    fontcolor=\"" (:secondary theme) "\";")
              (str "    fontsize=\"" (:secondary-size theme) "\";")

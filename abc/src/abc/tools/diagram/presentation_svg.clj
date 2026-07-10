@@ -12,6 +12,9 @@
 
 (def svg-namespace "http://www.w3.org/2000/svg")
 
+(def ^:private font-stylesheet-pattern
+  #"^@font-face\{font-family:'Noto Sans CJK JP';font-style:normal;font-weight:400 700;src:url\(data:font/woff2;base64,([A-Za-z0-9+/]+={0,2})\) format\('woff2'\);\}text\{font-family:'Noto Sans CJK JP',sans-serif;\}$")
+
 (defn- parse-xml [label value]
   (try
     ;; Graphviz emits a remote SVG 1.1 DOCTYPE. The figure is self-contained;
@@ -41,13 +44,17 @@
   (let [raw-root (parse-xml "Graphviz SVG" raw-svg)
         [_ _ raw-width raw-height] (parse-view-box raw-root)
         graph-x 96.0
-        graph-y 190.0
+        graph-y 230.0
         graph-width 1728.0
-        graph-height 760.0
+        graph-height 650.0
         scale (min (/ graph-width raw-width) (/ graph-height raw-height))
         tx (+ graph-x (/ (- graph-width (* raw-width scale)) 2.0))
         ty (+ graph-y (/ (- graph-height (* raw-height scale)) 2.0))
         graph-content (:content raw-root)
+        _ (when (< scale 1.0)
+            (throw (ex-info "Graphviz SVG requires a fit scale below 1"
+                            {:scale scale
+                             :viewBox (get-in raw-root [:attrs :viewBox])})))
         root
         (element :svg
                  {:width "1920" :height "1080"
@@ -59,19 +66,21 @@
                  (element :style {} (font-style woff2-bytes))
                  (element :rect {:x "0" :y "0" :width "1920" :height "1080"
                                  :fill "#000000"})
-                 (element :text {:x "96" :y "82" :fill "#F5F7FA"
+                 (element :text {:x "96" :y "148" :fill "#F5F7FA"
                                  :font-size "52" :font-weight "700"
                                  :class "figure-title"}
                           (:title graph))
-                 (element :text {:x "96" :y "126" :fill "#A7B0BE"
+                 (element :text {:x "96" :y "184" :fill "#A7B0BE"
                                  :font-size "22" :font-weight "400"
                                  :class "figure-subtitle"}
                           (:subtitle graph))
                  (apply element :g
-                        {:transform (format "translate(%.4f %.4f) scale(%.6f)"
+                        {:class "figure-graph"
+                         :data-graph-scale (format "%.6f" scale)
+                         :transform (format "translate(%.4f %.4f) scale(%.6f)"
                                             tx ty scale)}
                         graph-content)
-                 (element :text {:x "96" :y "1034" :fill "#A7B0BE"
+                 (element :text {:x "96" :y "976" :fill "#A7B0BE"
                                  :font-size "16" :font-weight "400"
                                  :class "figure-citation"}
                           (:footer graph)))]
@@ -88,11 +97,21 @@
           (when (= wanted (name key)) value))
         (:attrs node)))
 
+(defn- parse-number [value]
+  (when (string? value)
+    (try
+      (let [number (parse-double value)]
+        (when (and (some? number) (Double/isFinite number)) number))
+      (catch NumberFormatException _ nil))))
+
 (defn- font-size-problem [node]
   (when-let [raw-size (attr node "font-size")]
-    (let [size (parse-double raw-size)
+    (let [size (parse-number raw-size)
           class (attr node "class")]
       (cond
+        (nil? size)
+        (str "presentation text has invalid font-size: " raw-size)
+
         (= "figure-title" class)
         (when (< size 52.0) "figure title is smaller than 52 px")
 
@@ -102,13 +121,107 @@
         (< size 22.0)
         (str "presentation label is smaller than 22 px: " raw-size)))))
 
+(defn- bold? [value]
+  (or (= "bold" value)
+      (some-> (parse-number value) (>= 700.0))))
+
+(defn- graph-node-problems [graph-root]
+  (letfn [(walk [node inherited]
+            (if-not (map? node)
+              []
+              (let [stroke (or (attr node "stroke") (:stroke inherited))
+                    stroke-width (or (attr node "stroke-width")
+                                     (:stroke-width inherited)
+                                     "1")
+                    font-size (or (attr node "font-size")
+                                  (:font-size inherited)
+                                  "16")
+                    font-weight (or (attr node "font-weight")
+                                    (:font-weight inherited)
+                                    "normal")
+                    text? (= "text" (tag-name node))
+                    size (parse-number font-size)
+                    width (parse-number stroke-width)
+                    current {:stroke stroke
+                             :stroke-width stroke-width
+                             :font-size font-size
+                             :font-weight font-weight}]
+                (concat
+                 (when text?
+                   (cond
+                     (nil? size)
+                     [(str "graph text has invalid font-size: " font-size)]
+
+                     (and (bold? font-weight) (< size 30.0))
+                     [(str "bold graph text is smaller than 30 px: " font-size)]
+
+                     (< size 22.0)
+                     [(str "graph text is smaller than 22 px: " font-size)]))
+                 (when (and stroke (not= "none" stroke))
+                   (cond
+                     (nil? width)
+                     [(str "graph stroke has invalid stroke-width: " stroke-width)]
+
+                     (< width 2.0)
+                     [(str "graph stroke is thinner than 2 px: " stroke-width)]))
+                 (mapcat #(walk % current) (:content node))))))]
+    (vec (mapcat #(walk % {}) (:content graph-root)))))
+
+(defn- graph-transform-scale [graph-root]
+  (some->> (attr graph-root "transform")
+           (re-find #"scale\(\s*([^\s)]+)\s*\)")
+           second
+           parse-number))
+
+(defn- canonical-font-stylesheet? [style-node]
+  (and (empty? (:attrs style-node))
+       (every? string? (:content style-node))
+       (when-let [[_ encoded] (re-matches font-stylesheet-pattern
+                                          (apply str (:content style-node)))]
+         (try
+           (pos? (alength (.decode (Base64/getDecoder) encoded)))
+           (catch IllegalArgumentException _ false)))))
+
+(defn- allowed-resource? [value]
+  (and (string? value)
+       (or (= svg-namespace value)
+           (str/starts-with? value "data:")
+           (str/starts-with? value "#"))))
+
+(defn- url-resources [value]
+  (map second
+       (re-seq #"(?i)url\(\s*['\"]?([^'\"\s)]+)['\"]?\s*\)" value)))
+
+(defn- resource-problems [nodes svg-string]
+  (let [attribute-resources
+        (for [node nodes
+              [key value] (:attrs node)
+              :when (or (#{"href" "src" "base"} (name key))
+                        (and (string? value)
+                             (re-find #"(?i)^[a-z][a-z0-9+.-]*:" value)))]
+          value)
+        url-values (mapcat url-resources
+                           (concat [svg-string]
+                                   (mapcat (comp vals :attrs) nodes)))
+        external (distinct
+                  (remove allowed-resource?
+                          (concat attribute-resources url-values)))]
+    (concat
+     (when (re-find #"(?i)@import\b" svg-string)
+       ["CSS @import is forbidden"])
+     (for [resource external]
+       (str "external SVG resource " resource)))))
+
 (defn svg-problems [svg-string]
   (try
     (let [root (parse-xml "presentation SVG" svg-string)
           nodes (filter map? (elements root))
           first-rect (first (filter #(= "rect" (tag-name %)) nodes))
-          style-text (apply str (mapcat :content
-                                        (filter #(= "style" (tag-name %)) nodes)))
+          styles (filter #(= "style" (tag-name %)) nodes)
+          graph-roots (filter #(= "figure-graph" (attr % "class")) nodes)
+          graph-root (when (= 1 (count graph-roots)) (first graph-roots))
+          graph-scale (some-> graph-root (attr "data-graph-scale") parse-number)
+          transform-scale (some-> graph-root graph-transform-scale)
           attribute-colors
           (for [node nodes
                 key-name ["fill" "stroke" "color"]
@@ -119,23 +232,23 @@
               value))
           hex-colors (set (map str/upper-case
                                (re-seq #"#[0-9A-Fa-f]{6}" svg-string)))
-          external (for [node nodes
-                         [key value] (:attrs node)
-                         :when (and (= "href" (name key))
-                                    (not (str/starts-with? value "data:"))
-                                    (not (str/starts-with? value "#")))]
-                     value)
           font-problems (keep font-size-problem
                               (filter #(= "text" (tag-name %)) nodes))
           wrong-namespace
           (for [node nodes
                 :when (and (:tag node)
                            (not= svg-namespace (xml/qname-uri (:tag node))))]
-            (tag-name node))]
+            (tag-name node))
+          style-attributes (for [node nodes
+                                 :when (some? (attr node "style"))]
+                             (tag-name node))]
       (vec
        (concat
         (when-not (= "0 0 1920 1080" (attr root "viewBox"))
           ["presentation SVG must use viewBox 0 0 1920 1080"])
+        (when-not (and (= "1920" (attr root "width"))
+                       (= "1080" (attr root "height")))
+          ["presentation SVG must use width 1920 and height 1080"])
         (when-not (= svg-namespace (xml/qname-uri (:tag root)))
           ["presentation SVG root is not in the SVG namespace"])
         (for [tag wrong-namespace]
@@ -149,17 +262,37 @@
                        (= "0" (attr first-rect "y"))
                        (= "1920" (attr first-rect "width"))
                        (= "1080" (attr first-rect "height"))
-                       (= "#000000" (str/upper-case (attr first-rect "fill"))))
+                       (= "#000000" (some-> (attr first-rect "fill")
+                                            str/upper-case)))
           ["presentation SVG needs a full 1920x1080 black background"])
-        (when-not (str/includes? style-text "data:font/woff2;base64,")
-          ["presentation SVG must embed its WOFF2 font subset"])
+        (when-not (= 1 (count styles))
+          ["presentation SVG needs exactly one embedded-font stylesheet"])
+        (when (and (= 1 (count styles))
+                   (not (and (some #{(first styles)} (:content root))
+                             (canonical-font-stylesheet? (first styles)))))
+          ["presentation SVG embedded-font stylesheet is not canonical"])
+        (for [tag style-attributes]
+          (str "style attributes are forbidden on SVG element " tag))
+        (when-not (= 1 (count graph-roots))
+          ["presentation SVG needs exactly one figure graph"])
+        (when (and graph-root (nil? graph-scale))
+          ["presentation graph has invalid data-graph-scale"])
+        (when (and graph-scale (< graph-scale 1.0))
+          ["presentation graph data-graph-scale must be at least 1"])
+        (when (and graph-root
+                   (or (nil? transform-scale)
+                       (< transform-scale 1.0)
+                       (and graph-scale (not= graph-scale transform-scale))))
+          ["presentation graph transform scale is invalid or disagrees with data-graph-scale"])
+        (when graph-root (graph-node-problems graph-root))
         (for [color attribute-colors :when (not (allowed-colors color))]
           (str "unapproved SVG color " color))
         (for [color hex-colors :when (not (allowed-colors color))]
           (str "unapproved SVG color " color))
-        (for [resource external] (str "external SVG resource " resource))
+        (resource-problems nodes svg-string)
         font-problems)))
-    (catch clojure.lang.ExceptionInfo ex [(ex-message ex)])))
+    (catch Exception ex
+      [(or (ex-message ex) "presentation SVG validation failed")])))
 
 (defn- required-env [name]
   (or (System/getenv name)

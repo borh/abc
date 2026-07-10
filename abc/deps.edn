@@ -80,6 +80,7 @@
   :abc/aozora-history-audit {:main-opts ["-m" "abc.tools.aozora-history-audit"]}
   :abc/aat-compat-admission {:main-opts ["-m" "abc.tools.aat-parser-ir-compat"]}
   :abc/diagrams {:main-opts ["-m" "abc.tools.diagram.registry"]}
+  :abc/adr-governance {:main-opts ["-m" "abc.tools.adr-governance"]}
   :abc/workflow-graph {:main-opts ["-m" "abc.tools.diagram.workflow-graph"]}
   :update {:deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
            :main-opts ["-m" "antq.core"]}}}

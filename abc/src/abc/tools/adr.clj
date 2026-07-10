@@ -1,6 +1,7 @@
 (ns abc.tools.adr
   (:require [clojure.java.io :as io]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:import [java.time LocalDate]))
 
 (def statuses #{"Draft" "Proposed" "Accepted" "Superseded" "Withdrawn"})
 (def header-fields
@@ -189,3 +190,186 @@
 
 (defn parse-all [dir]
   (mapv #(parse-adr dir %) (adr-files dir)))
+
+(defn- duplicate-number-problems [adrs]
+  (for [[num duplicates] (group-by :num adrs)
+        :when (and num (< 1 (count duplicates)))
+        adr duplicates]
+    (problem :duplicate-number (:file adr)
+             "ADR number must be unique"
+             :value num)))
+
+(defn- parse-date [value]
+  (when value
+    (try
+      (LocalDate/parse value)
+      (catch Exception _ nil))))
+
+(defn- lifecycle-problems [{:keys [file status date accepted]}]
+  (let [parsed-date (parse-date date)
+        parsed-accepted (parse-date accepted)]
+    (concat
+     (when-not (contains? statuses status)
+       [(problem :invalid-status file
+                 "status must be Draft, Proposed, Accepted, Superseded, or Withdrawn"
+                 :value status)])
+     (when-not parsed-date
+       [(problem :invalid-date file
+                 "Date must be a calendar-valid YYYY-MM-DD value"
+                 :field "Date" :value date)])
+     (if (= "Accepted" status)
+       (concat
+        (when-not accepted
+          [(problem :missing-accepted-date file
+                    "Accepted status requires an Accepted date")])
+        (when (and accepted (nil? parsed-accepted))
+          [(problem :invalid-date file
+                    "Accepted must be a calendar-valid YYYY-MM-DD value"
+                    :field "Accepted" :value accepted)])
+        (when (and parsed-date parsed-accepted
+                   (.isBefore parsed-accepted parsed-date))
+          [(problem :accepted-before-date file
+                    "Accepted date must not be before Date"
+                    :value {:date date :accepted accepted})]))
+       (when accepted
+         [(problem :forbidden-accepted-date file
+                   "only Accepted ADRs may have an Accepted date"
+                   :value accepted)])))))
+
+(def ^:private required-accepted-sections
+  {"Decision" :missing-decision
+   "Implementation Status" :missing-implementation-status
+   "Acceptance Criteria" :missing-acceptance-criteria})
+
+(defn- required-section-problems [{:keys [file status sections]}]
+  (when (= "Accepted" status)
+    (for [[heading kind] required-accepted-sections
+          :when (not (contains? sections heading))]
+      (problem kind file
+               (str "Accepted status requires a `## " heading "` section")))))
+
+(defn- relation-resolution-problems [adrs]
+  (let [known (set (keep :num adrs))]
+    (mapcat
+     (fn [{:keys [file relations]}]
+       (mapcat
+        (fn [[relation items]]
+          (concat
+           (for [[item frequency] (frequencies items)
+                 :when (< 1 frequency)]
+             (problem :duplicate-relation file
+                      "relation item must not appear more than once"
+                      :relation relation :value item))
+           (for [{:keys [target] :as item} items
+                 :when (not (contains? known target))]
+             (problem :missing-relation-target file
+                      "relation target does not exist"
+                      :relation relation :value item))))
+        relations))
+     adrs)))
+
+(def ^:private reciprocal-relations
+  {:amends {:reciprocal :amended-by :missing-kind :missing-amended-by}
+   :amended-by {:reciprocal :amends :missing-kind :missing-amends}
+   :supersedes {:reciprocal :superseded-by
+                :missing-kind :missing-superseded-by}
+   :superseded-by {:reciprocal :supersedes
+                   :missing-kind :missing-supersedes}})
+
+(defn- relation-reciprocity-problems [adrs]
+  (let [by-number (into {} (map (juxt :num identity) adrs))]
+    (for [{source :num file :file relations :relations} adrs
+          [relation {:keys [reciprocal missing-kind]}] reciprocal-relations
+          {:keys [target scope] :as item} (get relations relation)
+          :let [target-adr (get by-number target)
+                expected {:target source :scope scope}]
+          :when (and target-adr
+                     (not (some #{expected}
+                                (get-in target-adr [:relations reciprocal]))))]
+      (problem missing-kind file
+               "relation must have a reciprocal item with matching scope"
+               :relation relation :value item))))
+
+(defn- supersession-status-problems [adrs]
+  (let [by-number (into {} (map (juxt :num identity) adrs))
+        incoming-unscoped
+        (set (for [{:keys [relations]} adrs
+                   {:keys [target scope]} (:supersedes relations)
+                   :when (nil? scope)]
+               target))]
+    (concat
+     (for [{file :file relations :relations} adrs
+           {:keys [target scope] :as item} (:supersedes relations)
+           :let [target-adr (get by-number target)]
+           :when (and target-adr (nil? scope)
+                      (not= "Superseded" (:status target-adr)))]
+       (problem :unscoped-supersession-target-not-superseded file
+                "an unscoped supersession target must have Superseded status"
+                :value item))
+     (for [{:keys [num file status]} adrs
+           :when (and (= "Superseded" status)
+                      (not (contains? incoming-unscoped num)))]
+       (problem :superseded-without-successor file
+                "a Superseded ADR requires an incoming unscoped supersession")))))
+
+(defn- dependency-status-problems [adrs]
+  (let [by-number (into {} (map (juxt :num identity) adrs))]
+    (for [{source-status :status file :file relations :relations} adrs
+          {:keys [target scope] :as item} (:depends-on relations)
+          :let [target-status (:status (get by-number target))]
+          :when (and (= "Accepted" source-status)
+                     (or (and (#{"Draft" "Proposed"} target-status)
+                              (nil? scope))
+                         (#{"Withdrawn" "Superseded"} target-status)))]
+      (if (#{"Withdrawn" "Superseded"} target-status)
+        (problem :inactive-dependency file
+                 "an Accepted ADR cannot depend on a Withdrawn or Superseded ADR"
+                 :value item)
+        (problem :unscoped-nonaccepted-dependency file
+                 "an Accepted ADR dependency on Draft or Proposed requires scope"
+                 :value item)))))
+
+(defn- existing-file? [repo-root path]
+  (.isFile (io/file repo-root path)))
+
+(defn- evidence-problems [repo-root {:keys [file status evidence]}]
+  (let [by-criterion (group-by :criterion-index evidence)]
+    (concat
+     (when (and (= "Accepted" status) (empty? evidence))
+       [(problem :missing-evidence file
+                 "Accepted status requires an evidence path in Acceptance Criteria")])
+     (for [{:keys [path] :as item} evidence
+           :when (not (.exists (io/file repo-root path)))]
+       (problem :missing-evidence-path file
+                "evidence path does not exist"
+                :value item))
+     (for [{:keys [path criterion-index] :as item} evidence
+           :when (.isDirectory (io/file repo-root path))
+           :let [companions (get by-criterion criterion-index)]
+           :when (not-any? (fn [{companion :path}]
+                             (and (or (str/starts-with? companion "test/")
+                                      (str/starts-with? companion "nix/"))
+                                  (existing-file? repo-root companion)))
+                           companions)]
+       (problem :unverified-evidence-directory file
+                "an evidence directory requires an existing test/ or nix/ file in the same criterion"
+                :value item)))))
+
+(defn validate-adrs [adrs repo-root]
+  (vec
+   (concat
+    (mapcat :parse-problems adrs)
+    (duplicate-number-problems adrs)
+    (mapcat lifecycle-problems adrs)
+    (mapcat required-section-problems adrs)
+    (relation-resolution-problems adrs)
+    (relation-reciprocity-problems adrs)
+    (supersession-status-problems adrs)
+    (dependency-status-problems adrs)
+    (mapcat #(evidence-problems repo-root %) adrs))))
+
+(defn validate-repository
+  ([repo-root] (validate-repository repo-root "docs/adr"))
+  ([repo-root adr-dir]
+   (validate-adrs (parse-all (str (io/file repo-root adr-dir)))
+                  (io/file repo-root))))

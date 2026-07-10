@@ -1,16 +1,16 @@
 (ns abc.tools.diagram.architecture-graph
   "Tier 2 pure builder: architecture-stages.edn -> dataflow graph value, cross-
    checked against schema-contracts.json and the ADR files. See ADR 0029."
-  (:require [clojure.edn :as edn]
-            [clojure.string :as str]
+  (:require [abc.tools.diagram.adr-graph :as adr]
+            [abc.tools.files :as files]
             [abc.tools.json :as json]
-            [abc.tools.diagram.adr-graph :as adr]))
+            [clojure.string :as str]))
 
 (def stages-path "docs/architecture-stages.edn")
 (def contracts-path "schemas/schema-contracts.json")
 (def out-path "docs/architecture.mmd")
 
-(defn load-stages [] (edn/read-string (slurp stages-path)))
+(defn load-stages [] (files/read-edn stages-path))
 
 (defn schema-paths []
   (->> (get (json/read-json-file contracts-path) "schemas")

@@ -215,7 +215,7 @@
                     (.toPath (io/file file)))))
 
 (defn- normalized-relative-path [root file]
-  (string/replace (relative-path root file) "\\" "/"))
+  (files/relative-path root file))
 
 (defn- loose-manifest-reference [root manifest-file]
   {"manifest_path" (str (io/file manifest-file))

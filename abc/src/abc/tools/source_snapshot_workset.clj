@@ -1,6 +1,5 @@
 (ns abc.tools.source-snapshot-workset
   (:require [abc.tools.files :as files]
-            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.tools.cli :as cli]
@@ -59,9 +58,7 @@
           (keys resolved-path-key)))
 
 (defn- relative-path [from-dir to-file]
-  (normalize-path
-   (.relativize (.toPath (canonical-file from-dir))
-                (.toPath (canonical-file to-file)))))
+  (files/relative-path (canonical-file from-dir) (canonical-file to-file)))
 
 (defn- candidate-work-dir? [dir]
   (some #(.exists (io/file dir %)) (vals required-file-names)))
@@ -178,7 +175,7 @@
 (defn read-workset [path]
   (let [workset-file (io/file path)
         base-dir (.getParentFile (.getCanonicalFile workset-file))
-        value (edn/read-string (slurp workset-file))]
+        value (files/read-edn workset-file)]
     (when-not (seq (map-value value :works))
       (throw (ex-info "workset must contain non-empty :works"
                       {:workset-path path})))

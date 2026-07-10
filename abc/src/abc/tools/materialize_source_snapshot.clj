@@ -7,7 +7,6 @@
             [abc.tools.schema :as schema]
             [abc.tools.source-snapshot-workset :as source-snapshot-workset]
             [clojure.java.io :as io]
-            [clojure.string :as string]
             [clojure.tools.cli :as cli]
             [taoensso.telemere :as tel]))
 
@@ -32,10 +31,8 @@
       (required-work-value work k)))
 
 (defn- relative-path [from-file to-file]
-  (let [from-parent (.getCanonicalFile (.getParentFile (io/file from-file)))
-        to (.getCanonicalFile (io/file to-file))]
-    (-> (str (.relativize (.toPath from-parent) (.toPath to)))
-        (string/replace "\\" "/"))))
+  (files/relative-path (.getCanonicalFile (.getParentFile (io/file from-file)))
+                       (.getCanonicalFile (io/file to-file))))
 
 (defn- compact-hashes [& values]
   (vec (keep identity values)))

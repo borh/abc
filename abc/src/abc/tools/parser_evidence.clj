@@ -2,7 +2,6 @@
   (:require [abc.tools.edn-registry :as registry]
             [abc.tools.files :as files]
             [abc.tools.malli :as am]
-            [clojure.edn :as edn]
             [clojure.string :as string]))
 
 (def index-path
@@ -71,7 +70,7 @@
 
 (defn load-index
   []
-  (let [index (edn/read-string (slurp index-path))]
+  (let [index (files/read-edn index-path)]
     (validate-index! index)
     index))
 

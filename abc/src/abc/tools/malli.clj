@@ -75,8 +75,6 @@
     :status :superseded
     :summary "Comparator oracle evidence."}])
 
-(def ^:private parser-evidence-example (first parser-evidence-examples))
-
 (def ^:private compat-entry-example
   {:aat_version 1
    :aat_adapter "aozora2html"

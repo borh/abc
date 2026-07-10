@@ -1,9 +1,9 @@
 (ns abc.tools.aat-parser-ir-compat
-  (:require [abc.tools.edn-registry :as registry]
+  (:require [abc.tools.cli :as abc-cli]
+            [abc.tools.edn-registry :as registry]
             [abc.tools.files :as files]
             [abc.tools.malli :as am]
-            [clojure.string :as string]
-            [clojure.tools.cli :as cli]))
+            [clojure.string :as string]))
 
 (def registry-path
   (files/path "data" "aat-parser-ir-compatibility.edn"))
@@ -188,35 +188,23 @@
     :default registry-path]
    [nil "--candidates PATH" "Producer compatibility candidates EDN path"]])
 
-(defn- usage
+(defn usage
   [summary]
-  (binding [*out* *err*]
-    (println "Usage: clojure -M:abc/aat-compat-admission -- --candidates <path> [--registry <path>]")
-    (println)
-    (println summary)))
+  (str "Usage: clojure -M:abc/aat-compat-admission -- --candidates <path> [--registry <path>]\n\n"
+       summary))
 
 (defn -main
   [& args]
-  (let [args (if (= "--" (first args)) (rest args) args)
-        {:keys [options errors summary]} (cli/parse-opts args cli-options)]
-    (cond
-      (seq errors)
-      (do
-        (binding [*out* *err*]
-          (doseq [error errors]
-            (println error)))
-        (usage summary)
-        (System/exit 2))
-
-      (nil? (:candidates options))
-      (do
-        (usage summary)
-        (System/exit 2))
-
-      :else
-      (let [report (admission-report
-                    (files/read-edn (:registry options))
-                    (files/read-edn (:candidates options)))]
-        (prn report)
-        (when-not (= :admitted (:status report))
-          (System/exit 1))))))
+  (abc-cli/run-cli!
+   args
+   {:cli-options cli-options
+    :required    [:candidates]
+    :usage-fn    usage
+    :run         (fn [{:keys [options]}]
+                   (let [report (admission-report
+                                 (files/read-edn (:registry options))
+                                 (files/read-edn (:candidates options)))]
+                     ;; report is the primary tool output on stdout
+                     (prn report)
+                     report))
+    :fail?       (fn [report] (not= :admitted (:status report)))}))

@@ -38,10 +38,17 @@
   (and (.isFile file)
        (string/ends-with? (.getName file) ".zip")))
 
+(defn- normalized-abs-path
+  "Absolute, `.`/`..`-normalized path that does NOT resolve symlinks — unlike
+  getCanonicalFile. Keeps files under a symlinked root (e.g. the zero-copy
+  aozorabunko-corpus symlinkJoin) instead of escaping to the symlink targets."
+  [f]
+  (.normalize (.toAbsolutePath (.toPath (io/file f)))))
+
 (defn- aozora-work-zip? [root file]
   (let [rel (normalized-path
-             (.relativize (.toPath (.getCanonicalFile (io/file root)))
-                          (.toPath (.getCanonicalFile (io/file file)))))]
+             (.relativize (normalized-abs-path root)
+                          (normalized-abs-path file)))]
     (when (re-matches #"^cards/[0-9]{6}/files/[^/]+\.zip$" rel)
       rel)))
 
@@ -351,9 +358,8 @@
                               {"path" (or relpath
                                           (normalized-path
                                            (.relativize
-                                            (.toPath (.getCanonicalFile
-                                                      (io/file aozora-root)))
-                                            (.toPath (.getCanonicalFile file)))))
+                                            (normalized-abs-path aozora-root)
+                                            (normalized-abs-path file))))
                                "reason" (cond
                                           (nil? relpath)
                                           "not-under-cards-files"

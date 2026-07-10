@@ -5,6 +5,7 @@ author: Bor Hodošček
 date: July 2026
 type: slides
 aspect-ratio: 16-9
+css: jadh-2026-wip-slides.css
 bibliography: references/abstract-refs.bib
 csl: references/digital_humanities_abstracts.csl
 link-citations: true
@@ -14,18 +15,9 @@ link-citations: true
 Citation provenance:
 - abstract-refs.bib sha256:ecac6b1d04171239d5cd1467a37802ff8e9fe8a5820f03ebbdb05cec196ae897
 - digital_humanities_abstracts.csl sha256:51537ae9dd3a3a77a971757942c3769c722379aa78d7f2a0bec442e57197c1c9
-Budget: 18 min talk + 5 min demo + 2 min buffer.
+Budget: 22 min talk + 5 min demo + 3 min buffer.
 Canonical Pandoc backend: reveal.js (`--to revealjs --standalone --citeproc`).
 -->
-
-# Sustaining Aozora Bunko as Versioned Corpus Infrastructure
-
-## Evidence-driven source mapping, parser comparison, and analytical views
-
-Bor Hodošček  
-Soranoha — work in progress
-
-<!-- 0:30. Repository: https://github.com/borh/soranoha -->
 
 # Aozora Bunko Is Shared Research Infrastructure
 
@@ -338,7 +330,7 @@ Provenance narrative: sibling archive paper/demo-trace.md; it is not a build inp
 
 **Corpus transformation is part of the scholarly method.**
 
-Repository: <https://github.com/borh/soranoha>
+[Soranoha repository](https://github.com/borh/soranoha)
 
 # Appendix: Source Markup Inventory
 
@@ -366,12 +358,3 @@ Repository: <https://github.com/borh/soranoha>
 - **Speed:** operational feasibility
 
 No single column answers every research question.
-
-# Appendix: References and Artifacts
-
-- Aozora Bunko [@aozorabunko2026]
-- TEI-EAJ guidance and comparison evidence [@teieaj2023; @okada2023]
-- Sudachi and UniDic/Vibrato [@worksapplications2026; @den2008; @daactools2026]
-- Soranoha: <https://github.com/borh/soranoha>
-
-<!-- Pandoc citeproc resolves references from the vendored BibTeX and CSL files. -->

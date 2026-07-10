@@ -1,0 +1,24 @@
+.reveal #title-slide .author,
+.reveal #title-slide .date {
+  display: none;
+}
+
+.reveal .compact table {
+  font-size: 0.72em;
+}
+
+.reveal .compact th,
+.reveal .compact td {
+  padding: 0.18em 0.35em;
+}
+
+.reveal .xml-example pre {
+  max-height: 58vh;
+  overflow-y: auto;
+  font-size: 0.55em;
+  line-height: 1.25;
+}
+
+.reveal .evidence-links {
+  font-size: 0.68em;
+}

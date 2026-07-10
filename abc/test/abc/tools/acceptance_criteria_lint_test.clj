@@ -4,13 +4,31 @@
   path. Mutation-tested to confirm the verdict flips on a real regression
   (otherwise the lint itself would be a mode-B artifact — asserting a rule
   that doesn't bite)."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [abc.tools.files :as files]
+            [clojure.test :refer [deftest is testing use-fixtures]]
             [clojure.java.shell :refer [sh]]
             [clojure.java.io :as io])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
 
 (def ^:private script "nix/check-acceptance-criteria.sh")
+
+;; Track temp dirs and delete them in a :each fixture so a failing test
+;; cannot orphan them (these tests previously never cleaned up).
+(def ^:private created-temp-dirs (atom []))
+
+(defn- temp-dir [prefix]
+  (let [d (.toFile (Files/createTempDirectory prefix (make-array FileAttribute 0)))]
+    (swap! created-temp-dirs conj d)
+    d))
+
+(use-fixtures :each
+  (fn [f]
+    (try
+      (f)
+      (finally
+        (run! files/delete-tree! @created-temp-dirs)
+        (reset! created-temp-dirs [])))))
 
 (defn- env [m] (merge (into {} (System/getenv)) m))
 
@@ -26,8 +44,7 @@
   (testing "a non-allowlisted ADR with an Acceptance Criteria section but no
             executable path fails the lint — tested against a TEMP ADR corpus
             so the real repo is untouched"
-    (let [tmp (str (Files/createTempDirectory
-                    "abc-adr-lint" (make-array FileAttribute 0)))
+    (let [tmp (str (temp-dir "abc-adr-lint"))
           adr-tmp (io/file (str tmp "/adr"))]
       (.mkdirs adr-tmp)
       (doseq [f (ls-adr)
@@ -48,8 +65,7 @@
   (testing "a non-allowlisted ADR WITH an executable path in its Acceptance
             Criteria passes the lint (positive control — distinguishes the
             failure above from a blanket-reject bug)"
-    (let [tmp (str (Files/createTempDirectory
-                    "abc-adr-lint-pos" (make-array FileAttribute 0)))
+    (let [tmp (str (temp-dir "abc-adr-lint-pos"))
           adr-tmp (io/file (str tmp "/adr"))]
       (.mkdirs adr-tmp)
       (io/copy (io/file "docs/adr/.acceptance-legacy-allowlist")
@@ -72,8 +88,7 @@
             so section extraction must be too (regression: ADR 0028's
             original lowercase heading extracted an empty section and
             false-failed the lint)"
-    (let [tmp (str (Files/createTempDirectory
-                    "abc-adr-lint-case" (make-array FileAttribute 0)))
+    (let [tmp (str (temp-dir "abc-adr-lint-case"))
           adr-tmp (io/file (str tmp "/adr"))]
       (.mkdirs adr-tmp)
       (spit (io/file (str adr-tmp "/9997-lowercase.md"))

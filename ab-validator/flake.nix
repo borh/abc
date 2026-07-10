@@ -1646,6 +1646,26 @@
           '';
         };
 
+        aozoraAdapterIntegrationCheck = mkSmokeCheck {
+          name = "aozora-adapter-integration-check";
+          testScript = "tests/aozora-adapter-integration.sh";
+          nativeBuildInputs = [ rustToolchain ];
+          extraEnv = {
+            AB_AOZORA_BIN = "${upstreamParserAozora}/bin/aozora";
+          };
+          extraPreScript = ''
+            export CARGO_HOME="$work_dir/cargo-home"
+            mkdir -p "$CARGO_HOME"
+            cat > "$CARGO_HOME/config.toml" <<'EOF'
+            [source.crates-io]
+            replace-with = "vendored-sources"
+
+            [source.vendored-sources]
+            directory = "${aozoraCargoDeps}"
+            EOF
+          '';
+        };
+
         aozoraNotationSpecComparatorSmokeCheck = mkSmokeCheck {
           name = "aozora-notation-spec-comparator-smoke-check";
           testScript = "tests/aozora-notation-spec-comparator-smoke.sh";
@@ -1837,6 +1857,7 @@
           aat-oracle-data-schema-smoke = aatOracleDataSchemaSmokeCheck;
           aozora2html-rust-parity = aozora2htmlRustParityCheck;
           aozora-smoke = aozoraAdapterSmokeCheck;
+          aozora-integration = aozoraAdapterIntegrationCheck;
           aozora-notation-spec-comparator-smoke = aozoraNotationSpecComparatorSmokeCheck;
           aozora-epub3-smoke = aozoraEpub3SmokeCheck;
           adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
@@ -1867,6 +1888,7 @@
             AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
             AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
             AB_DUCKDB_BIN = "${pkgs.duckdb}/bin/duckdb";
+            AB_AOZORA_BIN = "${upstreamParserAozora}/bin/aozora";
 
             shellHook = ''
               export CARGO_HOME="''${CARGO_HOME:-$PWD/.cargo}"

@@ -72,7 +72,7 @@ aozora-build PROFILE="release":
 	@cargo build --manifest-path "{{repo_root}}/adapters/aozora/Cargo.toml" --{{PROFILE}}
 
 aozora-test:
-	@AB_AOZORA_BIN="${AB_AOZORA_BIN:-aozora}" cargo test --manifest-path "{{repo_root}}/adapters/aozora/Cargo.toml"
+	@nix develop "{{repo_root}}" --command bash "{{repo_root}}/tests/aozora-adapter-integration.sh"
 
 aozora-smoke: aozora-build
 	@bash "{{repo_root}}/tests/aozora-adapter-smoke.sh"

@@ -30,7 +30,7 @@
 - `abc/test/abc/tools/adr_test.clj` — synthetic parser/policy tests plus the clean-current-repository assertion.
 - `abc/src/abc/tools/diagram/adr_graph.clj` — graph construction and semantic-sidecar lint only; consumes `abc.tools.adr` values.
 - `abc/test/abc/tools/diagram/adr_graph_test.clj` — graph/sidecar tests after parser tests relocate.
-- `abc/docs/adr/README.md`, the affected existing ADR files, and new ADR 0030 — repaired corpus and durable governance decision.
+- `abc/docs/adr/README.md`, the affected existing ADR files, and new ADR 0031 — repaired corpus and durable governance decision. ADR 0030 is the pre-existing parser-selection decision and remains in the corpus.
 - `abc/deps.edn` — `:abc/adr-governance` CLI alias.
 - `abc/flake.nix` — replace `adr-acceptance-criteria` with `adr-governance`.
 - Delete `abc/nix/check-acceptance-criteria.sh`, `abc/docs/adr/.acceptance-legacy-allowlist`, and the shell-specific test `abc/test/abc/tools/acceptance_criteria_lint_test.clj` after the Clojure gate is green.
@@ -531,8 +531,9 @@ git commit -m "feat(adr): validate lifecycle relations and evidence"
 - Modify: `abc/docs/adr/0023-owned-aat-parser-ir-mapping.md`
 - Modify: `abc/docs/adr/0024-parser-ir-span-and-ruby-direction.md`
 - Modify: `abc/docs/adr/0028-ruby-annotation-view.md`
+- Modify: `abc/docs/adr/0030-aozora-parser-selection.md`
 - Modify other ADR headers only where the closed parser reports a wrapped `Source` value.
-- Create: `abc/docs/adr/0030-adr-governance-validation.md`
+- Create: `abc/docs/adr/0031-adr-governance-validation.md`
 - Modify: `abc/docs/adr/0029-diagrams-as-gated-derived-views.md`
 - Modify: `abc/src/abc/tools/diagram/adr_graph.clj`
 - Modify: `abc/test/abc/tools/diagram/adr_graph_test.clj`
@@ -575,7 +576,7 @@ Apply these exact migrations:
 
 - [ ] **Step 3: Add missing Implementation Status sections**
 
-Add dated current-state summaries immediately after the headers of ADRs 0012, 0013, 0014, 0016, 0018, 0020, 0021, 0022, and 0023. Each summary must name the concrete live schema/tool and its covering test path; do not rewrite Decision, Hard Rule, or Consequences text.
+Add dated current-state summaries immediately after the headers of ADRs 0012, 0013, 0014, 0016, 0018, 0020, 0021, 0022, 0023, and 0030. Each summary must name the concrete live schema/tool and its covering test path; do not rewrite Decision, Hard Rule, or Consequences text.
 
 - [ ] **Step 4: Backfill Accepted evidence using existing executable surfaces**
 
@@ -601,12 +602,12 @@ Add at least one code-spanned path to each Accepted allowlisted ADR according to
 
 Do not add evidence to Draft ADRs 0002–0005 merely to satisfy the old shell rule.
 
-- [ ] **Step 5: Add ADR 0030 in Proposed state**
+- [ ] **Step 5: Add ADR 0031 in Proposed state**
 
-Create `0030-adr-governance-validation.md` with:
+Create `0031-adr-governance-validation.md` with:
 
 ```markdown
-# ADR 0030: Uniform ADR Governance Validation
+# ADR 0031: Uniform ADR Governance Validation
 
 Status: Proposed
 Date: 2026-07-10
@@ -664,7 +665,7 @@ Reverting the gate requires a new ADR; generated diagrams remain non-identity
 documentation views.
 ```
 
-Add `Amended by: ADR 0030 [scope: ADR header and decision-graph source validation]` to ADR 0029.
+Add `Amended by: ADR 0031 [scope: ADR header and decision-graph source validation]` to ADR 0029.
 
 - [ ] **Step 6: Move `adr_graph.clj` to shared ADR values**
 
@@ -711,7 +712,7 @@ clojure -M:abc/diagrams
 clojure -M:abc/diagrams --check
 ```
 
-Expected: all commands exit 0. The graph contains ADR 0030, the scoped 0012→0006 supersession, and the scoped 0024→0002 dependency.
+Expected: all commands exit 0. The graph contains parser-selection ADR 0030 and governance ADR 0031, the scoped 0012→0006 supersession, and the scoped 0024→0002 dependency.
 
 - [ ] **Step 9: Commit the corpus migration**
 
@@ -1101,14 +1102,14 @@ git add abc/src/abc/tools/diagram/workflow_graph.clj \
 git commit -m "fix(diagram): validate workflow reports before rendering"
 ```
 
-### Task 7: Accept ADR 0030 and run the complete migration gate
+### Task 7: Accept ADR 0031 and run the complete migration gate
 
 **Files:**
-- Modify: `abc/docs/adr/0030-adr-governance-validation.md`
+- Modify: `abc/docs/adr/0031-adr-governance-validation.md`
 - Modify: `abc/docs/adr/adr-graph.mmd`
 
 **Interfaces:**
-- ADR 0030 becomes the Accepted canonical contract only after every acceptance path exists and all gates pass.
+- ADR 0031 becomes the Accepted canonical contract only after every acceptance path exists and all gates pass.
 
 - [ ] **Step 1: Run the pre-acceptance verification matrix**
 
@@ -1128,9 +1129,9 @@ nix build .#checks.x86_64-linux.clj-kondo --no-link
 nix build .#checks.x86_64-linux.clj-nix-focused-tests --no-link
 ```
 
-Expected: every command exits 0. Do not change ADR 0030 status if any command fails.
+Expected: every command exits 0. Do not change ADR 0031 status if any command fails.
 
-- [ ] **Step 2: Promote ADR 0030 using the verified evidence**
+- [ ] **Step 2: Promote ADR 0031 using the verified evidence**
 
 Change its header and implementation status:
 
@@ -1158,7 +1159,7 @@ bin/kaocha --focus abc.tools.adr-test
 bin/kaocha --focus abc.tools.diagram.registry-test
 ```
 
-Expected: all commands exit 0; ADR 0030 is rendered with the Accepted class.
+Expected: all commands exit 0; ADR 0031 is rendered with the Accepted class.
 
 - [ ] **Step 4: Run monorepo verification from the root**
 
@@ -1177,12 +1178,12 @@ git status --short
 git diff --check
 ```
 
-Expected: only the intended ADR 0030 status/graph edits are pending; `/tmp` outputs and the pre-existing untracked Clojure remediation plan are not staged.
+Expected: only the intended ADR 0031 status/graph edits are pending; `/tmp` outputs and the pre-existing untracked Clojure remediation plan are not staged.
 
 - [ ] **Step 6: Commit acceptance**
 
 ```sh
-git add abc/docs/adr/0030-adr-governance-validation.md \
+git add abc/docs/adr/0031-adr-governance-validation.md \
   abc/docs/adr/adr-graph.mmd
 git commit -m "docs(adr): accept uniform governance validation"
 ```
@@ -1191,7 +1192,7 @@ git commit -m "docs(adr): accept uniform governance validation"
 
 - [ ] `abc.tools.adr` is the only ADR Markdown parser; `rg -n "parse-adr|header-block|adr-ref-tokens" abc/src` finds no parallel parser in diagram code.
 - [ ] No permanent allowlist or shell acceptance gate remains.
-- [ ] All 30 ADRs pass exact lifecycle/header/relation validation.
+- [ ] All 31 ADRs pass exact lifecycle/header/relation validation.
 - [ ] Draft ADRs 0002–0005 retain honest promotion criteria without fabricated evidence.
 - [ ] ADR 0028 is exactly Proposed; ADRs 0026–0029 were not promoted.
 - [ ] Scoped supersession and dependency labels remain visible in `adr-graph.mmd`.

@@ -723,6 +723,7 @@ Expected: 0.750 human-probe heuristic F1; 0.9629 LLM-label ML F1; 0.9171/0.9586 
 Class: checked-in evaluation and corpus-probe reports
 -->
 
+<!--
 # Appendix — Reproducing the Evidence
 
 - [Pinned TEI-EAJ source](https://github.com/TEI-EAJ/aozora_tei):
@@ -735,3 +736,4 @@ Class: checked-in evaluation and corpus-probe reports
   `nix run .#abc-materialize-publication -- examples/v0/example-work/parser-ir.json examples/v0/example-work/metadata-record.json examples/v0/example-persons /tmp/jadh-publication --generated-at 2026-07-03T00:00:00Z`
 
 The publication command demonstrates the reproducible fixture—not the gated real Melos comparison.
+-->

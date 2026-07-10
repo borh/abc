@@ -612,7 +612,11 @@ git commit -m "feat(abc): run annotation release guardrails in the batch path"
     (is (= {"ruby" 3 "gaiji" 1} (:annotation_counts agg)))
     (is (= 1 (get-in agg [:classifications "ruby" "aligned-single"])))
     (is (= 1 (get-in agg [:classifications "ruby" "aligned-multi"])))
-    (is (= 0.5 (get-in agg [:classification_rates "ruby" "stem-prefix"])))))
+    ;; rates are fractions of the kind's corpus-wide total (ruby total = 3),
+    ;; so a kind's rates always sum to 1
+    (is (= (double (/ 1 3))
+           (get-in agg [:classification_rates "ruby" "stem-prefix"])))
+    (is (= 1.0 (reduce + (vals (get-in agg [:classification_rates "ruby"])))))))
 ```
 
 - [ ] **Step 2: Run to verify failure**

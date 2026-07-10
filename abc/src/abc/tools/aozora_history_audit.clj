@@ -4,6 +4,7 @@
   conservative person-drift history report."
   (:require [abc.git :as abc-git]
             [abc.tools.aozora-ingest :as ingest]
+            [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.person-drift :as drift]
             [abc.tools.person-drift-history :as drift-history]
@@ -53,18 +54,9 @@
     (rest args)
     args))
 
-(defn- delete-recursive! [^java.io.File file]
-  (when (.exists file)
-    (when (.isDirectory file)
-      (doseq [child (.listFiles file)]
-        (delete-recursive! child)))
-    (when-not (.delete file)
-      (throw (ex-info (str "failed to delete " (.getPath file))
-                      {:path (.getPath file)})))))
-
 (defn- prepare-owned-path! [path]
   (let [file (io/file path)]
-    (delete-recursive! file)
+    (files/delete-tree! file)
     file))
 
 (defn- extract-zip! [repo ref zip-path output-file]

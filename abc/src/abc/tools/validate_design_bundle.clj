@@ -822,8 +822,7 @@
                               {:committed (str committed)
                                :regenerated (str regen)}))))))
       (finally
-        (doseq [f (reverse (file-seq temp))]
-          (.delete f))))))
+        (files/delete-tree! temp)))))
 
 (defn validate-git-cliff! []
   (run-command! "git-cliff" "--config" "cliff.toml" "--unreleased" "--strip" "header"
@@ -1181,8 +1180,7 @@
       (tel/log! :info "git-cliff config ok")
       (tel/log! :info "design bundle validation ok")
       (finally
-        (doseq [file (reverse (file-seq temp-dir))]
-          (.delete file))))))
+        (files/delete-tree! temp-dir)))))
 
 (defn -main [& _args]
   (logging/install-cli-handler!)

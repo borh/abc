@@ -83,6 +83,8 @@
           ]);
           presentationFontConfig = pkgs.makeFontsConf {
             fontDirectories = [ pkgs.noto-fonts-cjk-sans ];
+            impureFontDirectories = [ ];
+            includes = [ ];
           };
           presentationLauncher = pkgs.writeShellScript "abc-presentation-diagrams" ''
             set -euo pipefail
@@ -94,9 +96,10 @@
             trap 'rm -rf "$presentationCache"' EXIT
             export CLJ_CACHE="$presentationCache/clojure"
             export FONTCONFIG_FILE="${presentationFontConfig}"
-            unset FONTCONFIG_PATH XDG_CONFIG_HOME XDG_CONFIG_DIRS
+            unset FONTCONFIG_PATH XDG_CONFIG_HOME XDG_CONFIG_DIRS XDG_DATA_DIRS
             export XDG_CACHE_HOME="$presentationCache/xdg-cache"
-            mkdir -p "$CLJ_CACHE" "$XDG_CACHE_HOME"
+            export XDG_DATA_HOME="$presentationCache/xdg-data"
+            mkdir -p "$CLJ_CACHE" "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
             if [ -f abc/deps.edn ] && [ -f abc/docs/architecture-stages.edn ]; then
               cd abc
             elif [ -f deps.edn ] && [ -f docs/architecture-stages.edn ]; then
@@ -378,6 +381,8 @@
           ]);
           presentationFontConfig = pkgs.makeFontsConf {
             fontDirectories = [ pkgs.noto-fonts-cjk-sans ];
+            impureFontDirectories = [ ];
+            includes = [ ];
           };
           tei = import ./nix/tei-profile-artifacts.nix {
             inherit pkgs;
@@ -474,9 +479,42 @@
                 export CLJ_CACHE="$TMPDIR/cp-cache"
                 export GITLIBS="$HOME/.gitlibs"
                 export FONTCONFIG_FILE="${presentationFontConfig}"
-                unset FONTCONFIG_PATH XDG_CONFIG_HOME XDG_CONFIG_DIRS
+                unset FONTCONFIG_PATH XDG_CONFIG_HOME XDG_CONFIG_DIRS XDG_DATA_DIRS
                 export XDG_CACHE_HOME="$TMPDIR/font-cache"
-                mkdir -p "$CLJ_CACHE" "$XDG_CACHE_HOME"
+                export XDG_DATA_HOME="$TMPDIR/xdg-data"
+                mkdir -p "$CLJ_CACHE" "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
+                grep -Fq \
+                  '<dir>${pkgs.noto-fonts-cjk-sans}</dir>' \
+                  "$FONTCONFIG_FILE"
+                activeFontPaths="$TMPDIR/fontconfig-active-paths"
+                sed -n \
+                  -e '/^[[:space:]]*<dir[ >]/p' \
+                  -e '/^[[:space:]]*<include[ >]/p' \
+                  "$FONTCONFIG_FILE" > "$activeFontPaths"
+                for forbidden in \
+                  /etc/fonts \
+                  /usr/share/fonts \
+                  /usr/local/share/fonts \
+                  '~/.nix-profile' \
+                  /nix/var/nix/profiles
+                do
+                  if grep -Fq "$forbidden" "$activeFontPaths"; then
+                    echo "presentation Fontconfig contains forbidden path: $forbidden" >&2
+                    exit 1
+                  fi
+                done
+                while IFS= read -r fontPath; do
+                  fontPath="$(printf '%s\n' "$fontPath" | sed 's/^[[:space:]]*//')"
+                  case "$fontPath" in
+                    '<dir>/nix/store/'*'</dir>' | '<dir prefix="xdg">fonts</dir>')
+                      ;;
+                    *)
+                      echo "presentation Fontconfig contains non-store path: $fontPath" >&2
+                      exit 1
+                      ;;
+                  esac
+                done < "$activeFontPaths"
+                test -z "$(find "$XDG_DATA_HOME" -mindepth 1 -print -quit)"
                 export ABC_GRAPHVIZ_DOT="${pkgs.graphviz}/bin/dot"
                 export ABC_FONTTOOLS_SUBSET="${presentationFontTools}/bin/pyftsubset"
                 export ABC_PRESENTATION_FONT="${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk/NotoSansCJK-VF.otf.ttc"
@@ -777,6 +815,8 @@
           ]);
           presentationFontConfig = pkgs.makeFontsConf {
             fontDirectories = [ pkgs.noto-fonts-cjk-sans ];
+            impureFontDirectories = [ ];
+            includes = [ ];
           };
 
         in
@@ -790,9 +830,11 @@
             DOTFONTPATH = "${pkgs.noto-fonts-cjk-sans}/share/fonts/opentype/noto-cjk";
             FONTCONFIG_FILE = "${presentationFontConfig}";
             shellHook = ''
-              unset FONTCONFIG_PATH XDG_CONFIG_HOME XDG_CONFIG_DIRS
+              unset FONTCONFIG_PATH XDG_CONFIG_HOME XDG_CONFIG_DIRS XDG_DATA_DIRS
               presentationFontCache="$(mktemp -d)"
-              export XDG_CACHE_HOME="$presentationFontCache"
+              export XDG_CACHE_HOME="$presentationFontCache/xdg-cache"
+              export XDG_DATA_HOME="$presentationFontCache/xdg-data"
+              mkdir -p "$XDG_CACHE_HOME" "$XDG_DATA_HOME"
               trap 'rm -rf "$presentationFontCache"' EXIT
             '';
             packages = with pkgs; [

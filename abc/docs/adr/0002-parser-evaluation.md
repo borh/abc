@@ -1,13 +1,26 @@
 # ADR 0002: Parser Evaluation Criteria
 
-Status: Draft
+Status: Accepted
 Date: 2026-04-26
+Accepted: 2026-07-10
 Supersedes: none
+Amended by: ADR 0030
 Source: `docs/high-level-architecture-note.md` v0.5
 
 ## Implementation Status
 
-Still Draft. Parser candidate comparison remains in `../ab-validator`. ABC now
+2026-07-10: Accepted via ADR 0030. The producer-side parser comparison study
+(`ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md`
+and its 2026-07-09 follow-ups) is recorded as `:citable` parser-selection
+evidence in `data/parser-evidence-citations.edn`, resolving the citation
+question that kept this ADR Draft. ADR 0030 selects `aozora-pipeline`
+(`P4suta/aozora`) as the consolidated-parser fork base and enacts the
+evidence-policy acceptance slice from
+`docs/handoffs/parser-evidence-citation-contract.md`. This ADR's gates remain
+the evaluation criteria of record; the notes below are retained as history of
+the Draft period.
+
+Historical (pre-acceptance): parser candidate comparison remains in `../ab-validator`. ABC now
 owns the downstream publication consumer contract: parser-IR can be validated,
 materialized, and rendered to publication artifacts without executing parser
 candidates locally.

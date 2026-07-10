@@ -1,6 +1,8 @@
 # Parser Evidence Citation Contract
 
-Status: provisional / ADR 0002 unblocker
+Status: accepted — enacted by ADR 0030 (2026-07-10) as the controlling
+citation contract; `data/parser-evidence-citations.edn` promoted to the
+accepted ADR 0002 citation index
 Date: 2026-07-04
 
 ## Purpose

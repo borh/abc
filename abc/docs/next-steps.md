@@ -337,10 +337,12 @@ bin/update-clj-nix-lock
 
 In rough order of leverage, none committed:
 
-1. **Parser-decision exercise (ADR 0002).** Run a candidate parser
-   (e.g. `aozora-rs`) over one Aozora work into the parser IR
-   contract. Currently parked while parser work happens in another
-   project.
+1. **Parser-decision exercise (ADR 0002).** Resolved 2026-07-10: ADR 0030
+   accepted the producer comparison study as parser-selection evidence and
+   selected `aozora-pipeline` (`P4suta/aozora`) as the consolidated-parser
+   fork base. The successor milestone is the parser design on that base
+   against
+   `ab-validator/docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md`.
 2. **Person identity drift (Flavor 2).** Splits, merges, renames as
    PROV-style events; the separated-persons milestone scoped Flavor 1
    only.

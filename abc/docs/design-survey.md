@@ -20,6 +20,13 @@ Promotion trigger: ADR 0002 accepts a parser candidate or parser-evaluation
 path, and at least one ABC manifest is produced from that candidate's output in
 a checked fixture or release-candidate run.
 
+2026-07-10 update: the first half of the trigger fired — ADR 0030 accepted the
+parser-evaluation path and selected `aozora-pipeline` (`P4suta/aozora`) as the
+consolidated-parser fork base (ADR 0002 is now Accepted). The remaining half
+(an ABC manifest produced from the consolidated parser's output in a checked
+fixture or release-candidate run) waits on the fork meeting the producer
+acceptance criteria; selection is not admission (ADR 0023).
+
 ## Schema And Graph Validation Alternatives
 
 SHACL is the accepted v0 RDF validation language. ShEx, `rudof`, SHACL 1.2,

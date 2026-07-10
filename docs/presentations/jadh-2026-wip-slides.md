@@ -38,19 +38,19 @@ Aozora source
   ├─ TEI editions
   ├─ plaintext corpora
   ├─ tokenized datasets
-  └─ LLM / RAG indexes
+  └─ LLM / retrieval-augmented generation indexes
 ```
 
-The transformation is often treated as disposable preprocessing.
+The transformation can be treated as disposable preprocessing.
 
-**Soranoha treats it as a versioned scholarly process.**
+**Our system, Soranoha, treats it as a versioned scholarly process.**
 
 # Parallel Work: TEI-EAJ aozora_tei
 
 - Curated human encoding of Aozora works in TEI P5
 - Encoding depth organized through Levels 2–5
 - Shared workflow for headers, drafts, completed files, and enrichment
-- Guidelines and visualization experiments that make TEI useful beyond XML
+- Tools and visualizations that make the encoding usable without reading raw XML
 
 [Project repository](https://github.com/TEI-EAJ/aozora_tei) ·
 [Project wiki](https://github.com/TEI-EAJ/aozora_tei/wiki)
@@ -73,6 +73,19 @@ Class: pinned upstream comparison source
 3. How do publication and tokenizer choices change downstream research views?
 
 **Contribution:** evidence that connects source syntax to versioned outputs.
+
+# Terms Used in This Talk
+
+| Term | Meaning here |
+| --- | --- |
+| Source authority | Official documentation and the source works themselves |
+| Conformance | Recognition of documented test cases |
+| Coverage | Share of real-corpus markup occurrences represented |
+| Fidelity | Representation quality on works a parser completes |
+| Robustness | Whether it completes the works, weighted by what is missed |
+| AAT | **Aozora Adapter Tree**: a record of what each parser produced |
+| Parser-IR | **Parser Intermediate Representation**: where publication decisions are recorded |
+| Manifest | Versioned identity and provenance for a derived artifact |
 
 # Readable Does Not Mean Plain
 
@@ -127,6 +140,8 @@ Class: pinned upstream comparison source
 
 Per-family counts overlap; rows do not sum to the de-duplicated total.
 
+Ruby is about **83% of the full inventory**; the parser-coverage denominator below is a selected construct set, where ruby is about **89%**.
+
 ## Rare Syntax Still Matters
 
 | Construct | Works |
@@ -137,7 +152,7 @@ Per-family counts overlap; rows do not sum to the de-duplicated total.
 
 - Frequency tells us impact, not semantic importance.
 - Rare constructs test whether a pipeline preserves the source's expressive range.
-- Long-tail syntax needs explicit evidence, not optimistic fallback.
+- Long-tail syntax needs explicit evidence, not silent fallback.
 
 <!--
 Evidence path: ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
@@ -159,8 +174,8 @@ ArtifactID is not a materialized-file byte hash.
 
 # Five Parsers, Three Questions
 
-- `aozora-pipeline`: measured reference candidate
-- `aozora2html`: official XHTML converter [@aozorahack2026]
+- `aozora-pipeline`: multi-crate Rust parser (`P4suta/aozora`); our reference
+- `aozora2html`: the aozorahack HTML converter [@aozorahack2026]
 - `aozora2`: Rust format converter [@takahashi2026]
 - `aozora-rs`: Rust parser [@kinokov2026]
 - `AozoraEpub3`: Java/EPUB converter [@aozoraepub32026]
@@ -175,19 +190,19 @@ aozora-pipeline is P4suta/aozora, a measured candidate—not completed Soranoha 
 
 | Measurement | Question |
 | --- | --- |
-| Conformance breadth | Which curated constructs are recognized? |
-| Frequency-weighted coverage | How much real-corpus markup mass is represented? |
+| Conformance breadth | Which documented test cases are recognized? |
+| Frequency-weighted coverage | What share of real-corpus markup occurrences is represented? |
 | Fidelity / robustness | Given completion, how faithful is output—and does the parser complete? |
 
 **Speed is a fourth engineering constraint, not a correctness score.**
 
 # Conformance Breadth
 
-- 127 third-party vectors across 24 feature families
-- No parser passes all 25 `must` vectors
-- `aozora-pipeline`: **22/25 must**; the three failures are diagnostic-only
-- Raw adapter scores can confuse parser gaps with adapter serialization gaps
-- Independent official-document seeds corroborate the family-level findings
+- 127 third-party test cases across 24 feature families
+- No parser passes all 25 required cases
+- `aozora-pipeline`: **22/25 required cases**; the three failures affect diagnostic messages, not parsed structure
+- A wrapper can omit detail that the underlying parser recognized
+- A small independent set derived from official documentation confirms the family-level findings
 
 **A conformance ranking is not a capability ranking.**
 
@@ -201,7 +216,7 @@ Class: checked-in comparison report; supporting evidence, not source authority
 
 # Frequency-Weighted Corpus Coverage
 
-| Parser lane | Coverage |
+| Parser | Coverage |
 | --- | ---: |
 | `aozora-pipeline` | **0.969** |
 | `aozora-rs` | 0.938 |
@@ -209,7 +224,7 @@ Class: checked-in comparison report; supporting evidence, not source authority
 | `aozora2` | 0.855 |
 | `aozora2html` | 0.743 |
 
-Ruby is about 90% of **coverage-weighted mass**: read the total as **ruby coverage adjusted by the long tail**.
+Ruby is about 89% of the selected **coverage-weighted occurrences**: read the total as **ruby coverage adjusted by the long tail**.
 
 <!--
 Evidence path: ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
@@ -221,11 +236,11 @@ Class: checked-in report
 
 # Fidelity and Robustness Are Different
 
-- `aozora2html`: highest per-work fidelity (**0.974**) on the common intersection
-- It fails on **302 ruby-heavy works**, missing **24.7% of ruby mass**
-- Its 0.983 work completion rate hides a mass-weighted robustness failure
-- `aozora-pipeline` and `aozora-rs` complete all 17,886 pinned works—but `aozora-rs` has the lowest isolated fidelity
-- In **ア、秋**: `aozora2` matches the one-paragraph reference; `aozora2html` produces **29 fragments**
+- `aozora2html`: highest per-work fidelity (**0.974**) on works completed by every parser
+- It fails on **302 ruby-heavy works**, missing **24.7% of ruby occurrences**
+- Its 0.983 work completion rate hides a frequency-weighted robustness failure
+- `aozora-pipeline` and `aozora-rs` complete all 17,886 pinned works—but `aozora-rs` has the lowest per-work fidelity
+- In **ア、秋**: `aozora2` matches the one-paragraph reference; `aozora2html` produces **29 paragraph fragments**
 
 **Per-work quality cannot compensate for systematically missing difficult works.**
 
@@ -240,8 +255,8 @@ Class: checked-in report
 # Parser Comparison: What We Can Conclude
 
 - Highest frequency-weighted coverage: `aozora-pipeline`
-- Highest isolated fidelity: `aozora2html`
-- Fastest measured lane: `aozora-rs`
+- Highest per-work fidelity: `aozora2html`
+- Fastest parser system: `aozora-rs`
 - Complementary strengths remain across feature families
 - Engineering recommendation: use `aozora-pipeline` as the future parser base
 
@@ -261,17 +276,17 @@ AAT is current producer detail.
 
 # Two Representation Boundaries
 
-## AAT — descriptive waist
+## AAT — what the parser produced
 
-- Parser-shaped evidence
-- Preserves raw markup and adapter provenance
-- Makes heterogeneous parser outputs comparable
+- Records raw markup, structured output, and which parser produced it
+- Keeps parser-specific detail before publication policy is applied
+- Gives five different parsers a comparable evidence format
 
-## Parser-IR — decisional waist
+## Parser-IR — where publication decisions are made
 
-- Publication lanes and normalized semantics
-- Typed loss taxonomy and ambiguity ledger
-- One policy boundary for multiple scholarly outputs
+- Normalizes concepts once for all downstream outputs
+- Records every ambiguity, addition, unsupported feature, and structural loss
+- Feeds TEI, visible plaintext, preservation records, and analytical data
 
 # Worked Mapping: 傍点
 
@@ -302,7 +317,7 @@ Class: checked-in generated mapping contract
 | `UNSUPPORTED` | No Parser-IR representation exists |
 | `STRUCTURAL` | Tree shape forces boundary or span loss |
 
-Each category has an explicit action and sidecar policy.
+Each category has an explicit action and says whether detail moves to a separate preservation file.
 
 <!-- Evidence: ab-validator/data/aat-to-parser-ir-mapping-v1.json loss_taxonomy. -->
 
@@ -333,21 +348,7 @@ Inspect/regenerate: tei_root="$(nix run .#abc-tei-eaj-aozora-tei-source)"; sed -
 Inputs: TEI-EAJ/aozora_tei@77a675fc2771936f9544505d922d4cd45075338c
 Expected: SHA-256 c2f6e43fbc3235e832feccf47e5b06c896959d8aa2a9798132e8dca12df5c7be; work 1567; curated Level 4
 Class: pinned upstream curated TEI
--->
 
-# Work-Matched XML Comparison: Readiness Gate
-
-## What the paired excerpts will test
-
-- Paragraph boundaries: curated structure versus parser-derived structure
-- Ruby: shared TEI vocabulary and source-preserving detail
-- Notes: body, back matter, and source-apparatus routing
-- Headers: human enrichment versus generated provenance
-- Named entities and speech: curated Level 4 depth versus transcription baseline
-
-**Draft gate:** the real Soranoha 走れメロス publication bundle has not yet landed as tracked, reproducible evidence.
-
-<!--
 DRAFT XML GATE
 Evidence path: target abc/paper/demo-melos-real/{parser-ir.aozora2html.json,metadata-record.json,source.manifest.json,tei.xml,tei.manifest.json,tei-validation-result.json}
 Inspect/regenerate: rg --files abc | rg 'demo-melos-real/(parser-ir|metadata-record|source\.manifest|tei\.xml|tei\.manifest|tei-validation-result)'
@@ -360,9 +361,9 @@ Class: readiness gate; no Soranoha fixture is shown as a real edition
 
 - **TEI:** structured scholarly transcription and validation [@okada2023]
 - **Visible plaintext:** body text only
-- **Custom sidecars:** source apparatus, provenance, and policy-specific detail
+- **Preservation files:** source apparatus, provenance, and policy-specific detail
 - **Tokenized artifacts:** identified analytical views
-- **Manifest:** binds identity-bearing inputs to each derived artifact
+- **Manifest:** records which versioned inputs and rules produced each artifact
 
 Parser-IR is a publication boundary, not a claim that every output should contain the same information.
 
@@ -399,23 +400,23 @@ Class: bounded live query over pinned analyzers
 - **17,894** works analyzed with Vibrato and Sudachi
 - **0** analyzer failures and **0** comparison failures
 - **7,358,000** segmentation-difference regions
-- Boundary-F1 median: **0.973**
-- Boundary-F1 minimum: **0.688** — the work containing 求むる
+- Boundary-agreement score (0–1), median: **0.973**
+- Boundary-agreement score (0–1), minimum: **0.688** — work `000081_43733`, containing 求むる
 
 The median establishes broad agreement; the regions identify analytically consequential disagreement.
 
 <!--
-Evidence path: ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md
-Inspect/regenerate: sed -n '35,100p' ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md
-Inputs: 17,894 AAT files; Vibrato unidic-cwj-202512; Sudachi C
-Expected: 0 failures; 7,358,000 regions; median 0.972972972972973; minimum 0.6884927066450566
+Evidence path: ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md and pinned Aozora corpus work 000081/card43733
+Inspect/regenerate: sed -n '35,100p' ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md; corpus="$(nix build .#ab-validator-aozorabunko-corpus --no-link --print-out-paths)"; rg -L -n '求むる' "$corpus/cards/000081/card43733.html"
+Inputs: 17,894 AAT files; Vibrato unidic-cwj-202512; Sudachi C; pinned corpus
+Expected: 0 failures; 7,358,000 regions; median 0.972972972972973; minimum 0.6884927066450566 for 000081_43733; source contains 求むる
 Class: checked-in full-corpus report
 -->
 
 # Live Demo: Follow the Evidence
 
 1. Inspect source constructs and authority-backed mappings.
-2. Compare selected parser lanes.
+2. Compare selected parsers.
 3. Inspect AAT → Parser-IR transformation records.
 4. Materialize TEI and visible plaintext.
 5. Compare tokenization over one selected region.
@@ -438,6 +439,7 @@ Provenance narrative: sibling archive paper/demo-trace.md; it is not a build inp
 
 - Long-tail gaps remain, including 字詰め and 横組 in the recommended candidate.
 - Parser consolidation is recommended, not complete.
+- A work-matched TEI-EAJ/Soranoha XML comparison is in progress.
 - TEI Levels 4–5 require editorial and enrichment work.
 - Tokenizer suitability needs work-level and genre-aware evaluation.
 - Every corpus, parser, dictionary, or profile change requires remeasurement.
@@ -499,9 +501,9 @@ Class: checked-in generated source-authority report
 
 # Appendix: Parser Names and Measurement Lenses
 
-- **Breadth:** curated constructs, equal weight per vector
-- **Mass:** real-corpus occurrences, ruby-dominated
-- **Fidelity:** representation quality on a common completed-work intersection
+- **Breadth:** documented test cases, each weighted equally
+- **Coverage weight:** real-corpus occurrences, dominated by ruby
+- **Fidelity:** representation quality on works completed by every parser
 - **Robustness:** completion over the pinned corpus
 - **Speed:** operational feasibility
 
@@ -517,13 +519,13 @@ Class: checked-in comparison methodology
 
 # Appendix: Parser Coverage by Construct
 
-| Construct | Source occurrences | Pipeline | aozora-rs | aozora2 | aozora2html | Epub3 |
+| Construct | Source occurrences | aozora-pipeline | aozora-rs | aozora2 | aozora2html | AozoraEpub3 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Ruby | 3,607,926 | 0.99 | 0.99 | 0.85 | 0.74 | 0.96 |
 | Heading | 80,592 | 0.84 | 0.24 | 0.92 | 0.77 | 0.84 |
 | Gaiji | 62,355 | 0.77 | 1.00 | 0.82 | 0.57 | 0.00 |
 | 縦中横 | 19,794 | 0.95 | 0.00 | 0.86 | 0.00 | 0.69 |
-| 傍線 | 18,127 | folded | 0.18 | 0.95 | 0.79 | 0.81 |
+| 傍線 | 18,127 | preserved generically | 0.18 | 0.95 | 0.79 | 0.81 |
 
 <!--
 Evidence path: ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md

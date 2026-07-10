@@ -276,7 +276,11 @@ Slide 1 uses two short verbatim excerpts labeled:
 
 Slide 2 annotates paragraph boundaries, ruby, notes, headers, and enrichment. Use ordinary fenced XML code blocks. Include pinned TEI-EAJ commit, work ID `1567`, Soranoha ArtifactID/manifest identity, materialization command, and validation result in HTML comments.
 
-If the Soranoha gate is closed, add the headings and `DRAFT XML GATE` comments but do not fabricate audience-facing XML.
+If the Soranoha gate is closed, keep `DRAFT XML GATE` in the TEI-EAJ slide's
+HTML comment and mention the in-progress comparison on the limitations slide.
+Do not add an audience-facing readiness/apology slide. When the counterpart
+lands, add the second XML slide and move one dense main slide to the appendix so
+the main count remains 27.
 
 - [ ] **Step 5: Verify XML provenance**
 

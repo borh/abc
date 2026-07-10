@@ -139,10 +139,11 @@ the deeper comparison when actual XML is on screen:
 4. TEI-EAJ `aozora_tei` as essential parallel work, including its Levels
    model, workflow, and linked ecosystem.
 5. Research questions and contribution.
-6. Aozora source is readable—but not plain.
-7. What counts as evidence?
-8. Building the source-authority notation inventory.
-9. Inventory results and rare syntax.
+6. Define the load-bearing terms: source authority, conformance, coverage,
+   fidelity, robustness, AAT, Parser-IR, and manifest.
+7. Aozora source is readable—but not plain.
+8. What counts as evidence?
+9. Building the source-authority notation inventory and showing its results.
 10. Figure: Soranoha Reproducibility Architecture.
 11. Why and how five parsers are compared.
 12. Conformance results—and why naive rankings mislead.
@@ -220,6 +221,11 @@ versioned access paths, and the Soranoha side has a source identity, Parser-IR,
 manifest, materialization command, and passing validation result. Until then,
 slides 19–20 remain explicitly draft-gated; fixture XML may not silently replace
 the missing real comparison.
+
+An unready comparison is not shown as an audience-facing “readiness gate” slide.
+Its status remains in HTML comments and the limitations slide. Until the real
+Soranoha counterpart lands, the main deck shows only the genuine pinned TEI-EAJ
+excerpt.
 
 Short XML excerpts foreground specific differences rather than reproduce whole
 documents. Suitable targets are paragraph boundaries, ruby, notes, headers,

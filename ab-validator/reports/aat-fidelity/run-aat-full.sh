@@ -290,10 +290,11 @@ renderer_dir=""
 aozora_bin_override_sha256=""
 aozora_bin_override_version=""
 if [[ "$adapter_id" == "aozora" && -n "$aozora_bin_override" ]]; then
-  if [[ ! -e "$aozora_bin_override" ]]; then
-    printf -- '--aozora-bin does not exist: %s\n' "$aozora_bin_override" >&2
+  if [[ ! -x "$aozora_bin_override" ]]; then
+    printf -- '--aozora-bin not found or not executable: %s\n' "$aozora_bin_override" >&2
     exit 2
   fi
+  aozora_bin_override="$(cd "$(dirname "$aozora_bin_override")" && pwd)/$(basename "$aozora_bin_override")"
   if ! aozora_bin_override_version="$("$aozora_bin_override" --version)"; then
     printf -- '--aozora-bin --version failed: %s\n' "$aozora_bin_override" >&2
     exit 2

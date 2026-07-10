@@ -43,17 +43,18 @@ mkdir -p "$corpus/cards/000001/files/1_ruby"
 printf '吾輩《わがはい》は猫である。\n' > "$corpus/cards/000001/files/1_ruby/test.txt"
 printf '["000001_1"]\n' > "$work_ids"
 
+# Test 1: absolute path
 "$repo_root/reports/aat-fidelity/run-aozora-aat-full.sh" \
   --aozora-bin "$stub" \
   --corpus "$corpus" \
-  --out-dir "$out_dir/run" \
+  --out-dir "$out_dir/run-absolute" \
   --work-ids "$work_ids" \
   --jobs 1 \
   --timeout 60s \
-  --report-id aozora-bin-override-smoke \
+  --report-id aozora-bin-override-smoke-absolute \
   --force
 
-metadata="$out_dir/run/metadata.json"
+metadata="$out_dir/run-absolute/metadata.json"
 test -f "$metadata"
 
 grep -q "OVERRIDE-PROOF" "$metadata"
@@ -67,7 +68,50 @@ metadata_path, stub_path = sys.argv[1:]
 metadata = json.loads(open(metadata_path, encoding="utf-8").read())
 override = metadata.get("aozora_bin_override")
 assert override is not None, "metadata.json missing aozora_bin_override"
-assert override["path"] == stub_path, override["path"]
+assert override["path"] == stub_path, f"path mismatch: {override['path']} != {stub_path}"
+expected_sha256 = hashlib.sha256(open(stub_path, "rb").read()).hexdigest()
+assert override["sha256"] == expected_sha256, override["sha256"]
+assert "OVERRIDE-PROOF" in override["version"], override["version"]
+assert "OVERRIDE-PROOF" in metadata["adapter_version"], metadata["adapter_version"]
+PY
+
+# Test 2: relative path
+# Change to stub's parent directory and pass relative path
+stub_parent="$(dirname "$stub")"
+stub_basename="$(basename "$stub")"
+mkdir -p "$corpus/cards/000001/files/1_ruby"
+printf '吾輩《わがはい》は猫である。\n' > "$corpus/cards/000001/files/1_ruby/test.txt"
+
+(
+  cd "$stub_parent"
+  "$repo_root/reports/aat-fidelity/run-aozora-aat-full.sh" \
+    --aozora-bin "./$stub_basename" \
+    --corpus "$corpus" \
+    --out-dir "$out_dir/run-relative" \
+    --work-ids "$work_ids" \
+    --jobs 1 \
+    --timeout 60s \
+    --report-id aozora-bin-override-smoke-relative \
+    --force
+)
+
+metadata="$out_dir/run-relative/metadata.json"
+test -f "$metadata"
+
+grep -q "OVERRIDE-PROOF" "$metadata"
+
+python - "$metadata" "$stub" <<'PY'
+import hashlib
+import json
+import sys
+
+metadata_path, stub_path = sys.argv[1:]
+metadata = json.loads(open(metadata_path, encoding="utf-8").read())
+override = metadata.get("aozora_bin_override")
+assert override is not None, "metadata.json missing aozora_bin_override"
+# Path must be absolute even though passed as relative
+assert override["path"].startswith("/"), f"path must be absolute: {override['path']}"
+assert override["path"] == stub_path, f"path mismatch: {override['path']} != {stub_path}"
 expected_sha256 = hashlib.sha256(open(stub_path, "rb").read()).hexdigest()
 assert override["sha256"] == expected_sha256, override["sha256"]
 assert "OVERRIDE-PROOF" in override["version"], override["version"]

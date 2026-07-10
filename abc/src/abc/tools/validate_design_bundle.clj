@@ -102,7 +102,7 @@
   (let [expected-parser-ir (manifest/schema-hash "schemas/parser-ir.schema.json")
         actual-parser-ir (get parser-ir "schema_hash")]
     (vec
-     (when (not (parser-ir-schema-hash-accepted? actual-parser-ir))
+     (when-not (parser-ir-schema-hash-accepted? actual-parser-ir)
        [(str "ab-validator parser IR schema_hash " actual-parser-ir
              " does not match ABC parser IR schema hash " expected-parser-ir)]))))
 
@@ -305,9 +305,8 @@
   (schema/schema-valid! schema path))
 
 (defn run-command! [& command]
-  (let [process (ProcessBuilder. command)
-        _ (.inheritIO process)
-        started (.start process)
+  (let [started (.start (doto (ProcessBuilder. command)
+                          (.inheritIO)))
         exit-code (.waitFor started)]
     (when-not (zero? exit-code)
       (throw (ex-info (str "Command failed: " (string/join " " command))

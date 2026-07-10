@@ -22,6 +22,7 @@ Usage:
   extract-perf-workset-corpus.py --workset data/perf-workset.json \
       --corpus-root <resolved corpus> --out-dir scratch/perf-workset-corpus
 """
+
 import argparse
 import hashlib
 import json
@@ -52,27 +53,32 @@ def main() -> int:
         work_id = work["work_id"]
         prov = work.get("_provenance")
         if not prov:
-            print(f"FAIL-CLOSED: {work_id} has no _provenance block in {args.workset}",
-                  file=sys.stderr)
+            print(
+                f"FAIL-CLOSED: {work_id} has no _provenance block in {args.workset}",
+                file=sys.stderr,
+            )
             return 2
 
         archive_path = corpus_root / prov["archive_relpath"]
         zip_entry = prov["zip_entry"]
         if not archive_path.is_file():
-            print(f"FAIL-CLOSED: {work_id} archive missing at {archive_path}",
-                  file=sys.stderr)
+            print(f"FAIL-CLOSED: {work_id} archive missing at {archive_path}", file=sys.stderr)
             return 2
 
         try:
             with zipfile.ZipFile(archive_path) as zf:
                 data = zf.read(zip_entry)
         except KeyError:
-            print(f"FAIL-CLOSED: {work_id} entry {zip_entry!r} not found in {archive_path}",
-                  file=sys.stderr)
+            print(
+                f"FAIL-CLOSED: {work_id} entry {zip_entry!r} not found in {archive_path}",
+                file=sys.stderr,
+            )
             return 2
         except zipfile.BadZipFile as exc:
-            print(f"FAIL-CLOSED: {work_id} archive {archive_path} is not a valid zip: {exc}",
-                  file=sys.stderr)
+            print(
+                f"FAIL-CLOSED: {work_id} archive {archive_path} is not a valid zip: {exc}",
+                file=sys.stderr,
+            )
             return 2
 
         out_path = out_dir / pathlib.Path(work["corpus_relpath"]).name

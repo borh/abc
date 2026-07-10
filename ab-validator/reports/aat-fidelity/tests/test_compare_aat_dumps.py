@@ -12,8 +12,9 @@ def write(d: pathlib.Path, name: str, doc: dict) -> None:
 
 
 def run(a, b):
-    proc = subprocess.run([sys.executable, str(SCRIPT), str(a), str(b)],
-                          capture_output=True, text=True)
+    proc = subprocess.run(
+        [sys.executable, str(SCRIPT), str(a), str(b)], capture_output=True, text=True
+    )
     return proc.returncode, json.loads(proc.stdout)
 
 

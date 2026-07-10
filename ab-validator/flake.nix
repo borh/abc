@@ -1341,6 +1341,26 @@
               ''
             );
 
+        # `reports/**` pytest (aat-fidelity dump comparator + lib helpers)
+        # wired into the sandbox: same copy-source-then-run idiom as the
+        # aozora2html Rust-mapper parity check above.
+        reportsPytestCheck =
+          pkgs.runCommand "reports-pytest-check"
+            {
+              nativeBuildInputs = [ pythonWithAatSchemaDeps ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+              python -m pytest \
+                reports/aat-fidelity/tests \
+                reports/lib/tests \
+                -q
+              touch "$out"
+            '';
+
         aatOracleDataSchemaSmokeShell = pkgs.writeShellApplication {
           name = "aat-oracle-data-schema-smoke";
           runtimeInputs = [
@@ -1965,6 +1985,7 @@
           source-representability-gate = sourceRepresentabilityGateCheck;
           aat-fidelity-duckdb-smoke = aatFidelityDuckdbSmokeCheck;
           aat-oracle-audit-smoke = aatOracleAuditSmokeCheck;
+          reports-pytest = reportsPytestCheck;
         };
 
         devShells = {

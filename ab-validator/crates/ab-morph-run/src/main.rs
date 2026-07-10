@@ -404,7 +404,9 @@ Defaults to the old-kana set 新字旧仮名,旧字旧仮名 when --works-parque
     /// Tokenizes every `*.txt` file directly in --plaintext-dir with exactly
     /// one analyzer, writing `<out-dir>/<work-id>.tokens.jsonl` (one compact
     /// JSON object per morpheme: surface, char_start, char_end) and a one-line
-    /// JSON summary on stdout.
+    /// JSON summary on stdout. Works whose analysis fails get no tokens file
+    /// and are recorded in `<out-dir>/tokenize-errors.jsonl` (always written,
+    /// zero-byte when clean); such per-work errors do not fail the run.
     TokenizePlaintext {
         #[arg(long, required = true)]
         analyzer: Vec<String>,

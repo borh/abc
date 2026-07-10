@@ -159,26 +159,44 @@
                (throw (ex-info "Tokenizer failed"
                                {:exit exit :stderr err})))
              (let [summary (tokenize-summary out)
-                   missing (vec (remove #(.isFile (io/file
-                                                   tokens-dir
-                                                   (str % ".tokens.jsonl")))
+                   errors-file (io/file tokens-dir "tokenize-errors.jsonl")
+                   errored (if (.isFile errors-file)
+                             (mapv #(get % "work_id")
+                                   (files/read-json-lines errors-file))
+                             [])
+                   errored-set (set errored)
+                   missing (vec (remove #(or (contains? errored-set %)
+                                             (.isFile (io/file
+                                                       tokens-dir
+                                                       (str % ".tokens.jsonl"))))
                                         rendered-work-ids))]
                (when (seq missing)
                  (throw (ex-info "Tokenizer output missing for works"
                                  {:missing missing})))
-               (when-not (= (count rendered-work-ids) (get summary "works"))
+               (when-not (= (count rendered-work-ids)
+                            (+ (get summary "works")
+                               (get summary "errors" 0)))
                  (throw (ex-info "Tokenizer work accounting mismatch"
                                  {:expected-works (count rendered-work-ids)
-                                  :tokenized-works (get summary "works")})))
-               {:state-updates {:tokenized-work-ids (vec rendered-work-ids)}
+                                  :tokenized-works (get summary "works")
+                                  :errored-works (get summary "errors" 0)})))
+               {:state-updates {:tokenized-work-ids
+                                (vec (remove errored-set rendered-work-ids))}
                 :inputs [{:role "tokenizer-bin" :path (str tokenizer-bin)}]
                 :outputs [{:role "tokens-dir" :path (str tokens-dir)}]
-                :messages [{:level "info"
-                            :message (str (count rendered-work-ids)
-                                          " works tokenized ("
-                                          tokenizer-dict ", "
-                                          (get summary "tokens")
-                                          " tokens)")}]})))}
+                :messages (cond-> [{:level "info"
+                                    :message (str (get summary "works")
+                                                  " works tokenized ("
+                                                  tokenizer-dict ", "
+                                                  (get summary "tokens")
+                                                  " tokens)")}]
+                            (seq errored)
+                            (conj {:level "warn"
+                                   :message (str (count errored)
+                                                 " works failed tokenization"
+                                                 " and join-stats will skip"
+                                                 " them (tokenize-errors"
+                                                 ".jsonl)")}))})))}
    {:id :join-stats
     :requires [:tokenized-work-ids :parser-ir-dir :tokens-dir :stats-dir]
     :produces [:aggregate]

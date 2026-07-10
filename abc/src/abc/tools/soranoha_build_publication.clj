@@ -321,7 +321,7 @@
 
 (defn- materialize-selected-sources!
   [{:keys [aozora-root output-root parser-profile snapshot-date
-           aozora-git-commit]}]
+           aozora-git-commit continue-on-failure]}]
   (let [{:keys [csv-text catalog-csv-hash]} (read-catalog-zip aozora-root)
         rows (aozora-csv/read-rows-from-string csv-text)
         rows-by-basename (catalog-index rows)
@@ -343,14 +343,31 @@
                                               :row row}))))
                                  (sort-by :relpath)
                                  vec)
-        selected (mapv #(write-materialized-work!
-                         {:rows rows
-                          :catalog-provenance catalog-provenance
-                          :materialized-root materialized-root
-                          :parser-profile parser-profile
-                          :corpus-hash corpus-hash
-                          :selected %})
-                       selected-candidates)
+        derive-one (fn [candidate]
+                     (write-materialized-work!
+                      {:rows rows
+                       :catalog-provenance catalog-provenance
+                       :materialized-root materialized-root
+                       :parser-profile parser-profile
+                       :corpus-hash corpus-hash
+                       :selected candidate}))
+        ;; A single corrupt/unreadable work ZIP (e.g. a zip Java's reader
+        ;; rejects with "invalid CEN header") must not abort a whole-corpus
+        ;; derive. With continue_on_failure, record and skip it; otherwise fail
+        ;; loudly as before.
+        results (mapv (fn [candidate]
+                        (if continue-on-failure
+                          (try
+                            {:ok (derive-one candidate)}
+                            (catch Throwable t
+                              {:failed {"work_id" (row-work-id (:row candidate))
+                                        "person_id" (row-person-id (:row candidate))
+                                        "text_zip_relpath" (:relpath candidate)
+                                        "error" (.getMessage t)}}))
+                          {:ok (derive-one candidate)}))
+                      selected-candidates)
+        selected (vec (keep :ok results))
+        derive-failures (vec (keep :failed results))
         selected-relpaths (set (map :relpath selected-candidates))
         rejected (->> candidates
                       (remove #(contains? selected-relpaths (:relpath %)))
@@ -371,9 +388,12 @@
                                           :else
                                           "not-selected")})))]
     (when-not (seq selected)
-      (throw (ex-info "no catalog-backed work ZIPs were selected"
-                      {:aozora_root (str aozora-root)})))
-    (let [report (selection-report selected rejected)]
+      (throw (ex-info "no catalog-backed work ZIPs were successfully derived"
+                      {:aozora_root (str aozora-root)
+                       :derive_failed_count (count derive-failures)})))
+    (let [report (-> (selection-report selected rejected)
+                     (assoc "derive_failed_count" (count derive-failures)
+                            "derive_failures" derive-failures))]
       (abc-json/write-deterministic-json-file!
        (io/file output-root "source-selection-report.json")
        report)
@@ -580,7 +600,9 @@
                           :parser-profile (get config-value "parser_profile")
                           :snapshot-date snapshot-date
                           :aozora-git-commit (get (git-provenance aozora-root)
-                                                  "aozora_git_commit")})
+                                                  "aozora_git_commit")
+                          :continue-on-failure
+                          (boolean (get config-value "continue_on_failure"))})
                  selection-report-file (io/file output-root
                                                 "source-selection-report.json")]
              {:state-updates {:materialization-result result}

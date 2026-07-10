@@ -82,7 +82,7 @@
                              :label "Output format"}]
               :role :coordinate-family :group :a :backing {}}
         out (graphviz/dot (assoc sample :nodes [node] :edges []
-                                :primary-order [] :concentrate? true))]
+                                 :primary-order [] :concentrate? true))]
     (is (= 1 (count (re-seq #"Output format" out))))
     (is (str/includes? out "concentrate=\"true\""))))
 
@@ -109,7 +109,7 @@
                         [:contract "#A7B0BE"]]]
     (let [node {:id role :label (name role) :role role :backing {}}
           out (graphviz/dot (assoc sample :nodes [node] :edges []
-                                  :primary-order []))]
+                                   :primary-order []))]
       (is (str/includes? out (str "color=\"" color "\"")) (name role)))))
 
 (deftest dot-rejects-sanitized-node-id-collisions

@@ -46,14 +46,10 @@ impl DetectorRegistry {
 
     #[must_use]
     pub fn detect_all<'a>(&'a self, ctx: &DetectorContext<'_>) -> BTreeMap<&'a str, u64> {
-        let mut counts = self
-            .detectors
-            .keys()
-            .map(|row_id| (row_id.as_str(), 0))
-            .collect::<BTreeMap<_, _>>();
+        let mut counts = vec![0u64; self.detectors.len()];
 
         walk(ctx.aat, &mut |node| {
-            for (row_id, detector) in &self.detectors {
+            for (count, detector) in counts.iter_mut().zip(self.detectors.values()) {
                 for rule in &detector.rules {
                     let matched = match rule {
                         Rule::AatKindCount(kinds) => node
@@ -64,22 +60,26 @@ impl DetectorRegistry {
                         Rule::SourceRegex(_) | Rule::WholeAat(_) => false,
                     };
                     if matched {
-                        *counts.get_mut(row_id.as_str()).expect("initialized row") += 1;
+                        *count += 1;
                     }
                 }
             }
         });
 
-        for (row_id, detector) in &self.detectors {
+        for (count, detector) in counts.iter_mut().zip(self.detectors.values()) {
             for rule in &detector.rules {
-                *counts.get_mut(row_id.as_str()).expect("initialized row") += match rule {
+                *count += match rule {
                     Rule::SourceRegex(regex) => regex.find_iter(ctx.source).count() as u64,
                     Rule::WholeAat(detect) => detect(ctx.aat),
                     Rule::AatKindCount(_) | Rule::AatNode(_) => 0,
                 };
             }
         }
-        counts
+        self.detectors
+            .keys()
+            .map(String::as_str)
+            .zip(counts)
+            .collect()
     }
 }
 

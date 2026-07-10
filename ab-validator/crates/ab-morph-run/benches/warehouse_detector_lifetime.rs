@@ -55,14 +55,20 @@ fn analyzer_specs() -> Option<Vec<String>> {
                 .collect::<Vec<_>>()
         })
         .filter(|values| !values.is_empty())
-        .or_else(|| std::env::var_os("AB_VIBRATO_DICT").map(|_| vec!["vibrato".to_owned()]))
+        .or_else(|| {
+            (std::env::var_os("AB_VIBRATO_DICT").is_some()
+                || std::env::var_os("AB_VIBRATO_DICT_DIR").is_some())
+            .then(|| vec!["vibrato".to_owned()])
+        })
 }
 
 fn detector_mode() -> Option<(OrthoDetectMode, Option<std::path::PathBuf>)> {
     if let Some(path) = std::env::var_os("AB_ORTHO_ML_MODEL") {
         return Some((OrthoDetectMode::Ml, Some(path.into())));
     }
-    std::env::var_os("AB_VIBRATO_DICT").map(|_| (OrthoDetectMode::Heuristic, None))
+    (std::env::var_os("AB_VIBRATO_DICT").is_some()
+        || std::env::var_os("AB_VIBRATO_DICT_DIR").is_some())
+    .then_some((OrthoDetectMode::Heuristic, None))
 }
 
 fn fixture_aat_dir() -> TempDir {

@@ -66,25 +66,101 @@
       (let [exit (.waitFor proc)]
         {:exit exit :out @out-fut :err @err-fut}))))
 
-(defn split-eos-groups
-  "Split MeCab-format tokenizer output into per-input-line surface groups.
-  The tokenizer emits one EOS line per input line (including blank input
-  lines); each token line is <surface>TAB<features>."
-  [tokenizer-output]
-  (loop [lines (string/split tokenizer-output #"\n" -1)
-         current []
-         groups []]
-    (if-let [line (first lines)]
-      (cond
-        (= line "EOS") (recur (next lines) [] (conj groups current))
-        (string/blank? line) (recur (next lines) current groups)
-        :else (recur (next lines)
-                     (conj current (first (string/split line #"\t" 2)))
-                     groups))
-      groups)))
-
 (defn- surface-json-line [surface]
   (str (charred/write-json-str {"surface" surface}) "\n"))
+
+(defn- plaintext-line-count
+  "Line count of a plaintext file under `split \"\\n\" -1` semantics (the
+  count the tokenizer's one-EOS-per-input-line protocol produces when the
+  file is streamed with one trailing newline appended): newlines + 1."
+  [file]
+  (with-open [r (io/reader file :encoding "UTF-8")]
+    (let [buf (char-array 65536)]
+      (loop [lines 1]
+        (let [n (.read r buf)]
+          (if (neg? n)
+            lines
+            (recur (loop [i 0 acc lines]
+                     (if (< i n)
+                       (recur (inc i)
+                              (if (= \newline (aget buf i)) (inc acc) acc))
+                       acc)))))))))
+
+(defn- demux-token-groups!
+  "Consume MeCab-format tokenizer stdout from rdr, writing each work's token
+  surfaces to tokens-dir as its EOS groups complete, so memory stays
+  O(line) no matter the corpus size. Blank output lines are skipped; a
+  trailing partial group without EOS is dropped, matching the historical
+  whole-output split. Returns the total number of EOS groups seen,
+  including any beyond the expected total, so accounting mismatches surface
+  with real numbers."
+  [^java.io.BufferedReader rdr works tokens-dir]
+  (letfn [(consume-group [^java.io.Writer w]
+            (loop []
+              (let [line (.readLine rdr)]
+                (cond
+                  (nil? line) :eof
+                  (= line "EOS") :eos
+                  (string/blank? line) (recur)
+                  :else (do (when w
+                              (.write w ^String (surface-json-line
+                                                 (first (string/split line
+                                                                      #"\t"
+                                                                      2)))))
+                            (recur))))))]
+    (loop [remaining works
+           eos-total 0]
+      (if-let [{:keys [work-id line-count]} (first remaining)]
+        (let [consumed
+              (with-open [w (io/writer (io/file tokens-dir
+                                                (str work-id ".tokens.jsonl"))
+                                       :encoding "UTF-8")]
+                (loop [i 0]
+                  (if (or (= i line-count) (= :eof (consume-group w)))
+                    i
+                    (recur (inc i)))))]
+          (if (< consumed line-count)
+            (+ eos-total consumed)
+            (recur (next remaining) (+ eos-total consumed))))
+        (loop [eos-total eos-total]
+          (if (= :eos (consume-group nil))
+            (recur (inc eos-total))
+            eos-total))))))
+
+(defn- stream-tokenize!
+  "Run the tokenizer once over every work's plaintext, streaming stdin from
+  the plaintext files (each file's content plus one trailing newline — byte
+  identical to joining all `split \"\\n\" -1` lines) and demultiplexing
+  stdout into per-work tokens.jsonl files as it arrives. Nothing corpus-sized
+  is ever held in memory; the historical whole-string approach hit the JVM's
+  2 GiB array cap on full-corpus token output. Returns {:exit :err
+  :eos-groups}. A broken pipe while writing stdin (the child died early) is
+  tolerated so the child's exit code and stderr survive to the caller."
+  [{:keys [works plaintext-dir tokenizer-bin env tokens-dir]}]
+  (let [pb (ProcessBuilder. ^java.util.List [(str tokenizer-bin)])]
+    (doseq [[k v] env]
+      (.put (.environment pb) (str k) (str v)))
+    (let [proc (.start pb)
+          err-fut (future (slurp (io/reader (.getErrorStream proc)
+                                            :encoding "UTF-8")))
+          stdin-fut (future
+                      (try
+                        (with-open [w (io/writer (.getOutputStream proc)
+                                                 :encoding "UTF-8")]
+                          (doseq [{:keys [work-id]} works]
+                            (with-open [r (io/reader
+                                           (io/file plaintext-dir
+                                                    (str work-id ".txt"))
+                                           :encoding "UTF-8")]
+                              (io/copy r w))
+                            (.write w "\n")))
+                        (catch java.io.IOException _)))
+          eos-groups (with-open [rdr (io/reader (.getInputStream proc)
+                                                :encoding "UTF-8")]
+                       (demux-token-groups! rdr works tokens-dir))
+          exit (.waitFor proc)]
+      @stdin-fut
+      {:exit exit :err @err-fut :eos-groups eos-groups})))
 
 (defn- annotation-join-stats-steps []
   [{:id :sample-aat
@@ -160,37 +236,29 @@
                       tokenizer-dict tokens-dir]}]
            (.mkdirs (io/file tokens-dir))
            (let [works (mapv (fn [work-id]
-                               (let [text (slurp (io/file plaintext-dir
-                                                          (str work-id ".txt")))]
-                                 {:work-id work-id
-                                  :lines (string/split text #"\n" -1)}))
+                               {:work-id work-id
+                                :line-count (plaintext-line-count
+                                             (io/file plaintext-dir
+                                                      (str work-id ".txt")))})
                              rendered-work-ids)
-                 full-input (str (string/join "\n" (mapcat :lines works)) "\n")
                  env (cond-> {"AB_VIBRATO_DICT" tokenizer-dict}
                        (System/getenv "AB_VIBRATO_CACHE_DIR")
                        (assoc "AB_VIBRATO_CACHE_DIR"
                               (System/getenv "AB_VIBRATO_CACHE_DIR")))
-                 {:keys [exit out err]} (run-process! {:cmd [tokenizer-bin]
-                                                       :env env
-                                                       :stdin full-input})
-                 _ (when-not (zero? exit)
-                     (throw (ex-info "Tokenizer failed"
-                                     {:exit exit :stderr err})))
-                 groups (split-eos-groups out)
-                 expected (reduce + (map #(count (:lines %)) works))]
-             (when-not (= expected (count groups))
+                 {:keys [exit err eos-groups]}
+                 (stream-tokenize! {:works works
+                                    :plaintext-dir plaintext-dir
+                                    :tokenizer-bin tokenizer-bin
+                                    :env env
+                                    :tokens-dir tokens-dir})
+                 expected (reduce + (map :line-count works))]
+             (when-not (zero? exit)
+               (throw (ex-info "Tokenizer failed"
+                               {:exit exit :stderr err})))
+             (when-not (= expected eos-groups)
                (throw (ex-info "Tokenizer line accounting mismatch"
                                {:expected-lines expected
-                                :eos-groups (count groups)})))
-             (loop [remaining works
-                    groups groups]
-               (when-let [{:keys [work-id lines]} (first remaining)]
-                 (let [[work-groups rest-groups] (split-at (count lines)
-                                                           groups)]
-                   (spit (io/file tokens-dir (str work-id ".tokens.jsonl"))
-                         (apply str (map surface-json-line
-                                         (apply concat work-groups))))
-                   (recur (next remaining) rest-groups))))
+                                :eos-groups eos-groups})))
              {:state-updates {:tokenized-work-ids (mapv :work-id works)}
               :inputs [{:role "tokenizer-bin" :path (str tokenizer-bin)}]
               :outputs [{:role "tokens-dir" :path (str tokens-dir)}]

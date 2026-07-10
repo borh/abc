@@ -49,11 +49,6 @@
       (finally
         (fixture/delete-tree! root)))))
 
-(deftest split-eos-groups-test
-  (is (= [["a"] [] ["b" "c"]]
-         (run/split-eos-groups
-          "a\t名詞\nEOS\nEOS\nb\t動詞\nc\t助詞\nEOS\n"))))
-
 (deftest run-rejects-missing-binaries-test
   (let [ex (try
              (run/run-annotation-join-stats-run!
@@ -178,6 +173,60 @@
       (finally
         (fixture/delete-tree! root)))))
 
+(deftest run-surfaces-eos-accounting-mismatch-test
+  (let [root (fixture/temp-dir "abc-join-stats-run-eosmismatch")
+        aat-dir (io/file root "aat")
+        out-root (io/file root "out")
+        plan-file (io/file root "plan.json")
+        parser-ir-fixture (.getAbsolutePath
+                           (io/file "examples/ab-validator-output/parser-ir.json"))
+        converter (write-stub!
+                   (io/file root "stub-converter.sh")
+                   (str "#!/usr/bin/env bash\nset -eu\n"
+                        "out=\"\"; div=\"\"\n"
+                        "while [ $# -gt 0 ]; do\n"
+                        "  case \"$1\" in\n"
+                        "    --parser-ir-out) out=\"$2\"; shift 2 ;;\n"
+                        "    --divergence-out) div=\"$2\"; shift 2 ;;\n"
+                        "    *) shift ;;\n"
+                        "  esac\n"
+                        "done\n"
+                        "cp " parser-ir-fixture " \"$out\"\n"
+                        "printf '{}' > \"$div\"\n"))
+        ;; one EOS per input line plus one spurious trailing EOS — the run
+        ;; must fail accounting with the real observed group count
+        tokenizer (write-stub!
+                   (io/file root "stub-tokenizer.sh")
+                   (str "#!/usr/bin/env bash\nset -eu\n"
+                        "while IFS= read -r line; do\n"
+                        "  echo EOS\n"
+                        "done\n"
+                        "echo EOS\n"))]
+    (try
+      (.mkdirs aat-dir)
+      (spit (io/file aat-dir "000001_1-aaaaaaaaaaaa.json") "{}")
+      (manifest/write-json-file!
+       plan-file
+       {"label" "eos-mismatch-test"
+        "aat_dir" (str aat-dir)
+        "mapping" parser-ir-fixture
+        "stride" 1
+        "tokenizer_dict" "stub-dict"})
+      (let [ex (try
+                 (run/run-annotation-join-stats-run!
+                  {:plan-file (str plan-file)
+                   :out-root (str out-root)
+                   :converter-bin (str converter)
+                   :tokenizer-bin (str tokenizer)})
+                 nil
+                 (catch clojure.lang.ExceptionInfo e e))]
+        (is (some? ex))
+        (is (= "Tokenizer line accounting mismatch" (ex-message ex)))
+        (is (= (inc (:expected-lines (ex-data ex)))
+               (:eos-groups (ex-data ex)))))
+      (finally
+        (fixture/delete-tree! root)))))
+
 (deftest run-annotation-join-stats-run-end-to-end-test
   (let [root (fixture/temp-dir "abc-join-stats-run-e2e")
         aat-dir (io/file root "aat")
@@ -250,6 +299,19 @@
             (is (.isFile (io/file out-root "plaintext" (str work-id ".txt"))))
             (is (.isFile (io/file out-root "tokens"
                                   (str work-id ".tokens.jsonl"))))))
+        (testing "streamed demux keeps each work's tokens aligned to its
+                  own plaintext lines"
+          (doseq [work-id ["000001_1" "000002_2"]]
+            (let [plain-lines (->> (string/split
+                                    (slurp (io/file out-root "plaintext"
+                                                    (str work-id ".txt")))
+                                    #"\n" -1)
+                                   (remove string/blank?))
+                  token-surfaces (->> (files/read-json-lines
+                                       (io/file out-root "tokens"
+                                                (str work-id ".tokens.jsonl")))
+                                      (mapv #(get % "surface")))]
+              (is (= (vec plain-lines) token-surfaces)))))
         (testing "stats cover both sampled works"
           (is (= 2 (get aggregate "work_count")))
           (is (= [] (get aggregate "skipped_work_ids")))))

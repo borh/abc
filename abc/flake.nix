@@ -319,6 +319,21 @@
               pkgs.lib.splitString "\n" (builtins.readFile path)
             );
           contractSurfacePaths = manifestLines ./nix/contract-surface.txt;
+
+          copyWritableSource = ''
+            cp -R ${./.} source
+            chmod -R u+w source
+            cd source
+          '';
+
+          cljSandboxEnv = ''
+            export HOME="${cljDepsCache}"
+            export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+            export CLJ_CONFIG="$HOME/.clojure"
+            export CLJ_CACHE="$TMPDIR/cp-cache"
+            export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
+            export GITLIBS="$HOME/.gitlibs"
+          '';
         in
         {
           clj-nix-focused-tests =
@@ -331,17 +346,8 @@
                 ];
               }
               ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                export GITLIBS="$HOME/.gitlibs"
-
+                ${copyWritableSource}
+                ${cljSandboxEnv}
                 # Keep TEI schema-backed tests active in the sandbox. The schema is
                 # a pinned fixed-output artifact, so tests do not need network access.
                 export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
@@ -362,17 +368,8 @@
                 ];
               }
               ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                export GITLIBS="$HOME/.gitlibs"
-
+                ${copyWritableSource}
+                ${cljSandboxEnv}
                 # Regenerate the two committed diagrams in memory and byte-compare
                 # to the checked-in files; also runs the ADR header-hygiene and
                 # architecture-stage lints. Any drift or lint problem exits non-zero.
@@ -408,10 +405,7 @@
                 ];
               }
               ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-
+                ${copyWritableSource}
                 python -m unittest prototypes/aat-to-parser-ir-probe/test_probe_mapping.py
 
                 mkdir -p "$out"
@@ -555,10 +549,7 @@
                 nativeBuildInputs = [ pkgs.clojure ];
               }
               ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-
+                ${copyWritableSource}
                 export HOME="${cljDepsCache}"
                 export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
                 export CLJ_CONFIG="$HOME/.clojure"

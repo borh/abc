@@ -1,5 +1,5 @@
 {:index_version "0.1.0"
-:path_policy {:identity_paths "logical workspace-relative component paths"
+ :path_policy {:identity_paths "logical workspace-relative component paths"
                :current_external_paths "optional local rerun locators; nil in committed pre-monorepo index"
                :monorepo_note "Physical repo boundaries may disappear; producer and consumer component roles remain explicit."}
  :entries
@@ -83,6 +83,30 @@
    :sha256 "sha256:f52e2347c1ba859eb9b2227812e17b3f720ff271d98b144b477ed3adfcb56c7c"
    :status :provisional
    :summary "Parser recognition and AAT-fidelity feature matrix across aozora2, aozora-rs, and aozora2html."}
+  {:evidence_id "ab-validator/aozora-parser-comparison-study-2026-07-08"
+   :evidence_class :parser-selection
+   :producer_component "ab-validator"
+   :logical_path "ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md"
+   :current_external_path nil
+   :sha256 "sha256:8f68178186c9ccad2514c833098f3ffbc725183699757d5dc8182678c5826a59"
+   :status :citable
+   :summary "Five-parser comparison at pinned revisions over the pinned 17,886-work corpus: conformance breadth, faithful capability with parser-vs-adapter attribution, frequency-weighted corpus coverage decomposed into fidelity and robustness, and bounded performance. Verdict: aozora-pipeline is the fork base. Accepted as parser-selection evidence by ADR 0030."}
+  {:evidence_id "ab-validator/parser-fork-candidacy-faithful-comparison-2026-07-08"
+   :evidence_class :parser-selection
+   :producer_component "ab-validator"
+   :logical_path "ab-validator/docs/superpowers/reports/2026-07-08-parser-fork-candidacy-faithful-comparison.md"
+   :current_external_path nil
+   :sha256 "sha256:ec0e5b7cdef6ea0c14b6ba59af8a35eb7b742b12a3da74683f771873330933e8"
+   :status :citable
+   :summary "Rust-candidate eligibility (license, maintenance, forkability), faithfulness corrections for aozora-core and aozora-rs-core adapter distortions, and the build-fresh option on ab-source-syntax. Accepted as parser-selection evidence by ADR 0030."}
+  {:evidence_id "ab-validator/parser-comparison-followups-2026-07-09"
+   :evidence_class :parser-selection
+   :producer_component "ab-validator"
+   :logical_path "ab-validator/docs/superpowers/specs/2026-07-09-parser-comparison-followups-handoff.md"
+   :current_external_path nil
+   :sha256 "sha256:e13c904f36ddc4180f1326cdc375e6939716487e55318349c86c64e5158d2aa0"
+   :status :citable
+   :summary "Hardening index for the study: corpus-invariant denominators, aozora-core ruby-density pathology root cause, controlled upstream re-pin equivalence, construct-gap backlog, official-docs seed expansion, and methodology write-up. None changed the verdict. Accepted as parser-selection evidence by ADR 0030."}
   {:evidence_id "ab-validator/adapter-fidelity-matrix"
    :evidence_class :comparator-oracle
    :producer_component "ab-validator"

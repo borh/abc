@@ -46,6 +46,35 @@ The transformation is often treated as disposable preprocessing.
 
 **Soranoha treats it as a versioned scholarly process.**
 
+# Parallel Work: TEI-EAJ aozora_tei
+
+- Curated human encoding of Aozora works in TEI P5
+- Encoding depth organized through Levels 2–5
+- Shared workflow for headers, drafts, completed files, and enrichment
+- Guidelines and visualization experiments that make TEI useful beyond XML
+
+[Project repository](https://github.com/TEI-EAJ/aozora_tei) ·
+[Project wiki](https://github.com/TEI-EAJ/aozora_tei/wiki)
+[@teieaj2023; @okada2023]
+
+**Parallel emphasis:** TEI-EAJ develops curated scholarly encodings; Soranoha measures and versions corpus-scale transformations.
+
+<!--
+Evidence path: abc/flake.nix; pinned input tei-eaj-aozora-tei.
+Inspect/regenerate: nix run .#abc-tei-eaj-aozora-tei-source
+Inputs: TEI-EAJ/aozora_tei@77a675fc2771936f9544505d922d4cd45075338c
+Expected: store path containing README.md and data/complete/tei_lib_lv4/1567_tei.xml
+Class: pinned upstream comparison source
+-->
+
+# Research Questions
+
+1. What markup syntax does the authoritative source corpus contain?
+2. What does each parser preserve, normalize, or lose?
+3. How do publication and tokenizer choices change downstream research views?
+
+**Contribution:** evidence that connects source syntax to versioned outputs.
+
 # Readable Does Not Mean Plain
 
 ```text
@@ -59,14 +88,6 @@ The transformation is often treated as disposable preprocessing.
 - Emphasis and headings
 - Layout, notes, images, warigaki, and kunten
 - Conventions whose meaning depends on documented syntax and context
-
-# Research Questions
-
-1. What markup syntax does the authoritative source corpus contain?
-2. What does each parser preserve, normalize, or lose?
-3. How do publication and tokenizer choices change downstream research views?
-
-**Contribution:** evidence that connects source syntax to versioned outputs.
 
 # What Counts as Evidence?
 
@@ -107,7 +128,7 @@ The transformation is often treated as disposable preprocessing.
 
 Per-family counts overlap; rows do not sum to the de-duplicated total.
 
-# Rare Syntax Still Matters
+## Rare Syntax Still Matters
 
 | Construct | Works |
 | --- | ---: |
@@ -119,6 +140,14 @@ Per-family counts overlap; rows do not sum to the de-duplicated total.
 - Rare constructs test whether a pipeline preserves the source's expressive range.
 - Long-tail syntax needs explicit evidence, not optimistic fallback.
 
+<!--
+Evidence path: ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
+Inspect/regenerate: jq '{works_scanned,markers_total,row_count:(.rows|length),selected:(.rows|with_entries(select(.key=="ruby.basic" or .key=="layout.multicolumn" or .key=="structure.table" or .key=="structure.quote_block")))}' ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json
+Inputs: source-authority extraction over the 17,894-work snapshot
+Expected: markers_total 4323915; 50 rows; ruby 3607926 occurrences; multicolumn 26 works; tables 7; quote blocks 6
+Class: checked-in generated source-authority summary
+-->
+
 # What Makes a Corpus Version Reproducible?
 
 ![Soranoha Reproducibility Architecture](../../abc/docs/figures/soranoha-reproducibility-architecture.svg){width=100%}
@@ -129,7 +158,7 @@ Focus: identity binds sources, evidence, contracts, profiles, and recipes.
 ArtifactID is not a materialized-file byte hash.
 -->
 
-# Why Compare Multiple Parsers?
+# Five Parsers, Three Questions
 
 - `aozora-pipeline`: measured reference candidate
 - `aozora2html`: official XHTML converter [@aozorahack2026]
@@ -144,8 +173,6 @@ Crosswalk: aozora-pipeline = aozora / ab-aozora; aozora2 = aozora-core;
 aozora-rs = aozora-rs-core when measured natively; AozoraEpub3 = aozora-epub3.
 aozora-pipeline is P4suta/aozora, a measured candidate—not completed Soranoha consolidation.
 -->
-
-# Three Measurements, Three Questions
 
 | Measurement | Question |
 | --- | --- |
@@ -165,7 +192,13 @@ aozora-pipeline is P4suta/aozora, a measured candidate—not completed Soranoha 
 
 **A conformance ranking is not a capability ranking.**
 
-<!-- Evidence: parser study §§3–4.5. The P4suta suite is supporting evidence, not source authority. -->
+<!--
+Evidence path: ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
+Inspect/regenerate: sed -n '85,175p' ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
+Inputs: 127 P4suta vectors; independent official-doc seed
+Expected: 24 families; 25 must vectors; aozora-pipeline 22/25; no parser passes all must vectors
+Class: checked-in comparison report; supporting evidence, not source authority
+-->
 
 # Frequency-Weighted Corpus Coverage
 
@@ -179,7 +212,13 @@ aozora-pipeline is P4suta/aozora, a measured candidate—not completed Soranoha 
 
 Ruby is about 90% of **coverage-weighted mass**: read the total as **ruby coverage adjusted by the long tail**.
 
-<!-- Evidence: parser study §4.7. Do not mix the 17,894 source snapshot and pinned 17,886 denominator. -->
+<!--
+Evidence path: ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
+Inspect/regenerate: sed -n '219,345p' ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md
+Inputs: checked-in July 2026 parser study; pinned-denominator reconciliation report
+Expected: coverage 0.969/0.938/0.926/0.855/0.743; robustness interpretation over 17,886 works
+Class: checked-in report
+-->
 
 # Fidelity and Robustness Are Different
 
@@ -191,7 +230,13 @@ Ruby is about 90% of **coverage-weighted mass**: read the total as **ruby covera
 
 **Per-work quality cannot compensate for systematically missing difficult works.**
 
-<!-- Evidence: 2026-07-08-fidelity-robustness-split.md; updated abstract paragraph 5; 2026-07-09-full-nix-denominator-recompute.md. -->
+<!--
+Evidence path: ab-validator/docs/superpowers/reports/2026-07-08-fidelity-robustness-split.md
+Inspect/regenerate: sed -n '140,175p' ab-validator/docs/superpowers/reports/2026-07-08-fidelity-robustness-split.md
+Inputs: common completed-work intersection; pinned 17,886-work robustness denominator
+Expected: aozora2html fidelity 0.974; 302 ruby-heavy failures; 24.7% ruby mass missed; work-count completion 0.983
+Class: checked-in report
+-->
 
 # Parser Comparison: What We Can Conclude
 
@@ -240,9 +285,15 @@ AAT is current producer detail.
 
 **Normalization does not have to mean silent loss.**
 
-<!-- Evidence: parser study §2 and mapping A-06. A-06 has 130 style mappings; do not claim all are boten. AMBIGUITY records a sidecar by taxonomy default. -->
+<!--
+Evidence path: ab-validator/data/aat-to-parser-ir-mapping-v1.json
+Inspect/regenerate: jq '.transform_rule_descriptions[] | select(.rule_id == "A-06"), .loss_taxonomy.AMBIGUITY' ab-validator/data/aat-to-parser-ir-mapping-v1.json
+Inputs: mapping version 0.2.1
+Expected: A-06 style -> emphasis; 130 observed style mappings; AMBIGUITY records_sidecar true
+Class: checked-in generated mapping contract
+-->
 
-# Transformation Records Make Decisions Inspectable
+## Transformation Records Make Decisions Inspectable
 
 | Category | Meaning |
 | --- | --- |

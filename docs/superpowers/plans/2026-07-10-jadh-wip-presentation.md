@@ -185,9 +185,11 @@ The contribution language is:
 
 Do not use “extends,” “replaces,” “successor,” or “supersedes.”
 
-- [ ] **Step 3: Reconcile the main sequence to 26 level-one headings plus generated title**
+- [ ] **Step 3: Reconcile the pre-XML/data main sequence to 23 level-one headings**
 
-Before the appendix marker there must be 26 `# ` headings. Merge:
+Before the appendix marker there must be 23 `# ` headings. Tasks 3 and 4 add
+two XML slides and one tokenizer-data slide, producing 26 headings plus the
+generated title. Merge:
 
 - “Why Compare Multiple Parsers?” with “Three Measurements, Three Questions.”
 - “Worked Mapping: 傍点” with the transformation taxonomy.
@@ -226,8 +228,8 @@ python - <<'PY'
 from pathlib import Path
 p = Path("docs/presentations/jadh-2026-wip-slides.md").read_text()
 main = p.split("# Appendix:", 1)[0]
-assert sum(line.startswith("# ") for line in main.splitlines()) == 26
-print("26 Markdown main headings + 1 generated title = 27 main slides")
+assert sum(line.startswith("# ") for line in main.splitlines()) == 23
+print("23 pre-XML/data main headings")
 PY
 ```
 

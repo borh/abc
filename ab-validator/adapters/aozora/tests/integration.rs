@@ -161,6 +161,56 @@ fn slices_constructs_in_upstream_sanitized_coordinate_space() {
     assert_eq!(content[2]["value"], "後\n");
 }
 
+// Seed regression for the 2026-07-10 ruby-base fidelity audit: the
+// aozora-full-20260705 corpus dump fed unsanitized text to the parser while
+// slicing with sanitized-text spans, so CRLF/header drift corrupted implicit
+// ruby bases (source を吹《ふ》 emitted base "を吹"). Pins the correct
+// kanji-run attachment on a CRLF work shaped like the real corpus files.
+#[test]
+fn attaches_implicit_ruby_to_kanji_run_under_crlf_header_drift() {
+    let source = [
+        "一夕話",
+        "テスト著",
+        "",
+        "-------------------------------------------------------",
+        "【テキスト中に現れる記号について】",
+        "",
+        "《》：ルビ",
+        "（例）蘆《あし》",
+        "-------------------------------------------------------",
+        "",
+        "　兩親《りやうしん》や兄《あに》の意見《いけん》などは、蘆《あし》を吹《ふ》く風《かぜ》ほども身《み》に染みない。",
+        "",
+        "底本：テスト",
+    ]
+    .join("\r\n");
+    let aat = run_aat(&source);
+    let content = paragraph_content(&aat);
+    let ruby = content
+        .iter()
+        .filter(|node| node["kind"] == "ruby")
+        .map(|node| {
+            (
+                node["base"].as_str().unwrap(),
+                node["reading"].as_str().unwrap(),
+            )
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        ruby,
+        [
+            ("兩親", "りやうしん"),
+            ("兄", "あに"),
+            ("意見", "いけん"),
+            ("蘆", "あし"),
+            ("吹", "ふ"),
+            ("風", "かぜ"),
+            ("身", "み"),
+        ]
+    );
+}
+
 #[test]
 fn strips_aozora_header_legend_and_footer_from_aat_body() {
     let source = [

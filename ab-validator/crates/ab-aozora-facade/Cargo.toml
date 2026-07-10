@@ -92,20 +92,14 @@ query = []
 # Used by `tests/corpus_sweep.rs`, `tests/corpus_incremental_merge.rs`, and
 # `tests/corpus_splice_tiling.rs` to walk `AOZORA_CORPUS_ROOT` and verify
 # parse / round-trip / incremental-reparse invariants over a real corpus.
-# Declared path-only (no version) on purpose: aozora-corpus is a dev-only
-# corpus loader that stays `publish = false`.
+# Declared path-only (no version) on purpose: ab-aozora-corpus is a
+# dev-only corpus loader that stays `publish = false`.
 #
-# BLOCKED (Task 3 lift, STOP condition): `aozora-corpus` is not in the
-# Task-2-confirmed LIFT_SET (the 9-crate closure audit's dependency grep
-# excluded [dev-dependencies] block contents, so this edge was not
-# surfaced before Task 3). Left path-identical to upstream rather than
-# silently added to LIFT_SET or silently dropped — this makes
-# `cargo test -p ab-aozora-facade` (and any `--workspace` build/test/
-# clippy invocation that includes this crate) fail to resolve the
-# manifest at all, blocking all three corpus_*.rs test targets. See the
-# Task 3 report for the escalation and the verification done with this
-# line temporarily uncommented (every other test/gate confirmed green).
-# aozora-corpus = { path = "../aozora-corpus" }
+# Escalation resolved (2026-07-10): LIFT_SET extended with `aozora-corpus`
+# as a 10th, dev-only, test-support crate (`ab-aozora-corpus`) — see
+# docs/handoffs/2026-07-10-parser-fork-provenance.md. Restores this
+# dependency and the 3 corpus_*.rs test targets it gates.
+ab-aozora-corpus = { path = "../ab-aozora-corpus" }
 proptest = "1.11"
 ab-aozora-proptest = { path = "../ab-aozora-proptest" }
 

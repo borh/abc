@@ -21,7 +21,7 @@ use ab_aozora_facade::Document;
 
 #[test]
 fn corpus_round_trip_is_a_fixed_point() {
-    let Some(source) = aozora_corpus::from_env() else {
+    let Some(source) = ab_aozora_corpus::from_env() else {
         eprintln!("AOZORA_CORPUS_ROOT not set; skipping corpus sweep");
         return;
     };

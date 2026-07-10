@@ -35,7 +35,7 @@ use ab_aozora_facade::{
     reason = "one corpus differential harness: per-doc baseline + diagnostics-only splice, all over the same loop"
 )]
 fn reparse_diagnostics_only_equals_full_parse() {
-    let Some(source) = aozora_corpus::from_env() else {
+    let Some(source) = ab_aozora_corpus::from_env() else {
         eprintln!("AOZORA_CORPUS_ROOT not set; skipping diagnostics-only incremental gate");
         return;
     };

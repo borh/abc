@@ -28,7 +28,7 @@ const MAX_REPORTED: usize = 50;
 
 #[test]
 fn corpus_regions_tile_the_source() {
-    let Some(source) = aozora_corpus::from_env() else {
+    let Some(source) = ab_aozora_corpus::from_env() else {
         eprintln!("AOZORA_CORPUS_ROOT not set; skipping splice tiling sweep");
         return;
     };

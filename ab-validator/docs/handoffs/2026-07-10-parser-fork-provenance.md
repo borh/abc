@@ -31,6 +31,25 @@ Authority: ADR 0030 (selection), ADR 0031 (hard detach),
 | aozora-render | ab-aozora-render | spec, syntax, pipeline |
 | aozora (umbrella) | ab-aozora-facade | render, pipeline, syntax, spec, encoding (required); proptest, cst, query (optional, feature-gated — cst/query not lifted, see below) |
 | aozora-proptest (test-support) | ab-aozora-proptest | (none) |
+| aozora-corpus (test-support, dev-only) | ab-aozora-corpus | (none) |
+
+**LIFT_SET extension (2026-07-10, Task 3 escalation resolved)**:
+`aozora-corpus` added as a 10th, dev-only, test-support crate. It is a
+`publish = false` dev-dependency of `aozora`/`ab-aozora-facade` only
+(`[dev-dependencies] aozora-corpus = { path = "../aozora-corpus" }`),
+consumed by 3 of the umbrella's test files
+(`corpus_sweep.rs`/`corpus_incremental_merge.rs`/`corpus_splice_tiling.rs`).
+Task 2's dependency-closure grep scanned `[dependencies]` contents only
+(its `sed` range stopped at the first `[dev-dependencies]`/
+`[build-dependencies]`/`[features]`/`[[...]]` heading), so this dev-only
+edge was not surfaced until Task 3 attempted the lift and hit a STOP
+condition (documented in `.superpowers/sdd/task-3-report.md`). Controller
+ruling: extend LIFT_SET per the plan's Global Constraint ("test-only
+workspace deps are lifted too") — `aozora-corpus` is the same category as
+`aozora-proptest`: dev-only, `publish = false`, 2,572 lines, no network
+code, zero `aozora-*` deps of its own (verified: `aozora-corpus/Cargo.toml`
+`[dependencies]` lists only `blake3`/`num_cpus`/`rayon`/`thiserror`/
+`walkdir`/`zstd`, no aozora-internal deps).
 
 Closure notes (Step 1 evidence):
 - `aozora-render` depends on `aozora-spec`, `aozora-syntax`, `aozora-pipeline`
@@ -117,6 +136,15 @@ phf_codegen = "0.14"                                    # [build-dependencies]
 
 == aozora-proptest
 proptest = { workspace = true }
+
+== aozora-corpus
+blake3 = { workspace = true }
+num_cpus = { workspace = true }
+rayon = { workspace = true }
+thiserror = { workspace = true }
+walkdir = { workspace = true }
+zstd = { workspace = true }
+tempfile = { workspace = true }                         # [dev-dependencies]
 ```
 
 Workspace-pinned versions for the crates.io deps actually used above
@@ -138,6 +166,12 @@ exact versions):
 | phf | 0.14 (workspace default features = ["macros"]; aozora-encoding overrides to `default-features = false`) |
 | phf_codegen | 0.14 (declared ad hoc in aozora-encoding, not in workspace.dependencies) |
 | encoding_rs | 0.8.35 |
+| blake3 | 1.5 |
+| num_cpus | 1.16 |
+| rayon | 1.12 |
+| walkdir | 2.5 |
+| zstd | 0.13 |
+| tempfile | 3.27 (dev-dep only) |
 
 Note: `phf_codegen = "0.14"` is declared directly in
 `aozora-encoding/Cargo.toml`'s `[build-dependencies]`, not via
@@ -153,6 +187,14 @@ headers): `version = "0.4.1"`, `edition = "2024"`, `rust-version =
 Full audit of docs.rs / feature-flag surface is deferred to Task 4 per
 the template.
 
+Note: Task 2's dependency-closure scan covered `[dependencies]` contents
+only — `[dev-dependencies]` (and `[build-dependencies]`/`[features]`)
+blocks were out of its grep range by construction. `aozora-corpus`, a
+dev-only dependency of the umbrella crate, was therefore not discovered
+by Task 2 and was instead surfaced empirically at lift time (Task 3, when
+`ab-aozora-facade`'s dev-dependency on it failed to resolve). See the
+LIFT_SET extension note above.
+
 ## Test inventory
 
 | crate | inherited tests (files) | retained | dropped |
@@ -166,6 +208,7 @@ the template.
 | aozora-render | tests/byte_identical_html.rs, tests/fuzz_regressions.rs (+ fuzz_regressions/ dir), tests/gatekeeper.rs, tests/property_emit_symmetry.rs, tests/property_html_roundtrip.rs, tests/property_serialize_idempotent.rs, tests/serialize_fixed_point.rs, tests/snapshot_html_golden.rs (+ snapshots/ dir); unit/proptest in src/lib.rs, src/classes.rs, src/serialize.rs, src/spelling/html.rs | all | none (no `[[bench]]`) |
 | aozora (umbrella) | tests/catalogue_properties.rs, tests/corpus_incremental_merge.rs, tests/corpus_splice_tiling.rs, tests/corpus_sweep.rs, tests/json_format.rs, tests/lint_catalogue.rs, tests/property_json_round_trip.rs, tests/property_public_api.rs, tests/splice_api.rs; unit/proptest in src/diagnostics_text.rs, src/json.rs, src/lib.rs, src/document.rs, src/splice.rs, src/incremental.rs | all | none (no `[[bench]]`) |
 | aozora-proptest | tests/ (none); src/config.rs, src/generators.rs, src/lib.rs contain no `#[test]`/`proptest!` (it is the generator library consumed by the other crates' tests, not itself a test target) | all (nothing to drop) | none (no `[[bench]]`) |
+| aozora-corpus | tests/ (none); unit tests inline in src/archive.rs, src/error.rs, src/filesystem.rs, src/in_memory.rs, src/lib.rs, src/parallel.rs, src/vendored.rs (64 unit tests total) | all | none (no `[[bench]]`) |
 
 `.proptest-regressions` files (`catalogue_properties.proptest-regressions`,
 `property_json_round_trip.proptest-regressions`,

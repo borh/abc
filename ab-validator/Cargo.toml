@@ -26,6 +26,7 @@ members = [
     "crates/ab-aozora-render",
     "crates/ab-aozora-facade",
     "crates/ab-aozora-proptest",
+    "crates/ab-aozora-corpus",
 ]
 resolver = "2"
 exclude = [

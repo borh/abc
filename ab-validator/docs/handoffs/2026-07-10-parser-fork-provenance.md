@@ -195,6 +195,77 @@ by Task 2 and was instead surfaced empirically at lift time (Task 3, when
 `ab-aozora-facade`'s dev-dependency on it failed to resolve). See the
 LIFT_SET extension note above.
 
+### Task 4: cargo-deny audit — genuinely-new third-party crates
+
+Computed via `cargo tree -p ab-aozora-facade --features json
+--no-default-features` and `cargo tree -p ab-aozora-corpus`, name+version
+pairs unioned and diffed against `main:ab-validator/Cargo.lock`'s crate
+set (`git show main:ab-validator/Cargo.lock`, read-only — main's checkout
+at `/home/bor/Projects/soranoha` was not modified). Beyond the 10
+`ab-aozora-*` crates themselves, the following third-party crates are
+genuinely new to the dependency graph (not present in `main` at any
+version):
+
+| crate | version | pulled in by |
+| --- | --- | --- |
+| arrayref | 0.3.9 | blake3 (aozora-corpus) |
+| arrayvec | 0.7.8 | blake3 (aozora-corpus) |
+| blake3 | 1.8.5 | aozora-corpus (direct dep) |
+| constant_time_eq | 0.4.2 | blake3 (aozora-corpus) |
+| miette | 7.6.0 | aozora-syntax / aozora-spec / aozora-encoding (direct dep) |
+| miette-derive | 7.6.0 | miette |
+| num_cpus | 1.17.0 | aozora-corpus (direct dep) |
+| phf | 0.14.0 | aozora-encoding (direct dep) |
+| phf_codegen | 0.14.0 | aozora-encoding (direct build-dep) |
+| phf_generator | 0.14.0 | phf_codegen |
+| phf_macros | 0.14.0 | phf |
+| phf_shared | 0.14.0 | phf / phf_codegen / phf_generator / phf_macros |
+| siphasher | 1.0.3 | phf_shared |
+| unicode-width | 0.1.14 | miette |
+
+`crossbeam-epoch` is deliberately excluded from this "genuinely new"
+list: it was already present in `main`'s `Cargo.lock` at v0.9.18 (pulled
+in via `rayon`, pre-existing); this branch only changed its resolved
+version (to v0.9.20, see Follow-ups below), it did not introduce the
+crate.
+
+**`deny.toml` was introduced by this task.** No `cargo-deny` gate existed
+in the `ab-validator` workspace before this commit — `cargo deny check`
+previously had no config file to run against (default config only,
+which fails on this graph's `MIT OR Apache-2.0` compound licenses). The
+new `ab-validator/deny.toml` allows a permissive license set (plus two
+single-term exceptions: `MPL-2.0` for `option-ext`, `CDLA-Permissive-2.0`
+for `webpki-root-certs`) and ignores three unmaintained-crate advisories
+plus downgrades the `num-bigint` yanked-crate lint to a warning, all four
+pre-existing on `main` before the parser fork. `cargo deny check` now
+exits 0.
+
+#### Follow-ups (pre-existing, outside Phase 1 scope)
+
+All four items below were confirmed present in `main:ab-validator/Cargo.lock`
+before this branch's changes (i.e., not introduced by the ab-aozora-* lift
+or this task) and are deliberately deferred rather than fixed here:
+
+- `RUSTSEC-2024-0436` — `paste` unmaintained (creator archived repo, no
+  safe upgrade available); reached via `argmin` → `rucrf` →
+  `vibrato-rkyv` → `ab-morph-analyzers`.
+- `RUSTSEC-2025-0141` — `bincode` unmaintained, two versions in the graph
+  (`1.3.3` via `ab-ortho-detect(-ml)`, `2.0.1` via `rucrf`/`vaporetto`/
+  `vibrato-rkyv`).
+- `RUSTSEC-2024-0384` — `instant` unmaintained; reached via `argmin`.
+- `num-bigint` v0.4.7 yanked version; reached via `num` → `arrow-*`/
+  `parquet` → `ab-morph-run`/`ab-warehouse`.
+
+One additional pre-existing item was **fixed in-branch, not deferred**:
+`RUSTSEC-2026-0204` (security vulnerability — invalid pointer dereference
+in `crossbeam-epoch`'s `fmt::Pointer` impl, reached via `rayon`, pulled in
+by the newly-lifted `ab-aozora-corpus` among others) was resolved by
+`cargo update -p crossbeam-epoch --precise 0.9.20` (lockfile-only patch
+bump; `crossbeam-epoch` was already a transitive dependency on `main` at
+v0.9.18, so this is a version bump, not a new dependency). `cargo build
+--workspace` and `cargo test --workspace` both pass clean after the bump
+(1755 tests, 0 failures).
+
 ## Test inventory
 
 | crate | inherited tests (files) | retained | dropped |

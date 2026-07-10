@@ -1,0 +1,55 @@
+# cargo-deny audit configuration for the ab-validator workspace.
+# Introduced by Task 4 (parser-fork Phase 1) — no prior deny gate existed
+# in this workspace before this commit.
+#
+# Run: `cargo deny check` from this directory (ab-validator/).
+
+[licenses]
+allow = [
+  "0BSD",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "BSL-1.0",
+  "CC0-1.0",
+  # webpki-root-certs 1.0.8 sole term — permissive data license for root-cert data
+  "CDLA-Permissive-2.0",
+  "ISC",
+  "MIT",
+  "MIT-0",
+  # option-ext 0.2.0 sole term — file-level copyleft, unmodified transitive dep of dirs-sys; acceptable
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Unlicense",
+  "Zlib",
+]
+# NOTE: LGPL-2.1-or-later is deliberately NOT allowed here. It appears only
+# as one term of an OR expression (r-efi's "MIT OR Apache-2.0 OR
+# LGPL-2.1-or-later") which already resolves via the MIT/Apache-2.0 terms
+# above; cargo-deny is satisfied by any single OR'd term being allowed, so
+# no LGPL allow-list entry is needed or wanted.
+
+[advisories]
+ignore = [
+  # paste 1.0.15 unmaintained (creator archived repo, no safe upgrade path);
+  # pre-existing on main before parser fork (verified against main:Cargo.lock);
+  # follow-up outside Phase 1 scope — 2026-07-10
+  "RUSTSEC-2024-0436",
+  # bincode 1.3.3 / 2.0.1 unmaintained;
+  # pre-existing on main before parser fork (verified against main:Cargo.lock);
+  # follow-up outside Phase 1 scope — 2026-07-10
+  "RUSTSEC-2025-0141",
+  # instant 0.1.13 unmaintained;
+  # pre-existing on main before parser fork (verified against main:Cargo.lock);
+  # follow-up outside Phase 1 scope — 2026-07-10
+  "RUSTSEC-2024-0384",
+]
+# num-bigint 0.4.7 yanked version has no per-crate ignore mechanism in
+# cargo-deny's advisories.ignore (that list is RUSTSEC IDs only), so the
+# yanked-crate lint is downgraded to a warning instead;
+# pre-existing on main before parser fork (verified against main:Cargo.lock);
+# follow-up outside Phase 1 scope — 2026-07-10
+yanked = "warn"
+# crossbeam-epoch RUSTSEC-2026-0204 is intentionally NOT ignored here — it
+# was fixed in-branch via `cargo update -p crossbeam-epoch --precise 0.9.20`.

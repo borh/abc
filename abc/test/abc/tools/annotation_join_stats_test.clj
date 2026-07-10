@@ -32,6 +32,16 @@
     (is (= 1 (:token-index failure)))
     (is (= 2 (:offset failure)))))
 
+(deftest reconstruct-token-spans-rejects-non-string-surface-test
+  (let [ex (try
+             (stats/reconstruct-token-spans "吾輩は" ["吾輩" nil])
+             nil
+             (catch clojure.lang.ExceptionInfo e e))]
+    (is (some? ex))
+    (is (= "Token surface must be a string" (ex-message ex)))
+    (is (= 1 (:token-index (ex-data ex))))
+    (is (nil? (:surface (ex-data ex))))))
+
 (deftest work-stats-classifies-fixture-annotations-test
   (let [parser-ir (files/read-json "examples/ab-validator-output/parser-ir.json")
         {:keys [text annotations]} (plaintext/render-with-annotations parser-ir)
@@ -93,6 +103,9 @@
       (.mkdirs (io/file parser-ir-dir "work-b"))
       (manifest/write-json-file! (io/file parser-ir-dir "work-b" "parser-ir.json")
                                  parser-ir)
+      ;; work-c is an empty subdir (no parser-ir.json, no tokens) → recorded
+      ;; as skipped rather than silently excluded
+      (.mkdirs (io/file parser-ir-dir "work-c"))
       (let [exit (stats/run-join-stats! (str parser-ir-dir)
                                         (str tokens-dir)
                                         (str out-dir))
@@ -101,9 +114,38 @@
         (is (= 0 exit))
         (is (.exists (io/file out-dir "report.md")))
         (is (= 1 (get aggregate "work_count")))
-        (is (= ["work-b"] (get aggregate "skipped_work_ids")))
+        (is (= ["work-b" "work-c"] (get aggregate "skipped_work_ids")))
         (is (= 1 (count per-work)))
         (is (= "work-a" (get (first per-work) "work_id")))
         (is (pos? (get-in aggregate ["annotation_counts" "ruby"]))))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest run-join-stats-skips-failed-span-walk-test
+  (let [root (fixture/temp-dir "abc-join-stats-failed-walk")
+        parser-ir-dir (io/file root "parser-ir")
+        tokens-dir (io/file root "tokens")
+        out-dir (io/file root "out")
+        parser-ir (files/read-json "examples/ab-validator-output/parser-ir.json")]
+    (try
+      (.mkdirs (io/file parser-ir-dir "work-d"))
+      (.mkdirs tokens-dir)
+      (manifest/write-json-file! (io/file parser-ir-dir "work-d" "parser-ir.json")
+                                 parser-ir)
+      ;; first token surface can never match the rendered plaintext → the
+      ;; span walk fails, so work-d must land in skipped_work_ids and never
+      ;; appear in per-work.jsonl
+      (spit (io/file tokens-dir "work-d.tokens.jsonl")
+            "{\"surface\":\"ZZZ\"}\n")
+      (let [exit (stats/run-join-stats! (str parser-ir-dir)
+                                        (str tokens-dir)
+                                        (str out-dir))
+            aggregate (files/read-json (io/file out-dir "aggregate.json"))
+            per-work (files/read-json-lines (io/file out-dir "per-work.jsonl"))]
+        (is (= 0 exit))
+        (is (= 0 (get aggregate "work_count")))
+        (is (= ["work-d"] (get aggregate "skipped_work_ids")))
+        (is (= 0 (count per-work)))
+        (is (not (contains? (set (map #(get % "work_id") per-work)) "work-d"))))
       (finally
         (fixture/delete-tree! root)))))

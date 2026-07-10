@@ -34,6 +34,9 @@
       (if-not remaining
         {:tokens tokens}
         (let [surface (first remaining)
+              _ (when-not (string? surface)
+                  (throw (ex-info "Token surface must be a string"
+                                  {:token-index token-index :surface surface})))
               width (scalar-count surface)
               slice (when (<= (+ offset width) total)
                       (apply str (subvec scalars offset (+ offset width))))]
@@ -101,7 +104,6 @@
 (defn- work-dirs [parser-ir-dir]
   (->> (.listFiles (io/file parser-ir-dir))
        (filter #(.isDirectory %))
-       (filter #(.isFile (io/file % "parser-ir.json")))
        (sort-by #(.getName %))))
 
 (defn- work-tokens [tokens-dir work-id]
@@ -109,22 +111,23 @@
     (when (.isFile file)
       (mapv #(get % "surface") (files/read-json-lines file)))))
 
-(defn- stats-row [work-id text annotations tokens]
-  (merge {"work_id" work-id
-          "text_scalar_count" (scalar-count text)}
-         (let [{:keys [annotation_counts classifications]}
-               (work-stats {:annotations annotations :tokens tokens})]
-           {"annotation_counts" annotation_counts
-            "classifications" classifications})))
+(defn- stats-row [work-id text work-stats-value]
+  (let [{:keys [annotation_counts classifications]} work-stats-value]
+    {"work_id" work-id
+     "text_scalar_count" (scalar-count text)
+     "annotation_counts" annotation_counts
+     "classifications" classifications}))
 
-(defn- report-md [aggregate]
+(defn- report-md [aggregate-value]
   (str "# Annotation join statistics\n\n"
-       "- works: " (get aggregate "work_count")
-       " (skipped: " (count (get aggregate "skipped_work_ids")) ")\n"
-       "- annotation counts: " (pr-str (get aggregate "annotation_counts")) "\n\n"
+       "- works: " (get aggregate-value "work_count")
+       " (skipped: " (count (get aggregate-value "skipped_work_ids")) ")\n"
+       "- annotation counts: "
+       (pr-str (into (sorted-map) (get aggregate-value "annotation_counts")))
+       "\n\n"
        "## Classification rates\n\n"
        (apply str
-              (for [[kind rates] (sort-by key (get aggregate "classification_rates"))]
+              (for [[kind rates] (sort-by key (get aggregate-value "classification_rates"))]
                 (str "- " kind ": "
                      (pr-str (into (sorted-map) rates))
                      "\n")))))
@@ -147,7 +150,8 @@
            skipped []]
       (if-let [dir (first dirs)]
         (let [work-id (.getName dir)
-              surfaces (work-tokens tokens-dir work-id)]
+              has-parser-ir (.isFile (io/file dir "parser-ir.json"))
+              surfaces (and has-parser-ir (work-tokens tokens-dir work-id))]
           (if-not surfaces
             (recur (next dirs) rows work-stats-acc (conj skipped work-id))
             (let [parser-ir (files/read-json (io/file dir "parser-ir.json"))
@@ -156,12 +160,12 @@
                   {:keys [tokens failure]} (reconstruct-token-spans text surfaces)]
               (if failure
                 (recur (next dirs) rows work-stats-acc (conj skipped work-id))
-                (recur (next dirs)
-                       (conj rows (stats-row work-id text annotations tokens))
-                       (conj work-stats-acc
-                             (work-stats {:annotations annotations
-                                          :tokens tokens}))
-                       skipped)))))
+                (let [work-stats-value (work-stats {:annotations annotations
+                                                    :tokens tokens})]
+                  (recur (next dirs)
+                         (conj rows (stats-row work-id text work-stats-value))
+                         (conj work-stats-acc work-stats-value)
+                         skipped))))))
         (let [aggregate-value
               (-> (aggregate work-stats-acc)
                   (update-keys name)

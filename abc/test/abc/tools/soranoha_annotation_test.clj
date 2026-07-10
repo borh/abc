@@ -1,6 +1,5 @@
 (ns abc.tools.soranoha-annotation-test
-  (:require [abc.tools.analysis-identity :as analysis-identity]
-            [abc.tools.files :as files]
+  (:require [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [abc.tools.schema :as schema]
             [abc.tools.snapshot-index :as snapshot-index]

@@ -27,7 +27,6 @@ members = [
     "crates/ab-aozora-facade",
     "crates/ab-aozora-proptest",
     "crates/ab-aozora-corpus",
-    "crates/ab-aozora-cli",
 ]
 resolver = "2"
 exclude = [
@@ -37,6 +36,10 @@ exclude = [
     "adapters/aozora-rs",
     "adapters/aozora-epub3",
     "references",
+    # excluded: enables ab-aozora-facade/json -> serde_json/preserve_order;
+    # feature unification must not leak insertion-order JSON into production
+    # crates (see 2026-07-10 provenance handoff)
+    "crates/ab-aozora-cli",
 ]
 
 [workspace.package]

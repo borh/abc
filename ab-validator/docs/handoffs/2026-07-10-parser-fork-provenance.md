@@ -310,3 +310,44 @@ paths, provenance headers). No semantic edits. Gate evidence:
   before the confirming re-run)
 - Perf gate: `PASS` — [2026-07-10 fork-parity perf report](docs/superpowers/reports/2026-07-10-fork-parity-perf.md) (workset `perf-workset-v1`, 6 works, 1+5 runs/bin; regression -0.07% vs 10% threshold; no new timeouts)
 - Gate A: `FORK_PARITY_CONFIRMED` — [2026-07-10 fork-parity corpus report](docs/superpowers/reports/2026-07-10-fork-parity-corpus.md) (all 17,886 works: reference resolved fail-closed via run-set `current-aat-fidelity-2026-07-09` with content hash verified, fork dump generated under explicit `--aozora-bin` at rev `2263b92a` on hinoki, semantic JSON parity with the single allowlisted pointer `/meta/adapter_version`; 0 missing, 0 diverged, 0 `fatal_error`)
+
+## Feature-unification hazard (found at branch finishing)
+
+**Defect.** `crates/ab-aozora-facade`'s `json` feature enables
+`serde_json/preserve_order` (required for upstream byte-stable envelopes —
+Gate B byte-parity depends on it; this requirement is not being removed).
+`crates/ab-aozora-cli` (a workspace member at the time) enabled
+`facade/json`, so Cargo's feature-unification rules turned
+`preserve_order` on for **every** crate in any `--workspace` build —
+including production `ab-aat-to-parser-ir`, whose canonical
+sorted-key JSON output silently switched to insertion order.
+
+**Reproduction.** `cargo test --workspace` →
+`ab-aat-to-parser-ir` integration suite 50/57 FAIL. `cargo test -p
+ab-aat-to-parser-ir --test integration` alone (outside the unified
+workspace feature graph) → 57/57 PASS. The 7-test delta is exactly the
+set of assertions comparing serialized JSON against a canonical
+(sorted-key) golden fixture.
+
+**Fix (isolation).** `ab-aozora-cli` moved from the root workspace
+`members` list to `exclude` (mirroring the existing `adapters/aozora-rs`
+pattern) and given its own `[workspace]` table in
+`crates/ab-aozora-cli/Cargo.toml` so it builds standalone (own
+`Cargo.lock`, own `target/` dir under `crates/ab-aozora-cli/target/`).
+This removes the shim — and therefore `facade/json` — from the root
+workspace's unified feature graph entirely; `preserve_order` no longer
+leaks into `ab-aat-to-parser-ir` or any other production crate. The
+shim retains byte-parity with upstream inside its own, isolated
+workspace (verified via `cargo test --manifest-path
+crates/ab-aozora-cli/Cargo.toml` against the pinned upstream binary:
+2/2 goldens pass).
+
+**Hard constraint for Phase 2.** `ab-aozora-aat` (or any future crate)
+cannot join the root workspace while depending on `facade/json` until
+either (a) `ab-aat-to-parser-ir`'s JSON serialization is made canonical
+independent of `serde_json` feature state (i.e. explicit key ordering at
+the call site, not reliance on `BTreeMap`/default-map ordering), or (b)
+the `json` feature's `preserve_order` requirement is otherwise decoupled
+from workspace-wide feature unification (e.g. by isolating every
+`json`-feature consumer into its own standalone workspace, as done here
+for `ab-aozora-cli`).

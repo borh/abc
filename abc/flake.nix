@@ -98,6 +98,20 @@
               cd ${./.}
               exec ${pkgs.clojure}/bin/clojure -M:${alias} "$@"
             '';
+          mkCljApp =
+            {
+              name,
+              alias,
+              description,
+              env ? "",
+            }:
+            {
+              type = "app";
+              program = toString (mkCljLauncher {
+                inherit name alias env;
+              });
+              meta.description = description;
+            };
           tei = import ./nix/tei-profile-artifacts.nix {
             inherit pkgs;
             odd = ./schemas/tei-profile.odd;
@@ -123,119 +137,83 @@
             };
         in
         {
-          validate-design-bundle = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-validate-design-bundle";
-              alias = "abc/validate-design-bundle";
-              env = ''
-                export PATH="${
-                  pkgs.lib.makeBinPath [
-                    pkgs.git-cliff
-                    pkgs.libxml2
-                  ]
-                }:''${PATH:-}"
-                export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
-              '';
-            });
-            meta.description = "Validate ABC v0 design-bundle schemas and fixtures";
+          validate-design-bundle = mkCljApp {
+            name = "abc-validate-design-bundle";
+            alias = "abc/validate-design-bundle";
+            description = "Validate ABC v0 design-bundle schemas and fixtures";
+            env = ''
+              export PATH="${
+                pkgs.lib.makeBinPath [
+                  pkgs.git-cliff
+                  pkgs.libxml2
+                ]
+              }:''${PATH:-}"
+              export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
+            '';
           };
 
-          soranoha = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "soranoha";
-              alias = "abc/soranoha";
-            });
-            meta.description = "Soranoha snapshot publication command dispatcher";
+          soranoha = mkCljApp {
+            name = "soranoha";
+            alias = "abc/soranoha";
+            description = "Soranoha snapshot publication command dispatcher";
           };
 
-          materialize-import = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-materialize-import";
-              alias = "abc/materialize-import";
-            });
-            meta.description = "Materialize imported ab-validator output as ABC manifests";
+          materialize-import = mkCljApp {
+            name = "abc-materialize-import";
+            alias = "abc/materialize-import";
+            description = "Materialize imported ab-validator output as ABC manifests";
           };
 
-          materialize-publication = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-materialize-publication";
-              alias = "abc/materialize-publication";
-            });
-            meta.description = "Materialize parser-IR publication plaintext and TEI artifacts";
+          materialize-publication = mkCljApp {
+            name = "abc-materialize-publication";
+            alias = "abc/materialize-publication";
+            description = "Materialize parser-IR publication plaintext and TEI artifacts";
           };
 
-          materialize-publications-batch = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-materialize-publications-batch";
-              alias = "abc/materialize-publication";
-            });
-            meta.description = "Materialize parser-IR publication plaintext and TEI artifacts from a batch JSON";
+          materialize-publications-batch = mkCljApp {
+            name = "abc-materialize-publications-batch";
+            alias = "abc/materialize-publication";
+            description = "Materialize parser-IR publication plaintext and TEI artifacts from a batch JSON";
           };
 
-          materialize-source-snapshot = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-materialize-source-snapshot";
-              alias = "abc/materialize-source-snapshot";
-            });
-            meta.description = "Materialize a source corpus snapshot and source manifests";
+          materialize-source-snapshot = mkCljApp {
+            name = "abc-materialize-source-snapshot";
+            alias = "abc/materialize-source-snapshot";
+            description = "Materialize a source corpus snapshot and source manifests";
           };
 
-          manifest-to-rdf = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-manifest-to-rdf";
-              alias = "abc/manifest-to-rdf";
-            });
-            meta.description = "Generate deterministic RDF/Turtle view from an ABC manifest";
+          manifest-to-rdf = mkCljApp {
+            name = "abc-manifest-to-rdf";
+            alias = "abc/manifest-to-rdf";
+            description = "Generate deterministic RDF/Turtle view from an ABC manifest";
           };
 
-          aozora-ingest = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-aozora-ingest";
-              alias = "abc/aozora-ingest";
-              # Default the catalog to the pinned canonical Aozora source, so
-              # `--zip`/`--source-url` may be omitted (the tool falls back to
-              # these env vars). An explicit --zip on the command line wins.
-              env = ''
-                export ABC_AOZORA_CATALOG_ZIP="${aozorabunko-src}/index_pages/list_person_all_extended_utf8.zip"
-                export ABC_AOZORA_CATALOG_URL="github:aozorabunko/aozorabunko/0e9ea3e586eb0aa34039fabfc85a407d2f98b165"
-              '';
-            });
-            meta.description = "Build a metadata-record JSON from the canonical (pinned) Aozora catalog, or a --zip slice";
+          aozora-ingest = mkCljApp {
+            name = "abc-aozora-ingest";
+            alias = "abc/aozora-ingest";
+            description = "Build a metadata-record JSON from the canonical (pinned) Aozora catalog, or a --zip slice";
+            env = ''
+              export ABC_AOZORA_CATALOG_ZIP="${aozorabunko-src}/index_pages/list_person_all_extended_utf8.zip"
+              export ABC_AOZORA_CATALOG_URL="github:aozorabunko/aozorabunko/0e9ea3e586eb0aa34039fabfc85a407d2f98b165"
+            '';
           };
 
-          validate-corpus = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-validate-corpus";
-              alias = "abc/validate-corpus";
-            });
-            meta.description = "Validate an ingested corpus directory through SHACL";
+          validate-corpus = mkCljApp {
+            name = "abc-validate-corpus";
+            alias = "abc/validate-corpus";
+            description = "Validate an ingested corpus directory through SHACL";
           };
 
-          person-drift-history = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-person-drift-history";
-              alias = "abc/person-drift-history";
-            });
-            meta.description = "Audit generated corpus snapshots for conservative person split/merge candidates";
+          person-drift-history = mkCljApp {
+            name = "abc-person-drift-history";
+            alias = "abc/person-drift-history";
+            description = "Audit generated corpus snapshots for conservative person split/merge candidates";
           };
 
-          aozora-history-audit = {
-            type = "app";
-            program = toString (mkCljLauncher {
-              name = "abc-aozora-history-audit";
-              alias = "abc/aozora-history-audit";
-            });
-            meta.description = "Extract two Aozora git refs, ingest them, validate current corpus, and report person drift candidates";
+          aozora-history-audit = mkCljApp {
+            name = "abc-aozora-history-audit";
+            alias = "abc/aozora-history-audit";
+            description = "Extract two Aozora git refs, ingest them, validate current corpus, and report person drift candidates";
           };
 
           aozora-upstream-audit = {
@@ -341,6 +319,21 @@
               pkgs.lib.splitString "\n" (builtins.readFile path)
             );
           contractSurfacePaths = manifestLines ./nix/contract-surface.txt;
+
+          copyWritableSource = ''
+            cp -R ${./.} source
+            chmod -R u+w source
+            cd source
+          '';
+
+          cljSandboxEnv = ''
+            export HOME="${cljDepsCache}"
+            export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
+            export CLJ_CONFIG="$HOME/.clojure"
+            export CLJ_CACHE="$TMPDIR/cp-cache"
+            export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
+            export GITLIBS="$HOME/.gitlibs"
+          '';
         in
         {
           clj-nix-focused-tests =
@@ -353,17 +346,8 @@
                 ];
               }
               ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                export GITLIBS="$HOME/.gitlibs"
-
+                ${copyWritableSource}
+                ${cljSandboxEnv}
                 # Keep TEI schema-backed tests active in the sandbox. The schema is
                 # a pinned fixed-output artifact, so tests do not need network access.
                 export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
@@ -384,17 +368,8 @@
                 ];
               }
               ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                export GITLIBS="$HOME/.gitlibs"
-
+                ${copyWritableSource}
+                ${cljSandboxEnv}
                 # Regenerate the two committed diagrams in memory and byte-compare
                 # to the checked-in files; also runs the ADR header-hygiene and
                 # architecture-stage lints. Any drift or lint problem exits non-zero.
@@ -430,10 +405,7 @@
                 ];
               }
               ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-
+                ${copyWritableSource}
                 python -m unittest prototypes/aat-to-parser-ir-probe/test_probe_mapping.py
 
                 mkdir -p "$out"
@@ -577,17 +549,8 @@
                 nativeBuildInputs = [ pkgs.clojure ];
               }
               ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-
-                export HOME="${cljDepsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                export GITLIBS="$HOME/.gitlibs"
-
+                ${copyWritableSource}
+                ${cljSandboxEnv}
                 clojure -M:abc/adr-governance
 
                 mkdir -p "$out"

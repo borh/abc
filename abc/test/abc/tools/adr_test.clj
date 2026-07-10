@@ -178,6 +178,16 @@
       (is (contains? (kinds problems) :forbidden-accepted-date))
       (is (contains? (kinds problems) :accepted-before-date)))))
 
+(deftest any-present-accepted-date-must-be-calendar-valid
+  (let [dir (temp-dir)]
+    (write-adr! dir "0001-draft.md"
+                (str "# ADR 0001: Draft\n\nStatus: Draft\nDate: 2026-07-10\n"
+                     "Accepted: 2026-02-30\n\n## Decision\n\nX.\n"))
+    (let [problem-kinds (kinds (adr/validate-adrs
+                                (adr/parse-all (.getPath dir)) dir))]
+      (is (contains? problem-kinds :invalid-date))
+      (is (contains? problem-kinds :forbidden-accepted-date)))))
+
 (deftest accepted-status-requires-date-and-sections
   (let [dir (temp-dir)]
     (write-adr! dir "0001-bad.md"
@@ -291,6 +301,21 @@
     (is (contains?
          (kinds (adr/validate-adrs (adr/parse-all (.getPath dir)) dir))
          :superseded-without-successor))))
+
+(deftest reciprocity-requires-the-same-scope-on-both-sides
+  (let [dir (temp-dir)]
+    (write-path! dir "test/evidence.clj" "(ns evidence)")
+    (write-adr! dir "0001-base.md"
+                (accepted-body
+                 1 "Base"
+                 "Superseded by: ADR 0002 [scope: replacement rule]\n"))
+    (write-adr! dir "0002-next.md"
+                (accepted-body
+                 2 "Next"
+                 "Supersedes: ADR 0001 [scope: old rule]\n"))
+    (let [problem-kinds (kinds (adr/validate-adrs
+                                (adr/parse-all (.getPath dir)) dir))]
+      (is (contains? problem-kinds :missing-superseded-by)))))
 
 (deftest proposed-amendment-is-pending-and-reciprocal
   (let [dir (temp-dir)]

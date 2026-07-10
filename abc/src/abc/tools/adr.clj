@@ -217,15 +217,15 @@
        [(problem :invalid-date file
                  "Date must be a calendar-valid YYYY-MM-DD value"
                  :field "Date" :value date)])
+     (when (and accepted (nil? parsed-accepted))
+       [(problem :invalid-date file
+                 "Accepted must be a calendar-valid YYYY-MM-DD value"
+                 :field "Accepted" :value accepted)])
      (if (= "Accepted" status)
        (concat
         (when-not accepted
           [(problem :missing-accepted-date file
                     "Accepted status requires an Accepted date")])
-        (when (and accepted (nil? parsed-accepted))
-          [(problem :invalid-date file
-                    "Accepted must be a calendar-valid YYYY-MM-DD value"
-                    :field "Accepted" :value accepted)])
         (when (and parsed-date parsed-accepted
                    (.isBefore parsed-accepted parsed-date))
           [(problem :accepted-before-date file

@@ -1,6 +1,9 @@
 { pkgs, odd }:
 
 let
+  # TEI P5 version. Deliberately duplicated in <repo-root>/nix/tei.nix (separate
+  # flake). Drift is caught by the `monorepo-tei-version-coherence` check. Bump
+  # both together.
   teiP5Version = "4.11.0";
 
   teiAllSchema = pkgs.fetchurl {

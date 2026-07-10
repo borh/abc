@@ -1,8 +1,7 @@
 (ns abc.tools.adr-test
   (:require [abc.tools.adr :as adr]
             [clojure.java.io :as io]
-            [clojure.string :as str]
-            [clojure.test :refer [deftest is testing]])
+            [clojure.test :refer [deftest is]])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
 
@@ -12,12 +11,6 @@
 
 (defn- write-adr! [dir filename body]
   (let [file (io/file dir filename)]
-    (spit file body)
-    file))
-
-(defn- write-path! [dir path body]
-  (let [file (io/file dir path)]
-    (.mkdirs (.getParentFile file))
     (spit file body)
     file))
 
@@ -112,3 +105,28 @@
                 "# ADR 0001: None\n\nStatus: Draft\nDate: 2026-07-10\nSupersedes: none\n\n## Decision\n\nX.\n")
     (is (= [] (get-in (adr/parse-adr (.getPath dir) "0001-none.md")
                       [:relations :supersedes])))))
+
+(deftest missing-required-blank-line-preserves-first-header-field
+  (let [dir (temp-dir)]
+    (write-adr! dir "0001-no-blank.md"
+                "# ADR 0001: No blank\nStatus: Draft\nDate: 2026-07-10\n\n## Decision\n\nX.\n")
+    (let [parsed (adr/parse-adr (.getPath dir) "0001-no-blank.md")]
+      (is (= "Draft" (:status parsed)))
+      (is (some #(= :missing-required-blank-line (:kind %))
+                (:parse-problems parsed))))))
+
+(deftest duplicate-field-tracks-an-empty-first-occurrence
+  (let [dir (temp-dir)]
+    (write-adr! dir "0001-duplicate-empty.md"
+                "# ADR 0001: Duplicate empty\n\nStatus: Draft\nSource:\nSource: docs/spec.md\n\n## Decision\n\nX.\n")
+    (let [parsed (adr/parse-adr (.getPath dir) "0001-duplicate-empty.md")
+          kinds (set (map :kind (:parse-problems parsed)))]
+      (is (nil? (get-in parsed [:fields "Source"])))
+      (is (contains? kinds :empty-header-value))
+      (is (contains? kinds :duplicate-header-field)))))
+
+(deftest adr-files-excludes-directories
+  (let [dir (temp-dir)]
+    (.mkdir (io/file dir "0001-directory.md"))
+    (write-adr! dir "0002-file.md" "")
+    (is (= ["0002-file.md"] (adr/adr-files (.getPath dir))))))

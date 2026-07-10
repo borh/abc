@@ -19,6 +19,7 @@
 
 (defn adr-files [dir]
   (->> (.listFiles (io/file dir))
+       (filter #(.isFile %))
        (map #(.getName %))
        (filter #(re-matches #"\d{4}-.*\.md" %))
        sort
@@ -65,46 +66,57 @@
       :section "Acceptance Criteria"
       :criterion-index idx})))
 
-(defn- header-lines [lines]
-  (loop [remaining (drop 2 lines)
-         result []]
-    (let [line (first remaining)]
-      (cond
-        (nil? line) result
-        (and (seq result) (str/blank? line)) result
-        :else (recur (rest remaining) (conj result line))))))
+(defn- header-lines [file lines]
+  (let [has-required-blank? (str/blank? (second lines))]
+    {:lines (loop [remaining (drop (if has-required-blank? 2 1) lines)
+                   result []]
+              (let [line (first remaining)]
+                (cond
+                  (nil? line) result
+                  (and (seq result) (str/blank? line)) result
+                  :else (recur (rest remaining) (conj result line)))))
+     :problems (if has-required-blank?
+                 []
+                 [(problem :missing-required-blank-line file
+                           "title must be followed by a blank line")])}))
 
 (defn- parse-fields [file lines]
-  (reduce
-   (fn [{:keys [fields] :as parsed} line]
-     (if-let [[_ field value] (re-matches #"([^:]+):(.*)" line)]
-       (cond
-         (not (contains? header-fields field))
-         (update parsed :problems conj
-                 (problem :unknown-header-field file
-                          "header field is not recognized"
-                          :field field :value (str/trim value)))
+  (->
+   (reduce
+    (fn [{:keys [seen] :as parsed} line]
+      (if-let [[_ field value] (re-matches #"([^:]+):(.*)" line)]
+        (cond
+          (not (contains? header-fields field))
+          (update parsed :problems conj
+                  (problem :unknown-header-field file
+                           "header field is not recognized"
+                           :field field :value (str/trim value)))
 
-         (contains? fields field)
-         (update parsed :problems conj
-                 (problem :duplicate-header-field file
-                          "header field appears more than once"
-                          :field field :value (str/trim value)))
+          (contains? seen field)
+          (update parsed :problems conj
+                  (problem :duplicate-header-field file
+                           "header field appears more than once"
+                           :field field :value (str/trim value)))
 
-         (str/blank? value)
-         (update parsed :problems conj
-                 (problem :empty-header-value file
-                          "header field value must not be empty"
-                          :field field :value (str/trim value)))
+          (str/blank? value)
+          (-> parsed
+              (update :seen conj field)
+              (update :problems conj
+                      (problem :empty-header-value file
+                               "header field value must not be empty"
+                               :field field :value (str/trim value))))
 
-         :else
-         (assoc-in parsed [:fields field] (str/trim value)))
-       (update parsed :problems conj
-               (problem :invalid-header-line file
-                        "header line must be `Field: non-empty value`"
-                        :value line))))
-   {:fields {} :problems []}
-   lines))
+          :else
+          (-> parsed
+              (update :seen conj field)
+              (assoc-in [:fields field] (str/trim value))))
+        (update parsed :problems conj
+                (problem :invalid-header-line file
+                         "header line must be `Field: non-empty value`"
+                         :value line))))
+    {:fields {} :seen #{} :problems []}
+    lines)
+   (dissoc :seen)))
 
 (defn- parse-relations [file fields]
   (reduce-kv
@@ -145,7 +157,8 @@
 (defn parse-adr [dir filename]
   (let [lines (str/split-lines (slurp (io/file dir filename)))
         title-result (parse-title filename (first lines))
-        fields-result (parse-fields filename (header-lines lines))
+        header-result (header-lines filename lines)
+        fields-result (parse-fields filename (:lines header-result))
         fields (:fields fields-result)
         relations-result (parse-relations filename fields)
         sections-result (parse-sections lines)
@@ -168,6 +181,7 @@
      :section-bodies (:section-bodies sections-result)
      :evidence (evidence (:section-bodies sections-result))
      :parse-problems (vec (concat (:problems title-result)
+                                  (:problems header-result)
                                   (:problems fields-result)
                                   (:problems relations-result)
                                   mismatch-problems))}))

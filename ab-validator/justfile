@@ -96,6 +96,7 @@ aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2
 	  aozora_bin="$aozora_pkg/bin/aozora"; \
 	fi; \
 	if [ -n "$aozora_bin" ]; then aozora_bin="$(cd "$(dirname "$aozora_bin")" && pwd)/$(basename "$aozora_bin")"; fi; \
+	if [ ! -x "$aozora_bin" ]; then echo "AOZORA_BIN not found or not executable: $aozora_bin" >&2; exit 2; fi; \
 	aozora2html_pkg="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora2html')"; \
 	epub3_pkg="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora-epub3')"; \
 	epub3_jar="${AB_AOZORAEPUB3_JAR:-$epub3_pkg/lib/AozoraEpub3.jar}"; \
@@ -108,10 +109,13 @@ aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2
 	for a in aozora aozora2 aozora-rs aozora2html aozora-epub3; do \
 		cargo build --manifest-path "{{repo_root}}/adapters/$a/Cargo.toml" --release; \
 	done; \
+	export RUSTC_WRAPPER= SCCACHE_DISABLE=1; \
+	cargo build --manifest-path "{{repo_root}}/Cargo.toml" --package ab-aozora --release; \
 	python "{{repo_root}}/reports/parser-conformance/run-aozora-notation-spec.py" \
 		--vectors-dir "$vectors" \
 		--adapter "aozora=inspect:$aozora_bin_q inspect" \
-		--adapter "ab-aozora=aat:env AB_AOZORA_BIN=$aozora_bin_q {{repo_root}}/adapters/aozora/target/release/aozora-adapter --mode aat" \
+		--adapter "aozora-adapter=aat:env AB_AOZORA_BIN=$aozora_bin_q {{repo_root}}/adapters/aozora/target/release/aozora-adapter --mode aat" \
+		--adapter "ab-aozora=aat:{{repo_root}}/target/release/ab-aozora --mode aat" \
 		--adapter "aozora2=aat:{{repo_root}}/adapters/aozora2/target/release/aozora2-adapter --mode aat" \
 		--adapter "aozora2html=aat:env AB_AOZORA2HTML_BIN=$a2h_bin_q AB_VALIDATOR_GEM_HOME=$a2h_gem_q {{repo_root}}/adapters/aozora2html/aozora2html-adapter --mode aat" \
 		--adapter "aozora-rs=aat:{{repo_root}}/adapters/aozora-rs/target/release/aozora-rs-adapter --mode aat" \

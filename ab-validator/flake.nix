@@ -1357,6 +1357,7 @@
               python -m pytest \
                 reports/aat-fidelity/tests \
                 reports/lib/tests \
+                reports/parser-conformance/tests \
                 -q
               touch "$out"
             '';

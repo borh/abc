@@ -374,13 +374,24 @@ workspace's unified feature graph resolves `serde_json::Map` to
 below, landed at commit `482279c0`. (b): the root workspace now carries a
 standing guard, `tests/workspace-no-preserve-order.sh`, which fails the
 build if `preserve_order` ever resolves into the root workspace's unified
-feature graph (run as part of the verification battery, alongside
-`cargo test --workspace`); `tools/preserve-order-canary` is the
-deliberate, permanently-excluded `preserve_order` consumer that exercises
+feature graph; `tools/preserve-order-canary` is the deliberate,
+permanently-excluded `preserve_order` consumer that exercises
 `sort_keys_deep` under `IndexMap`-backed `Map` to prove the
 canonicalization holds even when insertion order is adversarial — it must
 never join the root workspace (see its own `exclude` entry in the root
-`Cargo.toml`).
+`Cargo.toml`). What actually runs these two: the `just
+preserve-order-hazard-check` recipe (justfile), which runs the guard
+script followed by `cargo test --manifest-path
+tools/preserve-order-canary/Cargo.toml`; and, independently,
+`ab-aozora-aat`'s always-on
+`aat_json_from_bytes_is_byte_exact_under_default_map_ordering` unit test
+(`crates/ab-aozora-aat/src/lib.rs`), which asserts exact serialized bytes
+from a fixed input and therefore fails on its own — with no separate
+recipe invocation required — if `preserve_order` ever leaks into that
+crate's compiled feature graph and flips its `Value` map ordering. Neither
+of these runs automatically as part of plain `cargo test --workspace`
+except the latter (it is an ordinary `#[test]` in a workspace member); the
+guard script and the canary crate require the dedicated justfile recipe.
 
 With both defenses in place, the hard constraint above is **narrowed**:
 any future crate enabling `serde_json/preserve_order` must live outside
@@ -405,3 +416,19 @@ removed. Evidence:
 - `docs/superpowers/reports/2026-07-10-phase2-absorption-parity.md`
 - `docs/superpowers/reports/2026-07-10-phase2-perf.md`
 - `docs/superpowers/reports/2026-07-10-phase2-conformance-echo.md`
+
+## Phase 3 follow-ups
+
+- **Retire the live crates.io `aozora-pipeline` dependency in
+  `ab-aozora-aat`.** `crates/ab-aozora-aat/Cargo.toml` still depends on
+  upstream `aozora-pipeline` (pinned exact, `=0.4.1`, per ADR 0032 — no
+  floating upstream) and `src/lib.rs` imports
+  `aozora_pipeline::lexer::sanitize`, ported verbatim from the frozen
+  adapter's dependency surface. This is the one place a non-forked,
+  non-vendored upstream crate still runs inside the fork's owning crate;
+  the fork's own `ab-aozora-pipeline` (already lifted, see the LIFT_SET
+  table above) has no public `lexer::sanitize` equivalent yet. Swapping the
+  import for the fork's own lexer sanitize path is a Phase 3 item, gated by
+  Phase 3's own conformance/parity evidence — it is a behavior-relevant
+  change to gate-covered code and must not be folded into a metadata-only
+  fix.

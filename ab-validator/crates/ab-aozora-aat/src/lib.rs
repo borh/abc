@@ -953,4 +953,35 @@ mod tests {
             assert_eq!(decoded.source_hash, vector.sha256, "{} hash", vector.name);
         }
     }
+
+    /// `preserve_order` tripwire (see
+    /// `docs/handoffs/2026-07-10-parser-fork-provenance.md`'s
+    /// feature-unification hazard section): `aat_json_from_bytes` builds its
+    /// `serde_json::Value` output via object literals (`json!` macro
+    /// insertion order), so if `serde_json/preserve_order` ever leaks into
+    /// this crate's compiled feature graph, `Value`'s map switches from
+    /// `BTreeMap` (alphabetical-by-key serialization) to `IndexMap`
+    /// (insertion-order serialization) and this exact-byte assertion goes
+    /// red — a parsed/`Value`-equality check would NOT catch this, since
+    /// `Value::eq` for objects is order-independent.
+    ///
+    /// Expected output generated 2026-07-10 via:
+    /// ```text
+    /// export RUSTC_WRAPPER= SCCACHE_DISABLE=1
+    /// cd ab-validator
+    /// cargo test -p ab-aozora-aat --test probe -- --nocapture
+    /// ```
+    /// (a scratch test asserting against a deliberately wrong literal, whose
+    /// panic message prints the actual bytes; pasted here verbatim). The
+    /// `(git unknown)` suffix in `adapter_version` is `build.rs`'s fallback
+    /// when `AB_AOZORA_GIT_REV` is unset, which is the case for a plain
+    /// `cargo test` invocation (only flake-built release binaries bake in a
+    /// real rev; see `flake.nix`'s `AB_AOZORA_GIT_REV = self.rev or
+    /// "unknown"` and `build.rs`'s doc comment).
+    #[test]
+    fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.1.0 aat-schema 1 facade 0.1.0 wire-schema 2 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":1,\"work_id\":\"stdin\"}\n";
+        let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
+        assert_eq!(actual, expected.as_bytes());
+    }
 }

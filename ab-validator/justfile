@@ -37,6 +37,17 @@ workspace-check:
 clippy:
 	@cargo clippy --workspace --all-targets --all-features
 
+# Guards the feature-unification hazard recorded in
+# docs/handoffs/2026-07-10-parser-fork-provenance.md: fails if
+# serde_json/preserve_order ever resolves into the root workspace's unified
+# feature graph, and proves ab-aat-to-parser-ir's canonical JSON stays
+# order-independent even when preserve_order is deliberately forced on.
+preserve-order-hazard-check:
+	@set -euo pipefail; \
+	export RUSTC_WRAPPER= SCCACHE_DISABLE=1; \
+	bash "{{repo_root}}/tests/workspace-no-preserve-order.sh"; \
+	cargo test --manifest-path "{{repo_root}}/tools/preserve-order-canary/Cargo.toml"
+
 quality:
 	@just fmt-check
 	@just workspace-check

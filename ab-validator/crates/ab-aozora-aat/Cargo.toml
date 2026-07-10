@@ -21,7 +21,12 @@ ab-aozora-facade = { path = "../ab-aozora-facade", features = ["entries"] }
 anyhow = "1.0"
 regex = "1.12"
 encoding_rs = "0.8"
-aozora-pipeline = "0.4.1"
+# Ported verbatim from the frozen adapter's dependency surface; pinned
+# exact per ADR 0032 (hard detach — no floating upstream). Replacing this
+# with the fork's own ab-aozora-pipeline::lexer::sanitize is a recorded
+# Phase 3 item under Phase 3's own gates (see
+# docs/handoffs/2026-07-10-parser-fork-provenance.md).
+aozora-pipeline = "=0.4.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"

@@ -79,6 +79,8 @@ mapping), the golden test matrix was extended to 4 kinds x 3 samples
 shim leg was re-run from scratch. Commit: `1fa0316c`
 `fix(parser): add inspect pairs to the ab-aozora-cli shim`.
 
+The baseline artifacts were deliberately not regenerated after the pairs fix: the baseline leg never invokes the shim binary, and `git diff --stat` over `reports/parser-conformance/` and `justfile` across the Task 7 window is empty (no harness, recipe, or vector changes), so a baseline re-run would have been a byte-identical no-op.
+
 ## Results
 
 ### Instrument 1: 127-vector P4suta suite (127 vectors x 6 adapters = 762 rows)

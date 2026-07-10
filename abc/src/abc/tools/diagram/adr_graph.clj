@@ -2,7 +2,7 @@
   "Tier 1 pure builder: ADR headers (+ adr-relations.edn, Task 6) -> decision-map
    graph value. lint* enforces header hygiene and (Task 6) sidecar rules.
    See ADR 0029."
-  (:require [clojure.edn :as edn]
+  (:require [abc.tools.files :as files]
             [clojure.java.io :as io]
             [clojure.string :as str]))
 
@@ -85,7 +85,7 @@
 
 (defn load-relations []
   (if (.exists (io/file relations-path))
-    (:relations (edn/read-string (slurp relations-path)))
+    (:relations (files/read-edn relations-path))
     []))
 
 ;; --- lint (pure core + IO wrapper) ------------------------------------------

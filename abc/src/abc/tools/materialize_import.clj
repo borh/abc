@@ -1,9 +1,8 @@
 (ns abc.tools.materialize-import
-  (:require [abc.tools.logging :as logging]
+  (:require [abc.tools.cli :as abc-cli]
             [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [clojure.java.io :as io]
-            [clojure.tools.cli :as cli]
             [taoensso.telemere :as tel]))
 
 (def default-generated-at "2026-04-26T00:00:00Z")
@@ -122,28 +121,27 @@
     {:parser-ir parser-file
      :warnings warnings-file}))
 
-(defn usage []
-  (tel/log! :warn "Usage: clojure -M:abc/materialize-import <input-dir> <output-dir> [--generated-at instant]"))
+(defn usage [_summary]
+  "Usage: clojure -M:abc/materialize-import <input-dir> <output-dir> [--generated-at instant]")
 
 (def cli-options
   [[nil "--generated-at INSTANT" "UTC generation timestamp for deterministic fixtures"
     :id :generated-at]])
 
 (defn -main [& args]
-  (logging/install-cli-handler!)
-  (let [{:keys [options arguments errors]} (cli/parse-opts args cli-options)
-        [input-dir output-dir positional-generated-at & extra] arguments
-        generated-at (or (:generated-at options)
-                         positional-generated-at
-                         default-generated-at)]
-    (if (or (seq errors) (nil? input-dir) (nil? output-dir) (seq extra))
-      (do
-        (doseq [error errors]
-          (tel/log! :error error))
-        (usage)
-        (System/exit 2))
-      (do
-        (materialize-import! {:input-dir input-dir
-                              :output-dir output-dir
-                              :generated-at generated-at})
-        (tel/log! :info (str "materialized imported parser output to " output-dir))))))
+  (abc-cli/run-cli!
+   args
+   {:cli-options cli-options
+    :min-args    2
+    :max-args    3
+    :usage-fn    usage
+    :run         (fn [{:keys [options arguments]}]
+                   (let [[input-dir output-dir positional-generated-at] arguments
+                         generated-at (or (:generated-at options)
+                                          positional-generated-at
+                                          default-generated-at)]
+                     (materialize-import! {:input-dir input-dir
+                                           :output-dir output-dir
+                                           :generated-at generated-at})
+                     (tel/log! :info (str "materialized imported parser output to "
+                                          output-dir))))}))

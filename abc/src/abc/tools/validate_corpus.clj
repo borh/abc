@@ -9,14 +9,13 @@
   Reports a summary {:works-checked, :failed, :first-failures}.
   Person bodies are cached by person_id; the SHACL shapes graph is
   loaded once."
-  (:require [abc.tools.files :as files]
-            [abc.tools.logging :as logging]
+  (:require [abc.tools.cli :as abc-cli]
+            [abc.tools.files :as files]
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.person-record :as person-record]
             [abc.tools.shacl :as shacl]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.tools.cli :as cli]
             [taoensso.telemere :as tel]))
 
 (defn- list-json-files [^java.io.File dir]
@@ -102,22 +101,20 @@
     :default 10
     :parse-fn #(Integer/parseInt %)]])
 
-(defn usage []
-  (tel/log! :warn (str "Usage: clojure -M:abc/validate-corpus "
-                       "--input-dir <DIR>")))
+(defn usage [_summary]
+  "Usage: clojure -M:abc/validate-corpus --input-dir <DIR>")
 
 (defn -main [& args]
-  (logging/install-cli-handler!)
-  (let [{:keys [options errors]} (cli/parse-opts args cli-options)]
-    (if (or (seq errors) (nil? (:input-dir options)))
-      (do
-        (doseq [e errors] (tel/log! :error e))
-        (usage)
-        (System/exit 2))
-      (let [{:keys [works-checked failed first-failures]}
-            (validate-corpus! options)]
-        (tel/log! :info (str "checked " works-checked " works, " failed " failed"))
-        (doseq [f first-failures]
-          (tel/log! :error (str (:work-id f) ": " (:error f))))
-        (when (pos? failed)
-          (System/exit 1))))))
+  (abc-cli/run-cli!
+   args
+   {:cli-options cli-options
+    :required    [:input-dir]
+    :usage-fn    usage
+    :run         (fn [{:keys [options]}]
+                   (let [{:keys [works-checked failed first-failures] :as result}
+                         (validate-corpus! options)]
+                     (tel/log! :info (str "checked " works-checked " works, " failed " failed"))
+                     (doseq [f first-failures]
+                       (tel/log! :error (str (:work-id f) ": " (:error f))))
+                     result))
+    :fail?       (fn [{:keys [failed]}] (pos? failed))}))

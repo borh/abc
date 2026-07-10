@@ -1,3 +1,7 @@
 {:linters
  {:unresolved-symbol
-  {:exclude [(clojure.test/is [schema-valid])]}}}
+  {:exclude [(clojure.test/is [schema-valid])]}}
+ :hooks
+ {:analyze-call
+  {abc.test-fs/with-temp-dir hooks.with-temp-dir/with-temp-dir
+   babashka.fs/with-temp-dir hooks.with-temp-dir/with-temp-dir}}}

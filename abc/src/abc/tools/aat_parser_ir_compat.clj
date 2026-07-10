@@ -2,7 +2,6 @@
   (:require [abc.tools.edn-registry :as registry]
             [abc.tools.files :as files]
             [abc.tools.malli :as am]
-            [clojure.edn :as edn]
             [clojure.string :as string]
             [clojure.tools.cli :as cli]))
 
@@ -120,7 +119,7 @@
 
 (defn load-registry
   []
-  (let [registry (edn/read-string (slurp registry-path))]
+  (let [registry (files/read-edn registry-path)]
     (validate-registry! registry)
     registry))
 
@@ -196,10 +195,6 @@
     (println)
     (println summary)))
 
-(defn- read-edn-file
-  [path]
-  (edn/read-string (slurp path)))
-
 (defn -main
   [& args]
   (let [args (if (= "--" (first args)) (rest args) args)
@@ -220,8 +215,8 @@
 
       :else
       (let [report (admission-report
-                    (read-edn-file (:registry options))
-                    (read-edn-file (:candidates options)))]
+                    (files/read-edn (:registry options))
+                    (files/read-edn (:candidates options)))]
         (prn report)
         (when-not (= :admitted (:status report))
           (System/exit 1))))))

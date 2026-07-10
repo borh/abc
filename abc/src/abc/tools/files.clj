@@ -1,38 +1,45 @@
 (ns abc.tools.files
   (:require [abc.tools.hash :as hash]
             [abc.tools.json :as abc-json]
-            [charred.api :as json]
-            [clojure.java.io :as io]
+            [babashka.fs :as fs]
+            [clojure.edn :as edn]
             [clojure.string :as string]))
 
 (def hash-pattern hash/hash-pattern)
 
 (defn repo-root []
-  (.getCanonicalFile (io/file ".")))
+  (fs/file (fs/canonicalize ".")))
 
 (defn path [& segments]
-  (apply io/file (repo-root) segments))
+  (apply fs/file (repo-root) segments))
 
 (defn read-json [file]
   (abc-json/read-json-file file))
 
 (defn read-json-lines [file]
-  (->> (string/split-lines (slurp (io/file file)))
+  (->> (string/split-lines (slurp (fs/file file)))
        (remove string/blank?)
-       (mapv json/read-json)))
+       (mapv abc-json/read-json-str)))
 
-(defn delete-tree! [file]
-  (let [file (io/file file)]
-    (when (.exists file)
-      (doseq [entry (reverse (file-seq file))]
-        (.delete entry)))))
+(defn read-edn [file]
+  (edn/read-string (slurp (fs/file file))))
+
+(defn relative-path [base file]
+  (string/replace (str (fs/relativize (fs/path base) (fs/path file))) "\\" "/"))
+
+(defn delete-tree!
+  "Recursively delete `file`. No-op when it does not exist; throws on real
+  filesystem failure (unlike the ignored .delete boolean it replaces)."
+  [file]
+  (when (fs/exists? file)
+    (fs/delete-tree file)))
 
 (defn copy-file! [source target]
-  (let [target (io/file target)]
-    (when-let [parent (.getParentFile target)]
-      (.mkdirs parent))
-    (io/copy (io/file source) target)
-    target))
+  ;; Guard: (fs/parent bare-filename) is nil and (fs/create-dirs nil) throws NPE.
+  (when-let [parent (fs/parent target)]
+    (fs/create-dirs parent))
+  (fs/copy source target {:replace-existing true})
+  (fs/file target))
 
 (defn bytes->hex [bytes]
   (hash/bytes->hex bytes))

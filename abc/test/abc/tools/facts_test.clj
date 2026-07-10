@@ -19,10 +19,11 @@
   (fn [f]
     (reset! tmp-dir (str (Files/createTempDirectory
                           "abc-facts" (make-array FileAttribute 0))))
-    (f)
-    (run! #(.delete (java.io.File. (str @tmp-dir "/" %)))
-          ["manifest_identity.pl" "drift.pl" "person_records.pl"])
-    (.delete (java.io.File. @tmp-dir))))
+    (try
+      (f)
+      (finally
+        ;; Exception-safe: delete the whole tree even if a test throws.
+        (files/delete-tree! @tmp-dir)))))
 
 (deftest emit-prolog-writes-manifest-identity-facts-test
   (facts/emit-prolog! @tmp-dir)

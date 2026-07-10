@@ -15,7 +15,7 @@ digraph "reproducibility" {
     "views" [color="#7BC47F",fontcolor="#F5F7FA",group="primary",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="34"><B>Scholarly views</B></FONT></TD></TR><TR><TD><FONT COLOR="#A7B0BE" POINT-SIZE="24">TEI · text · RDF · Linked<BR/>Art · IIIF · annotation ·<BR/>analysis</FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
   }
   subgraph "cluster_identity_contract" {
-    label="Canonical identity contract";
+    label="Versioned identity contract";
     color="#A7B0BE";
     penwidth="2";
     fontname="Noto Sans CJK JP";
@@ -45,13 +45,13 @@ digraph "reproducibility" {
   "sources" -> "artifact_id" [style="invis",weight="100"];
   "artifact_id" -> "manifest" [style="invis",weight="100"];
   "manifest" -> "views" [style="invis",weight="100"];
-  "analysis" -> "artifact_id" [color="#48CAE4",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="w",penwidth="2",style="solid"];
-  "artifact_id" -> "manifest" [color="#48CAE4",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",penwidth="4",style="solid"];
-  "manifest" -> "views" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",penwidth="2",style="solid"];
-  "output" -> "artifact_id" [color="#48CAE4",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="w",penwidth="2",style="solid"];
-  "parsing" -> "artifact_id" [color="#48CAE4",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="w",penwidth="2",style="solid"];
-  "publication" -> "artifact_id" [color="#48CAE4",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="w",penwidth="2",style="solid"];
-  "source" -> "artifact_id" [color="#48CAE4",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="w",penwidth="2",style="solid"];
+  "analysis" -> "artifact_id" [color="#48CAE4",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="nw",penwidth="2",style="solid"];
+  "artifact_id" -> "manifest" [color="#48CAE4",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="nw",penwidth="4",style="solid",tailport="ne"];
+  "manifest" -> "views" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="nw",penwidth="2",style="solid",tailport="ne"];
+  "output" -> "artifact_id" [color="#48CAE4",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="nw",penwidth="2",style="solid"];
+  "parsing" -> "artifact_id" [color="#48CAE4",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="nw",penwidth="2",style="solid"];
+  "publication" -> "artifact_id" [color="#48CAE4",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="nw",penwidth="2",style="solid"];
+  "source" -> "artifact_id" [color="#48CAE4",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",headport="nw",penwidth="2",style="solid"];
   "sources" -> "analysis" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",penwidth="2",style="solid",tailport="n"];
   "sources" -> "output" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",penwidth="2",style="solid",tailport="n"];
   "sources" -> "parsing" [color="#A7B0BE",fontcolor="#A7B0BE",fontname="Noto Sans CJK JP",fontsize="24",penwidth="2",style="solid",tailport="n"];

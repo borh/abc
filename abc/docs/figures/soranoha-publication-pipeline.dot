@@ -24,6 +24,7 @@ digraph "publication" {
     fontsize="24";
     margin="0";
     style="rounded,dashed";
+    labelloc="b";
     "aat_detail" [color="#A7B0BE",fontcolor="#F5F7FA",label=<<TABLE BORDER="0" CELLBORDER="0" CELLPADDING="1"><TR><TD><FONT POINT-SIZE="34"><B>AAT evidence +<BR/>mapping gate</B></FONT></TD></TR></TABLE>>,penwidth="2",shape="rect",style="rounded"];
   }
   subgraph "cluster_producer" {

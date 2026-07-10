@@ -9,7 +9,7 @@
 <a:g id="clust2" class="cluster">
 <a:title>cluster_identity_contract</a:title>
 <a:path fill="none" stroke="#a7b0be" stroke-width="2" d="M20,-135.56C20,-135.56 985.02,-135.56 985.02,-135.56 991.02,-135.56 997.02,-141.56 997.02,-147.56 997.02,-147.56 997.02,-707.57 997.02,-707.57 997.02,-713.57 991.02,-719.57 985.02,-719.57 985.02,-719.57 20,-719.57 20,-719.57 14,-719.57 8,-713.57 8,-707.57 8,-707.57 8,-147.57 8,-147.57 8,-141.57 14,-135.56 20,-135.56"/>
-<a:text text-anchor="middle" x="502.51" y="-692.77" font-family="Noto Sans CJK JP" font-size="24.00" fill="#a7b0be">Canonical identity contract</a:text>
+<a:text text-anchor="middle" x="502.51" y="-692.77" font-family="Noto Sans CJK JP" font-size="24.00" fill="#a7b0be">Versioned identity contract</a:text>
 </a:g>
 <a:g id="clust3" class="cluster">
 <a:title>cluster_record</a:title>
@@ -46,9 +46,9 @@
 </a:g>
 
 <a:g id="edge4" class="edge">
-<a:title>analysis-&gt;artifact_id:w</a:title>
-<a:path fill="none" stroke="#48cae4" stroke-width="2" d="M742.63,-203.6C742.77,-203.6 742.91,-203.6 743.05,-203.6"/>
-<a:polygon fill="#48cae4" stroke="#48cae4" stroke-width="2" points="739.25,-206.25 746.73,-203.58 739.22,-201 739.25,-206.25"/>
+<a:title>analysis-&gt;artifact_id:nw</a:title>
+<a:path fill="none" stroke="#48cae4" stroke-width="2" d="M742.63,-269.88C742.77,-269.9 742.91,-269.93 743.05,-269.95"/>
+<a:polygon fill="#48cae4" stroke="#48cae4" stroke-width="2" points="738.94,-271.9 746.78,-270.61 739.84,-266.73 738.94,-271.9"/>
 </a:g>
 
 <a:g id="node8" class="node">
@@ -61,9 +61,9 @@
 
 
 <a:g id="edge5" class="edge">
-<a:title>artifact_id-&gt;manifest</a:title>
-<a:path fill="none" stroke="#48cae4" stroke-width="4" d="M997.86,-203.94C997.99,-203.94 998.13,-203.94 998.26,-203.94"/>
-<a:polygon fill="#48cae4" stroke="#48cae4" stroke-width="4" points="990.83,-206.56 998.33,-203.94 990.83,-201.31 990.83,-206.56"/>
+<a:title>artifact_id:ne-&gt;manifest:nw</a:title>
+<a:path fill="none" stroke="#48cae4" stroke-width="4" d="M996.02,-271.13C996.02,-271.13 996.06,-271.13 996.12,-271.13"/>
+<a:polygon fill="#48cae4" stroke="#48cae4" stroke-width="4" points="991.47,-273.76 998.97,-271.13 991.47,-268.51 991.47,-273.76"/>
 </a:g>
 
 <a:g id="node4" class="node">
@@ -73,9 +73,9 @@
 </a:g>
 
 <a:g id="edge7" class="edge">
-<a:title>output-&gt;artifact_id:w</a:title>
-<a:path fill="none" stroke="#48cae4" stroke-width="2" d="M502.82,-293.77C608.5,-283.95 741.76,-271.56 741.76,-271.56 741.76,-271.56 746.31,-232.92 748.54,-213.89"/>
-<a:polygon fill="#48cae4" stroke="#48cae4" stroke-width="2" points="751.14,-214.33 749.41,-206.57 745.92,-213.71 751.14,-214.33"/>
+<a:title>output-&gt;artifact_id:nw</a:title>
+<a:path fill="none" stroke="#48cae4" stroke-width="2" d="M502.72,-293.88C593.36,-285.53 705.09,-275.24 739.31,-272.09"/>
+<a:polygon fill="#48cae4" stroke="#48cae4" stroke-width="2" points="739.52,-274.71 746.75,-271.41 739.04,-269.48 739.52,-274.71"/>
 </a:g>
 
 <a:g id="node5" class="node">
@@ -89,9 +89,9 @@
 </a:g>
 
 <a:g id="edge8" class="edge">
-<a:title>parsing-&gt;artifact_id:w</a:title>
-<a:path fill="none" stroke="#48cae4" stroke-width="2" d="M629,-354.37C691.9,-341.65 741.76,-331.56 741.76,-331.56 741.76,-331.56 747.19,-244.61 749.11,-214.04"/>
-<a:polygon fill="#48cae4" stroke="#48cae4" stroke-width="2" points="751.72,-214.24 749.57,-206.59 746.48,-213.91 751.72,-214.24"/>
+<a:title>parsing-&gt;artifact_id:nw</a:title>
+<a:path fill="none" stroke="#48cae4" stroke-width="2" d="M629,-354.37C691.9,-341.65 741.76,-331.56 741.76,-331.56 741.76,-331.56 746.12,-298.62 748.4,-281.38"/>
+<a:polygon fill="#48cae4" stroke="#48cae4" stroke-width="2" points="750.98,-281.91 749.36,-274.13 745.78,-281.22 750.98,-281.91"/>
 </a:g>
 
 <a:g id="node6" class="node">
@@ -103,9 +103,9 @@
 </a:g>
 
 <a:g id="edge9" class="edge">
-<a:title>publication-&gt;artifact_id:w</a:title>
-<a:path fill="none" stroke="#48cae4" stroke-width="2" d="M627,-488.5C690.84,-479.08 741.76,-471.56 741.76,-471.56 741.76,-471.56 747.97,-263.62 749.45,-214.07"/>
-<a:polygon fill="#48cae4" stroke="#48cae4" stroke-width="2" points="752.07,-214.17 749.67,-206.59 746.82,-214.01 752.07,-214.17"/>
+<a:title>publication-&gt;artifact_id:nw</a:title>
+<a:path fill="none" stroke="#48cae4" stroke-width="2" d="M627,-488.5C690.84,-479.08 741.76,-471.56 741.76,-471.56 741.76,-471.56 747.7,-322.87 749.34,-281.62"/>
+<a:polygon fill="#48cae4" stroke="#48cae4" stroke-width="2" points="751.96,-281.75 749.64,-274.15 746.72,-281.54 751.96,-281.75"/>
 </a:g>
 
 <a:g id="node7" class="node">
@@ -118,16 +118,16 @@
 </a:g>
 
 <a:g id="edge10" class="edge">
-<a:title>source-&gt;artifact_id:w</a:title>
-<a:path fill="none" stroke="#48cae4" stroke-width="2" d="M714.86,-575.54C731.68,-573.05 741.76,-571.57 741.76,-571.57 741.76,-571.57 748.25,-273.23 749.54,-213.79"/>
-<a:polygon fill="#48cae4" stroke="#48cae4" stroke-width="2" points="752.16,-214.15 749.69,-206.59 746.91,-214.03 752.16,-214.15"/>
+<a:title>source-&gt;artifact_id:nw</a:title>
+<a:path fill="none" stroke="#48cae4" stroke-width="2" d="M714.86,-575.54C731.68,-573.05 741.76,-571.57 741.76,-571.57 741.76,-571.57 748.08,-334.3 749.48,-281.47"/>
+<a:polygon fill="#48cae4" stroke="#48cae4" stroke-width="2" points="752.1,-281.72 749.68,-274.16 746.86,-281.58 752.1,-281.72"/>
 </a:g>
 
 
 <a:g id="edge6" class="edge">
-<a:title>manifest-&gt;views</a:title>
-<a:path fill="none" stroke="#a7b0be" stroke-width="2" d="M1328.94,-203.94C1329.07,-203.94 1329.2,-203.94 1329.33,-203.94"/>
-<a:polygon fill="#a7b0be" stroke="#a7b0be" stroke-width="2" points="1324.53,-206.57 1332.03,-203.94 1324.53,-201.32 1324.53,-206.57"/>
+<a:title>manifest:ne-&gt;views:nw</a:title>
+<a:path fill="none" stroke="#a7b0be" stroke-width="2" d="M1327.03,-271.13C1327.03,-271.13 1329.28,-275.63 1331.53,-280.13"/>
+<a:polygon fill="#a7b0be" stroke="#a7b0be" stroke-width="2" points="1328.97,-280.89 1334.68,-286.42 1333.67,-278.54 1328.97,-280.89"/>
 </a:g>
 
 <a:g id="node9" class="node">

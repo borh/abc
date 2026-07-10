@@ -51,6 +51,11 @@
         "aarch64-linux"
       ];
 
+      # Root and abc deliberately target Linux only (x86_64 + aarch64) via a
+      # hand-rolled genAttrs, while ab-validator uses flake-utils.eachDefaultSystem
+      # for its Rust builds (which include darwin). The root wraps only ab-validator's
+      # Linux outputs. This split is intentional; do not unify without widening the
+      # supported-system contract.
       forAllSystems = nixpkgs.lib.genAttrs systems;
 
       lib = nixpkgs.lib;

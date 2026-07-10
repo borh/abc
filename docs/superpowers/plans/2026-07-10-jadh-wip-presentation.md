@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Revise the existing JADH Pandoc deck into a 27-slide main talk plus eight to ten appendix slides that positions TEI-EAJ as parallel work, shows reproducible real XML comparisons, and gives every displayed Soranoha datum an exact repository-backed inspection or regeneration recipe.
+**Goal:** Revise the existing JADH Pandoc deck into an approximately 27-slide main talk plus up to ten appendix slides that positions TEI-EAJ as parallel work, shows reproducible real XML comparisons, presents the old-orthography evidence chain, and gives every displayed Soranoha datum an exact repository-backed inspection or regeneration recipe.
 
 **Architecture:** Keep the existing vendored bibliography and evidence-disciplined parser narrative. Restructure the deck around the downstream generator's metadata title view, add one early TEI-EAJ positioning slide, return to TEI-EAJ at a two-slide real XML comparison, and move high-density examples into a large appendix. Keep the Pandoc-flavored Markdown backend-neutral.
 
@@ -14,8 +14,9 @@
 - Preserve the vendored BibTeX/CSL bytes and provenance hashes.
 - Retain YAML `author: Bor Hodošček` and `date` for the website generator.
 - Retain YAML author/date for the website generator; remove the duplicate manual title heading.
-- Produce exactly 27 rendered main slides.
-- Produce 35–37 rendered slides total, including eight to ten appendix slides.
+- Keep the rendered main sequence close to 27 slides; split dense claims instead
+  of preserving an exact count.
+- Use no more than ten appendix slides.
 - Budget 22 minutes prepared talk, 5 minutes bounded demo, 3 minutes buffer.
 - Use one early TEI-EAJ positioning slide; place detailed TEI-EAJ discussion beside the real XML comparison.
 - Frame TEI-EAJ and Soranoha as parallel, complementary programs.
@@ -25,6 +26,8 @@
 - Do not use sibling-archive, `/db`, `/home/bor`, or untracked `references/` paths as active evidence/demo inputs.
 - Do not substitute reduced fixtures for a claimed real XML comparison.
 - Do not declare completion until the figure, XML, and demo gates all pass.
+- Use colons sparingly in visible prose; prefer ordinary sentences with bold or
+  italic emphasis when useful.
 
 ---
 
@@ -110,7 +113,8 @@ git commit -m "docs(presentation): normalize metadata title"
 - Modify: `docs/presentations/jadh-2026-wip-slides.md`
 
 **Interfaces:**
-- Consumes: TEI-EAJ repository/wiki, vendored citations, approved 27-slide outline.
+- Consumes: TEI-EAJ repository/wiki, vendored citations, approved approximate
+  27-slide outline.
 - Produces: one early positioning slide and a contribution slide that does not imply succession.
 
 - [ ] **Step 1: Insert the early TEI-EAJ positioning slide after “One Source, Many Derived Corpora”**
@@ -148,11 +152,11 @@ The contribution language is:
 
 Do not use “extends,” “replaces,” “successor,” or “supersedes.”
 
-- [ ] **Step 3: Reconcile the pre-XML/data main sequence to 23 level-one headings**
+- [ ] **Step 3: Reconcile the main sequence without forcing an exact count**
 
-Before the appendix marker there must be 23 `# ` headings. Tasks 3 and 4 add
-two XML slides and one tokenizer-data slide, producing 26 headings plus the
-generated title. Merge:
+Keep the sequence near the approved outline while leaving room for Tasks 3 and
+5 to add two XML slides and two old-orthography slides. Merge only where one
+claim remains intelligible:
 
 - “Why Compare Multiple Parsers?” with “Three Measurements, Three Questions.”
 - “Worked Mapping: 傍点” with the transformation taxonomy.
@@ -182,7 +186,7 @@ Expected: coverage 0.969/0.938/0.926/0.855/0.743; robustness interpretation over
 Class: checked-in report
 ```
 
-- [ ] **Step 5: Verify wording, citations, and count**
+- [ ] **Step 5: Verify wording, citations, and approximate count**
 
 ```bash
 rg -n 'Parallel Work: TEI-EAJ|parallel emphasis|@teieaj2023|@okada2023' docs/presentations/jadh-2026-wip-slides.md
@@ -190,9 +194,10 @@ rg -n 'Parallel Work: TEI-EAJ|parallel emphasis|@teieaj2023|@okada2023' docs/pre
 python - <<'PY'
 from pathlib import Path
 p = Path("docs/presentations/jadh-2026-wip-slides.md").read_text()
-main = p.split("# Appendix:", 1)[0]
-assert sum(line.startswith("# ") for line in main.splitlines()) == 23
-print("23 pre-XML/data main headings")
+main = p.split("# Appendix", 1)[0]
+n = sum(line.startswith("# ") for line in main.splitlines())
+assert 24 <= n <= 30, n
+print(f"{n} main Markdown headings before the generated metadata title")
 PY
 ```
 
@@ -307,11 +312,11 @@ git commit -m "docs(presentation): add gated TEI XML comparison"
 
 **Interfaces:**
 - Consumes: current source inventory, parser reports, tokenizer reports, mapping taxonomy.
-- Produces: 35–37 rendered slides with richer examples and a reproduction appendix.
+- Produces: a richer appendix that remains within the ten-slide ceiling.
 
-- [ ] **Step 1: Add one corpus-scale tokenizer slide to the main sequence**
+- [ ] **Step 1: Move corpus-scale tokenizer statistics to the appendix**
 
-Use checked-in values from `ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md`: 17,894 inputs, no analyzer/comparison failures, 7,358,000 segmentation regions, boundary-F1 median `0.972972972972973`, minimum `0.6884927066450566`. Include the full evidence-contract comment and do not imply the median erases local differences.
+Use checked-in values from `ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md`: 17,894 inputs, no analyzer/comparison failures, 7,358,000 segmentation regions, boundary-F1 median `0.972972972972973`, minimum `0.6884927066450566`. Include the full evidence-contract comment, do not attribute the minimum to 求むる, and do not imply the median erases local differences.
 
 - [ ] **Step 2: Build eight core appendix slides**
 
@@ -324,21 +329,24 @@ The core appendix headings are:
 # Appendix: Parser Coverage by Construct
 # Appendix: Transformation Taxonomy
 # Appendix: Additional Tokenizer Regions
+# Appendix: Corpus-scale Tokenizer Results
 # Appendix: Reproducing the Evidence
 ```
 
-Do not add a manual References heading; citeproc's generated bibliography is the eighth appendix slide.
+Do not add a manual References heading. Citeproc supplies the bibliography.
 
 - [ ] **Step 3: Add up to two optional appendices only when they carry real evidence**
 
-Allowed headings:
+Allowed headings, only if the ten-slide ceiling still permits them after the
+orthography appendix from Task 5:
 
 ```markdown
 # Appendix: Fuller TEI XML Excerpts
 # Appendix: Additional Parser Divergences
 ```
 
-Use them if the XML gate is ready or if the cited checked-in report provides enough examples. Total rendered slides must remain 35–37.
+Use them if the XML gate is ready or if the cited checked-in report provides
+enough examples. The appendix must remain at or below ten slides.
 
 - [ ] **Step 4: Make the reproduction appendix operational**
 
@@ -381,14 +389,92 @@ git commit -m "docs(presentation): expand reproducible examples and appendix"
 
 ---
 
-### Task 5: Close Figure, XML, Demo, Render, and Timing Gates
+### Task 5: Add the Old-Orthography Evidence Chain
+
+**Files:**
+- Modify: `docs/presentations/jadh-2026-wip-slides.md`
+
+**Interfaces:**
+- Consumes: the checked-in orthography reports, JSONL label sets, and TEI/normalization implementation evidence.
+- Produces: two concrete main slides and one detailed appendix slide without conflating evaluation sets.
+
+- [ ] **Step 1: Add one detector-results slide using the shared human set**
+
+Show the three-way rubric and one concrete sentence. Use only the shared
+300-item results for the visible comparison:
+
+```markdown
+**The author hand-labeled three outcomes** on an LLM-assisted, stratified
+300-sentence sample — 197 `accept`, 22 `normalize`, and 81 `reject`.
+
+| Detector | Recall | Precision | F1 |
+|---|---:|---:|---:|
+| Heuristic | 0.9087 | 0.9256 | 0.9171 |
+| Character-only ML, 5-fold mean | 0.9468 | 0.9718 | 0.9586 |
+
+`スベテハ豫期ノゴトクニ行ッタ。`
+```
+
+The adjacent evidence comment must point to
+`ab-validator/reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md`
+and identify `sample-300-unlabeled.jsonl` as the file containing the final
+three-way hand labels. Do not call the sampling author-produced or the labels
+LLM-produced.
+
+- [ ] **Step 2: Add one source-preserving normalization slide**
+
+Show concrete transformations `ゐる → いる`, `なほ → なお`, `いふ → いう`,
+and `やう → よう`. Explain in ordinary prose that the original transcription
+is preserved, sentence-level TEI records the evidence, a normalized analytical
+view is optional, spans are remapped to source coordinates, and the policy hash
+participates in artifact identity. Connect this explicitly to TEI-EAJ Levels 2,
+3, and 4–5.
+
+Report `94.8%` vocabulary agreement over `10,444` historical tokens from `25`
+parallel editions, clearly labeled as a separate normalization evaluation rather
+than detector F1.
+
+- [ ] **Step 3: Add the orthography appendix evidence**
+
+Record the two earlier, non-comparable evaluations:
+
+```text
+50-sentence human probe — heuristic F1 0.750, recall 0.636, precision 0.913
+300 binary LLM labels — ML CV F1 0.9629, recall 0.9590, precision 0.9673
+```
+
+State that the LLM run is single-annotator evidence, not human ground truth.
+Also show `11,059` historical tokens among `348,814` all-kana tokens and the
+`39,618` standalone は／を／へ cases that normalization must protect.
+
+- [ ] **Step 4: Verify provenance wording and values**
+
+```bash
+rg -n '0\.9171|0\.9586|94\.8%|10,444|39,618' docs/presentations/jadh-2026-wip-slides.md
+! rg -n '300 author-labeled|300 human-labeled sentences|50-sentence human/assistant' docs/presentations/jadh-2026-wip-slides.md
+rg -n 'single-annotator|not human ground truth|three-way' docs/presentations/jadh-2026-wip-slides.md
+```
+
+Expected: the shared human evaluation drives the main comparison; older sets
+are separated in the appendix with their provenance caveats.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add docs/presentations/jadh-2026-wip-slides.md
+git commit -m "docs(presentation): add orthography evidence chain"
+```
+
+---
+
+### Task 6: Close Figure, XML, Demo, Render, and Timing Gates
 
 **Files:**
 - Modify: `docs/presentations/jadh-2026-wip-slides.md` only for verified final locators or timing cuts.
 - Consume: generated figures and tracked demo/XML bundle.
 
 **Interfaces:**
-- Consumes: Tasks 1–4 and external in-flight artifacts.
+- Consumes: Tasks 1–5 and external in-flight artifacts.
 - Produces: delivery-ready source, or a clearly reported draft blocked at named gates.
 
 - [ ] **Step 1: Close the figure gate**

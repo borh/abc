@@ -5,13 +5,13 @@
   ordinary person-record and contributor-edge changes, and only emits
   split/merge candidates when a same-work/same-relation edge shows a
   one-to-many or many-to-one replacement backed by retired/new person IDs."
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.cli :as abc-cli]
+            [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.person-record :as person-record]
             [clojure.java.io :as io]
             [clojure.set :as set]
-            [clojure.string :as string]
-            [clojure.tools.cli :refer [parse-opts]]))
+            [clojure.string :as string]))
 
 (def ^:private identity-fields
   ["person_record_schema_id"
@@ -41,11 +41,6 @@
   (str "Usage: clojure -M:abc/person-drift-history -- --previous-dir DIR --current-dir DIR [--output FILE]\n\n"
        "Compares generated corpus snapshots containing works/ and persons/ directories.\n\n"
        summary))
-
-(defn- normalize-cli-args [args]
-  (if (= "--" (first args))
-    (rest args)
-    args))
 
 (defn- json-file? [^java.io.File file]
   (and (.isFile file)
@@ -281,29 +276,14 @@
     result))
 
 (defn -main [& args]
-  (let [{:keys [options errors summary]} (parse-opts (normalize-cli-args args) cli-options)]
-    (cond
-      (:help options)
-      (do (println (usage summary))
-          (System/exit 0))
-
-      (seq errors)
-      (do (binding [*out* *err*]
-            (doseq [error errors] (println error))
-            (println)
-            (println (usage summary)))
-          (System/exit 2))
-
-      :else
-      (try
-        (let [result (write-report! options)
-              candidate-count (+ (get-in result ["summary" "split_candidates"])
-                                 (get-in result ["summary" "merge_candidates"]))]
-          (when (and (:fail-on-candidates options) (pos? candidate-count))
-            (System/exit 1)))
-        (catch clojure.lang.ExceptionInfo ex
-          (binding [*out* *err*]
-            (println (.getMessage ex))
-            (when-let [data (seq (ex-data ex))]
-              (println (pr-str data))))
-          (System/exit 2))))))
+  (abc-cli/run-cli!
+   args
+   {:cli-options cli-options
+    :usage-fn    usage
+    :run         (fn [{:keys [options]}]
+                   (let [result (write-report! options)
+                         candidate-count (+ (get-in result ["summary" "split_candidates"])
+                                            (get-in result ["summary" "merge_candidates"]))]
+                     (assoc result ::exit-fail?
+                            (and (:fail-on-candidates options) (pos? candidate-count)))))
+    :fail?       ::exit-fail?}))

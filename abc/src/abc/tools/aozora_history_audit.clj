@@ -4,14 +4,14 @@
   conservative person-drift history report."
   (:require [abc.git :as abc-git]
             [abc.tools.aozora-ingest :as ingest]
+            [abc.tools.cli :as abc-cli]
             [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.person-drift :as drift]
             [abc.tools.person-drift-history :as drift-history]
             [abc.tools.validate-corpus :as validate-corpus]
             [clojure.java.io :as io]
-            [clojure.string :as string]
-            [clojure.tools.cli :refer [parse-opts]])
+            [clojure.string :as string])
   (:import [java.time ZoneOffset]))
 
 (def ^:private default-zip-path
@@ -48,11 +48,6 @@
        "--work-dir is tool-owned: previous.zip, current.zip, previous-corpus/, "
        "and current-corpus/ are deleted before each run.\n\n"
        summary))
-
-(defn- normalize-cli-args [args]
-  (if (= "--" (first args))
-    (rest args)
-    args))
 
 (defn- prepare-owned-path! [path]
   (let [file (io/file path)]
@@ -351,43 +346,27 @@
   result)
 
 (defn -main [& args]
-  (let [{:keys [options errors summary]} (parse-opts (normalize-cli-args args)
-                                                     cli-options)]
-    (cond
-      (:help options)
-      (do (println (usage summary))
-          (System/exit 0))
-
-      (seq errors)
-      (do (binding [*out* *err*]
-            (doseq [error errors] (println error))
-            (println)
-            (println (usage summary)))
-          (System/exit 2))
-
-      :else
-      (try
-        (let [scan? (:scan-history options)
-              result (write-or-print! ((if scan? scan-history! audit!)
-                                       (dissoc options :output))
-                                      (:output options))
-              validation-failed? (= "validation_failed" (:status result))
-              candidate-count (if scan?
-                                (+ (or (get-in result [:summary "split_candidates"]) 0)
-                                   (or (get-in result [:summary "merge_candidates"]) 0))
-                                (+ (split-candidate-count result)
-                                   (merge-candidate-count result)))
-              drift-participant-update-count (if scan?
-                                               (or (get-in result [:summary "drift_participant_updates"]) 0)
-                                               (participant-update-count result))]
-          (when (or validation-failed?
-                    (and (:fail-on-candidates options) (pos? candidate-count))
-                    (and (:fail-on-drift-participant-updates options)
-                         (pos? drift-participant-update-count)))
-            (System/exit 1)))
-        (catch clojure.lang.ExceptionInfo ex
-          (binding [*out* *err*]
-            (println (.getMessage ex))
-            (when-let [data (seq (ex-data ex))]
-              (println (pr-str data))))
-          (System/exit 2))))))
+  (abc-cli/run-cli!
+   args
+   {:cli-options cli-options
+    :usage-fn    usage
+    :run         (fn [{:keys [options]}]
+                   (let [scan? (:scan-history options)
+                         result (write-or-print! ((if scan? scan-history! audit!)
+                                                  (dissoc options :output))
+                                                 (:output options))
+                         validation-failed? (= "validation_failed" (:status result))
+                         candidate-count (if scan?
+                                           (+ (or (get-in result [:summary "split_candidates"]) 0)
+                                              (or (get-in result [:summary "merge_candidates"]) 0))
+                                           (+ (split-candidate-count result)
+                                              (merge-candidate-count result)))
+                         drift-participant-update-count (if scan?
+                                                          (or (get-in result [:summary "drift_participant_updates"]) 0)
+                                                          (participant-update-count result))]
+                     (assoc result ::exit-fail?
+                            (boolean (or validation-failed?
+                                         (and (:fail-on-candidates options) (pos? candidate-count))
+                                         (and (:fail-on-drift-participant-updates options)
+                                              (pos? drift-participant-update-count)))))))
+    :fail?       ::exit-fail?}))

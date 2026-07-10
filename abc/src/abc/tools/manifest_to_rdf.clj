@@ -1,16 +1,15 @@
 (ns abc.tools.manifest-to-rdf
   "Convert ABC design-bundle manifests to deterministic RDF/Turtle using
   Apache Jena (via Aristotle) for graph construction."
-  (:require ;; logging first to install SLF4J ns-filter before Aristotle
-            ;; pulls in Jena and SSHD.
-   [abc.tools.logging :as logging]
+  (:require ;; abc.tools.cli first: it loads abc.tools.logging, which installs
+            ;; the SLF4J ns-filter, before Aristotle pulls in Jena and SSHD.
+   [abc.tools.cli :as abc-cli]
    [abc.tools.files :as files]
    [abc.tools.rdf-prefixes :as rdf-prefixes]
    [arachne.aristotle :as aa]
    [arachne.aristotle.registry :as reg]
    [clojure.java.io :as io]
    [clojure.string :as string]
-   [clojure.tools.cli :as cli]
    [taoensso.telemere :as tel])
   (:import [org.apache.jena.datatypes.xsd XSDDatatype]
            [org.apache.jena.graph Node Triple NodeFactory]))
@@ -357,24 +356,23 @@
 (def cli-options
   [["-o" "--output FILE" "Output Turtle file. Defaults to stdout."]])
 
-(defn usage []
-  (tel/log! :warn "Usage: clojure -M:abc/manifest-to-rdf <manifest.json> [-o output.ttl]"))
+(defn usage [_summary]
+  "Usage: clojure -M:abc/manifest-to-rdf <manifest.json> [-o output.ttl]")
 
 (defn -main [& args]
-  (logging/install-cli-handler!)
-  (let [{:keys [options arguments errors]} (cli/parse-opts args cli-options)
-        [manifest-path & extra] arguments]
-    (if (or (seq errors) (nil? manifest-path) (seq extra))
-      (do
-        (doseq [error errors]
-          (tel/log! :error error))
-        (usage)
-        (System/exit 2))
-      (let [ttl (manifest->ttl (files/read-json manifest-path))]
-        (if-let [output (:output options)]
-          (do
-            (io/make-parents output)
-            (spit (io/file output) ttl)
-            (tel/log! :info (str "wrote RDF Turtle view to " output)))
-          ;; Turtle goes to stdout as primary tool output, not a log event.
-          (print ttl))))))
+  (abc-cli/run-cli!
+   args
+   {:cli-options cli-options
+    :min-args    1
+    :max-args    1
+    :usage-fn    usage
+    :run         (fn [{:keys [options arguments]}]
+                   (let [manifest-path (first arguments)
+                         ttl (manifest->ttl (files/read-json manifest-path))]
+                     (if-let [output (:output options)]
+                       (do
+                         (io/make-parents output)
+                         (spit (io/file output) ttl)
+                         (tel/log! :info (str "wrote RDF Turtle view to " output)))
+                       ;; Turtle goes to stdout as primary tool output, not a log event.
+                       (print ttl))))}))

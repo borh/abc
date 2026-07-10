@@ -1,13 +1,12 @@
 (ns abc.tools.materialize-source-snapshot
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.cli :as abc-cli]
+            [abc.tools.files :as files]
             [abc.tools.hash :as hash]
-            [abc.tools.logging :as logging]
             [abc.tools.manifest :as manifest]
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.schema :as schema]
             [abc.tools.source-snapshot-workset :as source-snapshot-workset]
             [clojure.java.io :as io]
-            [clojure.tools.cli :as cli]
             [taoensso.telemere :as tel]))
 
 (def default-generated-at "2026-07-04T00:00:00Z")
@@ -189,9 +188,8 @@
        :snapshot-hash snapshot-hash
        :works works})))
 
-(defn usage []
-  (tel/log! :warn
-            "Usage: clojure -M:abc/materialize-source-snapshot --workset workset.edn --output snapshot.json [--generated-at instant]"))
+(defn usage [_summary]
+  "Usage: clojure -M:abc/materialize-source-snapshot --workset workset.edn --output snapshot.json [--generated-at instant]")
 
 (def cli-options
   [["-w" "--workset FILE" "EDN workset describing source snapshot inputs."
@@ -202,18 +200,16 @@
     :id :generated-at]])
 
 (defn -main [& args]
-  (logging/install-cli-handler!)
-  (let [{:keys [options errors]} (cli/parse-opts args cli-options)
-        {:keys [workset-path output-path generated-at]} options]
-    (if (or (seq errors) (nil? workset-path) (nil? output-path))
-      (do
-        (doseq [error errors]
-          (tel/log! :error error))
-        (usage)
-        (System/exit 2))
-      (let [{:keys [snapshot snapshot-hash]} (materialize-source-snapshot!
-                                              {:workset-path workset-path
-                                               :output-path output-path
-                                               :generated-at generated-at})]
-        (tel/log! :info (str "materialized source snapshot " snapshot
-                             " with hash " snapshot-hash))))))
+  (abc-cli/run-cli!
+   args
+   {:cli-options cli-options
+    :required    [:workset-path :output-path]
+    :usage-fn    usage
+    :run         (fn [{:keys [options]}]
+                   (let [{:keys [workset-path output-path generated-at]} options
+                         {:keys [snapshot snapshot-hash]}
+                         (materialize-source-snapshot! {:workset-path workset-path
+                                                        :output-path output-path
+                                                        :generated-at generated-at})]
+                     (tel/log! :info (str "materialized source snapshot " snapshot
+                                          " with hash " snapshot-hash))))}))

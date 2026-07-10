@@ -1,8 +1,8 @@
 (ns abc.tools.source-snapshot-workset
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.cli :as abc-cli]
+            [abc.tools.files :as files]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.tools.cli :as cli]
             [taoensso.telemere :as tel]))
 
 (def required-file-names
@@ -182,11 +182,10 @@
     (assoc value :works (mapv #(resolve-work-paths % base-dir)
                               (map-value value :works)))))
 
-(defn usage []
-  (tel/log! :warn
-            (str "Usage: clojure -M:abc/source-snapshot-workset "
-                 "--input-root ROOT --output workset.edn "
-                 "--snapshot-scope SCOPE --snapshot-date YYYY-MM-DD")))
+(defn usage [_summary]
+  (str "Usage: clojure -M:abc/source-snapshot-workset "
+       "--input-root ROOT --output workset.edn "
+       "--snapshot-scope SCOPE --snapshot-date YYYY-MM-DD"))
 
 (def cli-options
   [["-i" "--input-root DIR" "Materialized corpus root containing work directories."
@@ -199,23 +198,18 @@
     :id :snapshot-date]])
 
 (defn -main [& args]
-  (let [{:keys [options errors]} (cli/parse-opts args cli-options)
-        {:keys [input-root output-path snapshot-scope snapshot-date]} options]
-    (if (or (seq errors)
-            (nil? input-root)
-            (nil? output-path)
-            (nil? snapshot-scope)
-            (nil? snapshot-date))
-      (do
-        (doseq [error errors]
-          (tel/log! :error error))
-        (usage)
-        (System/exit 2))
-      (let [{:keys [output works-count]} (write-workset!
-                                          {:input-root input-root
-                                           :output-path output-path
-                                           :snapshot-scope snapshot-scope
-                                           :snapshot-date snapshot-date})]
-        (tel/log! :info (str "wrote " works-count
-                             " source snapshot work entries to "
-                             output))))))
+  (abc-cli/run-cli!
+   args
+   {:cli-options cli-options
+    :required    [:input-root :output-path :snapshot-scope :snapshot-date]
+    :usage-fn    usage
+    :run         (fn [{:keys [options]}]
+                   (let [{:keys [input-root output-path snapshot-scope snapshot-date]} options
+                         {:keys [output works-count]}
+                         (write-workset! {:input-root input-root
+                                          :output-path output-path
+                                          :snapshot-scope snapshot-scope
+                                          :snapshot-date snapshot-date})]
+                     (tel/log! :info (str "wrote " works-count
+                                          " source snapshot work entries to "
+                                          output))))}))

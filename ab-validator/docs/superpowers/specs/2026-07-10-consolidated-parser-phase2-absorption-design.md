@@ -318,9 +318,13 @@ therefore an evidence-bearing checkpoint:
   default comparison lane until Phase 4 activation — flipping which adapter
   id publication measurement *defaults to* is part of the Phase 4 cutover,
   not Phase 2.
-- `reports/aat-fidelity/measure-parser-performance.py`: gains the
-  `ab-aozora` lane; its schemaVersion-1 drift (advertised handling that no
-  longer matches any adapter) is fixed in the same change (folded Minor).
+- The schemaVersion drift (folded Minor) lives in
+  `reports/parser-conformance/run-aozora-notation-spec.py:72`, which
+  rejects inspect envelopes whose `schemaVersion != 1` while the pinned
+  upstream binary emits `2` — fixed while this harness gains the
+  `ab-aozora` lane. (`measure-parser-performance.py`, initially suspected,
+  has no schemaVersion handling; it is the comparative-study harness and
+  gains no lane in Phase 2 — Phase 3 re-measurement owns it.)
 - `justfile` `aozora-notation-spec-comparison`: `AOZORA_BIN` gains an
   existence/executability guard with a clear error before any run starts
   (folded Minor).

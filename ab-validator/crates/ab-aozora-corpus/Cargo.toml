@@ -1,0 +1,22 @@
+[package]
+name = "ab-aozora-corpus"
+description = "Corpus source abstraction for aozora parser sweep tests (dev-only, not published)"
+# dev-only support crate — never published to crates.io.
+publish = false
+version = "0.1.0"
+edition.workspace = true
+license = "MIT OR Apache-2.0"
+
+[lints]
+workspace = true
+
+[dependencies]
+blake3 = "1.5"
+num_cpus = "1.16"
+rayon = "1.12"
+thiserror = "2.0.18"
+walkdir = "2.5"
+zstd = "0.13"
+
+[dev-dependencies]
+tempfile = "3.27"

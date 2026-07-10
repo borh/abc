@@ -136,10 +136,46 @@
               }/bin/ab-aat-to-parser-ir"
               exec ${abcApps.${name}.program} "$@"
             '';
+          # build-publication materializes real TEI by shelling out to the owned
+          # adapters. Inject them (and the shell tools the aozora2html wrapper
+          # needs) so `nix run .#soranoha` is hermetic and never falls back to a
+          # stub. Mirrors mkProbeAwareAbcApp.
+          mkAdapterAwareSoranohaApp =
+            soranohaApp:
+            pkgs.writeShellScript "soranoha-with-adapters" ''
+              export PATH="${
+                pkgs.lib.makeBinPath [
+                  pkgs.bash
+                  pkgs.coreutils
+                  pkgs.gnugrep
+                  pkgs.perl
+                  pkgs.glibc.bin
+                ]
+              }:''${PATH:-}"
+              export AB_AOZORA2HTML_ADAPTER="${ab-validator}/adapters/aozora2html/aozora2html-adapter"
+              export AB_AOZORA2HTML_BIN="${abValidatorPackages."upstream-parser-aozora2html"}/bin/aozora2html"
+              export AB_AOZORA2HTML_MAPPER_BIN="${
+                abValidatorPackages."aozora2html-adapter"
+              }/bin/aozora2html-adapter"
+              export AB_AAT_TO_PARSER_IR_BIN="${
+                abValidatorPackages."ab-aat-to-parser-ir"
+              }/bin/ab-aat-to-parser-ir"
+              export AB_AAT_TO_PARSER_IR_MAPPING="${ab-validator}/data/aat-to-parser-ir-mapping-v1.json"
+              exec ${soranohaApp.program} "$@"
+            '';
         in
         prefixAttrs "abc-" abcApps
         // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "apps" system)
-        // (if builtins.hasAttr "soranoha" abcApps then { soranoha = abcApps.soranoha; } else { })
+        // (
+          if builtins.hasAttr "soranoha" abcApps then
+            {
+              soranoha = mkScriptApp (mkAdapterAwareSoranohaApp abcApps.soranoha) (
+                abcApps.soranoha.meta.description or "Soranoha snapshot publication command dispatcher"
+              );
+            }
+          else
+            { }
+        )
         // {
           abc-tei-eaj-aozora-alignment-probe = mkScriptApp (mkProbeAwareAbcApp "tei-eaj-aozora-alignment-probe") "Regenerate TEI-EAJ alignment probes with the Nix-built Rust probe binary";
           abc-tei-eaj-aozora-reports-with-probes = mkScriptApp (mkProbeAwareAbcApp "tei-eaj-aozora-reports-with-probes") "Regenerate TEI-EAJ comparison reports and attach Rust alignment probes";

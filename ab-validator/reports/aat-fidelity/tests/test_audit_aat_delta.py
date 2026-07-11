@@ -732,6 +732,42 @@ def test_v2_migration_rejects_unexpected_raw_to_ruby_upgrade(tmp_path):
     assert code == 2
 
 
+def test_v2_migration_rejects_prefixed_left_ruby_marker(tmp_path):
+    # `pre` = "前文" is neither "" nor base ("X") — this is NOT an
+    # admissible left-ruby marker per the anchored regex, so the raw node
+    # must survive unchanged. A candidate that upgrades it anyway (the old
+    # unanchored `.search()` would have falsely accepted this) is rejected.
+    raw_ruby = raw_marker("前文［＃「X」の左に「Y」のルビ］", "ruby", 0)
+    base = write_dump(tmp_path, "a", {"w1": doc([para(raw_ruby)])})
+    wrongly_upgraded = {
+        "kind": "ruby",
+        "base": "X",
+        "reading": "Y",
+        "direction": "left",
+        "span": raw_ruby["span"],
+    }
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc([para(wrongly_upgraded)])})
+    code, _, _ = run("v2-migration", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_v2_migration_echoed_base_left_ruby_still_upgrades(tmp_path):
+    # `pre` = "名" equals base ("名") — the echoed-base prefix form is still
+    # admissible and upgrades, even under the anchored regex.
+    raw_ruby = raw_marker("名［＃「名」の左に「な」のルビ］", "ruby", 0)
+    base = write_dump(tmp_path, "a", {"w1": doc([para(raw_ruby)])})
+    upgraded = {
+        "kind": "ruby",
+        "base": "名",
+        "reading": "な",
+        "direction": "left",
+        "span": raw_ruby["span"],
+    }
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc([para(upgraded)])})
+    code, summary, err = run("v2-migration", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+
+
 JOPEN = "［＃ここから２１字詰め］"
 JCLOSE = "［＃ここで字詰め終わり］"
 
@@ -775,6 +811,7 @@ def test_v2_migration_jizume_formation(tmp_path):
     code, summary, err = run("v2-migration", base, cand, tmp_path)
     assert code == 0, (summary, err)
     assert summary["classes"]["jizume_rewritten"] == 1
+    assert summary["details"].get("compound_jizume_adopted", 0) == 0
 
 
 def test_v2_migration_rejects_leftover_x_layout(tmp_path):
@@ -884,3 +921,70 @@ def test_v2_migration_compound_jizume_wrap(tmp_path):
     code, summary, err = run("v2-migration", base, cand, tmp_path)
     assert code == 0, (summary, err)
     assert summary["classes"]["jizume_rewritten"] == 1
+    assert summary["details"]["compound_jizume_adopted"] == 1
+
+
+def test_v2_migration_rejects_warning_missing_span_when_line_present(tmp_path):
+    # Baseline warning carries a line; candidate warning has no span at
+    # all — the candidate must carry a dict span whenever baseline had a
+    # line, so this is rejected (was previously silently accepted since the
+    # old check only fired when a dict span happened to already be present).
+    base = write_dump(
+        tmp_path,
+        "a",
+        {"w1": doc([para(text("あ\n"))], warnings=[{"message": "some_warning", "line": 5}])},
+    )
+    cand = write_dump(
+        tmp_path,
+        "b",
+        {
+            "w1": v2_doc(
+                [para(text("あ\n"))],
+                warnings=[
+                    {
+                        "code": "some-warning",
+                        "severity": "warning",
+                        "message": "some_warning",
+                    }
+                ],
+            )
+        },
+    )
+    code, _, _ = run("v2-migration", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_v2_migration_rejects_warning_extra_key(tmp_path):
+    # Candidate warning has a key outside the allowed v2 warning shape
+    # {"code", "severity", "message", "span", "path"} — rejected even
+    # though every other field is otherwise correct.
+    base = write_dump(
+        tmp_path,
+        "a",
+        {"w1": doc([para(text("あ\n"))], warnings=[{"message": "some_warning", "line": 1}])},
+    )
+    cand = write_dump(
+        tmp_path,
+        "b",
+        {
+            "w1": v2_doc(
+                [para(text("あ\n"))],
+                warnings=[
+                    {
+                        "code": "some-warning",
+                        "severity": "warning",
+                        "message": "some_warning",
+                        "span": {
+                            "byte_start": 0,
+                            "byte_end": 4,
+                            "line_start": 1,
+                            "line_end": 1,
+                        },
+                        "extra": "nope",
+                    }
+                ],
+            )
+        },
+    )
+    code, _, _ = run("v2-migration", base, cand, tmp_path)
+    assert code == 2

@@ -522,8 +522,18 @@ def span_confinement_mode(base_doc, cand_doc, name, summary):
 # --- v2-migration (Phase 4, rotation C3) ------------------------------------
 
 WARNING_SEVERITIES = {"error", "warning", "note"}
+WARNING_ALLOWED_KEYS = {"code", "severity", "message", "span", "path"}
+WARNING_REQUIRED_KEYS = {"code", "severity", "message"}
 
-LEFT_RUBY_RE = re.compile(r"［＃「(?P<base>[^」]+)」の左に「(?P<reading>[^」]+)」のルビ］$")
+# Anchored end-to-end against the TRIMMED source: `pre` captures whatever
+# precedes the marker (typically the echoed base text some upstream markers
+# carry, e.g. "名［＃「名」の左に「な」のルビ］"). Anything with a `pre` that
+# is neither empty nor an exact echo of `base` is NOT an admissible left-ruby
+# marker and must survive as raw — a bare `.search()` would silently accept
+# arbitrary garbage before the marker.
+LEFT_RUBY_RE = re.compile(
+    r"^(?P<pre>[^］]*?)［＃「(?P<base>[^」]+)」の左に「(?P<reading>[^」]+)」のルビ］$"
+)
 
 
 def migrate_warnings(base_meta, cand_meta, name):
@@ -547,11 +557,22 @@ def migrate_warnings(base_meta, cand_meta, name):
             die(
                 f"{name}: warning code mismatch (expected {expected_code!r}, got {cand_w.get('code')!r})"
             )
+        cand_keys = set(cand_w)
+        if not cand_keys <= WARNING_ALLOWED_KEYS:
+            die(
+                f"{name}: warning has unexpected keys: "
+                f"{sorted(cand_keys - WARNING_ALLOWED_KEYS)}"
+            )
+        if not cand_keys >= WARNING_REQUIRED_KEYS:
+            die(
+                f"{name}: warning missing required keys: "
+                f"{sorted(WARNING_REQUIRED_KEYS - cand_keys)}"
+            )
         if cand_w.get("severity") not in WARNING_SEVERITIES:
             die(f"{name}: warning severity invalid: {cand_w.get('severity')!r}")
-        if "line" in cand_w:
-            die(f"{name}: candidate warning still carries 'line'")
-        if base_w.get("line") is not None and isinstance(cand_w.get("span"), dict):
+        if base_w.get("line") is not None:
+            if not isinstance(cand_w.get("span"), dict):
+                die(f"{name}: warning missing span while baseline line is present")
             if cand_w["span"].get("line_start") != base_w["line"]:
                 die(f"{name}: warning span.line_start does not match baseline line")
 
@@ -583,11 +604,15 @@ def rewrite_left_ruby(node):
     form ［＃「base」の左に「reading」のルビ］ upgrades to a typed ruby node
     (base/reading pulled from the marker's OWN 「」-quoted segments — the
     marker's echoed base prefix, if any, is not consulted); anything else
-    survives unchanged (broken/non-left ruby stays raw)."""
+    survives unchanged (broken/non-left ruby stays raw). Matched full-anchor
+    against the TRIMMED source: a `pre` prefix that is neither empty nor an
+    exact echo of `base` means this is NOT an admissible left-ruby marker
+    (e.g. arbitrary text glued in front) and the raw node survives unchanged."""
     if not is_raw(node, "ruby"):
         return node
-    m = LEFT_RUBY_RE.search(node.get("source") or "")
-    if not m:
+    source = (node.get("source") or "").strip()
+    m = LEFT_RUBY_RE.match(source)
+    if not m or m.group("pre") not in ("", m.group("base")):
         return node
     return {
         "kind": "ruby",
@@ -636,7 +661,10 @@ def adopt_compound_jizume(base_node, cand_node, name):
     positive int, wrapped content byte-identical to what v1 classified,
     no stray keys) — mirroring Task 6's wrap rule structurally. Anything
     else about candidate's shape is left to the caller's final deep-equality
-    check. Returns (adopted_node, changed_bool)."""
+    check. Returns (adopted_node, adopted_count): the count of DISTINCT
+    compound wraps accepted in this subtree (0 if none), which the caller
+    tallies into summary["details"]["compound_jizume_adopted"] — a
+    magnitude signal, not just a presence flag."""
     if is_burasage_paragraph(base_node):
         if isinstance(cand_node, dict) and cand_node.get("kind") == "jizume_block":
             if set(cand_node) != {"kind", "width", "children"}:
@@ -646,29 +674,29 @@ def adopt_compound_jizume(base_node, cand_node, name):
                 die(f"{name}: jizume_block width invalid: {width!r}")
             if cand_node.get("children") != [base_node]:
                 die(f"{name}: compound jizume_block does not wrap exactly the burasage paragraph")
-            return cand_node, True
-        return base_node, False
+            return cand_node, 1
+        return base_node, 0
     if isinstance(base_node, list):
         if not isinstance(cand_node, list) or len(base_node) != len(cand_node):
-            return base_node, False
-        changed = False
+            return base_node, 0
+        count = 0
         out = []
         for b, c in zip(base_node, cand_node):
             nb, ch = adopt_compound_jizume(b, c, name)
             out.append(nb)
-            changed = changed or ch
-        return out, changed
+            count += ch
+        return out, count
     if isinstance(base_node, dict):
         if not isinstance(cand_node, dict):
-            return base_node, False
-        changed = False
+            return base_node, 0
+        count = 0
         out = {}
         for k, v in base_node.items():
             nv, ch = adopt_compound_jizume(v, cand_node.get(k), name)
             out[k] = nv
-            changed = changed or ch
-        return out, changed
-    return base_node, False
+            count += ch
+        return out, count
+    return base_node, 0
 
 
 def v2_migration_mode(base_doc, cand_doc, name, summary):
@@ -687,8 +715,13 @@ def v2_migration_mode(base_doc, cand_doc, name, summary):
     rewritten = dict(base, blocks=adopted_blocks)
     if rewritten != cand:
         die(f"{name}: candidate is not exactly the v2-migration grammar's rewrite")
+    if compound_adopted:
+        # Pure-jizume formations (jizume_count) never touch this counter —
+        # only compound-container adoptions count, per Task 10's magnitude
+        # signal requirement.
+        summary["details"]["compound_jizume_adopted"] += compound_adopted
     ruby_fired = counts["ruby_left"] > 0
-    jizume_fired = jizume_count > 0 or compound_adopted
+    jizume_fired = jizume_count > 0 or compound_adopted > 0
     if ruby_fired and jizume_fired:
         summary["classes"]["ruby_left_rewritten"] += 1
         summary["details"]["both"] += 1
@@ -727,7 +760,7 @@ def main() -> int:
         "verdict": "PASS",
     }
     if args.mode == "v2-migration":
-        summary["details"] = {"both": 0}
+        summary["details"] = {"both": 0, "compound_jizume_adopted": 0}
     handler = {
         "container-rewrite": container_rewrite_mode,
         "span-confinement": span_confinement_mode,

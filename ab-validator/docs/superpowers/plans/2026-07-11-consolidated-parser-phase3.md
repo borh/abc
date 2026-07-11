@@ -2224,7 +2224,9 @@ git add crates/ab-aozora-pipeline/src/lexer/sanitize.rs crates/ab-aozora-pipelin
 git commit -m "feat(ab-aozora-pipeline): sanitize_mapped with composed offset map (span semantics groundwork)"
 ```
 
----### Task 14: Rotation B — span composition, real lines, version 0.3.0, tripwire
+---
+
+### Task 14: Rotation B — span composition, real lines, version 0.3.0, tripwire
 
 **Files:**
 - Modify: `crates/ab-aozora-aat/src/lib.rs` (DecodedSource, `sanitize_for_aat`, `aozora_body_text` range refactor, `span_json`, `diagnostic_warning`, synthesized-warning removal, `diagnostics_json_from_bytes` rebase, tripwire literal, new unit tests)

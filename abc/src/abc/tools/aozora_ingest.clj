@@ -160,10 +160,59 @@
                       {:embedded embedded :live live}))))
   :ok)
 
+(defn- build-work-plan
+  "Pure build phase for one work: parse the fragment, build and
+  schema-validate every contributor person record, assemble the
+  metadata-record, and self-consistency-check it. NO filesystem writes —
+  any row/work fault throws ex-info here, before a single byte lands on
+  disk. Returns {:work-id :person-records {pid record} :metadata-rec}."
+  [{:keys [rows work-id source-csv-provenance]}]
+  (let [matching (filter #(= work-id (get % "作品ID")) rows)]
+    (when-not (seq matching)
+      (throw (ex-info (str "no rows for work_id " work-id " in supplied rows")
+                      {:work-id work-id})))
+    (let [{:keys [work persons-by-id contributors corrections-by-pid]}
+          (ac/build-record-fragment-from-rows matching)
+          _ (doseq [[pid corrs] (sort-by key corrections-by-pid)
+                    c corrs]
+              (tel/log! :debug
+                        (str "parse-correction person=" pid
+                             " field=" (get c "field")
+                             " rule=" (get c "rule")
+                             " raw=" (pr-str (get c "raw"))
+                             " corrected=" (pr-str (get c "corrected")))))
+          person-records
+          (into (sorted-map)
+                (map (fn [[pid body]]
+                       (let [record (build-person-record
+                                     body (get corrections-by-pid pid)
+                                     source-csv-provenance)]
+                         (person-record/validate! record)
+                         [pid record])))
+                persons-by-id)
+          contributor-entries
+          (vec (for [c contributors
+                     :let [pid (get c "person_id")]]
+                 {"person_id" pid
+                  "person_record_hash" (person-record/record-hash
+                                        (get person-records pid))
+                  "relation_to_work" (get c "relation_to_work")}))
+          metadata-rec {"metadata_record_schema_id" schema-id
+                        "metadata_record_schema_hash" (am/cached-schema-hash schema-path)
+                        "work" work
+                        "contributors" (vec (sort-by #(get % "person_id")
+                                                     contributor-entries))}]
+      (self-consistency-check! metadata-rec)
+      {:work-id work-id
+       :person-records person-records
+       :metadata-rec metadata-rec})))
+
 (defn run-from-rows!
   "Programmatic entry that operates on already-parsed CSV rows. Writes
   N+1 deterministic JSON files (the work metadata-record + each
   contributor person record) and returns the new metadata_record_hash.
+  All validation happens before the first write; a validation failure
+  leaves no files behind.
 
   Required keys: :rows (seq of CSV-row maps), :work-id, :output.
   Optional: :persons-output-dir (defaults to '<output-dir>/persons'),
@@ -177,52 +226,26 @@
               are synthetic or the source has no recoverable identity.)"
   [{:keys [rows work-id output persons-output-dir overwrite refresh-manifest
            source-csv-provenance]}]
-  (let [matching (filter #(= work-id (get % "作品ID")) rows)]
-    (when-not (seq matching)
-      (throw (ex-info (str "no rows for work_id " work-id " in supplied rows")
-                      {:work-id work-id})))
-    (let [{:keys [work persons-by-id contributors corrections-by-pid]}
-          (ac/build-record-fragment-from-rows matching)
-          persons-dir (or persons-output-dir
-                          (str (.getParent (io/file output)) "/persons"))
-          _ (doseq [[pid corrs] (sort-by key corrections-by-pid)
-                    c corrs]
-              (tel/log! :debug
-                        (str "parse-correction person=" pid
-                             " field=" (get c "field")
-                             " rule=" (get c "rule")
-                             " raw=" (pr-str (get c "raw"))
-                             " corrected=" (pr-str (get c "corrected")))))
-          contributor-entries
-          (vec
-           (for [c contributors
-                 :let [pid (get c "person_id")
-                       body (get persons-by-id pid)
-                       corrs (get corrections-by-pid pid)
-                       record (build-person-record body corrs source-csv-provenance)
-                       new-hash (write-person-file! persons-dir record overwrite)]]
-             {"person_id" pid
-              "person_record_hash" new-hash
-              "relation_to_work" (get c "relation_to_work")}))
-          metadata-rec {"metadata_record_schema_id" schema-id
-                        "metadata_record_schema_hash" (am/cached-schema-hash schema-path)
-                        "work" work
-                        "contributors" (vec (sort-by #(get % "person_id")
-                                                     contributor-entries))}]
-      (self-consistency-check! metadata-rec)
-      (.mkdirs (.getParentFile (io/file output)))
-      (json/write-deterministic-json-file! (io/file output) metadata-rec)
-      (let [new-hash (metadata-record/record-hash metadata-rec)]
-        (tel/log! :debug (str "metadata_record_hash: " new-hash))
-        (when refresh-manifest
-          (let [m (files/read-json refresh-manifest)
-                m' (assoc-in m ["manifest_identity_object" "metadata_record_hash"] new-hash)
-                identity-obj (get m' "manifest_identity_object")
-                artifact-id (hash/format-sha256 (hash/sha256-json-jcs identity-obj))
-                m'' (assoc m' "artifact_id" artifact-id)]
-            (json/write-deterministic-json-file! (io/file refresh-manifest) m'')
-            (tel/log! :info (str "refreshed manifest " refresh-manifest))))
-        new-hash))))
+  (let [{:keys [person-records metadata-rec]}
+        (build-work-plan {:rows rows :work-id work-id
+                          :source-csv-provenance source-csv-provenance})
+        persons-dir (or persons-output-dir
+                        (str (.getParent (io/file output)) "/persons"))]
+    (doseq [[_pid record] person-records]
+      (write-person-file! persons-dir record (boolean overwrite)))
+    (.mkdirs (.getParentFile (io/file output)))
+    (json/write-deterministic-json-file! (io/file output) metadata-rec)
+    (let [new-hash (metadata-record/record-hash metadata-rec)]
+      (tel/log! :debug (str "metadata_record_hash: " new-hash))
+      (when refresh-manifest
+        (let [m (files/read-json refresh-manifest)
+              m' (assoc-in m ["manifest_identity_object" "metadata_record_hash"] new-hash)
+              identity-obj (get m' "manifest_identity_object")
+              artifact-id (hash/format-sha256 (hash/sha256-json-jcs identity-obj))
+              m'' (assoc m' "artifact_id" artifact-id)]
+          (json/write-deterministic-json-file! (io/file refresh-manifest) m'')
+          (tel/log! :info (str "refreshed manifest " refresh-manifest))))
+      new-hash)))
 
 (defn run-corpus!
   "Two-stage corpus ingest. Groups rows by work_id and writes:
@@ -230,57 +253,104 @@
     - <output-dir>/persons/<person_id>.json (deduplicated across works)
 
   Returns {:works-written N :persons-written M
-           :works-skipped K :skipped-work-ids [...]}.
+           :works-skipped K :skipped-work-ids [...]
+           :person-conflicts [...]}.
 
-  Cross-work person dedup is handled by the corruption-safe
-  write-person-file! call: identical bodies produce identical hashes
-  and are no-op rewrites; divergent bodies throw unless :overwrite is
-  true. Within a single work, build-record-fragment-from-rows already
-  enforces consistency.
+  Corpus-level policy: every work is fully built and schema-validated
+  (via build-work-plan) before any writes happen, so a skipped work
+  leaves no new or modified files behind. When surviving works carry
+  divergent bodies for the same person_id, the body from the smallest
+  work_id wins deterministically; every affected work is still written,
+  with its contributor entries referencing the winning record's hash.
+  Each such conflict is warn-logged and reported in :person-conflicts as
+  {\"person_id\" pid \"chosen_work_id\" wid \"work_ids\" [wids…]}.
+  Pre-existing on-disk divergence without :overwrite still fails loudly
+  via write-person-file! — a cross-RUN conflict is an environment fault,
+  not a row fault, and is not caught here.
 
-  Tolerance: per-record `person-record/validate!` failures inside
-  `run-from-rows!` are caught here per work, logged with the offending
-  work_id and reason, and counted in :works-skipped. The single-work
-  CLI path keeps the legacy fail-loud behavior (run-from-rows! still
-  throws); only the corpus path absorbs the failure so a handful of
-  out-of-grammar dates cannot abort an end-to-end run. ADR 0015.
+  Tolerance: per-work faults (fragment guards, `person-record/validate!`
+  per contributor, `self-consistency-check!`) are caught here per work,
+  logged with the offending work_id and reason, and counted in
+  :works-skipped. The single-work CLI path keeps the legacy fail-loud
+  behavior (run-from-rows! still throws); only the corpus path absorbs
+  the failure so a handful of out-of-grammar dates cannot abort an
+  end-to-end run. ADR 0015.
 
   Required keys: :rows, :output-dir.
   Optional: :overwrite (boolean, default false),
-            :source-csv-provenance (forwarded to run-from-rows!)."
+            :source-csv-provenance (forwarded to build-work-plan)."
   [{:keys [rows output-dir overwrite source-csv-provenance]}]
   (let [works-dir (io/file output-dir "works")
         persons-dir (io/file output-dir "persons")
         rows-by-work (group-by #(get % "作品ID") rows)
-        person-ids (atom #{})
-        skipped (atom [])]
+        {:keys [plans skipped]}
+        (reduce
+         (fn [acc [work-id work-rows]]
+           (try
+             (update acc :plans conj
+                     (build-work-plan {:rows work-rows
+                                       :work-id work-id
+                                       :source-csv-provenance source-csv-provenance}))
+             (catch clojure.lang.ExceptionInfo e
+               (let [{:keys [errors-humanized field value]} (ex-data e)
+                     hint (or (some-> errors-humanized first)
+                              (when (and field value)
+                                (str field "=" (pr-str value)))
+                              "no detail")]
+                 (tel/log! :warn
+                           (str "skipped work " work-id ": "
+                                (.getMessage e) " — " hint)))
+               (update acc :skipped conj work-id))))
+         {:plans [] :skipped []}
+         (sort-by key rows-by-work))
+        ;; corpus-level shared-person reconciliation: plans arrive sorted by
+        ;; work id, so the FIRST carrier of a pid is the smallest work id.
+        carriers-by-pid
+        (reduce (fn [m {:keys [work-id person-records]}]
+                  (reduce-kv (fn [m pid record]
+                               (update m pid (fnil conj [])
+                                       {:work-id work-id :record record}))
+                             m person-records))
+                (sorted-map)
+                plans)
+        resolutions
+        (mapv (fn [[pid carriers]]
+                (let [winner (first carriers)
+                      hashes (distinct (map #(person-record/record-hash (:record %))
+                                            carriers))]
+                  {:pid pid
+                   :record (:record winner)
+                   :hash (first hashes)
+                   :conflict (when (< 1 (count hashes))
+                               {"person_id" pid
+                                "chosen_work_id" (:work-id winner)
+                                "work_ids" (vec (distinct (map :work-id carriers)))})}))
+              carriers-by-pid)
+        chosen-hash (into {} (map (juxt :pid :hash)) resolutions)
+        conflicts (vec (keep :conflict resolutions))]
+    (doseq [c conflicts]
+      (tel/log! :warn
+                (str "person " (get c "person_id")
+                     " has divergent bodies across works "
+                     (get c "work_ids")
+                     "; keeping the body from work " (get c "chosen_work_id"))))
     (.mkdirs works-dir)
     (.mkdirs persons-dir)
-    (doseq [[work-id work-rows] (sort-by key rows-by-work)]
-      (try
-        (run-from-rows!
-         {:rows work-rows
-          :work-id work-id
-          :output (str (io/file works-dir (str work-id ".json")))
-          :persons-output-dir (str persons-dir)
-          :overwrite (boolean overwrite)
-          :source-csv-provenance source-csv-provenance})
-        (doseq [r work-rows]
-          (swap! person-ids conj (get r "人物ID")))
-        (catch clojure.lang.ExceptionInfo e
-          (swap! skipped conj work-id)
-          (let [{:keys [errors-humanized field value]} (ex-data e)
-                hint (or (some-> errors-humanized first)
-                         (when (and field value)
-                           (str field "=" (pr-str value)))
-                         "no detail")]
-            (tel/log! :warn
-                      (str "skipped work " work-id ": "
-                           (.getMessage e) " — " hint))))))
-    {:works-written (- (count rows-by-work) (count @skipped))
-     :persons-written (count @person-ids)
-     :works-skipped (count @skipped)
-     :skipped-work-ids @skipped}))
+    (doseq [{:keys [record]} resolutions]
+      (write-person-file! persons-dir record (boolean overwrite)))
+    (doseq [{:keys [work-id metadata-rec]} plans
+            :let [rec (update metadata-rec "contributors"
+                              (fn [cs]
+                                (mapv #(assoc % "person_record_hash"
+                                              (chosen-hash (get % "person_id")))
+                                      cs)))]]
+      (json/write-deterministic-json-file!
+       (io/file works-dir (str work-id ".json")) rec))
+    {:works-written (count plans)
+     :persons-written (count resolutions)
+     :works-skipped (count skipped)
+     :skipped-work-ids skipped
+     :person-conflicts conflicts}))
 
 (defn- rows-from-zip
   "Read and parse the CSV entry at zip-path. Fails loudly when the entry

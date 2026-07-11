@@ -11,8 +11,8 @@
         :notes "fixed 2026-07-11: sample-commits-by-period groups globally by period key (was contiguous partition-by), keeping the last commit in log order per period"}
    :D3 {:case "P13.ragged-row" :status :fixed
         :notes "fixed 2026-07-11: read-rows* marks ragged rows (ragged-key); work assembly rejects them, corpus ingest skips + counts the work"}
-   :D4 {:case "P8.atomicity, P8.order-independence" :status :open
-        :notes "aozora_ingest.clj:151-213 person writes precede work failure"}
+   :D4 {:case "P8.atomicity, P8.order-independence" :status :fixed
+        :notes "fixed 2026-07-11: run-corpus! builds+validates all works before writing; shared-person conflicts resolve to the smallest work_id deterministically and are reported in :person-conflicts"}
    :D5 {:case "P13.empty-csv" :status :fixed
         :notes "fixed 2026-07-11: zip entry points throw ex-info {:zip-path :row-count} when the CSV has no data rows"}
    :D6 {:case "P13.non-zip-bytes" :status :fixed

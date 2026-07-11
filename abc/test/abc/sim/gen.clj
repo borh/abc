@@ -127,9 +127,18 @@
            :person (variant-person 54)}]))
 
       :ambiguous-replacement
-      (gen/let [pid (gen/elements (vec (keys (:persons m))))]
-        [[] {:event/type :ambiguous-replacement :pid pid :target t1
-             :person (variant-person 55)}])
+      (let [attached (vec (filter #(seq (model/edges-of m %)) (keys (:persons m))))]
+        (if (seq attached)
+          (gen/let [pid (gen/elements attached)]
+            [[] {:event/type :ambiguous-replacement :pid pid :target t1
+                 :person (variant-person 55)}])
+          (let [wid (model/fresh-wid m) pid t1
+                tgt (model/fresh-pid (update m :next-id + 2))]
+            (gen/return
+             [[{:event/type :add-work-with-edge :wid wid :work (model/base-work wid)
+                :pid pid :person (variant-person 59) :relation "著者"}]
+              {:event/type :ambiguous-replacement :pid pid :target tgt
+               :person (variant-person 55)}]))))
 
       :impure-split
       (let [wid (model/fresh-wid m) pid t1

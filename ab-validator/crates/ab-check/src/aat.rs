@@ -180,15 +180,10 @@ fn collect_inline<'a>(node: &'a Value, path: &str, fragments: &mut Vec<VisibleFr
             path: path.to_owned(),
             node,
         }),
-        "raw" => fragments.push(VisibleFragment::Text {
-            value: node
-                .get("source")
-                .and_then(Value::as_str)
-                .unwrap_or_default()
-                .to_owned(),
-            path: path.to_owned(),
-            node,
-        }),
+        // raw nodes are layout/markup markers, excluded from the visible
+        // projection (see ab_plaintext::visible_text_projection); the
+        // source-order comparison walker keeps them on purpose.
+        "raw" => {}
         "warigaki" => {
             for key in ["upper", "lower"] {
                 if let Some(content) = node.get(key).and_then(Value::as_array) {
@@ -290,7 +285,8 @@ mod tests {
             fragments_to_text(&aat),
             ab_plaintext::visible_text_projection(&aat)
         );
-        assert_eq!(fragments_to_text(&aat), "ABCDEFGH");
+        // the raw node ("E") is a layout/markup marker and must not project
+        assert_eq!(fragments_to_text(&aat), "ABCDFGH");
     }
 
     #[test]

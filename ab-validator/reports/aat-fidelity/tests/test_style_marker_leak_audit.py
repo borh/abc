@@ -95,6 +95,7 @@ def test_partial_openers_do_not_become_complete_findings(tmp_path):
     assert summary["totals"]["marker_occurrences"] == 0
     assert summary["totals"]["unmatched_marker_open"] == 1
     assert "split across text nodes" in report
+    assert "before［＃open" in report
 
 
 def test_malformed_inputs_are_recorded_and_exit_one(tmp_path):
@@ -103,7 +104,7 @@ def test_malformed_inputs_are_recorded_and_exit_one(tmp_path):
     (input_dir / "bad-json.json").write_text("{")
     (input_dir / "bad-blocks.json").write_text(json.dumps({"blocks": {}}))
     write_doc(input_dir, "bad-text.json", [paragraph(style("bold", text(42)))])
-    proc, summary, _ = run_audit(tmp_path, input_dir)
+    proc, summary, report = run_audit(tmp_path, input_dir)
     assert proc.returncode == 1
     assert summary["totals"]["files_scanned"] == 3
     assert summary["totals"]["malformed_files"] == 3
@@ -112,6 +113,7 @@ def test_malformed_inputs_are_recorded_and_exit_one(tmp_path):
         "bad-json",
         "bad-text",
     ]
+    assert "`bad-json`" in report
 
 
 def test_examples_are_deterministic_diverse_and_capped_per_file(tmp_path):

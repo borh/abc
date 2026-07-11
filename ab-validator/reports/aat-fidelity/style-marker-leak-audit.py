@@ -265,6 +265,19 @@ def markdown(summary: dict[str, Any]) -> str:
         )
     if not summary["examples"]:
         lines.append("- none")
+    lines.extend(["", "## Unmatched marker-open examples", ""])
+    for row in summary["unmatched_examples"]:
+        lines.append(
+            f"- `{row['file_stem']}` `{row['style_type']}` `{row['json_path']}` "
+            f"({row['count']}): {row['excerpt']}"
+        )
+    if not summary["unmatched_examples"]:
+        lines.append("- none")
+    lines.extend(["", "## Malformed inputs", ""])
+    for row in summary["malformed_inputs"]:
+        lines.append(f"- `{row['file_stem']}`: {'; '.join(row['errors'])}")
+    if not summary["malformed_inputs"]:
+        lines.append("- none")
     lines.extend(["", "## Limitations", ""])
     lines.extend(f"- {item}" for item in summary["limitations"])
     lines.append("")

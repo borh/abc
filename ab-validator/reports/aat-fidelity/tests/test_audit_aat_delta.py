@@ -1186,3 +1186,159 @@ def test_v2_migration_rejects_warning_extra_key(tmp_path):
     )
     code, _, _ = run("v2-migration", base, cand, tmp_path)
     assert code == 2
+
+
+# --- source-note-append mode (Phase 4, rotation C4) ---
+
+
+def source_note(content, placement="back", region_class="terminal_provenance", span=None):
+    content = list(content)
+    if span is None:
+        first_span = content[0]["span"]
+        last_span = content[-1]["span"]
+        span = {
+            "byte_start": first_span["byte_start"],
+            "byte_end": last_span["byte_end"],
+            "line_start": first_span["line_start"],
+            "line_end": last_span["line_end"],
+        }
+    return {
+        "kind": "source_note",
+        "placement": placement,
+        "region_class": region_class,
+        "content": content,
+        "span": span,
+    }
+
+
+def test_append_mode_identical_pass(tmp_path):
+    blocks = [para(text("本文\n", 0, 7))]
+    base = write_dump(tmp_path, "a", {"w1": v2_doc(blocks)})
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc(blocks)})
+    code, summary, err = run("source-note-append", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["identical"] == 1
+    assert summary["classes"]["source_note_appended"] == 0
+
+
+def test_append_mode_valid_source_note_append(tmp_path):
+    base_blocks = [para(text("本文\n", 0, 7))]
+    base = write_dump(tmp_path, "a", {"w1": v2_doc(base_blocks)})
+    note = source_note(
+        [
+            spanned("底本：「作品集」文庫社\n", 100, 133, 3, 3),
+            spanned("　1990（平成2）年5月10日発行\n", 133, 166, 4, 4),
+        ]
+    )
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc(base_blocks + [note])})
+    code, summary, err = run("source-note-append", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["source_note_appended"] == 1
+    assert summary["classes"]["identical"] == 0
+
+
+def test_append_mode_multiple_source_note_blocks_pass(tmp_path):
+    # Multiple source_note blocks per work are legal — a blank/colophon line
+    # can split contiguous terminal-provenance groups into distinct blocks;
+    # the "appended blocks all source_note" invariant applies to each.
+    base_blocks = [para(text("本文\n", 0, 7))]
+    base = write_dump(tmp_path, "a", {"w1": v2_doc(base_blocks)})
+    note1 = source_note([spanned("底本：「作品集」文庫社\n", 100, 133, 3, 3)])
+    note2 = source_note([spanned("入力：someone\n", 200, 220, 6, 6)])
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc(base_blocks + [note1, note2])})
+    code, summary, err = run("source-note-append", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["source_note_appended"] == 1
+
+
+def test_append_mode_rejects_body_drift(tmp_path):
+    base = write_dump(tmp_path, "a", {"w1": v2_doc([para(text("本文\n", 0, 7))])})
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc([para(text("変わった\n", 0, 7))])})
+    code, _, _ = run("source-note-append", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_append_mode_rejects_non_source_note_append(tmp_path):
+    base_blocks = [para(text("本文\n", 0, 7))]
+    base = write_dump(tmp_path, "a", {"w1": v2_doc(base_blocks)})
+    extra = para(text("追記\n", 100, 107))
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc(base_blocks + [extra])})
+    code, _, _ = run("source-note-append", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_append_mode_rejects_wrong_region_class(tmp_path):
+    base_blocks = [para(text("本文\n", 0, 7))]
+    base = write_dump(tmp_path, "a", {"w1": v2_doc(base_blocks)})
+    note = source_note(
+        [spanned("入力：someone\n", 100, 120, 3, 3)], region_class="colophon_metadata"
+    )
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc(base_blocks + [note])})
+    code, _, _ = run("source-note-append", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_append_mode_rejects_inserted_not_appended(tmp_path):
+    # The extra source_note is a well-formed block, but INSERTED before the
+    # last baseline block rather than appended after all of them — the
+    # candidate's leading blocks no longer equal the baseline prefix.
+    base_blocks = [para(text("前\n", 0, 5)), para(text("後\n", 100, 105))]
+    base = write_dump(tmp_path, "a", {"w1": v2_doc(base_blocks)})
+    note = source_note([spanned("底本：X\n", 200, 212, 5, 5)])
+    cand_blocks = [base_blocks[0], note, base_blocks[1]]
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc(cand_blocks)})
+    code, _, _ = run("source-note-append", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_append_mode_rejects_warning_drift(tmp_path):
+    base_blocks = [para(text("本文\n", 0, 7))]
+    base = write_dump(
+        tmp_path,
+        "a",
+        {
+            "w1": v2_doc(
+                base_blocks,
+                warnings=[{"code": "some-warning", "severity": "warning", "message": "m"}],
+            )
+        },
+    )
+    cand = write_dump(
+        tmp_path,
+        "b",
+        {
+            "w1": v2_doc(
+                base_blocks,
+                warnings=[{"code": "other-warning", "severity": "warning", "message": "m"}],
+            )
+        },
+    )
+    code, _, _ = run("source-note-append", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_append_mode_rejects_degenerate_span(tmp_path):
+    base_blocks = [para(text("本文\n", 0, 7))]
+    base = write_dump(tmp_path, "a", {"w1": v2_doc(base_blocks)})
+    # byte_end == byte_start: degenerate content span
+    note = source_note([spanned("底本：X\n", 100, 100, 3, 3)])
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc(base_blocks + [note])})
+    code, _, _ = run("source-note-append", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_append_mode_rejects_terminator_stripped_values(tmp_path):
+    # Two adjacent content values where the first lacks its line terminator
+    # — without it the two values would concatenate into one line; the
+    # per-line invariant (values never concatenate lines) is violated.
+    base_blocks = [para(text("本文\n", 0, 7))]
+    base = write_dump(tmp_path, "a", {"w1": v2_doc(base_blocks)})
+    note = source_note(
+        [
+            spanned("底本：「作品集」文庫社", 100, 130, 3, 3),  # stripped terminator
+            spanned("　1990（平成2）年5月10日発行\n", 130, 163, 4, 4),
+        ]
+    )
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc(base_blocks + [note])})
+    code, _, _ = run("source-note-append", base, cand, tmp_path)
+    assert code == 2

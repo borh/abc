@@ -24,6 +24,18 @@ the v2 candidate. Mirrors ab-aozora-aat/src/lib.rs's Phase 4 emission
 semantics ONLY (never corpus-fitted); a mismatch on real corpus data is a
 controller escalation, same discipline as container-rewrite.
 
+source-note-append (Phase 4, rotation C4): the append-only confinement
+contract between two schema-v2 dumps (C3-dump baseline, C4-dump
+candidate). After stripping /meta/adapter_version, the candidate's block
+list must equal the baseline's block list as an exact PREFIX (zero body
+drift, order preserved); any blocks appended after that prefix must each
+be a well-formed `source_note` block (placement "back", region_class
+"terminal_provenance", terminator-preserving text content, positive
+spans, block span anchored to the first content span); `meta.warnings`
+and every other meta key (besides adapter_version) must stay byte-equal.
+This mode IS Task 14's emission contract in executable form — Task 14
+implements the emitter to satisfy it.
+
 Exit 0 = PASS. Exit 2 = ANY unclassified difference or reference error
 (fail-closed; there is no exit 1). A container-rewrite mismatch on real
 corpus data is an ESCALATION per the spec — do not weaken the grammar to
@@ -885,9 +897,106 @@ def v2_migration_mode(base_doc, cand_doc, name, summary):
         summary["classes"]["migrated"] += 1
 
 
+# --- source-note-append (Phase 4, rotation C4) ------------------------------
+
+
+def check_meta_confinement(base, cand, name):
+    """Contract item 4: `meta.warnings` byte-equal; any other differing
+    `meta` key (adapter_version already stripped by `strip_identity`) is a
+    reference error. Split into two checks purely for a clearer die()
+    message — together they are exactly full-`meta` equality."""
+    base_meta = base.get("meta", {})
+    cand_meta = cand.get("meta", {})
+    if base_meta.get("warnings") != cand_meta.get("warnings"):
+        die(f"{name}: meta.warnings drifted between baseline and candidate")
+    base_rest = {k: v for k, v in base_meta.items() if k != "warnings"}
+    cand_rest = {k: v for k, v in cand_meta.items() if k != "warnings"}
+    if base_rest != cand_rest:
+        die(f"{name}: meta drifted beyond warnings (other meta key changed)")
+
+
+def check_appended_source_note_block(block, name):
+    """Contract item 3: one appended block's shape."""
+    if not (isinstance(block, dict) and block.get("kind") == "source_note"):
+        die(f"{name}: appended block is not a source_note: {block!r}")
+    if block.get("placement") != "back":
+        die(f"{name}: appended source_note placement is not 'back': {block.get('placement')!r}")
+    if block.get("region_class") != "terminal_provenance":
+        die(
+            f"{name}: appended source_note region_class is not "
+            f"'terminal_provenance': {block.get('region_class')!r}"
+        )
+    content = block.get("content")
+    if not isinstance(content, list) or not content:
+        die(f"{name}: appended source_note has empty/invalid content")
+    last = len(content) - 1
+    for idx, node in enumerate(content):
+        if not (isinstance(node, dict) and node.get("kind") == "text"):
+            die(f"{name}: appended source_note content item is not a text inline: {node!r}")
+        value = node.get("value")
+        if not isinstance(value, str) or value == "":
+            die(f"{name}: appended source_note content value invalid: {value!r}")
+        # Terminator preservation: values never concatenate lines — every
+        # NON-FINAL value must end with the line terminator it carried in
+        # source. The tail's final line may lack one (nothing follows it).
+        if idx < last and not value.endswith(("\n", "\r")):
+            die(
+                f"{name}: appended source_note content value {idx} does not "
+                f"preserve its line terminator: {value!r}"
+            )
+        span = node.get("span")
+        if not (
+            isinstance(span, dict)
+            and isinstance(span.get("byte_start"), int)
+            and isinstance(span.get("byte_end"), int)
+            and span["byte_end"] > span["byte_start"]
+            and isinstance(span.get("line_start"), int)
+            and span["line_start"] >= 1
+        ):
+            die(f"{name}: appended source_note content span invalid: {span}")
+    block_span = block.get("span")
+    first_span = content[0].get("span")
+    if not (
+        isinstance(block_span, dict)
+        and block_span.get("byte_start") == first_span.get("byte_start")
+    ):
+        die(
+            f"{name}: appended source_note block span.byte_start does not "
+            f"equal the first content span's byte_start"
+        )
+
+
+def source_note_append_mode(base_doc, cand_doc, name, summary):
+    base = strip_identity(base_doc)
+    cand = strip_identity(cand_doc)
+    if base.get("version") != 2:  # contract item 1
+        die(f"{name}: baseline is not schema v2: version={base.get('version')!r}")
+    if cand.get("version") != 2:
+        die(f"{name}: candidate is not schema v2: version={cand.get('version')!r}")
+    check_meta_confinement(base, cand, name)  # contract item 4
+    base_blocks = base.get("blocks", [])
+    cand_blocks = cand.get("blocks")
+    if not isinstance(base_blocks, list) or not isinstance(cand_blocks, list):
+        die(f"{name}: blocks is not a list")
+    if len(cand_blocks) < len(base_blocks):
+        die(f"{name}: candidate has fewer blocks than baseline")
+    if cand_blocks[: len(base_blocks)] != base_blocks:  # contract item 2
+        die(f"{name}: candidate's leading blocks differ from baseline (body drift)")
+    appended = cand_blocks[len(base_blocks) :]
+    for block in appended:
+        check_appended_source_note_block(block, name)
+    if appended:  # contract item 5
+        summary["classes"]["source_note_appended"] += 1
+    else:
+        summary["classes"]["identical"] += 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["container-rewrite", "span-confinement", "v2-migration"])
+    ap.add_argument(
+        "mode",
+        choices=["container-rewrite", "span-confinement", "v2-migration", "source-note-append"],
+    )
     ap.add_argument("baseline_dir")
     ap.add_argument("candidate_dir")
     ap.add_argument("--summary-json", required=True)
@@ -902,6 +1011,8 @@ def main() -> int:
         # mechanically (root version bump), so a doc lands in "migrated"
         # at minimum.
         classes = {"migrated": 0, "jizume_rewritten": 0, "ruby_left_rewritten": 0}
+    elif args.mode == "source-note-append":
+        classes = {"identical": 0, "source_note_appended": 0}
     else:
         # Byte-identical shape to the pre-Task-8 output — untouched.
         classes = {"identical": 0, "rewritten": 0, "span_confined": 0}
@@ -917,6 +1028,7 @@ def main() -> int:
         "container-rewrite": container_rewrite_mode,
         "span-confinement": span_confinement_mode,
         "v2-migration": v2_migration_mode,
+        "source-note-append": source_note_append_mode,
     }[args.mode]
     for name in sorted(base_files):
         # Fail-closed: ANY per-work exception (unreadable file, valid JSON

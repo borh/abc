@@ -334,10 +334,20 @@ impl MorphAnalyzer for VibratoAnalyzer {
             }
             worker.reset_sentence(chunk.text);
             worker.tokenize();
-            tokens.extend(worker.token_iter().map(|token| RawToken {
-                emitted_surface: Some(token.surface().to_owned()),
-                byte_span: None,
-                features: parse_vibrato_feature_string(token.feature()),
+            // Vibrato reports chunk-relative byte ranges over the raw input
+            // (its surfaces are input slices, never normalized), so the
+            // reported span shifted by the chunk offset is authoritative —
+            // no sequential surface re-matching, which fails on surfaces
+            // with leading whitespace.
+            tokens.extend(worker.token_iter().map(|token| {
+                let range = token.range_byte();
+                RawToken {
+                    emitted_surface: None,
+                    byte_span: Some(
+                        chunk.byte_offset + range.start..chunk.byte_offset + range.end,
+                    ),
+                    features: parse_vibrato_feature_string(token.feature()),
+                }
             }));
         }
         if hard_split_count > 0 {

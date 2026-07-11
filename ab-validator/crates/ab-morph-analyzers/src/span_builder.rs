@@ -328,6 +328,53 @@ mod tests {
     }
 
     #[test]
+    fn reported_spans_cover_whitespace_leading_surfaces() {
+        // The full-corpus qkana failure class: a token whose surface begins
+        // with whitespace but contains non-whitespace cannot be re-matched
+        // sequentially (the walk skips the source whitespace first), but a
+        // reported span is authoritative. Vibrato reports spans for exactly
+        // this reason.
+        let source = "あ　　～\n";
+        let tokens = vec![
+            RawToken {
+                emitted_surface: None,
+                byte_span: Some(0..3),
+                features: FeatureMap::new(),
+            },
+            RawToken {
+                emitted_surface: None,
+                byte_span: Some(3..12),
+                features: FeatureMap::new(),
+            },
+        ];
+
+        let analysis =
+            build_analysis_from_tokens("test".to_owned(), "t6".to_owned(), source, tokens)
+                .unwrap();
+
+        assert_eq!(analysis.morphemes[1].surface, "　　～");
+        assert_eq!(analysis.morphemes[1].byte_span, 3..12);
+        assert_eq!(analysis.morphemes[1].char_span, 1..4);
+    }
+
+    #[test]
+    fn sequential_matching_rejects_whitespace_leading_surfaces() {
+        // Companion to the test above: the same token stream expressed as
+        // emitted surfaces (no reported spans) fails, because the
+        // whitespace-skip heuristic consumes the source whitespace the
+        // surface itself claims.
+        let err = build_analysis_from_tokens(
+            "test".to_owned(),
+            "t6".to_owned(),
+            "あ　　～\n",
+            vec![raw("あ"), raw("　　～")],
+        )
+        .unwrap_err();
+
+        assert!(matches!(err, AnalyzerError::SurfaceMismatch { .. }));
+    }
+
+    #[test]
     fn allows_trailing_uncovered_text() {
         let analysis = build_analysis_from_tokens(
             "test".to_owned(),

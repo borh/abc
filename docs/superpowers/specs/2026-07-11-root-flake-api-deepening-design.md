@@ -15,9 +15,10 @@ introducing machine-local runtime dependencies.
 
 ## Current Problem
 
-The root flake currently exposes, per supported system, 35 apps, 40 packages,
-72 checks, and 7 development shells. Most of these outputs are produced by
-mechanically prefixing and merging the component output sets:
+The pre-change machine-readable output snapshot is the source of truth for
+output counts. At design time it reports, per supported system, 35 apps, 40
+packages, 72 checks, and 7 development shells. Most of these outputs are
+produced by mechanically prefixing and merging the component output sets:
 
 - `abc` outputs become `abc-*` root outputs.
 - `ab-validator` outputs become `ab-validator-*` root outputs.
@@ -93,9 +94,12 @@ The root exposes exactly these five apps per supported system:
 - `tei-version-coherence`
 - `flake-input-policy`
 
-`soranoha` remains the primary publication workflow dispatcher. The other four
-apps are direct, automation-friendly operator or release diagnostics with
-distinct contracts.
+`soranoha` remains the primary publication workflow dispatcher. It qualifies
+as an end-to-end operator workflow. `validate-migration` qualifies separately
+because it enforces root-owned repository and cross-component release
+contracts; it is intentionally retained even though it orchestrates developer
+quality checks internally. The other three apps are direct,
+automation-friendly release diagnostics with distinct contracts.
 
 `python-quality` is removed from root apps because it is a developer quality
 gate rather than an operator workflow. It remains available through the root
@@ -161,8 +165,47 @@ Component correctness remains owned and exposed by the component flakes. The
 root `justfile` coordinates complete repository validation by running root and
 component checks directly. Both `just validate-migration` and the retained
 `validate-migration` app must explicitly run `nix flake check --no-build` for
-the root, `abc`, and `ab-validator`. This replaces the component evaluation
-previously obtained indirectly through mirrored root checks.
+the root, `abc`, and `ab-validator`. The validator invocation must follow the
+existing workspace-aware form:
+
+```sh
+(
+  cd ab-validator
+  AB_WORKSPACE_ROOT="$(pwd)/.." nix flake check --no-build
+)
+```
+
+This is a deliberate orchestration expansion in two places. It replaces the
+component evaluation previously obtained indirectly through mirrored root
+checks while preserving the effective validation coverage.
+
+## Retained Soranoha Integration Wrapper
+
+The retained `soranoha` app is itself a substantial cross-component wrapper,
+not a direct alias of `abc#soranoha`. The existing
+`mkAdapterAwareSoranohaApp` construction privately consumes these
+`ab-validator` packages:
+
+- `upstream-parser-aozora2html`
+- `aozora2html-adapter`
+- `ab-aat-to-parser-ir`
+
+It also consumes the validator-owned aozora2html adapter script and AAT mapping
+data. The wrapper provides its ABC dispatcher with a pinned runtime `PATH` and
+these six environment variables:
+
+- `AB_SEVENZIP_BIN`
+- `AB_AOZORA2HTML_ADAPTER`
+- `AB_AOZORA2HTML_BIN`
+- `AB_AOZORA2HTML_MAPPER_BIN`
+- `AB_AAT_TO_PARSER_IR_BIN`
+- `AB_AAT_TO_PARSER_IR_MAPPING`
+
+This wiring is part of the retained root app contract. It keeps publication
+materialization hermetic and prevents fallback to a stub parser. The
+implementation must preserve `mkAdapterAwareSoranohaApp`, its dependency set,
+runtime `PATH`, six environment assignments, and final dispatch byte-for-byte.
+These component outputs are private dependencies and are not re-exported.
 
 ## Cross-Component Evidence Workflows
 
@@ -177,8 +220,11 @@ is preserved as follows:
 
 - ABC retains dependency-injected component-local report apps.
 - The root `justfile` gains `tei-eaj-alignment-probe` and
-  `tei-eaj-reports-with-probes` recipes. They resolve the required Nix-built
-  validator binary and invoke the corresponding ABC report apps.
+  `tei-eaj-reports-with-probes` recipes. Each obtains the package path with
+  `nix build ./ab-validator#ab-aat-to-parser-ir --no-link --print-out-paths`,
+  exports
+  `ABC_TEI_EAJ_ALIGNMENT_PROBE_BIN=<path>/bin/ab-aat-to-parser-ir`, and invokes
+  the corresponding app with `nix run ./abc#<app>`.
 - Active report and presentation regeneration instructions use those recipes.
 - The existing root integration check continues to construct the same
   cross-component dependency internally.
@@ -216,18 +262,29 @@ No compatibility aliases are retained after the active migration is complete.
 The root uses an explicit facade rather than allowlist or traversal helpers:
 
 - Delete `prefixAttrs` and all blanket component-output merges.
-- Construct the five approved apps explicitly.
+- Construct the five approved apps explicitly. Preserve the existing
+  `mkAdapterAwareSoranohaApp` definition and its use for `soranoha` verbatim.
 - Construct `tei-p5-reference` explicitly.
 - Construct only the integrated default shell.
 - Retain root-owned checks explicitly.
-- Keep `optionalOutputAttrs` only for genuine private consumption of component
-  outputs; remove or narrow it if the final usage audit permits.
+- Keep `optionalOutputAttrs` for genuine private consumption of component
+  outputs, including `abc#soranoha`, `upstream-parser-aozora2html`,
+  `aozora2html-adapter`, and `ab-aat-to-parser-ir`; remove or narrow other uses
+  if the final usage audit permits.
 - Preserve the existing Linux-only root supported-system contract.
 
 This change does not introduce generic export helpers or split every output
 class into a separate Nix file. Explicit repetition is intentional API review
 friction. Reorganizing the large root check implementation is a separate
 concern and is outside this change unless required to preserve behavior.
+
+"Construct explicitly" does not authorize equivalent rewrites of retained
+wrapper scripts. Nix derivation identity includes generated script text, and
+the existing `validate-migration` comment documents that helper interpolation
+can re-indent a multi-line body and change its derivation hash. Retained
+wrappers stay textually identical unless this spec explicitly requires a
+behavior change. The new direct component checks make
+`validate-migration` the one intentional retained-app wrapper change.
 
 ## Failure Behavior
 
@@ -239,15 +296,21 @@ concern and is outside this change unless required to preserve behavior.
   evaluated or built; they do not silently select another binary.
 - The `validate-migration` app wrapper changes intentionally so that it checks
   the root and both component flakes directly after mirrored checks are
-  removed. Its validation coverage must not shrink.
+  removed. Its validator invocation supplies `AB_WORKSPACE_ROOT` exactly as
+  the established `just check-no-build` path does. Its validation coverage must
+  not shrink.
 - No runtime configuration, corpus location policy, source identity, schema
   identity, or TEI version changes as part of this restructuring.
 
 ## Verification
 
 Before modifying outputs, record a machine-readable snapshot for all three
-flakes on the current system. Record derivation paths for derivations and
-program paths for apps.
+flakes. Derive all pre-change output counts from this snapshot rather than from
+the illustrative counts in this document. On the build host, record derivation
+paths for derivations and program paths for apps. For both supported systems,
+record attribute names and output structure through evaluation; cross-system
+derivation-path identity is not required when the corresponding platform cannot
+be built on the host.
 
 Verification distinguishes three cases:
 
@@ -262,15 +325,20 @@ Verification distinguishes three cases:
 Additional verification must prove:
 
 - The root exposes 5 apps, 1 package, 1 development shell, the formatter, and
-  14 root-owned checks per supported system.
+  14 root-owned checks per supported system. Derive and compare both the before
+  and after counts from the snapshots.
 - No root output is generated by prefixing or traversing a component output
   set.
 - All active repository references use retained root outputs, qualified
   component outputs, or the approved maintainer recipes.
 - The two cross-component evidence recipes provide the Nix-built
   `ab-aat-to-parser-ir` binary and successfully evaluate their ABC app targets.
+- The retained `soranoha` program path is identical to the pre-change snapshot,
+  proving that its runtime `PATH`, six `AB_*` assignments, validator-owned
+  adapter and mapping paths, and final ABC dispatch were preserved verbatim.
 - The `validate-migration` app and `just validate-migration` each evaluate the
-  root, `abc`, and `ab-validator` checks with `--no-build`.
+  root, `abc`, and `ab-validator` checks with `--no-build`; both validator
+  invocations set `AB_WORKSPACE_ROOT` to the monorepo root.
 - Root `nix flake check --no-build` succeeds.
 - Direct `abc` and `ab-validator` no-build checks succeed.
 - `just validate-migration` succeeds.
@@ -302,10 +370,13 @@ interface over substantial component and workflow machinery.
 and CI aggregation are separated instead of being braided through blanket
 exports.
 
-**Evidence:** The observed root surface contains 155 named per-system outputs,
-while repository callers use only a small subset. The root currently creates
-most of the surface through `prefixAttrs`. Two apparent aliases contain genuine
-cross-component injection and receive explicit migration treatment.
+**Evidence:** The design-time snapshot reports 155 named per-system outputs,
+while repository callers use only a small subset. The implementation snapshot
+must re-derive that number. The root currently creates most of the surface
+through `prefixAttrs`. Two apparent probe aliases contain genuine
+cross-component injection and receive explicit migration treatment; the
+retained `soranoha` app contains a larger private cross-component injection that
+must remain byte-identical.
 
 **Assumption:** Unknown external consumers do not outweigh the selected clean
 cutover policy. Evidence of important external reliance would change release

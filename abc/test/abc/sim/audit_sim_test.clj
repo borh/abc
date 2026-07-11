@@ -87,3 +87,76 @@
                  (mapv (juxt :previous_ref :current_ref) (:pairs s)))))
         (testing "P11.drift-localization"
           (is (= [0 1] (mapv :split_candidates (:pairs s)))))))))
+
+;; P12.selection — monotone dates: exactly one representative per period.
+(deftest p12-selection-monotone-sim-test
+  (let [m0 (model/bootstrap 2)
+        edit (fn [m v] (:model (model/apply-event m {:event/type :edit-person
+                                                     :pid "000001"
+                                                     :field :family_name :value v})))
+        states [m0 (edit m0 "一") (edit (edit m0 "一") "二") (edit (edit (edit m0 "一") "二") "三")]
+        ;; years: 2023, 2023, 2024, 2025 → representatives: idx 1, 2, 3
+        instants ["2023-01-01T00:00:00Z" "2023-12-01T00:00:00Z"
+                  "2024-06-01T00:00:00Z" "2025-06-01T00:00:00Z"]]
+    (with-repo [git root work]
+      (let [cs (commit-history! git root states instants)
+            s (audit/scan-history! {:aozora-repo (str root)
+                                    :from-ref (.getName (first cs))
+                                    :sample-period "year"
+                                    :work-dir (str work)})]
+        (is (= [[(.getName (nth cs 0)) (.getName (nth cs 1))]
+                [(.getName (nth cs 1)) (.getName (nth cs 2))]
+                [(.getName (nth cs 2)) (.getName (nth cs 3))]]
+               (mapv (juxt :previous_ref :current_ref) (:pairs s))))))))
+
+;; P12.selection — non-monotone dates: desired = still one rep per period (D2).
+(deftest p12-selection-non-monotone-sim-test
+  (let [m0 (model/bootstrap 2)
+        edit (fn [m v] (:model (model/apply-event m {:event/type :edit-person
+                                                     :pid "000001"
+                                                     :field :family_name :value v})))
+        s1 (edit m0 "一") s2 (edit s1 "二") s3 (edit s2 "三")
+        ;; log order: 2023, 2024, 2023(!), 2024 — each year split across
+        ;; non-contiguous log segments
+        instants ["2023-01-01T00:00:00Z" "2024-03-01T00:00:00Z"
+                  "2023-06-01T00:00:00Z" "2024-09-01T00:00:00Z"]]
+    (with-repo [git root work]
+      (let [cs (commit-history! git root [m0 s1 s2 s3] instants)
+            s (audit/scan-history! {:aozora-repo (str root)
+                                    :from-ref (.getName (first cs))
+                                    :sample-period "year"
+                                    :work-dir (str work)})]
+        (div/expected-failure :D2 "P12.selection"
+          ;; DESIRED: one representative per calendar year among commits 1..3
+          ;; (from-ref is prepended by contract): 2023 → commit idx 2 (last in
+          ;; log order with a 2023 date), 2024 → idx 3. Two pairs total.
+                              (= [[(.getName (nth cs 0)) (.getName (nth cs 2))]
+                                  [(.getName (nth cs 2)) (.getName (nth cs 3))]]
+                                 (mapv (juxt :previous_ref :current_ref) (:pairs s))))))))
+
+;; P12.boundary-visibility — persistent drift is visible between
+;; representatives; transient intra-period drift is unobservable but must
+;; not crash or misattribute.
+(deftest p12-boundary-visibility-sim-test
+  (let [m0 (model/bootstrap 2)
+        split {:event/type :clean-split :pid "000001" :targets ["900001" "900002"]
+               :persons {"900001" (model/base-person) "900002" (model/base-person)}}
+        m-split (:model (model/apply-event m0 split))
+        states [m0
+                m-split ;; drift, mid-2024
+                m0      ;; reverted before the 2024 representative (transient)
+                (:model (model/apply-event m0 {:event/type :edit-person :pid "000002"
+                                               :field :family_name :value "改"}))]
+        instants ["2023-06-01T00:00:00Z" "2024-02-01T00:00:00Z"
+                  "2024-06-01T00:00:00Z" "2024-12-01T00:00:00Z"]]
+    (with-repo [git root work]
+      (let [cs (commit-history! git root states instants)
+            s (audit/scan-history! {:aozora-repo (str root)
+                                    :from-ref (.getName (first cs))
+                                    :sample-period "year"
+                                    :work-dir (str work)})]
+        (is (= "ok" (:status s)))
+        ;; transient split between representatives is invisible: summary shows
+        ;; only the persistent metadata correction, zero candidates.
+        (is (= 0 (get (:summary s) "split_candidates")))
+        (is (pos? (get (:summary s) "pairs_scanned")))))))

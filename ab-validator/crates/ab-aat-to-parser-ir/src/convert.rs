@@ -474,17 +474,17 @@ fn map_block(
                 recorder.record(
                     "STRUCTURAL",
                     Some(structural_pointer.as_str()),
-                    Some("paragraphs[].layout"),
+                    None,
                     None,
                     None,
                 )?;
-                recorder.record_if_measured(
+                recorder.record(
                     "INVENTION",
                     Some(structural_pointer.as_str()),
                     Some("indentation"),
                     None,
                     Some(json!(1)),
-                );
+                )?;
                 let span = map_span(block.get("span"), current, current, recorder, path)?;
                 outputs.nodes.push(json!({
                     "type": "indentation",

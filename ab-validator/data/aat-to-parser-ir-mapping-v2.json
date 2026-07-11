@@ -5442,9 +5442,9 @@
       "rule_id": "S-11",
       "category": "STRUCTURAL",
       "aat_pointer": "blocks[].jizume_block",
-      "parser_ir_pointer": "paragraphs[].layout",
-      "action": "project",
-      "description": "jizume_block container projects to paragraph layout jizume width(N); children recurse like jisage_block."
+      "parser_ir_pointer": null,
+      "action": "flatten",
+      "description": "jizume_block container collapsed on mixed-children fallback; layout not projected; children recurse without inherited layout"
     },
     {
       "rule_id": "L-468",
@@ -5493,6 +5493,14 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "AAT meta.warnings[].span has no parser-IR field; parser-IR carries warnings via its own diagnostics channel, the enriched field is sidecar-recorded."
+    },
+    {
+      "rule_id": "I-33",
+      "category": "INVENTION",
+      "aat_pointer": "blocks[].jizume_block",
+      "parser_ir_pointer": "indentation",
+      "action": "invent",
+      "description": "mixed-children jizume_block mapped to indentation node; width not projected on fallback; depth defaulted 1"
     }
   ],
   "synthetic_evidence_descriptions": [

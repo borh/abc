@@ -1874,6 +1874,52 @@ fn v2_jizume_block_projects_paragraph_layout() {
 }
 
 #[test]
+fn v2_jizume_block_mixed_children_fallback_accounts_invention() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat = json!({
+        "version": 2, "work_id": "t-jizume-fallback",
+        "blocks": [{ "kind": "jizume_block", "width": 21, "children": [
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] },
+            { "kind": "heading", "level": 1, "style": "normal",
+              "content": [{ "kind": "text", "value": "見出し" }] } ] }],
+        "meta": v2_test_meta()
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let nodes = output
+        .parser_ir
+        .pointer("/nodes")
+        .and_then(Value::as_array)
+        .unwrap();
+    assert!(
+        nodes.iter().any(|node| node["type"] == "indentation"),
+        "mixed-children jizume_block fallback must emit an indentation node"
+    );
+
+    assert!(has_divergence_record(
+        &output,
+        "STRUCTURAL",
+        "blocks[].jizume_block",
+        None
+    ));
+    assert!(has_divergence_record(
+        &output,
+        "INVENTION",
+        "blocks[].jizume_block",
+        Some("indentation")
+    ));
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
 fn v2_typed_layout_fields_project_without_x_names() {
     let (schemas, mapping) = v2_schemas_and_mapping();
     let aat = json!({

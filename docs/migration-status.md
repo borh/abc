@@ -145,8 +145,9 @@ Do not rename these surfaces as part of monorepo setup:
 
 Any future Soranoha rename needs a dedicated ADR that decides whether Soranoha
 is a public project name, code namespace, vocabulary base, component taxonomy,
-or a phased combination. Until then, root flake output prefixes are operational
-labels, not a public vocabulary migration.
+or a phased combination. Until then, retained ABC namespace, vocabulary,
+rule-ID, and artifact prefixes remain compatibility identifiers, not a public
+vocabulary migration to Soranoha.
 
 ## Heavy Data Policy
 

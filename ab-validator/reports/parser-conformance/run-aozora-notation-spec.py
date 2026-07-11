@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 import shlex
 import subprocess
 from dataclasses import asdict, dataclass
@@ -15,6 +17,7 @@ class Adapter:
     label: str
     mode: str
     command: list[str]
+    diagnostics_command: list[str] | None = None
 
 
 @dataclass
@@ -37,6 +40,13 @@ def parse_adapter(spec: str) -> Adapter:
     if not mode_sep or mode not in {"inspect", "aat"} or not command:
         raise SystemExit(f"--adapter mode must be inspect or aat, got {spec!r}")
     return Adapter(label=label, mode=mode, command=shlex.split(command))
+
+
+def parse_adapter_diagnostics(spec: str) -> tuple[str, list[str]]:
+    label, sep, command = spec.partition("=")
+    if not sep or not label or not command:
+        raise SystemExit(f"--adapter-diagnostics must be label=command, got {spec!r}")
+    return label, shlex.split(command)
 
 
 def load_vectors(vectors_dir: Path) -> list[dict[str, Any]]:
@@ -69,7 +79,7 @@ def inspect(adapter: Adapter, kind: str, source: str) -> tuple[dict[str, Any] | 
         value = json.loads(proc.stdout)
     except json.JSONDecodeError as error:
         return None, f"invalid JSON: {error}"
-    if value.get("schemaVersion") != 1 or not isinstance(value.get("data"), list):
+    if value.get("schemaVersion") != 2 or not isinstance(value.get("data"), list):
         return None, "unsupported inspect envelope"
     return value, None
 
@@ -136,6 +146,38 @@ def run_aat(adapter: Adapter, source: str) -> tuple[dict[str, Any] | None, str |
         return json.loads(proc.stdout), None
     except json.JSONDecodeError as error:
         return None, f"invalid JSON: {error}"
+
+
+def run_diagnostics(adapter: Adapter, source: str) -> tuple[list | None, str | None]:
+    proc = subprocess.run(
+        adapter.diagnostics_command,
+        input=source,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if proc.returncode != 0:
+        return None, proc.stderr.strip() or f"exit {proc.returncode}"
+    try:
+        value = json.loads(proc.stdout)
+    except json.JSONDecodeError as error:
+        return None, f"invalid JSON: {error}"
+    if value.get("schemaVersion") != 3 or not isinstance(value.get("data"), list):
+        return None, "unsupported diagnostics envelope"
+    projected = []
+    for entry in value["data"]:
+        try:
+            projected.append(
+                {
+                    "code": entry["code"],
+                    "severity": entry["severity"],
+                    "span": {"start": entry["span"]["start"], "end": entry["span"]["end"]},
+                }
+            )
+        except (KeyError, TypeError):
+            return None, f"entry missing code/severity/span: {entry!r}"
+    return projected, None
 
 
 def project_aat(blocks: list[dict[str, Any]]) -> tuple[list[str], set[str]]:
@@ -207,6 +249,55 @@ def expected_kind_seq(vector: dict[str, Any]) -> list[str] | None:
     return [node["kind"] for node in nodes]
 
 
+# --- span-deviation manifest --------------------------------------------------
+#
+# Pre-committed, hand-reviewed authorization for diagnostic-span deviations vs
+# third-party vectors (rotation B decoded-source offsets). Fail-closed on both
+# sides: unlisted divergence still fails, and unknown/unused manifest entries
+# are a hard error (stale authorization must not silently linger).
+
+MANIFEST_FIELDS = {
+    "vector": str,
+    "reason": str,
+    "original_expected": list,
+    "expected": list,
+    "source_sha256": str,
+}
+
+
+def load_span_deviation_manifest(path) -> dict:
+    entries = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(entries, list):
+        raise SystemExit("span-deviation-manifest must be a JSON list")
+    manifest = {}
+    for e in entries:
+        if not isinstance(e, dict) or set(e) != set(MANIFEST_FIELDS):
+            raise SystemExit(
+                f"span-deviation-manifest entry fields must be exactly "
+                f"{sorted(MANIFEST_FIELDS)}: {e!r}"
+            )
+        for key, typ in MANIFEST_FIELDS.items():
+            if not isinstance(e[key], typ):
+                raise SystemExit(f"span-deviation-manifest {key!r} must be {typ.__name__}: {e!r}")
+        if not re.fullmatch(r"[0-9a-f]{64}", e["source_sha256"]):
+            raise SystemExit(f"span-deviation-manifest source_sha256 must be 64-hex: {e!r}")
+        if e["vector"] in manifest:
+            raise SystemExit(f"span-deviation-manifest duplicate vector {e['vector']!r}")
+        manifest[e["vector"]] = e
+    return manifest
+
+
+def check_manifest_consumed(manifest: dict, vector_names: set, used: set) -> None:
+    unknown = sorted(set(manifest) - vector_names)
+    if unknown:
+        raise SystemExit(f"span-deviation-manifest entries match no loaded vector: {unknown}")
+    unused = sorted(set(manifest) - used)
+    if unused:
+        raise SystemExit(
+            f"span-deviation-manifest entries never exercised (stale authorization): {unused}"
+        )
+
+
 # --- scoring -----------------------------------------------------------------
 #
 # Projections an adapter cannot faithfully answer are recorded as explicit
@@ -215,7 +306,7 @@ def expected_kind_seq(vector: dict[str, Any]) -> list[str] | None:
 #   aat:     scores nodes (kind sequence); pairs/diagnostics/serialize/html skip.
 
 
-def evaluate(adapter: Adapter, vector: dict[str, Any]) -> Row:
+def evaluate(adapter: Adapter, vector: dict[str, Any], manifest=None, manifest_used=None) -> Row:
     failures: list[str] = []
     warnings: list[str] = []
     skips: list[str] = []
@@ -242,9 +333,41 @@ def evaluate(adapter: Adapter, vector: dict[str, Any]) -> Row:
                     )
                 if unmapped:
                     warnings.append(f"unmapped AAT node kinds: {sorted(unmapped)}")
-        for projection in ("pairs", "diagnostics", "serialize", "html"):
+        for projection in ("pairs", "serialize", "html"):
             if expected.get(projection) is not None:
                 skips.append(f"{projection}: not comparable for AAT adapter (kind-sequence only)")
+        want_diag = expected.get("diagnostics")
+        if want_diag is not None:
+            if adapter.diagnostics_command is None:
+                skips.append("diagnostics: not comparable for AAT adapter (kind-sequence only)")
+            else:
+                scored += 1
+                entry = (manifest or {}).get(vector["name"])
+                bad_manifest = False
+                if entry is not None:
+                    digest = hashlib.sha256(vector["source"].encode("utf-8")).hexdigest()
+                    if digest != entry["source_sha256"]:
+                        failures.append(
+                            "diagnostics: manifest source hash mismatch "
+                            "(vector changed since authorization)"
+                        )
+                        bad_manifest = True
+                    elif entry["original_expected"] != want_diag:
+                        failures.append(
+                            "diagnostics: manifest original_expected is stale "
+                            "(vector expectation changed since authorization)"
+                        )
+                        bad_manifest = True
+                    else:
+                        want_diag = entry["expected"]
+                        if manifest_used is not None:
+                            manifest_used.add(vector["name"])
+                if not bad_manifest:
+                    actual_diag, error = run_diagnostics(adapter, vector["source"])
+                    if error:
+                        failures.append(f"diagnostics: {error}")
+                    elif actual_diag != want_diag:
+                        failures.append(f"diagnostics: expected {want_diag!r}, got {actual_diag!r}")
     else:
         for projection in ("nodes", "pairs", "diagnostics"):
             want = expected.get(projection)
@@ -318,16 +441,35 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--vectors-dir", type=Path, required=True)
     parser.add_argument("--adapter", action="append", default=[])
+    parser.add_argument("--adapter-diagnostics", action="append", default=[])
     parser.add_argument("--summary-json", type=Path, required=True)
     parser.add_argument("--report-md", type=Path, required=True)
+    parser.add_argument("--span-deviation-manifest", type=Path, default=None)
     args = parser.parse_args()
 
     adapters = [parse_adapter(spec) for spec in args.adapter]
     if not adapters:
         raise SystemExit("at least one --adapter is required")
 
+    for spec in args.adapter_diagnostics:
+        label, command = parse_adapter_diagnostics(spec)
+        matches = [a for a in adapters if a.label == label]
+        if not matches or matches[0].mode != "aat":
+            raise SystemExit(f"--adapter-diagnostics {label!r}: no aat adapter with that label")
+        matches[0].diagnostics_command = command
+
     vectors = load_vectors(args.vectors_dir)
-    rows = [evaluate(adapter, vector) for vector in vectors for adapter in adapters]
+    manifest = None
+    manifest_used: set = set()
+    if args.span_deviation_manifest is not None:
+        manifest = load_span_deviation_manifest(args.span_deviation_manifest)
+    rows = [
+        evaluate(adapter, vector, manifest=manifest, manifest_used=manifest_used)
+        for vector in vectors
+        for adapter in adapters
+    ]
+    if manifest is not None:
+        check_manifest_consumed(manifest, {v["name"] for v in vectors}, manifest_used)
     summary = {
         "schema_version": 2,
         "vectors_dir": str(args.vectors_dir),

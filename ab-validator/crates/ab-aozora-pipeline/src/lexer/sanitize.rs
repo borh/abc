@@ -82,6 +82,109 @@ pub struct SanitizeOutput<'s> {
     pub diagnostics: Vec<Diagnostic>,
 }
 
+/// One non-identity rewrite: source bytes `src_start..src_end` became
+/// output bytes `dst_start..dst_end`.
+///
+/// Recorded in a single transform step's OWN input/output coordinates
+/// (Task 13 offset-map groundwork for Phase 3 span semantics; consumed by
+/// [`OffsetMap`] / [`SanitizeMaps`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MapEdit {
+    pub src_start: usize,
+    pub src_end: usize,
+    pub dst_start: usize,
+    pub dst_end: usize,
+}
+
+/// Offset map for ONE transform pass: sorted, non-overlapping edits;
+/// offsets between edits translate by the accumulated length delta.
+#[derive(Debug, Clone, Default)]
+pub struct OffsetMap {
+    edits: Vec<MapEdit>,
+}
+
+impl OffsetMap {
+    fn locate(&self, dst: usize) -> Result<usize, isize> {
+        // Returns Ok(edit index) when dst falls inside an edit's dst
+        // range, Err(delta) with the accumulated (src - dst) delta of all
+        // edits ending at or before dst otherwise.
+        let mut delta: isize = 0;
+        for (i, e) in self.edits.iter().enumerate() {
+            if dst < e.dst_start {
+                return Err(delta);
+            }
+            if dst < e.dst_end {
+                return Ok(i);
+            }
+            delta += (e.src_end - e.src_start).cast_signed()
+                - (e.dst_end - e.dst_start).cast_signed();
+        }
+        Err(delta)
+    }
+
+    #[must_use]
+    pub fn to_source_offset(&self, dst: usize) -> usize {
+        match self.locate(dst) {
+            Ok(i) => self.edits[i].src_start,
+            Err(delta) => (dst.cast_signed() + delta).cast_unsigned(),
+        }
+    }
+
+    #[must_use]
+    pub fn to_source_end(&self, dst: usize) -> usize {
+        // End-exclusive semantics: an end whose last covered byte
+        // (dst - 1) lands inside an edit resolves to the edit's src_end;
+        // an end at an edit's dst_start resolves BEFORE the edit. An
+        // empty span's end behaves like its start.
+        if dst == 0 {
+            return self.to_source_offset(0);
+        }
+        match self.locate(dst - 1) {
+            Ok(i) => self.edits[i].src_end,
+            Err(delta) => (dst.cast_signed() + delta).cast_unsigned(),
+        }
+    }
+}
+
+/// Composed per-step maps; queries walk the steps in reverse.
+#[derive(Debug, Clone, Default)]
+pub struct SanitizeMaps {
+    steps: Vec<OffsetMap>,
+}
+
+impl SanitizeMaps {
+    #[must_use]
+    pub fn to_source_offset(&self, dst: usize) -> usize {
+        self.steps.iter().rev().fold(dst, |o, m| m.to_source_offset(o))
+    }
+
+    #[must_use]
+    pub fn to_source_end(&self, dst: usize) -> usize {
+        self.steps.iter().rev().fold(dst, |o, m| m.to_source_end(o))
+    }
+
+    /// Test introspection: does `dst` pass through any step's edit?
+    #[cfg(test)]
+    fn is_edited(&self, dst: usize) -> bool {
+        let mut offset = dst;
+        for map in self.steps.iter().rev() {
+            match map.locate(offset) {
+                Ok(_) => return true,
+                Err(delta) => offset = (offset.cast_signed() + delta).cast_unsigned(),
+            }
+        }
+        false
+    }
+}
+
+/// [`sanitize`] plus the composed offset map (Phase 3 span semantics).
+#[derive(Debug)]
+pub struct SanitizeMappedOutput<'s> {
+    pub text: Cow<'s, str>,
+    pub diagnostics: Vec<Diagnostic>,
+    pub maps: SanitizeMaps,
+}
+
 /// Apply the four sanitation steps and return the result. See module
 /// documentation for the step order and rationale.
 #[must_use]
@@ -139,6 +242,93 @@ pub fn sanitize(source: &str) -> SanitizeOutput<'_> {
     diagnostics.extend(pua_diagnostics);
 
     SanitizeOutput { text, diagnostics }
+}
+
+/// As [`sanitize`], but additionally returns a [`SanitizeMaps`].
+///
+/// Composes one [`OffsetMap`] per transform step, so a downstream consumer
+/// can translate a byte offset in the sanitized `text` back to the
+/// corresponding offset in `source` (Task 13 groundwork for Phase 3 span
+/// semantics). Mirrors `sanitize`'s exact step sequence and MUST stay
+/// bit-identical to it — both delegate to the same `_core` functions, so
+/// there is only one implementation of each step to drift.
+#[must_use]
+pub fn sanitize_mapped(source: &str) -> SanitizeMappedOutput<'_> {
+    let mut steps: Vec<OffsetMap> = Vec::with_capacity(5);
+
+    // Step 1: BOM strip. See `sanitize` for the stacked-BOM rationale.
+    let mut after_bom = source;
+    let mut bom_bytes = 0usize;
+    while let Some(rest) = after_bom.strip_prefix('\u{FEFF}') {
+        bom_bytes += after_bom.len() - rest.len();
+        after_bom = rest;
+    }
+    steps.push(if bom_bytes > 0 {
+        OffsetMap {
+            edits: vec![MapEdit {
+                src_start: 0,
+                src_end: bom_bytes,
+                dst_start: 0,
+                dst_end: 0,
+            }],
+        }
+    } else {
+        OffsetMap::default()
+    });
+
+    // Step 2: CR/LF normalization.
+    let line_normalized: Cow<'_, str> = if after_bom.contains('\r') {
+        let mut edits = Vec::new();
+        let out = normalize_line_endings_core(after_bom, Some(&mut edits));
+        steps.push(OffsetMap { edits });
+        Cow::Owned(out)
+    } else {
+        steps.push(OffsetMap::default());
+        Cow::Borrowed(after_bom)
+    };
+
+    // Step 3: decorative-rule isolation.
+    let rule_isolated: Cow<'_, str> = if has_long_rule_line(&line_normalized) {
+        let mut edits = Vec::new();
+        let out = isolate_decorative_rules_core(&line_normalized, Some(&mut edits));
+        steps.push(OffsetMap { edits });
+        Cow::Owned(out)
+    } else {
+        steps.push(OffsetMap::default());
+        line_normalized
+    };
+
+    // Step 4: accent decomposition inside tortoiseshell brackets.
+    let mut accent_diagnostics: Vec<Diagnostic> = Vec::new();
+    let text: Cow<'_, str> =
+        if memmem::find(rule_isolated.as_bytes(), TORTOISE_OPEN_BYTES).is_some() {
+            let owned = rule_isolated.into_owned();
+            let mut edits = Vec::new();
+            let out = rewrite_accent_spans_collecting_core(
+                &owned,
+                &mut accent_diagnostics,
+                Some(&mut edits),
+            );
+            steps.push(OffsetMap { edits });
+            Cow::Owned(out)
+        } else {
+            steps.push(OffsetMap::default());
+            rule_isolated
+        };
+
+    // Step 5: PUA sentinel neutralization — byte-length-preserving, so
+    // this step never contributes a non-identity edit.
+    let (text, pua_diagnostics) = neutralize_sentinel_collisions(text);
+    steps.push(OffsetMap::default());
+
+    let mut diagnostics = accent_diagnostics;
+    diagnostics.extend(pua_diagnostics);
+
+    SanitizeMappedOutput {
+        text,
+        diagnostics,
+        maps: SanitizeMaps { steps },
+    }
 }
 
 /// Diagnose and neutralize source-side PUA sentinel collisions.
@@ -239,6 +429,19 @@ pub fn rewrite_accent_spans(input: &str) -> String {
 /// the caret on the right characters. The span brackets the whole
 /// `〔decomposed〕` run (open through close).
 fn rewrite_accent_spans_collecting(input: &str, diagnostics: &mut Vec<Diagnostic>) -> String {
+    rewrite_accent_spans_collecting_core(input, diagnostics, None)
+}
+
+/// Core of [`rewrite_accent_spans_collecting`]; when `edits` is `Some`,
+/// records one [`MapEdit`] per rewritten `〔...〕` span — whole bracketed
+/// run (open through close) in THIS step's input coordinates to the same
+/// run in its output coordinates — since accent decomposition is not
+/// byte-length-preserving inside the span (Task 13 offset-map groundwork).
+fn rewrite_accent_spans_collecting_core(
+    input: &str,
+    diagnostics: &mut Vec<Diagnostic>,
+    mut edits: Option<&mut Vec<MapEdit>>,
+) -> String {
     let mut out = String::with_capacity(input.len());
     let mut cursor = 0;
 
@@ -272,6 +475,7 @@ fn rewrite_accent_spans_collecting(input: &str, diagnostics: &mut Vec<Diagnostic
         out.push(TORTOISE_CLOSE);
         let out_close = out.len();
 
+        let src_end = close_abs + TORTOISE_CLOSE.len_utf8();
         if decomposed.as_ref() != body {
             // `out.len()` fits u32 by the same sanitize-entry length cap
             // that bounds the PUA scan; accent decomposition only ever
@@ -284,9 +488,17 @@ fn rewrite_accent_spans_collecting(input: &str, diagnostics: &mut Vec<Diagnostic
                 out_open as u32,
                 out_close as u32,
             )));
+            if let Some(e) = edits.as_deref_mut() {
+                e.push(MapEdit {
+                    src_start: open_abs,
+                    src_end,
+                    dst_start: out_open,
+                    dst_end: out_close,
+                });
+            }
         }
 
-        cursor = close_abs + TORTOISE_CLOSE.len_utf8();
+        cursor = src_end;
     }
 
     out
@@ -363,6 +575,14 @@ pub fn is_rule_line_trimmed(trimmed: &str) -> bool {
 #[doc(hidden)]
 #[must_use]
 pub fn isolate_decorative_rules(input: &str) -> String {
+    isolate_decorative_rules_core(input, None)
+}
+
+/// Core of [`isolate_decorative_rules`]; when `edits` is `Some`, records
+/// one [`MapEdit`] per inserted blank line — an empty source span (the
+/// insertion point) to the one-byte `\n` it produced (Task 13 offset-map
+/// groundwork).
+fn isolate_decorative_rules_core(input: &str, mut edits: Option<&mut Vec<MapEdit>>) -> String {
     let bytes = input.as_bytes();
     let mut out = String::with_capacity(input.len() + 16);
     let mut line_start: usize = 0;
@@ -380,7 +600,16 @@ pub fn isolate_decorative_rules(input: &str) -> String {
             // rule line, then inject the separating blank line. The
             // rule line itself stays in the next bulk-copy chunk.
             out.push_str(&input[copy_from..line_start]);
+            let dst_start = out.len();
             out.push('\n');
+            if let Some(e) = edits.as_deref_mut() {
+                e.push(MapEdit {
+                    src_start: line_start,
+                    src_end: line_start,
+                    dst_start,
+                    dst_end: dst_start + 1,
+                });
+            }
             copy_from = line_start;
         }
         // A rule line (or any visible line) keeps `prev_nonblank` true;
@@ -395,7 +624,16 @@ pub fn isolate_decorative_rules(input: &str) -> String {
         let tail_trimmed = tail.trim();
         if is_rule_line_trimmed(tail_trimmed) && prev_nonblank {
             out.push_str(&input[copy_from..line_start]);
+            let dst_start = out.len();
             out.push('\n');
+            if let Some(e) = edits {
+                e.push(MapEdit {
+                    src_start: line_start,
+                    src_end: line_start,
+                    dst_start,
+                    dst_end: dst_start + 1,
+                });
+            }
             copy_from = line_start;
         }
     }
@@ -432,6 +670,13 @@ pub fn isolate_decorative_rules(input: &str) -> String {
 #[doc(hidden)]
 #[must_use]
 pub fn normalize_line_endings(input: &str) -> String {
+    normalize_line_endings_core(input, None)
+}
+
+/// Core of [`normalize_line_endings`]; when `edits` is `Some`, records
+/// one [`MapEdit`] per `\r\n`→`\n` or lone `\r`→`\n` substitution in this
+/// step's own input/output coordinates (Task 13 offset-map groundwork).
+fn normalize_line_endings_core(input: &str, mut edits: Option<&mut Vec<MapEdit>>) -> String {
     let bytes = input.as_bytes();
     let mut out = String::with_capacity(input.len());
     let mut cursor = 0;
@@ -445,12 +690,22 @@ pub fn normalize_line_endings(input: &str) -> String {
         // Always emit one `\n` for the line terminator. Skip the
         // following `\n` if this is `\r\n` (the CRLF path); otherwise
         // step past the lone `\r` only.
+        let dst_start = out.len();
         out.push('\n');
-        cursor = if bytes.get(cr_pos + 1) == Some(&b'\n') {
+        let src_end = if bytes.get(cr_pos + 1) == Some(&b'\n') {
             cr_pos + 2
         } else {
             cr_pos + 1
         };
+        if let Some(e) = edits.as_deref_mut() {
+            e.push(MapEdit {
+                src_start: cr_pos,
+                src_end,
+                dst_start,
+                dst_end: dst_start + 1,
+            });
+        }
+        cursor = src_end;
     }
     if cursor < bytes.len() {
         out.push_str(&input[cursor..]);
@@ -521,6 +776,8 @@ pub fn scan_for_sentinel_collisions(text: &str) -> Vec<Diagnostic> {
 
 #[cfg(test)]
 mod tests {
+    use proptest::prelude::*;
+
     use super::*;
 
     #[test]
@@ -986,6 +1243,100 @@ mod tests {
                 "backtick survived for base {base:?}: {:?}",
                 out.text
             );
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Task 13: `sanitize_mapped` + `OffsetMap` — offset bookkeeping
+    // across the five sanitize transform steps.
+    // -------------------------------------------------------------
+
+    #[test]
+    fn sanitize_mapped_text_equals_sanitize() {
+        for src in [
+            "\u{feff}あ\r\nい\r う",
+            "plain",
+            "〔fune`bre〕\r\n----------\nx",
+            "あ\u{e001}い",
+            "",
+        ] {
+            let plain = sanitize(src);
+            let mapped = sanitize_mapped(src);
+            assert_eq!(plain.text, mapped.text, "text drift on {src:?}");
+            assert_eq!(plain.diagnostics.len(), mapped.diagnostics.len());
+        }
+    }
+
+    #[test]
+    fn offset_map_translates_through_bom_and_crlf() {
+        // source: BOM(3) + "あ\r\nい"  → sanitized: "あ\nい"
+        let src = "\u{feff}あ\r\nい";
+        let m = sanitize_mapped(src).maps;
+        assert_eq!(m.to_source_offset(0), 3); // あ starts after BOM
+        assert_eq!(m.to_source_offset(3), 6); // \n ← \r\n start
+        assert_eq!(m.to_source_end(4), 8); // end of \n ← end of \r\n
+        assert_eq!(m.to_source_offset(4), 8); // い
+    }
+
+    /// Width-equality is not unedited-ness: lone `\r`→`\n` is a
+    /// width-equal rewrite (plan test corrected per prose property).
+    #[test]
+    fn offset_map_is_monotone_and_content_preserving() {
+        let src = "\u{feff}前〔e'te'〕中\r\n==========\n後\r尾";
+        let out = sanitize_mapped(src);
+        let dst = out.text.as_ref();
+        let mut prev = 0usize;
+        for i in (0..=dst.len()).filter(|i| dst.is_char_boundary(*i)) {
+            let s = out.maps.to_source_offset(i);
+            assert!(s >= prev && s <= src.len(), "monotonicity at {i}");
+            prev = s;
+        }
+        // Unedited chars must map to a width-equal source region that
+        // slices identically; edited chars are exempt entirely.
+        for (i, ch) in dst.char_indices() {
+            if out.maps.is_edited(i) {
+                continue;
+            }
+            let (s, e) = (
+                out.maps.to_source_offset(i),
+                out.maps.to_source_end(i + ch.len_utf8()),
+            );
+            assert_eq!(e - s, ch.len_utf8(), "unedited char changed width at {i}");
+            assert_eq!(&src[s..e], &dst[i..i + ch.len_utf8()], "content drift at {i}");
+        }
+        // Pin the traced rewrite: the `\n` produced from the lone `\r`
+        // (dst byte 33, between 後 and 尾) IS an edit and maps to the
+        // lone `\r`'s exact source range (src 36..37).
+        assert_eq!(&dst[33..34], "\n");
+        assert!(out.maps.is_edited(33));
+        assert_eq!(out.maps.to_source_offset(33), 36);
+        assert_eq!(out.maps.to_source_end(34), 37);
+        assert_eq!(&src[36..37], "\r");
+    }
+
+    proptest! {
+        #[test]
+        fn mapped_output_always_matches_unmapped(parts in prop::collection::vec(
+            prop_oneof![
+                Just("あいう".to_owned()),
+                Just("\r\n".to_owned()),
+                Just("\r".to_owned()),
+                Just("〔cafe'〕".to_owned()),
+                Just("----------\n".to_owned()),
+                Just("\u{feff}".to_owned()),
+                Just("\u{e001}".to_owned()),
+            ], 0..12)) {
+            let src: String = parts.concat();
+            let plain = sanitize(&src);
+            let mapped = sanitize_mapped(&src);
+            prop_assert_eq!(plain.text.as_ref(), mapped.text.as_ref());
+            let dst_len = mapped.text.len();
+            let mut prev = 0usize;
+            for i in (0..=dst_len).filter(|i| mapped.text.is_char_boundary(*i)) {
+                let s = mapped.maps.to_source_offset(i);
+                prop_assert!(s >= prev && s <= src.len());
+                prev = s;
+            }
         }
     }
 }

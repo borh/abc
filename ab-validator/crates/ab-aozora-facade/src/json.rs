@@ -11,7 +11,7 @@
 //! Every JSON envelope has the shape
 //!
 //! ```json
-//! { "schemaVersion": 2, "data": [ /* …entries… */ ] }
+//! { "schemaVersion": 3, "data": [ /* …entries… */ ] }
 //! ```
 //!
 //! [`SCHEMA_VERSION`] is bumped on any breaking change to the
@@ -33,7 +33,9 @@
 
 use serde::Serialize;
 
-use crate::encoding::gaiji::{self, find_span, gaiji_resolutions, resolve_at};
+use crate::encoding::gaiji::{self, gaiji_resolutions};
+#[cfg(feature = "json")]
+use crate::encoding::gaiji::{find_span, resolve_at};
 use crate::{DiagnosticSource, Severity, Tree};
 
 /// Wire-format schema version. Bumped on any breaking change to the
@@ -43,13 +45,18 @@ use crate::{DiagnosticSource, Severity, Tree};
 /// Schema 2 (#435): added the `gothic` weight tag (emphasis / container);
 /// renamed the `lineBold` node kind to `lineGothic`; removed the
 /// `combineUprightRange` container tag (縦中横 has no paired-range form).
-pub const SCHEMA_VERSION: u32 = 2;
+///
+/// Schema 3 (Phase 3): added the stable kebab-case `code` field to
+/// diagnostics entries.
+pub const SCHEMA_VERSION: u32 = 3;
 
 /// Project a slice of [`crate::Diagnostic`] into a `{ schemaVersion, data }`
 /// JSON envelope. Every entry has the shape
 /// `{ kind, span: { start, end }, codepoint? }`.
 ///
-/// Empty input → `{"schemaVersion":2,"data":[]}`.
+/// Empty input → `{"schemaVersion":3,"data":[]}`.
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn diagnostics(diagnostics: &[crate::Diagnostic]) -> String {
     serialize_envelope(&diagnostic_entries(diagnostics))
@@ -68,7 +75,9 @@ pub fn diagnostic_entries(diagnostics: &[crate::Diagnostic]) -> Vec<Diagnostic> 
 ///
 /// Every entry has the shape `{ kind, span: { start, end } }`,
 /// source-coordinate, sorted by `span.start`. Empty parse →
-/// `{"schemaVersion":2,"data":[]}`.
+/// `{"schemaVersion":3,"data":[]}`.
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn nodes(tree: &Tree<'_>) -> String {
     serialize_envelope(&node_entries(tree))
@@ -97,7 +106,9 @@ pub fn node_entries(tree: &Tree<'_>) -> Vec<Node> {
 /// `textDocument/linkedEditingRange` and
 /// `textDocument/documentHighlight`.
 ///
-/// Empty parse → `{"schemaVersion":2,"data":[]}`.
+/// Empty parse → `{"schemaVersion":3,"data":[]}`.
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn pairs(tree: &Tree<'_>) -> String {
     serialize_envelope(&pair_entries(tree))
@@ -131,7 +142,9 @@ pub fn pair_entries(tree: &Tree<'_>) -> Vec<Pair> {
 /// source-coordinate container pairs must translate through
 /// [`Tree::source_nodes`].
 ///
-/// Empty parse → `{"schemaVersion":2,"data":[]}`.
+/// Empty parse → `{"schemaVersion":3,"data":[]}`.
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn container_pairs(tree: &Tree<'_>) -> String {
     serialize_envelope(&container_pair_entries(tree))
@@ -166,6 +179,8 @@ pub fn container_pair_entries(tree: &Tree<'_>) -> Vec<ContainerPair> {
 /// editor completion menus for `［＃…］` annotations without
 /// re-implementing the table per driver (`aozora-wasm` / `aozora-py`
 /// both call this).
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn slugs() -> String {
     serialize_envelope(&slug_entries())
@@ -199,7 +214,9 @@ pub fn slug_entries() -> Vec<Slug> {
 /// audits. The scan + resolution are the single authority in
 /// [`crate::encoding::gaiji`]; this is only their wire projection.
 ///
-/// Empty / gaiji-free source → `{"schemaVersion":2,"data":[]}`.
+/// Empty / gaiji-free source → `{"schemaVersion":3,"data":[]}`.
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn gaiji(source: &str) -> String {
     serialize_envelope(&gaiji_entries(source))
@@ -225,6 +242,8 @@ pub fn gaiji_entries(source: &str) -> Vec<GaijiResolution> {
 /// For editor cursor-hover: the scan is bounded to a window around the
 /// cursor, so cost is independent of document size (unlike
 /// [`gaiji()`], which walks the whole source).
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn gaiji_at(source: &str, byte_offset: usize) -> String {
     find_span(source, byte_offset)
@@ -242,6 +261,7 @@ pub fn gaiji_at(source: &str, byte_offset: usize) -> String {
 // Internal: envelope + wire structs
 // ────────────────────────────────────────────────────────────────────
 
+#[cfg(feature = "json")]
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Envelope<'a, T> {
@@ -358,6 +378,7 @@ fn envelope_schema(
     root
 }
 
+#[cfg(feature = "json")]
 fn serialize_envelope<T: Serialize>(data: &[T]) -> String {
     let env = Envelope {
         schema_version: SCHEMA_VERSION,
@@ -385,10 +406,14 @@ impl From<crate::Span> for Span {
 }
 
 /// One `diagnostics` envelope entry — a projected [`crate::Diagnostic`].
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Diagnostic {
     kind: &'static str,
+    /// Stable kebab-case diagnostic code — the conformance-contract
+    /// identity of this diagnostic (Phase 3 design spec). Always the
+    /// 1:1 kebab form of `kind`.
+    code: String,
     severity: &'static str,
     source: &'static str,
     span: Span,
@@ -414,8 +439,10 @@ impl From<&crate::Diagnostic> for Diagnostic {
         // and internal axes; consumers that need the full namespaced ID
         // can still rely on `Diagnostic::code()`.
         let kind = d.code().rsplit("::").next().unwrap_or("unknown");
+        let code = kind.replace('_', "-");
         Self {
             kind,
+            code,
             severity: severity_str(d.severity()),
             source: source_str(d.source()),
             span: d.span().into(),
@@ -537,12 +564,14 @@ impl From<gaiji::GaijiResolution> for GaijiResolution {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "json")]
     use crate::Document;
 
     #[test]
+    #[cfg(feature = "json")]
     fn slugs_envelope_lists_catalogue_with_known_families() {
         let json = slugs();
-        assert!(json.contains(r#""schemaVersion":2"#));
+        assert!(json.contains(r#""schemaVersion":3"#));
         assert!(json.contains(r#""canonical":"#));
         assert!(json.contains(r#""family":"#));
         // Guard against the silent `_ => "unknown"` degrade: every
@@ -554,14 +583,16 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn gaiji_resolutions_empty_envelope_for_plain_text() {
-        assert_eq!(gaiji("no gaiji here"), r#"{"schemaVersion":2,"data":[]}"#);
+        assert_eq!(gaiji("no gaiji here"), r#"{"schemaVersion":3,"data":[]}"#);
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn gaiji_resolutions_emits_resolved_entry_in_source_coords() {
         let json = gaiji("※［＃「々」］");
-        assert!(json.contains(r#""schemaVersion":2"#));
+        assert!(json.contains(r#""schemaVersion":3"#));
         assert!(
             json.contains(r#""span":{"start":0,"end":21}"#),
             "json: {json}"
@@ -573,6 +604,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn gaiji_resolution_at_returns_object_inside_span_else_null() {
         let src = "あ※［＃「々」］い";
         let inside = src.find('※').unwrap() + "※".len();
@@ -585,51 +617,72 @@ mod tests {
 
     #[test]
     fn schema_version_is_one() {
-        assert_eq!(SCHEMA_VERSION, 2);
+        assert_eq!(SCHEMA_VERSION, 3);
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn empty_diagnostics_round_trip_envelope() {
         let json = diagnostics(&[]);
-        assert_eq!(json, r#"{"schemaVersion":2,"data":[]}"#);
+        assert_eq!(json, r#"{"schemaVersion":3,"data":[]}"#);
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn empty_nodes_round_trip_envelope() {
         let doc = Document::new("plain");
         let tree = doc.parse();
         let json = nodes(&tree);
-        assert_eq!(json, r#"{"schemaVersion":2,"data":[]}"#);
+        assert_eq!(json, r#"{"schemaVersion":3,"data":[]}"#);
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn empty_pairs_round_trip_envelope() {
         let doc = Document::new("plain");
         let tree = doc.parse();
         let json = pairs(&tree);
-        assert_eq!(json, r#"{"schemaVersion":2,"data":[]}"#);
+        assert_eq!(json, r#"{"schemaVersion":3,"data":[]}"#);
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn pua_collision_serialises_as_warning_kind() {
         let doc = Document::new("abc\u{E001}def");
         let tree = doc.parse();
         let json = diagnostics(tree.diagnostics());
-        assert!(json.contains(r#""schemaVersion":2"#));
+        assert!(json.contains(r#""schemaVersion":3"#));
         assert!(json.contains(r#""kind":"source_contains_pua""#));
         assert!(json.contains(r#""codepoint":"""#) || json.contains(r#""codepoint":""#));
     }
 
     #[test]
+    #[cfg(feature = "json")]
+    fn diagnostic_entries_carry_kebab_code() {
+        // Any source producing an unclosed_bracket diagnostic:
+        let doc = Document::new("あ［＃ここから".to_owned());
+        let tree = doc.parse();
+        let entries = diagnostic_entries(tree.diagnostics());
+        assert!(!entries.is_empty());
+        let value = serde_json::to_value(&entries).unwrap();
+        let entry = &value[0];
+        let code = entry["code"].as_str().unwrap();
+        assert_eq!(code, entry["kind"].as_str().unwrap().replace('_', "-"));
+        assert!(!code.contains("::"));
+    }
+
+    #[test]
+    #[cfg(feature = "json")]
     fn ruby_serialises_with_kind_ruby_in_nodes() {
         let doc = Document::new("｜青梅《おうめ》");
         let tree = doc.parse();
         let json = nodes(&tree);
         assert!(json.contains(r#""kind":"ruby""#));
-        assert!(json.contains(r#""schemaVersion":2"#));
+        assert!(json.contains(r#""schemaVersion":3"#));
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn ruby_serialises_in_pairs() {
         let doc = Document::new("｜青梅《おうめ》");
         let tree = doc.parse();

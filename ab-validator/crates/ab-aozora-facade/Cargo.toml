@@ -1,7 +1,7 @@
 [package]
 name = "ab-aozora-facade"
 description = "Aozora Bunko notation parser — single front door (Document + Tree)"
-version = "0.1.0"
+version = "0.2.0"
 edition.workspace = true
 license = "MIT OR Apache-2.0"
 publish = false
@@ -52,6 +52,12 @@ proptest = { version = "1.11", optional = true }
 
 [features]
 default = []
+# Typed wire-projection layer: entry types + *_entries() constructors +
+# SCHEMA_VERSION. Builds structs from the parse tree; never serializes, so
+# it must not pull serde_json (and above all not serde_json/preserve_order —
+# see the feature-unification hazard in
+# docs/handoffs/2026-07-10-parser-fork-provenance.md).
+entries = ["dep:serde"]
 # JSON wire format projection used by FFI / WASM / PyO3 drivers.
 # Enables `aozora::json::diagnostics` /
 # `nodes` / `pairs` and the `SCHEMA_VERSION`
@@ -65,7 +71,7 @@ default = []
 # key order. Pinning it to `json` makes the byte-canonical contract
 # self-contained instead of silently depending on `schema` pulling in
 # schemars (which also enables `preserve_order`).
-json = ["dep:serde", "dep:serde_json", "serde_json/preserve_order"]
+json = ["entries", "dep:serde_json", "serde_json/preserve_order"]
 # JSON Schema introspection for the wire format. Enables
 # `aozora::json::schema_diagnostics` / `schema_nodes` /
 # `schema_pairs` / `schema_container_pairs` (one per envelope).

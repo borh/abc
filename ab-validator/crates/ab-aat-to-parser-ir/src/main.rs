@@ -136,11 +136,11 @@ fn main() -> Result<()> {
             )?;
             std::fs::write(
                 parser_ir_out,
-                serde_json::to_string_pretty(&output.parser_ir)? + "\n",
+                ab_aat_to_parser_ir::to_canonical_json_pretty(output.parser_ir)? + "\n",
             )?;
             std::fs::write(
                 divergence_out,
-                serde_json::to_string_pretty(&output.divergence_bundle)? + "\n",
+                ab_aat_to_parser_ir::to_canonical_json_pretty(output.divergence_bundle)? + "\n",
             )?;
         }
         Command::DetectOrthoAnnotations {

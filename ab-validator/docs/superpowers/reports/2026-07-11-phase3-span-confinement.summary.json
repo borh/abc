@@ -1,0 +1,21 @@
+{
+  "stage": "rotation-b",
+  "gate": "confinement",
+  "candidate": {
+    "commit": "a3f91f53fcae9bc18f577ea5b746f3be7f228fcb",
+    "bin_sha256": "9a94dcc8daf9c38a74611667f316e0e024a999d9f41ec41a3721d493dae277dc",
+    "version": "ab-aozora 0.3.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git a3f91f53fcae9bc18f577ea5b746f3be7f228fcb)"
+  },
+  "verdict": "PASS",
+  "details": {
+    "mode": "span-confinement",
+    "compared": 17886,
+    "classes": {
+      "identical": 0,
+      "rewritten": 0,
+      "span_confined": 17886
+    },
+    "verdict": "PASS",
+    "instrument_commit": "b4db35e52010ebe7d698c2d4e8fa1e5caefdf267"
+  }
+}

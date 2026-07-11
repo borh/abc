@@ -16,7 +16,7 @@ if [[ ! -d "$abc_root" ]]; then
 fi
 
 if [[ ! -f "$workset" ]]; then
-  echo "missing TEI-EAJ workset export at $workset; run nix run .#abc-tei-eaj-aozora-workset-json or set AB_TEI_EAJ_WORKSET=/path/to/workset.json" >&2
+  echo "missing TEI-EAJ workset export at $workset; run nix run ./abc#tei-eaj-aozora-workset-json or set AB_TEI_EAJ_WORKSET=/path/to/workset.json" >&2
   exit 2
 fi
 

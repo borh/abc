@@ -74,6 +74,10 @@
 
 use core::ops::Range;
 
+/// Crate version, re-exported for identity strings (ab-aozora-aat's
+/// adapter_version embeds it as the `facade` coordinate).
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 pub use ab_aozora_pipeline::{LexOutput, NodeRef, SourceNode, lex};
 pub use ab_aozora_spec::{
     ALL_SENTINELS, BLOCK_CLOSE_SENTINEL, BLOCK_LEAF_SENTINEL, BLOCK_OPEN_SENTINEL, Diagnostic,
@@ -97,8 +101,8 @@ mod document;
 mod incremental;
 mod splice;
 
-#[cfg(feature = "json")]
-#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
+#[cfg(feature = "entries")]
+#[cfg_attr(docsrs, doc(cfg(feature = "entries")))]
 pub mod json;
 
 /// Plain-text diagnostic rendering (`miette`-free, every target).

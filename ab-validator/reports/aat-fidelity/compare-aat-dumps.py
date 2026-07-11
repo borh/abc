@@ -1,29 +1,68 @@
 #!/usr/bin/env python3
-"""Semantic-JSON parity between two AAT dumps.
+"""Parity between two AAT dumps (directories of per-work *.json).
 
-Gate definition (Phase 1 Gate A): equality of parsed JSON documents after
-normalizing EXACTLY one pointer — /meta/adapter_version — which embeds the
-producing binary's identity (upstream store path vs fork shim) and is the
-only sanctioned difference. This is semantic JSON equality, not byte
-equality: key order and float formatting differences would be invisible,
-which is acceptable because both sides are serde_json output.
+Two instruments over the same allowlist — exactly the identity pointers
+/meta/adapter and /meta/adapter_version (Phase 2 rotates both):
+
+  semantic  parsed-JSON equality after REMOVING the two pointers. Key order
+            and number formatting are invisible. Localization diagnostic.
+  bytes     (--bytes) raw-byte equality after SUBSTITUTING each pointer's
+            exact serialized occurrence with a fixed placeholder. The
+            occurrence must appear exactly once per document (fail closed:
+            exit 2) so drift can never hide inside the substitution.
+
+Without --bytes the exit code reflects semantic parity (Phase 1 Gate A
+behavior); with --bytes it reflects byte parity, and the semantic result is
+still computed and reported for localization.
 
 Exit 0 = parity; 1 = divergence; 2 = usage/reference error.
 """
 
+import argparse
 import json
 import pathlib
 import sys
+
+POINTERS = ("adapter", "adapter_version")
+PLACEHOLDER = "__AB_PARITY_IDENTITY__"
 
 
 def normalize(doc):
     meta = doc.get("meta")
     if isinstance(meta, dict):
         meta = dict(meta)
-        meta.pop("adapter_version", None)
+        for key in POINTERS:
+            meta.pop(key, None)
         doc = dict(doc)
         doc["meta"] = meta
     return doc
+
+
+def substitute_identity(raw: bytes, path: pathlib.Path) -> bytes:
+    doc = json.loads(raw)
+    meta = doc.get("meta")
+    if not isinstance(meta, dict):
+        print(f"ERROR: {path}: no /meta object", file=sys.stderr)
+        raise SystemExit(2)
+    for key in POINTERS:
+        if key not in meta:
+            print(f"ERROR: {path}: missing /meta/{key}", file=sys.stderr)
+            raise SystemExit(2)
+        value = json.dumps(meta[key], ensure_ascii=False).encode("utf-8")
+        # serde_json emits compact (`"k":v`); tolerate a single space after
+        # the colon in case a producer pretty-prints. Total must be exactly 1.
+        needles = [b'"%s":%s' % (key.encode(), value), b'"%s": %s' % (key.encode(), value)]
+        counts = [raw.count(n) for n in needles]
+        if sum(counts) != 1:
+            print(
+                f"ERROR: {path}: expected exactly 1 serialized occurrence "
+                f"of /meta/{key}, found {sum(counts)}",
+                file=sys.stderr,
+            )
+            raise SystemExit(2)
+        needle = needles[0] if counts[0] else needles[1]
+        raw = raw.replace(needle, b'"%s":"%s"' % (key.encode(), PLACEHOLDER.encode()), 1)
+    return raw
 
 
 def load_dir(d: pathlib.Path) -> dict:
@@ -35,31 +74,42 @@ def load_dir(d: pathlib.Path) -> dict:
 
 
 def main() -> int:
-    if len(sys.argv) != 3:
-        print(__doc__, file=sys.stderr)
-        return 2
-    a_files = load_dir(pathlib.Path(sys.argv[1]))
-    b_files = load_dir(pathlib.Path(sys.argv[2]))
+    ap = argparse.ArgumentParser()
+    ap.add_argument("dir_a")
+    ap.add_argument("dir_b")
+    ap.add_argument("--bytes", action="store_true")
+    args = ap.parse_args()
+    a_files = load_dir(pathlib.Path(args.dir_a))
+    b_files = load_dir(pathlib.Path(args.dir_b))
     missing = sorted(set(a_files) ^ set(b_files))
-    diverged = []
-    for name in sorted(set(a_files) & set(b_files)):
-        a = normalize(json.loads(a_files[name].read_text()))
-        b = normalize(json.loads(b_files[name].read_text()))
-        if a != b:
-            diverged.append(name)
-    print(
-        json.dumps(
-            {
-                "compared": len(set(a_files) & set(b_files)),
-                "missing_count": len(missing),
-                "missing_sample": missing[:20],
-                "diverged_count": len(diverged),
-                "diverged_sample": diverged[:20],
-            },
-            indent=2,
-        )
-    )
-    return 0 if not missing and not diverged else 1
+    shared = sorted(set(a_files) & set(b_files))
+    sem_diverged, byte_diverged = [], []
+    for name in shared:
+        raw_a = a_files[name].read_bytes()
+        raw_b = b_files[name].read_bytes()
+        if normalize(json.loads(raw_a)) != normalize(json.loads(raw_b)):
+            sem_diverged.append(name)
+        if args.bytes and substitute_identity(raw_a, a_files[name]) != substitute_identity(
+            raw_b, b_files[name]
+        ):
+            byte_diverged.append(name)
+    summary = {
+        "compared": len(shared),
+        "missing_count": len(missing),
+        "missing_sample": missing[:20],
+        "semantic": {
+            "diverged_count": len(sem_diverged),
+            "diverged_sample": sem_diverged[:20],
+        },
+    }
+    if args.bytes:
+        summary["bytes"] = {
+            "diverged_count": len(byte_diverged),
+            "diverged_sample": byte_diverged[:20],
+        }
+    print(json.dumps(summary, indent=2))
+    gate_diverged = byte_diverged if args.bytes else sem_diverged
+    return 0 if not missing and not gate_diverged else 1
 
 
 if __name__ == "__main__":

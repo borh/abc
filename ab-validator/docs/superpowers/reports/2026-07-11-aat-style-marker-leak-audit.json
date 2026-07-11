@@ -1,0 +1,425 @@
+{
+  "by_signature": {
+    "［＃Rは下ドット付き。sは下ドット付き。hは下ドット付き］": 1,
+    "［＃Tは下ドット付き］": 1,
+    "［＃dは下ドット付き］": 1,
+    "［＃hは下ドット付き］": 5,
+    "［＃mは上ドット付き。nは下ドット付き］": 1,
+    "［＃mは上ドット付き。２つめのsは下ドット付き］": 6,
+    "［＃mは上ドット付き］": 9,
+    "［＃mは下ドット付き］": 1,
+    "［＃nは上ドット付き］": 10,
+    "［＃nは下ドット付き。２つめのdは下ドット付き］": 2,
+    "［＃nは下ドット付き］": 2,
+    "［＃rsnはそれぞれ下ドット付き］": 1,
+    "［＃rは下ドット付き。mは下ドット付き］": 1,
+    "［＃rは下ドット付き。２つめのtは下ドット付き］": 1,
+    "［＃rは下ドット付き］": 3,
+    "［＃snはそれぞれ下ドット付き］": 1,
+    "［＃snはともに下ドット付き］": 1,
+    "［＃stはともに下ドット付き］": 3,
+    "［＃sは下ドット付き］": 11,
+    "［＃tはともに下ドット付き］": 1,
+    "［＃tは下ドット付き］": 7,
+    "［＃キャプション］…［＃キャプション終わり］": 284,
+    "［＃一］": 2,
+    "［＃丸傍点］…［＃丸傍点終わり］": 150,
+    "［＃二重丸傍点］…［＃二重丸傍点終わり］": 7,
+    "［＃二重傍線］…［＃二重傍線終わり］": 17,
+    "［＃傍点］…［＃傍点終わり］": 1297,
+    "［＃傍線］…［＃傍線終わり］": 162,
+    "［＃前のnは上ドット付き、後のnは下ドット付き］": 1,
+    "［＃太字］…［＃太字終わり］": 3555,
+    "［＃小書き平仮名ん、129-17］": 1,
+    "［＃小書き平仮名ん、130-2］": 1,
+    "［＃小書き平仮名ん、130-3］": 1,
+    "［＃小書き平仮名ん、130-4］": 1,
+    "［＃小書き平仮名ん、130-5］": 2,
+    "［＃小書き平仮名ん、130-7］": 1,
+    "［＃小書き平仮名ん、87-16］": 2,
+    "［＃左に傍線］…［＃左に傍線終わり］": 7,
+    "［＃後のnは下ドット付き］": 1,
+    "［＃斜体］…［＃斜体終わり］": 837,
+    "［＃最後のmは上ドット付き］": 2,
+    "［＃濁点付き平仮名う、1-4-84］": 1,
+    "［＃濁点付き片仮名ワ、1-7-82］": 2,
+    "［＃白三角傍点］…［＃白三角傍点終わり］": 21,
+    "［＃白丸傍点］…［＃白丸傍点終わり］": 498,
+    "［＃行右小書き］…［＃行右小書き終わり］": 3889,
+    "［＃（ノ）］": 3,
+    "［＃（ラ）］": 1,
+    "［＃（ヲ）］ | ［＃（フ）］ | ［＃二］ | ［＃（ト）］ | ［＃一］": 1,
+    "［＃（个）］": 1,
+    "［＃（子）］": 1,
+    "［＃１つめのrは下ドット付き。sは下ドット付き］": 3,
+    "［＃２つめのmは上ドット付き］": 1,
+    "［＃２つめのrは下ドット付き。sは下ドット付き］": 1,
+    "［＃２つめのsは下ドット付き］": 1,
+    "［＃２つめのtは下ドット付き］": 1
+  },
+  "by_style_type": {
+    "bold": 7110,
+    "bouten": 4337,
+    "emphasis": 10106
+  },
+  "examples": [
+    {
+      "excerpt": "［＃太字］ユマニテ（〔Humanité〕）に就いて。［＃太字終わり］",
+      "file_stem": "000026_50241-af65ef658680",
+      "json_path": "/blocks/0/content/27/content/0",
+      "marker_forms": [
+        "［＃太字］",
+        "［＃太字終わり］"
+      ],
+      "signature": "［＃太字］…［＃太字終わり］",
+      "style_type": "bold"
+    },
+    {
+      "excerpt": "［＃白丸傍点］ヨブ記の聖書における位置［＃白丸傍点終わり］",
+      "file_stem": "000034_56908-06d9d9f1df88",
+      "json_path": "/blocks/0/content/17/content/0",
+      "marker_forms": [
+        "［＃白丸傍点］",
+        "［＃白丸傍点終わり］"
+      ],
+      "signature": "［＃白丸傍点］…［＃白丸傍点終わり］",
+      "style_type": "bouten"
+    },
+    {
+      "excerpt": "［＃斜体］AULD LANG SYNE!［＃斜体終わり］",
+      "file_stem": "000067_1790-1b06f6d1a80b",
+      "json_path": "/blocks/42/content/3/content/0",
+      "marker_forms": [
+        "［＃斜体］",
+        "［＃斜体終わり］"
+      ],
+      "signature": "［＃斜体］…［＃斜体終わり］",
+      "style_type": "emphasis"
+    },
+    {
+      "excerpt": "［＃太字］ムカシ　ムカシノオ話ヨ［＃太字終わり］",
+      "file_stem": "000035_52380-31ca9a256419",
+      "json_path": "/blocks/5/content/7/content/0",
+      "marker_forms": [
+        "［＃太字］",
+        "［＃太字終わり］"
+      ],
+      "signature": "［＃太字］…［＃太字終わり］",
+      "style_type": "bold"
+    },
+    {
+      "excerpt": "［＃傍点］支点［＃傍点終わり］",
+      "file_stem": "000042_61014-aeee005c4e1a",
+      "json_path": "/blocks/0/content/3/content/0",
+      "marker_forms": [
+        "［＃傍点］",
+        "［＃傍点終わり］"
+      ],
+      "signature": "［＃傍点］…［＃傍点終わり］",
+      "style_type": "bouten"
+    },
+    {
+      "excerpt": "［＃斜体］〔Val de Grâce〕［＃斜体終わり］",
+      "file_stem": "000075_47967-46eddbff13c0",
+      "json_path": "/blocks/0/content/0/content/1/content/0",
+      "marker_forms": [
+        "［＃斜体］",
+        "［＃斜体終わり］"
+      ],
+      "signature": "［＃斜体］…［＃斜体終わり］",
+      "style_type": "emphasis"
+    },
+    {
+      "excerpt": "［＃太字］人物［＃太字終わり］",
+      "file_stem": "000083_57848-80aaafd2185c",
+      "json_path": "/blocks/0/content/0/content/0",
+      "marker_forms": [
+        "［＃太字］",
+        "［＃太字終わり］"
+      ],
+      "signature": "［＃太字］…［＃太字終わり］",
+      "style_type": "bold"
+    },
+    {
+      "excerpt": "［＃傍点］かいつぶり［＃傍点終わり］",
+      "file_stem": "000042_61015-7af622bd3028",
+      "json_path": "/blocks/0/content/5/content/0",
+      "marker_forms": [
+        "［＃傍点］",
+        "［＃傍点終わり］"
+      ],
+      "signature": "［＃傍点］…［＃傍点終わり］",
+      "style_type": "bouten"
+    },
+    {
+      "excerpt": "［＃キャプション］「おにが嶋の文字にて」書かれた『鬼桃太郎』の序文（紅葉筆）［＃キャプション終わり］",
+      "file_stem": "000091_50354-ce30f36cb845",
+      "json_path": "/blocks/0/content/769/content/0",
+      "marker_forms": [
+        "［＃キャプション］",
+        "［＃キャプション終わり］"
+      ],
+      "signature": "［＃キャプション］…［＃キャプション終わり］",
+      "style_type": "emphasis"
+    },
+    {
+      "excerpt": "［＃太字］東京駅ホテルにて［＃太字終わり］",
+      "file_stem": "000096_2100-f3cca7424289",
+      "json_path": "/blocks/7/content/1/content/0",
+      "marker_forms": [
+        "［＃太字］",
+        "［＃太字終わり］"
+      ],
+      "signature": "［＃太字］…［＃太字終わり］",
+      "style_type": "bold"
+    },
+    {
+      "excerpt": "［＃傍点］無線電話［＃傍点終わり］",
+      "file_stem": "000042_61019-3b93de829d89",
+      "json_path": "/blocks/0/content/19/content/0",
+      "marker_forms": [
+        "［＃傍点］",
+        "［＃傍点終わり］"
+      ],
+      "signature": "［＃傍点］…［＃傍点終わり］",
+      "style_type": "bouten"
+    },
+    {
+      "excerpt": "［＃斜体］4［＃斜体終わり］",
+      "file_stem": "000094_2525-9c05271ce1b8",
+      "json_path": "/blocks/11/children/0/content/10/content/0",
+      "marker_forms": [
+        "［＃斜体］",
+        "［＃斜体終わり］"
+      ],
+      "signature": "［＃斜体］…［＃斜体終わり］",
+      "style_type": "emphasis"
+    },
+    {
+      "excerpt": "［＃太字］古風の庭［＃太字終わり］",
+      "file_stem": "000106_53242-a157b181558a",
+      "json_path": "/blocks/3/children/0/content/1/content/0",
+      "marker_forms": [
+        "［＃太字］",
+        "［＃太字終わり］"
+      ],
+      "signature": "［＃太字］…［＃太字終わり］",
+      "style_type": "bold"
+    },
+    {
+      "excerpt": "［＃丸傍点］円本流行［＃丸傍点終わり］",
+      "file_stem": "000063_385-d4fb3dee4ba1",
+      "json_path": "/blocks/4/content/1/content/0",
+      "marker_forms": [
+        "［＃丸傍点］",
+        "［＃丸傍点終わり］"
+      ],
+      "signature": "［＃丸傍点］…［＃丸傍点終わり］",
+      "style_type": "bouten"
+    },
+    {
+      "excerpt": "［＃行右小書き］（９）［＃行右小書き終わり］",
+      "file_stem": "000094_4261-23dd52ff3aae",
+      "json_path": "/blocks/14/content/333/content/0",
+      "marker_forms": [
+        "［＃行右小書き］",
+        "［＃行右小書き終わり］"
+      ],
+      "signature": "［＃行右小書き］…［＃行右小書き終わり］",
+      "style_type": "emphasis"
+    },
+    {
+      "excerpt": "［＃太字］ゴンシヤン［＃太字終わり］",
+      "file_stem": "000106_55787-3d9d0da2e2ee",
+      "json_path": "/blocks/4/content/1090/content/0",
+      "marker_forms": [
+        "［＃太字］",
+        "［＃太字終わり］"
+      ],
+      "signature": "［＃太字］…［＃太字終わり］",
+      "style_type": "bold"
+    },
+    {
+      "excerpt": "マルダイ※［＃濁点付き片仮名ワ、1-7-82］",
+      "file_stem": "000077_1323-b51132c1dd72",
+      "json_path": "/blocks/112/content/1444/content/0",
+      "marker_forms": [
+        "［＃濁点付き片仮名ワ、1-7-82］"
+      ],
+      "signature": "［＃濁点付き片仮名ワ、1-7-82］",
+      "style_type": "bouten"
+    },
+    {
+      "excerpt": "［＃行右小書き］１［＃行右小書き終わり］",
+      "file_stem": "000094_56515-42626c61203a",
+      "json_path": "/blocks/1/children/0/content/1/content/0",
+      "marker_forms": [
+        "［＃行右小書き］",
+        "［＃行右小書き終わり］"
+      ],
+      "signature": "［＃行右小書き］…［＃行右小書き終わり］",
+      "style_type": "emphasis"
+    },
+    {
+      "excerpt": "［＃太字］「一　飲食物はサロン外に持ち出さないこと」［＃太字終わり］",
+      "file_stem": "000113_4325-8f52b8f2c06c",
+      "json_path": "/blocks/5/content/26/content/0",
+      "marker_forms": [
+        "［＃太字］",
+        "［＃太字終わり］"
+      ],
+      "signature": "［＃太字］…［＃太字終わり］",
+      "style_type": "bold"
+    },
+    {
+      "excerpt": "［＃傍点］右手の袖口を泥まみれにした外套と上衣を着て膝の処を左右とも泥だらけにしたズボンを穿いて［＃傍点終わり］",
+      "file_stem": "000096_2100-f3cca7424289",
+      "json_path": "/blocks/13/content/189/content/0",
+      "marker_forms": [
+        "［＃傍点］",
+        "［＃傍点終わり］"
+      ],
+      "signature": "［＃傍点］…［＃傍点終わり］",
+      "style_type": "bouten"
+    },
+    {
+      "excerpt": "［＃行右小書き］１［＃行右小書き終わり］",
+      "file_stem": "000094_56535-aadd072d16e3",
+      "json_path": "/blocks/0/content/2/content/0",
+      "marker_forms": [
+        "［＃行右小書き］",
+        "［＃行右小書き終わり］"
+      ],
+      "signature": "［＃行右小書き］…［＃行右小書き終わり］",
+      "style_type": "emphasis"
+    },
+    {
+      "excerpt": "［＃太字］家人への手紙　一［＃太字終わり］",
+      "file_stem": "000168_56934-63f734551d19",
+      "json_path": "/blocks/2/content/0/content/0/content/0",
+      "marker_forms": [
+        "［＃太字］",
+        "［＃太字終わり］"
+      ],
+      "signature": "［＃太字］…［＃太字終わり］",
+      "style_type": "bold"
+    },
+    {
+      "excerpt": "［＃傍点］人のためになることをしてこそえらいといはれるもんさ［＃傍点終わり］",
+      "file_stem": "000121_45081-406b2c875967",
+      "json_path": "/blocks/3/content/15/content/0",
+      "marker_forms": [
+        "［＃傍点］",
+        "［＃傍点終わり］"
+      ],
+      "signature": "［＃傍点］…［＃傍点終わり］",
+      "style_type": "bouten"
+    },
+    {
+      "excerpt": "［＃行右小書き］１［＃行右小書き終わり］",
+      "file_stem": "000094_56536-da7064105f9c",
+      "json_path": "/blocks/1/content/0/content/2/content/0",
+      "marker_forms": [
+        "［＃行右小書き］",
+        "［＃行右小書き終わり］"
+      ],
+      "signature": "［＃行右小書き］…［＃行右小書き終わり］",
+      "style_type": "emphasis"
+    },
+    {
+      "excerpt": "［＃太字］（「生産だ！」の項の最後よりつづく）［＃太字終わり］",
+      "file_stem": "000255_47055-45b1e8b9e5bb",
+      "json_path": "/blocks/302/content/72/content/0",
+      "marker_forms": [
+        "［＃太字］",
+        "［＃太字終わり］"
+      ],
+      "signature": "［＃太字］…［＃太字終わり］",
+      "style_type": "bold"
+    },
+    {
+      "excerpt": "［＃傍点］貧乏だとてはずかしがることはないのだ［＃傍点終わり］",
+      "file_stem": "000121_56250-6d8f4a27b2ac",
+      "json_path": "/blocks/11/content/17/content/0",
+      "marker_forms": [
+        "［＃傍点］",
+        "［＃傍点終わり］"
+      ],
+      "signature": "［＃傍点］…［＃傍点終わり］",
+      "style_type": "bouten"
+    },
+    {
+      "excerpt": "［＃行右小書き］１［＃行右小書き終わり］",
+      "file_stem": "000094_56537-1a3e8d8cbc84",
+      "json_path": "/blocks/1/content/0/content/1/content/0",
+      "marker_forms": [
+        "［＃行右小書き］",
+        "［＃行右小書き終わり］"
+      ],
+      "signature": "［＃行右小書き］…［＃行右小書き終わり］",
+      "style_type": "emphasis"
+    },
+    {
+      "excerpt": "［＃太字］さまよう町のさまよう家［＃太字終わり］",
+      "file_stem": "000255_47423-42bdaa472c87",
+      "json_path": "/blocks/74/children/0/content/1/content/0",
+      "marker_forms": [
+        "［＃太字］",
+        "［＃太字終わり］"
+      ],
+      "signature": "［＃太字］…［＃太字終わり］",
+      "style_type": "bold"
+    },
+    {
+      "excerpt": "［＃傍線］神その女児を下界に降して人の母となさしめ給いき［＃傍線終わり］",
+      "file_stem": "000125_1317-75eca9fa8fae",
+      "json_path": "/blocks/97/content/34/content/0",
+      "marker_forms": [
+        "［＃傍線］",
+        "［＃傍線終わり］"
+      ],
+      "signature": "［＃傍線］…［＃傍線終わり］",
+      "style_type": "bouten"
+    },
+    {
+      "excerpt": "［＃キャプション］地図＝グリーンランドとセル・ミク・シュア［＃キャプション終わり］",
+      "file_stem": "000125_1321-cbc1f0426de2",
+      "json_path": "/blocks/0/content/102/content/0",
+      "marker_forms": [
+        "［＃キャプション］",
+        "［＃キャプション終わり］"
+      ],
+      "signature": "［＃キャプション］…［＃キャプション終わり］",
+      "style_type": "emphasis"
+    }
+  ],
+  "input_label": "aozora-full-repin-1a4f864",
+  "limitations": [
+    "Complete markers are shortest non-overlapping matches within one text value.",
+    "Markers split across text nodes are not reconstructed or counted."
+  ],
+  "malformed_inputs": [],
+  "schema": "soranoha.aat-style-marker-leak-audit.v1",
+  "totals": {
+    "affected_files": 179,
+    "affected_style_nodes": 10825,
+    "affected_text_nodes": 10825,
+    "files_scanned": 17886,
+    "malformed_files": 0,
+    "marker_occurrences": 21553,
+    "style_nodes_inspected": 204887,
+    "unmatched_marker_open": 3
+  },
+  "unmatched_by_style_type": {
+    "bouten": 3
+  },
+  "unmatched_examples": [
+    {
+      "count": 1,
+      "excerpt": "※［＃「麾－毛",
+      "file_stem": "000305_1897-b3ce99e6fae1",
+      "json_path": "/blocks/74/content/6/content/0",
+      "style_type": "bouten"
+    }
+  ]
+}

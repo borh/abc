@@ -2,23 +2,38 @@
 """Phase perf gate: baseline-vs-candidate wall-time on the pinned workset.
 
 Reads data/perf-workset.json, VERIFIES each work's source_sha256 (fail
-closed on mismatch), runs each binary as `<bin> inspect nodes -` with
-1 warm-up + N measured runs per work, and emits a JSON report with per-work
+closed on mismatch), runs each lane's argv with the work's bytes on stdin
+(1 warm-up + N measured runs per work), and emits a JSON report with per-work
 medians/spread, machine identity, and a blocking verdict:
 - BLOCK if any candidate run times out where baseline did not
 - BLOCK if candidate workset median wall-time regresses > threshold_pct
 - PASS otherwise (regressions under threshold are recorded, not blocking)
 
+Each lane is an explicit argv (not a single binary path), because Phase 2's
+two lanes cannot be expressed by a hardcoded `<bin> inspect nodes -`
+invocation: the legacy end-to-end lane is `aozora-adapter --mode aat` with
+`AB_AOZORA_BIN` pointed at the pinned upstream parser (`env VAR=x cmd args`
+works because `env` is argv[0]), while the ab-aozora lane is a single binary,
+`ab-aozora --mode aat`, with no subprocess hops. A lane's --*-id-bin is the
+adapter executable whose existence (-x), sha256, and verbatim --version
+output are recorded as that lane's identity — independent of what argv
+happens to invoke, so the report's identity claim cannot silently diverge
+from what actually ran.
+
 Usage:
   run-perf-workset.py --workset data/perf-workset.json \
-      --baseline-bin PATH --candidate-bin PATH --corpus DIR --out report.json
+      --baseline-cmd "aozora-adapter --mode aat" --baseline-id-bin PATH \
+      --candidate-cmd "ab-aozora --mode aat" --candidate-id-bin PATH \
+      --corpus DIR --out report.json
 """
 
 import argparse
 import hashlib
 import json
+import os
 import pathlib
 import platform
+import shlex
 import statistics
 import subprocess
 import sys
@@ -29,13 +44,13 @@ def sha256(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def timed_runs(bin_path: str, source: bytes, warmup: int, measured: int, timeout_s: float) -> dict:
+def timed_runs(argv: list, source: bytes, warmup: int, measured: int, timeout_s: float) -> dict:
     times, timeouts = [], 0
     for i in range(warmup + measured):
         start = time.monotonic()
         try:
             subprocess.run(
-                [bin_path, "inspect", "nodes", "-"],
+                argv,
                 input=source,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
@@ -56,14 +71,62 @@ def timed_runs(bin_path: str, source: bytes, warmup: int, measured: int, timeout
     }
 
 
+def resolve_lane_identity(id_bin: str) -> dict | None:
+    """Fail-closed identity resolution for a lane's --*-id-bin: -x check,
+    sha256, and verbatim --version output. Returns None (after printing a
+    FAIL-CLOSED message to stderr) on any failure, so main() can exit 2
+    without ever recording a lane whose identity could not be verified."""
+    path = pathlib.Path(id_bin)
+    if not (path.is_file() and os.access(path, os.X_OK)):
+        print(f"FAIL-CLOSED: id-bin not found or not executable: {id_bin}", file=sys.stderr)
+        return None
+    try:
+        version_proc = subprocess.run([str(path), "--version"], capture_output=True, text=True)
+    except OSError as exc:
+        print(f"FAIL-CLOSED: id-bin --version failed to execute: {id_bin}: {exc}", file=sys.stderr)
+        return None
+    if version_proc.returncode != 0:
+        print(f"FAIL-CLOSED: id-bin --version failed: {id_bin}", file=sys.stderr)
+        return None
+    return {
+        "id_bin": str(path),
+        "id_bin_sha256": sha256(path),
+        "id_bin_version": version_proc.stdout.strip(),
+    }
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--workset", required=True)
-    ap.add_argument("--baseline-bin", required=True)
-    ap.add_argument("--candidate-bin", required=True)
+    ap.add_argument("--baseline-cmd", required=True, help="full argv string, shlex-split")
+    ap.add_argument("--candidate-cmd", required=True, help="full argv string, shlex-split")
+    ap.add_argument(
+        "--baseline-id-bin", required=True, help="adapter executable identifying the baseline lane"
+    )
+    ap.add_argument(
+        "--candidate-id-bin",
+        required=True,
+        help="adapter executable identifying the candidate lane",
+    )
     ap.add_argument("--corpus", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument(
+        "--runs",
+        type=int,
+        default=5,
+        help="measured runs per work (in addition to the workset's warmup_runs); default 5",
+    )
     args = ap.parse_args()
+
+    lanes = {}
+    for label, cmd, id_bin in (
+        ("baseline", args.baseline_cmd, args.baseline_id_bin),
+        ("candidate", args.candidate_cmd, args.candidate_id_bin),
+    ):
+        identity = resolve_lane_identity(id_bin)
+        if identity is None:
+            return 2
+        lanes[label] = {"argv": shlex.split(cmd), **identity}
 
     ws = json.loads(pathlib.Path(args.workset).read_text())
     proto = ws["protocol"]
@@ -74,22 +137,9 @@ def main() -> int:
             "node": platform.node(),
             "machine": platform.machine(),
             "processor": platform.processor(),
-            "cpu_count": __import__("os").cpu_count(),
+            "cpu_count": os.cpu_count(),
         },
-        "bins": {
-            "baseline": {
-                "path": args.baseline_bin,
-                "version": subprocess.run(
-                    [args.baseline_bin, "--version"], capture_output=True, text=True
-                ).stdout.strip(),
-            },
-            "candidate": {
-                "path": args.candidate_bin,
-                "version": subprocess.run(
-                    [args.candidate_bin, "--version"], capture_output=True, text=True
-                ).stdout.strip(),
-            },
-        },
+        "bins": lanes,
         "works": [],
     }
     for work in ws["works"]:
@@ -108,12 +158,12 @@ def main() -> int:
             return 2
         source = src_path.read_bytes()
         row = {"work_id": work["work_id"]}
-        for label, bin_path in (("baseline", args.baseline_bin), ("candidate", args.candidate_bin)):
+        for label in ("baseline", "candidate"):
             row[label] = timed_runs(
-                bin_path,
+                lanes[label]["argv"],
                 source,
                 proto["warmup_runs"],
-                proto["measured_runs"],
+                args.runs,
                 proto["per_work_timeout_seconds"],
             )
         report["works"].append(row)

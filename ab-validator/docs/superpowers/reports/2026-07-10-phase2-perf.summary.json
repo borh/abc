@@ -1,0 +1,20 @@
+{
+  "gate": "perf",
+  "candidate": {
+    "commit": "9cbb7b7b22a3c1779b99300a3fbe3e8d0ec12b33",
+    "bin_sha256": "0f699aa57d8420f76269ccd0c302d9a7578d02246876ad18443b2847803851e0",
+    "version": "ab-aozora 0.1.0 aat-schema 1 facade 0.1.0 wire-schema 2 (git 9cbb7b7b22a3c1779b99300a3fbe3e8d0ec12b33)"
+  },
+  "verdict": "PASS",
+  "details": {
+    "runner_report": "docs/superpowers/reports/2026-07-10-phase2-perf.runner.json",
+    "new_timeouts": false,
+    "median_regression_pct": -35.29,
+    "machine": {
+      "node": "hinoki",
+      "machine": "x86_64",
+      "processor": "",
+      "cpu_count": 32
+    }
+  }
+}

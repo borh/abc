@@ -1,0 +1,21 @@
+{
+  "stage": "rotation-a",
+  "gate": "delta",
+  "candidate": {
+    "commit": "a81edf066ecc0e9ac12e04c4ccc2551c27009161",
+    "bin_sha256": "c3cec69c7dd4261bd9068bab1de06666c54584a77c15783ccc17c8cea355e916",
+    "version": "ab-aozora 0.2.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git a81edf066ecc0e9ac12e04c4ccc2551c27009161)"
+  },
+  "verdict": "PASS",
+  "details": {
+    "mode": "container-rewrite",
+    "compared": 17886,
+    "classes": {
+      "identical": 17723,
+      "rewritten": 163,
+      "span_confined": 0
+    },
+    "verdict": "PASS",
+    "instrument_commit": "b4db35e52010ebe7d698c2d4e8fa1e5caefdf267"
+  }
+}

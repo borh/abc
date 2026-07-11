@@ -232,3 +232,24 @@
     (is (some? threw) "non-ZIP bytes must not produce a normal-looking report")
     (div/expected-failure :D6 "P13.non-zip-bytes"
                           (clean-ex-info? threw [:zip-path]))))
+
+;; P14.rerun — a reused --work-dir yields the same semantic report as a
+;; fresh one.
+(deftest p14-work-dir-hygiene-sim-test
+  (let [m0 (model/bootstrap 2)
+        m1 (:model (model/apply-event m0 {:event/type :edit-person :pid "000001"
+                                          :field :family_name :value "改"}))]
+    (with-repo [git root work]
+      (let [[c1 c2] (commit-history! git root [m0 m1]
+                                     ["2024-01-01T00:00:00Z" "2024-02-01T00:00:00Z"])
+            run! (fn [w] (oracle/semantic-report
+                          (audit/audit! {:aozora-repo (str root)
+                                         :previous-ref (.getName c1)
+                                         :current-ref (.getName c2)
+                                         :work-dir (str w)})))
+            first-run (run! work)
+            reused (run! work)          ;; same dir, second run
+            fresh-dir (render/temp-dir "sim-fresh-work")
+            fresh (try (run! fresh-dir)
+                       (finally (render/delete-tree! fresh-dir)))]
+        (is (= first-run reused fresh))))))

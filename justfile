@@ -41,3 +41,7 @@ check-no-build: runtime-config-smoke active-path-hygiene schema-drift tei-versio
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." nix flake check --no-build)
 
 validate-migration: runtime-config-smoke active-path-hygiene schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check root-flake-check-no-build
+
+# Unseeded simulation soak (15x counts); failures print the seed to replay.
+sim-soak:
+	cd abc && ABC_SIM_SOAK=1 clojure -M:test:kaocha -m kaocha.runner --focus :simulation

@@ -454,7 +454,7 @@ fn build_aat(
         .map(|diagnostic| diagnostic_warning(diagnostic, &decoded.span_ctx))
         .collect::<Vec<_>>();
     json!({
-        "version": 1,
+        "version": 2,
         "work_id": "stdin",
         "blocks": blocks,
         "meta": {
@@ -1311,7 +1311,7 @@ fn source_slice<'a>(source: &'a str, span: &Span) -> &'a str {
 #[must_use]
 pub fn adapter_version() -> String {
     format!(
-        "ab-aozora {} aat-schema 1 facade {} wire-schema {} (git {})",
+        "ab-aozora {} aat-schema 2 facade {} wire-schema {} (git {})",
         env!("CARGO_PKG_VERSION"),
         ab_aozora_facade_version(),
         aozora_json::SCHEMA_VERSION,
@@ -1379,8 +1379,9 @@ mod tests {
     /// red — a parsed/`Value`-equality check would NOT catch this, since
     /// `Value::eq` for objects is order-independent.
     ///
-    /// Expected output re-pasted 2026-07-12 (Task 4: facade `0.2.0` →
-    /// `0.3.0`) via:
+    /// Expected output re-pasted 2026-07-12 (Task 9: `ab-aozora` `0.3.0` →
+    /// `0.4.0`, `aat-schema 1` → `aat-schema 2`, document `"version"` `1` →
+    /// `2`) via:
     /// ```text
     /// export RUSTC_WRAPPER= SCCACHE_DISABLE=1
     /// cd ab-validator
@@ -1395,7 +1396,7 @@ mod tests {
     /// self.rev or "unknown"` and `build.rs`'s doc comment).
     #[test]
     fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
-        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.3.0 aat-schema 1 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":1,\"work_id\":\"stdin\"}\n";
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.4.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
     }
@@ -1912,5 +1913,14 @@ mod tests {
         let heading = find_first_node(&aat, "heading");
         assert_eq!(heading["indent"], 5);
         assert!(heading.get("x-indent").is_none());
+    }
+
+    #[test]
+    fn c3_identity_join_key_and_document_version() {
+        assert!(
+            adapter_version().starts_with("ab-aozora 0.4.0 aat-schema 2 facade 0.3.0 wire-schema 3")
+        );
+        let aat = aat_value_for("あ\n");
+        assert_eq!(aat["version"], 2);
     }
 }

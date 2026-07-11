@@ -199,7 +199,11 @@ that violates its precondition is a recorded no-op (see `apply-event`).
   successor, rewrite those edges to exactly `#{successor}`.
 - ambiguous-replacement — 1→1 pid swap on an edge (retire old, mint new).
 - impure-split — like clean-split except one successor pid already existed in
-  the previous state (must NOT be a candidate).
+  the previous state AND participates in at least one edge there, so it is
+  present in the catalog projection (must NOT be a candidate). An unattached
+  "existing" successor is invisible to the CSV and the evidence becomes
+  indistinguishable from a clean split — such events are inapplicable
+  (no-op), discovered during implementation.
 - partial-split — the source pid is **retained** in `:persons`; a strict,
   non-empty, proper subset of its edges is rewritten to newly minted pids
   (must NOT be a candidate: the source is not globally removed).

@@ -170,4 +170,14 @@
             {m' :model intent :applied} (model/apply-event m e)]
         (is (some? intent))
         (is (= #{"900001"} (get-in m' [:edges ["000101" "著者"]])))
-        (is (not (contains? (:persons m') "000001")))))))
+        (is (not (contains? (:persons m') "000001")))))
+    (testing "impure-split no-ops when existing-target is unattached"
+      (let [m1 (:model (model/apply-event m {:event/type :add-person
+                                             :pid "900050"
+                                             :person (model/base-person)}))
+            e {:event/type :impure-split :pid "000001"
+               :existing-target "900050" :new-target "900051"
+               :person (model/base-person)}
+            {m2 :model intent :applied} (model/apply-event m1 e)]
+        (is (nil? intent))
+        (is (= m1 m2))))))

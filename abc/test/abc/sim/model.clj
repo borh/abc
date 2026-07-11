@@ -225,10 +225,16 @@
                    (rewrite-edges ks #(-> % (disj pid) (conj target))))
                e ks))))
 
+;; existing-target must already participate in ≥1 edge: an unattached
+;; existing-target is dropped by the catalog projection, so the rendered
+;; corpus would show pid's edges going to two brand-new persons — evidence
+;; indistinguishable from a clean split. No-op rather than emit an event
+;; the classifier cannot observably tell apart from :clean-split.
 (defmethod apply-event* :impure-split
   [m {:keys [pid existing-target new-target person] :as e}]
   (if (or (not (sole-contributor? m pid))
           (not (contains? (:persons m) existing-target))
+          (empty? (edges-of m existing-target))
           (= pid existing-target)
           (= existing-target new-target)
           (= pid new-target)

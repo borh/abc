@@ -141,13 +141,29 @@
                :person (variant-person 55)}]))))
 
       :impure-split
+      ;; existing-target must be attached (≥1 edge), otherwise it's invisible
+      ;; in the rendered projection and the injected event is evidence-
+      ;; equivalent to a clean split (see model.clj :impure-split comment).
       (let [wid (model/fresh-wid m) pid t1
-            newt (model/fresh-pid (update m :next-id + 2))]
-        (gen/let [existing (gen/elements (vec (keys (:persons m))))]
-          [[{:event/type :add-work-with-edge :wid wid :work (model/base-work wid)
-             :pid pid :person (variant-person 56) :relation "著者"}]
-           {:event/type :impure-split :pid pid :existing-target existing
-            :new-target newt :person (variant-person 57)}]))
+            newt (model/fresh-pid (update m :next-id + 2))
+            attached (vec (filter #(seq (model/edges-of m %)) (keys (:persons m))))]
+        (if (seq attached)
+          (gen/let [existing (gen/elements attached)]
+            [[{:event/type :add-work-with-edge :wid wid :work (model/base-work wid)
+               :pid pid :person (variant-person 56) :relation "著者"}]
+             {:event/type :impure-split :pid pid :existing-target existing
+              :new-target newt :person (variant-person 57)}])
+          ;; no attached person to reuse: construct one via a second
+          ;; work-with-edge before the impure split
+          (let [wid2 (model/fresh-wid (update m :next-id + 3))
+                existing (model/fresh-pid (update m :next-id + 4))]
+            (gen/return
+             [[{:event/type :add-work-with-edge :wid wid :work (model/base-work wid)
+                :pid pid :person (variant-person 56) :relation "著者"}
+               {:event/type :add-work-with-edge :wid wid2 :work (model/base-work wid2)
+                :pid existing :person (variant-person 60) :relation "著者"}]
+              {:event/type :impure-split :pid pid :existing-target existing
+               :new-target newt :person (variant-person 57)}]))))
 
       :partial-split
       (let [wid1 (model/fresh-wid m)

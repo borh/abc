@@ -26,6 +26,7 @@
 (defn- accepted-body [num title extra-fields]
   (str "# ADR " (format "%04d" num) ": " title "\n\n"
        "Status: Accepted\nDate: 2026-07-10\nAccepted: 2026-07-10\n"
+       "Validation scope: structural\nRelease authority: none\n"
        extra-fields
        "\n## Decision\n\nDecision.\n\n"
        "## Implementation Status\n\nImplemented.\n\n"
@@ -234,6 +235,35 @@
       (is (contains? (kinds problems) :missing-implementation-status))
       (is (contains? (kinds problems) :missing-acceptance-criteria)))))
 
+(deftest accepted-status-requires-validation-scope-and-release-authority
+  (let [dir (temp-dir)]
+    (write-path! dir "test/evidence.clj" "(ns evidence)")
+    (write-adr! dir "0001-missing.md"
+                (str "# ADR 0001: Missing lifecycle dimensions\n\n"
+                     "Status: Accepted\nDate: 2026-07-10\nAccepted: 2026-07-10\n\n"
+                     "## Decision\n\nX.\n\n"
+                     "## Implementation Status\n\nDone.\n\n"
+                     "## Acceptance Criteria\n\n- `test/evidence.clj`.\n"))
+    (let [problem-kinds (kinds (adr/validate-adrs
+                                (adr/parse-all (.getPath dir)) dir))]
+      (is (contains? problem-kinds :missing-validation-scope))
+      (is (contains? problem-kinds :missing-release-authority)))))
+
+(deftest lifecycle-dimensions-use-closed-vocabularies
+  (let [dir (temp-dir)]
+    (write-path! dir "test/evidence.clj" "(ns evidence)")
+    (write-adr! dir "0001-invalid.md"
+                (str "# ADR 0001: Invalid lifecycle dimensions\n\n"
+                     "Status: Accepted\nDate: 2026-07-10\nAccepted: 2026-07-10\n"
+                     "Validation scope: everything\nRelease authority: automatic\n\n"
+                     "## Decision\n\nX.\n\n"
+                     "## Implementation Status\n\nDone.\n\n"
+                     "## Acceptance Criteria\n\n- `test/evidence.clj`.\n"))
+    (let [problem-kinds (kinds (adr/validate-adrs
+                                (adr/parse-all (.getPath dir)) dir))]
+      (is (contains? problem-kinds :invalid-validation-scope))
+      (is (contains? problem-kinds :invalid-release-authority)))))
+
 (deftest draft-criteria-need-no-existing-evidence
   (let [dir (temp-dir)]
     (write-adr! dir "0001-draft.md"
@@ -280,7 +310,9 @@
     (write-path! repo "nix/evidence.nix" "{}")
     (write-adr! adr-dir "0001-contained.md"
                 (str "# ADR 0001: Contained\n\nStatus: Accepted\nDate: 2026-07-10\n"
-                     "Accepted: 2026-07-10\n\n## Decision\n\nX.\n\n"
+                     "Accepted: 2026-07-10\n"
+                     "Validation scope: structural\nRelease authority: none\n\n"
+                     "## Decision\n\nX.\n\n"
                      "## Implementation Status\n\nDone.\n\n## Acceptance Criteria\n\n"
                      "- `test/./evidence.clj`, `fixtures/evidence.txt`, and `nix/evidence.nix`.\n"))
     (is (empty? (adr/validate-repository repo "docs/adr")))))
@@ -326,16 +358,17 @@
       (is (contains? (kinds problems) :duplicate-relation))
       (is (contains? (kinds problems) :missing-relation-target)))))
 
-(deftest accepted-to-draft-requires-scope
+(deftest accepted-to-nonaccepted-is-rejected-even-with-scope
   (let [dir (temp-dir)]
     (write-path! dir "test/evidence.clj" "(ns evidence)")
     (write-adr! dir "0001-draft.md"
                 "# ADR 0001: Draft\n\nStatus: Draft\nDate: 2026-07-10\n\n## Decision\n\nX.\n")
     (write-adr! dir "0002-accepted.md"
-                (accepted-body 2 "Accepted" "Depends on: ADR 0001\n"))
+                (accepted-body 2 "Accepted"
+                               "Depends on: ADR 0001 [scope: provisional contract]\n"))
     (is (contains? (kinds (adr/validate-adrs
                            (adr/parse-all (.getPath dir)) dir))
-                   :unscoped-nonaccepted-dependency))))
+                   :noncanonical-dependency-path))))
 
 (deftest accepted-cannot-depend-on-inactive-decisions
   (let [dir (temp-dir)]
@@ -347,7 +380,34 @@
                                "Depends on: ADR 0001 [scope: old contract]\n"))
     (is (contains? (kinds (adr/validate-adrs
                            (adr/parse-all (.getPath dir)) dir))
-                   :inactive-dependency))))
+                   :noncanonical-dependency-path))))
+
+(deftest accepted-dependency-closure-reports-transitive-path
+  (let [dir (temp-dir)]
+    (write-path! dir "test/evidence.clj" "(ns evidence)")
+    (write-adr! dir "0001-root.md"
+                (accepted-body 1 "Root" "Depends on: ADR 0002\n"))
+    (write-adr! dir "0002-middle.md"
+                (accepted-body 2 "Middle" "Depends on: ADR 0003\n"))
+    (write-adr! dir "0003-proposed.md"
+                (str "# ADR 0003: Proposed\n\nStatus: Proposed\n"
+                     "Date: 2026-07-10\n\n## Decision\n\nFuture.\n"))
+    (let [problem (->> (adr/validate-adrs (adr/parse-all (.getPath dir)) dir)
+                       (filter #(and (= :noncanonical-dependency-path (:kind %))
+                                     (= "0001-root.md" (:file %))))
+                       first)]
+      (is (= [1 2 3] (:path problem))))))
+
+(deftest accepted-dependency-closure-terminates-on-cycles
+  (let [dir (temp-dir)]
+    (write-path! dir "test/evidence.clj" "(ns evidence)")
+    (write-adr! dir "0001-first.md"
+                (accepted-body 1 "First" "Depends on: ADR 0002\n"))
+    (write-adr! dir "0002-second.md"
+                (accepted-body 2 "Second" "Depends on: ADR 0001\n"))
+    (is (not (contains? (kinds (adr/validate-adrs
+                                (adr/parse-all (.getPath dir)) dir))
+                        :noncanonical-dependency-path)))))
 
 (deftest supersession-reciprocity-and-status-are-distinct
   (let [dir (temp-dir)]
@@ -412,5 +472,18 @@
                    dir))
            :missing-amended-by)))))
 
-(deftest current-repository-satisfies-governance
-  (is (= [] (adr/validate-repository "."))))
+(deftest current-repository-audit-inventory-is-explicit
+  (let [adrs (adr/parse-all "docs/adr")
+        accepted-count (count (filter #(= "Accepted" (:status %)) adrs))
+        problems (adr/validate-repository ".")
+        dependency-paths (->> problems
+                              (filter #(= :noncanonical-dependency-path
+                                          (:kind %)))
+                              (map :path)
+                              vec)]
+    (is (= #{:missing-validation-scope
+             :missing-release-authority
+             :noncanonical-dependency-path}
+           (kinds problems)))
+    (is (= (inc (* 2 accepted-count)) (count problems)))
+    (is (= [[31 29]] dependency-paths))))

@@ -5,9 +5,13 @@
            [java.time LocalDate]))
 
 (def statuses #{"Draft" "Proposed" "Accepted" "Superseded" "Withdrawn"})
+(def validation-scopes #{"structural" "fixture" "smoke-corpus"
+                         "full-corpus" "operational"})
+(def release-authorities #{"none" "development" "publication"})
 (def header-fields
   #{"Status" "Date" "Accepted" "Supersedes" "Superseded by"
-    "Amends" "Amended by" "Depends on" "Source"})
+    "Amends" "Amended by" "Depends on" "Source"
+    "Validation scope" "Release authority"})
 (def relation-fields
   {"Supersedes" :supersedes
    "Superseded by" :superseded-by
@@ -188,6 +192,8 @@
      :status (get fields "Status")
      :date (get fields "Date")
      :accepted (get fields "Accepted")
+     :validation-scope (get fields "Validation scope")
+     :release-authority (get fields "Release authority")
      :relations (:relations relations-result)
      :sections (:sections sections-result)
      :section-bodies (:section-bodies sections-result)
@@ -215,7 +221,8 @@
       (LocalDate/parse value)
       (catch Exception _ nil))))
 
-(defn- lifecycle-problems [{:keys [file status date accepted]}]
+(defn- lifecycle-problems
+  [{:keys [file status date accepted validation-scope release-authority]}]
   (let [parsed-date (parse-date date)
         parsed-accepted (parse-date accepted)]
     (concat
@@ -231,6 +238,16 @@
        [(problem :invalid-date file
                  "Accepted must be a calendar-valid YYYY-MM-DD value"
                  :field "Accepted" :value accepted)])
+     (when (and validation-scope
+                (not (contains? validation-scopes validation-scope)))
+       [(problem :invalid-validation-scope file
+                 "Validation scope must be structural, fixture, smoke-corpus, full-corpus, or operational"
+                 :field "Validation scope" :value validation-scope)])
+     (when (and release-authority
+                (not (contains? release-authorities release-authority)))
+       [(problem :invalid-release-authority file
+                 "Release authority must be none, development, or publication"
+                 :field "Release authority" :value release-authority)])
      (if (= "Accepted" status)
        (concat
         (when-not accepted
@@ -240,7 +257,13 @@
                    (.isBefore parsed-accepted parsed-date))
           [(problem :accepted-before-date file
                     "Accepted date must not be before Date"
-                    :value {:date date :accepted accepted})]))
+                    :value {:date date :accepted accepted})])
+        (when-not validation-scope
+          [(problem :missing-validation-scope file
+                    "Accepted status requires a Validation scope")])
+        (when-not release-authority
+          [(problem :missing-release-authority file
+                    "Accepted status requires a Release authority")]))
        (when accepted
          [(problem :forbidden-accepted-date file
                    "only Accepted ADRs may have an Accepted date"
@@ -322,22 +345,35 @@
        (problem :superseded-without-successor file
                 "a Superseded ADR requires an incoming unscoped supersession")))))
 
+(defn- dependency-paths-from [by-number source]
+  (loop [queue (conj clojure.lang.PersistentQueue/EMPTY [source])
+         visited #{source}
+         paths []]
+    (if (empty? queue)
+      paths
+      (let [path (peek queue)
+            current (get by-number (peek path))
+            targets (->> (get-in current [:relations :depends-on])
+                         (map :target)
+                         distinct
+                         sort)
+            unseen (remove visited targets)
+            next-paths (mapv #(conj path %) unseen)]
+        (recur (into (pop queue) next-paths)
+               (into visited unseen)
+               (into paths next-paths))))))
+
 (defn- dependency-status-problems [adrs]
   (let [by-number (into {} (map (juxt :num identity) adrs))]
-    (for [{source-status :status file :file relations :relations} adrs
-          {:keys [target scope] :as item} (:depends-on relations)
-          :let [target-status (:status (get by-number target))]
-          :when (and (= "Accepted" source-status)
-                     (or (and (#{"Draft" "Proposed"} target-status)
-                              (nil? scope))
-                         (#{"Withdrawn" "Superseded"} target-status)))]
-      (if (#{"Withdrawn" "Superseded"} target-status)
-        (problem :inactive-dependency file
-                 "an Accepted ADR cannot depend on a Withdrawn or Superseded ADR"
-                 :value item)
-        (problem :unscoped-nonaccepted-dependency file
-                 "an Accepted ADR dependency on Draft or Proposed requires scope"
-                 :value item)))))
+    (for [{:keys [num file status]} adrs
+          :when (= "Accepted" status)
+          path (dependency-paths-from by-number num)
+          :let [target (get by-number (peek path))]
+          :when (and target (not= "Accepted" (:status target)))]
+      (problem :noncanonical-dependency-path file
+               "Accepted ADR dependency closure contains a non-Accepted ADR"
+               :path path
+               :target-status (:status target)))))
 
 (defn- raw-path [path]
   (Paths/get path (make-array String 0)))

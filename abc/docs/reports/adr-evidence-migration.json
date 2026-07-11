@@ -1,5 +1,252 @@
 {
   "mode": "audit",
-  "ok": true,
-  "problems": []
+  "ok": false,
+  "problems": [
+    {
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0002-parser-evaluation.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0002-parser-evaluation.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0007-external-parser-validation-boundary.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0007-external-parser-validation-boundary.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0008-abc-tools-runtime.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0008-abc-tools-runtime.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0010-manifest-identity-hardening.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0010-manifest-identity-hardening.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0011-generated-fixture-policy.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0011-generated-fixture-policy.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0013-cultural-heritage-lod-profile.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0013-cultural-heritage-lod-profile.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0014-iiif-applicability.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0014-iiif-applicability.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0015-temporal-modeling.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0015-temporal-modeling.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0016-edtf-level1-decade-century.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0016-edtf-level1-decade-century.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0018-predicate-rename-batch-1.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0018-predicate-rename-batch-1.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0020-person-identity-drift-data-model.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0020-person-identity-drift-data-model.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0022-upstream-ingest-drift-awareness.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0022-upstream-ingest-drift-awareness.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0023-owned-aat-parser-ir-mapping.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0023-owned-aat-parser-ir-mapping.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0024-parser-ir-span-and-ruby-direction.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0024-parser-ir-span-and-ruby-direction.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0025-parser-ir-publication-rendering.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0025-parser-ir-publication-rendering.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0030-aozora-parser-selection.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0030-aozora-parser-selection.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0031-adr-governance-validation.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0031-adr-governance-validation.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0032-parser-fork-hard-detach.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0032-parser-fork-hard-detach.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0031-adr-governance-validation.md",
+      "kind": "noncanonical-dependency-path",
+      "message": "Accepted ADR dependency closure contains a non-Accepted ADR",
+      "path": [31,29],
+      "target-status": "Proposed"
+    }]
 }

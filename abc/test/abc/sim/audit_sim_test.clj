@@ -160,3 +160,75 @@
         ;; only the persistent metadata correction, zero candidates.
         (is (= 0 (get (:summary s) "split_candidates")))
         (is (pos? (get (:summary s) "pairs_scanned")))))))
+
+(defn- audit-two!
+  "Commit clean state then a faulted current blob (bytes) and audit the pair.
+  Returns {:result r} or {:threw ex}."
+  [current-bytes]
+  (let [m (model/bootstrap 2)]
+    (with-repo [git root work]
+      (let [clean (render/csv->zip-bytes (render/rows->csv (render/model->rows m)))
+            c1 (render/commit-zip-at! git root clean "clean" "2024-01-01T00:00:00Z")
+            c2 (render/commit-file-at! git root render/zip-path current-bytes
+                                       "faulted" "2024-02-01T00:00:00Z")]
+        (try {:result (audit/audit! {:aozora-repo (str root)
+                                     :previous-ref (.getName c1)
+                                     :current-ref (.getName c2)
+                                     :work-dir (str work)})}
+             (catch Exception e {:threw e}))))))
+
+(defn- clean-ex-info? [e required-keys]
+  (and (instance? clojure.lang.ExceptionInfo e)
+       (every? #(contains? (ex-data e) %) required-keys)))
+
+;; P13.ragged-row — D3: row-level fault must not abort; desired = work
+;; skipped. Both directions of raggedness get a defined outcome.
+(deftest p13-ragged-row-sim-test
+  (doseq [corrupt [:ragged-short :ragged-long]]
+    (let [m (model/bootstrap 2)
+          rows (render/corrupt-rows (render/model->rows m)
+                                    [{:corrupt/type corrupt :wid "000101"}])
+          {:keys [result threw]} (audit-two!
+                                  (render/csv->zip-bytes (render/rows->csv rows)))]
+      (is (nil? threw) (str corrupt ": row-level fault must never abort an audit"))
+      (div/expected-failure :D3 (str "P13.ragged-row/" (name corrupt))
+        ;; DESIRED: the ragged work is skipped with a reason, not silently
+        ;; ingested with truncated/dropped cells.
+                            (boolean (some #{"000101"}
+                                           (get-in result [:ingest :current :skipped-work-ids])))))))
+
+;; P13.divergent-person — absorbed and counted (current behavior matches
+;; spec). The fault must be two bodies for the SAME person id within one
+;; work: duplicate person 000001's row, then diverge the duplicate's 姓.
+(deftest p13-divergent-person-sim-test
+  (let [m (model/bootstrap 2)
+        rows (render/corrupt-rows (render/model->rows m)
+                                  [{:corrupt/type :duplicate-row :wid "000101"
+                                    :pid "000001"}
+                                   {:corrupt/type :divergent-person :wid "000101"
+                                    :pid "000001" :column "姓" :value "×"}])
+        {:keys [result threw]} (audit-two!
+                                (render/csv->zip-bytes (render/rows->csv rows)))]
+    (is (nil? threw))
+    (is (= ["000101"] (get-in result [:ingest :current :skipped-work-ids])))))
+
+;; P13.empty-csv — D5 (desired: explicit ex-info with :zip-path).
+(deftest p13-empty-csv-sim-test
+  (doseq [[label csv] [["empty" ""]
+                       ["header-only" (render/rows->csv [])]]]
+    (let [{:keys [threw]} (audit-two! (render/csv->zip-bytes csv))]
+      (div/expected-failure :D5 (str "P13.empty-csv/" label)
+                            (clean-ex-info? threw [:zip-path])))))
+
+;; P13.no-csv-entry — current behavior matches spec: ex-info {:zip-path}.
+(deftest p13-no-csv-entry-sim-test
+  (let [{:keys [threw]} (audit-two! (render/csv->zip-bytes "x" {:no-entry? true}))]
+    (is (clean-ex-info? threw [:zip-path])
+        (str "expected ex-info with :zip-path, got: " (pr-str threw)))))
+
+;; P13.non-zip-bytes — D6 (desired: wrapped ex-info, cause chained).
+(deftest p13-non-zip-bytes-sim-test
+  (let [{:keys [threw]} (audit-two! "this is not a zip file")]
+    (is (some? threw) "non-ZIP bytes must not produce a normal-looking report")
+    (div/expected-failure :D6 "P13.non-zip-bytes"
+                          (clean-ex-info? threw [:zip-path]))))

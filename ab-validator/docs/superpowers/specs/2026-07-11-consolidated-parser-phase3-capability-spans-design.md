@@ -184,6 +184,21 @@ unchanged.
   `aat_json_from_bytes` — there must never be two preprocessing paths. The
   permanent binary's `--mode diagnostics` only dispatches to this
   operation and writes the bytes, preserving the thin-binary boundary.
+- **Sanitize-stage diagnostics are retained and merged.** Sanitization is
+  where `source-contains-pua` (and the accent notes) are born, and it runs
+  BEFORE the parse — the inner parse sees neutralized/rewritten text and
+  can never rediscover them. `sanitize_for_aat` therefore stops discarding
+  the sanitize `diagnostics` vector; the wire envelope is the projection
+  of sanitize-stage diagnostics followed by parser diagnostics (that
+  order, deterministic; duplicates are impossible by construction because
+  the inner re-sanitize sees already-neutralized text, and a test pins
+  it). Without this, the `pua_collision` must vector cannot pass and the
+  25/25 gate is unreachable. AAT `meta.warnings` stays parser-only at
+  rotation A (schema-v1 lossy shape, delta-taxonomy stability); the wire
+  envelope is the conformance surface. Rotation B translates
+  sanitize-diagnostic spans through the offset map exactly like every
+  other span (they carry full-sanitized-text coordinates, so they bypass
+  the body offset).
 - **preserve_order constraint (hard).** Neither `ab-aozora-aat` nor the
   binary may enable facade `json` — that feature pulls
   `serde_json/preserve_order` into the workspace feature graph
@@ -374,11 +389,19 @@ the diagnostic's span start (schema v1 allows any integer ≥ 1).
     (the fork offset map is the system under test and must not be its own
     oracle; it may inform a non-gating diagnostic artifact only), and the
     vector source's SHA-256.
-  - The scorer consumes the manifest: for listed vectors it verifies the
-    source hash and compares against the manifest's hand-verified decoded
-    span exactly; for every other vector the original expected span
-    applies unchanged. **Any unlisted divergence, hash mismatch, or
-    candidate span differing from a manifest entry fails the gate.**
+  - The scorer consumes the manifest fail-closed on BOTH sides: vector
+    IDs must be unique; every entry must use exactly the declared fields
+    with valid types; every entry must resolve to exactly one loaded
+    vector AND be exercised during the run (an unused entry is a stale
+    authorization — the run fails); `original_expected` must equal the
+    vector's CURRENT `expected.diagnostics` (so a later vector-expectation
+    change invalidates the authorization even though the source hash is
+    unchanged); the source hash must match. For listed vectors the
+    candidate is compared against the manifest's hand-verified decoded
+    spans exactly; for every other vector the original expected span
+    applies unchanged. **Any unlisted divergence, duplicate or unknown or
+    unused entry, stale `original_expected`, hash mismatch, or candidate
+    span differing from a manifest entry fails the gate.**
   - The rotation-B report's deviation list is derived from the manifest,
     with per-vector before/after offsets — the report documents, the
     manifest authorizes.
@@ -405,8 +428,16 @@ the diagnostic's span start (schema v1 allows any integer ≥ 1).
   phase completion: every stage's summaries agree internally on
   commit/bin_sha256/version, all verdicts PASS, version strings embed
   their commit and the expected version/wire-schema values per stage, and
-  the stage set is complete. The Phase 3 branch merges only after
-  `CHECKPOINT OK`.
+  the stage set is complete. It also consumes BOTH conversion-audit
+  summaries (rotation A and B) and requires: 17,886 attempted = 17,886
+  succeeded, 0 failed, mapping version 0.2.8 with the recorded mapping
+  hash, and the audited dump's `aat_adapter_version` matching the stage's
+  version pattern with the stage's candidate commit. The delta and
+  confinement gate details are checked substantively, not just
+  `verdict: PASS`: expected mode, `compared == 17886`, and class totals
+  summing to the compared count (confinement additionally: all works in
+  the span-confined/identical classes). The Phase 3 branch merges only
+  after `CHECKPOINT OK`.
 - Both registry rows are compatibility evidence under ADR 0023 —
   **unadmitted**. Nothing in Phase 3 changes the measurement default, the
   admission state, or the legacy lane.

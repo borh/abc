@@ -549,8 +549,9 @@ git commit -m "feat(facade): kebab diagnostic code, wire schema 3, rotation A ve
 - Modify: `crates/ab-aozora/src/main.rs` (mode dispatch), `tests/wire.rs` (3 new tests)
 
 **Interfaces:**
-- Consumes: `decode_source_bytes`, `Document`/`encoding::decode_auto` (the exact `projections()` parse path), `aozora_json::diagnostic_entries`, `aozora_json::SCHEMA_VERSION` (all in scope in lib.rs).
-- Produces: `pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>>` — one JSON line `{"data":[…],"schemaVersion":3}` (serde_json default sorted-key ordering; key order is NOT contract). Binary surface `ab-aozora --mode diagnostics`. Task 6's scorer and Task 14's span rebase consume this function.
+- Consumes: `decode_source_bytes`, `Document`/`encoding::decode_auto` (the exact `projections()` parse path), `aozora_json::diagnostic_entries`, `aozora_json::SCHEMA_VERSION` (all in scope in lib.rs); the sanitize call's full `SanitizeOutput { text, diagnostics }` (diagnostics are currently DISCARDED — that discard is the bug this task fixes: `source-contains-pua` and the accent notes are born in sanitize, and the inner parse sees neutralized text so it can never rediscover them).
+- Produces: `pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>>` — one JSON line `{"data":[…],"schemaVersion":3}` (serde_json default sorted-key ordering; key order is NOT contract). Entry order: sanitize-stage diagnostics first (sanitize's own emission order: accent notes, then PUA), then parser diagnostics. `DecodedSource` gains `sanitize_diagnostics` and `body_offset` (the `aozora_body_range` refactor happens HERE, not in Task 14). AAT `meta.warnings` stays parser-only (delta-taxonomy stability — Task 10's class 3 depends on it). Binary surface `ab-aozora --mode diagnostics`. Task 6's scorer and Task 14's span rebase consume this function.
+- Coordinate rule (rotation A): parser entries carry body-relative sanitized offsets (parser-native); sanitize entries carry full-sanitized-text offsets converted to body-relative via `saturating_sub(body_offset)` (conformance vectors have no header, so `body_offset == 0` and the two systems coincide there). Type note: the sanitize `Diagnostic` is the same type family the facade re-exports (`grep -n "pub use" crates/ab-aozora-facade/src/lib.rs` to confirm the path); both lists feed ONE `aozora_json::diagnostic_entries` call.
 
 - [ ] **Step 1: Write the failing unit test** (in lib.rs `#[cfg(test)] mod tests`)
 
@@ -578,21 +579,100 @@ fn diagnostics_json_from_bytes_clean_source_is_empty_data() {
         &diagnostics_json_from_bytes("あ\n".as_bytes()).unwrap()).unwrap();
     assert_eq!(doc["data"], json!([]));
 }
+
+#[test]
+fn sanitize_stage_pua_diagnostic_survives_to_the_envelope() {
+    // Raw U+E001 in the source: sanitize neutralizes it to U+FFFD and
+    // emits SourceContainsPua — the parse of the neutralized text can
+    // never rediscover it, so it MUST come from the retained sanitize
+    // diagnostics. あ = bytes 0..3, U+E001 = bytes 3..6.
+    let out = diagnostics_json_from_bytes("あ\u{e001}い\n".as_bytes()).unwrap();
+    let doc: Value = serde_json::from_slice(&out).unwrap();
+    let data = doc["data"].as_array().unwrap();
+    let pua: Vec<&Value> = data.iter()
+        .filter(|e| e["code"] == "source-contains-pua").collect();
+    assert_eq!(pua.len(), 1, "expected exactly one PUA diagnostic: {data:?}");
+    assert_eq!(pua[0]["severity"], "warning");
+    assert_eq!(pua[0]["span"]["start"], 3);
+    assert_eq!(pua[0]["span"]["end"], 6);
+}
+
+#[test]
+fn sanitize_and_parser_diagnostics_merge_in_order_without_duplicates() {
+    // PUA (sanitize-stage) + unclosed bracket (parser-stage) in one input:
+    // sanitize entries come first, parser entries after, one of each.
+    let out = diagnostics_json_from_bytes("あ\u{e001}い［＃ここから\n".as_bytes()).unwrap();
+    let doc: Value = serde_json::from_slice(&out).unwrap();
+    let codes: Vec<&str> = doc["data"].as_array().unwrap().iter()
+        .map(|e| e["code"].as_str().unwrap()).collect();
+    let pua_count = codes.iter().filter(|c| **c == "source-contains-pua").count();
+    assert_eq!(pua_count, 1, "duplicate or missing PUA entry: {codes:?}");
+    assert!(codes[0] == "source-contains-pua", "sanitize entries must come first: {codes:?}");
+    assert!(codes.iter().any(|c| *c == "unclosed-bracket"), "{codes:?}");
+}
 ```
 
 (If `あ［＃ここから\n` yields no diagnostic, use the input from Task 4's
-facade test — the two tests must share the diagnostic-producing literal.)
+facade test — the tests must share the diagnostic-producing literal.
+For the third named must vector: extract the `source` string from the
+`tate_chu_yoko` vector's `vector.json` under the nix vectors dir
+(`nix build --no-link --print-out-paths .#upstream-aozora-notation-spec`),
+add a test asserting a `tcy-target-not-found` entry appears with the
+vector's expected span — all three named must vectors then have explicit
+unit coverage.)
 
 - [ ] **Step 2: Run to verify failure** — `cargo test -p ab-aozora-aat diagnostics_json_from_bytes` → FAIL (fn missing).
 
-- [ ] **Step 3: Implement in lib.rs** (next to `aat_json_from_bytes`)
+- [ ] **Step 3: Implement in lib.rs**
+
+1. Stop discarding sanitize diagnostics; retain the body offset (this is
+   the `aozora_body_range` refactor, pulled forward from Task 14 because
+   both consumers need it):
+
+```rust
+fn sanitize_for_aat(text: &str) -> (String, Vec<AozoraSanitizeDiagnostic>, usize) {
+    let sanitized_out = sanitize_aozora_source(text);
+    let sanitize_diagnostics = sanitized_out.diagnostics;
+    let sanitized = sanitized_out.text.into_owned();
+    let body = aozora_body_range(&sanitized);
+    (sanitized[body.clone()].to_owned(), sanitize_diagnostics, body.start)
+}
+```
+
+where `AozoraSanitizeDiagnostic` is a type alias for the sanitize
+`Diagnostic` type (confirm the facade re-export path with
+`grep -n "pub use" crates/ab-aozora-facade/src/lib.rs`; alias whatever
+resolves so `aozora_json::diagnostic_entries(&sanitize_diagnostics)`
+type-checks — it takes `&[crate::Diagnostic]` of the same family).
+Refactor `aozora_body_text(source: &str) -> &str` into
+`fn aozora_body_range(source: &str) -> std::ops::Range<usize>` (it
+already computes `body_start`/`body_end` internally — return them
+instead of slicing; keep `aozora_body_text` as a one-line range wrapper
+only if other callers remain). `DecodedSource` gains two fields, set in
+all three `decode_source_bytes` arms:
+
+```rust
+    /// Sanitize-stage diagnostics (PUA collisions, accent notes) — born
+    /// BEFORE the parse; the parse of neutralized text cannot rediscover
+    /// them. Spans are full-sanitized-text byte offsets.
+    pub sanitize_diagnostics: Vec<AozoraSanitizeDiagnostic>,
+    /// Byte offset of the body slice within the sanitized text.
+    pub body_offset: usize,
+```
+
+2. The envelope merges sanitize-stage entries (first, converted to
+   body-relative offsets) with parser entries:
 
 ```rust
 /// One wire diagnostics envelope (`{"data": […], "schemaVersion": 3}`)
 /// per input — the `--mode diagnostics` payload. Single owner of the
 /// diagnostics path (Phase 3 design spec): decoding, sanitization, and
 /// body selection are the EXACT same `decode_source_bytes` path as
-/// `aat_json_from_bytes`; the parse mirrors `projections()`.
+/// `aat_json_from_bytes`; the parse mirrors `projections()`. Entry
+/// order: sanitize-stage diagnostics, then parser diagnostics.
+/// Duplicates are impossible by construction (the inner re-sanitize sees
+/// already-neutralized, already-rewritten text) — the merge-order test
+/// pins this.
 ///
 /// # Errors
 ///
@@ -604,10 +684,28 @@ pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
         .map_err(|err| anyhow::anyhow!("decode_auto: {err:?}"))?;
     let doc = Document::new(source);
     let tree = doc.parse();
-    let entries = aozora_json::diagnostic_entries(tree.diagnostics());
+    let mut data = serde_json::to_value(
+        aozora_json::diagnostic_entries(&decoded.sanitize_diagnostics))?;
+    // Sanitize spans are full-sanitized-text offsets; rebase to the
+    // parser's body-relative system (vectors have no header: offset 0).
+    if let Some(items) = data.as_array_mut() {
+        for entry in items.iter_mut() {
+            for key in ["start", "end"] {
+                if let Some(v) = entry["span"][key].as_u64() {
+                    entry["span"][key] =
+                        json!(v.saturating_sub(decoded.body_offset as u64));
+                }
+            }
+        }
+    }
+    let parser_entries =
+        serde_json::to_value(aozora_json::diagnostic_entries(tree.diagnostics()))?;
+    if let (Some(items), Some(more)) = (data.as_array_mut(), parser_entries.as_array()) {
+        items.extend(more.iter().cloned());
+    }
     let envelope = json!({
         "schemaVersion": aozora_json::SCHEMA_VERSION,
-        "data": serde_json::to_value(entries)?,
+        "data": data,
     });
     let mut out = Vec::new();
     serde_json::to_writer(&mut out, &envelope)?;
@@ -615,6 +713,11 @@ pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     Ok(out)
 }
 ```
+
+3. `build_aat` / `meta.warnings` are NOT touched: AAT warnings stay
+   parser-only at rotation A (Task 10's delta taxonomy class 3 depends on
+   PUA works staying byte-identical). Confirm the tripwire still passes
+   unmodified in this task.
 
 - [ ] **Step 4: Run** — `cargo test -p ab-aozora-aat diagnostics_json_from_bytes` → 2 passed.
 
@@ -2194,6 +2297,10 @@ pub struct DecodedSource {
 struct SpanContext {
     maps: SanitizeMaps,
     /// Byte offset of the body slice within the SANITIZED text.
+    /// (Task 5 introduced this as a standalone `DecodedSource.body_offset`
+    /// field — it MOVES here; delete the standalone field and route every
+    /// consumer through `span_ctx`. `DecodedSource.sanitize_diagnostics`
+    /// stays as introduced in Task 5.)
     body_offset: usize,
     /// Byte offsets of line starts in the DECODED text (`text`).
     line_starts: Vec<usize>,
@@ -2212,23 +2319,24 @@ impl SpanContext {
 }
 ```
 
-2. `sanitize_for_aat` → returns the context too:
+2. `sanitize_for_aat` → switches to `sanitize_mapped` and returns the
+   maps alongside what Task 5 already returns (the `aozora_body_range`
+   refactor and the `sanitize_diagnostics`/`body_offset` fields landed in
+   Task 5 — this task ADDS `maps` and `line_starts`, bundled as
+   `span_ctx`):
 
 ```rust
-fn sanitize_for_aat(text: &str) -> (String, SanitizeMaps, usize) {
+fn sanitize_for_aat(text: &str)
+    -> (String, Vec<AozoraSanitizeDiagnostic>, SanitizeMaps, usize) {
     let mapped = sanitize_mapped(text);
+    let sanitize_diagnostics = mapped.diagnostics;
     let sanitized = mapped.text.into_owned();
     let body = aozora_body_range(&sanitized);
-    (sanitized[body.clone()].to_owned(), mapped.maps, body.start)
+    (sanitized[body.clone()].to_owned(), sanitize_diagnostics, mapped.maps, body.start)
 }
 ```
 
-Refactor `aozora_body_text(source: &str) -> &str` into
-`aozora_body_range(source: &str) -> std::ops::Range<usize>` (it already
-computes `body_start`/`body_end` internally — return them instead of
-slicing; keep a thin `aozora_body_text` wrapper only if other callers
-remain). Build `line_starts` in `decode_source_bytes` after `text` is
-final:
+Build `line_starts` in `decode_source_bytes` after `text` is final:
 
 ```rust
 fn line_starts(text: &str) -> Vec<usize> {
@@ -2265,19 +2373,41 @@ fn span_json(span: &Span, ctx: &SpanContext) -> Value {
    `ctx.line_of(ctx.to_decoded(span.start))` when a span exists.
 5. Delete the `warnings.push(json!({ "message": "aozora upstream spans …", "line": 1 }))`
    block in `build_aat` (lines ~232–237) entirely.
-6. `diagnostics_json_from_bytes`: after building the envelope data,
-   rebase each entry's wire span in place:
+6. `diagnostics_json_from_bytes`: replace Task 5's rotation-A coordinate
+   conversion with the final decoded-source translation, applied PER
+   ORIGIN before merging (sanitize entries carry full-sanitized-text
+   offsets → through the maps directly, NO body offset — this also
+   removes Task 5's `saturating_sub` clipping edge for pre-body
+   diagnostics; parser entries carry body-relative offsets → body offset
+   + maps):
 
 ```rust
-    let mut data = serde_json::to_value(entries)?;
-    if let Some(items) = data.as_array_mut() {
-        for entry in items {
-            let (Some(start), Some(end)) = (entry["span"]["start"].as_u64(), entry["span"]["end"].as_u64()) else { continue };
-            entry["span"]["start"] = json!(decoded.span_ctx.to_decoded(start as usize));
-            entry["span"]["end"] = json!(decoded.span_ctx.to_decoded_end(end as usize));
+    fn rebase_spans(data: &mut Value, translate: impl Fn(usize) -> usize,
+                    translate_end: impl Fn(usize) -> usize) {
+        if let Some(items) = data.as_array_mut() {
+            for entry in items {
+                let (Some(start), Some(end)) =
+                    (entry["span"]["start"].as_u64(), entry["span"]["end"].as_u64())
+                else { continue };
+                entry["span"]["start"] = json!(translate(start as usize));
+                entry["span"]["end"] = json!(translate_end(end as usize));
+            }
         }
     }
+    // sanitize-stage entries: full-sanitized coords → decoded
+    rebase_spans(&mut data,
+        |o| decoded.span_ctx.maps.to_source_offset(o),
+        |o| decoded.span_ctx.maps.to_source_end(o));
+    // parser entries: body-relative coords → decoded
+    rebase_spans(&mut parser_entries,
+        |o| decoded.span_ctx.to_decoded(o),
+        |o| decoded.span_ctx.to_decoded_end(o));
+    // then merge as before (sanitize first) and wrap the envelope
 ```
+
+   Extend the Task 5 unit tests: the PUA test's input gains a BOM +
+   CRLF prefix variant asserting the PUA span lands at the raw U+E001's
+   DECODED offsets (hand-compute them in the test).
 
 7. Versions: `ab-aozora-aat` and `ab-aozora` → `0.3.0`; wire.rs field
    list → `"ab-aozora 0.3.0"`. Tripwire literal: version substring →
@@ -2497,6 +2627,50 @@ def test_unlisted_divergence_still_fails(tmp_path):
     row = scorer.evaluate(fake_diag_adapter(tmp_path, [shifted]), vector(WANT),
                           manifest={})
     assert row.status == "fail"
+
+
+def entry(**kw):
+    import hashlib
+    base = {"vector": "v", "reason": "crlf", "original_expected": WANT,
+            "expected": WANT, "source_sha256": hashlib.sha256(b"s").hexdigest()}
+    base.update(kw)
+    return base
+
+
+def test_duplicate_vector_ids_rejected(tmp_path):
+    import pytest
+    with pytest.raises(SystemExit, match="duplicate"):
+        scorer.load_span_deviation_manifest(manifest_file(tmp_path, [entry(), entry()]))
+
+
+def test_unknown_fields_rejected(tmp_path):
+    import pytest
+    with pytest.raises(SystemExit, match="fields must be exactly"):
+        scorer.load_span_deviation_manifest(manifest_file(tmp_path, [entry(extra=1)]))
+
+
+def test_stale_original_expected_fails(tmp_path):
+    stale = entry(original_expected=[{"code": "unclosed-bracket", "severity": "error",
+                                      "span": {"start": 0, "end": 1}}])
+    manifest = scorer.load_span_deviation_manifest(manifest_file(tmp_path, [stale]))
+    row = scorer.evaluate(fake_diag_adapter(tmp_path, [FULL]), vector(WANT),
+                          manifest=manifest)
+    assert row.status == "fail"
+    assert any("stale" in f for f in row.failures)
+
+
+def test_unknown_and_unused_entries_rejected():
+    import pytest
+    manifest = {"ghost": entry(vector="ghost")}
+    with pytest.raises(SystemExit, match="match no loaded vector"):
+        scorer.check_manifest_consumed(manifest, {"v"}, set())
+    manifest = {"v": entry()}
+    with pytest.raises(SystemExit, match="never exercised"):
+        scorer.check_manifest_consumed(manifest, {"v"}, set())
+
+
+def test_exercised_entry_passes_consumed_check():
+    scorer.check_manifest_consumed({"v": entry()}, {"v"}, {"v"})
 ```
 
 - [ ] **Step 2: Run to verify failure** — the three new tests FAIL (`load_span_deviation_manifest` / `manifest=` unknown).
@@ -2504,18 +2678,50 @@ def test_unlisted_divergence_still_fails(tmp_path):
 - [ ] **Step 3: Implement in the scorer**
 
 ```python
+MANIFEST_FIELDS = {"vector": str, "reason": str, "original_expected": list,
+                   "expected": list, "source_sha256": str}
+
+
 def load_span_deviation_manifest(path) -> dict:
     entries = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(entries, list):
+        raise SystemExit("span-deviation-manifest must be a JSON list")
     manifest = {}
     for e in entries:
-        for key in ("vector", "reason", "original_expected", "expected", "source_sha256"):
-            if key not in e:
-                raise SystemExit(f"span-deviation-manifest entry missing {key!r}: {e}")
+        if not isinstance(e, dict) or set(e) != set(MANIFEST_FIELDS):
+            raise SystemExit(f"span-deviation-manifest entry fields must be exactly "
+                             f"{sorted(MANIFEST_FIELDS)}: {e!r}")
+        for key, typ in MANIFEST_FIELDS.items():
+            if not isinstance(e[key], typ):
+                raise SystemExit(f"span-deviation-manifest {key!r} must be {typ.__name__}: {e!r}")
+        if not re.fullmatch(r"[0-9a-f]{64}", e["source_sha256"]):
+            raise SystemExit(f"span-deviation-manifest source_sha256 must be 64-hex: {e!r}")
+        if e["vector"] in manifest:
+            raise SystemExit(f"span-deviation-manifest duplicate vector {e['vector']!r}")
         manifest[e["vector"]] = e
     return manifest
+
+
+def check_manifest_consumed(manifest: dict, vector_names: set, used: set) -> None:
+    unknown = sorted(set(manifest) - vector_names)
+    if unknown:
+        raise SystemExit(f"span-deviation-manifest entries match no loaded vector: {unknown}")
+    unused = sorted(set(manifest) - used)
+    if unused:
+        raise SystemExit(f"span-deviation-manifest entries never exercised "
+                         f"(stale authorization): {unused}")
 ```
 
-`evaluate` grows a keyword arg (`def evaluate(adapter, vector, manifest=None)`;
+(`import re` is already present at the top of the scorer.) `main()`
+calls `check_manifest_consumed(manifest, {v["name"] for v in vectors}, used)`
+after the scoring loop whenever a manifest was loaded; `used` collects
+the vector names for which the override was applied (evaluate returns
+rows — track usage via a shared set passed as
+`evaluate(adapter, vector, manifest=manifest, manifest_used=used)`, added
+to the set at the point the override is applied).
+
+`evaluate` grows keyword args
+(`def evaluate(adapter, vector, manifest=None, manifest_used=None)`;
 add `import hashlib` at the top of the file). The diagnostics-command
 branch becomes:
 
@@ -2530,8 +2736,14 @@ branch becomes:
                         failures.append("diagnostics: manifest source hash mismatch "
                                         "(vector changed since authorization)")
                         bad_manifest = True
+                    elif entry["original_expected"] != want_diag:
+                        failures.append("diagnostics: manifest original_expected is stale "
+                                        "(vector expectation changed since authorization)")
+                        bad_manifest = True
                     else:
                         want_diag = entry["expected"]
+                        if manifest_used is not None:
+                            manifest_used.add(vector["name"])
                 if not bad_manifest:
                     actual_diag, error = run_diagnostics(adapter, vector["source"])
                     if error:
@@ -2642,8 +2854,8 @@ may now be scheduled for deletion (after Task 18's checkpoint passes).
 - Modify: `docs/handoffs/2026-07-10-parser-fork-provenance.md` (close the "Phase 3 follow-ups" section)
 
 **Interfaces:**
-- Consumes: the nine frozen gate summaries (3 stages × 3 gates), C0/C1/C2 from the ledger, Task 17's audit artifacts.
-- Produces: `verify-phase3-checkpoint.py --stage0 P C E --rotation-a D C P --rotation-b D C P --c0 SHA --c1 SHA --c2 SHA` → `CHECKPOINT OK` / exit 1. The branch merges only after CHECKPOINT OK.
+- Consumes: the nine frozen gate summaries (3 stages × 3 gates) PLUS the two conversion-audit summaries (rotation A and B), C0/C1/C2 from the ledger.
+- Produces: `verify-phase3-checkpoint.py --stage0 P C E --rotation-a D C P --rotation-b D C P --audit-a PATH --audit-b PATH --c0 SHA --c1 SHA --c2 SHA` → `CHECKPOINT OK` / exit 1. Substantive checks on delta/confinement details and on the audits (17886/17886/0, mapping 0.2.8 + recorded hash, audited `aat_adapter_version` matching the stage candidate) — never just `verdict: PASS`. The branch merges only after CHECKPOINT OK.
 
 - [ ] **Step 1: Registry row** — exactly Task 11's procedure with Task 17's audit artifacts and the C2 version string; `:corpus` = `"ab-aozora Phase 3 rotation B dump (aozora-full corpus, 17886 works)"`. Validate (`adr-governance` + kaocha) and commit.
 
@@ -2663,10 +2875,20 @@ V1 = f"ab-aozora 0.2.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git {C1})"
 V2 = f"ab-aozora 0.3.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git {C2})"
 
 
+MAPPING_HASH = "sha256:952620ced4eb22f9771e6a10c3a1d4d93de604a8c33e360311f82b6e1eafc5b7"
+
+
 def summary(stage, gate, commit, version, bin_sha="f" * 64, verdict="PASS", details=None):
     return {"stage": stage, "gate": gate, "verdict": verdict,
             "candidate": {"commit": commit, "bin_sha256": bin_sha, "version": version},
             "details": details or {}}
+
+
+def audit(version):
+    return {"mapping": {"mapping_version": "0.2.8", "mapping_hash": MAPPING_HASH},
+            "totals": {"files_attempted": 17886, "files_succeeded": 17886,
+                       "files_failed": 0},
+            "compatibility_candidates": [{"aat_adapter_version": version}]}
 
 
 def write_all(tmp_path, mutate=None):
@@ -2678,16 +2900,23 @@ def write_all(tmp_path, mutate=None):
         "s0f": summary("stage0", "perf", C0, V0, bin_sha="0" * 64,
                        details={"new_timeouts": 0}),
         "rap": summary("rotation-a", "delta", C1, V1, bin_sha="1" * 64,
-                       details={"verdict": "PASS"}),
+                       details={"mode": "container-rewrite", "compared": 17886,
+                                "classes": {"identical": 17700, "rewritten": 186,
+                                            "span_confined": 0}, "verdict": "PASS"}),
         "rac": summary("rotation-a", "conformance", C1, V1, bin_sha="1" * 64,
                        details={"must_fail": 0, "must_skip": 0}),
         "raf": summary("rotation-a", "perf", C1, V1, bin_sha="1" * 64,
                        details={"new_timeouts": 0}),
-        "rbp": summary("rotation-b", "confinement", C2, V2, bin_sha="2" * 64),
+        "rbp": summary("rotation-b", "confinement", C2, V2, bin_sha="2" * 64,
+                       details={"mode": "span-confinement", "compared": 17886,
+                                "classes": {"identical": 0, "rewritten": 0,
+                                            "span_confined": 17886}, "verdict": "PASS"}),
         "rbc": summary("rotation-b", "conformance", C2, V2, bin_sha="2" * 64,
                        details={"must_fail": 0, "must_skip": 0}),
         "rbf": summary("rotation-b", "perf", C2, V2, bin_sha="2" * 64,
                        details={"new_timeouts": 0}),
+        "auda": audit(V1),
+        "audb": audit(V2),
     }
     if mutate:
         mutate(docs)
@@ -2699,19 +2928,20 @@ def write_all(tmp_path, mutate=None):
     return paths
 
 
-def run(paths):
+def run(paths, c2=C2):
     return subprocess.run(
         [sys.executable, str(SCRIPT),
          "--stage0", paths["s0p"], paths["s0c"], paths["s0f"],
          "--rotation-a", paths["rap"], paths["rac"], paths["raf"],
          "--rotation-b", paths["rbp"], paths["rbc"], paths["rbf"],
-         "--c0", C0, "--c1", C1, "--c2", C2],
+         "--audit-a", paths["auda"], "--audit-b", paths["audb"],
+         "--c0", C0, "--c1", C1, "--c2", c2],
         capture_output=True, text=True)
 
 
 def test_all_pass(tmp_path):
     p = run(write_all(tmp_path))
-    assert p.returncode == 0 and "CHECKPOINT OK" in p.stdout
+    assert p.returncode == 0 and "CHECKPOINT OK" in p.stdout, p.stderr
 
 
 def test_verdict_fail_rejected(tmp_path):
@@ -2739,30 +2969,56 @@ def test_duplicate_candidates_across_stages_rejected(tmp_path):
         for k in ("rbp", "rbc", "rbf"):
             d[k]["candidate"]["commit"] = C1
             d[k]["candidate"]["version"] = V2.replace(C2, C1)
-    paths = write_all(tmp_path, mutate)
-    proc = subprocess.run(
-        [sys.executable, str(SCRIPT),
-         "--stage0", paths["s0p"], paths["s0c"], paths["s0f"],
-         "--rotation-a", paths["rap"], paths["rac"], paths["raf"],
-         "--rotation-b", paths["rbp"], paths["rbc"], paths["rbf"],
-         "--c0", C0, "--c1", C1, "--c2", C1],
-        capture_output=True, text=True)
-    assert proc.returncode == 1
+    assert run(write_all(tmp_path, mutate), c2=C1).returncode == 1
+
+
+def test_delta_class_totals_must_sum_to_compared(tmp_path):
+    def mutate(d): d["rap"]["details"]["classes"]["identical"] = 17000
+    assert run(write_all(tmp_path, mutate)).returncode == 1
+
+
+def test_confinement_wrong_mode_rejected(tmp_path):
+    def mutate(d): d["rbp"]["details"]["mode"] = "container-rewrite"
+    assert run(write_all(tmp_path, mutate)).returncode == 1
+
+
+def test_audit_failed_files_rejected(tmp_path):
+    def mutate(d): d["audb"]["totals"]["files_failed"] = 1
+    assert run(write_all(tmp_path, mutate)).returncode == 1
+
+
+def test_audit_wrong_mapping_rejected(tmp_path):
+    def mutate(d): d["auda"]["mapping"]["mapping_version"] = "0.2.4"
+    assert run(write_all(tmp_path, mutate)).returncode == 1
+
+
+def test_audit_identity_mismatch_rejected(tmp_path):
+    def mutate(d): d["auda"]["compatibility_candidates"][0]["aat_adapter_version"] = V2
+    assert run(write_all(tmp_path, mutate)).returncode == 1
 ```
 
 - [ ] **Step 3: Implement the verifier**
 
 ```python
 #!/usr/bin/env python3
-"""Fail-closed Phase 3 checkpoint: nine PASS gate summaries, three candidates.
+"""Fail-closed Phase 3 checkpoint: nine PASS gate summaries, two
+conversion audits, three candidates.
 
 Per stage (stage0 / rotation-a / rotation-b): the three summaries carry
 the expected stage + gate names, verdict PASS, ONE candidate commit and
 ONE bin_sha256, and a version string matching the stage's exact pattern
 and embedding the commit. Across stages: the three candidate commits
-equal --c0/--c1/--c2 and are pairwise distinct. Detail minimums: stage0
-parity compared>0/missing 0/bytes diverged 0; rotation conformance
-must_fail==0 and must_skip==0; every perf new_timeouts==0.
+equal --c0/--c1/--c2 and are pairwise distinct.
+
+Substantive detail checks (never just verdict): stage0 parity
+compared==17886/missing 0/bytes diverged 0; rotation-a delta mode
+container-rewrite, compared==17886, class totals summing to compared;
+rotation-b confinement mode span-confinement, compared==17886, all works
+span_confined or identical; rotation conformance must_fail==0 AND
+must_skip==0; every perf new_timeouts==0. Conversion audits (--audit-a /
+--audit-b): 17886 attempted == 17886 succeeded, 0 failed, mapping 0.2.8
+with the recorded hash, and the audited dump's aat_adapter_version
+matching the stage pattern with that stage's candidate commit.
 
 Exit 0 + "CHECKPOINT OK" or exit 1 with the first violation."""
 import argparse
@@ -2770,6 +3026,9 @@ import json
 import re
 import sys
 
+CORPUS = 17886
+MAPPING_VERSION = "0.2.8"
+MAPPING_HASH = "sha256:952620ced4eb22f9771e6a10c3a1d4d93de604a8c33e360311f82b6e1eafc5b7"
 STAGES = {
     "stage0": (("parity", "conformance", "perf"),
                r"^ab-aozora 0\.1\.0 aat-schema 1 facade 0\.1\.0 wire-schema 2 \(git {c}\)$"),
@@ -2785,11 +3044,55 @@ def die(msg):
     raise SystemExit(1)
 
 
+def load(path):
+    try:
+        return json.load(open(path))
+    except (OSError, json.JSONDecodeError) as err:
+        die(f"{path}: unreadable ({err})")
+
+
+def check_audit(path, stage, version_pat, commit):
+    doc = load(path)
+    totals = doc.get("totals") or {}
+    if not (totals.get("files_attempted") == CORPUS
+            and totals.get("files_succeeded") == CORPUS
+            and totals.get("files_failed") == 0):
+        die(f"{path}: audit totals fail minimums: {totals}")
+    mapping = doc.get("mapping") or {}
+    if mapping.get("mapping_version") != MAPPING_VERSION or \
+            mapping.get("mapping_hash") != MAPPING_HASH:
+        die(f"{path}: audit mapping coordinate mismatch: {mapping}")
+    candidates = doc.get("compatibility_candidates") or []
+    if len(candidates) != 1:
+        die(f"{path}: expected exactly one compatibility candidate")
+    adapter_version = candidates[0].get("aat_adapter_version") or ""
+    if not re.fullmatch(version_pat.format(c=commit), adapter_version):
+        die(f"{path}: audited adapter_version {adapter_version!r} does not match "
+            f"the {stage} candidate")
+
+
+def check_audit_gate_details(path, gate, details):
+    expected_mode = {"delta": "container-rewrite",
+                     "confinement": "span-confinement"}[gate]
+    if details.get("mode") != expected_mode:
+        die(f"{path}: {gate} mode is {details.get('mode')!r}, expected {expected_mode!r}")
+    if details.get("compared") != CORPUS:
+        die(f"{path}: {gate} compared {details.get('compared')!r} != {CORPUS}")
+    classes = details.get("classes") or {}
+    if sum(classes.values()) != CORPUS:
+        die(f"{path}: {gate} class totals {classes} do not sum to {CORPUS}")
+    if gate == "confinement" and \
+            classes.get("span_confined", 0) + classes.get("identical", 0) != CORPUS:
+        die(f"{path}: confinement classes must all be span_confined/identical: {classes}")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--stage0", nargs=3, required=True)
     ap.add_argument("--rotation-a", dest="rotation_a", nargs=3, required=True)
     ap.add_argument("--rotation-b", dest="rotation_b", nargs=3, required=True)
+    ap.add_argument("--audit-a", required=True)
+    ap.add_argument("--audit-b", required=True)
     ap.add_argument("--c0", required=True)
     ap.add_argument("--c1", required=True)
     ap.add_argument("--c2", required=True)
@@ -2806,10 +3109,7 @@ def main() -> int:
         commit = expected_commits[stage]
         bins, versions = set(), set()
         for path, gate in zip(files[stage], gates):
-            try:
-                doc = json.load(open(path))
-            except (OSError, json.JSONDecodeError) as err:
-                die(f"{path}: unreadable ({err})")
+            doc = load(path)
             if doc.get("stage") != stage:
                 die(f"{path}: stage is {doc.get('stage')!r}, expected {stage!r}")
             if doc.get("gate") != gate:
@@ -2825,9 +3125,12 @@ def main() -> int:
             versions.add(cand.get("version"))
             details = doc.get("details") or {}
             if gate == "parity":
-                if not (details.get("compared", 0) > 0 and details.get("missing_count") == 0
+                if not (details.get("compared") == CORPUS
+                        and details.get("missing_count") == 0
                         and (details.get("bytes") or {}).get("diverged_count") == 0):
                     die(f"{path}: parity details fail minimums: {details}")
+            if gate in ("delta", "confinement"):
+                check_audit_gate_details(path, gate, details)
             if gate == "conformance" and stage != "stage0":
                 if details.get("must_fail") != 0 or details.get("must_skip") != 0:
                     die(f"{path}: conformance must gate not clean: {details}")
@@ -2837,6 +3140,8 @@ def main() -> int:
             die(f"{stage}: bin_sha256 not identical across gates: {bins}")
         if len(versions) != 1:
             die(f"{stage}: version strings differ: {versions}")
+    check_audit(args.audit_a, "rotation-a", STAGES["rotation-a"][1], args.c1)
+    check_audit(args.audit_b, "rotation-b", STAGES["rotation-b"][1], args.c2)
     print("CHECKPOINT OK")
     return 0
 
@@ -2845,7 +3150,7 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 4: Run the tests** — `python -m pytest reports/aat-fidelity/tests/test_verify_phase3_checkpoint.py -v` → 6 passed. Ensure the three rotation gate summaries written in Tasks 10/17 include `details.must_fail`/`details.must_skip`/`details.new_timeouts` fields the verifier reads — if a written summary lacks one, that summary is WRONG (not the verifier); fix it before freezing (they are only frozen after checkpoint).
+- [ ] **Step 4: Run the tests** — `python -m pytest reports/aat-fidelity/tests/test_verify_phase3_checkpoint.py -v` → 11 passed. Ensure the gate summaries written in Tasks 10/17 include every detail field the verifier reads (`must_fail`/`must_skip`, `new_timeouts`, and for delta/confinement the full audit summary as `details` — `mode`/`compared`/`classes`) — if a written summary lacks one, that summary is WRONG (not the verifier); fix it before freezing (they are only frozen after checkpoint).
 
 - [ ] **Step 5: Run the real checkpoint**
 
@@ -2854,6 +3159,8 @@ python3 reports/aat-fidelity/verify-phase3-checkpoint.py \
   --stage0 docs/superpowers/reports/2026-07-11-phase3-stage0-sanitize-parity.summary.json docs/superpowers/reports/2026-07-11-phase3-stage0-conformance-gate.summary.json docs/superpowers/reports/2026-07-11-phase3-stage0-perf.summary.json \
   --rotation-a docs/superpowers/reports/2026-07-11-phase3-capability-delta.summary.json docs/superpowers/reports/2026-07-11-phase3-capability-conformance-gate.summary.json docs/superpowers/reports/2026-07-11-phase3-capability-perf.summary.json \
   --rotation-b docs/superpowers/reports/2026-07-11-phase3-span-confinement.summary.json docs/superpowers/reports/2026-07-11-phase3-span-conformance-gate.summary.json docs/superpowers/reports/2026-07-11-phase3-span-perf.summary.json \
+  --audit-a docs/superpowers/reports/2026-07-11-ab-aozora-phase3-capability-conversion-audit.summary.json \
+  --audit-b docs/superpowers/reports/2026-07-11-ab-aozora-phase3-span-conversion-audit.summary.json \
   --c0 <C0> --c1 <C1> --c2 <C2>
 ```
 

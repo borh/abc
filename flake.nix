@@ -62,8 +62,6 @@
 
       pkgsFor = system: import nixpkgs { inherit system; };
 
-      prefixAttrs = prefix: lib.mapAttrs' (name: value: lib.nameValuePair "${prefix}${name}" value);
-
       optionalOutputAttrs =
         flake: outputName: system:
         lib.attrByPath [ outputName system ] { } flake;
@@ -91,19 +89,24 @@
           schema-drift = mkWrappedScript "soranoha-schema-drift" ''exec bash scripts/monorepo-schema-drift.sh "$@"'';
           tei-version-coherence = mkWrappedScript "soranoha-tei-version-coherence" ''exec bash scripts/monorepo-tei-version-coherence.sh "$@"'';
           flake-input-policy = mkWrappedScript "soranoha-flake-input-policy" ''exec python scripts/monorepo-flake-input-policy.py "$@"'';
-          python-quality = mkWrappedScript "soranoha-python-quality" ''exec bash scripts/python-quality.sh "$@"'';
-
           # Kept explicit (not via mkWrappedScript): its multi-line body, when
           # spliced through the helper's ''-string, re-dedents to a different
           # script text and changes the derivation hash. Explicit form preserves it.
           validate-migration = pkgs.writeShellScript "soranoha-validate-migration" ''
             set -euo pipefail
             export PATH="${runtimePath}:$PATH"
+            workspace_root="$PWD"
             bash tests/monorepo-active-path-hygiene-smoke.sh
+            bash tests/root-flake-output-contract-smoke.sh
             bash scripts/monorepo-schema-drift.sh
             bash scripts/monorepo-tei-version-coherence.sh
             python scripts/monorepo-flake-input-policy.py
             nix flake check --no-build "$@"
+            (cd "$workspace_root/abc" && nix flake check --no-build "$@")
+            (
+              cd "$workspace_root/ab-validator"
+              AB_WORKSPACE_ROOT="$workspace_root" nix flake check --no-build "$@"
+            )
           '';
         };
     in
@@ -128,14 +131,6 @@
             program = "${program}";
             meta.description = description;
           };
-          mkProbeAwareAbcApp =
-            name:
-            pkgs.writeShellScript "soranoha-abc-${name}" ''
-              export ABC_TEI_EAJ_ALIGNMENT_PROBE_BIN="${
-                abValidatorPackages."ab-aat-to-parser-ir"
-              }/bin/ab-aat-to-parser-ir"
-              exec ${abcApps.${name}.program} "$@"
-            '';
           # build-publication materializes real TEI by shelling out to the owned
           # adapters. Inject them (and the shell tools the aozora2html wrapper
           # needs) so `nix run .#soranoha` is hermetic and never falls back to a
@@ -168,9 +163,7 @@
               exec ${soranohaApp.program} "$@"
             '';
         in
-        prefixAttrs "abc-" abcApps
-        // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "apps" system)
-        // (
+        (
           if builtins.hasAttr "soranoha" abcApps then
             {
               soranoha = mkScriptApp (mkAdapterAwareSoranohaApp abcApps.soranoha) (
@@ -181,12 +174,9 @@
             { }
         )
         // {
-          abc-tei-eaj-aozora-alignment-probe = mkScriptApp (mkProbeAwareAbcApp "tei-eaj-aozora-alignment-probe") "Regenerate TEI-EAJ alignment probes with the Nix-built Rust probe binary";
-          abc-tei-eaj-aozora-reports-with-probes = mkScriptApp (mkProbeAwareAbcApp "tei-eaj-aozora-reports-with-probes") "Regenerate TEI-EAJ comparison reports and attach Rust alignment probes";
           schema-drift = mkScriptApp scripts.schema-drift "Check monorepo ABC schema contract drift";
           tei-version-coherence = mkScriptApp scripts.tei-version-coherence "Check TEI P5 source/profile version coherence";
           flake-input-policy = mkScriptApp scripts.flake-input-policy "Check release-critical flake inputs are explicitly pinned";
-          python-quality = mkScriptApp scripts.python-quality "Run monorepo Python ruff and mypy checks";
           validate-migration = mkScriptApp scripts.validate-migration "Run Soranoha monorepo migration validation gates";
         }
       );
@@ -198,7 +188,6 @@
           tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
           abcApps = optionalOutputAttrs abc "apps" system;
           abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
-          abValidatorChecks = optionalOutputAttrs ab-validator "checks" system;
           mkMonorepoCheck =
             name: nativeBuildInputs: script:
             pkgs.runCommand name
@@ -212,10 +201,7 @@
                 touch "$out"
               '';
         in
-        prefixAttrs "abc-" (optionalOutputAttrs abc "checks" system)
-        // prefixAttrs "ab-validator-" abValidatorChecks
-        // {
-          parser-ir-ortho-publication-smoke = abValidatorChecks.parser-ir-ortho-publication-smoke;
+        {
           monorepo-tei-p5-reference = tei.reference;
           monorepo-tei-version-coherence =
             mkMonorepoCheck "soranoha-monorepo-tei-version-coherence"
@@ -417,9 +403,7 @@
           pkgs = pkgsFor system;
           tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
         in
-        prefixAttrs "abc-" (optionalOutputAttrs abc "packages" system)
-        // prefixAttrs "ab-validator-" (optionalOutputAttrs ab-validator "packages" system)
-        // {
+        {
           tei-p5-reference = tei.reference;
         }
       );
@@ -431,9 +415,7 @@
           abcShells = optionalOutputAttrs abc "devShells" system;
           abValidatorShells = optionalOutputAttrs ab-validator "devShells" system;
         in
-        prefixAttrs "abc-" abcShells
-        // prefixAttrs "ab-validator-" abValidatorShells
-        // {
+        {
           default = pkgs.mkShell {
             AB_BOOTSTRAP_VIBRATO_DICT = "0";
             TEI_SCHEMA_PATH = abcShells.default.TEI_SCHEMA_PATH;

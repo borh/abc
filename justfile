@@ -36,8 +36,11 @@ nix-format-check:
 root-flake-check-no-build:
 	@nix flake check --no-build
 
-check-no-build: runtime-config-smoke active-path-hygiene schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check
+root-flake-output-contract:
+	@bash tests/root-flake-output-contract-smoke.sh
+
+check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check root-flake-check-no-build
 	@(cd abc && nix flake check --no-build)
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." nix flake check --no-build)
 
-validate-migration: runtime-config-smoke active-path-hygiene schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check root-flake-check-no-build
+validate-migration: check-no-build

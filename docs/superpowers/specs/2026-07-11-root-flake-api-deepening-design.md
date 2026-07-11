@@ -336,13 +336,16 @@ Additional verification must prove:
   component outputs, or the approved maintainer recipes.
 - The two cross-component evidence recipes provide the Nix-built
   `ab-aat-to-parser-ir` binary and successfully evaluate their ABC app targets.
-- Immediately after the root-only output refactor, the retained `soranoha`
-  program path is identical to the pre-change snapshot. After active caller
-  documentation inside the `abc` and `ab-validator` path inputs is migrated,
-  those inputs necessarily receive new store paths; compare normalized wrapper
-  script text with store hashes removed. This proves that the runtime `PATH`,
-  six `AB_*` assignments, validator-owned adapter and mapping path shapes, and
-  final ABC dispatch were preserved apart from expected input identities.
+- Immediately after the root-only output refactor, compare the realized
+  `soranoha` wrapper text with store hashes removed. Raw program-path identity
+  is not expected: any tracked root edit changes the parent Git source snapshot
+  and therefore churns the nested `path:./ab-validator` source hash embedded in
+  the wrapper. Normalized realized-script equality, together with stable direct
+  ABC app and validator package identities, proves that the runtime `PATH`, six
+  `AB_*` assignments, validator-owned adapter and mapping path shapes, and final
+  ABC dispatch were preserved apart from expected source identities. Repeat the
+  normalized comparison after later caller migration; do not require raw
+  wrapper program-path equality at either point.
 - The `validate-migration` app and `just validate-migration` each evaluate the
   root, `abc`, and `ab-validator` checks with `--no-build`; both validator
   invocations set `AB_WORKSPACE_ROOT` to the monorepo root.

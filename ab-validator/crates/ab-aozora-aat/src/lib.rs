@@ -549,21 +549,6 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 index = boundary;
                 continue;
             }
-        } else if let Some(width) = pure_jizume_open_width(&node) {
-            if let Some(close_index) = find_matching_container_close(&content, index + 1, "字詰め")
-            {
-                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-                let mut inner = content[index + 1..close_index].to_vec();
-                strip_boundary_newlines(&mut inner);
-                blocks.push(json!({
-                    "kind": "jizume_block",
-                    "width": width,
-                    "children": blocks_from_inline_content(inner)
-                }));
-                strip_next_leading_newline = true;
-                index = close_index + 1;
-                continue;
-            }
         } else if let Some(indent) = jisage_container_indent(&node) {
             if let Some(close_index) = find_matching_jisage_close(&content, index + 1) {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
@@ -783,14 +768,24 @@ fn simple_jisage_open_indent(source: &str) -> Option<u64> {
     Some(parse_aozora_number_before(marker, "字下げ").unwrap_or(1))
 }
 
-/// Recognize a jizume (字詰め) container-open marker and extract the
-/// chars-per-line count — standalone (`［＃ここからN字詰め］`) or as the
-/// FINAL clause of a compound container
+/// Recognize a `字詰め` open marker and extract the chars-per-line count.
+///
+/// Matches the standalone line-width form (`［＃ここからN字詰め］`) or a
+/// `字詰め` carried as the FINAL clause of a compound indent container
 /// (`［＃ここから６字下げ、折り返して７字下げ、２１字詰め］`).
 ///
-/// Consumed by the block classifier to emit `jizume_block` (standalone) or
-/// to wrap the existing burasage classification of a compound container
-/// (Phase 4, this recognizer's emission wave).
+/// NOTE (C3 gate fix): the *standalone* `［＃ここからN字詰め］` is the
+/// `line-width` container family (upstream notation spec §6.6,
+/// `line-width-open = ［＃ここから 1*DIGIT 字詰め］`). It is NOT a typed
+/// `jizume_block`; it must round-trip as a raw `containerOpen`/
+/// `containerClose` pair (conformance vector `line_width_container`). This
+/// recognizer therefore feeds ONLY the compound-indent wrap path
+/// (`push_burasage_paragraph_maybe_jizume`): a `字詰め` that appears as a
+/// clause on a `字下げ`-carrying indent opener projects the compound
+/// `jizume_block { width }`. It intentionally still *recognizes* the
+/// standalone form (a pure predicate — its Phase 3 semantics are pinned by
+/// `jizume_open_chars_recognizes_standalone_and_compound`), but no block
+/// classifier arm emits a standalone `jizume_block` from it.
 #[must_use]
 pub fn jizume_open_chars(source: &str) -> Option<u64> {
     let marker = source.trim();
@@ -808,22 +803,6 @@ pub fn jizume_open_chars(source: &str) -> Option<u64> {
 #[must_use]
 pub fn is_jizume_close(source: &str) -> bool {
     source.trim() == "［＃ここで字詰め終わり］"
-}
-
-/// Recognize a *pure* jizume container-open — one with no `字下げ` segment —
-/// so this arm never shadows (or is shadowed by) the jisage/burasage
-/// compound handling, which always carries `字下げ`.
-fn pure_jizume_open_width(node: &Value) -> Option<u64> {
-    if node.get("kind").and_then(Value::as_str) != Some("raw")
-        || node.get("x-source-marker-kind").and_then(Value::as_str) != Some("containerOpen")
-    {
-        return None;
-    }
-    let source = node.get("source").and_then(Value::as_str)?;
-    if source.contains("字下げ") {
-        return None;
-    }
-    jizume_open_chars(source)
 }
 
 fn find_matching_jisage_close(content: &[Value], start: usize) -> Option<usize> {
@@ -1814,11 +1793,39 @@ mod tests {
     }
 
     #[test]
-    fn paired_jizume_emits_jizume_block() {
+    fn paired_line_width_container_stays_raw() {
+        // C3 gate fix: standalone `［＃ここからN字詰め］` is the `line-width`
+        // container family (upstream notation spec §6.6, `line-width-open`),
+        // NOT a typed jizume_block. Even a fully paired open/close must
+        // round-trip as raw containerOpen/containerClose — the conformance
+        // vector `line_width_container` requires exactly this. (Pre-C3 this
+        // arm emitted a jizume_block, which over-matched the vector.)
         let aat = aat_value_for("［＃ここから２１字詰め］\n本文\n［＃ここで字詰め終わり］\n");
-        let block = find_first_node(&aat, "jizume_block");
-        assert_eq!(block["width"], 21);
-        assert_eq!(block["children"].as_array().unwrap().len(), 1);
+        assert!(
+            find_node(&aat, "jizume_block").is_none(),
+            "standalone line-width container must not form a jizume_block"
+        );
+        let serialized = serde_json::to_string(&aat).unwrap();
+        assert!(serialized.contains("containerOpen"));
+        assert!(serialized.contains("containerClose"));
+    }
+
+    #[test]
+    fn line_width_container_conformance_vector_stays_raw() {
+        // Pins the exact source text of the upstream conformance vector
+        // `line_width_container` (§6.6): the parser must leave it a raw
+        // containerOpen/containerClose pair so the comparator maps it 1:1 to
+        // the vector's expected node kinds. Verbatim vector source below.
+        let aat = aat_value_for(
+            "本文。\n［＃ここから26字詰め］\n詰めた段落。\n別の行。\n［＃ここで字詰め終わり］\n通常段落。\n",
+        );
+        assert!(
+            find_node(&aat, "jizume_block").is_none(),
+            "line_width_container vector must not form a jizume_block"
+        );
+        let serialized = serde_json::to_string(&aat).unwrap();
+        assert!(serialized.contains("containerOpen"));
+        assert!(serialized.contains("containerClose"));
     }
 
     #[test]

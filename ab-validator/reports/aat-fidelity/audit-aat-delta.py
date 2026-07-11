@@ -77,22 +77,22 @@ def is_raw(node, marker_kind):
     )
 
 
-def open_kind(node, jizume=False):
+def open_kind(node):
     """Return `(kind, extra_fields)` for an admissible containerOpen raw,
-    or `None`. `extra_fields` merges into the rewritten block dict (e.g.
-    jizume's `width`). `jizume=True` (v2-migration only) additionally
-    recognizes a *pure* jizume open (mirror of `pure_jizume_open_width` —
-    container-rewrite mode never sees this, so its 20 tests are unaffected).
+    or `None`. `extra_fields` merges into the rewritten block dict.
+
+    C3 gate fix (mirror of the Rust classifier): the standalone
+    `［＃ここからN字詰め］` is the `line-width` container family (upstream
+    notation spec §6.6, `line-width-open`), NOT a typed `jizume_block`; it
+    stays a raw containerOpen/containerClose pair. No pure-jizume open is
+    admitted here — jizume width is only ever adopted from the compound
+    indent wrap in `adopt_compound_jizume`.
     """
     if is_raw(node, "containerOpen"):
         source = (node.get("source") or "").strip()
         for kind, (marker, _) in CONSTRUCTS.items():
             if source == marker:
                 return kind, {}
-        if jizume:
-            width = pure_jizume_open_width(node)
-            if width is not None:
-                return "jizume_block", {"width": width}
     return None
 
 
@@ -160,9 +160,16 @@ def parse_aozora_number_before(source, needle):
 
 
 def jizume_open_width(source):
-    """Python transcription of `jizume_open_chars`: the width of a jizume
-    (字詰め) container-open marker — standalone or the FINAL clause of a
-    compound container. `None` if `source` isn't a jizume-open marker."""
+    """Python transcription of `jizume_open_chars`: the width of a `字詰め`
+    open marker — the standalone line-width form or the FINAL clause of a
+    compound indent container. `None` if `source` isn't a jizume-open marker.
+
+    C3 gate fix: the standalone `［＃ここからN字詰め］` is the `line-width`
+    container family (spec §6.6, `line-width-open`) and stays a raw
+    containerOpen/containerClose pair — it is never formed into a
+    `jizume_block` by the forward rewrite (mirror of the Rust recognizer,
+    whose standalone emission arm was likewise removed). This predicate is
+    retained as the documented mirror of the retained `jizume_open_chars`."""
     marker = source.strip()
     if not marker.startswith("［＃ここから") or not marker.endswith("］"):
         return None
@@ -172,18 +179,6 @@ def jizume_open_width(source):
     if after != "］":
         return None
     return parse_aozora_number_before(marker, JIZUME_NEEDLE)
-
-
-def pure_jizume_open_width(node):
-    """Python transcription of `pure_jizume_open_width`: a jizume open with
-    NO 字下げ segment (so this never shadows/gets shadowed by the
-    already-classified burasage/jisage compound handling)."""
-    if not is_raw(node, "containerOpen"):
-        return None
-    source = node.get("source") or ""
-    if "字下げ" in source:
-        return None
-    return jizume_open_width(source)
 
 
 def strip_leading_newline(node):
@@ -322,18 +317,18 @@ def scan_segment(nodes, start, needle):
     return None, None
 
 
-def rewrite_blocks(blocks, jizume=False):
+def rewrite_blocks(blocks):
     """One grammar pass over a block list; returns (rewritten, count).
 
-    `jizume=True` (v2-migration only) additionally admits *pure* jizume
-    open/close pairs (container-rewrite mode never passes this — its 20
-    tests are unaffected since `open_kind` only checks jizume when asked).
+    Admits only the fixed-marker container constructs (CONSTRUCTS). The
+    standalone `字詰め` line-width form is deliberately NOT admitted (C3 gate
+    fix) — it stays a raw containerOpen/containerClose pair per spec §6.6.
     """
     out, count, i = [], 0, 0
     while i < len(blocks):
         block = blocks[i]
         if isinstance(block, dict) and isinstance(block.get("children"), list):
-            children, inner_count = rewrite_blocks(block["children"], jizume=jizume)
+            children, inner_count = rewrite_blocks(block["children"])
             count += inner_count
             block = dict(block, children=children)
         if not (isinstance(block, dict) and block.get("kind") == "paragraph"):
@@ -348,11 +343,11 @@ def rewrite_blocks(blocks, jizume=False):
         # unadmitted yokogumi pair). Mirror by trying each open in order.
         admitted = None
         for oi, node in enumerate(content):
-            hit = open_kind(node, jizume=jizume)
+            hit = open_kind(node)
             if hit is None:
                 continue
             kind, extra = hit
-            needle = JIZUME_NEEDLE if kind == "jizume_block" else CONSTRUCTS[kind][1]
+            needle = CONSTRUCTS[kind][1]
             # Scan forward through the flat stream for the matching close;
             # any containerOpen aborts. First the open paragraph's
             # remainder, then each following block (paragraph content is
@@ -439,7 +434,7 @@ def rewrite_blocks(blocks, jizume=False):
             rest = apply_post_close_strip(rest)
         post_para = make_para(post)
         rewritten_rest, rest_count = rewrite_blocks(
-            ([post_para] if post_para else []) + rest, jizume=jizume
+            ([post_para] if post_para else []) + rest
         )
         out.extend(rewritten_rest)
         return out, count + rest_count
@@ -708,20 +703,24 @@ def v2_migration_mode(base_doc, cand_doc, name, summary):
     cand.setdefault("meta", {})["warnings"] = "__warnings_checked__"
     counts = {"ruby_left": 0}
     migrated_blocks = migrate_tree(base.get("blocks", []), counts)  # items 3+4
-    jizume_blocks, jizume_count = rewrite_blocks(migrated_blocks, jizume=True)  # item 5, pure form
+    # C3 gate fix: the standalone `字詰め` line-width form is NOT formed into a
+    # jizume_block (spec §6.6 — it stays a raw containerOpen/containerClose
+    # pair, exactly as the v1 baseline already left it). `rewrite_blocks`
+    # therefore does no jizume formation here; jizume enters only via the
+    # compound-indent wrap adopted below.
+    migrated_blocks, _ = rewrite_blocks(migrated_blocks)
     adopted_blocks, compound_adopted = adopt_compound_jizume(
-        jizume_blocks, cand.get("blocks"), name
+        migrated_blocks, cand.get("blocks"), name
     )  # item 5, compound form
     rewritten = dict(base, blocks=adopted_blocks)
     if rewritten != cand:
         die(f"{name}: candidate is not exactly the v2-migration grammar's rewrite")
     if compound_adopted:
-        # Pure-jizume formations (jizume_count) never touch this counter —
-        # only compound-container adoptions count, per Task 10's magnitude
-        # signal requirement.
+        # Only compound-container adoptions count toward the jizume magnitude
+        # signal; the standalone line-width form never forms a jizume_block.
         summary["details"]["compound_jizume_adopted"] += compound_adopted
     ruby_fired = counts["ruby_left"] > 0
-    jizume_fired = jizume_count > 0 or compound_adopted > 0
+    jizume_fired = compound_adopted > 0
     if ruby_fired and jizume_fired:
         summary["classes"]["ruby_left_rewritten"] += 1
         summary["details"]["both"] += 1

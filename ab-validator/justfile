@@ -327,7 +327,7 @@ fidelity-coverage-refresh JOBS="24" INDEX="" CORPUS="":
 # harness (all five adapters, auto-built) — a thin, discoverable wrapper over
 # aozora-notation-spec-comparison pinned to the seed vectors.
 official-docs-seed-comparison REPORT_MD="docs/superpowers/reports/2026-07-09-official-docs-seed-comparison.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-09-official-docs-seed-comparison.summary.json":
-	@just aozora-notation-spec-comparison VECTORS="{{repo_root}}/reports/parser-conformance/official-docs-seed" REPORT_MD="{{REPORT_MD}}" SUMMARY_JSON="{{SUMMARY_JSON}}"
+	@just aozora-notation-spec-comparison "{{repo_root}}/reports/parser-conformance/official-docs-seed" "{{REPORT_MD}}" "{{SUMMARY_JSON}}"
 
 # Full parser-IR conversion audit over all five adapters. Dump selection comes
 # from the fidelity run-set (resolve-run-set -> lock, content-verified, fails

@@ -772,9 +772,13 @@ JOPEN = "［＃ここから２１字詰め］"
 JCLOSE = "［＃ここで字詰め終わり］"
 
 
-def test_v2_migration_jizume_formation(tmp_path):
+def _line_width_base(tmp_path):
+    # A standalone `［＃ここからN字詰め］ … ［＃ここで字詰め終わり］` pair as a v1
+    # baseline leaves it a RAW containerOpen/containerClose pair — Phase 3 (and,
+    # post-C3-fix, Phase 4) never form a jizume_block from the standalone
+    # line-width form (spec §6.6, `line-width-open`).
     inner = text("\n中身\n", 10)  # span 10..18
-    base = write_dump(
+    return write_dump(
         tmp_path,
         "a",
         {
@@ -791,6 +795,43 @@ def test_v2_migration_jizume_formation(tmp_path):
             )
         },
     )
+
+
+def test_v2_migration_line_width_container_stays_raw(tmp_path):
+    # C3 gate fix (mirror of the Rust `line_width_container` pin): the
+    # standalone `字詰め` line-width form migrates MECHANICALLY only — the
+    # candidate keeps the raw containerOpen/containerClose pair, so the doc
+    # lands in `migrated`, never `jizume_rewritten`.
+    base = _line_width_base(tmp_path)
+    cand = write_dump(
+        tmp_path,
+        "b",
+        {
+            "w1": v2_doc(
+                [
+                    para(
+                        text("前\n"),
+                        raw_marker(JOPEN, "containerOpen", 4),
+                        text("\n中身\n", 10),
+                        raw_marker(JCLOSE, "containerClose", 40),
+                        text("\n後\n", 70),
+                    )
+                ]
+            )
+        },
+    )
+    code, summary, err = run("v2-migration", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["migrated"] == 1
+    assert summary["classes"]["jizume_rewritten"] == 0
+    assert summary["details"].get("compound_jizume_adopted", 0) == 0
+
+
+def test_v2_migration_rejects_standalone_jizume_block(tmp_path):
+    # A candidate that forms a jizume_block from the standalone line-width
+    # form is the over-match the C3 gate caught — it must be REJECTED, since
+    # the forward rewrite leaves the pair raw.
+    base = _line_width_base(tmp_path)
     cand = write_dump(
         tmp_path,
         "b",
@@ -808,10 +849,8 @@ def test_v2_migration_jizume_formation(tmp_path):
             )
         },
     )
-    code, summary, err = run("v2-migration", base, cand, tmp_path)
-    assert code == 0, (summary, err)
-    assert summary["classes"]["jizume_rewritten"] == 1
-    assert summary["details"].get("compound_jizume_adopted", 0) == 0
+    code, _, _ = run("v2-migration", base, cand, tmp_path)
+    assert code == 2
 
 
 def test_v2_migration_rejects_leftover_x_layout(tmp_path):

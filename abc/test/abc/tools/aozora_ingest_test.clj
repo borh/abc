@@ -490,3 +490,19 @@
   (testing "blank / absent fallbacks stay nil"
     (is (= {:zip-path nil :source-url nil}
            (ingest/merge-catalog-defaults {} {:zip "  " :source-url nil})))))
+
+(deftest ingest-non-zip-bytes-wrapped-test
+  (testing "non-ZIP bytes at the zip path throw ex-info {:zip-path} with ZipException cause"
+    (let [dir (temp-dir "abc-ingest-notzip")
+          fake (io/file dir "fake.zip")
+          out (io/file dir "out")]
+      (try
+        (spit fake "this is not a zip file")
+        (let [e (try (ingest/run-corpus-from-zip! {:zip-path (str fake)
+                                                   :output-dir (str out)})
+                     nil
+                     (catch Exception e e))]
+          (is (instance? clojure.lang.ExceptionInfo e))
+          (is (= (str fake) (:zip-path (ex-data e))))
+          (is (instance? java.util.zip.ZipException (ex-cause e))))
+        (finally (delete-recursive dir))))))

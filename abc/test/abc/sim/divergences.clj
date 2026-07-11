@@ -15,8 +15,8 @@
         :notes "aozora_ingest.clj:151-213 person writes precede work failure"}
    :D5 {:case "P13.empty-csv" :status :open
         :notes "confirmed 2026-07-11 (P13): empty/header-only CSV yields a silent zero-row corpus, no throw, no skip"}
-   :D6 {:case "P13.non-zip-bytes" :status :open
-        :notes "confirmed 2026-07-11 (P13): ZipFile ctor escapes as raw java.util.zip.ZipException, not ex-info"}})
+   :D6 {:case "P13.non-zip-bytes" :status :fixed
+        :notes "fixed 2026-07-11: read-zip-csv wraps ZipException as ex-info {:zip-path} with cause chained"}})
 
 (defn- entry [id]
   (or (get table id)

@@ -238,18 +238,11 @@
     (is (clean-ex-info? threw [:zip-path])
         (str "expected ex-info with :zip-path, got: " (pr-str threw)))))
 
-;; P13.non-zip-bytes — D6 (desired: wrapped ex-info, cause chained).
+;; P13.non-zip-bytes — D6 fixed: wrapped ex-info, cause chained.
 (deftest p13-non-zip-bytes-sim-test
   (let [{:keys [threw]} (audit-two! "this is not a zip file")]
     (is (some? threw) "non-ZIP bytes must not produce a normal-looking report")
-    ;; forbidden-throw? excludes ZipException here on purpose: a raw
-    ;; ZipException IS the open D6 divergence (gated below), so asserting
-    ;; the full envelope would fail this test until D6 is fixed. The other
-    ;; forbidden classes must never appear regardless of D6's status.
-    (is (not (or (instance? NullPointerException threw)
-                 (instance? AssertionError threw)
-                 (instance? StackOverflowError threw)))
-        "P13.non-zip-bytes")
+    (is (not (forbidden-throw? threw)) "P13.non-zip-bytes")
     (div/expected-failure :D6 "P13.non-zip-bytes"
                           (clean-ex-info? threw [:zip-path]))))
 

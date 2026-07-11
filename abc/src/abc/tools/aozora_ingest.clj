@@ -25,6 +25,18 @@
 (def person-schema-path "schemas/person-record.schema.json")
 (def person-schema-id "https://w3id.org/abc/schemas/person-record.schema.json")
 
+(defn- open-zip
+  "Open zip-path as a ZipFile, wrapping the unreadable-archive case as
+  ex-info {:zip-path} with the ZipException chained (failure taxonomy:
+  ZIP source validation)."
+  ^ZipFile [^String zip-path]
+  (try
+    (ZipFile. (io/file zip-path))
+    (catch java.util.zip.ZipException e
+      (throw (ex-info (str zip-path " is not a readable ZIP archive")
+                      {:zip-path zip-path}
+                      e)))))
+
 (defn- read-zip-csv
   "Returns {:csv, :provenance}. :provenance carries
   source_url (caller-supplied or nil), retrieved_at (the CSV entry's
@@ -32,7 +44,7 @@
   original_file_hash (sha256 of the CSV bytes, always computable).
   This is the only fact-set the ingester knows about the source."
   [^String zip-path source-url]
-  (with-open [zf (ZipFile. (io/file zip-path))]
+  (with-open [zf (open-zip zip-path)]
     (let [csv-entry (->> (enumeration-seq (.entries zf))
                          (filter (fn [^ZipEntry e]
                                    (string/ends-with? (.getName e) ".csv")))

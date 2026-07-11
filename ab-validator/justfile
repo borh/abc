@@ -79,19 +79,6 @@ aozora2html-rust-test:
 aozora2html-rust-parity:
 	@nix run "{{repo_root}}#aozora2html-rust-parity"
 
-aozora-build PROFILE="release":
-	@cargo build --manifest-path "{{repo_root}}/adapters/aozora/Cargo.toml" --{{PROFILE}}
-
-aozora-test:
-	@nix develop "{{repo_root}}" --command bash "{{repo_root}}/tests/aozora-adapter-integration.sh"
-
-aozora-smoke: aozora-build
-	@bash "{{repo_root}}/tests/aozora-adapter-smoke.sh"
-
-aozora-flake-smoke:
-	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
-	nix build "{{repo_root}}#checks.$system.aozora-smoke" --print-build-logs
-
 aozora-notation-spec-comparator-smoke:
 	@bash "{{repo_root}}/tests/aozora-notation-spec-comparator-smoke.sh"
 
@@ -99,36 +86,26 @@ aozora-notation-spec-comparator-flake-smoke:
 	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
 	nix build "{{repo_root}}#checks.$system.aozora-notation-spec-comparator-smoke" --print-build-logs
 
-aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.summary.json" AOZORA_BIN="":
+aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.summary.json":
 	@vectors="{{VECTORS}}"; \
 	manifest_args=(); \
 	if [ -z "$vectors" ]; then manifest_args=(--span-deviation-manifest "{{repo_root}}/reports/parser-conformance/span-deviation-manifest.json"); fi; \
 	if [ -z "$vectors" ]; then vectors="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-aozora-notation-spec')/conformance/vectors"; fi; \
-	aozora_bin="{{AOZORA_BIN}}"; \
-	if [ -z "$aozora_bin" ]; then \
-	  aozora_pkg="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora')"; \
-	  aozora_bin="$aozora_pkg/bin/aozora"; \
-	fi; \
-	if [ -n "$aozora_bin" ]; then aozora_bin="$(cd "$(dirname "$aozora_bin")" && pwd)/$(basename "$aozora_bin")"; fi; \
-	if [ ! -x "$aozora_bin" ]; then echo "AOZORA_BIN not found or not executable: $aozora_bin" >&2; exit 2; fi; \
 	aozora2html_pkg="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora2html')"; \
 	epub3_pkg="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora-epub3')"; \
 	epub3_jar="${AB_AOZORAEPUB3_JAR:-$epub3_pkg/lib/AozoraEpub3.jar}"; \
 	test -f "$epub3_jar" || { echo "AozoraEpub3.jar not found: $epub3_jar" >&2; exit 2; }; \
 	q() { python -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$1"; }; \
-	aozora_bin_q="$(q "$aozora_bin")"; \
 	epub3_jar_q="$(q "$epub3_jar")"; \
 	a2h_bin_q="$(q "$aozora2html_pkg/bin/aozora2html")"; \
 	a2h_gem_q="$(q "$aozora2html_pkg/lib/ruby/gems")"; \
-	for a in aozora aozora2 aozora-rs aozora2html aozora-epub3; do \
+	for a in aozora2 aozora-rs aozora2html aozora-epub3; do \
 		cargo build --manifest-path "{{repo_root}}/adapters/$a/Cargo.toml" --release; \
 	done; \
 	export RUSTC_WRAPPER= SCCACHE_DISABLE=1; \
 	cargo build --manifest-path "{{repo_root}}/Cargo.toml" --package ab-aozora --release; \
 	python "{{repo_root}}/reports/parser-conformance/run-aozora-notation-spec.py" \
 		--vectors-dir "$vectors" \
-		--adapter "aozora=inspect:$aozora_bin_q inspect" \
-		--adapter "aozora-adapter=aat:env AB_AOZORA_BIN=$aozora_bin_q {{repo_root}}/adapters/aozora/target/release/aozora-adapter --mode aat" \
 		--adapter "ab-aozora=aat:{{repo_root}}/target/release/ab-aozora --mode aat" \
 		--adapter-diagnostics "ab-aozora={{repo_root}}/target/release/ab-aozora --mode diagnostics" \
 		"${manifest_args[@]}" \
@@ -201,18 +178,15 @@ parser-performance-all-parsers:
 	stage_split_sample="${STAGE_SPLIT_SAMPLE:-5}"; \
 	jobs="${JOBS:-24}"; \
 	test -n "$index" || { echo "INDEX=/path/to/index.json is required" >&2; exit 2; }; \
-	aozora_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora')"; \
 	aozora2html_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora2html')"; \
 	epub3_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora-epub3')"; \
 	epub3_jar="${AB_AOZORAEPUB3_JAR:-$epub3_pkg/lib/AozoraEpub3.jar}"; \
 	test -f "$epub3_jar" || { echo "AozoraEpub3.jar not found: $epub3_jar" >&2; echo "set AB_AOZORAEPUB3_JAR or rebuild {{repo_root}}#upstream-parser-aozora-epub3" >&2; exit 2; }; \
-	aozora_pkg_q="$(python -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$aozora_pkg")"; \
 	epub3_jar_q="$(python -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$epub3_jar")"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora2/Cargo.toml" --release --jobs "$jobs"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora-rs/Cargo.toml" --release --jobs "$jobs"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora2html/Cargo.toml" --release --jobs "$jobs"; \
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora-epub3/Cargo.toml" --release --jobs "$jobs"; \
-	cargo build --manifest-path "{{repo_root}}/adapters/aozora/Cargo.toml" --release --jobs "$jobs"; \
 	work_args=(); if [ -n "$work_ids" ]; then work_args=(--work-ids "$work_ids"); fi; \
 	python "{{repo_root}}/reports/aat-fidelity/measure-parser-performance.py" \
 		--index "$index" \
@@ -225,7 +199,6 @@ parser-performance-all-parsers:
 		--adapter "aozora-rs={{repo_root}}/adapters/aozora-rs/target/release/aozora-rs-adapter --mode aat" \
 		--adapter "aozora2html={{repo_root}}/adapters/aozora2html/aozora2html-adapter --mode aat" \
 		--adapter "aozora-epub3=env AB_AOZORAEPUB3_JAR=$epub3_jar_q {{repo_root}}/adapters/aozora-epub3/aozora-epub3-adapter --mode aat" \
-		--adapter "aozora=env AB_AOZORA_BIN=$aozora_pkg_q/bin/aozora {{repo_root}}/adapters/aozora/target/release/aozora-adapter --mode aat" \
 		--aozora2html-label aozora2html \
 		--aozora2html-bin "$aozora2html_pkg/bin/aozora2html" \
 		--aozora2html-gem-home "$aozora2html_pkg/lib/ruby/gems" \

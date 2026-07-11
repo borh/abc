@@ -16,7 +16,6 @@ work_ids=""
 features=""
 force=0
 print_plan=0
-aozora_bin_override=""
 adapter_bin_override=""
 
 usage() {
@@ -24,17 +23,9 @@ usage() {
 usage: run-aat-full.sh --adapter ADAPTER [--corpus DIR] [--out-dir DIR]
                        [--jobs N] [--timeout DURATION] [--report-id ID]
                        [--work-ids IDS] [--features TAGS] [--force]
-                       [--print-plan] [--aozora-bin PATH] [--adapter-bin PATH]
+                       [--print-plan] [--adapter-bin PATH]
 
-ADAPTER: aozora | ab-aozora | aozora2html | aozora-epub3
-
---aozora-bin PATH: only valid with --adapter aozora. Overrides the pinned
-  nix-store upstream `aozora` parser with an explicit binary: it is what
-  actually runs (exported as AB_AOZORA_BIN) AND what is recorded as the
-  run's generator identity (hashed into input_set_hash, plus its path,
-  sha256, and --version output recorded verbatim in metadata.json). Fails
-  (exit 2) if PATH does not exist or `PATH --version` fails. Without it,
-  behavior is unchanged: the pinned upstream-parser-aozora store binary.
+ADAPTER: ab-aozora | aozora2html | aozora-epub3
 
 --adapter-bin PATH: only valid with --adapter ab-aozora. Overrides the
   pinned nix-store `ab-aozora` adapter binary with an explicit binary: it is
@@ -42,9 +33,7 @@ ADAPTER: aozora | ab-aozora | aozora2html | aozora-epub3
   (hashed into input_set_hash, plus its path, sha256, and --version output
   recorded verbatim in metadata.json). Fails (exit 2) if PATH does not exist
   or `PATH --version` fails. Without it, behavior is unchanged: the pinned
-  ab-aozora store binary. Distinct from --aozora-bin: that flag overrides the
-  INNER upstream parser the legacy aozora adapter spawns; this flag selects
-  the ab-aozora ADAPTER EXECUTABLE ITSELF (no inner parser, no renderer).
+  ab-aozora store binary (no inner parser, no renderer).
 EOF
 }
 
@@ -90,10 +79,6 @@ while [[ $# -gt 0 ]]; do
       print_plan=1
       shift
       ;;
-    --aozora-bin)
-      aozora_bin_override="$2"
-      shift 2
-      ;;
     --adapter-bin)
       adapter_bin_override="$2"
       shift 2
@@ -116,12 +101,6 @@ if [[ -z "$adapter_id" ]]; then
   exit 2
 fi
 
-if [[ -n "$aozora_bin_override" && "$adapter_id" != "aozora" ]]; then
-  echo "--aozora-bin only applies to --adapter aozora" >&2
-  usage
-  exit 2
-fi
-
 if [[ -n "$adapter_bin_override" && "$adapter_id" != "ab-aozora" ]]; then
   echo "--adapter-bin only applies to --adapter ab-aozora" >&2
   usage
@@ -129,12 +108,11 @@ if [[ -n "$adapter_bin_override" && "$adapter_id" != "ab-aozora" ]]; then
 fi
 
 # Every adapter's dump identity now fully captures the code that produces its
-# output, so the active skip fires for all three. Each adapter shells out to an
-# external parser/renderer that is pinned by content: the aozora adapter to the
-# upstream `aozora` parser, the wrapper adapters to the Ruby aozora2html gem /
-# AozoraEpub3.jar. renderer_attr names the nix package whose store dir is
-# resolved, exported under the adapter's env var, and hashed into identity
-# (see below).
+# output, so the active skip fires for all three. The wrapper adapters shell
+# out to an external parser/renderer that is pinned by content: the Ruby
+# aozora2html gem / AozoraEpub3.jar. renderer_attr names the nix package whose
+# store dir is resolved, exported under the adapter's env var, and hashed into
+# identity (see below).
 case "$adapter_id" in
   aozora2html)
     default_out_dir="${AB_AOZORA2HTML_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora2html-full-$(date -u +%Y%m%dT%H%M%SZ)}"
@@ -149,22 +127,6 @@ case "$adapter_id" in
     adapter="$repo_root/adapters/aozora2html/aozora2html-adapter"
     mapper_attr="aozora2html-adapter"
     renderer_attr="upstream-parser-aozora2html"
-    ;;
-  aozora)
-    default_out_dir="${AB_AOZORA_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/aozora-full-$(date -u +%Y%m%dT%H%M%SZ)}"
-    default_jobs="${AB_AOZORA_AAT_FULL_JOBS:-$(nproc)}"
-    default_timeout="${AB_AOZORA_AAT_FULL_TIMEOUT:-300s}"
-    default_report_id="${AB_AOZORA_AAT_FULL_REPORT_ID:-aozora-full-$(date -u +%F)}"
-    # The Rust mapper binary is resolved from nix past the --print-plan
-    # early-exit; here "adapter" is just the flake attr id placeholder that
-    # --print-plan reports (no build); it comes prebuilt, no mapper attr.
-    # The adapter spawns the external upstream `aozora` parser (via
-    # AB_AOZORA_BIN); treat it as this adapter's renderer so it is both
-    # provisioned below and pinned by content in the identity, exactly like the
-    # aozora2html/aozora-epub3 renderers.
-    adapter="aozora-adapter"
-    mapper_attr=""
-    renderer_attr="upstream-parser-aozora"
     ;;
   ab-aozora)
     default_out_dir="${AB_AB_AOZORA_AAT_FULL_OUT_DIR:-$AB_DB_ROOT/aat-corpus/ab-aozora-full-$(date -u +%Y%m%dT%H%M%SZ)}"
@@ -282,22 +244,15 @@ ab_index_bin="$(nix build "$repo_root#ab-index" --no-link --print-out-paths)/bin
 ab_check_bin="$(nix build "$repo_root#ab-check" --no-link --print-out-paths)/bin/ab-check"
 triage_python="$(nix build "$repo_root#aat-triage-python" --no-link --print-out-paths)/bin/python3"
 
-# The aozora adapter's Rust mapper binary also comes from nix; adapter_hash_target
-# pins it. The adapter additionally spawns the external upstream `aozora` parser,
-# resolved + provisioned + content-pinned below as this adapter's renderer (so its
-# identity is complete). The wrapper adapters keep the bash-wrapper path set in the
-# case block (ab-check invokes it) and resolve their Rust mapper from nix below;
+# The wrapper adapters keep the bash-wrapper path set in the case block
+# (ab-check invokes it) and resolve their Rust mapper from nix below;
 # adapter_hash_target then points at that nix mapper binary for them.
-if [[ "$adapter_id" == "aozora" ]]; then
-  adapter="$(nix build "$repo_root#aozora-adapter" --no-link --print-out-paths)/bin/aozora-adapter"
-  adapter_hash_target="$adapter"
-fi
 
 # ab-aozora is the permanent native stdin->AAT binary (Task 4): no separate
 # Rust mapper, no external renderer — the binary itself is the complete
-# generator identity. --adapter-bin overrides resolution entirely, exactly
-# like --aozora-bin does for the aozora adapter: no nix build, the override
-# both executes AND is what is recorded (never silently diverging).
+# generator identity. --adapter-bin overrides resolution entirely: no nix
+# build, the override both executes AND is what is recorded (never silently
+# diverging).
 adapter_bin_override_sha256=""
 adapter_bin_override_version=""
 if [[ "$adapter_id" == "ab-aozora" ]]; then
@@ -335,41 +290,20 @@ if [[ -n "$mapper_attr" ]]; then
   fi
 fi
 
-# Resolve each adapter's external parser/renderer from its nix store dir so it is
-# pinned by content (the Rust mapper was already resolved from nix above): the
-# aozora2html Ruby gem, the AozoraEpub3.jar, or — for the aozora adapter — the
-# upstream `aozora` parser it spawns. Each is exported under the env var its
-# adapter reads, so ab-check runs the SAME store binary that identity pins.
+# Resolve each wrapper adapter's external parser/renderer from its nix store
+# dir so it is pinned by content (the Rust mapper was already resolved from
+# nix above): the aozora2html Ruby gem, or the AozoraEpub3.jar. Each is
+# exported under the env var its adapter reads, so ab-check runs the SAME
+# store binary that identity pins.
 #
-# --aozora-bin PATH (aozora adapter only) overrides this resolution entirely:
-# no nix build happens, AB_AOZORA_BIN is exported straight to PATH (so it is
-# both the recorded and the executed binary — never silently diverging), and
-# PATH's containing directory stands in for renderer_dir below so the
-# existing tree_hash-based identity/staleness plumbing picks up its content
-# unchanged (a differing override binary is a differing renderer_content_hash,
-# so a stale dump against a NEW override is never served as fresh).
+# --adapter-bin PATH (ab-aozora only) overrides resolution entirely: no nix
+# build happens; the override's containing directory stands in for
+# renderer_dir below so the existing tree_hash-based identity/staleness
+# plumbing picks up its content unchanged (a differing override binary is a
+# differing renderer_content_hash, so a stale dump against a NEW override is
+# never served as fresh).
 renderer_dir=""
-aozora_bin_override_sha256=""
-aozora_bin_override_version=""
-if [[ "$adapter_id" == "aozora" && -n "$aozora_bin_override" ]]; then
-  if [[ ! -x "$aozora_bin_override" ]]; then
-    printf -- '--aozora-bin not found or not executable: %s\n' "$aozora_bin_override" >&2
-    exit 2
-  fi
-  aozora_bin_override="$(cd "$(dirname "$aozora_bin_override")" && pwd)/$(basename "$aozora_bin_override")"
-  if ! aozora_bin_override_version="$("$aozora_bin_override" --version)"; then
-    printf -- '--aozora-bin --version failed: %s\n' "$aozora_bin_override" >&2
-    exit 2
-  fi
-  aozora_bin_override_sha256="$(sha256sum "$aozora_bin_override" | cut -d' ' -f1)"
-  renderer_dir="$(cd "$(dirname "$aozora_bin_override")" && pwd)"
-  export AB_AOZORA_BIN="$aozora_bin_override"
-elif [[ "$adapter_id" == "ab-aozora" && -n "$adapter_bin_override" ]]; then
-  # Mirror the --aozora-bin trick above: the override's containing directory
-  # stands in for renderer_dir, so the existing tree_hash-based staleness
-  # plumbing detects a differing override binary (adapter_binary_hash alone
-  # already does, since it hashes adapter_hash_target by content; this keeps
-  # the two override lanes symmetric).
+if [[ "$adapter_id" == "ab-aozora" && -n "$adapter_bin_override" ]]; then
   renderer_dir="$(dirname "$adapter_bin_override")"
 elif [[ "$adapter_id" == "ab-aozora" ]]; then
   # nix-resolved: renderer_dir = the nix output dir (content-addressed), i.e.
@@ -382,8 +316,6 @@ if [[ "$adapter_id" == "aozora2html" ]]; then
   export AB_AOZORA2HTML_BIN="$renderer_dir/bin/aozora2html"
 elif [[ "$adapter_id" == "aozora-epub3" ]]; then
   export AB_AOZORAEPUB3_JAR="$renderer_dir/lib/AozoraEpub3.jar"
-elif [[ "$adapter_id" == "aozora" && -z "$aozora_bin_override" ]]; then
-  export AB_AOZORA_BIN="$renderer_dir/bin/aozora"
 fi
 if [[ ! "$jobs" =~ ^[0-9]+$ || "$jobs" == "0" ]]; then
   echo "--jobs must be a positive integer" >&2
@@ -485,7 +417,7 @@ run_step build-triage "$triage_dir" "$triage_python" \
   --report-id "$report_id" \
   --out-dir "$triage_dir"
 
-python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" "$features" "$work_ids" "$ab_index_bin" "$ab_check_bin" "$adapter_hash_target" "$renderer_dir" "$identity_file" "$adapter_version" "$aozora_bin_override" "$aozora_bin_override_sha256" "$aozora_bin_override_version" "$adapter_bin_override" "$adapter_bin_override_sha256" "$adapter_bin_override_version" <<'PY'
+python - "$repo_root" "$corpus" "$out_dir" "$report_id" "$jobs" "$timeout" "$adapter" "$adapter_id" "$features" "$work_ids" "$ab_index_bin" "$ab_check_bin" "$adapter_hash_target" "$renderer_dir" "$identity_file" "$adapter_version" "$adapter_bin_override" "$adapter_bin_override_sha256" "$adapter_bin_override_version" <<'PY'
 import json
 import os
 import pathlib
@@ -510,9 +442,6 @@ from datetime import datetime, timezone
     renderer_dir,
     identity_file,
     adapter_version,
-    aozora_bin_override,
-    aozora_bin_override_sha256,
-    aozora_bin_override_version,
     adapter_bin_override,
     adapter_bin_override_sha256,
     adapter_bin_override_version,
@@ -557,21 +486,9 @@ metadata = {
     "workflow_run_path": str(out / "workflow-run.json"),
 }
 
-# Explicit --aozora-bin override identity (Task 6): recorded verbatim, never
-# derived from AB_AOZORA_BIN, so this is proof the override reached the
-# adapter subprocess (not merely that a flag was passed) — the override path,
-# its content hash, and the binary's own --version output.
-if aozora_bin_override:
-    metadata["aozora_bin_override"] = {
-        "path": aozora_bin_override,
-        "sha256": aozora_bin_override_sha256,
-        "version": aozora_bin_override_version,
-    }
-
 # Explicit --adapter-bin override identity (Task 6, ab-aozora lane): recorded
-# verbatim, exactly parallel to aozora_bin_override above — proof the override
-# reached the adapter subprocess ab-check actually invoked, not merely that a
-# flag was passed.
+# verbatim — proof the override reached the adapter subprocess ab-check
+# actually invoked, not merely that a flag was passed.
 if adapter_bin_override:
     metadata["adapter_bin_override"] = {
         "path": adapter_bin_override,

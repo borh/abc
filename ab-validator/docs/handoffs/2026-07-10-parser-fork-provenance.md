@@ -488,3 +488,103 @@ C2=`a3f91f53fcae9bc18f577ea5b746f3be7f228fcb`). Follow-up disposition:
   frozen, UNRESOLVED); and the `:corpus` label normalization trap at
   admission (registry equality is byte-exact — rows must copy tool-emitted
   labels verbatim).
+
+### Phase 4 closure (2026-07-12)
+
+Phase 4 (level-3 admission + activation + legacy-lane retirement) is
+CHECKPOINT OK (`reports/aat-fidelity/verify-phase4-checkpoint.py`; see
+`docs/superpowers/reports/2026-07-12-phase4-acceptance-wholesale.md`).
+Candidates and join keys:
+
+| Candidate | Commit | Version join key |
+|---|---|---|
+| C3 | `c2b9b396271755bc0b898fdaed17c9c9cbe4666d` | `ab-aozora 0.4.0 aat-schema 2 facade 0.3.0 wire-schema 3` |
+| C4 | `27772b1b75c9ceeb0b724095bbbb47f774f3a275` | `ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3` |
+
+Activation commit: `1333b43dd103480d9064935cd1cf3027706531ee` (`ab-aozora`
+swapped in as the sole publication lane in
+`reports/aat-fidelity/run-sets/current.json`, five active lanes). Retirement
+of the legacy `aozora` crate/lane (this commit) follows the activation
+commit and is the final Phase 4 task; rollback for either is `git revert`.
+
+**Evidence inventory** (six gates, two audits, one split, one admission
+capture, one bundle validation, one wholesale checkpoint, pre/post coverage):
+
+- Six gates: `2026-07-12-phase4-c3-delta`, `…-c3-conformance-gate`,
+  `…-c3-perf` (C3); `…-c4-confinement`, `…-c4-conformance-gate`, `…-c4-perf`
+  (C4) — all under `docs/superpowers/reports/`.
+- Two conversion audits: `2026-07-12-ab-aozora-phase4-c3-conversion-audit`,
+  `…-c4-conversion-audit` (17886/17886/0 parsed/raw-preserved/diagnostic,
+  both candidates).
+- Split: `2026-07-12-terminal-provenance-colophon-split` (Revision 2;
+  `classes.identical + classes.source_note_appended == 17886`,
+  `classes.source_note_appended == split.works_with_terminal_provenance ==
+  17735`).
+- Admission: `2026-07-12-phase4-admission-report.txt` (`:status :admitted`,
+  re-run live by the checkpoint verifier, not just a stale capture).
+- Bundle: `2026-07-12-phase4-bundle-validation`
+  (`PHASE4_BUNDLE_VALIDATION_PASS_WITH_PREEXISTING_BLOCKED_FINDING`).
+- Wholesale: `2026-07-12-phase4-acceptance-wholesale` (`CHECKPOINT OK`).
+- Pre/post coverage: `2026-07-12-phase4-preadmission-coverage` and
+  `…-phase4-postactivation-coverage` (both assert
+  `source_authority_gate.gate_status == SOURCE_AUTHORITY_GATE_PASS` with the
+  three occurrence counters at 0, and
+  `parser_evidence_coverage.verdict == FIVE_PARSER_EVIDENCE_COMPLETE`).
+
+**Retained dumps** (never delete): `ab-aozora-phase4-c3-c2b9b39` and
+`ab-aozora-phase4-c4-27772b1` under `/db/ab-validator/aat-corpus/` join the
+never-delete list (alongside the Phase 3 `ab-aozora-phase3-span-a3f91f5`
+dump). The superseded pre-perf-fix C3 attempt dump,
+`ab-aozora-phase4-c3-f71432a` (the `+11.54%` BLOCK later resolved by the
+`c2b9b396` perf fix), is DELETABLE on hinoki — not deleted by this task;
+cleanup is a controller action.
+
+**Perf trajectory — closes the Phase 3 −4.09% watch item**: Phase 3 span
+rotation B measured −4.09% (candidate faster) with per-work regressions up
+to +34.77%. Phase 4 C3 (`c2b9b396`) measured **−7.96%** workset median
+(`2026-07-12-phase4-c3-perf.summary.json`), and C4 (`27772b1b`) measured
+**−7.93%** (`2026-07-12-phase4-c4-perf.summary.json`), both well inside the
+≤10% threshold and both improving on the Phase 3 margin (the C3 run also
+recovered from an interim `f71432a` pre-fix attempt that measured +11.54%
+and BLOCKed). Per-work spread stayed stable C3→C4 (every delta within 0.2pp
+of its C3 value); the heaviest v2-feature-density work, `001562_56145`,
+individually regressed +34.89% at C3 / +34.76% at C4 — consistent with the
+Phase 3 watch item's per-work spread and still comfortably absorbed by the
+workset median. The watch item is closed: the trend held through both
+Phase 4 rotations with no growth.
+
+**Carried forward past Phase 4** (unresolved, not gating any Phase 4 gate):
+
+- Bare-toggle marker forms (`［＃横組み］…終わり` ~3,188, bare
+  `［＃罫囲み］` ~25) — explicit Phase 4 non-goal, raw-preserved.
+- Keigakomi 44-marker denominator residual (673 matrix vs 717 frozen,
+  UNRESOLVED; `docs/superpowers/reports/2026-07-11-keigakomi-yokogumi-denominator-attribution.md`).
+- Warigaki/kunten vocabulary — awaits its own vocabulary ADR; both remain
+  raw-preserved and surface as `classified_but_not_admitted` closure-gap
+  entries (rule IDs `A-07`, `A-29`, `A-32`, `A-102`, `A-108`, `A-112`), not
+  true unsupported gaps.
+- ABC custom-contract `0.3.0`-candidate classified-gaps drift: the ABC
+  source-region policy rotated to `policy_version 0.3.0`
+  (`source-region-policy-measurement-status-drift`) before the Python-side
+  `reports/lib/source_region.py` `SOURCE_REGION_POLICY_VERSION` pin was
+  updated to match, so `IR_PUBLICATION_COVERAGE_*` reads
+  `BLOCKED_SOURCE_REGION_CONTRACT_MISSING`/`BLOCKED_CLASSIFIED_GAPS` rather
+  than `COMPLETE` in the raw coverage-report verdict; the three required
+  zero counters and `FIVE_PARSER_EVIDENCE_COMPLETE` are unaffected (traced
+  in `2026-07-12-phase4-acceptance-wholesale.md`, Step 1).
+- Four legacy comparison-lane dumps (`aozora-rs`, `aozora2`, `aozora2html`,
+  `aozora-epub3`) are absent from hinoki `/db` — pre-existing, unrelated to
+  any Phase 4 gate (comparison-lane evidence only, not live-lane evidence).
+- `verify-golden-spans.py` CRLF false positives — a pre-existing,
+  pre-documented CRLF-normalization projection artifact (not a span bug),
+  green modulo this one known false-positive family since Phase 3.
+
+Legacy-lane retirement (this commit): `adapters/aozora/` (the crate),
+`reports/aat-fidelity/run-aozora-aat-full.sh`, the `upstream-aozora-src`
+flake input, every `AB_AOZORA_BIN` binding, and the corresponding
+justfile/flake/script lanes are removed. `ab-aozora` is now the sole live
+Aozora parser lane; the legacy lane's Phase 4 evidence remains archived at
+`reports/aat-fidelity/run-sets/2026-07-12-aozora-legacy-archive.json`
+(content hash retained, nix `source` pin dropped since its flake input no
+longer exists). Rollback for the retirement is `git revert` of this commit
+(and, if reverting activation too, of `1333b43d` as well, in that order).

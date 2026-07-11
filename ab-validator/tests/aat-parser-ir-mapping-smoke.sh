@@ -15,7 +15,7 @@ trap 'rm -f "$lock"' EXIT
 python3 "$repo_root/reports/aat-fidelity/resolve-run-set.py" \
   --repo-root "$repo_root" --no-verify-content --out "$lock"
 mapfile -t aat_dirs < <(python3 "$repo_root/reports/aat-fidelity/lock-aat-dirs.py" \
-  "$lock" --order aozora-rs aozora2html aozora-epub3 aozora2 aozora)
+  "$lock" --order aozora-rs aozora2html aozora-epub3 aozora2 ab-aozora)
 aat_dir="${aat_dirs[0]}"
 
 rm -rf "$out_dir"

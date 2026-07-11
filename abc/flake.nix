@@ -682,7 +682,7 @@
               ''
                 ${copyWritableSource}
                 ${cljSandboxEnv}
-                clojure -M:abc/adr-governance
+                clojure -M:abc/adr-governance --mode audit
 
                 mkdir -p "$out"
                 echo "ADR lifecycle, relation, dependency, and evidence governance passed." > "$out/result.txt"

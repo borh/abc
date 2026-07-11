@@ -100,9 +100,12 @@ qkana) differ from the table above by ≤0.05pp per class.
   `/build` cache fallback ⇒ always set `AB_VIBRATO_CACHE_DIR`, `nix run
   .#soranoha` cd's into the store ⇒ launch via `nix develop -c clojure
   -M:abc/soranoha` from `abc/`) are recorded in project memory.
-- Cost: convert ≈45 min per profile (dominant, three in parallel),
-  tokenize ≈5–10 min at `--jobs 8`, join-stats ≈15 min; morph-warehouse
-  full three-profile run ≈17 min wall at auto-jobs 23. Disk: ≈17 GB per
+- Cost: convert ≈45 min per profile (three in parallel), tokenize
+  ≈5–10 min at `--jobs 8`, join-stats ≈7.3 h single-core per profile
+  (the dominant step — the annotation×token join, per the workflow-run
+  `duration_ms`; an earlier revision of this handoff wrongly said
+  ≈15 min, which was the stride-44 figure); morph-warehouse full
+  three-profile run ≈17 min wall at auto-jobs 23. Disk: ≈17 GB per
   join-stats run, 24 GB for the warehouse run.
 
 ## Follow-ups

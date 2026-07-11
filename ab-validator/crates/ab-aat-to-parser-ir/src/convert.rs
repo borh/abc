@@ -2199,11 +2199,17 @@ fn map_warnings(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value>
             );
         }
         if let Some(span) = warning.get("span") {
+            // `span` is a structured object (start/end), not a schema-legal
+            // scalar `source_value` (string/integer/boolean/null per
+            // aat-parser-ir-divergence.schema.json). `scalar_divergence_value`
+            // is the established convention for this (see
+            // `record_optional_figure_loss` above): non-scalars collapse to
+            // `None` since the rule + count already carry the accounting.
             recorder.record_if_measured(
                 "LOSS",
                 Some("meta.warnings[].span"),
                 None,
-                Some(span.clone()),
+                scalar_divergence_value(span),
                 None,
             );
         }

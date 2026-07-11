@@ -2151,6 +2151,61 @@ fn v2_source_note_unknown_region_class_fails_closed() {
 }
 
 #[test]
+fn v2_warning_span_loss_record_is_schema_valid_scalar() {
+    // C3 audit blocker regression: a v2 `meta.warnings[].span` is a
+    // structured object (line_start/line_end/byte_start/byte_end), not a
+    // schema-legal `source_value` scalar (string/integer/boolean/null per
+    // aat-parser-ir-divergence.schema.json). Conversion must still succeed,
+    // and the resulting divergence record's `source_value` must validate
+    // against the divergence-record schema (which `recorder.bundle()`
+    // already enforces per-record; this pins the regression at the
+    // integration level too).
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let mut meta = v2_test_meta();
+    meta["warnings"] = json!([{
+        "code": "FIXTURE_WARNING",
+        "severity": "warning",
+        "message": "fixture warning with span",
+        "span": { "line_start": 3, "line_end": 3, "byte_start": 10, "byte_end": 20 }
+    }]);
+    let aat = json!({
+        "version": 2, "work_id": "t-warning-span",
+        "blocks": [{ "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] }],
+        "meta": meta
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let span_record = output
+        .divergence_bundle
+        .pointer("/records")
+        .and_then(Value::as_array)
+        .expect("divergence bundle records")
+        .iter()
+        .find(|record| record["aat_pointer"] == "meta.warnings[].span")
+        .expect("meta.warnings[].span LOSS record present");
+    assert!(
+        span_record["source_value"].is_null(),
+        "structured span must not leak into source_value: {span_record}"
+    );
+
+    validate_value(
+        &schemas.abc_divergence_record_schema,
+        span_record,
+        "ABC divergence record",
+    )
+    .unwrap();
+    validate_value(&schemas.bundle_schema, &output.divergence_bundle, "bundle").unwrap();
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
 fn projects_measured_figure_inline_to_image_node() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({

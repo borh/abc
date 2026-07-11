@@ -39,6 +39,12 @@ root-flake-check-no-build:
 root-flake-output-contract:
 	@bash tests/root-flake-output-contract-smoke.sh
 
+tei-eaj-alignment-probe *args:
+	@scripts/run-tei-eaj-probe-workflow.sh alignment-probe {{args}}
+
+tei-eaj-reports-with-probes *args:
+	@scripts/run-tei-eaj-probe-workflow.sh reports-with-probes {{args}}
+
 check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract schema-drift tei-version-coherence flake-input-policy python-quality nix-format-check root-flake-check-no-build
 	@(cd abc && nix flake check --no-build)
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." nix flake check --no-build)

@@ -4,7 +4,7 @@
   inapplicable events are recorded no-ops so sequence shrinking always
   yields valid histories.
   Spec: docs/superpowers/specs/2026-07-11-aozora-evolution-simulation-testing-design.md"
-  (:require [clojure.string :as string]))
+  (:require [clojure.set] [clojure.string :as string]))
 
 (def person-fields
   [:family_name :given_name :family_name_reading :given_name_reading
@@ -149,6 +149,112 @@
                    (update :works dissoc wid)
                    (update :edges #(apply dissoc % edge-keys)))
                e edge-keys))))
+
+(defn edges-of [m pid]
+  (vec (for [[k pids] (:edges m) :when (contains? pids pid)] k)))
+
+(defn sole-contributor?
+  "True when pid has ≥1 edge and every edge containing pid is exactly #{pid}."
+  [m pid]
+  (let [ks (edges-of m pid)]
+    (and (seq ks)
+         (every? #(= #{pid} (get-in m [:edges %])) ks))))
+
+(defn- rewrite-edges [m edge-keys f]
+  (reduce (fn [m k] (update-in m [:edges k] f)) m edge-keys))
+
+(defn- valid-body? [x] (map? x))
+
+(defn- valid-targets?
+  "Totality over malformed payloads: targets distinct, none preexisting,
+  source not among them, and persons keyed EXACTLY by the targets with map
+  bodies — otherwise a shrunk event could write pids into edges without
+  matching person records and fold-history would throw."
+  [m pid targets persons]
+  (and (seq targets)
+       (apply distinct? targets)
+       (not-any? #(contains? (:persons m) %) targets)
+       (not (contains? (set targets) pid))
+       (= (set targets) (set (keys persons)))
+       (every? valid-body? (vals persons))))
+
+(defmethod apply-event* :clean-split
+  [m {:keys [pid targets persons] :as e}]
+  (if (or (< (count targets) 2)
+          (not (sole-contributor? m pid))
+          (not (valid-targets? m pid targets persons)))
+    (no-op m)
+    (let [ks (edges-of m pid)]
+      (applied (-> m
+                   (update :persons dissoc pid)
+                   (update :persons merge persons)
+                   (rewrite-edges ks (constantly (set targets))))
+               e ks))))
+
+(defmethod apply-event* :clean-merge
+  [m {:keys [pids target person] :as e}]
+  (let [srcs (set pids)
+        ks (distinct (mapcat #(edges-of m %) pids))]
+    (if (or (< (count srcs) 2)
+            (not= (count srcs) (count pids))
+            (contains? (:persons m) target)
+            (contains? srcs target)
+            (not (valid-body? person))
+            (not-every? #(contains? (:persons m) %) pids)
+            (empty? ks)
+            (not-every? #(= srcs (get-in m [:edges %])) ks))
+      (no-op m)
+      (applied (-> m
+                   (update :persons #(apply dissoc % pids))
+                   (assoc-in [:persons target] person)
+                   (rewrite-edges ks (constantly #{target})))
+               e ks))))
+
+(defmethod apply-event* :ambiguous-replacement
+  [m {:keys [pid target person] :as e}]
+  (let [ks (edges-of m pid)]
+    (if (or (empty? ks)
+            (contains? (:persons m) target)
+            (= pid target)
+            (not (valid-body? person))
+            (not (contains? (:persons m) pid)))
+      (no-op m)
+      (applied (-> m
+                   (update :persons dissoc pid)
+                   (assoc-in [:persons target] person)
+                   (rewrite-edges ks #(-> % (disj pid) (conj target))))
+               e ks))))
+
+(defmethod apply-event* :impure-split
+  [m {:keys [pid existing-target new-target person] :as e}]
+  (if (or (not (sole-contributor? m pid))
+          (not (contains? (:persons m) existing-target))
+          (= pid existing-target)
+          (= existing-target new-target)
+          (= pid new-target)
+          (not (valid-body? person))
+          (contains? (:persons m) new-target))
+    (no-op m)
+    (let [ks (edges-of m pid)]
+      (applied (-> m
+                   (update :persons dissoc pid)
+                   (assoc-in [:persons new-target] person)
+                   (rewrite-edges ks (constantly #{existing-target new-target})))
+               e ks))))
+
+(defmethod apply-event* :partial-split
+  [m {:keys [pid targets edge-keys persons] :as e}]
+  (let [all (set (edges-of m pid))
+        chosen (set edge-keys)]
+    (if (or (empty? chosen)
+            (not (contains? (:persons m) pid))
+            (not (valid-targets? m pid targets persons))
+            (not (and (clojure.set/subset? chosen all) (< (count chosen) (count all)))))
+      (no-op m)
+      (applied (-> m
+                   (update :persons merge persons)
+                   (rewrite-edges chosen #(-> % (disj pid) (into targets))))
+               e (vec chosen)))))
 
 (defmethod apply-event* :default [m _e] (no-op m))
 

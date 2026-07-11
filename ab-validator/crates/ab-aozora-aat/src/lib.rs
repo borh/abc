@@ -410,6 +410,34 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 index = boundary;
                 continue;
             }
+        } else if block_container_open(&node, "［＃ここから罫囲み］") {
+            if let Some(close_index) = find_matching_container_close(&content, index + 1, "罫囲み")
+            {
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+                let mut inner = content[index + 1..close_index].to_vec();
+                strip_boundary_newlines(&mut inner);
+                blocks.push(json!({
+                    "kind": "keigakomi_block",
+                    "children": blocks_from_inline_content(inner)
+                }));
+                strip_next_leading_newline = true;
+                index = close_index + 1;
+                continue;
+            }
+        } else if block_container_open(&node, "［＃ここから横組み］") {
+            if let Some(close_index) = find_matching_container_close(&content, index + 1, "横組み")
+            {
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+                let mut inner = content[index + 1..close_index].to_vec();
+                strip_boundary_newlines(&mut inner);
+                blocks.push(json!({
+                    "kind": "yokogumi_block",
+                    "children": blocks_from_inline_content(inner)
+                }));
+                strip_next_leading_newline = true;
+                index = close_index + 1;
+                continue;
+            }
         }
 
         if is_heading_hint_raw(&node)
@@ -546,15 +574,36 @@ fn simple_jisage_open_indent(source: &str) -> Option<u64> {
 }
 
 fn find_matching_jisage_close(content: &[Value], start: usize) -> Option<usize> {
+    find_matching_container_close(content, start, "字下げ")
+}
+
+fn find_matching_container_close(content: &[Value], start: usize, needle: &str) -> Option<usize> {
     for (offset, node) in content[start..].iter().enumerate() {
         if is_container_open_raw(node) {
             return None;
         }
-        if is_jisage_container_close(node) {
+        if is_container_close_with(node, needle) {
             return Some(start + offset);
         }
     }
     None
+}
+
+fn is_container_close_with(node: &Value, needle: &str) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("raw")
+        && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("containerClose")
+        && node
+            .get("source")
+            .and_then(Value::as_str)
+            .is_some_and(|source| source.contains(needle))
+}
+
+fn block_container_open(node: &Value, marker: &str) -> bool {
+    is_container_open_raw(node)
+        && node
+            .get("source")
+            .and_then(Value::as_str)
+            .is_some_and(|source| source.trim() == marker)
 }
 
 fn find_next_container_boundary(content: &[Value], start: usize) -> usize {
@@ -583,15 +632,6 @@ fn is_container_marker_raw(node: &Value) -> bool {
 fn is_container_open_raw(node: &Value) -> bool {
     node.get("kind").and_then(Value::as_str) == Some("raw")
         && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("containerOpen")
-}
-
-fn is_jisage_container_close(node: &Value) -> bool {
-    node.get("kind").and_then(Value::as_str) == Some("raw")
-        && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("containerClose")
-        && node
-            .get("source")
-            .and_then(Value::as_str)
-            .is_some_and(|source| source.contains("字下げ"))
 }
 
 fn parse_aozora_number_before(source: &str, needle: &str) -> Option<u64> {
@@ -1146,5 +1186,71 @@ mod tests {
         assert_eq!(tcy[0]["severity"], "warning");
         assert_eq!(tcy[0]["span"]["start"], 6);
         assert_eq!(tcy[0]["span"]["end"], 35);
+    }
+
+    fn block_kinds(doc: &Value) -> Vec<String> {
+        doc["blocks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|b| b["kind"].as_str().unwrap().to_owned())
+            .collect()
+    }
+
+    #[test]
+    fn keigakomi_container_classifies_as_block() {
+        let src = "前文\n［＃ここから罫囲み］\n中身\n［＃ここで罫囲み終わり］\n後文\n";
+        let doc: Value =
+            serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
+        assert_eq!(
+            block_kinds(&doc),
+            ["paragraph", "keigakomi_block", "paragraph"]
+        );
+        let block = &doc["blocks"][1];
+        assert!(block.get("span").is_none() && block.get("x-indent").is_none());
+        let children = block["children"].as_array().unwrap();
+        assert_eq!(children[0]["kind"], "paragraph");
+        let text: String = children
+            .iter()
+            .flat_map(|c| c["content"].as_array().unwrap())
+            .filter_map(|n| n["value"].as_str())
+            .collect();
+        assert!(text.contains("中身"));
+        // No raw container markers survive inside or around the block.
+        assert!(!serde_json::to_string(&doc).unwrap().contains("罫囲み］"));
+    }
+
+    #[test]
+    fn yokogumi_container_classifies_as_block() {
+        let src = "［＃ここから横組み］\nＡＢＣ\n［＃ここで横組み終わり］\n";
+        let doc: Value =
+            serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
+        assert!(block_kinds(&doc).contains(&"yokogumi_block".to_owned()));
+    }
+
+    #[test]
+    fn unpaired_keigakomi_open_stays_raw() {
+        let src = "前\n［＃ここから罫囲み］\n中身\n";
+        let doc: Value =
+            serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
+        assert!(!block_kinds(&doc).contains(&"keigakomi_block".to_owned()));
+        assert!(
+            serde_json::to_string(&doc)
+                .unwrap()
+                .contains("containerOpen")
+        );
+    }
+
+    #[test]
+    fn intervening_container_open_aborts_keigakomi_pairing() {
+        let src = "［＃ここから罫囲み］\n［＃ここから２字下げ］\nａ\n［＃ここで字下げ終わり］\n［＃ここで罫囲み終わり］\n";
+        let doc: Value =
+            serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
+        let kinds = block_kinds(&doc);
+        assert!(
+            !kinds.contains(&"keigakomi_block".to_owned()),
+            "pairing must abort: {kinds:?}"
+        );
+        assert!(kinds.contains(&"jisage_block".to_owned()));
     }
 }

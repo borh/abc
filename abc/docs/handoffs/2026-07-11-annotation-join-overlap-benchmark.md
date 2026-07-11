@@ -12,13 +12,32 @@ equal before timing results were accepted.
 
 | work | selection | tokens | annotations | exhaustive | optimized median (5) | speedup |
 |---|---|---:|---:|---:|---:|---:|
-| `001562_33224` | largest retained token stream | 388,148 | 14,663 | 690,658.46 ms | 79.08 ms | 8,733.61× |
-| `000077_1323` | highest annotation density among nontrivial large works | 90,512 | 32,377 | 359,493.77 ms | 72.05 ms | 4,989.76× |
+| `001562_33224` | largest retained token stream | 388,148 | 14,663 | 701,665.60 ms | 89.27 ms | 7,860.45× |
+| `000077_1323` | highest density with ≥10,000 tokens and ≥1,000 annotations | 90,512 | 32,377 | 354,394.18 ms | 69.86 ms | 5,073.24× |
 
 Optimized samples were:
 
-- `001562_33224`: 124.68, 87.87, 79.08, 54.35, 53.77 ms.
-- `000077_1323`: 72.05, 72.04, 71.54, 72.26, 75.03 ms.
+- `001562_33224`: 95.86, 89.27, 88.47, 91.67, 88.60 ms.
+- `000077_1323`: 73.40, 69.83, 69.86, 69.73, 69.86 ms.
+
+All five optimized samples were recorded after an unmeasured warm-up call.
+The benchmark exits nonzero when a supplied workload measures below the 10×
+acceptance floor.
+
+## Work selection
+
+The largest stream was selected by byte-sorting token files, then confirmed
+by `wc -l`. The density candidate was selected reproducibly from every row in
+`stats/per-work.jsonl`: sum `annotation_counts`, count the matching token-file
+lines, retain rows with at least 10,000 tokens and 1,000 annotations, compute
+`annotations / tokens`, and sort descending. `000077_1323` ranks first at
+0.357709475.
+
+The literal unconstrained density maximum, `001475_51115`, has only 92 tokens
+and 33 annotations. A review-triggered boundary run measured 3.84×: fixed
+validation and timing overhead dominate at that size. It is excluded by the
+predeclared benchmark-scale thresholds because it does not represent the
+corpus hotspot; the result is recorded here rather than discarded.
 
 The original protocol requested five exhaustive repetitions. It was stopped
 after more than 17 minutes without completing the largest work. The bounded

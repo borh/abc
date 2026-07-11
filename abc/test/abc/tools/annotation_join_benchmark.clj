@@ -95,27 +95,30 @@
 (defn- benchmark-work [{:keys [work-id tokens annotations]}]
   (let [optimized #(join/join tokens annotations)
         exhaustive #(join-exhaustive tokens annotations)
-        exhaustive-run (elapsed-ms exhaustive)
-        optimized-run (elapsed-ms optimized)]
-    (when-not (= (:result exhaustive-run) (:result optimized-run))
-      (throw (ex-info "Benchmark implementations disagree" {:work-id work-id})))
+        exhaustive-run (elapsed-ms exhaustive)]
     (optimized)
-    (let [optimized-ms (into [(:elapsed-ms optimized-run)]
-                             (map (fn [_] (:elapsed-ms (elapsed-ms optimized))) (range 4)))
-          exhaustive-ms (:elapsed-ms exhaustive-run)
-          optimized-median (median optimized-ms)
-          speedup (/ exhaustive-ms optimized-median)]
-      {:work-id work-id
-       :token-count (count tokens)
-       :annotation-count (count annotations)
-       :optimized-ms optimized-ms
-       :exhaustive-ms exhaustive-ms
-       :optimized-median-ms optimized-median
-       :speedup speedup})))
+    (let [optimized-runs (mapv (fn [_] (elapsed-ms optimized)) (range 5))
+          optimized-run (first optimized-runs)]
+      (when-not (= (:result exhaustive-run) (:result optimized-run))
+        (throw (ex-info "Benchmark implementations disagree" {:work-id work-id})))
+      (let [optimized-ms (mapv :elapsed-ms optimized-runs)
+            exhaustive-ms (:elapsed-ms exhaustive-run)
+            optimized-median (median optimized-ms)
+            speedup (/ exhaustive-ms optimized-median)]
+        (when (< speedup 10.0)
+          (throw (ex-info "Annotation join speedup is below the 10x acceptance floor"
+                          {:work-id work-id :speedup speedup})))
+        {:work-id work-id
+         :token-count (count tokens)
+         :annotation-count (count annotations)
+         :optimized-ms optimized-ms
+         :exhaustive-ms exhaustive-ms
+         :optimized-median-ms optimized-median
+         :speedup speedup}))))
 
 (defn -main [& paths]
-  (when (or (< (count paths) 4) (odd? (count paths)))
-    (throw (ex-info "Expected at least two PARSER_IR TOKENS path pairs"
+  (when (or (< (count paths) 2) (odd? (count paths)))
+    (throw (ex-info "Expected one or more PARSER_IR TOKENS path pairs"
                     {:paths paths})))
   (doseq [[parser-ir-path tokens-path] (partition 2 paths)]
     (prn (benchmark-work (load-work parser-ir-path tokens-path)))))

@@ -61,6 +61,7 @@ class FileAudit:
     marker_occurrences: int = 0
     unmatched_marker_open: int = 0
     by_style_type: Counter[str] = field(default_factory=Counter)
+    unmatched_by_style_type: Counter[str] = field(default_factory=Counter)
     by_signature: Counter[str] = field(default_factory=Counter)
     candidates: list[dict[str, Any]] = field(default_factory=list)
     unmatched_candidates: list[dict[str, Any]] = field(default_factory=list)
@@ -108,27 +109,30 @@ def audit_value(
             audit.marker_occurrences += len(markers)
             audit.by_style_type[style_type] += len(markers)
             audit.by_signature[signature] += 1
-            audit.candidates.append(
-                {
-                    "file_stem": audit.file_stem,
-                    "style_type": style_type,
-                    "json_path": pointer(path),
-                    "marker_forms": markers,
-                    "signature": signature,
-                    "excerpt": excerpt(text_value),
-                }
-            )
+            if not any(row["style_type"] == style_type for row in audit.candidates):
+                audit.candidates.append(
+                    {
+                        "file_stem": audit.file_stem,
+                        "style_type": style_type,
+                        "json_path": pointer(path),
+                        "marker_forms": markers,
+                        "signature": signature,
+                        "excerpt": excerpt(text_value),
+                    }
+                )
         if partial:
             audit.unmatched_marker_open += partial
-            audit.unmatched_candidates.append(
-                {
-                    "file_stem": audit.file_stem,
-                    "style_type": style_type,
-                    "json_path": pointer(path),
-                    "count": partial,
-                    "excerpt": excerpt(text_value),
-                }
-            )
+            audit.unmatched_by_style_type[style_type] += partial
+            if not any(row["style_type"] == style_type for row in audit.unmatched_candidates):
+                audit.unmatched_candidates.append(
+                    {
+                        "file_stem": audit.file_stem,
+                        "style_type": style_type,
+                        "json_path": pointer(path),
+                        "count": partial,
+                        "excerpt": excerpt(text_value),
+                    }
+                )
         return
 
     for key in sorted(value):
@@ -164,12 +168,21 @@ def select_examples(candidates: list[dict[str, Any]], limit: int) -> list[dict[s
     return selected
 
 
+def retain_bounded_candidate(
+    buckets: dict[str, list[dict[str, Any]]], candidate: dict[str, Any], limit: int
+) -> None:
+    rows = buckets[candidate["style_type"]]
+    if len(rows) < limit:
+        rows.append(candidate)
+
+
 def audit_directory(input_dir: Path, input_label: str, example_limit: int) -> dict[str, Any]:
     totals: Counter[str] = Counter()
     by_style_type: Counter[str] = Counter()
+    unmatched_by_style_type: Counter[str] = Counter()
     by_signature: Counter[str] = Counter()
-    candidates: list[dict[str, Any]] = []
-    unmatched_candidates: list[dict[str, Any]] = []
+    candidate_buckets: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    unmatched_candidate_buckets: dict[str, list[dict[str, Any]]] = defaultdict(list)
     malformed_inputs: list[dict[str, Any]] = []
 
     for path in sorted(input_dir.glob("*.json"), key=lambda item: item.name):
@@ -194,9 +207,12 @@ def audit_directory(input_dir: Path, input_label: str, example_limit: int) -> di
         totals["marker_occurrences"] += audit.marker_occurrences
         totals["unmatched_marker_open"] += audit.unmatched_marker_open
         by_style_type.update(audit.by_style_type)
+        unmatched_by_style_type.update(audit.unmatched_by_style_type)
         by_signature.update(audit.by_signature)
-        candidates.extend(audit.candidates)
-        unmatched_candidates.extend(audit.unmatched_candidates)
+        for candidate in audit.candidates:
+            retain_bounded_candidate(candidate_buckets, candidate, example_limit)
+        for candidate in audit.unmatched_candidates:
+            retain_bounded_candidate(unmatched_candidate_buckets, candidate, example_limit)
         if audit.affected_style_paths:
             totals["affected_files"] += 1
         if audit.malformed:
@@ -222,9 +238,14 @@ def audit_directory(input_dir: Path, input_label: str, example_limit: int) -> di
         "input_label": input_label,
         "totals": dict(sorted(totals.items())),
         "by_style_type": dict(sorted(by_style_type.items())),
+        "unmatched_by_style_type": dict(sorted(unmatched_by_style_type.items())),
         "by_signature": dict(sorted(by_signature.items())),
-        "examples": select_examples(candidates, example_limit),
-        "unmatched_examples": select_examples(unmatched_candidates, example_limit),
+        "examples": select_examples(
+            [row for rows in candidate_buckets.values() for row in rows], example_limit
+        ),
+        "unmatched_examples": select_examples(
+            [row for rows in unmatched_candidate_buckets.values() for row in rows], example_limit
+        ),
         "malformed_inputs": sorted(malformed_inputs, key=lambda row: row["file_stem"]),
         "limitations": [
             "Complete markers are shortest non-overlapping matches within one text value.",
@@ -253,6 +274,18 @@ def markdown(summary: dict[str, Any]) -> str:
         "|---|---:|",
     ]
     lines.extend(f"| `{key}` | {value:,} |" for key, value in summary["by_style_type"].items())
+    lines.extend(
+        [
+            "",
+            "## Unmatched marker opens by style type",
+            "",
+            "| style type | unmatched opens |",
+            "|---|---:|",
+        ]
+    )
+    lines.extend(
+        f"| `{key}` | {value:,} |" for key, value in summary["unmatched_by_style_type"].items()
+    )
     lines.extend(["", "## Counts by signature", "", "| signature | text nodes |", "|---|---:|"])
     lines.extend(
         f"| `{table_cell(key)}` | {value:,} |" for key, value in summary["by_signature"].items()

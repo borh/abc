@@ -94,6 +94,7 @@ def test_partial_openers_do_not_become_complete_findings(tmp_path):
     assert proc.returncode == 0
     assert summary["totals"]["marker_occurrences"] == 0
     assert summary["totals"]["unmatched_marker_open"] == 1
+    assert summary["unmatched_by_style_type"] == {"bold": 1}
     assert "split across text nodes" in report
     assert "before［＃open" in report
 
@@ -150,6 +151,19 @@ def test_examples_are_deterministic_diverse_and_capped_per_file(tmp_path):
     assert proc2.returncode == 0
     assert summary2 == summary
     assert report2 == report
+
+
+def test_candidate_state_is_bounded_while_scanning(tmp_path):
+    module = load_module()
+    input_dir = tmp_path / "aat"
+    for index in range(20):
+        write_doc(
+            input_dir,
+            f"{index:02}.json",
+            [paragraph(style("bold", text(f"［＃太字］{index}［＃太字終わり］")))],
+        )
+    summary = module.audit_directory(input_dir, "fixture", 3)
+    assert len(summary["examples"]) == 3
 
 
 def test_quoted_target_signature_is_retained():

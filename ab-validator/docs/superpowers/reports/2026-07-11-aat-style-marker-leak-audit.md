@@ -17,6 +17,12 @@
 | `bouten` | 4,337 |
 | `emphasis` | 10,106 |
 
+## Unmatched marker opens by style type
+
+| style type | unmatched opens |
+|---|---:|
+| `bouten` | 3 |
+
 ## Counts by signature
 
 | signature | text nodes |
@@ -81,40 +87,39 @@
 ## Examples
 
 - `000026_50241-af65ef658680` `bold` `/blocks/0/content/27/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］ユマニテ（〔Humanité〕）に就いて。［＃太字終わり］
-- `000034_56908-06d9d9f1df88` `bouten` `/blocks/0/content/1017/content/0`: `［＃白丸傍点］…［＃白丸傍点終わり］` — ［＃白丸傍点］もししかりとせばキリストは如何［＃白丸傍点終わり］
-- `000067_1790-1b06f6d1a80b` `emphasis` `/blocks/104/content/8/content/0`: `［＃斜体］…［＃斜体終わり］` — ［＃斜体］Nostalgia［＃斜体終わり］
-- `000035_52380-31ca9a256419` `bold` `/blocks/35/content/13/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］タチマチ　シラガノ　オヂイサン［＃太字終わり］
-- `000034_56908-06d9d9f1df88` `bouten` `/blocks/0/content/1025/content/0`: `［＃白丸傍点］…［＃白丸傍点終わり］` — ［＃白丸傍点］信仰を試むるために下る苦難である［＃白丸傍点終わり］
-- `000067_1790-1b06f6d1a80b` `emphasis` `/blocks/178/content/16/content/0`: `［＃斜体］…［＃斜体終わり］` — ［＃斜体］AULD LANG SYNE!［＃斜体終わり］
-- `000035_52380-31ca9a256419` `bold` `/blocks/43/content/7/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］カゴノナカノ　スズメ［＃太字終わり］
+- `000034_56908-06d9d9f1df88` `bouten` `/blocks/0/content/17/content/0`: `［＃白丸傍点］…［＃白丸傍点終わり］` — ［＃白丸傍点］ヨブ記の聖書における位置［＃白丸傍点終わり］
+- `000067_1790-1b06f6d1a80b` `emphasis` `/blocks/42/content/3/content/0`: `［＃斜体］…［＃斜体終わり］` — ［＃斜体］AULD LANG SYNE!［＃斜体終わり］
+- `000035_52380-31ca9a256419` `bold` `/blocks/5/content/7/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］ムカシ　ムカシノオ話ヨ［＃太字終わり］
 - `000042_61014-aeee005c4e1a` `bouten` `/blocks/0/content/3/content/0`: `［＃傍点］…［＃傍点終わり］` — ［＃傍点］支点［＃傍点終わり］
 - `000075_47967-46eddbff13c0` `emphasis` `/blocks/0/content/0/content/1/content/0`: `［＃斜体］…［＃斜体終わり］` — ［＃斜体］〔Val de Grâce〕［＃斜体終わり］
 - `000083_57848-80aaafd2185c` `bold` `/blocks/0/content/0/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］人物［＃太字終わり］
 - `000042_61015-7af622bd3028` `bouten` `/blocks/0/content/5/content/0`: `［＃傍点］…［＃傍点終わり］` — ［＃傍点］かいつぶり［＃傍点終わり］
-- `000075_47967-46eddbff13c0` `emphasis` `/blocks/0/content/0/content/3/content/0`: `［＃斜体］…［＃斜体終わり］` — ［＃斜体］Asile de nuit［＃斜体終わり］
-- `000083_57848-80aaafd2185c` `bold` `/blocks/2/content/1/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］時代［＃太字終わり］
-- `000042_61019-3b93de829d89` `bouten` `/blocks/0/content/19/content/0`: `［＃傍点］…［＃傍点終わり］` — ［＃傍点］無線電話［＃傍点終わり］
 - `000091_50354-ce30f36cb845` `emphasis` `/blocks/0/content/769/content/0`: `［＃キャプション］…［＃キャプション終わり］` — ［＃キャプション］「おにが嶋の文字にて」書かれた『鬼桃太郎』の序文（紅葉筆）［＃キャプション終わり］
-- `000096_2100-f3cca7424289` `bold` `/blocks/13/content/183/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］岩形氏の死状［＃太字終わり］
-- `000063_385-d4fb3dee4ba1` `bouten` `/blocks/11/content/1/content/0`: `［＃傍点］…［＃傍点終わり］` — ［＃傍点］出版界［＃傍点終わり］
+- `000096_2100-f3cca7424289` `bold` `/blocks/7/content/1/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］東京駅ホテルにて［＃太字終わり］
+- `000042_61019-3b93de829d89` `bouten` `/blocks/0/content/19/content/0`: `［＃傍点］…［＃傍点終わり］` — ［＃傍点］無線電話［＃傍点終わり］
 - `000094_2525-9c05271ce1b8` `emphasis` `/blocks/11/children/0/content/10/content/0`: `［＃斜体］…［＃斜体終わり］` — ［＃斜体］4［＃斜体終わり］
-- `000096_2100-f3cca7424289` `bold` `/blocks/13/content/212/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］容貌と体格［＃太字終わり］
-- `000063_385-d4fb3dee4ba1` `bouten` `/blocks/11/content/11/content/0`: `［＃傍点］…［＃傍点終わり］` — ［＃傍点］破壊にあらずして建設［＃傍点終わり］
-- `000094_4261-23dd52ff3aae` `emphasis` `/blocks/14/content/333/content/0`: `［＃行右小書き］…［＃行右小書き終わり］` — ［＃行右小書き］（９）［＃行右小書き終わり］
 - `000106_53242-a157b181558a` `bold` `/blocks/3/children/0/content/1/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］古風の庭［＃太字終わり］
+- `000063_385-d4fb3dee4ba1` `bouten` `/blocks/4/content/1/content/0`: `［＃丸傍点］…［＃丸傍点終わり］` — ［＃丸傍点］円本流行［＃丸傍点終わり］
+- `000094_4261-23dd52ff3aae` `emphasis` `/blocks/14/content/333/content/0`: `［＃行右小書き］…［＃行右小書き終わり］` — ［＃行右小書き］（９）［＃行右小書き終わり］
+- `000106_55787-3d9d0da2e2ee` `bold` `/blocks/4/content/1090/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］ゴンシヤン［＃太字終わり］
 - `000077_1323-b51132c1dd72` `bouten` `/blocks/112/content/1444/content/0`: `［＃濁点付き片仮名ワ、1-7-82］` — マルダイ※［＃濁点付き片仮名ワ、1-7-82］
 - `000094_56515-42626c61203a` `emphasis` `/blocks/1/children/0/content/1/content/0`: `［＃行右小書き］…［＃行右小書き終わり］` — ［＃行右小書き］１［＃行右小書き終わり］
-- `000106_53242-a157b181558a` `bold` `/blocks/3/children/0/content/3/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］紅葉を焚いて［＃太字終わり］
-- `000077_1323-b51132c1dd72` `bouten` `/blocks/114/content/775/content/0`: `［＃濁点付き片仮名ワ、1-7-82］` — マルダイ※［＃濁点付き片仮名ワ、1-7-82］
-- `000094_56515-42626c61203a` `emphasis` `/blocks/2/content/125/content/0`: `［＃行右小書き］…［＃行右小書き終わり］` — ［＃行右小書き］７［＃行右小書き終わり］
-- `000106_55787-3d9d0da2e2ee` `bold` `/blocks/4/content/1090/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］ゴンシヤン［＃太字終わり］
-- `000121_45081-406b2c875967` `bouten` `/blocks/11/content/17/content/0`: `［＃傍点］…［＃傍点終わり］` — ［＃傍点］正しい生き方［＃傍点終わり］
+- `000113_4325-8f52b8f2c06c` `bold` `/blocks/5/content/26/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］「一　飲食物はサロン外に持ち出さないこと」［＃太字終わり］
+- `000096_2100-f3cca7424289` `bouten` `/blocks/13/content/189/content/0`: `［＃傍点］…［＃傍点終わり］` — ［＃傍点］右手の袖口を泥まみれにした外套と上衣を着て膝の処を左右とも泥だらけにしたズボンを穿いて［＃傍点終わり］
 - `000094_56535-aadd072d16e3` `emphasis` `/blocks/0/content/2/content/0`: `［＃行右小書き］…［＃行右小書き終わり］` — ［＃行右小書き］１［＃行右小書き終わり］
+- `000168_56934-63f734551d19` `bold` `/blocks/2/content/0/content/0/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］家人への手紙　一［＃太字終わり］
+- `000121_45081-406b2c875967` `bouten` `/blocks/3/content/15/content/0`: `［＃傍点］…［＃傍点終わり］` — ［＃傍点］人のためになることをしてこそえらいといはれるもんさ［＃傍点終わり］
+- `000094_56536-da7064105f9c` `emphasis` `/blocks/1/content/0/content/2/content/0`: `［＃行右小書き］…［＃行右小書き終わり］` — ［＃行右小書き］１［＃行右小書き終わり］
+- `000255_47055-45b1e8b9e5bb` `bold` `/blocks/302/content/72/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］（「生産だ！」の項の最後よりつづく）［＃太字終わり］
+- `000121_56250-6d8f4a27b2ac` `bouten` `/blocks/11/content/17/content/0`: `［＃傍点］…［＃傍点終わり］` — ［＃傍点］貧乏だとてはずかしがることはないのだ［＃傍点終わり］
+- `000094_56537-1a3e8d8cbc84` `emphasis` `/blocks/1/content/0/content/1/content/0`: `［＃行右小書き］…［＃行右小書き終わり］` — ［＃行右小書き］１［＃行右小書き終わり］
+- `000255_47423-42bdaa472c87` `bold` `/blocks/74/children/0/content/1/content/0`: `［＃太字］…［＃太字終わり］` — ［＃太字］さまよう町のさまよう家［＃太字終わり］
+- `000125_1317-75eca9fa8fae` `bouten` `/blocks/97/content/34/content/0`: `［＃傍線］…［＃傍線終わり］` — ［＃傍線］神その女児を下界に降して人の母となさしめ給いき［＃傍線終わり］
+- `000125_1321-cbc1f0426de2` `emphasis` `/blocks/0/content/102/content/0`: `［＃キャプション］…［＃キャプション終わり］` — ［＃キャプション］地図＝グリーンランドとセル・ミク・シュア［＃キャプション終わり］
 
 ## Unmatched marker-open examples
 
 - `000305_1897-b3ce99e6fae1` `bouten` `/blocks/74/content/6/content/0` (1): ※［＃「麾－毛
-- `000305_1897-b3ce99e6fae1` `bouten` `/blocks/84/content/2/content/0` (1): ※［＃「寛の「儿
 
 ## Malformed inputs
 

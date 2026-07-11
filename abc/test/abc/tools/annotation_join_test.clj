@@ -102,7 +102,15 @@
       (testing label
         (is (thrown-with-msg? clojure.lang.ExceptionInfo
                               #"Invalid token span"
-                              (join/join tokens [])))))))
+                              (join/join tokens []))))))
+  (testing "failure data identifies the invalid token and preceding boundary"
+    (let [error (try
+                  (join/join [(tok 0 0 2 "ab") (tok 1 1 3 "bc")] [])
+                  nil
+                  (catch clojure.lang.ExceptionInfo exception
+                    exception))]
+      (is (= {:token-index 1 :start 1 :end 3 :prev-end 2}
+             (ex-data error))))))
 
 (deftest join-overlap-boundaries-test
   (let [tokens [(tok 0 2 4 "ab") (tok 1 6 8 "cd")]

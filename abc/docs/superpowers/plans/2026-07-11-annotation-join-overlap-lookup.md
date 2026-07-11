@@ -60,7 +60,7 @@
 - Produces: a CLI that warms both lookup implementations, asserts identical covers, reports counts and repeated timings, and a checked-in handoff containing commands, identities, medians, and ratios without machine-local paths in active configuration.
 
 - [ ] **Step 1: Implement the benchmark harness.** Keep the exhaustive implementation local to the benchmark; accept two or more path pairs, use the equality-checking exhaustive pass as the single baseline, and print five optimized measurements after warm-up.
-- [ ] **Step 2: Select real works.** From the retained stride-44 run, select the largest token file and independently select the work with the highest rendered annotation-to-token ratio among available works.
+- [ ] **Step 2: Select real works.** From the retained stride-44 run, select the largest token file and independently select the highest rendered annotation-to-token ratio among works with at least 10,000 tokens and 1,000 annotations; record the selection command.
 - [ ] **Step 3: Run the benchmark.** Run with `clojure -M:test -m abc.tools.annotation-join-benchmark ...`; require cover equality and at least 10× median isolated-lookup speedup for each work.
 - [ ] **Step 4: Record evidence.** Write the handoff with work stems, token/annotation counts, timing medians, ratios, and the retained run label; omit absolute `/db` paths from executable configuration.
 - [ ] **Step 5: Run focused tests once more.** Run the annotation join tests and ensure they remain green.

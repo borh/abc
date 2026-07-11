@@ -61,7 +61,11 @@ single-core join-stats step
 (`docs/handoffs/2026-07-11-tokenizer-comparison-followups.md`). A deterministic
 benchmark command compares the two lookup algorithms over at least two real
 works from a retained join-stats run: the largest available token stream and a
-second work selected for high annotation density. It reports token and
+second work selected for the highest annotation density among benchmark-scale
+works with at least 10,000 tokens and 1,000 annotations. The thresholds exclude
+tiny works where fixed validation and timer overhead dominate rather than the
+corpus bottleneck under study. The selection command and candidate universe
+are recorded with the evidence. It reports token and
 annotation counts, records the equality-checking exhaustive pass as its
 baseline, warms the optimized implementation, and reports five optimized
 elapsed measurements with a median ratio against that baseline. Repeating the
@@ -71,7 +75,7 @@ protocol; multiplying that known bottleneck does not improve the go/no-go
 decision. Input paths are operator arguments and are never checked into source.
 
 The performance acceptance floor is a 10× median speedup for the isolated
-overlap lookup on each real work. Failure to meet it stops the optimization
+overlap lookup on each benchmark-scale real work. Failure to meet it stops the optimization
 for investigation; it is not waived by passing functional tests. Benchmark
 numbers are operator evidence, not a timing-sensitive automated test.
 

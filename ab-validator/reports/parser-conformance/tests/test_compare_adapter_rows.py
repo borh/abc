@@ -11,8 +11,16 @@ def summary(rows):
 
 
 def row(vector="v1", status="pass", adapter="ab-aozora", **kw):
-    base = {"vector": vector, "feature": "f", "level": "must", "adapter": adapter,
-            "status": status, "failures": [], "warnings": [], "skips": []}
+    base = {
+        "vector": vector,
+        "feature": "f",
+        "level": "must",
+        "adapter": adapter,
+        "status": status,
+        "failures": [],
+        "warnings": [],
+        "skips": [],
+    }
     base.update(kw)
     return base
 
@@ -22,8 +30,11 @@ def run(tmp_path, old_rows, new_rows, adapter="ab-aozora"):
     new = tmp_path / "new.json"
     old.write_text(json.dumps(summary(old_rows)))
     new.write_text(json.dumps(summary(new_rows)))
-    return subprocess.run([sys.executable, str(SCRIPT), str(old), str(new),
-                           "--adapter", adapter], capture_output=True, text=True)
+    return subprocess.run(
+        [sys.executable, str(SCRIPT), str(old), str(new), "--adapter", adapter],
+        capture_output=True,
+        text=True,
+    )
 
 
 def test_identical_rows_pass(tmp_path):
@@ -38,8 +49,14 @@ def test_status_change_fails(tmp_path):
 
 
 def test_other_adapters_ignored(tmp_path):
-    assert run(tmp_path, [row(), row(adapter="aozora", status="fail")],
-               [row(), row(adapter="aozora", status="pass")]).returncode == 0
+    assert (
+        run(
+            tmp_path,
+            [row(), row(adapter="aozora", status="fail")],
+            [row(), row(adapter="aozora", status="pass")],
+        ).returncode
+        == 0
+    )
 
 
 def test_missing_vector_fails(tmp_path):

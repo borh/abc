@@ -149,8 +149,14 @@ def run_aat(adapter: Adapter, source: str) -> tuple[dict[str, Any] | None, str |
 
 
 def run_diagnostics(adapter: Adapter, source: str) -> tuple[list | None, str | None]:
-    proc = subprocess.run(adapter.diagnostics_command, input=source, text=True,
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    proc = subprocess.run(
+        adapter.diagnostics_command,
+        input=source,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
     if proc.returncode != 0:
         return None, proc.stderr.strip() or f"exit {proc.returncode}"
     try:
@@ -162,9 +168,13 @@ def run_diagnostics(adapter: Adapter, source: str) -> tuple[list | None, str | N
     projected = []
     for entry in value["data"]:
         try:
-            projected.append({"code": entry["code"], "severity": entry["severity"],
-                              "span": {"start": entry["span"]["start"],
-                                       "end": entry["span"]["end"]}})
+            projected.append(
+                {
+                    "code": entry["code"],
+                    "severity": entry["severity"],
+                    "span": {"start": entry["span"]["start"], "end": entry["span"]["end"]},
+                }
+            )
         except (KeyError, TypeError):
             return None, f"entry missing code/severity/span: {entry!r}"
     return projected, None
@@ -246,8 +256,13 @@ def expected_kind_seq(vector: dict[str, Any]) -> list[str] | None:
 # sides: unlisted divergence still fails, and unknown/unused manifest entries
 # are a hard error (stale authorization must not silently linger).
 
-MANIFEST_FIELDS = {"vector": str, "reason": str, "original_expected": list,
-                   "expected": list, "source_sha256": str}
+MANIFEST_FIELDS = {
+    "vector": str,
+    "reason": str,
+    "original_expected": list,
+    "expected": list,
+    "source_sha256": str,
+}
 
 
 def load_span_deviation_manifest(path) -> dict:
@@ -257,8 +272,10 @@ def load_span_deviation_manifest(path) -> dict:
     manifest = {}
     for e in entries:
         if not isinstance(e, dict) or set(e) != set(MANIFEST_FIELDS):
-            raise SystemExit(f"span-deviation-manifest entry fields must be exactly "
-                             f"{sorted(MANIFEST_FIELDS)}: {e!r}")
+            raise SystemExit(
+                f"span-deviation-manifest entry fields must be exactly "
+                f"{sorted(MANIFEST_FIELDS)}: {e!r}"
+            )
         for key, typ in MANIFEST_FIELDS.items():
             if not isinstance(e[key], typ):
                 raise SystemExit(f"span-deviation-manifest {key!r} must be {typ.__name__}: {e!r}")
@@ -276,8 +293,9 @@ def check_manifest_consumed(manifest: dict, vector_names: set, used: set) -> Non
         raise SystemExit(f"span-deviation-manifest entries match no loaded vector: {unknown}")
     unused = sorted(set(manifest) - used)
     if unused:
-        raise SystemExit(f"span-deviation-manifest entries never exercised "
-                         f"(stale authorization): {unused}")
+        raise SystemExit(
+            f"span-deviation-manifest entries never exercised (stale authorization): {unused}"
+        )
 
 
 # --- scoring -----------------------------------------------------------------
@@ -329,12 +347,16 @@ def evaluate(adapter: Adapter, vector: dict[str, Any], manifest=None, manifest_u
                 if entry is not None:
                     digest = hashlib.sha256(vector["source"].encode("utf-8")).hexdigest()
                     if digest != entry["source_sha256"]:
-                        failures.append("diagnostics: manifest source hash mismatch "
-                                        "(vector changed since authorization)")
+                        failures.append(
+                            "diagnostics: manifest source hash mismatch "
+                            "(vector changed since authorization)"
+                        )
                         bad_manifest = True
                     elif entry["original_expected"] != want_diag:
-                        failures.append("diagnostics: manifest original_expected is stale "
-                                        "(vector expectation changed since authorization)")
+                        failures.append(
+                            "diagnostics: manifest original_expected is stale "
+                            "(vector expectation changed since authorization)"
+                        )
                         bad_manifest = True
                     else:
                         want_diag = entry["expected"]

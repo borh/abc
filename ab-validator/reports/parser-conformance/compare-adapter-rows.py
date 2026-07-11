@@ -8,6 +8,7 @@ stage and the differences are reviewed against expectations.
 Exit 0 = identical; 1 = any row differs / vector set differs; 2 = usage or
 reference error (unreadable file, adapter absent from either file).
 """
+
 import argparse
 import json
 import sys
@@ -41,8 +42,10 @@ def main() -> int:
         elif vector not in new:
             diffs.append(f"{vector}: only in old")
         elif old[vector] != new[vector]:
-            diffs.append(f"{vector}: old={json.dumps(old[vector], ensure_ascii=False)}\n"
-                         f"  new={json.dumps(new[vector], ensure_ascii=False)}")
+            diffs.append(
+                f"{vector}: old={json.dumps(old[vector], ensure_ascii=False)}\n"
+                f"  new={json.dumps(new[vector], ensure_ascii=False)}"
+            )
     for d in diffs:
         print(d)
     print(f"compared={len(set(old) | set(new))} differing={len(diffs)}")

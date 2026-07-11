@@ -8,6 +8,7 @@ span; exit 1 on any mismatch.
 
 Usage: verify-golden-spans.py SOURCE_FILE GOLDEN_JSON
 """
+
 import json
 import sys
 
@@ -26,11 +27,13 @@ def walk(node):
     if isinstance(node, dict):
         span, value = node.get("span"), node.get("value")
         if isinstance(span, dict) and isinstance(value, str):
-            got = data[span["byte_start"]:span["byte_end"]].decode("utf-8", "replace")
-            line = 1 + data[:span["byte_start"]].decode("utf-8", "replace").count("\n")
+            got = data[span["byte_start"] : span["byte_end"]].decode("utf-8", "replace")
+            line = 1 + data[: span["byte_start"]].decode("utf-8", "replace").count("\n")
             ok_v = got == value
             ok_l = line == span["line_start"]
-            print(f"{'OK ' if ok_v and ok_l else 'FAIL'} span={span} value={value!r} slice={got!r} line={line}")
+            print(
+                f"{'OK ' if ok_v and ok_l else 'FAIL'} span={span} value={value!r} slice={got!r} line={line}"
+            )
             failures += 0 if ok_v and ok_l else 1
         for v in node.values():
             walk(v)

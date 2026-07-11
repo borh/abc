@@ -21,6 +21,7 @@ entry out of each zip (first non-README `.txt` member, mirroring
 bare `*.txt` sibling files, and decodes everything as Shift_JIS
 (errors=replace).
 """
+
 import argparse
 import json
 import pathlib
@@ -66,15 +67,12 @@ def iter_work_texts(corpus_root: pathlib.Path):
             if name_lower.endswith(".zip"):
                 try:
                     with zipfile.ZipFile(path) as zf:
-                        entry = next(
-                            (n for n in zf.namelist() if is_text_entry(n)), None
-                        )
+                        entry = next((n for n in zf.namelist() if is_text_entry(n)), None)
                         if entry is None:
                             continue
                         data = zf.read(entry)
                 except (zipfile.BadZipFile, KeyError) as exc:
-                    print(f"warning: skipping unreadable zip {path}: {exc}",
-                          file=sys.stderr)
+                    print(f"warning: skipping unreadable zip {path}: {exc}", file=sys.stderr)
                     continue
                 label = f"{path.relative_to(corpus_root)}::{entry}"
                 yield label, data.decode("shift_jis", errors="replace")
@@ -103,13 +101,20 @@ def main() -> int:
     if not files_scanned:
         print(f"ERROR: no work texts found under {corpus_root}", file=sys.stderr)
         return 2
-    summary = {"files_scanned": files_scanned,
-               "constructs": {name: {"forms": dict(counts[name]),
-                                     "total": sum(counts[name].values()),
-                                     "works": len(works[name])}
-                              for name in TOKENS}}
-    pathlib.Path(args.summary_json).write_text(json.dumps(summary, indent=2,
-                                                          ensure_ascii=False) + "\n")
+    summary = {
+        "files_scanned": files_scanned,
+        "constructs": {
+            name: {
+                "forms": dict(counts[name]),
+                "total": sum(counts[name].values()),
+                "works": len(works[name]),
+            }
+            for name in TOKENS
+        },
+    }
+    pathlib.Path(args.summary_json).write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False) + "\n"
+    )
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     return 0
 

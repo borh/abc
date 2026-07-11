@@ -21,14 +21,17 @@ Exit 0 = PASS. Exit 2 = ANY unclassified difference or reference error
 corpus data is an ESCALATION per the spec — do not weaken the grammar to
 invariants.
 """
+
 import argparse
 import copy
 import json
 import pathlib
 import sys
 
-LEGACY_WARNING = ("aozora upstream spans are sanitized-source byte offsets; "
-                  "line_start and line_end are synthesized as 1")
+LEGACY_WARNING = (
+    "aozora upstream spans are sanitized-source byte offsets; "
+    "line_start and line_end are synthesized as 1"
+)
 CONSTRUCTS = {
     "keigakomi_block": ("［＃ここから罫囲み］", "罫囲み"),
     "yokogumi_block": ("［＃ここから横組み］", "横組み"),
@@ -56,9 +59,13 @@ def strip_identity(doc):
 
 # --- container-rewrite grammar (mirror of blocks_from_inline_content) ------
 
+
 def is_raw(node, marker_kind):
-    return (isinstance(node, dict) and node.get("kind") == "raw"
-            and node.get("x-source-marker-kind") == marker_kind)
+    return (
+        isinstance(node, dict)
+        and node.get("kind") == "raw"
+        and node.get("x-source-marker-kind") == marker_kind
+    )
 
 
 def open_kind(node):
@@ -98,8 +105,7 @@ def make_para(content):
 
 
 def is_empty_text(node):
-    return (isinstance(node, dict) and node.get("kind") == "text"
-            and node.get("value", "") == "")
+    return isinstance(node, dict) and node.get("kind") == "text" and node.get("value", "") == ""
 
 
 def is_wrapper_style(node):
@@ -107,8 +113,12 @@ def is_wrapper_style(node):
     # flat stream nodes and carries NO span field. Inline styles built in
     # inline_content carry a span and existed whole in the flat stream —
     # Rust's boundary strip saw them as non-text nodes and no-op'd.
-    return (isinstance(node, dict) and node.get("kind") == "style"
-            and "span" not in node and isinstance(node.get("content"), list))
+    return (
+        isinstance(node, dict)
+        and node.get("kind") == "style"
+        and "span" not in node
+        and isinstance(node.get("content"), list)
+    )
 
 
 def is_container_derived_block(block):
@@ -125,8 +135,8 @@ def is_container_derived_block(block):
     if block.get("kind") == "paragraph":
         content = block.get("content", [])
         return bool(content) and (
-            is_wrapper_style(content[0])
-            and content[0].get("style_type") == "burasage")
+            is_wrapper_style(content[0]) and content[0].get("style_type") == "burasage"
+        )
     return False
 
 
@@ -222,8 +232,7 @@ def rewrite_blocks(blocks):
         # still be admitted (e.g. an inner keigakomi pair nested inside an
         # unadmitted yokogumi pair). Mirror by trying each open in order.
         admitted = None
-        for oi, kind in ((j, open_kind(n)) for j, n in enumerate(content)
-                        if open_kind(n)):
+        for oi, kind in ((j, open_kind(n)) for j, n in enumerate(content) if open_kind(n)):
             needle = CONSTRUCTS[kind][1]
             # Scan forward through the flat stream for the matching close;
             # any containerOpen aborts. First the open paragraph's
@@ -257,19 +266,19 @@ def rewrite_blocks(blocks):
         oi, kind, close_block_index, ci = admitted
         pre = content[:oi]
         if close_block_index == i:
-            inner = content[oi + 1:ci]
-            post = content[ci + 1:]
+            inner = content[oi + 1 : ci]
+            post = content[ci + 1 :]
             if inner:
                 inner = [strip_leading_newline(inner[0])] + inner[1:]
                 inner = inner[:-1] + [strip_trailing_newline(inner[-1])]
             inner_para = make_para(inner)
             children = [inner_para] if inner_para else []
         else:
-            head = content[oi + 1:]
+            head = content[oi + 1 :]
             close_content = blocks[close_block_index].get("content", [])
             tail = close_content[:ci]
-            post = close_content[ci + 1:]
-            middle = blocks[i + 1:close_block_index]
+            post = close_content[ci + 1 :]
+            middle = blocks[i + 1 : close_block_index]
             if head:
                 head = [strip_leading_newline(head[0])] + head[1:]
             # Trailing boundary strip lands on the FLAT stream's last
@@ -301,7 +310,7 @@ def rewrite_blocks(blocks):
         # newline; if that empties the text node, DROP it (the Rust
         # post-close path removes emptied nodes — asymmetric with
         # strip_boundary_newlines, which keeps them).
-        rest = blocks[close_block_index + 1:]
+        rest = blocks[close_block_index + 1 :]
         if post:
             first = strip_leading_newline(post[0])
             post = ([] if is_empty_text(first) else [first]) + post[1:]
@@ -310,8 +319,7 @@ def rewrite_blocks(blocks):
             # stream node of the NEXT block instead.
             rest = apply_post_close_strip(rest)
         post_para = make_para(post)
-        rewritten_rest, rest_count = rewrite_blocks(
-            ([post_para] if post_para else []) + rest)
+        rewritten_rest, rest_count = rewrite_blocks(([post_para] if post_para else []) + rest)
         out.extend(rewritten_rest)
         return out, count + rest_count
     return out, count
@@ -326,23 +334,30 @@ def container_rewrite_mode(base_doc, cand_doc, name, summary):
     rewritten_blocks, count = rewrite_blocks(base.get("blocks", []))
     rewritten = dict(base, blocks=rewritten_blocks)
     if count == 0:
-        die(f"{name}: differs but baseline has no well-paired "
-            f"keigakomi/yokogumi markers (unclassified)")
+        die(
+            f"{name}: differs but baseline has no well-paired "
+            f"keigakomi/yokogumi markers (unclassified)"
+        )
     if rewritten != cand:
-        die(f"{name}: candidate is not exactly the grammar's rewrite "
-            f"({count} container(s) rewritten) — escalate per spec")
+        die(
+            f"{name}: candidate is not exactly the grammar's rewrite "
+            f"({count} container(s) rewritten) — escalate per spec"
+        )
     summary["classes"]["rewritten"] += 1
 
 
 # --- span-confinement -------------------------------------------------------
+
 
 def mask_spans(node, spans_out):
     if isinstance(node, dict):
         # Intercept the "span" KEY regardless of value type: a null or
         # otherwise non-dict span must reach the invariant loop below and
         # fail there, not mask equal on both sides as a false PASS.
-        return {k: (spans_out.append(v) or None) if k == "span"
-                else mask_spans(v, spans_out) for k, v in node.items()}
+        return {
+            k: (spans_out.append(v) or None) if k == "span" else mask_spans(v, spans_out)
+            for k, v in node.items()
+        }
     if isinstance(node, list):
         return [mask_spans(v, spans_out) for v in node]
     return node
@@ -352,8 +367,7 @@ def span_confinement_mode(base_doc, cand_doc, name, summary):
     base = strip_identity(base_doc)
     cand = strip_identity(cand_doc)
     meta = base.get("meta", {})
-    meta["warnings"] = [w for w in meta.get("warnings", [])
-                        if w.get("message") != LEGACY_WARNING]
+    meta["warnings"] = [w for w in meta.get("warnings", []) if w.get("message") != LEGACY_WARNING]
     for doc in (base, cand):
         for w in doc.get("meta", {}).get("warnings", []):
             if "line" in w:
@@ -370,9 +384,12 @@ def span_confinement_mode(base_doc, cand_doc, name, summary):
             # null spans and wire-shaped {start,end} spans (none expected
             # in AAT) fail too
             die(f"{name}: span missing AAT fields: {span}")
-        if not (isinstance(span["byte_start"], int) and isinstance(span["byte_end"], int)
-                and span["byte_end"] >= span["byte_start"]
-                and span["line_end"] >= span["line_start"] >= 1):
+        if not (
+            isinstance(span["byte_start"], int)
+            and isinstance(span["byte_end"], int)
+            and span["byte_end"] >= span["byte_start"]
+            and span["line_end"] >= span["line_start"] >= 1
+        ):
             die(f"{name}: invalid span {span}")
         if span["line_start"] != 1 or span["line_end"] != 1:
             all_line1 = False
@@ -393,11 +410,13 @@ def main() -> int:
     missing = sorted(set(base_files) ^ set(cand_files))
     if missing:
         die(f"file sets differ: {missing[:10]}")
-    summary = {"mode": args.mode, "compared": len(base_files),
-               "classes": {"identical": 0, "rewritten": 0, "span_confined": 0},
-               "verdict": "PASS"}
-    handler = (container_rewrite_mode if args.mode == "container-rewrite"
-               else span_confinement_mode)
+    summary = {
+        "mode": args.mode,
+        "compared": len(base_files),
+        "classes": {"identical": 0, "rewritten": 0, "span_confined": 0},
+        "verdict": "PASS",
+    }
+    handler = container_rewrite_mode if args.mode == "container-rewrite" else span_confinement_mode
     for name in sorted(base_files):
         # Fail-closed: ANY per-work exception (unreadable file, valid JSON
         # of the wrong shape, unexpected structure deep in a handler) exits

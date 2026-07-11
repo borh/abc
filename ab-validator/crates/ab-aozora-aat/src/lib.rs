@@ -529,7 +529,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 strip_boundary_newlines(&mut inner);
                 blocks.push(json!({
                     "kind": "jisage_block",
-                    "x-indent": indent,
+                    "indent": indent,
                     "children": blocks_from_inline_content(inner)
                 }));
                 strip_next_leading_newline = true;
@@ -543,7 +543,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 strip_boundary_newlines(&mut inner);
                 blocks.push(json!({
                     "kind": "jisage_block",
-                    "x-indent": indent,
+                    "indent": indent,
                     "children": blocks_from_inline_content(inner)
                 }));
                 index = boundary;
@@ -623,8 +623,8 @@ fn push_chitsuki_paragraph(blocks: &mut Vec<Value>, offset: u64, content: Vec<Va
             "kind": "style",
             "style_type": "chitsuki",
             "content": content,
-            "x-align": "right",
-            "x-offset": offset,
+            "align": "right",
+            "offset_from_end": offset,
             "x-provenance": "source-derived"
         }]
     }));
@@ -654,8 +654,8 @@ fn push_burasage_paragraph(blocks: &mut Vec<Value>, first: u64, rest: u64, conte
             "kind": "style",
             "style_type": "burasage",
             "content": content,
-            "x-indent-first": first,
-            "x-indent-rest": rest,
+            "indent_first": first,
+            "indent_rest": rest,
             "x-provenance": "source-derived"
         }]
     }));
@@ -905,7 +905,7 @@ fn heading_block_from_hint(paragraph: &mut Vec<Value>, node: &Value) -> Option<V
         "x-provenance": "source-derived",
     });
     if let Some(indent) = indent {
-        heading["x-indent"] = json!(indent);
+        heading["indent"] = json!(indent);
     }
     Some(heading)
 }
@@ -1631,7 +1631,7 @@ mod tests {
             ["paragraph", "keigakomi_block", "paragraph"]
         );
         let block = &doc["blocks"][1];
-        assert!(block.get("span").is_none() && block.get("x-indent").is_none());
+        assert!(block.get("span").is_none() && block.get("indent").is_none());
         let children = block["children"].as_array().unwrap();
         assert_eq!(children[0]["kind"], "paragraph");
         let text: String = children
@@ -1701,5 +1701,45 @@ mod tests {
         let text = serde_json::to_string(&doc).unwrap();
         assert!(!text.contains("jizume_block"));
         assert!(text.contains("burasage"));
+    }
+
+    #[test]
+    fn jisage_block_emits_typed_indent() {
+        let aat = aat_value_for("［＃ここから２字下げ］\n本文\n［＃ここで字下げ終わり］\n");
+        let block = find_first_node(&aat, "jisage_block");
+        assert_eq!(block["indent"], 2);
+        assert!(block.get("x-indent").is_none());
+    }
+
+    #[test]
+    fn chitsuki_style_emits_typed_align_offset() {
+        let aat = aat_value_for("本文［＃地から２字上げ］\n");
+        let style = find_first_node(&aat, "style");
+        assert_eq!(style["align"], "right");
+        assert_eq!(style["offset_from_end"], 2);
+        assert!(style.get("x-align").is_none() && style.get("x-offset").is_none());
+        assert_eq!(style["x-provenance"], "source-derived"); // provenance retained
+    }
+
+    #[test]
+    fn burasage_style_emits_typed_first_rest() {
+        // Pinned (6,7) compound input — same source string exercised by
+        // `compound_jizume_still_classifies_burasage_and_emits_no_jizume_block`.
+        let src = "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\nあ\n［＃ここで字下げ終わり］\n";
+        let aat = aat_value_for(src);
+        let style = find_first_node(&aat, "style");
+        assert_eq!(style["indent_first"], 6);
+        assert_eq!(style["indent_rest"], 7);
+        assert!(style.get("x-indent-first").is_none() && style.get("x-indent-rest").is_none());
+        assert_eq!(style["x-provenance"], "source-derived");
+    }
+
+    #[test]
+    fn heading_emits_typed_indent_when_indented() {
+        // Same indented-heading line as `full-markup-utf8.txt` line 9.
+        let aat = aat_value_for("［＃５字下げ］一［＃「一」は中見出し］\n");
+        let heading = find_first_node(&aat, "heading");
+        assert_eq!(heading["indent"], 5);
+        assert!(heading.get("x-indent").is_none());
     }
 }

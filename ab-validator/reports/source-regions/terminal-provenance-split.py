@@ -39,9 +39,11 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import pathlib
+import struct
 import sys
 import zipfile
-from typing import Any
+import zlib
+from typing import Any, Callable
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -121,7 +123,25 @@ def work_id_from_index_path(path: str) -> str:
 
 
 def discover_entries(corpus_root: pathlib.Path) -> list[pathlib.Path]:
-    """Yield every `cards/*/files/*.zip` and bare `*.txt` sibling, sorted."""
+    """Yield every `cards/*/files/*.zip` and bare `*.txt` sibling, sorted.
+
+    Selection rule (Task 15's C4-gate correction): every `.zip`/`.txt` FILE
+    CANDIDATE in a `cards/<id>/files/` directory is discovered here -- one
+    candidate per file, same as Rust's `collect_source_files` in
+    `crates/ab-index/src/index.rs` (which walks the identical `cards/*/
+    files/*` layout). A card directory legitimately holding more than one
+    candidate (a ruby and a non-ruby zip edition of the same work, or a
+    stray/corrupt duplicate file alongside the real entry) is NOT
+    deduplicated at discovery time in either implementation -- the
+    dedup/exclusion happens downstream, at READ time: `read_entry_text`
+    (below) decides zip-vs-plain by CONTENT (magic bytes), not extension,
+    and a candidate that sniffs/declares itself a zip but cannot actually
+    be opened/decompressed is EXCLUDED (`None`), exactly mirroring Rust's
+    `push_zip_sources` skipping (and warning on) an unreadable zip rather
+    than ever falling back to reading it as plain text. This is what makes
+    the final scored-entry set match the Rust corpus run's 17886-entry
+    `index.json` universe card-for-card, without discovery itself needing
+    to pick a "winner" among a directory's candidates."""
     entries: list[pathlib.Path] = []
     for files_dir in sorted(corpus_root.glob("cards/*/files")):
         if not files_dir.is_dir():
@@ -137,19 +157,195 @@ def discover_entries(corpus_root: pathlib.Path) -> list[pathlib.Path]:
     return entries
 
 
+# --- Zip-vs-plain entry selection/reading (Task 15's 6-entry correction) --
+#
+# Task 15's C4-gate confinement audit traced the split scanner's 6-entry
+# disagreement with the Rust corpus pipeline to a single root cause: this
+# reader used to dispatch zip-vs-plain by FILENAME EXTENSION (`.zip` only),
+# never by content. The pinned aozorabunko corpus contains files named
+# `*.txt` whose actual bytes are zip archives (a stray/corrupt duplicate
+# alongside the real entry in the same `cards/<id>/files/` directory, or --
+# in two cases -- the ONLY file for that work id, wrongly named `.txt`).
+# Extension-only dispatch read those files' raw zip bytes as if they were
+# Shift_JIS text, producing phantom `no_tail` misclassifications instead of
+# either the genuine tail inside the zip or (for the two truly-corrupt
+# stray duplicates) correct exclusion.
+#
+# The selection rule now mirrors `is_zip_file` in
+# `crates/ab-index/src/index.rs` exactly: a file is treated as a zip
+# archive when its content starts with the zip local-file-header magic
+# (`PK\x03\x04`), REGARDLESS of its extension; a `.zip`-extension file is
+# also always treated as a zip (matching Rust's unconditional
+# `push_zip_sources` for `*.zip`, magic bytes or not). A file that sniffs
+# as zip-shaped but cannot be opened/decompressed AT ALL is EXCLUDED
+# (returns `None`, same as `unreadable_entries`) -- exactly like Rust's
+# `collect_source_files` logging "skipping unreadable zip" and omitting the
+# file from `index.json` entirely. This is what makes the scanner's final
+# scored-entry set match the Rust corpus run's 17886-entry universe
+# card-for-card, without needing to change what `discover_entries` walks.
+#
+# A second, independent defect lives inside the zip-reading itself. Both
+# `ab-index`'s and `ab-check`'s `read_zip_entry_bytes` (crates/ab-index/src
+# /index.rs, crates/ab-check/src/check.rs -- the actual dump-producing
+# read path) fetch each entry via `ZipArchive::by_index_raw` and manually
+# `read_to_end` + inflate: this NEVER cross-checks a central-directory-
+# sourced CRC-32 or uncompressed-size against the entry's own local file
+# header. Python's stdlib `zipfile.read()` does perform that check, and
+# the pinned corpus contains (at least) two entries where the central
+# directory disagrees with the local header:
+#   - `cards/001393/files/50710_ruby_36965.zip`: central directory's CRC/
+#     uncompressed-size fields for the one text member are simply wrong;
+#     the LOCAL header's fields are correct and the data decompresses
+#     cleanly under them.
+#   - `cards/001505/files/58100_txt_60357.zip`: the central directory/EOCD
+#     is not a coherent whole at all (`zipfile.ZipFile()` itself raises
+#     `BadZipFile` before any `ZipInfo` exists), while the wanted member's
+#     own local file header (at the very front of this 26MB archive) is
+#     completely intact.
+# `_read_zip_entry` tries the fully-validated stdlib path first (fast,
+# correct for 17880-ish of the ~17886 entries) and falls back to
+# `_read_zip_member_bypassing_central_directory` -- which trusts ONLY the
+# wanted member's own local file header, never the central directory --
+# exactly reproducing the Rust read path's leniency. This same fallback
+# also naturally EXCLUDES the two genuinely-truncated stray duplicate
+# files above: their local header is intact but the compressed data it
+# points at is truncated mid-stream, so decompression fails and `None` is
+# returned, matching Rust's own exclusion of those exact two files.
+
+ZIP_LOCAL_HEADER_SIGNATURE = b"PK\x03\x04"
+# signature(4) + version(2) + flag(2) + method(2) + mtime(2) + mdate(2)
+# + crc32(4) + compress_size(4) + uncompressed_size(4) + name_len(2)
+# + extra_len(2) = 30 bytes, per the PKZIP APPNOTE local file header layout.
+_LOCAL_HEADER_STRUCT = "<IHHHHHIIIHH"
+_LOCAL_HEADER_SIZE = struct.calcsize(_LOCAL_HEADER_STRUCT)
+_STORED = 0
+_DEFLATED = 8
+
+
+def sniffs_as_zip(entry: pathlib.Path) -> bool:
+    """Content-sniff for the zip local-file-header magic, mirroring Rust's
+    `is_zip_file` in `crates/ab-index/src/index.rs` (peeks the first 4
+    bytes rather than trusting the filename extension)."""
+    try:
+        with entry.open("rb") as fh:
+            return fh.read(4) == ZIP_LOCAL_HEADER_SIGNATURE
+    except OSError:
+        return False
+
+
+def _parse_local_header(data: bytes, offset: int) -> tuple[str, int, int, int, int] | None:
+    """Parse one local file header directly from raw bytes at `offset`.
+
+    Returns `(name, method, compress_size, uncompressed_size, data_offset)`,
+    or `None` if `offset` is not a valid, in-bounds local-header position
+    (including a streamed entry using a trailing data descriptor -- general
+    purpose bit 3 -- whose sizes are not known up front and which this
+    fallback does not attempt to support)."""
+    if data[offset : offset + 4] != ZIP_LOCAL_HEADER_SIGNATURE:
+        return None
+    if offset + _LOCAL_HEADER_SIZE > len(data):
+        return None
+    (_sig, _ver, flag, method, _mtime, _mdate, _crc, csize, usize, fnlen, extralen) = struct.unpack(
+        _LOCAL_HEADER_STRUCT, data[offset : offset + _LOCAL_HEADER_SIZE]
+    )
+    if flag & 0x8:
+        return None
+    name_start = offset + _LOCAL_HEADER_SIZE
+    name_end = name_start + fnlen
+    data_offset = name_end + extralen
+    if data_offset > len(data):
+        return None
+    name = data[name_start:name_end].decode("cp437", errors="replace")
+    return name, method, csize, usize, data_offset
+
+
+def _decompress_local_entry(
+    data: bytes, method: int, compress_size: int, uncompressed_size: int, data_offset: int
+) -> bytes | None:
+    """Decompress one entry using ONLY its own local-header-declared method
+    and sizes -- never a central-directory CRC or size. Returns `None` on
+    any failure (short read, corrupt/truncated deflate stream, unsupported
+    method), mirroring Rust's `bail!` on an unsupported compression method
+    in `read_zip_entry_bytes` -- never a guess."""
+    compressed = data[data_offset : data_offset + compress_size]
+    if len(compressed) < compress_size:
+        return None
+    if method == _STORED:
+        return compressed[:uncompressed_size]
+    if method == _DEFLATED:
+        try:
+            return zlib.decompressobj(-15).decompress(compressed, uncompressed_size)
+        except zlib.error:
+            return None
+    return None
+
+
+def _read_zip_member_bypassing_central_directory(
+    path: pathlib.Path, want: Callable[[str], bool]
+) -> tuple[str, bytes] | None:
+    """Recover a member's bytes by scanning the file for local file headers
+    directly, trusting ONLY each local header's own fields -- never the
+    central directory or EOCD. Fallback of last resort; see the module-
+    level comment above this function's block for the two real-corpus
+    corruption patterns this recovers, and why the same logic correctly
+    keeps a genuinely-truncated stray duplicate excluded (its local header
+    parses, but the compressed data it points at is incomplete, so
+    decompression fails and `None` propagates).
+
+    Finds the FIRST local header (file-physical order, matching the
+    "first matching text entry wins" convention `read_entry_text` and
+    Rust's `zip_text_entries` already use) whose name satisfies `want`."""
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return None
+    offset = 0
+    while True:
+        offset = data.find(ZIP_LOCAL_HEADER_SIGNATURE, offset)
+        if offset == -1:
+            return None
+        parsed = _parse_local_header(data, offset)
+        if parsed is not None:
+            name, method, csize, usize, data_offset = parsed
+            if want(name):
+                decompressed = _decompress_local_entry(data, method, csize, usize, data_offset)
+                if decompressed is not None:
+                    return name, decompressed
+        offset += 4
+
+
+def _read_zip_entry(entry: pathlib.Path) -> tuple[str, bytes] | None:
+    """Read the first text member from a zip-shaped file, tolerating the
+    two central-directory corruption patterns described above the way the
+    Rust `zip` crate's `by_index_raw` + manual decompress already does.
+    Tries the fully-validated stdlib path first; the raw local-header scan
+    is only a fallback of last resort, so the overwhelming majority of
+    (well-formed) corpus entries are entirely unaffected by it."""
+    try:
+        with zipfile.ZipFile(entry) as zf:
+            member = next((n for n in zf.namelist() if is_text_entry(n)), None)
+            if member is None:
+                return None
+            try:
+                return member, zf.read(member)
+            except (zipfile.BadZipFile, OSError):
+                pass  # central-directory CRC/size disagrees with the local
+                # header -- fall through to the local-header-trusting scan.
+    except zipfile.BadZipFile:
+        pass  # EOCD/central directory not parseable as a coherent whole at
+        # all -- fall through to the local-header-trusting scan.
+    return _read_zip_member_bypassing_central_directory(entry, is_text_entry)
+
+
 def read_entry_text(corpus_root: pathlib.Path, entry: pathlib.Path) -> tuple[str, str] | None:
     """Return `(label, text)` for a corpus entry, or `None` if unreadable."""
     name_lower = entry.name.lower()
     rel = entry.relative_to(corpus_root)
-    if name_lower.endswith(".zip"):
-        try:
-            with zipfile.ZipFile(entry) as zf:
-                member = next((n for n in zf.namelist() if is_text_entry(n)), None)
-                if member is None:
-                    return None
-                data = zf.read(member)
-        except (zipfile.BadZipFile, KeyError):
+    if name_lower.endswith(".zip") or sniffs_as_zip(entry):
+        result = _read_zip_entry(entry)
+        if result is None:
             return None
+        member, data = result
         return f"{rel}::{member}", data.decode("shift_jis", errors="replace")
     return str(rel), entry.read_bytes().decode("shift_jis", errors="replace")
 

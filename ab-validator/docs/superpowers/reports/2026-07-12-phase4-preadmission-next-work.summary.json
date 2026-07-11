@@ -1,0 +1,618 @@
+{
+  "schema_version": "aozora-publication-next-work-v1",
+  "verdict": "AOZORA_PUBLICATION_NEXT_WORK_COMPLETE",
+  "completed_gates": [
+    {
+      "id": "source_authority",
+      "status": "complete",
+      "evidence": {
+        "gate_status": "SOURCE_AUTHORITY_GATE_PASS",
+        "works_scanned": 17894,
+        "counter_source": "source_region_coverage",
+        "unsupported_body_markup_occurrences": 0,
+        "unknown_region_occurrences": 0,
+        "unknown_unreviewed_occurrences": 0
+      }
+    },
+    {
+      "id": "ir_publication_coverage",
+      "status": "complete",
+      "evidence": {
+        "verdict": "IR_PUBLICATION_COVERAGE_COMPLETE",
+        "classified_but_not_admitted": 0,
+        "true_unsupported_gaps": 0
+      }
+    },
+    {
+      "id": "publication_bundle_contract",
+      "status": "complete",
+      "evidence": {
+        "verdict": "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION",
+        "rows_validated": 285,
+        "rows_failed": 0,
+        "path": "docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json"
+      }
+    },
+    {
+      "id": "five_parser_conversion",
+      "status": "open",
+      "evidence": {
+        "required_parsers": [
+          "aozora2html",
+          "aozora-epub3",
+          "aozora-rs",
+          "aozora2",
+          "aozora"
+        ],
+        "present_parsers": [],
+        "files_attempted": 17886,
+        "files_failed": 0
+      }
+    },
+    {
+      "id": "source_reference_reconciliation",
+      "status": "complete",
+      "evidence": {
+        "verdict": "SOURCE_REFERENCE_RECONCILIATION_COMPLETE",
+        "observed_without_syntax_row": 0,
+        "p4suta_feature_unmapped": 0
+      }
+    }
+  ],
+  "next_work_items": [
+    {
+      "id": "source_region_disposition_samples",
+      "owner": "ab-validator+abc",
+      "status": "complete",
+      "evidence": {
+        "verdict": "SOURCE_REGION_DISPOSITION_SAMPLES_READY",
+        "classes_total": 7,
+        "admitted_classes": [
+          "body_end_boundary",
+          "colophon_metadata",
+          "letter_address_origin",
+          "malformed_source",
+          "notation_legend",
+          "notation_placeholder",
+          "terminal_provenance"
+        ],
+        "admitted_count": 7,
+        "policy_needed_classes": [],
+        "policy_needed_count": 0,
+        "evidence_needed_classes": [],
+        "status_counts": {
+          "admitted": 7
+        },
+        "measured_occurrences_by_class": {
+          "body_end_boundary": 243,
+          "colophon_metadata": 89416,
+          "letter_address_origin": 6,
+          "malformed_source": 16,
+          "notation_legend": 13920,
+          "notation_placeholder": 14627,
+          "terminal_provenance": 609
+        }
+      }
+    },
+    {
+      "id": "text_policy_calibration",
+      "owner": "ab-validator+abc",
+      "status": "complete",
+      "evidence": {
+        "different_rows": 271,
+        "generated_contains_tei_eaj_rows": 6,
+        "tei_eaj_contains_generated_rows": 1,
+        "schema_version": "parser-ir-text-policy-delta-v1",
+        "counts_by_cause": {
+          "adapter_text_loss": 55,
+          "body_visible_layout_policy": 51,
+          "front_back_source_region_policy": 50,
+          "ruby_or_parenthetical_policy": 67,
+          "tei_eaj_editorial_or_enrichment": 48,
+          "unknown_text_delta": 0
+        },
+        "source_markup_backed_blockers": 223,
+        "calibration_only_rows": 7,
+        "workset_files": {
+          "ruby_or_parenthetical_policy": {
+            "count": 67,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/ruby_or_parenthetical_policy.json",
+            "hash": "sha256:bf41591d558d7a19c45b11470b783e7cfebe66e71602faf981d3ccb5389da3a1"
+          },
+          "front_back_source_region_policy": {
+            "count": 50,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/front_back_source_region_policy.json",
+            "hash": "sha256:ebc35751a56d677d4a319d81fd9dc607112de030b7b5fbc1e962d4c9cf027c20"
+          },
+          "body_visible_layout_policy": {
+            "count": 51,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/body_visible_layout_policy.json",
+            "hash": "sha256:714c1d5a0e152e8d7d066d450191e6160eb78d302af37d67627195ea1d3e865f"
+          },
+          "adapter_text_loss": {
+            "count": 55,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/adapter_text_loss.json",
+            "hash": "sha256:48ce7bcb3456a8b0f25ced62c692c1c5a9d84f3b55f546ff86c9f39ddc019394"
+          },
+          "tei_eaj_editorial_or_enrichment": {
+            "count": 48,
+            "source_markup_backed": false,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/tei_eaj_editorial_or_enrichment.json",
+            "hash": "sha256:16ed6ab1db18f21a5ea8b1051d88bc7ba30891c67c8bb7cbd363937d04bee2e1"
+          },
+          "unknown_text_delta": {
+            "count": 0,
+            "source_markup_backed": false,
+            "requires_manual_classification": true,
+            "path": null,
+            "hash": null
+          }
+        },
+        "source_markup_backed_workset_files": {
+          "ruby_or_parenthetical_policy": {
+            "count": 67,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/ruby_or_parenthetical_policy.json",
+            "hash": "sha256:bf41591d558d7a19c45b11470b783e7cfebe66e71602faf981d3ccb5389da3a1"
+          },
+          "front_back_source_region_policy": {
+            "count": 50,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/front_back_source_region_policy.json",
+            "hash": "sha256:ebc35751a56d677d4a319d81fd9dc607112de030b7b5fbc1e962d4c9cf027c20"
+          },
+          "body_visible_layout_policy": {
+            "count": 51,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/body_visible_layout_policy.json",
+            "hash": "sha256:714c1d5a0e152e8d7d066d450191e6160eb78d302af37d67627195ea1d3e865f"
+          },
+          "adapter_text_loss": {
+            "count": 55,
+            "source_markup_backed": true,
+            "requires_manual_classification": false,
+            "path": "docs/superpowers/reports/2026-07-06-text-policy-worksets/adapter_text_loss.json",
+            "hash": "sha256:48ce7bcb3456a8b0f25ced62c692c1c5a9d84f3b55f546ff86c9f39ddc019394"
+          }
+        },
+        "manual_classification_workset_files": {
+          "unknown_text_delta": {
+            "count": 0,
+            "source_markup_backed": false,
+            "requires_manual_classification": true,
+            "path": null,
+            "hash": null
+          }
+        }
+      }
+    },
+    {
+      "id": "adapter_fidelity_worksets",
+      "owner": "ab-validator",
+      "status": "complete",
+      "evidence": {
+        "adapter_distortion_rows": 218,
+        "included_buckets": [
+          "adapter_over_segmented",
+          "adapter_collapsed",
+          "adapter_under_segmented",
+          "converter_paragraph_mismatch",
+          "adapter_raw_only"
+        ],
+        "excluded_buckets": [
+          "aligned",
+          "source_note_back_routing",
+          "page_break_projection"
+        ],
+        "schema_version": "adapter-fidelity-worksets-v1",
+        "worksets": {
+          "adapter_collapsed": 67,
+          "adapter_over_segmented": 127,
+          "adapter_raw_only": 2,
+          "adapter_under_segmented": 14,
+          "converter_paragraph_mismatch": 8
+        },
+        "workset_files": {
+          "adapter_over_segmented": {
+            "all": {
+              "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_over_segmented/all.json",
+              "hash": "sha256:278c4edb8da247f68b59d157dfe596a983c761a1fe480324c3df057a7637efe0",
+              "count": 47
+            },
+            "by_adapter": {
+              "aozora-epub3": {
+                "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_over_segmented/aozora-epub3.json",
+                "hash": "sha256:ed5ecf5143dd9386d545bf26c7cf6915f88932bd9fefdfc1569a5fea85c7d3c9",
+                "count": 42
+              },
+              "aozora-rs": {
+                "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_over_segmented/aozora-rs.json",
+                "hash": "sha256:6b252524c0d91d288c7cedf983ed4b3447dd528ed15cada5c1640ee4a7267b56",
+                "count": 32
+              },
+              "aozora2": {
+                "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_over_segmented/aozora2.json",
+                "hash": "sha256:193e54350635b14397b79129f065e6f830ec723f6fe3a73c285336703b39995f",
+                "count": 4
+              },
+              "aozora2html": {
+                "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_over_segmented/aozora2html.json",
+                "hash": "sha256:2f376f872605ee391e1e28e40d1f9b8d40c27420109395c62ed7e8c5f6e8f3aa",
+                "count": 38
+              }
+            }
+          },
+          "adapter_collapsed": {
+            "all": {
+              "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_collapsed/all.json",
+              "hash": "sha256:78c15b5d8db3e9331953ef8b875d53bfa0b817e33214f9cbcb16b4d1aebc9f06",
+              "count": 28
+            },
+            "by_adapter": {
+              "aozora": {
+                "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_collapsed/aozora.json",
+                "hash": "sha256:3fe00b2287154207acebe473ab1cc4e789e69e446f24ca5acdda38cb3354dd7e",
+                "count": 26
+              },
+              "aozora-rs": {
+                "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_collapsed/aozora-rs.json",
+                "hash": "sha256:73fd78c5acb0061035072bafb533ab4d60125485aafb6a855f5da9c8666ffe77",
+                "count": 13
+              },
+              "aozora2": {
+                "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_collapsed/aozora2.json",
+                "hash": "sha256:0366aaae869ee24d33a912d76e350827d4fe72b1e7ddf570a670108606e0df61",
+                "count": 16
+              }
+            }
+          },
+          "adapter_under_segmented": {
+            "all": {
+              "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_under_segmented/all.json",
+              "hash": "sha256:82891a5c7c55f3afcaf838702fa96dd94958e933ae48ba50275569c40c5eae7d",
+              "count": 9
+            },
+            "by_adapter": {
+              "aozora-epub3": {
+                "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_under_segmented/aozora-epub3.json",
+                "hash": "sha256:38316194c29ccd8c0312c57137f3f29acd6f9898057df8165af9bbbca3a9febe",
+                "count": 2
+              },
+              "aozora2": {
+                "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_under_segmented/aozora2.json",
+                "hash": "sha256:689e03e1ce74fb8c0edd279815136398e57930c7877e98a58107bdfdd726221c",
+                "count": 5
+              },
+              "aozora2html": {
+                "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_under_segmented/aozora2html.json",
+                "hash": "sha256:9b645755657692f72c93953b5a811badbc2740e7cb6b8ecae7c1f5d2fd02ec04",
+                "count": 4
+              }
+            }
+          },
+          "converter_paragraph_mismatch": {
+            "all": {
+              "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/converter_paragraph_mismatch/all.json",
+              "hash": "sha256:7faed1510708057ad92dc7da15399c985692fb68a5936db74f324365f5b71dcb",
+              "count": 7
+            },
+            "by_adapter": {
+              "aozora2": {
+                "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/converter_paragraph_mismatch/aozora2.json",
+                "hash": "sha256:7faed1510708057ad92dc7da15399c985692fb68a5936db74f324365f5b71dcb",
+                "count": 7
+              }
+            }
+          },
+          "adapter_raw_only": {
+            "all": {
+              "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_raw_only/all.json",
+              "hash": "sha256:0caec24ee67628cf319432abe97597cfbe87ea25afe201417242fe00afefa2d5",
+              "count": 2
+            },
+            "by_adapter": {
+              "aozora": {
+                "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets/adapter_raw_only/aozora.json",
+                "hash": "sha256:0caec24ee67628cf319432abe97597cfbe87ea25afe201417242fe00afefa2d5",
+                "count": 2
+              }
+            }
+          }
+        },
+        "excluded_counts": {
+          "aligned": 60,
+          "page_break_projection": 3,
+          "source_note_back_routing": 4
+        }
+      }
+    },
+    {
+      "id": "tei_p5_mapping_dossiers",
+      "owner": "ab-validator+abc",
+      "status": "complete",
+      "evidence": {
+        "dossier_count": 11,
+        "status_counts": {
+          "adapter-fidelity-needed": 1,
+          "admitted": 4,
+          "diagnostic-only": 1,
+          "policy-needed": 3,
+          "schema-needed": 2
+        },
+        "complete_section_count": 11,
+        "incomplete_section_dossiers": [],
+        "tei_p5_reference_count": 34,
+        "tei_p5_reference_root": "$TEI_P5_ROOT",
+        "tei_p5_reference_root_exists": true,
+        "tei_p5_reference_file_count": 34,
+        "tei_p5_reference_directory_count": 0,
+        "directory_tei_p5_references": [],
+        "missing_tei_p5_references": [],
+        "unverified_tei_p5_references": [],
+        "dossiers": [
+          {
+            "name": "emphasis-style",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/emphasis-style.md",
+            "status": "admitted",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "$TEI_P5_ROOT/Source/Specs/att.global.rendition.xml",
+              "$TEI_P5_ROOT/Source/Specs/hi.xml",
+              "$TEI_P5_ROOT/Source/Specs/rendition.xml"
+            ]
+          },
+          {
+            "name": "gaiji",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/gaiji.md",
+            "status": "admitted",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "$TEI_P5_ROOT/Source/Guidelines/en/WD-NonStandardCharacters.xml",
+              "$TEI_P5_ROOT/Source/Specs/char.xml",
+              "$TEI_P5_ROOT/Source/Specs/g.xml",
+              "$TEI_P5_ROOT/Source/Specs/glyph.xml"
+            ]
+          },
+          {
+            "name": "images-figures-captions",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/images-figures-captions.md",
+            "status": "policy-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "$TEI_P5_ROOT/Source/Specs/figDesc.xml",
+              "$TEI_P5_ROOT/Source/Specs/figure.xml",
+              "$TEI_P5_ROOT/Source/Specs/graphic.xml"
+            ]
+          },
+          {
+            "name": "kunten",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/kunten.md",
+            "status": "schema-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "$TEI_P5_ROOT/Source/Specs/gloss.xml",
+              "$TEI_P5_ROOT/Source/Specs/note.xml",
+              "$TEI_P5_ROOT/Source/Specs/ruby.xml",
+              "$TEI_P5_ROOT/Source/Specs/seg.xml",
+              "$TEI_P5_ROOT/Source/Specs/span.xml"
+            ]
+          },
+          {
+            "name": "layout-indentation",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/layout-indentation.md",
+            "status": "policy-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "$TEI_P5_ROOT/Source/Specs/att.global.rendition.xml",
+              "$TEI_P5_ROOT/Source/Specs/layout.xml",
+              "$TEI_P5_ROOT/Source/Specs/rendition.xml",
+              "$TEI_P5_ROOT/Source/Specs/space.xml"
+            ]
+          },
+          {
+            "name": "malformed-source-diagnostics",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/malformed-source-diagnostics.md",
+            "status": "diagnostic-only",
+            "missing_sections": [],
+            "tei_p5_references": []
+          },
+          {
+            "name": "page-line-breaks",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/page-line-breaks.md",
+            "status": "policy-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "$TEI_P5_ROOT/Source/Specs/lb.xml",
+              "$TEI_P5_ROOT/Source/Specs/milestone.xml",
+              "$TEI_P5_ROOT/Source/Specs/pb.xml"
+            ]
+          },
+          {
+            "name": "paragraphs-headings",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/paragraphs-headings.md",
+            "status": "adapter-fidelity-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "$TEI_P5_ROOT/Source/Specs/div.xml",
+              "$TEI_P5_ROOT/Source/Specs/head.xml",
+              "$TEI_P5_ROOT/Source/Specs/p.xml"
+            ]
+          },
+          {
+            "name": "ruby",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/ruby.md",
+            "status": "admitted",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "$TEI_P5_ROOT/Source/Specs/ruby.xml"
+            ]
+          },
+          {
+            "name": "source-apparatus-front-back",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/source-apparatus-front-back.md",
+            "status": "admitted",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "$TEI_P5_ROOT/Source/Guidelines/en/HD-Header.xml",
+              "$TEI_P5_ROOT/Source/Specs/back.xml",
+              "$TEI_P5_ROOT/Source/Specs/front.xml",
+              "$TEI_P5_ROOT/Source/Specs/fw.xml",
+              "$TEI_P5_ROOT/Source/Specs/note.xml"
+            ]
+          },
+          {
+            "name": "warigaki",
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers/warigaki.md",
+            "status": "schema-needed",
+            "missing_sections": [],
+            "tei_p5_references": [
+              "$TEI_P5_ROOT/Source/Specs/note.xml",
+              "$TEI_P5_ROOT/Source/Specs/seg.xml",
+              "$TEI_P5_ROOT/Source/Specs/span.xml"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "parser_acceptance_criteria",
+      "owner": "ab-validator",
+      "status": "complete",
+      "evidence": {
+        "path": "docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md",
+        "hash": "sha256:a332aa7ed65562072b86fc3e8d0463b2c0f91fc049f4ab9b486c3174bbbe01ee",
+        "title": "Comprehensive Parser Acceptance Criteria",
+        "spec_status": "Accepted",
+        "required_evidence_inputs": 6,
+        "required_evidence_paths_total": 6,
+        "required_evidence_paths_existing": 6,
+        "missing_required_evidence_paths": [],
+        "required_evidence_paths": [
+          {
+            "path": "docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json",
+            "exists": true
+          },
+          {
+            "path": "docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json",
+            "exists": true
+          },
+          {
+            "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+            "exists": true
+          },
+          {
+            "path": "docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json",
+            "exists": true
+          },
+          {
+            "path": "docs/superpowers/reports/2026-07-04-parser-performance-measurement.md",
+            "exists": true
+          },
+          {
+            "path": "docs/superpowers/specs/tei-p5-mapping-dossiers",
+            "exists": true
+          }
+        ]
+      }
+    }
+  ],
+  "calibration_only_items": [
+    {
+      "id": "tei_eaj_editorial_enrichment",
+      "status": "calibration_only",
+      "reason": "TEI-EAJ editorial enrichment is evidence for calibration, not source-authority admission."
+    }
+  ],
+  "parser_lanes": [
+    {
+      "adapter": "aozora2html",
+      "files_scanned": 0,
+      "files_failed": null
+    },
+    {
+      "adapter": "aozora-epub3",
+      "files_scanned": 0,
+      "files_failed": null
+    },
+    {
+      "adapter": "aozora-rs",
+      "files_scanned": 0,
+      "files_failed": null
+    },
+    {
+      "adapter": "aozora2",
+      "files_scanned": 0,
+      "files_failed": null
+    },
+    {
+      "adapter": "aozora",
+      "files_scanned": 0,
+      "files_failed": null
+    }
+  ],
+  "performance": {
+    "dnf_recorded": true
+  },
+  "evidence_inputs": {
+    "source_summary": {
+      "path": "docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json",
+      "hash": "sha256:de4e01a67ca31dd992859eb6d53a09dba3a244a1c985b7d3da0085c70f679c30"
+    },
+    "coverage_summary": {
+      "path": "docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json",
+      "hash": "sha256:41fb3b337db38227d03e306457ab2d0fe7a5643bbcfac611df848a8e19cfa683",
+      "hash_basis": "canonical_json_without_next_work_dashboard"
+    },
+    "matrix_summary": {
+      "path": "docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json",
+      "hash": "sha256:f21cea6a4ceed7fc6bd9187c3e16f70f38922a441817e6e19b187a9bf6ecd4bc"
+    },
+    "conversion_summary": {
+      "path": "docs/superpowers/reports/2026-07-12-ab-aozora-phase4-c4-conversion-audit.summary.json",
+      "hash": "sha256:b3b5d048590419fa247647a9150044aa31d1874540b21f6adc700a332dc24865"
+    },
+    "source_reference_summary": {
+      "path": "docs/superpowers/reports/2026-07-06-source-reference-reconciliation.summary.json",
+      "hash": "sha256:04c9806d8bb7dbe4c4af48c29f373354de6b2351f4971e91cc5948844270eb81"
+    },
+    "performance_report": {
+      "path": "docs/superpowers/reports/2026-07-04-parser-performance-measurement.md",
+      "hash": "sha256:4603fc0f3f175dc2524e0ac1b4f312df020cecfda5728cc8fbfe04f0337d49cd"
+    },
+    "source_disposition_summary": {
+      "path": "docs/superpowers/reports/2026-07-06-source-region-disposition-samples.summary.json",
+      "hash": "sha256:e607da37f55a6d014c88218899bd57b12744d0a694a99dffc76622c8ab31943d"
+    },
+    "text_policy_summary": {
+      "path": "docs/superpowers/reports/2026-07-06-text-policy-delta.summary.json",
+      "hash": "sha256:ff262754f8eb59bf7452b6dcf366e31a64da0d587a605923ed1f70c71cf1096e"
+    },
+    "adapter_worksets_summary": {
+      "path": "docs/superpowers/reports/2026-07-06-adapter-fidelity-worksets.summary.json",
+      "hash": "sha256:65c959ddf1adf0a95b06dc15e0f4c63ae4606e603506737135f6c37c9793468d"
+    },
+    "dossier_dir": {
+      "path": "docs/superpowers/specs/tei-p5-mapping-dossiers"
+    },
+    "tei_p5_root": {
+      "path": "$TEI_P5_ROOT",
+      "exists": true
+    },
+    "parser_acceptance_spec": {
+      "path": "docs/superpowers/specs/2026-07-06-comprehensive-parser-acceptance-criteria.md",
+      "hash": "sha256:a332aa7ed65562072b86fc3e8d0463b2c0f91fc049f4ab9b486c3174bbbe01ee"
+    }
+  }
+}

@@ -13,8 +13,8 @@
         :notes "aozora_csv.clj:22-32 ragged rows silently truncated"}
    :D4 {:case "P8.atomicity, P8.order-independence" :status :open
         :notes "aozora_ingest.clj:151-213 person writes precede work failure"}
-   :D5 {:case "P13.empty-csv" :status :open
-        :notes "confirmed 2026-07-11 (P13): empty/header-only CSV yields a silent zero-row corpus, no throw, no skip"}
+   :D5 {:case "P13.empty-csv" :status :fixed
+        :notes "fixed 2026-07-11: zip entry points throw ex-info {:zip-path :row-count} when the CSV has no data rows"}
    :D6 {:case "P13.non-zip-bytes" :status :fixed
         :notes "fixed 2026-07-11: read-zip-csv wraps ZipException as ex-info {:zip-path} with cause chained"}})
 

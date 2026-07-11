@@ -282,12 +282,23 @@
      :works-skipped (count @skipped)
      :skipped-work-ids @skipped}))
 
+(defn- rows-from-zip
+  "Read and parse the CSV entry at zip-path. Fails loudly when the entry
+  has no data rows (failure taxonomy: corpus source validation) —
+  a silent zero-row corpus must never look like a successful run."
+  [zip-path source-url]
+  (let [{:keys [csv provenance]} (read-zip-csv zip-path source-url)
+        rows (ac/read-rows-from-string csv)]
+    (when (empty? rows)
+      (throw (ex-info (str "CSV entry in " zip-path " has no data rows")
+                      {:zip-path zip-path :row-count (count rows)})))
+    {:rows rows :provenance provenance}))
+
 (defn run!
   "CLI-shaped entry: reads the CSV from a ZIP path and delegates to
   run-from-rows!. Same return value."
   [{:keys [zip-path source-url] :as opts}]
-  (let [{:keys [csv provenance]} (read-zip-csv zip-path source-url)
-        rows (ac/read-rows-from-string csv)]
+  (let [{:keys [rows provenance]} (rows-from-zip zip-path source-url)]
     (run-from-rows! (-> opts
                         (dissoc :zip-path :source-url)
                         (assoc :rows rows
@@ -297,8 +308,7 @@
   "CLI-shaped entry: reads the CSV from a ZIP path and delegates to
   run-corpus!."
   [{:keys [zip-path source-url] :as opts}]
-  (let [{:keys [csv provenance]} (read-zip-csv zip-path source-url)
-        rows (ac/read-rows-from-string csv)]
+  (let [{:keys [rows provenance]} (rows-from-zip zip-path source-url)]
     (run-corpus! (-> opts
                      (dissoc :zip-path :source-url)
                      (assoc :rows rows

@@ -2,6 +2,7 @@
   (:require [abc.tools.aozora-ingest :as ingest]
             [abc.tools.files :as files]
             [abc.tools.person-record :as pr]
+            [abc.sim.render :as sim-render]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [taoensso.telemere :as tel])
@@ -506,3 +507,22 @@
           (is (= (str fake) (:zip-path (ex-data e))))
           (is (instance? java.util.zip.ZipException (ex-cause e))))
         (finally (delete-recursive dir))))))
+
+(deftest ingest-empty-csv-fails-loud-test
+  (testing "empty and header-only CSVs throw ex-info with :zip-path and :row-count"
+    (doseq [[label csv] [["empty" ""]
+                         ["header-only" "作品ID,人物ID,役割フラグ"]]]
+      (let [dir (temp-dir "abc-ingest-empty")
+            zip (io/file dir "catalog.zip")
+            out (io/file dir "out")]
+        (try
+          (with-open [o (io/output-stream zip)]
+            (.write o ^bytes (sim-render/csv->zip-bytes csv)))
+          (let [e (try (ingest/run-corpus-from-zip! {:zip-path (str zip)
+                                                     :output-dir (str out)})
+                       nil
+                       (catch Exception e e))]
+            (is (instance? clojure.lang.ExceptionInfo e) label)
+            (is (= (str zip) (:zip-path (ex-data e))) label)
+            (is (= 0 (:row-count (ex-data e))) label))
+          (finally (delete-recursive dir)))))))

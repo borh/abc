@@ -8,8 +8,7 @@
             [abc.tools.json :as json]
             [abc.tools.malli :as am]
             [charred.api :as charred]
-            [clojure.java.io :as io]
-            [clojure.string])
+            [clojure.java.io :as io])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
 
@@ -71,8 +70,6 @@
          result (do (charred/write-csv sw cells :close-writer? true)
                     (str sw))]
      (str (when bom? "﻿") result))))
-
-(defn- rows-for-wid [rows wid] (filter #(= wid (get % "作品ID")) rows))
 
 (defn corrupt-rows
   "Apply render-layer corruptions. Cell corruptions rewrite the first row of

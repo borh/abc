@@ -162,20 +162,37 @@ unchanged.
   form of the existing snake_case `kind` (the three `must` vectors confirm
   the correspondence: `source_contains_pua` → `source-contains-pua`,
   `tcy_target_not_found` → `tcy-target-not-found`, `unclosed_bracket` →
-  `unclosed-bracket`). The `code` is emitted by the parser (facade entries
-  layer), not synthesized by any instrument: the code value in scored
-  output must originate in fork code.
-- The wire diagnostics envelope (facade `json` feature) carries the new
-  `code` field alongside the existing fields. Wire `SCHEMA_VERSION` bumps
-  **2 → 3**; the `const _: () = assert!(json::SCHEMA_VERSION == …)`
-  tripwire in `ab-aozora-aat` and every harness gate that names the wire
-  schema are updated in the same commit (the Phase 2 lesson: the pin-bump
-  drift where the adapter gate moved and the Python harness didn't).
-- The permanent binary gains `--mode diagnostics`: read stdin, emit the
-  wire diagnostics envelope as one JSON line. Exit codes unchanged (0
-  success, 1 failure, 2 still reserved); `--mode aat` and `--version`
-  behavior unchanged. This is a recorded, additive amendment to the
-  executable-boundary contract of the Phase 2 spec.
+  `unclosed-bracket`). The `code` field is added to the facade **entries**
+  layer's typed diagnostic struct, so the code value in any scored output
+  originates in fork code, never in an instrument.
+- Wire `SCHEMA_VERSION` bumps **2 → 3** for the envelope shape change; the
+  `const _: () = assert!(…SCHEMA_VERSION == …)` tripwire in
+  `ab-aozora-aat` and every harness gate that names the wire schema are
+  updated in the same commit (the Phase 2 lesson: the pin-bump drift where
+  the adapter gate moved and the Python harness didn't).
+- **Single owner for the diagnostics path.** One library operation in
+  `ab-aozora-aat` — `diagnostics_json_from_bytes(bytes) → Result<Vec<u8>>`
+  — owns decoding, sanitization, body selection, projection to facade
+  `entries` diagnostic structs (with `code`), span handling (rotation B
+  rebases these spans through the same composition chain as AAT spans; see
+  Stage 2), and serialization of the schema-3 envelope. It reuses the
+  exact same `decode_source_bytes` + `sanitize_for_aat` path as
+  `aat_json_from_bytes` — there must never be two preprocessing paths. The
+  permanent binary's `--mode diagnostics` only dispatches to this
+  operation and writes the bytes, preserving the thin-binary boundary.
+- **preserve_order constraint (hard).** Neither `ab-aozora-aat` nor the
+  binary may enable facade `json` — that feature pulls
+  `serde_json/preserve_order` into the workspace feature graph
+  (`tests/workspace-no-preserve-order.sh` must stay green). The envelope
+  is serialized by `ab-aozora-aat`'s own `serde_json` under default
+  (sorted-key) map ordering; JSON key order is explicitly **not** part of
+  the diagnostics envelope contract — consumers (the scorer) parse, never
+  byte-compare.
+- Binary surface: `--mode diagnostics` reads stdin, emits one JSON line.
+  Exit codes unchanged (0 success, 1 failure, 2 still reserved);
+  `--mode aat` and `--version` behavior unchanged. This is a recorded,
+  additive amendment to the executable-boundary contract of the Phase 2
+  spec.
 
 ### Classifiers
 
@@ -248,15 +265,31 @@ only to well-paired markers, matching the `jisage_block` precedent.
   an explicit allowed-change taxonomy:
   1. identity pointers (`/meta/adapter_version`; substitution reused from
      `compare-aat-dumps.py`);
-  2. works whose source carries keigakomi/yokogumi container markers may
-     differ **only** by the typed-container restructuring, verified by:
-     schema validation, typed-container counts consistent with marker-pair
-     counts, and concatenated text content (all `text` node `value`s in
-     document order) unchanged;
+  2. works whose baseline AAT carries well-paired keigakomi/yokogumi
+     container markers are checked by **forward rewrite + deep equality**:
+     the auditor applies a fixed, unit-tested structural rewrite grammar
+     to the *baseline* document — an independent Python reimplementation
+     of the classification decision over AAT JSON (pair the exact open and
+     close marker strings; replace each pair and the nodes between them
+     with a `block_container` of the declared kind whose children are
+     exactly the intervening nodes and whose span runs from the open
+     marker's start to the close marker's end) — and requires **deep
+     equality** between the rewritten baseline and the candidate after
+     identity substitution. Nothing outside the grammar's output may
+     differ: spans, warnings, metadata, sibling order, and every other
+     attribute are covered by the deep compare, not by invariants. The
+     grammar is derived from the observed baseline representation and
+     frozen (committed + unit-tested) before the gate run. Typed-container
+     counts vs marker-pair counts and concatenated-text preservation
+     remain as secondary sanity checks only;
   3. every other work byte-identical after identity substitution.
-  Anything unclassified is exit 2. Expected magnitudes recorded against the
-  backlog references (keigakomi ~106 works, yokogumi ~88, overlap
-  possible); jizume works must appear in class 3 (byte-identical).
+  Anything unclassified — including a class-2 work whose candidate is not
+  exactly the grammar's output — is exit 2. Expected magnitudes recorded
+  against the backlog references (keigakomi ~106 works, yokogumi ~88,
+  overlap possible); jizume works must appear in class 3 (byte-identical).
+  If the parser's actual restructuring turns out not to be expressible as
+  a deterministic grammar over the baseline, that is an escalation-worthy
+  design finding — the audit is never weakened to invariants-only.
 - Conversion audit on hinoki against mapping 0.2.8; new **unadmitted**
   registry row in `abc/data/aat-parser-ir-compatibility.edn` for the 0.2.0
   identity, citing the audit's own coordinates (the Phase 2 rule: fresh
@@ -289,7 +322,10 @@ the diagnostic's span start (schema v1 allows any integer ≥ 1).
   body-selected sanitized text) → + body-selection offset (position of the
   body slice within the sanitized text) → sanitize offset map → offsets in
   the decoded source; a precomputed line index over `decoded_utf8` yields
-  line coordinates. `span_json` stops synthesizing `1`.
+  line coordinates. `span_json` stops synthesizing `1`. The same
+  composition is applied inside `diagnostics_json_from_bytes`, so
+  `--mode diagnostics` spans rebase to decoded-source offsets in the same
+  rotation — one owner, one span contract across both modes.
 - Property tests over the map: for arbitrary inputs exercising all four
   sanitize steps, every mapped span's decoded-source slice must equal the
   sanitized-text slice it translates wherever the step is
@@ -322,13 +358,25 @@ the diagnostic's span start (schema v1 allows any integer ≥ 1).
   sanitized-text offsets; after rotation B the fork emits decoded-source
   offsets. For most vectors (no BOM/CRLF/accent content) the two coincide.
   Where they differ, our ADR 0024 contract governs — the instrument is
-  corroborating, not authoritative (ADR 0030's own framing). Each such
-  vector is listed in the rotation-B report with both offset values and
-  scored via a declared, span-translated comparison: the expected
-  sanitized-text offsets are translated through the same fork offset map
-  (computed for the vector's source) before the exact compare, and the
-  translation is only applied to vectors on the report's named list —
-  never by silently editing vectors or weakening the scorer for everyone.
+  corroborating, not authoritative (ADR 0030's own framing) — under a
+  **pre-committed deviation manifest**, never a post-hoc list:
+  - `reports/parser-conformance/span-deviation-manifest.json`, committed
+    and reviewed **before** the rotation-B gate scoring run, with one
+    entry per deviating vector: vector ID, reason (which sanitize step
+    shifts the offsets), the original expected sanitized-span, the
+    expected decoded-source span **derived by hand from the vector's
+    source text and the ADR 0024 contract — never computed by fork code**
+    (the fork offset map is the system under test and must not be its own
+    oracle; it may inform a non-gating diagnostic artifact only), and the
+    vector source's SHA-256.
+  - The scorer consumes the manifest: for listed vectors it verifies the
+    source hash and compares against the manifest's hand-verified decoded
+    span exactly; for every other vector the original expected span
+    applies unchanged. **Any unlisted divergence, hash mismatch, or
+    candidate span differing from a manifest entry fails the gate.**
+  - The rotation-B report's deviation list is derived from the manifest,
+    with per-vector before/after offsets — the report documents, the
+    manifest authorizes.
 - Conversion audit + second unadmitted registry row (0.3.0 identity), perf
   gate — same ceremony as rotation A.
 - Evidence: `2026-07-11-phase3-span-confinement.{md,summary.json}`,
@@ -391,8 +439,15 @@ the diagnostic's span start (schema v1 allows any integer ≥ 1).
   property-test suite is the primary defense, the hand-verified goldens the
   secondary.
 - **Diagnostic-span drift vs third-party vectors after rotation B**:
-  handled by the declared deviation rule; worst case is a documented,
-  per-vector translated comparison, never a silent instrument weakening.
+  handled by the pre-committed deviation manifest with hand-verified
+  decoded spans; worst case is manifest-authoring effort per deviating
+  vector, never a silent instrument weakening or a fork-code oracle.
+- **Rewrite-grammar mismatch at rotation A**: if the parser's typed-
+  container restructuring cannot be reproduced by a deterministic grammar
+  over the baseline AAT (e.g. block-assembly interactions around
+  paragraph-embedded markers), the delta audit cannot pass — that is an
+  escalation, and the classification design gets revisited rather than the
+  audit weakened.
 - **Warning-count blowup at rotation A** is designed out: AAT
   `meta.warnings` is untouched at rotation A (closed schema), so the corpus
   delta stays confined to the two typed constructs.
@@ -405,10 +460,14 @@ the diagnostic's span start (schema v1 allows any integer ≥ 1).
 - [ ] Stage 0 parity: 17,886/0/0 byte-parity vs the Phase 2 dump; tripwire
       unmodified and green; conformance scores identical to Phase 2 echo.
 - [ ] Rotation A: 25/25 `must` scored and passing on the `ab-aozora` lane;
-      delta audit PASS under the three-class taxonomy; conversion audit +
-      unadmitted 0.2.0 registry row; perf gate PASS.
+      delta audit PASS with class-2 works proven by forward rewrite + deep
+      equality (not invariants); conversion audit + unadmitted 0.2.0
+      registry row; perf gate PASS.
 - [ ] `ab-aozora --mode diagnostics` emits wire-schema-3 envelopes with
-      parser-originated kebab `code`s; exit codes unchanged.
+      parser-originated kebab `code`s via the single
+      `diagnostics_json_from_bytes` owner; exit codes unchanged; facade
+      `json` stays out of the workspace feature graph
+      (`workspace-no-preserve-order.sh` green).
 - [ ] `jizume_block` typed in parser vocabulary with N attribute and
       compound-form parsing; jizume corpus AAT byte-stable.
 - [ ] keigakomi denominator seeded (106/200, backlog-cited); yokogumi
@@ -416,7 +475,9 @@ the diagnostic's span start (schema v1 allows any integer ≥ 1).
 - [ ] Rotation B: span-confinement audit PASS (only spans, warning lines,
       and the synthesized warning moved); hand-verified goldens; conversion
       audit + unadmitted 0.3.0 registry row; perf gate PASS; diagnostic-span
-      deviations (if any) documented per the deviation rule.
+      deviations (if any) authorized only by the pre-committed
+      `span-deviation-manifest.json` with hand-verified decoded spans —
+      unlisted divergence fails the gate.
 - [ ] `verify-phase3-checkpoint.py` reports CHECKPOINT OK over all frozen
       stage summaries before merge.
 - [ ] Legacy lane untouched: `--adapter aozora` remains the measurement

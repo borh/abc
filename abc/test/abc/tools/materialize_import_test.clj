@@ -9,7 +9,7 @@
            [java.nio.file.attribute FileAttribute]))
 
 (def ^:private mapping-hash
-  "sha256:4c0d3eb53942b4e1e14a6efc614bab99e391e90d85b817e090b42d02c05ba22e")
+  "sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40")
 
 (defn- temp-manifest-inputs [overrides]
   (merge

@@ -100,7 +100,10 @@ aozora-notation-spec-comparator-flake-smoke:
 	nix build "{{repo_root}}#checks.$system.aozora-notation-spec-comparator-smoke" --print-build-logs
 
 aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-08-aozora-notation-spec-comparison.summary.json" AOZORA_BIN="":
-	@vectors="{{VECTORS}}"; if [ -z "$vectors" ]; then vectors="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-aozora-notation-spec')/conformance/vectors"; fi; \
+	@vectors="{{VECTORS}}"; \
+	manifest_args=(); \
+	if [ -z "$vectors" ]; then manifest_args=(--span-deviation-manifest "{{repo_root}}/reports/parser-conformance/span-deviation-manifest.json"); fi; \
+	if [ -z "$vectors" ]; then vectors="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-aozora-notation-spec')/conformance/vectors"; fi; \
 	aozora_bin="{{AOZORA_BIN}}"; \
 	if [ -z "$aozora_bin" ]; then \
 	  aozora_pkg="$(nix build --no-link --print-out-paths '{{repo_root}}#upstream-parser-aozora')"; \
@@ -128,6 +131,7 @@ aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2
 		--adapter "aozora-adapter=aat:env AB_AOZORA_BIN=$aozora_bin_q {{repo_root}}/adapters/aozora/target/release/aozora-adapter --mode aat" \
 		--adapter "ab-aozora=aat:{{repo_root}}/target/release/ab-aozora --mode aat" \
 		--adapter-diagnostics "ab-aozora={{repo_root}}/target/release/ab-aozora --mode diagnostics" \
+		"${manifest_args[@]}" \
 		--adapter "aozora2=aat:{{repo_root}}/adapters/aozora2/target/release/aozora2-adapter --mode aat" \
 		--adapter "aozora2html=aat:env AB_AOZORA2HTML_BIN=$a2h_bin_q AB_VALIDATOR_GEM_HOME=$a2h_gem_q {{repo_root}}/adapters/aozora2html/aozora2html-adapter --mode aat" \
 		--adapter "aozora-rs=aat:{{repo_root}}/adapters/aozora-rs/target/release/aozora-rs-adapter --mode aat" \

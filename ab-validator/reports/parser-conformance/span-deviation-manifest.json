@@ -1,0 +1,27 @@
+[
+  {
+    "vector": "accent_decomposition_applied",
+    "reason": "Rotation B (decoded-source byte offsets, ADR 0024) exposes an off-by-one in the third-party vector's own hand-derived span, not a fork bug. Source `前〔ae&on〕後` (前/〔/〕/後 are each 3-byte UTF-8; ae&on is 5 ASCII bytes): decoded-source byte layout is 前=0..3, 〔=3..6, a=6..7,e=7..8,&=8..9,o=9..10,n=10..11, 〕=11..14, 後=14..17. The vector's original span {3,13} truncates 〕's 3-byte encoding to 2 bytes -- bytes[3:13] is not even valid UTF-8 (splits mid-character, verified by decode failure), so it cannot be a decoded_utf8 span per ADR 0024. bytes[3:14] decodes cleanly to the full construct '〔ae&on〕' -- the entire accent-decomposition-applied region, hand-verified byte-by-byte independent of any adapter output.",
+    "original_expected": [
+      {
+        "code": "accent-decomposition-applied",
+        "severity": "note",
+        "span": {
+          "start": 3,
+          "end": 13
+        }
+      }
+    ],
+    "expected": [
+      {
+        "code": "accent-decomposition-applied",
+        "severity": "note",
+        "span": {
+          "start": 3,
+          "end": 14
+        }
+      }
+    ],
+    "source_sha256": "dd6ad3508b1d20958d11dc1e4a96a1f3f1dcf740800730eeebb0ffc5f8662087"
+  }
+]

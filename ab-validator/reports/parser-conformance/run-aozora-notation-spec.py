@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import re
 import shlex
 import subprocess
 from dataclasses import asdict, dataclass
@@ -237,6 +239,47 @@ def expected_kind_seq(vector: dict[str, Any]) -> list[str] | None:
     return [node["kind"] for node in nodes]
 
 
+# --- span-deviation manifest --------------------------------------------------
+#
+# Pre-committed, hand-reviewed authorization for diagnostic-span deviations vs
+# third-party vectors (rotation B decoded-source offsets). Fail-closed on both
+# sides: unlisted divergence still fails, and unknown/unused manifest entries
+# are a hard error (stale authorization must not silently linger).
+
+MANIFEST_FIELDS = {"vector": str, "reason": str, "original_expected": list,
+                   "expected": list, "source_sha256": str}
+
+
+def load_span_deviation_manifest(path) -> dict:
+    entries = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(entries, list):
+        raise SystemExit("span-deviation-manifest must be a JSON list")
+    manifest = {}
+    for e in entries:
+        if not isinstance(e, dict) or set(e) != set(MANIFEST_FIELDS):
+            raise SystemExit(f"span-deviation-manifest entry fields must be exactly "
+                             f"{sorted(MANIFEST_FIELDS)}: {e!r}")
+        for key, typ in MANIFEST_FIELDS.items():
+            if not isinstance(e[key], typ):
+                raise SystemExit(f"span-deviation-manifest {key!r} must be {typ.__name__}: {e!r}")
+        if not re.fullmatch(r"[0-9a-f]{64}", e["source_sha256"]):
+            raise SystemExit(f"span-deviation-manifest source_sha256 must be 64-hex: {e!r}")
+        if e["vector"] in manifest:
+            raise SystemExit(f"span-deviation-manifest duplicate vector {e['vector']!r}")
+        manifest[e["vector"]] = e
+    return manifest
+
+
+def check_manifest_consumed(manifest: dict, vector_names: set, used: set) -> None:
+    unknown = sorted(set(manifest) - vector_names)
+    if unknown:
+        raise SystemExit(f"span-deviation-manifest entries match no loaded vector: {unknown}")
+    unused = sorted(set(manifest) - used)
+    if unused:
+        raise SystemExit(f"span-deviation-manifest entries never exercised "
+                         f"(stale authorization): {unused}")
+
+
 # --- scoring -----------------------------------------------------------------
 #
 # Projections an adapter cannot faithfully answer are recorded as explicit
@@ -245,7 +288,7 @@ def expected_kind_seq(vector: dict[str, Any]) -> list[str] | None:
 #   aat:     scores nodes (kind sequence); pairs/diagnostics/serialize/html skip.
 
 
-def evaluate(adapter: Adapter, vector: dict[str, Any]) -> Row:
+def evaluate(adapter: Adapter, vector: dict[str, Any], manifest=None, manifest_used=None) -> Row:
     failures: list[str] = []
     warnings: list[str] = []
     skips: list[str] = []
@@ -281,11 +324,28 @@ def evaluate(adapter: Adapter, vector: dict[str, Any]) -> Row:
                 skips.append("diagnostics: not comparable for AAT adapter (kind-sequence only)")
             else:
                 scored += 1
-                actual_diag, error = run_diagnostics(adapter, vector["source"])
-                if error:
-                    failures.append(f"diagnostics: {error}")
-                elif actual_diag != want_diag:
-                    failures.append(f"diagnostics: expected {want_diag!r}, got {actual_diag!r}")
+                entry = (manifest or {}).get(vector["name"])
+                bad_manifest = False
+                if entry is not None:
+                    digest = hashlib.sha256(vector["source"].encode("utf-8")).hexdigest()
+                    if digest != entry["source_sha256"]:
+                        failures.append("diagnostics: manifest source hash mismatch "
+                                        "(vector changed since authorization)")
+                        bad_manifest = True
+                    elif entry["original_expected"] != want_diag:
+                        failures.append("diagnostics: manifest original_expected is stale "
+                                        "(vector expectation changed since authorization)")
+                        bad_manifest = True
+                    else:
+                        want_diag = entry["expected"]
+                        if manifest_used is not None:
+                            manifest_used.add(vector["name"])
+                if not bad_manifest:
+                    actual_diag, error = run_diagnostics(adapter, vector["source"])
+                    if error:
+                        failures.append(f"diagnostics: {error}")
+                    elif actual_diag != want_diag:
+                        failures.append(f"diagnostics: expected {want_diag!r}, got {actual_diag!r}")
     else:
         for projection in ("nodes", "pairs", "diagnostics"):
             want = expected.get(projection)
@@ -362,6 +422,7 @@ def main() -> None:
     parser.add_argument("--adapter-diagnostics", action="append", default=[])
     parser.add_argument("--summary-json", type=Path, required=True)
     parser.add_argument("--report-md", type=Path, required=True)
+    parser.add_argument("--span-deviation-manifest", type=Path, default=None)
     args = parser.parse_args()
 
     adapters = [parse_adapter(spec) for spec in args.adapter]
@@ -376,7 +437,17 @@ def main() -> None:
         matches[0].diagnostics_command = command
 
     vectors = load_vectors(args.vectors_dir)
-    rows = [evaluate(adapter, vector) for vector in vectors for adapter in adapters]
+    manifest = None
+    manifest_used: set = set()
+    if args.span_deviation_manifest is not None:
+        manifest = load_span_deviation_manifest(args.span_deviation_manifest)
+    rows = [
+        evaluate(adapter, vector, manifest=manifest, manifest_used=manifest_used)
+        for vector in vectors
+        for adapter in adapters
+    ]
+    if manifest is not None:
+        check_manifest_consumed(manifest, {v["name"] for v in vectors}, manifest_used)
     summary = {
         "schema_version": 2,
         "vectors_dir": str(args.vectors_dir),

@@ -74,9 +74,13 @@ In scope:
   (parser-side) `jizume_block`, including the compound container form
   (`［＃ここから６字下げ、折り返して７字下げ、２１字詰め］`).
 - Instrument work the parent spec assigns to Phase 3: AAT-lane diagnostics
-  scoring, keigakomi source-authority denominator seed (106 works /
-  200 start-annotations), yokogumi denominator audit (3,690 recorded vs
-  183 observed).
+  scoring, and a keigakomi/yokogumi denominator **attribution audit**.
+  (Plan-time correction of the backlog-era framing: the 2026-07-09
+  pinned-corpus recompute already classifies `decoration.keigakomi` at
+  denominator 717 — all marker forms, not the backlog's 200 block starts —
+  and `layout.yokogumi`'s 3,690 persisted through that recompute, so the
+  discrepancy is a counting-unit attribution question, not stale
+  extraction.)
 - Span semantics per ADR 0024: byte offsets into the full decoded source
   and real line coordinates, as its own identity-rotated step.
 - Two identity rotations with full ceremony each: adapter version bump,
@@ -233,17 +237,18 @@ only to well-paired markers, matching the `jisage_block` precedent.
   and exact-compare against `expected.diagnostics`. Vectors without
   `expected.diagnostics` are unaffected. Unit tests cover pass, fail,
   missing-code, and projection behavior.
-- **keigakomi denominator**: seed the source-authority denominator with
-  the backlog's verified figure (106 works / 200 start-annotations on the
-  pinned corpus) so keigakomi becomes rate-scoreable; per the backlog,
-  this means adding `罫囲み` to the source-representability classifier /
-  `build-inputs.json` `occ` path, citing the backlog report.
-- **yokogumi denominator audit**: resolve the 3,690-vs-183 discrepancy
-  (the recorded denominator is from the original local extraction, not the
-  pinned nix corpus). Deliverable: a recomputed pinned-corpus figure with
-  the counting unit stated, or a documented decision to carry the old
-  figure as provisional with the discrepancy explained. The audit result
-  is part of rotation A's report either way.
+- **keigakomi/yokogumi denominator attribution audit.** The pinned-corpus
+  recompute (`2026-07-09-corpus-adapter-fidelity.summary.json`) already
+  classifies `decoration.keigakomi` (denominator 717, predicate covering
+  `keigakomi`/`keigakomi_block`) and carries `layout.yokogumi` at 3,690 —
+  both far above the backlog's block-start counts (200 / 183) even on the
+  pinned corpus, so the gap is counting-unit attribution (inline
+  `［＃「…」は横組み］`-style forms, end markers, per-line effects), not stale
+  extraction. Deliverable: a dated report + summary JSON decomposing both
+  denominators (and jizume's 3,239) by marker form on the pinned corpus,
+  stating explicitly which subset denominates the new block classifiers'
+  rates. No frozen report is edited; the attribution is cited by
+  rotation A's report.
 
 ### Rotation A ceremony (candidate C1)
 
@@ -470,8 +475,11 @@ the diagnostic's span start (schema v1 allows any integer ≥ 1).
       (`workspace-no-preserve-order.sh` green).
 - [ ] `jizume_block` typed in parser vocabulary with N attribute and
       compound-form parsing; jizume corpus AAT byte-stable.
-- [ ] keigakomi denominator seeded (106/200, backlog-cited); yokogumi
-      denominator audit resolved or documented-provisional.
+- [ ] Denominator attribution audit: a dated report decomposes the
+      pinned-corpus keigakomi (717) / yokogumi (3,690) / jizume (3,239)
+      denominators by marker form against the block-start counts
+      (200 / 183 / 1,373) and states which figures denominate the new
+      block classifiers' rates; no frozen report edited.
 - [ ] Rotation B: span-confinement audit PASS (only spans, warning lines,
       and the synthesized warning moved); hand-verified goldens; conversion
       audit + unadmitted 0.3.0 registry row; perf gate PASS; diagnostic-span

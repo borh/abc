@@ -1,7 +1,7 @@
 # Aozora Evolution Simulation Testing Design
 
 Date: 2026-07-11
-Status: Approved design
+Status: Approved design (revised after spec review, 2026-07-11)
 
 ## Purpose
 
@@ -33,10 +33,11 @@ commits, flowing through:
 Out of scope (Future Work): content-side evolution
 (`cards/NNNNNN/files/*.zip` through official-source hash pins, worksets,
 snapshot index, workflow cache), drift-sidecar interplay
-(`drift_participant_updates` with generated `_events/` and `_indexes/`), and a
-replay harness over the real pinned upstream repository.
+(`drift_participant_updates` with generated `_events/` and `_indexes/`), a
+replay harness over the real pinned upstream repository, and any production
+change to the classifier's candidate-evidence contract (see Future Work).
 
-## Design Decisions (resolved during brainstorming)
+## Design Decisions (resolved during brainstorming and spec review)
 
 - **Scope:** catalog side only.
 - **Oracle stance:** properties assert *desired* behavior. Divergences from
@@ -45,12 +46,19 @@ replay harness over the real pinned upstream repository.
   golden behavior.
 - **CI shape:** a seeded, deterministic simulation suite in normal CI plus an
   unseeded soak target for on-demand/nightly exploration.
-- **Failure model:** two-tier contract. Row/work-level malformations must
-  never abort a corpus run; source-level malformations must fail loud but
-  clean (`ex-info` with diagnostic data).
+- **Failure model:** two-tier contract, made precise by a per-boundary fault
+  taxonomy (see Failure Taxonomy). Row/work-level malformations must never
+  abort a corpus run; source-level malformations must fail loud but clean
+  (`ex-info` with required diagnostic keys).
 - **Architecture:** layered model-based property testing (fast pure layer for
   the classifier and ingest; thinner git layer for orchestration), rather
   than git-level-only or a differential reference oracle.
+- **Ingest oracle:** faithfulness is defined against a formal
+  *catalog projection* of the model, not the unconstrained model, because the
+  CSV format cannot represent edge-less works or unattached persons.
+- **Event applicability:** `apply-event` is total; inapplicable events are
+  recorded no-ops, and the oracle reads the applied-intent log. This keeps
+  `test.check` sequence shrinking inside the space of valid histories.
 
 ## Architecture
 
@@ -59,16 +67,16 @@ Three units, all test infrastructure under `abc/test/` (nothing ships in
 
 ```
 generator ──▶ history (initial model + events)
-                 │  fold apply-event
+                 │  fold apply-event  (produces applied-intent log)
                  ▼
            model states (ground truth)
-                 │  render
+                 │  catalog projection + render
                  ▼
    ┌─ pure layer: corpus dirs / CSV text ──▶ report / run-corpus!
    └─ git layer:  CSV ─▶ ZIP ─▶ JGit commits ──▶ audit! / scan-history!
                  │
                  ▼
-        oracle: report ⟷ injected event intent
+        oracle: report ⟷ applied-intent log for the compared window
 ```
 
 ### `abc.sim.model` — ground truth and event algebra
@@ -80,11 +88,47 @@ Pure data and pure functions.
   generated corpus records (the JSON-shaped bodies), not raw CSV columns.
 - An **event** is data, e.g.
   `{:event/type :clean-split, :source-pid "000879", :target-pids [...]}`.
-- `apply-event : model × event → model` is pure and total over valid
-  event/model pairs.
+- `apply-event : model × event → {:model model', :applied intent-or-nil}` is
+  pure and **total**: an event whose preconditions do not hold in the current
+  state (e.g. a clean-split whose source pid is absent or not edge-exhaustive)
+  returns the model unchanged with `:applied nil`. Applied intents accumulate
+  into the **applied-intent log**; the oracle consumes that log, never the raw
+  event list. This makes plain sequence shrinking safe: any subsequence is a
+  valid history.
 - A **history** is `[initial-model [event ...]]`; folding yields the sequence
-  of model states. Adjacent states are the ground truth for any two-ref
-  comparison.
+  of model states plus the applied-intent log.
+
+**Model invariants**, checked after every `apply-event` (a violation throws
+immediately and is a harness defect, never absorbed):
+
+- person and work ids are unique within their maps;
+- every edge `[wid relation]` references an existing work, a non-blank
+  relation, and only pids present in `:persons`;
+- edge person-sets are non-empty (an edge with no contributors is deleted).
+
+**Catalog projection.** `projection(model)` restricts the model to what the
+CSV can express: the works that participate in at least one edge, the persons
+referenced by at least one edge, and all edges. Unattached persons and
+edge-less works are representable in the model but invisible to the CSV;
+ingest-facing properties compare against `projection(model)`, and drift
+properties compare projections of the two endpoint states. Generators keep
+unattached persons/works rare (they are only useful for exercising the
+projection itself); `add-person`/`add-work` are normally generated together
+with an initial edge.
+
+**Comparison windows.** A *window* is the pair of states actually compared by
+the system under test:
+
+- pure layer: two chosen model states (usually adjacent — one applied event
+  apart — but aggregated multi-event windows are also generated);
+- git layer, unsampled scan: adjacent ZIP-changing commits (the renderer
+  commits one model state per commit, so one event per window when each event
+  is committed individually);
+- git layer, sampled scan: consecutive period representatives — a window
+  aggregates every event applied between them.
+
+Oracle checks are always defined over the endpoint states and the applied
+intents *inside the window*.
 
 Events carry *intent*. The oracle reads intent; it never re-derives the
 classification the system under test is supposed to produce. The model has no
@@ -92,7 +136,7 @@ notion of "candidate" — that word belongs to the system's output vocabulary.
 
 ### `abc.sim.render` — projection to upstream formats
 
-- model state → CSV rows keyed by the real
+- model state → `projection(model)` → CSV rows keyed by the real
   `list_person_all_extended_utf8.csv` column names (one row per
   work-contributor-role tuple).
 - rows → CSV text through a real CSV writer (charred), so quoting of commas,
@@ -112,7 +156,7 @@ inputs.
 
 ### `abc.sim.properties` and test namespaces — generators and two layers
 
-- **Pure layer** (no git, no ZIP): render adjacent model states directly to
+- **Pure layer** (no git, no ZIP): render window endpoints directly to
   `works/` + `persons/` corpus directories and run
   `person-drift-history/report`; render CSV text and run
   `aozora-ingest/run-corpus!` against in-memory rows.
@@ -126,26 +170,44 @@ the shared versions; scenario tests themselves are kept, not replaced.
 
 ## Event Catalog
 
-Grouped by the property tier that consumes them.
+Grouped by the property tier that consumes them. Every event's applicability
+precondition is part of its definition; an event generated against a state
+that violates its precondition is a recorded no-op (see `apply-event`).
 
 **Benign** (must never produce candidates):
 
-- add-work, add-person, add-contributor-edge, remove-edge
+- add-work-with-edge (a work plus its first contributor edge)
+- add-person-with-edge (a person plus an edge referencing it)
+- add-person (unattached; rare — exercises the catalog projection)
+- add-work (edge-less; rare — same purpose)
+- add-contributor-edge, remove-edge (removing an edge's last pid deletes the
+  edge; removing a work's last edge makes the work leave the projection)
 - metadata-correction (edit a name/reading/romaji/date field of an existing
   person; edit work-level fields)
-- remove-work
+- remove-work (removes the work and its edges)
 - add-work-row-with-new-role (same person, new `relation_to_work`)
 
 **Drift** (rare; generation-forced per property):
 
-- clean-split: retire one pid, mint N ≥ 2 new pids, rewrite every edge of the
-  retired pid to the full successor set
-- clean-merge: retire N ≥ 2 pids, mint one successor, rewrite their edges
-- ambiguous-replacement: 1→1 pid swap on an edge
-- impure-split: like clean-split but one successor pid already existed in the
-  previous state (must NOT be a candidate)
-- partial-split: clean-split applied to only a strict subset of the source
-  pid's edges
+- clean-split — precondition: the source pid is the *sole* contributor on
+  every one of its edges (edge-exhaustive evidence, matching the classifier's
+  documented contract). Effect: retire the source pid, mint N ≥ 2 new pids,
+  rewrite every source edge to exactly the successor set.
+- clean-merge — precondition: the N ≥ 2 source pids constitute the *complete*
+  contributor set on every edge any of them touches, and all their edges
+  coincide on `[work relation]` keys. Effect: retire all sources, mint one
+  successor, rewrite those edges to exactly `#{successor}`.
+- ambiguous-replacement — 1→1 pid swap on an edge (retire old, mint new).
+- impure-split — like clean-split except one successor pid already existed in
+  the previous state (must NOT be a candidate).
+- partial-split — the source pid is **retained** in `:persons`; a strict,
+  non-empty, proper subset of its edges is rewritten to newly minted pids
+  (must NOT be a candidate: the source is not globally removed).
+
+The generator *constructs* states satisfying drift preconditions (e.g. builds
+a sole-contributor person first) rather than hoping one exists; a forced
+drift event that nevertheless no-ops makes the test case invalid and is
+surfaced through `test.check` labels (see Generation strategy).
 
 **Dirty data** (render-layer corruptions):
 
@@ -155,6 +217,7 @@ Grouped by the property tier that consumes them.
   digits, impossible calendar dates (e.g. `2020-02-31`), unparseable shapes
 - divergent person bodies within one work (same pid, different fields across
   rows of that work)
+- divergent work-level fields across rows of one work
 - duplicate rows (exact repeats)
 - ragged rows: fewer cells than the header, and more cells than the header
 - quoted commas / embedded newlines / quote characters in titles and names
@@ -164,164 +227,269 @@ Grouped by the property tier that consumes them.
 **Repo-level** (git layer only):
 
 - commits that do not touch the catalog ZIP
-- identical ZIP bytes recommitted
+- identical ZIP bytes recommitted (expected to be invisible: JGit path
+  filtering is tree-diff based, so a no-diff commit is not a ZIP-changing
+  commit — asserted in property 11)
 - non-monotonic author dates across ZIP-changing commits
-- multiple ZIP-changing commits within a single sampling period
+- multiple ZIP-changing commits within a single sampling period, including
+  drift introduced and reverted inside one period
 - degenerate sources: ZIP with no `.csv` entry, header-only CSV, empty CSV
   file, non-ZIP bytes at the ZIP path
 
-**Generation strategy:** histories are event sequences of length ~5–15 over a
+**Generation strategy.** Histories are event sequences of length ~5–15 over a
 bootstrap corpus of ~5–20 works. Event weights make benign events common and
 dirty/repo events occasional. Each drift-tier property *forces* at least one
 instance of its target event into the history so rare events are exercised on
 every run, with random background noise around them. `test.check` shrinking
-operates on the event sequence, so failures arrive as minimal histories.
+operates on the event sequence; because `apply-event` is total, every shrink
+candidate is a valid history. Properties over forced events first check the
+applied-intent log: if the forced event did not apply (possible after
+shrinking), the case still runs the totality checks but skips the
+intent-specific assertion, and `test.check` labels (`tc.results/classify`
+equivalent) track the applied/no-op ratio so vacuous coverage is visible and
+bounded (acceptance criterion below).
 
-**Confusability constraint.** Some benign compositions are
-evidence-equivalent to drift: within one comparison window, remove-person
-plus add-person plus edge changes on the same `[work, relation]` produce
-exactly the retired/new-id replacement evidence a real split leaves. The
-classifier cannot distinguish these by construction, and the properties must
-not demand that it does. The benign generator therefore enforces a
-per-window constraint: it never composes person removal and person addition
-touching the same `[work, relation]` edge within one window. Soundness
-(property 1) is defined over these non-confusable benign histories; the
-confusable compositions are instead covered by the drift tier (they are what
-ambiguous-replacement and impure-split model deliberately).
+**Confusability predicate.** Some benign compositions are evidence-equivalent
+to drift: an endpoint diff in which a globally removed pid's edge is taken
+over by globally added pids is exactly the evidence a real split leaves,
+regardless of which event sequence produced it. Because the classifier
+observes only endpoint diffs, non-confusability must be a predicate over the
+window's *endpoint states*, not over event adjacency:
+
+> `confusable?(prev, cur)` — after projection, some edge's diff is
+> candidate-shaped: a replacement whose previous pid-set is contained in the
+> globally removed ids and whose current pid-set is contained in the globally
+> added ids, with cardinality 1→many or many→1.
+
+Soundness (property 1) applies to windows whose applied intents are all
+benign **and** whose endpoints satisfy `not (confusable? prev cur)`; the
+predicate is evaluated inside the property, so it holds for shrunk cases by
+construction. The benign generator additionally avoids composing person
+removal and person addition around the same `[work relation]` edge within one
+window, to keep the discard/skip rate low; the predicate, not the generator
+heuristic, is normative. Confusable endpoint shapes are deliberately covered
+by the drift tier (ambiguous-replacement, impure-split).
+
+## Failure Taxonomy
+
+Normative table for dirty and degenerate inputs. "Expected result" is desired
+behavior; where current behavior is suspected to differ, the divergence
+column links the triage entry.
+
+| Fault | Owning boundary | Expected result | Divergence |
+|---|---|---|---|
+| Ragged row (short/long) | CSV reader | row rejected; affected work skipped and counted, with a reason | D3 |
+| Divergent person bodies within a work | work assembly | work skipped and counted (current behavior matches) | — |
+| Divergent work fields across rows | work assembly | divergence detected: work skipped or an audit entry emitted — not silent first-row-wins | D1 |
+| Invalid date passthrough | schema validation | work skipped and counted (current behavior matches) | — |
+| Header-only or empty CSV | corpus source validation | explicit `ex-info`; ex-data includes `:zip-path` and row-count context | D5 |
+| No `.csv` entry in ZIP | ZIP source validation | explicit `ex-info`; ex-data includes `:zip-path` (current behavior matches) | — |
+| Non-ZIP bytes at ZIP path | ZIP source validation | wrapped `ex-info`; ex-data includes `:zip-path`, cause chained | D6 |
+| Missing path at ref (git extraction) | git boundary | `ex-info` with `:ref` and `:path` (current behavior matches, `abc/git.clj`) | — |
+
+Source-level failures are specified by **required ex-data keys**, not merely
+by forbidden exception classes; forbidden classes
+(`NullPointerException`, `AssertionError`, `StackOverflowError`, raw
+`ZipException`) are additionally asserted.
+
+D5 and D6 record *suspected* divergences: current behavior (silent zero-row
+corpus; raw `ZipException`) is inferred from reading the code and must be
+confirmed during implementation before the entries are adjudicated.
 
 ## Oracle Properties
 
-Properties read event intent from the history; they never mirror the
-classifier's mechanics. Numbering is referenced by the known-divergences
-table.
+Properties read applied intent from the history; they never mirror the
+classifier's mechanics. Property **cases** carry stable ids
+(`P6.clean-faithfulness` etc.); the known-divergences table references cases,
+not whole properties, so pending markers disable only the unresolved
+assertion while the rest of the property keeps running.
+
+**Report normalization.** Reports embed run locations
+(`previous_dir`/`current_dir` in the drift report; `:aozora-repo`,
+`:work-dir`, `:corpus-dirs`, `:extracted-zips` and validation input paths in
+audit reports). Define `semantic-report` = the report with all filesystem
+locators removed (the implementation plan enumerates the exact keys).
+Equality and byte-identity assertions in properties 5, 10, and 14 apply to
+the deterministic JSON serialization of `semantic-report`.
 
 ### Pure layer — classifier (`person-drift-history/report`)
 
-1. **Soundness.** A history containing only benign events (under the
-   confusability constraint above) yields zero `split_candidates`, zero
-   `merge_candidates`, and no `ambiguous_replacements` beyond those implied
-   by explicitly injected edge rewrites.
-2. **Completeness.** Every clean-split (clean-merge) appears in
-   `split_candidates` (`merge_candidates`) with exactly the injected
-   source/target person ids on each rewritten edge.
-3. **Conservatism.** Ambiguous-replacement, impure-split, and partial-split
-   events never produce candidates; their edges are classified as
+1. **Soundness** (`P1.benign-quiet`). A window whose applied intents are all
+   benign and whose endpoints satisfy the non-confusability predicate yields
+   zero `split_candidates`, zero `merge_candidates`, and no
+   `ambiguous_replacements` beyond those implied by explicitly injected edge
+   rewrites.
+2. **Completeness** (`P2.clean-split`, `P2.clean-merge`). Every applied
+   clean-split (clean-merge) in the window appears in `split_candidates`
+   (`merge_candidates`). Candidates are edge-local: an event that rewrote k
+   edges yields k candidate entries, one per `[work relation]`, each carrying
+   exactly the injected source and target pid sets for that edge.
+3. **Conservatism** (`P3.ambiguous`, `P3.impure-split`, `P3.partial-split`).
+   Ambiguous-replacement, impure-split, and partial-split events never
+   produce candidates; their edges are classified as
    replacements/`ambiguous_replacements` or plain edge changes per event
    type.
-4. **Accounting.** `metadata_corrections`, `added_person_ids`,
-   `removed_person_ids`, and the summary counts equal the model diff exactly.
-5. **Determinism.** Two report runs over the same directories are `=`, and
-   the serialized JSON is byte-identical.
+4. **Accounting** (`P4.counts`). `metadata_corrections`, `added_person_ids`,
+   `removed_person_ids`, and the summary counts equal the diff of the
+   projected endpoint states exactly.
+5. **Determinism** (`P5.repeat`). Two report runs over the same directories
+   have equal `semantic-report`s with byte-identical serialization.
 
 ### Pure layer — ingest (`run-corpus!` on rendered CSV)
 
-6. **Faithfulness.** For clean rows, every model person and work appears in
-   the generated corpus with the model's field values. (Adjudicates
-   first-row-wins on divergent work fields.)
-7. **Date totality.** Every generated date-cell class ingests to either a
-   valid EDTF lexical value accompanied by the expected correction entries,
-   or verbatim passthrough that schema validation later rejects — never a
-   crash and never a silent third outcome.
-8. **Tolerance.** A dirty-work corruption affects only that work: it is
-   counted in `:works-skipped` with its id in `:skipped-work-ids`, and all
-   clean works are unaffected.
-9. **Idempotence.** Re-ingesting the same rendered CSV into the same output
-   directory is a no-op: all record hashes stable, no overwrite errors, no
-   byte changes.
+6. **Faithfulness** (`P6.clean-faithfulness`, `P6.divergent-work-fields`).
+   - `P6.clean-faithfulness`: for windows with no dirty-data corruptions,
+     ingest output contains exactly the persons, works, and contributor
+     entries of `projection(model)`, with the model's field values.
+   - `P6.divergent-work-fields`: divergent work fields across rows are
+     detected per the failure taxonomy (attached to D1; pending until
+     adjudicated).
+7. **Date totality** (`P7.date-classes`). Every generated date-cell class
+   ingests to either a valid EDTF lexical value accompanied by the expected
+   correction entries, or verbatim passthrough whose work is then skipped by
+   schema validation — never a crash and never a silent third outcome.
+8. **Tolerance and isolation** (`P8.skip-counted`, `P8.atomicity`,
+   `P8.order-independence`).
+   - `P8.skip-counted`: a dirty work is counted in `:works-skipped` with its
+     id in `:skipped-work-ids`, and every clean work's *records* are present
+     and correct.
+   - `P8.atomicity`: a skipped work leaves no newly created or modified
+     person records behind (attached to D4; pending until adjudicated —
+     current ingest writes person files before the work-level failure can
+     occur).
+   - `P8.order-independence`: permuting work processing order does not change
+     any clean work's ingested records, including when dirty and clean works
+     share person ids (attached to D4).
+9. **Idempotence** (`P9.byte-stable`). Re-ingesting the same rendered CSV
+   into the same output directory succeeds without overwrite errors and
+   leaves every record byte-identical. File metadata (mtimes) is explicitly
+   NOT asserted: current behavior deterministically rewrites identical
+   records, and that is acceptable.
 
 ### Git layer — orchestration (`audit!`, `scan-history!`)
 
-10. **Pair equivalence.** For adjacent refs, the drift section of
-    `audit!(a, b)` equals the scan pair report for `[a, b]`.
-11. **Scan coverage.** An unsampled scan pairs exactly the ZIP-changing
-    commits in order, ignoring other commits; drift injected between refs N
-    and N+1 is reported in exactly that pair.
-12. **Sampling contract.** `--sample-period year|month` selects at most one
-    commit per calendar period regardless of commit-date ordering, and drift
-    occurring inside one period remains visible in the surrounding sampled
-    pair. (Adjudicates `partition-by` behavior under non-monotonic dates.)
-13. **Two-tier failure contract.** Row/work-level corruption never aborts an
-    audit or scan (absorbed, counted, reported). Degenerate sources throw
-    `ex-info` carrying diagnostic data — never `NullPointerException`,
-    `AssertionError`, stack overflow, or a normal-looking report.
-14. **Work-dir hygiene.** Rerunning in a previously used `--work-dir`
-    produces reports identical to a fresh-dir run.
+10. **Pair equivalence** (`P10.audit-vs-scan`). For adjacent ZIP-changing
+    refs, the `semantic-report` drift section of `audit!(a, b)` equals that
+    of the scan pair `[a, b]`.
+11. **Scan coverage** (`P11.pairing`, `P11.no-diff-invisible`,
+    `P11.drift-localization`).
+    - `P11.pairing`: an unsampled scan pairs exactly the ZIP-changing commits
+      in log order, ignoring commits that do not change the ZIP path.
+    - `P11.no-diff-invisible`: a commit that rewrites identical ZIP bytes
+      produces no tree diff at the path and therefore does not appear as a
+      scan pair boundary.
+    - `P11.drift-localization`: drift applied between ZIP-changing refs N and
+      N+1 is reported in exactly that pair.
+12. **Sampling** (`P12.selection`, `P12.boundary-visibility`).
+    - `P12.selection`: for each calendar period (author date, UTC) containing
+      ZIP-changing commits, the sampled scan selects exactly one
+      representative — the last such commit in log order among that period's
+      commits — regardless of whether author dates are monotone across the
+      log (adjudicates D2). Representatives are paired in log order.
+    - `P12.boundary-visibility`: state differences between the projected
+      endpoint states of two consecutive representatives are reported per the
+      pure-layer contract. Transient intra-period drift (introduced and
+      reverted between representatives) is **explicitly unobservable under
+      sampling** and is not asserted; the generator still produces such
+      histories to prove the scan does not crash or misattribute them.
+13. **Failure contract** (`P13.<fault>` per taxonomy row). Each fault class
+    in the Failure Taxonomy produces its specified outcome: row/work faults
+    never abort an audit or scan; source faults throw `ex-info` with the
+    required ex-data keys and never a forbidden exception class or a
+    normal-looking report.
+14. **Work-dir hygiene** (`P14.rerun`). Rerunning in a previously used
+    `--work-dir` yields a `semantic-report` identical to a fresh-dir run.
 
 ## Known Divergences and Triage
 
-The suite asserts desired behavior, so some properties are expected to fail
-against current code from day one. The mechanism:
+The suite asserts desired behavior, so some property cases are expected to
+fail against current code from day one. The mechanism:
 
 - A **known-divergences table** lives beside the simulation tests (an EDN var
-  or table in the sim namespace, mirrored in this spec's implementation
-  plan). Each entry records: property number, current behavior, suspected
-  desired behavior, and status — `open`, `adjudicated-bug`, or
+  in the sim namespace; this spec's table is the source of record until the
+  code lands). Each entry records: property-case id, current behavior,
+  suspected desired behavior, and status — `open`, `adjudicated-bug`, or
   `adjudicated-intended`.
-- Properties covering `open` / `adjudicated-bug` entries are marked pending
-  (kaocha pending metadata or an explicit skip-list var referencing the
-  table) so the suite stays green while divergences are unresolved.
+- Pending markers are applied **per property case**, never per numbered
+  property: only the precise unresolved assertion is skipped (or run as an
+  expected-failure that alerts when it starts passing); all sibling cases
+  keep running.
 - Resolution is always a code fix or an explicit `adjudicated-intended`
-  ruling (which then relaxes the property with a comment citing the entry).
+  ruling (which then relaxes the case with a comment citing the entry).
   Fixing code happens in separate commits/PRs from harness work.
 - New failures found by the soak run enter the same table.
 
 Seed entries:
 
-| # | Property | Current behavior | Suspected desired behavior |
-|---|----------|------------------|----------------------------|
-| D1 | 6 | `build-record-fragment-from-rows` docstring claims work-field consistency is asserted, but the code takes `(first works)` — divergent work fields across rows silently resolve first-row-wins (`aozora_csv.clj:284-325`) | Divergent work fields are detected: either throw (work becomes skipped) or emit a correction/audit entry |
-| D2 | 12 | `sample-commits-by-period` uses `partition-by` over log order (`aozora_history_audit.clj:188-193`); non-monotonic author dates yield multiple samples per period | At most one sampled commit per calendar period |
-| D3 | 6, 7 | `read-rows*` zips header against cells (`aozora_csv.clj:22-32`); ragged rows silently truncate or drop cells | Ragged rows are detected: skipped with a warning or surfaced as corrections |
+| Id | Case | Current behavior | Suspected desired behavior | Status |
+|---|---|---|---|---|
+| D1 | P6.divergent-work-fields | `build-record-fragment-from-rows` docstring claims work-field consistency is asserted, but the code takes `(first works)` — divergent work fields silently resolve first-row-wins (`aozora_csv.clj:284-325`) | divergence detected: work skipped or audit entry emitted | open |
+| D2 | P12.selection | `sample-commits-by-period` uses `partition-by` over log order (`aozora_history_audit.clj:188-193`); non-monotonic author dates yield multiple samples per period | exactly one representative per period | open |
+| D3 | P13.ragged-row | `read-rows*` zips header against cells (`aozora_csv.clj:22-32`); ragged rows silently truncate or drop cells | ragged row rejected; work skipped with reason | open |
+| D4 | P8.atomicity, P8.order-independence | `run-from-rows!` writes person files per contributor before work-level validation completes (`aozora_ingest.clj:151-213`); skipped works can leave person records, and shared-pid hash conflicts couple works across processing order | skipped works leave no new/modified person records; clean-work results are order-independent; shared-person conflicts have a stated corpus-level policy | open |
+| D5 | P13.empty-csv | suspected: empty/header-only CSV yields a silent zero-row corpus instead of throwing (`read-rows*` returns nil for no rows) — to be confirmed during implementation | explicit `ex-info` with `:zip-path` and row-count context | open |
+| D6 | P13.non-zip-bytes | suspected: `ZipFile.` throws raw `ZipException` (`aozora_ingest.clj:28-51`) — to be confirmed during implementation | wrapped `ex-info` with `:zip-path`, cause chained | open |
 
 ## Error Handling
 
 The harness itself follows the same two-tier philosophy it tests: generator
-or render bugs (e.g. an event inapplicable to the current model state) throw
-`ex-info` immediately with the offending event and model — they are harness
-defects, never absorbed. Temp repositories and work dirs are created per
-test-case under the test temp root and deleted in `finally` blocks, matching
-existing test hygiene.
+or render bugs throw `ex-info` immediately with the offending event and model
+— they are harness defects, never absorbed. (Event *inapplicability* is not a
+bug: it is a recorded no-op per the event algebra; only invariant violations
+after an applied event throw.) Temp repositories and work dirs are created
+per test-case under the test temp root and deleted in `finally` blocks,
+matching existing test hygiene.
 
 ## CI Integration and Budget
 
 - New kaocha suite `:simulation` in `abc/tests.edn` with
   `:ns-patterns ["-sim-test$"]`; the existing `:unit` suite excludes that
   pattern so current behavior is unchanged.
-- CI runs `:simulation` with a fixed `test.check` seed and modest counts
-  (~50 cases per pure-layer property, ~15 per git-layer property). Budget:
-  ≤ ~2 minutes JVM time.
+- CI runs `:simulation` deterministically against a small **checked-in seed
+  corpus** (3 seeds to start), with case counts divided so total budget stays
+  ≤ ~2 minutes JVM time (~50 cases per pure-layer property, ~15 per git-layer
+  property, across seeds). A fixed seed is regression coverage, not
+  exploration; the seed corpus is rotated when the soak run finds seeds that
+  exercise interesting histories.
 - `just sim-soak` runs the suite unseeded at 10–20× counts and prints the
   failing seed for replay. Nightly automation of the soak is follow-up work,
   not part of this design.
 
 ## Phasing
 
-- **Phase 1:** `abc.sim.model`, `abc.sim.render` (CSV/dir rendering),
-  generators, pure-layer properties 1–9, known-divergences table, kaocha
-  suite wiring.
-- **Phase 2:** git rendering (ZIP + JGit), git-layer properties 10–14,
+- **Phase 1:** `abc.sim.model` (events, invariants, applied-intent log,
+  projection), `abc.sim.render` (CSV/dir rendering), generators, pure-layer
+  properties P1–P9, known-divergences table, kaocha suite wiring.
+- **Phase 2:** git rendering (ZIP + JGit), git-layer properties P10–P14,
   `just sim-soak`, helper unification with
   `aozora_history_audit_test.clj`.
 - **Future work (not this design):** drift-sidecar interplay
-  (`drift_participant_updates` against generated `_events/`/`_indexes/`),
+  (`drift_participant_updates` against generated `_events/`/`_indexes/`);
   replay harness over the real pinned upstream repository
-  (`scan-history --sample-period year` as an integration check), and
+  (`scan-history --sample-period year` as an integration check);
   content-side evolution simulation (official-source pins, worksets,
-  snapshot index, workflow cache staleness).
+  snapshot index, workflow cache staleness); extending the classifier's
+  candidate contract to set-difference-based replacement detection in the
+  presence of unchanged co-contributors (a production design change requiring
+  its own ADR-level adjudication — the current edge-exhaustive contract is
+  what this harness tests).
 
 ## Acceptance Criteria
 
 - `clojure -M:test:kaocha -m kaocha.runner --focus :simulation` (or
-  `./bin/kaocha --focus :simulation`) runs green with the fixed seed, with
-  pending markers only for entries listed in the known-divergences table.
-- Each drift-tier property demonstrably exercises its forced rare event
-  (spot-checkable via generator labels / `tc/quick-check` reports).
+  `./bin/kaocha --focus :simulation`) runs green with the checked-in seeds,
+  with pending/expected-failure markers only for property cases listed in the
+  known-divergences table.
+- Every drift-tier property reports (via `test.check` labels) the fraction of
+  cases in which its forced event actually applied; that fraction is ≥ 0.9
+  per seed, so intent assertions are non-vacuous.
 - A deliberately introduced classifier bug (e.g. inverting
-  `split-candidate?`'s subset check) is caught by property 2 with a shrunk
-  counterexample of ≤ 3 events.
+  `split-candidate?`'s subset check) is caught by `P2.clean-split` with a
+  shrunk counterexample of ≤ 3 events.
 - The unit suite's runtime and results are unchanged.
-- D1–D3 are filed as triage entries with `open` status, not silently
-  encoded as golden behavior.
+- D1–D6 are filed as triage entries with `open` status, not silently encoded
+  as golden behavior; D5/D6's current-behavior claims are confirmed or
+  corrected during implementation before any code fix is proposed.
 
 ## References
 

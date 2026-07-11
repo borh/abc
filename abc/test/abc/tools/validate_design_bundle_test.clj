@@ -389,6 +389,27 @@
         (is (some #{"schemas/source-region-coverage.schema.json"}
                   @checked-paths))))))
 
+(deftest validate-json-schemas-includes-source-assertion-contract-test
+  (testing "design-bundle schema pass validates the shared source-assertion contract"
+    (let [checked-paths (atom [])]
+      (with-redefs [validate/schema-valid! (fn [_schema path]
+                                             (swap! checked-paths conj path)
+                                             nil)
+                    validate/validate-json! (fn [& _args] nil)
+                    validate/validate-json-lines! (fn [& _args] nil)
+                    validate/validation-errors (fn [_schema value]
+                                                 (if (and (map? value)
+                                                          (contains? value "rule_id"))
+                                                   nil
+                                                   [:expected-error]))
+                    compat/load-registry (fn [] {:entries []})
+                    compat/validate-registry! (fn [_registry] :ok)
+                    parser-evidence/load-index (fn [] {:entries []})
+                    parser-evidence/validate-index! (fn [_index] :ok)]
+        (validate/validate-json-schemas! [])
+        (is (some #{"schemas/source-assertion.schema.json"}
+                  @checked-paths))))))
+
 (deftest validate-json-schemas-includes-tei-eaj-comparison-fixture-test
   (testing "design-bundle schema pass validates the TEI-EAJ comparison export contract"
     (let [checked-schemas (atom [])

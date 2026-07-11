@@ -66,6 +66,13 @@
       "hash": "sha256:87357b591fab820bf514389336ad8c4fb1ec338629e65803a0bfd747e53e4ed9"
     },
     {
+      "path": "schemas/source-assertion.schema.json",
+      "id": "https://w3id.org/abc/schemas/source-assertion.schema.json",
+      "title": "ABC Source Assertion",
+      "version": "0.1.0",
+      "hash": "sha256:77c246885b7aa95ad897ac216b0d4a53bf5e20d826857d3bbdc684b879e29b55"
+    },
+    {
       "path": "schemas/source-region-coverage.schema.json",
       "id": "https://w3id.org/abc/schemas/source-region-coverage.schema.json",
       "title": "ABC Source Region Coverage Report",

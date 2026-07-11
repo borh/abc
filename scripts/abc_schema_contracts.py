@@ -25,6 +25,7 @@ SCHEMA_FILES = (
     "parser-ir-publication-preservation.schema.json",
     "parser-ir.schema.json",
     "request-set.schema.json",
+    "source-assertion.schema.json",
     "source-region-coverage.schema.json",
     "snapshot-index.schema.json",
     "tei-eaj-comparison.schema.json",

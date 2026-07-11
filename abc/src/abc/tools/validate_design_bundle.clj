@@ -333,6 +333,7 @@
         request-set-schema (files/read-json "schemas/request-set.schema.json")
         snapshot-index-schema (files/read-json "schemas/snapshot-index.schema.json")
         pack-policy-schema (files/read-json "schemas/pack-policy.schema.json")
+        source-assertion-schema (files/read-json "schemas/source-assertion.schema.json")
         source-region-coverage-schema (files/read-json "schemas/source-region-coverage.schema.json")
         tei-eaj-comparison-schema (files/read-json "schemas/tei-eaj-comparison.schema.json")
         token-output-schema (files/read-json "schemas/token-output.schema.json")
@@ -357,6 +358,7 @@
                            ["schemas/request-set.schema.json" request-set-schema]
                            ["schemas/snapshot-index.schema.json" snapshot-index-schema]
                            ["schemas/pack-policy.schema.json" pack-policy-schema]
+                           ["schemas/source-assertion.schema.json" source-assertion-schema]
                            ["schemas/source-region-coverage.schema.json" source-region-coverage-schema]
                            ["schemas/tei-eaj-comparison.schema.json" tei-eaj-comparison-schema]
                            ["schemas/token-output.schema.json" token-output-schema]

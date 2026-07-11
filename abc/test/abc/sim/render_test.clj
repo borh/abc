@@ -67,19 +67,21 @@
         (is (apply not= (map #(get % "姓") same-pid)))))))
 
 (deftest zip-and-commit-roundtrip-test
-  (let [repo-dir (render/temp-dir "sim-repo")
-        git (render/init-repo! repo-dir)
-        m (model/bootstrap 1)
-        csv (render/rows->csv (render/model->rows m))
-        c1 (render/commit-zip-at! git repo-dir (render/csv->zip-bytes csv)
-                                  "v1" "2024-01-01T00:00:00Z")]
+  (let [repo-dir (render/temp-dir "sim-repo")]
     (try
-      (let [bytes (abc-git/blob-bytes-at
-                   git (.getName c1) "index_pages/list_person_all_extended_utf8.zip")]
-        (is (pos? (count bytes))))
-      (is (= 1 (count (abc-git/commits-touching-path
-                       git "index_pages/list_person_all_extended_utf8.zip"))))
-      (finally (.close git) (render/delete-tree! repo-dir)))))
+      (let [git (render/init-repo! repo-dir)]
+        (try
+          (let [m (model/bootstrap 1)
+                csv (render/rows->csv (render/model->rows m))
+                c1 (render/commit-zip-at! git repo-dir (render/csv->zip-bytes csv)
+                                          "v1" "2024-01-01T00:00:00Z")
+                bytes (abc-git/blob-bytes-at
+                       git (.getName c1) "index_pages/list_person_all_extended_utf8.zip")]
+            (is (pos? (count bytes)))
+            (is (= 1 (count (abc-git/commits-touching-path
+                             git "index_pages/list_person_all_extended_utf8.zip")))))
+          (finally (.close git))))
+      (finally (render/delete-tree! repo-dir)))))
 
 (deftest zip-without-csv-entry-test
   (let [bytes (render/csv->zip-bytes "ignored" {:no-entry? true})]

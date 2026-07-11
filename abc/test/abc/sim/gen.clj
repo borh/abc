@@ -94,6 +94,12 @@
   (vec (filter #(model/sole-contributor? m %) (keys (:persons m)))))
 
 (defn- gen-forced [m forced]
+  ;; Drift events mint 2-4 fresh ids here, but an *applied* event only
+  ;; advances :next-id by exactly 1 (see model/apply-event). So the next
+  ;; fresh-pid/fresh-wid drawn after this forced splice may collide with an
+  ;; id just minted here. Such a draw is a no-op (apply-event's totality
+  ;; handles it harmlessly) at the cost of slightly thinner post-drift
+  ;; benign coverage. Do not "fix" this by advancing :next-id further.
   (let [t1 (model/fresh-pid m)
         t2 (model/fresh-pid (update m :next-id inc))
         mk-persons (fn [& pids]

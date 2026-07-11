@@ -27,7 +27,11 @@
         csv (render/rows->csv rows)
         parsed (ac/read-rows-from-string csv)
         dir (render/temp-dir "sim-ingest")]
-    {:dir dir :result (ingest-rows! parsed dir)}))
+    (try
+      {:dir dir :result (ingest-rows! parsed dir)}
+      (catch Exception e
+        (render/delete-tree! dir)
+        (throw e)))))
 
 (defn- ingested-person [dir pid]
   (let [f (io/file dir "persons" (str pid ".json"))]
@@ -101,9 +105,11 @@
    ["1900 - 01 - 01" "1900-01-01" #{"strip-whitespace"} :corrected]
    ["1900--01" "1900-01" #{"collapse-multi-dash"} :corrected]
    ["不詳" nil #{"unknown-marker"} :corrected]
+   ["未詳" nil #{"unknown-marker"} :corrected]
    ["前5" "-0004" #{"bce-astronomical"} :corrected]
    ["紀元前5世紀初頭" "-04XX" #{"century-prose"} :corrected]
    ["192X" "192X" #{} :verbatim]
+   ["645-01-01" "0645-01-01" #{"pad-year"} :corrected]
    ["2020-02-31" nil nil :skipped]      ;; impossible date → schema reject
    ["こんにちは" nil nil :skipped]])     ;; unparseable shape → schema reject
 

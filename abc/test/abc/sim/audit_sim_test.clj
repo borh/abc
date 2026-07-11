@@ -181,6 +181,17 @@
   (and (instance? clojure.lang.ExceptionInfo e)
        (every? #(contains? (ex-data e) %) required-keys)))
 
+(defn- forbidden-throw?
+  "True when the SUT escaped with an exception class the failure taxonomy
+  forbids outright (spec §Failure Taxonomy) — asserted even for
+  divergence-gated cases so a wrong-behavior regression cannot hide
+  behind an open divergence."
+  [e]
+  (or (instance? NullPointerException e)
+      (instance? AssertionError e)
+      (instance? StackOverflowError e)
+      (instance? java.util.zip.ZipException e)))
+
 ;; P13.ragged-row — D3: row-level fault must not abort; desired = work
 ;; skipped. Both directions of raggedness get a defined outcome.
 (deftest p13-ragged-row-sim-test
@@ -217,6 +228,7 @@
   (doseq [[label csv] [["empty" ""]
                        ["header-only" (render/rows->csv [])]]]
     (let [{:keys [threw]} (audit-two! (render/csv->zip-bytes csv))]
+      (is (not (forbidden-throw? threw)) (str "P13.empty-csv/" label))
       (div/expected-failure :D5 (str "P13.empty-csv/" label)
                             (clean-ex-info? threw [:zip-path])))))
 
@@ -230,6 +242,14 @@
 (deftest p13-non-zip-bytes-sim-test
   (let [{:keys [threw]} (audit-two! "this is not a zip file")]
     (is (some? threw) "non-ZIP bytes must not produce a normal-looking report")
+    ;; forbidden-throw? excludes ZipException here on purpose: a raw
+    ;; ZipException IS the open D6 divergence (gated below), so asserting
+    ;; the full envelope would fail this test until D6 is fixed. The other
+    ;; forbidden classes must never appear regardless of D6's status.
+    (is (not (or (instance? NullPointerException threw)
+                 (instance? AssertionError threw)
+                 (instance? StackOverflowError threw)))
+        "P13.non-zip-bytes")
     (div/expected-failure :D6 "P13.non-zip-bytes"
                           (clean-ex-info? threw [:zip-path]))))
 

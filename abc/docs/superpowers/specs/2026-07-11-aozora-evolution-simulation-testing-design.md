@@ -161,8 +161,9 @@ inputs.
   `person-drift-history/report`; render CSV text and run
   `aozora-ingest/run-corpus!` against in-memory rows.
 - **Git layer**: commit rendered ZIPs at controlled timestamps and drive
-  `aozora-history-audit/audit!` and `scan-history!`, including `--max-pairs`
-  and `--sample-period`.
+  `aozora-history-audit/audit!` and `scan-history!`, including
+  `--sample-period` (`--max-pairs` remains covered by the existing scenario
+  test in `aozora_history_audit_test.clj`).
 
 Existing helpers in `aozora_history_audit_test.clj` (repo/zip/commit
 construction) are lifted into `abc.sim.render` and the test file switches to
@@ -249,9 +250,9 @@ operates on the event sequence; because `apply-event` is total, every shrink
 candidate is a valid history. Properties over forced events first check the
 applied-intent log: if the forced event did not apply (possible after
 shrinking), the case still runs the totality checks but skips the
-intent-specific assertion, and `test.check` labels (`tc.results/classify`
-equivalent) track the applied/no-op ratio so vacuous coverage is visible and
-bounded (acceptance criterion below).
+intent-specific assertion, and counter atoms track the applied/no-op ratio
+with a hard ≥ 0.9 assertion so vacuous coverage is visible and bounded
+(acceptance criterion below).
 
 **Confusability predicate.** Some benign compositions are evidence-equivalent
 to drift: an endpoint diff in which a globally removed pid's edge is taken
@@ -431,8 +432,8 @@ Seed entries:
 | D2 | P12.selection | `sample-commits-by-period` uses `partition-by` over log order (`aozora_history_audit.clj:188-193`); non-monotonic author dates yield multiple samples per period | exactly one representative per period | open |
 | D3 | P13.ragged-row | `read-rows*` zips header against cells (`aozora_csv.clj:22-32`); ragged rows silently truncate or drop cells | ragged row rejected; work skipped with reason | open |
 | D4 | P8.atomicity, P8.order-independence | `run-from-rows!` writes person files per contributor before work-level validation completes (`aozora_ingest.clj:151-213`); skipped works can leave person records, and shared-pid hash conflicts couple works across processing order | skipped works leave no new/modified person records; clean-work results are order-independent; shared-person conflicts have a stated corpus-level policy | open |
-| D5 | P13.empty-csv | suspected: empty/header-only CSV yields a silent zero-row corpus instead of throwing (`read-rows*` returns nil for no rows) — to be confirmed during implementation | explicit `ex-info` with `:zip-path` and row-count context | open |
-| D6 | P13.non-zip-bytes | suspected: `ZipFile.` throws raw `ZipException` (`aozora_ingest.clj:28-51`) — to be confirmed during implementation | wrapped `ex-info` with `:zip-path`, cause chained | open |
+| D5 | P13.empty-csv | suspected: empty/header-only CSV yields a silent zero-row corpus instead of throwing (`read-rows*` returns nil for no rows) — to be confirmed during implementation (confirmed 2026-07-11) | explicit `ex-info` with `:zip-path` and row-count context | open |
+| D6 | P13.non-zip-bytes | suspected: `ZipFile.` throws raw `ZipException` (`aozora_ingest.clj:28-51`) — to be confirmed during implementation (confirmed 2026-07-11) | wrapped `ex-info` with `:zip-path`, cause chained | open |
 
 ## Error Handling
 
@@ -486,7 +487,8 @@ matching existing test hygiene.
   known-divergences table.
 - Every drift-tier property reports (via `test.check` labels) the fraction of
   cases in which its forced event actually applied; that fraction is ≥ 0.9
-  per seed, so intent assertions are non-vacuous.
+  aggregated across the CI seeds (per-seed in soak mode, where a single
+  unseeded run is made), so intent assertions are non-vacuous.
 - A deliberately introduced classifier bug (e.g. inverting
   `split-candidate?`'s subset check) is caught by `P2.clean-split`, with a
   shrunk counterexample that still contains an applied clean-split

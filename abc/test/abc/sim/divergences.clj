@@ -11,12 +11,12 @@
         :notes "aozora_history_audit.clj:188-193 partition-by over log order"}
    :D3 {:case "P13.ragged-row" :status :open
         :notes "aozora_csv.clj:22-32 ragged rows silently truncated"}
-   :D4 {:case "P8.atomicity+order-independence" :status :open
+   :D4 {:case "P8.atomicity, P8.order-independence" :status :open
         :notes "aozora_ingest.clj:151-213 person writes precede work failure"}
    :D5 {:case "P13.empty-csv" :status :open
-        :notes "suspected: empty/header-only CSV yields silent zero-row corpus; confirm during P13"}
+        :notes "confirmed 2026-07-11 (P13): empty/header-only CSV yields a silent zero-row corpus, no throw, no skip"}
    :D6 {:case "P13.non-zip-bytes" :status :open
-        :notes "suspected: raw ZipException from ZipFile ctor; confirm during P13"}})
+        :notes "confirmed 2026-07-11 (P13): ZipFile ctor escapes as raw java.util.zip.ZipException, not ex-info"}})
 
 (defn- entry [id]
   (or (get table id)

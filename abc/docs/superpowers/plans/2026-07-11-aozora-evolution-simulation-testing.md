@@ -358,7 +358,8 @@ Create `abc/test/abc/sim/model.clj`:
 
 (defmethod apply-event* :add-work-with-edge
   [m {:keys [wid work pid person relation] :as e}]
-  (if (or (contains? (:works m) wid) (contains? (:persons m) pid))
+  (if (or (contains? (:works m) wid) (contains? (:persons m) pid)
+          (not (map? work)) (not (map? person)) (string/blank? relation))
     (no-op m)
     (applied (-> m
                  (assoc-in [:works wid] work)
@@ -368,7 +369,8 @@ Create `abc/test/abc/sim/model.clj`:
 
 (defmethod apply-event* :add-person-with-edge
   [m {:keys [pid person wid relation] :as e}]
-  (if (or (contains? (:persons m) pid) (not (contains? (:works m) wid)))
+  (if (or (contains? (:persons m) pid) (not (contains? (:works m) wid))
+          (not (map? person)) (string/blank? relation))
     (no-op m)
     (applied (-> m
                  (assoc-in [:persons pid] person)
@@ -377,13 +379,13 @@ Create `abc/test/abc/sim/model.clj`:
 
 (defmethod apply-event* :add-person
   [m {:keys [pid person] :as e}]
-  (if (contains? (:persons m) pid)
+  (if (or (contains? (:persons m) pid) (not (map? person)))
     (no-op m)
     (applied (assoc-in m [:persons pid] person) e [])))
 
 (defmethod apply-event* :add-work
   [m {:keys [wid work] :as e}]
-  (if (contains? (:works m) wid)
+  (if (or (contains? (:works m) wid) (not (map? work)))
     (no-op m)
     (applied (assoc-in m [:works wid] work) e [])))
 
@@ -538,6 +540,32 @@ git commit -m "test(sim): ground-truth model, invariants, benign events"
       (let [e-all (assoc e :edge-keys [["000101" "著者"] ["000101" "翻訳者"]])]
         (is (nil? (:applied (model/apply-event m1 e-all))))))))
 
+(deftest malformed-events-no-op-test
+  ;; totality over structurally possible but invalid payloads: shrinking
+  ;; must yield no-ops, never invariant violations
+  (let [m (model/bootstrap 1)]
+    (doseq [e [;; :persons keys disagree with :targets
+               {:event/type :clean-split :pid "000001" :targets ["900001" "900002"]
+                :persons {"900001" (model/base-person)}}
+               ;; duplicate targets
+               {:event/type :clean-split :pid "000001" :targets ["900001" "900001"]
+                :persons {"900001" (model/base-person)}}
+               ;; source among targets
+               {:event/type :clean-split :pid "000001" :targets ["000001" "900001"]
+                :persons {"000001" (model/base-person) "900001" (model/base-person)}}
+               ;; missing person body
+               {:event/type :clean-merge :pids ["000001" "000002"] :target "900001"
+                :person nil}
+               ;; target = source
+               {:event/type :ambiguous-replacement :pid "000001" :target "000001"
+                :person (model/base-person)}
+               ;; nil work body on a benign add
+               {:event/type :add-work-with-edge :wid "800001" :work nil
+                :pid "900009" :person (model/base-person) :relation "著者"}]]
+      (let [{m' :model intent :applied} (model/apply-event m e)]
+        (is (nil? intent) (pr-str e))
+        (is (= m m') (pr-str e))))))
+
 (deftest impure-and-ambiguous-test
   (let [m (model/bootstrap 2)]
     (testing "impure-split reuses an existing person as one successor"
@@ -577,11 +605,26 @@ Expected: FAIL — `:default` method no-ops the drift events, so intents are nil
 (defn- rewrite-edges [m edge-keys f]
   (reduce (fn [m k] (update-in m [:edges k] f)) m edge-keys))
 
+(defn- valid-body? [x] (map? x))
+
+(defn- valid-targets?
+  "Totality over malformed payloads: targets distinct, none preexisting,
+  source not among them, and persons keyed EXACTLY by the targets with map
+  bodies — otherwise a shrunk event could write pids into edges without
+  matching person records and fold-history would throw."
+  [m pid targets persons]
+  (and (seq targets)
+       (apply distinct? targets)
+       (not-any? #(contains? (:persons m) %) targets)
+       (not (contains? (set targets) pid))
+       (= (set targets) (set (keys persons)))
+       (every? valid-body? (vals persons))))
+
 (defmethod apply-event* :clean-split
   [m {:keys [pid targets persons] :as e}]
   (if (or (< (count targets) 2)
           (not (sole-contributor? m pid))
-          (some #(contains? (:persons m) %) targets))
+          (not (valid-targets? m pid targets persons)))
     (no-op m)
     (let [ks (edges-of m pid)]
       (applied (-> m
@@ -595,7 +638,10 @@ Expected: FAIL — `:default` method no-ops the drift events, so intents are nil
   (let [srcs (set pids)
         ks (distinct (mapcat #(edges-of m %) pids))]
     (if (or (< (count srcs) 2)
+            (not= (count srcs) (count pids))
             (contains? (:persons m) target)
+            (contains? srcs target)
+            (not (valid-body? person))
             (not-every? #(contains? (:persons m) %) pids)
             (empty? ks)
             (not-every? #(= srcs (get-in m [:edges %])) ks))
@@ -611,6 +657,8 @@ Expected: FAIL — `:default` method no-ops the drift events, so intents are nil
   (let [ks (edges-of m pid)]
     (if (or (empty? ks)
             (contains? (:persons m) target)
+            (= pid target)
+            (not (valid-body? person))
             (not (contains? (:persons m) pid)))
       (no-op m)
       (applied (-> m
@@ -624,6 +672,9 @@ Expected: FAIL — `:default` method no-ops the drift events, so intents are nil
   (if (or (not (sole-contributor? m pid))
           (not (contains? (:persons m) existing-target))
           (= pid existing-target)
+          (= existing-target new-target)
+          (= pid new-target)
+          (not (valid-body? person))
           (contains? (:persons m) new-target))
     (no-op m)
     (let [ks (edges-of m pid)]
@@ -639,8 +690,7 @@ Expected: FAIL — `:default` method no-ops the drift events, so intents are nil
         chosen (set edge-keys)]
     (if (or (empty? chosen)
             (not (contains? (:persons m) pid))
-            (some #(contains? (:persons m) %) targets)
-            (empty? targets)
+            (not (valid-targets? m pid targets persons))
             (not (and (clojure.set/subset? chosen all) (< (count chosen) (count all)))))
       (no-op m)
       (applied (-> m
@@ -688,6 +738,17 @@ git commit -m "test(sim): drift events with edge-exhaustive preconditions"
   - `expected-split-candidates : intent → [{"work_id" .. "relation_to_work" .. "source_person_ids" [..] "target_person_ids" [..]}]`
     (edge-local, one entry per rewritten edge; same for
     `expected-merge-candidates`).
+  - `expected-replacements : prev-model × cur-model × intent → [{"work_id" .. "relation_to_work" .. "previous_person_ids" [..] "current_person_ids" [..]}]`
+    — the ambiguous-replacement entries the classifier must emit for a
+    conservatism-tier intent's rewritten edges, computed from the window's
+    endpoint states.
+
+  Note on oracle independence: `model-diff` and `confusable?` necessarily
+  share the set-difference partition with the classifier — the accounting
+  summary and the candidate evidence shape are DEFINED by that arithmetic.
+  They are structural oracles, not independent ones; independent anchoring
+  comes from the hand-written classification-matrix scenarios in
+  `abc/test/abc/tools/person_drift_history_test.clj`, which stay in force.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -837,9 +898,12 @@ Create `abc/test/abc/sim/oracle.clj`:
      :edge-counts counts}))
 
 (def ^:private locator-keys
+  ;; filesystem locators ONLY — :ingest (counts, skipped work ids) is
+  ;; deliberately retained: P14 must detect stale-work-dir contamination
+  ;; of ingest results, not just of the drift section.
   ["previous_dir" "current_dir" "input_dir" "input-dir"
    :previous_dir :current_dir :input-dir
-   :aozora-repo :work-dir :corpus-dirs :extracted-zips :ingest])
+   :aozora-repo :work-dir :corpus-dirs :extracted-zips])
 
 (defn semantic-report
   "Strip run-location fields so report equality is meaningful across
@@ -860,6 +924,16 @@ Create `abc/test/abc/sim/oracle.clj`:
 
 (defn expected-merge-candidates [intent]
   (edge-candidates intent (-> intent :event :pids) [(-> intent :event :target)]))
+
+(defn expected-replacements
+  "Ambiguous-replacement entries for a conservatism-tier intent's rewritten
+  edges, from the window's endpoint states (P3)."
+  [prev cur intent]
+  (vec (for [[wid rel :as k] (:edges intent)]
+         {"work_id" wid
+          "relation_to_work" rel
+          "previous_person_ids" (vec (sort (get-in prev [:edges k] #{})))
+          "current_person_ids" (vec (sort (get-in cur [:edges k] #{})))})))
 ```
 
 - [ ] **Step 4: Run tests to verify they pass**
@@ -963,7 +1037,21 @@ Create `abc/test/abc/sim/render_test.clj`:
     (testing "ragged-short renders a cell vector shorter than the header"
       (let [[r] (render/corrupt-rows rows [{:corrupt/type :ragged-short :wid "000101"}])]
         (is (vector? r))
-        (is (< (count r) (count render/headers)))))))
+        (is (< (count r) (count render/headers)))))
+    (testing "duplicate+divergent yields two distinct bodies for ONE person id"
+      ;; proves the fault shape P8/P13 rely on actually reaches the parser
+      (let [corrupted (render/corrupt-rows rows
+                                           [{:corrupt/type :duplicate-row
+                                             :wid "000101" :pid "000001"}
+                                            {:corrupt/type :divergent-person
+                                             :wid "000101" :pid "000001"
+                                             :column "姓" :value "×"}])
+            parsed (ac/read-rows-from-string (render/rows->csv corrupted))
+            same-pid (filter #(= "000001" (get % "人物ID")) parsed)]
+        (is (= 2 (count same-pid)))
+        (is (= #{(get (first same-pid) "姓") "×"}
+               (set (map #(get % "姓") same-pid))))
+        (is (apply not= (map #(get % "姓") same-pid)))))))
 ```
 
 - [ ] **Step 2: Run to verify failure**
@@ -1409,10 +1497,14 @@ git commit -m "test(sim): history generators with forced drift events"
   - `open? : id → boolean` (true for `:open` and `:adjudicated-bug`).
   - `expected-failure` macro:
     `(expected-failure :D1 "P6.divergent-work-fields" <desired-behavior-form>)`.
-    While `open?`, the desired-behavior form (which must evaluate truthy when
-    the DESIRED behavior holds; may throw) is expected NOT to hold — if it
+    While `open?`, the desired-behavior form is expected NOT to hold — if it
     starts holding, the test FAILS with "now passes — adjudicate". When the
     divergence is closed, the form is asserted directly with `clojure.test/is`.
+    The form must return a boolean derived from an ALREADY-CAPTURED outcome
+    (no SUT calls, no I/O that can throw): harness exceptions escape and fail
+    the test — they are never interpreted as "desired behavior absent". When
+    an exception IS the expected current behavior, capture it outside the
+    gate and assert its shape inside. Unknown divergence ids throw.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1433,6 +1525,14 @@ Create `abc/test/abc/sim/divergences_test.clj`:
   ;; :D1 is open: a FALSE desired-check passes, a TRUE desired-check fails.
   (is (true? (div/expected-failure* :D1 "demo" (fn [] false))))
   (is (false? (div/expected-failure* :D1 "demo" (fn [] true)))))
+
+(deftest harness-exceptions-and-unknown-ids-escape-test
+  (is (thrown? clojure.lang.ExceptionInfo (div/open? :D99)))
+  (is (thrown? clojure.lang.ExceptionInfo
+       (div/expected-failure* :D99 "demo" (fn [] false))))
+  ;; a throwing desired-fn is a harness defect, not an expected failure
+  (is (thrown? IllegalStateException
+       (div/expected-failure* :D1 "demo" #(throw (IllegalStateException. "boom"))))))
 ```
 
 - [ ] **Step 2: Run to verify failure**
@@ -1465,15 +1565,20 @@ Create `abc/test/abc/sim/divergences.clj`:
    :D6 {:case "P13.non-zip-bytes" :status :open
         :notes "suspected: raw ZipException from ZipFile ctor; confirm during P13"}})
 
+(defn- entry [id]
+  (or (get table id)
+      (throw (ex-info "unknown divergence id" {:id id :known (vec (keys table))}))))
+
 (defn open? [id]
-  (contains? #{:open :adjudicated-bug} (get-in table [id :status])))
+  (contains? #{:open :adjudicated-bug} (:status (entry id))))
 
 (defn expected-failure*
-  "Returns true when the outcome matches the table's expectation. Desired-fn
-  must return truthy iff DESIRED behavior holds; throwing counts as
-  not-holding."
+  "Returns true when the outcome matches the table's expectation. desired-fn
+  must return a boolean derived from an already-captured SUT outcome; it must
+  not perform SUT calls or I/O. Exceptions ESCAPE (harness defect), they are
+  never treated as 'desired behavior absent'."
   [id _desc desired-fn]
-  (let [holds? (try (boolean (desired-fn)) (catch Exception _ false))]
+  (let [holds? (boolean (desired-fn))]
     (if (open? id) (not holds?) holds?)))
 
 (defmacro expected-failure
@@ -1543,13 +1648,19 @@ Create `abc/test/abc/sim/classifier_sim_test.clj`:
    (get-in r ["summary" "merge_candidates"])])
 
 ;; P1.benign-quiet — aggregated window over the whole benign history.
+;; Confusable endpoints are excluded by the normative predicate, but the
+;; exclusion rate is measured: ≥ 90% of cases must actually be checked, so
+;; a generator-distribution change cannot silently make P1 vacuous.
 (deftest p1-benign-quiet-sim-test
-  (harness/check! "P1.benign-quiet" 50
-    (prop/for-all [hist (sgen/benign-history-gen {:length [5 12] :works [5 12]})]
-      (let [{:keys [states]} (model/fold-history hist)
-            prev (first states) cur (peek states)]
-        (or (oracle/confusable? prev cur) ;; excluded by the normative predicate
-            (= [0 0] (candidate-counts (report-for-window prev cur))))))))
+  (let [c (harness/ratio-counter)]
+    (harness/check! "P1.benign-quiet" 50
+      (prop/for-all [hist (sgen/benign-history-gen {:length [5 12] :works [5 12]})]
+        (let [{:keys [states]} (model/fold-history hist)
+              prev (first states) cur (peek states)]
+          (if-not (harness/tick! c (not (oracle/confusable? prev cur)))
+            true
+            (= [0 0] (candidate-counts (report-for-window prev cur)))))))
+    (harness/assert-applied-ratio! "P1.benign-quiet non-confusable rate" c)))
 
 (defn- forced-window
   "States immediately around the forced intent's position: find the first
@@ -1564,37 +1675,51 @@ Create `abc/test/abc/sim/classifier_sim_test.clj`:
                         (:events hist)))]
         {:intent intent :prev (nth states idx) :cur (nth states (inc idx))}))))
 
-;; P2 — completeness, edge-local candidates.
-(defn- completeness-prop [forced expected-fn candidates-key counter]
+;; P2 — completeness: the window is exactly the forced-event pair, so the
+;; report's candidate set must EQUAL the injected candidates (a classifier
+;; that adds false positives fails), and the opposite candidate list must
+;; be empty.
+(defn- completeness-prop [forced expected-fn candidates-key other-key counter]
   (prop/for-all [hist (sgen/history-gen {:length [4 8] :works [4 8] :forced forced})]
     (let [w (forced-window hist forced)]
       (if-not (harness/tick! counter (some? w))
         true ;; no-op after shrink: totality only
         (let [r (report-for-window (:prev w) (:cur w))]
-          (every? (set (get r candidates-key))
-                  (expected-fn (:intent w))))))))
+          (and (= (set (expected-fn (:intent w)))
+                  (set (get r candidates-key)))
+               (empty? (get r other-key))))))))
 
 (deftest p2-clean-split-sim-test
   (let [c (harness/ratio-counter)]
     (harness/check! "P2.clean-split" 50
       (completeness-prop :clean-split oracle/expected-split-candidates
-                         "split_candidates" c))
+                         "split_candidates" "merge_candidates" c))
     (harness/assert-applied-ratio! "P2.clean-split" c)))
 
 (deftest p2-clean-merge-sim-test
   (let [c (harness/ratio-counter)]
     (harness/check! "P2.clean-merge" 50
       (completeness-prop :clean-merge oracle/expected-merge-candidates
-                         "merge_candidates" c))
+                         "merge_candidates" "split_candidates" c))
     (harness/assert-applied-ratio! "P2.clean-merge" c)))
 
-;; P3 — conservatism: these intents never yield candidates in their window.
+;; P3 — conservatism is positive classification, not mere absence: the
+;; rewritten edges must appear in ambiguous_replacements with the exact
+;; endpoint pid sets (a classifier that silently drops them fails), no
+;; candidates, and partial-split's source must not be globally removed.
 (defn- conservatism-prop [forced counter]
   (prop/for-all [hist (sgen/history-gen {:length [4 8] :works [4 8] :forced forced})]
     (let [w (forced-window hist forced)]
       (if-not (harness/tick! counter (some? w))
         true
-        (= [0 0] (candidate-counts (report-for-window (:prev w) (:cur w))))))))
+        (let [r (report-for-window (:prev w) (:cur w))
+              expected (set (oracle/expected-replacements
+                             (:prev w) (:cur w) (:intent w)))]
+          (and (= [0 0] (candidate-counts r))
+               (= expected (set (get r "ambiguous_replacements")))
+               (or (not= forced :partial-split)
+                   (not-any? #{(-> w :intent :event :pid)}
+                             (get r "removed_person_ids")))))))))
 
 (deftest p3-ambiguous-sim-test
   (let [c (harness/ratio-counter)]
@@ -1682,8 +1807,11 @@ git commit -m "test(sim): classifier properties P1-P5"
 - Consumes: `abc.tools.aozora-ingest/run-corpus!`,
   `abc.tools.aozora-csv/read-rows-from-string`, everything above.
 - Produces: cases `P6.clean-faithfulness`, `P6.divergent-work-fields` (D1),
-  `P7.date-classes`, `P8.skip-counted`, `P8.atomicity` (D4),
-  `P8.order-independence` (D4), `P9.byte-stable`.
+  `P6.encoding-equivalence` (BOM + header permutation),
+  `P6.quoting-through-ingest`, `P6.duplicate-dedup`, `P7.date-classes`
+  (normalized values + correction rules under provenance),
+  `P8.skip-counted`, `P8.atomicity` (D4), `P8.order-independence` (D4, both
+  processing orders), `P9.byte-stable`.
 
 - [ ] **Step 1: Write the tests**
 
@@ -1705,6 +1833,7 @@ Create `abc/test/abc/sim/ingest_sim_test.clj`:
             [abc.tools.files :as files]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
+            [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]))
 
 (defn- ingest-rows! [rows dir]
@@ -1778,38 +1907,101 @@ Create `abc/test/abc/sim/ingest_sim_test.clj`:
                           ["work" "title"]))))
       (finally (render/delete-tree! dir)))))
 
-;; P7.date-classes — every parse-date input class: correction+valid, or
-;; passthrough+skip; never a crash or silent third outcome.
+;; P7.date-classes — every parse-date input class: normalized EDTF value +
+;; the exact correction rules (carried in source_csv_provenance), verbatim
+;; admission, or passthrough+skip; never a crash or silent third outcome.
+;; Corrections are only emitted when provenance is supplied (ADR 0015
+;; two-mode contract), so the ingest here passes a provenance map.
 (def date-cases
-  ;; [cell expected-outcome] where outcome ∈ :corrected :verbatim-valid :skipped
-  [["1900. 1. 1" :corrected]
-   ["1900 - 01 - 01" :corrected]
-   ["1900--01" :corrected]
-   ["不詳" :corrected]          ;; null + unknown-marker correction
-   ["前5" :corrected]
-   ["紀元前5世紀初頭" :corrected]
-   ["192X" :verbatim-valid]
-   ["2020-02-31" :skipped]      ;; impossible calendar date → schema reject
-   ["こんにちは" :skipped]])     ;; unparseable shape → schema reject
+  ;; [cell normalized rules outcome]; outcome ∈ :corrected :verbatim :skipped
+  [["1900. 1. 1" "1900-01-01"
+    #{"strip-whitespace" "normalize-date-separator" "pad-month" "pad-day"} :corrected]
+   ["1900 - 01 - 01" "1900-01-01" #{"strip-whitespace"} :corrected]
+   ["1900--01" "1900-01" #{"collapse-multi-dash"} :corrected]
+   ["不詳" nil #{"unknown-marker"} :corrected]
+   ["前5" "-0004" #{"bce-astronomical"} :corrected]
+   ["紀元前5世紀初頭" "-04XX" #{"century-prose"} :corrected]
+   ["192X" "192X" #{} :verbatim]
+   ["2020-02-31" nil nil :skipped]      ;; impossible date → schema reject
+   ["こんにちは" nil nil :skipped]])     ;; unparseable shape → schema reject
+
+(def ^:private test-provenance
+  {"source_url" nil
+   "retrieved_at" nil
+   "original_file_hash" (str "sha256:" (apply str (repeat 64 "a")))})
 
 (deftest p7-date-classes-sim-test
-  (doseq [[cell outcome] date-cases]
+  (doseq [[cell normalized rules outcome] date-cases]
     (testing (pr-str cell)
       (let [m (model/bootstrap 2) ;; work 000101 dirty, 000102 clean
-            {:keys [dir result]} (ingest-model m [{:corrupt/type :cell
-                                                   :wid "000101"
-                                                   :column "生年月日" :value cell}])]
+            rows (render/corrupt-rows (render/model->rows m)
+                                      [{:corrupt/type :cell :wid "000101"
+                                        :pid "000001"
+                                        :column "生年月日" :value cell}])
+            parsed (ac/read-rows-from-string (render/rows->csv rows))
+            dir (render/temp-dir "sim-p7")
+            result (ingest/run-corpus! {:rows parsed :output-dir (str dir)
+                                        :overwrite true
+                                        :source-csv-provenance test-provenance})]
         (try
-          (case outcome
-            :skipped
+          (if (= :skipped outcome)
             (is (= ["000101"] (:skipped-work-ids result)) (pr-str cell))
-
-            (:corrected :verbatim-valid)
-            (do (is (zero? (:works-skipped result)) (pr-str cell))
-                (is (some? (ingested-person dir "000001")) (pr-str cell))))
+            (let [r (ingested-person dir "000001")
+                  corrs (filter #(= "date_of_birth" (get % "field"))
+                                (get-in r ["source_csv_provenance"
+                                           "parse_corrections"]))]
+              (is (zero? (:works-skipped result)) (pr-str cell))
+              (is (= normalized (get r "date_of_birth")) (pr-str cell))
+              (is (= rules (set (map #(get % "rule") corrs))) (pr-str cell))))
           ;; the clean work always survives
           (is (some? (ingested-person dir "000002")))
           (finally (render/delete-tree! dir)))))))
+
+;; P6.encoding-equivalence — BOM presence and header permutation must not
+;; change ingest output at all (byte-level snapshot comparison).
+(deftest p6-encoding-equivalence-sim-test
+  (harness/check! "P6.encoding-equivalence" 15
+    (prop/for-all [hist (sgen/benign-history-gen {:length [2 5] :works [2 5]})
+                   permuted (gen/shuffle render/headers)]
+      (let [m (peek (:states (model/fold-history hist)))
+            rows (render/model->rows m)
+            snap (fn [csv]
+                   (let [dir (render/temp-dir "sim-enc")]
+                     (try
+                       (ingest-rows! (ac/read-rows-from-string csv) dir)
+                       (into {} (for [f (file-seq (io/file dir))
+                                      :when (.isFile ^java.io.File f)]
+                                  [(subs (str f) (count (str dir))) (slurp f)]))
+                       (finally (render/delete-tree! dir)))))
+            canonical (snap (render/rows->csv rows))]
+        (and (= canonical (snap (render/rows->csv rows {:bom? true})))
+             (= canonical (snap (render/rows->csv rows {:header-cells (vec permuted)}))))))))
+
+;; P6.quoting — quoted commas/newlines/quotes must survive INGEST, not just
+;; CSV parsing (the render-layer test only proves the latter).
+(deftest p6-quoting-through-ingest-sim-test
+  (let [title "旅,\"新\"\n行"
+        m (:model (model/apply-event (model/bootstrap 1)
+                                     {:event/type :edit-work :wid "000101"
+                                      :field :title :value title}))
+        {:keys [dir result]} (ingest-model m [])]
+    (try
+      (is (zero? (:works-skipped result)))
+      (is (= title (get-in (files/read-json (io/file dir "works" "000101.json"))
+                           ["work" "title"])))
+      (finally (render/delete-tree! dir)))))
+
+;; P6.duplicate-dedup — an exact duplicate row changes nothing.
+(deftest p6-duplicate-dedup-sim-test
+  (let [m (model/bootstrap 2)
+        run (fn [corruptions]
+              (let [{:keys [dir result]} (ingest-model m corruptions)]
+                (try {:result result
+                      :work (files/read-json (io/file dir "works" "000101.json"))
+                      :person (ingested-person dir "000001")}
+                     (finally (render/delete-tree! dir)))))]
+    (is (= (run [])
+           (run [{:corrupt/type :duplicate-row :wid "000101" :pid "000001"}])))))
 
 ;; P8.skip-counted — generative: a within-work person divergence skips
 ;; exactly that work; clean works' records stay present and correct.
@@ -1860,32 +2052,39 @@ Create `abc/test/abc/sim/ingest_sim_test.clj`:
       (finally (render/delete-tree! dir)))))
 
 ;; P8.order-independence — D4: a dirty work must not damage a clean work
-;; that shares a person. Cross-work divergence (same pid, different valid
-;; bodies in two works): without :overwrite, whichever work ingests second
-;; hits the refuse-to-overwrite guard and is skipped — the clean work's
-;; fate depends on processing order relative to the dirty work.
+;; that shares a person, in EITHER processing order. run-corpus! processes
+;; works sorted by work id, so both orders are exercised by mirroring which
+;; logical work carries the divergent row: dirty=000101 makes the dirty work
+;; ingest first (clean work then hits the refuse-to-overwrite guard);
+;; dirty=000102 makes the clean work ingest first. The desired contract is
+;; the CONJUNCTION over both orders, gated once.
 (deftest p8-order-independence-sim-test
-  (let [m0 (model/bootstrap 2)
-        ;; shared person: 000001 also contributes to work 000102
-        m (:model (model/apply-event m0 {:event/type :add-edge :wid "000102"
-                                         :relation "翻訳者" :pid "000001"}))
-        ;; valid-but-different 姓 only in work 000101's row for 000001:
-        ;; work 000101 ingests first (sorted) and wins the person file
-        rows (render/corrupt-rows (render/model->rows m)
-                                  [{:corrupt/type :cell
-                                    :wid "000101" :pid "000001"
-                                    :column "姓" :value "別"}])
-        parsed (ac/read-rows-from-string (render/rows->csv rows))
-        dir (render/temp-dir "sim-isolation")
-        result (ingest/run-corpus! {:rows parsed :output-dir (str dir)})] ;; NO :overwrite
-    (try
-      (div/expected-failure :D4 "P8.order-independence"
-        ;; DESIRED: the clean work 000102 is unaffected by 000101's divergent
-        ;; shared-person body. Current: 000102 is skipped by the overwrite
-        ;; guard because 000101 wrote 姓=別 first.
-        (and (not-any? #{"000102"} (:skipped-work-ids result))
-             (some? (ingested-person dir "000002"))))
-      (finally (render/delete-tree! dir)))))
+  (let [run-order
+        (fn [dirty-wid]
+          (let [m0 (model/bootstrap 2)
+                ;; shared person: 000001 contributes to both works
+                m (:model (model/apply-event m0 {:event/type :add-edge
+                                                 :wid "000102"
+                                                 :relation "翻訳者" :pid "000001"}))
+                ;; valid-but-different 姓 only in the dirty work's row
+                rows (render/corrupt-rows (render/model->rows m)
+                                          [{:corrupt/type :cell
+                                            :wid dirty-wid :pid "000001"
+                                            :column "姓" :value "別"}])
+                parsed (ac/read-rows-from-string (render/rows->csv rows))
+                dir (render/temp-dir "sim-isolation")
+                result (ingest/run-corpus! {:rows parsed
+                                            :output-dir (str dir)})] ;; NO :overwrite
+            (try
+              (let [clean-wid (if (= dirty-wid "000101") "000102" "000101")]
+                (not-any? #{clean-wid} (:skipped-work-ids result)))
+              (finally (render/delete-tree! dir)))))
+        dirty-first-ok? (run-order "000101")
+        clean-first-ok? (run-order "000102")]
+    (div/expected-failure :D4 "P8.order-independence"
+      ;; DESIRED: clean work unaffected in both orders. Current: when the
+      ;; dirty work ingests first, the clean work is skipped by the guard.
+      (and dirty-first-ok? clean-first-ok?))))
 
 ;; P9.byte-stable — re-ingest is byte-identical, no overwrite errors.
 (deftest p9-byte-stable-sim-test
@@ -2346,28 +2545,32 @@ git commit -m "test(sim): sampling properties P12 with D2 expected failure"
   (and (instance? clojure.lang.ExceptionInfo e)
        (every? #(contains? (ex-data e) %) required-keys)))
 
-;; P13.ragged-row — D3: row-level fault must not abort; desired = work skipped.
+;; P13.ragged-row — D3: row-level fault must not abort; desired = work
+;; skipped. Both directions of raggedness get a defined outcome.
 (deftest p13-ragged-row-sim-test
+  (doseq [corrupt [:ragged-short :ragged-long]]
+    (let [m (model/bootstrap 2)
+          rows (render/corrupt-rows (render/model->rows m)
+                                    [{:corrupt/type corrupt :wid "000101"}])
+          {:keys [result threw]} (audit-two!
+                                  (render/csv->zip-bytes (render/rows->csv rows)))]
+      (is (nil? threw) (str corrupt ": row-level fault must never abort an audit"))
+      (div/expected-failure :D3 (str "P13.ragged-row/" (name corrupt))
+        ;; DESIRED: the ragged work is skipped with a reason, not silently
+        ;; ingested with truncated/dropped cells.
+        (boolean (some #{"000101"}
+                       (get-in result [:ingest :current :skipped-work-ids])))))))
+
+;; P13.divergent-person — absorbed and counted (current behavior matches
+;; spec). The fault must be two bodies for the SAME person id within one
+;; work: duplicate person 000001's row, then diverge the duplicate's 姓.
+(deftest p13-divergent-person-sim-test
   (let [m (model/bootstrap 2)
         rows (render/corrupt-rows (render/model->rows m)
-                                  [{:corrupt/type :ragged-short :wid "000101"}])
-        {:keys [result threw]} (audit-two!
-                                (render/csv->zip-bytes (render/rows->csv rows)))]
-    (is (nil? threw) "row-level fault must never abort an audit")
-    (div/expected-failure :D3 "P13.ragged-row"
-      ;; DESIRED: the ragged work is skipped with a reason, not silently
-      ;; ingested with truncated cells.
-      (some #{"000101"} (get-in result [:ingest :current :skipped-work-ids])))))
-
-;; P13.divergent-person — absorbed and counted (current behavior matches spec).
-(deftest p13-divergent-person-sim-test
-  (let [m0 (model/bootstrap 2)
-        m (:model (model/apply-event m0 {:event/type :add-person-with-edge
-                                         :pid "000009" :person (model/base-person)
-                                         :wid "000101" :relation "翻訳者"}))
-        rows (render/corrupt-rows (render/model->rows m)
-                                  [{:corrupt/type :divergent-person :wid "000101"
-                                    :column "姓" :value "×"}])
+                                  [{:corrupt/type :duplicate-row :wid "000101"
+                                    :pid "000001"}
+                                   {:corrupt/type :divergent-person :wid "000101"
+                                    :pid "000001" :column "姓" :value "×"}])
         {:keys [result threw]} (audit-two!
                                 (render/csv->zip-bytes (render/rows->csv rows)))]
     (is (nil? threw))
@@ -2491,8 +2694,10 @@ In `abc/src/abc/tools/person_drift_history.clj:167-174`, change
 
 `clojure -M:test:kaocha -m kaocha.runner --focus abc.sim.classifier-sim-test`
 
-Expected: `p2-clean-split-sim-test` FAILS with a shrunk history of ≤ 3
-events. Then **revert the mutation**:
+Expected: `p2-clean-split-sim-test` FAILS, and the reported shrunk
+counterexample contains an applied clean-split event (typically ≤ 3 events;
+the numeric bound is indicative, not enforced — shrinking of gen/bind
+chains is not guaranteed minimal). Then **revert the mutation**:
 
 ```bash
 git checkout -- abc/src/abc/tools/person_drift_history.clj
@@ -2522,9 +2727,27 @@ git commit -m "test(sim): work-dir hygiene P14 and sim-soak target"
   are T4; edge-exhaustive drift preconditions are T3; seed corpus + soak +
   applied-ratio acceptance criteria are T1/T14; mutation-catch acceptance is
   T14 step 4; unit-suite-unchanged constraint is checked in T1, T10, T14.
-- The spec's BOM / column-reorder / quoted-field dirty events are covered by
-  `rows->csv` options and the quoting test (T5); duplicate-row is exercised
-  inside P8 cases (T9). Non-monotonic dates and intra-period churn are T12.
+- The spec's BOM / column-reorder / quoted-field / duplicate-row dirty
+  events are asserted as INGEST-level behavior in T9
+  (`P6.encoding-equivalence`, `P6.quoting-through-ingest`,
+  `P6.duplicate-dedup`), not just exposed as render options; ragged-short
+  and ragged-long both have defined P13 outcomes. Non-monotonic dates and
+  intra-period churn are T12.
+- Review hardening (2026-07-11 plan review): the divergence gate lets
+  harness exceptions escape and rejects unknown ids (T7); `apply-event` is
+  total over malformed payloads with unit tests (T2/T3); P2 asserts
+  candidate-set EQUALITY plus empty opposite list; P1 measures its
+  non-confusable rate (≥ 90%); P3 asserts positive `ambiguous_replacements`
+  classification via `oracle/expected-replacements`; `semantic-report`
+  retains `:ingest`; P13's divergent-person fixture uses a same-pid
+  duplicate; P7 verifies normalized values and correction rules under
+  supplied provenance; the mutation-catch bound is indicative.
+- Acknowledged structural oracles: `model-diff`/`confusable?` share the
+  set-difference partition with the classifier by definition; independent
+  anchoring remains the hand-written scenarios in
+  `person_drift_history_test.clj` (noted in T4).
 - Type consistency: `apply-event` returns `{:model :applied}` everywhere;
   intents are `{:intent :event :edges}`; `check!` signature is
-  `(check! name num-tests prop)` in every property test.
+  `(check! name num-tests prop)` in every property test;
+  `completeness-prop` takes `[forced expected-fn candidates-key other-key
+  counter]`.

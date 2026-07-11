@@ -484,8 +484,9 @@ matching existing test hygiene.
   cases in which its forced event actually applied; that fraction is ≥ 0.9
   per seed, so intent assertions are non-vacuous.
 - A deliberately introduced classifier bug (e.g. inverting
-  `split-candidate?`'s subset check) is caught by `P2.clean-split` with a
-  shrunk counterexample of ≤ 3 events.
+  `split-candidate?`'s subset check) is caught by `P2.clean-split`, with a
+  shrunk counterexample that still contains an applied clean-split
+  (typically ≤ 3 events; the bound is indicative, not enforced).
 - The unit suite's runtime and results are unchanged.
 - D1–D6 are filed as triage entries with `open` status, not silently encoded
   as golden behavior; D5/D6's current-behavior claims are confirmed or

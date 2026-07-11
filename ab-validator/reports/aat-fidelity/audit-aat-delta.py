@@ -102,6 +102,95 @@ def is_empty_text(node):
             and node.get("value", "") == "")
 
 
+def is_wrapper_style(node):
+    # Block-assembly style wrapper (chitsuki/burasage): assembled AROUND
+    # flat stream nodes and carries NO span field. Inline styles built in
+    # inline_content carry a span and existed whole in the flat stream —
+    # Rust's boundary strip saw them as non-text nodes and no-op'd.
+    return (isinstance(node, dict) and node.get("kind") == "style"
+            and "span" not in node and isinstance(node.get("content"), list))
+
+
+def is_container_derived_block(block):
+    # Blocks assembled FROM a containerOpen marker: in Rust's flat close
+    # scan (find_matching_container_close) that marker was still inline
+    # and ABORTED the scan — jisage_block from ［＃ここから…字下げ］,
+    # burasage-style paragraphs from ［＃ここから…折り返して…］.
+    # Chitsuki paragraphs (alignEnd) and headings (headingHint) come from
+    # non-containerOpen markers and do not abort.
+    if not isinstance(block, dict):
+        return False
+    if block.get("kind") == "jisage_block":
+        return True
+    if block.get("kind") == "paragraph":
+        content = block.get("content", [])
+        return bool(content) and (
+            is_wrapper_style(content[0])
+            and content[0].get("style_type") == "burasage")
+    return False
+
+
+def strip_trailing_leaf(node):
+    # Flat-stream trailing strip when the flat-last node was consumed into
+    # a no-span style wrapper: descend to the last leaf and strip if it is
+    # text. Never descend into span-carrying nodes — Rust saw those whole
+    # in the stream and no-op'd on them.
+    if isinstance(node, dict) and node.get("kind") == "text":
+        return strip_trailing_newline(node)
+    if is_wrapper_style(node):
+        inner = node["content"]
+        if inner:
+            last = strip_trailing_leaf(inner[-1])
+            if last is not inner[-1]:
+                return dict(node, content=inner[:-1] + [last])
+    return node
+
+
+def strip_trailing_in_block(block):
+    """Apply the flat-last boundary strip inside the last middle block.
+
+    Rust strips the flat inner stream's LAST node BEFORE assembly
+    (strip_boundary_newlines). When the close marker starts its own
+    paragraph (tail empty), that node is the last stream node consumed by
+    the last middle block — only paragraph-kind blocks (plain, or
+    chitsuki/burasage no-span style wrappers) end on a stream node.
+    jisage_block ends on its consumed close marker and heading on its
+    consumed hint: Rust no-op'd on those raws, so we never descend there.
+    """
+    if not (isinstance(block, dict) and block.get("kind") == "paragraph"):
+        return block
+    content = block.get("content", [])
+    if not content:
+        return block
+    last = strip_trailing_leaf(content[-1])
+    if last is content[-1]:
+        return block
+    return dict(block, content=content[:-1] + [last])
+
+
+def apply_post_close_strip(rest):
+    # Rust's strip_next_leading_newline (lib.rs ~347-359) consumes on the
+    # NEXT stream node. When the close marker ended its paragraph (post
+    # empty), that node opens the next block. Only a plain paragraph
+    # starts with a stream node; chitsuki/burasage paragraphs, jisage
+    # blocks, and headings start with a marker the assembler consumed
+    # (flag cleared with no effect). An emptied text node is DROPPED; a
+    # paragraph emptied by the drop disappears (push_paragraph_if_not_empty).
+    if not rest:
+        return rest
+    block = rest[0]
+    if not (isinstance(block, dict) and block.get("kind") == "paragraph"):
+        return rest
+    content = block.get("content", [])
+    if not content or is_wrapper_style(content[0]):
+        return rest
+    first = strip_leading_newline(content[0])
+    content = ([] if is_empty_text(first) else [first]) + content[1:]
+    if not content:
+        return rest[1:]
+    return [dict(block, content=content)] + rest[1:]
+
+
 def scan_segment(nodes, start, needle):
     """Mirror find_matching_container_close over one content slice."""
     for k in range(start, len(nodes)):
@@ -146,6 +235,8 @@ def rewrite_blocks(blocks):
             j = i + 1
             while j < len(blocks):
                 nxt = blocks[j]
+                if is_container_derived_block(nxt):
+                    break  # its containerOpen was inline in Rust's scan: abort
                 if isinstance(nxt, dict) and nxt.get("kind") == "paragraph":
                     state, k = scan_segment(nxt.get("content", []), 0, needle)
                     if state == "close":
@@ -174,8 +265,14 @@ def rewrite_blocks(blocks):
             middle = blocks[i + 1:close_block_index]
             if head:
                 head = [strip_leading_newline(head[0])] + head[1:]
+            # Trailing boundary strip lands on the FLAT stream's last
+            # inner node: in the tail slice if non-empty; otherwise on the
+            # last stream node consumed by the last middle block;
+            # otherwise (no middle) at the end of the head.
             if tail:
                 tail = tail[:-1] + [strip_trailing_newline(tail[-1])]
+            elif middle:
+                middle = middle[:-1] + [strip_trailing_in_block(middle[-1])]
             elif head:
                 head = head[:-1] + [strip_trailing_newline(head[-1])]
             children = []
@@ -197,11 +294,15 @@ def rewrite_blocks(blocks):
         # newline; if that empties the text node, DROP it (the Rust
         # post-close path removes emptied nodes — asymmetric with
         # strip_boundary_newlines, which keeps them).
+        rest = blocks[close_block_index + 1:]
         if post:
             first = strip_leading_newline(post[0])
             post = ([] if is_empty_text(first) else [first]) + post[1:]
+        else:
+            # Close ended its paragraph: the flag consumes on the first
+            # stream node of the NEXT block instead.
+            rest = apply_post_close_strip(rest)
         post_para = make_para(post)
-        rest = blocks[close_block_index + 1:]
         rewritten_rest, rest_count = rewrite_blocks(
             ([post_para] if post_para else []) + rest)
         out.extend(rewritten_rest)

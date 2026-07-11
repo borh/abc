@@ -143,6 +143,114 @@ def test_missing_file_fails(tmp_path):
     assert code == 2
 
 
+def style_chitsuki(content):
+    # push_chitsuki_paragraph shape: no-span block-assembly wrapper.
+    return {"kind": "style", "style_type": "chitsuki", "content": list(content),
+            "x-align": "right", "x-offset": 0, "x-provenance": "source-derived"}
+
+
+def style_span(content, start, end):
+    # Inline style built in inline_content: CARRIES a span, existed whole
+    # in the flat stream at strip time — Rust's boundary strip no-ops on it.
+    return {"kind": "style", "style_type": "bold", "content": list(content),
+            "span": {"byte_start": start, "byte_end": end,
+                     "line_start": 1, "line_end": 1}}
+
+
+def test_tail_in_chitsuki_wrapper_stripped(tmp_path):
+    # Close marker starts its paragraph (tail empty): the flat stream's
+    # last inner node is the chitsuki wrapper's text — Rust stripped it
+    # BEFORE the wrapper assembled. The head keeps its trailing newline.
+    base = write_dump(tmp_path, "a", {"w1": doc([
+        para(text("前\n"), raw_marker(OPEN, "containerOpen", 4), text("\n頭\n", 40)),
+        para(style_chitsuki([text("著者\n", 50)])),
+        para(raw_marker(CLOSE, "containerClose", 60), text("\n後\n", 90))])})
+    cand = write_dump(tmp_path, "b", {"w1": doc([
+        para(text("前\n")),
+        {"kind": "keigakomi_block", "children": [
+            para(text("頭\n", 40, 45)),
+            para(style_chitsuki([text("著者", 50, 57)]))]},
+        para(text("後\n", 90, 95))])})
+    code, summary, err = run("container-rewrite", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["rewritten"] == 1
+
+
+def test_span_carrying_style_at_tail_not_stripped(tmp_path):
+    # A span-carrying inline style at the tail existed whole in the flat
+    # stream: Rust's strip no-ops on it. Candidate keeps the trailing
+    # newline inside it too.
+    inner_style = style_span([text("末尾\n", 20)], 20, 27)
+    base = write_dump(tmp_path, "a", {"w1": doc([
+        para(text("前\n"), raw_marker(OPEN, "containerOpen", 4),
+             text("\n中身", 10), inner_style,
+             raw_marker(CLOSE, "containerClose", 40), text("\n後\n", 70))])})
+    cand = write_dump(tmp_path, "b", {"w1": doc([
+        para(text("前\n")),
+        {"kind": "keigakomi_block", "children": [
+            para(text("中身", 10, 17), inner_style)]},
+        para(text("後\n", 70, 75))])})
+    code, summary, err = run("container-rewrite", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["rewritten"] == 1
+
+
+def test_candidate_stripping_span_styled_tail_fails(tmp_path):
+    # The other direction: a candidate that stripped INSIDE the
+    # span-carrying style did something Rust does not do — exit 2.
+    base = write_dump(tmp_path, "a", {"w1": doc([
+        para(text("前\n"), raw_marker(OPEN, "containerOpen", 4),
+             text("\n中身", 10), style_span([text("末尾\n", 20)], 20, 27),
+             raw_marker(CLOSE, "containerClose", 40), text("\n後\n", 70))])})
+    cand = write_dump(tmp_path, "b", {"w1": doc([
+        para(text("前\n")),
+        {"kind": "keigakomi_block", "children": [
+            para(text("中身", 10, 17), style_span([text("末尾", 20, 27)], 20, 27))]},
+        para(text("後\n", 70, 75))])})
+    code, _, _ = run("container-rewrite", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_intervening_jisage_block_aborts_pairing(tmp_path):
+    # A jisage_block between open and close was assembled FROM a
+    # containerOpen marker: Rust's flat close-scan aborted on it, so the
+    # pair is unadmitted and stays verbatim; the other pair still rewrites.
+    jisage = {"kind": "jisage_block", "x-indent": 2,
+              "children": [para(text("じ\n", 150))]}
+    aborted_open = para(text("違\n", 100), raw_marker(OPEN, "containerOpen", 110))
+    late_close = para(raw_marker(CLOSE, "containerClose", 200), text("x\n", 230))
+    base = write_dump(tmp_path, "a", {"w1": doc([
+        para(text("あ\n"), raw_marker(OPEN, "containerOpen", 4), text("\n中身\n", 10),
+             raw_marker(CLOSE, "containerClose", 40), text("\n後\n", 70)),
+        aborted_open, jisage, late_close])})
+    cand = write_dump(tmp_path, "b", {"w1": doc([
+        para(text("あ\n")),
+        {"kind": "keigakomi_block", "children": [para(text("中身", 10, 18))]},
+        para(text("後\n", 70, 75)),
+        aborted_open, jisage, late_close])})
+    code, summary, err = run("container-rewrite", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["rewritten"] == 1
+
+
+def test_post_close_chitsuki_paragraph_not_stripped(tmp_path):
+    # Post empty (close ends its paragraph): Rust's post-close flag is
+    # consumed by the next flat node — the chitsuki alignEnd MARKER, not
+    # the text inside the wrapper. The wrapper text keeps its newline.
+    chitsuki_para = para(style_chitsuki([text("\n地付き", 60)]))
+    base = write_dump(tmp_path, "a", {"w1": doc([
+        para(text("前\n"), raw_marker(OPEN, "containerOpen", 4), text("\n中身\n", 10),
+             raw_marker(CLOSE, "containerClose", 40)),
+        chitsuki_para])})
+    cand = write_dump(tmp_path, "b", {"w1": doc([
+        para(text("前\n")),
+        {"kind": "keigakomi_block", "children": [para(text("中身", 10, 18))]},
+        chitsuki_para])})
+    code, summary, err = run("container-rewrite", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["rewritten"] == 1
+
+
 def test_top_level_array_is_reference_error(tmp_path):
     # Valid JSON, wrong shape: fail-closed (exit 2, never an uncaught
     # traceback / exit 1).

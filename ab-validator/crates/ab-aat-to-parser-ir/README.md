@@ -72,9 +72,9 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 
 ## Current Evidence
 
-- Mapping version: `0.2.6`
+- Mapping version: `0.2.8`
 - Mapping hash:
-  `sha256:e36508c32ef14bb59dac27d5da082fec0d34c345b2fb6bc280c1879919c52fe2`
+  `sha256:952620ced4eb22f9771e6a10c3a1d4d93de604a8c33e360311f82b6e1eafc5b7`
 - Mapping schema hash:
   `sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2`
 - Parser-IR schema hash:

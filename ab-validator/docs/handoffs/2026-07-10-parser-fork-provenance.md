@@ -481,3 +481,10 @@ C2=`a3f91f53fcae9bc18f577ea5b746f3be7f228fcb`). Follow-up disposition:
   +34.77%) — acceptable under the gate's median threshold but worth
   tracking if span-confinement cost grows with future schema work
   (`docs/superpowers/reports/2026-07-11-phase3-span-perf.summary.json`).
+- **Also carried on the Phase 4 ledger** (recorded in the execution ledger,
+  omitted from the list above): the bare-toggle marker forms
+  （［＃横組み］…終わり ~3,188, ［＃罫囲み］ toggles ~25）as the classifier
+  ceiling; the keigakomi 44-marker denominator residual (673 matrix vs 717
+  frozen, UNRESOLVED); and the `:corpus` label normalization trap at
+  admission (registry equality is byte-exact — rows must copy tool-emitted
+  labels verbatim).

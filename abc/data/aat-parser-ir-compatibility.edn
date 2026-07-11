@@ -758,4 +758,28 @@
                     :rules_emitted 43
                     :rules_missing 637
                     :unsupported_occurrences 199147}
+   :compatibility "lossy"}
+  {:aat_version 1
+   :aat_adapter "ab-aozora"
+   :aat_adapter_version "ab-aozora 0.2.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git a81edf066ecc0e9ac12e04c4ccc2551c27009161)"
+   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+   :mapping_version "0.2.8"
+   :mapping_hash "sha256:952620ced4eb22f9771e6a10c3a1d4d93de604a8c33e360311f82b6e1eafc5b7"
+   :mapping_schema_hash "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2"
+   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   :parser_ir_schema_hash "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2"
+   :evidence_scope {:evidence_type :conversion-audit
+                    :adapter "ab-aozora"
+                    :adapter_version "ab-aozora 0.2.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git a81edf066ecc0e9ac12e04c4ccc2551c27009161)"
+                    :corpus "ab-aozora Phase 3 rotation A dump (aozora-full corpus, 17886 works)"
+                    :files_scanned 17886
+                    :files_succeeded 17886
+                    :files_failed 0
+                    :parser_ir_nodes 18786700
+                    :divergence_records 200711
+                    :divergence_occurrences 4610592
+                    :rules_total 680
+                    :rules_emitted 47
+                    :rules_missing 633
+                    :unsupported_occurrences 198831}
    :compatibility "lossy"}]}

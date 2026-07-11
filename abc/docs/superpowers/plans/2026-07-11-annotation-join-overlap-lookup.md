@@ -59,7 +59,7 @@
 - Consumes: pairs of `<parser-ir.json> <tokens.jsonl>` paths, rendering annotations with `abc.tools.parser-ir-plaintext` and validating tokens with `abc.tools.annotation-join-stats/token-spans`.
 - Produces: a CLI that warms both lookup implementations, asserts identical covers, reports counts and repeated timings, and a checked-in handoff containing commands, identities, medians, and ratios without machine-local paths in active configuration.
 
-- [ ] **Step 1: Implement the benchmark harness.** Keep the exhaustive implementation local to the benchmark; accept two or more path pairs and print deterministic EDN/JSON-like measurements for five repetitions after warm-up.
+- [ ] **Step 1: Implement the benchmark harness.** Keep the exhaustive implementation local to the benchmark; accept two or more path pairs, use the equality-checking exhaustive pass as the single baseline, and print five optimized measurements after warm-up.
 - [ ] **Step 2: Select real works.** From the retained stride-44 run, select the largest token file and independently select the work with the highest rendered annotation-to-token ratio among available works.
 - [ ] **Step 3: Run the benchmark.** Run with `clojure -M:test -m abc.tools.annotation-join-benchmark ...`; require cover equality and at least 10× median isolated-lookup speedup for each work.
 - [ ] **Step 4: Record evidence.** Write the handoff with work stems, token/annotation counts, timing medians, ratios, and the retained run label; omit absolute `/db` paths from executable configuration.
@@ -72,4 +72,3 @@
 - [ ] **Step 1: Run `nix build .#checks.x86_64-linux.abc-clj-kondo`.** Expect success.
 - [ ] **Step 2: Run `just validate-migration`.** Expect success, or report any unrelated pre-existing failure with evidence.
 - [ ] **Step 3: Inspect `git diff --check` and the final diff.** Confirm no Phase 3 parser file or unrelated user change is included.
-

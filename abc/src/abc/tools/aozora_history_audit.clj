@@ -185,12 +185,20 @@
                       {:sample-period sample-period
                        :supported ["month" "year"]})))))
 
-(defn- sample-commits-by-period [commits sample-period]
+(defn- sample-commits-by-period
+  "One representative per calendar period: the last commit in log order
+  among that period's commits. Grouping is global (not partition-by over
+  contiguous runs), so non-monotonic author dates cannot yield multiple
+  representatives for one period. Representatives keep log order."
+  [commits sample-period]
   (if-not sample-period
     commits
-    (->> commits
-         (partition-by #(commit-period-key sample-period %))
-         (mapv last))))
+    (->> (map-indexed vector commits)
+         (group-by (fn [[_ c]] (commit-period-key sample-period c)))
+         vals
+         (map peek)
+         (sort-by first)
+         (mapv second))))
 
 (defn- history-scan-refs [repo zip-path from-ref to-ref sample-period]
   (let [opts (cond-> {}

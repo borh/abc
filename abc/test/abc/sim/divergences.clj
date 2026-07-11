@@ -7,8 +7,8 @@
 (def table
   {:D1 {:case "P6.divergent-work-fields" :status :open
         :notes "aozora_csv.clj:284-325 first-row-wins on divergent work fields"}
-   :D2 {:case "P12.selection" :status :open
-        :notes "aozora_history_audit.clj:188-193 partition-by over log order"}
+   :D2 {:case "P12.selection" :status :fixed
+        :notes "fixed 2026-07-11: sample-commits-by-period groups globally by period key (was contiguous partition-by), keeping the last commit in log order per period"}
    :D3 {:case "P13.ragged-row" :status :open
         :notes "aozora_csv.clj:22-32 ragged rows silently truncated"}
    :D4 {:case "P8.atomicity, P8.order-independence" :status :open

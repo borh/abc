@@ -446,3 +446,29 @@
           (.close git)
           (delete-recursive repo-dir)
           (delete-recursive work-dir))))))
+
+(deftest scan-history-year-sampling-non-monotone-test
+  (testing "year sampling picks one representative per year even when author dates are non-monotonic in log order"
+    (let [repo-dir (temp-dir "abc-audit-nonmono")
+          work-dir (temp-dir "abc-audit-nonmono-work")
+          git (sim-render/init-repo! repo-dir)
+          state (fn [family] (sim-render/csv->zip-bytes
+                              (csv-text [(row {"姓" family})])))
+          ;; log order: 2023, 2024, 2023(!), 2024 — years interleaved
+          c0 (sim-render/commit-zip-at! git repo-dir (state "壱") "s0" "2023-01-01T00:00:00Z")
+          _c1 (sim-render/commit-zip-at! git repo-dir (state "弐") "s1" "2024-03-01T00:00:00Z")
+          c2 (sim-render/commit-zip-at! git repo-dir (state "参") "s2" "2023-06-01T00:00:00Z")
+          c3 (sim-render/commit-zip-at! git repo-dir (state "肆") "s3" "2024-09-01T00:00:00Z")]
+      (try
+        (let [result (audit/scan-history! {:aozora-repo (str repo-dir)
+                                           :from-ref (.getName c0)
+                                           :sample-period "year"
+                                           :work-dir (str work-dir)})]
+          ;; 2023 → c2 (last 2023 commit in log order), 2024 → c3
+          (is (= [[(.getName c0) (.getName c2)]
+                  [(.getName c2) (.getName c3)]]
+                 (mapv (juxt :previous_ref :current_ref) (:pairs result)))))
+        (finally
+          (.close git)
+          (delete-recursive repo-dir)
+          (delete-recursive work-dir))))))

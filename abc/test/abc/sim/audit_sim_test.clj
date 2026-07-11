@@ -27,12 +27,14 @@
 
 (defmacro with-repo [[git-sym root-sym work-sym] & body]
   `(let [~root-sym (render/temp-dir "sim-repo")
-         ~work-sym (render/temp-dir "sim-work")
-         ~git-sym (render/init-repo! ~root-sym)]
-     (try ~@body
-          (finally (.close ~git-sym)
-                   (render/delete-tree! ~root-sym)
-                   (render/delete-tree! ~work-sym)))))
+         ~work-sym (render/temp-dir "sim-work")]
+     (try
+       (let [~git-sym (render/init-repo! ~root-sym)]
+         (try ~@body
+              (finally (.close ~git-sym))))
+       (finally
+         (render/delete-tree! ~root-sym)
+         (render/delete-tree! ~work-sym)))))
 
 ;; P10.audit-vs-scan
 (deftest p10-audit-vs-scan-sim-test

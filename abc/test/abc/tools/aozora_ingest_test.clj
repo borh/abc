@@ -508,6 +508,30 @@
           (is (instance? java.util.zip.ZipException (ex-cause e))))
         (finally (delete-recursive dir))))))
 
+(deftest ingest-corpus-skips-divergent-work-fields-test
+  (testing "a work whose rows disagree on work fields is skipped + counted; clean works survive"
+    (let [out-dir (temp-dir "abc-ingest-divergent-work")
+          rows (conj synthetic-corpus-rows
+                     ;; second row for work 000127 with a different 作品名
+                     (person-row {"作品ID" "000127"
+                                  "作品名" "別の羅生門"
+                                  "人物ID" "000888"
+                                  "役割フラグ" "翻訳者"
+                                  "姓" "夏目" "名" "漱石"
+                                  "姓読み" "なつめ" "名読み" "そうせき"
+                                  "姓読みソート用" "なつめ" "名読みソート用" "そうせき"
+                                  "姓ローマ字" "Natsume" "名ローマ字" "Soseki"
+                                  "生年月日" "1867-02-09" "没年月日" "1916-12-09"
+                                  "底本名1" "羅生門" "底本出版社名1" "テスト出版社"}))]
+      (try
+        (let [{:keys [works-written works-skipped skipped-work-ids]}
+              (ingest/run-corpus! {:rows rows :output-dir (str out-dir)})]
+          (is (= 2 works-written))
+          (is (= 1 works-skipped))
+          (is (= ["000127"] skipped-work-ids))
+          (is (not (.exists (io/file out-dir "works" "000127.json")))))
+        (finally (delete-recursive out-dir))))))
+
 (deftest ingest-empty-csv-fails-loud-test
   (testing "empty and header-only CSVs throw ex-info with :zip-path and :row-count"
     (doseq [[label csv] [["empty" ""]

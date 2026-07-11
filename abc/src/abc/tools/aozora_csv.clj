@@ -284,7 +284,7 @@
 (defn build-record-fragment-from-rows
   "Given multiple CSV rows for the same work_id (one per author/role),
   return {:work, :persons-by-id, :contributors, :corrections-by-pid}.
-  Asserts work-level fields are consistent across rows; persons-by-id
+  Throws ex-info if work-level fields diverge across rows; persons-by-id
   is keyed by person_id; contributors are sorted by person_id and
   de-duplicated. Throws if a single person_id appears with divergent
   body fields. `:corrections-by-pid` maps person_id → vector of
@@ -295,6 +295,12 @@
         work-ids (distinct (map #(get % "work_id") works))]
     (assert (= 1 (count work-ids))
             (str "rows must share work_id; got: " (vec work-ids)))
+    (let [unique-works (vec (distinct works))]
+      (when (< 1 (count unique-works))
+        (throw (ex-info (str "work " (first work-ids)
+                             " has divergent work fields across CSV rows")
+                        {:work-id (first work-ids)
+                         :divergent-works unique-works}))))
     (let [person-results (mapv parse-person-fields-from-row rows)
           per-pid (group-by #(get-in % [:fields "person_id"]) person-results)
           person-bodies-by-id

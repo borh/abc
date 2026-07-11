@@ -5,8 +5,8 @@
   (:require [clojure.test :refer [is]]))
 
 (def table
-  {:D1 {:case "P6.divergent-work-fields" :status :open
-        :notes "aozora_csv.clj:284-325 first-row-wins on divergent work fields"}
+  {:D1 {:case "P6.divergent-work-fields" :status :fixed
+        :notes "fixed 2026-07-11: build-record-fragment-from-rows throws ex-info on divergent work fields; corpus ingest skips + counts the work"}
    :D2 {:case "P12.selection" :status :fixed
         :notes "fixed 2026-07-11: sample-commits-by-period groups globally by period key (was contiguous partition-by), keeping the last commit in log order per period"}
    :D3 {:case "P13.ragged-row" :status :open

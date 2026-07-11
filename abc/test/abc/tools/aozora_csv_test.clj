@@ -281,3 +281,16 @@
     (let [[norm corrs] (ac/parse-date "2020-13-01")]
       (is (= "2020-13-01" norm))
       (is (= [] corrs)))))
+
+(deftest build-record-fragment-divergent-work-fields-test
+  (testing "divergent work fields across same-work rows throw ex-info, not first-row-wins"
+    (let [base (first (ac/read-rows-from-string csv-text))
+          rows [base (assoc base "作品名" "別の題名"
+                            "人物ID" "000880"
+                            "役割フラグ" "翻訳者")]
+          e (try (ac/build-record-fragment-from-rows rows)
+                 nil
+                 (catch clojure.lang.ExceptionInfo e e))]
+      (is (some? e))
+      (is (= "000127" (:work-id (ex-data e))))
+      (is (= 2 (count (:divergent-works (ex-data e))))))))

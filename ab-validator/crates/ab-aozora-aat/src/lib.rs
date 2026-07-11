@@ -504,11 +504,25 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
         }
 
         if let Some((first, rest)) = burasage_container_indent(&node) {
+            // Compound container: 字下げ/burasage classification is unchanged;
+            // if the SAME marker also carries a 字詰め clause (jizume compound
+            // form), the burasage output nests inside a jizume_block instead
+            // of landing directly in `blocks`.
+            let compound_jizume_width = node
+                .get("source")
+                .and_then(Value::as_str)
+                .and_then(jizume_open_chars);
             if let Some(close_index) = find_matching_jisage_close(&content, index + 1) {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..close_index].to_vec();
                 strip_boundary_newlines(&mut inner);
-                push_burasage_paragraph(&mut blocks, first, rest, inner);
+                push_burasage_paragraph_maybe_jizume(
+                    &mut blocks,
+                    compound_jizume_width,
+                    first,
+                    rest,
+                    inner,
+                );
                 strip_next_leading_newline = true;
                 index = close_index + 1;
                 continue;
@@ -518,8 +532,29 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..boundary].to_vec();
                 strip_boundary_newlines(&mut inner);
-                push_burasage_paragraph(&mut blocks, first, rest, inner);
+                push_burasage_paragraph_maybe_jizume(
+                    &mut blocks,
+                    compound_jizume_width,
+                    first,
+                    rest,
+                    inner,
+                );
                 index = boundary;
+                continue;
+            }
+        } else if let Some(width) = pure_jizume_open_width(&node) {
+            if let Some(close_index) = find_matching_container_close(&content, index + 1, "字詰め")
+            {
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+                let mut inner = content[index + 1..close_index].to_vec();
+                strip_boundary_newlines(&mut inner);
+                blocks.push(json!({
+                    "kind": "jizume_block",
+                    "width": width,
+                    "children": blocks_from_inline_content(inner)
+                }));
+                strip_next_leading_newline = true;
+                index = close_index + 1;
                 continue;
             }
         } else if let Some(indent) = jisage_container_indent(&node) {
@@ -661,6 +696,36 @@ fn push_burasage_paragraph(blocks: &mut Vec<Value>, first: u64, rest: u64, conte
     }));
 }
 
+/// As [`push_burasage_paragraph`], but if `jizume_width` is present (the
+/// compound container's marker also carried a `字詰め` clause) the burasage
+/// paragraph nests inside a `jizume_block { width }` instead of landing
+/// directly in `blocks` — the compound close-matching logic that got us
+/// here is untouched; only the destination of the classified output moves.
+#[allow(
+    clippy::needless_pass_by_value,
+    reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+)]
+fn push_burasage_paragraph_maybe_jizume(
+    blocks: &mut Vec<Value>,
+    jizume_width: Option<u64>,
+    first: u64,
+    rest: u64,
+    content: Vec<Value>,
+) {
+    match jizume_width {
+        Some(width) => {
+            let mut children = Vec::new();
+            push_burasage_paragraph(&mut children, first, rest, content);
+            blocks.push(json!({
+                "kind": "jizume_block",
+                "width": width,
+                "children": children
+            }));
+        }
+        None => push_burasage_paragraph(blocks, first, rest, content),
+    }
+}
+
 fn burasage_container_indent(node: &Value) -> Option<(u64, u64)> {
     if node.get("kind").and_then(Value::as_str) != Some("raw")
         || node.get("x-source-marker-kind").and_then(Value::as_str) != Some("containerOpen")
@@ -716,10 +781,9 @@ fn simple_jisage_open_indent(source: &str) -> Option<u64> {
 /// FINAL clause of a compound container
 /// (`［＃ここから６字下げ、折り返して７字下げ、２１字詰め］`).
 ///
-/// Phase 4 wiring point: recognized but deliberately NOT emitted — AAT
-/// schema v1 has no `jizume_block` kind (Phase 3 design spec, decision 4),
-/// so jizume markers stay raw in AAT output until the Phase 4 schema
-/// rotation.
+/// Consumed by the block classifier to emit `jizume_block` (standalone) or
+/// to wrap the existing burasage classification of a compound container
+/// (Phase 4, this recognizer's emission wave).
 #[must_use]
 pub fn jizume_open_chars(source: &str) -> Option<u64> {
     let marker = source.trim();
@@ -737,6 +801,22 @@ pub fn jizume_open_chars(source: &str) -> Option<u64> {
 #[must_use]
 pub fn is_jizume_close(source: &str) -> bool {
     source.trim() == "［＃ここで字詰め終わり］"
+}
+
+/// Recognize a *pure* jizume container-open — one with no `字下げ` segment —
+/// so this arm never shadows (or is shadowed by) the jisage/burasage
+/// compound handling, which always carries `字下げ`.
+fn pure_jizume_open_width(node: &Value) -> Option<u64> {
+    if node.get("kind").and_then(Value::as_str) != Some("raw")
+        || node.get("x-source-marker-kind").and_then(Value::as_str) != Some("containerOpen")
+    {
+        return None;
+    }
+    let source = node.get("source").and_then(Value::as_str)?;
+    if source.contains("字下げ") {
+        return None;
+    }
+    jizume_open_chars(source)
 }
 
 fn find_matching_jisage_close(content: &[Value], start: usize) -> Option<usize> {
@@ -1559,28 +1639,30 @@ mod tests {
     }
 
     /// Depth-first search over `blocks`/`content`/`children` for the first
-    /// node whose `"kind"` equals `kind`.
-    fn find_first_node<'a>(v: &'a Value, kind: &str) -> &'a Value {
-        fn search<'a>(v: &'a Value, kind: &str) -> Option<&'a Value> {
-            match v {
-                Value::Object(map) => {
-                    if map.get("kind").and_then(Value::as_str) == Some(kind) {
-                        return Some(v);
-                    }
-                    for key in ["blocks", "content", "children"] {
-                        if let Some(child) = map.get(key)
-                            && let Some(found) = search(child, kind)
-                        {
-                            return Some(found);
-                        }
-                    }
-                    None
+    /// node whose `"kind"` equals `kind`, or `None` if absent.
+    fn find_node<'a>(v: &'a Value, kind: &str) -> Option<&'a Value> {
+        match v {
+            Value::Object(map) => {
+                if map.get("kind").and_then(Value::as_str) == Some(kind) {
+                    return Some(v);
                 }
-                Value::Array(items) => items.iter().find_map(|item| search(item, kind)),
-                _ => None,
+                for key in ["blocks", "content", "children"] {
+                    if let Some(child) = map.get(key)
+                        && let Some(found) = find_node(child, kind)
+                    {
+                        return Some(found);
+                    }
+                }
+                None
             }
+            Value::Array(items) => items.iter().find_map(|item| find_node(item, kind)),
+            _ => None,
         }
-        search(v, kind).unwrap_or_else(|| panic!("no {kind:?} node found in {v}"))
+    }
+
+    /// Like [`find_node`], but panics if no matching node is found.
+    fn find_first_node<'a>(v: &'a Value, kind: &str) -> &'a Value {
+        find_node(v, kind).unwrap_or_else(|| panic!("no {kind:?} node found in {v}"))
     }
 
     #[test]
@@ -1689,18 +1771,43 @@ mod tests {
     }
 
     #[test]
-    fn compound_jizume_still_classifies_burasage_and_emits_no_jizume_block() {
-        // The compound container already classifies as burasage (6,7) today —
-        // the ２１字詰め clause is recognition-only until Phase 4.
+    fn paired_jizume_emits_jizume_block() {
+        let aat = aat_value_for("［＃ここから２１字詰め］\n本文\n［＃ここで字詰め終わり］\n");
+        let block = find_first_node(&aat, "jizume_block");
+        assert_eq!(block["width"], 21);
+        assert_eq!(block["children"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn unpaired_jizume_open_stays_raw() {
+        let aat = aat_value_for("［＃ここから２１字詰め］\n本文\n");
+        assert!(find_node(&aat, "jizume_block").is_none());
+        // the open survives as a raw containerOpen node — zero silent drops
+        assert!(
+            serde_json::to_string(&aat)
+                .unwrap()
+                .contains("containerOpen")
+        );
+    }
+
+    #[test]
+    fn compound_jisage_jizume_nests_jizume_block() {
+        // The compound container still classifies as burasage (6,7) — the
+        // ２１字詰め clause now additionally wraps that classified output in
+        // a jizume_block instead of leaving it unemitted.
         assert_eq!(
             burasage_open_indent("［＃ここから６字下げ、折り返して７字下げ、２１字詰め］"),
             Some((6, 7))
         );
-        let src = "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\nあ\n［＃ここで字下げ終わり］\n";
-        let doc: Value = serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
-        let text = serde_json::to_string(&doc).unwrap();
-        assert!(!text.contains("jizume_block"));
-        assert!(text.contains("burasage"));
+        let aat = aat_value_for(
+            "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\n本文\n［＃ここで字下げ終わり］\n",
+        );
+        let jizume = find_first_node(&aat, "jizume_block");
+        assert_eq!(jizume["width"], 21);
+        // children carry the burasage classification exactly as before, now typed (6,7)
+        let style = find_first_node(jizume, "style");
+        assert_eq!(style["indent_first"], 6);
+        assert_eq!(style["indent_rest"], 7);
     }
 
     #[test]
@@ -1724,7 +1831,7 @@ mod tests {
     #[test]
     fn burasage_style_emits_typed_first_rest() {
         // Pinned (6,7) compound input — same source string exercised by
-        // `compound_jizume_still_classifies_burasage_and_emits_no_jizume_block`.
+        // `compound_jisage_jizume_nests_jizume_block`.
         let src = "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\nあ\n［＃ここで字下げ終わり］\n";
         let aat = aat_value_for(src);
         let style = find_first_node(&aat, "style");

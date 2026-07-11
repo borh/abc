@@ -72,7 +72,11 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 
 ## Current Evidence
 
+### Mapping v1 (frozen)
+
+- File: `data/aat-to-parser-ir-mapping-v1.json` (byte-frozen; never edit)
 - Mapping version: `0.2.8`
+- `source_aat_version`: `1` (selects `data/aat-schema-v1.json`)
 - Mapping hash:
   `sha256:952620ced4eb22f9771e6a10c3a1d4d93de604a8c33e360311f82b6e1eafc5b7`
 - Mapping schema hash:
@@ -81,6 +85,22 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
   `sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340`
 - Latest full-corpus conversion audit:
   `docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md`
+
+### Mapping v2 (AAT schema 2)
+
+- File: `data/aat-to-parser-ir-mapping-v2.json` (frozen from Task 10 onward;
+  its content hash becomes a registry coordinate — never hand-edit after
+  that point)
+- Mapping version: `0.3.0`
+- `source_aat_version`: `2` (selects `data/aat-schema.json`)
+- Mapping hash: computed, never hand-written — surfaced by
+  `audit-corpus --summary-json`
+- Adds explicit source-note authority (`source_note` blocks), `jizume_block`
+  layout projection, and typed (non-`x-`) layout fields with `x-` fallback,
+  on top of the v1 rule set
+- `SchemaSet::load_for_aat_version` selects the (AAT schema, mapping)
+  tuple by the mapping's `source_aat_version`; both mappings share the same
+  mapping schema and target parser-IR schema
 
 ## Verification
 

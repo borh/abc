@@ -65,7 +65,6 @@ fn validated_v1_conversion_succeeds_under_v1_tuple() {
 }
 
 #[test]
-#[ignore = "needs Task 3's data/aat-to-parser-ir-mapping-v2.json"]
 fn v1_document_under_v2_tuple_fails_input_validation() {
     let (repo_root, abc_root) = roots();
     let mapping =
@@ -73,8 +72,32 @@ fn v1_document_under_v2_tuple_fails_input_validation() {
             .unwrap();
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
     // v1 fixture (version:1) must be REJECTED by the v2 tuple's input validation.
-    // Symmetric test v2_document_under_v1_tuple_fails lives in Task 3 (needs a v2 doc).
     let aat = include_fixture_json("nested-sentence-basic.aat.json");
+    let err = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap_err();
+    assert!(err.to_string().contains("AAT validation failed"), "{err}");
+}
+
+#[test]
+fn v2_document_under_v1_tuple_fails_input_validation() {
+    let (repo_root, abc_root) = roots();
+    let mapping =
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v1.json"))
+            .unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 1).unwrap();
+    // v2 doc (version:2, using a v2-only construct) must be REJECTED by the v1
+    // tuple's input validation.
+    let aat = json!({
+        "version": 2, "work_id": "t-jizume",
+        "blocks": [{ "kind": "jizume_block", "width": 21, "children": [
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] } ] }],
+        "meta": v2_test_meta()
+    });
     let err = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,
@@ -492,7 +515,7 @@ fn read_json_accepts_deeply_nested_aat_values() {
 }
 
 #[test]
-fn mapping_preflight_accepts_checked_in_v2_artifact() {
+fn mapping_preflight_accepts_checked_in_v1_artifact() {
     let (schemas, mapping) = schemas_and_mapping();
 
     let index = mapping.preflight(&schemas).unwrap();
@@ -536,6 +559,18 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
             .description
             .contains("warigaki")
     );
+}
+
+#[test]
+fn mapping_preflight_accepts_checked_in_v2_artifact() {
+    let (repo_root, abc_root) = roots();
+    let mapping =
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
+            .unwrap();
+    assert_eq!(mapping.mapping_version, "0.3.0");
+    assert_eq!(mapping.source_aat_version, 2);
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    mapping.preflight(&schemas).unwrap();
 }
 
 #[test]
@@ -1771,6 +1806,302 @@ fn projects_jisage_block_wrapped_paragraph_to_paragraph_layout() {
     );
 
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+fn v2_schemas_and_mapping() -> (SchemaSet, MappingDocument) {
+    let (repo_root, abc_root) = roots();
+    let mapping =
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
+            .unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    (schemas, mapping)
+}
+
+/// A schema-valid v2 `meta` block for tests: `warnings: []` keeps the fixture
+/// minimal (the individual warning-field LOSS accounting is exercised
+/// separately in `map_warnings`, not by these layout/source-note tests).
+fn v2_test_meta() -> Value {
+    json!({
+        "adapter": "fixture",
+        "adapter_version": "fixture 0.1.0",
+        "source_encoding": "utf-8",
+        "source_hash": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        "parse_complete": true,
+        "warnings": []
+    })
+}
+
+fn paragraph_layout_of(output: &ab_aat_to_parser_ir::ConversionOutput, index: usize) -> Value {
+    output
+        .parser_ir
+        .pointer(&format!("/paragraphs/{index}/layout"))
+        .cloned()
+        .unwrap_or(Value::Null)
+}
+
+#[test]
+fn v2_jizume_block_projects_paragraph_layout() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat = json!({
+        "version": 2, "work_id": "t-jizume",
+        "blocks": [{ "kind": "jizume_block", "width": 21, "children": [
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] } ] }],
+        "meta": v2_test_meta()
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let layout = paragraph_layout_of(&output, 0);
+    assert_eq!(
+        layout,
+        json!({ "kind": "jizume", "source": "aat-block", "width": 21 })
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/text")
+            .and_then(Value::as_str),
+        Some("本文")
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn v2_typed_layout_fields_project_without_x_names() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat = json!({
+        "version": 2, "work_id": "t-burasage",
+        "blocks": [{ "kind": "paragraph", "content": [{
+            "kind": "style", "style_type": "burasage",
+            "indent_first": 6, "indent_rest": 7, "x-provenance": "source-derived",
+            "content": [{ "kind": "text", "value": "本文" }] }] }],
+        "meta": v2_test_meta()
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let layout = paragraph_layout_of(&output, 0);
+    assert_eq!(
+        layout,
+        json!({
+            "kind": "burasage",
+            "source": "aat-style",
+            "first_line_indent": 6,
+            "continuation_indent": 7
+        })
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn v2_never_applies_source_note_heuristic() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat = json!({
+        "version": 2, "work_id": "t-heuristic-v2",
+        "blocks": [
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] },
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "（テストから。）" }] }
+        ],
+        "meta": v2_test_meta()
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    assert!(
+        !output
+            .parser_ir
+            .pointer("/nodes")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .any(|node| node["type"] == "source-note"),
+        "v2 documents must never trigger the v1 source-attribution heuristic"
+    );
+    assert!(
+        output
+            .parser_ir
+            .pointer("/paragraphs")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .all(|paragraph| paragraph["role"] == "body")
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn v1_heuristic_still_fires_byte_identically() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1, "work_id": "t-heuristic-v1",
+        "blocks": [
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] },
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "（テストから。）" }] }
+        ],
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        )
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let nodes = output
+        .parser_ir
+        .pointer("/nodes")
+        .and_then(Value::as_array)
+        .unwrap();
+    assert!(
+        nodes
+            .iter()
+            .any(|node| node["type"] == "source-note" && node["classification"] == "heuristic")
+    );
+    let paragraphs = output
+        .parser_ir
+        .pointer("/paragraphs")
+        .and_then(Value::as_array)
+        .unwrap();
+    assert!(
+        paragraphs
+            .iter()
+            .any(|paragraph| paragraph["role"] == "source-note"
+                && paragraph["classification"] == "heuristic")
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn v2_explicit_source_note_converts_direct() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat = json!({
+        "version": 2, "work_id": "t-source-note",
+        "blocks": [
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] },
+            {
+                "kind": "source_note",
+                "placement": "back",
+                "region_class": "terminal_provenance",
+                "content": [{ "kind": "text", "value": "底本：テスト文庫" }],
+                "span": { "line_start": 10, "line_end": 10, "byte_start": 100, "byte_end": 120 }
+            }
+        ],
+        "meta": v2_test_meta()
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let nodes = output
+        .parser_ir
+        .pointer("/nodes")
+        .and_then(Value::as_array)
+        .unwrap();
+    let note_index = nodes
+        .iter()
+        .position(|node| node["type"] == "source-note")
+        .expect("source-note node present");
+    let note = &nodes[note_index];
+    assert_eq!(note["note_type"], json!("source-attribution"));
+    assert_eq!(note["placement"], json!("back"));
+    assert_eq!(note["classification"], json!("direct"));
+    assert_eq!(note["source_pointer"], json!("blocks[1]"));
+    assert_eq!(note["text"], json!("底本：テスト文庫"));
+
+    let paragraphs = output
+        .parser_ir
+        .pointer("/paragraphs")
+        .and_then(Value::as_array)
+        .unwrap();
+    let row = paragraphs
+        .iter()
+        .find(|paragraph| paragraph["role"] == "source-note")
+        .expect("source-note paragraph row present");
+    assert_eq!(row["classification"], json!("direct"));
+    assert_eq!(
+        row["node_range"],
+        json!({ "start": note_index, "end": note_index + 1 })
+    );
+
+    assert!(has_divergence_record(
+        &output,
+        "STRUCTURAL",
+        "blocks[].source_note",
+        Some("source-note")
+    ));
+    assert!(has_divergence_record(
+        &output,
+        "LOSS",
+        "blocks[].source_note.region_class",
+        Some("(source-note.note_type)")
+    ));
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn v2_source_note_unknown_region_class_fails_closed() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat = json!({
+        "version": 2, "work_id": "t-source-note-unmapped",
+        "blocks": [
+            {
+                "kind": "source_note",
+                "placement": "back",
+                "region_class": "colophon_metadata",
+                "content": [{ "kind": "text", "value": "発行者：テスト" }],
+                "span": { "line_start": 10, "line_end": 10, "byte_start": 100, "byte_end": 120 }
+            }
+        ],
+        "meta": v2_test_meta()
+    });
+
+    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap_err();
+
+    assert!(
+        error
+            .to_string()
+            .contains("unmapped source_note region_class"),
+        "{error}"
+    );
 }
 
 #[test]

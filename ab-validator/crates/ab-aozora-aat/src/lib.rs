@@ -197,7 +197,7 @@ fn from_entries<S: Serialize, T: DeserializeOwned>(
 // The wire envelope's schemaVersion check becomes a compile-time pin: the
 // from_entries round-trip is only valid against the wire shape this port
 // was written for.
-const _: () = assert!(aozora_json::SCHEMA_VERSION == 2, "incompatible wire schema version");
+const _: () = assert!(aozora_json::SCHEMA_VERSION == 3, "incompatible wire schema version");
 
 /// Transform Aozora source bytes into AAT JSON output.
 ///
@@ -908,7 +908,7 @@ pub fn adapter_version() -> String {
 fn ab_aozora_facade_version() -> &'static str {
     // The facade crate version stands in for the deleted wire
     // schemaVersion check as the compatibility coordinate.
-    "0.1.0"
+    ab_aozora_facade::VERSION
 }
 
 fn hex_sha256(bytes: &[u8]) -> String {
@@ -980,7 +980,7 @@ mod tests {
     /// "unknown"` and `build.rs`'s doc comment).
     #[test]
     fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
-        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.1.0 aat-schema 1 facade 0.1.0 wire-schema 2 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":1,\"work_id\":\"stdin\"}\n";
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.2.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":1,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
     }

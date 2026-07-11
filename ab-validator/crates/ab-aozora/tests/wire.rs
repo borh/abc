@@ -13,7 +13,13 @@ fn version_carries_the_identity_fields() {
     let out = Command::new(bin()).arg("--version").output().unwrap();
     assert!(out.status.success());
     let text = String::from_utf8(out.stdout).unwrap();
-    for field in ["ab-aozora", "aat-schema 1", "wire-schema 2", "git "] {
+    for field in [
+        "ab-aozora 0.2.0",
+        "aat-schema 1",
+        "facade 0.2.0",
+        "wire-schema 3",
+        "git ",
+    ] {
         assert!(text.contains(field), "--version missing {field:?}: {text}");
     }
 }

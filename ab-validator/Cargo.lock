@@ -27,7 +27,7 @@ dependencies = [
 
 [[package]]
 name = "ab-aozora"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ab-aozora-aat",
  "serde_json",
@@ -35,7 +35,7 @@ dependencies = [
 
 [[package]]
 name = "ab-aozora-aat"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ab-aozora-facade",
  "ab-aozora-pipeline",
@@ -74,7 +74,7 @@ dependencies = [
 
 [[package]]
 name = "ab-aozora-facade"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "ab-aozora-corpus",
  "ab-aozora-encoding",

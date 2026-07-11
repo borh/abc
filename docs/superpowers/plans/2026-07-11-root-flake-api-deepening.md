@@ -475,11 +475,13 @@ Run:
 
 ```sh
 bash tests/tei-eaj-probe-workflows-smoke.sh
-just --dry-run tei-eaj-alignment-probe -- --max-rows 4
+just --dry-run tei-eaj-alignment-probe
 just --dry-run tei-eaj-reports-with-probes
 ```
 
-Expected: smoke passes; dry runs invoke the runner with the correct workflow selector.
+Expected: smoke passes; dry runs invoke the runner with the correct workflow
+selector. Argument forwarding is covered by the runner smoke test's
+`--max-rows 4` assertion rather than relying on `just` option parsing.
 
 - [ ] **Step 6: Commit the maintainer workflows**
 
@@ -573,7 +575,19 @@ Do not edit dated files under `docs/superpowers/`, `abc/docs/superpowers/`, `ab-
 Run:
 
 ```sh
-if rg -n '\.\#(abc-|ab-validator-)' \
+removed_alias_pattern='(\.\#(abc-|ab-validator-)|\.\#(apps|packages|checks|devShells)\.[^.[:space:]]+\.(abc-|ab-validator-))'
+
+for sample in \
+  'nix run .#abc-materialize-publication' \
+  'nix build .#checks.x86_64-linux.abc-clj-kondo' \
+  'nix build .#packages.aarch64-linux.ab-validator-example'; do
+  if ! printf '%s\n' "$sample" | rg -q "$removed_alias_pattern"; then
+    echo "removed-alias guard does not recognize: $sample" >&2
+    exit 1
+  fi
+done
+
+if rg -n "$removed_alias_pattern" \
   AGENTS.md README.md justfile scripts tests docs/migration-status.md \
   docs/presentations/jadh-2026-wip-slides.md abc/docs/architecture.md \
   abc/docs/handoffs ab-validator/tests; then
@@ -582,7 +596,9 @@ if rg -n '\.\#(abc-|ab-validator-)' \
 fi
 ```
 
-Expected: no matches.
+Expected: the regex self-test passes and the active-file scan returns no
+matches. The qualified examples ensure the guard covers output paths such as
+`.#checks.x86_64-linux.abc-clj-kondo`, not only short app aliases.
 
 - [ ] **Step 5: Refresh path-input locks and run focused checks**
 
@@ -590,12 +606,18 @@ Run from the monorepo root:
 
 ```sh
 nix flake lock
+nix eval --raw ./abc#checks.x86_64-linux.clj-kondo.drvPath >/dev/null
+nix eval --raw ./abc#checks.x86_64-linux.clj-nix-focused-tests.drvPath >/dev/null
+nix eval --raw ./ab-validator#checks.x86_64-linux.cargo-check.drvPath >/dev/null
+nix eval --raw ./ab-validator#checks.x86_64-linux.cargo-clippy.drvPath >/dev/null
+nix eval --raw ./ab-validator#checks.x86_64-linux.cargo-fmt.drvPath >/dev/null
 bash tests/root-flake-output-contract-smoke.sh
 bash tests/tei-eaj-probe-workflows-smoke.sh
 just nix-format-check
 ```
 
-Expected: root lock records current component paths; both smoke tests and formatting pass.
+Expected: root lock records current component paths; every documented focused
+check resolves; both smoke tests and formatting pass.
 
 - [ ] **Step 6: Commit the caller migration**
 

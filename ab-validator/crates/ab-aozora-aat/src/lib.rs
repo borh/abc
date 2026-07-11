@@ -1,9 +1,11 @@
 //! AAT (Aozora AST Transform) adapter ported from the frozen aozora adapter.
 
-use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str, sync::LazyLock};
+use std::{
+    collections::BTreeMap, fmt::Write as _, iter::once, mem, ops::Range, str, sync::LazyLock,
+};
 
 use anyhow::Result;
-use ab_aozora_pipeline::lexer::sanitize::sanitize as sanitize_aozora_source;
+use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
 use encoding_rs::SHIFT_JIS;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -41,8 +43,47 @@ pub struct DecodedSource {
     /// BEFORE the parse; the parse of neutralized text cannot rediscover
     /// them. Spans are full-sanitized-text byte offsets.
     pub sanitize_diagnostics: Vec<AozoraSanitizeDiagnostic>,
-    /// Byte offset of the body slice within the sanitized text.
-    pub body_offset: usize,
+    /// Sanitize offset maps + body offset + line index for span rebasing
+    /// (ADR 0024: emitted spans are offsets against the full decoded
+    /// source `text`, with real 1-based line numbers).
+    span_ctx: SpanContext,
+}
+
+/// Composition chain for translating a parser/sanitize-stage byte offset
+/// into `DecodedSource.text` coordinates plus a real line number.
+///
+/// Two offset systems feed span emission: the parser (and AAT node
+/// construction) work in `span_text` (sanitized-body-relative) offsets;
+/// `sanitize_diagnostics` carry full-sanitized-text offsets. Both compose
+/// through `maps` (sanitized → decoded `text`); the former additionally
+/// needs `body_offset` added first (body-relative → full-sanitized).
+#[derive(Debug)]
+struct SpanContext {
+    maps: SanitizeMaps,
+    /// Byte offset of the body slice within the SANITIZED text.
+    body_offset: usize,
+    /// Byte offsets of line starts in the DECODED text (`text`).
+    line_starts: Vec<usize>,
+}
+
+impl SpanContext {
+    fn to_decoded(&self, body_offset: usize) -> usize {
+        self.maps.to_source_offset(body_offset + self.body_offset)
+    }
+
+    fn to_decoded_end(&self, body_end: usize) -> usize {
+        self.maps.to_source_end(body_end + self.body_offset)
+    }
+
+    fn line_of(&self, decoded_offset: usize) -> u64 {
+        (self.line_starts.partition_point(|&s| s <= decoded_offset)) as u64
+    }
+}
+
+fn line_starts(text: &str) -> Vec<usize> {
+    once(0)
+        .chain(text.match_indices('\n').map(|(i, _)| i + 1))
+        .collect()
 }
 
 #[derive(Debug, Deserialize, Clone, Copy)]
@@ -85,31 +126,34 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     let source_hash = format!("sha256:{}", hex_sha256(bytes));
     if bytes.starts_with(&[0xef, 0xbb, 0xbf]) {
         let text = str::from_utf8(&bytes[3..])?.to_owned();
-        let (span_text, sanitize_diagnostics, body_offset) = sanitize_for_aat(&text);
+        let (span_text, sanitize_diagnostics, maps, body_offset) = sanitize_for_aat(&text);
+        let span_ctx = SpanContext { maps, body_offset, line_starts: line_starts(&text) };
         return Ok(DecodedSource {
             text,
             span_text,
             encoding: "utf-8-bom",
             source_hash,
             sanitize_diagnostics,
-            body_offset,
+            span_ctx,
         });
     }
     if let Ok(text) = str::from_utf8(bytes) {
         let text = text.to_owned();
-        let (span_text, sanitize_diagnostics, body_offset) = sanitize_for_aat(&text);
+        let (span_text, sanitize_diagnostics, maps, body_offset) = sanitize_for_aat(&text);
+        let span_ctx = SpanContext { maps, body_offset, line_starts: line_starts(&text) };
         return Ok(DecodedSource {
             text,
             span_text,
             encoding: "utf-8",
             source_hash,
             sanitize_diagnostics,
-            body_offset,
+            span_ctx,
         });
     }
     let (cow, _, had_errors) = SHIFT_JIS.decode(bytes);
     let text = cow.into_owned();
-    let (span_text, sanitize_diagnostics, body_offset) = sanitize_for_aat(&text);
+    let (span_text, sanitize_diagnostics, maps, body_offset) = sanitize_for_aat(&text);
+    let span_ctx = SpanContext { maps, body_offset, line_starts: line_starts(&text) };
     Ok(DecodedSource {
         text,
         span_text,
@@ -120,18 +164,21 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
         },
         source_hash,
         sanitize_diagnostics,
-        body_offset,
+        span_ctx,
     })
 }
 
-fn sanitize_for_aat(text: &str) -> (String, Vec<AozoraSanitizeDiagnostic>, usize) {
-    let sanitized_out = sanitize_aozora_source(text);
-    let sanitize_diagnostics = sanitized_out.diagnostics;
-    let sanitized = sanitized_out.text.into_owned();
+fn sanitize_for_aat(
+    text: &str,
+) -> (String, Vec<AozoraSanitizeDiagnostic>, SanitizeMaps, usize) {
+    let mapped = sanitize_mapped(text);
+    let sanitize_diagnostics = mapped.diagnostics;
+    let sanitized = mapped.text.into_owned();
     let body = aozora_body_range(&sanitized);
     (
         sanitized[body.clone()].to_owned(),
         sanitize_diagnostics,
+        mapped.maps,
         body.start,
     )
 }
@@ -243,6 +290,33 @@ pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     Ok(out)
 }
 
+/// Rewrite every `entry["span"]["start"/"end"]` in a diagnostic-entries
+/// array in place via the given translation functions. Entries lacking a
+/// numeric span (or lacking a `span` object entirely) pass through
+/// untouched.
+fn rebase_spans(
+    data: &mut Value,
+    translate: impl Fn(usize) -> usize,
+    translate_end: impl Fn(usize) -> usize,
+) {
+    if let Some(items) = data.as_array_mut() {
+        for entry in items {
+            let (Some(start), Some(end)) = (
+                entry["span"]["start"]
+                    .as_u64()
+                    .and_then(|v| usize::try_from(v).ok()),
+                entry["span"]["end"]
+                    .as_u64()
+                    .and_then(|v| usize::try_from(v).ok()),
+            ) else {
+                continue;
+            };
+            entry["span"]["start"] = json!(translate(start));
+            entry["span"]["end"] = json!(translate_end(end));
+        }
+    }
+}
+
 /// One wire diagnostics envelope (`{"data": […], "schemaVersion": 3}`)
 /// per input — the `--mode diagnostics` payload.
 ///
@@ -266,19 +340,22 @@ pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let tree = doc.parse();
     let mut data =
         serde_json::to_value(aozora_json::diagnostic_entries(&decoded.sanitize_diagnostics))?;
-    // Sanitize spans are full-sanitized-text offsets; rebase to the
-    // parser's body-relative system (vectors have no header: offset 0).
-    if let Some(items) = data.as_array_mut() {
-        for entry in items.iter_mut() {
-            for key in ["start", "end"] {
-                if let Some(v) = entry["span"][key].as_u64() {
-                    entry["span"][key] = json!(v.saturating_sub(decoded.body_offset as u64));
-                }
-            }
-        }
-    }
-    let parser_entries =
+    let mut parser_entries =
         serde_json::to_value(aozora_json::diagnostic_entries(tree.diagnostics()))?;
+    // Sanitize-stage entries carry full-sanitized-text offsets → through
+    // the maps directly (no body offset). Parser entries carry
+    // body-relative offsets → body offset + maps. Both land in decoded-
+    // source (`decoded.text`) coordinates, matching `span_json`'s output.
+    rebase_spans(
+        &mut data,
+        |o| decoded.span_ctx.maps.to_source_offset(o),
+        |o| decoded.span_ctx.maps.to_source_end(o),
+    );
+    rebase_spans(
+        &mut parser_entries,
+        |o| decoded.span_ctx.to_decoded(o),
+        |o| decoded.span_ctx.to_decoded_end(o),
+    );
     if let (Some(items), Some(more)) = (data.as_array_mut(), parser_entries.as_array()) {
         items.extend(more.iter().cloned());
     }
@@ -303,16 +380,10 @@ fn build_aat(
         .map(|entry| (entry.span.start, entry.clone()))
         .collect::<BTreeMap<_, _>>();
     let blocks = blocks_from_inline_content(inline_content(decoded, nodes, &gaiji_by_start));
-    let mut warnings = diagnostics
+    let warnings = diagnostics
         .iter()
-        .map(diagnostic_warning)
+        .map(|diagnostic| diagnostic_warning(diagnostic, &decoded.span_ctx))
         .collect::<Vec<_>>();
-    if !nodes.is_empty() {
-        warnings.push(json!({
-            "message": "aozora upstream spans are sanitized-source byte offsets; line_start and line_end are synthesized as 1",
-            "line": 1
-        }));
-    }
     json!({
         "version": 1,
         "work_id": "stdin",
@@ -870,7 +941,7 @@ fn inline_content(
                 "x-provenance": "parser-derived",
                 "x-source-marker-kind": "pageBreak",
                 "x-break-kind": "page",
-                "span": span_json(&node.span)
+                "span": span_json(&node.span, &decoded.span_ctx)
             })),
             _ => content.push(raw_node(decoded, node, node.kind.as_str())),
         }
@@ -909,13 +980,13 @@ fn push_source_gap(content: &mut Vec<Value>, decoded: &DecodedSource, start: usi
             "source": source,
             "x-provenance": "source-derived",
             "x-source-marker-kind": "unparsed-source-gap",
-            "span": span_json(&span)
+            "span": span_json(&span, &decoded.span_ctx)
         }));
     } else {
         content.push(json!({
             "kind": "text",
             "value": source,
-            "span": span_json(&span)
+            "span": span_json(&span, &decoded.span_ctx)
         }));
     }
 }
@@ -942,7 +1013,7 @@ fn ruby_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
             "base": caps.name("base").unwrap().as_str(),
             "reading": caps.name("reading").unwrap().as_str(),
             "direction": "right",
-            "span": span_json(&node.span)
+            "span": span_json(&node.span, &decoded.span_ctx)
         })
     } else {
         raw_node(decoded, node, "ruby")
@@ -964,7 +1035,7 @@ fn gaiji_node(
         "jis_code": gaiji.mencode,
         "unresolved_reason": if gaiji.resolved.is_some() { None::<String> } else { Some("unresolved".to_owned()) },
         "x-codepoint": gaiji.codepoint,
-        "span": span_json(&node.span)
+        "span": span_json(&node.span, &decoded.span_ctx)
     })
 }
 
@@ -975,7 +1046,7 @@ fn style_node(decoded: &DecodedSource, node: &AozoraNode, style_type: &str) -> V
         "kind": "style",
         "style_type": style_type,
         "content": [{"kind": "text", "value": text}],
-        "span": span_json(&node.span)
+        "span": span_json(&node.span, &decoded.span_ctx)
     })
 }
 
@@ -985,7 +1056,7 @@ fn tcy_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
     json!({
         "kind": "tcy",
         "content": [{"kind": "text", "value": text}],
-        "span": span_json(&node.span)
+        "span": span_json(&node.span, &decoded.span_ctx)
     })
 }
 
@@ -1011,26 +1082,38 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         "source": source_slice(&decoded.span_text, &node.span),
         "x-provenance": "parser-derived",
         "x-source-marker-kind": marker_kind,
-        "span": span_json(&node.span)
+        "span": span_json(&node.span, &decoded.span_ctx)
     })
 }
 
-fn diagnostic_warning(diagnostic: &AozoraDiagnostic) -> Value {
+fn diagnostic_warning(diagnostic: &AozoraDiagnostic, ctx: &SpanContext) -> Value {
     let mut warning = json!({
         "message": diagnostic.kind.clone().unwrap_or_else(|| "aozora diagnostic".to_owned())
     });
-    if let Some(line) = diagnostic.span.as_ref().map(|_| 1_u64) {
+    if let Some(line) = diagnostic
+        .span
+        .as_ref()
+        .map(|span| ctx.line_of(ctx.to_decoded(span.start)))
+    {
         warning["line"] = json!(line);
     }
     warning
 }
 
-fn span_json(span: &Span) -> Value {
+fn span_json(span: &Span, ctx: &SpanContext) -> Value {
+    let byte_start = ctx.to_decoded(span.start);
+    let byte_end = ctx.to_decoded_end(span.end);
+    let line_start = ctx.line_of(byte_start);
+    let line_end = ctx.line_of(if byte_end > byte_start {
+        byte_end - 1
+    } else {
+        byte_start
+    });
     json!({
-        "line_start": 1,
-        "line_end": 1,
-        "byte_start": span.start,
-        "byte_end": span.end
+        "line_start": line_start,
+        "line_end": line_end,
+        "byte_start": byte_start,
+        "byte_end": byte_end
     })
 }
 
@@ -1129,7 +1212,7 @@ mod tests {
     /// "unknown"` and `build.rs`'s doc comment).
     #[test]
     fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
-        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.2.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":1,\"work_id\":\"stdin\"}\n";
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.3.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":1,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
     }
@@ -1223,6 +1306,105 @@ mod tests {
         assert_eq!(tcy[0]["severity"], "warning");
         assert_eq!(tcy[0]["span"]["start"], 6);
         assert_eq!(tcy[0]["span"]["end"], 35);
+    }
+
+    #[test]
+    fn diagnostics_json_from_bytes_rebases_sanitize_span_through_bom_and_crlf() {
+        // BOM(3) + "あ\r\n" + PUA(U+E001) + "い\n": decoded text (post-
+        // BOM-strip, per decode_source_bytes) is "あ\r\n\u{e001}い\n" —
+        // あ 0..3, \r 3..4, \n 4..5, PUA 5..8, い 8..11, \n 11..12 (12
+        // bytes). Sanitize normalizes \r\n (bytes 3..5) → \n (1 byte),
+        // shifting everything after by one byte, and neutralizes the PUA
+        // byte-length-preserving; the resulting SANITIZED text is
+        // "あ\n\u{fffd}い\n" (あ 0..3, \n 3..4, PUA 4..7, い 7..10, \n
+        // 10..11 — 11 bytes). The PUA sanitize diagnostic's span is born
+        // in that sanitized-text coordinate system: 4..7. Rebasing
+        // through the CRLF map (no body offset — sanitize entries skip
+        // it) must land the span back at the PUA's own decoded-text
+        // offsets: 5..8.
+        let bytes = [b"\xef\xbb\xbf".as_ref(), "あ\r\n\u{e001}い\n".as_bytes()].concat();
+        let out = diagnostics_json_from_bytes(&bytes).unwrap();
+        let doc: Value = serde_json::from_slice(&out).unwrap();
+        let data = doc["data"].as_array().unwrap();
+        let pua: Vec<&Value> = data
+            .iter()
+            .filter(|e| e["code"] == "source-contains-pua")
+            .collect();
+        assert_eq!(pua.len(), 1, "expected exactly one PUA diagnostic: {data:?}");
+        assert_eq!(pua[0]["span"]["start"], 5);
+        assert_eq!(pua[0]["span"]["end"], 8);
+    }
+
+    #[test]
+    fn spans_are_decoded_source_offsets_with_real_lines() {
+        // BOM + CRLF + a page-break directive on its own line: decoded
+        // text (post-BOM-strip, per decode_source_bytes) is
+        // "あ\r\n［＃改ページ］\nい\n" — あ 0..3, \r 3..4, \n 4..5,
+        // ［＃改ページ］ 5..26 (7 fullwidth chars × 3 bytes each), \n
+        // 26..27, い 27..30, \n 30..31 (31 bytes total). The directive
+        // is markup, so the parser splits it into its own node — unlike
+        // a markup-free input, which the adapter merges into ONE
+        // source-gap node spanning the whole body and so can never
+        // exercise a line >1 (verified by running the brief's original
+        // markup-free literal: it produces a single span, byte_end 9,
+        // line_end 2, line_start 1 — never a span whose line_START is
+        // 2, hence this input adds the directive).
+        let bytes = [
+            b"\xef\xbb\xbf".as_ref(),
+            "あ\r\n［＃改ページ］\nい\n".as_bytes(),
+        ]
+        .concat();
+        let doc: Value = serde_json::from_slice(&aat_json_from_bytes(&bytes).unwrap()).unwrap();
+        let spans: Vec<&Value> = collect_spans(&doc["blocks"]);
+        assert!(!spans.is_empty());
+        // First text node "あ\n" ← decoded "あ\r\n" = bytes 0..5, line 1.
+        assert_eq!(spans[0]["byte_start"], 0);
+        assert_eq!(spans[0]["byte_end"], 5);
+        assert_eq!(spans[0]["line_start"], 1);
+        // The page-break directive itself: the CRLF collapse shifts its
+        // post-BOM-strip position (4..25 in the sanitized body) forward
+        // by exactly one decoded byte, landing at 5..26 — real line 2.
+        let page_break = spans
+            .iter()
+            .find(|s| s["byte_start"] == 5)
+            .unwrap_or_else(|| panic!("no span at decoded byte_start 5: {spans:?}"));
+        assert_eq!(page_break["byte_end"], 26);
+        assert_eq!(page_break["line_start"], 2);
+        // Some span must sit on line 2 (the directive line).
+        assert!(
+            spans.iter().any(|s| s["line_start"] == 2),
+            "no real line >1: {spans:?}"
+        );
+        // The legacy synthesized warning is gone.
+        let warnings = doc["meta"]["warnings"].as_array().unwrap();
+        assert!(warnings.iter().all(|w| {
+            w["message"].as_str()
+                != Some(
+                    "aozora upstream spans are sanitized-source byte offsets; \
+                     line_start and line_end are synthesized as 1",
+                )
+        }));
+    }
+
+    fn collect_spans(v: &Value) -> Vec<&Value> {
+        let mut out = Vec::new();
+        match v {
+            Value::Object(map) => {
+                if let Some(span) = map.get("span") {
+                    out.push(span);
+                }
+                for val in map.values() {
+                    out.extend(collect_spans(val));
+                }
+            }
+            Value::Array(items) => {
+                for val in items {
+                    out.extend(collect_spans(val));
+                }
+            }
+            _ => {}
+        }
+        out
     }
 
     fn block_kinds(doc: &Value) -> Vec<String> {

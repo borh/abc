@@ -1,10 +1,39 @@
 # IR Publication Coverage
 
-Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_SOURCE_REGION_CONTRACT_MISSING`
+## Revision 2 (2026-07-12, source-region policy pin fix)
+
+Task 20's original run of this report read
+`IR_PUBLICATION_COVERAGE_BLOCKED_SOURCE_REGION_CONTRACT_MISSING`, traced to
+`reports/lib/source_region.py`'s hardcoded `SOURCE_REGION_POLICY_VERSION`
+lagging at `0.2.0` while `abc/data/source-region-publication-policy-v0.json`
+had legitimately rotated to `0.3.0` (commit `8660511e`: `policy_version`
+0.2.0->0.3.0, one added `notes` line, and `measurement_status`
+`needs_measurement_split`->`measured` for `terminal_provenance` and
+`colophon_metadata` — nothing else changed, confirmed by full `git log -p`
+diff). That rotation was reviewed and the pin was updated to `0.3.0`
+(`reports/lib/source_region.py`).
+
+Re-running this exact invocation with the fixed pin now reads:
+
+- `source_region_contract.verdict`: `SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
+  (was `SOURCE_REGION_CONTRACT_CANDIDATE_PROVIDED`)
+- Top-level verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS` (was
+  `IR_PUBLICATION_COVERAGE_BLOCKED_SOURCE_REGION_CONTRACT_MISSING`) — this is
+  the same, already-documented, non-regressing block Task 16's pre-admission
+  run recorded (`closure_gaps.classified_but_not_admitted.count == 151`,
+  `true_unsupported_gap == 0`), not a new problem.
+- The three required zero counters
+  (`unsupported_body_markup_occurrences`/`unknown_region_occurrences`/`unknown_unreviewed_occurrences`)
+  remain `0` (frozen `2026-07-04-source-authority-representability.summary.json`
+  input, unchanged) and `source_authority_gate.gate_status ==
+  SOURCE_AUTHORITY_GATE_PASS`.
+- `parser_evidence_coverage.verdict` remains `FIVE_PARSER_EVIDENCE_COMPLETE`.
+
+Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS`
 
 ## Source Region Contract
 
-Verdict: `SOURCE_REGION_CONTRACT_CANDIDATE_PROVIDED`
+Verdict: `SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
 
 Schema: `https://w3id.org/abc/schemas/source-region-coverage.schema.json` `aozora-source-region-coverage-v1`
 

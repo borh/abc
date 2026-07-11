@@ -18,14 +18,14 @@
     "custom_contract_required": true,
     "publication_bundle_validation_required": true
   },
-  "verdict": "IR_PUBLICATION_COVERAGE_BLOCKED_SOURCE_REGION_CONTRACT_MISSING",
+  "verdict": "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS",
   "source_authority_gate": {
     "gate_status": "SOURCE_AUTHORITY_GATE_PASS",
     "works_scanned": 17894,
     "unallowlisted_unknown_markers_total": 0
   },
   "source_region_contract": {
-    "verdict": "SOURCE_REGION_CONTRACT_CANDIDATE_PROVIDED",
+    "verdict": "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION",
     "schema_id": "https://w3id.org/abc/schemas/source-region-coverage.schema.json",
     "schema_version": "aozora-source-region-coverage-v1",
     "policy_id": "https://w3id.org/abc/policies/source-region-publication-v0",
@@ -99,7 +99,7 @@
     "invalid_measurement_status_classes": [],
     "unmeasured_policy_classes": [],
     "missing_measurement_split_classes": [],
-    "message": "Readable source-region contract candidate recorded as evidence only; synced ABC integration must confirm the source-region contract before admission can unblock."
+    "message": "ABC source-region schema, publication policy, and manifest sidecar role are confirmed."
   },
   "parser_evidence_coverage": {
     "verdict": "FIVE_PARSER_EVIDENCE_COMPLETE",

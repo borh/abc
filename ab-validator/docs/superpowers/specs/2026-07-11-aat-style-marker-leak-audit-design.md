@@ -29,6 +29,19 @@ A finding requires all of the following:
 3. The value contains an Aozora directive-shaped marker beginning with `［＃`
    and ending with `］`.
 
+Complete markers are the shortest non-overlapping matches of `［＃`, followed
+by zero or more characters other than `］`, followed by `］`. Scanning resumes
+immediately after each closing `］`. Thus `［＃foo］x］［＃bar］` contains exactly
+the complete markers `［＃foo］` and `［＃bar］`; the stray `］` is not absorbed by
+the first match.
+
+An occurrence of `［＃` in the same text value that is not the start of a
+complete match is counted separately as an `unmatched_marker_open` diagnostic.
+It is not promoted to a complete-marker finding. The audit does not concatenate
+sibling text nodes to reconstruct a marker split across nodes; that limitation
+is stated in the generated report, so zero complete findings cannot be read as
+proof of zero partial or split leakage.
+
 The audit therefore measures marker-shaped text inside a parser-classified
 style container. It does not scan arbitrary prose and does not claim that
 every finding can be repaired by deleting a substring. The later adapter fix
@@ -53,19 +66,34 @@ The summary records:
 - counts by normalized marker-form signature;
 - bounded examples containing file stem, style type, JSON path, marker forms,
   and a length-bounded text excerpt.
+- unmatched marker-open diagnostics, by style type, with bounded examples.
 
 Marker-form signatures preserve directive bodies but replace visible content
-between paired leading/trailing markers with an ellipsis. Exact examples stay
-bounded so one large work cannot dominate the artifact.
+between paired leading/trailing markers with an ellipsis. For example,
+`［＃太字］ピアノ［＃太字終わり］` has signature
+`［＃太字］…［＃太字終わり］`. A quoted-target marker such as
+`［＃「ピアノ」は太字］` is one marker and retains the signature
+`［＃「ピアノ」は太字］`; the audit does not reinterpret its quoted target.
+
+Example selection permits at most two examples per file across the whole
+report and selects candidates in deterministic round-robin order across
+sorted style types until the global `--example-limit` is reached. Within a
+style type candidates sort by file stem, JSON path, and signature. Exact
+examples and excerpts stay bounded so neither one work nor one style type can
+consume the evidence budget.
 
 JSON keys, count tables, file traversal, and examples are deterministically
 ordered. Markdown is rendered entirely from the summary model so the two
 outputs cannot disagree.
 
-Malformed JSON or structurally invalid `blocks` is recorded and makes the CLI
-exit nonzero after writing the partial diagnostic summary. Ordinary AAT nodes
-with missing optional fields are ignored unless they violate the specific
-shape being audited.
+Malformed JSON, a non-array `blocks`, or a `text` node under a style whose
+present `value` is not a string is recorded as malformed input. A text node
+with no `value` is also malformed because the audited AAT text shape requires
+it. Other missing optional fields are ignored. The CLI writes a partial
+diagnostic summary and exits 1 if any malformed input is seen. Exit 0 means the
+audit completed, regardless of whether leaks were found; findings are the
+subject of the report, not command failure. Exit 2 is reserved for CLI usage
+errors. Checked-in evidence requires exit 0.
 
 ## Verification
 
@@ -75,6 +103,8 @@ Python tests use small temporary AAT fixtures covering:
 - bold, emphasis, and bouten findings;
 - nested styles without double attribution;
 - multiple text descendants and multiple markers;
+- shortest-match behavior with two markers and a stray closing `］`;
+- unmatched `［＃` accounting and the documented split-node limitation;
 - deterministic ordering and example limiting;
 - malformed JSON and invalid top-level shape;
 - agreement between JSON counts and Markdown rendering.
@@ -90,4 +120,3 @@ path represented only by a stable input label.
 - Repeated runs over the same dump are byte-identical.
 - Checked-in evidence is compact and contains no machine-local path.
 - No parser, adapter, schema, registry, or Phase 3 plan file is modified.
-

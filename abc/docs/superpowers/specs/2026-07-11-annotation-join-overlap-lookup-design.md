@@ -17,6 +17,14 @@ Tokens remain subject to the existing precondition: ascending by input-span
 start and non-overlapping. Annotations need not be sorted and may overlap,
 be zero-width, or be inverted.
 
+The optimized lookup cannot retain the exhaustive scan's accidental tolerance
+of invalid token order. `join` therefore coerces its token input to a vector
+and validates ascending, non-overlapping, non-degenerate spans once per call.
+Violation throws `ExceptionInfo` before producing any result. The public
+docstring states this failure mode. This O(tokens) validation is intentional:
+it prevents a future unvalidated caller from receiving plausible but wrong
+classifications, while remaining negligible beside per-annotation lookup.
+
 ## Design
 
 Replace the exhaustive token scan performed for every annotation with:
@@ -47,17 +55,27 @@ between the optimized implementation and the exhaustive oracle. Generated
 cases include empty token streams, gaps, boundary contact, zero-width spans,
 inverted spans, and annotations outside the token range.
 
-A deterministic benchmark command compares the two lookup algorithms over a
-representative synthetic large work. It reports elapsed time and verifies the
-same result before reporting the ratio. Benchmark numbers are operator
-evidence, not a timing-sensitive automated test.
+The performance target is grounded in the re-verification handoff, which
+records that the annotation×token join dominates the approximately 7.3-hour
+single-core join-stats step
+(`docs/handoffs/2026-07-11-tokenizer-comparison-followups.md`). A deterministic
+benchmark command compares the two lookup algorithms over at least two real
+works from a retained join-stats run: the largest available token stream and a
+second work selected for high annotation density. It reports token and
+annotation counts, verifies identical results, warms both implementations,
+and reports repeated elapsed measurements and median ratios. Input paths are
+operator arguments and are never checked into source.
+
+The performance acceptance floor is a 10× median speedup for the isolated
+overlap lookup on each real work. Failure to meet it stops the optimization
+for investigation; it is not waived by passing functional tests. Benchmark
+numbers are operator evidence, not a timing-sensitive automated test.
 
 ## Acceptance criteria
 
 - Focused annotation-join tests and the property test pass.
 - The existing ABC Clojure checks pass.
 - The benchmark verifies identical results and records a material speedup on
-  the representative workload.
+  both real workloads, meeting the 10× isolated-lookup floor.
 - No public output or file format changes.
 - No Phase 3 parser file is modified.
-

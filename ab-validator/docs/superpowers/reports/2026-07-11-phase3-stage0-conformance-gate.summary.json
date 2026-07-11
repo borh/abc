@@ -1,0 +1,14 @@
+{
+  "stage": "stage0",
+  "gate": "conformance",
+  "candidate": {
+    "commit": "c3cb16908b0134ca03856735f10445eeb2a92957",
+    "bin_sha256": "9a41cbfb4d6e61c74261501d26f6af34b50cc68f60cc5f5acd000e867affd6a6",
+    "version": "ab-aozora 0.1.0 aat-schema 1 facade 0.1.0 wire-schema 2 (git c3cb16908b0134ca03856735f10445eeb2a92957)"
+  },
+  "verdict": "PASS",
+  "details": {
+    "p4suta_differing": 0,
+    "seed_differing": 0
+  }
+}

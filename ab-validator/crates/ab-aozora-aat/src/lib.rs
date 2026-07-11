@@ -1,11 +1,10 @@
 //! AAT (Aozora AST Transform) adapter ported from the frozen aozora adapter.
 
-use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str, sync::LazyLock};
+use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str};
 
 use anyhow::Result;
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
 use encoding_rs::SHIFT_JIS;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
@@ -22,9 +21,6 @@ use ab_aozora_facade::{self, Diagnostic, Document, encoding, json as aozora_json
 /// `pub use ab_aozora_spec::{..., Diagnostic, ...};`. One alias, one
 /// `aozora_json::diagnostic_entries` call serves both diagnostic families.
 pub type AozoraSanitizeDiagnostic = Diagnostic;
-
-static RUBY_RE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap());
 
 /// Wire-shaped source decoding output ported from the frozen adapter.
 #[derive(Debug)]
@@ -141,6 +137,17 @@ struct AozoraGaiji {
     codepoint: Option<Value>,
     #[serde(default)]
     resolved: Option<String>,
+}
+
+/// The lossy-local counterpart of `ab_aozora_facade::json::RubyEntry` — same
+/// deserialize-the-serialized-entries pattern `AozoraDiagnostic` /
+/// `AozoraGaiji` already use.
+#[derive(Debug, Deserialize, Clone)]
+struct AozoraRubyEntry {
+    span: Span,
+    base: String,
+    reading: String,
+    side: String,
 }
 
 /// Decode source bytes to a normalized text with encoding detection.
@@ -271,9 +278,15 @@ fn lines_from(source: &str, offset: usize) -> impl Iterator<Item = (usize, &str)
     })
 }
 
+#[allow(clippy::type_complexity, reason = "one tuple per projected wire channel; a named struct would only restate the field set")]
 fn projections(
     span_text: &str,
-) -> Result<(Vec<AozoraNode>, Vec<AozoraDiagnostic>, Vec<AozoraGaiji>)> {
+) -> Result<(
+    Vec<AozoraNode>,
+    Vec<AozoraDiagnostic>,
+    Vec<AozoraGaiji>,
+    Vec<AozoraRubyEntry>,
+)> {
     // Mirrors the upstream binary's own stdin handling: each `aozora
     // inspect` subprocess ran decode_auto over the bytes the adapter piped
     // in (already-valid UTF-8 passes through unchanged).
@@ -284,7 +297,8 @@ fn projections(
     let nodes = from_entries(aozora_json::node_entries(&tree))?;
     let diagnostics = from_entries(aozora_json::diagnostic_entries(tree.diagnostics()))?;
     let gaiji = from_entries(aozora_json::gaiji_entries(&source))?;
-    Ok((nodes, diagnostics, gaiji))
+    let ruby = from_entries(aozora_json::ruby_entries(&tree))?;
+    Ok((nodes, diagnostics, gaiji, ruby))
 }
 
 /// Same data path as the deleted wire hop: the facade's Serialize impls
@@ -308,8 +322,8 @@ const _: () = assert!(aozora_json::SCHEMA_VERSION == 3, "incompatible wire schem
 /// Returns an error if source decoding, projection parsing, or JSON serialization fails.
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decoded = decode_source_bytes(bytes)?;
-    let (nodes, diagnostics, gaiji) = projections(&decoded.span_text)?;
-    let aat = build_aat(&decoded, &nodes, &diagnostics, &gaiji);
+    let (nodes, diagnostics, gaiji, ruby) = projections(&decoded.span_text)?;
+    let aat = build_aat(&decoded, &nodes, &diagnostics, &gaiji, &ruby);
     let mut out = Vec::new();
     serde_json::to_writer(&mut out, &aat)?;
     out.push(b'\n');
@@ -400,12 +414,22 @@ fn build_aat(
     nodes: &[AozoraNode],
     diagnostics: &[AozoraDiagnostic],
     gaiji: &[AozoraGaiji],
+    ruby: &[AozoraRubyEntry],
 ) -> Value {
     let gaiji_by_start = gaiji
         .iter()
         .map(|entry| (entry.span.start, entry.clone()))
         .collect::<BTreeMap<_, _>>();
-    let blocks = blocks_from_inline_content(inline_content(decoded, nodes, &gaiji_by_start));
+    let ruby_by_span = ruby
+        .iter()
+        .map(|entry| ((entry.span.start, entry.span.end), entry.clone()))
+        .collect::<BTreeMap<_, _>>();
+    let blocks = blocks_from_inline_content(inline_content(
+        decoded,
+        nodes,
+        &gaiji_by_start,
+        &ruby_by_span,
+    ));
     let warnings = diagnostics
         .iter()
         .map(|diagnostic| diagnostic_warning(diagnostic, &decoded.span_ctx))
@@ -937,6 +961,7 @@ fn inline_content(
     decoded: &DecodedSource,
     nodes: &[AozoraNode],
     gaiji_by_start: &BTreeMap<usize, AozoraGaiji>,
+    ruby_by_span: &BTreeMap<(usize, usize), AozoraRubyEntry>,
 ) -> Vec<Value> {
     let mut content = Vec::new();
     let mut ordered = nodes.iter().collect::<Vec<_>>();
@@ -948,7 +973,7 @@ fn inline_content(
             push_source_gap(&mut content, decoded, cursor, node.span.start);
         }
         match node.kind.as_str() {
-            "ruby" => content.push(ruby_node(decoded, node)),
+            "ruby" => content.push(ruby_node(decoded, node, ruby_by_span)),
             "gaiji" => content.push(gaiji_node(decoded, node, gaiji_by_start)),
             "bouten" => content.push(style_node(decoded, node, "bouten")),
             "emphasis" => content.push(style_node(
@@ -1027,23 +1052,21 @@ fn contains_aozora_markup(source: &str) -> bool {
         || source.contains('〕')
 }
 
-#[allow(
-    clippy::option_if_let_else,
-    reason = "if/else form preserved from frozen adapter; lambda restructure not permitted"
-)]
-fn ruby_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
-    let source = source_slice(&decoded.span_text, &node.span);
-    if let Some(caps) = RUBY_RE.captures(source) {
-        json!({
-            "kind": "ruby",
-            "base": caps.name("base").unwrap().as_str(),
-            "reading": caps.name("reading").unwrap().as_str(),
-            "direction": "right",
-            "span": span_json(&node.span, &decoded.span_ctx)
-        })
-    } else {
-        raw_node(decoded, node, "ruby")
-    }
+fn ruby_node(
+    decoded: &DecodedSource,
+    node: &AozoraNode,
+    ruby_by_span: &BTreeMap<(usize, usize), AozoraRubyEntry>,
+) -> Value {
+    let Some(entry) = ruby_by_span.get(&(node.span.start, node.span.end)) else {
+        return raw_node(decoded, node, "ruby");
+    };
+    json!({
+        "kind": "ruby",
+        "base": entry.base,
+        "reading": entry.reading,
+        "direction": entry.side,
+        "span": span_json(&node.span, &decoded.span_ctx)
+    })
 }
 
 fn gaiji_node(
@@ -1223,22 +1246,23 @@ mod tests {
     /// red — a parsed/`Value`-equality check would NOT catch this, since
     /// `Value::eq` for objects is order-independent.
     ///
-    /// Expected output generated 2026-07-10 via:
+    /// Expected output re-pasted 2026-07-12 (Task 4: facade `0.2.0` →
+    /// `0.3.0`) via:
     /// ```text
     /// export RUSTC_WRAPPER= SCCACHE_DISABLE=1
     /// cd ab-validator
-    /// cargo test -p ab-aozora-aat --test probe -- --nocapture
+    /// cargo test -p ab-aozora-aat --lib aat_json_from_bytes_is_byte_exact_under_default_map_ordering -- --nocapture
     /// ```
-    /// (a scratch test asserting against a deliberately wrong literal, whose
-    /// panic message prints the actual bytes; pasted here verbatim). The
-    /// `(git unknown)` suffix in `adapter_version` is `build.rs`'s fallback
-    /// when `AB_AOZORA_GIT_REV` is unset, which is the case for a plain
-    /// `cargo test` invocation (only flake-built release binaries bake in a
-    /// real rev; see `flake.nix`'s `AB_AOZORA_GIT_REV = self.rev or
-    /// "unknown"` and `build.rs`'s doc comment).
+    /// (this test's own literal is the deliberately-stale assertion; the
+    /// panic message prints the actual bytes, decoded and pasted here
+    /// verbatim). The `(git unknown)` suffix in `adapter_version` is
+    /// `build.rs`'s fallback when `AB_AOZORA_GIT_REV` is unset, which is the
+    /// case for a plain `cargo test` invocation (only flake-built release
+    /// binaries bake in a real rev; see `flake.nix`'s `AB_AOZORA_GIT_REV =
+    /// self.rev or "unknown"` and `build.rs`'s doc comment).
     #[test]
     fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
-        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.3.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":1,\"work_id\":\"stdin\"}\n";
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.3.0 aat-schema 1 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":1,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
     }
@@ -1494,6 +1518,55 @@ mod tests {
             .iter()
             .map(|b| b["kind"].as_str().unwrap().to_owned())
             .collect()
+    }
+
+    /// Parse `src` through the full `aat_json_from_bytes` path and return the
+    /// resulting AAT `Value`.
+    fn aat_value_for(src: &str) -> Value {
+        serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap()
+    }
+
+    /// Depth-first search over `blocks`/`content`/`children` for the first
+    /// node whose `"kind"` equals `kind`.
+    fn find_first_node<'a>(v: &'a Value, kind: &str) -> &'a Value {
+        fn search<'a>(v: &'a Value, kind: &str) -> Option<&'a Value> {
+            match v {
+                Value::Object(map) => {
+                    if map.get("kind").and_then(Value::as_str) == Some(kind) {
+                        return Some(v);
+                    }
+                    for key in ["blocks", "content", "children"] {
+                        if let Some(child) = map.get(key)
+                            && let Some(found) = search(child, kind)
+                        {
+                            return Some(found);
+                        }
+                    }
+                    None
+                }
+                Value::Array(items) => items.iter().find_map(|item| search(item, kind)),
+                _ => None,
+            }
+        }
+        search(v, kind).unwrap_or_else(|| panic!("no {kind:?} node found in {v}"))
+    }
+
+    #[test]
+    fn ruby_emission_uses_structured_entries_right_parity() {
+        let aat = aat_value_for("｜漢字《かんじ》\n");
+        let ruby = find_first_node(&aat, "ruby");
+        assert_eq!(ruby["base"], "漢字");
+        assert_eq!(ruby["reading"], "かんじ");
+        assert_eq!(ruby["direction"], "right");
+    }
+
+    #[test]
+    fn left_ruby_emits_direction_left() {
+        let aat = aat_value_for("名［＃「名」の左に「な」のルビ］\n");
+        let ruby = find_first_node(&aat, "ruby");
+        assert_eq!(ruby["direction"], "left");
+        assert_eq!(ruby["base"], "名");
+        assert_eq!(ruby["reading"], "な");
     }
 
     #[test]

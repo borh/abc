@@ -36,7 +36,7 @@ use serde::Serialize;
 use crate::encoding::gaiji::{self, gaiji_resolutions};
 #[cfg(feature = "json")]
 use crate::encoding::gaiji::{find_span, resolve_at};
-use crate::{DiagnosticSource, Severity, Tree};
+use crate::{DiagnosticSource, NodeRef, RubySide, Severity, Tree};
 
 /// Wire-format schema version. Bumped on any breaking change to the
 /// serialised shape (variant additions, field renames, envelope
@@ -230,6 +230,54 @@ pub fn gaiji_entries(source: &str) -> Vec<GaijiResolution> {
     gaiji_resolutions(source)
         .into_iter()
         .map(Into::into)
+        .collect()
+}
+
+/// The structured ruby (furigana) records projected from an [`Tree`]'s nodes.
+///
+/// Prefer this to re-parsing JSON when a caller needs the values directly
+/// (e.g. the `ab-aozora-aat` adapter, which retired its `RUBY_RE` regex
+/// reparse in favor of this typed projection).
+///
+/// Each entry has the shape `{ span: { start, end }, base, reading, side }`
+/// in source-byte coordinates, where `side` is `"right"` or `"left"`.
+///
+/// Mirrors [`gaiji_entries`]'s shape: walks [`Tree::source_nodes`], matches
+/// the nodes whose payload is [`crate::Node::Ruby`], and resolves the
+/// `base`/`reading` `ContentRange`s against the tree's backing
+/// [`crate::ast::NodeStore`] the same way [`crate::splice`]'s
+/// `coupled_target_text` resolves a split-ownership node's target (via
+/// `NodeStore::content_range_as_plain`). An entry is omitted when its base or
+/// reading is not a single plain run (mixed/segmented content) — the caller
+/// falls back to its own raw-node handling for that case, same as an
+/// unresolved gaiji reference.
+#[must_use]
+pub fn ruby_entries(tree: &Tree<'_>) -> Vec<RubyEntry> {
+    let store = &tree.lex_output().store;
+    tree.source_nodes()
+        .iter()
+        .filter_map(|sn| {
+            let (NodeRef::Inline(leaf) | NodeRef::BlockLeaf(leaf)) = sn.node else {
+                return None;
+            };
+            let crate::Node::Ruby(ruby) = leaf else {
+                return None;
+            };
+            let base = store.content_range_as_plain(ruby.base)?.to_owned();
+            let reading = store.content_range_as_plain(ruby.reading)?.to_owned();
+            Some(RubyEntry {
+                span: sn.source_span.into(),
+                base,
+                reading,
+                // `RubySide` is `#[non_exhaustive]` upstream — the wildcard
+                // arm covers any future variant by defaulting to "right"
+                // (the same defensive convention as `severity_str`).
+                side: match ruby.side {
+                    RubySide::Left => "left",
+                    RubySide::Right | _ => "right",
+                },
+            })
+        })
         .collect()
 }
 
@@ -561,10 +609,22 @@ impl From<gaiji::GaijiResolution> for GaijiResolution {
     }
 }
 
+/// One [`ruby_entries`] entry — a ruby (furigana) annotation resolved to its
+/// plain base/reading text, in source-byte coordinates.
+#[derive(Debug, Clone, Serialize)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct RubyEntry {
+    span: Span,
+    base: String,
+    reading: String,
+    /// `"right"` (`｜base《reading》`) or `"left"`
+    /// (`［＃「base」の左に「reading」のルビ］`).
+    side: &'static str,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(feature = "json")]
     use crate::Document;
 
     #[test]
@@ -690,6 +750,26 @@ mod tests {
         assert!(json.contains(r#""kind":"ruby""#));
         assert!(json.contains(r#""open":"#));
         assert!(json.contains(r#""close":"#));
+    }
+
+    #[test]
+    fn ruby_entries_exposes_side_base_reading() {
+        let src = "｜漢字《かんじ》\n名［＃「名」の左に「な」のルビ］\n";
+        let doc = Document::new(src);
+        let tree = doc.parse();
+        let entries = ruby_entries(&tree);
+        assert!(
+            entries
+                .iter()
+                .any(|e| e.base == "漢字" && e.reading == "かんじ" && e.side == "right"),
+            "no right ruby entry: {entries:?}"
+        );
+        assert!(
+            entries
+                .iter()
+                .any(|e| e.base == "名" && e.reading == "な" && e.side == "left"),
+            "no left ruby entry: {entries:?}"
+        );
     }
 
     #[test]

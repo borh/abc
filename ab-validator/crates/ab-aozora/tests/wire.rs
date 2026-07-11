@@ -16,7 +16,7 @@ fn version_carries_the_identity_fields() {
     for field in [
         "ab-aozora 0.3.0",
         "aat-schema 1",
-        "facade 0.2.0",
+        "facade 0.3.0",
         "wire-schema 3",
         "git ",
     ] {

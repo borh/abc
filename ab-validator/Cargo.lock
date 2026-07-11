@@ -41,7 +41,6 @@ dependencies = [
  "ab-aozora-pipeline",
  "anyhow",
  "encoding_rs",
- "regex",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -74,7 +73,7 @@ dependencies = [
 
 [[package]]
 name = "ab-aozora-facade"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "ab-aozora-corpus",
  "ab-aozora-encoding",

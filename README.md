@@ -32,7 +32,7 @@ just validate-migration
 
 This checks runtime configuration, active path hygiene, schema/policy drift, TEI
 version coherence, release-critical flake input pins, Python quality, and Nix
-formatting, and evaluates the root and both component flakes directly.
+formatting. It also evaluates the root and both component flakes directly.
 
 ## Focused Checks
 

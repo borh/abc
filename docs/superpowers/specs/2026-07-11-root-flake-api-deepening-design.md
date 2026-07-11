@@ -204,8 +204,10 @@ these six environment variables:
 This wiring is part of the retained root app contract. It keeps publication
 materialization hermetic and prevents fallback to a stub parser. The
 implementation must preserve `mkAdapterAwareSoranohaApp`, its dependency set,
-runtime `PATH`, six environment assignments, and final dispatch byte-for-byte.
-These component outputs are private dependencies and are not re-exported.
+runtime `PATH`, six environment assignments, and final dispatch as normalized
+realized-wrapper text, together with stable direct component identities. Raw
+store identity churn is expected when nested path-input or root source identities
+change. These component outputs are private dependencies and are not re-exported.
 
 ## Cross-Component Evidence Workflows
 

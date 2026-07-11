@@ -131,10 +131,10 @@
             program = "${program}";
             meta.description = description;
           };
-          # build-publication materializes real TEI by shelling out to the owned
-          # adapters. Inject them (and the shell tools the aozora2html wrapper
-          # needs) so `nix run .#soranoha` is hermetic and never falls back to a
-          # stub. Mirrors mkProbeAwareAbcApp.
+          # build-publication materializes real TEI by shelling out to validator-
+          # owned adapters. Inject those private dependencies (and the shell tools
+          # the aozora2html wrapper needs) without re-exporting them from the root,
+          # so `nix run .#soranoha` is hermetic and never falls back to a stub.
           mkAdapterAwareSoranohaApp =
             soranohaApp:
             pkgs.writeShellScript "soranoha-with-adapters" ''

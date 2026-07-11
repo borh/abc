@@ -9,6 +9,7 @@ import sys
 
 outputs = json.load(sys.stdin)
 systems = {"aarch64-linux", "x86_64-linux"}
+expected_output_names = {"apps", "checks", "devShells", "formatter", "packages"}
 expected = {
     "apps": {
         "flake-input-policy",
@@ -38,6 +39,12 @@ expected = {
 }
 
 errors = []
+actual_output_names = set(outputs)
+if actual_output_names != expected_output_names:
+    errors.append(
+        f"top-level outputs: expected {sorted(expected_output_names)}, got {sorted(actual_output_names)}"
+    )
+
 for output_name, expected_names in expected.items():
     actual_systems = set(outputs.get(output_name, {}))
     if actual_systems != systems:

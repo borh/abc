@@ -133,7 +133,14 @@ fn abc_root(repo: &Path) -> PathBuf {
 fn convert_and_serialize_parser_ir_is_canonical_under_preserve_order() {
     let repo = repo_root();
     let abc = abc_root(&repo);
-    let schemas = ab_aat_to_parser_ir::SchemaSet::load(&repo, &abc).unwrap();
+    // The mapping loaded below (`aat-to-parser-ir-mapping-v1.json`) declares
+    // `source_aat_version: 1`; `MappingDocument::preflight` requires the
+    // loaded AAT schema version to match, so this canary — whose fixture AAT
+    // document is itself `"version": 1` — loads the v1 schema tuple. (v2
+    // fails preflight with "mapping/schema tuple mismatch".) This preserves
+    // the canary's original assertion: preserve_order active, canonical
+    // (sorted-key) parser-IR serialization is unaffected by map ordering.
+    let schemas = ab_aat_to_parser_ir::SchemaSet::load_for_aat_version(&repo, &abc, 1).unwrap();
     let mapping = ab_aat_to_parser_ir::MappingDocument::from_path(
         &repo.join("data/aat-to-parser-ir-mapping-v1.json"),
     )

@@ -1,0 +1,213 @@
+# IR Publication Coverage
+
+## Revision 2 (2026-07-12, source-region policy pin fix)
+
+Task 20's original run of this report read
+`IR_PUBLICATION_COVERAGE_BLOCKED_SOURCE_REGION_CONTRACT_MISSING`, traced to
+`reports/lib/source_region.py`'s hardcoded `SOURCE_REGION_POLICY_VERSION`
+lagging at `0.2.0` while `abc/data/source-region-publication-policy-v0.json`
+had legitimately rotated to `0.3.0` (commit `8660511e`: `policy_version`
+0.2.0->0.3.0, one added `notes` line, and `measurement_status`
+`needs_measurement_split`->`measured` for `terminal_provenance` and
+`colophon_metadata` — nothing else changed, confirmed by full `git log -p`
+diff). That rotation was reviewed and the pin was updated to `0.3.0`
+(`reports/lib/source_region.py`).
+
+Re-running this exact invocation with the fixed pin now reads:
+
+- `source_region_contract.verdict`: `SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
+  (was `SOURCE_REGION_CONTRACT_CANDIDATE_PROVIDED`)
+- Top-level verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS` (was
+  `IR_PUBLICATION_COVERAGE_BLOCKED_SOURCE_REGION_CONTRACT_MISSING`) — this is
+  the same, already-documented, non-regressing block Task 16's pre-admission
+  run recorded (`closure_gaps.classified_but_not_admitted.count == 151`,
+  `true_unsupported_gap == 0`), not a new problem.
+- The three required zero counters
+  (`unsupported_body_markup_occurrences`/`unknown_region_occurrences`/`unknown_unreviewed_occurrences`)
+  remain `0` (frozen `2026-07-04-source-authority-representability.summary.json`
+  input, unchanged) and `source_authority_gate.gate_status ==
+  SOURCE_AUTHORITY_GATE_PASS`.
+- `parser_evidence_coverage.verdict` remains `FIVE_PARSER_EVIDENCE_COMPLETE`.
+
+Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS`
+
+## Source Region Contract
+
+Verdict: `SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION`
+
+Schema: `https://w3id.org/abc/schemas/source-region-coverage.schema.json` `aozora-source-region-coverage-v1`
+
+Policy: `https://w3id.org/abc/policies/source-region-publication-v0` `0.3.0`
+
+Manifest sidecar role present: `true`
+
+## Publication Bundle Contract
+
+Verdict: `PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION`
+
+Evidence: `docs/superpowers/reports/2026-07-06-publication-bundle-full-matrix-validation.summary.json`
+
+Bundle hash: `sha256:d75136defc1b32165c9a302eb252706dff409b0018c47a64204c74b91b268129`
+
+ABC commit: `95ace31`
+
+Validation scope: `batch`
+
+Rows validated: `285`
+
+Rows failed: `0`
+
+## Node Coverage
+
+| Class | Node types |
+|---|---:|
+## Next Work Dashboard
+
+Verdict: `AOZORA_PUBLICATION_NEXT_WORK_COMPLETE`
+
+Evidence: `docs/superpowers/reports/2026-07-06-aozora-publication-next-work.summary.json`
+
+Next work items: `5`
+
+- `source_region_disposition_samples`
+- `text_policy_calibration`
+- `adapter_fidelity_worksets`
+- `tei_p5_mapping_dossiers`
+- `parser_acceptance_criteria`
+
+| `tei_exact` | 7 |
+| `tei_policy_projection` | 7 |
+
+## Field Coverage
+
+| Class | Field facts |
+|---|---:|
+| `tei_exact` | 4 |
+| `tei_policy_projection` | 9 |
+| `tei_plus_abc_extension` | 1 |
+| `custom_sidecar` | 5 |
+
+| Field | Class | Target |
+|---|---|---|
+| `gaiji.raw_marker` | `tei_policy_projection` | TEI g/charDecl raw-marker preservation policy |
+| `gaiji.reference` | `tei_exact` | TEI g/charDecl reference linkage |
+| `gaiji.unicode` | `tei_exact` | TEI g/charDecl Unicode value |
+| `gaiji.resolved` | `tei_plus_abc_extension` | TEI visible glyph plus ABC resolution-status preservation |
+| `ruby.base` | `tei_exact` | TEI ruby base text |
+| `ruby.reading` | `tei_exact` | TEI ruby reading text |
+| `ruby.direction` | `tei_policy_projection` | TEI ruby placement policy for left/right readings |
+| `heading.level` | `tei_policy_projection` | TEI section/head level policy |
+| `emphasis.inline_children` | `tei_policy_projection` | TEI hi content with nested inline children policy |
+| `paragraph.layout` | `tei_policy_projection` | TEI p@rend paragraph layout policy |
+| `paragraph.node_range` | `custom_sidecar` | ABC sidecar node-range traceability |
+| `paragraph.role` | `tei_policy_projection` | TEI paragraph routing/body-vs-note role policy |
+| `source-note.placement` | `tei_policy_projection` | TEI front/body/back source-note routing |
+| `source-note.classification` | `custom_sidecar` | ABC sidecar source-note provenance classification |
+| `caption.target` | `tei_policy_projection` | TEI caption-to-figure association policy |
+| `quote.marker_type` | `tei_policy_projection` | TEI quote/cit marker interpretation policy |
+| `mapping.identity` | `custom_sidecar` | ABC sidecar mapping id/version/hash linkage |
+| `divergence.records` | `custom_sidecar` | ABC sidecar divergence record set |
+| `source.pointer` | `custom_sidecar` | ABC sidecar source pointer linkage |
+
+## Diagnostic Coverage
+
+| Class | Diagnostic facts |
+|---|---:|
+| `custom_sidecar` | 10 |
+
+| Diagnostic field | Class | Target |
+|---|---|---|
+| `warnings[]` | `custom_sidecar` | ABC sidecar warning record collection |
+| `warnings[].code` | `custom_sidecar` | ABC sidecar warning code preservation |
+| `warnings[].severity` | `custom_sidecar` | ABC sidecar warning severity preservation |
+| `warnings[].message` | `custom_sidecar` | ABC sidecar warning message preservation |
+| `warnings[].span` | `custom_sidecar` | ABC sidecar warning span preservation |
+| `errors[]` | `custom_sidecar` | ABC sidecar error record collection |
+| `errors[].code` | `custom_sidecar` | ABC sidecar error code preservation |
+| `errors[].severity` | `custom_sidecar` | ABC sidecar error severity preservation |
+| `errors[].message` | `custom_sidecar` | ABC sidecar error message preservation |
+| `errors[].span` | `custom_sidecar` | ABC sidecar error span preservation |
+
+## Source Construct Coverage
+
+| Class | Constructs |
+|---|---:|
+| `tei_exact` | 3 |
+| `tei_policy_projection` | 5 |
+| `tei_plus_abc_extension` | 2 |
+| `unsupported_gap` | 16 |
+
+## Unsupported-Derived Closure Coverage
+
+Closure-adjusted view of raw unsupported-derived mapping rows. A row is a true unsupported gap only if it has no TEI/profile/custom closure family.
+
+Total raw unsupported-derived rows: 151
+
+| Status | Rows |
+|---|---:|
+| `admitted_by_custom_contract` | 0 |
+| `admitted_by_tei_profile` | 0 |
+| `classified_but_not_admitted` | 151 |
+| `true_unsupported_gap` | 0 |
+
+## Raw Unsupported-Derived Mapping Rows
+
+Raw unsupported-derived mapping rows before closure folding. Use unsupported_derived_closure_coverage or closure_gaps to decide whether any row remains a true unsupported gap.
+
+Count: 151
+
+| Owner | Count |
+|---|---:|
+| `aat_to_parser_ir_converter` | 5 |
+| `custom_schema` | 97 |
+| `policy` | 49 |
+
+- `blocks[].children[].children[].content[].accent` owner `policy`
+- `blocks[].children[].children[].content[].span` owner `policy`
+- `blocks[].children[].children[].content[].style` owner `policy`
+- `blocks[].children[].children[].content[].warigaki.upper[].span` owner `policy`
+- `blocks[].children[].children[].heading.content[].span` owner `policy`
+- `blocks[].children[].children[].heading.content[].style` owner `policy`
+- `blocks[].children[].children[].span` owner `policy`
+- `blocks[].children[].content[].accent` owner `policy`
+- `blocks[].children[].content[].content[].accent` owner `policy`
+- `blocks[].children[].content[].content[].span` owner `policy`
+- `blocks[].children[].content[].content[].style` owner `policy`
+- `blocks[].children[].content[].span` owner `policy`
+- `blocks[].children[].content[].style` owner `policy`
+- `blocks[].children[].content[].warigaki.lower[].span` owner `policy`
+- `blocks[].children[].content[].warigaki.upper[].span` owner `policy`
+- `blocks[].children[].content[].warigaki.upper[].style` owner `policy`
+- `blocks[].children[].heading.content[].span` owner `policy`
+- `blocks[].children[].heading.content[].style` owner `policy`
+- `blocks[].children[].span` owner `policy`
+- `blocks[].content[].accent` owner `policy`
+
+## Closure Gaps
+
+Admitted by custom contract: 0
+
+Admitted by TEI profile: 0
+
+Classified but not admitted: 151
+
+| Family | Count |
+|---|---:|
+| `accent` | 14 |
+| `figure_metadata` | 85 |
+| `gaiji_unresolved_reason` | 6 |
+| `heading_jisage_structure` | 7 |
+| `provenance_metrics` | 3 |
+| `source_identity` | 5 |
+| `span_coordinates` | 17 |
+| `style_rendition` | 14 |
+
+True unsupported gaps: 0
+
+## Plaintext Policy
+
+`exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance`
+
+## TEI-EAJ Calibration
+
+TEI-EAJ rows are calibration evidence, not source authority.

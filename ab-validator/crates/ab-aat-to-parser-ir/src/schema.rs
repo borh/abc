@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -15,9 +15,23 @@ pub struct SchemaSet {
 }
 
 impl SchemaSet {
-    pub fn load(repo_root: &Path, abc_root: &Path) -> Result<Self> {
+    /// Load the (AAT schema, ABC schema) tuple for a given AAT schema
+    /// `version`. The AAT schema file is selected by version — 1 loads the
+    /// frozen `data/aat-schema-v1.json`, 2 loads the current
+    /// `data/aat-schema.json` — while the ABC-owned schemas (mapping,
+    /// parser-IR, divergence record, bundle) are shared across versions.
+    pub fn load_for_aat_version(
+        repo_root: &Path,
+        abc_root: &Path,
+        aat_version: u64,
+    ) -> Result<Self> {
+        let aat_schema_path = match aat_version {
+            1 => repo_root.join("data/aat-schema-v1.json"),
+            2 => repo_root.join("data/aat-schema.json"),
+            other => bail!("unsupported AAT schema version {other} (known: 1, 2)"),
+        };
         Ok(Self {
-            aat_schema: read_json(&repo_root.join("data/aat-schema.json"))?,
+            aat_schema: read_json(&aat_schema_path)?,
             mapping_schema: read_json(&abc_root.join("schemas/aat-parser-ir-mapping.schema.json"))?,
             parser_ir_schema: read_json(&abc_root.join("schemas/parser-ir.schema.json"))?,
             abc_divergence_record_schema: read_json(
@@ -46,6 +60,7 @@ pub fn parse_json_value(bytes: &[u8]) -> Result<Value> {
 /// per-record) validation skips schema recompilation.
 #[derive(Debug)]
 pub struct SchemaValidators {
+    pub aat: jsonschema::Validator,
     pub parser_ir: jsonschema::Validator,
     pub bundle: jsonschema::Validator,
     pub abc_divergence_record: jsonschema::Validator,
@@ -54,6 +69,7 @@ pub struct SchemaValidators {
 impl SchemaValidators {
     pub fn compile(schemas: &SchemaSet) -> Result<Self> {
         Ok(Self {
+            aat: compile_validator(&schemas.aat_schema, "AAT")?,
             parser_ir: compile_validator(&schemas.parser_ir_schema, "parser-IR")?,
             bundle: compile_validator(&schemas.bundle_schema, "AAT parser-IR divergence bundle")?,
             abc_divergence_record: compile_validator(

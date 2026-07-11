@@ -12,9 +12,9 @@ fn bench_convert_aat(c: &mut Criterion) {
     let abc = std::env::var_os("AB_ABC_ROOT")
         .map(PathBuf::from)
         .unwrap_or_else(|| repo.join("data/abc-schemas"));
-    let schemas = SchemaSet::load(&repo, &abc).unwrap();
     let mapping =
         MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo, &abc, mapping.source_aat_version).unwrap();
     let converter = PreparedConverter::new(mapping, schemas).unwrap();
 
     let mut group = c.benchmark_group("convert_aat");

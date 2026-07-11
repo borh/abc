@@ -22,7 +22,13 @@ Current state:
   `letter_address_origin_occurrences: 6`, and
   `malformed_source_occurrences: 16`.
 - Five parser lanes are present in the generated matrix:
-  `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `aozora`.
+  `aozora2html`, `aozora-epub3`, `aozora-rs`, `aozora2`, and `ab-aozora`.
+  `ab-aozora` is the designated publication lane (activated 2026-07-12); the
+  legacy `aozora` lane's evidence is archived at
+  `reports/aat-fidelity/run-sets/2026-07-12-aozora-legacy-archive.json`
+  (frozen dump `aozora-full-repin-1a4f864`). The legacy `aozora` lane (crate,
+  flake input, justfile recipes, and comparison lane) was retired in Task 21
+  (2026-07-12): `ab-aozora` is now the sole live Aozora parser lane.
 - ABC owns the custom preservation contract and TEI profile evidence now synced
   into ab-validator.
 - ab-validator now records full-matrix publication bundle validation evidence
@@ -58,7 +64,10 @@ Five parser inputs are required evidence:
 - `aozora-epub3`
 - `aozora-rs`
 - `aozora2`
-- `aozora`
+- `ab-aozora` (publication lane, sole live Aozora parser since Task 21's
+  2026-07-12 retirement; legacy `aozora` evidence archived at
+  `reports/aat-fidelity/run-sets/2026-07-12-aozora-legacy-archive.json`,
+  frozen dump `aozora-full-repin-1a4f864`)
 
 Remaining work is no longer "make TEI-EAJ Level 2/3 pass." It is:
 

@@ -93,8 +93,17 @@ impl MappingDocument {
             );
         }
 
-        if self.source_aat_version != 1 {
-            bail!("unsupported source_aat_version {}", self.source_aat_version);
+        let schema_aat_version = schemas
+            .aat_schema
+            .pointer("/properties/version/const")
+            .and_then(Value::as_u64)
+            .context("AAT schema missing properties.version.const")?;
+        if self.source_aat_version != schema_aat_version {
+            bail!(
+                "mapping/schema tuple mismatch: mapping source_aat_version {} but loaded AAT schema is version {}",
+                self.source_aat_version,
+                schema_aat_version
+            );
         }
 
         for category in [
@@ -265,14 +274,28 @@ fn path_exists(
         }
         return false;
     }
-    for keyword in ["allOf", "anyOf"] {
-        if let Some(branches) = node.get(keyword).and_then(Value::as_array) {
-            for branch in branches {
-                if path_exists(schema, branch, segments, index, seen.clone()) {
-                    return true;
+    // `allOf`/`anyOf` here mean two different things depending on whether the
+    // node also declares its own `properties`:
+    //   - No sibling `properties` (e.g. the ABC parser-IR schema's
+    //     `{"allOf": [baseNode, {"type": "object", "properties": {...}}]}`):
+    //     the branches ARE the schema — descend into whichever branch
+    //     resolves the segment.
+    //   - Sibling `properties` present (the AAT v2 `block_container` /
+    //     `inline_container` conditional-requiredness pattern —
+    //     `{"properties": {...}, "allOf": [{"if": ..., "then": {"required": [...]}}]}`):
+    //     the branches are `if`/`then` refinements of the SAME node, not
+    //     alternative property sets, so pointer resolution must fall through
+    //     to the node's own `properties` below instead of searching them.
+    if node.get("properties").is_none() {
+        for keyword in ["allOf", "anyOf"] {
+            if let Some(branches) = node.get(keyword).and_then(Value::as_array) {
+                for branch in branches {
+                    if path_exists(schema, branch, segments, index, seen.clone()) {
+                        return true;
+                    }
                 }
+                return false;
             }
-            return false;
         }
     }
     if node.get("type").and_then(Value::as_str) == Some("array") {

@@ -1,6 +1,6 @@
 use std::{path::PathBuf, time::Duration};
 
-use ab_check::check::{BatchOptions, check_single, run_batch, schema_validator};
+use ab_check::check::{BatchOptions, check_single, run_batch};
 use anyhow::{Result, bail};
 use clap::Parser;
 
@@ -44,8 +44,7 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
     if let (Some(txt), Some(aat)) = (&args.txt, &args.aat) {
-        let validator = schema_validator()?;
-        check_single(txt, aat, args.output.as_deref(), validator)?;
+        check_single(txt, aat, args.output.as_deref())?;
         return Ok(());
     }
 

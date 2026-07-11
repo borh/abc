@@ -32,11 +32,6 @@
       flake = false;
     };
 
-    upstream-aozora-src = {
-      url = "github:P4suta/aozora/1a4f864603970983719655aa4af4525958ac2d38";
-      flake = false;
-    };
-
     upstream-aozora-notation-spec-src = {
       url = "github:P4suta/aozora-notation-spec/b60665fd50b596c967254f99b61f418495656fef";
       flake = false;
@@ -73,7 +68,6 @@
       upstream-aozora-notation-spec-src,
       upstream-aozora-parser-js-src,
       upstream-aozora-rs-src,
-      upstream-aozora-src,
       upstream-aozora2-src,
       upstream-aozorabunko-extractor-src,
       aozorabunko-src,
@@ -190,23 +184,6 @@
             "aozora-rs-xhtml"
             "--package"
             "aozora-rs-zip"
-          ];
-          doCheck = false;
-        };
-
-        upstreamParserAozora = buildRustUpstreamParser {
-          name = "upstream-parser-aozora";
-          src = upstream-aozora-src;
-          lockFile = upstream-aozora-src + "/Cargo.lock";
-          cargoBuildFlags = [
-            "--package"
-            "aozora-cli"
-          ];
-          cargoTestFlags = [
-            "--package"
-            "aozora"
-            "--package"
-            "aozora-cli"
           ];
           doCheck = false;
         };
@@ -685,10 +662,6 @@
           lockFile = ./adapters/aozora2html/Cargo.lock;
         };
 
-        aozoraCargoDeps = rustPlatform.importCargoLock {
-          lockFile = ./adapters/aozora/Cargo.lock;
-        };
-
         # Vendored crate deps for the excluded aozora-epub3 adapter crate, so
         # the smoke check can build the mapper fully offline in the Nix store.
         aozoraEpub3CargoDeps = rustPlatform.importCargoLock {
@@ -697,20 +670,20 @@
 
         # ── Repo's own Rust adapters, packaged as reproducible derivations ──
         #
-        # Prior to this the five adapters under adapters/ were built only via
-        # `cargo build` inside justfile recipes — the ADR's F5 finding: the
-        # adapter *build* itself was not pinned/reproducible. Each Rust adapter
-        # is a crate excluded from the root workspace (see the `exclude` list in
-        # ./Cargo.toml) with its own Cargo.lock. We package them with
-        # `rustPlatform.buildRustPackage`, reusing the existing importCargoLock
-        # cargo-deps where they already exist (aozoraCargoDeps,
-        # aozora2htmlCargoDeps, aozoraEpub3CargoDeps) and adding new vendored
-        # deps for the two adapters that lacked them. All builds are fully
-        # offline; deps resolve from the importCargoLock vendor dirs.
+        # Prior to this the legacy comparison-lane adapters under adapters/
+        # were built only via `cargo build` inside justfile recipes — the
+        # ADR's F5 finding: the adapter *build* itself was not
+        # pinned/reproducible. Each Rust adapter is a crate excluded from the
+        # root workspace (see the `exclude` list in ./Cargo.toml) with its own
+        # Cargo.lock. We package them with `rustPlatform.buildRustPackage`,
+        # reusing the existing importCargoLock cargo-deps where they already
+        # exist (aozora2htmlCargoDeps, aozoraEpub3CargoDeps) and adding new
+        # vendored deps for the two adapters that lacked them. All builds are
+        # fully offline; deps resolve from the importCargoLock vendor dirs.
         #
         # doCheck is disabled: F5 is about pinning the *build*, and the adapter
         # test suites are already exercised by the dedicated smoke/parity checks
-        # (aozora-smoke, aozora-epub3-smoke, aozora2html-rust-parity, …), several
+        # (aozora-epub3-smoke, aozora2html-rust-parity, …), several
         # of which need fixtures/oracles this plain build derivation does not
         # stage. This mirrors the doCheck = false convention used by the other
         # single-binary build derivations here (taxonomyGenerator,
@@ -778,11 +751,6 @@
 
         adapterCargoQualityChecks = [
           (mkAdapterCargoQualityCheck {
-            name = "aozora";
-            manifestPath = "adapters/aozora/Cargo.toml";
-            cargoDeps = aozoraCargoDeps;
-          })
-          (mkAdapterCargoQualityCheck {
             name = "aozora2";
             manifestPath = "adapters/aozora2/Cargo.toml";
             cargoDeps = aozora2AdapterCargoDeps;
@@ -811,16 +779,6 @@
         '';
 
         adapterDecodingContractChecks = [
-          (mkAdapterCargoQualityCheck {
-            name = "aozora";
-            manifestPath = "adapters/aozora/Cargo.toml";
-            cargoDeps = aozoraCargoDeps;
-            checkSuffix = "decoding-contract-check";
-            cargoCommand = ''
-              cargo test --manifest-path "$manifest" \
-                --offline --locked source_decoding_contract
-            '';
-          })
           (mkAdapterCargoQualityCheck {
             name = "aozora2";
             manifestPath = "adapters/aozora2/Cargo.toml";
@@ -868,18 +826,6 @@
           ${pkgs.lib.concatMapStringsSep "\n" (check: "test -e ${check}") adapterDecodingContractChecks}
           touch "$out"
         '';
-
-        aozoraAdapter = rustPlatform.buildRustPackage {
-          pname = "aozora-adapter";
-          version = "0.1.0";
-
-          src = cleanProjectSource ./adapters/aozora;
-          cargoDeps = aozoraCargoDeps;
-
-          doCheck = false;
-
-          meta.description = "Repo adapter wrapping the aozora (aozora-pipeline) parser into AAT";
-        };
 
         aozora2Adapter = rustPlatform.buildRustPackage {
           pname = "aozora2-adapter";
@@ -1046,21 +992,6 @@
           test -f ${upstream-aozorabunko-extractor-src}/Gemfile.lock
           touch "$out"
         '';
-
-        upstreamAozoraMetadataCheck =
-          pkgs.runCommand "upstream-aozora-metadata-check"
-            {
-              nativeBuildInputs = [
-                pkgs.bash
-                pkgs.ripgrep
-              ];
-            }
-            ''
-              export AB_UPSTREAM_AOZORA="${upstreamParserAozora}"
-              export AB_UPSTREAM_AOZORA_NOTATION_SPEC="${upstreamAozoraNotationSpec}"
-              bash "${source}/tests/upstream-aozora-metadata-smoke.sh"
-              touch "$out"
-            '';
 
         upstreamParserShell = pkgs.mkShell {
           packages = devTools ++ [
@@ -1358,6 +1289,7 @@
                 reports/aat-fidelity/tests \
                 reports/lib/tests \
                 reports/parser-conformance/tests \
+                reports/source-regions/tests \
                 -q
               touch "$out"
             '';
@@ -1733,46 +1665,6 @@
           extraPreScript = stageAbcSchemas;
         };
 
-        aozoraAdapterSmokeCheck = mkSmokeCheck {
-          name = "aozora-adapter-smoke-check";
-          testScript = "tests/aozora-adapter-smoke.sh";
-          nativeBuildInputs = [
-            rustToolchain
-            pkgs.jq
-            pkgs.python3
-            pkgs.ripgrep
-            pkgs.python3Packages.jsonschema
-          ];
-          extraEnv = {
-            AB_AOZORA_BIN = "${upstreamParserAozora}/bin/aozora";
-          };
-          extraPreScript = ''
-            cargo --config "source.crates-io.replace-with='vendored-sources'" \
-              --config "source.vendored-sources.directory='${aozoraCargoDeps}'" \
-              build --manifest-path "$work_dir/source/adapters/aozora/Cargo.toml" --release --offline
-          '';
-        };
-
-        aozoraAdapterIntegrationCheck = mkSmokeCheck {
-          name = "aozora-adapter-integration-check";
-          testScript = "tests/aozora-adapter-integration.sh";
-          nativeBuildInputs = [ rustToolchain ];
-          extraEnv = {
-            AB_AOZORA_BIN = "${upstreamParserAozora}/bin/aozora";
-          };
-          extraPreScript = ''
-            export CARGO_HOME="$work_dir/cargo-home"
-            mkdir -p "$CARGO_HOME"
-            cat > "$CARGO_HOME/config.toml" <<'EOF'
-            [source.crates-io]
-            replace-with = "vendored-sources"
-
-            [source.vendored-sources]
-            directory = "${aozoraCargoDeps}"
-            EOF
-          '';
-        };
-
         aozoraNotationSpecComparatorSmokeCheck = mkSmokeCheck {
           name = "aozora-notation-spec-comparator-smoke-check";
           testScript = "tests/aozora-notation-spec-comparator-smoke.sh";
@@ -1849,7 +1741,6 @@
           aat-triage-python = pythonWithAatDuckdb;
           ab-source-inventory = sourceInventoryBin;
           ab-oracle = abOracleBin;
-          aozora-adapter = aozoraAdapter;
           aozora2-adapter = aozora2Adapter;
           aozora2html-adapter = aozora2htmlAdapter;
           aozora-epub3-adapter = aozoraEpub3Adapter;
@@ -1858,7 +1749,6 @@
           upstream-parser-aozora2 = upstreamParserAozora2;
           upstream-parser-aozora-rs = upstreamParserAozoraRs;
           upstream-parser-aozora2html = aozora2htmlParser;
-          upstream-parser-aozora = upstreamParserAozora;
           upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
           upstream-parser-aozora-parser-js = upstreamParserAozoraParserJs;
           upstream-tool-aozorabunko-extractor = upstreamToolAozorabunkoExtractor;
@@ -1953,19 +1843,14 @@
           cargo-test = workspaceCheck;
           upstream-parser-aozora2 = upstreamParserAozora2;
           upstream-parser-aozora-rs = upstreamParserAozoraRs;
-          upstream-parser-aozora = upstreamParserAozora;
-          aozora-adapter = aozoraAdapter;
           aozora2-adapter = aozora2Adapter;
           aozora2html-adapter = aozora2htmlAdapter;
           aozora-epub3-adapter = aozoraEpub3Adapter;
           aozora-rs-adapter = aozoraRsAdapter;
           upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
-          upstream-aozora-metadata = upstreamAozoraMetadataCheck;
           upstream-parser-metadata = upstreamNonRustMetadata;
           aat-oracle-data-schema-smoke = aatOracleDataSchemaSmokeCheck;
           aozora2html-rust-parity = aozora2htmlRustParityCheck;
-          aozora-smoke = aozoraAdapterSmokeCheck;
-          aozora-integration = aozoraAdapterIntegrationCheck;
           adapters-cargo-quality = adapterCargoQualityCheck;
           adapter-decoding-contract = adapterDecodingContractCheck;
           aozora-notation-spec-comparator-smoke = aozoraNotationSpecComparatorSmokeCheck;
@@ -1999,7 +1884,6 @@
             AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
             AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
             AB_DUCKDB_BIN = "${pkgs.duckdb}/bin/duckdb";
-            AB_AOZORA_BIN = "${upstreamParserAozora}/bin/aozora";
 
             shellHook = ''
               export CARGO_HOME="''${CARGO_HOME:-$PWD/.cargo}"

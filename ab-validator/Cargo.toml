@@ -32,7 +32,6 @@ members = [
 ]
 resolver = "2"
 exclude = [
-    "adapters/aozora",
     "adapters/aozora2",
     "adapters/aozora2html",
     "adapters/aozora-rs",

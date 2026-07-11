@@ -1,9 +1,11 @@
 (ns abc.tools.aozora-ingest-test
-  (:require [abc.tools.aozora-ingest :as ingest]
+  (:require [abc.tools.aozora-csv :as ac]
+            [abc.tools.aozora-ingest :as ingest]
             [abc.tools.files :as files]
             [abc.tools.person-record :as pr]
             [abc.sim.render :as sim-render]
             [clojure.java.io :as io]
+            [clojure.string]
             [clojure.test :refer [deftest is testing]]
             [taoensso.telemere :as tel])
   (:import [java.nio.file Files]
@@ -550,3 +552,26 @@
             (is (= (str zip) (:zip-path (ex-data e))) label)
             (is (= 0 (:row-count (ex-data e))) label))
           (finally (delete-recursive dir)))))))
+
+(deftest ingest-corpus-skips-ragged-row-work-test
+  (testing "a ragged CSV row skips exactly its work; clean works survive"
+    (let [out-dir (temp-dir "abc-ingest-ragged")
+          headers (vec (sort (keys (first synthetic-corpus-rows))))
+          cells (fn [r] (mapv #(get r % "") headers))
+          csv (->> (concat [headers]
+                           (map cells (take 2 synthetic-corpus-rows))
+                           ;; work 000129's row loses its last 3 cells
+                           [(vec (drop-last 3 (cells (nth synthetic-corpus-rows 2))))])
+                   (map #(clojure.string/join "," %))
+                   (clojure.string/join "\n"))
+          rows (ac/read-rows-from-string csv)]
+      (try
+        (let [{:keys [works-written works-skipped skipped-work-ids]}
+              (ingest/run-corpus! {:rows rows :output-dir (str out-dir)})]
+          (is (= 2 works-written))
+          (is (= 1 works-skipped))
+          (is (= ["000129"] skipped-work-ids))
+          (is (not (.exists (io/file out-dir "works" "000129.json"))))
+          (is (not (.exists (io/file out-dir "persons" "000888.json")))
+              "the ragged work's sole person is never written"))
+        (finally (delete-recursive out-dir))))))

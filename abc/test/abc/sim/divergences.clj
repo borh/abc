@@ -9,8 +9,8 @@
         :notes "fixed 2026-07-11: build-record-fragment-from-rows throws ex-info on divergent work fields; corpus ingest skips + counts the work"}
    :D2 {:case "P12.selection" :status :fixed
         :notes "fixed 2026-07-11: sample-commits-by-period groups globally by period key (was contiguous partition-by), keeping the last commit in log order per period"}
-   :D3 {:case "P13.ragged-row" :status :open
-        :notes "aozora_csv.clj:22-32 ragged rows silently truncated"}
+   :D3 {:case "P13.ragged-row" :status :fixed
+        :notes "fixed 2026-07-11: read-rows* marks ragged rows (ragged-key); work assembly rejects them, corpus ingest skips + counts the work"}
    :D4 {:case "P8.atomicity, P8.order-independence" :status :open
         :notes "aozora_ingest.clj:151-213 person writes precede work failure"}
    :D5 {:case "P13.empty-csv" :status :fixed

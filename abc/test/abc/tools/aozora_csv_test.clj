@@ -294,3 +294,24 @@
       (is (some? e))
       (is (= "000127" (:work-id (ex-data e))))
       (is (= 2 (count (:divergent-works (ex-data e))))))))
+
+(deftest read-rows-marks-ragged-test
+  (testing "rows whose cell count differs from the header are marked with ragged-key"
+    (let [csv "a,b,c\n1,2,3\n1,2\n1,2,3,4"
+          [ok short long] (ac/read-rows-from-string csv)]
+      (is (not (contains? ok ac/ragged-key)))
+      (is (true? (get short ac/ragged-key)))
+      (is (true? (get long ac/ragged-key)))
+      (is (= "1" (get short "a")) "surviving cells still parse")
+      (is (nil? (get short "c")) "missing trailing cells stay absent"))))
+
+(deftest build-record-fragment-rejects-ragged-test
+  (testing "a ragged row rejects the work with a ragged reason, not a field-divergence reason"
+    (let [base (first (ac/read-rows-from-string csv-text))
+          rows [base (assoc base ac/ragged-key true)]
+          e (try (ac/build-record-fragment-from-rows rows)
+                 nil
+                 (catch clojure.lang.ExceptionInfo e e))]
+      (is (some? e))
+      (is (= "000127" (:work-id (ex-data e))))
+      (is (= 1 (:ragged-rows (ex-data e)))))))

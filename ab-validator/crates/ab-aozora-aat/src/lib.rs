@@ -1,8 +1,6 @@
 //! AAT (Aozora AST Transform) adapter ported from the frozen aozora adapter.
 
-use std::{
-    collections::BTreeMap, fmt::Write as _, iter::once, mem, ops::Range, str, sync::LazyLock,
-};
+use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str, sync::LazyLock};
 
 use anyhow::Result;
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
@@ -80,10 +78,38 @@ impl SpanContext {
     }
 }
 
+/// Byte offsets of line starts in `text`, treating every terminator the
+/// decoded source can actually carry as a boundary: `\n`, `\r\n` (ONE
+/// boundary, after the pair), and bare `\r`.
+///
+/// The decoded source keeps its original terminators — sanitize's CR/LF
+/// normalization only rewrites the text the PARSER sees. A `\n`-only
+/// index therefore synthesizes line 1 for every span of a classic-Mac
+/// bare-CR source (zero `\n` in the whole file), violating ADR 0024's
+/// real-line requirement. Counting `\r\n` as one boundary keeps CRLF
+/// sources' boundary set byte-identical to a `\n`-only index (the
+/// boundary sits after the pair, exactly where `\n`+1 put it), and
+/// treating lone `\r` as a terminator mirrors sanitize's lone-`\r`→`\n`
+/// rewrite, so decoded-source lines and sanitized-text lines agree in
+/// count for every input.
 fn line_starts(text: &str) -> Vec<usize> {
-    once(0)
-        .chain(text.match_indices('\n').map(|(i, _)| i + 1))
-        .collect()
+    let bytes = text.as_bytes();
+    let mut starts = vec![0];
+    let mut i = 0;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'\n' => {
+                i += 1;
+                starts.push(i);
+            }
+            b'\r' => {
+                i += if bytes.get(i + 1) == Some(&b'\n') { 2 } else { 1 };
+                starts.push(i);
+            }
+            _ => i += 1,
+        }
+    }
+    starts
 }
 
 #[derive(Debug, Deserialize, Clone, Copy)]
@@ -1384,6 +1410,60 @@ mod tests {
                      line_start and line_end are synthesized as 1",
                 )
         }));
+    }
+
+    #[test]
+    fn line_starts_handles_lf_crlf_and_bare_cr() {
+        // CRLF: ONE boundary after the pair — byte-identical to the old
+        // \n-only index ([0, 3] is exactly what match_indices('\n')+1
+        // produced), proving CRLF sources' line numbering is unchanged.
+        assert_eq!(line_starts("a\r\nb"), vec![0, 3]);
+        // LF-only: unchanged classic behavior.
+        assert_eq!(line_starts("a\nb"), vec![0, 2]);
+        // Bare CR (classic Mac): now a real boundary.
+        assert_eq!(line_starts("a\rb"), vec![0, 2]);
+        // Two bare CRs: two boundaries, not one.
+        assert_eq!(line_starts("a\r\rb"), vec![0, 2, 3]);
+    }
+
+    #[test]
+    fn bare_cr_source_gets_real_line_numbers() {
+        // Classic-Mac terminators: zero \n in the whole input. Decoded
+        // text is byte-identical to the input:
+        //   あ 0..3, \r 3..4, ［＃改ページ］ 4..25 (7 fullwidth chars ×
+        //   3 bytes), \r 25..26, い 26..29, \r 29..30 (30 bytes).
+        // line_starts = [0, 4, 26, 30]. Sanitize rewrites each lone \r
+        // to \n WIDTH-EQUAL (1 byte → 1 byte), so sanitized-body offsets
+        // are numerically identical to decoded offsets and the map edits
+        // all carry delta 0 — the interesting part is purely the line
+        // index, which the old \n-only implementation computed as 1
+        // everywhere for this input.
+        let src = "あ\r［＃改ページ］\rい\r";
+        let doc: Value =
+            serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
+        let spans: Vec<&Value> = collect_spans(&doc["blocks"]);
+        assert!(!spans.is_empty());
+        // First text node "あ\n" ← decoded "あ\r" = bytes 0..4, line 1.
+        assert_eq!(spans[0]["byte_start"], 0);
+        assert_eq!(spans[0]["byte_end"], 4);
+        assert_eq!(spans[0]["line_start"], 1);
+        assert_eq!(spans[0]["line_end"], 1);
+        // The page-break directive: decoded bytes 4..25, real line 2.
+        let page_break = spans
+            .iter()
+            .find(|s| s["byte_start"] == 4)
+            .unwrap_or_else(|| panic!("no span at decoded byte_start 4: {spans:?}"));
+        assert_eq!(page_break["byte_end"], 25);
+        assert_eq!(page_break["line_start"], 2);
+        // The trailing gap "\nい\n" ← decoded "\rい\r" = bytes 25..30:
+        // starts on line 2 (the \r closing the directive line), ends on
+        // line 3 (line_of(29), the い line).
+        assert!(
+            spans
+                .iter()
+                .any(|s| s["line_start"] == 2 && s["line_end"] == 3),
+            "no span reaching real line 3: {spans:?}"
+        );
     }
 
     fn collect_spans(v: &Value) -> Vec<&Value> {

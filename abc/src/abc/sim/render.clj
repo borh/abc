@@ -60,28 +60,17 @@
                   (person-cells pid (get persons pid))
                   {"役割フラグ" rel})))))
 
-(defn- csv-quote-cell [s]
-  (if (or (nil? s) (= "" s))
-    ""
-    (let [s (str s)]
-      (if (or (clojure.string/includes? s ",")
-              (clojure.string/includes? s "\"")
-              (clojure.string/includes? s "\n"))
-        (str "\"" (clojure.string/replace s "\"" "\"\"") "\"")
-        s))))
-
-(defn- csv-row [cells]
-  (clojure.string/join "," (map csv-quote-cell cells)))
-
 (defn rows->csv
   "Quoted CSV text. Rows may be header-keyed maps or raw cell vectors
   (ragged corruptions)."
   ([rows] (rows->csv rows {}))
   ([rows {:keys [bom? header-cells] :or {bom? false}}]
    (let [hs (or header-cells headers)
-         cells (map (fn [r] (if (vector? r) r (mapv #(get r % "") hs))) rows)
-         csv-lines (cons (csv-row hs) (map csv-row cells))]
-     (str (when bom? "﻿") (clojure.string/join "\n" csv-lines) "\n"))))
+         cells (cons hs (map (fn [r] (if (vector? r) r (mapv #(get r % "") hs))) rows))
+         sw (java.io.StringWriter.)
+         result (do (charred/write-csv sw cells :close-writer? true)
+                    (str sw))]
+     (str (when bom? "﻿") result))))
 
 (defn- rows-for-wid [rows wid] (filter #(= wid (get % "作品ID")) rows))
 

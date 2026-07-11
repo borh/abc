@@ -1,6 +1,6 @@
 //! AAT (Aozora AST Transform) adapter ported from the frozen aozora adapter.
 
-use std::{collections::BTreeMap, fmt::Write as _, mem, str, sync::LazyLock};
+use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str, sync::LazyLock};
 
 use anyhow::Result;
 use ab_aozora_pipeline::lexer::sanitize::sanitize as sanitize_aozora_source;
@@ -15,8 +15,9 @@ use ab_aozora_facade::{self, Diagnostic, Document, encoding, json as aozora_json
 
 /// The sanitize stage's `Diagnostic` type is the exact same
 /// `ab_aozora_spec::Diagnostic` the facade re-exports as `Diagnostic` (and
-/// the same type `Tree::diagnostics()` returns) — confirmed via
-/// `crates/ab-aozora-pipeline/src/lexer/sanitize.rs`'s
+/// the same type `Tree::diagnostics()` returns).
+///
+/// Confirmed via `crates/ab-aozora-pipeline/src/lexer/sanitize.rs`'s
 /// `use ab_aozora_spec::Diagnostic;` and `crates/ab-aozora-facade/src/lib.rs`'s
 /// `pub use ab_aozora_spec::{..., Diagnostic, ...};`. One alias, one
 /// `aozora_json::diagnostic_entries` call serves both diagnostic families.
@@ -135,7 +136,7 @@ fn sanitize_for_aat(text: &str) -> (String, Vec<AozoraSanitizeDiagnostic>, usize
     )
 }
 
-fn aozora_body_range(source: &str) -> std::ops::Range<usize> {
+fn aozora_body_range(source: &str) -> Range<usize> {
     let mut separators = Vec::new();
     let mut start = 0_usize;
     for line in source.split_inclusive('\n') {
@@ -243,14 +244,15 @@ pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
 }
 
 /// One wire diagnostics envelope (`{"data": […], "schemaVersion": 3}`)
-/// per input — the `--mode diagnostics` payload. Single owner of the
-/// diagnostics path (Phase 3 design spec): decoding, sanitization, and
-/// body selection are the EXACT same `decode_source_bytes` path as
-/// `aat_json_from_bytes`; the parse mirrors `projections()`. Entry
-/// order: sanitize-stage diagnostics, then parser diagnostics.
-/// Duplicates are impossible by construction (the inner re-sanitize sees
-/// already-neutralized, already-rewritten text) — the merge-order test
-/// pins this.
+/// per input — the `--mode diagnostics` payload.
+///
+/// Single owner of the diagnostics path (Phase 3 design spec): decoding,
+/// sanitization, and body selection are the EXACT same
+/// `decode_source_bytes` path as `aat_json_from_bytes`; the parse mirrors
+/// `projections()`. Entry order: sanitize-stage diagnostics, then parser
+/// diagnostics. Duplicates are impossible by construction (the inner
+/// re-sanitize sees already-neutralized, already-rewritten text) — the
+/// merge-order test pins this.
 ///
 /// # Errors
 ///
@@ -329,6 +331,10 @@ fn build_aat(
 #[allow(
     clippy::needless_pass_by_value,
     reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+)]
+#[allow(
+    clippy::too_many_lines,
+    reason = "single linear classifier pass ported from the frozen adapter; splitting would obscure the branch order contract"
 )]
 fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
     let mut blocks = Vec::new();
@@ -424,20 +430,19 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 index = close_index + 1;
                 continue;
             }
-        } else if block_container_open(&node, "［＃ここから横組み］") {
-            if let Some(close_index) = find_matching_container_close(&content, index + 1, "横組み")
-            {
-                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-                let mut inner = content[index + 1..close_index].to_vec();
-                strip_boundary_newlines(&mut inner);
-                blocks.push(json!({
-                    "kind": "yokogumi_block",
-                    "children": blocks_from_inline_content(inner)
-                }));
-                strip_next_leading_newline = true;
-                index = close_index + 1;
-                continue;
-            }
+        } else if block_container_open(&node, "［＃ここから横組み］")
+            && let Some(close_index) = find_matching_container_close(&content, index + 1, "横組み")
+        {
+            push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+            let mut inner = content[index + 1..close_index].to_vec();
+            strip_boundary_newlines(&mut inner);
+            blocks.push(json!({
+                "kind": "yokogumi_block",
+                "children": blocks_from_inline_content(inner)
+            }));
+            strip_next_leading_newline = true;
+            index = close_index + 1;
+            continue;
         }
 
         if is_heading_hint_raw(&node)
@@ -1146,6 +1151,10 @@ mod tests {
     }
 
     #[test]
+    #[allow(
+        clippy::manual_contains,
+        reason = "assertion expression is a pinned test invariant, not touched per fix-wave scope"
+    )]
     fn sanitize_and_parser_diagnostics_merge_in_order_without_duplicates() {
         // PUA (sanitize-stage) + unclosed bracket (parser-stage) in one input:
         // sanitize entries come first, parser entries after, one of each.

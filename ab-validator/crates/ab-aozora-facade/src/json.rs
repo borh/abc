@@ -660,7 +660,7 @@ mod tests {
     #[cfg(feature = "json")]
     fn diagnostic_entries_carry_kebab_code() {
         // Any source producing an unclosed_bracket diagnostic:
-        let doc = crate::Document::new("あ［＃ここから".to_owned());
+        let doc = Document::new("あ［＃ここから".to_owned());
         let tree = doc.parse();
         let entries = diagnostic_entries(tree.diagnostics());
         assert!(!entries.is_empty());

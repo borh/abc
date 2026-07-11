@@ -41,6 +41,7 @@ dependencies = [
  "ab-aozora-pipeline",
  "anyhow",
  "encoding_rs",
+ "regex",
  "serde",
  "serde_json",
  "sha2 0.10.9",

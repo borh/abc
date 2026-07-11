@@ -19,6 +19,7 @@ workspace = true
 # entries constructors.
 ab-aozora-facade = { path = "../ab-aozora-facade", features = ["entries"] }
 anyhow = "1.0"
+regex = "1.12"
 encoding_rs = "0.8"
 # Fork-owned sanitize (Phase 3 stage 0): the crates.io aozora-pipeline
 # =0.4.1 dependency is retired; ab_aozora_pipeline::lexer::sanitize is the

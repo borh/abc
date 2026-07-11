@@ -1,10 +1,11 @@
 //! AAT (Aozora AST Transform) adapter ported from the frozen aozora adapter.
 
-use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str};
+use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str, sync::LazyLock};
 
 use anyhow::Result;
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
 use encoding_rs::SHIFT_JIS;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
@@ -21,6 +22,17 @@ use ab_aozora_facade::{self, Diagnostic, Document, encoding, json as aozora_json
 /// `pub use ab_aozora_spec::{..., Diagnostic, ...};`. One alias, one
 /// `aozora_json::diagnostic_entries` call serves both diagnostic families.
 pub type AozoraSanitizeDiagnostic = Diagnostic;
+
+/// v1-parity fallback for ruby nodes with no resolvable `ruby_entries`
+/// entry (gaiji-base ruby, `※［＃…］《reading》`, whose base is
+/// `Content::Segments` and so has no plain-text range to resolve — see
+/// `ruby_node`'s fallback branch). This is the original v1 regex, restored
+/// verbatim so a gaiji-base ruby's typed emission stays byte-identical to
+/// the pre-`ruby_entries` adapter output (Task 8's delta-audit ruby class
+/// requires baseline typed ruby to be byte-identical in the candidate;
+/// silently downgrading these to `raw` would break that).
+static RUBY_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap());
 
 /// Wire-shaped source decoding output ported from the frozen adapter.
 #[derive(Debug)]
@@ -1052,21 +1064,41 @@ fn contains_aozora_markup(source: &str) -> bool {
         || source.contains('〕')
 }
 
+#[allow(
+    clippy::option_if_let_else,
+    reason = "if/else form preserved from frozen adapter; lambda restructure not permitted"
+)]
 fn ruby_node(
     decoded: &DecodedSource,
     node: &AozoraNode,
     ruby_by_span: &BTreeMap<(usize, usize), AozoraRubyEntry>,
 ) -> Value {
-    let Some(entry) = ruby_by_span.get(&(node.span.start, node.span.end)) else {
-        return raw_node(decoded, node, "ruby");
-    };
-    json!({
-        "kind": "ruby",
-        "base": entry.base,
-        "reading": entry.reading,
-        "direction": entry.side,
-        "span": span_json(&node.span, &decoded.span_ctx)
-    })
+    if let Some(entry) = ruby_by_span.get(&(node.span.start, node.span.end)) {
+        return json!({
+            "kind": "ruby",
+            "base": entry.base,
+            "reading": entry.reading,
+            "direction": entry.side,
+            "span": span_json(&node.span, &decoded.span_ctx)
+        });
+    }
+    // No resolvable structured entry (e.g. gaiji-base ruby, whose base is
+    // `Content::Segments` and so has no plain-text range for
+    // `ruby_entries` to resolve — see the `RUBY_RE` doc comment). Fall
+    // back to the original v1 regex reparse so this stays byte-identical
+    // to v1's typed emission rather than silently downgrading to `raw`.
+    let source = source_slice(&decoded.span_text, &node.span);
+    if let Some(caps) = RUBY_RE.captures(source) {
+        json!({
+            "kind": "ruby",
+            "base": caps.name("base").unwrap().as_str(),
+            "reading": caps.name("reading").unwrap().as_str(),
+            "direction": "right",
+            "span": span_json(&node.span, &decoded.span_ctx)
+        })
+    } else {
+        raw_node(decoded, node, "ruby")
+    }
 }
 
 fn gaiji_node(
@@ -1567,6 +1599,26 @@ mod tests {
         assert_eq!(ruby["direction"], "left");
         assert_eq!(ruby["base"], "名");
         assert_eq!(ruby["reading"], "な");
+    }
+
+    /// Gaiji-base ruby (`※［＃…］《reading》`): the base is a deferred gaiji
+    /// (`ab-aozora-pipeline`'s `try_ruby_over_gaiji_base`), which becomes a
+    /// `Content::Segments` base — `content_range_as_plain` returns `None`
+    /// for it, so `ruby_entries` has no entry for this node's span and
+    /// `ruby_node` falls through to the `RUBY_RE` regex path. This asserts
+    /// that fallback keeps v1's typed emission (byte-identical `base`,
+    /// `direction: "right"`) rather than silently downgrading to a `raw`
+    /// node — see the `RUBY_RE` doc comment and Task 4's fix-wave concern
+    /// 1 (delta-audit ruby class requires byte-identical typed ruby).
+    #[test]
+    fn gaiji_base_ruby_keeps_v1_typed_emission() {
+        let src = "※［＃「木＋吶のつくり」、第3水準1-85-54］《かい》\n";
+        let aat = aat_value_for(src);
+        let ruby = find_first_node(&aat, "ruby");
+        assert_eq!(ruby["kind"], "ruby");
+        assert_eq!(ruby["direction"], "right");
+        assert_eq!(ruby["base"], "※［＃「木＋吶のつくり」、第3水準1-85-54］");
+        assert_eq!(ruby["reading"], "かい");
     }
 
     #[test]

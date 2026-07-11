@@ -91,6 +91,31 @@ def test_same_paragraph_pair_rewrites_to_container(tmp_path):
     assert summary["classes"]["rewritten"] == 1
 
 
+HEADING = {"kind": "heading", "level": 3, "style": "normal",
+           "content": [text("見出し")], "x-provenance": "source-derived"}
+
+
+def test_cross_paragraph_pair_rewrites_to_container(tmp_path):
+    # Open in one paragraph, close in a later paragraph, a non-paragraph
+    # block in between: head strips its leading "\n", tail strips its
+    # trailing "\n", the middle block is carried verbatim, and the
+    # post-close text strips its leading "\n". ALL spans stay at their
+    # baseline values (the Rust strip helpers mutate values only).
+    base = write_dump(tmp_path, "a", {"w1": doc([
+        para(text("前\n"), raw_marker(OPEN, "containerOpen", 4), text("\n頭", 40)),
+        HEADING,
+        para(text("尾\n", 50), raw_marker(CLOSE, "containerClose", 60),
+             text("\n後\n", 90))])})
+    cand = write_dump(tmp_path, "b", {"w1": doc([
+        para(text("前\n")),
+        {"kind": "keigakomi_block", "children": [
+            para(text("頭", 40, 44)), HEADING, para(text("尾", 50, 54))]},
+        para(text("後\n", 90, 95))])})
+    code, summary, err = run("container-rewrite", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["rewritten"] == 1
+
+
 def test_unrelated_change_in_marker_work_fails(tmp_path):
     inner = text("\n中身\n", 10)
     base = write_dump(tmp_path, "a", {"w1": doc([
@@ -114,6 +139,26 @@ def test_missing_file_fails(tmp_path):
     base = write_dump(tmp_path, "a", {"w1": doc([para(text("あ\n"))])})
     cand = write_dump(tmp_path, "b", {})
     (tmp_path / "b").mkdir(exist_ok=True)
+    code, _, _ = run("container-rewrite", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_top_level_array_is_reference_error(tmp_path):
+    # Valid JSON, wrong shape: fail-closed (exit 2, never an uncaught
+    # traceback / exit 1).
+    base = write_dump(tmp_path, "a", {"w1": doc([para(text("あ\n"))])})
+    cand_dir = tmp_path / "b"
+    cand_dir.mkdir()
+    (cand_dir / "w1.json").write_text("[1, 2, 3]\n")
+    code, _, _ = run("container-rewrite", base, cand_dir, tmp_path)
+    assert code == 2
+
+
+def test_blocks_as_object_is_reference_error(tmp_path):
+    # "blocks" as an object instead of a list: fail-closed (exit 2, never
+    # an uncaught traceback / exit 1).
+    base = write_dump(tmp_path, "a", {"w1": doc({"0": para(text("あ\n"))})})
+    cand = write_dump(tmp_path, "b", {"w1": doc([para(text("い\n"))])})
     code, _, _ = run("container-rewrite", base, cand, tmp_path)
     assert code == 2
 
@@ -143,6 +188,16 @@ def test_value_change_fails_in_span_mode(tmp_path):
 def test_invalid_span_fails(tmp_path):
     base = write_dump(tmp_path, "a", {"w1": doc([para(spanned("あ\n", 0, 4, 1, 1))])})
     cand = write_dump(tmp_path, "b", {"w1": doc([para(spanned("あ\n", 4, 0, 1, 1))])})
+    code, _, _ = run("span-confinement", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_null_span_fails_in_span_mode(tmp_path):
+    # A candidate node with "span": null must not slip past masking as a
+    # false PASS — non-dict spans are rejected.
+    base = write_dump(tmp_path, "a", {"w1": doc([para(spanned("あ\n", 0, 4, 1, 1))])})
+    cand = write_dump(tmp_path, "b", {"w1": doc([
+        para({"kind": "text", "value": "あ\n", "span": None})])})
     code, _, _ = run("span-confinement", base, cand, tmp_path)
     assert code == 2
 

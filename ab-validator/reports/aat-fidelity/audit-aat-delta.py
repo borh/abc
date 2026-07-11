@@ -230,7 +230,10 @@ def container_rewrite_mode(base_doc, cand_doc, name, summary):
 
 def mask_spans(node, spans_out):
     if isinstance(node, dict):
-        return {k: (spans_out.append(v) or None) if k == "span" and isinstance(v, dict)
+        # Intercept the "span" KEY regardless of value type: a null or
+        # otherwise non-dict span must reach the invariant loop below and
+        # fail there, not mask equal on both sides as a false PASS.
+        return {k: (spans_out.append(v) or None) if k == "span"
                 else mask_spans(v, spans_out) for k, v in node.items()}
     if isinstance(node, list):
         return [mask_spans(v, spans_out) for v in node]
@@ -255,8 +258,9 @@ def span_confinement_mode(base_doc, cand_doc, name, summary):
     all_line1 = True
     for span in cand_spans:
         keys = {"byte_start", "byte_end", "line_start", "line_end"}
-        if not keys <= set(span):
-            # wire-shaped {start,end} spans (none expected in AAT) fail too
+        if not isinstance(span, dict) or not keys <= set(span):
+            # null spans and wire-shaped {start,end} spans (none expected
+            # in AAT) fail too
             die(f"{name}: span missing AAT fields: {span}")
         if not (isinstance(span["byte_start"], int) and isinstance(span["byte_end"], int)
                 and span["byte_end"] >= span["byte_start"]
@@ -287,12 +291,17 @@ def main() -> int:
     handler = (container_rewrite_mode if args.mode == "container-rewrite"
                else span_confinement_mode)
     for name in sorted(base_files):
+        # Fail-closed: ANY per-work exception (unreadable file, valid JSON
+        # of the wrong shape, unexpected structure deep in a handler) exits
+        # 2 via die(). die() raises SystemExit, which is a BaseException —
+        # not caught by the `except Exception` below — so handler verdicts
+        # pass through unchanged.
         try:
             base_doc = json.loads(base_files[name].read_bytes())
             cand_doc = json.loads(cand_files[name].read_bytes())
-        except json.JSONDecodeError as err:
-            die(f"{name}: unreadable ({err})")
-        handler(base_doc, cand_doc, name, summary)
+            handler(base_doc, cand_doc, name, summary)
+        except Exception as err:
+            die(f"{name}: processing failed ({type(err).__name__}: {err})")
     pathlib.Path(args.summary_json).write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
     return 0

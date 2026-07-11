@@ -313,20 +313,34 @@ fn projections(
         .map_err(|err| anyhow::anyhow!("decode_auto: {err:?}"))?;
     let doc = Document::new(source.clone());
     let tree = doc.parse();
-    let nodes = from_entries(aozora_json::node_entries(&tree))?;
-    let diagnostics = from_entries(aozora_json::diagnostic_entries(tree.diagnostics()))?;
-    let gaiji = from_entries(aozora_json::gaiji_entries(&source))?;
-    let ruby = from_entries(aozora_json::ruby_entries(&tree))?;
+    let nodes = from_entries(&aozora_json::node_entries(&tree))?;
+    let diagnostics = from_entries(&aozora_json::diagnostic_entries(tree.diagnostics()))?;
+    let gaiji = from_entries(&aozora_json::gaiji_entries(&source))?;
+    let ruby = from_entries(&aozora_json::ruby_entries(&tree))?;
     Ok((nodes, diagnostics, gaiji, ruby))
 }
 
 /// Same data path as the deleted wire hop: the facade's Serialize impls
 /// (which produced the inspect JSON) feed the adapter's Deserialize types.
 /// Deserialization is key-order-independent, so no `preserve_order` needed.
+///
+/// Round-trips through a JSON byte buffer (`to_vec` + `from_slice`) rather
+/// than `serde_json::Value` (`to_value` + `from_value`): the `Value` path
+/// builds a full tagged-union tree (a heap-allocated `Map`/`Vec`/`String`
+/// per field) and then tears it back down, whereas the byte path lets
+/// `serde_json`'s writer/reader stream fields directly into the target
+/// type with no intermediate generic tree. Same semantics (still an
+/// order-independent JSON round trip; output bytes unaffected — this
+/// function's result never reaches the wire, only `build_aat`'s own
+/// `to_writer` call does), just without the `Value` tree's allocation
+/// overhead — this scales with the corpus's per-work entry count (e.g.
+/// `ruby_entries`, which can run into the tens of thousands for
+/// heavily-annotated works), where the `Value` overhead was measured to
+/// dominate wall time.
 fn from_entries<S: Serialize, T: DeserializeOwned>(
-    entries: Vec<S>,
+    entries: &[S],
 ) -> Result<Vec<T>> {
-    Ok(serde_json::from_value(serde_json::to_value(entries)?)?)
+    Ok(serde_json::from_slice(&serde_json::to_vec(entries)?)?)
 }
 
 // The wire envelope's schemaVersion check becomes a compile-time pin: the

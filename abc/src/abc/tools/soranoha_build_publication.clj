@@ -103,17 +103,30 @@
                :relpath (aozora-work-zip? aozora-root file)}))
        vec))
 
-(defn- first-text-member [zip-file]
-  (with-open [zf (ZipFile. (io/file zip-file))]
-    (or (some (fn [^ZipEntry entry]
-                (when (and (not (.isDirectory entry))
-                           (string/ends-with?
-                            (string/lower-case (.getName entry))
-                            ".txt"))
-                  (.getName entry)))
-              (enumeration-seq (.entries zf)))
-        (throw (ex-info "work ZIP contains no .txt member"
-                        {:path (str zip-file)})))))
+(def ^:private zip-name-charset
+  ;; Aozora work ZIPs carry Shift_JIS entry names (e.g. `ken'eki`, whose `'` is
+  ;; a raw 0x81 byte). java.util.zip defaults to UTF-8 and rejects those as
+  ;; "bad entry name"; windows-31j reads them correctly.
+  (java.nio.charset.Charset/forName "windows-31j"))
+
+(defn- text-member-name? [name]
+  (string/ends-with? (string/lower-case name) ".txt"))
+
+(defn- java-first-text-member
+  "First .txt member (name + bytes) via java.util.zip with the SJIS charset.
+  Throws ZipException on a structurally-broken central directory."
+  [zip-file]
+  (with-open [zf (ZipFile. (io/file zip-file) zip-name-charset)]
+    (if-let [member (some (fn [^ZipEntry entry]
+                            (when (and (not (.isDirectory entry))
+                                       (text-member-name? (.getName entry)))
+                              (.getName entry)))
+                          (enumeration-seq (.entries zf)))]
+      {:member member
+       :bytes (with-open [in (.getInputStream zf (.getEntry zf member))]
+                (.readAllBytes in))}
+      (throw (ex-info "work ZIP contains no .txt member"
+                      {:path (str zip-file)})))))
 
 (defn- slug [work-id person-id relpath]
   (let [basename (.getName (io/file relpath))
@@ -152,14 +165,6 @@
                     {:parser_profile parser-profile
                      :supported ["aozora2html"]}))))
 
-(defn- zip-member-bytes [zip-file zip-member]
-  (with-open [zf (ZipFile. (io/file zip-file))]
-    (if-let [entry (.getEntry zf zip-member)]
-      (with-open [in (.getInputStream zf entry)]
-        (.readAllBytes in))
-      (throw (ex-info "zip member missing"
-                      {:zip (str zip-file) :member zip-member})))))
-
 (defn- run-process!
   "Run a subprocess inheriting the current environment plus extra-env, feeding
   stdin-bytes, returning {:exit :out-bytes :err}."
@@ -174,6 +179,43 @@
             err (slurp (.getErrorStream proc))
             exit (.waitFor proc)]
         {:exit exit :out-bytes out :err err}))))
+
+(defn- sevenzip-first-text-member
+  "Fallback for ZIPs java.util.zip cannot parse at all (e.g. a damaged central
+  directory / prepended-data archive that even the SJIS charset can't open):
+  extract with 7zz's tolerant reader into a temp dir and read the first .txt.
+  Extract-all avoids entry-name matching pitfalls."
+  [zip-file]
+  (let [bin (or (env-value "AB_SEVENZIP_BIN") "7zz")
+        tmp (.toFile (java.nio.file.Files/createTempDirectory
+                      "abc-7z"
+                      (make-array java.nio.file.attribute.FileAttribute 0)))]
+    (try
+      (let [{:keys [exit err]} (run-process! {:args [bin "x" "-y"
+                                                     (str "-o" tmp)
+                                                     (str zip-file)]})]
+        (when-not (zero? exit)
+          (throw (ex-info "7zz extraction failed"
+                          {:zip (str zip-file) :exit exit :stderr err})))
+        (if-let [txt (->> (file-seq tmp)
+                          (filter #(.isFile ^java.io.File %))
+                          (filter #(text-member-name? (.getName ^java.io.File %)))
+                          first)]
+          {:member (.getName ^java.io.File txt)
+           :bytes (java.nio.file.Files/readAllBytes (.toPath txt))}
+          (throw (ex-info "7zz found no .txt member" {:zip (str zip-file)}))))
+      (finally
+        (files/delete-tree! tmp)))))
+
+(defn- read-first-text-member
+  "Robustly read the first .txt member (name + bytes) from an Aozora work ZIP.
+  Primary path uses java.util.zip with the SJIS charset (recovers Shift_JIS
+  entry names); on a ZipException (structural corruption) it falls back to 7zz."
+  [zip-file]
+  (try
+    (java-first-text-member zip-file)
+    (catch java.util.zip.ZipException _
+      (sevenzip-first-text-member zip-file))))
 
 (defn- write-aat!
   "Run the aozora2html adapter wrapper (parse + align) over the raw source
@@ -261,8 +303,7 @@
         work-id (row-work-id row)
         person-id (row-person-id row)
         work-hash (hash/format-sha256 (files/sha256-file file))
-        zip-member (first-text-member file)
-        source-bytes (zip-member-bytes file zip-member)
+        {zip-member :member source-bytes :bytes} (read-first-text-member file)
         work-dir (io/file materialized-root "works"
                           (slug work-id person-id relpath))
         aat-file (io/file work-dir "aat.json")

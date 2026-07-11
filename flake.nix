@@ -150,8 +150,12 @@
                   pkgs.gnugrep
                   pkgs.perl
                   pkgs.glibc.bin
+                  pkgs._7zz
                 ]
               }:''${PATH:-}"
+              # 7zz recovers work ZIPs java.util.zip can't parse (damaged central
+              # directories); build-publication falls back to it per work.
+              export AB_SEVENZIP_BIN="${pkgs._7zz}/bin/7zz"
               export AB_AOZORA2HTML_ADAPTER="${ab-validator}/adapters/aozora2html/aozora2html-adapter"
               export AB_AOZORA2HTML_BIN="${abValidatorPackages."upstream-parser-aozora2html"}/bin/aozora2html"
               export AB_AOZORA2HTML_MAPPER_BIN="${

@@ -151,11 +151,20 @@ Changes in v2 (all typed-in-place; node topology unchanged):
 - The replaced `x-` fields are dropped from fork emission in the same
   rotation. `patternProperties ^x-` remains legal in v2; provenance fields
   (`x-provenance`, `x-source-marker-kind`) are unchanged.
-- The exact field inventory is fixed at plan time by reading the current
-  emission sites in `crates/ab-aozora-aat/src/lib.rs` (jisage
-  495–510, chitsuki 583–592, burasage 614–623, indent helpers 628–672 at
-  the Phase 3 tip); any `x-` layout field found there beyond the list above
-  is promoted under the same rule, not left behind.
+- `heading` gains an optional typed `indent` (integer, minimum 0 —
+  optional because heading indentation is conditional), replacing the
+  `x-indent` that heading emission adds today
+  (`crates/ab-aozora-aat/src/lib.rs:872`); the converter already consumes
+  heading indentation as a separate concern, so this is a promotion, not a
+  new fact.
+- The field inventory is fixed by a **repository-wide inventory of every
+  emitted `x-*` field** in `crates/ab-aozora-aat/src` (not a line-range
+  read — the heading field above sits outside the block-emission region
+  and proves ranges under-count). The inventory is committed as evidence
+  in the schema task; every emitted `x-*` field is either promoted to a
+  typed field under this rule or explicitly classified as provenance
+  (`x-provenance`, `x-source-marker-kind` are the known provenance
+  fields, unchanged in v2). No third category.
 
 ### Warning enrichment
 
@@ -166,7 +175,7 @@ v2 `warning`:
   "required": ["code", "severity", "message"],
   "properties": {
     "code":     { "type": "string" },          // kebab-case, stable
-    "severity": { "enum": ["warning", "info"] },
+    "severity": { "enum": ["error", "warning", "note"] },
     "message":  { "type": "string" },
     "span":     { "$ref": "#/$defs/span" },    // optional, ADR 0024 semantics
     "path":     { "type": "string" }           // optional, retained
@@ -175,13 +184,21 @@ v2 `warning`:
 ```
 
 - `line` is dropped (subsumed by `span.line_start`).
-- Codes follow the kebab convention established by wire-schema 3
-  diagnostics; every current warning emission site gets a stable code.
-  The plan enumerates the sites and their codes from `lib.rs`; no site may
-  fall through to a placeholder code.
-- Severity vocabulary is fixed at plan time from the actual emission sites;
-  if only `warning` is ever emitted, the enum still ships both values (the
-  schema is the contract, emission may cover a subset).
+- **Severity vocabulary is the producer's, verbatim**: the façade's
+  `severity_str` (`crates/ab-aozora-facade/src/json.rs`) emits exactly
+  `error`, `warning`, `note` (with `error` as the non-exhaustive default
+  arm). The schema enum matches it one-to-one; no normalization layer.
+  `error` matters: `parse_complete` already keys off error-severity
+  diagnostics, so collapsing it would lose a tested signal.
+- **`code` is the façade's stable kebab code passed through verbatim**
+  for every façade-diagnostic-derived warning. The façade already
+  computes it (`Diagnostic::code()` → kebab); the adapter today discards
+  it and retains only kind/severity/span — v2 emission carries it through
+  unchanged. Adapter-origin warning sites (those not backed by a façade
+  diagnostic) get their own stable kebab codes under the same convention.
+  No site may fall through to a placeholder code; the plan enumerates all
+  warning emission sites and classifies each as façade-passthrough or
+  adapter-origin.
 
 ### source_note
 
@@ -209,15 +226,19 @@ pin actual emission to terminal_provenance only.
 
 ### ruby.direction
 
-Already present in v1 (`enum ["right", "left"]`); v2 is unchanged here. The
-Phase 4 work is emission: C3 emits `direction: "left"` for left-ruby
-constructs the CST already distinguishes. Whether the lifted grammar
-recognizes left ruby is verified at plan time from
-`ab-aozora-pipeline`/`ab-aozora-syntax` sources; if recognition is absent,
-left-ruby emission becomes a named C3 sub-task with its own reference
-counts (from the construct-gap backlog), not a silent omission. If the
-construct is genuinely unrepresented in the CST, `direction` emission is
-descoped by an explicit spec amendment, never quietly.
+Already present in v1 (`enum ["right", "left"]`); v2 is unchanged here.
+Recognition is **confirmed present** in the lifted grammar
+(`ab-aozora-syntax/src/lib.rs:188` `RubySide` with `Left`; the pipeline
+constructs left ruby), but **the adapter cannot currently observe it**:
+the façade's `AozoraNode` exposes only kind and span, and the adapter's
+`ruby_node` reparses source text with a regex that recognizes only
+ordinary `｜base《reading》` ruby. C3 therefore includes a **named plumbing
+task**: carry ruby side — and structured base/reading, retiring the regex
+reparse for ruby — through the façade (or another structured boundary),
+then emit `direction: "left"` where side is Left. The task carries its
+own reference counts (left-ruby forms from the construct-gap backlog) and
+tests at both the façade boundary and AAT emission. This is emission
+plumbing, not a recognition question; no descope path is needed.
 
 ## Rotation C3 — in-body reshaping
 
@@ -234,7 +255,11 @@ work corpus, hinoki):
    - `x-` → typed layout field migration (field-level rewrite; tree
      topology must be identical),
    - warning reshape (`meta.warnings` only),
-   - ruby.direction additions (field addition on ruby nodes only).
+   - ruby restructuring: ruby emission moves from regex reparse to
+     structured façade facts, so the class asserts byte-identical
+     base/reading for ordinary right ruby (deep equality — the structured
+     path must reproduce the regex path's values exactly) and admits only
+     `direction: "left"` additions on left-ruby nodes.
    Works outside these classes must be byte-identical modulo the version
    join key.
 3. **Conformance**: both suites (127-vector P4suta + 30-vector seed) via
@@ -313,22 +338,37 @@ conversion audit per protocol; C4 registry row appended (inert).
 
 ## Mapping and converter
 
-- Mapping document `data/aat-to-parser-ir-mapping-v1.json` rotates:
-  `mapping_id` `https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe`,
-  `mapping_version` `0.3.0`, `source_aat_version` 2. The hardcoded
-  `source_aat_version == 1` preflight in
-  `crates/ab-aat-to-parser-ir/src/mapping.rs` becomes version-aware
-  (accepts the document's declared version against the schema file it
-  pairs with; still fail-closed on mismatch). `mapping_hash` is computed,
-  never hand-written; the registry rows carry the fresh hash.
+- **The shipped v1 mapping is retained byte-frozen**, not rotated in
+  place: `data/aat-to-parser-ir-mapping-v1.json` stays exactly as shipped
+  (0.2.8, hash `sha256:952620ce…` — the frozen bytes keep the historical
+  registry rows verifiable). The v2 mapping is a **new file**,
+  `data/aat-to-parser-ir-mapping-v2.json`: `mapping_id`
+  `https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe`,
+  `mapping_version` `0.3.0`, `source_aat_version` 2. `mapping_hash` is
+  computed, never hand-written; the new registry rows carry the fresh
+  hash.
+- **Version-tuple selection precedes converter preparation.** Today
+  `PreparedConverter` binds exactly one mapping to one `SchemaSet`, and
+  `SchemaSet::load` hardcodes `data/aat-schema.json`. Phase 4 defines a
+  version-keyed tuple table resolved from the AAT document's `version`
+  field *before* preparation:
+  - `1` → (`data/aat-schema-v1.json`, `data/aat-to-parser-ir-mapping-v1.json`),
+  - `2` → (`data/aat-schema.json` [v2], `data/aat-to-parser-ir-mapping-v2.json`).
+  Fail-closed cases, each with a test: an AAT document with an unknown
+  `version` is a hard error (no default tuple); a mismatched pair —
+  `mapping.source_aat_version` differing from the schema's `version`
+  const or from the document's declared version — fails preflight. The
+  `source_aat_version == 1` hardcode in
+  `crates/ab-aat-to-parser-ir/src/mapping.rs` is replaced by this
+  tuple-consistency check.
 - New/changed rules with divergence accounting through the existing
   recorder (no new divergence structures):
   - `jizume_block` → parser-IR paragraph `layout` `jizume width(N)`,
   - typed layout pointers replace the `x-` layout pointer rules
     (chitsuki/burasage/jisage/line-jisage tokens unchanged on the
     parser-IR side),
-  - `source_note` → parser-IR `source-note` node with placement preserved;
-    `placement: "unknown"` must never map to ordinary body content,
+  - `source_note` → parser-IR `source-note` node per the explicit rules
+    below; `placement: "unknown"` must never map to ordinary body content,
   - warning enrichment accounted in the loss taxonomy (all five categories
     LOSS/INVENTION/AMBIGUITY/UNSUPPORTED/STRUCTURAL remain present).
 - Converter (`ab-aat-to-parser-ir`) dispatches on the AAT document
@@ -336,6 +376,48 @@ conversion audit per protocol; C4 registry row appended (inert).
   the frozen comparison-lane evidence), v2 path implements the new rules.
   Parser-IR `paragraphs[]` stays converter-derived from AAT blocks
   (Paragraph Authority contract; no AAT paragraph range table).
+
+### Source-note authority: explicit v2 replaces the v1 heuristic
+
+The v1 converter synthesizes a source note heuristically: the final
+top-level paragraph, when `source_attribution_text` matches, becomes a
+`source-note` node with `classification: "heuristic"`
+(`crates/ab-aat-to-parser-ir/src/convert.rs:260–287`). Left ambiguous,
+C3 would still synthesize source notes and C4 would duplicate or
+re-classify them. The contract:
+
+- **v1 path retains the heuristic byte-for-byte** (frozen fixtures pin it).
+- **v2 path never applies the heuristic** — at any rotation. v2
+  `source-note` nodes arise **only** from explicit AAT `source_note`
+  blocks.
+- Consequence, stated so audits read it correctly: at C3 (v2 documents,
+  no `source_note` blocks yet) works whose final parenthetical paragraph
+  previously triggered the heuristic legitimately convert to ordinary
+  body paragraphs; the C3 conversion audit accounts for this as the
+  heuristic's retirement (divergence-recorded), and the explicit
+  replacement arrives at C4. No duplication path exists because the
+  heuristic is dead in v2 from the first v2 document.
+- Explicit v2 mapping rules (mirroring the v1 node shape so parser-IR
+  consumers see one contract):
+  - `type: "source-note"`,
+  - `note_type: "source-attribution"` for
+    `region_class: "terminal_provenance"` (the only C4 class),
+  - `placement` copied verbatim from the AAT block,
+  - `classification: "direct"`,
+  - `source_pointer`: the structural pointer of the originating AAT
+    `source_note` block (same pointer scheme the v1 heuristic uses for
+    its paragraph),
+  - `text`: flattened from `content` via the existing
+    `visible_content_text` rule — text-inline values concatenated in
+    order; non-text inlines divergence-recorded (C4 emits text-only, so
+    this is a guard, not a path),
+  - `span`: mapped from the AAT block span via the existing `map_span`
+    rule,
+  - paragraph row: each `source_note` block yields its own
+    `paragraphs[]` row, `role: "source-note"`,
+    `classification: "direct"`, `node_range` covering exactly its
+    source-note node (satisfying ABC's paragraph-coherence rule that
+    direct source-note paragraphs contain a source-note node).
 - `crates/ab-aat-to-parser-ir/README.md` mapping coordinates refreshed
   (currently stale at 0.2.6 / `sha256:e36508c3…` vs shipped 0.2.8 /
   `sha256:952620ce…`) as part of the mapping rotation commit.
@@ -363,11 +445,13 @@ Ceremony order (each step blocks the next):
    source-reference reconciliation (must stay
    `SOURCE_REFERENCE_RECONCILIATION_COMPLETE`), full-corpus conversion
    audit (mapping 0.3.0), perf measurement, updated next-work ledger.
-2. **Registry rows** for C3 and C4 in
-   `abc/data/aat-parser-ir-compatibility.edn` (`:aat_version 2`); registry
-   schema (Malli) validation green; `admission-report` for the C4
-   candidate tuple returns `:admitted` (empirically run, output captured
-   as evidence).
+2. **C4 registry row appended** to
+   `abc/data/aat-parser-ir-compatibility.edn` (`:aat_version 2`). The C3
+   row was already committed with the C3 gate evidence (rotation step 6)
+   — this step appends the C4 row and **re-validates both** Phase 4 rows:
+   registry schema (Malli) validation green; `admission-report` for the
+   C4 candidate tuple returns `:admitted` (empirically run, output
+   captured as evidence).
 3. **ABC design-bundle validation**: representative bundle first, then
    full-scope, with fork parser-IR; parser-IR schema hash taken fresh from
    the synced `data/abc-schemas/schemas/parser-ir.schema.json` at ceremony
@@ -382,6 +466,12 @@ Ceremony order (each step blocks the next):
    - `examples/ab-validator-output/` fixtures regenerated at C4.
    Everything before this commit leaves the legacy lane as default;
    everything after it treats `ab-aozora` as the publication parser.
+   **The activation commit must not reach `main` until steps 5 and 6
+   pass.** It is authored on the phase branch; the wholesale gate and the
+   checkpoint run against it there. If a post-activation gate fails, the
+   activation commit (and anything stacked on it) is reverted or dropped
+   on the branch before any merge — `main` never sees an activated state
+   whose wholesale gate did not pass.
 5. **Acceptance gate wholesale** (2026-07-06 criteria):
    `unsupported_body_markup_occurrences == 0`,
    `unknown_region_occurrences == 0`,
@@ -462,17 +552,21 @@ median to the lane it replaces.
   bar (not slower than the legacy lane at median) is a hard floor.
 - **Converter dual-version regressions**: the v1 path is pinned by
   existing fixtures; any v1 output change in the conversion suites blocks.
-- **ABC renderer/policy discrepancy (ABC-owned, non-blocking here)**: the
-  2026-07-04 Level-3 delta handoff says plaintext appends back-placement
-  source notes after the body, while policy v0.2.0 says
-  `plaintext_projection: "omit"` for terminal_provenance. ab-validator's
-  instruments treat source_note as excluded from body byte accounting
-  either way; ABC resolves the rendering question on its side before
-  making plaintext claims for source notes. Recorded here so the ceremony
-  review checks it was raised with ABC.
-- **`ruby.direction` recognition** may turn out absent from the lifted
-  CST; handled by the named verification step in the schema section
-  (explicit sub-task or explicit descope amendment, never silent).
+- **ABC plaintext text vs policy (resolved as an assertion + stale doc)**:
+  the 2026-07-04 Level-3 delta handoff says plaintext appends
+  back-placement source notes after the body, while policy v0.2.0 says
+  `plaintext_projection: "omit"` for terminal_provenance — and ABC's
+  current code already omits source-note from plaintext, matching the
+  policy and the acceptance criteria. Phase 4 therefore (a) makes
+  **plaintext omission an explicit activation assertion** — the bundle
+  validation step asserts no source-note text appears in plaintext output
+  — and (b) tracks the delta handoff's plaintext sentence as **stale
+  documentation** for an ABC-side correction. ab-validator's own
+  instruments exclude source_note from body byte accounting regardless.
+- **Ruby plumbing regressions**: retiring the regex reparse in favor of
+  structured façade facts touches every ruby node in the corpus; the
+  delta-audit ruby class (byte-identical base/reading for right ruby)
+  is the guard, and the façade-boundary tests pin the new surface.
 - **Registry `:aat_version 2` schema**: abc's Malli entry schema may pin
   `:aat_version` to 1; if so, the ABC-side schema update is part of step 2
   of the ceremony, validated by the registry check.

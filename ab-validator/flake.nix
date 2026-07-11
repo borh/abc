@@ -1358,6 +1358,7 @@
                 reports/aat-fidelity/tests \
                 reports/lib/tests \
                 reports/parser-conformance/tests \
+                reports/source-regions/tests \
                 -q
               touch "$out"
             '';

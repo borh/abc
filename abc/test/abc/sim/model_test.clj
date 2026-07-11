@@ -46,6 +46,29 @@
         (is (not (contains? (:works m') wid)))
         (is (not-any? #(= wid (first %)) (keys (:edges m'))))))))
 
+(deftest invalid-relation-no-op-test
+  (let [m (model/bootstrap 1)
+        wid (first (keys (:works m)))
+        pid (first (keys (:persons m)))]
+    (testing "add-edge no-ops on blank relation"
+      (let [e {:event/type :add-edge :wid wid :relation "" :pid pid}
+            {m' :model intent :applied} (model/apply-event m e)]
+        (is (nil? intent))
+        (is (= m m'))))
+    (testing "add-edge no-ops on non-string relation"
+      (let [e {:event/type :add-edge :wid wid :relation 5 :pid pid}
+            {m' :model intent :applied} (model/apply-event m e)]
+        (is (nil? intent))
+        (is (= m m'))))
+    (testing "add-work-with-edge no-ops on non-string relation"
+      (let [e {:event/type :add-work-with-edge
+               :wid "800001" :work (model/base-work "800001")
+               :pid "900001" :person (model/base-person)
+               :relation 5}
+            {m' :model intent :applied} (model/apply-event m e)]
+        (is (nil? intent))
+        (is (= m m'))))))
+
 (deftest fold-history-collects-applied-intents-test
   (let [m (model/bootstrap 1)
         wid (first (keys (:works m)))

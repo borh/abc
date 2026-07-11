@@ -52,12 +52,16 @@
   [m event]
   (doseq [[[wid rel] pids] (:edges m)]
     (when (or (not (contains? (:works m) wid))
+              (not (string? rel))
               (string/blank? rel)
               (empty? pids)
               (not-every? #(contains? (:persons m) %) pids))
       (throw (ex-info "model invariant violated"
                       {:edge [wid rel] :pids pids :event event}))))
   nil)
+
+(defn- valid-relation? [relation]
+  (and (string? relation) (not (string/blank? relation))))
 
 (defn- no-op [m] {:model m :applied nil})
 
@@ -70,7 +74,7 @@
 (defmethod apply-event* :add-work-with-edge
   [m {:keys [wid work pid person relation] :as e}]
   (if (or (contains? (:works m) wid) (contains? (:persons m) pid)
-          (not (map? work)) (not (map? person)) (string/blank? relation))
+          (not (map? work)) (not (map? person)) (not (valid-relation? relation)))
     (no-op m)
     (applied (-> m
                  (assoc-in [:works wid] work)
@@ -81,7 +85,7 @@
 (defmethod apply-event* :add-person-with-edge
   [m {:keys [pid person wid relation] :as e}]
   (if (or (contains? (:persons m) pid) (not (contains? (:works m) wid))
-          (not (map? person)) (string/blank? relation))
+          (not (map? person)) (not (valid-relation? relation)))
     (no-op m)
     (applied (-> m
                  (assoc-in [:persons pid] person)
@@ -104,6 +108,7 @@
   [m {:keys [wid relation pid] :as e}]
   (if (or (not (contains? (:works m) wid))
           (not (contains? (:persons m) pid))
+          (not (valid-relation? relation))
           (contains? (get-in m [:edges [wid relation]] #{}) pid))
     (no-op m)
     (applied (update-in m [:edges [wid relation]] (fnil conj #{}) pid)

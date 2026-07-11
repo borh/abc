@@ -1,0 +1,62 @@
+{
+  "stage": "rotation-a",
+  "gate": "perf",
+  "candidate": {
+    "commit": "a81edf066ecc0e9ac12e04c4ccc2551c27009161",
+    "bin_sha256": "c3cec69c7dd4261bd9068bab1de06666c54584a77c15783ccc17c8cea355e916",
+    "version": "ab-aozora 0.2.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git a81edf066ecc0e9ac12e04c4ccc2551c27009161)"
+  },
+  "verdict": "PASS",
+  "details": {
+    "runner_report": "docs/superpowers/reports/2026-07-11-phase3-capability-perf.runner.json",
+    "new_timeouts": 0,
+    "median_delta_pct": -39.12,
+    "baseline_workset_median_s": 0.6422,
+    "candidate_workset_median_s": 0.391,
+    "threshold_pct": 10,
+    "machine": {
+      "node": "hinoki",
+      "machine": "x86_64",
+      "processor": "",
+      "cpu_count": 32
+    },
+    "per_work": [
+      {
+        "work_id": "001529_50685",
+        "baseline_median_s": 0.6677,
+        "candidate_median_s": 0.6169,
+        "delta_pct": -7.61
+      },
+      {
+        "work_id": "000311_2012",
+        "baseline_median_s": 0.6167,
+        "candidate_median_s": 0.316,
+        "delta_pct": -48.76
+      },
+      {
+        "work_id": "001562_56146",
+        "baseline_median_s": 0.8679,
+        "candidate_median_s": 0.5163,
+        "delta_pct": -40.51
+      },
+      {
+        "work_id": "001562_56145",
+        "baseline_median_s": 0.7165,
+        "candidate_median_s": 0.4659,
+        "delta_pct": -34.98
+      },
+      {
+        "work_id": "000363_56656",
+        "baseline_median_s": 0.3159,
+        "candidate_median_s": 0.1652,
+        "delta_pct": -47.7
+      },
+      {
+        "work_id": "001562_33224",
+        "baseline_median_s": 0.4168,
+        "candidate_median_s": 0.2657,
+        "delta_pct": -36.25
+      }
+    ]
+  }
+}

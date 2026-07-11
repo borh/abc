@@ -435,3 +435,49 @@ removed. Evidence:
   item, gated by Phase 3's own conformance/parity evidence — it is a
   behavior-relevant change to gate-covered code and must not be folded into
   a metadata-only fix.
+
+### Phase 3 closure (2026-07-11)
+
+Phase 3 (capability + span semantics) is CHECKPOINT OK
+(`reports/aat-fidelity/verify-phase3-checkpoint.py`, C0=`c3cb16908b0134ca03856735f10445eeb2a92957`,
+C1=`a81edf066ecc0e9ac12e04c4ccc2551c27009161`,
+C2=`a3f91f53fcae9bc18f577ea5b746f3be7f228fcb`). Follow-up disposition:
+
+- **Sanitize dependency retired.** The crates.io `aozora-pipeline =0.4.1`
+  pin described above is gone: `ab-aozora-aat` now calls the fork's own
+  `ab_aozora_pipeline::lexer::sanitize::sanitize`, with byte-parity between
+  the old and new sanitize path proven by the stage-0 evidence path
+  (`docs/superpowers/reports/2026-07-11-phase3-stage0-sanitize-parity.summary.json`,
+  17886/0/0 compared/missing/diverged).
+- **Diagnostics codes + classifiers landed at rotation A**, gated by the
+  rotation-A evidence set (`docs/superpowers/reports/2026-07-11-phase3-capability-delta.summary.json`,
+  `…-phase3-capability-conformance-gate.summary.json`,
+  `…-phase3-capability-perf.summary.json`) and registered in
+  `abc/data/aat-parser-ir-compatibility.edn` (adapter `ab-aozora` 0.2.0,
+  git `a81edf06`, rotation A row).
+- **Span semantics landed at rotation B per ADR 0024**, gated by the
+  rotation-B evidence set (`docs/superpowers/reports/2026-07-11-phase3-span-confinement.summary.json`,
+  `…-phase3-span-conformance-gate.summary.json`,
+  `…-phase3-span-perf.summary.json`) and registered in
+  `abc/data/aat-parser-ir-compatibility.edn` (adapter `ab-aozora` 0.3.0,
+  git `a3f91f53`, rotation B row); during rotation-B evidence gathering a
+  bare-CR line-index bug surfaced (line-start counting undercounted files
+  using lone `\r` terminators) and was fixed parser-side in
+  `a3f91f53fcae9bc18f577ea5b746f3be7f228fcb` (`crates/ab-aozora-aat/src/lib.rs`,
+  line boundaries now honor `\n`/`\r\n`/bare `\r` uniformly), which is why
+  the rotation-B candidate commit moved from the originally-planned
+  `5afe01c9` to `a3f91f53` mid-phase.
+- **Upstream-first obligation closed per ADR 0032's replacement clause**:
+  now that the fork's own sanitize path has passed stage-0 byte-parity
+  gates, the fork owns its full sanitize→AAT pipeline with no live,
+  non-vendored upstream crate remaining inside `ab-aozora-aat`'s
+  behavior-relevant dependency surface.
+- **Deferred to Phase 4:** jizume AAT surfacing (the recognizer functions
+  exist per Task 8 but are not wired into block emission; jizume corpus
+  AAT stays byte-stable through Phase 3) and parser-IR schema/warning
+  enrichment.
+- **Phase 4 watch item:** rotation-B perf shows median −4.09% (candidate
+  faster) but 3 of the 6 workset works individually regressed (up to
+  +34.77%) — acceptable under the gate's median threshold but worth
+  tracking if span-confinement cost grows with future schema work
+  (`docs/superpowers/reports/2026-07-11-phase3-span-perf.summary.json`).

@@ -11,7 +11,7 @@
 //! Every JSON envelope has the shape
 //!
 //! ```json
-//! { "schemaVersion": 2, "data": [ /* …entries… */ ] }
+//! { "schemaVersion": 3, "data": [ /* …entries… */ ] }
 //! ```
 //!
 //! [`SCHEMA_VERSION`] is bumped on any breaking change to the
@@ -45,13 +45,16 @@ use crate::{DiagnosticSource, Severity, Tree};
 /// Schema 2 (#435): added the `gothic` weight tag (emphasis / container);
 /// renamed the `lineBold` node kind to `lineGothic`; removed the
 /// `combineUprightRange` container tag (縦中横 has no paired-range form).
-pub const SCHEMA_VERSION: u32 = 2;
+///
+/// Schema 3 (Phase 3): added the stable kebab-case `code` field to
+/// diagnostics entries.
+pub const SCHEMA_VERSION: u32 = 3;
 
 /// Project a slice of [`crate::Diagnostic`] into a `{ schemaVersion, data }`
 /// JSON envelope. Every entry has the shape
 /// `{ kind, span: { start, end }, codepoint? }`.
 ///
-/// Empty input → `{"schemaVersion":2,"data":[]}`.
+/// Empty input → `{"schemaVersion":3,"data":[]}`.
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
@@ -72,7 +75,7 @@ pub fn diagnostic_entries(diagnostics: &[crate::Diagnostic]) -> Vec<Diagnostic> 
 ///
 /// Every entry has the shape `{ kind, span: { start, end } }`,
 /// source-coordinate, sorted by `span.start`. Empty parse →
-/// `{"schemaVersion":2,"data":[]}`.
+/// `{"schemaVersion":3,"data":[]}`.
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
@@ -103,7 +106,7 @@ pub fn node_entries(tree: &Tree<'_>) -> Vec<Node> {
 /// `textDocument/linkedEditingRange` and
 /// `textDocument/documentHighlight`.
 ///
-/// Empty parse → `{"schemaVersion":2,"data":[]}`.
+/// Empty parse → `{"schemaVersion":3,"data":[]}`.
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
@@ -139,7 +142,7 @@ pub fn pair_entries(tree: &Tree<'_>) -> Vec<Pair> {
 /// source-coordinate container pairs must translate through
 /// [`Tree::source_nodes`].
 ///
-/// Empty parse → `{"schemaVersion":2,"data":[]}`.
+/// Empty parse → `{"schemaVersion":3,"data":[]}`.
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
@@ -211,7 +214,7 @@ pub fn slug_entries() -> Vec<Slug> {
 /// audits. The scan + resolution are the single authority in
 /// [`crate::encoding::gaiji`]; this is only their wire projection.
 ///
-/// Empty / gaiji-free source → `{"schemaVersion":2,"data":[]}`.
+/// Empty / gaiji-free source → `{"schemaVersion":3,"data":[]}`.
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
@@ -403,10 +406,14 @@ impl From<crate::Span> for Span {
 }
 
 /// One `diagnostics` envelope entry — a projected [`crate::Diagnostic`].
-#[derive(Debug, Clone, Copy, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct Diagnostic {
     kind: &'static str,
+    /// Stable kebab-case diagnostic code — the conformance-contract
+    /// identity of this diagnostic (Phase 3 design spec). Always the
+    /// 1:1 kebab form of `kind`.
+    code: String,
     severity: &'static str,
     source: &'static str,
     span: Span,
@@ -432,8 +439,10 @@ impl From<&crate::Diagnostic> for Diagnostic {
         // and internal axes; consumers that need the full namespaced ID
         // can still rely on `Diagnostic::code()`.
         let kind = d.code().rsplit("::").next().unwrap_or("unknown");
+        let code = kind.replace('_', "-");
         Self {
             kind,
+            code,
             severity: severity_str(d.severity()),
             source: source_str(d.source()),
             span: d.span().into(),
@@ -562,7 +571,7 @@ mod tests {
     #[cfg(feature = "json")]
     fn slugs_envelope_lists_catalogue_with_known_families() {
         let json = slugs();
-        assert!(json.contains(r#""schemaVersion":2"#));
+        assert!(json.contains(r#""schemaVersion":3"#));
         assert!(json.contains(r#""canonical":"#));
         assert!(json.contains(r#""family":"#));
         // Guard against the silent `_ => "unknown"` degrade: every
@@ -576,14 +585,14 @@ mod tests {
     #[test]
     #[cfg(feature = "json")]
     fn gaiji_resolutions_empty_envelope_for_plain_text() {
-        assert_eq!(gaiji("no gaiji here"), r#"{"schemaVersion":2,"data":[]}"#);
+        assert_eq!(gaiji("no gaiji here"), r#"{"schemaVersion":3,"data":[]}"#);
     }
 
     #[test]
     #[cfg(feature = "json")]
     fn gaiji_resolutions_emits_resolved_entry_in_source_coords() {
         let json = gaiji("※［＃「々」］");
-        assert!(json.contains(r#""schemaVersion":2"#));
+        assert!(json.contains(r#""schemaVersion":3"#));
         assert!(
             json.contains(r#""span":{"start":0,"end":21}"#),
             "json: {json}"
@@ -608,14 +617,14 @@ mod tests {
 
     #[test]
     fn schema_version_is_one() {
-        assert_eq!(SCHEMA_VERSION, 2);
+        assert_eq!(SCHEMA_VERSION, 3);
     }
 
     #[test]
     #[cfg(feature = "json")]
     fn empty_diagnostics_round_trip_envelope() {
         let json = diagnostics(&[]);
-        assert_eq!(json, r#"{"schemaVersion":2,"data":[]}"#);
+        assert_eq!(json, r#"{"schemaVersion":3,"data":[]}"#);
     }
 
     #[test]
@@ -624,7 +633,7 @@ mod tests {
         let doc = Document::new("plain");
         let tree = doc.parse();
         let json = nodes(&tree);
-        assert_eq!(json, r#"{"schemaVersion":2,"data":[]}"#);
+        assert_eq!(json, r#"{"schemaVersion":3,"data":[]}"#);
     }
 
     #[test]
@@ -633,7 +642,7 @@ mod tests {
         let doc = Document::new("plain");
         let tree = doc.parse();
         let json = pairs(&tree);
-        assert_eq!(json, r#"{"schemaVersion":2,"data":[]}"#);
+        assert_eq!(json, r#"{"schemaVersion":3,"data":[]}"#);
     }
 
     #[test]
@@ -642,9 +651,24 @@ mod tests {
         let doc = Document::new("abc\u{E001}def");
         let tree = doc.parse();
         let json = diagnostics(tree.diagnostics());
-        assert!(json.contains(r#""schemaVersion":2"#));
+        assert!(json.contains(r#""schemaVersion":3"#));
         assert!(json.contains(r#""kind":"source_contains_pua""#));
         assert!(json.contains(r#""codepoint":"""#) || json.contains(r#""codepoint":""#));
+    }
+
+    #[test]
+    #[cfg(feature = "json")]
+    fn diagnostic_entries_carry_kebab_code() {
+        // Any source producing an unclosed_bracket diagnostic:
+        let doc = Document::new("あ［＃ここから".to_owned());
+        let tree = doc.parse();
+        let entries = diagnostic_entries(tree.diagnostics());
+        assert!(!entries.is_empty());
+        let value = serde_json::to_value(&entries).unwrap();
+        let entry = &value[0];
+        let code = entry["code"].as_str().unwrap();
+        assert_eq!(code, entry["kind"].as_str().unwrap().replace('_', "-"));
+        assert!(!code.contains("::"));
     }
 
     #[test]
@@ -654,7 +678,7 @@ mod tests {
         let tree = doc.parse();
         let json = nodes(&tree);
         assert!(json.contains(r#""kind":"ruby""#));
-        assert!(json.contains(r#""schemaVersion":2"#));
+        assert!(json.contains(r#""schemaVersion":3"#));
     }
 
     #[test]

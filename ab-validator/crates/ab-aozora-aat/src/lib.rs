@@ -1,9 +1,9 @@
 //! AAT (Aozora AST Transform) adapter ported from the frozen aozora adapter.
 
-use std::{collections::BTreeMap, fmt::Write as _, mem, str, sync::LazyLock};
+use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str, sync::LazyLock};
 
 use anyhow::Result;
-use aozora_pipeline::lexer::sanitize as sanitize_aozora_source;
+use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
 use encoding_rs::SHIFT_JIS;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -11,7 +11,17 @@ use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
-use ab_aozora_facade::{self, Document, encoding, json as aozora_json};
+use ab_aozora_facade::{self, Diagnostic, Document, encoding, json as aozora_json};
+
+/// The sanitize stage's `Diagnostic` type is the exact same
+/// `ab_aozora_spec::Diagnostic` the facade re-exports as `Diagnostic` (and
+/// the same type `Tree::diagnostics()` returns).
+///
+/// Confirmed via `crates/ab-aozora-pipeline/src/lexer/sanitize.rs`'s
+/// `use ab_aozora_spec::Diagnostic;` and `crates/ab-aozora-facade/src/lib.rs`'s
+/// `pub use ab_aozora_spec::{..., Diagnostic, ...};`. One alias, one
+/// `aozora_json::diagnostic_entries` call serves both diagnostic families.
+pub type AozoraSanitizeDiagnostic = Diagnostic;
 
 static RUBY_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap());
@@ -27,6 +37,79 @@ pub struct DecodedSource {
     pub encoding: &'static str,
     /// Hex-encoded SHA256 hash of the input bytes.
     pub source_hash: String,
+    /// Sanitize-stage diagnostics (PUA collisions, accent notes) — born
+    /// BEFORE the parse; the parse of neutralized text cannot rediscover
+    /// them. Spans are full-sanitized-text byte offsets.
+    pub sanitize_diagnostics: Vec<AozoraSanitizeDiagnostic>,
+    /// Sanitize offset maps + body offset + line index for span rebasing
+    /// (ADR 0024: emitted spans are offsets against the full decoded
+    /// source `text`, with real 1-based line numbers).
+    span_ctx: SpanContext,
+}
+
+/// Composition chain for translating a parser/sanitize-stage byte offset
+/// into `DecodedSource.text` coordinates plus a real line number.
+///
+/// Two offset systems feed span emission: the parser (and AAT node
+/// construction) work in `span_text` (sanitized-body-relative) offsets;
+/// `sanitize_diagnostics` carry full-sanitized-text offsets. Both compose
+/// through `maps` (sanitized → decoded `text`); the former additionally
+/// needs `body_offset` added first (body-relative → full-sanitized).
+#[derive(Debug)]
+struct SpanContext {
+    maps: SanitizeMaps,
+    /// Byte offset of the body slice within the SANITIZED text.
+    body_offset: usize,
+    /// Byte offsets of line starts in the DECODED text (`text`).
+    line_starts: Vec<usize>,
+}
+
+impl SpanContext {
+    fn to_decoded(&self, body_offset: usize) -> usize {
+        self.maps.to_source_offset(body_offset + self.body_offset)
+    }
+
+    fn to_decoded_end(&self, body_end: usize) -> usize {
+        self.maps.to_source_end(body_end + self.body_offset)
+    }
+
+    fn line_of(&self, decoded_offset: usize) -> u64 {
+        (self.line_starts.partition_point(|&s| s <= decoded_offset)) as u64
+    }
+}
+
+/// Byte offsets of line starts in `text`, treating every terminator the
+/// decoded source can actually carry as a boundary: `\n`, `\r\n` (ONE
+/// boundary, after the pair), and bare `\r`.
+///
+/// The decoded source keeps its original terminators — sanitize's CR/LF
+/// normalization only rewrites the text the PARSER sees. A `\n`-only
+/// index therefore synthesizes line 1 for every span of a classic-Mac
+/// bare-CR source (zero `\n` in the whole file), violating ADR 0024's
+/// real-line requirement. Counting `\r\n` as one boundary keeps CRLF
+/// sources' boundary set byte-identical to a `\n`-only index (the
+/// boundary sits after the pair, exactly where `\n`+1 put it), and
+/// treating lone `\r` as a terminator mirrors sanitize's lone-`\r`→`\n`
+/// rewrite, so decoded-source lines and sanitized-text lines agree in
+/// count for every input.
+fn line_starts(text: &str) -> Vec<usize> {
+    let bytes = text.as_bytes();
+    let mut starts = vec![0];
+    let mut i = 0;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'\n' => {
+                i += 1;
+                starts.push(i);
+            }
+            b'\r' => {
+                i += if bytes.get(i + 1) == Some(&b'\n') { 2 } else { 1 };
+                starts.push(i);
+            }
+            _ => i += 1,
+        }
+    }
+    starts
 }
 
 #[derive(Debug, Deserialize, Clone, Copy)]
@@ -69,27 +152,34 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     let source_hash = format!("sha256:{}", hex_sha256(bytes));
     if bytes.starts_with(&[0xef, 0xbb, 0xbf]) {
         let text = str::from_utf8(&bytes[3..])?.to_owned();
-        let span_text = sanitize_for_aat(&text);
+        let (span_text, sanitize_diagnostics, maps, body_offset) = sanitize_for_aat(&text);
+        let span_ctx = SpanContext { maps, body_offset, line_starts: line_starts(&text) };
         return Ok(DecodedSource {
             text,
             span_text,
             encoding: "utf-8-bom",
             source_hash,
+            sanitize_diagnostics,
+            span_ctx,
         });
     }
     if let Ok(text) = str::from_utf8(bytes) {
         let text = text.to_owned();
-        let span_text = sanitize_for_aat(&text);
+        let (span_text, sanitize_diagnostics, maps, body_offset) = sanitize_for_aat(&text);
+        let span_ctx = SpanContext { maps, body_offset, line_starts: line_starts(&text) };
         return Ok(DecodedSource {
             text,
             span_text,
             encoding: "utf-8",
             source_hash,
+            sanitize_diagnostics,
+            span_ctx,
         });
     }
     let (cow, _, had_errors) = SHIFT_JIS.decode(bytes);
     let text = cow.into_owned();
-    let span_text = sanitize_for_aat(&text);
+    let (span_text, sanitize_diagnostics, maps, body_offset) = sanitize_for_aat(&text);
+    let span_ctx = SpanContext { maps, body_offset, line_starts: line_starts(&text) };
     Ok(DecodedSource {
         text,
         span_text,
@@ -99,15 +189,27 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
             "windows-31j"
         },
         source_hash,
+        sanitize_diagnostics,
+        span_ctx,
     })
 }
 
-fn sanitize_for_aat(text: &str) -> String {
-    let sanitized = sanitize_aozora_source(text).text.into_owned();
-    aozora_body_text(&sanitized).to_owned()
+fn sanitize_for_aat(
+    text: &str,
+) -> (String, Vec<AozoraSanitizeDiagnostic>, SanitizeMaps, usize) {
+    let mapped = sanitize_mapped(text);
+    let sanitize_diagnostics = mapped.diagnostics;
+    let sanitized = mapped.text.into_owned();
+    let body = aozora_body_range(&sanitized);
+    (
+        sanitized[body.clone()].to_owned(),
+        sanitize_diagnostics,
+        mapped.maps,
+        body.start,
+    )
 }
 
-fn aozora_body_text(source: &str) -> &str {
+fn aozora_body_range(source: &str) -> Range<usize> {
     let mut separators = Vec::new();
     let mut start = 0_usize;
     for line in source.split_inclusive('\n') {
@@ -135,7 +237,7 @@ fn aozora_body_text(source: &str) -> &str {
         }
     }
 
-    &source[body_start..body_end]
+    body_start..body_end
 }
 
 fn is_aozora_separator(line: &str) -> bool {
@@ -197,7 +299,7 @@ fn from_entries<S: Serialize, T: DeserializeOwned>(
 // The wire envelope's schemaVersion check becomes a compile-time pin: the
 // from_entries round-trip is only valid against the wire shape this port
 // was written for.
-const _: () = assert!(aozora_json::SCHEMA_VERSION == 2, "incompatible wire schema version");
+const _: () = assert!(aozora_json::SCHEMA_VERSION == 3, "incompatible wire schema version");
 
 /// Transform Aozora source bytes into AAT JSON output.
 ///
@@ -214,6 +316,85 @@ pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     Ok(out)
 }
 
+/// Rewrite every `entry["span"]["start"/"end"]` in a diagnostic-entries
+/// array in place via the given translation functions. Entries lacking a
+/// numeric span (or lacking a `span` object entirely) pass through
+/// untouched.
+fn rebase_spans(
+    data: &mut Value,
+    translate: impl Fn(usize) -> usize,
+    translate_end: impl Fn(usize) -> usize,
+) {
+    if let Some(items) = data.as_array_mut() {
+        for entry in items {
+            let (Some(start), Some(end)) = (
+                entry["span"]["start"]
+                    .as_u64()
+                    .and_then(|v| usize::try_from(v).ok()),
+                entry["span"]["end"]
+                    .as_u64()
+                    .and_then(|v| usize::try_from(v).ok()),
+            ) else {
+                continue;
+            };
+            entry["span"]["start"] = json!(translate(start));
+            entry["span"]["end"] = json!(translate_end(end));
+        }
+    }
+}
+
+/// One wire diagnostics envelope (`{"data": […], "schemaVersion": 3}`)
+/// per input — the `--mode diagnostics` payload.
+///
+/// Single owner of the diagnostics path (Phase 3 design spec): decoding,
+/// sanitization, and body selection are the EXACT same
+/// `decode_source_bytes` path as `aat_json_from_bytes`; the parse mirrors
+/// `projections()`. Entry order: sanitize-stage diagnostics, then parser
+/// diagnostics. Duplicates are impossible by construction (the inner
+/// re-sanitize sees already-neutralized, already-rewritten text) — the
+/// merge-order test pins this.
+///
+/// # Errors
+///
+/// Returns an error if source decoding, projection parsing, or JSON
+/// serialization fails.
+pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
+    let decoded = decode_source_bytes(bytes)?;
+    let source = encoding::decode_auto(decoded.span_text.as_bytes())
+        .map_err(|err| anyhow::anyhow!("decode_auto: {err:?}"))?;
+    let doc = Document::new(source);
+    let tree = doc.parse();
+    let mut data =
+        serde_json::to_value(aozora_json::diagnostic_entries(&decoded.sanitize_diagnostics))?;
+    let mut parser_entries =
+        serde_json::to_value(aozora_json::diagnostic_entries(tree.diagnostics()))?;
+    // Sanitize-stage entries carry full-sanitized-text offsets → through
+    // the maps directly (no body offset). Parser entries carry
+    // body-relative offsets → body offset + maps. Both land in decoded-
+    // source (`decoded.text`) coordinates, matching `span_json`'s output.
+    rebase_spans(
+        &mut data,
+        |o| decoded.span_ctx.maps.to_source_offset(o),
+        |o| decoded.span_ctx.maps.to_source_end(o),
+    );
+    rebase_spans(
+        &mut parser_entries,
+        |o| decoded.span_ctx.to_decoded(o),
+        |o| decoded.span_ctx.to_decoded_end(o),
+    );
+    if let (Some(items), Some(more)) = (data.as_array_mut(), parser_entries.as_array()) {
+        items.extend(more.iter().cloned());
+    }
+    let envelope = json!({
+        "schemaVersion": aozora_json::SCHEMA_VERSION,
+        "data": data,
+    });
+    let mut out = Vec::new();
+    serde_json::to_writer(&mut out, &envelope)?;
+    out.push(b'\n');
+    Ok(out)
+}
+
 fn build_aat(
     decoded: &DecodedSource,
     nodes: &[AozoraNode],
@@ -225,16 +406,10 @@ fn build_aat(
         .map(|entry| (entry.span.start, entry.clone()))
         .collect::<BTreeMap<_, _>>();
     let blocks = blocks_from_inline_content(inline_content(decoded, nodes, &gaiji_by_start));
-    let mut warnings = diagnostics
+    let warnings = diagnostics
         .iter()
-        .map(diagnostic_warning)
+        .map(|diagnostic| diagnostic_warning(diagnostic, &decoded.span_ctx))
         .collect::<Vec<_>>();
-    if !nodes.is_empty() {
-        warnings.push(json!({
-            "message": "aozora upstream spans are sanitized-source byte offsets; line_start and line_end are synthesized as 1",
-            "line": 1
-        }));
-    }
     json!({
         "version": 1,
         "work_id": "stdin",
@@ -253,6 +428,10 @@ fn build_aat(
 #[allow(
     clippy::needless_pass_by_value,
     reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+)]
+#[allow(
+    clippy::too_many_lines,
+    reason = "single linear classifier pass ported from the frozen adapter; splitting would obscure the branch order contract"
 )]
 fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
     let mut blocks = Vec::new();
@@ -334,6 +513,33 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 index = boundary;
                 continue;
             }
+        } else if block_container_open(&node, "［＃ここから罫囲み］") {
+            if let Some(close_index) = find_matching_container_close(&content, index + 1, "罫囲み")
+            {
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+                let mut inner = content[index + 1..close_index].to_vec();
+                strip_boundary_newlines(&mut inner);
+                blocks.push(json!({
+                    "kind": "keigakomi_block",
+                    "children": blocks_from_inline_content(inner)
+                }));
+                strip_next_leading_newline = true;
+                index = close_index + 1;
+                continue;
+            }
+        } else if block_container_open(&node, "［＃ここから横組み］")
+            && let Some(close_index) = find_matching_container_close(&content, index + 1, "横組み")
+        {
+            push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+            let mut inner = content[index + 1..close_index].to_vec();
+            strip_boundary_newlines(&mut inner);
+            blocks.push(json!({
+                "kind": "yokogumi_block",
+                "children": blocks_from_inline_content(inner)
+            }));
+            strip_next_leading_newline = true;
+            index = close_index + 1;
+            continue;
         }
 
         if is_heading_hint_raw(&node)
@@ -469,16 +675,65 @@ fn simple_jisage_open_indent(source: &str) -> Option<u64> {
     Some(parse_aozora_number_before(marker, "字下げ").unwrap_or(1))
 }
 
+/// Recognize a jizume (字詰め) container-open marker and extract the
+/// chars-per-line count — standalone (`［＃ここからN字詰め］`) or as the
+/// FINAL clause of a compound container
+/// (`［＃ここから６字下げ、折り返して７字下げ、２１字詰め］`).
+///
+/// Phase 4 wiring point: recognized but deliberately NOT emitted — AAT
+/// schema v1 has no `jizume_block` kind (Phase 3 design spec, decision 4),
+/// so jizume markers stay raw in AAT output until the Phase 4 schema
+/// rotation.
+#[must_use]
+pub fn jizume_open_chars(source: &str) -> Option<u64> {
+    let marker = source.trim();
+    if !marker.starts_with("［＃ここから") || !marker.ends_with('］') {
+        return None;
+    }
+    let (_, after) = marker.split_once("字詰め")?;
+    if after != "］" {
+        return None;
+    }
+    parse_aozora_number_before(marker, "字詰め")
+}
+
+/// Recognize the jizume container-close marker (`［＃ここで字詰め終わり］`).
+#[must_use]
+pub fn is_jizume_close(source: &str) -> bool {
+    source.trim() == "［＃ここで字詰め終わり］"
+}
+
 fn find_matching_jisage_close(content: &[Value], start: usize) -> Option<usize> {
+    find_matching_container_close(content, start, "字下げ")
+}
+
+fn find_matching_container_close(content: &[Value], start: usize, needle: &str) -> Option<usize> {
     for (offset, node) in content[start..].iter().enumerate() {
         if is_container_open_raw(node) {
             return None;
         }
-        if is_jisage_container_close(node) {
+        if is_container_close_with(node, needle) {
             return Some(start + offset);
         }
     }
     None
+}
+
+fn is_container_close_with(node: &Value, needle: &str) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("raw")
+        && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("containerClose")
+        && node
+            .get("source")
+            .and_then(Value::as_str)
+            .is_some_and(|source| source.contains(needle))
+}
+
+fn block_container_open(node: &Value, marker: &str) -> bool {
+    is_container_open_raw(node)
+        && node
+            .get("source")
+            .and_then(Value::as_str)
+            .is_some_and(|source| source.trim() == marker)
 }
 
 fn find_next_container_boundary(content: &[Value], start: usize) -> usize {
@@ -507,15 +762,6 @@ fn is_container_marker_raw(node: &Value) -> bool {
 fn is_container_open_raw(node: &Value) -> bool {
     node.get("kind").and_then(Value::as_str) == Some("raw")
         && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("containerOpen")
-}
-
-fn is_jisage_container_close(node: &Value) -> bool {
-    node.get("kind").and_then(Value::as_str) == Some("raw")
-        && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("containerClose")
-        && node
-            .get("source")
-            .and_then(Value::as_str)
-            .is_some_and(|source| source.contains("字下げ"))
 }
 
 fn parse_aozora_number_before(source: &str, needle: &str) -> Option<u64> {
@@ -721,7 +967,7 @@ fn inline_content(
                 "x-provenance": "parser-derived",
                 "x-source-marker-kind": "pageBreak",
                 "x-break-kind": "page",
-                "span": span_json(&node.span)
+                "span": span_json(&node.span, &decoded.span_ctx)
             })),
             _ => content.push(raw_node(decoded, node, node.kind.as_str())),
         }
@@ -760,13 +1006,13 @@ fn push_source_gap(content: &mut Vec<Value>, decoded: &DecodedSource, start: usi
             "source": source,
             "x-provenance": "source-derived",
             "x-source-marker-kind": "unparsed-source-gap",
-            "span": span_json(&span)
+            "span": span_json(&span, &decoded.span_ctx)
         }));
     } else {
         content.push(json!({
             "kind": "text",
             "value": source,
-            "span": span_json(&span)
+            "span": span_json(&span, &decoded.span_ctx)
         }));
     }
 }
@@ -793,7 +1039,7 @@ fn ruby_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
             "base": caps.name("base").unwrap().as_str(),
             "reading": caps.name("reading").unwrap().as_str(),
             "direction": "right",
-            "span": span_json(&node.span)
+            "span": span_json(&node.span, &decoded.span_ctx)
         })
     } else {
         raw_node(decoded, node, "ruby")
@@ -815,7 +1061,7 @@ fn gaiji_node(
         "jis_code": gaiji.mencode,
         "unresolved_reason": if gaiji.resolved.is_some() { None::<String> } else { Some("unresolved".to_owned()) },
         "x-codepoint": gaiji.codepoint,
-        "span": span_json(&node.span)
+        "span": span_json(&node.span, &decoded.span_ctx)
     })
 }
 
@@ -826,7 +1072,7 @@ fn style_node(decoded: &DecodedSource, node: &AozoraNode, style_type: &str) -> V
         "kind": "style",
         "style_type": style_type,
         "content": [{"kind": "text", "value": text}],
-        "span": span_json(&node.span)
+        "span": span_json(&node.span, &decoded.span_ctx)
     })
 }
 
@@ -836,7 +1082,7 @@ fn tcy_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
     json!({
         "kind": "tcy",
         "content": [{"kind": "text", "value": text}],
-        "span": span_json(&node.span)
+        "span": span_json(&node.span, &decoded.span_ctx)
     })
 }
 
@@ -862,26 +1108,38 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         "source": source_slice(&decoded.span_text, &node.span),
         "x-provenance": "parser-derived",
         "x-source-marker-kind": marker_kind,
-        "span": span_json(&node.span)
+        "span": span_json(&node.span, &decoded.span_ctx)
     })
 }
 
-fn diagnostic_warning(diagnostic: &AozoraDiagnostic) -> Value {
+fn diagnostic_warning(diagnostic: &AozoraDiagnostic, ctx: &SpanContext) -> Value {
     let mut warning = json!({
         "message": diagnostic.kind.clone().unwrap_or_else(|| "aozora diagnostic".to_owned())
     });
-    if let Some(line) = diagnostic.span.as_ref().map(|_| 1_u64) {
+    if let Some(line) = diagnostic
+        .span
+        .as_ref()
+        .map(|span| ctx.line_of(ctx.to_decoded(span.start)))
+    {
         warning["line"] = json!(line);
     }
     warning
 }
 
-fn span_json(span: &Span) -> Value {
+fn span_json(span: &Span, ctx: &SpanContext) -> Value {
+    let byte_start = ctx.to_decoded(span.start);
+    let byte_end = ctx.to_decoded_end(span.end);
+    let line_start = ctx.line_of(byte_start);
+    let line_end = ctx.line_of(if byte_end > byte_start {
+        byte_end - 1
+    } else {
+        byte_start
+    });
     json!({
-        "line_start": 1,
-        "line_end": 1,
-        "byte_start": span.start,
-        "byte_end": span.end
+        "line_start": line_start,
+        "line_end": line_end,
+        "byte_start": byte_start,
+        "byte_end": byte_end
     })
 }
 
@@ -908,7 +1166,7 @@ pub fn adapter_version() -> String {
 fn ab_aozora_facade_version() -> &'static str {
     // The facade crate version stands in for the deleted wire
     // schemaVersion check as the compatibility coordinate.
-    "0.1.0"
+    ab_aozora_facade::VERSION
 }
 
 fn hex_sha256(bytes: &[u8]) -> String {
@@ -980,8 +1238,343 @@ mod tests {
     /// "unknown"` and `build.rs`'s doc comment).
     #[test]
     fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
-        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.1.0 aat-schema 1 facade 0.1.0 wire-schema 2 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":1,\"work_id\":\"stdin\"}\n";
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.3.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":1,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
+    }
+
+    #[test]
+    fn diagnostics_json_from_bytes_emits_schema3_envelope_with_codes() {
+        // Unclosed bracket → one error diagnostic.
+        let out = diagnostics_json_from_bytes("あ［＃ここから".as_bytes()).unwrap();
+        assert_eq!(out.last(), Some(&b'\n'));
+        let doc: Value = serde_json::from_slice(&out).unwrap();
+        assert_eq!(doc["schemaVersion"], 3);
+        let data = doc["data"].as_array().unwrap();
+        assert!(!data.is_empty());
+        for entry in data {
+            let code = entry["code"].as_str().unwrap();
+            assert!(!code.contains('_') && !code.contains("::"), "not kebab: {code}");
+            assert!(entry["severity"].is_string());
+            assert!(entry["span"]["start"].is_u64() && entry["span"]["end"].is_u64());
+        }
+    }
+
+    #[test]
+    fn diagnostics_json_from_bytes_clean_source_is_empty_data() {
+        let doc: Value =
+            serde_json::from_slice(&diagnostics_json_from_bytes("あ\n".as_bytes()).unwrap())
+                .unwrap();
+        assert_eq!(doc["data"], json!([]));
+    }
+
+    #[test]
+    fn sanitize_stage_pua_diagnostic_survives_to_the_envelope() {
+        // Raw U+E001 in the source: sanitize neutralizes it to U+FFFD and
+        // emits SourceContainsPua — the parse of the neutralized text can
+        // never rediscover it, so it MUST come from the retained sanitize
+        // diagnostics. あ = bytes 0..3, U+E001 = bytes 3..6.
+        let out = diagnostics_json_from_bytes("あ\u{e001}い\n".as_bytes()).unwrap();
+        let doc: Value = serde_json::from_slice(&out).unwrap();
+        let data = doc["data"].as_array().unwrap();
+        let pua: Vec<&Value> = data
+            .iter()
+            .filter(|e| e["code"] == "source-contains-pua")
+            .collect();
+        assert_eq!(pua.len(), 1, "expected exactly one PUA diagnostic: {data:?}");
+        assert_eq!(pua[0]["severity"], "warning");
+        assert_eq!(pua[0]["span"]["start"], 3);
+        assert_eq!(pua[0]["span"]["end"], 6);
+    }
+
+    #[test]
+    #[allow(
+        clippy::manual_contains,
+        reason = "assertion expression is a pinned test invariant, not touched per fix-wave scope"
+    )]
+    fn sanitize_and_parser_diagnostics_merge_in_order_without_duplicates() {
+        // PUA (sanitize-stage) + unclosed bracket (parser-stage) in one input:
+        // sanitize entries come first, parser entries after, one of each.
+        let out = diagnostics_json_from_bytes("あ\u{e001}い［＃ここから".as_bytes()).unwrap();
+        let doc: Value = serde_json::from_slice(&out).unwrap();
+        let codes: Vec<&str> = doc["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["code"].as_str().unwrap())
+            .collect();
+        let pua_count = codes.iter().filter(|c| **c == "source-contains-pua").count();
+        assert_eq!(pua_count, 1, "duplicate or missing PUA entry: {codes:?}");
+        assert!(
+            codes[0] == "source-contains-pua",
+            "sanitize entries must come first: {codes:?}"
+        );
+        assert!(
+            codes.iter().any(|c| *c == "unclosed-bracket"),
+            "{codes:?}"
+        );
+    }
+
+    #[test]
+    fn diagnostics_json_from_bytes_reports_tcy_target_not_found() {
+        // Named must vector `tate_chu_yoko` (upstream-aozora-notation-spec
+        // conformance vectors): the tcy directive's target "12" does not
+        // occur in the preceding text, so no run exists to rotate.
+        let source = "昭和［＃「12」は縦中横］年\n";
+        let out = diagnostics_json_from_bytes(source.as_bytes()).unwrap();
+        let doc: Value = serde_json::from_slice(&out).unwrap();
+        let data = doc["data"].as_array().unwrap();
+        let tcy: Vec<&Value> = data
+            .iter()
+            .filter(|e| e["code"] == "tcy-target-not-found")
+            .collect();
+        assert_eq!(tcy.len(), 1, "expected exactly one tcy diagnostic: {data:?}");
+        assert_eq!(tcy[0]["severity"], "warning");
+        assert_eq!(tcy[0]["span"]["start"], 6);
+        assert_eq!(tcy[0]["span"]["end"], 35);
+    }
+
+    #[test]
+    fn diagnostics_json_from_bytes_rebases_sanitize_span_through_bom_and_crlf() {
+        // BOM(3) + "あ\r\n" + PUA(U+E001) + "い\n": decoded text (post-
+        // BOM-strip, per decode_source_bytes) is "あ\r\n\u{e001}い\n" —
+        // あ 0..3, \r 3..4, \n 4..5, PUA 5..8, い 8..11, \n 11..12 (12
+        // bytes). Sanitize normalizes \r\n (bytes 3..5) → \n (1 byte),
+        // shifting everything after by one byte, and neutralizes the PUA
+        // byte-length-preserving; the resulting SANITIZED text is
+        // "あ\n\u{fffd}い\n" (あ 0..3, \n 3..4, PUA 4..7, い 7..10, \n
+        // 10..11 — 11 bytes). The PUA sanitize diagnostic's span is born
+        // in that sanitized-text coordinate system: 4..7. Rebasing
+        // through the CRLF map (no body offset — sanitize entries skip
+        // it) must land the span back at the PUA's own decoded-text
+        // offsets: 5..8.
+        let bytes = [b"\xef\xbb\xbf".as_ref(), "あ\r\n\u{e001}い\n".as_bytes()].concat();
+        let out = diagnostics_json_from_bytes(&bytes).unwrap();
+        let doc: Value = serde_json::from_slice(&out).unwrap();
+        let data = doc["data"].as_array().unwrap();
+        let pua: Vec<&Value> = data
+            .iter()
+            .filter(|e| e["code"] == "source-contains-pua")
+            .collect();
+        assert_eq!(pua.len(), 1, "expected exactly one PUA diagnostic: {data:?}");
+        assert_eq!(pua[0]["span"]["start"], 5);
+        assert_eq!(pua[0]["span"]["end"], 8);
+    }
+
+    #[test]
+    fn spans_are_decoded_source_offsets_with_real_lines() {
+        // BOM + CRLF + a page-break directive on its own line: decoded
+        // text (post-BOM-strip, per decode_source_bytes) is
+        // "あ\r\n［＃改ページ］\nい\n" — あ 0..3, \r 3..4, \n 4..5,
+        // ［＃改ページ］ 5..26 (7 fullwidth chars × 3 bytes each), \n
+        // 26..27, い 27..30, \n 30..31 (31 bytes total). The directive
+        // is markup, so the parser splits it into its own node — unlike
+        // a markup-free input, which the adapter merges into ONE
+        // source-gap node spanning the whole body and so can never
+        // exercise a line >1 (verified by running the brief's original
+        // markup-free literal: it produces a single span, byte_end 9,
+        // line_end 2, line_start 1 — never a span whose line_START is
+        // 2, hence this input adds the directive).
+        let bytes = [
+            b"\xef\xbb\xbf".as_ref(),
+            "あ\r\n［＃改ページ］\nい\n".as_bytes(),
+        ]
+        .concat();
+        let doc: Value = serde_json::from_slice(&aat_json_from_bytes(&bytes).unwrap()).unwrap();
+        let spans: Vec<&Value> = collect_spans(&doc["blocks"]);
+        assert!(!spans.is_empty());
+        // First text node "あ\n" ← decoded "あ\r\n" = bytes 0..5, line 1.
+        assert_eq!(spans[0]["byte_start"], 0);
+        assert_eq!(spans[0]["byte_end"], 5);
+        assert_eq!(spans[0]["line_start"], 1);
+        // The page-break directive itself: the CRLF collapse shifts its
+        // post-BOM-strip position (4..25 in the sanitized body) forward
+        // by exactly one decoded byte, landing at 5..26 — real line 2.
+        let page_break = spans
+            .iter()
+            .find(|s| s["byte_start"] == 5)
+            .unwrap_or_else(|| panic!("no span at decoded byte_start 5: {spans:?}"));
+        assert_eq!(page_break["byte_end"], 26);
+        assert_eq!(page_break["line_start"], 2);
+        // Some span must sit on line 2 (the directive line).
+        assert!(
+            spans.iter().any(|s| s["line_start"] == 2),
+            "no real line >1: {spans:?}"
+        );
+        // The legacy synthesized warning is gone.
+        let warnings = doc["meta"]["warnings"].as_array().unwrap();
+        assert!(warnings.iter().all(|w| {
+            w["message"].as_str()
+                != Some(
+                    "aozora upstream spans are sanitized-source byte offsets; \
+                     line_start and line_end are synthesized as 1",
+                )
+        }));
+    }
+
+    #[test]
+    fn line_starts_handles_lf_crlf_and_bare_cr() {
+        // CRLF: ONE boundary after the pair — byte-identical to the old
+        // \n-only index ([0, 3] is exactly what match_indices('\n')+1
+        // produced), proving CRLF sources' line numbering is unchanged.
+        assert_eq!(line_starts("a\r\nb"), vec![0, 3]);
+        // LF-only: unchanged classic behavior.
+        assert_eq!(line_starts("a\nb"), vec![0, 2]);
+        // Bare CR (classic Mac): now a real boundary.
+        assert_eq!(line_starts("a\rb"), vec![0, 2]);
+        // Two bare CRs: two boundaries, not one.
+        assert_eq!(line_starts("a\r\rb"), vec![0, 2, 3]);
+    }
+
+    #[test]
+    fn bare_cr_source_gets_real_line_numbers() {
+        // Classic-Mac terminators: zero \n in the whole input. Decoded
+        // text is byte-identical to the input:
+        //   あ 0..3, \r 3..4, ［＃改ページ］ 4..25 (7 fullwidth chars ×
+        //   3 bytes), \r 25..26, い 26..29, \r 29..30 (30 bytes).
+        // line_starts = [0, 4, 26, 30]. Sanitize rewrites each lone \r
+        // to \n WIDTH-EQUAL (1 byte → 1 byte), so sanitized-body offsets
+        // are numerically identical to decoded offsets and the map edits
+        // all carry delta 0 — the interesting part is purely the line
+        // index, which the old \n-only implementation computed as 1
+        // everywhere for this input.
+        let src = "あ\r［＃改ページ］\rい\r";
+        let doc: Value =
+            serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
+        let spans: Vec<&Value> = collect_spans(&doc["blocks"]);
+        assert!(!spans.is_empty());
+        // First text node "あ\n" ← decoded "あ\r" = bytes 0..4, line 1.
+        assert_eq!(spans[0]["byte_start"], 0);
+        assert_eq!(spans[0]["byte_end"], 4);
+        assert_eq!(spans[0]["line_start"], 1);
+        assert_eq!(spans[0]["line_end"], 1);
+        // The page-break directive: decoded bytes 4..25, real line 2.
+        let page_break = spans
+            .iter()
+            .find(|s| s["byte_start"] == 4)
+            .unwrap_or_else(|| panic!("no span at decoded byte_start 4: {spans:?}"));
+        assert_eq!(page_break["byte_end"], 25);
+        assert_eq!(page_break["line_start"], 2);
+        // The trailing gap "\nい\n" ← decoded "\rい\r" = bytes 25..30:
+        // starts on line 2 (the \r closing the directive line), ends on
+        // line 3 (line_of(29), the い line).
+        assert!(
+            spans
+                .iter()
+                .any(|s| s["line_start"] == 2 && s["line_end"] == 3),
+            "no span reaching real line 3: {spans:?}"
+        );
+    }
+
+    fn collect_spans(v: &Value) -> Vec<&Value> {
+        let mut out = Vec::new();
+        match v {
+            Value::Object(map) => {
+                if let Some(span) = map.get("span") {
+                    out.push(span);
+                }
+                for val in map.values() {
+                    out.extend(collect_spans(val));
+                }
+            }
+            Value::Array(items) => {
+                for val in items {
+                    out.extend(collect_spans(val));
+                }
+            }
+            _ => {}
+        }
+        out
+    }
+
+    fn block_kinds(doc: &Value) -> Vec<String> {
+        doc["blocks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|b| b["kind"].as_str().unwrap().to_owned())
+            .collect()
+    }
+
+    #[test]
+    fn keigakomi_container_classifies_as_block() {
+        let src = "前文\n［＃ここから罫囲み］\n中身\n［＃ここで罫囲み終わり］\n後文\n";
+        let doc: Value =
+            serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
+        assert_eq!(
+            block_kinds(&doc),
+            ["paragraph", "keigakomi_block", "paragraph"]
+        );
+        let block = &doc["blocks"][1];
+        assert!(block.get("span").is_none() && block.get("x-indent").is_none());
+        let children = block["children"].as_array().unwrap();
+        assert_eq!(children[0]["kind"], "paragraph");
+        let text: String = children
+            .iter()
+            .flat_map(|c| c["content"].as_array().unwrap())
+            .filter_map(|n| n["value"].as_str())
+            .collect();
+        assert!(text.contains("中身"));
+        // No raw container markers survive inside or around the block.
+        assert!(!serde_json::to_string(&doc).unwrap().contains("罫囲み］"));
+    }
+
+    #[test]
+    fn yokogumi_container_classifies_as_block() {
+        let src = "［＃ここから横組み］\nＡＢＣ\n［＃ここで横組み終わり］\n";
+        let doc: Value =
+            serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
+        assert!(block_kinds(&doc).contains(&"yokogumi_block".to_owned()));
+    }
+
+    #[test]
+    fn unpaired_keigakomi_open_stays_raw() {
+        let src = "前\n［＃ここから罫囲み］\n中身\n";
+        let doc: Value =
+            serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
+        assert!(!block_kinds(&doc).contains(&"keigakomi_block".to_owned()));
+        assert!(
+            serde_json::to_string(&doc)
+                .unwrap()
+                .contains("containerOpen")
+        );
+    }
+
+    #[test]
+    fn intervening_container_open_aborts_keigakomi_pairing() {
+        let src = "［＃ここから罫囲み］\n［＃ここから２字下げ］\nａ\n［＃ここで字下げ終わり］\n［＃ここで罫囲み終わり］\n";
+        let doc: Value =
+            serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
+        let kinds = block_kinds(&doc);
+        assert!(
+            !kinds.contains(&"keigakomi_block".to_owned()),
+            "pairing must abort: {kinds:?}"
+        );
+        assert!(kinds.contains(&"jisage_block".to_owned()));
+    }
+
+    #[test]
+    fn jizume_open_chars_recognizes_standalone_and_compound() {
+        assert_eq!(jizume_open_chars("［＃ここから２３字詰め］"), Some(23));
+        assert_eq!(jizume_open_chars("［＃ここから６字下げ、折り返して７字下げ、２１字詰め］"), Some(21));
+        assert_eq!(jizume_open_chars("［＃ここから２字下げ］"), None);
+        assert_eq!(jizume_open_chars("［＃ここで字詰め終わり］"), None);
+        assert!(is_jizume_close("［＃ここで字詰め終わり］"));
+        assert!(!is_jizume_close("［＃ここで字下げ終わり］"));
+    }
+
+    #[test]
+    fn compound_jizume_still_classifies_burasage_and_emits_no_jizume_block() {
+        // The compound container already classifies as burasage (6,7) today —
+        // the ２１字詰め clause is recognition-only until Phase 4.
+        assert_eq!(
+            burasage_open_indent("［＃ここから６字下げ、折り返して７字下げ、２１字詰め］"),
+            Some((6, 7))
+        );
+        let src = "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\nあ\n［＃ここで字下げ終わり］\n";
+        let doc: Value = serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
+        let text = serde_json::to_string(&doc).unwrap();
+        assert!(!text.contains("jizume_block"));
+        assert!(text.contains("burasage"));
     }
 }

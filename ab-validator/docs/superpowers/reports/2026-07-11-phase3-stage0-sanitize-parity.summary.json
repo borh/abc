@@ -1,0 +1,23 @@
+{
+  "stage": "stage0",
+  "gate": "parity",
+  "candidate": {
+    "commit": "c3cb16908b0134ca03856735f10445eeb2a92957",
+    "bin_sha256": "9a41cbfb4d6e61c74261501d26f6af34b50cc68f60cc5f5acd000e867affd6a6",
+    "version": "ab-aozora 0.1.0 aat-schema 1 facade 0.1.0 wire-schema 2 (git c3cb16908b0134ca03856735f10445eeb2a92957)"
+  },
+  "verdict": "PASS",
+  "details": {
+    "compared": 17886,
+    "missing_count": 0,
+    "missing_sample": [],
+    "semantic": {
+      "diverged_count": 0,
+      "diverged_sample": []
+    },
+    "bytes": {
+      "diverged_count": 0,
+      "diverged_sample": []
+    }
+  }
+}

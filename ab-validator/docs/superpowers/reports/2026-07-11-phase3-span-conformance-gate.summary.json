@@ -1,0 +1,56 @@
+{
+  "stage": "rotation-b",
+  "gate": "conformance",
+  "candidate": {
+    "commit": "a3f91f53fcae9bc18f577ea5b746f3be7f228fcb",
+    "bin_sha256": "9a94dcc8daf9c38a74611667f316e0e024a999d9f41ec41a3721d493dae277dc",
+    "version": "ab-aozora 0.3.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git a3f91f53fcae9bc18f577ea5b746f3be7f228fcb)"
+  },
+  "verdict": "PASS",
+  "details": {
+    "must_total": 25,
+    "must_fail": 0,
+    "must_skip": 0,
+    "p4suta_compared": 127,
+    "p4suta_differing_vs_rotation_a": 0,
+    "seed_compared": 30,
+    "seed_differing_vs_rotation_a": 0,
+    "row_diff_list": [],
+    "manifest_subset_check": {
+      "method": "python set comparison: set(differing_vectors) <= set(manifest_vectors), plus seed_differing == []",
+      "manifest_vectors": [
+        "accent_decomposition_applied"
+      ],
+      "p4suta_differing_vectors": [],
+      "seed_differing_vectors": [],
+      "p4suta_differing_is_subset_of_manifest": true,
+      "seed_differing_empty": true,
+      "result": "PASS",
+      "note": "differing=0 on both suites: the manifest override makes the accent_decomposition_applied diagnostics lane pass at rotation B (decoded span {3,14}) exactly as it passed natively at rotation A (sanitized-body span {3,13}), so the row is byte-identical; the empty differing set is trivially a subset of the manifest set"
+    },
+    "p4suta_totals_rotation_a": {
+      "pass": 118,
+      "warning": 9,
+      "fail": 0,
+      "skip": 0
+    },
+    "p4suta_totals_rotation_b": {
+      "pass": 118,
+      "warning": 9,
+      "fail": 0,
+      "skip": 0
+    },
+    "seed_totals_rotation_a": {
+      "pass": 22,
+      "warning": 8,
+      "fail": 0,
+      "skip": 0
+    },
+    "seed_totals_rotation_b": {
+      "pass": 22,
+      "warning": 8,
+      "fail": 0,
+      "skip": 0
+    }
+  }
+}

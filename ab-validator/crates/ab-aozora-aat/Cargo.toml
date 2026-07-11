@@ -1,7 +1,7 @@
 [package]
 name = "ab-aozora-aat"
 description = "In-process AAT (Adapter Abstract Tree) emission for Aozora Bunko notation, ported from the frozen adapters/aozora wire-hop adapter onto ab-aozora-facade's entries feature"
-version = "0.1.0"
+version = "0.3.0"
 edition.workspace = true
 license = "MIT OR Apache-2.0"
 publish = false
@@ -21,12 +21,11 @@ ab-aozora-facade = { path = "../ab-aozora-facade", features = ["entries"] }
 anyhow = "1.0"
 regex = "1.12"
 encoding_rs = "0.8"
-# Ported verbatim from the frozen adapter's dependency surface; pinned
-# exact per ADR 0032 (hard detach — no floating upstream). Replacing this
-# with the fork's own ab-aozora-pipeline::lexer::sanitize is a recorded
-# Phase 3 item under Phase 3's own gates (see
-# docs/handoffs/2026-07-10-parser-fork-provenance.md).
-aozora-pipeline = "=0.4.1"
+# Fork-owned sanitize (Phase 3 stage 0): the crates.io aozora-pipeline
+# =0.4.1 dependency is retired; ab_aozora_pipeline::lexer::sanitize is the
+# 1a4f864-lifted implementation, byte-equivalence proven corpus-wide in
+# docs/superpowers/reports/2026-07-11-phase3-stage0-sanitize-parity.md.
+ab-aozora-pipeline = { path = "../ab-aozora-pipeline" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"

@@ -69,7 +69,7 @@ def inspect(adapter: Adapter, kind: str, source: str) -> tuple[dict[str, Any] | 
         value = json.loads(proc.stdout)
     except json.JSONDecodeError as error:
         return None, f"invalid JSON: {error}"
-    if value.get("schemaVersion") != 1 or not isinstance(value.get("data"), list):
+    if value.get("schemaVersion") != 2 or not isinstance(value.get("data"), list):
         return None, "unsupported inspect envelope"
     return value, None
 

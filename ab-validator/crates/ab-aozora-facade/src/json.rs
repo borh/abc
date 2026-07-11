@@ -33,7 +33,9 @@
 
 use serde::Serialize;
 
-use crate::encoding::gaiji::{self, find_span, gaiji_resolutions, resolve_at};
+use crate::encoding::gaiji::{self, gaiji_resolutions};
+#[cfg(feature = "json")]
+use crate::encoding::gaiji::{find_span, resolve_at};
 use crate::{DiagnosticSource, Severity, Tree};
 
 /// Wire-format schema version. Bumped on any breaking change to the
@@ -50,6 +52,8 @@ pub const SCHEMA_VERSION: u32 = 2;
 /// `{ kind, span: { start, end }, codepoint? }`.
 ///
 /// Empty input → `{"schemaVersion":2,"data":[]}`.
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn diagnostics(diagnostics: &[crate::Diagnostic]) -> String {
     serialize_envelope(&diagnostic_entries(diagnostics))
@@ -69,6 +73,8 @@ pub fn diagnostic_entries(diagnostics: &[crate::Diagnostic]) -> Vec<Diagnostic> 
 /// Every entry has the shape `{ kind, span: { start, end } }`,
 /// source-coordinate, sorted by `span.start`. Empty parse →
 /// `{"schemaVersion":2,"data":[]}`.
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn nodes(tree: &Tree<'_>) -> String {
     serialize_envelope(&node_entries(tree))
@@ -98,6 +104,8 @@ pub fn node_entries(tree: &Tree<'_>) -> Vec<Node> {
 /// `textDocument/documentHighlight`.
 ///
 /// Empty parse → `{"schemaVersion":2,"data":[]}`.
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn pairs(tree: &Tree<'_>) -> String {
     serialize_envelope(&pair_entries(tree))
@@ -132,6 +140,8 @@ pub fn pair_entries(tree: &Tree<'_>) -> Vec<Pair> {
 /// [`Tree::source_nodes`].
 ///
 /// Empty parse → `{"schemaVersion":2,"data":[]}`.
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn container_pairs(tree: &Tree<'_>) -> String {
     serialize_envelope(&container_pair_entries(tree))
@@ -166,6 +176,8 @@ pub fn container_pair_entries(tree: &Tree<'_>) -> Vec<ContainerPair> {
 /// editor completion menus for `［＃…］` annotations without
 /// re-implementing the table per driver (`aozora-wasm` / `aozora-py`
 /// both call this).
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn slugs() -> String {
     serialize_envelope(&slug_entries())
@@ -200,6 +212,8 @@ pub fn slug_entries() -> Vec<Slug> {
 /// [`crate::encoding::gaiji`]; this is only their wire projection.
 ///
 /// Empty / gaiji-free source → `{"schemaVersion":2,"data":[]}`.
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn gaiji(source: &str) -> String {
     serialize_envelope(&gaiji_entries(source))
@@ -225,6 +239,8 @@ pub fn gaiji_entries(source: &str) -> Vec<GaijiResolution> {
 /// For editor cursor-hover: the scan is bounded to a window around the
 /// cursor, so cost is independent of document size (unlike
 /// [`gaiji()`], which walks the whole source).
+#[cfg(feature = "json")]
+#[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn gaiji_at(source: &str, byte_offset: usize) -> String {
     find_span(source, byte_offset)
@@ -242,6 +258,7 @@ pub fn gaiji_at(source: &str, byte_offset: usize) -> String {
 // Internal: envelope + wire structs
 // ────────────────────────────────────────────────────────────────────
 
+#[cfg(feature = "json")]
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Envelope<'a, T> {
@@ -358,6 +375,7 @@ fn envelope_schema(
     root
 }
 
+#[cfg(feature = "json")]
 fn serialize_envelope<T: Serialize>(data: &[T]) -> String {
     let env = Envelope {
         schema_version: SCHEMA_VERSION,
@@ -537,9 +555,11 @@ impl From<gaiji::GaijiResolution> for GaijiResolution {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "json")]
     use crate::Document;
 
     #[test]
+    #[cfg(feature = "json")]
     fn slugs_envelope_lists_catalogue_with_known_families() {
         let json = slugs();
         assert!(json.contains(r#""schemaVersion":2"#));
@@ -554,11 +574,13 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn gaiji_resolutions_empty_envelope_for_plain_text() {
         assert_eq!(gaiji("no gaiji here"), r#"{"schemaVersion":2,"data":[]}"#);
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn gaiji_resolutions_emits_resolved_entry_in_source_coords() {
         let json = gaiji("※［＃「々」］");
         assert!(json.contains(r#""schemaVersion":2"#));
@@ -573,6 +595,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn gaiji_resolution_at_returns_object_inside_span_else_null() {
         let src = "あ※［＃「々」］い";
         let inside = src.find('※').unwrap() + "※".len();
@@ -589,12 +612,14 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn empty_diagnostics_round_trip_envelope() {
         let json = diagnostics(&[]);
         assert_eq!(json, r#"{"schemaVersion":2,"data":[]}"#);
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn empty_nodes_round_trip_envelope() {
         let doc = Document::new("plain");
         let tree = doc.parse();
@@ -603,6 +628,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn empty_pairs_round_trip_envelope() {
         let doc = Document::new("plain");
         let tree = doc.parse();
@@ -611,6 +637,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn pua_collision_serialises_as_warning_kind() {
         let doc = Document::new("abc\u{E001}def");
         let tree = doc.parse();
@@ -621,6 +648,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn ruby_serialises_with_kind_ruby_in_nodes() {
         let doc = Document::new("｜青梅《おうめ》");
         let tree = doc.parse();
@@ -630,6 +658,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "json")]
     fn ruby_serialises_in_pairs() {
         let doc = Document::new("｜青梅《おうめ》");
         let tree = doc.parse();

@@ -37,6 +37,18 @@ original 0031-bearing version string.
 | aozora-proptest (test-support) | ab-aozora-proptest | (none) |
 | aozora-corpus (test-support, dev-only) | ab-aozora-corpus | (none) |
 
+**`ab-aozora-facade` is no longer rename-only (2026-07-10, Phase 2, commits
+`aaccd333`/`cd9ea986`)**: fork-owned divergence from upstream `aozora`'s
+`json` feature — the wire-projection surface was split into a serde-only
+`entries` feature (typed entry structs / `*_entries()` constructors /
+`SCHEMA_VERSION`, no `serde_json`, never `preserve_order`) and a narrower
+`json` feature (the actual `serde_json`-serializing envelope projection,
+still `preserve_order`-requiring). This is fork-owned discretion under ADR
+0032 (hard detach — the fork is not obligated to mirror upstream's feature
+graph 1:1), taken to let entries-only consumers build without pulling
+`serde_json/preserve_order` into their feature graph at all, ahead of the
+Phase 2 narrowed feature-unification rule below.
+
 **LIFT_SET extension (2026-07-10, Task 3 escalation resolved)**:
 `aozora-corpus` added as a 10th, dev-only, test-support crate. It is a
 `publish = false` dev-dependency of `aozora`/`ab-aozora-facade` only
@@ -351,3 +363,75 @@ the `json` feature's `preserve_order` requirement is otherwise decoupled
 from workspace-wide feature unification (e.g. by isolating every
 `json`-feature consumer into its own standalone workspace, as done here
 for `ab-aozora-cli`).
+
+**Phase 2 resolution (narrowed rule).** Both (a) and (b) landed. (a):
+`ab-aat-to-parser-ir::canonical_json::sort_keys_deep` (see
+`crates/ab-aat-to-parser-ir/src/canonical_json.rs`) explicitly re-sorts
+object keys at every call site that turns a `Value` into canonical bytes,
+so its output is byte-canonical regardless of whether the compiling
+workspace's unified feature graph resolves `serde_json::Map` to
+`BTreeMap` or `IndexMap` — this is the "converter hardening" referenced
+below, landed at commit `482279c0`. (b): the root workspace now carries a
+standing guard, `tests/workspace-no-preserve-order.sh`, which fails the
+build if `preserve_order` ever resolves into the root workspace's unified
+feature graph; `tools/preserve-order-canary` is the deliberate,
+permanently-excluded `preserve_order` consumer that exercises
+`sort_keys_deep` under `IndexMap`-backed `Map` to prove the
+canonicalization holds even when insertion order is adversarial — it must
+never join the root workspace (see its own `exclude` entry in the root
+`Cargo.toml`). What actually runs these two: the `just
+preserve-order-hazard-check` recipe (justfile), which runs the guard
+script followed by `cargo test --manifest-path
+tools/preserve-order-canary/Cargo.toml`; and, independently,
+`ab-aozora-aat`'s always-on
+`aat_json_from_bytes_is_byte_exact_under_default_map_ordering` unit test
+(`crates/ab-aozora-aat/src/lib.rs`), which asserts exact serialized bytes
+from a fixed input and therefore fails on its own — with no separate
+recipe invocation required — if `preserve_order` ever leaks into that
+crate's compiled feature graph and flips its `Value` map ordering. Neither
+of these runs automatically as part of plain `cargo test --workspace`
+except the latter (it is an ordinary `#[test]` in a workspace member); the
+guard script and the canary crate require the dedicated justfile recipe.
+
+With both defenses in place, the hard constraint above is **narrowed**:
+any future crate enabling `serde_json/preserve_order` must live outside
+the root workspace unless every workspace consumer of canonical JSON is
+order-independent by construction. `ab-aozora-facade`'s `entries`/`json`
+feature split (see the LIFT_SET annotation above) is the concrete
+instance of "order-independent by construction" for the `entries`
+feature: it never touches `serde_json`, so it carries no
+`preserve_order` risk regardless of what else joins the workspace.
+
+## Shim deleted (Phase 2 end, checkpoint contract)
+
+`crates/ab-aozora-cli` was deleted at the end of Phase 2, superseded by
+`ab-aozora` (the Phase 2 umbrella crate covering the shim's inspect
+dispatch inside the root workspace). Deletion followed the checkpoint
+contract: a fail-closed verifier
+(`ab-validator/reports/aat-fidelity/verify-phase2-checkpoint.py`)
+independently re-confirmed all three frozen gate summaries attest the
+same candidate commit, the same binary (parity/perf), and all PASS,
+before the shim's sources, goldens, and standalone `Cargo.lock` were
+removed. Evidence:
+- `docs/superpowers/reports/2026-07-10-phase2-absorption-parity.md`
+- `docs/superpowers/reports/2026-07-10-phase2-perf.md`
+- `docs/superpowers/reports/2026-07-10-phase2-conformance-echo.md`
+
+## Phase 3 follow-ups
+
+- **Retire the live crates.io `aozora-pipeline` dependency in
+  `ab-aozora-aat`.** `crates/ab-aozora-aat/Cargo.toml` still depends on
+  upstream `aozora-pipeline` (pinned exact, `=0.4.1`, per ADR 0032 — no
+  floating upstream) and `src/lib.rs` imports
+  `aozora_pipeline::lexer::sanitize`, ported verbatim from the frozen
+  adapter's dependency surface. This is the one place a non-forked,
+  non-vendored upstream crate still runs inside the fork's owning crate;
+  the fork's own `ab-aozora-pipeline` (already lifted, see the LIFT_SET
+  table above) exposes `ab_aozora_pipeline::lexer::sanitize::sanitize`
+  publicly, but behavioral equivalence between crates.io `0.4.1` and the
+  `1a4f864` lift has not been verified (the lift postdates the published
+  release; e.g. later sanitize changes may not exist in `0.4.1`). Swapping
+  the import for the fork's own lexer sanitize path is therefore a Phase 3
+  item, gated by Phase 3's own conformance/parity evidence — it is a
+  behavior-relevant change to gate-covered code and must not be folded into
+  a metadata-only fix.

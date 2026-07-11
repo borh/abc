@@ -217,11 +217,15 @@
                          :content_hash (manifest/file-hash aggregate-file)}
                         {:role "per-work"
                          :path (str (io/file stats-dir "per-work.jsonl"))}
+                        {:role "work-level"
+                         :path (str (io/file stats-dir "work-level.jsonl"))}
                         {:role "report"
                          :path (str (io/file stats-dir "report.md"))}]
               :messages [{:level "info"
                           :message (str (get aggregate "work_count")
-                                        " works in aggregate, "
+                                        " file entries ("
+                                        (get aggregate "distinct_work_count")
+                                        " works) in aggregate, "
                                         (count (get aggregate
                                                     "skipped_work_ids"))
                                         " skipped")}]}))}])
@@ -284,6 +288,9 @@
       (println "workflow_status:" (get run "status"))
       (println "aggregate:" (str (io/file stats-dir "aggregate.json")))
       (println "work_count:" (get-in state [:aggregate "work_count"]))
+      (println "distinct_work_count:" (get-in state
+                                              [:aggregate
+                                               "distinct_work_count"]))
       (println "skipped_count:" (count (get-in state
                                                [:aggregate
                                                 "skipped_work_ids"])))

@@ -285,10 +285,11 @@
                         "  esac\n"
                         "  out=\"$od/$stem.tokens.jsonl\"\n"
                         "  : > \"$out\"\n"
+                        "  n=0\n"
                         "  while IFS= read -r line || [ -n \"$line\" ]; do\n"
                         "    if [ -n \"$line\" ]; then\n"
-                        "      printf '{\"surface\":\"%s\"}\\n' \"$line\" >> \"$out\"\n"
-                        "      tokens=$((tokens+1))\n"
+                        "      printf '{\"surface\":\"%s\",\"char_start\":%d,\"char_end\":%d}\\n' \"$line\" \"$n\" $((n+1)) >> \"$out\"\n"
+                        "      n=$((n+1)); tokens=$((tokens+1))\n"
                         "    fi\n"
                         "  done < \"$f\"\n"
                         "  works=$((works+1))\n"
@@ -371,10 +372,11 @@
                         "  stem=$(basename \"$f\" .txt)\n"
                         "  out=\"$od/$stem.tokens.jsonl\"\n"
                         "  : > \"$out\"\n"
+                        "  n=0\n"
                         "  while IFS= read -r line || [ -n \"$line\" ]; do\n"
                         "    if [ -n \"$line\" ]; then\n"
-                        "      printf '{\"surface\":\"%s\"}\\n' \"$line\" >> \"$out\"\n"
-                        "      tokens=$((tokens+1))\n"
+                        "      printf '{\"surface\":\"%s\",\"char_start\":%d,\"char_end\":%d}\\n' \"$line\" \"$n\" $((n+1)) >> \"$out\"\n"
+                        "      n=$((n+1)); tokens=$((tokens+1))\n"
                         "    fi\n"
                         "  done < \"$f\"\n"
                         "  works=$((works+1))\n"
@@ -419,8 +421,7 @@
             (is (.isFile (io/file out-root "plaintext" (str work-id ".txt"))))
             (is (.isFile (io/file out-root "tokens"
                                   (str work-id ".tokens.jsonl"))))))
-        (testing "streamed demux keeps each work's tokens aligned to its
-                  own plaintext lines"
+        (testing "each work's tokens stay aligned to its own plaintext lines"
           (doseq [work-id ["000001_1-aaaaaaaaaaaa" "000002_2-bbbbbbbbbbbb"]]
             (let [plain-lines (->> (string/split
                                     (slurp (io/file out-root "plaintext"

@@ -1,5 +1,6 @@
 (ns abc.sim.render-test
-  (:require [abc.sim.model :as model]
+  (:require [abc.git :as abc-git]
+            [abc.sim.model :as model]
             [abc.sim.render :as render]
             [abc.tools.aozora-csv :as ac]
             [abc.tools.person-drift-history :as drift-history]
@@ -64,3 +65,22 @@
         (is (= #{(get (first same-pid) "姓") "×"}
                (set (map #(get % "姓") same-pid))))
         (is (apply not= (map #(get % "姓") same-pid)))))))
+
+(deftest zip-and-commit-roundtrip-test
+  (let [repo-dir (render/temp-dir "sim-repo")
+        git (render/init-repo! repo-dir)
+        m (model/bootstrap 1)
+        csv (render/rows->csv (render/model->rows m))
+        c1 (render/commit-zip-at! git repo-dir (render/csv->zip-bytes csv)
+                                  "v1" "2024-01-01T00:00:00Z")]
+    (try
+      (let [bytes (abc-git/blob-bytes-at
+                   git (.getName c1) "index_pages/list_person_all_extended_utf8.zip")]
+        (is (pos? (count bytes))))
+      (is (= 1 (count (abc-git/commits-touching-path
+                       git "index_pages/list_person_all_extended_utf8.zip"))))
+      (finally (.close git) (render/delete-tree! repo-dir)))))
+
+(deftest zip-without-csv-entry-test
+  (let [bytes (render/csv->zip-bytes "ignored" {:no-entry? true})]
+    (is (pos? (count bytes)))))

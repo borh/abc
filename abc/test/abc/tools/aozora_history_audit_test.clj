@@ -1,5 +1,6 @@
 (ns abc.tools.aozora-history-audit-test
-  (:require [abc.tools.aozora-history-audit :as audit]
+  (:require [abc.sim.render :as sim-render]
+            [abc.tools.aozora-history-audit :as audit]
             [abc.tools.files :as files]
             [abc.tools.json :as json]
             [abc.tools.manifest :as manifest]
@@ -8,13 +9,8 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]])
-  (:import [java.nio.charset StandardCharsets]
-           [java.nio.file Files]
+  (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]
-           [java.time Instant]
-           [java.util Date TimeZone]
-           [java.util.zip ZipEntry ZipOutputStream]
-           [org.eclipse.jgit.lib PersonIdent]
            [org.eclipse.jgit.api Git]))
 
 (defn- temp-dir [prefix]
@@ -60,42 +56,8 @@
          (map #(string/join "," %))
          (string/join "\n"))))
 
-(defn- zip-bytes [csv]
-  (let [out (java.io.ByteArrayOutputStream.)]
-    (with-open [zip (ZipOutputStream. out)]
-      (.putNextEntry zip (ZipEntry. "list_person_all_extended_utf8.csv"))
-      (.write zip (.getBytes csv StandardCharsets/UTF_8))
-      (.closeEntry zip))
-    (.toByteArray out)))
-
 (defn- commit-zip! [^Git git root bytes message]
-  (let [file (io/file root "index_pages/list_person_all_extended_utf8.zip")]
-    (io/make-parents file)
-    (with-open [out (io/output-stream file)]
-      (.write out bytes))
-    (-> git .add (.addFilepattern "index_pages/list_person_all_extended_utf8.zip") .call)
-    (-> git
-        .commit
-        (.setMessage message)
-        (.setAuthor "ABC Test" "abc@example.test")
-        (.setCommitter "ABC Test" "abc@example.test")
-        .call)))
-
-(defn- commit-zip-at! [^Git git root bytes message instant]
-  (let [file (io/file root "index_pages/list_person_all_extended_utf8.zip")
-        date (Date/from (Instant/parse instant))
-        zone (TimeZone/getTimeZone "UTC")
-        ident (PersonIdent. "ABC Test" "abc@example.test" date zone)]
-    (io/make-parents file)
-    (with-open [out (io/output-stream file)]
-      (.write out bytes))
-    (-> git .add (.addFilepattern "index_pages/list_person_all_extended_utf8.zip") .call)
-    (-> git
-        .commit
-        (.setMessage message)
-        (.setAuthor ident)
-        (.setCommitter ident)
-        .call)))
+  (sim-render/commit-zip-at! git root bytes message "2022-01-01T00:00:00Z"))
 
 (defn- commit-text! [^Git git root rel content message]
   (let [file (io/file root rel)]
@@ -286,11 +248,11 @@
       (try
         (let [old-commit (commit-zip!
                           git repo-dir
-                          (zip-bytes (csv-text [(row {})]))
+                          (sim-render/csv->zip-bytes (csv-text [(row {})]))
                           "old corpus")
               new-commit (commit-zip!
                           git repo-dir
-                          (zip-bytes
+                          (sim-render/csv->zip-bytes
                            (csv-text [(row {"人物ID" "abc-000000000001"
                                             "姓" "新" "名" "一"
                                             "姓読み" "しん" "名読み" "いち"
@@ -358,13 +320,13 @@
       (try
         (let [old-commit (commit-zip!
                           git repo-dir
-                          (zip-bytes (csv-text [(row {})]))
+                          (sim-render/csv->zip-bytes (csv-text [(row {})]))
                           "old corpus")
               _unrelated (commit-text! git repo-dir "README.md" "not a csv change"
                                        "unrelated")
               new-commit (commit-zip!
                           git repo-dir
-                          (zip-bytes
+                          (sim-render/csv->zip-bytes
                            (csv-text [(row {"人物ID" "abc-000000000001"
                                             "姓" "新" "名" "一"
                                             "姓読み" "しん" "名読み" "いち"
@@ -409,19 +371,19 @@
           work-dir (temp-dir "abc-history-year-scan-work")
           git (-> (Git/init) (.setDirectory repo-dir) .call)]
       (try
-        (let [baseline (commit-zip-at!
+        (let [baseline (sim-render/commit-zip-at!
                         git repo-dir
-                        (zip-bytes (csv-text [(row {})]))
+                        (sim-render/csv->zip-bytes (csv-text [(row {})]))
                         "2023 baseline"
                         "2023-01-01T00:00:00Z")
-              same-year (commit-zip-at!
+              same-year (sim-render/commit-zip-at!
                          git repo-dir
-                         (zip-bytes (csv-text [(row {"姓" "旧改"})]))
+                         (sim-render/csv->zip-bytes (csv-text [(row {"姓" "旧改"})]))
                          "2023 year end"
                          "2023-12-31T00:00:00Z")
-              _split-year (commit-zip-at!
+              _split-year (sim-render/commit-zip-at!
                            git repo-dir
-                           (zip-bytes
+                           (sim-render/csv->zip-bytes
                             (csv-text [(row {"人物ID" "abc-000000000001"
                                              "姓" "新" "名" "一"
                                              "姓読み" "しん" "名読み" "いち"
@@ -434,9 +396,9 @@
                                              "姓ローマ字" "New" "名ローマ字" "Two"})]))
                            "2024 split"
                            "2024-06-01T00:00:00Z")
-              same-split-year (commit-zip-at!
+              same-split-year (sim-render/commit-zip-at!
                                git repo-dir
-                               (zip-bytes
+                               (sim-render/csv->zip-bytes
                                 (csv-text [(row {"人物ID" "abc-000000000001"
                                                  "姓" "新改" "名" "一"
                                                  "姓読み" "しん" "名読み" "いち"
@@ -449,9 +411,9 @@
                                                  "姓ローマ字" "New" "名ローマ字" "Two"})]))
                                "2024 year end"
                                "2024-12-31T00:00:00Z")
-              stable-year (commit-zip-at!
+              stable-year (sim-render/commit-zip-at!
                            git repo-dir
-                           (zip-bytes
+                           (sim-render/csv->zip-bytes
                             (csv-text [(row {"人物ID" "abc-000000000001"
                                              "姓" "新改二" "名" "一"
                                              "姓読み" "しん" "名読み" "いち"

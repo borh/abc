@@ -9,8 +9,15 @@
             [abc.tools.malli :as am]
             [charred.api :as charred]
             [clojure.java.io :as io])
-  (:import [java.nio.file Files]
-           [java.nio.file.attribute FileAttribute]))
+  (:import [java.io ByteArrayOutputStream]
+           [java.nio.charset StandardCharsets]
+           [java.nio.file Files]
+           [java.nio.file.attribute FileAttribute]
+           [java.time Instant]
+           [java.util Date TimeZone]
+           [java.util.zip ZipEntry ZipOutputStream]
+           [org.eclipse.jgit.api Git]
+           [org.eclipse.jgit.lib PersonIdent]))
 
 (def headers
   (vec (sort ["作品ID" "人物ID" "役割フラグ" "作品名" "作品名読み" "ソート用読み"
@@ -138,3 +145,44 @@
                                   :when (= ewid wid)
                                   pid (sort pids)]
                               {"person_id" pid "relation_to_work" rel}))}))))
+
+(def zip-path "index_pages/list_person_all_extended_utf8.zip")
+
+(defn csv->zip-bytes
+  ([csv] (csv->zip-bytes csv {}))
+  ([csv {:keys [entry-name no-entry?]
+         :or {entry-name "list_person_all_extended_utf8.csv"}}]
+   (let [out (ByteArrayOutputStream.)
+         ;; deterministic entry mtime: rendered bytes must be a pure function
+         ;; of the CSV text (P11.no-diff-invisible, P14 rely on this)
+         entry (fn [^String n] (doto (ZipEntry. n) (.setTime 0)))]
+     (with-open [zip (ZipOutputStream. out)]
+       (if no-entry?
+         (do (.putNextEntry zip (entry "README.txt"))
+             (.write zip (.getBytes "no csv here" StandardCharsets/UTF_8)))
+         (do (.putNextEntry zip (entry entry-name))
+             (.write zip (.getBytes ^String csv StandardCharsets/UTF_8))))
+       (.closeEntry zip))
+     (.toByteArray out))))
+
+(defn init-repo! [dir]
+  (-> (Git/init) (.setDirectory (io/file dir)) .call))
+
+(defn- commit-at! [git message instant-str]
+  (let [ident (PersonIdent. "ABC Sim" "sim@example.test"
+                            (Date/from (Instant/parse instant-str))
+                            (TimeZone/getTimeZone "UTC"))]
+    (-> ^Git git .commit (.setMessage message)
+        (.setAuthor ident) (.setCommitter ident) .call)))
+
+(defn commit-file-at! [git root relpath content message instant-str]
+  (let [f (io/file root relpath)]
+    (io/make-parents f)
+    (if (bytes? content)
+      (with-open [o (io/output-stream f)] (.write o ^bytes content))
+      (spit f content))
+    (-> ^Git git .add (.addFilepattern relpath) .call)
+    (commit-at! git message instant-str)))
+
+(defn commit-zip-at! [git root zip-bytes message instant-str]
+  (commit-file-at! git root zip-path zip-bytes message instant-str))

@@ -135,6 +135,13 @@ struct AozoraNode {
 #[derive(Debug, Deserialize, Clone)]
 struct AozoraDiagnostic {
     kind: Option<String>,
+    /// Stable kebab-case diagnostic code from the façade wire entry
+    /// (`ab_aozora_facade::json::Diagnostic::code`, always
+    /// `kind.replace('_', "-")`). `Option` only because this struct is
+    /// deserialized generically from any diagnostic-entries JSON; the
+    /// façade always populates it.
+    #[serde(default)]
+    code: Option<String>,
     severity: Option<String>,
     span: Option<Span>,
 }
@@ -1247,16 +1254,30 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
     })
 }
 
+/// Builds a schema-v2 `meta.warnings[]` entry (`{code, severity, message,
+/// span?}`) from a façade-diagnostic-derived `AozoraDiagnostic`. The single
+/// call site (`build_aat`) only ever passes parser diagnostics sourced from
+/// `aozora_json::diagnostic_entries` — every warning is façade-passthrough;
+/// there are no adapter-origin warning sites.
 fn diagnostic_warning(diagnostic: &AozoraDiagnostic, ctx: &SpanContext) -> Value {
-    let mut warning = json!({
-        "message": diagnostic.kind.clone().unwrap_or_else(|| "aozora diagnostic".to_owned())
-    });
-    if let Some(line) = diagnostic
-        .span
-        .as_ref()
-        .map(|span| ctx.line_of(ctx.to_decoded(span.start)))
-    {
-        warning["line"] = json!(line);
+    let message = diagnostic
+        .kind
+        .clone()
+        .unwrap_or_else(|| "aozora diagnostic".to_owned());
+    let code = diagnostic
+        .code
+        .clone()
+        .unwrap_or_else(|| message.replace('_', "-"));
+    // severity_str's non-exhaustive default arm is "error"; mirror that
+    // here so an absent severity surfaces loudly rather than passing as
+    // benign.
+    let severity = diagnostic
+        .severity
+        .clone()
+        .unwrap_or_else(|| "error".to_owned());
+    let mut warning = json!({ "code": code, "severity": severity, "message": message });
+    if let Some(span) = diagnostic.span.as_ref() {
+        warning["span"] = span_json(span, ctx);
     }
     warning
 }
@@ -1394,6 +1415,27 @@ mod tests {
             assert!(entry["severity"].is_string());
             assert!(entry["span"]["start"].is_u64() && entry["span"]["end"].is_u64());
         }
+    }
+
+    #[test]
+    fn warnings_carry_facade_code_severity_span() {
+        // Same input as diagnostics_json_from_bytes_emits_schema3_envelope_with_codes:
+        // an unclosed bracket produces at least one (parser-stage) diagnostic.
+        let aat = aat_value_for("あ［＃ここから");
+        let w = &aat["meta"]["warnings"][0];
+        assert!(
+            w["code"].as_str().unwrap().chars().all(|c| c != '_'),
+            "kebab code"
+        );
+        assert!(matches!(
+            w["severity"].as_str().unwrap(),
+            "error" | "warning" | "note"
+        ));
+        assert!(w.get("message").is_some());
+        assert!(w.get("line").is_none(), "line dropped in v2");
+        let span = &w["span"];
+        assert!(span["line_start"].as_u64().unwrap() >= 1);
+        assert!(span["byte_end"].as_u64().unwrap() >= span["byte_start"].as_u64().unwrap());
     }
 
     #[test]

@@ -283,13 +283,13 @@ column links the triage entry.
 
 | Fault | Owning boundary | Expected result | Divergence |
 |---|---|---|---|
-| Ragged row (short/long) | CSV reader | row rejected; affected work skipped and counted, with a reason | D3 |
+| Ragged row (short/long) | CSV reader | row rejected; affected work skipped and counted, with a reason | D3 (fixed) |
 | Divergent person bodies within a work | work assembly | work skipped and counted (current behavior matches) | — |
-| Divergent work fields across rows | work assembly | divergence detected: work skipped or an audit entry emitted — not silent first-row-wins | D1 |
+| Divergent work fields across rows | work assembly | divergence detected: work skipped or an audit entry emitted — not silent first-row-wins | D1 (fixed) |
 | Invalid date passthrough | schema validation | work skipped and counted (current behavior matches) | — |
-| Header-only or empty CSV | corpus source validation | explicit `ex-info`; ex-data includes `:zip-path` and row-count context | D5 |
+| Header-only or empty CSV | corpus source validation | explicit `ex-info`; ex-data includes `:zip-path` and row-count context | D5 (fixed) |
 | No `.csv` entry in ZIP | ZIP source validation | explicit `ex-info`; ex-data includes `:zip-path` (current behavior matches) | — |
-| Non-ZIP bytes at ZIP path | ZIP source validation | wrapped `ex-info`; ex-data includes `:zip-path`, cause chained | D6 |
+| Non-ZIP bytes at ZIP path | ZIP source validation | wrapped `ex-info`; ex-data includes `:zip-path`, cause chained | D6 (fixed) |
 | Missing path at ref (git extraction) | git boundary | `ex-info` with `:ref` and `:path` (current behavior matches, `abc/git.clj`) | — |
 
 Source-level failures are specified by **required ex-data keys**, not merely
@@ -428,12 +428,12 @@ Seed entries:
 
 | Id | Case | Current behavior | Suspected desired behavior | Status |
 |---|---|---|---|---|
-| D1 | P6.divergent-work-fields | `build-record-fragment-from-rows` docstring claims work-field consistency is asserted, but the code takes `(first works)` — divergent work fields silently resolve first-row-wins (`aozora_csv.clj:284-325`) | divergence detected: work skipped or audit entry emitted | open |
-| D2 | P12.selection | `sample-commits-by-period` uses `partition-by` over log order (`aozora_history_audit.clj:188-193`); non-monotonic author dates yield multiple samples per period | exactly one representative per period | open |
-| D3 | P13.ragged-row | `read-rows*` zips header against cells (`aozora_csv.clj:22-32`); ragged rows silently truncate or drop cells | ragged row rejected; work skipped with reason | open |
-| D4 | P8.atomicity, P8.order-independence | `run-from-rows!` writes person files per contributor before work-level validation completes (`aozora_ingest.clj:151-213`); skipped works can leave person records, and shared-pid hash conflicts couple works across processing order | skipped works leave no new/modified person records; clean-work results are order-independent; shared-person conflicts have a stated corpus-level policy | open |
-| D5 | P13.empty-csv | suspected: empty/header-only CSV yields a silent zero-row corpus instead of throwing (`read-rows*` returns nil for no rows) — to be confirmed during implementation (confirmed 2026-07-11) | explicit `ex-info` with `:zip-path` and row-count context | open |
-| D6 | P13.non-zip-bytes | suspected: `ZipFile.` throws raw `ZipException` (`aozora_ingest.clj:28-51`) — to be confirmed during implementation (confirmed 2026-07-11) | wrapped `ex-info` with `:zip-path`, cause chained | open |
+| D1 | P6.divergent-work-fields | `build-record-fragment-from-rows` docstring claims work-field consistency is asserted, but the code takes `(first works)` — divergent work fields silently resolve first-row-wins (`aozora_csv.clj:284-325`) | divergence detected: work skipped or audit entry emitted | fixed (2026-07-11) |
+| D2 | P12.selection | `sample-commits-by-period` uses `partition-by` over log order (`aozora_history_audit.clj:188-193`); non-monotonic author dates yield multiple samples per period | exactly one representative per period | fixed (2026-07-11) |
+| D3 | P13.ragged-row | `read-rows*` zips header against cells (`aozora_csv.clj:22-32`); ragged rows silently truncate or drop cells | ragged row rejected; work skipped with reason | fixed (2026-07-11) |
+| D4 | P8.atomicity, P8.order-independence | `run-from-rows!` writes person files per contributor before work-level validation completes (`aozora_ingest.clj:151-213`); skipped works can leave person records, and shared-pid hash conflicts couple works across processing order | skipped works leave no new/modified person records; clean-work results are order-independent; shared-person conflicts have a stated corpus-level policy | fixed (2026-07-11) |
+| D5 | P13.empty-csv | suspected: empty/header-only CSV yields a silent zero-row corpus instead of throwing (`read-rows*` returns nil for no rows) — to be confirmed during implementation (confirmed 2026-07-11) | explicit `ex-info` with `:zip-path` and row-count context | fixed (2026-07-11) |
+| D6 | P13.non-zip-bytes | suspected: `ZipFile.` throws raw `ZipException` (`aozora_ingest.clj:28-51`) — to be confirmed during implementation (confirmed 2026-07-11) | wrapped `ex-info` with `:zip-path`, cause chained | fixed (2026-07-11) |
 
 ## Error Handling
 

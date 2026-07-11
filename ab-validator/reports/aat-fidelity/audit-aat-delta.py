@@ -34,7 +34,6 @@ import argparse
 import copy
 import json
 import pathlib
-import re
 import sys
 
 LEGACY_WARNING = (
@@ -433,9 +432,7 @@ def rewrite_blocks(blocks):
             # stream node of the NEXT block instead.
             rest = apply_post_close_strip(rest)
         post_para = make_para(post)
-        rewritten_rest, rest_count = rewrite_blocks(
-            ([post_para] if post_para else []) + rest
-        )
+        rewritten_rest, rest_count = rewrite_blocks(([post_para] if post_para else []) + rest)
         out.extend(rewritten_rest)
         return out, count + rest_count
     return out, count
@@ -520,15 +517,62 @@ WARNING_SEVERITIES = {"error", "warning", "note"}
 WARNING_ALLOWED_KEYS = {"code", "severity", "message", "span", "path"}
 WARNING_REQUIRED_KEYS = {"code", "severity", "message"}
 
-# Anchored end-to-end against the TRIMMED source: `pre` captures whatever
-# precedes the marker (typically the echoed base text some upstream markers
-# carry, e.g. "名［＃「名」の左に「な」のルビ］"). Anything with a `pre` that
-# is neither empty nor an exact echo of `base` is NOT an admissible left-ruby
-# marker and must survive as raw — a bare `.search()` would silently accept
-# arbitrary garbage before the marker.
-LEFT_RUBY_RE = re.compile(
-    r"^(?P<pre>[^］]*?)［＃「(?P<base>[^」]+)」の左に「(?P<reading>[^」]+)」のルビ］$"
-)
+# Structural mirror of `classify_forward_left_ruby`
+# (ab-aozora-pipeline/src/lexer/classify/forward.rs:1313) rather than a
+# `[^」]`/`[^］]` character-class regex: a left-ruby BASE may itself be — or
+# contain — an embedded gaiji reference `※［＃「…」、…］` (Task 6 corpus works
+# 001395_49891 `銅※［＃「金＋拔のつくり」、第3水準1-93-6］子` and 001395_49905
+# `※［＃「漸／耳」、第4水準2-85-15］`). The parser resolves such a base via
+# `alloc.content_plain(target)`, so `ruby_entries`
+# (ab-aozora-facade/src/json.rs:255) yields a plain-run base and the AAT
+# `ruby_node` (crates/ab-aozora-aat/src/lib.rs:1156) emits a typed
+# `direction:"left"` node verbatim — the embedded `」`/`］` are literal base
+# text, NOT structural. A char-class regex mis-anchors on those inner
+# brackets, so we split structurally on the fixed marker delimiters instead.
+LEFT_RUBY_OPEN = "［＃「"
+LEFT_RUBY_SEP = "」の左に「"
+LEFT_RUBY_END = "」のルビ］"
+
+
+def parse_left_ruby_marker(source):
+    """Parse a trimmed left-ruby marker `<pre>［＃「<base>」の左に「<reading>」のルビ］`.
+
+    Returns `(pre, base, reading)` or `None`. Mirrors the Rust classifier's
+    fixed-delimiter split (`strip_prefix("の左に「")` / `strip_suffix("」のルビ")`
+    on the suffix, target pulled from the leading quote) so that a `base`
+    carrying an embedded gaiji reference — whose own `」`/`］` are literal —
+    is captured whole. `pre` captures any echoed base text preceding the
+    marker (e.g. "名［＃「名」の左に…"); a `pre` that is neither empty nor an
+    exact echo of `base` means this is NOT an admissible marker (arbitrary
+    text glued in front) and the raw node must survive unchanged.
+    """
+    if not source.endswith(LEFT_RUBY_END):
+        return None
+    sep_idx = source.rfind(LEFT_RUBY_SEP)
+    if sep_idx == -1:
+        return None
+    # reading is the final clause, anchored between the separator and the
+    # trailing `」のルビ］` — like the Rust `strip_suffix("」のルビ")`; a plain
+    # kana run that never contains the separator or an unescaped `」`.
+    reading = source[sep_idx + len(LEFT_RUBY_SEP) : -len(LEFT_RUBY_END)]
+    if not reading:
+        return None
+    head = source[:sep_idx]  # <pre>［＃「<base>
+    # No echo: the marker opens at the very start, base is everything after
+    # the opening `［＃「` (which may itself contain further `［＃「` from an
+    # embedded gaiji — that is literal base text).
+    if head.startswith(LEFT_RUBY_OPEN):
+        base = head[len(LEFT_RUBY_OPEN) :]
+        if base:
+            return "", base, reading
+    # Echoed base: `<base>［＃「<base>` — the echo prefix must equal base.
+    open_idx = head.find(LEFT_RUBY_OPEN)
+    if open_idx > 0:
+        pre = head[:open_idx]
+        base = head[open_idx + len(LEFT_RUBY_OPEN) :]
+        if base and pre == base:
+            return pre, base, reading
+    return None
 
 
 def migrate_warnings(base_meta, cand_meta, name):
@@ -554,10 +598,7 @@ def migrate_warnings(base_meta, cand_meta, name):
             )
         cand_keys = set(cand_w)
         if not cand_keys <= WARNING_ALLOWED_KEYS:
-            die(
-                f"{name}: warning has unexpected keys: "
-                f"{sorted(cand_keys - WARNING_ALLOWED_KEYS)}"
-            )
+            die(f"{name}: warning has unexpected keys: {sorted(cand_keys - WARNING_ALLOWED_KEYS)}")
         if not cand_keys >= WARNING_REQUIRED_KEYS:
             die(
                 f"{name}: warning missing required keys: "
@@ -599,20 +640,23 @@ def rewrite_left_ruby(node):
     form ［＃「base」の左に「reading」のルビ］ upgrades to a typed ruby node
     (base/reading pulled from the marker's OWN 「」-quoted segments — the
     marker's echoed base prefix, if any, is not consulted); anything else
-    survives unchanged (broken/non-left ruby stays raw). Matched full-anchor
-    against the TRIMMED source: a `pre` prefix that is neither empty nor an
-    exact echo of `base` means this is NOT an admissible left-ruby marker
-    (e.g. arbitrary text glued in front) and the raw node survives unchanged."""
+    survives unchanged (broken/non-left ruby stays raw). Parsed structurally
+    (see `parse_left_ruby_marker`) against the TRIMMED source so an embedded
+    gaiji reference in the base is captured verbatim: a `pre` prefix that is
+    neither empty nor an exact echo of `base` means this is NOT an admissible
+    left-ruby marker (e.g. arbitrary text glued in front) and the raw node
+    survives unchanged."""
     if not is_raw(node, "ruby"):
         return node
     source = (node.get("source") or "").strip()
-    m = LEFT_RUBY_RE.match(source)
-    if not m or m.group("pre") not in ("", m.group("base")):
+    parsed = parse_left_ruby_marker(source)
+    if parsed is None:
         return node
+    _pre, base, reading = parsed
     return {
         "kind": "ruby",
-        "base": m.group("base"),
-        "reading": m.group("reading"),
+        "base": base,
+        "reading": reading,
         "direction": "left",
         "span": node.get("span"),
     }
@@ -643,6 +687,112 @@ def is_burasage_paragraph(node):
         and node["content"][0].get("kind") == "style"
         and node["content"][0].get("style_type") == "burasage"
     )
+
+
+# --- chitsuki left-ruby line re-merge (mirror of find_next_raw_boundary) -----
+#
+# The 地付き (align-end / chitsuki) block assembler collects the inline run
+# from just after its marker up to `find_next_raw_boundary`
+# (crates/ab-aozora-aat/src/lib.rs:516-522, 862-867) — the FIRST node of
+# `kind:"raw"`. In v1 an unrecognised left-ruby marker was such a raw node, so
+# it TERMINATED the chitsuki line: the marker (plus the rest of that physical
+# line) fell out into a following plain paragraph. In v2 the same marker is a
+# typed `ruby` node (NOT raw), so `find_next_raw_boundary` skips past it and
+# the chitsuki line extends through the ruby and its trailing inline run up to
+# the next real raw boundary (the next line's align/container/heading marker).
+#
+# This is the ONLY place a bare left-ruby changes block grouping: the jisage /
+# burasage / keigakomi / yokogumi assemblers scan for *container* markers
+# specifically (`find_matching_container_close` / `find_next_container_boundary`,
+# lib.rs:826-876), which a ruby marker is not. So the forward rewrite mirrors
+# exactly that one boundary shift: a chitsuki paragraph immediately followed by
+# a plain paragraph whose first node is a typed left-ruby (which, in v1, was the
+# raw node that ended the chitsuki line) re-absorbs that paragraph's leading run
+# — up to its own next raw node — into the chitsuki style content. chitsuki
+# assembly applies NO boundary-newline stripping (`push_chitsuki_paragraph`
+# copies the run verbatim), so nothing is trimmed on re-merge.
+
+
+def _chitsuki_style(block):
+    """The lone chitsuki style wrapper of a `push_chitsuki_paragraph`-shaped
+    paragraph (single no-span `style_type:"chitsuki"` child), else None."""
+    if not (
+        isinstance(block, dict)
+        and block.get("kind") == "paragraph"
+        and isinstance(block.get("content"), list)
+        and len(block["content"]) == 1
+    ):
+        return None
+    style = block["content"][0]
+    if (
+        isinstance(style, dict)
+        and style.get("kind") == "style"
+        and style.get("style_type") == "chitsuki"
+        and isinstance(style.get("content"), list)
+    ):
+        return style
+    return None
+
+
+def _starts_with_typed_left_ruby(block):
+    return (
+        isinstance(block, dict)
+        and block.get("kind") == "paragraph"
+        and isinstance(block.get("content"), list)
+        and bool(block["content"])
+        and isinstance(block["content"][0], dict)
+        and block["content"][0].get("kind") == "ruby"
+        and block["content"][0].get("direction") == "left"
+    )
+
+
+def merge_chitsuki_left_ruby(blocks):
+    """One recursive pass mirroring the v2 chitsuki-line boundary extension.
+
+    Recurses into every block's `children` first, then walks the list: when a
+    chitsuki paragraph is immediately followed by a plain paragraph beginning
+    with a typed left-ruby, the following paragraph's leading run (up to its
+    own first `kind:"raw"` node, exclusive) is appended to the chitsuki style
+    content. Any raw-boundary remainder stays behind as a plain paragraph."""
+    out = []
+    i = 0
+    while i < len(blocks):
+        block = blocks[i]
+        if isinstance(block, dict) and isinstance(block.get("children"), list):
+            block = dict(block, children=merge_chitsuki_left_ruby(block["children"]))
+        style = _chitsuki_style(block)
+        if (
+            style is not None
+            and i + 1 < len(blocks)
+            and _starts_with_typed_left_ruby(blocks[i + 1])
+        ):
+            content = blocks[i + 1]["content"]
+            stop = next(
+                (k for k, n in enumerate(content) if _is_raw_any(n)),
+                len(content),
+            )
+            merged_style = dict(style, content=list(style["content"]) + content[:stop])
+            out.append(dict(block, content=[merged_style]))
+            remaining = content[stop:]
+            if remaining:
+                # A raw node inside the absorbed line ends the chitsuki run
+                # again in v2; the tail survives as its own plain paragraph.
+                blocks = (
+                    blocks[: i + 1]
+                    + [{"kind": "paragraph", "content": remaining}]
+                    + blocks[i + 2 :]
+                )
+                i += 1
+                continue
+            i += 2
+            continue
+        out.append(block)
+        i += 1
+    return out
+
+
+def _is_raw_any(node):
+    return isinstance(node, dict) and node.get("kind") == "raw"
 
 
 def adopt_compound_jizume(base_node, cand_node, name):
@@ -709,6 +859,9 @@ def v2_migration_mode(base_doc, cand_doc, name, summary):
     # therefore does no jizume formation here; jizume enters only via the
     # compound-indent wrap adopted below.
     migrated_blocks, _ = rewrite_blocks(migrated_blocks)
+    # item 4b: re-merge chitsuki lines a now-typed left-ruby no longer breaks
+    # (mirror of find_next_raw_boundary; see merge_chitsuki_left_ruby).
+    migrated_blocks = merge_chitsuki_left_ruby(migrated_blocks)
     adopted_blocks, compound_adopted = adopt_compound_jizume(
         migrated_blocks, cand.get("blocks"), name
     )  # item 5, compound form

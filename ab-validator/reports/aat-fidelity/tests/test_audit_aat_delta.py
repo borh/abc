@@ -993,6 +993,165 @@ def test_v2_migration_rejects_warning_missing_span_when_line_present(tmp_path):
     assert code == 2
 
 
+def typed_left_ruby(base_text, reading, span):
+    return {
+        "kind": "ruby",
+        "base": base_text,
+        "reading": reading,
+        "direction": "left",
+        "span": span,
+    }
+
+
+def test_v2_migration_gaiji_base_left_ruby_upgrades(tmp_path):
+    # Failure shape 1 (corpus 001395_49905): the left-ruby BASE is itself an
+    # embedded gaiji reference `※［＃「漸／耳」、第4水準2-85-15］`. Its inner `」`
+    # and `］` are LITERAL base text — the parser resolves the base via
+    # `alloc.content_plain` and `ruby_node` emits a typed `direction:"left"`
+    # node verbatim. The old `[^」]`/`[^］]` char-class regex mis-anchored on
+    # the inner brackets and left the node raw; the structural parser types it.
+    src = "［＃「※［＃「漸／耳」、第4水準2-85-15］」の左に「にい」のルビ］"
+    raw_ruby = raw_marker(src, "ruby", 200)
+    base = write_dump(tmp_path, "a", {"w1": doc([para(text("前\n", 100, 107), raw_ruby)])})
+    upgraded = typed_left_ruby("※［＃「漸／耳」、第4水準2-85-15］", "にい", raw_ruby["span"])
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc([para(text("前\n", 100, 107), upgraded)])})
+    code, summary, err = run("v2-migration", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["ruby_left_rewritten"] == 1
+
+
+def test_v2_migration_compound_gaiji_base_left_ruby_upgrades(tmp_path):
+    # Failure shape 2 (corpus 001395_49891): the base is a COMPOUND run with a
+    # gaiji in the middle — `銅※［＃「金＋拔のつくり」、第3水準1-93-6］子` — again
+    # captured whole by the structural split, not the char-class regex.
+    src = "［＃「銅※［＃「金＋拔のつくり」、第3水準1-93-6］子」の左に「どびょうし」のルビ］"
+    raw_ruby = raw_marker(src, "ruby", 300)
+    base = write_dump(tmp_path, "a", {"w1": doc([para(text("や\n", 100, 104), raw_ruby)])})
+    upgraded = typed_left_ruby(
+        "銅※［＃「金＋拔のつくり」、第3水準1-93-6］子", "どびょうし", raw_ruby["span"]
+    )
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc([para(text("や\n", 100, 104), upgraded)])})
+    code, summary, err = run("v2-migration", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["ruby_left_rewritten"] == 1
+
+
+def chitsuki_v2(content):
+    # push_chitsuki_paragraph shape after the v2 key rename (x-align→align,
+    # x-offset→offset_from_end): the candidate-side chitsuki wrapper.
+    return {
+        "kind": "style",
+        "style_type": "chitsuki",
+        "content": list(content),
+        "align": "right",
+        "offset_from_end": 0,
+        "x-provenance": "source-derived",
+    }
+
+
+def test_v2_migration_chitsuki_left_ruby_line_remerges(tmp_path):
+    # Failure shape 3 (corpus 000933_47550): a raw left-ruby marker inside a
+    # 地付き (chitsuki) line was `find_next_raw_boundary` in v1, so it ended the
+    # chitsuki run and the marker + trailing text spilled into a following
+    # plain paragraph. In v2 the marker is a typed (non-raw) ruby, so the
+    # chitsuki line extends through it and the trailing text. The forward
+    # rewrite must re-absorb that paragraph into the chitsuki style content.
+    right_ruby = {
+        "kind": "ruby",
+        "base": "食",
+        "reading": "ヲセ",
+        "direction": "right",
+        "span": {"byte_start": 510, "byte_end": 537, "line_start": 1, "line_end": 1},
+    }
+    marker = raw_marker("［＃「食」の左に「クヘ」のルビ］", "ruby", 537)
+    left_span = marker["span"]
+    base = write_dump(
+        tmp_path,
+        "a",
+        {
+            "w1": doc(
+                [
+                    para(style_chitsuki([text("\n汁", 500, 510), right_ruby])),
+                    para(marker, text("と　すゝめ", 594)),
+                ]
+            )
+        },
+    )
+    cand = write_dump(
+        tmp_path,
+        "b",
+        {
+            "w1": v2_doc(
+                [
+                    para(
+                        chitsuki_v2(
+                            [
+                                text("\n汁", 500, 510),
+                                right_ruby,
+                                typed_left_ruby("食", "クヘ", left_span),
+                                text("と　すゝめ", 594),
+                            ]
+                        )
+                    ),
+                ]
+            )
+        },
+    )
+    code, summary, err = run("v2-migration", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["ruby_left_rewritten"] == 1
+
+
+def test_v2_migration_chitsuki_left_ruby_remerge_stops_at_inner_raw(tmp_path):
+    # Re-merge is bounded by the NEXT raw node inside the absorbed line
+    # (mirror of find_next_raw_boundary): only the run up to that raw node
+    # joins the chitsuki; the raw node + its tail stay as a plain paragraph.
+    right_ruby = {
+        "kind": "ruby",
+        "base": "食",
+        "reading": "ヲセ",
+        "direction": "right",
+        "span": {"byte_start": 510, "byte_end": 537, "line_start": 1, "line_end": 1},
+    }
+    marker = raw_marker("［＃「食」の左に「クヘ」のルビ］", "ruby", 537)
+    inner_raw = raw_marker("［＃ここから罫囲み］", "containerOpen", 620)
+    base = write_dump(
+        tmp_path,
+        "a",
+        {
+            "w1": doc(
+                [
+                    para(style_chitsuki([text("\n汁", 500, 510), right_ruby])),
+                    para(marker, text("と　すゝめ", 594), inner_raw, text("\n後", 650)),
+                ]
+            )
+        },
+    )
+    cand = write_dump(
+        tmp_path,
+        "b",
+        {
+            "w1": v2_doc(
+                [
+                    para(
+                        chitsuki_v2(
+                            [
+                                text("\n汁", 500, 510),
+                                right_ruby,
+                                typed_left_ruby("食", "クヘ", marker["span"]),
+                                text("と　すゝめ", 594),
+                            ]
+                        )
+                    ),
+                    para(inner_raw, text("\n後", 650)),
+                ]
+            )
+        },
+    )
+    code, summary, err = run("v2-migration", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+
+
 def test_v2_migration_rejects_warning_extra_key(tmp_path):
     # Candidate warning has a key outside the allowed v2 warning shape
     # {"code", "severity", "message", "span", "path"} — rejected even

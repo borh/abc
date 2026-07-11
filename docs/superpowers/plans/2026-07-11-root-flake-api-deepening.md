@@ -167,6 +167,7 @@ import sys
 
 outputs = json.load(sys.stdin)
 systems = {"aarch64-linux", "x86_64-linux"}
+expected_output_names = {"apps", "checks", "devShells", "formatter", "packages"}
 expected = {
     "apps": {
         "flake-input-policy",
@@ -196,6 +197,12 @@ expected = {
 }
 
 errors = []
+actual_output_names = set(outputs)
+if actual_output_names != expected_output_names:
+    errors.append(
+        f"top-level outputs: expected {sorted(expected_output_names)}, got {sorted(actual_output_names)}"
+    )
+
 for output_name, expected_names in expected.items():
     actual_systems = set(outputs.get(output_name, {}))
     if actual_systems != systems:
@@ -230,7 +237,9 @@ Run:
 bash tests/root-flake-output-contract-smoke.sh
 ```
 
-Expected: FAIL listing the current extra prefixed apps, packages, checks, and shells.
+Expected: FAIL listing the current extra prefixed apps, packages, checks, and
+shells. The assertion also rejects any top-level output category beyond exactly
+`apps`, `checks`, `devShells`, `formatter`, and `packages`.
 
 - [ ] **Step 3: Remove mechanical export machinery without rewriting retained wrappers**
 
@@ -326,10 +335,19 @@ bash tests/root-flake-output-contract-smoke.sh
 nix flake check --no-build
 nix eval --raw .#apps.x86_64-linux.soranoha.program > snapshot-soranoha-program-after.txt
 printf '\n' >> snapshot-soranoha-program-after.txt
-diff -u snapshot-soranoha-program-before.txt snapshot-soranoha-program-after.txt
+after_program="$(cat snapshot-soranoha-program-after.txt)"
+soranoha_drv="$(nix eval --json .#apps.x86_64-linux.soranoha --apply 'app: builtins.attrNames (builtins.getContext app.program)' | jq -r '.[0]')"
+nix-store --realise "$soranoha_drv" >/dev/null
+sed -E 's#/nix/store/[a-z0-9]{32}-#/nix/store/HASH-#g' "$after_program" \
+  > snapshot-soranoha-script-normalized-after.txt
+diff -u snapshot-soranoha-script-normalized-before.txt snapshot-soranoha-script-normalized-after.txt
 ```
 
-Expected: contract smoke passes; root check evaluation passes; `soranoha` program diff is empty.
+Expected: contract smoke and root check evaluation pass, and the normalized
+realized `soranoha` wrapper diff is empty. Do not compare raw program paths:
+any tracked root edit changes the parent Git source snapshot and therefore the
+nested `path:./ab-validator` source hash embedded in the wrapper. Step 7's
+stable direct component identities complete the preservation evidence.
 
 - [ ] **Step 7: Verify removed aliases still resolve from component flakes before editing component trees**
 
@@ -650,6 +668,8 @@ Run:
 nix eval --raw .#apps.x86_64-linux.soranoha.program > snapshot-soranoha-program-final.txt
 printf '\n' >> snapshot-soranoha-program-final.txt
 final_program="$(cat snapshot-soranoha-program-final.txt)"
+soranoha_drv="$(nix eval --json .#apps.x86_64-linux.soranoha --apply 'app: builtins.attrNames (builtins.getContext app.program)' | jq -r '.[0]')"
+nix-store --realise "$soranoha_drv" >/dev/null
 sed -E 's#/nix/store/[a-z0-9]{32}-#/nix/store/HASH-#g' "$final_program" \
   > snapshot-soranoha-script-normalized-final.txt
 ```
@@ -675,7 +695,12 @@ Run:
 diff -u snapshot-soranoha-script-normalized-before.txt snapshot-soranoha-script-normalized-final.txt
 ```
 
-Expected: empty normalized diff. The raw program path may change because Task 4 changes files inside both path inputs. Any normalized change means the adapter-aware wrapper structure or dependency shape changed; stop and reconcile before continuing.
+Expected: empty normalized diff. The raw program path may change after any
+tracked root edit because the nested `path:./ab-validator` source hash changes;
+Task 4 also changes files inside the path inputs. Any normalized change means
+the adapter-aware wrapper structure or dependency shape changed; stop and
+reconcile before continuing. Stable direct component identities remain the
+separate evidence for unchanged component outputs.
 
 - [ ] **Step 4: Verify private dependencies and removed aliases**
 

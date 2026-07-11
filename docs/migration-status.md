@@ -87,28 +87,33 @@ What they prove:
   its source-region policy symlink still points at `abc/data`.
 - `python-quality`: tracked Python passes ruff format/check and mypy.
 - `nix-format-check`: tracked Nix files are formatted with `nixfmt`.
-- `root-flake-check-no-build`: the root flake evaluates monorepo checks and
-  prefixed component checks without building large outputs.
+- `root-flake-check-no-build`: the root flake evaluates only root-owned
+  integration checks without building large outputs.
 - `tei-version-coherence`: the root TEI P5 source reference and ABC TEI profile
   inputs all target TEI P5 4.11.0.
 - `flake-input-policy`: release-critical source-evidence inputs carry explicit
   rev/tag pins in flake input URLs, not only in lockfiles, and component
   compatibility locks remain coherent with the root lock for shared inputs.
-- `check-no-build`: both component flakes evaluate through their no-build
-  checks from the monorepo layout. This is retained as a direct component
-  fallback while the root flake settles.
+- `check-no-build`: the root, ABC, and validator flakes evaluate explicitly
+  without building large outputs.
 - `validate-migration`: runs the cheap monorepo validation gate: runtime config,
   active path hygiene, schema/policy drift, TEI version coherence, flake input
-  policy, Python quality, Nix formatting, and root no-build flake validation.
+  policy, Python quality, Nix formatting, and explicit no-build evaluation of
+  the root, ABC, and validator flakes.
 - `nix build .#tei-p5-reference --no-link`: verifies the pinned TEI P5
   reference tree exposes the files cited by the publication mapping dossiers.
 
-The root flake prefixes component outputs instead of renaming them:
+The root flake is an explicit operator-facing integration facade. Component
+tools remain available from their owning flakes:
 
-- `abc` flake outputs are exposed as `abc-*`.
-- `ab-validator` flake outputs are exposed as `ab-validator-*`.
-- Monorepo-local checks/apps use unprefixed names such as `schema-drift`,
-  `active-path-hygiene`, and `validate-migration`.
+- use `./abc#...` for publication, schema, TEI, manifest, and registry tools;
+- use `./ab-validator#...` for parser, adapter, evidence, corpus, dictionary,
+  and analyzer tools;
+- use root outputs only for supported end-to-end workflows, root-owned
+  cross-component contracts, cross-component artifacts, and the integrated
+  development shell.
+
+Convenience alone is not sufficient for promotion to the root.
 
 ## Path Policy
 

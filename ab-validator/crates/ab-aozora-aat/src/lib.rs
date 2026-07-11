@@ -1811,6 +1811,28 @@ mod tests {
     }
 
     #[test]
+    fn compound_jizume_boundary_fallback_still_wraps() {
+        // Compound container with jizume width (21) but NO ［＃ここで字下げ終わり］
+        // close — a following container open (罫囲み) triggers the boundary-fallback
+        // arm, which finds the next container marker and classifies what's between.
+        // The burasage classification still nests inside the jizume_block (6,7,21).
+        let aat = aat_value_for(
+            "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\n本文\n［＃ここから罫囲み］\nX\n［＃ここで罫囲み終わり］\n",
+        );
+        // 1. A jizume_block exists with width 21
+        let jizume = find_first_node(&aat, "jizume_block");
+        assert_eq!(jizume["width"], 21);
+        // 2. Inside it, a style node with style_type "burasage", indent_first 6, indent_rest 7
+        let style = find_first_node(jizume, "style");
+        assert_eq!(style["style_type"], "burasage");
+        assert_eq!(style["indent_first"], 6);
+        assert_eq!(style["indent_rest"], 7);
+        // 3. A keigakomi_block also exists at top level
+        let keigakomi = find_first_node(&aat, "keigakomi_block");
+        assert_eq!(keigakomi["kind"], "keigakomi_block");
+    }
+
+    #[test]
     fn jisage_block_emits_typed_indent() {
         let aat = aat_value_for("［＃ここから２字下げ］\n本文\n［＃ここで字下げ終わり］\n");
         let block = find_first_node(&aat, "jisage_block");

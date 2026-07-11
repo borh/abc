@@ -16,6 +16,14 @@ legacy synthesized-span warning from the baseline, the documents must be
 deeply equal; candidate spans must satisfy field invariants; the
 line-synthesis tripline flags wholesale line=1 output.
 
+v2-migration (Phase 4, rotation C3): forward-rewrites a schema-v1 baseline
+document to its expected schema-v2 form — layout key renames, left-ruby
+typing, jizume_block formation (paired + compound), a warnings-shape
+projection, and the root version bump — and requires deep equality with
+the v2 candidate. Mirrors ab-aozora-aat/src/lib.rs's Phase 4 emission
+semantics ONLY (never corpus-fitted); a mismatch on real corpus data is a
+controller escalation, same discipline as container-rewrite.
+
 Exit 0 = PASS. Exit 2 = ANY unclassified difference or reference error
 (fail-closed; there is no exit 1). A container-rewrite mismatch on real
 corpus data is an ESCALATION per the spec — do not weaken the grammar to
@@ -26,6 +34,7 @@ import argparse
 import copy
 import json
 import pathlib
+import re
 import sys
 
 LEGACY_WARNING = (
@@ -68,17 +77,113 @@ def is_raw(node, marker_kind):
     )
 
 
-def open_kind(node):
+def open_kind(node, jizume=False):
+    """Return `(kind, extra_fields)` for an admissible containerOpen raw,
+    or `None`. `extra_fields` merges into the rewritten block dict (e.g.
+    jizume's `width`). `jizume=True` (v2-migration only) additionally
+    recognizes a *pure* jizume open (mirror of `pure_jizume_open_width` —
+    container-rewrite mode never sees this, so its 20 tests are unaffected).
+    """
     if is_raw(node, "containerOpen"):
         source = (node.get("source") or "").strip()
         for kind, (marker, _) in CONSTRUCTS.items():
             if source == marker:
-                return kind
+                return kind, {}
+        if jizume:
+            width = pure_jizume_open_width(node)
+            if width is not None:
+                return "jizume_block", {"width": width}
     return None
 
 
 def close_matches(node, needle):
     return is_raw(node, "containerClose") and needle in (node.get("source") or "")
+
+
+JIZUME_NEEDLE = "字詰め"
+
+_FULLWIDTH_DIGIT_SHIFT = ord("0") - ord("０")
+_KANJI_DIGITS = {"一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9}
+
+
+def _aozora_digit(ch):
+    if "0" <= ch <= "9":
+        return ch
+    if "０" <= ch <= "９":
+        return chr(ord(ch) + _FULLWIDTH_DIGIT_SHIFT)
+    return None
+
+
+def _parse_kanji_number_before(prefix):
+    # Mirror of `parse_kanji_number_before`: a trailing run of kanji digits
+    # (optionally with a '十' tens-marker), read backwards from `prefix`'s
+    # end; anything before the run is ignored, matching the Rust original.
+    run = []
+    for ch in reversed(prefix):
+        if ch in _KANJI_DIGITS or ch == "十":
+            run.append(ch)
+        else:
+            break
+    if not run:
+        return None
+    run.reverse()
+    text = "".join(run)
+    if "十" in text:
+        tens_s, _, ones_s = text.partition("十")
+        tens = 1 if tens_s == "" else _KANJI_DIGITS.get(tens_s[0])
+        if tens is None:
+            return None
+        ones = 0 if ones_s == "" else _KANJI_DIGITS.get(ones_s[0])
+        if ones is None:
+            return None
+        return tens * 10 + ones
+    return _KANJI_DIGITS.get(text[0])
+
+
+def parse_aozora_number_before(source, needle):
+    """Python transcription of `parse_aozora_number_before`: the digit (or
+    kanji-numeral) run immediately preceding `needle`'s first occurrence."""
+    idx = source.find(needle)
+    if idx == -1:
+        return None
+    prefix = source[:idx]
+    digits = []
+    for ch in reversed(prefix):
+        digit = _aozora_digit(ch)
+        if digit is not None:
+            digits.insert(0, digit)
+        elif digits:
+            break
+    if digits:
+        return int("".join(digits))
+    return _parse_kanji_number_before(prefix)
+
+
+def jizume_open_width(source):
+    """Python transcription of `jizume_open_chars`: the width of a jizume
+    (字詰め) container-open marker — standalone or the FINAL clause of a
+    compound container. `None` if `source` isn't a jizume-open marker."""
+    marker = source.strip()
+    if not marker.startswith("［＃ここから") or not marker.endswith("］"):
+        return None
+    if JIZUME_NEEDLE not in marker:
+        return None
+    _, after = marker.split(JIZUME_NEEDLE, 1)
+    if after != "］":
+        return None
+    return parse_aozora_number_before(marker, JIZUME_NEEDLE)
+
+
+def pure_jizume_open_width(node):
+    """Python transcription of `pure_jizume_open_width`: a jizume open with
+    NO 字下げ segment (so this never shadows/gets shadowed by the
+    already-classified burasage/jisage compound handling)."""
+    if not is_raw(node, "containerOpen"):
+        return None
+    source = node.get("source") or ""
+    if "字下げ" in source:
+        return None
+    return jizume_open_width(source)
 
 
 def strip_leading_newline(node):
@@ -125,12 +230,17 @@ def is_container_derived_block(block):
     # Blocks assembled FROM a containerOpen marker: in Rust's flat close
     # scan (find_matching_container_close) that marker was still inline
     # and ABORTED the scan — jisage_block from ［＃ここから…字下げ］,
-    # burasage-style paragraphs from ［＃ここから…折り返して…］.
-    # Chitsuki paragraphs (alignEnd) and headings (headingHint) come from
-    # non-containerOpen markers and do not abort.
+    # burasage-style paragraphs from ［＃ここから…折り返して…］. keigakomi_block
+    # / yokogumi_block / jizume_block are the SAME abort source for
+    # v2-migration mode, whose baseline already has them pre-classified
+    # (unlike container-rewrite mode, where they're this pass's OWN
+    # output and never appear pre-formed in `blocks[j]` for j>i — so this
+    # is a harmless no-op there). Chitsuki paragraphs (alignEnd) and
+    # headings (headingHint) come from non-containerOpen markers and do
+    # not abort.
     if not isinstance(block, dict):
         return False
-    if block.get("kind") == "jisage_block":
+    if block.get("kind") in ("jisage_block", "keigakomi_block", "yokogumi_block", "jizume_block"):
         return True
     if block.get("kind") == "paragraph":
         content = block.get("content", [])
@@ -212,13 +322,18 @@ def scan_segment(nodes, start, needle):
     return None, None
 
 
-def rewrite_blocks(blocks):
-    """One grammar pass over a block list; returns (rewritten, count)."""
+def rewrite_blocks(blocks, jizume=False):
+    """One grammar pass over a block list; returns (rewritten, count).
+
+    `jizume=True` (v2-migration only) additionally admits *pure* jizume
+    open/close pairs (container-rewrite mode never passes this — its 20
+    tests are unaffected since `open_kind` only checks jizume when asked).
+    """
     out, count, i = [], 0, 0
     while i < len(blocks):
         block = blocks[i]
         if isinstance(block, dict) and isinstance(block.get("children"), list):
-            children, inner_count = rewrite_blocks(block["children"])
+            children, inner_count = rewrite_blocks(block["children"], jizume=jizume)
             count += inner_count
             block = dict(block, children=children)
         if not (isinstance(block, dict) and block.get("kind") == "paragraph"):
@@ -232,8 +347,12 @@ def rewrite_blocks(blocks):
         # still be admitted (e.g. an inner keigakomi pair nested inside an
         # unadmitted yokogumi pair). Mirror by trying each open in order.
         admitted = None
-        for oi, kind in ((j, open_kind(n)) for j, n in enumerate(content) if open_kind(n)):
-            needle = CONSTRUCTS[kind][1]
+        for oi, node in enumerate(content):
+            hit = open_kind(node, jizume=jizume)
+            if hit is None:
+                continue
+            kind, extra = hit
+            needle = JIZUME_NEEDLE if kind == "jizume_block" else CONSTRUCTS[kind][1]
             # Scan forward through the flat stream for the matching close;
             # any containerOpen aborts. First the open paragraph's
             # remainder, then each following block (paragraph content is
@@ -257,13 +376,13 @@ def rewrite_blocks(blocks):
                             break
                     j += 1
             if close_block_index is not None:
-                admitted = (oi, kind, close_block_index, ci)
+                admitted = (oi, kind, extra, close_block_index, ci)
                 break
         if admitted is None:
             out.append(block)  # no admissible pair: candidate must equal baseline
             i += 1
             continue
-        oi, kind, close_block_index, ci = admitted
+        oi, kind, extra, close_block_index, ci = admitted
         pre = content[:oi]
         if close_block_index == i:
             inner = content[oi + 1 : ci]
@@ -304,7 +423,7 @@ def rewrite_blocks(blocks):
         pre_para = make_para(pre)
         if pre_para:
             out.append(pre_para)
-        out.append({"kind": kind, "children": children})
+        out.append({"kind": kind, **extra, "children": children})
         count += 1
         # strip_next_leading_newline after close: strip post[0]'s leading
         # newline; if that empties the text node, DROP it (the Rust
@@ -319,7 +438,9 @@ def rewrite_blocks(blocks):
             # stream node of the NEXT block instead.
             rest = apply_post_close_strip(rest)
         post_para = make_para(post)
-        rewritten_rest, rest_count = rewrite_blocks(([post_para] if post_para else []) + rest)
+        rewritten_rest, rest_count = rewrite_blocks(
+            ([post_para] if post_para else []) + rest, jizume=jizume
+        )
         out.extend(rewritten_rest)
         return out, count + rest_count
     return out, count
@@ -398,9 +519,190 @@ def span_confinement_mode(base_doc, cand_doc, name, summary):
     summary["classes"]["span_confined"] += 1
 
 
+# --- v2-migration (Phase 4, rotation C3) ------------------------------------
+
+WARNING_SEVERITIES = {"error", "warning", "note"}
+
+LEFT_RUBY_RE = re.compile(r"［＃「(?P<base>[^」]+)」の左に「(?P<reading>[^」]+)」のルビ］$")
+
+
+def migrate_warnings(base_meta, cand_meta, name):
+    """Contract item 2: per-index invariant check (severity/span are new
+    information a forward rewrite cannot derive, so they're checked, not
+    reproduced). Caller sentinel-replaces both arrays afterward."""
+    base_warnings = base_meta.get("warnings") or []
+    cand_warnings = cand_meta.get("warnings") or []
+    if len(base_warnings) != len(cand_warnings):
+        die(f"{name}: warnings count changed ({len(base_warnings)} -> {len(cand_warnings)})")
+    for base_w, cand_w in zip(base_warnings, cand_warnings):
+        if not isinstance(cand_w, dict):
+            die(f"{name}: candidate warning is not an object: {cand_w!r}")
+        if cand_w.get("message") != base_w.get("message"):
+            die(
+                f"{name}: warning message changed "
+                f"({base_w.get('message')!r} -> {cand_w.get('message')!r})"
+            )
+        expected_code = str(base_w.get("message", "")).replace("_", "-")
+        if cand_w.get("code") != expected_code:
+            die(
+                f"{name}: warning code mismatch (expected {expected_code!r}, got {cand_w.get('code')!r})"
+            )
+        if cand_w.get("severity") not in WARNING_SEVERITIES:
+            die(f"{name}: warning severity invalid: {cand_w.get('severity')!r}")
+        if "line" in cand_w:
+            die(f"{name}: candidate warning still carries 'line'")
+        if base_w.get("line") is not None and isinstance(cand_w.get("span"), dict):
+            if cand_w["span"].get("line_start") != base_w["line"]:
+                die(f"{name}: warning span.line_start does not match baseline line")
+
+
+def rename_layout_keys(node):
+    """Contract item 3: mechanical schema-v2 key renames, values untouched."""
+    kind = node.get("kind")
+    renamed = dict(node)
+    if kind in ("jisage_block", "heading"):
+        if "x-indent" in renamed:
+            renamed["indent"] = renamed.pop("x-indent")
+    elif kind == "style":
+        style_type = renamed.get("style_type")
+        if style_type == "chitsuki":
+            if "x-align" in renamed:
+                renamed["align"] = renamed.pop("x-align")
+            if "x-offset" in renamed:
+                renamed["offset_from_end"] = renamed.pop("x-offset")
+        elif style_type == "burasage":
+            if "x-indent-first" in renamed:
+                renamed["indent_first"] = renamed.pop("x-indent-first")
+            if "x-indent-rest" in renamed:
+                renamed["indent_rest"] = renamed.pop("x-indent-rest")
+    return renamed
+
+
+def rewrite_left_ruby(node):
+    """Contract item 4: a raw ruby marker whose source is the left-ruby
+    form ［＃「base」の左に「reading」のルビ］ upgrades to a typed ruby node
+    (base/reading pulled from the marker's OWN 「」-quoted segments — the
+    marker's echoed base prefix, if any, is not consulted); anything else
+    survives unchanged (broken/non-left ruby stays raw)."""
+    if not is_raw(node, "ruby"):
+        return node
+    m = LEFT_RUBY_RE.search(node.get("source") or "")
+    if not m:
+        return node
+    return {
+        "kind": "ruby",
+        "base": m.group("base"),
+        "reading": m.group("reading"),
+        "direction": "left",
+        "span": node.get("span"),
+    }
+
+
+def migrate_tree(node, counts):
+    """Recursive node-level pass applying items 3+4 (layout renames, left-
+    ruby upgrade) everywhere in the tree; `counts["ruby_left"]` tallies
+    upgrades fired for classification."""
+    if isinstance(node, list):
+        return [migrate_tree(v, counts) for v in node]
+    if isinstance(node, dict):
+        renamed = rename_layout_keys(node)
+        rewritten = rewrite_left_ruby(renamed)
+        if rewritten is not renamed:
+            counts["ruby_left"] += 1
+        return {k: migrate_tree(v, counts) for k, v in rewritten.items()}
+    return node
+
+
+def is_burasage_paragraph(node):
+    return (
+        isinstance(node, dict)
+        and node.get("kind") == "paragraph"
+        and isinstance(node.get("content"), list)
+        and len(node["content"]) == 1
+        and isinstance(node["content"][0], dict)
+        and node["content"][0].get("kind") == "style"
+        and node["content"][0].get("style_type") == "burasage"
+    )
+
+
+def adopt_compound_jizume(base_node, cand_node, name):
+    """Contract item 5, compound form: a compound container's 字詰め clause
+    is discarded by v1's burasage classification (`burasage_container_indent`
+    is unchanged since the initial port — Task 6's git history confirms it)
+    — so its width is NOT derivable from baseline output alone, unlike the
+    pure/standalone form. Wherever baseline already classified a burasage
+    paragraph, ADOPT candidate's jizume_block wrapper when present,
+    verifying every invariant a forward rewrite CAN check (width a
+    positive int, wrapped content byte-identical to what v1 classified,
+    no stray keys) — mirroring Task 6's wrap rule structurally. Anything
+    else about candidate's shape is left to the caller's final deep-equality
+    check. Returns (adopted_node, changed_bool)."""
+    if is_burasage_paragraph(base_node):
+        if isinstance(cand_node, dict) and cand_node.get("kind") == "jizume_block":
+            if set(cand_node) != {"kind", "width", "children"}:
+                die(f"{name}: jizume_block has unexpected keys: {sorted(cand_node)}")
+            width = cand_node.get("width")
+            if not (isinstance(width, int) and not isinstance(width, bool) and width > 0):
+                die(f"{name}: jizume_block width invalid: {width!r}")
+            if cand_node.get("children") != [base_node]:
+                die(f"{name}: compound jizume_block does not wrap exactly the burasage paragraph")
+            return cand_node, True
+        return base_node, False
+    if isinstance(base_node, list):
+        if not isinstance(cand_node, list) or len(base_node) != len(cand_node):
+            return base_node, False
+        changed = False
+        out = []
+        for b, c in zip(base_node, cand_node):
+            nb, ch = adopt_compound_jizume(b, c, name)
+            out.append(nb)
+            changed = changed or ch
+        return out, changed
+    if isinstance(base_node, dict):
+        if not isinstance(cand_node, dict):
+            return base_node, False
+        changed = False
+        out = {}
+        for k, v in base_node.items():
+            nv, ch = adopt_compound_jizume(v, cand_node.get(k), name)
+            out[k] = nv
+            changed = changed or ch
+        return out, changed
+    return base_node, False
+
+
+def v2_migration_mode(base_doc, cand_doc, name, summary):
+    base = strip_identity(base_doc)
+    cand = strip_identity(cand_doc)
+    base["version"] = 2  # contract item 1
+    migrate_warnings(base.get("meta", {}), cand.get("meta", {}), name)  # contract item 2
+    base.setdefault("meta", {})["warnings"] = "__warnings_checked__"
+    cand.setdefault("meta", {})["warnings"] = "__warnings_checked__"
+    counts = {"ruby_left": 0}
+    migrated_blocks = migrate_tree(base.get("blocks", []), counts)  # items 3+4
+    jizume_blocks, jizume_count = rewrite_blocks(migrated_blocks, jizume=True)  # item 5, pure form
+    adopted_blocks, compound_adopted = adopt_compound_jizume(
+        jizume_blocks, cand.get("blocks"), name
+    )  # item 5, compound form
+    rewritten = dict(base, blocks=adopted_blocks)
+    if rewritten != cand:
+        die(f"{name}: candidate is not exactly the v2-migration grammar's rewrite")
+    ruby_fired = counts["ruby_left"] > 0
+    jizume_fired = jizume_count > 0 or compound_adopted
+    if ruby_fired and jizume_fired:
+        summary["classes"]["ruby_left_rewritten"] += 1
+        summary["details"]["both"] += 1
+    elif ruby_fired:
+        summary["classes"]["ruby_left_rewritten"] += 1
+    elif jizume_fired:
+        summary["classes"]["jizume_rewritten"] += 1
+    else:
+        summary["classes"]["migrated"] += 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["container-rewrite", "span-confinement"])
+    ap.add_argument("mode", choices=["container-rewrite", "span-confinement", "v2-migration"])
     ap.add_argument("baseline_dir")
     ap.add_argument("candidate_dir")
     ap.add_argument("--summary-json", required=True)
@@ -410,13 +712,27 @@ def main() -> int:
     missing = sorted(set(base_files) ^ set(cand_files))
     if missing:
         die(f"file sets differ: {missing[:10]}")
+    if args.mode == "v2-migration":
+        # No "identical" bucket: every document changes at least
+        # mechanically (root version bump), so a doc lands in "migrated"
+        # at minimum.
+        classes = {"migrated": 0, "jizume_rewritten": 0, "ruby_left_rewritten": 0}
+    else:
+        # Byte-identical shape to the pre-Task-8 output — untouched.
+        classes = {"identical": 0, "rewritten": 0, "span_confined": 0}
     summary = {
         "mode": args.mode,
         "compared": len(base_files),
-        "classes": {"identical": 0, "rewritten": 0, "span_confined": 0},
+        "classes": classes,
         "verdict": "PASS",
     }
-    handler = container_rewrite_mode if args.mode == "container-rewrite" else span_confinement_mode
+    if args.mode == "v2-migration":
+        summary["details"] = {"both": 0}
+    handler = {
+        "container-rewrite": container_rewrite_mode,
+        "span-confinement": span_confinement_mode,
+        "v2-migration": v2_migration_mode,
+    }[args.mode]
     for name in sorted(base_files):
         # Fail-closed: ANY per-work exception (unreadable file, valid JSON
         # of the wrong shape, unexpected structure deep in a handler) exits

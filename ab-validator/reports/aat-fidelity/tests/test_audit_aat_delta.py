@@ -618,3 +618,269 @@ def test_wholesale_line1_synthesis_trips(tmp_path):
     cand = write_dump(tmp_path, "b", {"w1": doc([para(*nodes)])})
     code, _, _ = run("span-confinement", base, cand, tmp_path)
     assert code == 2
+
+
+# --- v2-migration mode (Phase 4, rotation C3) ---
+
+
+def v2_doc(blocks, warnings=None):
+    """A schema-v2-shaped candidate document (version 2, meta() reused for
+    everything except the warnings shape, which v2 restructures)."""
+    return {
+        "version": 2,
+        "work_id": "stdin",
+        "blocks": blocks,
+        "meta": meta(warnings=warnings),
+    }
+
+
+def test_v2_migration_mechanical_only_passes(tmp_path):
+    base = write_dump(
+        tmp_path,
+        "a",
+        {
+            "w1": doc(
+                [
+                    {
+                        "kind": "jisage_block",
+                        "x-indent": 2,
+                        "children": [para(text("本文\n", 0))],
+                    }
+                ],
+                warnings=[{"message": "some_warning", "line": 3}],
+            )
+        },
+    )
+    cand = write_dump(
+        tmp_path,
+        "b",
+        {
+            "w1": v2_doc(
+                [
+                    {
+                        "kind": "jisage_block",
+                        "indent": 2,
+                        "children": [para(text("本文\n", 0))],
+                    }
+                ],
+                warnings=[
+                    {
+                        "code": "some-warning",
+                        "severity": "warning",
+                        "message": "some_warning",
+                        "span": {
+                            "byte_start": 0,
+                            "byte_end": 1,
+                            "line_start": 3,
+                            "line_end": 3,
+                        },
+                    }
+                ],
+            )
+        },
+    )
+    code, summary, err = run("v2-migration", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["migrated"] == 1
+
+
+def test_v2_migration_rejects_changed_right_ruby(tmp_path):
+    ruby_node = {
+        "kind": "ruby",
+        "base": "漢字",
+        "reading": "かんじ",
+        "direction": "right",
+        "span": {"byte_start": 0, "byte_end": 10, "line_start": 1, "line_end": 1},
+    }
+    base = write_dump(tmp_path, "a", {"w1": doc([para(ruby_node)])})
+    changed = dict(ruby_node, reading="ちがう")
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc([para(changed)])})
+    code, _, _ = run("v2-migration", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_v2_migration_left_ruby_upgrade(tmp_path):
+    raw_ruby = raw_marker("名［＃「名」の左に「な」のルビ］", "ruby", 0)
+    base = write_dump(tmp_path, "a", {"w1": doc([para(text("前\n", 100), raw_ruby)])})
+    upgraded = {
+        "kind": "ruby",
+        "base": "名",
+        "reading": "な",
+        "direction": "left",
+        "span": raw_ruby["span"],
+    }
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc([para(text("前\n", 100), upgraded)])})
+    code, summary, err = run("v2-migration", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["ruby_left_rewritten"] == 1
+
+
+def test_v2_migration_rejects_unexpected_raw_to_ruby_upgrade(tmp_path):
+    # Source does not match the left-ruby marker form at all — must survive
+    # as raw; a candidate that upgrades it anyway is a defect.
+    raw_ruby = raw_marker("［＃「変」の注記］", "ruby", 0)
+    base = write_dump(tmp_path, "a", {"w1": doc([para(raw_ruby)])})
+    wrongly_upgraded = {
+        "kind": "ruby",
+        "base": "変",
+        "reading": "",
+        "direction": "left",
+        "span": raw_ruby["span"],
+    }
+    cand = write_dump(tmp_path, "b", {"w1": v2_doc([para(wrongly_upgraded)])})
+    code, _, _ = run("v2-migration", base, cand, tmp_path)
+    assert code == 2
+
+
+JOPEN = "［＃ここから２１字詰め］"
+JCLOSE = "［＃ここで字詰め終わり］"
+
+
+def test_v2_migration_jizume_formation(tmp_path):
+    inner = text("\n中身\n", 10)  # span 10..18
+    base = write_dump(
+        tmp_path,
+        "a",
+        {
+            "w1": doc(
+                [
+                    para(
+                        text("前\n"),
+                        raw_marker(JOPEN, "containerOpen", 4),
+                        inner,
+                        raw_marker(JCLOSE, "containerClose", 40),
+                        text("\n後\n", 70),
+                    )
+                ]
+            )
+        },
+    )
+    cand = write_dump(
+        tmp_path,
+        "b",
+        {
+            "w1": v2_doc(
+                [
+                    para(text("前\n")),
+                    {
+                        "kind": "jizume_block",
+                        "width": 21,
+                        "children": [para(text("中身", 10, 18))],
+                    },
+                    para(text("後\n", 70, 75)),
+                ]
+            )
+        },
+    )
+    code, summary, err = run("v2-migration", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["jizume_rewritten"] == 1
+
+
+def test_v2_migration_rejects_leftover_x_layout(tmp_path):
+    base = write_dump(
+        tmp_path,
+        "a",
+        {
+            "w1": doc(
+                [
+                    {
+                        "kind": "jisage_block",
+                        "x-indent": 3,
+                        "children": [para(text("本文\n", 0))],
+                    }
+                ]
+            )
+        },
+    )
+    cand = write_dump(
+        tmp_path,
+        "b",
+        {
+            "w1": v2_doc(
+                [
+                    {
+                        "kind": "jisage_block",
+                        "x-indent": 3,  # bug: never renamed to "indent"
+                        "children": [para(text("本文\n", 0))],
+                    }
+                ]
+            )
+        },
+    )
+    code, _, _ = run("v2-migration", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_v2_migration_warning_code_mismatch(tmp_path):
+    base = write_dump(
+        tmp_path,
+        "a",
+        {"w1": doc([para(text("あ\n"))], warnings=[{"message": "some_warning", "line": 1}])},
+    )
+    cand = write_dump(
+        tmp_path,
+        "b",
+        {
+            "w1": v2_doc(
+                [para(text("あ\n"))],
+                warnings=[
+                    {
+                        "code": "wrong-code",
+                        "severity": "warning",
+                        "message": "some_warning",
+                        "span": {
+                            "byte_start": 0,
+                            "byte_end": 4,
+                            "line_start": 1,
+                            "line_end": 1,
+                        },
+                    }
+                ],
+            )
+        },
+    )
+    code, _, _ = run("v2-migration", base, cand, tmp_path)
+    assert code == 2
+
+
+def burasage_style(content, first, rest):
+    # push_burasage_paragraph shape, v1 (pre-rename) key names.
+    return {
+        "kind": "style",
+        "style_type": "burasage",
+        "content": list(content),
+        "x-indent-first": first,
+        "x-indent-rest": rest,
+        "x-provenance": "source-derived",
+    }
+
+
+def test_v2_migration_compound_jizume_wrap(tmp_path):
+    # v1's compound-container burasage classification already discards any
+    # 字詰め clause on its marker (burasage_container_indent is unchanged
+    # since the initial port) — so the baseline shape below is exactly what
+    # a real v1 dump produces whether or not the original marker carried a
+    # 字詰め clause. The audit cannot re-derive the width from baseline
+    # alone; it adopts the candidate's jizume_block wrapper (verifying
+    # width and exact wrapped-content invariants) mirroring Task 6's wrap.
+    base_para = para(burasage_style([text("本文", 10, 16)], 6, 7))
+    base = write_dump(tmp_path, "a", {"w1": doc([base_para])})
+    cand_para = para(
+        {
+            "kind": "style",
+            "style_type": "burasage",
+            "content": [text("本文", 10, 16)],
+            "indent_first": 6,
+            "indent_rest": 7,
+            "x-provenance": "source-derived",
+        }
+    )
+    cand = write_dump(
+        tmp_path,
+        "b",
+        {"w1": v2_doc([{"kind": "jizume_block", "width": 21, "children": [cand_para]}])},
+    )
+    code, summary, err = run("v2-migration", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["jizume_rewritten"] == 1

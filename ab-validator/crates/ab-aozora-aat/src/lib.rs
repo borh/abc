@@ -578,6 +578,34 @@ fn simple_jisage_open_indent(source: &str) -> Option<u64> {
     Some(parse_aozora_number_before(marker, "字下げ").unwrap_or(1))
 }
 
+/// Recognize a jizume (字詰め) container-open marker and extract the
+/// chars-per-line count — standalone (`［＃ここからN字詰め］`) or as the
+/// FINAL clause of a compound container
+/// (`［＃ここから６字下げ、折り返して７字下げ、２１字詰め］`).
+///
+/// Phase 4 wiring point: recognized but deliberately NOT emitted — AAT
+/// schema v1 has no `jizume_block` kind (Phase 3 design spec, decision 4),
+/// so jizume markers stay raw in AAT output until the Phase 4 schema
+/// rotation.
+#[must_use]
+pub fn jizume_open_chars(source: &str) -> Option<u64> {
+    let marker = source.trim();
+    if !marker.starts_with("［＃ここから") || !marker.ends_with('］') {
+        return None;
+    }
+    let (_, after) = marker.split_once("字詰め")?;
+    if after != "］" {
+        return None;
+    }
+    parse_aozora_number_before(marker, "字詰め")
+}
+
+/// Recognize the jizume container-close marker (`［＃ここで字詰め終わり］`).
+#[must_use]
+pub fn is_jizume_close(source: &str) -> bool {
+    source.trim() == "［＃ここで字詰め終わり］"
+}
+
 fn find_matching_jisage_close(content: &[Value], start: usize) -> Option<usize> {
     find_matching_container_close(content, start, "字下げ")
 }
@@ -1261,5 +1289,30 @@ mod tests {
             "pairing must abort: {kinds:?}"
         );
         assert!(kinds.contains(&"jisage_block".to_owned()));
+    }
+
+    #[test]
+    fn jizume_open_chars_recognizes_standalone_and_compound() {
+        assert_eq!(jizume_open_chars("［＃ここから２３字詰め］"), Some(23));
+        assert_eq!(jizume_open_chars("［＃ここから６字下げ、折り返して７字下げ、２１字詰め］"), Some(21));
+        assert_eq!(jizume_open_chars("［＃ここから２字下げ］"), None);
+        assert_eq!(jizume_open_chars("［＃ここで字詰め終わり］"), None);
+        assert!(is_jizume_close("［＃ここで字詰め終わり］"));
+        assert!(!is_jizume_close("［＃ここで字下げ終わり］"));
+    }
+
+    #[test]
+    fn compound_jizume_still_classifies_burasage_and_emits_no_jizume_block() {
+        // The compound container already classifies as burasage (6,7) today —
+        // the ２１字詰め clause is recognition-only until Phase 4.
+        assert_eq!(
+            burasage_open_indent("［＃ここから６字下げ、折り返して７字下げ、２１字詰め］"),
+            Some((6, 7))
+        );
+        let src = "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\nあ\n［＃ここで字下げ終わり］\n";
+        let doc: Value = serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
+        let text = serde_json::to_string(&doc).unwrap();
+        assert!(!text.contains("jizume_block"));
+        assert!(text.contains("burasage"));
     }
 }

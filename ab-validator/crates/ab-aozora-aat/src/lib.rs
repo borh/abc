@@ -49,6 +49,25 @@ pub struct DecodedSource {
     /// BEFORE the parse; the parse of neutralized text cannot rediscover
     /// them. Spans are full-sanitized-text byte offsets.
     pub sanitize_diagnostics: Vec<AozoraSanitizeDiagnostic>,
+    /// The tail of the SANITIZED text from the `底本：` line onward
+    /// (`aozora_body_range`'s tail-start line, NOT its trailing-blank-
+    /// trimmed `body_end` — blank lines between the last body content and
+    /// the `底本：` line belong to neither the body nor a real tail line,
+    /// so anchoring on the line itself is the only choice that doesn't
+    /// silently drop or duplicate those blanks). Empty when the work has
+    /// no `底本：` line at all (`aozora_body_range` returns
+    /// `source.len()` as the tail start in that case). Phase 4 (Task 14):
+    /// previously this text was computed and thrown away by
+    /// `sanitize_for_aat`, discarding the terminal-provenance/colophon
+    /// tail entirely — see
+    /// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`.
+    pub sanitized_tail: String,
+    /// Byte offset of `sanitized_tail`'s start within the full SANITIZED
+    /// text (same coordinate system `sanitize_diagnostics` spans use —
+    /// composes through `span_ctx`'s `maps` directly, with NO
+    /// `body_offset` added, exactly like `diagnostics_json_from_bytes`'s
+    /// sanitize-stage rebase).
+    pub tail_offset: usize,
     /// Sanitize offset maps + body offset + line index for span rebasing
     /// (ADR 0024: emitted spans are offsets against the full decoded
     /// source `text`, with real 1-based line numbers).
@@ -101,23 +120,65 @@ impl SpanContext {
 /// rewrite, so decoded-source lines and sanitized-text lines agree in
 /// count for every input.
 fn line_starts(text: &str) -> Vec<usize> {
-    let bytes = text.as_bytes();
     let mut starts = vec![0];
+    starts.extend(terminator_ends(text));
+    starts
+}
+
+/// Byte offsets immediately after every line terminator in `text`,
+/// treating `\n`, `\r\n` (one boundary, after the pair), and bare `\r` as
+/// boundaries — the exact rule `line_starts` is built from (factored out
+/// so the tail line-splitting below shares it rather than re-deriving a
+/// different one; see `line_starts`'s doc comment for why bare `\r` must
+/// count).
+fn terminator_ends(text: &str) -> Vec<usize> {
+    let bytes = text.as_bytes();
+    let mut ends = Vec::new();
     let mut i = 0;
     while i < bytes.len() {
         match bytes[i] {
             b'\n' => {
                 i += 1;
-                starts.push(i);
+                ends.push(i);
             }
             b'\r' => {
                 i += if bytes.get(i + 1) == Some(&b'\n') { 2 } else { 1 };
-                starts.push(i);
+                ends.push(i);
             }
             _ => i += 1,
         }
     }
-    starts
+    ends
+}
+
+/// Terminator-INCLUSIVE `(start, end)` byte ranges of every line in
+/// `text`, built from the same boundary set as `line_starts`/
+/// `terminator_ends`. Unlike `split_inclusive('\n')` (which only splits on
+/// `\n`, missing bare-CR tails — see Phase 3's `line_starts` doc comment),
+/// this honors `\n`, `\r\n`, and bare `\r`. A final line lacking a
+/// terminator (the text doesn't end in one) still yields one last range
+/// ending at `text.len()`.
+///
+/// NOTE (Task 14 divergence from the Python reference,
+/// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`):
+/// Python's `str.splitlines`/line iteration also breaks on `\v`, `\f`,
+/// `\x1c`-`\x1e`, `U+2028`, `U+2029`, etc. This Rust rule only recognizes
+/// `\n`/`\r\n`/`\r` (the terminators `sanitize` and `line_starts` already
+/// treat as real line boundaries). The corpus scan
+/// (`docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`)
+/// found zero exotic-boundary tail lines across 17,886 works, so this
+/// divergence is corpus-absent.
+fn line_ranges(text: &str) -> Vec<Range<usize>> {
+    let mut out = Vec::new();
+    let mut start = 0;
+    for end in terminator_ends(text) {
+        out.push(start..end);
+        start = end;
+    }
+    if start < text.len() {
+        out.push(start..text.len());
+    }
+    out
 }
 
 #[derive(Debug, Deserialize, Clone, Copy)]
@@ -178,64 +239,108 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     let source_hash = format!("sha256:{}", hex_sha256(bytes));
     if bytes.starts_with(&[0xef, 0xbb, 0xbf]) {
         let text = str::from_utf8(&bytes[3..])?.to_owned();
-        let (span_text, sanitize_diagnostics, maps, body_offset) = sanitize_for_aat(&text);
-        let span_ctx = SpanContext { maps, body_offset, line_starts: line_starts(&text) };
+        let sanitized = sanitize_for_aat(&text);
+        let span_ctx = SpanContext {
+            maps: sanitized.maps,
+            body_offset: sanitized.body_offset,
+            line_starts: line_starts(&text),
+        };
         return Ok(DecodedSource {
             text,
-            span_text,
+            span_text: sanitized.body,
             encoding: "utf-8-bom",
             source_hash,
-            sanitize_diagnostics,
+            sanitize_diagnostics: sanitized.diagnostics,
+            sanitized_tail: sanitized.tail,
+            tail_offset: sanitized.tail_offset,
             span_ctx,
         });
     }
     if let Ok(text) = str::from_utf8(bytes) {
         let text = text.to_owned();
-        let (span_text, sanitize_diagnostics, maps, body_offset) = sanitize_for_aat(&text);
-        let span_ctx = SpanContext { maps, body_offset, line_starts: line_starts(&text) };
+        let sanitized = sanitize_for_aat(&text);
+        let span_ctx = SpanContext {
+            maps: sanitized.maps,
+            body_offset: sanitized.body_offset,
+            line_starts: line_starts(&text),
+        };
         return Ok(DecodedSource {
             text,
-            span_text,
+            span_text: sanitized.body,
             encoding: "utf-8",
             source_hash,
-            sanitize_diagnostics,
+            sanitize_diagnostics: sanitized.diagnostics,
+            sanitized_tail: sanitized.tail,
+            tail_offset: sanitized.tail_offset,
             span_ctx,
         });
     }
     let (cow, _, had_errors) = SHIFT_JIS.decode(bytes);
     let text = cow.into_owned();
-    let (span_text, sanitize_diagnostics, maps, body_offset) = sanitize_for_aat(&text);
-    let span_ctx = SpanContext { maps, body_offset, line_starts: line_starts(&text) };
+    let sanitized = sanitize_for_aat(&text);
+    let span_ctx = SpanContext {
+        maps: sanitized.maps,
+        body_offset: sanitized.body_offset,
+        line_starts: line_starts(&text),
+    };
     Ok(DecodedSource {
         text,
-        span_text,
+        span_text: sanitized.body,
         encoding: if had_errors {
             "windows-31j-lossy"
         } else {
             "windows-31j"
         },
         source_hash,
-        sanitize_diagnostics,
+        sanitize_diagnostics: sanitized.diagnostics,
+        sanitized_tail: sanitized.tail,
+        tail_offset: sanitized.tail_offset,
         span_ctx,
     })
 }
 
-fn sanitize_for_aat(
-    text: &str,
-) -> (String, Vec<AozoraSanitizeDiagnostic>, SanitizeMaps, usize) {
+/// Intermediate result of the sanitize + body/tail split stage — a named
+/// struct rather than a wide tuple so `decode_source_bytes`'s three
+/// branches read as field access, not positional unpacking (Task 14 added
+/// the tail fields; a tuple would have grown to six positional slots).
+struct SanitizedForAat {
+    /// The BODY slice (`sanitized[body_range]`), same content
+    /// `sanitize_for_aat` always returned as its first element.
+    body: String,
+    diagnostics: Vec<AozoraSanitizeDiagnostic>,
+    maps: SanitizeMaps,
+    /// `body_range.start`, sanitized coordinates.
+    body_offset: usize,
+    /// The TAIL slice (`sanitized[tail_start..]`) — see
+    /// `DecodedSource::sanitized_tail`'s doc comment for why this is
+    /// anchored on the `底本：` line, not `body_range.end`.
+    tail: String,
+    /// `tail_start`, sanitized coordinates.
+    tail_offset: usize,
+}
+
+fn sanitize_for_aat(text: &str) -> SanitizedForAat {
     let mapped = sanitize_mapped(text);
     let sanitize_diagnostics = mapped.diagnostics;
     let sanitized = mapped.text.into_owned();
-    let body = aozora_body_range(&sanitized);
-    (
-        sanitized[body.clone()].to_owned(),
-        sanitize_diagnostics,
-        mapped.maps,
-        body.start,
-    )
+    let (body, tail_start) = aozora_body_range(&sanitized);
+    SanitizedForAat {
+        body: sanitized[body.clone()].to_owned(),
+        diagnostics: sanitize_diagnostics,
+        maps: mapped.maps,
+        body_offset: body.start,
+        tail: sanitized[tail_start..].to_owned(),
+        tail_offset: tail_start,
+    }
 }
 
-fn aozora_body_range(source: &str) -> Range<usize> {
+/// Returns the BODY range (unchanged boundary semantics: trailing blank
+/// lines before the `底本：` line are trimmed off the body end) and the
+/// TAIL start offset — the byte offset of the `底本：` line itself, NOT
+/// `body_range.end` (blank lines between the last body content and the
+/// `底本：` line belong to neither region). When no `底本：` line exists,
+/// both `body_range.end` and the tail start are `source.len()` (no tail).
+fn aozora_body_range(source: &str) -> (Range<usize>, usize) {
     let mut separators = Vec::new();
     let mut start = 0_usize;
     for line in source.split_inclusive('\n') {
@@ -256,14 +361,16 @@ fn aozora_body_range(source: &str) -> Range<usize> {
     }
 
     let mut body_end = source.len();
+    let mut tail_start = source.len();
     for (line_start, line) in lines_from(source, body_start) {
         if line.trim_start().starts_with("底本：") {
             body_end = trim_trailing_blank_lines(source, line_start);
+            tail_start = line_start;
             break;
         }
     }
 
-    body_start..body_end
+    (body_start..body_end, tail_start)
 }
 
 fn is_aozora_separator(line: &str) -> bool {
@@ -457,16 +564,19 @@ fn build_aat(
         .iter()
         .map(|entry| ((entry.span.start, entry.span.end), entry.clone()))
         .collect::<BTreeMap<_, _>>();
-    let blocks = blocks_from_inline_content(inline_content(
+    let mut blocks = blocks_from_inline_content(inline_content(
         decoded,
         nodes,
         &gaiji_by_start,
         &ruby_by_span,
     ));
-    let warnings = diagnostics
+    let mut warnings = diagnostics
         .iter()
         .map(|diagnostic| diagnostic_warning(diagnostic, &decoded.span_ctx))
         .collect::<Vec<_>>();
+    let (source_notes, tail_warnings) = source_notes_from_tail(decoded);
+    blocks.extend(source_notes);
+    warnings.extend(tail_warnings);
     json!({
         "version": 2,
         "work_id": "stdin",
@@ -478,6 +588,202 @@ fn build_aat(
             "source_hash": decoded.source_hash,
             "parse_complete": diagnostics.iter().all(|d| d.severity.as_deref() != Some("error")),
             "warnings": warnings
+        }
+    })
+}
+
+/// The terminal-provenance/colophon tail line classes — a direct
+/// transcription of `reports/lib/terminal_provenance.py`'s `Class`
+/// (`TERMINAL_PROVENANCE_CLASS` / `COLOPHON_METADATA_CLASS` /
+/// `BLANK_CLASS`) from
+/// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`,
+/// the NORMATIVE authority for this rule. `Colophon` covers both a real
+/// colophon-head/continuation line AND the fail-open fallback below
+/// (`classify_tail`'s doc comment) — AAT emission only ever needs to know
+/// "not terminal provenance", so the two are not distinguished here; the
+/// fallback additionally produces a `tail-line-unclassified` warning.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TailLineClass {
+    TerminalProvenance,
+    Colophon,
+    Blank,
+}
+
+/// State carried across tail lines — mirrors the Python module's
+/// `PROVENANCE_STATE` / `COLOPHON_STATE`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TailState {
+    Provenance,
+    Colophon,
+}
+
+/// Ordered head-marker skeleton — verbatim transcription of
+/// `reports/lib/terminal_provenance.py`'s `PROVENANCE_HEADS`. A head is
+/// recognized by prefix match against the line with leading/trailing
+/// whitespace stripped, same as the Python `classify_tail`.
+const PROVENANCE_HEADS: [&str; 2] = ["底本：", "底本の親本："];
+
+/// Verbatim transcription of `reports/lib/terminal_provenance.py`'s
+/// `COLOPHON_HEADS`.
+const COLOPHON_HEADS: [&str; 4] = ["入力：", "校正：", "青空文庫作成ファイル：", "※"];
+
+/// Classify every line of a tail (terminator-inclusive, as produced by
+/// `line_ranges` over `DecodedSource::sanitized_tail`). Transcribes
+/// `reports/lib/terminal_provenance.py`'s `classify_tail` case-for-case —
+/// see
+/// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`
+/// for the normative rule this must not drift from:
+///
+/// - blank line (whitespace-stripped empty): `Blank`, state unchanged.
+/// - line (stripped) starts with a `PROVENANCE_HEADS` entry: `Provenance`
+///   state, class `TerminalProvenance`.
+/// - line (stripped) starts with a `COLOPHON_HEADS` entry: `Colophon`
+///   state, class `Colophon`.
+/// - otherwise, non-blank, matching no head: inherits the class of the
+///   current state (continuation line).
+///
+/// **Divergence from the Python reference (deliberate, documented):** the
+/// Python `classify_tail` is fail-closed — a non-blank line reached before
+/// any state-setting head raises `UnclassifiableTail`, because the corpus
+/// scan proved the rule total (zero unclassifiable residual across 17,886
+/// works) and the *generator*'s job is to flag out-of-corpus input loudly.
+/// The AAT emitter's job is different: it must always produce SOME AAT
+/// document for arbitrary stdin, so failing closed here would turn a
+/// corpus-absent edge case into a hard error for end users. Instead this
+/// classifies the line `Colophon` (excluded from `source_note` emission,
+/// same as a real colophon line) and records its tail-relative line index
+/// in the returned `Vec<usize>` so the caller can emit a
+/// `tail-line-unclassified` warning — nothing is silently interpreted as
+/// terminal provenance.
+fn classify_tail(lines: &[&str]) -> (Vec<TailLineClass>, Vec<usize>) {
+    let mut state: Option<TailState> = None;
+    let mut classes = Vec::with_capacity(lines.len());
+    let mut unclassifiable = Vec::new();
+    for (index, line) in lines.iter().enumerate() {
+        let stripped = line.trim();
+        if stripped.is_empty() {
+            classes.push(TailLineClass::Blank);
+            continue;
+        }
+        if PROVENANCE_HEADS.iter().any(|head| stripped.starts_with(head)) {
+            state = Some(TailState::Provenance);
+            classes.push(TailLineClass::TerminalProvenance);
+        } else if COLOPHON_HEADS.iter().any(|head| stripped.starts_with(head)) {
+            state = Some(TailState::Colophon);
+            classes.push(TailLineClass::Colophon);
+        } else {
+            match state {
+                Some(TailState::Provenance) => classes.push(TailLineClass::TerminalProvenance),
+                Some(TailState::Colophon) => classes.push(TailLineClass::Colophon),
+                None => {
+                    classes.push(TailLineClass::Colophon);
+                    unclassifiable.push(index);
+                }
+            }
+        }
+    }
+    (classes, unclassifiable)
+}
+
+/// Byte-offset span of a tail-relative range, composed exactly like
+/// `diagnostics_json_from_bytes`'s sanitize-stage rebase (lib.rs's
+/// `rebase_spans` call with `maps.to_source_offset`/`to_source_end`
+/// directly — NO `body_offset` added, since `tail_offset` is already a
+/// full-sanitized-text coordinate, the same coordinate system
+/// `sanitize_diagnostics` spans use).
+fn tail_span_json(range: &Range<usize>, tail_offset: usize, ctx: &SpanContext) -> Value {
+    let byte_start = ctx.maps.to_source_offset(tail_offset + range.start);
+    let byte_end = ctx.maps.to_source_end(tail_offset + range.end);
+    let line_start = ctx.line_of(byte_start);
+    let line_end = ctx.line_of(if byte_end > byte_start {
+        byte_end - 1
+    } else {
+        byte_start
+    });
+    json!({
+        "line_start": line_start,
+        "line_end": line_end,
+        "byte_start": byte_start,
+        "byte_end": byte_end
+    })
+}
+
+/// Builds trailing `source_note` blocks from `decoded.sanitized_tail`
+/// (see `DecodedSource::sanitized_tail`'s doc comment for what "tail"
+/// means and where it starts). Splits the tail into terminator-inclusive
+/// lines (`line_ranges`, the same `\n`/`\r\n`/bare-`\r` boundary set
+/// `line_starts` uses), classifies each line (`classify_tail`), and
+/// groups CONTIGUOUS `TerminalProvenance` lines into one `source_note`
+/// block per group — a `Blank` or `Colophon` line ends a group.
+/// `colophon_metadata` lines are excluded from AAT entirely (measured
+/// separately by the source-region instrument;
+/// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`),
+/// as is a work with no tail at all (`sanitized_tail` empty — no blocks,
+/// no warnings). Returns `(blocks, warnings)`: the `warnings` are only
+/// ever `tail-line-unclassified` fallback entries (see `classify_tail`'s
+/// doc comment); a well-formed tail produces none.
+fn source_notes_from_tail(decoded: &DecodedSource) -> (Vec<Value>, Vec<Value>) {
+    if decoded.sanitized_tail.is_empty() {
+        return (Vec::new(), Vec::new());
+    }
+    let ranges = line_ranges(&decoded.sanitized_tail);
+    let lines = ranges
+        .iter()
+        .map(|range| &decoded.sanitized_tail[range.clone()])
+        .collect::<Vec<_>>();
+    let (classes, unclassifiable) = classify_tail(&lines);
+    let warnings = unclassifiable
+        .iter()
+        .map(|&index| {
+            json!({
+                "code": "tail-line-unclassified",
+                "severity": "warning",
+                "message": lines[index].trim_end_matches(['\n', '\r']),
+                "span": tail_span_json(&ranges[index], decoded.tail_offset, &decoded.span_ctx)
+            })
+        })
+        .collect::<Vec<_>>();
+    let mut blocks = Vec::new();
+    let mut group = Vec::new();
+    for index in 0..classes.len() {
+        if classes[index] == TailLineClass::TerminalProvenance {
+            group.push(json!({
+                "kind": "text",
+                "value": lines[index],
+                "span": tail_span_json(&ranges[index], decoded.tail_offset, &decoded.span_ctx)
+            }));
+        } else if !group.is_empty() {
+            blocks.push(source_note_block(mem::take(&mut group)));
+        }
+    }
+    if !group.is_empty() {
+        blocks.push(source_note_block(group));
+    }
+    (blocks, warnings)
+}
+
+/// One `source_note` block (`placement: "back"`,
+/// `region_class: "terminal_provenance"`) from a non-empty run of
+/// `{kind: "text", value, span}` content nodes. The block `span`
+/// aggregates the first content span's `byte_start`/`line_start` and the
+/// last content span's `byte_end`/`line_end`.
+#[allow(
+    clippy::needless_pass_by_value,
+    reason = "content is consumed (moved into the returned block); a slice would force an extra clone at the one call site"
+)]
+fn source_note_block(content: Vec<Value>) -> Value {
+    let first_span = content[0]["span"].clone();
+    let last_span = content[content.len() - 1]["span"].clone();
+    json!({
+        "kind": "source_note",
+        "placement": "back",
+        "region_class": "terminal_provenance",
+        "content": content,
+        "span": {
+            "byte_start": first_span["byte_start"],
+            "byte_end": last_span["byte_end"],
+            "line_start": first_span["line_start"],
+            "line_end": last_span["line_end"]
         }
     })
 }
@@ -1372,9 +1678,10 @@ mod tests {
     /// red — a parsed/`Value`-equality check would NOT catch this, since
     /// `Value::eq` for objects is order-independent.
     ///
-    /// Expected output re-pasted 2026-07-12 (Task 9: `ab-aozora` `0.3.0` →
-    /// `0.4.0`, `aat-schema 1` → `aat-schema 2`, document `"version"` `1` →
-    /// `2`) via:
+    /// Expected output re-pasted 2026-07-12 (Task 14: `ab-aozora` `0.4.0` →
+    /// `0.5.0` — the `source_note` emission itself is a no-op on this
+    /// input, which has no `底本：` tail, so only the version string
+    /// changes) via:
     /// ```text
     /// export RUSTC_WRAPPER= SCCACHE_DISABLE=1
     /// cd ab-validator
@@ -1389,7 +1696,7 @@ mod tests {
     /// self.rev or "unknown"` and `build.rs`'s doc comment).
     #[test]
     fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
-        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.4.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
     }
@@ -1701,6 +2008,11 @@ mod tests {
         find_node(v, kind).unwrap_or_else(|| panic!("no {kind:?} node found in {v}"))
     }
 
+    /// The top-level `blocks` array of an AAT document.
+    fn top_level_blocks(v: &Value) -> &Vec<Value> {
+        v["blocks"].as_array().unwrap()
+    }
+
     #[test]
     fn ruby_emission_uses_structured_entries_right_parity() {
         let aat = aat_value_for("｜漢字《かんじ》\n");
@@ -1937,11 +2249,250 @@ mod tests {
     }
 
     #[test]
-    fn c3_identity_join_key_and_document_version() {
+    fn c4_identity_join_key_and_document_version() {
+        // Was the C3 identity test (Task 9); C4 (Task 14) bumps
+        // `ab-aozora` `0.4.0` → `0.5.0` — the schema-2 join key's other
+        // coordinates (`aat-schema 2 facade 0.3.0 wire-schema 3`) are
+        // unchanged by source_note emission.
         assert!(
-            adapter_version().starts_with("ab-aozora 0.4.0 aat-schema 2 facade 0.3.0 wire-schema 3")
+            adapter_version().starts_with("ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3")
         );
         let aat = aat_value_for("あ\n");
         assert_eq!(aat["version"], 2);
+    }
+
+    // --- Task 14: classify_tail (transcribed from
+    // reports/lib/terminal_provenance.py — see
+    // docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md)
+    // Tests mirror `ClassifyTail` in
+    // reports/source-regions/tests/test_terminal_provenance_split.py
+    // one-for-one where applicable. ------------------------------------
+
+    #[test]
+    fn classify_tail_provenance_head_line() {
+        let (classes, unclassifiable) = classify_tail(&["底本：「日本文学全集1」集英社"]);
+        assert_eq!(classes, vec![TailLineClass::TerminalProvenance]);
+        assert!(unclassifiable.is_empty());
+    }
+
+    #[test]
+    fn classify_tail_continuation_after_provenance_head_is_provenance() {
+        let lines = ["底本：「日本文学全集1」集英社", "　　　1969（昭和44）年12月25日初版"];
+        let (classes, _) = classify_tail(&lines);
+        assert_eq!(
+            classes,
+            vec![TailLineClass::TerminalProvenance, TailLineClass::TerminalProvenance]
+        );
+    }
+
+    /// THE distinguishing case: the identically-shaped date line that is
+    /// `TerminalProvenance` in the previous test is `Colophon` here,
+    /// because it follows `入力：` instead of `底本：`. No per-line
+    /// predicate can tell these apart — only carried state can.
+    #[test]
+    fn classify_tail_same_shaped_line_after_colophon_head_is_colophon() {
+        let lines = ["入力：j.utiyama", "1998年7月28日公開"];
+        let (classes, _) = classify_tail(&lines);
+        assert_eq!(classes, vec![TailLineClass::Colophon, TailLineClass::Colophon]);
+    }
+
+    #[test]
+    fn classify_tail_real_corpus_tail_end_to_end() {
+        // cards/000005/files/5_ruby_21311.zip::aibiki.txt in the pinned
+        // aozorabunko corpus (the motivating example from the report).
+        let lines = [
+            "底本：「日本文学全集1　坪内逍遥・二葉亭四迷集」集英社",
+            "　　　1969（昭和44）年12月25日初版",
+            "入力：j.utiyama",
+            "校正：八巻美恵",
+            "1998年7月28日公開",
+            "2006年1月6日修正",
+            "青空文庫作成ファイル：",
+            "このファイルは、インターネットの図書館、青空文庫で作られました。",
+        ];
+        let (classes, unclassifiable) = classify_tail(&lines);
+        assert!(unclassifiable.is_empty());
+        assert_eq!(
+            classes,
+            vec![
+                TailLineClass::TerminalProvenance,
+                TailLineClass::TerminalProvenance,
+                TailLineClass::Colophon,
+                TailLineClass::Colophon,
+                TailLineClass::Colophon,
+                TailLineClass::Colophon,
+                TailLineClass::Colophon,
+                TailLineClass::Colophon,
+            ]
+        );
+    }
+
+    #[test]
+    fn classify_tail_oyahon_continuation_is_provenance() {
+        let lines = ["底本の親本：「新編 銀河鉄道の夜」新潮文庫", "　　　1989（平成元）年11月10日初版"];
+        let (classes, _) = classify_tail(&lines);
+        assert_eq!(
+            classes,
+            vec![TailLineClass::TerminalProvenance, TailLineClass::TerminalProvenance]
+        );
+    }
+
+    #[test]
+    fn classify_tail_all_named_colophon_heads() {
+        let lines = [
+            "入力：ある人",
+            "校正：別の人",
+            "青空文庫作成ファイル：",
+            "※このファイルはインターネットの図書館、青空文庫で作られました。",
+        ];
+        let (classes, _) = classify_tail(&lines);
+        assert_eq!(classes, vec![TailLineClass::Colophon; 4]);
+    }
+
+    #[test]
+    fn classify_tail_blank_between_blocks_is_blank_and_preserves_state() {
+        let lines = ["底本：「サンプル」出版社", "", "入力：誰か"];
+        let (classes, _) = classify_tail(&lines);
+        assert_eq!(
+            classes,
+            vec![TailLineClass::TerminalProvenance, TailLineClass::Blank, TailLineClass::Colophon]
+        );
+    }
+
+    #[test]
+    fn classify_tail_blank_preserves_provenance_state_across_continuation() {
+        let lines = ["底本：「サンプル」出版社", "", "　　　1999年1月1日初版"];
+        let (classes, _) = classify_tail(&lines);
+        assert_eq!(
+            classes,
+            vec![
+                TailLineClass::TerminalProvenance,
+                TailLineClass::Blank,
+                TailLineClass::TerminalProvenance
+            ]
+        );
+    }
+
+    /// Divergence from the Python reference: `classify_tail` never fails
+    /// closed. A non-blank line before any head classifies `Colophon` and
+    /// its tail-relative index is reported so the caller can warn.
+    #[test]
+    fn classify_tail_nonblank_before_any_head_is_unclassifiable_fallback() {
+        let lines = ["何かの一行", "底本：「サンプル」出版社"];
+        let (classes, unclassifiable) = classify_tail(&lines);
+        assert_eq!(classes[0], TailLineClass::Colophon);
+        assert_eq!(classes[1], TailLineClass::TerminalProvenance);
+        assert_eq!(unclassifiable, vec![0]);
+    }
+
+    // --- Task 14: source_note emission --------------------------------
+
+    #[test]
+    fn terminal_provenance_tail_emits_source_note() {
+        let src = "本文です。\n\n底本：「作品集」文庫社\n　1990（平成2）年5月10日発行\n入力：someone\n校正：other\n";
+        let aat = aat_value_for(src);
+        let notes: Vec<&Value> = top_level_blocks(&aat)
+            .iter()
+            .filter(|b| b["kind"] == "source_note")
+            .collect();
+        assert_eq!(notes.len(), 1);
+        let note = notes[0];
+        assert_eq!(note["placement"], "back");
+        assert_eq!(note["region_class"], "terminal_provenance");
+        // one text inline per terminal-provenance line (底本 + its
+        // continuation date line), colophon lines (入力/校正) EXCLUDED;
+        // values PRESERVE the line terminator
+        let content = note["content"].as_array().unwrap();
+        assert_eq!(content.len(), 2);
+        assert_eq!(content[0]["value"], "底本：「作品集」文庫社\n");
+        assert_eq!(content[1]["value"], "　1990（平成2）年5月10日発行\n");
+        let s = &content[0]["span"];
+        let (a, b) = (
+            s["byte_start"].as_u64().unwrap() as usize,
+            s["byte_end"].as_u64().unwrap() as usize,
+        );
+        assert_eq!(&src[a..b], "底本：「作品集」文庫社\n"); // terminator inside the span
+        assert_eq!(s["line_start"], 3);
+        // block span aggregates first content start .. last content end
+        assert_eq!(note["span"]["byte_start"], content[0]["span"]["byte_start"]);
+        assert_eq!(note["span"]["byte_end"], content[1]["span"]["byte_end"]);
+        assert_eq!(note["span"]["line_start"], content[0]["span"]["line_start"]);
+        assert_eq!(note["span"]["line_end"], content[1]["span"]["line_end"]);
+    }
+
+    #[test]
+    fn stateful_boundary_date_after_colophon_head_is_excluded() {
+        // The reviewer's distinguishing case: a date-shaped line AFTER
+        // 入力： stays colophon (excluded), even though it is shaped
+        // identically to a 底本 continuation line.
+        let src = "本文。\n\n底本：「X」Y社\n入力：someone\n　2005（平成17）年1月1日作成\n";
+        let aat = aat_value_for(src);
+        let note = top_level_blocks(&aat)
+            .iter()
+            .find(|b| b["kind"] == "source_note")
+            .unwrap()
+            .clone();
+        assert_eq!(note["content"].as_array().unwrap().len(), 1); // only the 底本 line
+    }
+
+    #[test]
+    fn tail_free_work_has_no_source_note() {
+        let aat = aat_value_for("本文だけ。\n");
+        assert!(top_level_blocks(&aat).iter().all(|b| b["kind"] != "source_note"));
+    }
+
+    #[test]
+    fn two_non_contiguous_provenance_groups_emit_two_source_notes() {
+        // A colophon block interrupts two provenance blocks — each
+        // contiguous TerminalProvenance run is its own source_note.
+        let src = "本文。\n\n底本：「A」X社\n入力：someone\n底本の親本：「B」Y社\n入力：other\n";
+        let aat = aat_value_for(src);
+        let notes: Vec<&Value> = top_level_blocks(&aat)
+            .iter()
+            .filter(|b| b["kind"] == "source_note")
+            .collect();
+        assert_eq!(notes.len(), 2);
+        assert_eq!(notes[0]["content"].as_array().unwrap().len(), 1);
+        assert_eq!(notes[1]["content"].as_array().unwrap().len(), 1);
+        assert_eq!(notes[1]["content"][0]["value"], "底本の親本：「B」Y社\n");
+    }
+
+    /// A real `decode_source_bytes` tail's first line is ALWAYS a
+    /// recognized head: `aozora_body_range`'s tail-start rule
+    /// (`line.trim_start().starts_with("底本：")`) IS
+    /// `classify_tail`'s `PROVENANCE_HEADS[0]` check, so `state` is
+    /// always set before `classify_tail` ever looks at a second line —
+    /// the fallback branch is provably unreachable through the real
+    /// pipeline (mirrors the Python module's own finding in
+    /// `GeneratorCli.test_unclassifiable_residual_exits_2_with_bounded_examples`'s
+    /// comment, which monkeypatches `classify_tail` for the same reason).
+    /// This test therefore pins the PLUMBING directly against
+    /// `source_notes_from_tail` with a hand-built `sanitized_tail` a
+    /// future caller could still produce, rather than round-tripping
+    /// through `decode_source_bytes` on synthetic source text.
+    #[test]
+    fn unclassifiable_tail_line_falls_back_to_colophon_with_warning() {
+        let mut decoded = decode_source_bytes("foo\n".as_bytes()).unwrap();
+        assert!(decoded.sanitized_tail.is_empty(), "sanity: no real tail in this input");
+        decoded.sanitized_tail = "何かの一行\n底本：「X」Y社\n".to_owned();
+        decoded.tail_offset = 0;
+        let (blocks, warnings) = source_notes_from_tail(&decoded);
+        assert_eq!(blocks.len(), 1);
+        assert_eq!(blocks[0]["kind"], "source_note");
+        let content = blocks[0]["content"].as_array().unwrap();
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0]["value"], "底本：「X」Y社\n");
+        assert_eq!(warnings.len(), 1, "{warnings:?}");
+        assert_eq!(warnings[0]["code"], "tail-line-unclassified");
+        assert_eq!(warnings[0]["severity"], "warning");
+        assert_eq!(warnings[0]["message"], "何かの一行");
+    }
+
+    #[test]
+    fn line_ranges_handles_lf_crlf_bare_cr_and_unterminated_tail() {
+        assert_eq!(line_ranges("a\nb"), vec![0..2, 2..3]);
+        assert_eq!(line_ranges("a\r\nb"), vec![0..3, 3..4]);
+        assert_eq!(line_ranges("a\rb"), vec![0..2, 2..3]);
+        assert_eq!(line_ranges("a\n"), vec![0..2]);
     }
 }

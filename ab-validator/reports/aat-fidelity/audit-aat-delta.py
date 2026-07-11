@@ -216,38 +216,45 @@ def rewrite_blocks(blocks):
             i += 1
             continue
         content = block.get("content", [])
-        oi, kind = next(((j, open_kind(n)) for j, n in enumerate(content)
-                         if open_kind(n)), (None, None))
-        if oi is None:
-            out.append(block)
+        # Rust dispatches arms PER NODE in stream order: an open whose
+        # close scan fails (abort or exhaustion) is pushed raw and the
+        # linear scan continues — a LATER open in the same paragraph can
+        # still be admitted (e.g. an inner keigakomi pair nested inside an
+        # unadmitted yokogumi pair). Mirror by trying each open in order.
+        admitted = None
+        for oi, kind in ((j, open_kind(n)) for j, n in enumerate(content)
+                        if open_kind(n)):
+            needle = CONSTRUCTS[kind][1]
+            # Scan forward through the flat stream for the matching close;
+            # any containerOpen aborts. First the open paragraph's
+            # remainder, then each following block (paragraph content is
+            # scanned; container-derived blocks abort — their containerOpen
+            # was inline at Rust's scan time).
+            close_block_index = ci = None
+            state, k = scan_segment(content, oi + 1, needle)
+            if state == "close":
+                close_block_index, ci = i, k
+            elif state is None:
+                j = i + 1
+                while j < len(blocks):
+                    nxt = blocks[j]
+                    if is_container_derived_block(nxt):
+                        break  # its containerOpen was inline in Rust's scan
+                    if isinstance(nxt, dict) and nxt.get("kind") == "paragraph":
+                        state, k = scan_segment(nxt.get("content", []), 0, needle)
+                        if state == "close":
+                            close_block_index, ci = j, k
+                        if state is not None:
+                            break
+                    j += 1
+            if close_block_index is not None:
+                admitted = (oi, kind, close_block_index, ci)
+                break
+        if admitted is None:
+            out.append(block)  # no admissible pair: candidate must equal baseline
             i += 1
             continue
-        needle = CONSTRUCTS[kind][1]
-        # Scan forward through the flat stream for the matching close;
-        # any containerOpen aborts. First the open paragraph's remainder,
-        # then each following paragraph block (non-paragraph blocks carry
-        # no container markers by construction — see Task 7's abort rule).
-        close_block_index = ci = None
-        state, k = scan_segment(content, oi + 1, needle)
-        if state == "close":
-            close_block_index, ci = i, k
-        elif state is None:
-            j = i + 1
-            while j < len(blocks):
-                nxt = blocks[j]
-                if is_container_derived_block(nxt):
-                    break  # its containerOpen was inline in Rust's scan: abort
-                if isinstance(nxt, dict) and nxt.get("kind") == "paragraph":
-                    state, k = scan_segment(nxt.get("content", []), 0, needle)
-                    if state == "close":
-                        close_block_index, ci = j, k
-                    if state is not None:
-                        break
-                j += 1
-        if close_block_index is None:
-            out.append(block)  # unpaired/aborted: candidate must equal baseline
-            i += 1
-            continue
+        oi, kind, close_block_index, ci = admitted
         pre = content[:oi]
         if close_block_index == i:
             inner = content[oi + 1:ci]

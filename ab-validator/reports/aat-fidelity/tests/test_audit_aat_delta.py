@@ -233,6 +233,32 @@ def test_intervening_jisage_block_aborts_pairing(tmp_path):
     assert summary["classes"]["rewritten"] == 1
 
 
+YOPEN = "［＃ここから横組み］"
+YCLOSE = "［＃ここで横組み終わり］"
+
+
+def test_nested_pair_inner_admitted_outer_raw(tmp_path):
+    # 001558 corpus pattern: yokogumi open, keigakomi open, keigakomi
+    # close, yokogumi close — all inline in ONE paragraph. Rust tries each
+    # node in stream order: the yokogumi open is unadmitted (its close
+    # scan aborts on the inner containerOpen) and stays raw; the inner
+    # keigakomi pair IS admitted. The outer close also stays raw, in the
+    # post paragraph.
+    base = write_dump(tmp_path, "a", {"w1": doc([
+        para(text("あ\n"), raw_marker(YOPEN, "containerOpen", 4), text("\nX", 40),
+             raw_marker(OPEN, "containerOpen", 50), text("\n中身\n", 80),
+             raw_marker(CLOSE, "containerClose", 100), text("\nY", 130),
+             raw_marker(YCLOSE, "containerClose", 140), text("\n後\n", 170))])})
+    cand = write_dump(tmp_path, "b", {"w1": doc([
+        para(text("あ\n"), raw_marker(YOPEN, "containerOpen", 4), text("\nX", 40)),
+        {"kind": "keigakomi_block", "children": [para(text("中身", 80, 88))]},
+        para(text("Y", 130, 132), raw_marker(YCLOSE, "containerClose", 140),
+             text("\n後\n", 170))])})
+    code, summary, err = run("container-rewrite", base, cand, tmp_path)
+    assert code == 0, (summary, err)
+    assert summary["classes"]["rewritten"] == 1
+
+
 def test_post_close_chitsuki_paragraph_not_stripped(tmp_path):
     # Post empty (close ends its paragraph): Rust's post-close flag is
     # consumed by the next flat node — the chitsuki alignEnd MARKER, not

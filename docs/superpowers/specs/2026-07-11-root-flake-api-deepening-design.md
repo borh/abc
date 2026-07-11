@@ -1,7 +1,7 @@
 # Root Flake API Deepening Design
 
 **Date:** 2026-07-11
-**Status:** Provisional, pending user review
+**Status:** Approved
 
 ## Purpose
 
@@ -314,9 +314,12 @@ be built on the host.
 
 Verification distinguishes three cases:
 
-1. **Retained identity:** every retained root output and every unchanged
-   component output has the same derivation or program path, except where a
-   documented wrapper change makes identity preservation impossible.
+1. **Retained identity:** every retained non-`self`-dependent root output and
+   every unchanged component output has the same derivation or program path,
+   except where a documented wrapper change makes identity preservation
+   impossible. Root checks that embed `self` necessarily receive new derivation
+   paths when repository content changes; verify their attribute structure and
+   focused builds instead.
 2. **Moved accessibility:** every removed component alias still resolves from
    its owning component flake with the same derivation or program identity.
 3. **Intentional removal:** removed root aliases fail attribute resolution and
@@ -333,9 +336,13 @@ Additional verification must prove:
   component outputs, or the approved maintainer recipes.
 - The two cross-component evidence recipes provide the Nix-built
   `ab-aat-to-parser-ir` binary and successfully evaluate their ABC app targets.
-- The retained `soranoha` program path is identical to the pre-change snapshot,
-  proving that its runtime `PATH`, six `AB_*` assignments, validator-owned
-  adapter and mapping paths, and final ABC dispatch were preserved verbatim.
+- Immediately after the root-only output refactor, the retained `soranoha`
+  program path is identical to the pre-change snapshot. After active caller
+  documentation inside the `abc` and `ab-validator` path inputs is migrated,
+  those inputs necessarily receive new store paths; compare normalized wrapper
+  script text with store hashes removed. This proves that the runtime `PATH`,
+  six `AB_*` assignments, validator-owned adapter and mapping path shapes, and
+  final ABC dispatch were preserved apart from expected input identities.
 - The `validate-migration` app and `just validate-migration` each evaluate the
   root, `abc`, and `ab-validator` checks with `--no-build`; both validator
   invocations set `AB_WORKSPACE_ROOT` to the monorepo root.

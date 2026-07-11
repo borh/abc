@@ -82,7 +82,6 @@ enum SpanKind {
     RubyBase,
     Gaiji,
     Accent,
-    Raw,
 }
 
 impl SpanKind {
@@ -92,7 +91,6 @@ impl SpanKind {
             Self::RubyBase => "ruby",
             Self::Gaiji => "gaiji",
             Self::Accent => "accent",
-            Self::Raw => "raw",
         }
     }
 }
@@ -232,7 +230,12 @@ fn walk_inline(node: &Value, path: &mut Vec<PathSeg>, sink: &mut impl Projection
                 push_field(node, "name", SpanKind::Accent, path, sink);
             }
         }
-        "raw" => push_field(node, "source", SpanKind::Raw, path, sink),
+        // Raw nodes are never body text: the adapter emits them only for
+        // layout markers (［＃…字下げ］, 改ページ, kaeriten, …), parser
+        // residue, and unparsed markup fragments. Projecting their source
+        // leaks markup into the tokenized text stream; the parser-IR
+        // converter's sibling projections drop raw for the same reason.
+        "raw" => {}
         "warigaki" => {
             for key in ["upper", "lower"] {
                 walk_inline_children(node, key, path, sink);
@@ -337,7 +340,8 @@ mod tests {
             }]
         });
 
-        assert_eq!(visible_text_projection(&aat), "ABCDéfallbackEFGH");
+        // the raw node ("E") is a layout/markup marker and must not project
+        assert_eq!(visible_text_projection(&aat), "ABCDéfallbackFGH");
     }
 
     #[test]
@@ -373,6 +377,31 @@ mod tests {
                         "kind": "style",
                         "style_type": "notes",
                         "content": [{"kind": "text", "value": "［＃改丁］"}]
+                    },
+                    {"kind": "text", "value": "後"}
+                ]
+            }]
+        });
+
+        assert_eq!(visible_text_projection(&aat), "前後");
+    }
+
+    #[test]
+    fn projection_excludes_raw_layout_markers() {
+        // The corpus-scale leakage class: adapter-parsed layout notes
+        // (字下げ etc.) arrive as raw nodes and must not reach the
+        // tokenized text stream.
+        let aat = json!({
+            "work_id": "w-raw-markers",
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "前"},
+                    {
+                        "kind": "raw",
+                        "source": "［＃２字下げ］",
+                        "x-provenance": "parser-derived",
+                        "x-source-marker-kind": "indent"
                     },
                     {"kind": "text", "value": "後"}
                 ]
@@ -502,7 +531,7 @@ mod tests {
     fn spans_cover_projected_text_exactly_with_golden_pointers() {
         let aat = nested_fixture();
         let (text, spans) = visible_text_projection_with_spans(&aat);
-        assert_eq!(text, "ABCDéfallbackEFGH");
+        assert_eq!(text, "ABCDéfallbackFGH");
 
         let expected = vec![
             (0, 1, "/blocks/0/content/0", "text", false, false, false),
@@ -511,10 +540,10 @@ mod tests {
             (3, 4, "/blocks/0/content/4", "gaiji", false, true, false),
             (4, 5, "/blocks/0/content/5", "accent", false, false, false),
             (5, 13, "/blocks/0/content/6", "accent", false, false, false),
-            (13, 14, "/blocks/0/content/7", "raw", false, false, false),
+            // /blocks/0/content/7 is a raw layout marker: no projection span
             (
+                13,
                 14,
-                15,
                 "/blocks/0/content/8/upper/0",
                 "text",
                 false,
@@ -522,8 +551,8 @@ mod tests {
                 false,
             ),
             (
+                14,
                 15,
-                16,
                 "/blocks/0/content/8/lower/0",
                 "text",
                 false,
@@ -531,8 +560,8 @@ mod tests {
                 false,
             ),
             (
+                15,
                 16,
-                17,
                 "/blocks/0/content/9/content/0",
                 "text",
                 false,

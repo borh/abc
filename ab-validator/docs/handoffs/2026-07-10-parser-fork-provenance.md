@@ -588,3 +588,9 @@ Aozora parser lane; the legacy lane's Phase 4 evidence remains archived at
 (content hash retained, nix `source` pin dropped since its flake input no
 longer exists). Rollback for the retirement is `git revert` of this commit
 (and, if reverting activation too, of `1333b43d` as well, in that order).
+- **Also carried (record-only, ledger-recorded):** the converter README's
+  v1 parser-IR hash line still cites `0b495bb5…` where the frozen v1
+  mapping binds `a1e1b506…` (doc line only; no gate reads it), and the
+  facade lacks a facade-level assertion that `ruby_entries` skips
+  Segments-base ruby (behavior covered by the adapter-level
+  `gaiji_base_ruby_keeps_v1_typed_emission` test).

@@ -3,7 +3,7 @@
 use std::{collections::BTreeMap, fmt::Write as _, mem, str, sync::LazyLock};
 
 use anyhow::Result;
-use aozora_pipeline::lexer::sanitize as sanitize_aozora_source;
+use ab_aozora_pipeline::lexer::sanitize::sanitize as sanitize_aozora_source;
 use encoding_rs::SHIFT_JIS;
 use regex::Regex;
 use serde::{Deserialize, Serialize};

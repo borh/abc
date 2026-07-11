@@ -127,6 +127,7 @@ aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2
 		--adapter "aozora=inspect:$aozora_bin_q inspect" \
 		--adapter "aozora-adapter=aat:env AB_AOZORA_BIN=$aozora_bin_q {{repo_root}}/adapters/aozora/target/release/aozora-adapter --mode aat" \
 		--adapter "ab-aozora=aat:{{repo_root}}/target/release/ab-aozora --mode aat" \
+		--adapter-diagnostics "ab-aozora={{repo_root}}/target/release/ab-aozora --mode diagnostics" \
 		--adapter "aozora2=aat:{{repo_root}}/adapters/aozora2/target/release/aozora2-adapter --mode aat" \
 		--adapter "aozora2html=aat:env AB_AOZORA2HTML_BIN=$a2h_bin_q AB_VALIDATOR_GEM_HOME=$a2h_gem_q {{repo_root}}/adapters/aozora2html/aozora2html-adapter --mode aat" \
 		--adapter "aozora-rs=aat:{{repo_root}}/adapters/aozora-rs/target/release/aozora-rs-adapter --mode aat" \

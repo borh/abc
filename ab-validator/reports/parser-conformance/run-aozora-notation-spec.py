@@ -15,6 +15,7 @@ class Adapter:
     label: str
     mode: str
     command: list[str]
+    diagnostics_command: list[str] | None = None
 
 
 @dataclass
@@ -37,6 +38,13 @@ def parse_adapter(spec: str) -> Adapter:
     if not mode_sep or mode not in {"inspect", "aat"} or not command:
         raise SystemExit(f"--adapter mode must be inspect or aat, got {spec!r}")
     return Adapter(label=label, mode=mode, command=shlex.split(command))
+
+
+def parse_adapter_diagnostics(spec: str) -> tuple[str, list[str]]:
+    label, sep, command = spec.partition("=")
+    if not sep or not label or not command:
+        raise SystemExit(f"--adapter-diagnostics must be label=command, got {spec!r}")
+    return label, shlex.split(command)
 
 
 def load_vectors(vectors_dir: Path) -> list[dict[str, Any]]:
@@ -136,6 +144,28 @@ def run_aat(adapter: Adapter, source: str) -> tuple[dict[str, Any] | None, str |
         return json.loads(proc.stdout), None
     except json.JSONDecodeError as error:
         return None, f"invalid JSON: {error}"
+
+
+def run_diagnostics(adapter: Adapter, source: str) -> tuple[list | None, str | None]:
+    proc = subprocess.run(adapter.diagnostics_command, input=source, text=True,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    if proc.returncode != 0:
+        return None, proc.stderr.strip() or f"exit {proc.returncode}"
+    try:
+        value = json.loads(proc.stdout)
+    except json.JSONDecodeError as error:
+        return None, f"invalid JSON: {error}"
+    if value.get("schemaVersion") != 3 or not isinstance(value.get("data"), list):
+        return None, "unsupported diagnostics envelope"
+    projected = []
+    for entry in value["data"]:
+        try:
+            projected.append({"code": entry["code"], "severity": entry["severity"],
+                              "span": {"start": entry["span"]["start"],
+                                       "end": entry["span"]["end"]}})
+        except (KeyError, TypeError):
+            return None, f"entry missing code/severity/span: {entry!r}"
+    return projected, None
 
 
 def project_aat(blocks: list[dict[str, Any]]) -> tuple[list[str], set[str]]:
@@ -242,9 +272,20 @@ def evaluate(adapter: Adapter, vector: dict[str, Any]) -> Row:
                     )
                 if unmapped:
                     warnings.append(f"unmapped AAT node kinds: {sorted(unmapped)}")
-        for projection in ("pairs", "diagnostics", "serialize", "html"):
+        for projection in ("pairs", "serialize", "html"):
             if expected.get(projection) is not None:
                 skips.append(f"{projection}: not comparable for AAT adapter (kind-sequence only)")
+        want_diag = expected.get("diagnostics")
+        if want_diag is not None:
+            if adapter.diagnostics_command is None:
+                skips.append("diagnostics: not comparable for AAT adapter (kind-sequence only)")
+            else:
+                scored += 1
+                actual_diag, error = run_diagnostics(adapter, vector["source"])
+                if error:
+                    failures.append(f"diagnostics: {error}")
+                elif actual_diag != want_diag:
+                    failures.append(f"diagnostics: expected {want_diag!r}, got {actual_diag!r}")
     else:
         for projection in ("nodes", "pairs", "diagnostics"):
             want = expected.get(projection)
@@ -318,6 +359,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--vectors-dir", type=Path, required=True)
     parser.add_argument("--adapter", action="append", default=[])
+    parser.add_argument("--adapter-diagnostics", action="append", default=[])
     parser.add_argument("--summary-json", type=Path, required=True)
     parser.add_argument("--report-md", type=Path, required=True)
     args = parser.parse_args()
@@ -325,6 +367,13 @@ def main() -> None:
     adapters = [parse_adapter(spec) for spec in args.adapter]
     if not adapters:
         raise SystemExit("at least one --adapter is required")
+
+    for spec in args.adapter_diagnostics:
+        label, command = parse_adapter_diagnostics(spec)
+        matches = [a for a in adapters if a.label == label]
+        if not matches or matches[0].mode != "aat":
+            raise SystemExit(f"--adapter-diagnostics {label!r}: no aat adapter with that label")
+        matches[0].diagnostics_command = command
 
     vectors = load_vectors(args.vectors_dir)
     rows = [evaluate(adapter, vector) for vector in vectors for adapter in adapters]

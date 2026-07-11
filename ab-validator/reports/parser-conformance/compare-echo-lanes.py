@@ -23,15 +23,13 @@ def lane(rows, label, path):
             continue
         vector = row["vector"]
         if vector in out:
-            print(f"ERROR: {path}: duplicate vector {vector!r} for "
-                  f"adapter {label!r}", file=sys.stderr)
+            print(
+                f"ERROR: {path}: duplicate vector {vector!r} for adapter {label!r}", file=sys.stderr
+            )
             raise SystemExit(2)
-        out[vector] = json.dumps(
-            {f: row.get(f) for f in FIELDS}, sort_keys=True
-        )
+        out[vector] = json.dumps({f: row.get(f) for f in FIELDS}, sort_keys=True)
     if not out:
-        print(f"ERROR: {path}: adapter label {label!r} absent",
-              file=sys.stderr)
+        print(f"ERROR: {path}: adapter label {label!r} absent", file=sys.stderr)
         raise SystemExit(2)
     return out
 
@@ -50,15 +48,22 @@ def main() -> int:
         b = lane(rows, args.lane_b, path)
         mismatched = sorted(set(a) ^ set(b))
         if mismatched:
-            print(f"ERROR: {path}: vector sets differ between lanes: "
-                  f"{mismatched[:10]}", file=sys.stderr)
+            print(
+                f"ERROR: {path}: vector sets differ between lanes: {mismatched[:10]}",
+                file=sys.stderr,
+            )
             raise SystemExit(2)
         for vector in sorted(a):
             compared += 1
             if a[vector] != b[vector]:
-                differing.append({"summary": path, "vector": vector,
-                                  args.lane_a: json.loads(a[vector]),
-                                  args.lane_b: json.loads(b[vector])})
+                differing.append(
+                    {
+                        "summary": path,
+                        "vector": vector,
+                        args.lane_a: json.loads(a[vector]),
+                        args.lane_b: json.loads(b[vector]),
+                    }
+                )
     result = {
         "lane_a": args.lane_a,
         "lane_b": args.lane_b,

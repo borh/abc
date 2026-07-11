@@ -100,8 +100,14 @@ def main() -> int:
     ap.add_argument("--workset", required=True)
     ap.add_argument("--baseline-cmd", required=True, help="full argv string, shlex-split")
     ap.add_argument("--candidate-cmd", required=True, help="full argv string, shlex-split")
-    ap.add_argument("--baseline-id-bin", required=True, help="adapter executable identifying the baseline lane")
-    ap.add_argument("--candidate-id-bin", required=True, help="adapter executable identifying the candidate lane")
+    ap.add_argument(
+        "--baseline-id-bin", required=True, help="adapter executable identifying the baseline lane"
+    )
+    ap.add_argument(
+        "--candidate-id-bin",
+        required=True,
+        help="adapter executable identifying the candidate lane",
+    )
     ap.add_argument("--corpus", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument(

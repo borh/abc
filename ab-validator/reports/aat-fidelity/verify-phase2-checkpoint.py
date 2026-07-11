@@ -45,8 +45,7 @@ def main() -> int:
     args = ap.parse_args()
     if not re.fullmatch(r"[0-9a-f]{40}", args.candidate_commit):
         die("--candidate-commit must be a full 40-hex sha")
-    expected = {"parity": "absorption-parity", "perf": "perf",
-                "echo": "conformance-echo"}
+    expected = {"parity": "absorption-parity", "perf": "perf", "echo": "conformance-echo"}
     docs, versions, commits = {}, set(), set()
     for name in ("parity", "perf", "echo"):
         path = getattr(args, name)
@@ -68,14 +67,11 @@ def main() -> int:
     if len(versions) != 1:
         die(f"--version strings disagree: {sorted(versions)}")
     if args.candidate_commit not in next(iter(versions)):
-        die("--version does not embed the candidate commit "
-            "(AB_AOZORA_GIT_REV not injected?)")
+        die("--version does not embed the candidate commit (AB_AOZORA_GIT_REV not injected?)")
     p_path, p = docs["parity"]
     q_path, q = docs["perf"]
     e_path, e = docs["echo"]
-    if field(p, "candidate.bin_sha256", p_path) != field(
-        q, "candidate.bin_sha256", q_path
-    ):
+    if field(p, "candidate.bin_sha256", p_path) != field(q, "candidate.bin_sha256", q_path):
         die("parity and perf attest different binaries")
     if field(p, "details.compared", p_path) <= 0:
         die("parity: compared not > 0")

@@ -51,8 +51,7 @@ def substitute_identity(raw: bytes, path: pathlib.Path) -> bytes:
         value = json.dumps(meta[key], ensure_ascii=False).encode("utf-8")
         # serde_json emits compact (`"k":v`); tolerate a single space after
         # the colon in case a producer pretty-prints. Total must be exactly 1.
-        needles = [b'"%s":%s' % (key.encode(), value),
-                   b'"%s": %s' % (key.encode(), value)]
+        needles = [b'"%s":%s' % (key.encode(), value), b'"%s": %s' % (key.encode(), value)]
         counts = [raw.count(n) for n in needles]
         if sum(counts) != 1:
             print(
@@ -62,9 +61,7 @@ def substitute_identity(raw: bytes, path: pathlib.Path) -> bytes:
             )
             raise SystemExit(2)
         needle = needles[0] if counts[0] else needles[1]
-        raw = raw.replace(
-            needle, b'"%s":"%s"' % (key.encode(), PLACEHOLDER.encode()), 1
-        )
+        raw = raw.replace(needle, b'"%s":"%s"' % (key.encode(), PLACEHOLDER.encode()), 1)
     return raw
 
 
@@ -92,9 +89,9 @@ def main() -> int:
         raw_b = b_files[name].read_bytes()
         if normalize(json.loads(raw_a)) != normalize(json.loads(raw_b)):
             sem_diverged.append(name)
-        if args.bytes and substitute_identity(
-            raw_a, a_files[name]
-        ) != substitute_identity(raw_b, b_files[name]):
+        if args.bytes and substitute_identity(raw_a, a_files[name]) != substitute_identity(
+            raw_b, b_files[name]
+        ):
             byte_diverged.append(name)
     summary = {
         "compared": len(shared),

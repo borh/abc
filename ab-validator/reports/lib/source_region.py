@@ -7,7 +7,9 @@ from typing import Any
 SOURCE_REGION_SCHEMA_ID = "https://w3id.org/abc/schemas/source-region-coverage.schema.json"
 SOURCE_REGION_SCHEMA_VERSION = "aozora-source-region-coverage-v1"
 SOURCE_REGION_POLICY_ID = "https://w3id.org/abc/policies/source-region-publication-v0"
-SOURCE_REGION_POLICY_VERSION = "0.2.0"
+# 0.3.0 = 0.2.0 + measurement_status measured for terminal_provenance/colophon
+# (split instrument, 2026-07-12); reviewed, no disposition changes.
+SOURCE_REGION_POLICY_VERSION = "0.3.0"
 SCHEMA_ID = SOURCE_REGION_SCHEMA_ID
 SCHEMA_VERSION = SOURCE_REGION_SCHEMA_VERSION
 POLICY_ID = SOURCE_REGION_POLICY_ID

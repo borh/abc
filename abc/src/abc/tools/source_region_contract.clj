@@ -13,8 +13,15 @@
     "letter_address_origin"
     "malformed_source"})
 
-(def classes-needing-measurement-split
-  #{"terminal_provenance" "colophon_metadata"})
+(def allowed-measurement-statuses
+  "A disposition's measurement_status records whether ab-validator has
+   separately measured that source class's prevalence, or whether the
+   class is still pending a measurement split (in which case downstream
+   consumers must not treat its occurrences as a separately-measured
+   prevalence claim). Any class may legitimately be in either state at
+   different points in time, so this is validated as an enum rather than
+   pinned to a specific set of classes."
+  #{"measured" "needs_measurement_split"})
 
 (def allowed-target-classes
   #{"tei_policy_projection"
@@ -54,15 +61,12 @@
                            [(str "source-region policy class " source-class
                                  " must omit from plaintext, got "
                                  plaintext-projection)])
-                         (when (and (contains? classes-needing-measurement-split
-                                               source-class)
-                                    (not= "needs_measurement_split"
-                                          measurement-status))
+                         (when-not (contains? allowed-measurement-statuses
+                                              measurement-status)
                            [(str "source-region policy class " source-class
-                                 " must declare measurement_status "
-                                 "needs_measurement_split until ab-validator "
-                                 "separately measures terminal provenance and "
-                                 "colophon prevalence")]))))
+                                 " has unsupported measurement_status "
+                                 measurement-status ", must be one of "
+                                 allowed-measurement-statuses)]))))
                     dispositions)]
     (vec
      (concat

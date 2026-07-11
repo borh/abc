@@ -3,13 +3,13 @@ use std::{fs, path::Path, process::Command};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
-use ab_check::check::{check_single, schema_validator};
+use ab_check::check::{check_single, schema_validator_for_version};
 use serde_json::Value;
 
 #[test]
 fn aat_schema_accepts_nested_fixture_and_rejects_event_nodes() {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let schema = schema_validator().unwrap();
+    let schema = schema_validator_for_version(1).unwrap();
     let valid: Value = serde_json::from_str(
         &fs::read_to_string(manifest.join("../../data/fixtures/aat-valid-nested.json")).unwrap(),
     )
@@ -26,7 +26,7 @@ fn aat_schema_accepts_nested_fixture_and_rejects_event_nodes() {
 
 #[test]
 fn aat_schema_accepts_adapter_metrics_metadata() {
-    let schema = schema_validator().unwrap();
+    let schema = schema_validator_for_version(1).unwrap();
     let value = serde_json::json!({
         "version": 1,
         "work_id": "metrics_fixture",
@@ -73,7 +73,7 @@ fn aat_schema_accepts_adapter_metrics_metadata() {
 
 #[test]
 fn aat_schema_accepts_semantic_summary_metadata() {
-    let schema = schema_validator().unwrap();
+    let schema = schema_validator_for_version(1).unwrap();
     let value = serde_json::json!({
         "version": 1,
         "work_id": "semantic_summary_fixture",
@@ -141,9 +141,8 @@ fn check_single_accepts_deeply_nested_aat_json() {
     );
     fs::write(&aat_path, aat).unwrap();
 
-    let schema = schema_validator().unwrap();
     let report_path = temp.path().join("report.json");
-    let report = check_single(&txt_path, &aat_path, Some(&report_path), schema).unwrap();
+    let report = check_single(&txt_path, &aat_path, Some(&report_path)).unwrap();
 
     assert_eq!(report.work_id, "deep_fixture");
     assert!(report.results["schema_valid"].pass);
@@ -167,7 +166,7 @@ fn aat_schema_documents_raw_source_marker_extensions() {
         serde_json::json!("string")
     );
 
-    let schema = schema_validator().unwrap();
+    let schema = schema_validator_for_version(1).unwrap();
     let value = serde_json::json!({
         "version": 1,
         "work_id": "raw_source_marker_fixture",

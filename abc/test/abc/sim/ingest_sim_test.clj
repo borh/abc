@@ -216,11 +216,10 @@
                                                  works))
                                     (finally (render/delete-tree! dir)))))))
 
-;; P8.atomicity — D4: a skipped work must leave no person records behind.
-;; The fault must fail LATE (after the first person write): an impossible
-;; calendar date passes parse-date verbatim and fails schema validation only
-;; when the SECOND contributor's record is validated in write-person-file!,
-;; by which point contributor 000001's file is already on disk.
+;; P8.atomicity — D4 fixed: a skipped work leaves no person records behind.
+;; The fault fails LATE in the old flow (second contributor's schema
+;; validation); the build-before-write structure must keep both files off
+;; disk regardless.
 (deftest p8-atomicity-sim-test
   (let [m0 (model/bootstrap 1)
         m (:model (model/apply-event m0 {:event/type :add-person-with-edge
@@ -233,8 +232,8 @@
     (try
       (is (= ["000101"] (:skipped-work-ids result)))
       (div/expected-failure :D4 "P8.atomicity"
-        ;; DESIRED: the skipped work wrote no person files at all.
-        ;; Current: 000001 (sorted first) is written before 000002 fails.
+        ;; DESIRED (holds since D4 fix): the skipped work wrote no person
+        ;; files at all.
                             (and (nil? (ingested-person dir "000001"))
                                  (nil? (ingested-person dir "000002"))))
       (finally (render/delete-tree! dir)))))
@@ -270,8 +269,9 @@
         dirty-first-ok? (run-order "000101")
         clean-first-ok? (run-order "000102")]
     (div/expected-failure :D4 "P8.order-independence"
-      ;; DESIRED: clean work unaffected in both orders. Current: when the
-      ;; dirty work ingests first, the clean work is skipped by the guard.
+      ;; DESIRED: clean work unaffected in both orders. Holds since the D4
+      ;; fix: conflicts resolve deterministically at the corpus level; no
+      ;; work is skipped for a cross-work conflict.
                           (and dirty-first-ok? clean-first-ok?))))
 
 ;; P9.byte-stable — re-ingest is byte-identical, no overwrite errors.

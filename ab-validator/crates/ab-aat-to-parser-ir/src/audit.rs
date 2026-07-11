@@ -274,7 +274,8 @@ pub fn run_audit(config: CorpusAuditConfig) -> Result<AuditSummary> {
         .clone()
         .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
         .unwrap_or_else(|| config.repo_root.join("data/abc-schemas"));
-    let schemas = SchemaSet::load(&config.repo_root, &abc_root)?;
+    let schemas =
+        SchemaSet::load_for_aat_version(&config.repo_root, &abc_root, mapping.source_aat_version)?;
     let converter = PreparedConverter::new(mapping.clone(), schemas)?;
     let mapping_hash = mapping.document_hash.clone();
     let inputs = collect_inputs(&config.aat_dirs)?;

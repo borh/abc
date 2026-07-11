@@ -1,133 +1,265 @@
 {
-  "schema_id": "https://abc.local/schemas/aat-parser-ir-divergence-bundle-v1.json",
-  "schema_version": "0.1.0",
-  "work_id": "fixture-0001",
-  "mapping": {
-    "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-    "mapping_version": "0.1.1",
-    "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
-  },
-  "target": {
-    "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-    "parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
-  },
   "aat": {
-    "version": 1,
-    "adapter": "aozora2html",
-    "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1",
-    "source_hash": "sha256:a100000000000000000000000000000000000000000000000000000000000001",
-    "parse_complete": true
+    "adapter": "ab-aozora",
+    "adapter_version": "ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 27772b1b75c9ceeb0b724095bbbb47f774f3a275)",
+    "parse_complete": false,
+    "source_hash": "sha256:296cd806ac46e93855dd25c2aebe7b22fd163a278f98daf9f43c40808d6ade94",
+    "version": 2
+  },
+  "mapping": {
+    "mapping_id": "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe",
+    "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
+    "mapping_version": "0.3.0"
   },
   "preserved_aat_meta": {
     "metrics": null,
     "semantic_summary": null
   },
-  "summary": {
-    "LOSS": 3,
-    "INVENTION": 5,
-    "AMBIGUITY": 1,
-    "UNSUPPORTED": 0,
-    "STRUCTURAL": 0
-  },
   "records": [
     {
-      "rule_id": "A-28",
+      "aat_pointer": "blocks[].content[].style",
       "category": "AMBIGUITY",
+      "count": 13,
+      "first_path": "blocks[4].content[17].style",
+      "message": "style inline_container mapped to emphasis; parser-IR does not preserve nested inline container identity",
+      "parser_ir_pointer": "emphasis",
+      "rule_id": "A-107",
+      "source_value": "bouten",
+      "target_value": null
+    },
+    {
+      "aat_pointer": "blocks[].heading.level",
+      "category": "AMBIGUITY",
+      "count": 22,
+      "first_path": "blocks[1].heading.level",
+      "message": "AAT heading.level range 1-3 vs parser-IR 1-6; values fit but domain differs",
+      "parser_ir_pointer": "heading.level",
+      "rule_id": "A-127",
+      "source_value": 2,
+      "target_value": 2
+    },
+    {
+      "aat_pointer": "blocks[].span",
+      "category": "AMBIGUITY",
+      "count": 22,
+      "first_path": "blocks[1].span",
+      "message": "AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized",
+      "parser_ir_pointer": "span",
+      "rule_id": "A-128",
+      "source_value": null,
+      "target_value": null
+    },
+    {
       "aat_pointer": "meta.source_hash",
-      "parser_ir_pointer": "source.work_content_hash",
-      "source_value": "sha256:a100000000000000000000000000000000000000000000000000000000000001",
-      "target_value": "sha256:a100000000000000000000000000000000000000000000000000000000000001",
+      "category": "AMBIGUITY",
+      "count": 1,
+      "first_path": "meta.source_hash",
       "message": "AAT hashes raw source bytes; parser-IR work_content_hash is content hash; identifier semantics differ",
-      "count": 1,
-      "first_path": "meta.source_hash"
+      "parser_ir_pointer": "source.work_content_hash",
+      "rule_id": "A-130",
+      "source_value": "sha256:296cd806ac46e93855dd25c2aebe7b22fd163a278f98daf9f43c40808d6ade94",
+      "target_value": "sha256:296cd806ac46e93855dd25c2aebe7b22fd163a278f98daf9f43c40808d6ade94"
     },
     {
-      "rule_id": "I-01",
-      "category": "INVENTION",
       "aat_pointer": null,
-      "parser_ir_pointer": "errors[]",
-      "source_value": null,
-      "target_value": null,
+      "category": "INVENTION",
+      "count": 1,
+      "first_path": null,
       "message": "parser-IR requires errors[]; AAT has no errors concept -> defaulted empty",
-      "count": 1,
-      "first_path": null
+      "parser_ir_pointer": "errors[]",
+      "rule_id": "I-01",
+      "source_value": null,
+      "target_value": null
     },
     {
-      "rule_id": "I-02",
-      "category": "INVENTION",
       "aat_pointer": null,
-      "parser_ir_pointer": "ruby.scope",
-      "source_value": null,
-      "target_value": "explicit",
+      "category": "INVENTION",
+      "count": 2164,
+      "first_path": null,
       "message": "AAT has no scope field; defaulted to 'explicit'",
-      "count": 1,
-      "first_path": null
+      "parser_ir_pointer": "ruby.scope",
+      "rule_id": "I-02",
+      "source_value": null,
+      "target_value": "explicit"
     },
     {
-      "rule_id": "I-03",
-      "category": "INVENTION",
       "aat_pointer": null,
-      "parser_ir_pointer": "source.normalization",
-      "source_value": null,
-      "target_value": "source",
+      "category": "INVENTION",
+      "count": 1,
+      "first_path": null,
       "message": "parser-IR requires normalization enum; AAT has none -> defaulted 'source'",
-      "count": 1,
-      "first_path": null
+      "parser_ir_pointer": "source.normalization",
+      "rule_id": "I-03",
+      "source_value": null,
+      "target_value": "source"
     },
     {
-      "rule_id": "I-04",
-      "category": "INVENTION",
       "aat_pointer": null,
-      "parser_ir_pointer": "source.source_path",
-      "source_value": null,
-      "target_value": null,
+      "category": "INVENTION",
+      "count": 1,
+      "first_path": null,
       "message": "parser-IR source_path optional; AAT has none -> null",
-      "count": 1,
-      "first_path": null
-    },
-    {
-      "rule_id": "I-07",
-      "category": "INVENTION",
-      "aat_pointer": null,
-      "parser_ir_pointer": "schema_id/schema_hash",
+      "parser_ir_pointer": "source.source_path",
+      "rule_id": "I-04",
       "source_value": null,
-      "target_value": null,
+      "target_value": null
+    },
+    {
+      "aat_pointer": null,
+      "category": "INVENTION",
+      "count": 12,
+      "first_path": null,
+      "message": "AAT warning has no code -> defaulted 'AAT_WARNING'",
+      "parser_ir_pointer": "warnings[].code",
+      "rule_id": "I-05",
+      "source_value": null,
+      "target_value": "AAT_WARNING"
+    },
+    {
+      "aat_pointer": null,
+      "category": "INVENTION",
+      "count": 12,
+      "first_path": null,
+      "message": "AAT warning has no severity -> defaulted 'warning'",
+      "parser_ir_pointer": "warnings[].severity",
+      "rule_id": "I-06",
+      "source_value": null,
+      "target_value": "warning"
+    },
+    {
+      "aat_pointer": null,
+      "category": "INVENTION",
+      "count": 1,
+      "first_path": null,
       "message": "parser-IR requires schema_id+schema_hash; AAT supplies only version=1",
-      "count": 1,
-      "first_path": null
+      "parser_ir_pointer": "schema_id/schema_hash",
+      "rule_id": "I-07",
+      "source_value": null,
+      "target_value": null
     },
     {
-      "rule_id": "L-49",
+      "aat_pointer": "blocks[].heading.style",
       "category": "LOSS",
-      "aat_pointer": "meta.adapter",
+      "count": 22,
+      "first_path": "blocks[1].heading.style",
+      "message": "heading.style='handled_elsewhere' dropped",
       "parser_ir_pointer": null,
-      "source_value": "aozora2html",
-      "target_value": null,
-      "message": "adapter='aozora2html' dropped; parser-IR carries no producer identity / parse status",
-      "count": 1,
-      "first_path": "meta.adapter"
+      "rule_id": "L-464",
+      "source_value": "normal",
+      "target_value": null
     },
     {
-      "rule_id": "L-50",
-      "category": "LOSS",
-      "aat_pointer": "meta.adapter_version",
-      "parser_ir_pointer": null,
-      "source_value": "aozora2html-adapter 0.1.0 gem-3.0.1",
-      "target_value": null,
-      "message": "adapter_version='aozora2html-adapter 0.1.0 gem-3.0.1' dropped; parser-IR carries no producer identity / parse status",
-      "count": 1,
-      "first_path": "meta.adapter_version"
-    },
-    {
-      "rule_id": "L-52",
-      "category": "LOSS",
       "aat_pointer": "meta.parse_complete",
-      "parser_ir_pointer": null,
-      "source_value": true,
-      "target_value": null,
-      "message": "parse_complete=True dropped; parser-IR carries no producer identity / parse status",
+      "category": "LOSS",
       "count": 1,
-      "first_path": "meta.parse_complete"
+      "first_path": "meta.parse_complete",
+      "message": "parse_complete=True preserved in divergence bundle; parser-IR derived_from does not model parse completeness",
+      "parser_ir_pointer": null,
+      "rule_id": "L-466",
+      "source_value": false,
+      "target_value": null
+    },
+    {
+      "aat_pointer": "blocks[].heading.indent",
+      "category": "LOSS",
+      "count": 22,
+      "first_path": "blocks[1].heading.indent",
+      "message": "heading indentation has no parser-IR heading layout field; recorded, not projected.",
+      "parser_ir_pointer": null,
+      "rule_id": "L-468",
+      "source_value": 5,
+      "target_value": null
+    },
+    {
+      "aat_pointer": "blocks[].source_note.region_class",
+      "category": "LOSS",
+      "count": 1,
+      "first_path": "blocks[49].source_note.region_class",
+      "message": "region_class terminal_provenance → note_type source-attribution.",
+      "parser_ir_pointer": "(source-note.note_type)",
+      "rule_id": "L-469",
+      "source_value": "terminal_provenance",
+      "target_value": "source-attribution"
+    },
+    {
+      "aat_pointer": "meta.warnings[].code",
+      "category": "LOSS",
+      "count": 12,
+      "first_path": "meta.warnings[].code",
+      "message": "AAT meta.warnings[].code has no parser-IR field; parser-IR carries warnings via its own diagnostics channel, the enriched field is sidecar-recorded.",
+      "parser_ir_pointer": null,
+      "rule_id": "L-470",
+      "source_value": "unmatched-close",
+      "target_value": null
+    },
+    {
+      "aat_pointer": "meta.warnings[].severity",
+      "category": "LOSS",
+      "count": 12,
+      "first_path": "meta.warnings[].severity",
+      "message": "AAT meta.warnings[].severity has no parser-IR field; parser-IR carries warnings via its own diagnostics channel, the enriched field is sidecar-recorded.",
+      "parser_ir_pointer": null,
+      "rule_id": "L-471",
+      "source_value": "error",
+      "target_value": null
+    },
+    {
+      "aat_pointer": "meta.warnings[].span",
+      "category": "LOSS",
+      "count": 12,
+      "first_path": "meta.warnings[].span",
+      "message": "AAT meta.warnings[].span has no parser-IR field; parser-IR carries warnings via its own diagnostics channel, the enriched field is sidecar-recorded.",
+      "parser_ir_pointer": null,
+      "rule_id": "L-472",
+      "source_value": null,
+      "target_value": null
+    },
+    {
+      "aat_pointer": "blocks[].heading",
+      "category": "STRUCTURAL",
+      "count": 22,
+      "first_path": "blocks[1].heading",
+      "message": "block container of kind 'heading' has no parser-IR node; boundary + span + style lost, only inlines emitted",
+      "parser_ir_pointer": null,
+      "rule_id": "S-07",
+      "source_value": null,
+      "target_value": null
+    },
+    {
+      "aat_pointer": "blocks[].source_note",
+      "category": "STRUCTURAL",
+      "count": 1,
+      "first_path": "blocks[49].source_note",
+      "message": "explicit v2 source_note block → parser-IR source-note node, classification direct.",
+      "parser_ir_pointer": "source-note",
+      "rule_id": "S-12",
+      "source_value": null,
+      "target_value": null
+    },
+    {
+      "aat_pointer": "blocks[].content[].raw",
+      "category": "UNSUPPORTED",
+      "count": 9,
+      "first_path": "blocks[0].content[0].raw",
+      "message": "parser-IR has no raw node; faithful escape hatch dropped",
+      "parser_ir_pointer": null,
+      "rule_id": "U-28",
+      "source_value": "［＃ページの左右中央］",
+      "target_value": null
     }
-  ]
+  ],
+  "schema_id": "https://abc.local/schemas/aat-parser-ir-divergence-bundle-v1.json",
+  "schema_version": "0.1.0",
+  "summary": {
+    "AMBIGUITY": 58,
+    "INVENTION": 2192,
+    "LOSS": 82,
+    "STRUCTURAL": 23,
+    "UNSUPPORTED": 9
+  },
+  "target": {
+    "parser_ir_schema_hash": "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2",
+    "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json"
+  },
+  "work_id": "000005_53194"
 }

@@ -5,18 +5,18 @@
   (:require [clojure.test :refer [is]]))
 
 (def table
-  {:D1 {:case "P6.divergent-work-fields" :status :open
-        :notes "aozora_csv.clj:284-325 first-row-wins on divergent work fields"}
-   :D2 {:case "P12.selection" :status :open
-        :notes "aozora_history_audit.clj:188-193 partition-by over log order"}
-   :D3 {:case "P13.ragged-row" :status :open
-        :notes "aozora_csv.clj:22-32 ragged rows silently truncated"}
-   :D4 {:case "P8.atomicity, P8.order-independence" :status :open
-        :notes "aozora_ingest.clj:151-213 person writes precede work failure"}
-   :D5 {:case "P13.empty-csv" :status :open
-        :notes "confirmed 2026-07-11 (P13): empty/header-only CSV yields a silent zero-row corpus, no throw, no skip"}
-   :D6 {:case "P13.non-zip-bytes" :status :open
-        :notes "confirmed 2026-07-11 (P13): ZipFile ctor escapes as raw java.util.zip.ZipException, not ex-info"}})
+  {:D1 {:case "P6.divergent-work-fields" :status :fixed
+        :notes "fixed 2026-07-11: build-record-fragment-from-rows throws ex-info on divergent work fields; corpus ingest skips + counts the work"}
+   :D2 {:case "P12.selection" :status :fixed
+        :notes "fixed 2026-07-11: sample-commits-by-period groups globally by period key (was contiguous partition-by), keeping the last commit in log order per period"}
+   :D3 {:case "P13.ragged-row" :status :fixed
+        :notes "fixed 2026-07-11: read-rows* marks ragged rows (ragged-key); work assembly rejects them, corpus ingest skips + counts the work"}
+   :D4 {:case "P8.atomicity, P8.order-independence" :status :fixed
+        :notes "fixed 2026-07-11: run-corpus! builds+validates all works before writing; shared-person conflicts resolve to the smallest work_id deterministically and are reported in :person-conflicts"}
+   :D5 {:case "P13.empty-csv" :status :fixed
+        :notes "fixed 2026-07-11: zip entry points throw ex-info {:zip-path :row-count} when the CSV has no data rows"}
+   :D6 {:case "P13.non-zip-bytes" :status :fixed
+        :notes "fixed 2026-07-11: read-zip-csv wraps ZipException as ex-info {:zip-path} with cause chained"}})
 
 (defn- entry [id]
   (or (get table id)

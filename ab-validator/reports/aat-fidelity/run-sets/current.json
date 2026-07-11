@@ -2,22 +2,6 @@
   "schema_version": 1,
   "run_set_id": "current-aat-fidelity-2026-07-09",
   "adapters": {
-    "aozora": {
-      "aat_dir": "${AB_DB_ROOT}/aat-corpus/aozora-full-repin-1a4f864/aat/aozora-adapter",
-      "run_descriptor": "${AB_DB_ROOT}/aat-corpus/aozora-full-repin-1a4f864/metadata.json",
-      "expected": {
-        "adapter_id": "aozora",
-        "adapter_version_contains": "aozora-adapter",
-        "source": {
-          "flake_input": "upstream-aozora-src",
-          "owner": "P4suta",
-          "repo": "aozora",
-          "rev": "1a4f864603970983719655aa4af4525958ac2d38",
-          "narHash": "sha256-XS7BdCpcbfJoTRYcrHWwcCErmQFRfFF7U7FUQU2Ezsg="
-        },
-        "content_hash": "sha256:9860a7b64bce8b0af2f09f587df239a95ae7ffe9afd97961447306b022cecfa0"
-      }
-    },
     "aozora2": {
       "aat_dir": "${AB_DB_ROOT}/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter",
       "run_descriptor": "${AB_DB_ROOT}/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/metadata.json",
@@ -66,6 +50,15 @@
         "adapter_id": "aozora-epub3",
         "adapter_version_contains": "aozora-epub3-adapter",
         "content_hash": "sha256:b734be04ab821a369c137c6596059dc6a079a1a01172f488f413f2ba2d3eadd4"
+      }
+    },
+    "ab-aozora": {
+      "aat_dir": "${AB_DB_ROOT}/aat-corpus/ab-aozora-phase4-c4-27772b1/aat/ab-aozora",
+      "run_descriptor": "${AB_DB_ROOT}/aat-corpus/ab-aozora-phase4-c4-27772b1/metadata.json",
+      "expected": {
+        "adapter_id": "ab-aozora",
+        "adapter_version_contains": "27772b1b75c9ceeb0b724095bbbb47f774f3a275",
+        "content_hash": "sha256:a19a3829125dde95a94da0077d5197d5b5645d64b4101dc3fb7c599a41f5ff80"
       }
     }
   }

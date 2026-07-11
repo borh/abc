@@ -1,0 +1,63 @@
+{
+ "stage": "c4",
+ "gate": "perf",
+ "candidate": {
+  "commit": "27772b1b75c9ceeb0b724095bbbb47f774f3a275",
+  "bin_sha256": "641b5eaefbaa67f6c157484979d1c9e02db3e1c610d8eccae42895fd670c87c6",
+  "version": "ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 27772b1b75c9ceeb0b724095bbbb47f774f3a275)"
+ },
+ "verdict": "PASS",
+ "details": {
+  "runner_report": "docs/superpowers/reports/2026-07-12-phase4-c4-perf.runner.json",
+  "new_timeouts": 0,
+  "median_delta_pct": -7.93,
+  "baseline_workset_median_s": 0.6421,
+  "candidate_workset_median_s": 0.5912,
+  "threshold_pct": 10,
+  "activation_floor_ok": true,
+  "machine": {
+   "node": "hinoki",
+   "machine": "x86_64",
+   "processor": "",
+   "cpu_count": 32
+  },
+  "per_work": [
+   {
+    "work_id": "001529_50685",
+    "baseline_median_s": 0.6674,
+    "candidate_median_s": 0.7163,
+    "delta_pct": 7.33
+   },
+   {
+    "work_id": "000311_2012",
+    "baseline_median_s": 0.6168,
+    "candidate_median_s": 0.3662,
+    "delta_pct": -40.63
+   },
+   {
+    "work_id": "001562_56146",
+    "baseline_median_s": 0.8674,
+    "candidate_median_s": 0.8669,
+    "delta_pct": -0.06
+   },
+   {
+    "work_id": "001562_56145",
+    "baseline_median_s": 0.7172,
+    "candidate_median_s": 0.9665,
+    "delta_pct": 34.76
+   },
+   {
+    "work_id": "000363_56656",
+    "baseline_median_s": 0.3161,
+    "candidate_median_s": 0.1652,
+    "delta_pct": -47.74
+   },
+   {
+    "work_id": "001562_33224",
+    "baseline_median_s": 0.4169,
+    "candidate_median_s": 0.466,
+    "delta_pct": 11.78
+   }
+  ]
+ }
+}

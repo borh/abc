@@ -21,7 +21,6 @@ RELEASE_CRITICAL_INPUTS = {
     "upstream-aozora-notation-spec-src",
     "upstream-aozora-parser-js-src",
     "upstream-aozora-rs-src",
-    "upstream-aozora-src",
     "upstream-aozora2-src",
     "upstream-aozorabunko-extractor-src",
 }

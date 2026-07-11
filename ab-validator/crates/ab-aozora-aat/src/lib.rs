@@ -23,6 +23,14 @@ use ab_aozora_facade::{self, Diagnostic, Document, encoding, json as aozora_json
 /// `aozora_json::diagnostic_entries` call serves both diagnostic families.
 pub type AozoraSanitizeDiagnostic = Diagnostic;
 
+/// v1-parity fallback for ruby nodes with no resolvable `ruby_entries`
+/// entry (gaiji-base ruby, `※［＃…］《reading》`, whose base is
+/// `Content::Segments` and so has no plain-text range to resolve — see
+/// `ruby_node`'s fallback branch). This is the original v1 regex, restored
+/// verbatim so a gaiji-base ruby's typed emission stays byte-identical to
+/// the pre-`ruby_entries` adapter output (Task 8's delta-audit ruby class
+/// requires baseline typed ruby to be byte-identical in the candidate;
+/// silently downgrading these to `raw` would break that).
 static RUBY_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap());
 
@@ -41,6 +49,25 @@ pub struct DecodedSource {
     /// BEFORE the parse; the parse of neutralized text cannot rediscover
     /// them. Spans are full-sanitized-text byte offsets.
     pub sanitize_diagnostics: Vec<AozoraSanitizeDiagnostic>,
+    /// The tail of the SANITIZED text from the `底本：` line onward
+    /// (`aozora_body_range`'s tail-start line, NOT its trailing-blank-
+    /// trimmed `body_end` — blank lines between the last body content and
+    /// the `底本：` line belong to neither the body nor a real tail line,
+    /// so anchoring on the line itself is the only choice that doesn't
+    /// silently drop or duplicate those blanks). Empty when the work has
+    /// no `底本：` line at all (`aozora_body_range` returns
+    /// `source.len()` as the tail start in that case). Phase 4 (Task 14):
+    /// previously this text was computed and thrown away by
+    /// `sanitize_for_aat`, discarding the terminal-provenance/colophon
+    /// tail entirely — see
+    /// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`.
+    pub sanitized_tail: String,
+    /// Byte offset of `sanitized_tail`'s start within the full SANITIZED
+    /// text (same coordinate system `sanitize_diagnostics` spans use —
+    /// composes through `span_ctx`'s `maps` directly, with NO
+    /// `body_offset` added, exactly like `diagnostics_json_from_bytes`'s
+    /// sanitize-stage rebase).
+    pub tail_offset: usize,
     /// Sanitize offset maps + body offset + line index for span rebasing
     /// (ADR 0024: emitted spans are offsets against the full decoded
     /// source `text`, with real 1-based line numbers).
@@ -93,23 +120,65 @@ impl SpanContext {
 /// rewrite, so decoded-source lines and sanitized-text lines agree in
 /// count for every input.
 fn line_starts(text: &str) -> Vec<usize> {
-    let bytes = text.as_bytes();
     let mut starts = vec![0];
+    starts.extend(terminator_ends(text));
+    starts
+}
+
+/// Byte offsets immediately after every line terminator in `text`,
+/// treating `\n`, `\r\n` (one boundary, after the pair), and bare `\r` as
+/// boundaries — the exact rule `line_starts` is built from (factored out
+/// so the tail line-splitting below shares it rather than re-deriving a
+/// different one; see `line_starts`'s doc comment for why bare `\r` must
+/// count).
+fn terminator_ends(text: &str) -> Vec<usize> {
+    let bytes = text.as_bytes();
+    let mut ends = Vec::new();
     let mut i = 0;
     while i < bytes.len() {
         match bytes[i] {
             b'\n' => {
                 i += 1;
-                starts.push(i);
+                ends.push(i);
             }
             b'\r' => {
                 i += if bytes.get(i + 1) == Some(&b'\n') { 2 } else { 1 };
-                starts.push(i);
+                ends.push(i);
             }
             _ => i += 1,
         }
     }
-    starts
+    ends
+}
+
+/// Terminator-INCLUSIVE `(start, end)` byte ranges of every line in
+/// `text`, built from the same boundary set as `line_starts`/
+/// `terminator_ends`. Unlike `split_inclusive('\n')` (which only splits on
+/// `\n`, missing bare-CR tails — see Phase 3's `line_starts` doc comment),
+/// this honors `\n`, `\r\n`, and bare `\r`. A final line lacking a
+/// terminator (the text doesn't end in one) still yields one last range
+/// ending at `text.len()`.
+///
+/// NOTE (Task 14 divergence from the Python reference,
+/// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`):
+/// Python's `str.splitlines`/line iteration also breaks on `\v`, `\f`,
+/// `\x1c`-`\x1e`, `U+2028`, `U+2029`, etc. This Rust rule only recognizes
+/// `\n`/`\r\n`/`\r` (the terminators `sanitize` and `line_starts` already
+/// treat as real line boundaries). The corpus scan
+/// (`docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`)
+/// found zero exotic-boundary tail lines across 17,886 works, so this
+/// divergence is corpus-absent.
+fn line_ranges(text: &str) -> Vec<Range<usize>> {
+    let mut out = Vec::new();
+    let mut start = 0;
+    for end in terminator_ends(text) {
+        out.push(start..end);
+        start = end;
+    }
+    if start < text.len() {
+        out.push(start..text.len());
+    }
+    out
 }
 
 #[derive(Debug, Deserialize, Clone, Copy)]
@@ -127,6 +196,13 @@ struct AozoraNode {
 #[derive(Debug, Deserialize, Clone)]
 struct AozoraDiagnostic {
     kind: Option<String>,
+    /// Stable kebab-case diagnostic code from the façade wire entry
+    /// (`ab_aozora_facade::json::Diagnostic::code`, always
+    /// `kind.replace('_', "-")`). `Option` only because this struct is
+    /// deserialized generically from any diagnostic-entries JSON; the
+    /// façade always populates it.
+    #[serde(default)]
+    code: Option<String>,
     severity: Option<String>,
     span: Option<Span>,
 }
@@ -143,6 +219,17 @@ struct AozoraGaiji {
     resolved: Option<String>,
 }
 
+/// The lossy-local counterpart of `ab_aozora_facade::json::RubyEntry` — same
+/// deserialize-the-serialized-entries pattern `AozoraDiagnostic` /
+/// `AozoraGaiji` already use.
+#[derive(Debug, Deserialize, Clone)]
+struct AozoraRubyEntry {
+    span: Span,
+    base: String,
+    reading: String,
+    side: String,
+}
+
 /// Decode source bytes to a normalized text with encoding detection.
 ///
 /// # Errors
@@ -152,64 +239,108 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     let source_hash = format!("sha256:{}", hex_sha256(bytes));
     if bytes.starts_with(&[0xef, 0xbb, 0xbf]) {
         let text = str::from_utf8(&bytes[3..])?.to_owned();
-        let (span_text, sanitize_diagnostics, maps, body_offset) = sanitize_for_aat(&text);
-        let span_ctx = SpanContext { maps, body_offset, line_starts: line_starts(&text) };
+        let sanitized = sanitize_for_aat(&text);
+        let span_ctx = SpanContext {
+            maps: sanitized.maps,
+            body_offset: sanitized.body_offset,
+            line_starts: line_starts(&text),
+        };
         return Ok(DecodedSource {
             text,
-            span_text,
+            span_text: sanitized.body,
             encoding: "utf-8-bom",
             source_hash,
-            sanitize_diagnostics,
+            sanitize_diagnostics: sanitized.diagnostics,
+            sanitized_tail: sanitized.tail,
+            tail_offset: sanitized.tail_offset,
             span_ctx,
         });
     }
     if let Ok(text) = str::from_utf8(bytes) {
         let text = text.to_owned();
-        let (span_text, sanitize_diagnostics, maps, body_offset) = sanitize_for_aat(&text);
-        let span_ctx = SpanContext { maps, body_offset, line_starts: line_starts(&text) };
+        let sanitized = sanitize_for_aat(&text);
+        let span_ctx = SpanContext {
+            maps: sanitized.maps,
+            body_offset: sanitized.body_offset,
+            line_starts: line_starts(&text),
+        };
         return Ok(DecodedSource {
             text,
-            span_text,
+            span_text: sanitized.body,
             encoding: "utf-8",
             source_hash,
-            sanitize_diagnostics,
+            sanitize_diagnostics: sanitized.diagnostics,
+            sanitized_tail: sanitized.tail,
+            tail_offset: sanitized.tail_offset,
             span_ctx,
         });
     }
     let (cow, _, had_errors) = SHIFT_JIS.decode(bytes);
     let text = cow.into_owned();
-    let (span_text, sanitize_diagnostics, maps, body_offset) = sanitize_for_aat(&text);
-    let span_ctx = SpanContext { maps, body_offset, line_starts: line_starts(&text) };
+    let sanitized = sanitize_for_aat(&text);
+    let span_ctx = SpanContext {
+        maps: sanitized.maps,
+        body_offset: sanitized.body_offset,
+        line_starts: line_starts(&text),
+    };
     Ok(DecodedSource {
         text,
-        span_text,
+        span_text: sanitized.body,
         encoding: if had_errors {
             "windows-31j-lossy"
         } else {
             "windows-31j"
         },
         source_hash,
-        sanitize_diagnostics,
+        sanitize_diagnostics: sanitized.diagnostics,
+        sanitized_tail: sanitized.tail,
+        tail_offset: sanitized.tail_offset,
         span_ctx,
     })
 }
 
-fn sanitize_for_aat(
-    text: &str,
-) -> (String, Vec<AozoraSanitizeDiagnostic>, SanitizeMaps, usize) {
+/// Intermediate result of the sanitize + body/tail split stage — a named
+/// struct rather than a wide tuple so `decode_source_bytes`'s three
+/// branches read as field access, not positional unpacking (Task 14 added
+/// the tail fields; a tuple would have grown to six positional slots).
+struct SanitizedForAat {
+    /// The BODY slice (`sanitized[body_range]`), same content
+    /// `sanitize_for_aat` always returned as its first element.
+    body: String,
+    diagnostics: Vec<AozoraSanitizeDiagnostic>,
+    maps: SanitizeMaps,
+    /// `body_range.start`, sanitized coordinates.
+    body_offset: usize,
+    /// The TAIL slice (`sanitized[tail_start..]`) — see
+    /// `DecodedSource::sanitized_tail`'s doc comment for why this is
+    /// anchored on the `底本：` line, not `body_range.end`.
+    tail: String,
+    /// `tail_start`, sanitized coordinates.
+    tail_offset: usize,
+}
+
+fn sanitize_for_aat(text: &str) -> SanitizedForAat {
     let mapped = sanitize_mapped(text);
     let sanitize_diagnostics = mapped.diagnostics;
     let sanitized = mapped.text.into_owned();
-    let body = aozora_body_range(&sanitized);
-    (
-        sanitized[body.clone()].to_owned(),
-        sanitize_diagnostics,
-        mapped.maps,
-        body.start,
-    )
+    let (body, tail_start) = aozora_body_range(&sanitized);
+    SanitizedForAat {
+        body: sanitized[body.clone()].to_owned(),
+        diagnostics: sanitize_diagnostics,
+        maps: mapped.maps,
+        body_offset: body.start,
+        tail: sanitized[tail_start..].to_owned(),
+        tail_offset: tail_start,
+    }
 }
 
-fn aozora_body_range(source: &str) -> Range<usize> {
+/// Returns the BODY range (unchanged boundary semantics: trailing blank
+/// lines before the `底本：` line are trimmed off the body end) and the
+/// TAIL start offset — the byte offset of the `底本：` line itself, NOT
+/// `body_range.end` (blank lines between the last body content and the
+/// `底本：` line belong to neither region). When no `底本：` line exists,
+/// both `body_range.end` and the tail start are `source.len()` (no tail).
+fn aozora_body_range(source: &str) -> (Range<usize>, usize) {
     let mut separators = Vec::new();
     let mut start = 0_usize;
     for line in source.split_inclusive('\n') {
@@ -230,14 +361,16 @@ fn aozora_body_range(source: &str) -> Range<usize> {
     }
 
     let mut body_end = source.len();
+    let mut tail_start = source.len();
     for (line_start, line) in lines_from(source, body_start) {
         if line.trim_start().starts_with("底本：") {
             body_end = trim_trailing_blank_lines(source, line_start);
+            tail_start = line_start;
             break;
         }
     }
 
-    body_start..body_end
+    (body_start..body_end, tail_start)
 }
 
 fn is_aozora_separator(line: &str) -> bool {
@@ -271,9 +404,15 @@ fn lines_from(source: &str, offset: usize) -> impl Iterator<Item = (usize, &str)
     })
 }
 
+#[allow(clippy::type_complexity, reason = "one tuple per projected wire channel; a named struct would only restate the field set")]
 fn projections(
     span_text: &str,
-) -> Result<(Vec<AozoraNode>, Vec<AozoraDiagnostic>, Vec<AozoraGaiji>)> {
+) -> Result<(
+    Vec<AozoraNode>,
+    Vec<AozoraDiagnostic>,
+    Vec<AozoraGaiji>,
+    Vec<AozoraRubyEntry>,
+)> {
     // Mirrors the upstream binary's own stdin handling: each `aozora
     // inspect` subprocess ran decode_auto over the bytes the adapter piped
     // in (already-valid UTF-8 passes through unchanged).
@@ -281,19 +420,34 @@ fn projections(
         .map_err(|err| anyhow::anyhow!("decode_auto: {err:?}"))?;
     let doc = Document::new(source.clone());
     let tree = doc.parse();
-    let nodes = from_entries(aozora_json::node_entries(&tree))?;
-    let diagnostics = from_entries(aozora_json::diagnostic_entries(tree.diagnostics()))?;
-    let gaiji = from_entries(aozora_json::gaiji_entries(&source))?;
-    Ok((nodes, diagnostics, gaiji))
+    let nodes = from_entries(&aozora_json::node_entries(&tree))?;
+    let diagnostics = from_entries(&aozora_json::diagnostic_entries(tree.diagnostics()))?;
+    let gaiji = from_entries(&aozora_json::gaiji_entries(&source))?;
+    let ruby = from_entries(&aozora_json::ruby_entries(&tree))?;
+    Ok((nodes, diagnostics, gaiji, ruby))
 }
 
 /// Same data path as the deleted wire hop: the facade's Serialize impls
 /// (which produced the inspect JSON) feed the adapter's Deserialize types.
 /// Deserialization is key-order-independent, so no `preserve_order` needed.
+///
+/// Round-trips through a JSON byte buffer (`to_vec` + `from_slice`) rather
+/// than `serde_json::Value` (`to_value` + `from_value`): the `Value` path
+/// builds a full tagged-union tree (a heap-allocated `Map`/`Vec`/`String`
+/// per field) and then tears it back down, whereas the byte path lets
+/// `serde_json`'s writer/reader stream fields directly into the target
+/// type with no intermediate generic tree. Same semantics (still an
+/// order-independent JSON round trip; output bytes unaffected — this
+/// function's result never reaches the wire, only `build_aat`'s own
+/// `to_writer` call does), just without the `Value` tree's allocation
+/// overhead — this scales with the corpus's per-work entry count (e.g.
+/// `ruby_entries`, which can run into the tens of thousands for
+/// heavily-annotated works), where the `Value` overhead was measured to
+/// dominate wall time.
 fn from_entries<S: Serialize, T: DeserializeOwned>(
-    entries: Vec<S>,
+    entries: &[S],
 ) -> Result<Vec<T>> {
-    Ok(serde_json::from_value(serde_json::to_value(entries)?)?)
+    Ok(serde_json::from_slice(&serde_json::to_vec(entries)?)?)
 }
 
 // The wire envelope's schemaVersion check becomes a compile-time pin: the
@@ -308,8 +462,8 @@ const _: () = assert!(aozora_json::SCHEMA_VERSION == 3, "incompatible wire schem
 /// Returns an error if source decoding, projection parsing, or JSON serialization fails.
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decoded = decode_source_bytes(bytes)?;
-    let (nodes, diagnostics, gaiji) = projections(&decoded.span_text)?;
-    let aat = build_aat(&decoded, &nodes, &diagnostics, &gaiji);
+    let (nodes, diagnostics, gaiji, ruby) = projections(&decoded.span_text)?;
+    let aat = build_aat(&decoded, &nodes, &diagnostics, &gaiji, &ruby);
     let mut out = Vec::new();
     serde_json::to_writer(&mut out, &aat)?;
     out.push(b'\n');
@@ -400,18 +554,31 @@ fn build_aat(
     nodes: &[AozoraNode],
     diagnostics: &[AozoraDiagnostic],
     gaiji: &[AozoraGaiji],
+    ruby: &[AozoraRubyEntry],
 ) -> Value {
     let gaiji_by_start = gaiji
         .iter()
         .map(|entry| (entry.span.start, entry.clone()))
         .collect::<BTreeMap<_, _>>();
-    let blocks = blocks_from_inline_content(inline_content(decoded, nodes, &gaiji_by_start));
-    let warnings = diagnostics
+    let ruby_by_span = ruby
+        .iter()
+        .map(|entry| ((entry.span.start, entry.span.end), entry.clone()))
+        .collect::<BTreeMap<_, _>>();
+    let mut blocks = blocks_from_inline_content(inline_content(
+        decoded,
+        nodes,
+        &gaiji_by_start,
+        &ruby_by_span,
+    ));
+    let mut warnings = diagnostics
         .iter()
         .map(|diagnostic| diagnostic_warning(diagnostic, &decoded.span_ctx))
         .collect::<Vec<_>>();
+    let (source_notes, tail_warnings) = source_notes_from_tail(decoded);
+    blocks.extend(source_notes);
+    warnings.extend(tail_warnings);
     json!({
-        "version": 1,
+        "version": 2,
         "work_id": "stdin",
         "blocks": blocks,
         "meta": {
@@ -421,6 +588,202 @@ fn build_aat(
             "source_hash": decoded.source_hash,
             "parse_complete": diagnostics.iter().all(|d| d.severity.as_deref() != Some("error")),
             "warnings": warnings
+        }
+    })
+}
+
+/// The terminal-provenance/colophon tail line classes — a direct
+/// transcription of `reports/lib/terminal_provenance.py`'s `Class`
+/// (`TERMINAL_PROVENANCE_CLASS` / `COLOPHON_METADATA_CLASS` /
+/// `BLANK_CLASS`) from
+/// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`,
+/// the NORMATIVE authority for this rule. `Colophon` covers both a real
+/// colophon-head/continuation line AND the fail-open fallback below
+/// (`classify_tail`'s doc comment) — AAT emission only ever needs to know
+/// "not terminal provenance", so the two are not distinguished here; the
+/// fallback additionally produces a `tail-line-unclassified` warning.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TailLineClass {
+    TerminalProvenance,
+    Colophon,
+    Blank,
+}
+
+/// State carried across tail lines — mirrors the Python module's
+/// `PROVENANCE_STATE` / `COLOPHON_STATE`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TailState {
+    Provenance,
+    Colophon,
+}
+
+/// Ordered head-marker skeleton — verbatim transcription of
+/// `reports/lib/terminal_provenance.py`'s `PROVENANCE_HEADS`. A head is
+/// recognized by prefix match against the line with leading/trailing
+/// whitespace stripped, same as the Python `classify_tail`.
+const PROVENANCE_HEADS: [&str; 2] = ["底本：", "底本の親本："];
+
+/// Verbatim transcription of `reports/lib/terminal_provenance.py`'s
+/// `COLOPHON_HEADS`.
+const COLOPHON_HEADS: [&str; 4] = ["入力：", "校正：", "青空文庫作成ファイル：", "※"];
+
+/// Classify every line of a tail (terminator-inclusive, as produced by
+/// `line_ranges` over `DecodedSource::sanitized_tail`). Transcribes
+/// `reports/lib/terminal_provenance.py`'s `classify_tail` case-for-case —
+/// see
+/// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`
+/// for the normative rule this must not drift from:
+///
+/// - blank line (whitespace-stripped empty): `Blank`, state unchanged.
+/// - line (stripped) starts with a `PROVENANCE_HEADS` entry: `Provenance`
+///   state, class `TerminalProvenance`.
+/// - line (stripped) starts with a `COLOPHON_HEADS` entry: `Colophon`
+///   state, class `Colophon`.
+/// - otherwise, non-blank, matching no head: inherits the class of the
+///   current state (continuation line).
+///
+/// **Divergence from the Python reference (deliberate, documented):** the
+/// Python `classify_tail` is fail-closed — a non-blank line reached before
+/// any state-setting head raises `UnclassifiableTail`, because the corpus
+/// scan proved the rule total (zero unclassifiable residual across 17,886
+/// works) and the *generator*'s job is to flag out-of-corpus input loudly.
+/// The AAT emitter's job is different: it must always produce SOME AAT
+/// document for arbitrary stdin, so failing closed here would turn a
+/// corpus-absent edge case into a hard error for end users. Instead this
+/// classifies the line `Colophon` (excluded from `source_note` emission,
+/// same as a real colophon line) and records its tail-relative line index
+/// in the returned `Vec<usize>` so the caller can emit a
+/// `tail-line-unclassified` warning — nothing is silently interpreted as
+/// terminal provenance.
+fn classify_tail(lines: &[&str]) -> (Vec<TailLineClass>, Vec<usize>) {
+    let mut state: Option<TailState> = None;
+    let mut classes = Vec::with_capacity(lines.len());
+    let mut unclassifiable = Vec::new();
+    for (index, line) in lines.iter().enumerate() {
+        let stripped = line.trim();
+        if stripped.is_empty() {
+            classes.push(TailLineClass::Blank);
+            continue;
+        }
+        if PROVENANCE_HEADS.iter().any(|head| stripped.starts_with(head)) {
+            state = Some(TailState::Provenance);
+            classes.push(TailLineClass::TerminalProvenance);
+        } else if COLOPHON_HEADS.iter().any(|head| stripped.starts_with(head)) {
+            state = Some(TailState::Colophon);
+            classes.push(TailLineClass::Colophon);
+        } else {
+            match state {
+                Some(TailState::Provenance) => classes.push(TailLineClass::TerminalProvenance),
+                Some(TailState::Colophon) => classes.push(TailLineClass::Colophon),
+                None => {
+                    classes.push(TailLineClass::Colophon);
+                    unclassifiable.push(index);
+                }
+            }
+        }
+    }
+    (classes, unclassifiable)
+}
+
+/// Byte-offset span of a tail-relative range, composed exactly like
+/// `diagnostics_json_from_bytes`'s sanitize-stage rebase (lib.rs's
+/// `rebase_spans` call with `maps.to_source_offset`/`to_source_end`
+/// directly — NO `body_offset` added, since `tail_offset` is already a
+/// full-sanitized-text coordinate, the same coordinate system
+/// `sanitize_diagnostics` spans use).
+fn tail_span_json(range: &Range<usize>, tail_offset: usize, ctx: &SpanContext) -> Value {
+    let byte_start = ctx.maps.to_source_offset(tail_offset + range.start);
+    let byte_end = ctx.maps.to_source_end(tail_offset + range.end);
+    let line_start = ctx.line_of(byte_start);
+    let line_end = ctx.line_of(if byte_end > byte_start {
+        byte_end - 1
+    } else {
+        byte_start
+    });
+    json!({
+        "line_start": line_start,
+        "line_end": line_end,
+        "byte_start": byte_start,
+        "byte_end": byte_end
+    })
+}
+
+/// Builds trailing `source_note` blocks from `decoded.sanitized_tail`
+/// (see `DecodedSource::sanitized_tail`'s doc comment for what "tail"
+/// means and where it starts). Splits the tail into terminator-inclusive
+/// lines (`line_ranges`, the same `\n`/`\r\n`/bare-`\r` boundary set
+/// `line_starts` uses), classifies each line (`classify_tail`), and
+/// groups CONTIGUOUS `TerminalProvenance` lines into one `source_note`
+/// block per group — a `Blank` or `Colophon` line ends a group.
+/// `colophon_metadata` lines are excluded from AAT entirely (measured
+/// separately by the source-region instrument;
+/// `docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md`),
+/// as is a work with no tail at all (`sanitized_tail` empty — no blocks,
+/// no warnings). Returns `(blocks, warnings)`: the `warnings` are only
+/// ever `tail-line-unclassified` fallback entries (see `classify_tail`'s
+/// doc comment); a well-formed tail produces none.
+fn source_notes_from_tail(decoded: &DecodedSource) -> (Vec<Value>, Vec<Value>) {
+    if decoded.sanitized_tail.is_empty() {
+        return (Vec::new(), Vec::new());
+    }
+    let ranges = line_ranges(&decoded.sanitized_tail);
+    let lines = ranges
+        .iter()
+        .map(|range| &decoded.sanitized_tail[range.clone()])
+        .collect::<Vec<_>>();
+    let (classes, unclassifiable) = classify_tail(&lines);
+    let warnings = unclassifiable
+        .iter()
+        .map(|&index| {
+            json!({
+                "code": "tail-line-unclassified",
+                "severity": "warning",
+                "message": lines[index].trim_end_matches(['\n', '\r']),
+                "span": tail_span_json(&ranges[index], decoded.tail_offset, &decoded.span_ctx)
+            })
+        })
+        .collect::<Vec<_>>();
+    let mut blocks = Vec::new();
+    let mut group = Vec::new();
+    for index in 0..classes.len() {
+        if classes[index] == TailLineClass::TerminalProvenance {
+            group.push(json!({
+                "kind": "text",
+                "value": lines[index],
+                "span": tail_span_json(&ranges[index], decoded.tail_offset, &decoded.span_ctx)
+            }));
+        } else if !group.is_empty() {
+            blocks.push(source_note_block(mem::take(&mut group)));
+        }
+    }
+    if !group.is_empty() {
+        blocks.push(source_note_block(group));
+    }
+    (blocks, warnings)
+}
+
+/// One `source_note` block (`placement: "back"`,
+/// `region_class: "terminal_provenance"`) from a non-empty run of
+/// `{kind: "text", value, span}` content nodes. The block `span`
+/// aggregates the first content span's `byte_start`/`line_start` and the
+/// last content span's `byte_end`/`line_end`.
+#[allow(
+    clippy::needless_pass_by_value,
+    reason = "content is consumed (moved into the returned block); a slice would force an extra clone at the one call site"
+)]
+fn source_note_block(content: Vec<Value>) -> Value {
+    let first_span = content[0]["span"].clone();
+    let last_span = content[content.len() - 1]["span"].clone();
+    json!({
+        "kind": "source_note",
+        "placement": "back",
+        "region_class": "terminal_provenance",
+        "content": content,
+        "span": {
+            "byte_start": first_span["byte_start"],
+            "byte_end": last_span["byte_end"],
+            "line_start": first_span["line_start"],
+            "line_end": last_span["line_end"]
         }
     })
 }
@@ -468,11 +831,25 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
         }
 
         if let Some((first, rest)) = burasage_container_indent(&node) {
+            // Compound container: 字下げ/burasage classification is unchanged;
+            // if the SAME marker also carries a 字詰め clause (jizume compound
+            // form), the burasage output nests inside a jizume_block instead
+            // of landing directly in `blocks`.
+            let compound_jizume_width = node
+                .get("source")
+                .and_then(Value::as_str)
+                .and_then(jizume_open_chars);
             if let Some(close_index) = find_matching_jisage_close(&content, index + 1) {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..close_index].to_vec();
                 strip_boundary_newlines(&mut inner);
-                push_burasage_paragraph(&mut blocks, first, rest, inner);
+                push_burasage_paragraph_maybe_jizume(
+                    &mut blocks,
+                    compound_jizume_width,
+                    first,
+                    rest,
+                    inner,
+                );
                 strip_next_leading_newline = true;
                 index = close_index + 1;
                 continue;
@@ -482,7 +859,13 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..boundary].to_vec();
                 strip_boundary_newlines(&mut inner);
-                push_burasage_paragraph(&mut blocks, first, rest, inner);
+                push_burasage_paragraph_maybe_jizume(
+                    &mut blocks,
+                    compound_jizume_width,
+                    first,
+                    rest,
+                    inner,
+                );
                 index = boundary;
                 continue;
             }
@@ -493,7 +876,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 strip_boundary_newlines(&mut inner);
                 blocks.push(json!({
                     "kind": "jisage_block",
-                    "x-indent": indent,
+                    "indent": indent,
                     "children": blocks_from_inline_content(inner)
                 }));
                 strip_next_leading_newline = true;
@@ -507,7 +890,7 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                 strip_boundary_newlines(&mut inner);
                 blocks.push(json!({
                     "kind": "jisage_block",
-                    "x-indent": indent,
+                    "indent": indent,
                     "children": blocks_from_inline_content(inner)
                 }));
                 index = boundary;
@@ -587,8 +970,8 @@ fn push_chitsuki_paragraph(blocks: &mut Vec<Value>, offset: u64, content: Vec<Va
             "kind": "style",
             "style_type": "chitsuki",
             "content": content,
-            "x-align": "right",
-            "x-offset": offset,
+            "align": "right",
+            "offset_from_end": offset,
             "x-provenance": "source-derived"
         }]
     }));
@@ -618,11 +1001,41 @@ fn push_burasage_paragraph(blocks: &mut Vec<Value>, first: u64, rest: u64, conte
             "kind": "style",
             "style_type": "burasage",
             "content": content,
-            "x-indent-first": first,
-            "x-indent-rest": rest,
+            "indent_first": first,
+            "indent_rest": rest,
             "x-provenance": "source-derived"
         }]
     }));
+}
+
+/// As [`push_burasage_paragraph`], but if `jizume_width` is present (the
+/// compound container's marker also carried a `字詰め` clause) the burasage
+/// paragraph nests inside a `jizume_block { width }` instead of landing
+/// directly in `blocks` — the compound close-matching logic that got us
+/// here is untouched; only the destination of the classified output moves.
+#[allow(
+    clippy::needless_pass_by_value,
+    reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+)]
+fn push_burasage_paragraph_maybe_jizume(
+    blocks: &mut Vec<Value>,
+    jizume_width: Option<u64>,
+    first: u64,
+    rest: u64,
+    content: Vec<Value>,
+) {
+    match jizume_width {
+        Some(width) => {
+            let mut children = Vec::new();
+            push_burasage_paragraph(&mut children, first, rest, content);
+            blocks.push(json!({
+                "kind": "jizume_block",
+                "width": width,
+                "children": children
+            }));
+        }
+        None => push_burasage_paragraph(blocks, first, rest, content),
+    }
 }
 
 fn burasage_container_indent(node: &Value) -> Option<(u64, u64)> {
@@ -675,15 +1088,24 @@ fn simple_jisage_open_indent(source: &str) -> Option<u64> {
     Some(parse_aozora_number_before(marker, "字下げ").unwrap_or(1))
 }
 
-/// Recognize a jizume (字詰め) container-open marker and extract the
-/// chars-per-line count — standalone (`［＃ここからN字詰め］`) or as the
-/// FINAL clause of a compound container
+/// Recognize a `字詰め` open marker and extract the chars-per-line count.
+///
+/// Matches the standalone line-width form (`［＃ここからN字詰め］`) or a
+/// `字詰め` carried as the FINAL clause of a compound indent container
 /// (`［＃ここから６字下げ、折り返して７字下げ、２１字詰め］`).
 ///
-/// Phase 4 wiring point: recognized but deliberately NOT emitted — AAT
-/// schema v1 has no `jizume_block` kind (Phase 3 design spec, decision 4),
-/// so jizume markers stay raw in AAT output until the Phase 4 schema
-/// rotation.
+/// NOTE (C3 gate fix): the *standalone* `［＃ここからN字詰め］` is the
+/// `line-width` container family (upstream notation spec §6.6,
+/// `line-width-open = ［＃ここから 1*DIGIT 字詰め］`). It is NOT a typed
+/// `jizume_block`; it must round-trip as a raw `containerOpen`/
+/// `containerClose` pair (conformance vector `line_width_container`). This
+/// recognizer therefore feeds ONLY the compound-indent wrap path
+/// (`push_burasage_paragraph_maybe_jizume`): a `字詰め` that appears as a
+/// clause on a `字下げ`-carrying indent opener projects the compound
+/// `jizume_block { width }`. It intentionally still *recognizes* the
+/// standalone form (a pure predicate — its Phase 3 semantics are pinned by
+/// `jizume_open_chars_recognizes_standalone_and_compound`), but no block
+/// classifier arm emits a standalone `jizume_block` from it.
 #[must_use]
 pub fn jizume_open_chars(source: &str) -> Option<u64> {
     let marker = source.trim();
@@ -869,7 +1291,7 @@ fn heading_block_from_hint(paragraph: &mut Vec<Value>, node: &Value) -> Option<V
         "x-provenance": "source-derived",
     });
     if let Some(indent) = indent {
-        heading["x-indent"] = json!(indent);
+        heading["indent"] = json!(indent);
     }
     Some(heading)
 }
@@ -937,6 +1359,7 @@ fn inline_content(
     decoded: &DecodedSource,
     nodes: &[AozoraNode],
     gaiji_by_start: &BTreeMap<usize, AozoraGaiji>,
+    ruby_by_span: &BTreeMap<(usize, usize), AozoraRubyEntry>,
 ) -> Vec<Value> {
     let mut content = Vec::new();
     let mut ordered = nodes.iter().collect::<Vec<_>>();
@@ -948,7 +1371,7 @@ fn inline_content(
             push_source_gap(&mut content, decoded, cursor, node.span.start);
         }
         match node.kind.as_str() {
-            "ruby" => content.push(ruby_node(decoded, node)),
+            "ruby" => content.push(ruby_node(decoded, node, ruby_by_span)),
             "gaiji" => content.push(gaiji_node(decoded, node, gaiji_by_start)),
             "bouten" => content.push(style_node(decoded, node, "bouten")),
             "emphasis" => content.push(style_node(
@@ -1031,7 +1454,25 @@ fn contains_aozora_markup(source: &str) -> bool {
     clippy::option_if_let_else,
     reason = "if/else form preserved from frozen adapter; lambda restructure not permitted"
 )]
-fn ruby_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
+fn ruby_node(
+    decoded: &DecodedSource,
+    node: &AozoraNode,
+    ruby_by_span: &BTreeMap<(usize, usize), AozoraRubyEntry>,
+) -> Value {
+    if let Some(entry) = ruby_by_span.get(&(node.span.start, node.span.end)) {
+        return json!({
+            "kind": "ruby",
+            "base": entry.base,
+            "reading": entry.reading,
+            "direction": entry.side,
+            "span": span_json(&node.span, &decoded.span_ctx)
+        });
+    }
+    // No resolvable structured entry (e.g. gaiji-base ruby, whose base is
+    // `Content::Segments` and so has no plain-text range for
+    // `ruby_entries` to resolve — see the `RUBY_RE` doc comment). Fall
+    // back to the original v1 regex reparse so this stays byte-identical
+    // to v1's typed emission rather than silently downgrading to `raw`.
     let source = source_slice(&decoded.span_text, &node.span);
     if let Some(caps) = RUBY_RE.captures(source) {
         json!({
@@ -1112,16 +1553,30 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
     })
 }
 
+/// Builds a schema-v2 `meta.warnings[]` entry (`{code, severity, message,
+/// span?}`) from a façade-diagnostic-derived `AozoraDiagnostic`. The single
+/// call site (`build_aat`) only ever passes parser diagnostics sourced from
+/// `aozora_json::diagnostic_entries` — every warning is façade-passthrough;
+/// there are no adapter-origin warning sites.
 fn diagnostic_warning(diagnostic: &AozoraDiagnostic, ctx: &SpanContext) -> Value {
-    let mut warning = json!({
-        "message": diagnostic.kind.clone().unwrap_or_else(|| "aozora diagnostic".to_owned())
-    });
-    if let Some(line) = diagnostic
-        .span
-        .as_ref()
-        .map(|span| ctx.line_of(ctx.to_decoded(span.start)))
-    {
-        warning["line"] = json!(line);
+    let message = diagnostic
+        .kind
+        .clone()
+        .unwrap_or_else(|| "aozora diagnostic".to_owned());
+    let code = diagnostic
+        .code
+        .clone()
+        .unwrap_or_else(|| message.replace('_', "-"));
+    // severity_str's non-exhaustive default arm is "error"; mirror that
+    // here so an absent severity surfaces loudly rather than passing as
+    // benign.
+    let severity = diagnostic
+        .severity
+        .clone()
+        .unwrap_or_else(|| "error".to_owned());
+    let mut warning = json!({ "code": code, "severity": severity, "message": message });
+    if let Some(span) = diagnostic.span.as_ref() {
+        warning["span"] = span_json(span, ctx);
     }
     warning
 }
@@ -1155,7 +1610,7 @@ fn source_slice<'a>(source: &'a str, span: &Span) -> &'a str {
 #[must_use]
 pub fn adapter_version() -> String {
     format!(
-        "ab-aozora {} aat-schema 1 facade {} wire-schema {} (git {})",
+        "ab-aozora {} aat-schema 2 facade {} wire-schema {} (git {})",
         env!("CARGO_PKG_VERSION"),
         ab_aozora_facade_version(),
         aozora_json::SCHEMA_VERSION,
@@ -1223,22 +1678,25 @@ mod tests {
     /// red — a parsed/`Value`-equality check would NOT catch this, since
     /// `Value::eq` for objects is order-independent.
     ///
-    /// Expected output generated 2026-07-10 via:
+    /// Expected output re-pasted 2026-07-12 (Task 14: `ab-aozora` `0.4.0` →
+    /// `0.5.0` — the `source_note` emission itself is a no-op on this
+    /// input, which has no `底本：` tail, so only the version string
+    /// changes) via:
     /// ```text
     /// export RUSTC_WRAPPER= SCCACHE_DISABLE=1
     /// cd ab-validator
-    /// cargo test -p ab-aozora-aat --test probe -- --nocapture
+    /// cargo test -p ab-aozora-aat --lib aat_json_from_bytes_is_byte_exact_under_default_map_ordering -- --nocapture
     /// ```
-    /// (a scratch test asserting against a deliberately wrong literal, whose
-    /// panic message prints the actual bytes; pasted here verbatim). The
-    /// `(git unknown)` suffix in `adapter_version` is `build.rs`'s fallback
-    /// when `AB_AOZORA_GIT_REV` is unset, which is the case for a plain
-    /// `cargo test` invocation (only flake-built release binaries bake in a
-    /// real rev; see `flake.nix`'s `AB_AOZORA_GIT_REV = self.rev or
-    /// "unknown"` and `build.rs`'s doc comment).
+    /// (this test's own literal is the deliberately-stale assertion; the
+    /// panic message prints the actual bytes, decoded and pasted here
+    /// verbatim). The `(git unknown)` suffix in `adapter_version` is
+    /// `build.rs`'s fallback when `AB_AOZORA_GIT_REV` is unset, which is the
+    /// case for a plain `cargo test` invocation (only flake-built release
+    /// binaries bake in a real rev; see `flake.nix`'s `AB_AOZORA_GIT_REV =
+    /// self.rev or "unknown"` and `build.rs`'s doc comment).
     #[test]
     fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
-        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.3.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":1,\"work_id\":\"stdin\"}\n";
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
     }
@@ -1258,6 +1716,27 @@ mod tests {
             assert!(entry["severity"].is_string());
             assert!(entry["span"]["start"].is_u64() && entry["span"]["end"].is_u64());
         }
+    }
+
+    #[test]
+    fn warnings_carry_facade_code_severity_span() {
+        // Same input as diagnostics_json_from_bytes_emits_schema3_envelope_with_codes:
+        // an unclosed bracket produces at least one (parser-stage) diagnostic.
+        let aat = aat_value_for("あ［＃ここから");
+        let w = &aat["meta"]["warnings"][0];
+        assert!(
+            w["code"].as_str().unwrap().chars().all(|c| c != '_'),
+            "kebab code"
+        );
+        assert!(matches!(
+            w["severity"].as_str().unwrap(),
+            "error" | "warning" | "note"
+        ));
+        assert!(w.get("message").is_some());
+        assert!(w.get("line").is_none(), "line dropped in v2");
+        let span = &w["span"];
+        assert!(span["line_start"].as_u64().unwrap() >= 1);
+        assert!(span["byte_end"].as_u64().unwrap() >= span["byte_start"].as_u64().unwrap());
     }
 
     #[test]
@@ -1496,6 +1975,82 @@ mod tests {
             .collect()
     }
 
+    /// Parse `src` through the full `aat_json_from_bytes` path and return the
+    /// resulting AAT `Value`.
+    fn aat_value_for(src: &str) -> Value {
+        serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap()
+    }
+
+    /// Depth-first search over `blocks`/`content`/`children` for the first
+    /// node whose `"kind"` equals `kind`, or `None` if absent.
+    fn find_node<'a>(v: &'a Value, kind: &str) -> Option<&'a Value> {
+        match v {
+            Value::Object(map) => {
+                if map.get("kind").and_then(Value::as_str) == Some(kind) {
+                    return Some(v);
+                }
+                for key in ["blocks", "content", "children"] {
+                    if let Some(child) = map.get(key)
+                        && let Some(found) = find_node(child, kind)
+                    {
+                        return Some(found);
+                    }
+                }
+                None
+            }
+            Value::Array(items) => items.iter().find_map(|item| find_node(item, kind)),
+            _ => None,
+        }
+    }
+
+    /// Like [`find_node`], but panics if no matching node is found.
+    fn find_first_node<'a>(v: &'a Value, kind: &str) -> &'a Value {
+        find_node(v, kind).unwrap_or_else(|| panic!("no {kind:?} node found in {v}"))
+    }
+
+    /// The top-level `blocks` array of an AAT document.
+    fn top_level_blocks(v: &Value) -> &Vec<Value> {
+        v["blocks"].as_array().unwrap()
+    }
+
+    #[test]
+    fn ruby_emission_uses_structured_entries_right_parity() {
+        let aat = aat_value_for("｜漢字《かんじ》\n");
+        let ruby = find_first_node(&aat, "ruby");
+        assert_eq!(ruby["base"], "漢字");
+        assert_eq!(ruby["reading"], "かんじ");
+        assert_eq!(ruby["direction"], "right");
+    }
+
+    #[test]
+    fn left_ruby_emits_direction_left() {
+        let aat = aat_value_for("名［＃「名」の左に「な」のルビ］\n");
+        let ruby = find_first_node(&aat, "ruby");
+        assert_eq!(ruby["direction"], "left");
+        assert_eq!(ruby["base"], "名");
+        assert_eq!(ruby["reading"], "な");
+    }
+
+    /// Gaiji-base ruby (`※［＃…］《reading》`): the base is a deferred gaiji
+    /// (`ab-aozora-pipeline`'s `try_ruby_over_gaiji_base`), which becomes a
+    /// `Content::Segments` base — `content_range_as_plain` returns `None`
+    /// for it, so `ruby_entries` has no entry for this node's span and
+    /// `ruby_node` falls through to the `RUBY_RE` regex path. This asserts
+    /// that fallback keeps v1's typed emission (byte-identical `base`,
+    /// `direction: "right"`) rather than silently downgrading to a `raw`
+    /// node — see the `RUBY_RE` doc comment and Task 4's fix-wave concern
+    /// 1 (delta-audit ruby class requires byte-identical typed ruby).
+    #[test]
+    fn gaiji_base_ruby_keeps_v1_typed_emission() {
+        let src = "※［＃「木＋吶のつくり」、第3水準1-85-54］《かい》\n";
+        let aat = aat_value_for(src);
+        let ruby = find_first_node(&aat, "ruby");
+        assert_eq!(ruby["kind"], "ruby");
+        assert_eq!(ruby["direction"], "right");
+        assert_eq!(ruby["base"], "※［＃「木＋吶のつくり」、第3水準1-85-54］");
+        assert_eq!(ruby["reading"], "かい");
+    }
+
     #[test]
     fn keigakomi_container_classifies_as_block() {
         let src = "前文\n［＃ここから罫囲み］\n中身\n［＃ここで罫囲み終わり］\n後文\n";
@@ -1506,7 +2061,7 @@ mod tests {
             ["paragraph", "keigakomi_block", "paragraph"]
         );
         let block = &doc["blocks"][1];
-        assert!(block.get("span").is_none() && block.get("x-indent").is_none());
+        assert!(block.get("span").is_none() && block.get("indent").is_none());
         let children = block["children"].as_array().unwrap();
         assert_eq!(children[0]["kind"], "paragraph");
         let text: String = children
@@ -1564,17 +2119,380 @@ mod tests {
     }
 
     #[test]
-    fn compound_jizume_still_classifies_burasage_and_emits_no_jizume_block() {
-        // The compound container already classifies as burasage (6,7) today —
-        // the ２１字詰め clause is recognition-only until Phase 4.
+    fn paired_line_width_container_stays_raw() {
+        // C3 gate fix: standalone `［＃ここからN字詰め］` is the `line-width`
+        // container family (upstream notation spec §6.6, `line-width-open`),
+        // NOT a typed jizume_block. Even a fully paired open/close must
+        // round-trip as raw containerOpen/containerClose — the conformance
+        // vector `line_width_container` requires exactly this. (Pre-C3 this
+        // arm emitted a jizume_block, which over-matched the vector.)
+        let aat = aat_value_for("［＃ここから２１字詰め］\n本文\n［＃ここで字詰め終わり］\n");
+        assert!(
+            find_node(&aat, "jizume_block").is_none(),
+            "standalone line-width container must not form a jizume_block"
+        );
+        let serialized = serde_json::to_string(&aat).unwrap();
+        assert!(serialized.contains("containerOpen"));
+        assert!(serialized.contains("containerClose"));
+    }
+
+    #[test]
+    fn line_width_container_conformance_vector_stays_raw() {
+        // Pins the exact source text of the upstream conformance vector
+        // `line_width_container` (§6.6): the parser must leave it a raw
+        // containerOpen/containerClose pair so the comparator maps it 1:1 to
+        // the vector's expected node kinds. Verbatim vector source below.
+        let aat = aat_value_for(
+            "本文。\n［＃ここから26字詰め］\n詰めた段落。\n別の行。\n［＃ここで字詰め終わり］\n通常段落。\n",
+        );
+        assert!(
+            find_node(&aat, "jizume_block").is_none(),
+            "line_width_container vector must not form a jizume_block"
+        );
+        let serialized = serde_json::to_string(&aat).unwrap();
+        assert!(serialized.contains("containerOpen"));
+        assert!(serialized.contains("containerClose"));
+    }
+
+    #[test]
+    fn unpaired_jizume_open_stays_raw() {
+        let aat = aat_value_for("［＃ここから２１字詰め］\n本文\n");
+        assert!(find_node(&aat, "jizume_block").is_none());
+        // the open survives as a raw containerOpen node — zero silent drops
+        assert!(
+            serde_json::to_string(&aat)
+                .unwrap()
+                .contains("containerOpen")
+        );
+    }
+
+    #[test]
+    fn compound_jisage_jizume_nests_jizume_block() {
+        // The compound container still classifies as burasage (6,7) — the
+        // ２１字詰め clause now additionally wraps that classified output in
+        // a jizume_block instead of leaving it unemitted.
         assert_eq!(
             burasage_open_indent("［＃ここから６字下げ、折り返して７字下げ、２１字詰め］"),
             Some((6, 7))
         );
+        let aat = aat_value_for(
+            "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\n本文\n［＃ここで字下げ終わり］\n",
+        );
+        let jizume = find_first_node(&aat, "jizume_block");
+        assert_eq!(jizume["width"], 21);
+        // children carry the burasage classification exactly as before, now typed (6,7)
+        let style = find_first_node(jizume, "style");
+        assert_eq!(style["indent_first"], 6);
+        assert_eq!(style["indent_rest"], 7);
+    }
+
+    #[test]
+    fn compound_jizume_boundary_fallback_still_wraps() {
+        // Compound container with jizume width (21) but NO ［＃ここで字下げ終わり］
+        // close — a following container open (罫囲み) triggers the boundary-fallback
+        // arm, which finds the next container marker and classifies what's between.
+        // The burasage classification still nests inside the jizume_block (6,7,21).
+        let aat = aat_value_for(
+            "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\n本文\n［＃ここから罫囲み］\nX\n［＃ここで罫囲み終わり］\n",
+        );
+        // 1. A jizume_block exists with width 21
+        let jizume = find_first_node(&aat, "jizume_block");
+        assert_eq!(jizume["width"], 21);
+        // 2. Inside it, a style node with style_type "burasage", indent_first 6, indent_rest 7
+        let style = find_first_node(jizume, "style");
+        assert_eq!(style["style_type"], "burasage");
+        assert_eq!(style["indent_first"], 6);
+        assert_eq!(style["indent_rest"], 7);
+        // 3. A keigakomi_block also exists at top level
+        let keigakomi = find_first_node(&aat, "keigakomi_block");
+        assert_eq!(keigakomi["kind"], "keigakomi_block");
+    }
+
+    #[test]
+    fn jisage_block_emits_typed_indent() {
+        let aat = aat_value_for("［＃ここから２字下げ］\n本文\n［＃ここで字下げ終わり］\n");
+        let block = find_first_node(&aat, "jisage_block");
+        assert_eq!(block["indent"], 2);
+        assert!(block.get("x-indent").is_none());
+    }
+
+    #[test]
+    fn chitsuki_style_emits_typed_align_offset() {
+        let aat = aat_value_for("本文［＃地から２字上げ］\n");
+        let style = find_first_node(&aat, "style");
+        assert_eq!(style["align"], "right");
+        assert_eq!(style["offset_from_end"], 2);
+        assert!(style.get("x-align").is_none() && style.get("x-offset").is_none());
+        assert_eq!(style["x-provenance"], "source-derived"); // provenance retained
+    }
+
+    #[test]
+    fn burasage_style_emits_typed_first_rest() {
+        // Pinned (6,7) compound input — same source string exercised by
+        // `compound_jisage_jizume_nests_jizume_block`.
         let src = "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\nあ\n［＃ここで字下げ終わり］\n";
-        let doc: Value = serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
-        let text = serde_json::to_string(&doc).unwrap();
-        assert!(!text.contains("jizume_block"));
-        assert!(text.contains("burasage"));
+        let aat = aat_value_for(src);
+        let style = find_first_node(&aat, "style");
+        assert_eq!(style["indent_first"], 6);
+        assert_eq!(style["indent_rest"], 7);
+        assert!(style.get("x-indent-first").is_none() && style.get("x-indent-rest").is_none());
+        assert_eq!(style["x-provenance"], "source-derived");
+    }
+
+    #[test]
+    fn heading_emits_typed_indent_when_indented() {
+        // Same indented-heading line as `full-markup-utf8.txt` line 9.
+        let aat = aat_value_for("［＃５字下げ］一［＃「一」は中見出し］\n");
+        let heading = find_first_node(&aat, "heading");
+        assert_eq!(heading["indent"], 5);
+        assert!(heading.get("x-indent").is_none());
+    }
+
+    #[test]
+    fn c4_identity_join_key_and_document_version() {
+        // Was the C3 identity test (Task 9); C4 (Task 14) bumps
+        // `ab-aozora` `0.4.0` → `0.5.0` — the schema-2 join key's other
+        // coordinates (`aat-schema 2 facade 0.3.0 wire-schema 3`) are
+        // unchanged by source_note emission.
+        assert!(
+            adapter_version().starts_with("ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3")
+        );
+        let aat = aat_value_for("あ\n");
+        assert_eq!(aat["version"], 2);
+    }
+
+    // --- Task 14: classify_tail (transcribed from
+    // reports/lib/terminal_provenance.py — see
+    // docs/superpowers/reports/2026-07-12-terminal-provenance-colophon-split.md)
+    // Tests mirror `ClassifyTail` in
+    // reports/source-regions/tests/test_terminal_provenance_split.py
+    // one-for-one where applicable. ------------------------------------
+
+    #[test]
+    fn classify_tail_provenance_head_line() {
+        let (classes, unclassifiable) = classify_tail(&["底本：「日本文学全集1」集英社"]);
+        assert_eq!(classes, vec![TailLineClass::TerminalProvenance]);
+        assert!(unclassifiable.is_empty());
+    }
+
+    #[test]
+    fn classify_tail_continuation_after_provenance_head_is_provenance() {
+        let lines = ["底本：「日本文学全集1」集英社", "　　　1969（昭和44）年12月25日初版"];
+        let (classes, _) = classify_tail(&lines);
+        assert_eq!(
+            classes,
+            vec![TailLineClass::TerminalProvenance, TailLineClass::TerminalProvenance]
+        );
+    }
+
+    /// THE distinguishing case: the identically-shaped date line that is
+    /// `TerminalProvenance` in the previous test is `Colophon` here,
+    /// because it follows `入力：` instead of `底本：`. No per-line
+    /// predicate can tell these apart — only carried state can.
+    #[test]
+    fn classify_tail_same_shaped_line_after_colophon_head_is_colophon() {
+        let lines = ["入力：j.utiyama", "1998年7月28日公開"];
+        let (classes, _) = classify_tail(&lines);
+        assert_eq!(classes, vec![TailLineClass::Colophon, TailLineClass::Colophon]);
+    }
+
+    #[test]
+    fn classify_tail_real_corpus_tail_end_to_end() {
+        // cards/000005/files/5_ruby_21311.zip::aibiki.txt in the pinned
+        // aozorabunko corpus (the motivating example from the report).
+        let lines = [
+            "底本：「日本文学全集1　坪内逍遥・二葉亭四迷集」集英社",
+            "　　　1969（昭和44）年12月25日初版",
+            "入力：j.utiyama",
+            "校正：八巻美恵",
+            "1998年7月28日公開",
+            "2006年1月6日修正",
+            "青空文庫作成ファイル：",
+            "このファイルは、インターネットの図書館、青空文庫で作られました。",
+        ];
+        let (classes, unclassifiable) = classify_tail(&lines);
+        assert!(unclassifiable.is_empty());
+        assert_eq!(
+            classes,
+            vec![
+                TailLineClass::TerminalProvenance,
+                TailLineClass::TerminalProvenance,
+                TailLineClass::Colophon,
+                TailLineClass::Colophon,
+                TailLineClass::Colophon,
+                TailLineClass::Colophon,
+                TailLineClass::Colophon,
+                TailLineClass::Colophon,
+            ]
+        );
+    }
+
+    #[test]
+    fn classify_tail_oyahon_continuation_is_provenance() {
+        let lines = ["底本の親本：「新編 銀河鉄道の夜」新潮文庫", "　　　1989（平成元）年11月10日初版"];
+        let (classes, _) = classify_tail(&lines);
+        assert_eq!(
+            classes,
+            vec![TailLineClass::TerminalProvenance, TailLineClass::TerminalProvenance]
+        );
+    }
+
+    #[test]
+    fn classify_tail_all_named_colophon_heads() {
+        let lines = [
+            "入力：ある人",
+            "校正：別の人",
+            "青空文庫作成ファイル：",
+            "※このファイルはインターネットの図書館、青空文庫で作られました。",
+        ];
+        let (classes, _) = classify_tail(&lines);
+        assert_eq!(classes, vec![TailLineClass::Colophon; 4]);
+    }
+
+    #[test]
+    fn classify_tail_blank_between_blocks_is_blank_and_preserves_state() {
+        let lines = ["底本：「サンプル」出版社", "", "入力：誰か"];
+        let (classes, _) = classify_tail(&lines);
+        assert_eq!(
+            classes,
+            vec![TailLineClass::TerminalProvenance, TailLineClass::Blank, TailLineClass::Colophon]
+        );
+    }
+
+    #[test]
+    fn classify_tail_blank_preserves_provenance_state_across_continuation() {
+        let lines = ["底本：「サンプル」出版社", "", "　　　1999年1月1日初版"];
+        let (classes, _) = classify_tail(&lines);
+        assert_eq!(
+            classes,
+            vec![
+                TailLineClass::TerminalProvenance,
+                TailLineClass::Blank,
+                TailLineClass::TerminalProvenance
+            ]
+        );
+    }
+
+    /// Divergence from the Python reference: `classify_tail` never fails
+    /// closed. A non-blank line before any head classifies `Colophon` and
+    /// its tail-relative index is reported so the caller can warn.
+    #[test]
+    fn classify_tail_nonblank_before_any_head_is_unclassifiable_fallback() {
+        let lines = ["何かの一行", "底本：「サンプル」出版社"];
+        let (classes, unclassifiable) = classify_tail(&lines);
+        assert_eq!(classes[0], TailLineClass::Colophon);
+        assert_eq!(classes[1], TailLineClass::TerminalProvenance);
+        assert_eq!(unclassifiable, vec![0]);
+    }
+
+    // --- Task 14: source_note emission --------------------------------
+
+    #[test]
+    fn terminal_provenance_tail_emits_source_note() {
+        let src = "本文です。\n\n底本：「作品集」文庫社\n　1990（平成2）年5月10日発行\n入力：someone\n校正：other\n";
+        let aat = aat_value_for(src);
+        let notes: Vec<&Value> = top_level_blocks(&aat)
+            .iter()
+            .filter(|b| b["kind"] == "source_note")
+            .collect();
+        assert_eq!(notes.len(), 1);
+        let note = notes[0];
+        assert_eq!(note["placement"], "back");
+        assert_eq!(note["region_class"], "terminal_provenance");
+        // one text inline per terminal-provenance line (底本 + its
+        // continuation date line), colophon lines (入力/校正) EXCLUDED;
+        // values PRESERVE the line terminator
+        let content = note["content"].as_array().unwrap();
+        assert_eq!(content.len(), 2);
+        assert_eq!(content[0]["value"], "底本：「作品集」文庫社\n");
+        assert_eq!(content[1]["value"], "　1990（平成2）年5月10日発行\n");
+        let s = &content[0]["span"];
+        let (a, b) = (
+            s["byte_start"].as_u64().unwrap() as usize,
+            s["byte_end"].as_u64().unwrap() as usize,
+        );
+        assert_eq!(&src[a..b], "底本：「作品集」文庫社\n"); // terminator inside the span
+        assert_eq!(s["line_start"], 3);
+        // block span aggregates first content start .. last content end
+        assert_eq!(note["span"]["byte_start"], content[0]["span"]["byte_start"]);
+        assert_eq!(note["span"]["byte_end"], content[1]["span"]["byte_end"]);
+        assert_eq!(note["span"]["line_start"], content[0]["span"]["line_start"]);
+        assert_eq!(note["span"]["line_end"], content[1]["span"]["line_end"]);
+    }
+
+    #[test]
+    fn stateful_boundary_date_after_colophon_head_is_excluded() {
+        // The reviewer's distinguishing case: a date-shaped line AFTER
+        // 入力： stays colophon (excluded), even though it is shaped
+        // identically to a 底本 continuation line.
+        let src = "本文。\n\n底本：「X」Y社\n入力：someone\n　2005（平成17）年1月1日作成\n";
+        let aat = aat_value_for(src);
+        let note = top_level_blocks(&aat)
+            .iter()
+            .find(|b| b["kind"] == "source_note")
+            .unwrap()
+            .clone();
+        assert_eq!(note["content"].as_array().unwrap().len(), 1); // only the 底本 line
+    }
+
+    #[test]
+    fn tail_free_work_has_no_source_note() {
+        let aat = aat_value_for("本文だけ。\n");
+        assert!(top_level_blocks(&aat).iter().all(|b| b["kind"] != "source_note"));
+    }
+
+    #[test]
+    fn two_non_contiguous_provenance_groups_emit_two_source_notes() {
+        // A colophon block interrupts two provenance blocks — each
+        // contiguous TerminalProvenance run is its own source_note.
+        let src = "本文。\n\n底本：「A」X社\n入力：someone\n底本の親本：「B」Y社\n入力：other\n";
+        let aat = aat_value_for(src);
+        let notes: Vec<&Value> = top_level_blocks(&aat)
+            .iter()
+            .filter(|b| b["kind"] == "source_note")
+            .collect();
+        assert_eq!(notes.len(), 2);
+        assert_eq!(notes[0]["content"].as_array().unwrap().len(), 1);
+        assert_eq!(notes[1]["content"].as_array().unwrap().len(), 1);
+        assert_eq!(notes[1]["content"][0]["value"], "底本の親本：「B」Y社\n");
+    }
+
+    /// A real `decode_source_bytes` tail's first line is ALWAYS a
+    /// recognized head: `aozora_body_range`'s tail-start rule
+    /// (`line.trim_start().starts_with("底本：")`) IS
+    /// `classify_tail`'s `PROVENANCE_HEADS[0]` check, so `state` is
+    /// always set before `classify_tail` ever looks at a second line —
+    /// the fallback branch is provably unreachable through the real
+    /// pipeline (mirrors the Python module's own finding in
+    /// `GeneratorCli.test_unclassifiable_residual_exits_2_with_bounded_examples`'s
+    /// comment, which monkeypatches `classify_tail` for the same reason).
+    /// This test therefore pins the PLUMBING directly against
+    /// `source_notes_from_tail` with a hand-built `sanitized_tail` a
+    /// future caller could still produce, rather than round-tripping
+    /// through `decode_source_bytes` on synthetic source text.
+    #[test]
+    fn unclassifiable_tail_line_falls_back_to_colophon_with_warning() {
+        let mut decoded = decode_source_bytes("foo\n".as_bytes()).unwrap();
+        assert!(decoded.sanitized_tail.is_empty(), "sanity: no real tail in this input");
+        decoded.sanitized_tail = "何かの一行\n底本：「X」Y社\n".to_owned();
+        decoded.tail_offset = 0;
+        let (blocks, warnings) = source_notes_from_tail(&decoded);
+        assert_eq!(blocks.len(), 1);
+        assert_eq!(blocks[0]["kind"], "source_note");
+        let content = blocks[0]["content"].as_array().unwrap();
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0]["value"], "底本：「X」Y社\n");
+        assert_eq!(warnings.len(), 1, "{warnings:?}");
+        assert_eq!(warnings[0]["code"], "tail-line-unclassified");
+        assert_eq!(warnings[0]["severity"], "warning");
+        assert_eq!(warnings[0]["message"], "何かの一行");
+    }
+
+    #[test]
+    fn line_ranges_handles_lf_crlf_bare_cr_and_unterminated_tail() {
+        assert_eq!(line_ranges("a\nb"), vec![0..2, 2..3]);
+        assert_eq!(line_ranges("a\r\nb"), vec![0..3, 3..4]);
+        assert_eq!(line_ranges("a\rb"), vec![0..2, 2..3]);
+        assert_eq!(line_ranges("a\n"), vec![0..2]);
     }
 }

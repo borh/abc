@@ -19,13 +19,105 @@ fn abc_root(repo: &Path) -> PathBuf {
         .unwrap_or_else(|| repo.join("data/abc-schemas"))
 }
 
-fn schemas_and_mapping() -> (SchemaSet, MappingDocument) {
+fn roots() -> (PathBuf, PathBuf) {
     let repo = repo_root();
     let abc = abc_root(&repo);
-    let schemas = SchemaSet::load(&repo, &abc).unwrap();
+    (repo, abc)
+}
+
+fn default_test_options() -> ConversionOptions {
+    ConversionOptions::default()
+}
+
+fn schemas_and_mapping() -> (SchemaSet, MappingDocument) {
+    let (repo_root, abc_root) = roots();
     let mapping =
-        MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v1.json"))
+            .unwrap();
+    let schemas =
+        SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version).unwrap();
     (schemas, mapping)
+}
+
+#[test]
+fn schema_set_rejects_unknown_aat_version() {
+    let (repo_root, abc_root) = roots();
+    let err = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 3).unwrap_err();
+    assert!(
+        err.to_string().contains("unsupported AAT schema version 3"),
+        "{err}"
+    );
+}
+
+#[test]
+fn validated_v1_conversion_succeeds_under_v1_tuple() {
+    // full pipeline proof, not just preflight: any existing v1 fixture through
+    // convert() with the v1 tuple must succeed WITH input validation on.
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = include_fixture_json("nested-sentence-basic.aat.json");
+    ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap();
+}
+
+#[test]
+fn v1_document_under_v2_tuple_fails_input_validation() {
+    let (repo_root, abc_root) = roots();
+    let mapping =
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
+            .unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    // v1 fixture (version:1) must be REJECTED by the v2 tuple's input validation.
+    let aat = include_fixture_json("nested-sentence-basic.aat.json");
+    let err = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap_err();
+    assert!(err.to_string().contains("AAT validation failed"), "{err}");
+}
+
+#[test]
+fn v2_document_under_v1_tuple_fails_input_validation() {
+    let (repo_root, abc_root) = roots();
+    let mapping =
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v1.json"))
+            .unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 1).unwrap();
+    // v2 doc (version:2, using a v2-only construct) must be REJECTED by the v1
+    // tuple's input validation.
+    let aat = json!({
+        "version": 2, "work_id": "t-jizume",
+        "blocks": [{ "kind": "jizume_block", "width": 21, "children": [
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] } ] }],
+        "meta": v2_test_meta()
+    });
+    let err = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap_err();
+    assert!(err.to_string().contains("AAT validation failed"), "{err}");
+}
+
+#[test]
+fn preflight_rejects_mismatched_mapping_schema_tuple() {
+    let (repo_root, abc_root) = roots();
+    // v1 mapping paired with the v2 schema file must fail preflight.
+    let mapping =
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v1.json"))
+            .unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    let err = mapping.preflight(&schemas).unwrap_err();
+    assert!(err.to_string().contains("tuple mismatch"), "{err}");
 }
 
 fn include_fixture_json(name: &str) -> serde_json::Value {
@@ -365,7 +457,7 @@ fn has_divergence_record(
 fn legacy_schema_hashes_match_mapping_artifact() {
     let repo = repo_root();
     let abc = abc_root(&repo);
-    let schemas = SchemaSet::load(&repo, &abc).unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo, &abc, 1).unwrap();
 
     assert_eq!(
         schema_hash(&schemas.mapping_schema).unwrap(),
@@ -423,7 +515,7 @@ fn read_json_accepts_deeply_nested_aat_values() {
 }
 
 #[test]
-fn mapping_preflight_accepts_checked_in_v2_artifact() {
+fn mapping_preflight_accepts_checked_in_v1_artifact() {
     let (schemas, mapping) = schemas_and_mapping();
 
     let index = mapping.preflight(&schemas).unwrap();
@@ -470,6 +562,18 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
 }
 
 #[test]
+fn mapping_preflight_accepts_checked_in_v2_artifact() {
+    let (repo_root, abc_root) = roots();
+    let mapping =
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
+            .unwrap();
+    assert_eq!(mapping.mapping_version, "0.3.0");
+    assert_eq!(mapping.source_aat_version, 2);
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    mapping.preflight(&schemas).unwrap();
+}
+
+#[test]
 fn mapping_preflight_rejects_wrong_target_schema_hash() {
     let (schemas, mut mapping) = schemas_and_mapping();
     mapping.target_parser_ir_schema_hash = format!("sha256:{}", "0".repeat(64));
@@ -508,7 +612,7 @@ fn orthographic_annotations_inject_into_schema_valid_parser_ir() {
         schemas: schemas.clone(),
         options: ConversionOptions {
             orthographic_annotations: Some(bundle),
-            ..ConversionOptions::default()
+            ..default_test_options()
         },
     })
     .unwrap();
@@ -577,7 +681,7 @@ fn parser_ir_emits_split_sentence_rows_and_ortho_tags() {
         schemas: schemas.clone(),
         options: ConversionOptions {
             orthographic_annotations: Some(bundle),
-            ..ConversionOptions::default()
+            ..default_test_options()
         },
     })
     .unwrap();
@@ -660,7 +764,7 @@ fn sentence_segmentation_uses_ruby_base_not_reading() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -700,7 +804,7 @@ fn checked_in_schema_accepts_sentence_segmentation_and_ortho_annotations() {
         schemas: schemas.clone(),
         options: ConversionOptions {
             orthographic_annotations: Some(ortho_fixture_bundle()),
-            ..ConversionOptions::default()
+            ..default_test_options()
         },
     })
     .unwrap();
@@ -759,7 +863,7 @@ fn ortho_indices_cover_multiple_annotations_in_one_sentence() {
         schemas: schemas.clone(),
         options: ConversionOptions {
             orthographic_annotations: Some(bundle),
-            ..ConversionOptions::default()
+            ..default_test_options()
         },
     })
     .unwrap();
@@ -817,7 +921,7 @@ fn ortho_annotation_spanning_two_sentences_tags_both() {
         schemas: schemas.clone(),
         options: ConversionOptions {
             orthographic_annotations: Some(bundle),
-            ..ConversionOptions::default()
+            ..default_test_options()
         },
     })
     .unwrap();
@@ -863,7 +967,7 @@ fn coalesces_sentence_boundary_inside_atomic_ruby_child_from_aat() {
         aat: include_fixture_json("atomic-boundary-emphasis-input.aat.json"),
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
     assert_eq!(
@@ -912,7 +1016,7 @@ fn splits_emphasis_container_at_sentence_boundary_keeping_ruby_whole() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1063,7 +1167,7 @@ fn converts_text_ruby_gaiji_and_validates_parser_ir() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1165,7 +1269,7 @@ fn projects_source_derived_page_break_paragraph_to_page_break_node() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1238,7 +1342,7 @@ fn projects_source_derived_line_break_inline_to_line_break_node() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1321,7 +1425,7 @@ fn recovers_direct_raw_without_rendering_parser_residue_as_body_text() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1438,7 +1542,7 @@ fn recovers_accent_and_inline_yokogumi_without_fatal_conversion() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1534,7 +1638,7 @@ fn projects_burasage_style_wrapper_to_paragraph_layout() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1601,7 +1705,7 @@ fn projects_chitsuki_style_wrapper_to_paragraph_layout() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1665,7 +1769,7 @@ fn projects_jisage_block_wrapped_paragraph_to_paragraph_layout() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1704,6 +1808,403 @@ fn projects_jisage_block_wrapped_paragraph_to_paragraph_layout() {
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 
+fn v2_schemas_and_mapping() -> (SchemaSet, MappingDocument) {
+    let (repo_root, abc_root) = roots();
+    let mapping =
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
+            .unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    (schemas, mapping)
+}
+
+/// A schema-valid v2 `meta` block for tests: `warnings: []` keeps the fixture
+/// minimal (the individual warning-field LOSS accounting is exercised
+/// separately in `map_warnings`, not by these layout/source-note tests).
+fn v2_test_meta() -> Value {
+    json!({
+        "adapter": "fixture",
+        "adapter_version": "fixture 0.1.0",
+        "source_encoding": "utf-8",
+        "source_hash": "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        "parse_complete": true,
+        "warnings": []
+    })
+}
+
+fn paragraph_layout_of(output: &ab_aat_to_parser_ir::ConversionOutput, index: usize) -> Value {
+    output
+        .parser_ir
+        .pointer(&format!("/paragraphs/{index}/layout"))
+        .cloned()
+        .unwrap_or(Value::Null)
+}
+
+#[test]
+fn v2_jizume_block_projects_paragraph_layout() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat = json!({
+        "version": 2, "work_id": "t-jizume",
+        "blocks": [{ "kind": "jizume_block", "width": 21, "children": [
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] } ] }],
+        "meta": v2_test_meta()
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let layout = paragraph_layout_of(&output, 0);
+    assert_eq!(
+        layout,
+        json!({ "kind": "jizume", "source": "aat-block", "width": 21 })
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/text")
+            .and_then(Value::as_str),
+        Some("本文")
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn v2_jizume_block_mixed_children_fallback_accounts_invention() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat = json!({
+        "version": 2, "work_id": "t-jizume-fallback",
+        "blocks": [{ "kind": "jizume_block", "width": 21, "children": [
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] },
+            { "kind": "heading", "level": 1, "style": "normal",
+              "content": [{ "kind": "text", "value": "見出し" }] } ] }],
+        "meta": v2_test_meta()
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let nodes = output
+        .parser_ir
+        .pointer("/nodes")
+        .and_then(Value::as_array)
+        .unwrap();
+    assert!(
+        nodes.iter().any(|node| node["type"] == "indentation"),
+        "mixed-children jizume_block fallback must emit an indentation node"
+    );
+
+    assert!(has_divergence_record(
+        &output,
+        "STRUCTURAL",
+        "blocks[].jizume_block",
+        None
+    ));
+    assert!(has_divergence_record(
+        &output,
+        "INVENTION",
+        "blocks[].jizume_block",
+        Some("indentation")
+    ));
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn v2_typed_layout_fields_project_without_x_names() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat = json!({
+        "version": 2, "work_id": "t-burasage",
+        "blocks": [{ "kind": "paragraph", "content": [{
+            "kind": "style", "style_type": "burasage",
+            "indent_first": 6, "indent_rest": 7, "x-provenance": "source-derived",
+            "content": [{ "kind": "text", "value": "本文" }] }] }],
+        "meta": v2_test_meta()
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let layout = paragraph_layout_of(&output, 0);
+    assert_eq!(
+        layout,
+        json!({
+            "kind": "burasage",
+            "source": "aat-style",
+            "first_line_indent": 6,
+            "continuation_indent": 7
+        })
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn v2_never_applies_source_note_heuristic() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat = json!({
+        "version": 2, "work_id": "t-heuristic-v2",
+        "blocks": [
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] },
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "（テストから。）" }] }
+        ],
+        "meta": v2_test_meta()
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    assert!(
+        !output
+            .parser_ir
+            .pointer("/nodes")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .any(|node| node["type"] == "source-note"),
+        "v2 documents must never trigger the v1 source-attribution heuristic"
+    );
+    assert!(
+        output
+            .parser_ir
+            .pointer("/paragraphs")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .all(|paragraph| paragraph["role"] == "body")
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn v1_heuristic_still_fires_byte_identically() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1, "work_id": "t-heuristic-v1",
+        "blocks": [
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] },
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "（テストから。）" }] }
+        ],
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        )
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let nodes = output
+        .parser_ir
+        .pointer("/nodes")
+        .and_then(Value::as_array)
+        .unwrap();
+    assert!(
+        nodes
+            .iter()
+            .any(|node| node["type"] == "source-note" && node["classification"] == "heuristic")
+    );
+    let paragraphs = output
+        .parser_ir
+        .pointer("/paragraphs")
+        .and_then(Value::as_array)
+        .unwrap();
+    assert!(
+        paragraphs
+            .iter()
+            .any(|paragraph| paragraph["role"] == "source-note"
+                && paragraph["classification"] == "heuristic")
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn v2_explicit_source_note_converts_direct() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat = json!({
+        "version": 2, "work_id": "t-source-note",
+        "blocks": [
+            { "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] },
+            {
+                "kind": "source_note",
+                "placement": "back",
+                "region_class": "terminal_provenance",
+                "content": [{ "kind": "text", "value": "底本：テスト文庫" }],
+                "span": { "line_start": 10, "line_end": 10, "byte_start": 100, "byte_end": 120 }
+            }
+        ],
+        "meta": v2_test_meta()
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let nodes = output
+        .parser_ir
+        .pointer("/nodes")
+        .and_then(Value::as_array)
+        .unwrap();
+    let note_index = nodes
+        .iter()
+        .position(|node| node["type"] == "source-note")
+        .expect("source-note node present");
+    let note = &nodes[note_index];
+    assert_eq!(note["note_type"], json!("source-attribution"));
+    assert_eq!(note["placement"], json!("back"));
+    assert_eq!(note["classification"], json!("direct"));
+    assert_eq!(note["source_pointer"], json!("blocks[1]"));
+    assert_eq!(note["text"], json!("底本：テスト文庫"));
+
+    let paragraphs = output
+        .parser_ir
+        .pointer("/paragraphs")
+        .and_then(Value::as_array)
+        .unwrap();
+    let row = paragraphs
+        .iter()
+        .find(|paragraph| paragraph["role"] == "source-note")
+        .expect("source-note paragraph row present");
+    assert_eq!(row["classification"], json!("direct"));
+    assert_eq!(
+        row["node_range"],
+        json!({ "start": note_index, "end": note_index + 1 })
+    );
+
+    assert!(has_divergence_record(
+        &output,
+        "STRUCTURAL",
+        "blocks[].source_note",
+        Some("source-note")
+    ));
+    assert!(has_divergence_record(
+        &output,
+        "LOSS",
+        "blocks[].source_note.region_class",
+        Some("(source-note.note_type)")
+    ));
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn v2_source_note_unknown_region_class_fails_closed() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat = json!({
+        "version": 2, "work_id": "t-source-note-unmapped",
+        "blocks": [
+            {
+                "kind": "source_note",
+                "placement": "back",
+                "region_class": "colophon_metadata",
+                "content": [{ "kind": "text", "value": "発行者：テスト" }],
+                "span": { "line_start": 10, "line_end": 10, "byte_start": 100, "byte_end": 120 }
+            }
+        ],
+        "meta": v2_test_meta()
+    });
+
+    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap_err();
+
+    assert!(
+        error
+            .to_string()
+            .contains("unmapped source_note region_class"),
+        "{error}"
+    );
+}
+
+#[test]
+fn v2_warning_span_loss_record_is_schema_valid_scalar() {
+    // C3 audit blocker regression: a v2 `meta.warnings[].span` is a
+    // structured object (line_start/line_end/byte_start/byte_end), not a
+    // schema-legal `source_value` scalar (string/integer/boolean/null per
+    // aat-parser-ir-divergence.schema.json). Conversion must still succeed,
+    // and the resulting divergence record's `source_value` must validate
+    // against the divergence-record schema (which `recorder.bundle()`
+    // already enforces per-record; this pins the regression at the
+    // integration level too).
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let mut meta = v2_test_meta();
+    meta["warnings"] = json!([{
+        "code": "FIXTURE_WARNING",
+        "severity": "warning",
+        "message": "fixture warning with span",
+        "span": { "line_start": 3, "line_end": 3, "byte_start": 10, "byte_end": 20 }
+    }]);
+    let aat = json!({
+        "version": 2, "work_id": "t-warning-span",
+        "blocks": [{ "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] }],
+        "meta": meta
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+
+    let span_record = output
+        .divergence_bundle
+        .pointer("/records")
+        .and_then(Value::as_array)
+        .expect("divergence bundle records")
+        .iter()
+        .find(|record| record["aat_pointer"] == "meta.warnings[].span")
+        .expect("meta.warnings[].span LOSS record present");
+    assert!(
+        span_record["source_value"].is_null(),
+        "structured span must not leak into source_value: {span_record}"
+    );
+
+    validate_value(
+        &schemas.abc_divergence_record_schema,
+        span_record,
+        "ABC divergence record",
+    )
+    .unwrap();
+    validate_value(&schemas.bundle_schema, &output.divergence_bundle, "bundle").unwrap();
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
 #[test]
 fn projects_measured_figure_inline_to_image_node() {
     let (schemas, mapping) = schemas_and_mapping();
@@ -1736,7 +2237,7 @@ fn projects_measured_figure_inline_to_image_node() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1808,7 +2309,7 @@ fn measured_policy_projects_style_heading_warning_and_warigaki() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1898,7 +2399,7 @@ fn preserves_ruby_inside_emphasis_inline_children() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1961,7 +2462,7 @@ fn preserves_gaiji_inside_emphasis_inline_children() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2013,7 +2514,7 @@ fn preserves_nested_inline_container_children() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2068,7 +2569,7 @@ fn inline_children_depth_limit_records_warning() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2134,7 +2635,7 @@ fn measured_policy_flattens_epub3_tcy_and_block_containers() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2646,7 +3147,7 @@ fn heading_preserves_structured_inline_children() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2722,7 +3223,7 @@ fn converts_inline_layout_scopes_to_layout_span() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2791,7 +3292,7 @@ fn recovers_caption_and_quote_block_children_without_fatal_divergence() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2832,7 +3333,7 @@ fn unmeasured_inline_kind_refuses_by_default() {
         schemas,
         options: ConversionOptions {
             validate_input_aat: false,
-            ..ConversionOptions::default()
+            ..default_test_options()
         },
     })
     .unwrap_err()
@@ -2856,7 +3357,7 @@ fn converts_checked_in_real_measured_aat_fixtures() {
             aat,
             mapping: MappingDocument::from_path(&mapping_path).unwrap(),
             schemas: schemas.clone(),
-            options: ConversionOptions::default(),
+            options: default_test_options(),
         })
         .unwrap_or_else(|error| panic!("{fixture} failed conversion: {error:#}"));
 
@@ -3374,7 +3875,7 @@ fn quote_node_emission_from_text() {
         aat: include_fixture_json("quote-node-emission.aat.json"),
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
     let nodes = output.parser_ir["nodes"].as_array().unwrap();
@@ -3407,7 +3908,7 @@ fn fragment_assembly_single_inner_sentence() {
         aat: include_fixture_json("nested-sentence-basic.aat.json"),
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
     let sentences = output.parser_ir["sentences"].as_array().unwrap();
@@ -3447,7 +3948,7 @@ fn fragment_assembly_multiple_inner_sentences() {
         aat: include_fixture_json("nested-sentence-multiple.aat.json"),
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
     let sentences = output.parser_ir["sentences"].as_array().unwrap();
@@ -3480,7 +3981,7 @@ fn fragment_field_coherence_holds() {
         aat: include_fixture_json("nested-sentence-multiple.aat.json"),
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
     let sentences = output.parser_ir["sentences"].as_array().unwrap();
@@ -3554,7 +4055,7 @@ fn ruby_node_span_is_decoded_not_raw_source() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 

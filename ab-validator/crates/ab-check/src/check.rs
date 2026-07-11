@@ -22,13 +22,26 @@ use crate::{
     properties::{PropertyViolation, builtin_properties},
 };
 
-const AAT_SCHEMA: &str = include_str!("../../../data/aat-schema.json");
-static AAT_SCHEMA_VALIDATOR: LazyLock<Result<Validator, String>> = LazyLock::new(|| {
-    let schema: Value = serde_json::from_str(AAT_SCHEMA).map_err(|error| error.to_string())?;
+// The AAT schema is versioned (see `docs/aat-contract.md` "Versioning" and
+// the sibling dispatch in `crates/ab-aat-to-parser-ir/src/schema.rs`).
+// `ab-check` embeds both frozen versions and selects the compiled validator
+// per AAT document by its own top-level `"version"` field, so a
+// comparison-lane (v1) document keeps validating against the frozen v1
+// schema even after `data/aat-schema.json` rotates to a newer version.
+const AAT_SCHEMA_V1: &str = include_str!("../../../data/aat-schema-v1.json");
+const AAT_SCHEMA_V2: &str = include_str!("../../../data/aat-schema.json");
+
+fn compile_embedded_schema(source: &str, label: &str) -> Result<Validator, String> {
+    let schema: Value = serde_json::from_str(source).map_err(|error| error.to_string())?;
     jsonschema::validator_for(&schema)
-        .context("failed to compile AAT schema")
+        .with_context(|| format!("failed to compile {label} AAT schema"))
         .map_err(|error| error.to_string())
-});
+}
+
+static AAT_SCHEMA_VALIDATOR_V1: LazyLock<Result<Validator, String>> =
+    LazyLock::new(|| compile_embedded_schema(AAT_SCHEMA_V1, "v1"));
+static AAT_SCHEMA_VALIDATOR_V2: LazyLock<Result<Validator, String>> =
+    LazyLock::new(|| compile_embedded_schema(AAT_SCHEMA_V2, "v2"));
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CheckReport {
@@ -82,24 +95,50 @@ struct AdapterCheckOutput {
     aat: Option<Value>,
 }
 
-/// Return a lazily initialized JSON-schema validator for AAT documents.
+/// Return the compiled validator for a specific AAT schema `version`.
 ///
 /// # Errors
 ///
-/// Returns an error when the embedded schema cannot be parsed or validated.
-pub fn schema_validator() -> Result<&'static Validator> {
-    AAT_SCHEMA_VALIDATOR
-        .as_ref()
-        .map_err(|message| anyhow::anyhow!(message.clone()))
+/// Returns an error when `version` is not a known AAT schema version, or the
+/// embedded schema for a known version fails to compile.
+pub fn schema_validator_for_version(version: u64) -> Result<&'static Validator> {
+    match version {
+        1 => AAT_SCHEMA_VALIDATOR_V1
+            .as_ref()
+            .map_err(|message| anyhow::anyhow!(message.clone())),
+        2 => AAT_SCHEMA_VALIDATOR_V2
+            .as_ref()
+            .map_err(|message| anyhow::anyhow!(message.clone())),
+        other => bail!("unsupported AAT schema version {other} (known: 1, 2)"),
+    }
 }
 
-/// Validate an AAT object against the JSON schema.
+/// Read an AAT document's top-level `"version"` field and return the
+/// matching compiled validator. Fails closed: a missing or non-integer
+/// `"version"` is rejected rather than defaulting to any particular schema.
 ///
 /// # Errors
 ///
-/// Returns an error when schema validation fails.
+/// Returns an error when `"version"` is missing, is not an unsigned
+/// integer, or is not a known AAT schema version.
+pub fn schema_validator_for_document(aat: &Value) -> Result<&'static Validator> {
+    let version = aat
+        .get("version")
+        .context("AAT document is missing the top-level \"version\" field")?
+        .as_u64()
+        .context("AAT document's top-level \"version\" field is not an unsigned integer")?;
+    schema_validator_for_version(version)
+}
+
+/// Validate an AAT object against the JSON schema selected by its own
+/// top-level `"version"` field.
+///
+/// # Errors
+///
+/// Returns an error when the document's version cannot be resolved to a
+/// known schema, or when schema validation fails.
 pub fn validate_aat_value(aat: &Value) -> Result<()> {
-    let validator = schema_validator()?;
+    let validator = schema_validator_for_document(aat)?;
     validator.validate(aat).map_err(|error| {
         anyhow::anyhow!(
             "AAT schema validation failed at {}: {error}",
@@ -125,7 +164,6 @@ pub fn check_single(
     txt_path: &Path,
     aat_path: &Path,
     output: Option<&Path>,
-    validator: &Validator,
 ) -> Result<CheckReport> {
     let txt_bytes =
         fs::read(txt_path).with_context(|| format!("failed to read {}", txt_path.display()))?;
@@ -134,12 +172,12 @@ pub fn check_single(
         &fs::read(aat_path).with_context(|| format!("failed to read {}", aat_path.display()))?,
     )
     .with_context(|| format!("failed to parse {}", aat_path.display()))?;
-    let report = check_value(&decoded.text, &aat, validator);
+    let report = check_value(&decoded.text, &aat);
     write_report(&report, output)?;
     Ok(report)
 }
 
-pub fn check_value(txt: &str, aat: &Value, validator: &Validator) -> CheckReport {
+pub fn check_value(txt: &str, aat: &Value) -> CheckReport {
     let adapter = aat
         .pointer("/meta/adapter")
         .and_then(Value::as_str)
@@ -157,14 +195,21 @@ pub fn check_value(txt: &str, aat: &Value, validator: &Validator) -> CheckReport
         .to_owned();
 
     let mut results = BTreeMap::new();
-    if let Err(error) = validator.validate(aat) {
+    let schema_failure = match schema_validator_for_document(aat) {
+        Err(error) => Some((error.to_string(), None)),
+        Ok(validator) => validator
+            .validate(aat)
+            .err()
+            .map(|error| (error.to_string(), Some(error.instance_path().to_string()))),
+    };
+    if let Some((message, path)) = schema_failure {
         results.insert(
             "schema_valid".to_owned(),
             CheckResult {
                 pass: false,
-                message: Some(error.to_string()),
+                message: Some(message),
                 line: None,
-                path: Some(error.instance_path().to_string()),
+                path,
                 confidence: Some("strict".to_owned()),
             },
         );
@@ -262,7 +307,6 @@ pub fn run_batch(options: BatchOptions<'_>) -> Result<()> {
             .and_then(|name| name.to_str())
             .unwrap_or(options.adapter),
     );
-    let validator = schema_validator()?;
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(options.jobs)
         .build()?;
@@ -276,7 +320,6 @@ pub fn run_batch(options: BatchOptions<'_>) -> Result<()> {
                 &work.txt_path,
                 &work.id,
                 options.timeout,
-                validator,
             )?;
             let out = options
                 .output_dir
@@ -327,7 +370,6 @@ fn invoke_and_check(
     indexed_txt_path: &str,
     work_id: &str,
     timeout: Duration,
-    validator: &Validator,
 ) -> Result<AdapterCheckOutput> {
     let txt_bytes = read_indexed_source_bytes(corpus_root, indexed_txt_path)?;
     let decoded = decode_source_bytes(&txt_bytes)?;
@@ -379,7 +421,7 @@ fn invoke_and_check(
                             Value::String(adapter_version.to_owned()),
                         );
                     }
-                    let report = check_value(&decoded.text, &aat, validator);
+                    let report = check_value(&decoded.text, &aat);
                     Ok(AdapterCheckOutput {
                         report,
                         aat: Some(aat),
@@ -602,10 +644,9 @@ pub fn report_to_value(report: &CheckReport) -> Value {
 mod tests {
     use super::*;
 
-    #[test]
-    fn validate_aat_value_reports_schema_status() {
-        let valid = serde_json::json!({
-            "version": 1,
+    fn fixture_with_version(version: Value) -> Value {
+        serde_json::json!({
+            "version": version,
             "work_id": "fixture",
             "blocks": [{"kind": "paragraph", "content": [{"kind": "text", "value": "本文"}]}],
             "meta": {
@@ -616,10 +657,73 @@ mod tests {
                 "parse_complete": true,
                 "warnings": []
             }
-        });
+        })
+    }
+
+    #[test]
+    fn validate_aat_value_reports_schema_status() {
+        let valid = fixture_with_version(serde_json::json!(1));
         assert!(validate_aat_value(&valid).is_ok());
 
         let invalid = serde_json::json!({"version": 1});
         assert!(validate_aat_value(&invalid).is_err());
+    }
+
+    #[test]
+    fn v1_document_validates_against_frozen_v1_schema() {
+        let doc = fixture_with_version(serde_json::json!(1));
+        assert!(validate_aat_value(&doc).is_ok());
+    }
+
+    #[test]
+    fn v2_document_validates_against_current_v2_schema() {
+        let doc = fixture_with_version(serde_json::json!(2));
+        assert!(validate_aat_value(&doc).is_ok());
+    }
+
+    #[test]
+    fn version_3_document_is_rejected_fail_closed() {
+        let doc = fixture_with_version(serde_json::json!(3));
+        let error = validate_aat_value(&doc).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("unsupported AAT schema version 3"),
+            "unexpected error message: {error}"
+        );
+    }
+
+    #[test]
+    fn missing_version_document_is_rejected_fail_closed() {
+        let doc = serde_json::json!({
+            "work_id": "fixture",
+            "blocks": [],
+            "meta": {
+                "adapter": "fixture",
+                "adapter_version": "fixture",
+                "source_encoding": "utf-8",
+                "source_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                "parse_complete": true,
+                "warnings": []
+            }
+        });
+        let error = validate_aat_value(&doc).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("missing the top-level \"version\" field"),
+            "unexpected error message: {error}"
+        );
+    }
+
+    #[test]
+    fn schema_validator_for_version_rejects_unknown_version() {
+        let error = schema_validator_for_version(99).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("unsupported AAT schema version 99"),
+            "unexpected error message: {error}"
+        );
     }
 }

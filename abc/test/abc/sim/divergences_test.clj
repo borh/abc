@@ -4,14 +4,16 @@
 
 (deftest table-covers-spec-entries-test
   (is (= #{:D1 :D2 :D3 :D4 :D5 :D6} (set (keys div/table))))
-  (is (every? #(contains? #{:open :adjudicated-bug :adjudicated-intended}
+  (is (every? #(contains? #{:open :adjudicated-bug :adjudicated-intended :fixed}
                           (:status %))
               (vals div/table))))
 
 (deftest expected-failure-inverts-while-open-test
-  ;; :D1 is open: a FALSE desired-check passes, a TRUE desired-check fails.
-  (is (true? (div/expected-failure* :D1 "demo" (fn [] false))))
-  (is (false? (div/expected-failure* :D1 "demo" (fn [] true)))))
+  ;; Inversion semantics are pinned against a synthetic open entry so this
+  ;; test stays valid as the real divergences get fixed.
+  (with-redefs [div/table {:DX {:case "demo" :status :open}}]
+    (is (true? (div/expected-failure* :DX "demo" (fn [] false))))
+    (is (false? (div/expected-failure* :DX "demo" (fn [] true))))))
 
 (deftest harness-exceptions-and-unknown-ids-escape-test
   (is (thrown? clojure.lang.ExceptionInfo (div/open? :D99)))

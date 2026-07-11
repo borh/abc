@@ -87,7 +87,7 @@ fn convert_preflighted(
     options: ConversionOptions,
 ) -> Result<ConversionOutput> {
     if options.validate_input_aat {
-        ab_check::check::validate_aat_value(&aat)?;
+        validate_compiled(&validators.aat, &aat, "AAT")?;
     }
 
     let mut recorder = DivergenceRecorder::new(index);
@@ -102,6 +102,14 @@ fn convert_preflighted(
             paragraphs: &mut paragraphs,
             synthetic_warnings: &mut synthetic_warnings,
         };
+
+        // AAT `version` selects the source-attribution heuristic: it only ever
+        // fires for v1 documents. v2 documents carry an explicit `source_note`
+        // block (see the `source_note` match arm below) and must never trigger
+        // the heuristic, even if a final paragraph happens to look like an
+        // attribution string.
+        let aat_version = aat.get("version").and_then(Value::as_u64).unwrap_or(1);
+        let heuristic_enabled = aat_version == 1;
 
         let blocks = aat
             .pointer("/blocks")
@@ -118,6 +126,7 @@ fn convert_preflighted(
                 &format!("blocks[{block_index}]"),
                 None,
                 block_index + 1 == top_level_block_count,
+                heuristic_enabled,
             )?;
         }
     }
@@ -218,6 +227,7 @@ struct BlockOutputs<'a> {
     synthetic_warnings: &'a mut Vec<Value>,
 }
 
+#[allow(clippy::too_many_arguments)]
 fn map_block(
     block: &Value,
     outputs: &mut BlockOutputs<'_>,
@@ -226,6 +236,7 @@ fn map_block(
     path: &str,
     inherited_layout: Option<Value>,
     is_final_top_level: bool,
+    heuristic_enabled: bool,
 ) -> Result<u64> {
     let kind = block["kind"].as_str().unwrap_or("unknown");
     let structural_pointer = format!("{path}.{kind}");
@@ -257,7 +268,7 @@ fn map_block(
             };
             let paragraph_id = format!("p{:06}", outputs.paragraphs.len());
             let node_start = outputs.nodes.len();
-            let source_note_text = if is_final_top_level {
+            let source_note_text = if is_final_top_level && heuristic_enabled {
                 source_attribution_text(paragraph_content)?
             } else {
                 None
@@ -353,6 +364,16 @@ fn map_block(
                 block.get("style").cloned(),
                 None,
             )?;
+            if let Some(indent) = block.get("indent").or_else(|| block.get("x-indent")) {
+                let indent_pointer = format!("{path}.heading.indent");
+                recorder.record_if_measured(
+                    "LOSS",
+                    Some(indent_pointer.as_str()),
+                    None,
+                    Some(indent.clone()),
+                    None,
+                );
+            }
             let text = plain_visible_content_text(block.get("content"))?;
             let inline_children = inline_children_nodes(
                 block.get("content"),
@@ -390,6 +411,7 @@ fn map_block(
                         &format!("{path}.children[{index}]"),
                         Some(layout.clone()),
                         false,
+                        heuristic_enabled,
                     )?;
                 }
             } else {
@@ -423,9 +445,137 @@ fn map_block(
                         &format!("{path}.children[{index}]"),
                         None,
                         false,
+                        heuristic_enabled,
                     )?;
                 }
             }
+        }
+        "jizume_block" => {
+            let children: Vec<&Value> =
+                block["children"].as_array().into_iter().flatten().collect();
+            if children
+                .iter()
+                .all(|child| child.get("kind").and_then(Value::as_str) == Some("paragraph"))
+            {
+                let layout = paragraph_layout_from_jizume_block(block);
+                for (index, child) in children.into_iter().enumerate() {
+                    current = map_block(
+                        child,
+                        outputs,
+                        recorder,
+                        current,
+                        &format!("{path}.children[{index}]"),
+                        Some(layout.clone()),
+                        false,
+                        heuristic_enabled,
+                    )?;
+                }
+            } else {
+                recorder.record(
+                    "STRUCTURAL",
+                    Some(structural_pointer.as_str()),
+                    None,
+                    None,
+                    None,
+                )?;
+                recorder.record(
+                    "INVENTION",
+                    Some(structural_pointer.as_str()),
+                    Some("indentation"),
+                    None,
+                    Some(json!(1)),
+                )?;
+                let span = map_span(block.get("span"), current, current, recorder, path)?;
+                outputs.nodes.push(json!({
+                    "type": "indentation",
+                    "span": span,
+                    "depth": 1,
+                    "text": null,
+                }));
+                for (index, child) in children.into_iter().enumerate() {
+                    current = map_block(
+                        child,
+                        outputs,
+                        recorder,
+                        current,
+                        &format!("{path}.children[{index}]"),
+                        None,
+                        false,
+                        heuristic_enabled,
+                    )?;
+                }
+            }
+        }
+        "source_note" => {
+            let placement = block
+                .get("placement")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown");
+            let region_class = block
+                .get("region_class")
+                .and_then(Value::as_str)
+                .unwrap_or("");
+            let region_class_pointer = format!("{structural_pointer}.region_class");
+            let note_type = match region_class {
+                "terminal_provenance" => "source-attribution",
+                other => bail!("unmapped source_note region_class {other:?} at {path}"),
+            };
+            recorder.record(
+                "STRUCTURAL",
+                Some(structural_pointer.as_str()),
+                Some("source-note"),
+                None,
+                None,
+            )?;
+            recorder.record(
+                "LOSS",
+                Some(region_class_pointer.as_str()),
+                Some("(source-note.note_type)"),
+                Some(json!(region_class)),
+                Some(json!(note_type)),
+            )?;
+            let text = visible_content_text(
+                block.get("content"),
+                recorder,
+                &format!("{path}.content"),
+                Some("source-note.text"),
+            )?;
+            let node_start = outputs.nodes.len();
+            let end = current + utf8_len(&text);
+            let span = map_span(block.get("span"), current, end, recorder, path)?;
+            outputs.nodes.push(json!({
+                "type": "source-note",
+                "span": span,
+                "text": text,
+                "note_type": note_type,
+                "placement": placement,
+                "classification": "direct",
+                "source_pointer": path,
+            }));
+            current = end;
+            let node_end = outputs.nodes.len();
+            let paragraph_id = format!("p{:06}", outputs.paragraphs.len());
+            let (note_paragraph_span, span_source) = paragraph_span(
+                block.get("span"),
+                outputs.nodes,
+                node_start,
+                node_end,
+                offset,
+                current,
+            )?;
+            outputs.paragraphs.push(json!({
+                "id": paragraph_id,
+                "span": note_paragraph_span,
+                "span_source": span_source,
+                "node_range": {
+                    "start": node_start,
+                    "end": node_end,
+                },
+                "role": "source-note",
+                "source_pointer": path,
+                "classification": "direct",
+            }));
+            return Ok(current);
         }
         "keigakomi_block" | "yokogumi_block" => {
             recorder.record(
@@ -456,6 +606,7 @@ fn map_block(
                     &format!("{path}.children[{index}]"),
                     None,
                     false,
+                    heuristic_enabled,
                 )?;
             }
         }
@@ -481,6 +632,7 @@ fn map_block(
                     &format!("{path}.children[{index}]"),
                     None,
                     false,
+                    heuristic_enabled,
                 )?;
             }
         }
@@ -513,17 +665,25 @@ fn paragraph_layout_wrapper(block: &Value) -> Option<&Value> {
     }
 }
 
+/// Read a layout field by its v2 typed name first, falling back to the v1
+/// `x-`-prefixed name. v1 documents never carry the typed name (the v1 AAT
+/// schema doesn't declare it), so the fallback makes this one code path
+/// bit-identical for v1 input while also serving v2 documents that use the
+/// typed field.
+fn typed_or_x<'a>(node: &'a Value, typed: &str, x_prefixed: &str) -> Option<&'a Value> {
+    node.get(typed).or_else(|| node.get(x_prefixed))
+}
+
 fn paragraph_layout_from_style(node: &Value) -> Option<Value> {
     match node.get("style_type").and_then(Value::as_str)? {
         "burasage" => Some(json!({
             "kind": "burasage",
             "source": "aat-style",
-            "first_line_indent": node.get("x-indent-first")?.as_u64()?,
-            "continuation_indent": node.get("x-indent-rest")?.as_u64()?,
+            "first_line_indent": typed_or_x(node, "indent_first", "x-indent-first")?.as_u64()?,
+            "continuation_indent": typed_or_x(node, "indent_rest", "x-indent-rest")?.as_u64()?,
         })),
         "chitsuki" => {
-            let align = node
-                .get("x-align")
+            let align = typed_or_x(node, "align", "x-align")
                 .and_then(Value::as_str)
                 .unwrap_or("right");
             if align != "right" {
@@ -533,23 +693,23 @@ fn paragraph_layout_from_style(node: &Value) -> Option<Value> {
                 "kind": "chitsuki",
                 "source": "aat-style",
                 "align": align,
-                "offset_from_end": node.get("x-offset")?.as_u64()?,
+                "offset_from_end": typed_or_x(node, "offset_from_end", "x-offset")?.as_u64()?,
             }))
         }
         "jisage" => Some(json!({
             "kind": "jisage",
             "source": "aat-style",
-            "indent": node.get("x-indent")?.as_u64()?,
+            "indent": typed_or_x(node, "indent", "x-indent")?.as_u64()?,
         })),
         "jizume" => Some(json!({
             "kind": "jizume",
             "source": "aat-style",
-            "width": node.get("x-width")?.as_u64()?,
+            "width": typed_or_x(node, "width", "x-width")?.as_u64()?,
         })),
         "line-jisage" | "jisage_line" => Some(json!({
             "kind": "line-jisage",
             "source": "aat-style",
-            "indent": node.get("x-indent")?.as_u64()?,
+            "indent": typed_or_x(node, "indent", "x-indent")?.as_u64()?,
         })),
         _ => None,
     }
@@ -559,8 +719,19 @@ fn paragraph_layout_from_jisage_block(block: &Value) -> Value {
     json!({
         "kind": "jisage",
         "source": "aat-block",
-        "indent": block.get("x-indent").and_then(Value::as_u64).unwrap_or(1),
+        "indent": typed_or_x(block, "indent", "x-indent")
+            .and_then(Value::as_u64)
+            .unwrap_or(1),
     })
+}
+
+fn paragraph_layout_from_jizume_block(block: &Value) -> Value {
+    let width = block
+        .get("width")
+        .or_else(|| block.get("x-width"))
+        .and_then(Value::as_u64)
+        .unwrap_or(1);
+    json!({ "kind": "jizume", "source": "aat-block", "width": width })
 }
 
 fn paragraph_span(
@@ -2004,6 +2175,44 @@ fn map_warnings(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value>
             None,
             Some(json!("AAT_WARNING")),
         )?;
+        // v2 AAT warnings carry their own `code`/`severity`/`span`, but
+        // parser-IR's warnings channel always uses the fixed AAT_WARNING/
+        // warning invention above; the input's richer fields are dropped
+        // (sidecar-recorded), never projected. v1 warnings never have these
+        // fields, so these are no-ops under the v1 tuple.
+        if let Some(code) = warning.get("code") {
+            recorder.record_if_measured(
+                "LOSS",
+                Some("meta.warnings[].code"),
+                None,
+                Some(code.clone()),
+                None,
+            );
+        }
+        if let Some(severity) = warning.get("severity") {
+            recorder.record_if_measured(
+                "LOSS",
+                Some("meta.warnings[].severity"),
+                None,
+                Some(severity.clone()),
+                None,
+            );
+        }
+        if let Some(span) = warning.get("span") {
+            // `span` is a structured object (start/end), not a schema-legal
+            // scalar `source_value` (string/integer/boolean/null per
+            // aat-parser-ir-divergence.schema.json). `scalar_divergence_value`
+            // is the established convention for this (see
+            // `record_optional_figure_loss` above): non-scalars collapse to
+            // `None` since the rule + count already carry the accounting.
+            recorder.record_if_measured(
+                "LOSS",
+                Some("meta.warnings[].span"),
+                None,
+                scalar_divergence_value(span),
+                None,
+            );
+        }
         warnings.push(json!({
             "severity": "warning",
             "code": "AAT_WARNING",

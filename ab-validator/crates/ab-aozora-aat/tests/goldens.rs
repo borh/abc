@@ -7,32 +7,46 @@
 //! rotation B confinement report. Hermetic: plain `cargo test` builds
 //! carry `(git unknown)`, which these goldens embed.
 //!
-//! ## Verification summary (Task 15)
+//! ## Verification summary (Task 15; updated Task 14 — C4 source_note
+//! emission)
 //!
 //! `verify-golden-spans.py` walks every node with both `value` (a string)
 //! and `span`, and asserts `decoded[byte_start:byte_end] == value` plus
 //! `line_start == 1 + newlines-before(byte_start)`, against the source
 //! independently re-decoded in Python (`utf-8-sig` / `utf-8` / `shift_jis`).
 //!
-//! | sample                       | OK | FAIL | FAIL verdict                              |
-//! |-------------------------------|----|------|-------------------------------------------|
-//! | plain-ascii.txt               | 1  | 0    | n/a                                        |
-//! | broken-ruby-utf8.txt          | 0  | 0    | n/a (only node is a `raw` node: no `value`)|
-//! | full-markup-utf8.txt          | 2  | 1    | projection (CRLF→LF text normalization)    |
-//! | full-markup-shift_jis.txt     | 2  | 1    | projection (CRLF→LF text normalization)    |
+//! | sample                        | OK | FAIL | FAIL verdict                              |
+//! |--------------------------------|----|------|-------------------------------------------|
+//! | plain-ascii.txt                | 1  | 0    | n/a                                        |
+//! | broken-ruby-utf8.txt           | 0  | 0    | n/a (only node is a `raw` node: no `value`)|
+//! | full-markup-utf8.txt           | 2  | 2    | projection (CRLF→LF text normalization)    |
+//! | full-markup-shift_jis.txt      | 2  | 2    | projection (CRLF→LF text normalization)    |
+//! | terminal-provenance-utf8.txt   | 5  | 0    | n/a (`\n`-only fixture; no CRLF tails)     |
 //!
-//! The single FAIL in each markup sample is the trailing-newline `text`
-//! node after the gaiji marker on line 8 (`byte_start:303, byte_end:305`,
-//! `value:"\n"`, raw slice `"\r\n"`). This is NOT a span bug: the sanitize
-//! stage's CR/LF normalization (`ab-aozora-pipeline/src/lexer/sanitize.rs`,
-//! `normalize_line_endings_core`, doc comment ~line 649) collapses every
-//! `\r\n` (and lone `\r`) to a single `\n` in the text the parser actually
-//! sees, while the byte-offset map (`MapEdit`, tested at
-//! `sanitize.rs:1276-1277`: `to_source_end(4) == 8` for a `\r\n`→`\n` edit)
-//! deliberately expands the corresponding span back to the full 2-byte
-//! `\r\n` run in decoded-source coordinates, so spans stay contiguous and
-//! never drop source bytes. `value` reflects the normalized text the
-//! parser operated on; `span` reflects raw source coverage. Same pattern
+//! `full-markup-{utf8,shift_jis}.txt` each carry `底本：「テスト」` as
+//! their final line (previously silently dropped by `aozora_body_range`;
+//! Task 14 retains it as a `source_note` block), so each golden went from
+//! one known CRLF FAIL to two:
+//!
+//! - The pre-existing FAIL: the trailing-newline `text` node after the
+//!   gaiji marker on line 8 (`byte_start:303, byte_end:305`,
+//!   `value:"\n"`, raw slice `"\r\n"`).
+//! - The new FAIL: the `source_note` tail's sole content line
+//!   (`byte_start:364, byte_end:390`, `value:"底本：「テスト」\n"`, raw
+//!   slice `"底本：「テスト」\r\n"`) — the fixture's final line is itself
+//!   `\r\n`-terminated.
+//!
+//! Neither is a span bug: the sanitize stage's CR/LF normalization
+//! (`ab-aozora-pipeline/src/lexer/sanitize.rs`, `normalize_line_endings_core`,
+//! doc comment ~line 649) collapses every `\r\n` (and lone `\r`) to a
+//! single `\n` in the text the parser (and `source_note` line-splitting,
+//! which reuses the same sanitized-tail text) actually sees, while the
+//! byte-offset map (`MapEdit`, tested at `sanitize.rs:1276-1277`:
+//! `to_source_end(4) == 8` for a `\r\n`→`\n` edit) deliberately expands
+//! the corresponding span back to the full 2-byte `\r\n` run in
+//! decoded-source coordinates, so spans stay contiguous and never drop
+//! source bytes. `value` reflects the normalized text the parser/emitter
+//! operated on; `span` reflects raw source coverage. Same pattern
 //! recurs, unflagged by the helper because it's on a `raw` node's
 //! `source` field rather than `value`, in `broken-ruby-utf8.txt`'s sole
 //! node (`source:"壊れた《ルビ\n"`, span 0..20 covering the full
@@ -59,6 +73,13 @@
 //!   puts `"一"` at byte 326 — matches the heading node's
 //!   `byte_start:326, line_start:9` (a line > 1 check, present in both
 //!   samples including the SJIS one).
+//! - `terminal-provenance-utf8.txt`: two non-contiguous `source_note`
+//!   groups (separated by 入力：/校正： colophon lines) — the first
+//!   covers the `底本：` head plus its date continuation (lines 3-4,
+//!   `byte_start:17, byte_end:90`), the second the `底本の親本：` head
+//!   plus its continuation (lines 7-8, `byte_start:122, byte_end:216`),
+//!   confirming contiguous-group boundaries end at a colophon line and
+//!   re-open on a later provenance head.
 use std::fs;
 
 #[test]

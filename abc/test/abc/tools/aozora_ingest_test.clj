@@ -1,8 +1,11 @@
 (ns abc.tools.aozora-ingest-test
-  (:require [abc.tools.aozora-ingest :as ingest]
+  (:require [abc.tools.aozora-csv :as ac]
+            [abc.tools.aozora-ingest :as ingest]
             [abc.tools.files :as files]
             [abc.tools.person-record :as pr]
+            [abc.sim.render :as sim-render]
             [clojure.java.io :as io]
+            [clojure.string]
             [clojure.test :refer [deftest is testing]]
             [taoensso.telemere :as tel])
   (:import [java.nio.file Files]
@@ -490,3 +493,143 @@
   (testing "blank / absent fallbacks stay nil"
     (is (= {:zip-path nil :source-url nil}
            (ingest/merge-catalog-defaults {} {:zip "  " :source-url nil})))))
+
+(deftest ingest-non-zip-bytes-wrapped-test
+  (testing "non-ZIP bytes at the zip path throw ex-info {:zip-path} with ZipException cause"
+    (let [dir (temp-dir "abc-ingest-notzip")
+          fake (io/file dir "fake.zip")
+          out (io/file dir "out")]
+      (try
+        (spit fake "this is not a zip file")
+        (let [e (try (ingest/run-corpus-from-zip! {:zip-path (str fake)
+                                                   :output-dir (str out)})
+                     nil
+                     (catch Exception e e))]
+          (is (instance? clojure.lang.ExceptionInfo e))
+          (is (= (str fake) (:zip-path (ex-data e))))
+          (is (instance? java.util.zip.ZipException (ex-cause e))))
+        (finally (delete-recursive dir))))))
+
+(deftest ingest-corpus-skips-divergent-work-fields-test
+  (testing "a work whose rows disagree on work fields is skipped + counted; clean works survive"
+    (let [out-dir (temp-dir "abc-ingest-divergent-work")
+          rows (conj synthetic-corpus-rows
+                     ;; second row for work 000127 with a different 作品名
+                     (person-row {"作品ID" "000127"
+                                  "作品名" "別の羅生門"
+                                  "人物ID" "000888"
+                                  "役割フラグ" "翻訳者"
+                                  "姓" "夏目" "名" "漱石"
+                                  "姓読み" "なつめ" "名読み" "そうせき"
+                                  "姓読みソート用" "なつめ" "名読みソート用" "そうせき"
+                                  "姓ローマ字" "Natsume" "名ローマ字" "Soseki"
+                                  "生年月日" "1867-02-09" "没年月日" "1916-12-09"
+                                  "底本名1" "羅生門" "底本出版社名1" "テスト出版社"}))]
+      (try
+        (let [{:keys [works-written works-skipped skipped-work-ids]}
+              (ingest/run-corpus! {:rows rows :output-dir (str out-dir)})]
+          (is (= 2 works-written))
+          (is (= 1 works-skipped))
+          (is (= ["000127"] skipped-work-ids))
+          (is (not (.exists (io/file out-dir "works" "000127.json")))))
+        (finally (delete-recursive out-dir))))))
+
+(deftest ingest-empty-csv-fails-loud-test
+  (testing "empty and header-only CSVs throw ex-info with :zip-path and :row-count"
+    (doseq [[label csv] [["empty" ""]
+                         ["header-only" "作品ID,人物ID,役割フラグ"]]]
+      (let [dir (temp-dir "abc-ingest-empty")
+            zip (io/file dir "catalog.zip")
+            out (io/file dir "out")]
+        (try
+          (with-open [o (io/output-stream zip)]
+            (.write o ^bytes (sim-render/csv->zip-bytes csv)))
+          (let [e (try (ingest/run-corpus-from-zip! {:zip-path (str zip)
+                                                     :output-dir (str out)})
+                       nil
+                       (catch Exception e e))]
+            (is (instance? clojure.lang.ExceptionInfo e) label)
+            (is (= (str zip) (:zip-path (ex-data e))) label)
+            (is (= 0 (:row-count (ex-data e))) label))
+          (finally (delete-recursive dir)))))))
+
+(deftest ingest-corpus-skips-ragged-row-work-test
+  (testing "a ragged CSV row skips exactly its work; clean works survive"
+    (let [out-dir (temp-dir "abc-ingest-ragged")
+          headers (vec (sort (keys (first synthetic-corpus-rows))))
+          cells (fn [r] (mapv #(get r % "") headers))
+          csv (->> (concat [headers]
+                           (map cells (take 2 synthetic-corpus-rows))
+                           ;; work 000129's row loses its last 3 cells
+                           [(vec (drop-last 3 (cells (nth synthetic-corpus-rows 2))))])
+                   (map #(clojure.string/join "," %))
+                   (clojure.string/join "\n"))
+          rows (ac/read-rows-from-string csv)]
+      (try
+        (let [{:keys [works-written works-skipped skipped-work-ids]}
+              (ingest/run-corpus! {:rows rows :output-dir (str out-dir)})]
+          (is (= 2 works-written))
+          (is (= 1 works-skipped))
+          (is (= ["000129"] skipped-work-ids))
+          (is (not (.exists (io/file out-dir "works" "000129.json"))))
+          (is (not (.exists (io/file out-dir "persons" "000888.json")))
+              "the ragged work's sole person is never written"))
+        (finally (delete-recursive out-dir))))))
+
+(deftest ingest-corpus-atomic-skip-test
+  (testing "a work that fails late (second contributor invalid) leaves NO person files behind"
+    (let [out-dir (temp-dir "abc-ingest-atomic")
+          rows [(person-row {"作品ID" "000131"
+                             "底本名1" "作品甲" "底本出版社名1" "テスト出版社"})
+                ;; second contributor of the same work, invalid date that
+                ;; passes parse-date verbatim and fails schema validation
+                (person-row {"作品ID" "000131"
+                             "人物ID" "000999"
+                             "役割フラグ" "翻訳者"
+                             "姓" "テスト" "名" "次郎"
+                             "姓読み" "てすと" "名読み" "じろう"
+                             "姓読みソート用" "てすと" "名読みソート用" "しろう"
+                             "姓ローマ字" "Test" "名ローマ字" "Jiro"
+                             "生年月日" "2020-02-31"
+                             "底本名1" "作品甲" "底本出版社名1" "テスト出版社"})]]
+      (try
+        (let [{:keys [works-written works-skipped skipped-work-ids]}
+              (ingest/run-corpus! {:rows rows :output-dir (str out-dir)})]
+          (is (= 0 works-written))
+          (is (= 1 works-skipped))
+          (is (= ["000131"] skipped-work-ids))
+          (is (not (.exists (io/file out-dir "persons" "000879.json")))
+              "the VALID first contributor must not be left behind")
+          (is (not (.exists (io/file out-dir "persons" "000999.json")))))
+        (finally (delete-recursive out-dir))))))
+
+(deftest ingest-corpus-shared-person-conflict-policy-test
+  (testing "divergent shared-person bodies: smallest work_id wins, both works written, conflict reported"
+    (let [out-dir (temp-dir "abc-ingest-conflict")
+          rows [(person-row {"作品ID" "000127"
+                             "姓" "旧" ;; body A carried by the smaller work id
+                             "底本名1" "羅生門" "底本出版社名1" "テスト出版社"})
+                (person-row {"作品ID" "000128"
+                             "作品名" "鼻" "作品名読み" "はな" "ソート用読み" "はな"
+                             "姓" "新" ;; divergent body for the SAME person 000001
+                             "底本名1" "鼻" "底本出版社名1" "テスト出版社"})]
+          ;; NOTE person-row defaults 人物ID to 000001-equivalent — both rows
+          ;; share the default person id.
+          {:keys [works-written works-skipped person-conflicts]}
+          (ingest/run-corpus! {:rows rows :output-dir (str out-dir)})]
+      (try
+        (is (= 2 works-written))
+        (is (= 0 works-skipped))
+        (is (= 1 (count person-conflicts)))
+        (let [conflict (first person-conflicts)
+              pid (get conflict "person_id")
+              person (files/read-json (str (io/file out-dir "persons" (str pid ".json"))))
+              hash-of (fn [wid]
+                        (-> (files/read-json (str (io/file out-dir "works" (str wid ".json"))))
+                            (get "contributors") first (get "person_record_hash")))]
+          (is (= "000127" (get conflict "chosen_work_id")))
+          (is (= ["000127" "000128"] (get conflict "work_ids")))
+          (is (= "旧" (get person "family_name")) "smallest work_id's body wins")
+          (is (= (pr/record-hash person) (hash-of "000127") (hash-of "000128"))
+              "both works reference the winning record's hash"))
+        (finally (delete-recursive out-dir))))))

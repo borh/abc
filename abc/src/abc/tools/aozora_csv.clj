@@ -19,16 +19,24 @@
     (.substring s 1)
     s))
 
+(def ragged-key
+  "Marker key assoc'd (true) onto a parsed row whose cell count differed
+  from the header row's. A namespaced keyword, so it can never collide
+  with a string header column and is invisible to (get row \"…\") users."
+  ::ragged?)
+
 (defn- read-rows*
   "Internal: takes a charred result (vector of vectors, first row is
   header) and returns a seq of maps keyed by header column. Strips
-  the UTF-8 BOM from the first header cell."
+  the UTF-8 BOM from the first header cell. Ragged rows (cell count ≠
+  header count) are marked with ragged-key; surviving cells still parse."
   [rows]
   (when (seq rows)
-    (let [header (mapv (fn [c] (strip-bom (or c ""))) (first rows))]
+    (let [header (mapv (fn [c] (strip-bom (or c ""))) (first rows))
+          width (count header)]
       (mapv (fn [r]
-              (into {}
-                    (map (fn [k v] [k (or v "")]) header r)))
+              (cond-> (into {} (map (fn [k v] [k (or v "")]) header r))
+                (not= width (count r)) (assoc ragged-key true)))
             (rest rows)))))
 
 (defn read-rows-from-string [^String s]
@@ -284,8 +292,8 @@
 (defn build-record-fragment-from-rows
   "Given multiple CSV rows for the same work_id (one per author/role),
   return {:work, :persons-by-id, :contributors, :corrections-by-pid}.
-  Asserts work-level fields are consistent across rows; persons-by-id
-  is keyed by person_id; contributors are sorted by person_id and
+  Throws ex-info if any row is ragged or if work-level fields diverge across rows;
+  persons-by-id is keyed by person_id; contributors are sorted by person_id and
   de-duplicated. Throws if a single person_id appears with divergent
   body fields. `:corrections-by-pid` maps person_id → vector of
   {field, raw, corrected, rule} audit entries (deduplicated)."
@@ -295,6 +303,18 @@
         work-ids (distinct (map #(get % "work_id") works))]
     (assert (= 1 (count work-ids))
             (str "rows must share work_id; got: " (vec work-ids)))
+    (let [ragged (count (filter ragged-key rows))]
+      (when (pos? ragged)
+        (throw (ex-info (str "work " (first work-ids)
+                             " has " ragged " ragged CSV row(s)")
+                        {:work-id (first work-ids)
+                         :ragged-rows ragged}))))
+    (let [unique-works (vec (distinct works))]
+      (when (< 1 (count unique-works))
+        (throw (ex-info (str "work " (first work-ids)
+                             " has divergent work fields across CSV rows")
+                        {:work-id (first work-ids)
+                         :divergent-works unique-works}))))
     (let [person-results (mapv parse-person-fields-from-row rows)
           per-pid (group-by #(get-in % [:fields "person_id"]) person-results)
           person-bodies-by-id

@@ -9,20 +9,19 @@ medians/spread, machine identity, and a blocking verdict:
 - BLOCK if candidate workset median wall-time regresses > threshold_pct
 - PASS otherwise (regressions under threshold are recorded, not blocking)
 
-Each lane is an explicit argv (not a single binary path), because Phase 2's
-two lanes cannot be expressed by a hardcoded `<bin> inspect nodes -`
-invocation: the legacy end-to-end lane is `aozora-adapter --mode aat` with
-`AB_AOZORA_BIN` pointed at the pinned upstream parser (`env VAR=x cmd args`
-works because `env` is argv[0]), while the ab-aozora lane is a single binary,
-`ab-aozora --mode aat`, with no subprocess hops. A lane's --*-id-bin is the
-adapter executable whose existence (-x), sha256, and verbatim --version
-output are recorded as that lane's identity — independent of what argv
-happens to invoke, so the report's identity claim cannot silently diverge
-from what actually ran.
+Each lane is an explicit argv (not a single binary path), because some lanes
+cannot be expressed by a hardcoded `<bin> inspect nodes -` invocation: a
+wrapper-adapter lane may need an `env VAR=x cmd args` prefix to point its
+subprocess at a pinned renderer (`env` is argv[0] in that case), while the
+ab-aozora lane is a single binary, `ab-aozora --mode aat`, with no subprocess
+hops. A lane's --*-id-bin is the adapter executable whose existence (-x),
+sha256, and verbatim --version output are recorded as that lane's identity —
+independent of what argv happens to invoke, so the report's identity claim
+cannot silently diverge from what actually ran.
 
 Usage:
   run-perf-workset.py --workset data/perf-workset.json \
-      --baseline-cmd "aozora-adapter --mode aat" --baseline-id-bin PATH \
+      --baseline-cmd "aozora2-adapter --mode aat" --baseline-id-bin PATH \
       --candidate-cmd "ab-aozora --mode aat" --candidate-id-bin PATH \
       --corpus DIR --out report.json
 """

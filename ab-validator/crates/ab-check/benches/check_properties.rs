@@ -2,12 +2,11 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use serde_json::{Value, json};
 
 fn bench_check_properties(c: &mut Criterion) {
-    let schema = ab_check::check::schema_validator().unwrap();
     let txt = large_aozora_text();
     let value = large_matching_aat(&txt);
 
     c.bench_function("check_properties_large", |b| {
-        b.iter(|| ab_check::check::check_value(&txt, &value, schema))
+        b.iter(|| ab_check::check::check_value(&txt, &value))
     });
 }
 

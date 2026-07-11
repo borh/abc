@@ -120,7 +120,8 @@ fn main() -> Result<()> {
                 .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
-            let schemas = SchemaSet::load(&repo_root, &abc_root)?;
+            let schemas =
+                SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
             let orthographic_annotations = match ortho_annotations {
                 Some(path) => Some(
                     ab_aat_to_parser_ir::ortho_annotations::read_ortho_annotations_bundle(&path)?,
@@ -155,7 +156,8 @@ fn main() -> Result<()> {
                 .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
-            let schemas = SchemaSet::load(&repo_root, &abc_root)?;
+            let schemas =
+                SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
             let vibrato = std::sync::Arc::new(
                 ab_morph_analyzers::VibratoAnalyzer::unidic_cwj_default()
                     .context("detect-ortho-annotations requires AB_VIBRATO_DICT or the flake-provided Unidic CWJ dictionary")?,
@@ -215,7 +217,8 @@ fn main() -> Result<()> {
                 .map(|spec| parse_input_spec(spec))
                 .collect::<Result<Vec<_>>>()?;
             let mapping = MappingDocument::from_path(&mapping)?;
-            let schemas = SchemaSet::load(&repo_root, &abc_root)?;
+            let schemas =
+                SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
             let summary = run_structural_probe(StructuralProbeConfig {
                 inputs,
                 mapping,
@@ -246,7 +249,8 @@ fn main() -> Result<()> {
                 .map(|spec| parse_input_spec(spec))
                 .collect::<Result<Vec<_>>>()?;
             let mapping = MappingDocument::from_path(&mapping)?;
-            let schemas = SchemaSet::load(&repo_root, &abc_root)?;
+            let schemas =
+                SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
             let summary = run_tei_eaj_structural_expansion(TeiEajStructuralExpansionConfig {
                 workset_path: workset,
                 aat_dirs,

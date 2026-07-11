@@ -19,13 +19,82 @@ fn abc_root(repo: &Path) -> PathBuf {
         .unwrap_or_else(|| repo.join("data/abc-schemas"))
 }
 
-fn schemas_and_mapping() -> (SchemaSet, MappingDocument) {
+fn roots() -> (PathBuf, PathBuf) {
     let repo = repo_root();
     let abc = abc_root(&repo);
-    let schemas = SchemaSet::load(&repo, &abc).unwrap();
+    (repo, abc)
+}
+
+fn default_test_options() -> ConversionOptions {
+    ConversionOptions::default()
+}
+
+fn schemas_and_mapping() -> (SchemaSet, MappingDocument) {
+    let (repo_root, abc_root) = roots();
     let mapping =
-        MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v1.json"))
+            .unwrap();
+    let schemas =
+        SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version).unwrap();
     (schemas, mapping)
+}
+
+#[test]
+fn schema_set_rejects_unknown_aat_version() {
+    let (repo_root, abc_root) = roots();
+    let err = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 3).unwrap_err();
+    assert!(
+        err.to_string().contains("unsupported AAT schema version 3"),
+        "{err}"
+    );
+}
+
+#[test]
+fn validated_v1_conversion_succeeds_under_v1_tuple() {
+    // full pipeline proof, not just preflight: any existing v1 fixture through
+    // convert() with the v1 tuple must succeed WITH input validation on.
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = include_fixture_json("nested-sentence-basic.aat.json");
+    ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap();
+}
+
+#[test]
+#[ignore = "needs Task 3's data/aat-to-parser-ir-mapping-v2.json"]
+fn v1_document_under_v2_tuple_fails_input_validation() {
+    let (repo_root, abc_root) = roots();
+    let mapping =
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
+            .unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    // v1 fixture (version:1) must be REJECTED by the v2 tuple's input validation.
+    // Symmetric test v2_document_under_v1_tuple_fails lives in Task 3 (needs a v2 doc).
+    let aat = include_fixture_json("nested-sentence-basic.aat.json");
+    let err = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap_err();
+    assert!(err.to_string().contains("AAT validation failed"), "{err}");
+}
+
+#[test]
+fn preflight_rejects_mismatched_mapping_schema_tuple() {
+    let (repo_root, abc_root) = roots();
+    // v1 mapping paired with the v2 schema file must fail preflight.
+    let mapping =
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v1.json"))
+            .unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    let err = mapping.preflight(&schemas).unwrap_err();
+    assert!(err.to_string().contains("tuple mismatch"), "{err}");
 }
 
 fn include_fixture_json(name: &str) -> serde_json::Value {
@@ -365,7 +434,7 @@ fn has_divergence_record(
 fn legacy_schema_hashes_match_mapping_artifact() {
     let repo = repo_root();
     let abc = abc_root(&repo);
-    let schemas = SchemaSet::load(&repo, &abc).unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&repo, &abc, 1).unwrap();
 
     assert_eq!(
         schema_hash(&schemas.mapping_schema).unwrap(),
@@ -508,7 +577,7 @@ fn orthographic_annotations_inject_into_schema_valid_parser_ir() {
         schemas: schemas.clone(),
         options: ConversionOptions {
             orthographic_annotations: Some(bundle),
-            ..ConversionOptions::default()
+            ..default_test_options()
         },
     })
     .unwrap();
@@ -577,7 +646,7 @@ fn parser_ir_emits_split_sentence_rows_and_ortho_tags() {
         schemas: schemas.clone(),
         options: ConversionOptions {
             orthographic_annotations: Some(bundle),
-            ..ConversionOptions::default()
+            ..default_test_options()
         },
     })
     .unwrap();
@@ -660,7 +729,7 @@ fn sentence_segmentation_uses_ruby_base_not_reading() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -700,7 +769,7 @@ fn checked_in_schema_accepts_sentence_segmentation_and_ortho_annotations() {
         schemas: schemas.clone(),
         options: ConversionOptions {
             orthographic_annotations: Some(ortho_fixture_bundle()),
-            ..ConversionOptions::default()
+            ..default_test_options()
         },
     })
     .unwrap();
@@ -759,7 +828,7 @@ fn ortho_indices_cover_multiple_annotations_in_one_sentence() {
         schemas: schemas.clone(),
         options: ConversionOptions {
             orthographic_annotations: Some(bundle),
-            ..ConversionOptions::default()
+            ..default_test_options()
         },
     })
     .unwrap();
@@ -817,7 +886,7 @@ fn ortho_annotation_spanning_two_sentences_tags_both() {
         schemas: schemas.clone(),
         options: ConversionOptions {
             orthographic_annotations: Some(bundle),
-            ..ConversionOptions::default()
+            ..default_test_options()
         },
     })
     .unwrap();
@@ -863,7 +932,7 @@ fn coalesces_sentence_boundary_inside_atomic_ruby_child_from_aat() {
         aat: include_fixture_json("atomic-boundary-emphasis-input.aat.json"),
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
     assert_eq!(
@@ -912,7 +981,7 @@ fn splits_emphasis_container_at_sentence_boundary_keeping_ruby_whole() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1063,7 +1132,7 @@ fn converts_text_ruby_gaiji_and_validates_parser_ir() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1165,7 +1234,7 @@ fn projects_source_derived_page_break_paragraph_to_page_break_node() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1238,7 +1307,7 @@ fn projects_source_derived_line_break_inline_to_line_break_node() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1321,7 +1390,7 @@ fn recovers_direct_raw_without_rendering_parser_residue_as_body_text() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1438,7 +1507,7 @@ fn recovers_accent_and_inline_yokogumi_without_fatal_conversion() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1534,7 +1603,7 @@ fn projects_burasage_style_wrapper_to_paragraph_layout() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1601,7 +1670,7 @@ fn projects_chitsuki_style_wrapper_to_paragraph_layout() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1665,7 +1734,7 @@ fn projects_jisage_block_wrapped_paragraph_to_paragraph_layout() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1736,7 +1805,7 @@ fn projects_measured_figure_inline_to_image_node() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1808,7 +1877,7 @@ fn measured_policy_projects_style_heading_warning_and_warigaki() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1898,7 +1967,7 @@ fn preserves_ruby_inside_emphasis_inline_children() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -1961,7 +2030,7 @@ fn preserves_gaiji_inside_emphasis_inline_children() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2013,7 +2082,7 @@ fn preserves_nested_inline_container_children() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2068,7 +2137,7 @@ fn inline_children_depth_limit_records_warning() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2134,7 +2203,7 @@ fn measured_policy_flattens_epub3_tcy_and_block_containers() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2646,7 +2715,7 @@ fn heading_preserves_structured_inline_children() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2722,7 +2791,7 @@ fn converts_inline_layout_scopes_to_layout_span() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2791,7 +2860,7 @@ fn recovers_caption_and_quote_block_children_without_fatal_divergence() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 
@@ -2832,7 +2901,7 @@ fn unmeasured_inline_kind_refuses_by_default() {
         schemas,
         options: ConversionOptions {
             validate_input_aat: false,
-            ..ConversionOptions::default()
+            ..default_test_options()
         },
     })
     .unwrap_err()
@@ -2856,7 +2925,7 @@ fn converts_checked_in_real_measured_aat_fixtures() {
             aat,
             mapping: MappingDocument::from_path(&mapping_path).unwrap(),
             schemas: schemas.clone(),
-            options: ConversionOptions::default(),
+            options: default_test_options(),
         })
         .unwrap_or_else(|error| panic!("{fixture} failed conversion: {error:#}"));
 
@@ -3374,7 +3443,7 @@ fn quote_node_emission_from_text() {
         aat: include_fixture_json("quote-node-emission.aat.json"),
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
     let nodes = output.parser_ir["nodes"].as_array().unwrap();
@@ -3407,7 +3476,7 @@ fn fragment_assembly_single_inner_sentence() {
         aat: include_fixture_json("nested-sentence-basic.aat.json"),
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
     let sentences = output.parser_ir["sentences"].as_array().unwrap();
@@ -3447,7 +3516,7 @@ fn fragment_assembly_multiple_inner_sentences() {
         aat: include_fixture_json("nested-sentence-multiple.aat.json"),
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
     let sentences = output.parser_ir["sentences"].as_array().unwrap();
@@ -3480,7 +3549,7 @@ fn fragment_field_coherence_holds() {
         aat: include_fixture_json("nested-sentence-multiple.aat.json"),
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
     let sentences = output.parser_ir["sentences"].as_array().unwrap();
@@ -3554,7 +3623,7 @@ fn ruby_node_span_is_decoded_not_raw_source() {
         aat,
         mapping,
         schemas: schemas.clone(),
-        options: ConversionOptions::default(),
+        options: default_test_options(),
     })
     .unwrap();
 

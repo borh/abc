@@ -87,7 +87,7 @@ fn convert_preflighted(
     options: ConversionOptions,
 ) -> Result<ConversionOutput> {
     if options.validate_input_aat {
-        ab_check::check::validate_aat_value(&aat)?;
+        validate_compiled(&validators.aat, &aat, "AAT")?;
     }
 
     let mut recorder = DivergenceRecorder::new(index);

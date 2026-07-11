@@ -3,7 +3,6 @@
             [abc.tools.aozora-ingest :as ingest]
             [abc.tools.files :as files]
             [abc.tools.person-record :as pr]
-            [abc.tools.person-record :as person-record]
             [abc.sim.render :as sim-render]
             [clojure.java.io :as io]
             [clojure.string]
@@ -631,6 +630,6 @@
           (is (= "000127" (get conflict "chosen_work_id")))
           (is (= ["000127" "000128"] (get conflict "work_ids")))
           (is (= "旧" (get person "family_name")) "smallest work_id's body wins")
-          (is (= (person-record/record-hash person) (hash-of "000127") (hash-of "000128"))
+          (is (= (pr/record-hash person) (hash-of "000127") (hash-of "000128"))
               "both works reference the winning record's hash"))
         (finally (delete-recursive out-dir))))))

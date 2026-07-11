@@ -78,13 +78,15 @@
                                                :wid "000101" :column "作品名"
                                                :value "別名"}])]
     (try
-      (div/expected-failure :D1 "P6.divergent-work-fields"
-        ;; DESIRED: the divergence is detected — work skipped or audited,
-        ;; i.e. NOT a silently written work carrying first-row title.
-                            (or (pos? (:works-skipped result))
-                                (not= "作品000101"
-                                      (get-in (files/read-json (io/file dir "works" "000101.json"))
-                                              ["work" "title"]))))
+      (let [work-skipped? (pos? (:works-skipped result))
+            ingested-title (when-not work-skipped?
+                             (get-in (files/read-json (io/file dir "works" "000101.json"))
+                                     ["work" "title"]))]
+        (div/expected-failure :D1 "P6.divergent-work-fields"
+          ;; DESIRED: the divergence is detected — work skipped or audited,
+          ;; i.e. NOT a silently written work carrying first-row title.
+                              (or work-skipped?
+                                  (not= "作品000101" ingested-title))))
       (finally (render/delete-tree! dir)))))
 
 ;; P7.date-classes — every parse-date input class: normalized EDTF value +

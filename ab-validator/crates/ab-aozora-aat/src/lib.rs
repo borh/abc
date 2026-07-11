@@ -11,7 +11,16 @@ use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
-use ab_aozora_facade::{self, Document, encoding, json as aozora_json};
+use ab_aozora_facade::{self, Diagnostic, Document, encoding, json as aozora_json};
+
+/// The sanitize stage's `Diagnostic` type is the exact same
+/// `ab_aozora_spec::Diagnostic` the facade re-exports as `Diagnostic` (and
+/// the same type `Tree::diagnostics()` returns) — confirmed via
+/// `crates/ab-aozora-pipeline/src/lexer/sanitize.rs`'s
+/// `use ab_aozora_spec::Diagnostic;` and `crates/ab-aozora-facade/src/lib.rs`'s
+/// `pub use ab_aozora_spec::{..., Diagnostic, ...};`. One alias, one
+/// `aozora_json::diagnostic_entries` call serves both diagnostic families.
+pub type AozoraSanitizeDiagnostic = Diagnostic;
 
 static RUBY_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap());
@@ -27,6 +36,12 @@ pub struct DecodedSource {
     pub encoding: &'static str,
     /// Hex-encoded SHA256 hash of the input bytes.
     pub source_hash: String,
+    /// Sanitize-stage diagnostics (PUA collisions, accent notes) — born
+    /// BEFORE the parse; the parse of neutralized text cannot rediscover
+    /// them. Spans are full-sanitized-text byte offsets.
+    pub sanitize_diagnostics: Vec<AozoraSanitizeDiagnostic>,
+    /// Byte offset of the body slice within the sanitized text.
+    pub body_offset: usize,
 }
 
 #[derive(Debug, Deserialize, Clone, Copy)]
@@ -69,27 +84,31 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     let source_hash = format!("sha256:{}", hex_sha256(bytes));
     if bytes.starts_with(&[0xef, 0xbb, 0xbf]) {
         let text = str::from_utf8(&bytes[3..])?.to_owned();
-        let span_text = sanitize_for_aat(&text);
+        let (span_text, sanitize_diagnostics, body_offset) = sanitize_for_aat(&text);
         return Ok(DecodedSource {
             text,
             span_text,
             encoding: "utf-8-bom",
             source_hash,
+            sanitize_diagnostics,
+            body_offset,
         });
     }
     if let Ok(text) = str::from_utf8(bytes) {
         let text = text.to_owned();
-        let span_text = sanitize_for_aat(&text);
+        let (span_text, sanitize_diagnostics, body_offset) = sanitize_for_aat(&text);
         return Ok(DecodedSource {
             text,
             span_text,
             encoding: "utf-8",
             source_hash,
+            sanitize_diagnostics,
+            body_offset,
         });
     }
     let (cow, _, had_errors) = SHIFT_JIS.decode(bytes);
     let text = cow.into_owned();
-    let span_text = sanitize_for_aat(&text);
+    let (span_text, sanitize_diagnostics, body_offset) = sanitize_for_aat(&text);
     Ok(DecodedSource {
         text,
         span_text,
@@ -99,15 +118,24 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
             "windows-31j"
         },
         source_hash,
+        sanitize_diagnostics,
+        body_offset,
     })
 }
 
-fn sanitize_for_aat(text: &str) -> String {
-    let sanitized = sanitize_aozora_source(text).text.into_owned();
-    aozora_body_text(&sanitized).to_owned()
+fn sanitize_for_aat(text: &str) -> (String, Vec<AozoraSanitizeDiagnostic>, usize) {
+    let sanitized_out = sanitize_aozora_source(text);
+    let sanitize_diagnostics = sanitized_out.diagnostics;
+    let sanitized = sanitized_out.text.into_owned();
+    let body = aozora_body_range(&sanitized);
+    (
+        sanitized[body.clone()].to_owned(),
+        sanitize_diagnostics,
+        body.start,
+    )
 }
 
-fn aozora_body_text(source: &str) -> &str {
+fn aozora_body_range(source: &str) -> std::ops::Range<usize> {
     let mut separators = Vec::new();
     let mut start = 0_usize;
     for line in source.split_inclusive('\n') {
@@ -135,7 +163,7 @@ fn aozora_body_text(source: &str) -> &str {
         }
     }
 
-    &source[body_start..body_end]
+    body_start..body_end
 }
 
 fn is_aozora_separator(line: &str) -> bool {
@@ -210,6 +238,54 @@ pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let aat = build_aat(&decoded, &nodes, &diagnostics, &gaiji);
     let mut out = Vec::new();
     serde_json::to_writer(&mut out, &aat)?;
+    out.push(b'\n');
+    Ok(out)
+}
+
+/// One wire diagnostics envelope (`{"data": […], "schemaVersion": 3}`)
+/// per input — the `--mode diagnostics` payload. Single owner of the
+/// diagnostics path (Phase 3 design spec): decoding, sanitization, and
+/// body selection are the EXACT same `decode_source_bytes` path as
+/// `aat_json_from_bytes`; the parse mirrors `projections()`. Entry
+/// order: sanitize-stage diagnostics, then parser diagnostics.
+/// Duplicates are impossible by construction (the inner re-sanitize sees
+/// already-neutralized, already-rewritten text) — the merge-order test
+/// pins this.
+///
+/// # Errors
+///
+/// Returns an error if source decoding, projection parsing, or JSON
+/// serialization fails.
+pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
+    let decoded = decode_source_bytes(bytes)?;
+    let source = encoding::decode_auto(decoded.span_text.as_bytes())
+        .map_err(|err| anyhow::anyhow!("decode_auto: {err:?}"))?;
+    let doc = Document::new(source);
+    let tree = doc.parse();
+    let mut data =
+        serde_json::to_value(aozora_json::diagnostic_entries(&decoded.sanitize_diagnostics))?;
+    // Sanitize spans are full-sanitized-text offsets; rebase to the
+    // parser's body-relative system (vectors have no header: offset 0).
+    if let Some(items) = data.as_array_mut() {
+        for entry in items.iter_mut() {
+            for key in ["start", "end"] {
+                if let Some(v) = entry["span"][key].as_u64() {
+                    entry["span"][key] = json!(v.saturating_sub(decoded.body_offset as u64));
+                }
+            }
+        }
+    }
+    let parser_entries =
+        serde_json::to_value(aozora_json::diagnostic_entries(tree.diagnostics()))?;
+    if let (Some(items), Some(more)) = (data.as_array_mut(), parser_entries.as_array()) {
+        items.extend(more.iter().cloned());
+    }
+    let envelope = json!({
+        "schemaVersion": aozora_json::SCHEMA_VERSION,
+        "data": data,
+    });
+    let mut out = Vec::new();
+    serde_json::to_writer(&mut out, &envelope)?;
     out.push(b'\n');
     Ok(out)
 }
@@ -983,5 +1059,92 @@ mod tests {
         let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.2.0 aat-schema 1 facade 0.2.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":1,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
+    }
+
+    #[test]
+    fn diagnostics_json_from_bytes_emits_schema3_envelope_with_codes() {
+        // Unclosed bracket → one error diagnostic.
+        let out = diagnostics_json_from_bytes("あ［＃ここから".as_bytes()).unwrap();
+        assert_eq!(out.last(), Some(&b'\n'));
+        let doc: Value = serde_json::from_slice(&out).unwrap();
+        assert_eq!(doc["schemaVersion"], 3);
+        let data = doc["data"].as_array().unwrap();
+        assert!(!data.is_empty());
+        for entry in data {
+            let code = entry["code"].as_str().unwrap();
+            assert!(!code.contains('_') && !code.contains("::"), "not kebab: {code}");
+            assert!(entry["severity"].is_string());
+            assert!(entry["span"]["start"].is_u64() && entry["span"]["end"].is_u64());
+        }
+    }
+
+    #[test]
+    fn diagnostics_json_from_bytes_clean_source_is_empty_data() {
+        let doc: Value =
+            serde_json::from_slice(&diagnostics_json_from_bytes("あ\n".as_bytes()).unwrap())
+                .unwrap();
+        assert_eq!(doc["data"], json!([]));
+    }
+
+    #[test]
+    fn sanitize_stage_pua_diagnostic_survives_to_the_envelope() {
+        // Raw U+E001 in the source: sanitize neutralizes it to U+FFFD and
+        // emits SourceContainsPua — the parse of the neutralized text can
+        // never rediscover it, so it MUST come from the retained sanitize
+        // diagnostics. あ = bytes 0..3, U+E001 = bytes 3..6.
+        let out = diagnostics_json_from_bytes("あ\u{e001}い\n".as_bytes()).unwrap();
+        let doc: Value = serde_json::from_slice(&out).unwrap();
+        let data = doc["data"].as_array().unwrap();
+        let pua: Vec<&Value> = data
+            .iter()
+            .filter(|e| e["code"] == "source-contains-pua")
+            .collect();
+        assert_eq!(pua.len(), 1, "expected exactly one PUA diagnostic: {data:?}");
+        assert_eq!(pua[0]["severity"], "warning");
+        assert_eq!(pua[0]["span"]["start"], 3);
+        assert_eq!(pua[0]["span"]["end"], 6);
+    }
+
+    #[test]
+    fn sanitize_and_parser_diagnostics_merge_in_order_without_duplicates() {
+        // PUA (sanitize-stage) + unclosed bracket (parser-stage) in one input:
+        // sanitize entries come first, parser entries after, one of each.
+        let out = diagnostics_json_from_bytes("あ\u{e001}い［＃ここから".as_bytes()).unwrap();
+        let doc: Value = serde_json::from_slice(&out).unwrap();
+        let codes: Vec<&str> = doc["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["code"].as_str().unwrap())
+            .collect();
+        let pua_count = codes.iter().filter(|c| **c == "source-contains-pua").count();
+        assert_eq!(pua_count, 1, "duplicate or missing PUA entry: {codes:?}");
+        assert!(
+            codes[0] == "source-contains-pua",
+            "sanitize entries must come first: {codes:?}"
+        );
+        assert!(
+            codes.iter().any(|c| *c == "unclosed-bracket"),
+            "{codes:?}"
+        );
+    }
+
+    #[test]
+    fn diagnostics_json_from_bytes_reports_tcy_target_not_found() {
+        // Named must vector `tate_chu_yoko` (upstream-aozora-notation-spec
+        // conformance vectors): the tcy directive's target "12" does not
+        // occur in the preceding text, so no run exists to rotate.
+        let source = "昭和［＃「12」は縦中横］年\n";
+        let out = diagnostics_json_from_bytes(source.as_bytes()).unwrap();
+        let doc: Value = serde_json::from_slice(&out).unwrap();
+        let data = doc["data"].as_array().unwrap();
+        let tcy: Vec<&Value> = data
+            .iter()
+            .filter(|e| e["code"] == "tcy-target-not-found")
+            .collect();
+        assert_eq!(tcy.len(), 1, "expected exactly one tcy diagnostic: {data:?}");
+        assert_eq!(tcy[0]["severity"], "warning");
+        assert_eq!(tcy[0]["span"]["start"], 6);
+        assert_eq!(tcy[0]["span"]["end"], 35);
     }
 }

@@ -8,10 +8,17 @@ use std::env;
 use std::io::{self, Read, Write};
 use std::process::ExitCode;
 
-const USAGE: &str = "usage: ab-aozora [--mode aat] [--version]  \
-(source bytes on stdin; one AAT JSON document on stdout)";
+const USAGE: &str = "usage: ab-aozora [--mode aat|diagnostics] [--version]  \
+(source bytes on stdin; one JSON document on stdout)";
+
+#[derive(Clone, Copy)]
+enum Mode {
+    Aat,
+    Diagnostics,
+}
 
 fn main() -> ExitCode {
+    let mut mode = Mode::Aat;
     let mut args = env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -20,10 +27,11 @@ fn main() -> ExitCode {
                 return ExitCode::SUCCESS;
             }
             "--mode" => match args.next().as_deref() {
-                Some("aat") => {}
+                Some("aat") => mode = Mode::Aat,
+                Some("diagnostics") => mode = Mode::Diagnostics,
                 other => {
                     eprintln!(
-                        "ab-aozora: unsupported --mode {:?} (only \"aat\")\n{USAGE}",
+                        "ab-aozora: unsupported --mode {:?} (aat | diagnostics)\n{USAGE}",
                         other.unwrap_or("<missing>")
                     );
                     return ExitCode::FAILURE;
@@ -40,9 +48,13 @@ fn main() -> ExitCode {
         eprintln!("ab-aozora: failed to read stdin: {err}");
         return ExitCode::FAILURE;
     }
-    // aat_json_from_bytes builds the full document in memory: on Err
-    // nothing has been written to stdout (no-partial-output contract).
-    match ab_aozora_aat::aat_json_from_bytes(&bytes) {
+    // Both functions build the full document in memory: on Err nothing has
+    // been written to stdout (no-partial-output contract).
+    let result = match mode {
+        Mode::Aat => ab_aozora_aat::aat_json_from_bytes(&bytes),
+        Mode::Diagnostics => ab_aozora_aat::diagnostics_json_from_bytes(&bytes),
+    };
+    match result {
         Ok(out) => {
             if let Err(err) = io::stdout().write_all(&out) {
                 eprintln!("ab-aozora: failed to write stdout: {err}");

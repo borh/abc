@@ -32,9 +32,9 @@ Comparison corpus:
 - Regenerate the machine-readable all-work handoff:
   `nix run .#tei-eaj-aozora-workset-json`
 - Regenerate the bounded alignment probe report from an existing workset:
-  `nix run .#abc-tei-eaj-aozora-alignment-probe`
+  `just tei-eaj-alignment-probe`
 - Regenerate all reports and attach bounded alignment probes:
-  `nix run .#abc-tei-eaj-aozora-reports-with-probes`
+  `just tei-eaj-reports-with-probes`
 - Current reports:
   - `docs/handoffs/tei-eaj-aozora-all-work-comparison-report.md`
   - `docs/handoffs/tei-eaj-aozora-melos-comparison-report.md`

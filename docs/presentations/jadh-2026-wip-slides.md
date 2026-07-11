@@ -60,7 +60,7 @@ The transformation can be treated as disposable preprocessing.
 
 <!--
 Evidence path: abc/flake.nix; pinned input tei-eaj-aozora-tei.
-Inspect/regenerate: nix run .#abc-tei-eaj-aozora-tei-source
+Inspect/regenerate: nix run ./abc#tei-eaj-aozora-tei-source
 Inputs: TEI-EAJ/aozora_tei@77a675fc2771936f9544505d922d4cd45075338c
 Expected: store path containing README.md and data/complete/tei_lib_lv4/1567_tei.xml
 Class: pinned upstream comparison source
@@ -168,7 +168,7 @@ Class: checked-in generated source-authority summary
 
 <!--
 Evidence path: abc/docs/architecture-presentation.edn; abc/docs/figures/soranoha-reproducibility-architecture.svg
-Inspect/regenerate: nix run .#abc-presentation-diagrams; nix build .#checks.x86_64-linux.abc-presentation-diagram-drift --no-link
+Inspect/regenerate: nix run ./abc#presentation-diagrams; nix build ./abc#checks.x86_64-linux.presentation-diagram-drift --no-link
 Inputs: checked-in presentation model; architecture stages and ADR registry; pinned Graphviz and Noto CJK font environment
 Expected: byte-identical 1920x1080 SVG; sources and computational evidence enter the identity contract before validated manifests and scholarly views
 Class: generated, checked-in, drift-validated presentation figure
@@ -294,7 +294,7 @@ complementary rather than nested.
 
 <!--
 Evidence path: abc/docs/architecture-presentation.edn; abc/docs/figures/soranoha-publication-pipeline.svg
-Inspect/regenerate: nix run .#abc-presentation-diagrams; nix build .#checks.x86_64-linux.abc-presentation-diagram-drift --no-link
+Inspect/regenerate: nix run ./abc#presentation-diagrams; nix build ./abc#checks.x86_64-linux.presentation-diagram-drift --no-link
 Inputs: checked-in presentation model; publication schemas and role registry; pinned Graphviz and Noto CJK font environment
 Expected: byte-identical 1920x1080 SVG; source passes through validated parsing and Parser-IR into manifests and plural scholarly outputs
 Class: generated, checked-in, drift-validated presentation figure
@@ -372,7 +372,7 @@ Each category has an explicit action and says whether detail moves to a separate
 
 <!--
 Evidence path: pinned input data/complete/tei_lib_lv4/1567_tei.xml
-Inspect/regenerate: tei_root="$(nix run .#abc-tei-eaj-aozora-tei-source)"; sed -n '57,67p' "$tei_root/data/complete/tei_lib_lv4/1567_tei.xml"
+Inspect/regenerate: tei_root="$(nix run ./abc#tei-eaj-aozora-tei-source)"; sed -n '57,67p' "$tei_root/data/complete/tei_lib_lv4/1567_tei.xml"
 Inputs: TEI-EAJ/aozora_tei@77a675fc2771936f9544505d922d4cd45075338c
 Expected: SHA-256 c2f6e43fbc3235e832feccf47e5b06c896959d8aa2a9798132e8dca12df5c7be; work 1567; curated Level 4
 Class: pinned upstream curated TEI
@@ -439,7 +439,7 @@ Dictionary choice can change POS even when token boundaries look similar [@den20
 
 <!--
 Evidence path: pinned Sudachi and Vibrato/UniDic flake outputs; ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md
-Inspect/regenerate: printf 'その地点を求むるならば\nメロスには竹馬の友があった。\n' | nix run .#ab-validator-sudachi -- --mode A; printf 'その地点を求むるならば\nメロスには竹馬の友があった。\n' | nix run .#ab-validator-vibrato-tokenize -- --sysdic "$(nix build .#ab-validator-vibrato-dict-cwj --no-link --print-out-paths)/share/vibrato/unidic-cwj-202512.dic.zst"
+Inspect/regenerate: printf 'その地点を求むるならば\nメロスには竹馬の友があった。\n' | nix run ./ab-validator#sudachi -- --mode A; printf 'その地点を求むるならば\nメロスには竹馬の友があった。\n' | nix run ./ab-validator#vibrato-tokenize -- --sysdic "$(nix build ./ab-validator#vibrato-dict-cwj --no-link --print-out-paths)/share/vibrato/unidic-cwj-202512.dic.zst"
 Inputs: sudachi-20260116; unidic-cwj-202512; literal bounded regions
 Expected: Sudachi A keeps 求むる and splits 竹馬/の/友; Vibrato splits 求/む/る and 竹馬/の/友
 Class: bounded live query over pinned analyzers
@@ -675,7 +675,7 @@ Class: checked-in mapping contract
 
 <!--
 Evidence path: pinned Sudachi and Vibrato dictionary outputs; ab-validator/docs/superpowers/reports/2026-04-29-morph-full-corpus.md
-Inspect/regenerate: printf 'その地点を求むるならば\nメロスには竹馬の友があった。\n' | nix run .#ab-validator-sudachi -- --mode C
+Inspect/regenerate: printf 'その地点を求むるならば\nメロスには竹馬の友があった。\n' | nix run ./ab-validator#sudachi -- --mode C
 Inputs: sudachi-20260116 and versioned UniDic profiles
 Expected: bounded region differences shown above; dictionary identity recorded with artifact
 Class: bounded live query plus checked-in corpus report
@@ -727,13 +727,13 @@ Class: checked-in evaluation and corpus-probe reports
 # Appendix — Reproducing the Evidence
 
 - [Pinned TEI-EAJ source](https://github.com/TEI-EAJ/aozora_tei):
-  `nix run .#abc-tei-eaj-aozora-tei-source`
+  `nix run ./abc#tei-eaj-aozora-tei-source`
 - Parser study:
   `sed -n '219,345p' ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md`
 - Mapping rule A-06:
   `jq '.transform_rule_descriptions[] | select(.rule_id == "A-06")' ab-validator/data/aat-to-parser-ir-mapping-v1.json`
 - Publication fixture:
-  `nix run .#abc-materialize-publication -- examples/v0/example-work/parser-ir.json examples/v0/example-work/metadata-record.json examples/v0/example-persons /tmp/jadh-publication --generated-at 2026-07-03T00:00:00Z`
+  `nix run ./abc#materialize-publication -- examples/v0/example-work/parser-ir.json examples/v0/example-work/metadata-record.json examples/v0/example-persons /tmp/jadh-publication --generated-at 2026-07-03T00:00:00Z`
 
 The publication command demonstrates the reproducible fixture—not the gated real Melos comparison.
 -->

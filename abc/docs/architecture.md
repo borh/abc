@@ -133,8 +133,8 @@ larger-type, audience-facing view of the same contracts:
 
 They are generated presentation views, not additional architecture sources.
 Regenerate them from the monorepo root with
-`nix run .#abc-presentation-diagrams`; verify drift with
-`nix run .#abc-presentation-diagrams -- --check`. The pipeline figure keeps the
+`nix run ./abc#presentation-diagrams`; verify drift with
+`nix run ./abc#presentation-diagrams -- --check`. The pipeline figure keeps the
 stable Parser-IR publication contract prominent and marks the current AAT path
 as implementation detail so parser consolidation can simplify it honestly.
 

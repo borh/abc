@@ -26,16 +26,17 @@ Useful focused checks:
 ```sh
 just python-quality
 just nix-format-check
-nix build .#checks.x86_64-linux.abc-clj-kondo
-nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests
-nix build .#checks.x86_64-linux.ab-validator-cargo-check
-nix build .#checks.x86_64-linux.ab-validator-cargo-clippy
-nix build .#checks.x86_64-linux.ab-validator-cargo-fmt
+nix build ./abc#checks.x86_64-linux.clj-kondo
+nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests
+nix build ./ab-validator#checks.x86_64-linux.cargo-check
+nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
+nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 ```
 
 ## Language Conventions
 
-- Rust: use the `ab-validator-*` Nix checks for cargo check, clippy, fmt, and tests.
+- Rust: use the `./ab-validator#checks...` Nix checks for cargo check, clippy,
+  fmt, and tests.
 - Python: all tracked Python should pass ruff format/check and mypy via `just python-quality`.
 - Clojure: `abc-clj-kondo` checks all `abc/src` and `abc/test` with clj-kondo plus cljfmt.
 - Nix: run `nixfmt` or `just nix-format-check` for Nix changes.

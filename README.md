@@ -31,19 +31,19 @@ just validate-migration
 ```
 
 This checks runtime configuration, active path hygiene, schema/policy drift, TEI
-version coherence, release-critical flake input pins, Python quality, Nix
-formatting, and root flake evaluation.
+version coherence, release-critical flake input pins, Python quality, and Nix
+formatting, and evaluates the root and both component flakes directly.
 
 ## Focused Checks
 
 ```sh
 just python-quality
 just nix-format-check
-nix build .#checks.x86_64-linux.abc-clj-kondo
-nix build .#checks.x86_64-linux.abc-clj-nix-focused-tests
-nix build .#checks.x86_64-linux.ab-validator-cargo-check
-nix build .#checks.x86_64-linux.ab-validator-cargo-clippy
-nix build .#checks.x86_64-linux.ab-validator-cargo-fmt
+nix build ./abc#checks.x86_64-linux.clj-kondo
+nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests
+nix build ./ab-validator#checks.x86_64-linux.cargo-check
+nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
+nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 ```
 
 Heavy corpus measurements are operator-driven and require local data under the

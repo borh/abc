@@ -286,21 +286,46 @@
          {:label "primary member"
           :role :primary-member
           :mutate (fn [work]
-                    (let [primary (get (files/read-json
-                                        (:official_source_path work))
-                                       "primary_text_member")]
-                      (update-json!
-                       (:source_bundle_path work)
-                       #(update % "members"
-                                (fn [members]
-                                  (mapv (fn [member]
-                                          (if (= primary (get member "path"))
-                                            (assoc member "member_hash" other)
-                                            member))
-                                        members))))))}]]
+                    (update-json! (:official_source_path work)
+                                  #(assoc % "primary_text_member"
+                                          "images/cover.png")))}]]
     (doseq [{:keys [label role mutate]} cases]
       (let [error (materialize-error mutate)]
         (is (= role (:identity-role (ex-data error))) label)))))
+
+(deftest coordinated-primary-member-divergence-is-rejected-test
+  (let [divergent-hash (fixture/example-hash "dd")
+        error
+        (materialize-error
+         (fn [work]
+           (let [primary-member (get (files/read-json
+                                      (:official_source_path work))
+                                     "primary_text_member")]
+             (update-json!
+              (:source_bundle_path work)
+              #(update % "members"
+                       (fn [members]
+                         (mapv (fn [member]
+                                 (if (= primary-member (get member "path"))
+                                   (assoc member "member_hash" divergent-hash)
+                                   member))
+                               members))))
+             (update-json! (:official_source_path work)
+                           #(assoc % "primary_text_hash" divergent-hash))
+             (update-json! (:parser_ir_path work)
+                           #(assoc-in % ["source" "primary_text_hash"]
+                                      divergent-hash)))))]
+    (is (= :member-identity-projection
+           (:identity-role (ex-data error))))))
+
+(deftest reordered-member-metadata-projection-is-rejected-test
+  (let [error (materialize-error
+               #(update-json! (:source_bundle_path %)
+                              (fn [source-bundle]
+                                (update source-bundle "members"
+                                        (comp vec reverse)))))]
+    (is (= :member-identity-projection
+           (:identity-role (ex-data error))))))
 
 (deftest materialized-source-snapshot-is-deterministic-test
   (let [root (fixture/temp-dir "abc-source-snapshot-deterministic")]

@@ -82,10 +82,13 @@
                           :work (required-work-value work :slug)}
                          data))))
 
-(defn- member-hash [source-bundle-value primary-text-member]
+(defn- member-hash [identity-members primary-text-member]
   (some #(when (= primary-text-member (get % "path"))
            (get % "member_hash"))
-        (get source-bundle-value "members")))
+        identity-members))
+
+(defn- member-identity-projection [members]
+  (mapv #(select-keys % ["path" "member_hash"]) members))
 
 (defn- validate-legacy-identities!
   [work official-source parser-ir]
@@ -115,6 +118,9 @@
         official-bundle-hash (get official-source "bundle_hash")
         source-bundle-hash (get source-bundle-value "bundle_hash")
         identity-object (get source-bundle-value "identity_object")
+        identity-members (get identity-object "members")
+        member-projection (member-identity-projection
+                           (get source-bundle-value "members"))
         recomputed-bundle-hash
         (hash/format-sha256 (hash/sha256-json-jcs identity-object))
         parser-bundle-hash (get-in parser-ir ["source" "work_content_hash"])
@@ -122,7 +128,7 @@
         parser-primary-hash (get-in parser-ir ["source" "primary_text_hash"])
         primary-text-member (get official-source "primary_text_member")
         identity-primary-member (get identity-object "primary_text_member")
-        primary-member-hash (member-hash source-bundle-value
+        primary-member-hash (member-hash identity-members
                                          primary-text-member)]
     (when-not (= source-bundle/construction
                  (get identity-object "construction"))
@@ -145,6 +151,12 @@
                        :bundle-construction work
                        {:bundle-hash source-bundle-hash
                         :recomputed-bundle-hash recomputed-bundle-hash}))
+    (when-not (= identity-members member-projection)
+      (identity-error!
+       "source-bundle member metadata differs from identity_object members"
+       :member-identity-projection work
+       {:identity-members identity-members
+        :member-identity-projection member-projection}))
     (when-not (= official-bundle-hash source-bundle-hash)
       (identity-error! "official-source bundle_hash differs from source-bundle"
                        :official-bundle work

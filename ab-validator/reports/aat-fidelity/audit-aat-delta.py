@@ -1106,29 +1106,42 @@ def recover_markers(base_doc, container_span, open_token, close_token, name):
     return opens[0], closes[0]
 
 
-def expand_adoptions(node, base_doc, name, adopted):
+def expand_adoptions(node, base_doc, name, adopted, adopted_by_line):
     """Recursively copy `node`, splicing every yokogumi/keigakomi toggle
     container back into its baseline raw-marker shape
     [raw open, *content, raw close] (spans recovered verbatim from the
-    baseline via recover_markers) and tallying `adopted` by construct."""
+    baseline via recover_markers) and tallying `adopted` by construct.
+
+    Each adoption is additionally BOUND TO ITS LINE via the recovered
+    baseline open marker's span line_start into `adopted_by_line`
+    ({line: {construct: count}}), so the caller can compare observed vs
+    expected adoptions PER marker-carrying line rather than per work —
+    per-work totals alone admit a compensating false-pass where a missed
+    valid adoption on one line offsets a wrong adoption on another (plan
+    amendment 0d323a72)."""
     if isinstance(node, list):
         out = []
         for item in node:
             normalized = normalize_adoption(item, name) if isinstance(item, dict) else None
             if normalized is None:
-                out.append(expand_adoptions(item, base_doc, name, adopted))
+                out.append(expand_adoptions(item, base_doc, name, adopted, adopted_by_line))
                 continue
             kind, open_token, close_token, span, content = normalized
             adopted[kind] += 1
             open_marker, close_marker = recover_markers(
                 base_doc, span, open_token, close_token, name
             )
+            line = open_marker["span"]["line_start"]
+            adopted_by_line.setdefault(line, {"yokogumi": 0, "keigakomi": 0})[kind] += 1
             out.append(copy.deepcopy(open_marker))
-            out.extend(expand_adoptions(content, base_doc, name, adopted))
+            out.extend(expand_adoptions(content, base_doc, name, adopted, adopted_by_line))
             out.append(copy.deepcopy(close_marker))
         return out
     if isinstance(node, dict):
-        return {k: expand_adoptions(v, base_doc, name, adopted) for k, v in node.items()}
+        return {
+            k: expand_adoptions(v, base_doc, name, adopted, adopted_by_line)
+            for k, v in node.items()
+        }
     return node
 
 
@@ -1136,7 +1149,13 @@ def derive_expected(base_doc):
     """Independent expectation derivation (review P5-4 — the load-bearing
     check): classify_tokens over the BASELINE's own bare-toggle raw
     markers, grouped by physical line — never the placement report, never
-    the candidate."""
+    the candidate.
+
+    Returns (expected_adopted, expected_reasons, expected_by_line):
+    per-work adoption totals, per-work decline reasons, and the per-LINE
+    adoption expectation {line: {construct: count}} for every
+    marker-carrying line (plan amendment 0d323a72 — the per-line map is
+    what forecloses compensating cross-line false-passes)."""
     by_line: dict[int, list] = {}
     for path, node in collect_bare_toggle_raws(base_doc):
         span = node.get("span")
@@ -1150,17 +1169,22 @@ def derive_expected(base_doc):
     expected_reasons = {
         "orphan_open": 0, "orphan_close": 0, "reopen_rollback": 0, "interleave": 0,
     }
-    for entries in by_line.values():
+    expected_by_line: dict[int, dict[str, int]] = {}
+    for line, entries in by_line.items():
         entries.sort(key=lambda e: e[0])
         tokens = [TOKEN_KIND[node["source"]] for _, node in entries]
         outcome = classify_tokens(tokens)
+        expected_by_line[line] = {
+            construct: outcome.adopted_pairs[construct]
+            for construct in ("yokogumi", "keigakomi")
+        }
         for construct in ("yokogumi", "keigakomi"):
             expected_adopted[construct] += outcome.adopted_pairs[construct]
         expected_reasons["orphan_open"] += sum(outcome.orphan_open.values())
         expected_reasons["orphan_close"] += sum(outcome.orphan_close.values())
         expected_reasons["reopen_rollback"] += outcome.rollback_markers
         expected_reasons["interleave"] += outcome.interleave_events
-    return expected_adopted, expected_reasons
+    return expected_adopted, expected_reasons, expected_by_line
 
 
 def count_declined(doc):
@@ -1169,14 +1193,18 @@ def count_declined(doc):
     return len(collect_bare_toggle_raws(doc))
 
 
+_NO_ADOPTIONS = {"yokogumi": 0, "keigakomi": 0}
+
+
 def bare_toggle_adoption_mode(base_doc, cand_doc, name, summary):
     base = strip_identity(base_doc)
     cand = strip_identity(cand_doc)
-    expected_adopted, expected_reasons = derive_expected(base)
+    expected_adopted, expected_reasons, expected_by_line = derive_expected(base)
     expected_declined_total = sum(expected_reasons.values())
 
+    observed_adopted = {"yokogumi": 0, "keigakomi": 0}
+    observed_by_line: dict[int, dict[str, int]] = {}
     if base == cand:
-        observed_adopted = {"yokogumi": 0, "keigakomi": 0}
         declined_doc = base
     else:
         # Difference exists: it must consist EXACTLY of adopted-pair
@@ -1184,20 +1212,32 @@ def bare_toggle_adoption_mode(base_doc, cand_doc, name, summary):
         # by expanding every yokogumi/keigakomi inline_container into
         # [raw open, *content, raw close]; the projection must equal the
         # baseline byte-for-byte.
-        observed_adopted = {"yokogumi": 0, "keigakomi": 0}
-        projected = expand_adoptions(cand, base, name, observed_adopted)
+        projected = expand_adoptions(cand, base, name, observed_adopted, observed_by_line)
         if projected != base:
             die(f"{name}: candidate differences are not pure toggle adoptions")
         if observed_adopted["yokogumi"] + observed_adopted["keigakomi"] == 0:
             die(f"{name}: differs from baseline but contains no toggle adoption")
         declined_doc = cand
 
-    # Independence check (review P5-4): the candidate's OBSERVED adoptions
-    # must equal the baseline-derived EXPECTED adoptions exactly. This
-    # catches both directions — a candidate that failed to adopt a pair the
-    # derivation says is valid (observed 0, expected >0) AND a candidate
-    # that adopted a pair the derivation says is invalid (observed >0,
-    # expected differs) — even when the rewrite is structurally recoverable.
+    # Independence check (review P5-4), bound PER LINE (plan amendment
+    # 0d323a72): every marker-carrying line's OBSERVED adoptions must equal
+    # that line's baseline-derived EXPECTATION. This catches both
+    # directions — a candidate that failed to adopt a pair the derivation
+    # says is valid (observed 0, expected >0) AND a candidate that adopted
+    # a pair the derivation says is invalid — even when the rewrite is
+    # structurally recoverable, and even when the two errors would cancel
+    # in the per-work totals (the compensating false-pass).
+    for line in sorted(set(expected_by_line) | set(observed_by_line)):
+        expected_line = expected_by_line.get(line, _NO_ADOPTIONS)
+        observed_line = observed_by_line.get(line, _NO_ADOPTIONS)
+        if observed_line != expected_line:
+            die(
+                f"{name}: line {line}: observed toggle adoptions "
+                f"{observed_line} do not match the baseline-derived "
+                f"expectation {expected_line}"
+            )
+    # The per-line loop subsumes the per-work totals; this assertion is a
+    # belt-and-suspenders internal-consistency check, not a weaker gate.
     if observed_adopted != expected_adopted:
         die(
             f"{name}: observed toggle adoptions {observed_adopted} do not "

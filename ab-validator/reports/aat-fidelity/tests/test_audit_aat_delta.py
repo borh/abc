@@ -1517,3 +1517,101 @@ def test_bare_toggle_independence_invalid_adoption_fails(tmp_path):
     cand = write_dump(tmp_path, "b", cand_docs)
     code, _, _ = run("bare-toggle-adoption", base, cand, tmp_path)
     assert code == 2
+
+
+def test_bare_toggle_compensating_cross_line_adoption_fails(tmp_path):
+    # PROBE 1 (plan amendment 0d323a72): per-WORK totals alone admit a
+    # compensating false-pass. Baseline line 1 is a valid yokogumi pair
+    # (expected: 1 adoption); line 2 is an interleaved y/k line (expected:
+    # 0 adoptions; declined 4 = orphan_open 1 + reopen_rollback 2 +
+    # interleave 1). A candidate that leaves line 1 RAW but wrongly wraps
+    # line 2's yokogumi span cancels in the totals: observed yokogumi 1 ==
+    # expected 1, declined 4 (line-1 pair 2 + line-2 open_k/close_k 2) ==
+    # expected 4. Only the per-LINE binding (observed line 1 {0,0} !=
+    # expected {1,0}) catches it — must exit 2.
+    open_y1 = bare_marker("［＃横組み］", line=1, bs=0, be=12)
+    inner1 = {
+        "kind": "text", "value": "x",
+        "span": {"line_start": 1, "line_end": 1, "byte_start": 12, "byte_end": 13},
+    }
+    close_y1 = bare_marker("［＃横組み終わり］", line=1, bs=13, be=31)
+    open_y2 = bare_marker("［＃横組み］", line=2, bs=32, be=44)
+    open_k2 = bare_marker("［＃罫囲み］", line=2, bs=44, be=56)
+    inner2 = {
+        "kind": "text", "value": "y",
+        "span": {"line_start": 2, "line_end": 2, "byte_start": 56, "byte_end": 57},
+    }
+    close_y2 = bare_marker("［＃横組み終わり］", line=2, bs=57, be=75)
+    close_k2 = bare_marker("［＃罫囲み終わり］", line=2, bs=75, be=93)
+    base_docs = {
+        "w1": doc([para(
+            open_y1, inner1, close_y1,
+            open_y2, open_k2, inner2, close_y2, close_k2,
+        )])
+    }
+    cand_docs = {
+        "w1": doc([para(
+            open_y1, inner1, close_y1,  # line 1 left raw (missed adoption)
+            toggle_container("yokogumi", [open_k2, inner2], line=2, bs=32, be=75),
+            close_k2,  # line 2 wrongly adopted (grammar declares it invalid)
+        )])
+    }
+    base = write_dump(tmp_path, "a", base_docs)
+    cand = write_dump(tmp_path, "b", cand_docs)
+    code, _, err = run("bare-toggle-adoption", base, cand, tmp_path)
+    assert code == 2, err
+    assert "line" in err
+
+
+def test_bare_toggle_declined_by_reason_breakdown(tmp_path):
+    # Passing-path coverage for details.declined_by_reason. Baseline (and
+    # identical candidate) carries three declined-only lines; hand-computed
+    # per the Contract 1 grammar:
+    #   line 1 (interleave: y-open, k-open, y-close, k-close):
+    #     y-close vs top-of-stack k -> interleave_events 1, both invalid,
+    #     nothing popped; k-close pops the k pair -> rolled back (2);
+    #     y still open at EOL -> orphan_open 1. Declined 4.
+    #   line 2 (lone y-open): orphan_open 1. Declined 1.
+    #   line 3 (y-open, y-open, y-close): second open is a same-construct
+    #     reopen (y invalid); the close pops one candidate pair -> rolled
+    #     back (2); the other open survives to EOL -> orphan_open 1.
+    #     Declined 3.
+    # Totals: orphan_open 3, orphan_close 0, reopen_rollback 4,
+    # interleave 1; declined_markers 8 (= 4 + 1 + 3).
+    inner1 = {
+        "kind": "text", "value": "a",
+        "span": {"line_start": 1, "line_end": 1, "byte_start": 24, "byte_end": 25},
+    }
+    docs = {
+        "w1": doc([para(
+            # line 1: improper interleave
+            bare_marker("［＃横組み］", line=1, bs=0, be=12),
+            bare_marker("［＃罫囲み］", line=1, bs=12, be=24),
+            inner1,
+            bare_marker("［＃横組み終わり］", line=1, bs=25, be=43),
+            bare_marker("［＃罫囲み終わり］", line=1, bs=43, be=61),
+            # line 2: orphan open
+            bare_marker("［＃横組み］", line=2, bs=62, be=74),
+            # line 3: same-construct reopen
+            bare_marker("［＃横組み］", line=3, bs=75, be=87),
+            bare_marker("［＃横組み］", line=3, bs=87, be=99),
+            bare_marker("［＃横組み終わり］", line=3, bs=99, be=117),
+        )])
+    }
+    base = write_dump(tmp_path, "a", docs)
+    cand = write_dump(tmp_path, "b", docs)
+    code, summary, err = run(
+        "bare-toggle-adoption", base, cand, tmp_path,
+        "--expected-adopted-yokogumi", "0",
+        "--expected-adopted-keigakomi", "0",
+        "--expected-declined", "8",
+    )
+    assert code == 0, (summary, err)
+    assert summary["classes"]["identical"] == 1
+    assert summary["details"]["declined_markers"] == 8
+    assert summary["details"]["declined_by_reason"] == {
+        "orphan_open": 3,
+        "orphan_close": 0,
+        "reopen_rollback": 4,
+        "interleave": 1,
+    }

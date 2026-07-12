@@ -1,7 +1,8 @@
 # ADR 0033: Source Bundle Identity
 
-Status: Proposed
+Status: Accepted
 Date: 2026-07-12
+Accepted: 2026-07-12
 Supersedes: none
 Amends: ADR 0001 [scope: work_content_hash equality relation]
 Depends on: ADR 0010, ADR 0023, ADR 0025
@@ -17,7 +18,7 @@ make compression metadata part of logical work identity.
 
 ## Decision
 
-This ADR proposes a versioned source-bundle manifest that gives archive,
+This ADR establishes a versioned source-bundle manifest that gives archive,
 logical bundle, individual member, and parser input distinct identities:
 
 - `archive_hash` identifies the exact original ZIP bytes.
@@ -64,14 +65,33 @@ Historical manifests retain their schema hashes and historical
 
 ## Implementation Status
 
-Proposed. D7 currently demonstrates the unresolved member-hash versus raw-ZIP
-hash composition failure. No production bundle manifest, schema, or
-multi-coordinate parser-IR contract exists yet. This ADR must not be promoted
-to Accepted until D7 is fixed through the complete bundle-identity path rather
-than by making either existing hash impersonate the other.
+Accepted on 2026-07-12 with the following implementation evidence:
 
-Pinned-corpus evidence finds one Java-unreadable, `7zz`-recoverable archive.
-V1 intentionally rejects it rather than retaining the unbounded extract-all
+- `abc.tools.source-bundle` implements the bounded, deterministic v1 ZIP
+  inspector; `source-bundle.schema.json` and canonical fixtures pin manifest,
+  path-decoding, Unicode-folding, limit, and JCS identity behavior.
+- The `source-bundle-corpus` Nix check reproduces the checked-in report for
+  Aozora commit `0e9ea3e586eb0aa34039fabfc85a407d2f98b165` and verifies the
+  production bounds and damaged-archive disposition.
+- AAT and parser-IR schemas expose `primary_text_hash`; the Rust converter's
+  explicit `work_content_hash` option and CLI carry ABC's authoritative bundle
+  identity without computing it. Rust tests pin alias validation, distinct
+  roles, schema mirrors, and the current and frozen historical mapping
+  artifacts.
+- Publication build tests prove bundle-manifest materialization, adapter
+  integrity, bundle-keyed reuse, strict atomic rejection, best-effort counted
+  rejection, and non-releaseability after any admission failure.
+- Workset and source-snapshot tests prove complete historical readability and
+  role-specific validation of archive, canonical bundle, primary member, and
+  parser-input hashes, including persisted manifest-byte integrity.
+- P16 evolution tests prove image edits rotate bundle identity and rebuild,
+  metadata-only repacks rotate only archive identity and reuse, and text edits
+  rotate bundle and primary-text identity. P16.3 composes the real path without
+  an expected-failure gate; D7 is fixed with dated evidence in the divergence
+  table.
+
+The pinned corpus contains one Java-unreadable, `7zz`-recoverable archive. V1
+intentionally rejects it rather than retaining the unbounded extract-all
 fallback; upstream repair is required. Strict builds abort atomically on any
 admission error. Best-effort builds may continue and record per-work
 `derive_failures`, but any nonzero failure count is not release-admissible.
@@ -102,21 +122,24 @@ whole-work identity, because the adapter receives only the primary text bytes.
 ## Acceptance Criteria
 
 - `schemas/source-bundle.schema.json` validates a canonical manifest covering
-  every non-directory member.
+  every non-directory member; `test/abc/tools/source_bundle_test.clj` and
+  `test/abc/tools/schema_test.clj` pin the producer and schema contracts.
 - The Clojure producer reproduces one checked-in canonical identity fixture and
   `bundle_hash` byte-for-byte. Rust remains a consumer until a conformant
   implementation reproduces that fixture; it must not author bundle identity.
-- Tests prove metadata-only repacks preserve `bundle_hash` while image changes
-  rotate it.
+- `test/abc/sim/content_sim_test.clj` proves metadata-only repacks preserve
+  `bundle_hash` while image changes rotate it.
 - Parser-IR records both `work_content_hash = bundle_hash` and the independently
   verified `primary_text_hash`.
 - Source snapshot validation checks each hash role by its own construction and
-  never requires cross-role equality.
+  never requires cross-role equality, as pinned by
+  `test/abc/tools/materialize_source_snapshot_test.clj`.
 - P16.3 passes without `expected-failure*`; D7 is marked fixed with dated
   evidence.
 - Historical manifests and worksets remain readable without reinterpretation.
 - Archive member-count, per-member byte, and total-uncompressed-byte limits are
-  selected from measured corpus evidence and enforced before production use.
+  selected from measured corpus evidence and enforced before production use;
+  `test/abc/tools/source_bundle_report_test.clj` validates the report contract.
 - Tests pin both strict atomic-abort and best-effort counted-failure admission
   dispositions, and release validation rejects any nonzero derive-failure
   count.

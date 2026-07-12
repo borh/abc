@@ -1,7 +1,7 @@
 # Source Bundle Identity Design
 
 Date: 2026-07-12
-Status: Proposed design for review
+Status: Implemented; accepted by ADR 0033
 Decision record: ADR 0033
 Amends: ADR 0001 (`work_content_hash` meaning)
 
@@ -226,10 +226,12 @@ their schema hashes and historical meaning.
 
 ## D7 Transition
 
-D7 remains open until the complete new path is exercised. The implementation
-must not simply make the realistic stub write the ZIP hash.
+During implementation, D7 remained open until the complete new path was
+exercised. The implementation was not permitted to make the realistic stub
+write the ZIP hash merely to close the gate.
 
-The gate flips only when a real or contract-equivalent run demonstrates:
+The gate was permitted to flip only when a real or contract-equivalent run
+demonstrated:
 
 1. ZIP inspection emits the expected member manifest and hashes.
 2. Parser-IR records the same bundle hash supplied by ABC and independently
@@ -240,8 +242,9 @@ The gate flips only when a real or contract-equivalent run demonstrates:
 5. Repacking identical members rotates only `archive_hash` and permits logical
    publication reuse.
 
-At that point D7 becomes `:fixed`, P16.3 becomes an ordinary regression guard,
-and the hard mismatch assertions are replaced by role-specific checks:
+After those conditions passed, D7 became `:fixed`, P16.3 became an ordinary
+regression guard, and the hard mismatch assertions were replaced by
+role-specific checks:
 `official-source` archive hash equals the actual ZIP hash; bundle hash equals a
 fresh recomputation of the canonical member manifest; parser-IR carries the
 ABC-supplied bundle hash; and the independently returned primary-text hash
@@ -356,9 +359,9 @@ Measured against flake input `aozorabunko-src` commit
 
 The primary-selector packaging-metadata exclusion is therefore required for
 real corpus admission, and windows-31j fallback is the measured normal case,
-not an exceptional compatibility path. The implementation plan must turn this
-disposable measurement into a reproducible corpus report or checked fixture
-before production admission.
+not an exceptional compatibility path. The implementation records this
+measurement as a reproducible checked corpus report before production
+admission.
 
 Strict windows-31j fallback is intentional: a flag-unset name with neither a
 valid Unicode Path extra field nor valid windows-31j bytes fails admission
@@ -391,3 +394,30 @@ not a claim to emulate every APFS/NTFS filename rule.
 - Publication reuse and snapshot composition use the bundle identity.
 - P16.3 passes without an expected-failure gate and D7 is recorded fixed.
 - Historical manifests remain readable without reinterpretation.
+
+## Implementation Appendix
+
+Accepted on 2026-07-12 with the following implementation evidence:
+
+- `abc.tools.source-bundle` implements the bounded, deterministic v1 ZIP
+  inspector; `source-bundle.schema.json` and canonical fixtures pin manifest,
+  path-decoding, Unicode-folding, limit, and JCS identity behavior.
+- The `source-bundle-corpus` Nix check reproduces the checked-in report for
+  Aozora commit `0e9ea3e586eb0aa34039fabfc85a407d2f98b165` and verifies the
+  production bounds and damaged-archive disposition.
+- AAT and parser-IR schemas expose `primary_text_hash`; the Rust converter's
+  explicit `work_content_hash` option and CLI carry ABC's authoritative bundle
+  identity without computing it. Rust tests pin alias validation, distinct
+  roles, schema mirrors, and the current and frozen historical mapping
+  artifacts.
+- Publication build tests prove bundle-manifest materialization, adapter
+  integrity, bundle-keyed reuse, strict atomic rejection, best-effort counted
+  rejection, and non-releaseability after any admission failure.
+- Workset and source-snapshot tests prove complete historical readability and
+  role-specific validation of archive, canonical bundle, primary member, and
+  parser-input hashes, including persisted manifest-byte integrity.
+- P16 evolution tests prove image edits rotate bundle identity and rebuild,
+  metadata-only repacks rotate only archive identity and reuse, and text edits
+  rotate bundle and primary-text identity. P16.3 composes the real path without
+  an expected-failure gate; D7 is fixed with dated evidence in the divergence
+  table.

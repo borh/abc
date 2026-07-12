@@ -340,21 +340,9 @@
                             selected)
    "rejected_sources" (mapv identity rejected)})
 
-(def ^:private source-bundle-admission-reasons
-  #{:case-fold-member-path-collision
-    :duplicate-member-path
-    :invalid-member-name-encoding
-    :member-too-large
-    :multiple-primary-text-members
-    :no-primary-text-member
-    :too-many-members
-    :total-too-large
-    :unreadable-zip
-    :unsafe-member-path})
-
 (defn- source-bundle-admission-error? [t]
   (and (instance? clojure.lang.ExceptionInfo t)
-       (contains? source-bundle-admission-reasons (:reason (ex-data t)))))
+       (true? (::source-bundle/admission-error (ex-data t)))))
 
 (defn- derive-failure [candidate t]
   (let [d (ex-data t)
@@ -375,7 +363,10 @@
       (some? actual) (assoc "actual" actual)
       (:actual-bytes d) (assoc "actual_bytes" (:actual-bytes d))
       (:declared-bytes d) (assoc "declared_bytes" (:declared-bytes d))
-      (:member-count d) (assoc "member_count" (:member-count d)))))
+      (:member-count d) (assoc "member_count" (:member-count d))
+      (:paths d) (assoc "paths" (:paths d))
+      (:folded-path d) (assoc "folded_path" (:folded-path d))
+      (:candidates d) (assoc "candidates" (:candidates d)))))
 
 (defn- materialize-selected-sources!
   [{:keys [aozora-root output-root parser-profile snapshot-date
@@ -444,7 +435,7 @@
 
                                           :else
                                           "not-selected")})))]
-    (when-not (seq selected)
+    (when (and (empty? selected) (empty? derive-failures))
       (throw (ex-info "no catalog-backed work ZIPs were successfully derived"
                       {:aozora_root (str aozora-root)
                        :derive_failed_count (count derive-failures)})))

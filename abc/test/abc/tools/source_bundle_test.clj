@@ -4,9 +4,10 @@
             [abc.tools.schema :as schema]
             [abc.tools.source-bundle :as source-bundle]
             [clojure.test :refer [deftest is testing]])
-  (:import [java.nio ByteBuffer ByteOrder]
+  (:import [java.io FileNotFoundException InterruptedIOException]
+           [java.nio ByteBuffer ByteOrder]
            [java.nio.charset StandardCharsets]
-           [java.nio.file Files]
+           [java.nio.file AccessDeniedException Files NoSuchFileException]
            [java.util.zip CRC32]
            [org.apache.commons.compress.archivers.zip
             UnicodePathExtraField ZipArchiveEntry ZipArchiveOutputStream
@@ -183,6 +184,15 @@
          (reason #(inspection [["one.txt" (utf8-bytes "1")]
                                ["two.TXT" (utf8-bytes "2")]])))))
 
+(deftest multiple-primary-diagnostics-are-deterministic-test
+  (let [members [["two.txt" (utf8-bytes "2")]
+                 ["one.txt" (utf8-bytes "1")]]
+        forward (admission-data #(inspection members))
+        reverse-order (admission-data #(inspection (reverse members)))]
+    (is (= :multiple-primary-text-members (:reason forward)))
+    (is (= ["one.txt" "two.txt"] (:candidates forward)))
+    (is (= (:candidates forward) (:candidates reverse-order)))))
+
 (deftest entry-name-decoding-precedence-test
   (testing "EFS names are strict UTF-8"
     (with-zips [zip (write-zip! (temp-file ".zip") [["作品.txt" (utf8-bytes "x")]])]
@@ -243,6 +253,17 @@
     (is (= :case-fold-member-path-collision
            (reason #(inspection members))))))
 
+(deftest unicode-casefold-collision-diagnostics-are-deterministic-test
+  (let [members [["é.txt" (utf8-bytes "2")]
+                 ["É.txt" (utf8-bytes "1")]]
+        forward (admission-data #(inspection members))
+        reverse-order (admission-data #(inspection (reverse members)))]
+    (is (= :case-fold-member-path-collision (:reason forward)))
+    (is (= "é.txt" (:folded-path forward)))
+    (is (= ["É.txt" "é.txt"] (:paths forward)))
+    (is (= (select-keys forward [:folded-path :paths])
+           (select-keys reverse-order [:folded-path :paths])))))
+
 (deftest unsafe-paths-are-rejected-test
   (doseq [path ["/work.txt" "C:/work.txt" "a//work.txt" "./work.txt"
                 "a/../work.txt" "a\\..\\work.txt"]]
@@ -259,6 +280,37 @@
                  (catch clojure.lang.ExceptionInfo e (ex-data e)))]
       (is (= :unreadable-zip (:reason data)))
       (is (= (str file) (:archive-path data))))))
+
+(deftest full-inspection-propagates-non-archive-failures-test
+  (with-zips [zip (write-zip! (temp-file ".zip")
+                              [["work.txt" (utf8-bytes "body")]])]
+    (doseq [failure [(AssertionError. "programming")
+                     (LinkageError. "linkage")
+                     (InterruptedException. "interrupted")
+                     (InterruptedIOException. "interrupted")
+                     (FileNotFoundException. "missing")
+                     (NoSuchFileException. "missing")
+                     (AccessDeniedException. "denied")
+                     (RuntimeException. "programming")]]
+      (is (identical?
+           failure
+           (try
+             (with-redefs-fn
+               {#'source-bundle/inspect-open-zip (fn [& _] (throw failure))}
+               #(source-bundle/inspect-zip zip))
+             (catch Throwable t t)))))))
+
+(deftest entry-name-decoding-propagates-programming-failures-test
+  (with-zips [zip (write-zip! (temp-file ".zip")
+                              [["work.txt" (utf8-bytes "body")]])]
+    (let [failure (AssertionError. "strict decoder bug")]
+      (is (identical?
+           failure
+           (try
+             (with-redefs-fn
+               {#'source-bundle/strict-decode (fn [& _] (throw failure))}
+               #(source-bundle/inspect-zip zip))
+             (catch Throwable t t)))))))
 
 (deftest metadata-inspection-propagates-unexpected-errors-test
   (with-zips [zip (write-zip! (temp-file ".zip")

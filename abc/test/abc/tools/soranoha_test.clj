@@ -9,10 +9,13 @@
             [abc.tools.snapshot-index :as snapshot-index]
             [abc.tools.soranoha :as soranoha]
             [abc.tools.soranoha-build-publication :as build-publication]
+            [abc.tools.source-bundle :as source-bundle]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is]])
-  (:import [java.nio.charset StandardCharsets]
+  (:import [java.io FileNotFoundException InterruptedIOException]
+           [java.nio.charset StandardCharsets]
+           [java.nio.file AccessDeniedException NoSuchFileException]
            [java.util.zip ZipEntry ZipOutputStream]))
 
 (defn- temp-json-path [prefix]
@@ -929,6 +932,66 @@
                                         :actual-work-content-hash
                                         :expected-primary-text-hash
                                         :actual-primary-text-hash]))))))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-best-effort-propagates-non-admission-failures-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-error-taxonomy")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        output-root (io/file root "build-output")
+        config-file (io/file root "best-effort-config.json")]
+    (try
+      (abc-json/write-deterministic-json-file!
+       config-file
+       (assoc (files/read-json (io/file "config" "publication-basic-ja.json"))
+              "continue_on_failure" true))
+      (doseq [failure [(AssertionError. "programming")
+                       (LinkageError. "linkage")
+                       (InterruptedException. "interrupted")
+                       (InterruptedIOException. "interrupted")
+                       (FileNotFoundException. "missing")
+                       (NoSuchFileException. "missing")
+                       (AccessDeniedException. "denied")
+                       (RuntimeException. "programming")
+                       (ex-info "spoofed admission reason"
+                                {:reason :unsafe-member-path
+                                 :archive-path "not-from-inspector.zip"})]]
+        (is (identical?
+             failure
+             (try
+               (with-redefs [source-bundle/inspect-zip
+                             (fn [& _] (throw failure))]
+                 (build-publication/build-publication!
+                  ["--aozora-root" (str aozora-root)
+                   "--config" (str config-file)
+                   "--snapshot-date" "2026-07-08"
+                   "--output-root" (str output-root)]))
+               (catch Throwable t t)))))
+      (is (not (.exists output-root)))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-best-effort-still-rejects-zero-attempted-candidates-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-no-candidates")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        work-zip (io/file aozora-root "cards" "000879" "files"
+                          "000001_ruby_fixture.zip")
+        output-root (io/file root "build-output")]
+    (try
+      (is (.delete work-zip))
+      (let [thrown (try
+                     (build-publication/build-publication!
+                      ["--aozora-root" (str aozora-root)
+                       "--config" "abc/config/publication-basic-ja.json"
+                       "--snapshot-date" "2026-07-08"
+                       "--output-root" (str output-root)])
+                     nil
+                     (catch clojure.lang.ExceptionInfo t t))]
+        (is (some? thrown))
+        (is (= "no catalog-backed work ZIPs were successfully derived"
+               (.getMessage thrown)))
+        (is (= 0 (:derive_failed_count (ex-data thrown))))
+        (is (not (.exists output-root))))
       (finally
         (delete-tree! root)))))
 

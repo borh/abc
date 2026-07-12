@@ -162,6 +162,15 @@
       (.closeEntry zip))
     (.toByteArray out)))
 
+(defn- named-text-zip-bytes [entries]
+  (let [out (ByteArrayOutputStream.)]
+    (with-open [zip (ZipOutputStream. out)]
+      (doseq [[path content] entries]
+        (.putNextEntry zip (doto (ZipEntry. path) (.setTime 0)))
+        (.write zip (.getBytes content StandardCharsets/UTF_8))
+        (.closeEntry zip)))
+    (.toByteArray out)))
+
 (deftest p16-admission-failure-disposition-test
   ^{:clj-kondo/ignore [:unresolved-symbol]}
   (with-temp-dirs [aozora strict-out cfg]
@@ -216,6 +225,82 @@
           (is (.exists (io/file best-out "source-selection-report.json")))
           (is (.exists (io/file best-out "publications"
                                 "publications-report.json"))))))))
+
+(deftest p16-best-effort-promotes-all-rejected-evidence-test
+  ^{:clj-kondo/ignore [:unresolved-symbol]}
+  (with-temp-dirs [aozora unsafe-out cfg]
+    (let [m (synthetic-state)
+          damaged-out (io/file (.getParentFile unsafe-out) "all-damaged")
+          config (write-config! cfg true)]
+      (testing "all unsafe works produce an empty partial publication set"
+        (render/write-aozora-root! aozora m)
+        (doseq [wid ["000101" "000102"]]
+          (overwrite-zip! aozora m wid (unsafe-path-zip-bytes)))
+        (let [reports (run-build! {:aozora-root aozora
+                                   :out-root unsafe-out
+                                   :config-path config
+                                   :snapshot-date "2026-07-12"})
+              workflow (abc-json/read-json-file
+                        (io/file unsafe-out "workflow-run.json"))]
+          (is (= 1 (:exit reports)))
+          (is (= 0 (get-in reports [:selection "selected_source_count"])))
+          (is (= 2 (get-in reports [:selection "derive_failed_count"])))
+          (is (= #{"unsafe-member-path"}
+                 (set (map #(get % "reason")
+                           (get-in reports [:selection "derive_failures"])))))
+          (is (false? (get-in reports [:selection "release_admissible"])))
+          (is (= 0 (get-in reports [:publications "publication_count"])))
+          (is (= "partial" (get workflow "status")))))
+      (testing "all damaged works follow the same counted disposition"
+        (render/write-aozora-root! aozora m)
+        (doseq [wid ["000101" "000102"]]
+          (overwrite-zip! aozora m wid
+                          (.getBytes "damaged ZIP" StandardCharsets/UTF_8)))
+        (let [reports (run-build! {:aozora-root aozora
+                                   :out-root damaged-out
+                                   :config-path config
+                                   :snapshot-date "2026-07-13"})]
+          (is (= 1 (:exit reports)))
+          (is (= 0 (get-in reports [:selection "selected_source_count"])))
+          (is (= 2 (get-in reports [:selection "derive_failed_count"])))
+          (is (= #{"unreadable-zip"}
+                 (set (map #(get % "reason")
+                           (get-in reports [:selection "derive_failures"])))))
+          (is (= 0 (get-in reports [:publications "publication_count"]))))))))
+
+(deftest p16-best-effort-preserves-cardinality-and-collision-diagnostics-test
+  ^{:clj-kondo/ignore [:unresolved-symbol]}
+  (with-temp-dirs [aozora collision-out cfg]
+    (let [m (synthetic-state)
+          multiple-root (render/temp-dir "sim-multiple-aozora")
+          multiple-out (io/file (.getParentFile collision-out) "multiple")
+          config (write-config! cfg true)]
+      (try
+        (render/write-aozora-root! aozora m)
+        (overwrite-zip! aozora m "000101"
+                        (named-text-zip-bytes [["é.txt" "lower"]
+                                               ["É.txt" "upper"]]))
+        (let [failure (first (get-in (run-build! {:aozora-root aozora
+                                                  :out-root collision-out
+                                                  :config-path config
+                                                  :snapshot-date "2026-07-12"})
+                                     [:selection "derive_failures"]))]
+          (is (= "case-fold-member-path-collision" (get failure "reason")))
+          (is (= "é.txt" (get failure "folded_path")))
+          (is (= ["É.txt" "é.txt"] (get failure "paths"))))
+        (render/write-aozora-root! multiple-root m)
+        (overwrite-zip! multiple-root m "000101"
+                        (named-text-zip-bytes [["two.txt" "two"]
+                                               ["one.txt" "one"]]))
+        (let [failure (first (get-in (run-build! {:aozora-root multiple-root
+                                                  :out-root multiple-out
+                                                  :config-path config
+                                                  :snapshot-date "2026-07-12"})
+                                     [:selection "derive_failures"]))]
+          (is (= "multiple-primary-text-members" (get failure "reason")))
+          (is (= ["one.txt" "two.txt"] (get failure "candidates"))))
+        (finally
+          (render/delete-tree! multiple-root))))))
 
 (deftest p16-4-tamper-rebuild-test
   ^{:clj-kondo/ignore [:unresolved-symbol]}

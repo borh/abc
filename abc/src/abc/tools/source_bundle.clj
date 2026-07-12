@@ -11,6 +11,7 @@
             StandardCharsets]
            [java.security DigestInputStream MessageDigest]
            [java.text Normalizer Normalizer$Form]
+           [java.util.zip ZipException]
            [org.apache.commons.compress.archivers.zip
             UnicodePathExtraField ZipArchiveEntry ZipArchiveEntry$NameSource
             ZipFile]))
@@ -25,7 +26,10 @@
 
 (defn- fail! [reason archive-path data]
   (throw (ex-info (str "source bundle admission failed: " (name reason))
-                  (merge {:reason reason :archive-path (str archive-path)} data))))
+                  (merge {::admission-error true
+                          :reason reason
+                          :archive-path (str archive-path)}
+                         data))))
 
 (defn- unicode-fold [s]
   (UCharacter/foldCase ^String s true))
@@ -59,7 +63,7 @@
         :else
         (throw (IllegalArgumentException.
                 (str "unknown ZIP name source: " source)))))
-    (catch Throwable t
+    (catch CharacterCodingException t
       (fail! :invalid-member-name-encoding archive-path
              {:name-source (str (.getNameSource entry))
               :cause (.getMessage t)}))))
@@ -130,15 +134,17 @@
 
 (defn- validate-entry-collisions! [archive-path entries]
   (let [by-path (group-by :path entries)]
-    (when-let [[path duplicates] (first (filter #(> (count (val %)) 1) by-path))]
+    (when-let [[path duplicates]
+               (first (sort-by key (filter #(> (count (val %)) 1) by-path)))]
       (fail! :duplicate-member-path archive-path
              {:path path :member-count (count duplicates)}))
     (let [by-fold (group-by #(unicode-fold (:path %)) entries)]
       (when-let [[folded collisions]
-                 (first (filter #(> (count (val %)) 1) by-fold))]
+                 (first (sort-by key
+                                 (filter #(> (count (val %)) 1) by-fold)))]
         (fail! :case-fold-member-path-collision archive-path
                {:folded-path folded
-                :paths (mapv :path collisions)})))
+                :paths (->> collisions (map :path) sort vec)})))
     entries))
 
 (defn- validated-entries [archive-path archive limits]
@@ -234,11 +240,13 @@
      (inspect-open-zip zip-file (merge default-limits limits))
      (catch clojure.lang.ExceptionInfo e
        (throw e))
-     (catch Throwable t
+     (catch ZipException t
+       (fail! :unreadable-zip zip-file {:cause (.getMessage t)}))
+     (catch IOException t
        (if (caused-by? CharacterCodingException t)
          (fail! :invalid-member-name-encoding zip-file
                 {:cause (.getMessage t)})
-         (fail! :unreadable-zip zip-file {:cause (.getMessage t)}))))))
+         (throw t))))))
 
 (defn inspect-zip-metadata
   "Apply the source-bundle name decoding, normalization, collision, and primary
@@ -258,7 +266,7 @@
          (collision-evidence entries))))
     (catch clojure.lang.ExceptionInfo e
       (throw e))
-    (catch IOException t
+    (catch ZipException t
       (fail! :unreadable-zip zip-file {:cause (.getMessage t)}))))
 
 (defn write-manifest! [path inspection]

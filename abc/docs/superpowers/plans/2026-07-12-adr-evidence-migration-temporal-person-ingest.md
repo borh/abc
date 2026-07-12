@@ -19,7 +19,7 @@
 - Criterion correction precedes final claim-ID assignment. Once the Stage A claim headers are committed, their IDs are stable.
 - Plan 1's normative-section hash guard must remain green. Preserve original Decision/Hard Rule bytes; only duplicated criteria/status prose may move to non-acceptance sections.
 - All 36 baseline rows in family `temporal-person-ingest` receive exactly one reviewed disposition and an exact `:resulting-claim-ids` vector.
-- A passing namespace supports only assertions that namespace actually makes. Runtime-read schemas, SHACL, JSON fixtures, sidecars, and TTL graphs are explicit capture inputs.
+- A passing namespace supports only assertions that namespace actually makes. Runtime-read schemas, SHACL, JSON fixtures, sidecars, and TTL graphs are explicit capture inputs. Every boundary also has a checked runtime-input manifest whose exact equality with the files observed by its focused execution is proved through Plan 1's shared closure contract; a hand-written `:explicit` subset is not sufficient.
 - Keep legacy `nil` temporal behavior bounded to the named cases; never claim that it preserves unknown versus not-recorded knowledge state. ADR 0036 owns that future correction.
 - Command-level behavior requires a subprocess/direct operational assertion. A pure helper test does not prove a CLI exit contract.
 - `nix flake check` is not a timeless acceptance fact. Move the old criterion out of Acceptance Criteria; do not manufacture a passing historical observation.
@@ -37,6 +37,7 @@
 - `test/abc/tools/person_drift_test.clj` — event schema/cardinality, JSON coherence, SHACL resources, RDF derivation, committed example, and validation failure families.
 - `test/abc/tools/aozora_ingest_test.clj` — bounded with/without drift-sidecar identity comparison, raw-ingest independence, and synthetic schema-hash cascade changed set.
 - `test/abc/tools/aozora_history_audit_test.clj` — report-level empty/update behavior and direct subprocess exit-gate matrix.
+- `docs/evidence/adr-inputs/temporal-*.edn`, `person-drift-*.edn`, `aozora-*.edn` — checked exact runtime-data read manifests consumed by Plan 1's capture closure contract.
 - `docs/adr/0015-temporal-modeling.md` — six corrected typed claims; lifecycle `fixture` / `publication`.
 - `docs/adr/0016-edtf-level1-decade-century.md` — four corrected typed claims; Hard Rule removed from Acceptance Criteria; lifecycle `fixture` / `publication`.
 - `docs/adr/0020-person-identity-drift-data-model.md` — four corrected typed claims; review checklists removed from Acceptance Criteria; lifecycle `fixture` / `publication`.
@@ -44,7 +45,7 @@
 - `docs/adr/0022-upstream-ingest-drift-awareness.md` — six corrected typed claims; Nix-app operation moved to Future Verification; lifecycle `operational` / `development`.
 - `docs/adr/adr-claim-migration.edn` — 36 baseline-hash dispositions and final claim mappings.
 - `test/abc/tools/adr_evidence_inventory_test.clj` — temporal family count/mapping expectations using Plan 1's disposition-aware interface.
-- `docs/evidence/adr-capture/temporal-*.edn`, `person-drift-*.edn`, `aozora-*.edn` — checked clean-tree capture descriptors.
+- `docs/evidence/adr-capture/temporal-*.edn`, `person-drift-*.edn`, `aozora-*.edn` — checked clean-tree capture descriptors, each naming its corresponding runtime-input manifest.
 - `docs/evidence/adr-runs/temporal-*.json`, `person-drift-*.json`, `aozora-*.json` — generated executable bundles.
 - `docs/adr/adr-evidence.edn` — claim-level joins only; no observations, inputs, or verdicts.
 - `docs/reports/adr-claim-migration-inventory.json` and `docs/reports/adr-evidence-migration.json` — deterministic generated outputs.
@@ -55,8 +56,9 @@
 - Reviewed source: `docs/adr/adr-claim-migration.edn`; each key is `[adr-number original-criterion-text-hash]` and each value has one disposition, a rationale when non-retained, a planned evidence boundary for live claims, and `:resulting-claim-ids` after Stage A.
 - Inventory producer: `clojure -M:abc/adr-evidence-inventory -- --output docs/reports/adr-claim-migration-inventory.json`; it rejects duplicate/unresolved baseline keys and missing resulting claim IDs.
 - Evidence capture: `clojure -M:abc/adr-evidence-capture -- --descriptor PATH --output PATH`; a successful bundle contains one Boolean observation named by the descriptor.
-- Evidence validation/join: `abc.tools.adr-evidence/validate-registry` through `clojure -M:abc/adr-governance -- --mode audit --report docs/reports/adr-evidence-migration.json .`.
-- Shared command checks: `nix run ./abc#validate-design-bundle` is hermetic after Plan 1; `nix build ./abc#checks.x86_64-linux.git-cliff-config` owns synthetic Git-cliff validation.
+- Runtime-input closure: each descriptor names `:runtime-input-manifest "docs/evidence/adr-inputs/<stem>.edn"`; that EDN has exact shape `{:schema-version :abc-adr-runtime-inputs-v1 :paths [...]}` with a sorted, duplicate-free vector of repository/workspace-relative runtime data paths. Focused boundary tests trace repository reads through `abc.tools.evidence-io` and require exact equality with `:paths`. Capture requires descriptor `:explicit` to equal the manifest paths plus the descriptor and manifest paths; source/test namespace closure remains mechanically derived.
+- Evidence validation/join: `abc.tools.adr-evidence/validate-registry` through `clojure -M:abc/adr-governance -- --mode audit --report docs/reports/adr-evidence-migration.json`; the optional leading `--` is normalized by Plan 1 and no positional repository argument is accepted.
+- Shared command checks use the evaluated system instead of a hard-coded architecture: `system=$(nix eval --raw --impure --expr builtins.currentSystem)`. `nix run ./abc#validate-design-bundle` is hermetic after Plan 1; `nix build "./abc#checks.${system}.git-cliff-config"` owns synthetic Git-cliff validation.
 
 ---
 
@@ -83,7 +85,8 @@ Expected: clean worktree and all three files exist. If Plan 1 is absent or uncom
 
 ```bash
 nix run ./abc#validate-design-bundle
-nix build ./abc#checks.x86_64-linux.git-cliff-config
+system=$(nix eval --raw --impure --expr builtins.currentSystem)
+nix build "./abc#checks.${system}.git-cliff-config"
 ```
 
 Expected: both exit 0. The first must not inspect real Git history; the second must use Plan 1's synthetic repository.
@@ -128,6 +131,7 @@ Expected: `1 tests, 1 assertions, 0 failures`.
 - Modify: `abc/test/abc/tools/aozora_csv_test.clj`
 - Modify: `abc/test/abc/tools/person_record_test.clj`
 - Modify: `abc/test/abc/tools/shacl_test.clj`
+- Modify: `abc/src/abc/tools/shacl.clj`
 
 **Interfaces:**
 - Consumes: `abc.tools.aozora-csv/parse-date`, `abc.tools.person-record/validate!`, `record->graph`, and `abc.tools.shacl/load-shapes-graph`.
@@ -187,21 +191,36 @@ Expected: the new assertions compile and expose any mismatch between the live sc
 
 - [ ] **Step 4: Add a structural `PersonRecordShape` test independent of the malformed fixture**
 
-In `shacl_test.clj`, add helpers that query the loaded graph by URI and assert:
+In `shacl_test.clj`, add local Jena helpers that return objects for an exact
+subject/predicate pair and walk an RDF list. Assert graph structure rather
+than Turtle serialization order:
 
 ```clojure
 (deftest person-record-temporal-shape-contract-test
   (let [g (shacl/load-shapes-graph)
-        ttl (slurp "schemas/manifest.shacl.ttl")]
-    (is (re-find #"sh:path rdag2:dateOfBirth[\\s\\S]*xsd:date[\\s\\S]*xsd:gYearMonth[\\s\\S]*xsd:gYear" ttl))
-    (is (re-find #"sh:path abc:edtfDateOfBirth[\\s\\S]*sh:maxCount 1[\\s\\S]*sh:datatype abc:EDTF" ttl))
+        ttl (files/read-text "schemas/manifest.shacl.ttl")
+        dob-property (exact-property-shape g rdag2-date-of-birth)
+        edtf-property (exact-property-shape g abc-edtf-date-of-birth)]
+    (is (= #{xsd-date xsd-g-year-month xsd-g-year}
+           (datatype-alternatives g dob-property)))
+    (is (= #{(NodeFactory/createLiteral "1" XSDDatatype/XSDinteger)}
+           (set (objects g edtf-property sh-max-count))))
+    (is (= #{abc-edtf}
+           (set (objects g edtf-property sh-datatype))))
     (is (string/includes? ttl
                           "sh:pattern \"^(-?\\\\d{4}"))
     (is (string/includes? ttl "|-?\\\\d{3}X|-?\\\\d{2}XX)"))
     (is (pos? (count (iterator-seq (.find g)))))))
 ```
 
-Use the repository's existing Jena node helpers instead of regex for the `sh:path`, `sh:maxCount`, and datatype triples if available; keep the lexical pattern assertion exact. This test is separate from `validate-malformed-edtf-date-of-birth-test` so the structural and fixture claims remain independently joinable.
+Define the URI nodes with `NodeFactory/createURI`. `exact-property-shape`
+must find the unique subject having the requested `sh:path` object;
+`datatype-alternatives` follows `sh:or` through `rdf:first`/`rdf:rest` and
+returns the `sh:datatype` objects. Fail when a property shape or list link is
+missing or non-unique. Keep the lexical pattern assertion exact because the
+regular-expression lexeme itself is part of the contract. This test is
+separate from `validate-malformed-edtf-date-of-birth-test` so structural and
+fixture claims remain independently joinable.
 
 - [ ] **Step 5: Run GREEN focused verification**
 
@@ -292,18 +311,25 @@ Expected RED before the assertion only if the implementation regressed; the curr
 
 ```clojure
 (deftest drift-shacl-resources-and-subclass-axioms-test
-  (let [ttl (slurp "schemas/manifest.shacl.ttl")]
-    (doseq [resource ["abc:PersonDriftEventShape"
-                      "abc:PersonDriftSplitEventShape"
-                      "abc:PersonDriftMergeEventShape"]]
-      (is (string/includes? ttl resource)))
-    (doseq [axiom ["abc:DriftEvent\\n  rdfs:subClassOf prov:Activity"
-                   "abc:DriftSplitEvent\\n  rdfs:subClassOf abc:DriftEvent"
-                   "abc:DriftMergeEvent\\n  rdfs:subClassOf abc:DriftEvent"]]
-      (is (string/includes? ttl axiom)))))
+  (let [g (shacl/load-shapes-graph)]
+    (doseq [shape [person-drift-event-shape
+                   person-drift-split-event-shape
+                   person-drift-merge-event-shape]]
+      (is (graph-contains? g shape rdf-type sh-node-shape)))
+    (doseq [[child parent] [[drift-event prov-activity]
+                            [drift-split-event drift-event]
+                            [drift-merge-event drift-event]]]
+      (is (graph-contains? g child rdfs-sub-class-of parent)))))
 ```
 
-Prefer graph triple assertions if the loaded shapes graph retains the axioms; the exact six resources must be asserted, not merely “the file loads.”
+Add `[abc.tools.shacl :as shacl]` and define each constant with
+`NodeFactory/createURI`; `graph-contains?` must query an exact Jena triple.
+Add `[abc.tools.files :as files]`; the shared read helper records the schema
+path when a trace is active. Ensure `shacl/load-shapes-graph` calls
+`record-read!` immediately before its Jena load rather than bypassing the
+trace.
+The three shapes and three subclass axioms must be asserted, not merely “the
+file loads.”
 
 - [ ] **Step 5: Add committed example count and validation assertions**
 
@@ -357,16 +383,29 @@ git commit -m "test(adr): close person drift evidence gaps"
 (defn- changed-json-paths
   ([before after] (changed-json-paths [] before after))
   ([path before after]
-   (if (and (map? before) (map? after))
-     (set (mapcat (fn [k]
-                    (changed-json-paths (conj path k)
-                                        (get before k ::missing)
-                                        (get after k ::missing)))
-                  (set/union (set (keys before)) (set (keys after)))))
-     (if (= before after) #{} #{path}))))
+   (cond
+     (and (map? before) (map? after))
+     (into #{}
+           (mapcat (fn [k]
+                     (changed-json-paths (conj path k)
+                                         (get before k ::missing)
+                                         (get after k ::missing))))
+           (set/union (set (keys before)) (set (keys after))))
+
+     (and (vector? before) (vector? after))
+     (into #{}
+           (mapcat (fn [i]
+                     (changed-json-paths (conj path i)
+                                         (get before i ::missing)
+                                         (get after i ::missing))))
+           (range (max (count before) (count after))))
+
+     (= before after) #{}
+     :else #{path})))
 ```
 
-Add `[clojure.set :as set]` to the namespace.
+Add `[clojure.set :as set]`, `[abc.tools.manifest :as manifest]`, and
+`[abc.tools.malli :as am]` to the namespace.
 
 - [ ] **Step 2: Write the with/without-sidecar output identity test**
 
@@ -408,14 +447,37 @@ Run the same isolated ingest twice while `with-redefs` changes only the return v
              ["metadata" "contributors" 0 "person_record_hash"]
              ["manifest" "manifest_identity_object" "metadata_record_hash"]
              ["manifest" "artifact_id"]}
-           (changed-output-paths baseline rotated)))
-    (is (= (dissoc (:person baseline) "person_record_schema_hash")
-           (dissoc (:person rotated) "person_record_schema_hash")))
-    (is (= (dissoc-in (:metadata baseline) ["contributors" 0 "person_record_hash"])
-           (dissoc-in (:metadata rotated) ["contributors" 0 "person_record_hash"])))))
+           (changed-json-paths baseline rotated)))
+    (is (= (dissoc (get baseline "person") "person_record_schema_hash")
+           (dissoc (get rotated "person") "person_record_schema_hash")))
+    (is (= (get baseline "metadata")
+           (assoc-in (get rotated "metadata")
+                     ["contributors" 0 "person_record_hash"]
+                     (get-in baseline
+                             ["metadata" "contributors" 0
+                              "person_record_hash"]))))))
 ```
 
-Define `run-with-person-schema-hash!`, `changed-output-paths`, and a small local `dissoc-in` in the same test file. The helper conditionally redefines `manifest/schema-hash` only for the person schema and returns parsed maps keyed by `:person`, `:metadata`, and `:manifest`. The claim must be worded as this exact example-slice mutation, not a universal repository cascade.
+Use `changed-json-paths` directly; do not introduce a differently named wrapper.
+Define `run-with-person-schema-hash!` to return the JSON-like map
+`{"person" ..., "metadata" ..., "manifest" ...}`. Add
+the imports named in Step 1, capture the original `am/cached-schema-hash`
+function before `with-redefs`, and redefine that Var selectively:
+
+```clojure
+(let [live-cached-schema-hash am/cached-schema-hash]
+  (with-redefs [am/cached-schema-hash
+                (fn [path]
+                  (if (= path ingest/person-schema-path)
+                    person-schema-hash
+                    (live-cached-schema-hash path)))]
+    (run-isolated-ingest-and-read!)))
+```
+
+Do not redefine `manifest/schema-hash`: ingestion calls the Malli cache, and
+the baseline run may already have cached the original value. Run each case in
+fresh isolated output directories. The claim must be worded as this exact
+example-slice mutation, not a universal repository cascade.
 
 - [ ] **Step 5: Run the complete ingest namespace GREEN**
 
@@ -547,6 +609,8 @@ git commit -m "test(adr): observe upstream audit failure gates"
 - Modify: `abc/docs/adr/0022-upstream-ingest-drift-awareness.md`
 - Modify: `abc/docs/adr/adr-claim-migration.edn`
 - Modify: `abc/test/abc/tools/adr_evidence_inventory_test.clj`
+- Create: `abc/test/abc/tools/temporal_evidence_input_test.clj`
+- Create: eight manifests under `abc/docs/evidence/adr-inputs/` with the same basenames as the descriptors below.
 - Create: `abc/docs/evidence/adr-capture/temporal-date-normalization.edn`
 - Create: `abc/docs/evidence/adr-capture/temporal-person-record-contract.edn`
 - Create: `abc/docs/evidence/adr-capture/temporal-person-shacl-contract.edn`
@@ -585,23 +649,73 @@ Use Appendix B. For each original row, copy the hash from `adr-claim-migration-b
 Every descriptor has exactly this shape (example shown for the CSV boundary):
 
 ```clojure
-{:schema-version "abc-adr-evidence-capture-v1"
+{:schema-version "abc-adr-evidence-capture-v2"
  :tool "bin/kaocha"
  :argv ["bin/kaocha" "--focus" "abc.tools.aozora-csv-test"]
+ :runtime-input-manifest
+ "docs/evidence/adr-inputs/temporal-date-normalization.edn"
  :input-profile
  {:kind "clojure-test-v1"
   :roots ["abc.tools.aozora-csv-test"]
-  :explicit ["docs/evidence/adr-capture/temporal-date-normalization.edn"]}
+  :explicit ["docs/evidence/adr-capture/temporal-date-normalization.edn"
+             "docs/evidence/adr-inputs/temporal-date-normalization.edn"]}
  :observation-key "temporal-date-normalization"}
 ```
 
-Use Appendix C for every descriptor's command, root, observation key, and explicit inputs. For `person-drift-negative-fixtures.edn`, mechanically enumerate every file returned by:
+Use Appendix C for every descriptor's command, root, observation key, and
+runtime inputs. Create the corresponding manifest with exact shape:
+
+```clojure
+{:schema-version :abc-adr-runtime-inputs-v1
+ :paths ["sorted/repository-relative/runtime-data-path"]}
+```
+
+The descriptor's `:explicit` vector must equal the manifest `:paths` plus its
+own descriptor path and manifest path. Source and test namespaces remain
+derived by the profile and are not duplicated in the runtime manifest. For
+`person-drift-negative-fixtures.edn`, mechanically enumerate every file
+returned by:
 
 ```bash
 rg --files fixtures/v0/invalid/drift | LC_ALL=C sort
 ```
 
-and add the descriptor itself, both drift schemas, and `schemas/manifest.shacl.ttl`. No glob or directory name is a valid substitute for exact file bindings.
+and add those files, both drift schemas, and `schemas/manifest.shacl.ttl` to
+the runtime manifest. No glob or directory name is a valid substitute for
+exact file bindings.
+
+- [ ] **Step 3A: Prove exact runtime-input closure for all eight boundaries**
+
+In `temporal_evidence_input_test.clj`, use Plan 1's invocation-local,
+acyclic `abc.tools.evidence-io` trace hook around each exact set of focused
+test vars. Shared `files` and `hash` reads record transitively through that
+hook. For every descriptor, call:
+
+```clojure
+(runtime-inputs/assert-runtime-input-closure!
+ {:repo-root "."
+  :workspace-root ".."
+  :descriptor {:path descriptor-path :value descriptor}
+  :observed-paths observed-paths})
+```
+
+where `observed-paths` is the sorted vector of repository-relative data paths
+actually read through `evidence-io`. Assert exact equality among that vector,
+the checked manifest's `:paths`, and descriptor `:explicit` after removing
+only the descriptor and manifest paths. Run each boundary separately so a
+broad namespace cannot donate unrelated reads to a narrow observation. Add a
+negative test that removes one fixture path and another that adds one unread
+path; both must fail closure. Run Plan 1's bypass lint over every descriptor's
+complete statically derived source and test namespace closure, not only the
+direct test namespace. Reject direct path-based `slurp`, reader,
+`java.nio.file.Files`,
+Jena, and equivalent repository reads. Only the shared `files`/`hash` helpers
+and named adapters that call `record-read!` immediately before a library load
+are exempt. Stream reads such as subprocess stdout/stderr are not repository
+path reads and the lint must distinguish them. Add a synthetic transitive
+helper containing a bypass and require
+the lint to fail. Route each existing bypass through a traceable adapter
+without changing the value or ownership of the read.
 
 Create `temporal-person-ingest.edn` from Appendix D using plan 1's closed
 registration-template contract. It contains every Appendix D claim/evidence
@@ -636,7 +750,8 @@ Also assert all 36 baseline mappings have non-null dispositions and exact `resul
 ```bash
 cd abc
 bin/kaocha --focus abc.tools.adr-evidence-inventory-test \
-  --focus abc.tools.adr-test
+  --focus abc.tools.adr-test \
+  --focus abc.tools.temporal-evidence-input-test
 ```
 
 Expected: FAIL until ADR edits, ledger mappings, and inventory expectations agree exactly. Fix source/ledger mismatches; do not hand-edit the generated report.
@@ -657,7 +772,7 @@ bin/kaocha \
   --focus abc.tools.aozora-history-audit-test
 bin/kaocha --focus abc.tools.validate-design-bundle-test/validate-drift-fixtures-smoke-test
 clojure -M:abc/adr-governance -- --mode audit \
-  --report docs/reports/adr-evidence-migration.json .
+  --report docs/reports/adr-evidence-migration.json
 ```
 
 Expected: tests pass. Audit exits 0 and reports only expected missing-evidence problems for the 32 new family claims; it reports no malformed claim, lifecycle, ledger, dependency, or inventory problem.
@@ -672,10 +787,12 @@ git add docs/adr/0015-temporal-modeling.md \
         docs/adr/0022-upstream-ingest-drift-awareness.md \
         docs/adr/adr-claim-migration.edn \
         docs/evidence/adr-capture \
+        docs/evidence/adr-inputs \
         docs/evidence/adr-entries/temporal-person-ingest.edn \
         docs/reports/adr-claim-migration-inventory.json \
         docs/reports/adr-evidence-migration.json \
-        test/abc/tools/adr_evidence_inventory_test.clj
+        test/abc/tools/adr_evidence_inventory_test.clj \
+        test/abc/tools/temporal_evidence_input_test.clj
 git commit -m "docs(adr): bind temporal person ingest claims"
 git status --short
 ```
@@ -730,7 +847,7 @@ rm -rf "$tmpdir"
 
 Expected: every command exits 0 and writes one temporary bundle with observation value `true`; only after all eight captures succeed are the files copied into the worktree. This is required because the first in-repository untracked output would make the tree dirty and block the second capture. If a command fails, install no bundles and add no registry entry; repair forward, recommit changed inputs/descriptors, return to a clean tree, and recapture every stale bundle owned by this plan.
 
-- [ ] **Step 3: Validate observations and descriptor self-binding**
+- [ ] **Step 3: Validate observations and closure-artifact binding**
 
 ```bash
 for f in docs/evidence/adr-runs/{temporal-*,person-drift-*,aozora-*}.json; do
@@ -740,10 +857,15 @@ for f in docs/evidence/adr-capture/{temporal-*,person-drift-*,aozora-*}.edn; do
   base="$(basename "$f" .edn)"
   jq -e --arg p "docs/evidence/adr-capture/${base}.edn" '.inputs[$p] != null' \
     "docs/evidence/adr-runs/${base}.json"
+  jq -e --arg p "docs/evidence/adr-inputs/${base}.edn" '.inputs[$p] != null' \
+    "docs/evidence/adr-runs/${base}.json"
 done
 ```
 
-Expected: all checks exit 0.
+Expected: all checks exit 0. Capture has already rejected any mismatch among
+the traced runtime reads, the checked manifest, and descriptor explicit
+inputs; these checks additionally prove both closure-control artifacts are
+themselves bound into each immutable bundle.
 
 ---
 
@@ -779,7 +901,7 @@ Run it twice and verify the second run leaves the registry byte-identical.
 clojure -M:abc/adr-evidence-inventory -- \
   --output docs/reports/adr-claim-migration-inventory.json
 clojure -M:abc/adr-governance -- --mode audit \
-  --report docs/reports/adr-evidence-migration.json .
+  --report docs/reports/adr-evidence-migration.json
 ```
 
 Expected: audit exits 0.
@@ -821,8 +943,9 @@ git add abc/docs/adr/adr-evidence.edn \
   abc/docs/reports/adr-claim-migration-inventory.json
 git diff --cached --check
 nix run ./abc#validate-design-bundle
-nix build ./abc#checks.x86_64-linux.git-cliff-config
-nix build .#checks.x86_64-linux.monorepo-adr-governance
+system=$(nix eval --raw --impure --expr builtins.currentSystem)
+nix build "./abc#checks.${system}.git-cliff-config"
+nix build ".#checks.${system}.monorepo-adr-governance"
 ```
 
 Expected: focused tests have zero failures/errors; all Nix commands exit 0; `adr-governance` remains audit-mode globally.
@@ -943,13 +1066,15 @@ Use immutable baseline hashes as ledger keys. `correct` rationales are the narro
 
 ---
 
-## Appendix C: Capture boundaries and explicit inputs
+## Appendix C: Capture boundaries and runtime-input manifests
 
-All descriptors also explicitly bind their own path.
+Each row's data paths are the exact `:paths` of
+`docs/evidence/adr-inputs/<boundary>.edn`. Every descriptor's `:explicit`
+vector is that set plus its own path and the manifest path.
 
-| Boundary / output basename | Command and profile root | Additional explicit runtime inputs |
+| Boundary / output basename | Command and profile root | Exact runtime-data paths |
 |---|---|---|
-| `temporal-date-normalization` | `bin/kaocha --focus abc.tools.aozora-csv-test`; root `abc.tools.aozora-csv-test` | descriptor only |
+| `temporal-date-normalization` | `bin/kaocha --focus abc.tools.aozora-csv-test`; root `abc.tools.aozora-csv-test` | empty vector; the boundary reads no repository data at runtime |
 | `temporal-person-record-contract` | `bin/kaocha --focus abc.tools.person-record-test`; root `abc.tools.person-record-test` | `schemas/person-record.schema.json`, `examples/v0/example-persons/000879.json` |
 | `temporal-person-shacl-contract` | `bin/kaocha --focus abc.tools.shacl-test`; root `abc.tools.shacl-test` | `schemas/manifest.shacl.ttl`, every committed RDF fixture read by that namespace |
 | `person-drift-contract` | `bin/kaocha --focus abc.tools.person-drift-test`; root `abc.tools.person-drift-test` | both drift schemas, `schemas/manifest.shacl.ttl`, one event JSON and three index JSON files under the committed example |

@@ -25,13 +25,15 @@
 - Preserve `work_content_hash = bundle_hash` separately from independently checked `primary_text_hash` for new source-schema generations. Legacy parser-IR remains historical and is not reinterpreted.
 - Machine-local `/db/...` and `/home/...` strings in historical reports are locators, never evidence identities or freshness inputs.
 - Every checked-in descriptor is an explicit input to its own bundle. Every runtime-read schema, fixture, report, registry, ADR, assessment, flake file, and lock file is explicit.
-- Every B1–B9 Clojure descriptor uses capture schema v2 and names its checked
+- Every B1–B5 and B7–B9 Clojure descriptor uses capture schema v2 and names its checked
   `docs/evidence/adr-inputs/<stem>.edn` manifest. Boundary tests trace repository
   reads, including transitive production reads, through Plan 1's instrumented
   shared file/hash helpers and call `assert-runtime-input-closure!`; descriptor
   runtime-data inputs equal manifest paths plus descriptor and manifest
-  self-bindings. Plan 1's bypass lint scans the full derived namespace closure,
-  not only the evidence-test namespace. B10 retains Plan 1's
+  self-bindings. Plan 1's default-deny lint scans the resolved reachable-Var graph,
+  not only the evidence-test namespace. Their derived closures contain no
+  subprocess API. B6 is a version-1 `repo-files-v1` hermetic Nix boundary;
+  B10 retains Plan 1's
   aggregate contract unchanged.
 - All captures use the same clean Stage A revision and write only to one external staging directory. No run bundle is written into the repository until all captures validate.
 - All joins use `abc.tools.adr-evidence-register` and the checked-in entry template. Never hand-edit `:artifact-hash`.
@@ -45,15 +47,15 @@ Boundary identifiers below are normative plan interfaces.
 
 | Boundary | Descriptor → run bundle | Exact command/observation | Profile and owner |
 | --- | --- | --- | --- |
-| B1 citation identity | `parser-citation-identity.edn` → `parser-citation-identity.json` | `bash -lc "cd abc && bin/kaocha --focus abc.tools.parser-evidence-test"`; `historical-parser-citations-pass` | `component-clojure-test-v1`, monorepo root, this plan |
-| B2 import boundary | `parser-import-boundary.edn` → `parser-import-boundary.json` | `bash -lc "cd abc && bin/kaocha --focus abc.tools.parser-import-boundary-evidence-test --focus abc.tools.materialize-import-test"`; `parser-import-boundary-pass` | `component-clojure-test-v1`, monorepo root, this plan |
-| B3 mapping/admission | `parser-mapping-admission.edn` → `parser-mapping-admission.json` | `bash -lc "cd abc && bin/kaocha --focus abc.tools.parser-mapping-admission-evidence-test"`; `parser-mapping-admission-pass` | `component-clojure-test-v1`, monorepo root, this plan |
-| B4 identity relations | `parser-identity-relations.edn` → `parser-identity-relations.json` | `bash -lc "cd abc && bin/kaocha --focus abc.tools.parser-identity-relations-evidence-test"`; `parser-identity-relations-pass` | `component-clojure-test-v1`, monorepo root, this plan |
-| B5 parser-IR schema | `parser-ir-schema-regression.edn` → `parser-ir-schema-regression.json` | `bash -lc "cd abc && bin/kaocha --focus abc.tools.parser-ir-schema-evidence-test"`; `parser-ir-schema-regression-pass` | `component-clojure-test-v1`, monorepo root, this plan |
-| B6 publication | `parser-publication-rendering.edn` → `parser-publication-rendering.json` | `bash -lc "system=$(nix eval --impure --raw --expr builtins.currentSystem); nix build ./abc#checks.${system}.parser-publication-evidence --print-build-logs"`; `parser-publication-rendering-pass` | `component-clojure-test-v1` source closure plus dedicated hermetic Nix check, monorepo root, this plan |
-| B7 relations/provenance | `parser-relations-provenance.edn` → `parser-relations-provenance.json` | `bash -lc "cd abc && bin/kaocha --focus abc.tools.parser-relations-provenance-evidence-test"`; `parser-relations-provenance-pass` | `component-clojure-test-v1`, monorepo root, this plan |
-| B8 ownership assessment | `parser-ownership-assessment.edn` → `parser-ownership-assessment.json` | `bash -lc "cd abc && bin/kaocha --focus abc.tools.parser-ownership-assessment-evidence-test"`; `custom-parser-ownership-assessment-pass` | `component-clojure-test-v1`, monorepo root, this plan |
-| B9 frozen Phase 5 | `parser-phase5-frozen-tuple.edn` → `parser-phase5-frozen-tuple.json` | `bash -lc "cd abc && bin/kaocha --focus abc.tools.parser-phase5-frozen-tuple-test"`; `phase5-frozen-tuple-pass` | `component-clojure-test-v1`, monorepo root, this plan |
+| B1 citation identity | `parser-citation-identity.edn` → `parser-citation-identity.json` | exact focus `abc.tools.parser-evidence-test/historical-parser-citations-contract`; `historical-parser-citations-pass` | `component-clojure-test-v1`, monorepo root, this plan |
+| B2 import boundary | `parser-import-boundary.edn` → `parser-import-boundary.json` | exact focus `abc.tools.parser-import-boundary-evidence-test/parser-import-boundary-contract`; `parser-import-boundary-pass` | `component-clojure-test-v1`, monorepo root, this plan |
+| B3 mapping/admission | `parser-mapping-admission.edn` → `parser-mapping-admission.json` | exact focus `abc.tools.parser-mapping-admission-evidence-test/parser-mapping-admission-contract`; `parser-mapping-admission-pass` | `component-clojure-test-v1`, monorepo root, this plan |
+| B4 identity relations | `parser-identity-relations.edn` → `parser-identity-relations.json` | exact focus `abc.tools.parser-identity-relations-evidence-test/parser-identity-relations-contract`; `parser-identity-relations-pass` | `component-clojure-test-v1`, monorepo root, this plan |
+| B5 parser-IR schema | `parser-ir-schema-regression.edn` → `parser-ir-schema-regression.json` | exact focus `abc.tools.parser-ir-schema-evidence-test/parser-ir-schema-regression-contract`; `parser-ir-schema-regression-pass` | `component-clojure-test-v1`, monorepo root, this plan |
+| B6 publication | `parser-publication-rendering.edn` → `parser-publication-rendering.json` | `bash -lc "system=$(nix eval --impure --raw --expr builtins.currentSystem); nix build --no-link ./abc#checks.${system}.parser-publication-evidence --print-build-logs"`; `parser-publication-rendering-pass` | version-1 `repo-files-v1`, exact hermetic Nix determinants, monorepo root, this plan |
+| B7 relations/provenance | `parser-relations-provenance.edn` → `parser-relations-provenance.json` | exact focus `abc.tools.parser-relations-provenance-evidence-test/parser-relations-provenance-contract`; `parser-relations-provenance-pass` | `component-clojure-test-v1`, monorepo root, this plan |
+| B8 ownership assessment | `parser-ownership-assessment.edn` → `parser-ownership-assessment.json` | exact focus `abc.tools.parser-ownership-assessment-evidence-test/custom-parser-ownership-assessment-contract`; `custom-parser-ownership-assessment-pass` | `component-clojure-test-v1`, monorepo root, this plan |
+| B9 frozen Phase 5 | `parser-phase5-frozen-tuple.edn` → `parser-phase5-frozen-tuple.json` | exact focus `abc.tools.parser-phase5-frozen-tuple-test/phase5-frozen-tuple-contract`; `phase5-frozen-tuple-pass` | `component-clojure-test-v1`, monorepo root, this plan |
 | B10 design-bundle operation | plan 1's `design-bundle-operational.edn` → `design-bundle-operational.json` | plan 1 observation `design-bundle-exits-zero` | read-only shared artifact; never recaptured here |
 
 Every row below becomes one entry in
@@ -151,6 +153,7 @@ Do not append execution notes to this plan.
 **Files:**
 - Modify: `abc/src/abc/tools/parser_evidence.clj`
 - Modify: `abc/test/abc/tools/parser_evidence_test.clj`
+- Create: `abc/data/evidence-higher-order-calls/parser-evidence-duplicate-errors.edn`
 
 **Interfaces:**
 - Produces: `citation-file-problems [monorepo-root index] -> vector problem maps`.
@@ -176,6 +179,20 @@ the committed index and asserting these exact rows and current file bytes:
  ["ab-validator/docs/superpowers/specs/2026-07-09-parser-comparison-followups-handoff.md"
   "sha256:e13c904f36ddc4180f1326cdc375e6939716487e55318349c86c64e5158d2aa0"]}
 ```
+
+Before registering the reachable higher-order call, replace the keyword and
+anonymous `juxt` callables passed to `duplicate-errors` with named pure
+targets, preserving returned keys exactly:
+
+```clojure
+(defn evidence-id-key [entry] (:evidence_id entry))
+(defn logical-file-key [entry] [(:logical_path entry) (:sha256 entry)])
+```
+
+Add unit assertions that both named functions equal the old keyword/`juxt`
+results, and add them as the only allowed targets for `duplicate-errors`
+parameter `key-fn` in the new caller-scoped contract. Only B1 and later graphs
+that reach `duplicate-errors` bind this file; earlier bundles remain fresh.
 
 Assert none has a `:study_contract` or neutral-comparison marker; this is a
 historical classification fact, not scientific sufficiency.
@@ -205,8 +222,9 @@ cd abc
 bin/kaocha --focus abc.tools.parser-evidence-test
 cd ..
 system="$(nix eval --impure --raw --expr builtins.currentSystem)"
-nix build "./abc#checks.${system}.clj-kondo"
+nix build --no-link "./abc#checks.${system}.clj-kondo"
 git add abc/src/abc/tools/parser_evidence.clj \
+  abc/data/evidence-higher-order-calls/parser-evidence-duplicate-errors.edn \
   abc/test/abc/tools/parser_evidence_test.clj
 git commit -m "feat(parser-evidence): bind historical citation bytes"
 ```
@@ -357,16 +375,16 @@ parser-publication-evidence =
       ${copyWritableSource}
       ${cljSandboxEnv}
       export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
-      bin/kaocha \
-        --focus abc.tools.parser-publication-evidence-test \
-        --focus abc.tools.parser-ir-schema-evidence-test \
-        --focus abc.tools.parser-ir-tei-test \
-        --focus abc.tools.parser-ir-plaintext-test \
-        --focus abc.tools.parser-ir-publication-policy-test \
-        --focus abc.tools.materialize-publication-test
+      bin/kaocha --focus \
+        abc.tools.parser-publication-evidence-test/parser-publication-rendering-contract
       touch "$out"
     '';
 ```
+
+The focused contract invokes the renderer/materializer/schema APIs directly
+and contains every B6 assertion listed above; it does not call other `deftest`
+Vars or run their namespaces. Its checked Nix/Clojure closure therefore starts
+from this one exact Var.
 
 This check is the B6 execution boundary. It uses the TEI artifact imported by
 `abc/nix/tei-profile-artifacts.nix`; it does not enter an ambient development
@@ -376,7 +394,7 @@ shell.
 
 ```bash
 system="$(nix eval --impure --raw --expr builtins.currentSystem)"
-nix build "./abc#checks.${system}.parser-publication-evidence" \
+nix build --no-link "./abc#checks.${system}.parser-publication-evidence" \
   --print-build-logs
 ```
 
@@ -488,7 +506,7 @@ cd abc
 bin/kaocha --focus abc.tools.parser-phase5-frozen-tuple-test
 cd ..
 system="$(nix eval --impure --raw --expr builtins.currentSystem)"
-nix build "./ab-validator#checks.${system}.phase5-checkpoint"
+nix build --no-link "./ab-validator#checks.${system}.phase5-checkpoint"
 git add abc/src/abc/tools/parser_phase5_frozen_tuple.clj \
   abc/test/abc/tools/parser_phase5_frozen_tuple_test.clj
 git commit -m "test(parser): verify frozen Phase 5 full tuple"
@@ -517,13 +535,14 @@ derivation, owns B9 evidence.
 - Modify: `abc/src/abc/tools/adr_evidence_inventory.clj`
 - Modify: `abc/test/abc/tools/adr_evidence_inventory_test.clj`
 - Create: the nine B1–B9 descriptors under `abc/docs/evidence/adr-capture/`
-- Create: the nine matching B1–B9 manifests under
+- Create: the eight matching B1–B5/B7–B9 manifests under
   `abc/docs/evidence/adr-inputs/`
+- Create: `abc/docs/evidence/adr-inputs/parser-publication-rendering-nix-clojure-closure.edn`
 - Create: `abc/docs/evidence/adr-entries/parser-ir-publication.edn`
 - Regenerate: `abc/docs/reports/adr-claim-migration-inventory.json`
 - Regenerate: `abc/docs/adr/adr-graph.mmd`
 - Modify: `abc/test/abc/tools/adr_evidence_capture_test.clj`
-- Modify: every B1–B9 `*-evidence-test.clj` namespace named in the boundary
+- Modify: every B1–B5/B7–B9 `*-evidence-test.clj` namespace named in the boundary
   table to add its Plan 1 runtime-input closure assertion
 
 **Interfaces:**
@@ -671,7 +690,7 @@ ID uses the full `ADR-NNNN-CN` string.
 
 - [ ] **Step 4: Author exact descriptors and the registration template**
 
-Use the boundary table verbatim. B1–B9 descriptors use schema version
+Use the boundary table verbatim. B1–B5 and B7–B9 descriptors use schema version
 `abc-adr-evidence-capture-v2`, `component-clojure-test-v1`,
 `:component-root "abc"`, and
 `:runtime-input-manifest "abc/docs/evidence/adr-inputs/<stem>.edn"`. Each
@@ -681,7 +700,7 @@ monorepo-relative paths. Each descriptor's explicit runtime-data set is
 exactly its manifest `:paths` plus descriptor and manifest self-bindings; the
 component profile separately derives Clojure namespace closure.
 
-For every boundary, add a test that executes the supported evidence operation
+For every version-2 boundary, add a test that executes the supported evidence operation
 inside `abc.tools.evidence-io/with-read-trace`, so production helpers invoked
 by the operation contribute their transitive reads, and calls:
 
@@ -690,13 +709,30 @@ by the operation contribute their transitive reads, and calls:
  {:repo-root abc-root
   :workspace-root workspace-root
   :descriptor {:path descriptor-path :value descriptor}
-  :observed-paths observed-paths})
+  :repository-paths repository-paths})
 ```
 
-All repository reads in the full derived namespace closure use Plan 1's
-traceable shared file/hash helpers; Plan 1's closure-wide bypass lint must
+All repository reads in the resolved reachable-Var graph use Plan 1's
+traceable shared physical adapters; Plan 1's closure-wide default-deny lint must
 remain green. A test that traces only its wrapper while invoked production code
 reads files directly is invalid. The manifest contents are:
+
+Each descriptor focuses the exact dedicated wrapper Var named in the boundary
+table. That wrapper scopes every freshly generated output directory with
+`with-ephemeral-root`, invokes operations directly rather than calling another
+`deftest`, and owns the descriptor-keyed closure assertion. Default-deny
+analysis follows its reachable-Var graph and fails on unresolved/dynamic I/O,
+network, or process edges.
+
+B6 instead uses capture schema version 1 with `repo-files-v1`, no runtime
+manifest, and the exact command in the boundary table. Its explicit inputs
+are the B6 determinant list below plus its descriptor. Generate its checked
+Nix/Clojure closure with Plan 1's
+`derive-nix-clojure-source-closure` for exact focus
+`abc.tools.parser-publication-evidence-test/parser-publication-rendering-contract`;
+descriptor tests require
+`explicit` to contain the closure manifest and every expanded path, reject any
+missing/extra path, and prohibit a v2 runtime manifest.
 
 - B1 contains exactly four runtime paths:
   `abc/data/parser-evidence-citations.edn` and these three July
@@ -723,18 +759,23 @@ reads files directly is invalid. The manifest contents are:
   schema, and identity fixtures.
 - B5 binds the four new span fixtures, current parser-IR schema, imported
   parser IR/manifest inputs, and manifest schema.
-- B6 contains `abc/flake.nix`, `abc/flake.lock`,
+- B6 contains `abc/flake.nix`, `abc/flake.lock`, `abc/deps.edn`,
+  `abc/deps-lock.json`, `abc/tests.edn`,
   `abc/nix/tei-profile-artifacts.nix`,
+  `abc/docs/evidence/adr-inputs/parser-publication-rendering-nix-clojure-closure.edn`
+  plus every exact source/test path generated in that checked closure for
+  `abc.tools.parser-publication-evidence-test/parser-publication-rendering-contract`,
   `abc/examples/v0/example-work/{parser-ir.json,source.manifest.json,metadata-record.json,manifest.json}`,
   all five files below `abc/examples/v0/example-persons/`,
   `abc/data/{parser-ir-publication-policy-v0.json,publication-policy.edn}`,
   `abc/schemas/{parser-ir,manifest,parser-ir-publication-preservation,tei-validation-result,metadata-record,person-record}.schema.json`,
   `abc/schemas/workflow-run.schema.json`, and
   `abc/schemas/tei-profile.{odd,rng,sch}`.
-  `parser-publication-nix-determinants-test` reads the three Nix determinant
-  files through the instrumented shared helpers, asserts the dedicated check imports the TEI
-  expression and exposes `parser-publication-evidence`, then exercises the
-  publication operation so the observed path set equals the B6 manifest.
+  The descriptor contract asserts the dedicated check imports the TEI
+  expression and exposes `parser-publication-evidence`. The ODD remains a real
+  determinant because publication reads it for profile identity and rule
+  coverage; committed RNG/Schematron determine project validation, while the
+  lock-pinned `teiAllSchema` separately determines upstream validation.
 - B7 binds ADRs 0002/0030/0032/0038, the fork handoff, Cargo manifests and
   NOTICE files for `ab-aozora-{corpus,encoding,facade,pipeline,proptest,render,scan,spec,syntax,veb}`
   plus `ab-aozora/Cargo.toml`, provenance-bearing source files
@@ -770,7 +811,9 @@ the row's exact claim/evidence kinds, the boundary table's
 `adr_evidence_capture_test.clj` that loads all nine descriptors and the entry
 template, checks their closed key sets, exact observation names, self-inputs,
 33 distinct claim IDs, and exact equality with the matrix claim set. It also
-loads all nine manifests and calls Plan 1's static descriptor/manifest closure
+loads all eight manifests, calls Plan 1's static descriptor/manifest closure
+for their version-2 descriptors, and separately proves B6's closed
+version-1 Nix determinant set
 validator; changing a descriptor input or a manifest path must fail before
 capture.
 
@@ -794,7 +837,7 @@ bin/kaocha --focus abc.tools.adr-test \
   --focus abc.tools.parser-ownership-assessment-evidence-test \
   --focus abc.tools.parser-phase5-frozen-tuple-test
 system="$(nix eval --impure --raw --expr builtins.currentSystem)"
-nix build "./abc#checks.${system}.parser-publication-evidence" \
+nix build --no-link "./abc#checks.${system}.parser-publication-evidence" \
   --print-build-logs
 clojure -M:abc/adr-governance --mode audit \
   --report /tmp/adr-parser-stage-a.json
@@ -961,7 +1004,7 @@ git add abc/docs/evidence/adr-runs \
   abc/docs/reports/adr-claim-migration-inventory.json \
   abc/docs/reports/adr-evidence-migration.json
 system="$(nix eval --impure --raw --expr builtins.currentSystem)"
-nix build ".#checks.${system}.monorepo-adr-governance" \
+nix build --no-link ".#checks.${system}.monorepo-adr-governance" \
   "./abc#checks.${system}.clj-kondo" \
   "./abc#checks.${system}.clj-nix-focused-tests" \
   "./abc#checks.${system}.parser-publication-evidence" \

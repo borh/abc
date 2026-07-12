@@ -100,6 +100,12 @@ bounded bodies before rejection: at most 1,024 members, 16 MiB per member, and
 are rare, rejection-only, and the shared scan is what makes rejected-bundle
 evidence trustworthy. Success-path streaming cost is unchanged.
 
+Failure precedence changes for a bundle carrying more than one defect. A
+declared/actual limit failure or member-read failure now surfaces before a
+collision or wrong primary cardinality, because admission begins only after a
+complete bounded scan. This is accepted and pinned: resource and operational
+failures take precedence over later logical-bundle admission.
+
 ## Corpus Evidence
 
 The report walks only `cards/*/files/*.zip`, as today. For each archive it uses

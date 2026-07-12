@@ -16,7 +16,9 @@
    :D5 {:case "P13.empty-csv" :status :fixed
         :notes "fixed 2026-07-11: zip entry points throw ex-info {:zip-path :row-count} when the CSV has no data rows"}
    :D6 {:case "P13.non-zip-bytes" :status :fixed
-        :notes "fixed 2026-07-11: read-zip-csv wraps ZipException as ex-info {:zip-path} with cause chained"}})
+        :notes "fixed 2026-07-11: read-zip-csv wraps ZipException as ex-info {:zip-path} with cause chained"}
+   :D7 {:case "P16.3 pin-chain" :status :open
+        :notes "2026-07-12: parser-IR source.work_content_hash is the member-bytes hash (ab-aozora-aat decode_source_bytes hashes adapter stdin; ab-aat-to-parser-ir copies meta.source_hash), but official-source.json source_hash is the raw-ZIP hash; materialize-source-snapshot!'s snapshot-input requires equality, so build-publication → workset → source-snapshot always throws. Desired: the two tools compose; which hash is canonical is ADR-level adjudication (spec §Future work)."}})
 
 (defn- entry [id]
   (or (get table id)

@@ -3,9 +3,53 @@
   model diff for accounting, report normalization, expected candidates.
   These read model states and applied intents; they never re-derive the
   classifier's decisions."
-  (:require [clojure.set :as set]
+  (:require [abc.tools.hash :as hash]
+            [clojure.set :as set]
             [clojure.string :as string]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk])
+  (:import [java.nio.charset StandardCharsets]
+           [java.text Normalizer Normalizer$Form]))
+
+(def ^:private bundle-construction "abc-source-bundle-v1")
+
+(defn- normalize-identity-path [path]
+  (Normalizer/normalize (string/replace path "\\" "/") Normalizer$Form/NFC))
+
+(defn- oracle-member-bytes
+  "Independent model-to-member projection; intentionally does not use the
+  render namespace or production source-bundle code."
+  [m wid]
+  (let [{:keys [text images]} (get-in m [:contents wid])]
+    (into (sorted-map (str wid ".txt")
+                      (.getBytes ^String text StandardCharsets/UTF_8))
+          (map (fn [[path content]]
+                 [(normalize-identity-path path)
+                  (.getBytes ^String content StandardCharsets/UTF_8)]))
+          images)))
+
+(defn expected-content-identity
+  "Independent abc-source-bundle-v1 identity from model members plus the
+  separately rendered archive bytes. No production inspector/constructor is
+  called, making render/inspector mistakes falsifiable."
+  [m wid ^bytes archive-bytes]
+  (let [member-bytes (oracle-member-bytes m wid)
+        members (mapv (fn [[path ^bytes bytes]]
+                        {"path" path
+                         "member_hash" (hash/format-sha256
+                                        (hash/sha256-bytes bytes))})
+                      member-bytes)
+        primary (str wid ".txt")
+        identity-object {"construction" bundle-construction
+                         "members" members
+                         "primary_text_member" primary}
+        primary-hash (get (some #(when (= primary (get % "path")) %) members)
+                          "member_hash")]
+    {:identity-object identity-object
+     :members members
+     :archive-hash (hash/format-sha256 (hash/sha256-bytes archive-bytes))
+     :bundle-hash (hash/format-sha256 (hash/sha256-json-jcs identity-object))
+     :primary-text-member primary
+     :primary-text-hash primary-hash}))
 
 (defn projection
   "Restrict a model to what the CSV can express: works and persons that
@@ -157,7 +201,9 @@
   plants plus the catalog ZIP itself."
   [rows sources]
   (let [wins (winning-rows rows)
-        selected (for [[wid {:keys [basename relpath source-hash]}] sources
+        selected (for [[wid {:keys [basename relpath archive-hash bundle-hash
+                                    primary-text-hash primary-text-member members
+                                    identity-object]}] sources
                        :let [row (get wins basename)]
                        :when row
                        :let [pid (get row "人物ID")]]
@@ -165,7 +211,12 @@
                     :person_id pid
                     :slug (str wid "_" pid "_" wid "_t")
                     :text_zip_relpath relpath
-                    :source_hash source-hash})]
+                    :archive_hash archive-hash
+                    :bundle_hash bundle-hash
+                    :primary_text_hash primary-text-hash
+                    :primary_text_member primary-text-member
+                    :members members
+                    :identity_object identity-object})]
     {:selected (vec (sort-by :text_zip_relpath selected))
      :rejected #{["cards/999999/files/decoy.zip" "not-catalog-text-zip"]
                  ["support/tools.zip" "not-under-cards-files"]
@@ -173,14 +224,15 @@
 
 (defn expected-statuses
   "slug → \"reused\"|\"passed\" over the current selection: reused iff the
-  identical slug existed previously with the identical source hash
-  (byte-identical zip). Slugs absent from the current selection are absent.
+  identical slug existed previously with the identical bundle hash. Packaging
+  metadata can therefore change archive bytes without forcing a rebuild.
+  Slugs absent from the current selection are absent.
   \"skipped\" is never predicted — pub-dirs are built in a fresh temp root,
   so the skip branch is unreachable in normal runs; properties assert its
   count is 0."
   [prev-selection cur-selection]
-  (let [prev (into {} (map (juxt :slug :source_hash)) (:selected prev-selection))]
+  (let [prev (into {} (map (juxt :slug :bundle_hash)) (:selected prev-selection))]
     (into (sorted-map)
-          (map (fn [{:keys [slug source_hash]}]
-                 [slug (if (= source_hash (get prev slug)) "reused" "passed")]))
+          (map (fn [{:keys [slug bundle_hash]}]
+                 [slug (if (= bundle_hash (get prev slug)) "reused" "passed")]))
           (:selected cur-selection))))

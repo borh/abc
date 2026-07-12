@@ -15,6 +15,9 @@
          :given_name (str "人" i)))
 
 (def ^:private text-pool ["春" "夏" "秋" "冬" "花" "鳥" "風" "月" "雪" "星"])
+(def ^:private image-name-pool
+  ["images/表紙.png" "images/挿絵.jpg" "図版/地図.webp" "__MACOSX/._notes.txt"])
+(def ^:private image-content-pool ["image-a" "image-b" "image-c" "finder-info"])
 
 (defn- gen-text [wid]
   (gen/fmap (fn [s] (str "作品" wid " 本文 " s)) (gen/elements text-pool)))
@@ -92,6 +95,39 @@
       (gen/let [wid (gen/elements cands)]
         {:event/type :remove-content :wid wid}))))
 
+(defn- content-wids [m]
+  (vec (keys (:contents m))))
+
+(defn- gen-add-image [m]
+  (let [cands (content-wids m)]
+    (if (empty? cands)
+      (gen-edit-work m)
+      (gen/let [wid (gen/elements cands)
+                path (gen/elements image-name-pool)
+                content (gen/elements image-content-pool)]
+        {:event/type :add-image :wid wid :path path :content content}))))
+
+(defn- existing-images [m]
+  (vec (for [[wid {:keys [images]}] (:contents m)
+             [path content] images]
+         [wid path content])))
+
+(defn- gen-edit-image [m]
+  (let [cands (existing-images m)]
+    (if (empty? cands)
+      (gen-add-image m)
+      (gen/let [[wid path old] (gen/elements cands)
+                content (gen/elements image-content-pool)]
+        {:event/type :edit-image :wid wid :path path
+         :content (if (= old content) (str content "-edited") content)}))))
+
+(defn- gen-remove-image [m]
+  (let [cands (existing-images m)]
+    (if (empty? cands)
+      (gen-add-image m)
+      (gen/let [[wid path _] (gen/elements cands)]
+        {:event/type :remove-image :wid wid :path path}))))
+
 (defn- benign-event-gen
   "Weighted benign event against state m. Removal weights are low, which
   together with the fresh-id discipline keeps the confusable?-discard rate
@@ -108,6 +144,9 @@
       [3 (gen-add-person-with-edge m)]
       [3 (gen-add-edge m)]
       [2 (gen-add-content m cap)]
+      [2 (gen-add-image m)]
+      [1 (gen-edit-image m)]
+      [1 (gen-remove-image m)]
       [1 (gen-remove-content m)]
       [1 (gen-remove-edge m)]
       [1 (gen-remove-work m)]

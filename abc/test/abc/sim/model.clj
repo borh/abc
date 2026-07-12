@@ -59,13 +59,19 @@
               (not-every? #(contains? (:persons m) %) pids))
       (throw (ex-info "model invariant violated"
                       {:edge [wid rel] :pids pids :event event}))))
-  (doseq [[wid {:keys [text]}] (:contents m)]
+  (doseq [[wid {:keys [text images]}] (:contents m)]
     (when (or (not (contains? (:works m) wid))
               (not (string? text))
               (string/blank? text)
-              (not (string/includes? text wid)))
+              (not (string/includes? text wid))
+              (not (map? images))
+              (some (fn [[path content]]
+                      (or (not (string? path)) (string/blank? path)
+                          (= path (str wid ".txt"))
+                          (not (string? content))))
+                    images))
       (throw (ex-info "model invariant violated"
-                      {:content wid :text text :event event}))))
+                      {:content wid :text text :images images :event event}))))
   nil)
 
 (defn- valid-relation? [relation]
@@ -160,7 +166,8 @@
                e edge-keys))))
 
 ;; --- content events (content-side evolution spec) ----------------------
-;; :contents is sorted-map wid → {:text s}. Text must embed the wid
+;; :contents is sorted-map wid → {:text s :images (sorted-map path content)}.
+;; Text must embed the wid
 ;; (uniqueness of member bytes across works — the invariant enforces it).
 
 (defmethod apply-event* :add-content
@@ -170,7 +177,7 @@
           (not (string? text)) (string/blank? text)
           (not (string/includes? text wid)))
     (no-op m)
-    (applied (assoc-in m [:contents wid] {:text text}) e [])))
+    (applied (assoc-in m [:contents wid] {:text text :images (sorted-map)}) e [])))
 
 (defmethod apply-event* :edit-content
   [m {:keys [wid text] :as e}]
@@ -186,6 +193,33 @@
   (if-not (contains? (:contents m) wid)
     (no-op m)
     (applied (update m :contents dissoc wid) e [])))
+
+(defn- valid-image-value? [wid path content]
+  (and (string? path) (not (string/blank? path))
+       (not= path (str wid ".txt"))
+       (string? content)))
+
+(defmethod apply-event* :add-image
+  [m {:keys [wid path content] :as e}]
+  (if (or (not (contains? (:contents m) wid))
+          (not (valid-image-value? wid path content))
+          (contains? (get-in m [:contents wid :images]) path))
+    (no-op m)
+    (applied (assoc-in m [:contents wid :images path] content) e [])))
+
+(defmethod apply-event* :edit-image
+  [m {:keys [wid path content] :as e}]
+  (if (or (not (valid-image-value? wid path content))
+          (not (contains? (get-in m [:contents wid :images] {}) path))
+          (= content (get-in m [:contents wid :images path])))
+    (no-op m)
+    (applied (assoc-in m [:contents wid :images path] content) e [])))
+
+(defmethod apply-event* :remove-image
+  [m {:keys [wid path] :as e}]
+  (if-not (contains? (get-in m [:contents wid :images] {}) path)
+    (no-op m)
+    (applied (update-in m [:contents wid :images] dissoc path) e [])))
 
 (defn edges-of [m pid]
   (vec (for [[k pids] (:edges m) :when (contains? pids pid)] k)))

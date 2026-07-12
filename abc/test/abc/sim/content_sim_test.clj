@@ -7,11 +7,9 @@
   The parser adapter is stubbed with the REAL split identity contract:
   parser-IR source.work_content_hash is the bundle hash supplied by ABC,
   while source.primary_text_hash is the independently computed member hash.
-  official-source.json source_hash remains the raw-ZIP compatibility alias,
-  so old snapshot validation still fails across roles — the D7 divergence
-  gated in the pin-chain property."
-  (:require [abc.sim.divergences :as div]
-            [abc.sim.gen :as sgen]
+  official-source.json source_hash remains the raw-ZIP compatibility alias;
+  snapshot validation checks every role independently."
+  (:require [abc.sim.gen :as sgen]
             [abc.sim.harness :as harness]
             [abc.sim.model :as model]
             [abc.sim.oracle :as oracle]
@@ -139,8 +137,8 @@
 
 (defn- synthetic-state []
   (-> (model/bootstrap 2)
-      (assoc-in [:contents "000101"] {:text text-a})
-      (assoc-in [:contents "000102"] {:text text-b})))
+      (assoc-in [:contents "000101"] {:text text-a :images (sorted-map)})
+      (assoc-in [:contents "000102"] {:text text-b :images (sorted-map)})))
 
 (defn- overwrite-zip! [aozora-root m wid ^bytes zip-bytes]
   (let [rel (get-in (render/content-sources m) [wid :relpath])
@@ -398,6 +396,70 @@
         (is (some #(= :no-primary-text-member (:reason (ex-data %)))
                   (ex-chain t)))))))
 
+(deftest p16-image-repack-and-text-evolution-test
+  ^{:clj-kondo/ignore [:unresolved-symbol]}
+  (with-temp-dirs [aozora out cfg]
+    (let [config (write-config! cfg false)
+          m0 (-> (synthetic-state)
+                 (assoc-in [:contents "000101" :images]
+                           (sorted-map "images/表紙.png" "image-v1"
+                                       "__MACOSX/._notes.txt" "finder")))
+          m-image (assoc-in m0 [:contents "000101" :images "images/表紙.png"]
+                            "image-v2")
+          m-text (assoc-in m-image [:contents "000101" :text]
+                           "作品000101 本文 夏")]
+      (render/write-aozora-root! aozora m0)
+      (let [r0 (run-build! {:aozora-root aozora :out-root out
+                            :config-path config :snapshot-date "2026-07-01"})
+            base (official-source out slug-a)]
+        (is (= {slug-a "passed" slug-b "passed"} (statuses r0)))
+        (is (= "000101.txt" (get base "primary_text_member")))
+        (is (some #(= "__MACOSX/._notes.txt" (get % "path"))
+                  (get (source-bundle out slug-a) "members")))
+
+        (render/write-aozora-root! aozora m-image)
+        (let [r-image (run-build! {:aozora-root aozora :out-root out
+                                   :config-path config :snapshot-date "2026-07-02"
+                                   :replace? true})
+              image (official-source out slug-a)]
+          (testing "image change rebuilds through conservative bundle invalidation"
+            (is (= {slug-a "passed" slug-b "reused"} (statuses r-image)))
+            (is (not= (get base "bundle_hash") (get image "bundle_hash")))
+            (is (= (get base "primary_text_hash")
+                   (get image "primary_text_hash"))))
+
+          (render/write-aozora-root!
+           aozora m-image
+           {:zip-layouts {"000101" {:order :reverse
+                                    :mtime 1700000000000
+                                    :comment "metadata-only repack"
+                                    :compression :stored}}})
+          (let [r-repack (run-build! {:aozora-root aozora :out-root out
+                                      :config-path config
+                                      :snapshot-date "2026-07-03"
+                                      :replace? true})
+                repacked (official-source out slug-a)]
+            (testing "metadata-only repack changes archive identity and reuses"
+              (is (= {slug-a "reused" slug-b "reused"} (statuses r-repack)))
+              (is (not= (get image "archive_hash")
+                        (get repacked "archive_hash")))
+              (is (= (get image "bundle_hash") (get repacked "bundle_hash")))
+              (is (= (get image "primary_text_hash")
+                     (get repacked "primary_text_hash"))))
+
+            (render/write-aozora-root! aozora m-text)
+            (let [r-text (run-build! {:aozora-root aozora :out-root out
+                                      :config-path config
+                                      :snapshot-date "2026-07-04"
+                                      :replace? true})
+                  text-edited (official-source out slug-a)]
+              (testing "text edit changes bundle and primary text and rebuilds"
+                (is (= {slug-a "passed" slug-b "reused"} (statuses r-text)))
+                (is (not= (get repacked "bundle_hash")
+                          (get text-edited "bundle_hash")))
+                (is (not= (get repacked "primary_text_hash")
+                          (get text-edited "primary_text_hash")))))))))))
+
 ;; --- P16.1 build ---------------------------------------------------------
 
 (defn- build-checks
@@ -414,19 +476,19 @@
      :rejected (= (:rejected expected)
                   (set (map (juxt #(get % "path") #(get % "reason"))
                             (get-in reports [:selection "rejected_sources"]))))
-     :pins (every? (fn [{:keys [slug source_hash]}]
+     :pins (every? (fn [{:keys [slug archive_hash bundle_hash]}]
                      (let [official (official-source out slug)
                            bundle (source-bundle out slug)]
-                       (and (= source_hash (get official "source_hash"))
-                            (= source_hash (get official "archive_hash"))
-                            (= (get official "bundle_hash")
-                               (get bundle "bundle_hash"))
-                            (= (get official "bundle_hash")
+                       (and (= archive_hash (get official "source_hash"))
+                            (= archive_hash (get official "archive_hash"))
+                            (= bundle_hash (get official "bundle_hash"))
+                            (= bundle_hash (get bundle "bundle_hash"))
+                            (= bundle_hash
                                (get-in (abc-json/read-json-file
                                         (io/file out "materialized-root" "works" slug
                                                  "source.manifest.json"))
                                        ["manifest_identity_object" "work_content_hash"]))
-                            (= (get official "bundle_hash") (marker out slug)))))
+                            (= bundle_hash (marker out slug)))))
                    (:selected expected))
      :statuses (and (every? #(= "passed" %) (vals st))
                     (= (count (:selected expected)) (count st))
@@ -464,6 +526,52 @@
 
 ;; --- P16.3 pin-chain (D7) -------------------------------------------------
 
+(defn- pin-chain-work-checks [aozora out snapshot-input selected]
+  (let [{:keys [slug text_zip_relpath archive_hash bundle_hash
+                primary_text_hash primary_text_member members identity_object]}
+        selected
+        official (official-source out slug)
+        bundle (source-bundle out slug)
+        parser-ir (abc-json/read-json-file
+                   (io/file out "materialized-root" "works" slug "parser-ir.json"))
+        source-manifest (abc-json/read-json-file
+                         (io/file out "materialized-root" "works" slug
+                                  "source.manifest.json"))
+        primary-member-hash (get (some #(when (= primary_text_member
+                                                 (get % "path")) %)
+                                       members)
+                                 "member_hash")]
+    {:actual-archive (= archive_hash
+                        (hash/format-sha256
+                         (files/sha256-file (io/file aozora text_zip_relpath))))
+     :archive-alias (= archive_hash
+                       (get official "source_hash")
+                       (get official "archive_hash")
+                       (get bundle "archive_hash")
+                       (get snapshot-input "archive_hash"))
+     :independent-bundle (= bundle_hash
+                            (hash/format-sha256
+                             (hash/sha256-json-jcs identity_object))
+                            (get official "bundle_hash")
+                            (get bundle "bundle_hash")
+                            (get-in parser-ir ["source" "work_content_hash"])
+                            (get snapshot-input "work_content_hash")
+                            (get-in source-manifest
+                                    ["manifest_identity_object"
+                                     "work_content_hash"]))
+     :identity-object (= identity_object (get bundle "identity_object"))
+     :members (= members
+                 (mapv #(select-keys % ["path" "member_hash"])
+                       (get bundle "members")))
+     :primary-member (= primary_text_member
+                        (get official "primary_text_member")
+                        (get-in bundle ["identity_object" "primary_text_member"])
+                        (get snapshot-input "primary_text_member"))
+     :primary-integrity (= primary_text_hash primary-member-hash
+                           (get official "primary_text_hash")
+                           (get-in parser-ir ["source" "primary_text_hash"])
+                           (get snapshot-input "primary_text_hash"))}))
+
 (deftest p16-3-pin-chain-sim-test
   (harness/check!
    "P16.3 pin-chain" 5
@@ -479,38 +587,34 @@
                                     :config-path (write-config! cfg false)
                                     :snapshot-date "2026-07-12"})
                        (let [ws (io/file cfg "workset.edn")
+                             snapshot-file (io/file cfg "snapshot.json")
                              _ (workset/write-workset!
                                 {:input-root (str (io/file out "materialized-root"))
                                  :output-path (str ws)
                                  :snapshot-scope "sim" :snapshot-date "2026-07-12"})
-                             res (try {:ok (snapshot/materialize-source-snapshot!
-                                            {:workset-path (str ws)
-                                             :output-path (str (io/file cfg "snapshot.json"))})}
-                                      (catch Throwable t {:thrown t}))
-                 ;; workset works sort by [work_id slug]; snapshot-input
-                 ;; throws on the first mismatch
-                             first-sel (first (sort-by (juxt :work_id :slug)
-                                                       (:selected expected)))
-                             bundle-hash (get (source-bundle out (:slug first-sel)) "bundle_hash")
-                             hard-ok?
-                             (if-let [t (:thrown res)]
-                               (let [d (some #(let [dd (ex-data %)]
-                                                (when (contains? dd :work-content-hash) dd))
-                                             (ex-chain t))]
-                                 (and (not (harness/forbidden-throw? t))
-                                      (chain-clean-ex-info?
-                                       t [:work :parser-ir-path :official-source-path
-                                          :work-content-hash :official-source-hash])
-                                      ;; pin WHY it fails: bundle hash vs raw-ZIP hash
-                                      (= (:work d) (:slug first-sel))
-                                      (= (:work-content-hash d) bundle-hash)
-                                      (= (:official-source-hash d) (:source_hash first-sel))))
-                               true)]
-                         (and hard-ok?
-                              (div/expected-failure*
-                               :D7
-                               "P16.3: build-publication output composes with materialize-source-snapshot!"
-                               (fn [] (contains? res :ok)))))))))))
+                             result (snapshot/materialize-source-snapshot!
+                                     {:workset-path (str ws)
+                                      :output-path (str snapshot-file)})
+                             snapshot-value (abc-json/read-json-file snapshot-file)
+                             inputs (into {}
+                                          (map (juxt #(get % "slug") identity))
+                                          (get-in snapshot-value
+                                                  ["snapshot_identity_object"
+                                                   "snapshot_inputs"]))
+                             checks (into {}
+                                          (for [selected (:selected expected)
+                                                [role holds?]
+                                                (pin-chain-work-checks
+                                                 aozora out
+                                                 (get inputs (:slug selected))
+                                                 selected)]
+                                            [[(:slug selected) role] holds?]))]
+                         (when-not (every? val checks)
+                           (println "P16.3 failing role checks:"
+                                    (vec (keep (fn [[k v]] (when-not v k)) checks))))
+                         (and (= snapshot-file (:snapshot result))
+                              (= (count (:selected expected)) (count inputs))
+                              (every? val checks)))))))))
 
 ;; --- P16.2 evolution (the core) -------------------------------------------
 

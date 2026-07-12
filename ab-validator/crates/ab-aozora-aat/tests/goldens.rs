@@ -7,7 +7,7 @@
 //! rotation B confinement report. Hermetic: plain `cargo test` builds
 //! carry `(git unknown)`, which these goldens embed.
 //!
-//! ## Verification summary (Task 15; updated Task 14 — C4 source_note
+//! ## Verification summary (Task 15; updated Task 14 — C4 `source_note`
 //! emission)
 //!
 //! `verify-golden-spans.py` walks every node with both `value` (a string)

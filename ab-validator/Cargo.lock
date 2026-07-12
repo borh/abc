@@ -41,6 +41,7 @@ dependencies = [
  "ab-aozora-pipeline",
  "anyhow",
  "encoding_rs",
+ "proptest",
  "regex",
  "serde",
  "serde_json",

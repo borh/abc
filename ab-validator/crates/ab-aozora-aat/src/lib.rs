@@ -1861,6 +1861,8 @@ fn hex_sha256(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
+    use proptest::prelude::*;
+
     use super::*;
 
     #[derive(serde::Deserialize)]
@@ -2669,8 +2671,8 @@ mod tests {
         assert_eq!(content[1]["value"], "　1990（平成2）年5月10日発行\n");
         let s = &content[0]["span"];
         let (a, b) = (
-            s["byte_start"].as_u64().unwrap() as usize,
-            s["byte_end"].as_u64().unwrap() as usize,
+            usize::try_from(s["byte_start"].as_u64().unwrap()).unwrap(),
+            usize::try_from(s["byte_end"].as_u64().unwrap()).unwrap(),
         );
         assert_eq!(&src[a..b], "底本：「作品集」文庫社\n"); // terminator inside the span
         assert_eq!(s["line_start"], 3);
@@ -2737,7 +2739,7 @@ mod tests {
     /// through `decode_source_bytes` on synthetic source text.
     #[test]
     fn unclassifiable_tail_line_falls_back_to_colophon_with_warning() {
-        let mut decoded = decode_source_bytes("foo\n".as_bytes()).unwrap();
+        let mut decoded = decode_source_bytes(b"foo\n").unwrap();
         assert!(
             decoded.sanitized_tail.is_empty(),
             "sanity: no real tail in this input"
@@ -3075,5 +3077,150 @@ mod tests {
             1,
             "only line 2's orphan open stays raw: {raws:?}"
         );
+    }
+
+    // --- Phase 5 Task 5: property-test target -----------------------------
+    //
+    // `pair_bare_toggles` is `pub(crate)`, unreachable from an integration
+    // test under `tests/`. The mirror test over the shared vector file and
+    // the three properties that only need OBSERVABLE adapter outcomes
+    // (`every_marker_consumed_or_preserved_exactly_once`, `line_isolation`,
+    // `nesting_well_formed`) live in `tests/bare_toggle_model.rs`, reached
+    // through the public `aat_json_from_bytes`. The two properties below
+    // need a DIRECT `pair_bare_toggles` call (zero-adoption structural
+    // identity; determinism at the pass level, not the whole-adapter
+    // level), so they live here instead.
+
+    /// Recognize one of the four bare-toggle marker literals from its bare
+    /// token text. Independent of `bare_toggle_marker` (which classifies a
+    /// parsed `Value` node, not a token string) — this just restates the
+    /// fixed four-token vocabulary for the property generator below, not a
+    /// dependency on the classifier's internals.
+    fn oracle_marker_kind(token: &str) -> Option<(&'static str, bool)> {
+        match token {
+            "［＃横組み］" => Some(("yokogumi", true)),
+            "［＃横組み終わり］" => Some(("yokogumi", false)),
+            "［＃罫囲み］" => Some(("keigakomi", true)),
+            "［＃罫囲み終わり］" => Some(("keigakomi", false)),
+            _ => None,
+        }
+    }
+
+    /// Independent reimplementation of the two-pass bare-toggle grammar —
+    /// mirrors `reports/aat-fidelity/bare-toggle-placement.py`'s
+    /// `classify_tokens` exactly — used ONLY as the property oracle for
+    /// `bare_toggle_zero_adoption_is_structurally_unchanged`: true iff at
+    /// least one marker pair in `markers` (one line's marker sequence, in
+    /// source order) would adopt. Deliberately independent of
+    /// `pair_line_markers`/`pair_bare_toggles` so the property doesn't test
+    /// the production pass against itself.
+    fn oracle_line_has_adoption(markers: &[(&'static str, bool)]) -> bool {
+        let mut stack: Vec<&'static str> = Vec::new();
+        let mut candidates: Vec<&'static str> = Vec::new();
+        let mut invalid_yokogumi = false;
+        let mut invalid_keigakomi = false;
+        for &(construct, is_open) in markers {
+            if is_open {
+                if stack.contains(&construct) {
+                    match construct {
+                        "yokogumi" => invalid_yokogumi = true,
+                        _ => invalid_keigakomi = true,
+                    }
+                }
+                stack.push(construct);
+            } else {
+                match stack.last().copied() {
+                    None => match construct {
+                        "yokogumi" => invalid_yokogumi = true,
+                        _ => invalid_keigakomi = true,
+                    },
+                    Some(top) if top == construct => {
+                        stack.pop();
+                        candidates.push(construct);
+                    }
+                    Some(top) => {
+                        for invalidated in [construct, top] {
+                            match invalidated {
+                                "yokogumi" => invalid_yokogumi = true,
+                                _ => invalid_keigakomi = true,
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for construct in &stack {
+            match *construct {
+                "yokogumi" => invalid_yokogumi = true,
+                _ => invalid_keigakomi = true,
+            }
+        }
+        candidates.into_iter().any(|construct| match construct {
+            "yokogumi" => !invalid_yokogumi,
+            _ => !invalid_keigakomi,
+        })
+    }
+
+    /// One token: a bare-toggle marker literal, or a short run of ASCII/
+    /// hiragana filler standing in for ordinary text (same "token soup"
+    /// shape as `tests/bare_toggle_model.rs`'s generator; duplicated here
+    /// rather than shared, since that file can't reach this `mod tests`).
+    fn bare_toggle_token() -> impl Strategy<Value = String> {
+        prop_oneof![
+            Just("［＃横組み］".to_owned()),
+            Just("［＃横組み終わり］".to_owned()),
+            Just("［＃罫囲み］".to_owned()),
+            Just("［＃罫囲み終わり］".to_owned()),
+            "[a-zあ-ん]{1,4}",
+        ]
+    }
+
+    /// 1-3 lines, each 0-11 tokens, kept as un-joined per-line token lists
+    /// so the property oracle can read each line's marker sequence
+    /// directly (in source order) without re-tokenizing joined text.
+    fn bare_toggle_lines() -> impl Strategy<Value = Vec<Vec<String>>> {
+        prop::collection::vec(prop::collection::vec(bare_toggle_token(), 0..12), 1..=3)
+    }
+
+    fn join_bare_toggle_lines(lines: &[Vec<String>]) -> String {
+        lines
+            .iter()
+            .map(|tokens| tokens.join(""))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig { cases: 512, ..ProptestConfig::default() })]
+
+        /// Property 2: a line with zero adoptions (per the independent
+        /// oracle above) is passed through `pair_bare_toggles` byte-for-
+        /// byte unchanged — full structural equality (review P5-6), not
+        /// mere marker survival.
+        #[test]
+        fn bare_toggle_zero_adoption_is_structurally_unchanged(lines in bare_toggle_lines()) {
+            let any_adoption = lines.iter().any(|tokens| {
+                let markers: Vec<(&'static str, bool)> = tokens
+                    .iter()
+                    .filter_map(|token| oracle_marker_kind(token))
+                    .collect();
+                oracle_line_has_adoption(&markers)
+            });
+            prop_assume!(!any_adoption);
+            let content = inline_array_for(&join_bare_toggle_lines(&lines));
+            let out = pair_bare_toggles(content.clone());
+            prop_assert_eq!(out, content);
+        }
+
+        /// Property 3: `pair_bare_toggles` is a pure function of its input
+        /// — running it twice on the same pre-pass inline array yields
+        /// identical output.
+        #[test]
+        fn bare_toggle_pass_is_deterministic(lines in bare_toggle_lines()) {
+            let content = inline_array_for(&join_bare_toggle_lines(&lines));
+            let first = pair_bare_toggles(content.clone());
+            let second = pair_bare_toggles(content);
+            prop_assert_eq!(first, second);
+        }
     }
 }

@@ -31,3 +31,7 @@ serde_json = "1.0"
 sha2 = "0.10"
 
 [dev-dependencies]
+# Phase 5 Task 5: bare-toggle model mirror + property test target
+# (tests/bare_toggle_model.rs). Workspace-pinned at 1.5
+# (ab-validator/Cargo.toml:201) — never add a second literal version here.
+proptest.workspace = true

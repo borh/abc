@@ -1230,6 +1230,28 @@
         (delete-tree! snapshot-root)
         (delete-tree! root)))))
 
+(deftest cli-status-and-stream-contract-test
+  (testing "global help is successful stdout"
+    (doseq [args [[] ["help"] ["--help"]]]
+      (let [out (java.io.StringWriter.)
+            err (java.io.StringWriter.)]
+        (binding [*out* out *err* err]
+          (is (= 0 (soranoha/run! args))))
+        (is (string/includes? (str out) "usage: soranoha"))
+        (is (string/blank? (str err))))))
+  (testing "unknown command is status 2 on stderr"
+    (let [out (java.io.StringWriter.)
+          err (java.io.StringWriter.)]
+      (binding [*out* out *err* err]
+        (is (= 2 (soranoha/run! ["nope"]))))
+      (is (string/blank? (str out)))
+      (is (string/includes? (str err) "unknown command"))))
+  (testing "fixed positional arity is status 2 on stderr"
+    (let [err (java.io.StringWriter.)]
+      (binding [*err* err]
+        (is (= 2 (soranoha/run! ["snapshot-index"]))))
+      (is (string/includes? (str err) "wrong arity")))))
+
 (deftest unknown-command-returns-nonzero-test
   (let [err (java.io.StringWriter.)]
     (binding [*err* err]

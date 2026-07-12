@@ -4,6 +4,7 @@
   These read model states and applied intents; they never re-derive the
   classifier's decisions."
   (:require [clojure.set :as set]
+            [clojure.string :as string]
             [clojure.walk :as walk]))
 
 (defn projection
@@ -134,3 +135,52 @@
        (keep (fn [[[ewid _rel] pids]] (when (= ewid wid) pids)))
        (reduce into (sorted-set))
        first))
+
+(defn- winning-rows
+  "basename → row via catalog-index's documented last-row-wins reduction
+  over the shared row projection (render/model->rows). The oracle consumes
+  the SUT's actual input rows — it never reconstructs their ordering."
+  [rows]
+  (reduce (fn [acc row]
+            (let [url (get row "テキストファイルURL")]
+              (if (string/blank? url)
+                acc
+                (assoc acc (last (string/split url #"/")) row))))
+          {}
+          rows))
+
+(defn expected-selection
+  "Predicted build-publication source selection. rows = (render/model->rows m);
+  sources = (render/content-sources m). :selected is sorted by
+  :text_zip_relpath (the SUT sorts selected_sources by relpath). :rejected is
+  the exact [path reason] set: the two decoys write-aozora-root! always
+  plants plus the catalog ZIP itself."
+  [rows sources]
+  (let [wins (winning-rows rows)
+        selected (for [[wid {:keys [basename relpath source-hash]}] sources
+                       :let [row (get wins basename)]
+                       :when row
+                       :let [pid (get row "人物ID")]]
+                   {:work_id wid
+                    :person_id pid
+                    :slug (str wid "_" pid "_" wid "_t")
+                    :text_zip_relpath relpath
+                    :source_hash source-hash})]
+    {:selected (vec (sort-by :text_zip_relpath selected))
+     :rejected #{["cards/999999/files/decoy.zip" "not-catalog-text-zip"]
+                 ["support/tools.zip" "not-under-cards-files"]
+                 ["index_pages/list_person_all_extended_utf8.zip" "not-under-cards-files"]}}))
+
+(defn expected-statuses
+  "slug → \"reused\"|\"passed\" over the current selection: reused iff the
+  identical slug existed previously with the identical source hash
+  (byte-identical zip). Slugs absent from the current selection are absent.
+  \"skipped\" is never predicted — pub-dirs are built in a fresh temp root,
+  so the skip branch is unreachable in normal runs; properties assert its
+  count is 0."
+  [prev-selection cur-selection]
+  (let [prev (into {} (map (juxt :slug :source_hash)) (:selected prev-selection))]
+    (into (sorted-map)
+          (map (fn [{:keys [slug source_hash]}]
+                 [slug (if (= source_hash (get prev slug)) "reused" "passed")]))
+          (:selected cur-selection))))

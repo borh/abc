@@ -33,6 +33,8 @@ flowchart LR
   ADR0031["0031 Uniform ADR Governance Validation"]:::accepted
   ADR0032["0032 Parser Fork Hard Detach"]:::accepted
   ADR0033["0033 Source Bundle Identity"]:::accepted
+  ADR0034["0034 Typed Evidence and Lifecycle Closure"]:::proposed
+  ADR0035["0035 Rights Assessment and External Statements"]:::proposed
   ADR0008 -->|"amends"| ADR0006
   ADR0010 -->|"amends"| ADR0001
   ADR0010 -->|"amends"| ADR0009
@@ -97,6 +99,9 @@ flowchart LR
   ADR0033 -.->|"depends on"| ADR0010
   ADR0033 -.->|"depends on"| ADR0023
   ADR0033 -.->|"depends on"| ADR0025
+  ADR0034 -.->|"depends on"| ADR0031
+  ADR0035 -->|"amends — Boolean-to-external-rights RDF mapping"| ADR0018
+  ADR0035 -.->|"depends on"| ADR0034
   classDef accepted fill:#1b5e20,stroke:#a5d6a7,color:#fff
   classDef draft fill:#37474f,stroke:#b0bec5,color:#fff
   classDef proposed fill:#e65100,stroke:#ffcc80,color:#fff

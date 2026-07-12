@@ -62,12 +62,13 @@
           :criteria [] :section-bodies {}}]))))
 
 (deftest baseline-generation-rejects-a-duplicate-source-coordinate-test
-  (let [coordinates (migration/normative-coordinate-inventory)]
-    (with-redefs [migration/normative-coordinate-inventory
-                  (fn [] (conj coordinates (first coordinates)))]
-      (is (thrown-with-msg?
-           clojure.lang.ExceptionInfo #"duplicate normative coordinate"
-           (migration/baseline-value revision (adr/parse-all "docs/adr")))))))
+  (let [inventory-var #'abc.tools.adr-claim-migration/normative-coordinate-inventory
+        coordinates (inventory-var)]
+    (with-redefs-fn {inventory-var
+                     (fn [] (conj coordinates (first coordinates)))}
+      #(is (thrown-with-msg?
+            clojure.lang.ExceptionInfo #"duplicate normative coordinate"
+            (migration/baseline-value revision (adr/parse-all "docs/adr")))))))
 
 (deftest baseline-validation-test
   (let [baseline (actual-baseline)

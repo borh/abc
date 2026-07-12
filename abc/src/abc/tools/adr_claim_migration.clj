@@ -10,7 +10,7 @@
 (def ^:private baseline-schema-version "abc-adr-claim-migration-baseline-v1")
 (def ^:private ledger-schema-version "abc-adr-claim-migration-v1")
 
-(defn normative-coordinate-inventory []
+(defn- normative-coordinate-inventory []
   (let [decision-adrs [1 2 6 7 8 9 10 11 12 13 14 15 16 17 18 20 21 22
                        23 24 25 29 30 31 32 33]
         hard-rule-adrs [13 14 15 17 18 20 21 29]]

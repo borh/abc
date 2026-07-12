@@ -252,8 +252,8 @@ prove:
 - damaged archives remain classification-only and never reach `7zz` for
   identity;
 - report construction/version and reason counts are deterministic; and
-- EFS/legacy counts remain raw-bit counts even when decoder precedence selects
-  a Unicode Path extra field; and
+- EFS/legacy counts are derived from raw bits rather than `name_source`, with
+  separate EFS and Unicode-extra cases; and
 - production limit failures abort without writing re-blessable evidence; and
 - one shared collision analysis drives scan evidence, admission, and persisted
   identity validation; and

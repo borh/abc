@@ -14,7 +14,7 @@
 - Changes to `model.clj`, `gen.clj`, `render.clj`, `oracle.clj`, `divergences.clj` are **additive** — existing functions may only change where a step shows the exact edit (headers vector, `model->rows`, `bootstrap`, `:remove-work`, `check-invariants!`, `benign-event-gen`/`gen-events`/`history-gen` cap plumbing). Never delete or rewrite existing tests.
 - `:edit-content` is generated ONLY by `content-history-gen`'s seeding — it must never join `benign-event-gen`.
 - The stub's `parser-ir.json` `["source"]["work_content_hash"]` is `(hash/format-sha256 (hash/sha256-bytes source-bytes))` — the member-bytes hash. Never the raw-ZIP hash.
-- Content zip name is derived: work `wid` → zip `<wid>_t.zip`, member `<wid>.txt`. Content cap: `:content-cap` option, default 4.
+- Content zip name is derived: work `wid` → zip `<wid>_t.zip`, member `<wid>.txt`. Content cap: `:content-cap` option, default 4, bounding the **total** content-bearing works in every generated state including the two seeded works.
 - D7 stays `:open`; P16.3 gates ONLY composition success via `div/expected-failure*`; the throw's cleanliness and both hash values are asserted hard.
 - Forbidden throw classes (assert un-gated): NullPointerException, AssertionError, StackOverflowError, raw `java.util.zip.ZipException` (`harness/forbidden-throw?`).
 - All test commands run from `abc/`: `clojure -M:test:kaocha -m kaocha.runner --focus <target>`. CI seeds `[42 4242 424242]` are applied by `harness/check!` automatically.
@@ -109,7 +109,14 @@ Create `abc/test/abc/sim/content_test.clj`:
     (let [hist (gen/generate (sgen/content-history-gen {:length [0 0] :works [2 2]}) 30 7)
           fold (model/fold-history hist)]
       (is (= 3 (count (:events hist))))
-      (is (some? (sgen/find-applied fold :edit-content))))))
+      (is (some? (sgen/find-applied fold :edit-content)))))
+  (testing "the cap includes the two seeded content works"
+    (doseq [seed (range 20)]
+      (let [hist (gen/generate (sgen/content-history-gen
+                                {:content-cap 4 :works [6 6] :length [10 10]})
+                               30 seed)
+            fold (model/fold-history hist)]
+        (is (every? #(<= (count (:contents %)) 4) (:states fold)))))))
 ```
 
 - [ ] **Step 2: Run tests to verify they fail**
@@ -287,9 +294,16 @@ In `abc/test/abc/sim/gen.clj`:
   Requires ≥ 2 bootstrap works; defaults keep histories small because the
   properties run real builds."
   [opts]
-  (let [opts (merge {:works [2 6] :length [4 10]} opts)]
+  (let [opts (merge {:works [2 6] :length [4 10] :content-cap 4} opts)
+        content-cap (:content-cap opts)]
+    (when (< content-cap 2)
+      (throw (ex-info "content-history-gen requires content-cap >= 2"
+                      {:content-cap content-cap})))
     (gen/bind
-     (history-gen (assoc opts :forced nil))
+     ;; history-gen generates benign events before the two seeded adds are
+     ;; spliced into the returned history. Reserve two slots here; otherwise a
+     ;; nominal cap of 4 can render 6 works (4 benign + 2 seeded).
+     (history-gen (assoc opts :forced nil :content-cap (- content-cap 2)))
      (fn [{:keys [initial events]}]
        (let [[w1 w2] (vec (take 2 (keys (:works initial))))]
          (gen/let [t1 (gen-text w1)
@@ -1042,7 +1056,10 @@ git commit -m "test(sim): P16.4 content integrity faults + build harness"
                (let [t (try (run-build! args) nil (catch Throwable t t))]
                  (and (some? t)
                       (not (harness/forbidden-throw? t))
-                      (chain-clean-ex-info? t [:aozora_root])))))))))
+                      (chain-clean-ex-info? t [:aozora_root])
+                      (some #(= "no catalog-backed work ZIPs were successfully derived"
+                                (ex-message %))
+                            (ex-chain t))))))))))
     (harness/assert-applied-ratio! "P16.1 build" counter)))
 
 ;; --- P16.3 pin-chain (D7) -------------------------------------------------
@@ -1128,6 +1145,14 @@ git commit -m "test(sim): P16.1 build property; P16.3 pin-chain pinned as open d
 - Consumes: Task 4/5 helpers; `oracle/expected-statuses`; `sgen/find-applied`; fold `:states` indexing (`states[i]` is the state BEFORE `events[i]` applies).
 - Produces: `p16-2-evolution-sim-test`; final calibrated `check!` counts.
 
+P16.2 isolates the seeded edit transition: `s-before = states[i]` and
+`s-after = states[i+1]`, where `events[i]` is the uniquely seeded applied
+`:edit-content`. Generated events before the edit still exercise catalog and
+identity churn. Events after it remain covered as final states by P16.1, but
+are deliberately outside this transition pair: allowing a later removal to
+erase the selection would turn a reuse/rebuild property into the separately
+specified empty-selection error case.
+
 - [ ] **Step 1: Append the evolution property**
 
 ```clojure
@@ -1155,6 +1180,13 @@ git commit -m "test(sim): P16.1 build property; P16.3 pin-chain pinned as open d
                                   :config-path config :snapshot-date "2026-07-02"
                                   :replace? true})
                   st2 (statuses r2)
+                  ;; Capture second-leg evidence before the third replacement.
+                  ;; The zero-change leg may rebuild/repair a bad second leg;
+                  ;; reading files only after r3 would conceal that defect.
+                  r2-markers (into {} (map (fn [slug] [slug (marker out slug)])))
+                                   (keys cur-hash))
+                  r2-files (into {} (map (fn [slug] [slug (pub-files out slug)])))
+                                 (keys st2))
                   r3 (run-build! {:aozora-root aozora2 :out-root out
                                   :config-path config :snapshot-date "2026-07-03"
                                   :replace? true})
@@ -1164,11 +1196,11 @@ git commit -m "test(sim): P16.1 build property; P16.3 pin-chain pinned as open d
                :leg2-counts (and (zero? (get-in r2 [:publications "failed"]))
                                  (zero? (get-in r2 [:publications "skipped"])))
                ;; no-stale-reuse invariant: every marker equals the CURRENT hash
-               :markers (every? (fn [[slug h]] (= h (marker out slug))) cur-hash)
+               :markers (every? (fn [[slug h]] (= h (get r2-markers slug))) cur-hash)
                ;; reused slugs' publication files are byte-identical to prior
                :reused-bytes (every? (fn [[slug status]]
                                        (or (not= "reused" status)
-                                           (= (get prior slug) (pub-files out slug))))
+                                           (= (get prior slug) (get r2-files slug))))
                                      st2)
                ;; zero-change leg: everything reuses
                :leg3-all-reused (every? #(= "reused" %) (vals st3))})))
@@ -1185,7 +1217,11 @@ git commit -m "test(sim): P16.1 build property; P16.3 pin-chain pinned as open d
            (do (harness/tick! counter false) true) ;; seeded edit no-opped
            (let [i (.indexOf ^java.util.List (:events hist) (:event applied-edit))
                  s-before (nth (:states fold) i)
-                 s-after (peek (:states fold))
+                 ;; Isolate the transition under test. Using the history's
+                 ;; final state here would let post-edit removals erase every
+                 ;; selected work, for which build-publication! correctly
+                 ;; throws instead of producing a three-leg status report.
+                 s-after (nth (:states fold) (inc i))
                  sel-b (oracle/expected-selection (render/model->rows s-before)
                                                   (render/content-sources s-before))
                  sel-a (oracle/expected-selection (render/model->rows s-after)

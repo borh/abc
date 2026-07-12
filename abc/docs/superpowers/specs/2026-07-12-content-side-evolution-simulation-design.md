@@ -152,7 +152,8 @@ divergence **D7**.
   in the applied log (same mechanism as the forced drift intents), which
   P16.2 uses to place its `s-before` checkpoint.
 - `history-gen` gains no new required knobs; the content cap is a
-  `:content-cap` option with default 4.
+  `:content-cap` option with default 4. The cap bounds total content-bearing
+  works, including the two works seeded by `content-history-gen`.
 - A `content-history-gen` (thin wrapper over `history-gen`) seeds the
   shape the evolution property needs: two `:add-content` events on
   distinct bootstrap works early in the event list, and one
@@ -260,7 +261,10 @@ pattern). Contains:
   benign mix never emits `:edit-content`), let `i` = the index of that
   event in the history's events vector; `s-before` = `states[i]` (the
   fold state immediately **before** the edit applies — after both seeded
-  `:add-content` events), `s-after` = the final state. Runs where
+  `:add-content` events), `s-after` = `states[i+1]` (immediately after the
+  edit). Generated prefix events still exercise catalog/identity churn;
+  suffix events remain covered as final states by P16.1 but cannot erase
+  this transition pair's selection. Runs where
   `find-applied` returns nil (seeded edit no-opped, e.g. its work's
   content was removed first) or where `expected-selection s-before` is
   empty skip all assertions and count toward the ratio denominator only.

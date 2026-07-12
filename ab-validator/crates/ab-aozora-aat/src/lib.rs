@@ -1424,7 +1424,218 @@ fn inline_content(
             "x-break-kind": "page"
         }));
     }
-    content
+    // LAST step: fold same-line bare-toggle marker pairs into inline
+    // yokogumi/keigakomi containers (Phase 5, Task 4). Runs over the fully
+    // built inline array; consumes only adopted marker nodes and preserves
+    // every other node unchanged and in order, so the downstream verbose
+    // block classifier (`blocks_from_inline_content`) sees the identical
+    // stream for all non-bare-toggle inputs.
+    pair_bare_toggles(content)
+}
+
+/// A same-line bare-toggle marker located in the inline array: its `content`
+/// index, `construct` (which doubles as the emitted container `kind`), whether
+/// it is an open token, and its (single) source line.
+struct BareToggleMarker {
+    index: usize,
+    construct: &'static str,
+    is_open: bool,
+    line: u64,
+}
+
+/// Classify a node as a bare-toggle marker. Keys SOLELY on `kind == "raw"` and
+/// `source` being EXACTLY one of the four tokens; returns `(construct, is_open)`
+/// where `construct` is the emitted container kind. These markers reach the
+/// adapter as raw nodes the façade tagged `containerOpen` (opens) /
+/// `containerClose` (closes), but the exact-`source` match is what identifies
+/// them here — so the verbose block forms (`［＃ここから横組み］`,
+/// `［＃ここから罫囲み］`, distinct strings handled by
+/// `blocks_from_inline_content`) can never match.
+fn bare_toggle_marker(node: &Value) -> Option<(&'static str, bool)> {
+    if node.get("kind").and_then(Value::as_str) != Some("raw") {
+        return None;
+    }
+    match node.get("source").and_then(Value::as_str)? {
+        "［＃横組み］" => Some(("yokogumi", true)),
+        "［＃横組み終わり］" => Some(("yokogumi", false)),
+        "［＃罫囲み］" => Some(("keigakomi", true)),
+        "［＃罫囲み終わり］" => Some(("keigakomi", false)),
+        _ => None,
+    }
+}
+
+/// Stable index of a construct into the per-line `invalid` flag pair.
+fn bare_toggle_construct_index(construct: &str) -> usize {
+    usize::from(construct == "keigakomi")
+}
+
+/// Fold same-line bare-toggle marker pairs into inline containers, mirroring
+/// `classify_line` in `reports/aat-fidelity/bare-toggle-placement.py` (the
+/// normative two-pass grammar). A pure `Vec<Value> -> Vec<Value>` function
+/// applied as the last step of `inline_content`.
+///
+/// Pass 1 runs one global nesting stack over each line's markers in array (==
+/// source) order: a same-construct reopen invalidates the construct but still
+/// pushes; an orphan close invalidates; a close matching the stack top pops
+/// and records a candidate pair; a mismatched close invalidates BOTH the
+/// closing and the top construct and pops nothing; any open frame left on the
+/// stack at end of line invalidates its construct. Pass 2 adopts a candidate
+/// iff its construct was not invalidated on that line — invalidation is
+/// construct-scoped, so a valid construct's pair nested inside an invalid
+/// construct's markers still adopts. Adopted marker nodes are consumed into the
+/// container; every other node, including the raw markers of invalid
+/// constructs, is preserved unchanged and in its original order.
+///
+/// Perf: an O(n) scan that early-returns the input moved (no clone) whenever
+/// the paragraph carries no bare-toggle marker — the corpus hot path.
+pub(crate) fn pair_bare_toggles(content: Vec<Value>) -> Vec<Value> {
+    let markers: Vec<BareToggleMarker> = content
+        .iter()
+        .enumerate()
+        .filter_map(|(index, node)| {
+            let (construct, is_open) = bare_toggle_marker(node)?;
+            // Markers never span lines; treat a line-spanning token as a
+            // non-marker rather than adopting across a line boundary.
+            let span = node.get("span")?;
+            let line = span.get("line_start")?.as_u64()?;
+            let line_end = span.get("line_end")?.as_u64()?;
+            if line != line_end {
+                return None;
+            }
+            Some(BareToggleMarker {
+                index,
+                construct,
+                is_open,
+                line,
+            })
+        })
+        .collect();
+    if markers.is_empty() {
+        return content;
+    }
+
+    // Run the two-pass grammar per line (markers are already in source order
+    // because `inline_content` sorts by span). Adopted candidates across all
+    // lines form a laminar family — matched pairs from one stack nest
+    // properly, and different lines occupy disjoint index ranges — so they
+    // splice cleanly as a forest.
+    let mut adopted: Vec<(usize, usize, &'static str)> = Vec::new();
+    let mut group_start = 0;
+    while group_start < markers.len() {
+        let line = markers[group_start].line;
+        let mut group_end = group_start;
+        while group_end < markers.len() && markers[group_end].line == line {
+            group_end += 1;
+        }
+        pair_line_markers(&markers[group_start..group_end], &mut adopted);
+        group_start = group_end;
+    }
+    if adopted.is_empty() {
+        return content;
+    }
+
+    let opens: BTreeMap<usize, (usize, &'static str)> = adopted
+        .into_iter()
+        .map(|(open, close, kind)| (open, (close, kind)))
+        .collect();
+    let mut content = content;
+    let len = content.len();
+    splice_bare_toggle_containers(&mut content, 0, len, &opens)
+}
+
+/// Pass 1 + Pass 2 over one line's markers (see `pair_bare_toggles`). Pushes
+/// each adopted `(open_index, close_index, kind)` onto `adopted`.
+fn pair_line_markers(line: &[BareToggleMarker], adopted: &mut Vec<(usize, usize, &'static str)>) {
+    let mut stack: Vec<(&'static str, usize)> = Vec::new();
+    let mut candidates: Vec<(usize, usize, &'static str)> = Vec::new();
+    // [yokogumi, keigakomi]
+    let mut invalid = [false; 2];
+    for marker in line {
+        if marker.is_open {
+            if stack
+                .iter()
+                .any(|(construct, _)| *construct == marker.construct)
+            {
+                // same-construct reopen
+                invalid[bare_toggle_construct_index(marker.construct)] = true;
+            }
+            stack.push((marker.construct, marker.index));
+        } else {
+            match stack.last().copied() {
+                // orphan close
+                None => invalid[bare_toggle_construct_index(marker.construct)] = true,
+                Some((top, open_index)) if top == marker.construct => {
+                    stack.pop();
+                    candidates.push((open_index, marker.index, marker.construct));
+                }
+                Some((top, _)) => {
+                    // improper interleave: both constructs invalid, pop nothing
+                    invalid[bare_toggle_construct_index(marker.construct)] = true;
+                    invalid[bare_toggle_construct_index(top)] = true;
+                }
+            }
+        }
+    }
+    // Leftover open frames are orphan opens: invalidate their construct.
+    for (construct, _) in &stack {
+        invalid[bare_toggle_construct_index(construct)] = true;
+    }
+    // Pass 2: adopt candidates whose construct was not invalidated.
+    for (open_index, close_index, construct) in candidates {
+        if !invalid[bare_toggle_construct_index(construct)] {
+            adopted.push((open_index, close_index, construct));
+        }
+    }
+}
+
+/// Rebuild `content[start..end]` folding each adopted `open_index` (looked up
+/// in `opens`) and its matching close into one container node whose content is
+/// the nodes strictly between the markers. Recurses on the interior first, so
+/// nested pairs become child containers; moves each surviving node exactly once
+/// (`mem::take`) rather than cloning.
+fn splice_bare_toggle_containers(
+    content: &mut Vec<Value>,
+    start: usize,
+    end: usize,
+    opens: &BTreeMap<usize, (usize, &'static str)>,
+) -> Vec<Value> {
+    let mut out = Vec::new();
+    let mut index = start;
+    while index < end {
+        if let Some(&(close, kind)) = opens.get(&index) {
+            let child = splice_bare_toggle_containers(content, index + 1, close, opens);
+            let open_node = mem::take(&mut content[index]);
+            let close_node = mem::take(&mut content[close]);
+            out.push(bare_toggle_container(kind, child, &open_node, &close_node));
+            index = close + 1;
+        } else {
+            out.push(mem::take(&mut content[index]));
+            index += 1;
+        }
+    }
+    out
+}
+
+/// Build one `inline_container` node (same shape family as `style_node`): the
+/// span runs from the open marker's start to the close marker's end.
+fn bare_toggle_container(
+    kind: &'static str,
+    content: Vec<Value>,
+    open: &Value,
+    close: &Value,
+) -> Value {
+    json!({
+        "kind": kind,
+        // `Value::Array` moves `content` in (json! would otherwise borrow it,
+        // reading as a needless by-value param); the pass has no further use.
+        "content": Value::Array(content),
+        "span": {
+            "line_start": open["span"]["line_start"],
+            "line_end": close["span"]["line_end"],
+            "byte_start": open["span"]["byte_start"],
+            "byte_end": close["span"]["byte_end"]
+        }
+    })
 }
 
 fn push_source_gap(content: &mut Vec<Value>, decoded: &DecodedSource, start: usize, end: usize) {
@@ -2624,5 +2835,245 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// Depth-first collect of every node whose `"kind"` equals `kind`, in
+    /// document order (for asserting on repeated containers on one line).
+    fn collect_nodes<'a>(v: &'a Value, kind: &str, out: &mut Vec<&'a Value>) {
+        match v {
+            Value::Object(map) => {
+                if map.get("kind").and_then(Value::as_str) == Some(kind) {
+                    out.push(v);
+                }
+                for key in ["blocks", "content", "children"] {
+                    if let Some(child) = map.get(key) {
+                        collect_nodes(child, kind, out);
+                    }
+                }
+            }
+            Value::Array(items) => {
+                for item in items {
+                    collect_nodes(item, kind, out);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// The REAL pre-pass inline array the adapter feeds `pair_bare_toggles`,
+    /// built by reusing `inline_content` with the same inputs `build_aat`
+    /// constructs (no hand-built approximation). For zero-adoption lines the
+    /// pass is identity, so this equals the array the classifier reads.
+    fn inline_array_for(line: &str) -> Vec<Value> {
+        let src = format!("{line}\n");
+        let decoded = decode_source_bytes(src.as_bytes()).unwrap();
+        let (nodes, _diagnostics, gaiji, ruby) = projections(&decoded.span_text).unwrap();
+        let gaiji_by_start = gaiji
+            .iter()
+            .map(|entry| (entry.span.start, entry.clone()))
+            .collect::<BTreeMap<_, _>>();
+        let ruby_by_span = ruby
+            .iter()
+            .map(|entry| ((entry.span.start, entry.span.end), entry.clone()))
+            .collect::<BTreeMap<_, _>>();
+        inline_content(&decoded, &nodes, &gaiji_by_start, &ruby_by_span)
+    }
+
+    fn raw_sources_of(doc: &Value) -> Vec<String> {
+        let mut raws = Vec::new();
+        collect_raw_sources(doc, &mut raws);
+        raws
+    }
+
+    // --- The ten shared bare-toggle vectors -------------------------------
+    // (reports/aat-fidelity/bare-toggle-model-vectors.json; each Rust test
+    // mirrors the normative `classify_line` adopt/decline decision.)
+
+    #[test]
+    fn bare_toggle_simple_pair_adopts_inline_container() {
+        let doc = aat_value_for("ab［＃横組み］xy［＃横組み終わり］cd\n");
+        let node = find_first_node(&doc, "yokogumi");
+        let content = node["content"].as_array().unwrap();
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0]["kind"], "text");
+        assert_eq!(content[0]["value"], "xy");
+        let raws = raw_sources_of(&doc);
+        assert!(
+            raws.iter().all(|s| !s.starts_with("［＃横組み")),
+            "markers must be consumed: {raws:?}"
+        );
+    }
+
+    #[test]
+    fn bare_toggle_two_sequential_pairs_adopt_two_containers() {
+        let doc =
+            aat_value_for("［＃罫囲み］a［＃罫囲み終わり］ b ［＃罫囲み］c［＃罫囲み終わり］\n");
+        let mut boxes = Vec::new();
+        collect_nodes(&doc, "keigakomi", &mut boxes);
+        assert_eq!(boxes.len(), 2, "both keigakomi pairs adopt");
+        assert_eq!(boxes[0]["content"][0]["value"], "a");
+        assert_eq!(boxes[1]["content"][0]["value"], "c");
+        let raws = raw_sources_of(&doc);
+        assert!(
+            raws.iter().all(|s| !s.starts_with("［＃罫囲み")),
+            "all four markers consumed: {raws:?}"
+        );
+    }
+
+    #[test]
+    fn bare_toggle_nested_pair_becomes_child_container() {
+        let doc = aat_value_for("［＃罫囲み］［＃横組み］x［＃横組み終わり］［＃罫囲み終わり］\n");
+        let outer = find_first_node(&doc, "keigakomi");
+        let inner = find_node(outer, "yokogumi").expect("nested yokogumi child");
+        assert_eq!(inner["content"][0]["value"], "x");
+        // span containment: parent covers child
+        let (po, pc) = (
+            outer["span"]["byte_start"].as_u64().unwrap(),
+            outer["span"]["byte_end"].as_u64().unwrap(),
+        );
+        let (io, ic) = (
+            inner["span"]["byte_start"].as_u64().unwrap(),
+            inner["span"]["byte_end"].as_u64().unwrap(),
+        );
+        assert!(po < io && ic < pc);
+        assert!(raw_sources_of(&doc).is_empty(), "no markers survive");
+    }
+
+    #[test]
+    fn bare_toggle_improper_interleave_declines_both() {
+        // ［＃横組み］［＃罫囲み］…［＃横組み終わり］…: the yoko close mismatches
+        // the kei top → BOTH invalid, nothing pops; the kei pair rolls back.
+        let doc = aat_value_for("［＃横組み］［＃罫囲み］x［＃横組み終わり］［＃罫囲み終わり］\n");
+        assert!(find_node(&doc, "yokogumi").is_none());
+        assert!(find_node(&doc, "keigakomi").is_none());
+        let raws = raw_sources_of(&doc);
+        for token in [
+            "［＃横組み］",
+            "［＃罫囲み］",
+            "［＃横組み終わり］",
+            "［＃罫囲み終わり］",
+        ] {
+            assert!(
+                raws.iter().any(|s| s == token),
+                "{token} stays raw: {raws:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn bare_toggle_same_construct_reopen_declines() {
+        let doc = aat_value_for("［＃横組み］a［＃横組み］b［＃横組み終わり］\n");
+        assert!(find_node(&doc, "yokogumi").is_none());
+        let raws = raw_sources_of(&doc);
+        assert_eq!(
+            raws.iter().filter(|s| *s == "［＃横組み］").count(),
+            2,
+            "both opens stay raw: {raws:?}"
+        );
+        assert!(raws.iter().any(|s| s == "［＃横組み終わり］"));
+    }
+
+    #[test]
+    fn bare_toggle_orphan_open_stays_raw() {
+        let doc = aat_value_for("（例）［＃横組み］\n");
+        assert!(find_node(&doc, "yokogumi").is_none());
+        assert!(raw_sources_of(&doc).iter().any(|s| s == "［＃横組み］"));
+    }
+
+    #[test]
+    fn bare_toggle_orphan_close_stays_raw() {
+        let doc = aat_value_for("ab［＃横組み終わり］cd\n");
+        assert!(find_node(&doc, "yokogumi").is_none());
+        assert!(
+            raw_sources_of(&doc)
+                .iter()
+                .any(|s| s == "［＃横組み終わり］")
+        );
+    }
+
+    #[test]
+    fn bare_toggle_valid_beside_invalid_other_construct() {
+        // A valid keigakomi pair sits beside a yokogumi orphan open on the
+        // same line: the keigakomi adopts, the yokogumi marker stays raw.
+        let doc = aat_value_for("［＃罫囲み］x［＃罫囲み終わり］ ［＃横組み］\n");
+        let box_node = find_first_node(&doc, "keigakomi");
+        assert_eq!(box_node["content"][0]["value"], "x");
+        assert!(find_node(&doc, "yokogumi").is_none());
+        assert!(raw_sources_of(&doc).iter().any(|s| s == "［＃横組み］"));
+    }
+
+    #[test]
+    fn bare_toggle_valid_nested_inside_invalid_outer_still_adopts() {
+        // Construct-scoped invalidation: the keigakomi open is an orphan
+        // (invalid), but the yokogumi pair nested inside it is valid and
+        // STILL adopts.
+        let doc = aat_value_for("［＃罫囲み］［＃横組み］x［＃横組み終わり］\n");
+        let inner = find_first_node(&doc, "yokogumi");
+        assert_eq!(inner["content"][0]["value"], "x");
+        assert!(find_node(&doc, "keigakomi").is_none());
+        assert!(raw_sources_of(&doc).iter().any(|s| s == "［＃罫囲み］"));
+    }
+
+    #[test]
+    fn bare_toggle_later_orphan_rolls_back_earlier_pair() {
+        // A matched yokogumi pair is followed by a third yokogumi open on the
+        // same line: the leftover open invalidates yokogumi, rolling back the
+        // earlier pair — nothing adopts.
+        let doc = aat_value_for("［＃横組み］a［＃横組み終わり］［＃横組み］\n");
+        assert!(find_node(&doc, "yokogumi").is_none());
+        let raws = raw_sources_of(&doc);
+        assert_eq!(
+            raws.iter().filter(|s| *s == "［＃横組み］").count(),
+            2,
+            "both opens stay raw: {raws:?}"
+        );
+        assert!(raws.iter().any(|s| s == "［＃横組み終わり］"));
+    }
+
+    // --- Invariants (review P5-6: STRUCTURAL EQUALITY) --------------------
+
+    #[test]
+    fn bare_toggle_zero_adoption_input_is_structurally_unchanged() {
+        // For every shared vector with zero adoptions, the pass must return
+        // the input array UNCHANGED — full structural equality, so no text,
+        // span, provenance, ordering, or field can drift unnoticed.
+        for line in [
+            "（例）［＃横組み］",                                            // orphan open
+            "ab［＃横組み終わり］cd",                                        // orphan close
+            "［＃横組み］a［＃横組み］b［＃横組み終わり］",                  // reopen
+            "［＃横組み］［＃罫囲み］x［＃横組み終わり］［＃罫囲み終わり］", // interleave
+            "［＃横組み］a［＃横組み終わり］［＃横組み］",                   // rollback
+        ] {
+            let content = inline_array_for(line);
+            let out = pair_bare_toggles(content.clone());
+            assert_eq!(out, content, "zero-adoption line must be identity: {line}");
+        }
+    }
+
+    #[test]
+    fn bare_toggle_no_marker_input_is_identity() {
+        // The perf early-return path: a paragraph with no bare-toggle marker
+        // must return byte-for-byte unchanged.
+        let content = inline_array_for("ただの本文《ほんぶん》です［＃ここから罫囲み］");
+        let out = pair_bare_toggles(content.clone());
+        assert_eq!(out, content);
+    }
+
+    #[test]
+    fn bare_toggle_multi_line_isolation() {
+        // Line 1 carries a valid pair; line 2 carries an orphan open (corpus
+        // case 000106_55753). Line 1 adopts; line 2's marker stays raw and its
+        // nodes are untouched.
+        let doc = aat_value_for("ab［＃横組み］xy［＃横組み終わり］cd\n（例）［＃横組み］\n");
+        let mut boxes = Vec::new();
+        collect_nodes(&doc, "yokogumi", &mut boxes);
+        assert_eq!(boxes.len(), 1, "exactly line 1 adopts");
+        assert_eq!(boxes[0]["content"][0]["value"], "xy");
+        let raws = raw_sources_of(&doc);
+        assert_eq!(
+            raws.iter().filter(|s| *s == "［＃横組み］").count(),
+            1,
+            "only line 2's orphan open stays raw: {raws:?}"
+        );
     }
 }

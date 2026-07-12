@@ -160,11 +160,11 @@ asset-only bundles are readable and rejected with
 `no-primary-text-member`.
 
 `utf8_flagged_entry_count` continues to count the raw ZIP general-purpose EFS
-bit 11, not a name-source label inferred later. Under v1 precedence an EFS-set
-entry decodes through strict UTF-8 before Unicode Path consideration, so the
-current values coincide; the scan nevertheless retains the raw bit explicitly
-to keep the report field's definition stable. `legacy_flagged_entry_count`
-remains the complement over non-directory entries.
+bit 11, independently of the decoder's `name_source` label. Under v1
+precedence an EFS-set entry decodes through strict UTF-8; Unicode Path evidence
+is exercised by a separate EFS-unset case. The scan retains the raw bit
+explicitly rather than deriving either count from decoder selection.
+`legacy_flagged_entry_count` remains the complement over non-directory entries.
 
 The report also pins every declared-versus-actual mismatch rather than only
 the maxima:
@@ -316,8 +316,9 @@ threshold.
   implementation with domain-specific error translation.
 - Every structurally readable pinned ZIP is streamed under production limits.
 - The report distinguishes structural readability from bundle admission.
-- Asset-only, collision, limit, and damaged-archive dispositions are stable and
-  counted.
+- Asset-only, collision, and damaged-archive dispositions are stable and
+  counted; bounded-limit violations and every other incomplete scan abort the
+  gate instead of becoming re-blessable evidence.
 - Protected non-admission failures abort the gate unchanged.
 - `source-bundle-corpus` reproduces the versioned checked report exactly.
 - Existing source-bundle, snapshot, publication, simulation, governance, and

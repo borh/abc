@@ -559,6 +559,20 @@
         (is (= :case-fold-member-path-collision
                (:reason (ex-data collision-error))))))))
 
+(deftest admission-rejects-mutated-retained-primary-bytes-test
+  (with-zips [zip (write-zip! (temp-file ".zip")
+                              [["work.txt" (utf8-bytes "body")]])]
+    (let [scan (source-bundle/scan-zip zip)
+          retained ^bytes (:primary-text-bytes scan)
+          _ (aset-byte retained 0 (byte (int \B)))
+          failure (try
+                    (source-bundle/admit-scan! scan)
+                    nil
+                    (catch clojure.lang.ExceptionInfo t t))]
+      (is (source-bundle/admission-error? failure))
+      (is (= :primary-text-retention-mismatch
+             (:reason (ex-data failure)))))))
+
 (deftest efs-count-is-independent-of-decoder-name-source-test
   (with-zips
     [efs-zip (write-zip!

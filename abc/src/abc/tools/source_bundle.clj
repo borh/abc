@@ -416,12 +416,16 @@
         primary-hash (get (some #(when (= primary-path (get % "path")) %)
                                 members)
                           "member_hash")
+        primary-bytes (:primary-text-bytes scan)
+        retained-hash (when (some? primary-bytes)
+                        (hash/format-sha256
+                         (hash/sha256-bytes primary-bytes)))
         identity-object
         (validate-identity-object!
          {"construction" construction
           "members" (mapv #(select-keys % ["path" "member_hash"]) members)
           "primary_text_member" primary-path})]
-    (when-not (and primary-hash (some? (:primary-text-bytes scan)))
+    (when-not (and primary-hash (= primary-hash retained-hash))
       (fail! :primary-text-retention-mismatch archive-path
              {:primary-text-member primary-path}))
     {:identity-object identity-object
@@ -430,7 +434,7 @@
      :members members
      :primary-text-member primary-path
      :primary-text-hash primary-hash
-     :primary-text-bytes (:primary-text-bytes scan)}))
+     :primary-text-bytes primary-bytes}))
 
 (defn inspect-zip
   ([zip-file] (inspect-zip zip-file default-limits))

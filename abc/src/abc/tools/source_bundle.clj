@@ -12,7 +12,8 @@
            [java.security DigestInputStream MessageDigest]
            [java.text Normalizer Normalizer$Form]
            [org.apache.commons.compress.archivers.zip
-            ZipArchiveEntry ZipArchiveEntry$NameSource ZipFile]))
+            UnicodePathExtraField ZipArchiveEntry ZipArchiveEntry$NameSource
+            ZipFile]))
 
 (def construction "abc-source-bundle-v1")
 (def schema-id "https://w3id.org/abc/schemas/source-bundle.schema.json")
@@ -40,7 +41,14 @@
     (let [source (.getNameSource entry)]
       (cond
         (= source ZipArchiveEntry$NameSource/UNICODE_EXTRA_FIELD)
-        (.getName entry)
+        (let [unicode-path (cast UnicodePathExtraField
+                                 (.getExtraField
+                                  entry UnicodePathExtraField/UPATH_ID))]
+          (when-not unicode-path
+            (throw (IllegalArgumentException.
+                    "Unicode Path name source has no Unicode Path field")))
+          (strict-decode StandardCharsets/UTF_8
+                         (.getUnicodeName unicode-path)))
 
         (= source ZipArchiveEntry$NameSource/NAME_WITH_EFS_FLAG)
         (strict-decode StandardCharsets/UTF_8 (.getRawName entry))

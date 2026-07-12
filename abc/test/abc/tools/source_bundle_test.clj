@@ -204,6 +204,19 @@
         (is (= "windows-31j"
                (get (member-by-path (source-bundle/inspect-zip zip) "legacy.txt")
                     "name_source"))))))
+  (testing "a CRC-valid Unicode Path field still requires strict UTF-8"
+    (let [raw-name (utf8-bytes "legacy.txt")
+          crc (doto (CRC32.) (.update raw-name))
+          malformed-extra
+          (doto (UnicodePathExtraField.)
+            (.setNameCRC32 (.getValue crc))
+            (.setUnicodeName
+             (byte-array [(unchecked-byte 0xc3) 0x28 0x2e 0x74 0x78 0x74])))]
+      (with-zips [zip (write-zip! (temp-file ".zip")
+                                  [["legacy.txt" (utf8-bytes "x") malformed-extra]]
+                                  {:encoding "windows-31j" :efs false})]
+        (is (= :invalid-member-name-encoding
+               (reason #(source-bundle/inspect-zip zip)))))))
   (testing "strict windows-31j is the final fallback"
     (with-zips [zip (write-zip! (temp-file ".zip") [["作品.txt" (utf8-bytes "x")]]
                                 {:encoding "windows-31j" :efs false})]

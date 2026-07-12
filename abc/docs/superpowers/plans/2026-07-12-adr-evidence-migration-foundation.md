@@ -424,6 +424,8 @@ git commit -m "feat(adr): add deterministic evidence registrar"
 - Modify: `abc/src/abc/tools/adr_evidence_capture.clj`
 - Create: `abc/src/abc/tools/evidence_io.clj`
 - Create: `abc/src/abc/tools/adr_evidence_runtime_inputs.clj`
+- Create: `abc/data/evidence-higher-order-calls/manifest-content.edn`
+- Create: `abc/data/evidence-higher-order-calls/adr-validate-repository.edn`
 - Modify: `abc/src/abc/tools/files.clj`
 - Modify: `abc/src/abc/tools/json.clj`
 - Modify: `abc/src/abc/tools/hash.clj`
@@ -454,27 +456,43 @@ git commit -m "feat(adr): add deterministic evidence registrar"
     `{:schema-version :abc-adr-runtime-inputs-v1 :paths [...]}` whose paths
     are sorted, unique, contained, existing repository/workspace-relative
     runtime-data paths;
-  - `(abc.tools.evidence-io/with-read-trace {:repo-root ... :workspace-root
-    ...} thunk) -> {:value ... :observed-paths [...]}` and
-    `(record-read! path) -> path`; absolute paths canonically contained by the
-    repository or workspace normalize to the same relative key as their
-    relative spelling. `(with-ephemeral-read-scope temp-root thunk)` permits
-    generated reads only below one canonical temporary root outside the
-    repository/workspace and excludes them from evidence inputs; repository
-    reads inside that scope are still recorded and every other external path
-    is rejected. The namespace
+  - `(abc.tools.evidence-io/with-read-trace {:identity-root ... :cwd-root ...}
+    thunk) -> {:value ... :repository-paths [...] :ephemeral-paths [...]}` and
+    `(record-read! path) -> path`; relative paths resolve from `cwd-root`,
+    while absolute or relative paths canonically contained by `identity-root`
+    normalize to the same identity-root-relative key.
+    `(with-ephemeral-root temp-root thunk)` grants a narrow capability for
+    generated reads only below one canonical root outside `identity-root` and
+    excludes them from manifest equality; repository reads inside that scope
+    remain recorded and every other external path throws
+    `:external-read-denied`. The namespace
     owns only an invocation-local trace hook and path recording and must not
     require `abc.tools.files` or `abc.tools.hash`;
-  - existing `abc.tools.files` repository-read helpers,
-    `abc.tools.json/read-json-file`, and
+  - traced physical adapters for text, bytes, streams, readers, JSON, EDN,
+    JSONL, directory enumeration, ZIP, Jena, and TEI loads; existing
+    `abc.tools.files` repository-read helpers, `abc.tools.json/read-json-file`, and
     `abc.tools.hash/sha256-file` call `record-read!` before reading, so tracing
     covers production helpers transitively invoked by an evidence test;
-    add `(abc.tools.files/read-text path) -> string` for callers that
-    previously used direct `slurp`;
+    add `abc.tools.files/read-text`, `read-bytes`, `input-stream`, `reader`,
+    and `list-files` for callers that previously used raw APIs;
   - `(assert-runtime-input-closure! {:repo-root ... :workspace-root ...
-    :descriptor ... :observed-paths ...}) -> true` or throws with exact
+    :descriptor ... :repository-paths ...}) -> true` or throws with exact
     `:missing-runtime-input`, `:undeclared-runtime-input`,
-    `:invalid-runtime-input-manifest`, or containment problem data;
+    `:invalid-runtime-input-manifest`, `:external-read-denied`,
+    `:invalid-ephemeral-root`, or containment problem data;
+  - `(derive-nix-clojure-source-closure repo-root focused-vars) ->
+    sorted-vector<relative-source-or-test-path>` and a closed checked manifest
+    `{:schema-version :abc-adr-nix-clojure-closure-v1 :focused-vars [...]
+    :paths [...]}`. A version-1 Nix/Clojure descriptor explicitly binds
+    `deps.edn`, `deps-lock.json`, `tests.edn`, this manifest, and every listed path; descriptor tests require
+    exact expansion rather than trusting the manifest hash alone;
+  - immutable caller-scoped higher-order target contract
+    `{:schema-version :abc-evidence-higher-order-call-v1
+      :caller qualified-var
+      :parameters {symbol [qualified-var ...]}}`, stored at the canonical
+    caller-derived path under `data/evidence-higher-order-calls/`. Reachability
+    binds only contracts it consults, expands every allowed target, and rejects
+    an unregistered or non-finite function-valued call;
   - CLI option `--repo-root PATH`, defaulting to `.`;
   - validator option `--workspace-root PATH`, used only to resolve the new
     profile and required whenever such an artifact is present;
@@ -505,8 +523,8 @@ descriptor value:
 
 ```clojure
 {:schema-version "abc-adr-evidence-capture-v2"
- :tool "bash"
- :argv ["bash" "-lc" "cd abc && test -f ../ab-validator/docs/report.md"]
+ :tool "bin/kaocha"
+ :argv ["bin/kaocha" "--focus" "example.core-test/runtime-input-contract"]
  :runtime-input-manifest "abc/docs/evidence/adr-inputs/example.edn"
  :input-profile {:kind "component-clojure-test-v1"
                  :component-root "abc"
@@ -551,23 +569,42 @@ Add runtime-input tests proving:
   from `:explicit`;
 - a manifest rejects unsorted, duplicate, absolute, `..`, missing, lexical-
   escape, and symlink-escape paths;
-- `with-read-trace` records each traceable read once in sorted order and does
-  not record writes; relative and absolute spellings of the same contained
-  file collapse to one key. An ephemeral scope rejects a root inside the
-  repository/workspace and rejects reads outside its declared temporary root;
+- `with-read-trace` records each traceable repository read once in sorted
+  order and does not record writes; relative and absolute spellings of the
+  same contained file collapse to one key. An ephemeral scope rejects a root
+  inside the identity tree, rejects reads outside its declared temporary root,
+  and cannot launder a repository file copied into that root without recording
+  the original repository read;
 - `assert-runtime-input-closure!` succeeds only when observed trace paths,
   manifest `:paths`, and descriptor runtime-data inputs are exactly equal;
   descriptor self, manifest self, and statically derived Clojure namespaces
   are excluded from that equality;
-- the full statically derived source-and-test namespace closure of a v2
-  descriptor fails the bypass lint when it directly uses `slurp`,
-  `clojure.java.io/reader`, `Files/readAllBytes`, Jena path-loading APIs, or
-  another repository read that bypasses the hook. `spit` and other writes are
-  not reads. `abc.tools.files`, `abc.tools.hash`,
+- a Nix/Clojure closure manifest rejects unresolved focused Vars, unsorted or
+  missing source paths, and a descriptor that binds the manifest but omits one
+  listed source/test file or any of `deps.edn`, `deps-lock.json`, and
+  `tests.edn`;
+- the caller-scoped contracts accept initial finite targets for
+  `manifest/content` `sha256-file-fn` and `adr/validate-repository`
+  `validate-fn`; unknown target,
+  missing target Var, duplicate parameter, caller/path mismatch, or a target
+  graph with forbidden I/O fails closed;
+- the statically derived reachable-Var graph from a v2 descriptor's exact
+  focused Var fails the default-deny lint when it uses an unadapted file,
+  stream, reader, directory-enumeration, archive, Jena/TEI library-loader,
+  network, or subprocess API. This includes `slurp`, `io/reader`,
+  `io/input-stream`, `FileReader`, `Files/readAllBytes`, `Files/readString`,
+  `Files/newInputStream`, `line-seq`, path-based `clojure.edn/read`,
+  `file-seq`, `.listFiles`, `ZipFile`, `ProcessBuilder`, `shell/sh`, and
+  `babashka.process`. `spit` and other writes are not reads.
+  `abc.tools.files`, `abc.tools.hash`,
   `abc.tools.json/read-json-file`, and a small named adapter
   that calls `record-read!` immediately before a library path-load are the
   only exemptions. A bypass in a transitive production helper therefore
-  fails the descriptor contract, not merely a bypass in the test namespace.
+  fails the descriptor contract, while an unrelated unreachable helper does
+  not contaminate a narrow boundary. Dynamic Var resolution, reflection-based
+  I/O, and an unresolved call edge are forbidden in a v2 evidence graph.
+  Checked higher-order entries are allowed only when the caller/parameter and
+  every possible target resolve exactly; target graphs receive the same lint.
 
 - [ ] **Step 2: Run RED**
 
@@ -614,19 +651,40 @@ descriptor and manifest are themselves hashed inputs, so this strengthens
 capture preconditions without changing the observation artifact shape.
 
 Implement `evidence-io` as an acyclic trace-hook leaf. `with-read-trace` binds
-an invocation-local collector and `record-read!` resolves through
-`abc.tools.path-containment/path-state` before recording a workspace-relative
-path. Relative paths and canonical absolute paths contained by either root
-normalize identically. A dynamically bound ephemeral scope may suppress only
-generated reads canonically below its declared temporary root, which must be
-outside both roots; it never suppresses a repository/workspace read or permits
-another external path. It must not use global mutable state and must not
-require `files` or `hash`. Modify all repository-reading functions in
+an invocation-local collector. Do not pass an absolute path to
+`path-containment/path-state`, whose contract intentionally rejects absolutes.
+Instead, `record-read!` first resolves a relative path against canonical
+`cwd-root` or normalizes an absolute path, then classifies the canonical result
+against canonical `identity-root` and active ephemeral roots. Only after a
+repository path is relativized to `identity-root` may existing containment
+validation run on that relative key. A dynamically bound ephemeral scope may
+suppress only generated reads canonically below its declared temporary root,
+which must be outside the identity root; it never suppresses a repository read
+or permits another external path. It must not use global mutable state and
+must not require `files` or `hash`. Modify all physical repository-reading
+functions in
 `abc.tools.files`, `abc.tools.json/read-json-file`, and
 `abc.tools.hash/sha256-file` to call the hook before their existing read. A
 production helper that must give a path directly to Jena or another library
 uses a named traced adapter which calls `record-read!` immediately before the
 library call; do not whitelist arbitrary callers.
+
+Add traced directory, archive, Jena, and TEI adapters. Directory enumeration
+records every returned regular file so additions and removals affect exact
+closure. The closure-wide lint rejects every subprocess API in a version-2
+descriptor's derived namespaces. Tests needing a real child command must use
+a version-1 sandboxed Nix descriptor; injected fake runners remain allowed in
+pure unit tests.
+
+Use clj-kondo analysis to derive the exact reachable-Var graph from each
+focused Var. Source/test namespace files remain freshness inputs, but the
+default-deny semantic scan follows only resolved call edges. Fail closed on a
+missing focus, unresolved/dynamic invocation, reflective I/O, or a reachable
+raw I/O/network/process symbol.
+The initial higher-order contracts are not a blanket allowlist. If RED
+analysis finds another legitimate function-valued call, stop and add a
+reviewed finite caller/parameter/target entry with positive and unknown-target
+negative tests before any family descriptor may rely on it.
 
 The `:descriptor` option is exactly `{:path "..." :value descriptor-map}`;
 this avoids adding a second path option while keeping the descriptor path out
@@ -643,7 +701,7 @@ explicit set is exactly:
               [descriptor-path (:runtime-input-manifest descriptor)]))
 ```
 
-The caller supplies `:observed-paths` from the boundary's completed
+The caller supplies `:repository-paths` from the boundary's completed
 `with-read-trace` result. Capture refuses to execute a v2 descriptor whose
 static manifest/explicit comparison fails; the focused boundary test refuses
 to pass when the dynamic observed/manifest comparison fails.
@@ -656,6 +714,11 @@ path and every explicit path are still evidence inputs relative to that root.
 The subprocess working directory is the monorepo root; component selection is
 recorded in `argv`, normally `bash -lc "cd abc && ..."`. Do not add an ambient
 working-directory field or permit repository-parent inputs.
+Every v2 derived input set includes only the caller-scoped higher-order
+contract files actually consulted by its reachable graph (with `abc/data/...`
+keys for a component profile). Adding a contract for an unrelated future
+caller therefore cannot stale prior evidence. Nix/Clojure closure descriptors
+apply the same rule and bind every consulted contract.
 
 Thread `workspace-root` separately through `validate-registry`,
 `validate-bundle`, and the governance CLI. Change `validate-bundle` to the
@@ -718,7 +781,7 @@ bin/kaocha --focus abc.tools.adr-evidence-bundle-test \
 cd ..
 bash tests/root-flake-output-contract-smoke.sh
 system="$(nix eval --impure --raw --expr builtins.currentSystem)"
-nix build ".#checks.${system}.monorepo-adr-governance"
+nix build --no-link ".#checks.${system}.monorepo-adr-governance"
 ```
 
 Expected: all tests and the root audit check pass.
@@ -729,7 +792,10 @@ git add abc/schemas/adr-evidence-run.schema.json \
   abc/src/abc/tools/adr_evidence_capture.clj \
   abc/src/abc/tools/evidence_io.clj \
   abc/src/abc/tools/adr_evidence_runtime_inputs.clj \
+  abc/data/evidence-higher-order-calls/manifest-content.edn \
+  abc/data/evidence-higher-order-calls/adr-validate-repository.edn \
   abc/src/abc/tools/files.clj \
+  abc/src/abc/tools/json.clj \
   abc/src/abc/tools/hash.clj \
   abc/src/abc/tools/adr_evidence.clj \
   abc/src/abc/tools/adr_evidence_register.clj \
@@ -754,12 +820,20 @@ git commit -m "feat(adr): capture component tests from monorepo root"
 **Interfaces:**
 - Consumes: parsed `:section-bodies` already returned by `parse-adr`.
 - Produces: `:claim-header-outside-acceptance` problems with `:section` equal to exactly `Historical Evidence` or `Future Verification`.
+- Also routes `adr-files` directory enumeration through
+  `abc.tools.files/list-files` and `parse-adr` content reads through
+  `abc.tools.files/read-text`; their behavior and sort order remain unchanged,
+  but Plan 5's graph/policy evidence can now trace them.
 
 - [ ] **Step 1: Write failing parser/repository tests**
 
 Create temp ADRs where both exact sections contain
 `**ADR-0042-C1 — structural-invariant:**`; assert two problems. Assert ordinary
 bold prose and a header only in Acceptance Criteria remain valid.
+Add adapter-characterization tests proving `adr-files` returns the same sorted
+Markdown names and `parse-adr` returns the same value when the traced helpers
+are active; a synthetic direct `.listFiles` or `slurp` version fails Plan 1's
+reachable-Var lint.
 
 - [ ] **Step 2: Run RED**
 
@@ -1093,6 +1167,8 @@ Expected: clean tree. Do not begin capture otherwise.
 - Create: `abc/docs/evidence/adr-capture/design-bundle-operational.edn`
 - Create: six same-stem manifests under `abc/docs/evidence/adr-inputs/` for
   the focused Clojure descriptors
+- Create: `abc/docs/evidence/adr-inputs/source-bundle-corpus-nix-clojure-closure.edn`
+- Create: `abc/docs/evidence/adr-inputs/design-bundle-operational-nix-clojure-closure.edn`
 - Create: `abc/docs/evidence/adr-entries/foundation.edn`
 
 **Interfaces:**
@@ -1109,17 +1185,24 @@ manifest `:paths` vector is exactly the remaining explicit runtime-data paths.
 
 | Descriptor | Profile/command | Observation |
 |---|---|---|
-| `foundation-manifest-identity.edn` | `clojure-test-v1`, roots `abc.tools.jcs-test`, `abc.tools.code-as-spec-test`, `abc.tools.manifest-index-test`, `abc.tools.foundation-evidence-test`; `bin/kaocha --focus ...` | `manifest-identity-contracts-pass` |
-| `foundation-import-materialization.edn` | `clojure-test-v1`, root `abc.tools.materialize-import-test`; explicitly bind `examples/ab-validator-output/{README.md,comparison-report.json,divergence.json,manifest-inputs.json,parser-ir.json,run-summary.jsonl,source-region-coverage.json,warnings.jsonl}`, manifest/IR/diagnostic schemas, and compatibility data | `import-materialization-contracts-pass` |
-| `foundation-validation-helpers.edn` | `clojure-test-v1`, root `abc.tools.validate-design-bundle-test`; bind every schema/fixture/data path reached by selected tests | `validation-helper-contracts-pass` |
-| `source-bundle-fixtures.edn` | roots `abc.tools.source-bundle-test`, `abc.tools.schema-test`; bind known answer and source-bundle schema | `source-bundle-fixtures-pass` |
-| `source-identity-simulation.edn` | root `abc.sim.content-sim-test`; bind simulation configs and D7 table | `source-identity-simulation-pass` |
-| `source-snapshot-fixtures.edn` | root `abc.tools.materialize-source-snapshot-test`; bind schema/data fixtures | `source-snapshot-fixtures-pass` |
-| `source-bundle-corpus.edn` | `repo-files-v1`; command `nix build .#checks.$(nix eval --impure --raw --expr builtins.currentSystem).source-bundle-corpus --print-build-logs`; explicitly bind descriptor, `flake.nix`, `flake.lock`, `deps.edn`, `src/abc/tools/source_bundle_report.clj`, `src/abc/tools/source_bundle.clj`, `src/abc/tools/hash.clj`, `src/abc/tools/json.clj`, `src/abc/tools/files.clj`, `src/abc/tools/path_containment.clj`, `schemas/source-bundle.schema.json`, and `data/source-bundle/aozorabunko-0e9ea3e-summary.json` | `source-bundle-corpus-reproduced` |
-| `design-bundle-operational.edn` | `repo-files-v1`; command `nix run .#validate-design-bundle`; explicit set is its descriptor, `flake.nix`, `flake.lock`, `deps.edn`, `bin/validate-design-bundle.sh`, and exactly `(validate-design-bundle/evidence-input-paths)` | `design-bundle-exits-zero` |
+| `foundation-manifest-identity.edn` | exact focus `abc.tools.foundation-evidence-test/foundation-manifest-identity-contract`; this dedicated wrapper directly asserts the selected JCS/code-as-spec/index predicates | `manifest-identity-contracts-pass` |
+| `foundation-import-materialization.edn` | exact focus `abc.tools.foundation-evidence-test/foundation-import-materialization-contract`; explicitly bind `examples/ab-validator-output/{README.md,comparison-report.json,divergence.json,manifest-inputs.json,parser-ir.json,run-summary.jsonl,source-region-coverage.json,warnings.jsonl}`, manifest/IR/diagnostic schemas, and compatibility data | `import-materialization-contracts-pass` |
+| `foundation-validation-helpers.edn` | exact focus `abc.tools.foundation-evidence-test/foundation-validation-helpers-contract`; bind every schema/fixture/data path reached by the selected pure helper calls | `validation-helper-contracts-pass` |
+| `source-bundle-fixtures.edn` | exact focus `abc.tools.foundation-evidence-test/source-bundle-fixtures-contract`; bind known answer and source-bundle schema | `source-bundle-fixtures-pass` |
+| `source-identity-simulation.edn` | exact focus `abc.tools.foundation-evidence-test/source-identity-simulation-contract`; bind simulation configs and D7 table | `source-identity-simulation-pass` |
+| `source-snapshot-fixtures.edn` | exact focus `abc.tools.foundation-evidence-test/source-snapshot-fixtures-contract`; bind schema/data fixtures | `source-snapshot-fixtures-pass` |
+| `source-bundle-corpus.edn` | `repo-files-v1`; command `nix build --no-link .#checks.$(nix eval --impure --raw --expr builtins.currentSystem).source-bundle-corpus --print-build-logs`; bind descriptor, flake/locks/dependency configs, checked closure manifest for `abc.tools.source-bundle-report/-main` plus every expanded path, source-bundle schema, and the checked corpus summary | `source-bundle-corpus-reproduced` |
+| `design-bundle-operational.edn` | `repo-files-v1`; command `nix run .#validate-design-bundle`; bind descriptor, flake/locks/dependency configs, checked closure manifest for `abc.tools.validate-design-bundle/-main` plus every expanded path, wrapper, and exactly `(validate-design-bundle/evidence-input-paths)` | `design-bundle-exits-zero` |
 
 For Nix descriptors use `bash -lc` as argv so shell substitution is recorded
 literally. Do not attach fixture claims to the operational observation.
+Both Nix/Clojure descriptors bind `deps.edn`, `deps-lock.json`, and
+`tests.edn`. Generate their closure manifests with Plan 1's helper and assert
+exact descriptor expansion with missing/extra-path negative tests.
+Each version-2 wrapper owns its `with-read-trace`, scopes every freshly
+generated directory with `with-ephemeral-root`, calls only the exact operation
+under evidence, and invokes `assert-runtime-input-closure!` before returning.
+Do not focus a whole legacy test namespace or call another `deftest` Var.
 
 - [ ] **Step 2: Validate descriptor closure with tests**
 
@@ -1131,10 +1214,16 @@ For every version-2 descriptor, invoke
 checked manifest paths as the observed trace to prove static descriptor
 equality, then run the focused evidence test that obtains its real observed
 trace through `evidence-io/with-read-trace`. Require zero missing or undeclared
-runtime paths. Scan only the focused evidence namespaces named by these
-descriptors and their complete statically derived source/test namespace
-closures; reject direct repository-read bypasses except the named traced
-adapters defined in Task 2B.
+runtime paths. Starting from each exact focused Var, scan its statically
+resolved reachable-Var graph across source and test namespaces; reject direct
+repository-read bypasses except the named traced
+adapters defined in Task 2B, and reject every network/subprocess API. This
+central descriptor test is mandatory even when a family also owns a focused
+closure test, so a descriptor plus hand-written manifest cannot capture
+without executing the real trace assertion. It resolves every exact focused
+Var and verifies that the owning namespace contains the descriptor-keyed
+`with-read-trace` plus `assert-runtime-input-closure!` call before running that
+Var; missing focus or missing closure wiring fails before capture.
 For `design-bundle-operational.edn`, assert its explicit set equals the fixed
 wrapper/flake set union `(validate-design-bundle/evidence-input-paths)`; a new
 runtime-read file therefore fails the descriptor contract until it is bound.

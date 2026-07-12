@@ -110,22 +110,45 @@ bundles live under `docs/evidence/adr-runs/`. A descriptor is included in its
 own explicit input set so the recorded command/profile cannot drift without
 staling the bundle.
 
-Every executable bundle also has a mechanically checked runtime-data closure.
+Every executable bundle also has a mechanically checked runtime-data closure
+under the supported evidence-I/O protocol.
 Static namespace traversal establishes source-code closure only; it is never
 evidence that dynamically read schemas, fixtures, registries, reports, or
 configuration files are complete. Each focused evidence boundary publishes a
 sorted runtime-input manifest, its descriptor test requires exact equality
 between that manifest and the declared data inputs, and evidence-bound Clojure
-code routes repository reads through the traceable repository I/O boundary.
-Lint/tests reject direct read bypasses in those namespaces. Nix-backed
-boundaries instead name the exact check-specific flake lock, Nix expression,
-schema, and fixture determinants.
+code routes physical repository reads through the traceable repository I/O
+adapters. Reachable-Var lint rejects unadapted file, directory, archive,
+library-loader, network, and subprocess APIs on every statically resolved call
+edge from the exact focused Var; unresolved dynamic/reflection edges fail
+closed. Ordinary higher-order calls are permitted only through a checked
+finite target contract: the caller Var and parameter name map to explicit
+allowed target Vars, every target is added to the reachable graph, and an
+unknown target fails. This is not an exemption from I/O tracing. Each caller
+contract is an immutable, separately hashed input; a new caller's contract
+does not rotate unrelated earlier evidence. Nix-backed boundaries instead
+name the exact check-specific flake lock, Nix expression,
+schema, and fixture determinants. A Nix check that executes Clojure also binds
+a checked, expanded transitive source/test closure manifest plus `deps.edn`,
+`deps-lock.json`, and `tests.edn`;
+hashing only the closure manifest without every listed file is invalid.
 
-The trace boundary normalizes relative paths and absolute paths contained by
-the repository/workspace to the same manifest key. Generated temporary reads
-may be excluded only inside an explicit ephemeral scope rooted outside both
-trees; that scope cannot suppress repository reads or authorize any other
-external path. External authority inputs remain declared evidence inputs.
+The trace boundary classifies canonical paths into exactly three states:
+repository/workspace inputs, scoped generated-ephemeral paths, or denied
+external paths. Relative paths resolve against an explicit working root;
+absolute paths contained by the identity root normalize to the same relative
+manifest key. Generated temporary reads may be excluded only inside an
+explicit capability rooted outside the repository/workspace; that capability
+cannot suppress repository reads, launder copied repository inputs, or
+authorize another external path. External authority inputs remain declared
+evidence inputs.
+
+Version-2 Clojure evidence may not launch child processes in its transitive
+source/test closure. A claim that genuinely concerns an external command uses
+a version-1 `repo-files-v1` Nix boundary with exact lock, Nix expression,
+source, schema, and fixture determinants. The runtime capability plus static
+lint is default-deny for the supported evidence protocol; it is not presented
+as JVM-, native-, reflection-, network-, or OS-level interception.
 
 External-authority summaries and expert assessments live under
 `docs/evidence/external/`. They are bounded documents with independently
@@ -246,6 +269,9 @@ observations or be split at the actual assertion boundary.
 An aggregate process result may support multiple claims only when each claim
 explicitly asserts that same aggregate process result; it cannot substitute
 for narrower fixture or structural semantics.
+Every focused var or Nix check named by a descriptor must be authored by an
+owning task, and descriptor-contract tests must resolve every named target
+before capture. No missing focus may degrade to a vacuous pass.
 
 ## Lifecycle Assignments
 
@@ -374,7 +400,10 @@ implementation of the validator.
   be Accepted until the exact tuple and every declared release predicate pass.
 - Publication-rendering evidence binds `abc/flake.lock` and
   `abc/nix/tei-profile-artifacts.nix` together with the ODD/RNG/Schematron and
-  fixture inputs; the root lockfile is not a determinant of `./abc#...`.
+  fixture inputs; the root lockfile is not a determinant of `./abc#...`. The
+  ODD determines ABC profile identity and rule coverage, committed RNG/SCH
+  determine project validation, and lock-pinned `teiAllSchema` determines the
+  separate upstream validation.
 - Strengthen parser citation tests to recompute logical file hashes and reject
   explanatory/compatibility evidence at selection/admission transitions.
 - Preserve Phase 5 only under its frozen tuple:

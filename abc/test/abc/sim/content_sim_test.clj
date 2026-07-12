@@ -242,28 +242,28 @@
     (harness/check!
      "P16.1 build" 10
      (prop/for-all [hist (sgen/content-history-gen {})]
-                   (let [m (peek (:states (model/fold-history hist)))
-                         expected (oracle/expected-selection (render/model->rows m)
-                                                             (render/content-sources m))]
-                     (with-temp-dirs [aozora out cfg]
-                       (render/write-aozora-root! aozora m)
-                       (let [config (write-config! cfg false)
-                             args {:aozora-root aozora :out-root out :config-path config
-                                   :snapshot-date "2026-07-12"}]
-                         (if (harness/tick! counter (seq (:selected expected)))
-                           (let [checks (build-checks out (run-build! args) expected)]
-                             (when-not (every? val checks)
-                               (println "P16.1 failing checks:"
-                                        (vec (keep (fn [[k v]] (when-not v k)) checks))))
-                             (every? val checks))
+       (let [m (peek (:states (model/fold-history hist)))
+             expected (oracle/expected-selection (render/model->rows m)
+                                                 (render/content-sources m))]
+         (with-temp-dirs [aozora out cfg]
+           (render/write-aozora-root! aozora m)
+           (let [config (write-config! cfg false)
+                 args {:aozora-root aozora :out-root out :config-path config
+                       :snapshot-date "2026-07-12"}]
+             (if (harness/tick! counter (seq (:selected expected)))
+               (let [checks (build-checks out (run-build! args) expected)]
+                 (when-not (every? val checks)
+                   (println "P16.1 failing checks:"
+                            (vec (keep (fn [[k v]] (when-not v k)) checks))))
+                 (every? val checks))
                ;; empty selection: the SUT must refuse loudly
-                           (let [t (try (run-build! args) nil (catch Throwable t t))]
-                             (and (some? t)
-                                  (not (harness/forbidden-throw? t))
-                                  (chain-clean-ex-info? t [:aozora_root])
-                                  (some #(= "no catalog-backed work ZIPs were successfully derived"
-                                            (ex-message %))
-                                        (ex-chain t))))))))))
+               (let [t (try (run-build! args) nil (catch Throwable t t))]
+                 (and (some? t)
+                      (not (harness/forbidden-throw? t))
+                      (chain-clean-ex-info? t [:aozora_root])
+                      (some #(= "no catalog-backed work ZIPs were successfully derived"
+                                (ex-message %))
+                            (ex-chain t))))))))))
     (harness/assert-applied-ratio! "P16.1 build" counter)))
 
 ;; --- P16.3 pin-chain (D7) -------------------------------------------------
@@ -272,55 +272,66 @@
   (harness/check!
    "P16.3 pin-chain" 5
    (prop/for-all [hist (sgen/content-history-gen {})]
-                 (let [m (peek (:states (model/fold-history hist)))
-                       expected (oracle/expected-selection (render/model->rows m)
-                                                           (render/content-sources m))]
-                   (if (empty? (:selected expected))
-                     true ;; vacuous run; generation non-vacuity is enforced by P16.1's ratio
-                     (with-temp-dirs [aozora out cfg]
-                       (render/write-aozora-root! aozora m)
-                       (run-build! {:aozora-root aozora :out-root out
-                                    :config-path (write-config! cfg false)
-                                    :snapshot-date "2026-07-12"})
-                       (let [ws (io/file cfg "workset.edn")
-                             _ (workset/write-workset!
-                                {:input-root (str (io/file out "materialized-root"))
-                                 :output-path (str ws)
-                                 :snapshot-scope "sim" :snapshot-date "2026-07-12"})
-                             res (try {:ok (snapshot/materialize-source-snapshot!
-                                            {:workset-path (str ws)
-                                             :output-path (str (io/file cfg "snapshot.json"))})}
-                                      (catch Throwable t {:thrown t}))
+     (let [m (peek (:states (model/fold-history hist)))
+           expected (oracle/expected-selection (render/model->rows m)
+                                               (render/content-sources m))]
+       (if (empty? (:selected expected))
+         true ;; vacuous run; generation non-vacuity is enforced by P16.1's ratio
+         (with-temp-dirs [aozora out cfg]
+           (render/write-aozora-root! aozora m)
+           (run-build! {:aozora-root aozora :out-root out
+                        :config-path (write-config! cfg false)
+                        :snapshot-date "2026-07-12"})
+           (let [ws (io/file cfg "workset.edn")
+                 _ (workset/write-workset!
+                    {:input-root (str (io/file out "materialized-root"))
+                     :output-path (str ws)
+                     :snapshot-scope "sim" :snapshot-date "2026-07-12"})
+                 res (try {:ok (snapshot/materialize-source-snapshot!
+                                {:workset-path (str ws)
+                                 :output-path (str (io/file cfg "snapshot.json"))})}
+                          (catch Throwable t {:thrown t}))
                  ;; workset works sort by [work_id slug]; snapshot-input
                  ;; throws on the first mismatch
-                             first-sel (first (sort-by (juxt :work_id :slug)
-                                                       (:selected expected)))
-                             wid (:work_id first-sel)
-                             member-hash (hash/format-sha256
-                                          (hash/sha256-bytes
-                                           (.getBytes ^String (get-in m [:contents wid :text])
-                                                      StandardCharsets/UTF_8)))
-                             hard-ok?
-                             (if-let [t (:thrown res)]
-                               (let [d (some #(let [dd (ex-data %)]
-                                                (when (contains? dd :work-content-hash) dd))
-                                             (ex-chain t))]
-                                 (and (not (harness/forbidden-throw? t))
-                                      (chain-clean-ex-info?
-                                       t [:work :parser-ir-path :official-source-path
-                                          :work-content-hash :official-source-hash])
+                 first-sel (first (sort-by (juxt :work_id :slug)
+                                           (:selected expected)))
+                 wid (:work_id first-sel)
+                 member-hash (hash/format-sha256
+                              (hash/sha256-bytes
+                               (.getBytes ^String (get-in m [:contents wid :text])
+                                          StandardCharsets/UTF_8)))
+                 hard-ok?
+                 (if-let [t (:thrown res)]
+                   (let [d (some #(let [dd (ex-data %)]
+                                    (when (contains? dd :work-content-hash) dd))
+                                 (ex-chain t))]
+                     (and (not (harness/forbidden-throw? t))
+                          (chain-clean-ex-info?
+                           t [:work :parser-ir-path :official-source-path
+                              :work-content-hash :official-source-hash])
                           ;; pin WHY it fails: member hash vs raw-ZIP hash
-                                      (= (:work d) (:slug first-sel))
-                                      (= (:work-content-hash d) member-hash)
-                                      (= (:official-source-hash d) (:source_hash first-sel))))
-                               true)]
-                         (and hard-ok?
-                              (div/expected-failure*
-                               :D7
-                               "P16.3: build-publication output composes with materialize-source-snapshot!"
-                               (fn [] (contains? res :ok)))))))))))
+                          (= (:work d) (:slug first-sel))
+                          (= (:work-content-hash d) member-hash)
+                          (= (:official-source-hash d) (:source_hash first-sel))))
+                   true)]
+             (and hard-ok?
+                  (div/expected-failure*
+                   :D7
+                   "P16.3: build-publication output composes with materialize-source-snapshot!"
+                   (fn [] (contains? res :ok)))))))))))
 
 ;; --- P16.2 evolution (the core) -------------------------------------------
+
+(defn- exact-status-map? [slugs expected-status actual]
+  (= (zipmap slugs (repeat expected-status)) actual))
+
+(deftest exact-status-map-rejects-vacuous-or-partial-results-test
+  (let [slugs ["a" "b"]]
+    (is (exact-status-map? slugs "passed" {"a" "passed" "b" "passed"}))
+    (is (not (exact-status-map? slugs "passed" {})))
+    (is (not (exact-status-map? slugs "passed" {"a" "passed"})))
+    (is (not (exact-status-map? slugs "passed"
+                                {"a" "passed" "b" "passed" "c" "passed"})))))
 
 (defn- evolution-checks
   "Runs the three build legs and returns boolean checks (all must be true).
@@ -330,10 +341,15 @@
     (let [aozora2 (render/temp-dir "sim-aozora2")]
       (try
         (let [config (write-config! cfg false)
-              cur-hash (into {} (map (juxt :slug :source_hash))
-                             (:selected (oracle/expected-selection
-                                         (render/model->rows s-after)
-                                         (render/content-sources s-after))))]
+              selected-before (:selected (oracle/expected-selection
+                                           (render/model->rows s-before)
+                                           (render/content-sources s-before)))
+              selected-after (:selected (oracle/expected-selection
+                                          (render/model->rows s-after)
+                                          (render/content-sources s-after)))
+              before-slugs (mapv :slug selected-before)
+              after-slugs (mapv :slug selected-after)
+              cur-hash (into {} (map (juxt :slug :source_hash)) selected-after)]
           (render/write-aozora-root! aozora s-before)
           (let [r1 (run-build! {:aozora-root aozora :out-root out
                                 :config-path config :snapshot-date "2026-07-01"})
@@ -352,7 +368,9 @@
                                   :config-path config :snapshot-date "2026-07-03"
                                   :replace? true})
                   st3 (statuses r3)]
-              {:leg1-all-passed (every? #(= "passed" %) (vals st1))
+              {:leg1-all-passed (exact-status-map? before-slugs "passed" st1)
+               :leg1-counts (and (zero? (get-in r1 [:publications "failed"]))
+                                 (zero? (get-in r1 [:publications "skipped"])))
                :leg2-statuses (= exp-status st2)
                :leg2-counts (and (zero? (get-in r2 [:publications "failed"]))
                                  (zero? (get-in r2 [:publications "skipped"])))
@@ -361,7 +379,9 @@
                                        (or (not= "reused" status)
                                            (= (get prior slug) (get r2-files slug))))
                                      st2)
-               :leg3-all-reused (every? #(= "reused" %) (vals st3))})))
+               :leg3-all-reused (exact-status-map? after-slugs "reused" st3)
+               :leg3-counts (and (zero? (get-in r3 [:publications "failed"]))
+                                 (zero? (get-in r3 [:publications "skipped"])))})))
         (finally (render/delete-tree! aozora2))))))
 
 (deftest p16-2-evolution-sim-test

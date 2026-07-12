@@ -47,7 +47,9 @@ precedence or pinned Unicode folding data requires a new construction tag.
 Source-bundle v1 uses an explicit string-domain RFC 8785 serializer that keeps
 slashes and non-ASCII Unicode unescaped. The historical shared ABC JCS path is
 not changed in place because doing so would rotate and reinterpret older schema
-and artifact hashes.
+and artifact hashes. Before serialization, v1 validates every string value and
+object key as well-formed UTF-16 and rejects malformed surrogate sequences with
+their identity-object path.
 
 ABC owns archive inspection and bundle identity. The Clojure/JVM inspector is
 the sole v1 `bundle_hash` producer. Parser adapters own decoding and

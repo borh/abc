@@ -2,6 +2,16 @@
   (:require [abc.tools.jcs :as jcs]
             [clojure.test :refer [deftest is testing]]))
 
+(defn- utf16-string [& code-units]
+  (String. (char-array (map char code-units))))
+
+(defn- exception-data [f]
+  (try
+    (f)
+    nil
+    (catch clojure.lang.ExceptionInfo e
+      (ex-data e))))
+
 (deftest canonical-json-test
   (testing "object keys are sorted recursively"
     (is (= "{\"a\":{\"b\":2,\"c\":3},\"z\":1}"
@@ -20,3 +30,48 @@
            (jcs/canonical-json-string ["a" "b"])))
     (is (not= (jcs/canonical-json-string ["a" "b"])
               (jcs/canonical-json-string ["b" "a"])))))
+
+(deftest rfc8785-string-domain-canonical-json-test
+  (testing "optional escapes stay literal; required JSON escapes remain"
+    (is (= "\"a/作品  😀\""
+           (jcs/rfc8785-string-domain-json-string "a/作品  😀")))
+    (is (= "\"quote\\\"backslash\\\\control\\n\""
+           (jcs/rfc8785-string-domain-json-string
+            "quote\"backslash\\control\n"))))
+  (testing "supplementary pairs are accepted in nested keys and values"
+    (is (= "{\"outer\":[{\"補助😀\":\"値😀\"}]}"
+           (jcs/rfc8785-string-domain-json-string
+            {"outer" [{"補助😀" "値😀"}]}))))
+  (testing "malformed UTF-16 values fail with their nested identity path"
+    (doseq [invalid [(utf16-string 0xd800)
+                     (utf16-string 0xdc00)
+                     (utf16-string 0xd800 0x41)
+                     (utf16-string 0xdc00 0xd800)]]
+      (let [data (exception-data
+                  #(jcs/rfc8785-string-domain-json-string
+                    {"outer" [{"value" invalid}]}))]
+        (is (= :invalid-utf16 (:reason data)))
+        (is (= ["outer" 0 "value"] (:path data)))
+        (is (= :value (:position data)))
+        (is (integer? (:string-index data)))
+        (is (re-matches #"0x[0-9a-f]{4}" (:code-unit data))))))
+  (testing "malformed UTF-16 object keys fail at the containing object path"
+    (let [invalid-key (utf16-string 0xd800)
+          data (exception-data
+                #(jcs/rfc8785-string-domain-json-string
+                  {"outer" {invalid-key "value"}}))]
+      (is (= :invalid-utf16 (:reason data)))
+      (is (= ["outer"] (:path data)))
+      (is (= :object-key (:position data)))
+      (is (= 0 (:string-index data)))
+      (is (= "0xd800" (:code-unit data)))))
+  (testing "unsupported scalars fail with their nested identity path"
+    (let [data (exception-data
+                #(jcs/rfc8785-string-domain-json-string
+                  {"outer" ["ok" 1]}))]
+      (is (= :unsupported-scalar (:reason data)))
+      (is (= ["outer" 1] (:path data)))
+      (is (= 1 (:value data)))))
+  (testing "the historical serializer retains its frozen escaping behavior"
+    (is (= "\"fig\\/\\u4e00.png\""
+           (jcs/canonical-json-string "fig/一.png")))))

@@ -76,7 +76,10 @@ keys are sorted and required JSON escapes remain canonical. Numeric scalars are
 rejected because this identity object is string-only. ABC's older shared JCS
 entry point retains its historical Charred escaping behavior so existing
 schema and artifact hashes are not reinterpreted; source-bundle v1 does not use
-that legacy path.
+that legacy path. Before Charred sees a string, v1 validates every string value
+and object key as well-formed UTF-16: valid supplementary pairs pass, while
+lone, reversed, truncated, or otherwise malformed surrogate sequences fail
+with stable identity-object path evidence.
 
 Identity fields record facts that can change logical interpretation, not every
 value derivable from the bytes. `primary_text_member` remains identity-bearing

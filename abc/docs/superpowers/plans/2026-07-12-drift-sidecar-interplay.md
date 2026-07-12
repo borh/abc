@@ -223,7 +223,7 @@ git commit -m "test(sim): drift-sidecar authoring and fault injection (abc.sim.s
 
 **Files:**
 - Modify: `abc/test/abc/sim/oracle.clj` (append after `expected-replacements`, end of file)
-- Test: `abc/test/abc/sim/oracle_test.clj` (create)
+- Test: `abc/test/abc/sim/oracle_test.clj` (MODIFY — this file already exists with five deftests covering projection, confusable?, model-diff, semantic-report, and expected candidates. Do NOT replace it; append one deftest at the end. Its existing requires — `model`, `oracle`, `deftest`/`is` — already cover the new test; add nothing to the ns form.)
 
 **Interfaces:**
 - Consumes: `abc.sim.oracle/projection` (already in the namespace).
@@ -231,16 +231,11 @@ git commit -m "test(sim): drift-sidecar authoring and fault injection (abc.sim.s
 
 - [ ] **Step 1: Write the failing test**
 
-Create `abc/test/abc/sim/oracle_test.clj`:
+Append to the END of the existing `abc/test/abc/sim/oracle_test.clj` (leave every existing deftest untouched; the ns form stays exactly as it is):
 
 ```clojure
-(ns abc.sim.oracle-test
-  "Unit coverage for the pure participant-update oracle (P15).
-  bootstrap 2: works 000101/000102, sole authors 000001/000002."
-  (:require [abc.sim.model :as model]
-            [abc.sim.oracle :as oracle]
-            [clojure.test :refer [deftest is]]))
-
+;; P15 participant-update oracle. bootstrap 2: works 000101/000102, sole
+;; authors 000001/000002.
 (deftest expected-participant-updates-test
   (let [m0 (model/bootstrap 2)
         edited (:model (model/apply-event
@@ -305,7 +300,7 @@ Append to `abc/test/abc/sim/oracle.clj`:
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `clojure -M:test:kaocha -m kaocha.runner --focus abc.sim.oracle-test`
-Expected: PASS (1 test, 5 assertions).
+Expected: PASS (6 tests — the five pre-existing deftests plus the new one; the new deftest contributes 5 assertions).
 
 - [ ] **Step 5: Commit**
 
@@ -431,7 +426,8 @@ Create `abc/test/abc/sim/drift_sidecar_sim_test.clj`:
   :drift-persons-dir. Properties assert DESIRED behavior; divergences go
   to abc.sim.divergences (D7+).
   Spec: docs/superpowers/specs/2026-07-12-drift-sidecar-interplay-design.md"
-  (:require [abc.sim.gen :as sgen]
+  (:require [abc.sim.divergences :as div]
+            [abc.sim.gen :as sgen]
             [abc.sim.harness :as harness]
             [abc.sim.model :as model]
             [abc.sim.oracle :as oracle]
@@ -440,6 +436,11 @@ Create `abc/test/abc/sim/drift_sidecar_sim_test.clj`:
             [abc.tools.aozora-history-audit :as audit]
             [clojure.test :refer [deftest is]]
             [clojure.test.check.properties :as prop]))
+
+;; abc.sim.divergences is required from the start so the gate protocol is
+;; executable without touching the ns form: if a window diverges, swap the
+;; window's bare boolean for (div/expected-failure* :D7 <desc> (fn [] <bool>))
+;; inside the property — expected-failure* is the composable non-`is` form.
 
 (defn- successor-pids [applied]
   (case (:intent applied)
@@ -483,11 +484,13 @@ Create `abc/test/abc/sim/drift_sidecar_sim_test.clj`:
                                entries))))
          (every? #(entry-shape-ok? event %) entries))))
 
-(defn- lifecycle-holds?
+(defn- lifecycle-results
   "Author the sidecar from the applied forced intent; audit the post-event
   window (s-after → s-final: pre-pid absent both sides, appended successor
   edit surfaces as hash_changed) and the spanning window (s-before →
-  s-final: pre-pid removed, surviving successors added)."
+  s-final: pre-pid removed, surviving successors added). Returns
+  {:post-event bool :spanning bool} so each window can be asserted — and,
+  if a divergence surfaces, gated — independently."
   [hist applied]
   (let [succ (first (successor-pids applied))
         ;; guarantee hash_changed coverage when the successor survives
@@ -518,10 +521,10 @@ Create `abc/test/abc/sim/drift_sidecar_sim_test.clj`:
                                       :current-ref (.getName cur-c)
                                       :work-dir (str work)
                                       :drift-persons-dir (str drift-dir)}))]
-          (and (window-matches? (window (nth cs 1) (nth cs 2))
-                                event s-after s-final)
-               (window-matches? (window (nth cs 0) (nth cs 2))
-                                event s-before s-final))))
+          {:post-event (window-matches? (window (nth cs 1) (nth cs 2))
+                                        event s-after s-final)
+           :spanning (window-matches? (window (nth cs 0) (nth cs 2))
+                                      event s-before s-final)}))
       (finally (render/delete-tree! drift-dir)))))
 
 ;; P15.lifecycle — accepted event, then later participant edits (post-event
@@ -537,7 +540,13 @@ Create `abc/test/abc/sim/drift_sidecar_sim_test.clj`:
                            applied (sgen/find-applied fold forced)]
                        (if-not (harness/tick! counter (some? applied))
                          true ;; shrunk-away forced event: vacuous
-                         (lifecycle-holds? hist applied)))))
+                         (let [{:keys [post-event spanning]}
+                               (lifecycle-results hist applied)]
+                           ;; per-window verdicts: on divergence, gate only
+                           ;; the diverging one via div/expected-failure*
+                           ;; (see the ns-form comment), leaving the other
+                           ;; window hard
+                           (and post-event spanning))))))
       (harness/assert-applied-ratio!
        (str "P15.lifecycle/" (name forced)) counter))))
 ```
@@ -547,7 +556,7 @@ Create `abc/test/abc/sim/drift_sidecar_sim_test.clj`:
 Run: `clojure -M:test:kaocha -m kaocha.runner --focus abc.sim.drift-sidecar-sim-test`
 Expected: PASS (1 test; 2 variants × 3 seeds × 10 runs; roughly 1–3 min — each run commits 3 states and audits 2 windows).
 
-If it FAILS on `window-matches?` (not on a harness defect like an exception from sidecar authoring): follow the Global Constraints divergence protocol — new `:D7` entry, `div/expected-failure` around only the failing window comparison, report.
+If it FAILS on a window comparison (not on a harness defect like an exception from sidecar authoring): identify WHICH window diverged by rerunning the shrunk counterexample and inspecting `lifecycle-results`, then follow the Global Constraints divergence protocol — new `:D7` entry naming the window (e.g. case `"P15.lifecycle/post-event"`), and in the property replace only that window's bare boolean with `(div/expected-failure* :D7 "P15.lifecycle/<window>" (fn [] <that-boolean>))`, leaving the other window's verdict hard so an open divergence in one window cannot mask a regression in the other.
 
 - [ ] **Step 3: Commit**
 
@@ -703,7 +712,7 @@ Run: `clojure -M:test:kaocha -m kaocha.runner --focus :simulation`
 Expected: PASS (33 tests: 29 existing + 4 new).
 
 Run: `clojure -M:test:kaocha -m kaocha.runner --focus :unit`
-Expected: PASS (includes the new `abc.sim.sidecar-test` and `abc.sim.oracle-test`; 684 tests: 682 existing + 2 new).
+Expected: PASS (685 tests: 682 existing + 2 new `abc.sim.sidecar-test` deftests + 1 deftest appended to the pre-existing `abc.sim.oracle-test`).
 
 - [ ] **Step 4: Commit**
 

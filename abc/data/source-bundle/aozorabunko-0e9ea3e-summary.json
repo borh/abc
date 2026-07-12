@@ -1,0 +1,23 @@
+{
+  "aozorabunko_commit": "0e9ea3e586eb0aa34039fabfc85a407d2f98b165",
+  "damaged_paths": [
+    "cards/000035/files/258_ruby_5404.zip",
+    "cards/001779/files/56651_ruby_57934.zip",
+    "cards/002016/files/59475_ruby_70415.zip"
+  ],
+  "java_unreadable_7zz_recoverable_count": 1,
+  "java_unreadable_7zz_unrecoverable_count": 2,
+  "legacy_flagged_entry_count": 22860,
+  "max_member_bytes": 12631833,
+  "max_member_count": 778,
+  "max_total_bytes": 27874310,
+  "nfc_collision_bundle_count": 0,
+  "readable_zip_count": 17884,
+  "semantic_text_member_counts": {
+    "0": 5,
+    "1": 17879
+  },
+  "unicode_case_collision_bundle_count": 0,
+  "unreadable_zip_count": 3,
+  "utf8_flagged_entry_count": 0
+}

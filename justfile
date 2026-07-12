@@ -64,3 +64,6 @@ replay-aozora:
 # diff in the same PR as whatever caused it).
 replay-aozora-update:
 	cd abc && clojure -M:abc/aozora-replay -- --update
+
+source-bundle-corpus-check:
+	nix build ./abc#checks.x86_64-linux.source-bundle-corpus --print-build-logs

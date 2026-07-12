@@ -223,6 +223,29 @@
                 {:cause (.getMessage t)})
          (fail! :unreadable-zip zip-file {:cause (.getMessage t)}))))))
 
+(defn inspect-zip-metadata
+  "Apply the source-bundle name decoding, normalization, collision, and primary
+  candidate construction without reading or hashing member bodies. Intended for
+  bounded corpus evidence; admission must still use inspect-zip."
+  [zip-file]
+  (try
+    (with-open [archive (-> (ZipFile/builder)
+                            (.setFile (io/file zip-file))
+                            (.setCharset legacy-name-charset)
+                            (.setUseUnicodeExtraFields true)
+                            (.get))]
+      (let [entries (validated-entries
+                     zip-file archive
+                     {:max-members Long/MAX_VALUE
+                      :max-member-bytes Long/MAX_VALUE
+                      :max-total-bytes Long/MAX_VALUE})]
+        {:semantic-text-member-count
+         (count (filter #(primary-candidate? (:path %)) entries))}))
+    (catch clojure.lang.ExceptionInfo e
+      (throw e))
+    (catch Throwable t
+      (fail! :unreadable-zip zip-file {:cause (.getMessage t)}))))
+
 (defn write-manifest! [path inspection]
   (let [file (io/file path)]
     (json/write-deterministic-json-file!

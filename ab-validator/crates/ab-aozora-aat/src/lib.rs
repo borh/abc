@@ -585,6 +585,7 @@ fn build_aat(
             "adapter": "ab-aozora",
             "adapter_version": adapter_version(),
             "source_encoding": decoded.encoding,
+            "primary_text_hash": decoded.source_hash.clone(),
             "source_hash": decoded.source_hash,
             "parse_complete": diagnostics.iter().all(|d| d.severity.as_deref() != Some("error")),
             "warnings": warnings
@@ -1667,6 +1668,16 @@ mod tests {
         }
     }
 
+    #[test]
+    fn aat_emits_equal_source_and_primary_text_hash_aliases() {
+        let document: Value =
+            serde_json::from_slice(&aat_json_from_bytes(b"identity\n").unwrap()).unwrap();
+        assert_eq!(
+            document["meta"]["primary_text_hash"],
+            document["meta"]["source_hash"]
+        );
+    }
+
     /// `preserve_order` tripwire (see
     /// `docs/handoffs/2026-07-10-parser-fork-provenance.md`'s
     /// feature-unification hazard section): `aat_json_from_bytes` builds its
@@ -1696,7 +1707,7 @@ mod tests {
     /// self.rev or "unknown"` and `build.rs`'s doc comment).
     #[test]
     fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
-        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"primary_text_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
     }

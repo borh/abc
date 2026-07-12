@@ -431,6 +431,134 @@ fn base_meta(source_encoding: &str, source_hash: &str) -> Value {
     })
 }
 
+#[test]
+fn supplied_bundle_hash_is_distinct_from_primary_text_hash() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "identity-test",
+        "blocks": [],
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        )
+    });
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: ConversionOptions {
+            work_content_hash: Some(
+                "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+                    .to_owned(),
+            ),
+            ..ConversionOptions::default()
+        },
+    })
+    .unwrap();
+    assert_eq!(
+        output.parser_ir["source"]["work_content_hash"],
+        "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    );
+    assert_eq!(
+        output.parser_ir["source"]["primary_text_hash"],
+        "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    );
+    assert!(!has_divergence_record(
+        &output,
+        "AMBIGUITY",
+        "meta.source_hash",
+        Some("source.work_content_hash")
+    ));
+    assert!(has_divergence_record(
+        &output,
+        "AMBIGUITY",
+        "meta.source_hash",
+        Some("source.primary_text_hash")
+    ));
+}
+
+#[test]
+fn explicit_aat_primary_text_hash_is_the_recorded_provenance() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let hash = "sha256:1111111111111111111111111111111111111111111111111111111111111111";
+    let mut meta = base_meta("utf-8", hash);
+    meta["primary_text_hash"] = json!(hash);
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: json!({
+            "version": 1,
+            "work_id": "identity-test",
+            "blocks": [],
+            "meta": meta
+        }),
+        mapping,
+        schemas,
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+    assert!(has_divergence_record(
+        &output,
+        "AMBIGUITY",
+        "meta.primary_text_hash",
+        Some("source.primary_text_hash")
+    ));
+    assert!(!has_divergence_record(
+        &output,
+        "AMBIGUITY",
+        "meta.source_hash",
+        Some("source.primary_text_hash")
+    ));
+}
+
+#[test]
+fn aat_primary_text_alias_mismatch_is_rejected() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let mut aat = json!({
+        "version": 1,
+        "work_id": "identity-test",
+        "blocks": [],
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        )
+    });
+    aat["meta"]["primary_text_hash"] =
+        json!("sha256:2222222222222222222222222222222222222222222222222222222222222222");
+    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: ConversionOptions::default(),
+    })
+    .unwrap_err();
+    assert!(error.to_string().contains("primary_text_hash"), "{error}");
+}
+
+#[test]
+fn invalid_supplied_work_content_hash_is_rejected() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "identity-test",
+        "blocks": [],
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        )
+    });
+    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: ConversionOptions {
+            work_content_hash: Some("sha256:not-a-hash".to_owned()),
+            ..ConversionOptions::default()
+        },
+    })
+    .unwrap_err();
+    assert!(error.to_string().contains("work_content_hash"), "{error}");
+}
+
 fn has_divergence_record(
     output: &ab_aat_to_parser_ir::ConversionOutput,
     category: &str,
@@ -465,7 +593,7 @@ fn legacy_schema_hashes_match_mapping_artifact() {
     );
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2"
+        "sha256:b5b55d52f79a6e4feb7f27ebe1257e164c917674f8119995b6bb9afed33af290"
     );
 }
 
@@ -520,12 +648,12 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.2.8");
+    assert_eq!(mapping.mapping_version, "0.3.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
     );
-    assert_eq!(mapping.transform_rule_descriptions.len(), 680);
+    assert_eq!(mapping.transform_rule_descriptions.len(), 681);
     assert!(mapping.transform_rule_descriptions.iter().all(|rule| {
         !matches!(
             rule.parser_ir_pointer.as_deref(),
@@ -541,6 +669,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
     assert!(synthetic_pointers.contains("sentences"));
     assert!(synthetic_pointers.contains("sentences[].tags"));
     assert!(synthetic_pointers.contains("orthographic_annotations"));
+    assert!(synthetic_pointers.contains("source.work_content_hash"));
     assert!(
         !mapping
             .transform_rule_descriptions
@@ -1079,7 +1208,7 @@ fn divergence_records_aggregate_by_mapping_rule_and_validate_against_abc_schema(
         .record(
             "AMBIGUITY",
             Some("meta.source_hash"),
-            Some("source.work_content_hash"),
+            Some("source.primary_text_hash"),
             Some(json!(
                 "sha256:0000000000000000000000000000000000000000000000000000000000000000"
             )),
@@ -1092,7 +1221,7 @@ fn divergence_records_aggregate_by_mapping_rule_and_validate_against_abc_schema(
         .record(
             "AMBIGUITY",
             Some("meta.source_hash"),
-            Some("source.work_content_hash"),
+            Some("source.primary_text_hash"),
             None,
             None,
         )
@@ -3408,6 +3537,8 @@ fn cli_convert_writes_parser_ir_and_divergence_bundle() {
         .arg(&aat)
         .arg("--mapping")
         .arg(repo.join("data/aat-to-parser-ir-mapping-v1.json"))
+        .arg("--work-content-hash")
+        .arg("sha256:7777777777777777777777777777777777777777777777777777777777777777")
         .arg("--parser-ir-out")
         .arg(&parser_ir)
         .arg("--divergence-out")
@@ -3420,6 +3551,15 @@ fn cli_convert_writes_parser_ir_and_divergence_bundle() {
     assert!(status.success());
     assert!(parser_ir.exists());
     assert!(divergence.exists());
+    let output = read_json(&parser_ir).unwrap();
+    assert_eq!(
+        output["source"]["work_content_hash"],
+        "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+    );
+    assert_eq!(
+        output["source"]["primary_text_hash"],
+        "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+    );
 }
 
 #[test]

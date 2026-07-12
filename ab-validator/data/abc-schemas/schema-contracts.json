@@ -55,8 +55,8 @@
       "path": "data/abc-schemas/schemas/parser-ir.schema.json",
       "id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
       "title": "ABC Parser IR",
-      "version": "0.6.0",
-      "hash": "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2"
+      "version": "0.7.0",
+      "hash": "sha256:b5b55d52f79a6e4feb7f27ebe1257e164c917674f8119995b6bb9afed33af290"
     },
     {
       "path": "data/abc-schemas/schemas/request-set.schema.json",

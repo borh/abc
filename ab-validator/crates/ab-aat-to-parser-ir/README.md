@@ -72,17 +72,18 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 
 ## Current Evidence
 
-### Mapping v1 (frozen)
+### Mapping v1 (historical AAT compatibility)
 
-- File: `data/aat-to-parser-ir-mapping-v1.json` (byte-frozen; never edit)
-- Mapping version: `0.2.8`
+- File: `data/aat-to-parser-ir-mapping-v1.json` (identity-rotated compatibility
+  artifact; further edits require an explicit protocol/version rotation)
+- Mapping version: `0.3.0`
 - `source_aat_version`: `1` (selects `data/aat-schema-v1.json`)
 - Mapping hash:
-  `sha256:952620ced4eb22f9771e6a10c3a1d4d93de604a8c33e360311f82b6e1eafc5b7`
+  `sha256:8da8dd5917a4b052e20d41c08ac255838d6569eb414c78e2e6306df6bc549a92`
 - Mapping schema hash:
   `sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2`
 - Parser-IR schema hash:
-  `sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340`
+  `sha256:b5b55d52f79a6e4feb7f27ebe1257e164c917674f8119995b6bb9afed33af290`
 - Latest full-corpus conversion audit:
   `docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md`
 

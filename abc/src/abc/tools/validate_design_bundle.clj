@@ -320,6 +320,7 @@
 
 (defn validate-json-schemas! [extra-manifest-paths]
   (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
+        adr-claim-migration-baseline-schema (files/read-json "schemas/adr-claim-migration-baseline.schema.json")
         adr-evidence-run-schema (files/read-json "schemas/adr-evidence-run.schema.json")
         adr-external-evidence-schema (files/read-json "schemas/adr-external-evidence.schema.json")
         parser-ir-schema (files/read-json "schemas/parser-ir.schema.json")
@@ -347,6 +348,7 @@
         person-drift-event-schema (files/read-json "schemas/person-drift-event.schema.json")
         person-drift-index-schema (files/read-json "schemas/person-drift-index.schema.json")]
     (doseq [[path schema] [["schemas/manifest.schema.json" manifest-schema]
+                           ["schemas/adr-claim-migration-baseline.schema.json" adr-claim-migration-baseline-schema]
                            ["schemas/adr-evidence-run.schema.json" adr-evidence-run-schema]
                            ["schemas/adr-external-evidence.schema.json" adr-external-evidence-schema]
                            ["schemas/parser-ir.schema.json" parser-ir-schema]

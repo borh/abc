@@ -491,6 +491,23 @@
         (is (some #{"schemas/source-assertion.schema.json"}
                   @checked-paths))))))
 
+(deftest validate-json-schemas-includes-adr-claim-migration-baseline-contract-test
+  (let [checked-paths (atom [])]
+    (with-redefs [validate/schema-valid! (fn [_schema path]
+                                           (swap! checked-paths conj path))
+                  validate/validate-json! (fn [& _args])
+                  validate/validate-json-lines! (fn [& _args])
+                  validate/validation-errors (fn [_schema value]
+                                               (when-not (contains? value "rule_id")
+                                                 [:expected-error]))
+                  compat/load-registry (fn [] {:entries []})
+                  compat/validate-registry! (fn [_registry])
+                  parser-evidence/load-index (fn [] {:entries []})
+                  parser-evidence/validate-index! (fn [_index])]
+      (validate/validate-json-schemas! [])
+      (is (some #{"schemas/adr-claim-migration-baseline.schema.json"}
+                @checked-paths)))))
+
 (deftest validate-json-schemas-includes-adr-evidence-contracts-test
   (let [run-file (java.io.File/createTempFile "abc-adr-evidence-run" ".json")
         external-file (java.io.File/createTempFile "abc-adr-external-evidence" ".json")

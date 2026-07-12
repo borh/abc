@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/adr-claim-migration-baseline.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "baseline_revision", "accepted_adr_count", "criterion_count", "criteria", "normative_section_count", "normative_sections"],
+  "properties": {
+    "schema_version": {"const": "abc-adr-claim-migration-baseline-v1"},
+    "baseline_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "accepted_adr_count": {"const": 26},
+    "criterion_count": {"const": 146},
+    "criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["adr", "file", "original_criterion_index", "original_text", "original_text_hash"],
+        "properties": {
+          "adr": {"type": "integer", "minimum": 1},
+          "file": {"type": "string", "minLength": 1},
+          "original_criterion_index": {"type": "integer", "minimum": 0},
+          "original_text": {"type": "string"},
+          "original_text_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "normative_section_count": {"const": 36},
+    "normative_sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["adr", "file", "section", "original_text", "original_text_hash"],
+        "properties": {
+          "adr": {"type": "integer", "minimum": 1},
+          "file": {"type": "string", "minLength": 1},
+          "section": {"type": "string", "minLength": 1},
+          "original_text": {"type": "string"},
+          "original_text_hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        }
+      }
+    }
+  }
+}

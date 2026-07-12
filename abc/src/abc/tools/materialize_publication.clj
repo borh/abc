@@ -53,8 +53,21 @@
    header
    body])
 
+;; The TEI profile trio (odd/rng/sch) is fixed for a process lifetime but was
+;; re-hashed for every work (profile-hash 3x per work). Cache by canonical
+;; path + mtime, mirroring the schematron/tei schema caches.
+(defonce ^:private static-file-hash-cache (atom {}))
+
+(defn- static-file-hash [path]
+  (let [file (io/file path)
+        cache-key [(.getCanonicalPath file) (.lastModified file)]]
+    (or (get @static-file-hash-cache cache-key)
+        (let [hash (str "sha256:" (files/sha256-file path))]
+          (swap! static-file-hash-cache assoc cache-key hash)
+          hash))))
+
 (defn- profile-hash []
-  (str "sha256:" (files/sha256-file tei-odd-path)))
+  (static-file-hash tei-odd-path))
 
 (defn- file-hash [path]
   (str "sha256:" (files/sha256-file path)))
@@ -146,8 +159,8 @@
                   "rng_path" tei-rng-path
                   "schematron_path" tei-schematron-path
                   "odd_hash" tei-profile-hash
-                  "rng_hash" (file-hash tei-rng-path)
-                  "schematron_hash" (file-hash tei-schematron-path)
+                  "rng_hash" (static-file-hash tei-rng-path)
+                  "schematron_hash" (static-file-hash tei-schematron-path)
                   "generator" nil
                   "generator_build_hash" nil}
      "findings" (vec (concat (:findings rng-result)

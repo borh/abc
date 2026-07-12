@@ -211,6 +211,9 @@ audit.
 - [ ] **Step 4: Write failing snapshot-generation tests**
 
 With temporary repository fixtures and function redefinitions only at external process seams, assert `snapshot-value` rejects ADR 0034 Accepted, an incomplete ledger, any strict problem, `ok: false`, missing referenced artifact/input, or a path outside the repository. Assert the valid result embeds exact bytes, exact Accepted numbers/counts, governance date, HEAD revision, and strict report.
+Create every temporary C1/C2 repository inside the focused wrapper and scope
+the operation with `with-ephemeral-root`; assert the trace reports those paths
+only under `:ephemeral-paths` and never in the runtime-input manifest.
 
 - [ ] **Step 5: Run RED for generation**
 
@@ -436,12 +439,15 @@ boundary with `abc.tools.evidence-io` tracing and require the observed
 repository-read set to equal its manifest `:paths`; source namespace loading
 remains the component profile's separate responsibility.
 
-For C1, C2, and C3, also run Plan 1's closure-wide bypass control over the
-descriptor's complete statically derived source and test namespace closure.
+For C1, C2, and C3, also run Plan 1's default-deny control over the
+descriptor's statically resolved reachable-Var graph.
 Production reads exercised by a focused test must be recorded. Direct
-`slurp`, reader, `java.nio.file.Files`, Jena, or equivalent repository reads
-are rejected unless they are inside the shared `files`/`hash` adapters or a
+raw file/stream/directory/archive/library-loader, network, and subprocess APIs
+are rejected unless they are inside the shared physical adapters or a
 named adapter that calls `record-read!` immediately before the library load.
+Any synthetic temporary repository used by C1/C2 is created by the focused
+wrapper and scoped with `with-ephemeral-root`; pre-existing external inputs are
+never admitted through that capability.
 
 - [ ] **Step 3: Extend descriptor contract tests**
 
@@ -455,9 +461,10 @@ three and add a negative
 case deleting one manifest path; it must fail with
 `:missing-runtime-input`. Pass each descriptor as the exact
 `{:path descriptor-path :value descriptor}` wrapper required by Plan 1.
-Run the shared full-closure bypass lint for each descriptor and add a
-synthetic transitive helper containing an uninstrumented repository read; it
-must fail even though the direct test namespace contains no bypass.
+Run the shared full-closure default-deny lint for each descriptor and add
+synthetic transitive helpers containing an uninstrumented repository read and
+a ProcessBuilder call; both must fail even though the direct test namespace is
+clean.
 
 Create this exact hash-free registration template:
 

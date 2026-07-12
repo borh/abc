@@ -316,7 +316,10 @@ Add:
 
 Parse every criterion once. A criterion with no `**ADR-` prefix is missing only when its ADR is Accepted. A criterion beginning `**ADR-` but not matching is malformed for every status. Convert the kind token with `keyword`, compare its ADR digits to `:num`, and detect duplicate IDs across `validate-adrs`, not only within one file.
 
-Add all six claim problem kinds to `audit-only-problem-kinds` so `validate-adrs-legacy` remains unchanged during migration.
+Add all five claim-header problem kinds to `audit-only-problem-kinds` so
+`validate-adrs-legacy` remains unchanged during migration. Typed registry
+coverage (`:missing-claim-evidence`) remains owned by Task 4 rather than the
+Markdown parser.
 
 - [ ] **Step 4: Update the ADR README**
 

@@ -43,17 +43,17 @@ claims and must not be released as a complete rights view.
 
 ## Acceptance Criteria
 
-- **ADR-0035-C1 — structural invariant:** metadata RDF tests demonstrate that
+- **ADR-0035-C1 — structural-invariant:** metadata RDF tests demonstrate that
   true, false, nil, absent, and malformed legacy values emit no external rights
   statement.
-- **ADR-0035-C2 — fixture behavior:** SHACL accepts a work without an external
+- **ADR-0035-C2 — fixture-behavior:** SHACL accepts a work without an external
   rights IRI while retaining the existing cardinality and IRI checks when one
   is present.
-- **ADR-0035-C3 — operational behavior:** materialize, full-build, and staging
+- **ADR-0035-C3 — operational-behavior:** materialize, full-build, and staging
   release boundaries fail before writing artifacts while containment is active.
-- **ADR-0035-C4 — external semantics, promotion condition:** authoritative
+- **ADR-0035-C4 — external-semantics:** As a promotion condition, authoritative
   evidence defines the Aozora source fields and every enabled external mapping.
-- **ADR-0035-C5 — corpus behavior, promotion condition:** migration is total or
+- **ADR-0035-C5 — corpus-behavior:** As a promotion condition, migration is total or
   explicitly quarantines every record and publication accepts only valid
   assessments.
 

@@ -30,7 +30,79 @@
        extra-fields
        "\n## Decision\n\nDecision.\n\n"
        "## Implementation Status\n\nImplemented.\n\n"
-       "## Acceptance Criteria\n\n- `test/evidence.clj`.\n"))
+       "## Acceptance Criteria\n\n- **ADR-" (format "%04d" num)
+       "-C1 — structural-invariant:** `test/evidence.clj`.\n"))
+
+(defn- claim-body [num status criteria]
+  (str "# ADR " (format "%04d" num) ": Claims\n\n"
+       "Status: " status "\nDate: 2026-07-10\n\n"
+       "## Decision\n\nClaims.\n\n"
+       "## Acceptance Criteria\n\n" criteria "\n"))
+
+(deftest parses-exact-multiline-claim-header
+  (let [dir (temp-dir)]
+    (write-adr! dir "0042-claims.md"
+                (claim-body
+                 42 "Proposed"
+                 (str "- **ADR-0042-C1 — structural-invariant:** A multiline claim whose continuation\n"
+                      "  remains part of the same criterion.")))
+    (let [parsed (adr/parse-adr (.getPath dir) "0042-claims.md")]
+      (is (= [{:criterion-index 0
+               :body (str "**ADR-0042-C1 — structural-invariant:** A multiline claim whose continuation\n"
+                          "remains part of the same criterion.")
+               :claim-id "ADR-0042-C1"
+               :claim-kind :structural-invariant}]
+             (:criteria parsed)))
+      (is (empty? (:claim-problems parsed))))))
+
+(deftest claim-header-problems-are-specific-and-proposed-aware
+  (let [dir (temp-dir)]
+    (doseq [[filename num status criterion]
+            [["0042-missing.md" 42 "Accepted"
+              "- ADR-0042-C1 — structural-invariant: missing bold prefix"]
+             ["0043-short.md" 43 "Accepted"
+              "- **ADR-43-C1 — structural-invariant:** short ADR number"]
+             ["0044-mismatch.md" 44 "Accepted"
+              "- **ADR-0041-C1 — structural-invariant:** wrong ADR"]
+             ["0045-zero.md" 45 "Accepted"
+              "- **ADR-0045-C0 — structural-invariant:** zero criterion"]
+             ["0046-unknown.md" 46 "Accepted"
+              "- **ADR-0046-C1 — unknown-kind:** unknown kind"]
+             ["0047-proposed-plain.md" 47 "Proposed"
+              "- Future criterion without a header."]
+             ["0048-proposed-malformed.md" 48 "Proposed"
+              "- **ADR-48-C1 — structural-invariant:** malformed proposal"]]]
+      (write-adr! dir filename (claim-body num status criterion)))
+    (is (= #{:missing-claim-header}
+           (kinds (:claim-problems
+                   (adr/parse-adr dir "0042-missing.md")))))
+    (is (= #{:malformed-claim-header}
+           (kinds (:claim-problems
+                   (adr/parse-adr dir "0043-short.md")))))
+    (is (= #{:claim-adr-mismatch}
+           (kinds (:claim-problems
+                   (adr/parse-adr dir "0044-mismatch.md")))))
+    (is (= #{:malformed-claim-header}
+           (kinds (:claim-problems
+                   (adr/parse-adr dir "0045-zero.md")))))
+    (is (= #{:unknown-claim-kind}
+           (kinds (:claim-problems
+                   (adr/parse-adr dir "0046-unknown.md")))))
+    (is (empty? (:claim-problems
+                 (adr/parse-adr dir "0047-proposed-plain.md"))))
+    (is (= #{:malformed-claim-header}
+           (kinds (:claim-problems
+                   (adr/parse-adr dir "0048-proposed-malformed.md")))))))
+
+(deftest duplicate-claim-ids-are-repository-wide-problems
+  (let [dir (temp-dir)]
+    (write-adr! dir "0042-duplicate.md"
+                (claim-body
+                 42 "Proposed"
+                 (str "- **ADR-0042-C1 — structural-invariant:** first.\n"
+                      "- **ADR-0042-C1 — fixture-behavior:** second.")))
+    (is (contains? (kinds (adr/validate-adrs (adr/parse-all dir) dir))
+                   :duplicate-claim-id))))
 
 (deftest parses-exact-header-relations-sections-and-evidence
   (let [dir (temp-dir)]
@@ -314,7 +386,7 @@
                      "Validation scope: structural\nRelease authority: none\n\n"
                      "## Decision\n\nX.\n\n"
                      "## Implementation Status\n\nDone.\n\n## Acceptance Criteria\n\n"
-                     "- `test/./evidence.clj`, `fixtures/evidence.txt`, and `nix/evidence.nix`.\n"))
+                     "- **ADR-0001-C1 — structural-invariant:** `test/./evidence.clj`, `fixtures/evidence.txt`, and `nix/evidence.nix`.\n"))
     (is (empty? (adr/validate-repository repo "docs/adr")))))
 
 (deftest evidence-rejects-lexical-traversal-and-malformed-paths
@@ -475,18 +547,27 @@
 (deftest current-repository-audit-inventory-is-explicit
   (let [adrs (adr/parse-all "docs/adr")
         accepted (filter #(= "Accepted" (:status %)) adrs)
+        accepted-criteria (mapcat :criteria accepted)
         missing-scope-count (count (filter #(nil? (:validation-scope %)) accepted))
         missing-authority-count (count (filter #(nil? (:release-authority %)) accepted))
         problems (adr/validate-repository ".")
+        missing-claim-count (count (filter #(= :missing-claim-header (:kind %))
+                                           problems))
         dependency-paths (->> problems
                               (filter #(= :noncanonical-dependency-path
                                           (:kind %)))
                               (map :path)
                               vec)]
     (is (= #{:missing-validation-scope
-             :missing-release-authority}
+             :missing-release-authority
+             :missing-claim-header}
            (kinds problems)))
-    (is (= (+ missing-scope-count missing-authority-count) (count problems)))
+    (is (= 26 (count accepted)))
+    (is (= 146 (count accepted-criteria)))
+    (is (= 146 missing-claim-count))
+    (is (= (+ missing-scope-count missing-authority-count
+              (count accepted-criteria))
+           (count problems)))
     (is (= [] dependency-paths))))
 
 (deftest legacy-policy-keeps-audit-only-rules-nonblocking

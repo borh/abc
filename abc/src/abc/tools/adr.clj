@@ -8,6 +8,10 @@
 (def validation-scopes #{"structural" "fixture" "smoke-corpus"
                          "full-corpus" "operational"})
 (def release-authorities #{"none" "development" "publication"})
+(def claim-kinds
+  #{:structural-invariant :fixture-behavior :corpus-behavior
+    :performance-bound :external-semantics :implementation-agreement
+    :domain-interpretation :operational-behavior})
 (def header-fields
   #{"Status" "Date" "Accepted" "Supersedes" "Superseded by"
     "Amends" "Amended by" "Depends on" "Source"
@@ -60,6 +64,60 @@
 
                    :else items))
                [])))
+
+(def ^:private claim-header-pattern
+  #"^\*\*(ADR-([0-9]{4})-C([1-9][0-9]*) — ([a-z]+(?:-[a-z]+)*)):\*\*(?:\s|$)")
+
+(defn- criterion-claim [file num status criterion-index body]
+  (if-let [[_ _ adr-digits criterion-digits kind-token]
+           (re-find claim-header-pattern body)]
+    (let [claim-id (str "ADR-" adr-digits "-C" criterion-digits)
+          claim-kind (keyword kind-token)
+          base {:criterion-index criterion-index
+                :body body
+                :claim-id claim-id
+                :claim-kind claim-kind}]
+      {:criterion base
+       :problems
+       (vec
+        (concat
+         (when (and num (not= num (Integer/parseInt adr-digits)))
+           [(problem :claim-adr-mismatch file
+                     "claim ID ADR number must match its containing ADR"
+                     :criterion-index criterion-index
+                     :claim-id claim-id)])
+         (when-not (contains? claim-kinds claim-kind)
+           [(problem :unknown-claim-kind file
+                     "claim kind is not recognized"
+                     :criterion-index criterion-index
+                     :claim-id claim-id
+                     :value claim-kind)])))})
+    {:criterion {:criterion-index criterion-index
+                 :body body
+                 :claim-id nil
+                 :claim-kind nil}
+     :problems
+     (cond
+       (str/starts-with? body "**ADR-")
+       [(problem :malformed-claim-header file
+                 "claim header must use the exact ADR-NNNN-CN and claim-kind syntax"
+                 :criterion-index criterion-index)]
+
+       (= "Accepted" status)
+       [(problem :missing-claim-header file
+                 "Accepted criterion requires an exact claim header"
+                 :criterion-index criterion-index)]
+
+       :else [])}))
+
+(defn- parse-criteria [file num status section-bodies]
+  (let [parsed (mapv (fn [criterion-index body]
+                       (criterion-claim file num status criterion-index body))
+                     (range)
+                     (criterion-bodies
+                      (get section-bodies "Acceptance Criteria")))]
+    {:criteria (mapv :criterion parsed)
+     :problems (vec (mapcat :problems parsed))}))
 
 (defn- evidence [section-bodies]
   (vec
@@ -179,6 +237,8 @@
         relations-result (parse-relations filename fields)
         sections-result (parse-sections lines)
         num (:num title-result)
+        criteria-result (parse-criteria filename num (get fields "Status")
+                                        (:section-bodies sections-result))
         filename-num (filename-number filename)
         mismatch-problems (if (and filename-num num (not= filename-num num))
                             [(problem :filename-title-mismatch filename
@@ -197,6 +257,8 @@
      :relations (:relations relations-result)
      :sections (:sections sections-result)
      :section-bodies (:section-bodies sections-result)
+     :criteria (:criteria criteria-result)
+     :claim-problems (:problems criteria-result)
      :evidence (evidence (:section-bodies sections-result))
      :parse-problems (vec (concat (:problems title-result)
                                   (:problems header-result)
@@ -214,6 +276,19 @@
     (problem :duplicate-number (:file adr)
              "ADR number must be unique"
              :value num)))
+
+(defn- duplicate-claim-id-problems [adrs]
+  (let [claims (for [{:keys [file criteria]} adrs
+                     {:keys [claim-id] :as criterion} criteria
+                     :when claim-id]
+                 (assoc criterion :file file))]
+    (for [[claim-id duplicates] (sort-by key (group-by :claim-id claims))
+          :when (< 1 (count duplicates))
+          {:keys [file criterion-index]} duplicates]
+      (problem :duplicate-claim-id file
+               "claim ID must be unique across the repository"
+               :criterion-index criterion-index
+               :claim-id claim-id))))
 
 (defn- parse-date [value]
   (when value
@@ -465,7 +540,9 @@
   (vec
    (concat
     (mapcat :parse-problems adrs)
+    (mapcat :claim-problems adrs)
     (duplicate-number-problems adrs)
+    (duplicate-claim-id-problems adrs)
     (mapcat lifecycle-problems adrs)
     (mapcat required-section-problems adrs)
     (relation-resolution-problems adrs)
@@ -479,7 +556,12 @@
     :missing-release-authority
     :invalid-validation-scope
     :invalid-release-authority
-    :noncanonical-dependency-path})
+    :noncanonical-dependency-path
+    :missing-claim-header
+    :malformed-claim-header
+    :claim-adr-mismatch
+    :duplicate-claim-id
+    :unknown-claim-kind})
 
 (defn validate-adrs-legacy
   "Validate with the pre-migration lifecycle/dependency policy. Parsing,

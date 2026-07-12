@@ -88,6 +88,34 @@ trustworthy while allowing implementation tracking to stay current.
 | References | Yes | Append only. |
 | Errata | Yes | Must name the affected ADR and what was wrong. |
 
+### Typed Acceptance Criterion headers
+
+Every Acceptance Criterion in an Accepted ADR begins with an exact stable
+claim header:
+
+```markdown
+- **ADR-0042-C1 — structural-invariant:** Claim text and evidence citations.
+```
+
+The claim ID is `ADR-NNNN-CN`, where the four-digit ADR number matches the
+containing record and `N` begins at 1. Claim IDs are unique across the complete
+repository. The closed claim-kind vocabulary is:
+
+- `structural-invariant`
+- `fixture-behavior`
+- `corpus-behavior`
+- `performance-bound`
+- `external-semantics`
+- `implementation-agreement`
+- `domain-interpretation`
+- `operational-behavior`
+
+Proposed ADRs may omit claim headers while the proposal is being shaped. If a
+Proposed criterion starts with `**ADR-`, however, the complete header must
+already use the exact grammar above. Registry coverage is mandatory only for
+Accepted ADRs, but promotion requires compatible passing evidence for every
+criterion.
+
 ## Manifest identity invariants
 
 Three global invariants apply to `manifest_identity_object` across every ADR

@@ -290,9 +290,11 @@ Run:
 cd abc
 clojure -M:abc/adr-evidence-inventory -- \
   --output docs/reports/adr-claim-migration-inventory.json
-jq '.baseline_criterion_count,
-    [.baseline_criteria[] | select(.family == "foundation-runtime-identity") |
-     .disposition] | {baseline:.[0], foundation_dispositions:(.[1]|length)}' \
+jq '{baseline:.baseline_criterion_count,
+     foundation_dispositions:
+       ([.baseline_criteria[]
+         | select(.family == "foundation-runtime-identity"
+                  and .disposition != null)] | length)}' \
   docs/reports/adr-claim-migration-inventory.json
 ```
 

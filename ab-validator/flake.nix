@@ -1294,6 +1294,25 @@
               touch "$out"
             '';
 
+        phase5CheckpointCheck =
+          pkgs.runCommand "phase5-checkpoint-check"
+            {
+              nativeBuildInputs = [
+                pkgs.git
+                pythonWithAatSchemaDeps
+              ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+              python -m pytest \
+                reports/aat-fidelity/tests/test_verify_phase5_checkpoint.py \
+                -q
+              touch "$out"
+            '';
+
         aatOracleDataSchemaSmokeShell = pkgs.writeShellApplication {
           name = "aat-oracle-data-schema-smoke";
           runtimeInputs = [
@@ -1913,6 +1932,7 @@
           aat-fidelity-duckdb-smoke = aatFidelityDuckdbSmokeCheck;
           aat-oracle-audit-smoke = aatOracleAuditSmokeCheck;
           reports-pytest = reportsPytestCheck;
+          phase5-checkpoint = phase5CheckpointCheck;
         };
 
         devShells = {

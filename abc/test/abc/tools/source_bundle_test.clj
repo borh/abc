@@ -4,8 +4,9 @@
             [abc.tools.schema :as schema]
             [abc.tools.source-bundle :as source-bundle]
             [clojure.test :refer [deftest is testing]])
-  (:import [java.io FileNotFoundException InterruptedIOException]
+  (:import [java.io FileNotFoundException IOException InterruptedIOException]
            [java.nio ByteBuffer ByteOrder]
+           [java.nio.channels ClosedByInterruptException]
            [java.nio.charset StandardCharsets]
            [java.nio.file AccessDeniedException Files NoSuchFileException]
            [java.util.zip CRC32]
@@ -307,6 +308,84 @@
       (is (= :unreadable-zip (:reason data)))
       (is (= (str file) (:archive-path data))))))
 
+(deftest pinned-damaged-archive-plain-io-is-an-admission-error-test
+  (with-zips [zip (write-zip! (temp-file ".zip")
+                              [["work.txt" (utf8-bytes "body")]])]
+    (let [failure (IOException.
+                   (str "Error reading Zip content from " zip)
+                   (IOException.
+                    "Central directory is empty, can't expand corrupt archive."))
+          data (try
+                 (with-redefs-fn
+                   {#'source-bundle/decoded-entries (fn [& _] (throw failure))}
+                   #(source-bundle/inspect-zip zip))
+                 nil
+                 (catch clojure.lang.ExceptionInfo e (ex-data e)))]
+      (is (= :unreadable-zip (:reason data)))
+      (is (= (.getMessage failure) (:cause data))))))
+
+(deftest parser-boundary-propagates-wrapped-operational-io-test
+  (with-zips [zip (write-zip! (temp-file ".zip")
+                              [["work.txt" (utf8-bytes "body")]])]
+    (doseq [cause [(InterruptedIOException. "interrupted")
+                   (ClosedByInterruptException.)
+                   (FileNotFoundException. "missing")
+                   (NoSuchFileException. "missing")
+                   (AccessDeniedException. "denied")]]
+      (let [failure (IOException. "parser boundary wrapper" cause)]
+        (is (identical?
+             failure
+             (try
+               (with-redefs-fn
+                 {#'source-bundle/decoded-entries (fn [& _] (throw failure))}
+                 #(source-bundle/inspect-zip zip))
+               (catch Throwable t t)))
+            (str (class cause)))))))
+
+(deftest inspection-stages-one-stable-archive-test
+  (let [before-members [["work.txt" (utf8-bytes "before")]
+                        ["figure.png" (byte-array [1 2 3])]]
+        after-members [["work.txt" (utf8-bytes "after")]
+                       ["figure.png" (byte-array [9 8 7])]]]
+    (with-zips [zip (write-zip! (temp-file ".zip") before-members)]
+      (let [expected (inspection before-members)
+            original-inspect @#'source-bundle/inspect-open-zip
+            staged-path (atom nil)
+            actual
+            (with-redefs-fn
+              {#'source-bundle/inspect-open-zip
+               (fn [archive-path staged-file limits]
+                 (reset! staged-path staged-file)
+                 (write-zip! zip after-members)
+                 (original-inspect archive-path staged-file limits))}
+              #(source-bundle/inspect-zip zip))]
+        (is (= (select-keys expected [:identity-object :bundle-hash
+                                      :archive-hash :primary-text-hash])
+               (select-keys actual [:identity-object :bundle-hash
+                                    :archive-hash :primary-text-hash])))
+        (is (some? @staged-path))
+        (is (not (Files/exists (.toPath @staged-path)
+                               (make-array java.nio.file.LinkOption 0))))))))
+
+(deftest staged-archive-is-cleaned-after-later-failure-test
+  (with-zips [zip (write-zip! (temp-file ".zip")
+                              [["work.txt" (utf8-bytes "body")]])]
+    (let [failure (IOException. "later member read failed")
+          staged-path (atom nil)]
+      (is (identical?
+           failure
+           (try
+             (with-redefs-fn
+               {#'source-bundle/inspect-open-zip
+                (fn [_archive-path staged-file _limits]
+                  (reset! staged-path staged-file)
+                  (throw failure))}
+               #(source-bundle/inspect-zip zip))
+             (catch Throwable t t))))
+      (is (some? @staged-path))
+      (is (not (Files/exists (.toPath @staged-path)
+                             (make-array java.nio.file.LinkOption 0)))))))
+
 (deftest full-inspection-propagates-non-archive-failures-test
   (with-zips [zip (write-zip! (temp-file ".zip")
                               [["work.txt" (utf8-bytes "body")]])]
@@ -393,3 +472,67 @@
       (is (nil? (schema/validation-errors source-schema value)))
       (is (every? #(not (contains? % "byte_length"))
                   (get-in value ["identity_object" "members"]))))))
+
+(deftest persisted-v1-identity-policy-corruptions-have-stable-reasons-test
+  (let [base (:identity-object
+              (inspection [["work.txt" (utf8-bytes "body")]
+                           ["figure.png" (byte-array [1])]]))
+        h (get-in base ["members" 0 "member_hash"])
+        member (fn [path] {"path" path "member_hash" h})
+        cases
+        [{:reason :identity-fields
+          :value (dissoc base "primary_text_member")}
+         {:reason :identity-construction
+          :value (assoc base "construction" "abc-source-bundle-v2")}
+         {:reason :identity-member-fields
+          :value (assoc-in base ["members" 0 "extra"] "no")}
+         {:reason :identity-member-hash
+          :value (assoc-in base ["members" 0 "member_hash"] "not-a-hash")}
+         {:reason :identity-member-path
+          :value (assoc base "members" [(member "../work.txt")]
+                        "primary_text_member" "../work.txt")}
+         {:reason :identity-member-path
+          :value (assoc base "members" [(member "é.txt")]
+                        "primary_text_member" "é.txt")}
+         {:reason :identity-member-order
+          :value (update base "members" (comp vec reverse))}
+         {:reason :identity-member-path-collision
+          :value (assoc base "members" [(member "work.txt")
+                                        (member "work.txt")]
+                        "primary_text_member" "work.txt")}
+         {:reason :identity-member-case-fold-collision
+          :value (assoc base "members" [(member "A.png")
+                                        (member "a.png")
+                                        (member "work.txt")]
+                        "primary_text_member" "work.txt")}
+         {:reason :identity-primary-cardinality
+          :value (assoc base "members" [(member "one.txt")
+                                        (member "two.txt")]
+                        "primary_text_member" "one.txt")}
+         {:reason :identity-primary-match
+          :value (assoc base "primary_text_member" "figure.png")}]]
+    (is (= base (source-bundle/validate-identity-object! base)))
+    (doseq [{:keys [reason value]} cases]
+      (is (= reason
+             (:reason (admission-data
+                       #(source-bundle/validate-identity-object! value))))
+          (name reason)))))
+
+(deftest persisted-manifest-rejects-coordinated-reversal-and-resign-test
+  (with-zips [zip (write-zip! (temp-file ".zip")
+                              [["work.txt" (utf8-bytes "body")]
+                               ["figure.png" (byte-array [1])]])]
+    (let [inspection (source-bundle/inspect-zip zip)
+          manifest {"source_bundle_schema_id" source-bundle/schema-id
+                    "bundle_hash_algorithm" source-bundle/bundle-hash-algorithm
+                    "archive_hash" (:archive-hash inspection)
+                    "identity_object" (update (:identity-object inspection)
+                                              "members" (comp vec reverse))
+                    "members" (vec (reverse (:members inspection)))}
+          resigned (assoc manifest "bundle_hash"
+                          (source-bundle/bundle-identity-hash
+                           (get manifest "identity_object")))]
+      (is (= :identity-member-order
+             (:reason (admission-data
+                       #(source-bundle/validate-persisted-manifest!
+                         resigned))))))))

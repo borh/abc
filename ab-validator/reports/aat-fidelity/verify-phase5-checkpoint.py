@@ -2,7 +2,7 @@
 """Fail-closed Phase 5 checkpoint: the single C5 candidate's three gate
 summaries (delta + conformance + perf), the bare-toggle-adoption delta-audit
 summary (Task 2), the real-shape conversion audit summary (Task 9/6), the
-frozen-vs-live mapping-generation binding (Task 6), the admission capture
+admitted frozen mapping-generation binding (Task 6), the admission capture
 plus a *live* re-run of the admission command, the atomic repoint commit's
 git-level binding (Task 10), and the post-repoint coverage re-verification
 (Task 7).
@@ -39,8 +39,8 @@ hash -- abc_legacy_json_hash (crates/ab-aat-to-parser-ir/src/mapping.rs:
 (canonical_json -> sha256 -> "sha256:" + hex, reports/lib/hashing.py's
 sha256_hex). The canonical hash of --mapping-file's parsed JSON must equal
 --mapping-hash and its mapping_version must equal --mapping-version; the
-canonical hash of --frozen-mapping's parsed JSON must equal the frozen
-0.3.0 hash and its mapping_version must be "0.3.0".
+canonical and exact-byte hashes of --frozen-mapping must equal the admitted
+Phase 5 v2-0.4.0 artifact and its mapping_version must be "0.4.0".
 
 Admission: the capture file contains ":status :admitted" AND the live
 --admission-cmd subprocess (run with cwd at the abc/ directory, since the
@@ -73,6 +73,7 @@ verify-phase4-checkpoint.py:331).
 Exit 0 + "CHECKPOINT OK" or exit 1 with the first violation."""
 
 import argparse
+import hashlib
 import json
 import re
 import shlex
@@ -106,8 +107,9 @@ AUDIT_DECLINED_BY_REASON = {
     "interleave": 0,
 }
 
-FROZEN_MAPPING_VERSION = "0.3.0"
-FROZEN_MAPPING_HASH = "sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40"
+FROZEN_MAPPING_VERSION = "0.4.0"
+FROZEN_MAPPING_HASH = "sha256:cf177bee98af086fe728cbc1942e4f631b26ed5bb55aedc7d91b21f467c41f30"
+FROZEN_MAPPING_BYTE_HASH = "8ebd74dcd0f29973e375a9c89654ffbccc9f15fb2f5c5b7a5c97a0bef6206a56"
 
 REPOINT_PATH = "ab-validator/reports/aat-fidelity/run-sets/current.json"
 C4_COMMIT = "27772b1b75c9ceeb0b724095bbbb47f774f3a275"
@@ -200,15 +202,15 @@ def check_conversion(path, mapping_version, mapping_hash):
 
 
 def check_mapping_generation(mapping_file, mapping_version, mapping_hash, frozen_mapping):
-    live_doc = load(mapping_file)
-    if live_doc.get("mapping_version") != mapping_version:
+    mapping_doc = load(mapping_file)
+    if mapping_doc.get("mapping_version") != mapping_version:
         die(
-            f"{mapping_file}: mapping_version {live_doc.get('mapping_version')!r} "
+            f"{mapping_file}: mapping_version {mapping_doc.get('mapping_version')!r} "
             f"!= --mapping-version {mapping_version!r}"
         )
-    live_hash = document_hash(live_doc)
-    if live_hash != mapping_hash:
-        die(f"{mapping_file}: canonical hash {live_hash} != --mapping-hash {mapping_hash}")
+    mapping_doc_hash = document_hash(mapping_doc)
+    if mapping_doc_hash != mapping_hash:
+        die(f"{mapping_file}: canonical hash {mapping_doc_hash} != --mapping-hash {mapping_hash}")
 
     frozen_doc = load(frozen_mapping)
     if frozen_doc.get("mapping_version") != FROZEN_MAPPING_VERSION:
@@ -219,6 +221,9 @@ def check_mapping_generation(mapping_file, mapping_version, mapping_hash, frozen
     frozen_hash = document_hash(frozen_doc)
     if frozen_hash != FROZEN_MAPPING_HASH:
         die(f"{frozen_mapping}: canonical hash {frozen_hash} != frozen {FROZEN_MAPPING_HASH}")
+    frozen_byte_hash = hashlib.sha256(Path(frozen_mapping).read_bytes()).hexdigest()
+    if frozen_byte_hash != FROZEN_MAPPING_BYTE_HASH:
+        die(f"{frozen_mapping}: byte hash {frozen_byte_hash} != frozen {FROZEN_MAPPING_BYTE_HASH}")
 
 
 # check_admission / repo_root_for / git_show / git_show_names copied

@@ -74,7 +74,8 @@ Historical manifests retain their schema hashes and historical
 Accepted on 2026-07-12 with the following implementation evidence:
 
 - `abc.tools.source-bundle` implements the bounded, deterministic v1 ZIP
-  inspector; `source-bundle.schema.json`,
+  inspector over one private read-only staged artifact, so archive and member
+  identities cannot observe different path contents; `source-bundle.schema.json`,
   `fixtures/source-bundle/abc-source-bundle-v1-known-answer.json`, and its
   focused test pin manifest, path-decoding, Unicode-folding, limits, canonical
   UTF-8 bytes, and the literal JCS digest.
@@ -91,7 +92,11 @@ Accepted on 2026-07-12 with the following implementation evidence:
   rejection, and non-releaseability after any admission failure.
 - Workset and source-snapshot tests prove complete historical readability and
   role-specific validation of archive, canonical bundle, primary member, and
-  parser-input hashes, including persisted manifest-byte integrity.
+  parser-input hashes, including persisted manifest-byte integrity and
+  structural rejection of coordinated member reordering plus re-signing.
+- The hermetic Phase 5 checkpoint pins the exact bytes and canonical hash of
+  the admitted frozen v2-0.4.0 mapping artifact rather than consulting the
+  later live mapping generation.
 - P16 evolution tests prove image edits rotate bundle identity and rebuild,
   metadata-only repacks rotate only archive identity and reuse, and text edits
   rotate bundle and primary-text identity. P16.3 composes the real path without

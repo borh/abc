@@ -6,13 +6,15 @@
             [clojure.java.io :as io]
             [clojure.string :as string])
   (:import [com.ibm.icu.lang UCharacter]
-           [java.io ByteArrayOutputStream IOException]
+           [java.io ByteArrayOutputStream FileNotFoundException IOException
+            InterruptedIOException]
            [java.nio ByteBuffer]
+           [java.nio.channels ClosedByInterruptException]
            [java.nio.charset Charset CharacterCodingException CodingErrorAction
             StandardCharsets]
+           [java.nio.file FileSystemException Files StandardCopyOption]
            [java.security DigestInputStream MessageDigest]
            [java.text Normalizer Normalizer$Form]
-           [java.util.zip ZipException]
            [org.apache.commons.compress.archivers.zip
             UnicodePathExtraField ZipArchiveEntry ZipArchiveEntry$NameSource
             ZipFile]))
@@ -97,6 +99,90 @@
   (and (string/ends-with? (string/lower-case path) ".txt")
        (not (packaging-metadata? path))))
 
+(defn- identity-fail! [reason data]
+  (throw (ex-info (str "invalid abc-source-bundle-v1 identity: " (name reason))
+                  (merge {::identity-error true :reason reason} data))))
+
+(defn- identity-path-valid? [path]
+  (and (string? path)
+       (not (string/blank? path))
+       (= path (Normalizer/normalize path Normalizer$Form/NFC))
+       (not (string/includes? path "\\"))
+       (not (string/starts-with? path "/"))
+       (not (re-find #"^[A-Za-z]:" path))
+       (not-any? #{"" "." ".."} (string/split path #"/" -1))))
+
+(defn validate-identity-object!
+  "Validate the complete structural policy of an abc-source-bundle-v1
+  persisted identity and return it unchanged. This validation is independent
+  of JSON Schema so callers cannot re-sign a structurally non-canonical member
+  projection."
+  [identity-object]
+  (when-not (and (map? identity-object)
+                 (= #{"construction" "members" "primary_text_member"}
+                    (set (keys identity-object)))
+                 (vector? (get identity-object "members"))
+                 (string? (get identity-object "primary_text_member")))
+    (identity-fail! :identity-fields {}))
+  (when-not (= construction (get identity-object "construction"))
+    (identity-fail! :identity-construction
+                    {:construction (get identity-object "construction")}))
+  (let [members (get identity-object "members")]
+    (doseq [[index member] (map-indexed vector members)]
+      (when-not (and (map? member)
+                     (= #{"path" "member_hash"} (set (keys member)))
+                     (string? (get member "path")))
+        (identity-fail! :identity-member-fields {:member-index index}))
+      (when-not (and (string? (get member "member_hash"))
+                     (re-matches hash/hash-pattern
+                                 (get member "member_hash")))
+        (identity-fail! :identity-member-hash {:member-index index}))
+      (when-not (identity-path-valid? (get member "path"))
+        (identity-fail! :identity-member-path
+                        {:member-index index :path (get member "path")})))
+    (let [paths (mapv #(get % "path") members)
+          sorted-paths (vec (sort paths))]
+      (when-not (= paths sorted-paths)
+        (identity-fail! :identity-member-order
+                        {:paths paths :expected-paths sorted-paths}))
+      (when-not (= (count paths) (count (distinct paths)))
+        (identity-fail! :identity-member-path-collision {:paths paths}))
+      (let [folded (mapv unicode-fold paths)]
+        (when-not (= (count folded) (count (distinct folded)))
+          (identity-fail! :identity-member-case-fold-collision
+                          {:paths paths})))
+      (let [candidates (filterv primary-candidate? paths)
+            primary (get identity-object "primary_text_member")]
+        (when-not (= 1 (count candidates))
+          (identity-fail! :identity-primary-cardinality
+                          {:candidates candidates}))
+        (when-not (= primary (first candidates))
+          (identity-fail! :identity-primary-match
+                          {:primary-text-member primary
+                           :expected-primary-text-member
+                           (first candidates)})))))
+  identity-object)
+
+(defn validate-persisted-manifest!
+  "Validate a persisted source-bundle manifest's authoritative identity,
+  member projection, and signature. Return the manifest unchanged."
+  [manifest-value]
+  (let [identity-object (validate-identity-object!
+                         (get manifest-value "identity_object"))
+        authoritative-projection
+        (mapv #(select-keys % ["path" "member_hash"])
+              (get manifest-value "members"))]
+    (when-not (= (get identity-object "members") authoritative-projection)
+      (identity-fail! :identity-member-projection
+                      {:identity-members (get identity-object "members")
+                       :member-projection authoritative-projection}))
+    (let [expected (bundle-identity-hash identity-object)]
+      (when-not (= expected (get manifest-value "bundle_hash"))
+        (identity-fail! :identity-bundle-hash
+                        {:bundle-hash (get manifest-value "bundle_hash")
+                         :expected-bundle-hash expected})))
+    manifest-value))
+
 (defn- name-source [^ZipArchiveEntry entry]
   (let [source (.getNameSource entry)]
     (cond
@@ -157,12 +243,6 @@
                 :paths (->> collisions (map :path) sort vec)})))
     entries))
 
-(defn- validated-entries [archive-path archive limits]
-  (let [entries (decoded-entries archive-path archive)]
-    (validate-entry-collisions! archive-path entries)
-    (validate-declared-limits! archive-path entries limits)
-    (sort-by :path entries)))
-
 (defn- choose-primary! [archive-path entries]
   (let [candidates (filterv #(primary-candidate? (:path %)) entries)]
     (case (count candidates)
@@ -205,16 +285,63 @@
                 (.write retained buffer 0 n))
               (recur next-member))))))))
 
-(defn- inspect-open-zip [zip-file limits]
-  (with-open [archive (-> (ZipFile/builder)
-                          (.setFile (io/file zip-file))
-                          (.setCharset legacy-name-charset)
-                          (.setUseUnicodeExtraFields true)
-                          (.get))]
-    (let [entries (validated-entries zip-file archive limits)
-          primary-path (choose-primary! zip-file entries)
+(defn- caused-by? [class throwable]
+  (loop [cause throwable]
+    (cond
+      (nil? cause) false
+      (instance? class cause) true
+      :else (recur (.getCause cause)))))
+
+(defn- parser-boundary-io? [t]
+  (and (instance? IOException t)
+       (not (caused-by? InterruptedIOException t))
+       (not (caused-by? ClosedByInterruptException t))
+       (not (caused-by? FileNotFoundException t))
+       (not (caused-by? FileSystemException t))))
+
+(defn- unreadable-zip! [archive-path stable-file t]
+  (let [message (.getMessage ^Throwable t)
+        cause (if (and message stable-file)
+                (string/replace message (str stable-file) (str archive-path))
+                message)]
+    (fail! :unreadable-zip archive-path {:cause cause})))
+
+(defn- open-zip-archive [archive-path stable-file]
+  (try
+    (-> (ZipFile/builder)
+        (.setFile (io/file stable-file))
+        (.setCharset legacy-name-charset)
+        (.setUseUnicodeExtraFields true)
+        (.get))
+    (catch IOException t
+      (cond
+        (caused-by? CharacterCodingException t)
+        (fail! :invalid-member-name-encoding archive-path
+               {:cause (.getMessage t)})
+
+        (parser-boundary-io? t) (unreadable-zip! archive-path stable-file t)
+        :else (throw t)))))
+
+(defn- parser-decoded-entries [archive-path archive]
+  (try
+    (decoded-entries archive-path archive)
+    (catch IOException t
+      (if (parser-boundary-io? t)
+        (unreadable-zip! archive-path nil t)
+        (throw t)))))
+
+(defn- validated-parser-entries [archive-path archive limits]
+  (let [entries (parser-decoded-entries archive-path archive)]
+    (validate-entry-collisions! archive-path entries)
+    (validate-declared-limits! archive-path entries limits)
+    (sort-by :path entries)))
+
+(defn- inspect-open-zip [archive-path stable-file limits]
+  (with-open [archive (open-zip-archive archive-path stable-file)]
+    (let [entries (validated-parser-entries archive-path archive limits)
+          primary-path (choose-primary! archive-path entries)
           total-bytes (volatile! 0)
-          read-results (mapv #(read-member! zip-file archive % primary-path
+          read-results (mapv #(read-member! archive-path archive % primary-path
                                             total-bytes limits)
                              entries)
           members (mapv :metadata read-results)
@@ -223,70 +350,67 @@
           primary-hash (get (some #(when (= primary-path (get % "path")) %)
                                   members)
                             "member_hash")
-          identity-object {"construction" construction
-                           "members" (mapv #(select-keys % ["path" "member_hash"])
-                                           members)
-                           "primary_text_member" primary-path}]
+          identity-object
+          (validate-identity-object!
+           {"construction" construction
+            "members" (mapv #(select-keys % ["path" "member_hash"])
+                            members)
+            "primary_text_member" primary-path})]
       {:identity-object identity-object
        :bundle-hash (bundle-identity-hash identity-object)
-       :archive-hash (hash/format-sha256 (files/sha256-file zip-file))
+       :archive-hash (hash/format-sha256 (files/sha256-file stable-file))
        :members members
        :primary-text-member primary-path
        :primary-text-hash primary-hash
        :primary-text-bytes primary-bytes})))
 
-(defn- caused-by? [class throwable]
-  (loop [cause throwable]
-    (cond
-      (nil? cause) false
-      (instance? class cause) true
-      :else (recur (.getCause cause)))))
+(defn- stage-archive! [zip-file]
+  (let [staged (Files/createTempFile
+                "abc-source-bundle-staged-" ".zip"
+                (make-array java.nio.file.attribute.FileAttribute 0))]
+    (try
+      (Files/copy (.toPath (io/file zip-file)) staged
+                  (into-array java.nio.file.CopyOption
+                              [StandardCopyOption/REPLACE_EXISTING]))
+      (when-not (.setReadOnly (.toFile staged))
+        (throw (IOException. "could not make staged source archive read-only")))
+      (.toFile staged)
+      (catch Throwable t
+        (Files/deleteIfExists staged)
+        (throw t)))))
 
 (defn inspect-zip
   ([zip-file]
    (inspect-zip zip-file default-limits))
   ([zip-file limits]
-   (try
-     (inspect-open-zip zip-file (merge default-limits limits))
-     (catch clojure.lang.ExceptionInfo e
-       (throw e))
-     (catch ZipException t
-       (fail! :unreadable-zip zip-file {:cause (.getMessage t)}))
-     (catch IOException t
-       (if (caused-by? CharacterCodingException t)
-         (fail! :invalid-member-name-encoding zip-file
-                {:cause (.getMessage t)})
-         (throw t))))))
+   (let [staged (stage-archive! zip-file)]
+     (try
+       (inspect-open-zip zip-file staged (merge default-limits limits))
+       (finally
+         (Files/deleteIfExists (.toPath staged)))))))
 
 (defn inspect-zip-metadata
   "Apply the source-bundle name decoding, normalization, collision, and primary
   candidate construction without reading or hashing member bodies. Intended for
   bounded corpus evidence; admission must still use inspect-zip."
   [zip-file]
-  (try
-    (with-open [archive (-> (ZipFile/builder)
-                            (.setFile (io/file zip-file))
-                            (.setCharset legacy-name-charset)
-                            (.setUseUnicodeExtraFields true)
-                            (.get))]
-      (let [entries (decoded-entries zip-file archive)]
-        (merge
-         {:semantic-text-member-count
-          (count (filter #(primary-candidate? (:path %)) entries))}
-         (collision-evidence entries))))
-    (catch clojure.lang.ExceptionInfo e
-      (throw e))
-    (catch ZipException t
-      (fail! :unreadable-zip zip-file {:cause (.getMessage t)}))))
+  (with-open [archive (open-zip-archive zip-file zip-file)]
+    (let [entries (parser-decoded-entries zip-file archive)]
+      (merge
+       {:semantic-text-member-count
+        (count (filter #(primary-candidate? (:path %)) entries))}
+       (collision-evidence entries)))))
 
 (defn write-manifest! [path inspection]
-  (let [file (io/file path)]
+  (let [file (io/file path)
+        manifest-value
+        {"source_bundle_schema_id" schema-id
+         "bundle_hash_algorithm" bundle-hash-algorithm
+         "bundle_hash" (:bundle-hash inspection)
+         "archive_hash" (:archive-hash inspection)
+         "identity_object" (:identity-object inspection)
+         "members" (:members inspection)}]
+    (validate-persisted-manifest! manifest-value)
     (json/write-deterministic-json-file!
-     file
-     {"source_bundle_schema_id" schema-id
-      "bundle_hash_algorithm" bundle-hash-algorithm
-      "bundle_hash" (:bundle-hash inspection)
-      "archive_hash" (:archive-hash inspection)
-      "identity_object" (:identity-object inspection)
-      "members" (:members inspection)})
+     file manifest-value)
     file))

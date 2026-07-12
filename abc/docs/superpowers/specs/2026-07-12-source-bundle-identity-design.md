@@ -336,7 +336,11 @@ rewrites old manifests in place.
   `derive_failures`/counting, and release rejection of any nonzero failure
   count.
 - A pinned damaged-archive case proves Java-unreadable input does not reach the
-  unbounded `7zz` fallback.
+  unbounded `7zz` fallback, including the corpus archive whose Commons Compress
+  open failure is a plain `IOException` rather than `ZipException`.
+- Persisted identity policy tests reject unsafe/non-NFC paths, noncanonical
+  order, normalized/full-fold collisions, invalid hashes, bad primary
+  cardinality/matching, and coordinated member reversal plus re-signing.
 - Adapter tests prove `primary_text_hash` equals exact stdin/member bytes.
 - Composition tests prove all three hash roles survive build, workset, snapshot,
   and publication manifests without equality conflation.
@@ -352,6 +356,15 @@ configured archive limits for member count, per-member uncompressed bytes, and
 total uncompressed bytes to prevent decompression bombs. Concrete limits must
 be chosen from measured Aozora corpus maxima plus documented headroom before
 the inspector is admitted to production.
+
+Before inspection, the caller-visible ZIP path is copied once into a private,
+read-only temporary artifact. `archive_hash`, central-directory parsing, and
+all member hashes are then derived from that same staged file, which is deleted
+on success or failure. This closes replacement races that could otherwise pair
+member identity from one inode with `archive_hash` from later path contents.
+Only plain archive-parser `IOException` at ZIP open/enumeration is classified
+as `unreadable-zip`; interruption, missing/access/file-system errors, Errors,
+linkage failures, and member-read or other later operational IO propagate.
 
 ### Pinned-corpus evidence
 
@@ -416,7 +429,8 @@ not a claim to emulate every APFS/NTFS filename rule.
 Accepted on 2026-07-12 with the following implementation evidence:
 
 - `abc.tools.source-bundle` implements the bounded, deterministic v1 ZIP
-  inspector; `source-bundle.schema.json` and
+  inspector over one private read-only staged artifact, so archive and member
+  identities observe the same bytes; `source-bundle.schema.json` and
   `fixtures/source-bundle/abc-source-bundle-v1-known-answer.json` pin manifest,
   path-decoding, Unicode-folding, limit, and RFC 8785 canonical bytes/hash
   behavior. The known answer includes both a slash and non-ASCII paths.
@@ -433,7 +447,11 @@ Accepted on 2026-07-12 with the following implementation evidence:
   rejection, and non-releaseability after any admission failure.
 - Workset and source-snapshot tests prove complete historical readability and
   role-specific validation of archive, canonical bundle, primary member, and
-  parser-input hashes, including persisted manifest-byte integrity.
+  parser-input hashes, including persisted manifest-byte integrity and
+  structural rejection of coordinated member reordering plus re-signing.
+- The hermetic Phase 5 checkpoint pins the exact bytes and canonical hash of
+  the admitted frozen v2-0.4.0 mapping artifact rather than consulting the
+  later live mapping generation.
 - P16 evolution tests prove image edits rotate bundle identity and rebuild,
   metadata-only repacks rotate only archive identity and reuse, and text edits
   rotate bundle and primary-text identity. P16.3 composes the real path without

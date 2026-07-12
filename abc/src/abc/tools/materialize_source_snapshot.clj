@@ -112,6 +112,16 @@
       (identity-error! "source-bundle fails schema validation"
                        :source-bundle-schema work
                        {:errors source-bundle-errors})))
+  (try
+    (source-bundle/validate-identity-object!
+     (get source-bundle-value "identity_object"))
+    (catch clojure.lang.ExceptionInfo e
+      (if (true? (::source-bundle/identity-error (ex-data e)))
+        (identity-error! "source-bundle identity violates v1 structural policy"
+                         :source-bundle-identity-structure work
+                         {:reason (:reason (ex-data e))
+                          :identity-error (ex-data e)})
+        (throw e))))
   (let [source-hash (get official-source "source_hash")
         archive-hash (get official-source "archive_hash")
         bundle-archive-hash (get source-bundle-value "archive_hash")

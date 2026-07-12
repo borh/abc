@@ -6,6 +6,7 @@
             [abc.tools.materialize-source-snapshot :as materialize]
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.schema :as schema]
+            [abc.tools.source-bundle :as source-bundle]
             [abc.tools.source-snapshot-fixture :as fixture]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]))
@@ -326,6 +327,35 @@
                                         (comp vec reverse)))))]
     (is (= :member-identity-projection
            (:identity-role (ex-data error))))))
+
+(deftest coordinated-reordered-and-resigned-identity-is-rejected-test
+  (let [error
+        (materialize-error
+         (fn [work]
+           (let [source-bundle-path (:source_bundle_path work)
+                 reordered
+                 (update-json!
+                  source-bundle-path
+                  (fn [source-bundle]
+                    (let [identity (update (get source-bundle "identity_object")
+                                           "members" (comp vec reverse))
+                          bundle-hash
+                          (source-bundle/bundle-identity-hash identity)]
+                      (-> source-bundle
+                          (assoc "identity_object" identity
+                                 "bundle_hash" bundle-hash)
+                          (update "members" (comp vec reverse))))))
+                 resigned-hash (get (files/read-json source-bundle-path)
+                                    "bundle_hash")]
+             (update-json! (:official_source_path work)
+                           #(assoc % "bundle_hash" resigned-hash))
+             (update-json! (:parser_ir_path work)
+                           #(assoc-in % ["source" "work_content_hash"]
+                                      resigned-hash))
+             reordered)))]
+    (is (= :source-bundle-identity-structure
+           (:identity-role (ex-data error))))
+    (is (= :identity-member-order (:reason (ex-data error))))))
 
 (deftest materialized-source-snapshot-is-deterministic-test
   (let [root (fixture/temp-dir "abc-source-snapshot-deterministic")]

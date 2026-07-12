@@ -201,14 +201,18 @@
       "type": "object",
       "required": [
         "work_id",
-        "work_content_hash",
         "coordinate_system",
         "detector_id",
         "annotations"
       ],
+      "anyOf": [
+        { "required": ["primary_text_hash"] },
+        { "required": ["work_content_hash"] }
+      ],
       "additionalProperties": false,
       "properties": {
         "work_id": { "type": "string" },
+        "primary_text_hash": { "$ref": "#/$defs/hash" },
         "work_content_hash": { "$ref": "#/$defs/hash" },
         "coordinate_system": { "const": "decoded_utf8" },
         "detector_id": { "$ref": "#/$defs/orthoDetectorId" },

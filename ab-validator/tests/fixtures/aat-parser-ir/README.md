@@ -17,6 +17,6 @@ and do not require `/db`.
   ruby projection, warning inventions, and measured warigaki U-02.
 
 Both fixtures target `data/aat-to-parser-ir-mapping-v1.json` mapping version
-`0.2.4`. `real-aozora2html-sample.aat.json` is also used by
+`0.4.0`. `real-aozora2html-sample.aat.json` is also used by
 `just parser-ir-level3-publication-smoke` to prove checked-fixture
 paragraph-backed parser-IR can be materialized into TEI by ABC.

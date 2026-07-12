@@ -17,6 +17,7 @@ Convert one AAT file:
 cargo run -p ab-aat-to-parser-ir -- convert \
   --aat path/to/input.aat.json \
   --mapping data/aat-to-parser-ir-mapping-v1.json \
+  --work-content-hash sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
   --parser-ir-out /tmp/parser-ir.json \
   --divergence-out /tmp/divergence.json \
   --abc-root data/abc-schemas
@@ -32,14 +33,16 @@ Optional path to an orthographic annotations JSON file produced by the
 - `sentences[].tags`: renderer-facing sentence tags, including
   `orthographic-katakana`
 
-The annotation file must describe the same source as the AAT input:
-`work_id` must equal `AAT.work_id`, and `work_content_hash` must equal
-`AAT.meta.source_hash`.
+The annotation file must describe the same byte-coordinate source as the AAT
+input: `work_id` must equal `AAT.work_id`, and `primary_text_hash` must equal
+`AAT.meta.primary_text_hash` (or historical `AAT.meta.source_hash`). Historical
+annotation files using `work_content_hash` are accepted and migrated on read;
+new output emits only `primary_text_hash`.
 
 ```json
 {
   "work_id": "000000",
-  "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "primary_text_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
   "coordinate_system": "decoded_utf8",
   "detector_id": "HeuristicV1",
   "annotations": [
@@ -76,26 +79,30 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 
 - File: `data/aat-to-parser-ir-mapping-v1.json` (identity-rotated compatibility
   artifact; further edits require an explicit protocol/version rotation)
-- Mapping version: `0.3.0`
+- Mapping version: `0.4.0`
 - `source_aat_version`: `1` (selects `data/aat-schema-v1.json`)
 - Mapping hash:
-  `sha256:8da8dd5917a4b052e20d41c08ac255838d6569eb414c78e2e6306df6bc549a92`
+  `sha256:ffdfde35482b8e92fb929c40119cdfa8fa9019df53aa08f19359ac71584275c2`
 - Mapping schema hash:
   `sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2`
 - Parser-IR schema hash:
-  `sha256:b5b55d52f79a6e4feb7f27ebe1257e164c917674f8119995b6bb9afed33af290`
-- Latest full-corpus conversion audit:
+  `sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec`
+- Historical full-corpus conversion audit (predates and does not admit mapping
+  0.4.0):
   `docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md`
 
 ### Mapping v2 (AAT schema 2)
 
-- File: `data/aat-to-parser-ir-mapping-v2.json` (frozen from Task 10 onward;
-  its content hash becomes a registry coordinate — never hand-edit after
-  that point)
-- Mapping version: `0.3.0`
+- File: `data/aat-to-parser-ir-mapping-v2.json` (identity-rotated compatibility
+  artifact; further edits require an explicit protocol/version rotation)
+- Mapping version: `0.4.0`
 - `source_aat_version`: `2` (selects `data/aat-schema.json`)
-- Mapping hash: computed, never hand-written — surfaced by
-  `audit-corpus --summary-json`
+- Mapping hash:
+  `sha256:d53da085a07eda4d69c6f4e30bacfccc2c7916d2f4b73375cca10a89dc9fbba7`
+- Frozen pre-rotation v2 `0.3.0` artifact:
+  `data/aat-to-parser-ir-mapping-v2-0.3.0.json` (canonical hash
+  `sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40`),
+  retained so historical compatibility-registry evidence remains reproducible
 - Adds explicit source-note authority (`source_note` blocks), `jizume_block`
   layout projection, and typed (non-`x-`) layout fields with `x-` fallback,
   on top of the v1 rule set

@@ -157,7 +157,7 @@ fn visible_text_for_sentence(nodes: &[Value], sentence: &Value) -> String {
 fn ortho_fixture_bundle() -> ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle {
     serde_json::from_value(json!({
         "work_id": "000000",
-        "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "primary_text_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
         "coordinate_system": "decoded_utf8",
         "detector_id": "HeuristicV1",
         "annotations": [
@@ -593,7 +593,7 @@ fn legacy_schema_hashes_match_mapping_artifact() {
     );
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "sha256:b5b55d52f79a6e4feb7f27ebe1257e164c917674f8119995b6bb9afed33af290"
+        "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"
     );
 }
 
@@ -648,7 +648,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.3.0");
+    assert_eq!(mapping.mapping_version, "0.4.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -696,7 +696,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.3.0");
+    assert_eq!(mapping.mapping_version, "0.4.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -754,6 +754,47 @@ fn orthographic_annotations_inject_into_schema_valid_parser_ir() {
 }
 
 #[test]
+fn distinct_bundle_hash_does_not_change_annotation_coordinate_identity() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let primary = "sha256:1111111111111111111111111111111111111111111111111111111111111111";
+    let bundle = "sha256:2222222222222222222222222222222222222222222222222222222222222222";
+    let annotations: ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle =
+        serde_json::from_value(json!({
+            "work_id": "000000",
+            "primary_text_hash": primary,
+            "coordinate_system": "decoded_utf8",
+            "detector_id": "HeuristicV1",
+            "annotations": []
+        }))
+        .unwrap();
+    let mut aat = ortho_fixture_aat();
+    aat["meta"]["primary_text_hash"] = json!(primary);
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: ConversionOptions {
+            work_content_hash: Some(bundle.to_owned()),
+            orthographic_annotations: Some(annotations),
+            ..default_test_options()
+        },
+    })
+    .unwrap();
+
+    assert_eq!(output.parser_ir["source"]["work_content_hash"], bundle);
+    assert_eq!(output.parser_ir["source"]["primary_text_hash"], primary);
+    assert_eq!(
+        output.parser_ir["orthographic_annotations"]["primary_text_hash"],
+        primary
+    );
+    assert!(
+        output.parser_ir["orthographic_annotations"]
+            .get("work_content_hash")
+            .is_none()
+    );
+}
+
+#[test]
 fn detect_orthographic_annotations_uses_parser_ir_sentence_coordinates() {
     let (schemas, mapping) = schemas_and_mapping();
     let bundle = ab_aat_to_parser_ir::ortho_detect::detect_orthographic_annotations(
@@ -766,7 +807,7 @@ fn detect_orthographic_annotations_uses_parser_ir_sentence_coordinates() {
 
     assert_eq!(bundle.work_id, "000000");
     assert_eq!(
-        bundle.work_content_hash,
+        bundle.primary_text_hash,
         "sha256:1111111111111111111111111111111111111111111111111111111111111111"
     );
     assert_eq!(
@@ -976,7 +1017,7 @@ fn ortho_indices_cover_multiple_annotations_in_one_sentence() {
     let bundle: ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle =
         serde_json::from_value(json!({
             "work_id": "000000",
-            "work_content_hash": hash,
+            "primary_text_hash": hash,
             "coordinate_system": "decoded_utf8",
             "detector_id": "HeuristicV1",
             "annotations": [
@@ -1035,7 +1076,7 @@ fn ortho_annotation_spanning_two_sentences_tags_both() {
     let bundle: ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle =
         serde_json::from_value(json!({
             "work_id": "000000",
-            "work_content_hash": hash,
+            "primary_text_hash": hash,
             "coordinate_system": "decoded_utf8",
             "detector_id": "HeuristicV1",
             "annotations": [

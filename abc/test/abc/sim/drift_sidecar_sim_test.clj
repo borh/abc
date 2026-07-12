@@ -127,3 +127,122 @@
                            (and post-event spanning))))))
       (harness/assert-applied-ratio!
        (str "P15.lifecycle/" (name forced)) counter))))
+
+(def ^:private synthetic-intent
+  "Split whose pre- participant is bootstrap author 000001 and whose post-
+  participants are never-ingested fresh pids: only 000001 can ever produce
+  an entry; 9999xx pids are absent from every projection."
+  {:intent :clean-split
+   :event {:pid "000001" :targets ["999901" "999902"]}})
+
+(defmacro ^:private with-sidecar
+  "Author + write the synthetic sidecar; bind [event-sym dir-sym]."
+  [[event-sym dir-sym] & body]
+  `(let [~event-sym (sidecar/event-for-intent synthetic-intent)
+         ~dir-sym (render/temp-dir "sim-drift")]
+     (try
+       (sidecar/write-sidecars! ~dir-sym ~event-sym)
+       ~@body
+       (finally (render/delete-tree! ~dir-sym)))))
+
+;; P15.localization — the update appears only in the pair whose window
+;; spans the participant edit; summary equals the per-pair sum.
+(deftest p15-localization-sim-test
+  (let [m0 (model/bootstrap 2)
+        edit (fn [m pid v]
+               (:model (model/apply-event m {:event/type :edit-person
+                                             :pid pid :field :family_name
+                                             :value v})))
+        s1 (edit m0 "000002" "改") ;; pair 1: non-participant edit only
+        s2 (edit s1 "000001" "変")] ;; pair 2: participant edit
+    (with-sidecar [event drift-dir]
+      (render/with-repo [git root work]
+        (let [cs (render/commit-history! git root [m0 s1 s2]
+                                         (render/monotone-instants 3))
+              s (audit/scan-history! {:aozora-repo (str root)
+                                      :from-ref (.getName (first cs))
+                                      :work-dir (str work)
+                                      :drift-persons-dir (str drift-dir)})
+              pairs (:pairs s)]
+          (is (= "ok" (:status s)))
+          (is (= [0 1] (mapv :drift_participant_update_count pairs)))
+          (is (= [{"person_id" "000001" "change_type" "hash_changed"}]
+                 (mapv #(select-keys % ["person_id" "change_type"])
+                       (:drift_participant_updates (second pairs)))))
+          (is (every? #(entry-shape-ok? event %)
+                      (:drift_participant_updates (second pairs))))
+          (is (= 1 (get (:summary s) "drift_participant_updates"))))))))
+
+;; P15.invalid-sidecar — all four faults pin the shared drift-index-map
+;; validation boundary through audit!; :schema-hash-mismatch additionally
+;; pins scan-history! propagation (per-pair re-validation must be equally
+;; loud, not absorbed into a pair entry).
+(deftest p15-invalid-sidecar-sim-test
+  (let [m0 (model/bootstrap 2)
+        m1 (:model (model/apply-event m0 {:event/type :edit-person
+                                          :pid "000001"
+                                          :field :family_name :value "改"}))]
+    (doseq [fault [:schema-hash-mismatch :orphan-event-file
+                   :index-target-missing :participants-not-sorted]]
+      (with-sidecar [event drift-dir]
+        (sidecar/corrupt! drift-dir event fault)
+        (render/with-repo [git root work]
+          (let [cs (render/commit-history! git root [m0 m1]
+                                           (render/monotone-instants 2))
+                thrown (try (audit/audit! {:aozora-repo (str root)
+                                           :previous-ref (.getName (first cs))
+                                           :current-ref (.getName (second cs))
+                                           :work-dir (str work)
+                                           :drift-persons-dir (str drift-dir)})
+                            nil
+                            (catch Throwable e e))]
+            (is (some? thrown)
+                (str fault ": invalid sidecars must not yield a report"))
+            (is (not (harness/forbidden-throw? thrown)) (str fault))
+            (is (harness/clean-ex-info? thrown [:persons-dir :failures])
+                (str fault ": " (pr-str thrown)))))))
+    (with-sidecar [event drift-dir]
+      (sidecar/corrupt! drift-dir event :schema-hash-mismatch)
+      (render/with-repo [git root work]
+        (let [cs (render/commit-history! git root [m0 m1]
+                                         (render/monotone-instants 2))
+              thrown (try (audit/scan-history!
+                           {:aozora-repo (str root)
+                            :from-ref (.getName (first cs))
+                            :work-dir (str work)
+                            :drift-persons-dir (str drift-dir)})
+                          nil
+                          (catch Throwable e e))]
+          (is (some? thrown) "scan-history! must propagate, not absorb")
+          (is (not (harness/forbidden-throw? thrown)))
+          (is (harness/clean-ex-info? thrown [:persons-dir :failures])))))))
+
+;; P15.rerun — P14's work-dir hygiene contract extended to the sidecar
+;; path: drift_participant_updates carry no locator fields, so
+;; semantic-report retains them and equality is meaningful.
+(deftest p15-rerun-sim-test
+  (let [m0 (model/bootstrap 2)
+        m1 (:model (model/apply-event m0 {:event/type :edit-person
+                                          :pid "000001"
+                                          :field :family_name :value "改"}))]
+    (with-sidecar [event drift-dir]
+      (render/with-repo [git root work]
+        (let [cs (render/commit-history! git root [m0 m1]
+                                         (render/monotone-instants 2))
+              run! (fn [w]
+                     (oracle/semantic-report
+                      (audit/audit! {:aozora-repo (str root)
+                                     :previous-ref (.getName (first cs))
+                                     :current-ref (.getName (second cs))
+                                     :work-dir (str w)
+                                     :drift-persons-dir (str drift-dir)})))
+              first-run (run! work)
+              reused (run! work)
+              fresh-dir (render/temp-dir "sim-fresh-work")
+              fresh (try (run! fresh-dir)
+                         (finally (render/delete-tree! fresh-dir)))]
+          (is (= [{"person_id" "000001" "change_type" "hash_changed"}]
+                 (mapv #(select-keys % ["person_id" "change_type"])
+                       (:drift_participant_updates first-run)))
+              "sidecar entry present in the semantic report")
+          (is (= first-run reused fresh)))))))

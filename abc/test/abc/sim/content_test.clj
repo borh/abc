@@ -7,6 +7,7 @@
             [abc.sim.render :as render]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
+            [abc.tools.source-bundle :as source-bundle]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [clojure.test.check.generators :as gen]))
@@ -77,6 +78,30 @@
     (is (= "image-v2" (get-in m2 [:contents "000101" :images "images/表紙.png"])))
     (is (= :remove-image (:intent a3)))
     (is (empty? (get-in m3 [:contents "000101" :images])))
+    (is (nil? (:applied
+               (model/apply-event m2 {:event/type :remove-image
+                                      :wid "000101" :path 1}))))
+    (testing "successful image histories remain source-bundle admissible"
+      (is (= :add-image
+             (get-in (model/apply-event
+                      m0 {:event/type :add-image :wid "000101"
+                          :path "画像/鳥瞰図.jpeg" :content "unicode"})
+                     [:applied :intent])))
+      (is (nil? (:applied
+                 (model/apply-event
+                  m0 {:event/type :add-image :wid "000101"
+                      :path "notes.txt" :content "second semantic text"}))))
+      (is (nil? (:applied
+                 (model/apply-event
+                  m0 {:event/type :add-image :wid "000101"
+                      :path "../escape.png" :content "unsafe"}))))
+      (let [nfd (:model (model/apply-event
+                         m0 {:event/type :add-image :wid "000101"
+                             :path "images/é.png" :content "nfd"}))]
+        (is (nil? (:applied
+                   (model/apply-event
+                    nfd {:event/type :add-image :wid "000101"
+                         :path "images/é.png" :content "nfc collision"}))))))
     (doseq [event [{:event/type :edit-image :wid "000101" :path "missing.png"
                     :content "x"}
                    {:event/type :remove-image :wid "999999" :path "missing.png"}
@@ -85,6 +110,46 @@
                     :content "shadow text"}
                    {:event/type :add-image :wid "000101" :path "x.png" :content nil}]]
       (is (nil? (:applied (model/apply-event m3 event)))))))
+
+(defn- thrown-reason [f]
+  (try
+    (f)
+    nil
+    (catch clojure.lang.ExceptionInfo e
+      (:reason (ex-data e)))))
+
+(defn- inspector-reason [^bytes archive-bytes]
+  (let [dir (render/temp-dir "sim-admission")
+        archive (io/file dir "bundle.zip")]
+    (try
+      (with-open [out (io/output-stream archive)]
+        (.write out archive-bytes))
+      (thrown-reason #(source-bundle/inspect-zip archive))
+      (finally
+        (render/delete-tree! dir)))))
+
+(deftest bundle-oracle-rejects-extra-semantic-text-test
+  (let [m (-> (model/bootstrap 1)
+              (assoc-in [:contents "000101"]
+                        {:text "作品000101 本文"
+                         :images (sorted-map "notes.txt" "not primary")}))
+        archive (render/content->zip-bytes (get-in m [:contents "000101"])
+                                           "000101")]
+    (is (= :multiple-primary-text-members
+           (thrown-reason #(oracle/expected-content-identity m "000101" archive))))
+    (is (= :multiple-primary-text-members (inspector-reason archive)))))
+
+(deftest bundle-oracle-rejects-nfc-collision-test
+  (let [m (-> (model/bootstrap 1)
+              (assoc-in [:contents "000101"]
+                        {:text "作品000101 本文"
+                         :images (sorted-map "images/é.png" "nfd"
+                                             "images/é.png" "nfc")}))
+        archive (render/content->zip-bytes (get-in m [:contents "000101"])
+                                           "000101")]
+    (is (= :duplicate-member-path
+           (thrown-reason #(oracle/expected-content-identity m "000101" archive))))
+    (is (= :duplicate-member-path (inspector-reason archive)))))
 
 (deftest content-history-gen-shape-test
   (testing "structure: two leading adds on the two lowest bootstrap works, one edit"

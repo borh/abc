@@ -16,7 +16,8 @@
 
 (def ^:private text-pool ["春" "夏" "秋" "冬" "花" "鳥" "風" "月" "雪" "星"])
 (def ^:private image-name-pool
-  ["images/表紙.png" "images/挿絵.jpg" "図版/地図.webp" "__MACOSX/._notes.txt"])
+  ["images/表紙.png" "images/挿絵.jpg" "図版/地図.webp"
+   "images/éclair.png" "__MACOSX/._notes.txt"])
 (def ^:private image-content-pool ["image-a" "image-b" "image-c" "finder-info"])
 
 (defn- gen-text [wid]

@@ -7,7 +7,8 @@
             [clojure.set :as set]
             [clojure.string :as string]
             [clojure.walk :as walk])
-  (:import [java.nio.charset StandardCharsets]
+  (:import [com.ibm.icu.lang UCharacter]
+           [java.nio.charset StandardCharsets]
            [java.text Normalizer Normalizer$Form]))
 
 (def ^:private bundle-construction "abc-source-bundle-v1")
@@ -15,35 +16,86 @@
 (defn- normalize-identity-path [path]
   (Normalizer/normalize (string/replace path "\\" "/") Normalizer$Form/NFC))
 
-(defn- oracle-member-bytes
+(defn- safe-identity-path? [path]
+  (let [segments (string/split path #"/" -1)]
+    (and (not (string/blank? path))
+         (not (string/starts-with? path "/"))
+         (not (re-find #"^[A-Za-z]:" path))
+         (not-any? #{"" "." ".."} segments))))
+
+(defn- packaging-metadata? [path]
+  (or (string/starts-with? path "__MACOSX/")
+      (string/starts-with? (last (string/split path #"/")) "._")))
+
+(defn- primary-candidate? [path]
+  (and (string/ends-with? (string/lower-case path) ".txt")
+       (not (packaging-metadata? path))))
+
+(defn- reject! [reason data]
+  (throw (ex-info (str "oracle source bundle admission rejected: " (name reason))
+                  (assoc data :reason reason))))
+
+(defn- oracle-raw-members
   "Independent model-to-member projection; intentionally does not use the
   render namespace or production source-bundle code."
   [m wid]
   (let [{:keys [text images]} (get-in m [:contents wid])]
-    (into (sorted-map (str wid ".txt")
-                      (.getBytes ^String text StandardCharsets/UTF_8))
+    (into [[(str wid ".txt") (.getBytes ^String text StandardCharsets/UTF_8)]]
           (map (fn [[path content]]
-                 [(normalize-identity-path path)
-                  (.getBytes ^String content StandardCharsets/UTF_8)]))
+                 [path (.getBytes ^String content StandardCharsets/UTF_8)]))
           images)))
+
+(defn- oracle-members [m wid]
+  (let [members (mapv (fn [[raw-path ^bytes bytes]]
+                        (let [path (normalize-identity-path raw-path)]
+                          {:raw-path raw-path
+                           :path path
+                           :bytes bytes
+                           :member-hash (hash/format-sha256
+                                         (hash/sha256-bytes bytes))}))
+                      (oracle-raw-members m wid))]
+    (when-let [unsafe (first (remove #(safe-identity-path? (:path %)) members))]
+      (reject! :unsafe-member-path
+               {:decoded-path (:raw-path unsafe)
+                :normalized-path (:path unsafe)}))
+    (when-let [[path collisions]
+               (first (sort-by key
+                               (filter #(> (count (val %)) 1)
+                                       (group-by :path members))))]
+      (reject! :duplicate-member-path
+               {:path path :member-count (count collisions)}))
+    (when-let [[folded collisions]
+               (first (sort-by key
+                               (filter #(> (count (val %)) 1)
+                                       (group-by #(UCharacter/foldCase
+                                                   ^String (:path %) true)
+                                                 members))))]
+      (reject! :case-fold-member-path-collision
+               {:folded-path folded
+                :paths (->> collisions (map :path) sort vec)}))
+    (let [sorted-members (sort-by :path members)
+          candidates (filterv #(primary-candidate? (:path %)) sorted-members)]
+      (case (count candidates)
+        0 (reject! :no-primary-text-member {:candidates []})
+        1 {:members sorted-members :primary (first candidates)}
+        (reject! :multiple-primary-text-members
+                 {:candidates (mapv :path candidates)})))))
 
 (defn expected-content-identity
   "Independent abc-source-bundle-v1 identity from model members plus the
   separately rendered archive bytes. No production inspector/constructor is
   called, making render/inspector mistakes falsifiable."
   [m wid ^bytes archive-bytes]
-  (let [member-bytes (oracle-member-bytes m wid)
-        members (mapv (fn [[path ^bytes bytes]]
-                        {"path" path
-                         "member_hash" (hash/format-sha256
-                                        (hash/sha256-bytes bytes))})
-                      member-bytes)
-        primary (str wid ".txt")
+  (let [{oracle-members :members primary-member :primary}
+        (oracle-members m wid)
+        members (mapv (fn [{:keys [path member-hash]}]
+                        {"path" path "member_hash" member-hash})
+                      oracle-members)
+        primary (:path primary-member)
         identity-object {"construction" bundle-construction
                          "members" members
                          "primary_text_member" primary}
-        primary-hash (get (some #(when (= primary (get % "path")) %) members)
-                          "member_hash")]
+        primary-hash (:member-hash primary-member)]
     {:identity-object identity-object
      :members members
      :archive-hash (hash/format-sha256 (hash/sha256-bytes archive-bytes))

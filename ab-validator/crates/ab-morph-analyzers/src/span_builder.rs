@@ -349,8 +349,7 @@ mod tests {
         ];
 
         let analysis =
-            build_analysis_from_tokens("test".to_owned(), "t6".to_owned(), source, tokens)
-                .unwrap();
+            build_analysis_from_tokens("test".to_owned(), "t6".to_owned(), source, tokens).unwrap();
 
         assert_eq!(analysis.morphemes[1].surface, "　　～");
         assert_eq!(analysis.morphemes[1].byte_span, 3..12);

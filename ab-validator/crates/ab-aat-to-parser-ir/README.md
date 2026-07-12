@@ -82,16 +82,12 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 - Mapping schema hash:
   `sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2`
 - Parser-IR schema hash:
-  `sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340`
+  `sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2`
 - Latest full-corpus conversion audit:
   `docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md`
 
 ### Mapping v2 (AAT schema 2)
 
-- File: `data/aat-to-parser-ir-mapping-v2.json` (frozen from Task 10 onward;
-  its content hash becomes a registry coordinate — never hand-edit after
-  that point)
-- Mapping version: `0.3.0`
 - `source_aat_version`: `2` (selects `data/aat-schema.json`)
 - Mapping hash: computed, never hand-written — surfaced by
   `audit-corpus --summary-json`
@@ -101,6 +97,24 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 - `SchemaSet::load_for_aat_version` selects the (AAT schema, mapping)
   tuple by the mapping's `source_aat_version`; both mappings share the same
   mapping schema and target parser-IR schema
+
+#### Generations
+
+| Mapping version | File | Hash | Notes |
+| --- | --- | --- | --- |
+| `0.3.0` | `data/aat-to-parser-ir-mapping-v2-0.3.0.json` (frozen, byte-identical to the live file as it stood at the freeze commit; never edit) | `sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40` | Registry coordinate of the 0.2.0-era…C4 rows. |
+| `0.4.0` | `data/aat-to-parser-ir-mapping-v2.json` (live) | computed by `audit-corpus` (never hand-written) | Adds inline `yokogumi`/`keigakomi` container rules (`S-13`, `S-14`); binds C5+. |
+
+A generation is frozen the moment its hash is cited by a registry row —
+copy it to a version-suffixed file (as `0.3.0` was) before continuing to
+edit the live file for the next generation.
+
+Converter subcommands that load a mapping accept
+`--expect-mapping-version <v>` and `--expect-mapping-hash <sha256:…>` to bind
+an invocation to a specific mapping generation. When either is given and the
+loaded mapping does not match, the command fails closed before doing any
+conversion work, instead of silently running against whatever the live file
+currently contains.
 
 ## Verification
 

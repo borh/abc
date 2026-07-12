@@ -2,12 +2,12 @@
 
 use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str, sync::LazyLock};
 
-use anyhow::Result;
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
+use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
 use regex::Regex;
-use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
@@ -142,7 +142,11 @@ fn terminator_ends(text: &str) -> Vec<usize> {
                 ends.push(i);
             }
             b'\r' => {
-                i += if bytes.get(i + 1) == Some(&b'\n') { 2 } else { 1 };
+                i += if bytes.get(i + 1) == Some(&b'\n') {
+                    2
+                } else {
+                    1
+                };
                 ends.push(i);
             }
             _ => i += 1,
@@ -404,7 +408,10 @@ fn lines_from(source: &str, offset: usize) -> impl Iterator<Item = (usize, &str)
     })
 }
 
-#[allow(clippy::type_complexity, reason = "one tuple per projected wire channel; a named struct would only restate the field set")]
+#[allow(
+    clippy::type_complexity,
+    reason = "one tuple per projected wire channel; a named struct would only restate the field set"
+)]
 fn projections(
     span_text: &str,
 ) -> Result<(
@@ -444,16 +451,17 @@ fn projections(
 /// `ruby_entries`, which can run into the tens of thousands for
 /// heavily-annotated works), where the `Value` overhead was measured to
 /// dominate wall time.
-fn from_entries<S: Serialize, T: DeserializeOwned>(
-    entries: &[S],
-) -> Result<Vec<T>> {
+fn from_entries<S: Serialize, T: DeserializeOwned>(entries: &[S]) -> Result<Vec<T>> {
     Ok(serde_json::from_slice(&serde_json::to_vec(entries)?)?)
 }
 
 // The wire envelope's schemaVersion check becomes a compile-time pin: the
 // from_entries round-trip is only valid against the wire shape this port
 // was written for.
-const _: () = assert!(aozora_json::SCHEMA_VERSION == 3, "incompatible wire schema version");
+const _: () = assert!(
+    aozora_json::SCHEMA_VERSION == 3,
+    "incompatible wire schema version"
+);
 
 /// Transform Aozora source bytes into AAT JSON output.
 ///
@@ -518,8 +526,9 @@ pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
         .map_err(|err| anyhow::anyhow!("decode_auto: {err:?}"))?;
     let doc = Document::new(source);
     let tree = doc.parse();
-    let mut data =
-        serde_json::to_value(aozora_json::diagnostic_entries(&decoded.sanitize_diagnostics))?;
+    let mut data = serde_json::to_value(aozora_json::diagnostic_entries(
+        &decoded.sanitize_diagnostics,
+    ))?;
     let mut parser_entries =
         serde_json::to_value(aozora_json::diagnostic_entries(tree.diagnostics()))?;
     // Sanitize-stage entries carry full-sanitized-text offsets → through
@@ -564,12 +573,17 @@ fn build_aat(
         .iter()
         .map(|entry| ((entry.span.start, entry.span.end), entry.clone()))
         .collect::<BTreeMap<_, _>>();
-    let mut blocks = blocks_from_inline_content(inline_content(
+    // Bare-toggle pairing runs AFTER block classification (plan
+    // amendment 2): `blocks_from_inline_content` must see the original node
+    // stream — raw toggle markers included — so paragraph/jizume
+    // segmentation matches the no-pass baseline; adoption then rewrites
+    // only the toggle spans inside the built tree.
+    let mut blocks = pair_bare_toggles_in_blocks(blocks_from_inline_content(inline_content(
         decoded,
         nodes,
         &gaiji_by_start,
         &ruby_by_span,
-    ));
+    )));
     let mut warnings = diagnostics
         .iter()
         .map(|diagnostic| diagnostic_warning(diagnostic, &decoded.span_ctx))
@@ -665,7 +679,10 @@ fn classify_tail(lines: &[&str]) -> (Vec<TailLineClass>, Vec<usize>) {
             classes.push(TailLineClass::Blank);
             continue;
         }
-        if PROVENANCE_HEADS.iter().any(|head| stripped.starts_with(head)) {
+        if PROVENANCE_HEADS
+            .iter()
+            .any(|head| stripped.starts_with(head))
+        {
             state = Some(TailState::Provenance);
             classes.push(TailLineClass::TerminalProvenance);
         } else if COLOPHON_HEADS.iter().any(|head| stripped.starts_with(head)) {
@@ -1412,7 +1429,248 @@ fn inline_content(
             "x-break-kind": "page"
         }));
     }
+    // NOTE (plan amendment 2, Task 9 delta-gate block): the bare-toggle
+    // pairing pass does NOT run here. It must run AFTER block
+    // classification (`pair_bare_toggles_in_blocks` in `build_aat`):
+    // consuming the raw `containerOpen`/`containerClose` marker nodes
+    // before `blocks_from_inline_content` scans this stream changes
+    // paragraph/jizume segmentation (the markers act as container
+    // boundaries during block classification — corpus work 000026_55738).
     content
+}
+
+/// A same-line bare-toggle marker located in the inline array: its `content`
+/// index, `construct` (which doubles as the emitted container `kind`), whether
+/// it is an open token, and its (single) source line.
+struct BareToggleMarker {
+    index: usize,
+    construct: &'static str,
+    is_open: bool,
+    line: u64,
+}
+
+/// Classify a node as a bare-toggle marker. Keys SOLELY on `kind == "raw"` and
+/// `source` being EXACTLY one of the four tokens; returns `(construct, is_open)`
+/// where `construct` is the emitted container kind. These markers reach the
+/// adapter as raw nodes the façade tagged `containerOpen` (opens) /
+/// `containerClose` (closes), but the exact-`source` match is what identifies
+/// them here — so the verbose block forms (`［＃ここから横組み］`,
+/// `［＃ここから罫囲み］`, distinct strings handled by
+/// `blocks_from_inline_content`) can never match.
+fn bare_toggle_marker(node: &Value) -> Option<(&'static str, bool)> {
+    if node.get("kind").and_then(Value::as_str) != Some("raw") {
+        return None;
+    }
+    match node.get("source").and_then(Value::as_str)? {
+        "［＃横組み］" => Some(("yokogumi", true)),
+        "［＃横組み終わり］" => Some(("yokogumi", false)),
+        "［＃罫囲み］" => Some(("keigakomi", true)),
+        "［＃罫囲み終わり］" => Some(("keigakomi", false)),
+        _ => None,
+    }
+}
+
+/// Stable index of a construct into the per-line `invalid` flag pair.
+fn bare_toggle_construct_index(construct: &str) -> usize {
+    usize::from(construct == "keigakomi")
+}
+
+/// Apply `pair_bare_toggles` to every content array of an already-built
+/// block tree (plan amendment 2): recurse into each node's `content`/
+/// `children` arrays FIRST, then run the pairing pass over the array at this
+/// level. Post-order matters — a container the pass creates holds nodes the
+/// per-line grammar already ruled on (adopted-into or declined-in-place), and
+/// re-running the pass inside it could re-adopt a pair the full line
+/// declined (e.g. a rolled-back same-construct pair sitting inside the other
+/// construct's adopted container). Running AFTER `blocks_from_inline_content`
+/// keeps block segmentation identical to the no-pass baseline: the raw
+/// bare-toggle `containerOpen`/`containerClose` marker nodes act as container
+/// boundaries during block classification, so consuming them earlier changed
+/// paragraph/jizume segmentation (corpus work `000026_55738`; 83-work delta).
+fn pair_bare_toggles_in_blocks(nodes: Vec<Value>) -> Vec<Value> {
+    let mut nodes = nodes;
+    for node in &mut nodes {
+        if let Some(map) = node.as_object_mut() {
+            for key in ["content", "children"] {
+                if let Some(Value::Array(items)) = map.get_mut(key) {
+                    *items = pair_bare_toggles_in_blocks(mem::take(items));
+                }
+            }
+        }
+    }
+    pair_bare_toggles(nodes)
+}
+
+/// Fold same-line bare-toggle marker pairs into inline containers, mirroring
+/// `classify_line` in `reports/aat-fidelity/bare-toggle-placement.py` (the
+/// normative two-pass grammar). A pure `Vec<Value> -> Vec<Value>` function
+/// applied to every block/container content array AFTER block classification
+/// (`pair_bare_toggles_in_blocks`, called from `build_aat` — plan
+/// amendment 2; the markers reach it as raw nodes the façade tagged
+/// `containerOpen`/`containerClose`).
+///
+/// Pass 1 runs one global nesting stack over each line's markers in array (==
+/// source) order: a same-construct reopen invalidates the construct but still
+/// pushes; an orphan close invalidates; a close matching the stack top pops
+/// and records a candidate pair; a mismatched close invalidates BOTH the
+/// closing and the top construct and pops nothing; any open frame left on the
+/// stack at end of line invalidates its construct. Pass 2 adopts a candidate
+/// iff its construct was not invalidated on that line — invalidation is
+/// construct-scoped, so a valid construct's pair nested inside an invalid
+/// construct's markers still adopts. Adopted marker nodes are consumed into the
+/// container; every other node, including the raw markers of invalid
+/// constructs, is preserved unchanged and in its original order.
+///
+/// Perf: an O(n) scan that early-returns the input moved (no clone) whenever
+/// the paragraph carries no bare-toggle marker — the corpus hot path.
+pub(crate) fn pair_bare_toggles(content: Vec<Value>) -> Vec<Value> {
+    let markers: Vec<BareToggleMarker> = content
+        .iter()
+        .enumerate()
+        .filter_map(|(index, node)| {
+            let (construct, is_open) = bare_toggle_marker(node)?;
+            // Markers never span lines; treat a line-spanning token as a
+            // non-marker rather than adopting across a line boundary.
+            let span = node.get("span")?;
+            let line = span.get("line_start")?.as_u64()?;
+            let line_end = span.get("line_end")?.as_u64()?;
+            if line != line_end {
+                return None;
+            }
+            Some(BareToggleMarker {
+                index,
+                construct,
+                is_open,
+                line,
+            })
+        })
+        .collect();
+    if markers.is_empty() {
+        return content;
+    }
+
+    // Run the two-pass grammar per line (markers are already in source order
+    // because `inline_content` sorts by span). Adopted candidates across all
+    // lines form a laminar family — matched pairs from one stack nest
+    // properly, and different lines occupy disjoint index ranges — so they
+    // splice cleanly as a forest.
+    let mut adopted: Vec<(usize, usize, &'static str)> = Vec::new();
+    let mut group_start = 0;
+    while group_start < markers.len() {
+        let line = markers[group_start].line;
+        let mut group_end = group_start;
+        while group_end < markers.len() && markers[group_end].line == line {
+            group_end += 1;
+        }
+        pair_line_markers(&markers[group_start..group_end], &mut adopted);
+        group_start = group_end;
+    }
+    if adopted.is_empty() {
+        return content;
+    }
+
+    let opens: BTreeMap<usize, (usize, &'static str)> = adopted
+        .into_iter()
+        .map(|(open, close, kind)| (open, (close, kind)))
+        .collect();
+    let mut content = content;
+    let len = content.len();
+    splice_bare_toggle_containers(&mut content, 0, len, &opens)
+}
+
+/// Pass 1 + Pass 2 over one line's markers (see `pair_bare_toggles`). Pushes
+/// each adopted `(open_index, close_index, kind)` onto `adopted`.
+fn pair_line_markers(line: &[BareToggleMarker], adopted: &mut Vec<(usize, usize, &'static str)>) {
+    let mut stack: Vec<(&'static str, usize)> = Vec::new();
+    let mut candidates: Vec<(usize, usize, &'static str)> = Vec::new();
+    // [yokogumi, keigakomi]
+    let mut invalid = [false; 2];
+    for marker in line {
+        if marker.is_open {
+            if stack
+                .iter()
+                .any(|(construct, _)| *construct == marker.construct)
+            {
+                // same-construct reopen
+                invalid[bare_toggle_construct_index(marker.construct)] = true;
+            }
+            stack.push((marker.construct, marker.index));
+        } else {
+            match stack.last().copied() {
+                // orphan close
+                None => invalid[bare_toggle_construct_index(marker.construct)] = true,
+                Some((top, open_index)) if top == marker.construct => {
+                    stack.pop();
+                    candidates.push((open_index, marker.index, marker.construct));
+                }
+                Some((top, _)) => {
+                    // improper interleave: both constructs invalid, pop nothing
+                    invalid[bare_toggle_construct_index(marker.construct)] = true;
+                    invalid[bare_toggle_construct_index(top)] = true;
+                }
+            }
+        }
+    }
+    // Leftover open frames are orphan opens: invalidate their construct.
+    for (construct, _) in &stack {
+        invalid[bare_toggle_construct_index(construct)] = true;
+    }
+    // Pass 2: adopt candidates whose construct was not invalidated.
+    for (open_index, close_index, construct) in candidates {
+        if !invalid[bare_toggle_construct_index(construct)] {
+            adopted.push((open_index, close_index, construct));
+        }
+    }
+}
+
+/// Rebuild `content[start..end]` folding each adopted `open_index` (looked up
+/// in `opens`) and its matching close into one container node whose content is
+/// the nodes strictly between the markers. Recurses on the interior first, so
+/// nested pairs become child containers; moves each surviving node exactly once
+/// (`mem::take`) rather than cloning.
+fn splice_bare_toggle_containers(
+    content: &mut Vec<Value>,
+    start: usize,
+    end: usize,
+    opens: &BTreeMap<usize, (usize, &'static str)>,
+) -> Vec<Value> {
+    let mut out = Vec::new();
+    let mut index = start;
+    while index < end {
+        if let Some(&(close, kind)) = opens.get(&index) {
+            let child = splice_bare_toggle_containers(content, index + 1, close, opens);
+            let open_node = mem::take(&mut content[index]);
+            let close_node = mem::take(&mut content[close]);
+            out.push(bare_toggle_container(kind, child, &open_node, &close_node));
+            index = close + 1;
+        } else {
+            out.push(mem::take(&mut content[index]));
+            index += 1;
+        }
+    }
+    out
+}
+
+/// Build one `inline_container` node (same shape family as `style_node`): the
+/// span runs from the open marker's start to the close marker's end.
+fn bare_toggle_container(
+    kind: &'static str,
+    content: Vec<Value>,
+    open: &Value,
+    close: &Value,
+) -> Value {
+    json!({
+        "kind": kind,
+        // `Value::Array` moves `content` in (json! would otherwise borrow it,
+        // reading as a needless by-value param); the pass has no further use.
+        "content": Value::Array(content),
+        "span": {
+            "line_start": open["span"]["line_start"],
+            "line_end": close["span"]["line_end"],
+            "byte_start": open["span"]["byte_start"],
+            "byte_end": close["span"]["byte_end"]
+        }
+    })
 }
 
 fn push_source_gap(content: &mut Vec<Value>, decoded: &DecodedSource, start: usize, end: usize) {
@@ -1638,6 +1896,8 @@ fn hex_sha256(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
+    use proptest::prelude::*;
+
     use super::*;
 
     #[derive(serde::Deserialize)]
@@ -1678,10 +1938,9 @@ mod tests {
     /// red — a parsed/`Value`-equality check would NOT catch this, since
     /// `Value::eq` for objects is order-independent.
     ///
-    /// Expected output re-pasted 2026-07-12 (Task 14: `ab-aozora` `0.4.0` →
-    /// `0.5.0` — the `source_note` emission itself is a no-op on this
-    /// input, which has no `底本：` tail, so only the version string
-    /// changes) via:
+    /// Expected output re-pasted 2026-07-12 (Task 8: `ab-aozora` `0.5.0` →
+    /// `0.6.0` — the C5 identity bump; no functional change, only the
+    /// version string) via:
     /// ```text
     /// export RUSTC_WRAPPER= SCCACHE_DISABLE=1
     /// cd ab-validator
@@ -1696,7 +1955,7 @@ mod tests {
     /// self.rev or "unknown"` and `build.rs`'s doc comment).
     #[test]
     fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
-        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
     }
@@ -1712,7 +1971,10 @@ mod tests {
         assert!(!data.is_empty());
         for entry in data {
             let code = entry["code"].as_str().unwrap();
-            assert!(!code.contains('_') && !code.contains("::"), "not kebab: {code}");
+            assert!(
+                !code.contains('_') && !code.contains("::"),
+                "not kebab: {code}"
+            );
             assert!(entry["severity"].is_string());
             assert!(entry["span"]["start"].is_u64() && entry["span"]["end"].is_u64());
         }
@@ -1760,7 +2022,11 @@ mod tests {
             .iter()
             .filter(|e| e["code"] == "source-contains-pua")
             .collect();
-        assert_eq!(pua.len(), 1, "expected exactly one PUA diagnostic: {data:?}");
+        assert_eq!(
+            pua.len(),
+            1,
+            "expected exactly one PUA diagnostic: {data:?}"
+        );
         assert_eq!(pua[0]["severity"], "warning");
         assert_eq!(pua[0]["span"]["start"], 3);
         assert_eq!(pua[0]["span"]["end"], 6);
@@ -1782,16 +2048,16 @@ mod tests {
             .iter()
             .map(|e| e["code"].as_str().unwrap())
             .collect();
-        let pua_count = codes.iter().filter(|c| **c == "source-contains-pua").count();
+        let pua_count = codes
+            .iter()
+            .filter(|c| **c == "source-contains-pua")
+            .count();
         assert_eq!(pua_count, 1, "duplicate or missing PUA entry: {codes:?}");
         assert!(
             codes[0] == "source-contains-pua",
             "sanitize entries must come first: {codes:?}"
         );
-        assert!(
-            codes.iter().any(|c| *c == "unclosed-bracket"),
-            "{codes:?}"
-        );
+        assert!(codes.iter().any(|c| *c == "unclosed-bracket"), "{codes:?}");
     }
 
     #[test]
@@ -1807,7 +2073,11 @@ mod tests {
             .iter()
             .filter(|e| e["code"] == "tcy-target-not-found")
             .collect();
-        assert_eq!(tcy.len(), 1, "expected exactly one tcy diagnostic: {data:?}");
+        assert_eq!(
+            tcy.len(),
+            1,
+            "expected exactly one tcy diagnostic: {data:?}"
+        );
         assert_eq!(tcy[0]["severity"], "warning");
         assert_eq!(tcy[0]["span"]["start"], 6);
         assert_eq!(tcy[0]["span"]["end"], 35);
@@ -1835,7 +2105,11 @@ mod tests {
             .iter()
             .filter(|e| e["code"] == "source-contains-pua")
             .collect();
-        assert_eq!(pua.len(), 1, "expected exactly one PUA diagnostic: {data:?}");
+        assert_eq!(
+            pua.len(),
+            1,
+            "expected exactly one PUA diagnostic: {data:?}"
+        );
         assert_eq!(pua[0]["span"]["start"], 5);
         assert_eq!(pua[0]["span"]["end"], 8);
     }
@@ -2111,7 +2385,10 @@ mod tests {
     #[test]
     fn jizume_open_chars_recognizes_standalone_and_compound() {
         assert_eq!(jizume_open_chars("［＃ここから２３字詰め］"), Some(23));
-        assert_eq!(jizume_open_chars("［＃ここから６字下げ、折り返して７字下げ、２１字詰め］"), Some(21));
+        assert_eq!(
+            jizume_open_chars("［＃ここから６字下げ、折り返して７字下げ、２１字詰め］"),
+            Some(21)
+        );
         assert_eq!(jizume_open_chars("［＃ここから２字下げ］"), None);
         assert_eq!(jizume_open_chars("［＃ここで字詰め終わり］"), None);
         assert!(is_jizume_close("［＃ここで字詰め終わり］"));
@@ -2249,13 +2526,14 @@ mod tests {
     }
 
     #[test]
-    fn c4_identity_join_key_and_document_version() {
-        // Was the C3 identity test (Task 9); C4 (Task 14) bumps
-        // `ab-aozora` `0.4.0` → `0.5.0` — the schema-2 join key's other
+    fn c5_identity_join_key_and_document_version() {
+        // Was the C4 identity test (Task 14); C5 (Task 8) bumps
+        // `ab-aozora` `0.5.0` → `0.6.0` — the schema-2 join key's other
         // coordinates (`aat-schema 2 facade 0.3.0 wire-schema 3`) are
-        // unchanged by source_note emission.
+        // unchanged by this version-only bump.
         assert!(
-            adapter_version().starts_with("ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3")
+            adapter_version()
+                .starts_with("ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3")
         );
         let aat = aat_value_for("あ\n");
         assert_eq!(aat["version"], 2);
@@ -2277,11 +2555,17 @@ mod tests {
 
     #[test]
     fn classify_tail_continuation_after_provenance_head_is_provenance() {
-        let lines = ["底本：「日本文学全集1」集英社", "　　　1969（昭和44）年12月25日初版"];
+        let lines = [
+            "底本：「日本文学全集1」集英社",
+            "　　　1969（昭和44）年12月25日初版",
+        ];
         let (classes, _) = classify_tail(&lines);
         assert_eq!(
             classes,
-            vec![TailLineClass::TerminalProvenance, TailLineClass::TerminalProvenance]
+            vec![
+                TailLineClass::TerminalProvenance,
+                TailLineClass::TerminalProvenance
+            ]
         );
     }
 
@@ -2293,7 +2577,10 @@ mod tests {
     fn classify_tail_same_shaped_line_after_colophon_head_is_colophon() {
         let lines = ["入力：j.utiyama", "1998年7月28日公開"];
         let (classes, _) = classify_tail(&lines);
-        assert_eq!(classes, vec![TailLineClass::Colophon, TailLineClass::Colophon]);
+        assert_eq!(
+            classes,
+            vec![TailLineClass::Colophon, TailLineClass::Colophon]
+        );
     }
 
     #[test]
@@ -2329,11 +2616,17 @@ mod tests {
 
     #[test]
     fn classify_tail_oyahon_continuation_is_provenance() {
-        let lines = ["底本の親本：「新編 銀河鉄道の夜」新潮文庫", "　　　1989（平成元）年11月10日初版"];
+        let lines = [
+            "底本の親本：「新編 銀河鉄道の夜」新潮文庫",
+            "　　　1989（平成元）年11月10日初版",
+        ];
         let (classes, _) = classify_tail(&lines);
         assert_eq!(
             classes,
-            vec![TailLineClass::TerminalProvenance, TailLineClass::TerminalProvenance]
+            vec![
+                TailLineClass::TerminalProvenance,
+                TailLineClass::TerminalProvenance
+            ]
         );
     }
 
@@ -2355,7 +2648,11 @@ mod tests {
         let (classes, _) = classify_tail(&lines);
         assert_eq!(
             classes,
-            vec![TailLineClass::TerminalProvenance, TailLineClass::Blank, TailLineClass::Colophon]
+            vec![
+                TailLineClass::TerminalProvenance,
+                TailLineClass::Blank,
+                TailLineClass::Colophon
+            ]
         );
     }
 
@@ -2408,8 +2705,8 @@ mod tests {
         assert_eq!(content[1]["value"], "　1990（平成2）年5月10日発行\n");
         let s = &content[0]["span"];
         let (a, b) = (
-            s["byte_start"].as_u64().unwrap() as usize,
-            s["byte_end"].as_u64().unwrap() as usize,
+            usize::try_from(s["byte_start"].as_u64().unwrap()).unwrap(),
+            usize::try_from(s["byte_end"].as_u64().unwrap()).unwrap(),
         );
         assert_eq!(&src[a..b], "底本：「作品集」文庫社\n"); // terminator inside the span
         assert_eq!(s["line_start"], 3);
@@ -2438,7 +2735,11 @@ mod tests {
     #[test]
     fn tail_free_work_has_no_source_note() {
         let aat = aat_value_for("本文だけ。\n");
-        assert!(top_level_blocks(&aat).iter().all(|b| b["kind"] != "source_note"));
+        assert!(
+            top_level_blocks(&aat)
+                .iter()
+                .all(|b| b["kind"] != "source_note")
+        );
     }
 
     #[test]
@@ -2472,8 +2773,11 @@ mod tests {
     /// through `decode_source_bytes` on synthetic source text.
     #[test]
     fn unclassifiable_tail_line_falls_back_to_colophon_with_warning() {
-        let mut decoded = decode_source_bytes("foo\n".as_bytes()).unwrap();
-        assert!(decoded.sanitized_tail.is_empty(), "sanity: no real tail in this input");
+        let mut decoded = decode_source_bytes(b"foo\n").unwrap();
+        assert!(
+            decoded.sanitized_tail.is_empty(),
+            "sanity: no real tail in this input"
+        );
         decoded.sanitized_tail = "何かの一行\n底本：「X」Y社\n".to_owned();
         decoded.tail_offset = 0;
         let (blocks, warnings) = source_notes_from_tail(&decoded);
@@ -2494,5 +2798,604 @@ mod tests {
         assert_eq!(line_ranges("a\r\nb"), vec![0..3, 3..4]);
         assert_eq!(line_ranges("a\rb"), vec![0..2, 2..3]);
         assert_eq!(line_ranges("a\n"), vec![0..2]);
+    }
+
+    #[test]
+    fn bare_toggle_markers_arrive_as_ordered_container_wire_nodes() {
+        // Wire-level preflight: the facade must deliver each bare-toggle
+        // marker as its own wire node whose span slices the exact token, in
+        // source order — paired markers included (adoption later consumes
+        // them, so THIS test, not the AAT fallback test, pins the stream the
+        // classifier reads). Observed wire mapping (plan amendment, main
+        // 9a480e39): open tokens arrive as `containerOpen` nodes and close
+        // tokens as `containerClose` nodes — not `directive`.
+        let src =
+            "ウサギ［＃横組み］（Hare）［＃横組み終わり］だ\n［＃罫囲み］三［＃罫囲み終わり］\n";
+        // Follow `projections` (lib.rs:415) for decode + parse + node_entries.
+        let decoded = decode_source_bytes(src.as_bytes()).unwrap();
+        let nodes: Vec<AozoraNode> = projections(&decoded.span_text).unwrap().0;
+        let expected = [
+            ("containerOpen", "［＃横組み］"),
+            ("containerClose", "［＃横組み終わり］"),
+            ("containerOpen", "［＃罫囲み］"),
+            ("containerClose", "［＃罫囲み終わり］"),
+        ];
+        let markers: Vec<&AozoraNode> = nodes
+            .iter()
+            .filter(|n| n.kind == "containerOpen" || n.kind == "containerClose")
+            .collect();
+        let marker_shapes: Vec<(&str, &str)> = markers
+            .iter()
+            .map(|n| (n.kind.as_str(), source_slice(&decoded.span_text, &n.span)))
+            .collect();
+        // One wire node per marker, exact source slice, expected kind — no
+        // merging into wider nodes, no extra marker nodes:
+        assert_eq!(
+            marker_shapes, expected,
+            "bare-toggle wire nodes deviate from the pinned shape"
+        );
+        // Ordered by span (the classifier depends on source order):
+        let starts: Vec<usize> = markers.iter().map(|n| n.span.start).collect();
+        assert!(
+            starts.windows(2).all(|w| w[0] < w[1]),
+            "marker spans not ordered: {starts:?}"
+        );
+    }
+
+    #[test]
+    fn bare_toggle_orphan_markers_stay_raw_in_aat() {
+        let src = "（例）［＃横組み］\nx［＃罫囲み終わり］y\n";
+        let doc = aat_value_for(src);
+        let mut raw_sources = Vec::new();
+        collect_raw_sources(&doc, &mut raw_sources);
+        for token in ["［＃横組み］", "［＃罫囲み終わり］"] {
+            assert!(
+                raw_sources.iter().any(|s| s == token),
+                "orphan token {token} must stay a raw node; raw sources: {raw_sources:?}"
+            );
+        }
+    }
+
+    fn collect_raw_sources(v: &Value, out: &mut Vec<String>) {
+        if let Some(obj) = v.as_object() {
+            if obj.get("kind").and_then(Value::as_str) == Some("raw")
+                && let Some(s) = obj.get("source").and_then(Value::as_str)
+            {
+                out.push(s.to_owned());
+            }
+            for key in ["blocks", "content", "children"] {
+                if let Some(arr) = obj.get(key).and_then(Value::as_array) {
+                    for item in arr {
+                        collect_raw_sources(item, out);
+                    }
+                }
+            }
+        }
+    }
+
+    /// Depth-first collect of every node whose `"kind"` equals `kind`, in
+    /// document order (for asserting on repeated containers on one line).
+    fn collect_nodes<'a>(v: &'a Value, kind: &str, out: &mut Vec<&'a Value>) {
+        match v {
+            Value::Object(map) => {
+                if map.get("kind").and_then(Value::as_str) == Some(kind) {
+                    out.push(v);
+                }
+                for key in ["blocks", "content", "children"] {
+                    if let Some(child) = map.get(key) {
+                        collect_nodes(child, kind, out);
+                    }
+                }
+            }
+            Value::Array(items) => {
+                for item in items {
+                    collect_nodes(item, kind, out);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// A REAL adapter-built node array for `pair_bare_toggles`, produced by
+    /// reusing `inline_content` with the same inputs `build_aat` constructs
+    /// (no hand-built approximation). Since plan amendment 2 the adapter
+    /// applies the pass to the post-block-classification content arrays
+    /// (`pair_bare_toggles_in_blocks`), but for these single-paragraph,
+    /// zero-adoption lines block classification wraps the identical node
+    /// sequence in one paragraph, so the array the pass reads is this one.
+    fn inline_array_for(line: &str) -> Vec<Value> {
+        let src = format!("{line}\n");
+        let decoded = decode_source_bytes(src.as_bytes()).unwrap();
+        let (nodes, _diagnostics, gaiji, ruby) = projections(&decoded.span_text).unwrap();
+        let gaiji_by_start = gaiji
+            .iter()
+            .map(|entry| (entry.span.start, entry.clone()))
+            .collect::<BTreeMap<_, _>>();
+        let ruby_by_span = ruby
+            .iter()
+            .map(|entry| ((entry.span.start, entry.span.end), entry.clone()))
+            .collect::<BTreeMap<_, _>>();
+        inline_content(&decoded, &nodes, &gaiji_by_start, &ruby_by_span)
+    }
+
+    fn raw_sources_of(doc: &Value) -> Vec<String> {
+        let mut raws = Vec::new();
+        collect_raw_sources(doc, &mut raws);
+        raws
+    }
+
+    // --- The ten shared bare-toggle vectors -------------------------------
+    // (reports/aat-fidelity/bare-toggle-model-vectors.json; each Rust test
+    // mirrors the normative `classify_line` adopt/decline decision.)
+
+    #[test]
+    fn bare_toggle_simple_pair_adopts_inline_container() {
+        let doc = aat_value_for("ab［＃横組み］xy［＃横組み終わり］cd\n");
+        let node = find_first_node(&doc, "yokogumi");
+        let content = node["content"].as_array().unwrap();
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0]["kind"], "text");
+        assert_eq!(content[0]["value"], "xy");
+        let raws = raw_sources_of(&doc);
+        assert!(
+            raws.iter().all(|s| !s.starts_with("［＃横組み")),
+            "markers must be consumed: {raws:?}"
+        );
+    }
+
+    #[test]
+    fn bare_toggle_two_sequential_pairs_adopt_two_containers() {
+        let doc =
+            aat_value_for("［＃罫囲み］a［＃罫囲み終わり］ b ［＃罫囲み］c［＃罫囲み終わり］\n");
+        let mut boxes = Vec::new();
+        collect_nodes(&doc, "keigakomi", &mut boxes);
+        assert_eq!(boxes.len(), 2, "both keigakomi pairs adopt");
+        assert_eq!(boxes[0]["content"][0]["value"], "a");
+        assert_eq!(boxes[1]["content"][0]["value"], "c");
+        let raws = raw_sources_of(&doc);
+        assert!(
+            raws.iter().all(|s| !s.starts_with("［＃罫囲み")),
+            "all four markers consumed: {raws:?}"
+        );
+    }
+
+    #[test]
+    fn bare_toggle_nested_pair_becomes_child_container() {
+        let doc = aat_value_for("［＃罫囲み］［＃横組み］x［＃横組み終わり］［＃罫囲み終わり］\n");
+        let outer = find_first_node(&doc, "keigakomi");
+        let inner = find_node(outer, "yokogumi").expect("nested yokogumi child");
+        assert_eq!(inner["content"][0]["value"], "x");
+        // span containment: parent covers child
+        let (po, pc) = (
+            outer["span"]["byte_start"].as_u64().unwrap(),
+            outer["span"]["byte_end"].as_u64().unwrap(),
+        );
+        let (io, ic) = (
+            inner["span"]["byte_start"].as_u64().unwrap(),
+            inner["span"]["byte_end"].as_u64().unwrap(),
+        );
+        assert!(po < io && ic < pc);
+        assert!(raw_sources_of(&doc).is_empty(), "no markers survive");
+    }
+
+    #[test]
+    fn bare_toggle_improper_interleave_declines_both() {
+        // ［＃横組み］［＃罫囲み］…［＃横組み終わり］…: the yoko close mismatches
+        // the kei top → BOTH invalid, nothing pops; the kei pair rolls back.
+        let doc = aat_value_for("［＃横組み］［＃罫囲み］x［＃横組み終わり］［＃罫囲み終わり］\n");
+        assert!(find_node(&doc, "yokogumi").is_none());
+        assert!(find_node(&doc, "keigakomi").is_none());
+        let raws = raw_sources_of(&doc);
+        for token in [
+            "［＃横組み］",
+            "［＃罫囲み］",
+            "［＃横組み終わり］",
+            "［＃罫囲み終わり］",
+        ] {
+            assert!(
+                raws.iter().any(|s| s == token),
+                "{token} stays raw: {raws:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn bare_toggle_same_construct_reopen_declines() {
+        let doc = aat_value_for("［＃横組み］a［＃横組み］b［＃横組み終わり］\n");
+        assert!(find_node(&doc, "yokogumi").is_none());
+        let raws = raw_sources_of(&doc);
+        assert_eq!(
+            raws.iter().filter(|s| *s == "［＃横組み］").count(),
+            2,
+            "both opens stay raw: {raws:?}"
+        );
+        assert!(raws.iter().any(|s| s == "［＃横組み終わり］"));
+    }
+
+    #[test]
+    fn bare_toggle_orphan_open_stays_raw() {
+        let doc = aat_value_for("（例）［＃横組み］\n");
+        assert!(find_node(&doc, "yokogumi").is_none());
+        assert!(raw_sources_of(&doc).iter().any(|s| s == "［＃横組み］"));
+    }
+
+    #[test]
+    fn bare_toggle_orphan_close_stays_raw() {
+        let doc = aat_value_for("ab［＃横組み終わり］cd\n");
+        assert!(find_node(&doc, "yokogumi").is_none());
+        assert!(
+            raw_sources_of(&doc)
+                .iter()
+                .any(|s| s == "［＃横組み終わり］")
+        );
+    }
+
+    #[test]
+    fn bare_toggle_valid_beside_invalid_other_construct() {
+        // A valid keigakomi pair sits beside a yokogumi orphan open on the
+        // same line: the keigakomi adopts, the yokogumi marker stays raw.
+        let doc = aat_value_for("［＃罫囲み］x［＃罫囲み終わり］ ［＃横組み］\n");
+        let box_node = find_first_node(&doc, "keigakomi");
+        assert_eq!(box_node["content"][0]["value"], "x");
+        assert!(find_node(&doc, "yokogumi").is_none());
+        assert!(raw_sources_of(&doc).iter().any(|s| s == "［＃横組み］"));
+    }
+
+    #[test]
+    fn bare_toggle_valid_nested_inside_invalid_outer_still_adopts() {
+        // Construct-scoped invalidation: the keigakomi open is an orphan
+        // (invalid), but the yokogumi pair nested inside it is valid and
+        // STILL adopts.
+        let doc = aat_value_for("［＃罫囲み］［＃横組み］x［＃横組み終わり］\n");
+        let inner = find_first_node(&doc, "yokogumi");
+        assert_eq!(inner["content"][0]["value"], "x");
+        assert!(find_node(&doc, "keigakomi").is_none());
+        assert!(raw_sources_of(&doc).iter().any(|s| s == "［＃罫囲み］"));
+    }
+
+    #[test]
+    fn bare_toggle_later_orphan_rolls_back_earlier_pair() {
+        // A matched yokogumi pair is followed by a third yokogumi open on the
+        // same line: the leftover open invalidates yokogumi, rolling back the
+        // earlier pair — nothing adopts.
+        let doc = aat_value_for("［＃横組み］a［＃横組み終わり］［＃横組み］\n");
+        assert!(find_node(&doc, "yokogumi").is_none());
+        let raws = raw_sources_of(&doc);
+        assert_eq!(
+            raws.iter().filter(|s| *s == "［＃横組み］").count(),
+            2,
+            "both opens stay raw: {raws:?}"
+        );
+        assert!(raws.iter().any(|s| s == "［＃横組み終わり］"));
+    }
+
+    // --- Invariants (review P5-6: STRUCTURAL EQUALITY) --------------------
+
+    #[test]
+    fn bare_toggle_zero_adoption_input_is_structurally_unchanged() {
+        // For every shared vector with zero adoptions, the pass must return
+        // the input array UNCHANGED — full structural equality, so no text,
+        // span, provenance, ordering, or field can drift unnoticed.
+        for line in [
+            "（例）［＃横組み］",                                            // orphan open
+            "ab［＃横組み終わり］cd",                                        // orphan close
+            "［＃横組み］a［＃横組み］b［＃横組み終わり］",                  // reopen
+            "［＃横組み］［＃罫囲み］x［＃横組み終わり］［＃罫囲み終わり］", // interleave
+            "［＃横組み］a［＃横組み終わり］［＃横組み］",                   // rollback
+        ] {
+            let content = inline_array_for(line);
+            let out = pair_bare_toggles(content.clone());
+            assert_eq!(out, content, "zero-adoption line must be identity: {line}");
+        }
+    }
+
+    #[test]
+    fn bare_toggle_no_marker_input_is_identity() {
+        // The perf early-return path: a paragraph with no bare-toggle marker
+        // must return byte-for-byte unchanged.
+        let content = inline_array_for("ただの本文《ほんぶん》です［＃ここから罫囲み］");
+        let out = pair_bare_toggles(content.clone());
+        assert_eq!(out, content);
+    }
+
+    #[test]
+    fn bare_toggle_multi_line_isolation() {
+        // Line 1 carries a valid pair; line 2 carries an orphan open (corpus
+        // case 000106_55753). Line 1 adopts; line 2's marker stays raw and its
+        // nodes are untouched.
+        let doc = aat_value_for("ab［＃横組み］xy［＃横組み終わり］cd\n（例）［＃横組み］\n");
+        let mut boxes = Vec::new();
+        collect_nodes(&doc, "yokogumi", &mut boxes);
+        assert_eq!(boxes.len(), 1, "exactly line 1 adopts");
+        assert_eq!(boxes[0]["content"][0]["value"], "xy");
+        let raws = raw_sources_of(&doc);
+        assert_eq!(
+            raws.iter().filter(|s| *s == "［＃横組み］").count(),
+            1,
+            "only line 2's orphan open stays raw: {raws:?}"
+        );
+    }
+
+    /// Depth-first search for a `kind:"raw"` node whose `source` equals
+    /// `source` exactly.
+    fn find_raw_with_source<'a>(v: &'a Value, source: &str) -> Option<&'a Value> {
+        match v {
+            Value::Object(map) => {
+                if map.get("kind").and_then(Value::as_str) == Some("raw")
+                    && map.get("source").and_then(Value::as_str) == Some(source)
+                {
+                    return Some(v);
+                }
+                for key in ["blocks", "content", "children"] {
+                    if let Some(child) = map.get(key)
+                        && let Some(found) = find_raw_with_source(child, source)
+                    {
+                        return Some(found);
+                    }
+                }
+                None
+            }
+            Value::Array(items) => items
+                .iter()
+                .find_map(|item| find_raw_with_source(item, source)),
+            _ => None,
+        }
+    }
+
+    /// Rebuild `v` with every yokogumi/keigakomi inline container expanded
+    /// back to `[open, ...content, close]` — the delta audit's projection
+    /// (adoption undone, everything else untouched). `open`/`close` are the
+    /// raw marker nodes the no-pass tree kept; suitable for single-pair
+    /// inputs (every container expands to the same marker pair).
+    fn expand_bare_toggle_containers(v: &Value, open: &Value, close: &Value) -> Value {
+        match v {
+            Value::Array(items) => Value::Array(
+                items
+                    .iter()
+                    .flat_map(|item| {
+                        let kind = item.get("kind").and_then(Value::as_str);
+                        if kind == Some("yokogumi") || kind == Some("keigakomi") {
+                            let mut out = vec![open.clone()];
+                            if let Some(children) = item.get("content").and_then(Value::as_array) {
+                                out.extend(
+                                    children
+                                        .iter()
+                                        .map(|c| expand_bare_toggle_containers(c, open, close)),
+                                );
+                            }
+                            out.push(close.clone());
+                            out
+                        } else {
+                            vec![expand_bare_toggle_containers(item, open, close)]
+                        }
+                    })
+                    .collect(),
+            ),
+            Value::Object(map) => {
+                let mut expanded = map.clone();
+                for key in ["blocks", "content", "children"] {
+                    if let Some(child) = map.get(key) {
+                        expanded.insert(
+                            key.to_owned(),
+                            expand_bare_toggle_containers(child, open, close),
+                        );
+                    }
+                }
+                Value::Object(expanded)
+            }
+            _ => v.clone(),
+        }
+    }
+
+    #[test]
+    fn bare_toggle_inside_jizume_block_preserves_block_structure() {
+        // Corpus shape 000026_55738 (Task 9 delta-gate BLOCK → plan
+        // amendment 2): a compound 字下げ (burasage) block whose body line
+        // carries a bare yokogumi pair, closed by ここで字下げ終わり, then
+        // another paragraph. With the pass running BEFORE block
+        // classification, consuming the marker nodes changed segmentation
+        // (`find_matching_jisage_close` no longer aborted at the bare
+        // `containerOpen`, so the terminator was consumed and the following
+        // paragraph merged into the burasage paragraph). The pass now runs
+        // post-block-classification: the FULL block tree must equal the
+        // no-pass tree except for exactly the adopted-pair rewrite.
+        let src = "［＃ここから２字下げ、折り返して３字下げ］\n\
+                   Ａ＝Ａ［＃横組み］ＡＢ［＃横組み終わり］\n\
+                   ［＃ここで字下げ終わり］\n\
+                   次の段落\n";
+
+        // (a) the pair adopts with the right content.
+        let doc = aat_value_for(src);
+        let container = find_first_node(&doc, "yokogumi");
+        let content = container["content"].as_array().unwrap();
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0]["kind"], "text");
+        assert_eq!(content[0]["value"], "ＡＢ");
+
+        // (b) strongest form (mirrors the delta audit's projection): expand
+        // the adopted container back to [open, content, close] and assert
+        // the whole block tree equals the tree built WITHOUT the pass —
+        // block kinds, paragraph segmentation, jizume terminator handling,
+        // spans, provenance: everything.
+        let decoded = decode_source_bytes(src.as_bytes()).unwrap();
+        let (nodes, _diagnostics, gaiji, ruby) = projections(&decoded.span_text).unwrap();
+        let gaiji_by_start = gaiji
+            .iter()
+            .map(|entry| (entry.span.start, entry.clone()))
+            .collect::<BTreeMap<_, _>>();
+        let ruby_by_span = ruby
+            .iter()
+            .map(|entry| ((entry.span.start, entry.span.end), entry.clone()))
+            .collect::<BTreeMap<_, _>>();
+        let no_pass_blocks = Value::Array(blocks_from_inline_content(inline_content(
+            &decoded,
+            &nodes,
+            &gaiji_by_start,
+            &ruby_by_span,
+        )));
+        let open = find_raw_with_source(&no_pass_blocks, "［＃横組み］")
+            .expect("no-pass tree keeps the open marker raw")
+            .clone();
+        let close = find_raw_with_source(&no_pass_blocks, "［＃横組み終わり］")
+            .expect("no-pass tree keeps the close marker raw")
+            .clone();
+        let expanded = expand_bare_toggle_containers(&doc["blocks"], &open, &close);
+        assert_eq!(
+            expanded, no_pass_blocks,
+            "block tree must differ from the no-pass tree ONLY by the adopted-pair rewrite"
+        );
+
+        // The regression's visible symptom, pinned directly: the 字下げ
+        // terminator must not be dropped.
+        let raws = raw_sources_of(&doc);
+        assert!(
+            raws.iter().any(|s| s == "［＃ここで字下げ終わり］"),
+            "jisage terminator dropped: {raws:?}"
+        );
+    }
+
+    // --- Phase 5 Task 5: property-test target -----------------------------
+    //
+    // `pair_bare_toggles` is `pub(crate)`, unreachable from an integration
+    // test under `tests/`. The mirror test over the shared vector file and
+    // the three properties that only need OBSERVABLE adapter outcomes
+    // (`every_marker_consumed_or_preserved_exactly_once`, `line_isolation`,
+    // `nesting_well_formed`) live in `tests/bare_toggle_model.rs`, reached
+    // through the public `aat_json_from_bytes`. The two properties below
+    // need a DIRECT `pair_bare_toggles` call (zero-adoption structural
+    // identity; determinism at the pass level, not the whole-adapter
+    // level), so they live here instead.
+
+    /// Recognize one of the four bare-toggle marker literals from its bare
+    /// token text. Independent of `bare_toggle_marker` (which classifies a
+    /// parsed `Value` node, not a token string) — this just restates the
+    /// fixed four-token vocabulary for the property generator below, not a
+    /// dependency on the classifier's internals.
+    fn oracle_marker_kind(token: &str) -> Option<(&'static str, bool)> {
+        match token {
+            "［＃横組み］" => Some(("yokogumi", true)),
+            "［＃横組み終わり］" => Some(("yokogumi", false)),
+            "［＃罫囲み］" => Some(("keigakomi", true)),
+            "［＃罫囲み終わり］" => Some(("keigakomi", false)),
+            _ => None,
+        }
+    }
+
+    /// Independent reimplementation of the two-pass bare-toggle grammar —
+    /// mirrors `reports/aat-fidelity/bare-toggle-placement.py`'s
+    /// `classify_tokens` exactly — used ONLY as the property oracle for
+    /// `bare_toggle_zero_adoption_is_structurally_unchanged`: true iff at
+    /// least one marker pair in `markers` (one line's marker sequence, in
+    /// source order) would adopt. Deliberately independent of
+    /// `pair_line_markers`/`pair_bare_toggles` so the property doesn't test
+    /// the production pass against itself.
+    fn oracle_line_has_adoption(markers: &[(&'static str, bool)]) -> bool {
+        let mut stack: Vec<&'static str> = Vec::new();
+        let mut candidates: Vec<&'static str> = Vec::new();
+        let mut invalid_yokogumi = false;
+        let mut invalid_keigakomi = false;
+        for &(construct, is_open) in markers {
+            if is_open {
+                if stack.contains(&construct) {
+                    match construct {
+                        "yokogumi" => invalid_yokogumi = true,
+                        _ => invalid_keigakomi = true,
+                    }
+                }
+                stack.push(construct);
+            } else {
+                match stack.last().copied() {
+                    None => match construct {
+                        "yokogumi" => invalid_yokogumi = true,
+                        _ => invalid_keigakomi = true,
+                    },
+                    Some(top) if top == construct => {
+                        stack.pop();
+                        candidates.push(construct);
+                    }
+                    Some(top) => {
+                        for invalidated in [construct, top] {
+                            match invalidated {
+                                "yokogumi" => invalid_yokogumi = true,
+                                _ => invalid_keigakomi = true,
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for construct in &stack {
+            match *construct {
+                "yokogumi" => invalid_yokogumi = true,
+                _ => invalid_keigakomi = true,
+            }
+        }
+        candidates.into_iter().any(|construct| match construct {
+            "yokogumi" => !invalid_yokogumi,
+            _ => !invalid_keigakomi,
+        })
+    }
+
+    /// One token: a bare-toggle marker literal, or a short run of ASCII/
+    /// hiragana filler standing in for ordinary text (same "token soup"
+    /// shape as `tests/bare_toggle_model.rs`'s generator; duplicated here
+    /// rather than shared, since that file can't reach this `mod tests`).
+    fn bare_toggle_token() -> impl Strategy<Value = String> {
+        prop_oneof![
+            Just("［＃横組み］".to_owned()),
+            Just("［＃横組み終わり］".to_owned()),
+            Just("［＃罫囲み］".to_owned()),
+            Just("［＃罫囲み終わり］".to_owned()),
+            "[a-zあ-ん]{1,4}",
+        ]
+    }
+
+    /// 1-3 lines, each 0-11 tokens, kept as un-joined per-line token lists
+    /// so the property oracle can read each line's marker sequence
+    /// directly (in source order) without re-tokenizing joined text.
+    fn bare_toggle_lines() -> impl Strategy<Value = Vec<Vec<String>>> {
+        prop::collection::vec(prop::collection::vec(bare_toggle_token(), 0..12), 1..=3)
+    }
+
+    fn join_bare_toggle_lines(lines: &[Vec<String>]) -> String {
+        lines
+            .iter()
+            .map(|tokens| tokens.join(""))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig { cases: 512, ..ProptestConfig::default() })]
+
+        /// Property 2: a line with zero adoptions (per the independent
+        /// oracle above) is passed through `pair_bare_toggles` byte-for-
+        /// byte unchanged — full structural equality (review P5-6), not
+        /// mere marker survival.
+        #[test]
+        fn bare_toggle_zero_adoption_is_structurally_unchanged(lines in bare_toggle_lines()) {
+            let any_adoption = lines.iter().any(|tokens| {
+                let markers: Vec<(&'static str, bool)> = tokens
+                    .iter()
+                    .filter_map(|token| oracle_marker_kind(token))
+                    .collect();
+                oracle_line_has_adoption(&markers)
+            });
+            prop_assume!(!any_adoption);
+            let content = inline_array_for(&join_bare_toggle_lines(&lines));
+            let out = pair_bare_toggles(content.clone());
+            prop_assert_eq!(out, content);
+        }
+
+        /// Property 3: `pair_bare_toggles` is a pure function of its input
+        /// — running it twice on the same pre-pass inline array yields
+        /// identical output.
+        #[test]
+        fn bare_toggle_pass_is_deterministic(lines in bare_toggle_lines()) {
+            let content = inline_array_for(&join_bare_toggle_lines(&lines));
+            let first = pair_bare_toggles(content.clone());
+            let second = pair_bare_toggles(content);
+            prop_assert_eq!(first, second);
+        }
     }
 }

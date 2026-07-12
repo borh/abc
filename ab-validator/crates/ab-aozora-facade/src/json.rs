@@ -773,6 +773,22 @@ mod tests {
     }
 
     #[test]
+    fn ruby_entries_skips_segments_base_ruby() {
+        // A gaiji-reference base (※［＃…］) is segmented content, not a single
+        // plain run; content_range_as_plain returns None and the entry must be
+        // omitted (the AAT adapter then keeps its own typed emission — pinned
+        // adapter-side by gaiji_base_ruby_keeps_v1_typed_emission).
+        let src = "※［＃「木＋吶のつくり」、第3水準1-85-57］《かい》\n";
+        let doc = Document::new(src);
+        let tree = doc.parse();
+        let entries = ruby_entries(&tree);
+        assert!(
+            entries.iter().all(|e| e.reading != "かい"),
+            "Segments-base ruby must not project into ruby_entries: {entries:?}"
+        );
+    }
+
+    #[test]
     fn pair_kind_camel_case_covers_all_known_kinds() {
         use crate::PairKind;
         assert_eq!(PairKind::Bracket.as_json_tag(), "bracket");

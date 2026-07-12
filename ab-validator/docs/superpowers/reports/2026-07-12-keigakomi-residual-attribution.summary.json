@@ -1,0 +1,1754 @@
+{
+ "schema_version": "keigakomi-residual-attribution-v1",
+ "corpus": "/nix/store/sdr1imwrxfldvlwzs2d2fhs11vxncgpx-aozorabunko-corpus",
+ "matrix_toml": "/home/bor/Projects/soranoha/.worktrees/parser-fork-phase5/ab-validator/data/aozora-syntax-coverage.toml",
+ "row_id": "decoration.keigakomi",
+ "patterns": [
+  "［＃ここから罫囲み］",
+  "［＃(ここで)?罫囲み(終わり)?］",
+  "［＃ここで字下げ、(枠|罫)囲み終わり］",
+  "「[^\\n]+」[のは]罫囲み",
+  "［＃「[^\\n]+」は枠囲み］",
+  "［＃「[^\\n]+」に枠囲み］",
+  "［＃「[^\\n]+」に枠線］",
+  "［＃「[^\\n]+」は[^］]*罫囲み］",
+  "［＃「[^\\n]+」は「□」囲み］",
+  "［＃[^］]*「[^\\n]+」は罫で囲む］",
+  "［＃[^］]*オモテケイ囲み］",
+  "［＃[^］]*ミシン罫囲み］",
+  "［＃[^］]*罫線囲み］"
+ ],
+ "candidates_discovered": 17895,
+ "candidate_classes": {
+  "work": 17886,
+  "non_work": 5,
+  "recovered_extra": 2,
+  "unreadable": 2
+ },
+ "works_expected": 17886,
+ "works_scanned": 17886,
+ "matrix_total": 673,
+ "rust_total": 717,
+ "frozen_matrix_exact": 673,
+ "frozen_denominator": 717,
+ "matrix_reproduces_frozen_673": true,
+ "rust_reproduces_frozen_717": true,
+ "residual_rust_minus_matrix": 44,
+ "residual_matches_44": true,
+ "works_touched": 157,
+ "per_work": [
+  {
+   "work_id": "000043_341",
+   "label": "cards/000043/files/341_ruby_34730.zip::hikokikara_ochirumade.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000063_385",
+   "label": "cards/000063/files/385_ruby_2182.zip::ichienbon.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000067_1789",
+   "label": "cards/000067/files/1789_ruby_20545.zip::01teihon_aoneko.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000072_408",
+   "label": "cards/000072/files/408_ruby_3319.zip::jinchu_nisshi.txt",
+   "matrix_count": 3,
+   "rust_count": 3
+  },
+  {
+   "work_id": "000072_864",
+   "label": "cards/000072/files/864_ruby.zip::umon30.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000072_864",
+   "label": "cards/000072/files/864_ruby_3401.zip::umon30.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000081_43733",
+   "label": "cards/000081/files/43733_ruby_17836.zip::chumonno_oi_kokokubun.txt",
+   "matrix_count": 13,
+   "rust_count": 13
+  },
+  {
+   "work_id": "000096_2093",
+   "label": "cards/000096/files/2093_ruby_28087.zip::dogura_magura.txt",
+   "matrix_count": 6,
+   "rust_count": 6
+  },
+  {
+   "work_id": "000096_2096",
+   "label": "cards/000096/files/2096_ruby_19325.zip::kokubyaku_story.txt",
+   "matrix_count": 3,
+   "rust_count": 3
+  },
+  {
+   "work_id": "000096_2100",
+   "label": "cards/000096/files/2100_ruby.zip::dark_minister.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000096_2100",
+   "label": "cards/000096/files/2100_ruby_5013.zip::dark_minister.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "000096_2117",
+   "label": "cards/000096/files/2117_ruby_2061.zip::nijushinzo.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000096_2124",
+   "label": "cards/000096/files/2124_ruby.zip::shirokurenai.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000096_935",
+   "label": "cards/000096/files/935_ruby_23283.zip::shojo_jigoku.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000106_53493",
+   "label": "cards/000106/files/53493_ruby_49073.zip::fureppu_torippu.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000125_1317",
+   "label": "cards/000125/files/1317_ruby_22263.zip::kokushikan_satsujin_jiken.txt",
+   "matrix_count": 7,
+   "rust_count": 13
+  },
+  {
+   "work_id": "000125_45231",
+   "label": "cards/000125/files/45231_ruby_24950.zip::ophelia_goroshi.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000134_2309",
+   "label": "cards/000134/files/2309_ruby_2512.zip::yubi.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000146_48509",
+   "label": "cards/000146/files/48509_ruby_35401.zip::07gochunikki7.txt",
+   "matrix_count": 3,
+   "rust_count": 3
+  },
+  {
+   "work_id": "000146_49148",
+   "label": "cards/000146/files/49148_ruby_35754.zip::08gochunikki8.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "000146_50413",
+   "label": "cards/000146/files/50413_ruby_40424.zip::issoannikki.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000150_46617",
+   "label": "cards/000150/files/46617_ruby_53786.zip::04chabanashi1918.txt",
+   "matrix_count": 6,
+   "rust_count": 6
+  },
+  {
+   "work_id": "000156_1465",
+   "label": "cards/000156/files/1465_ruby_16804.zip::kani_kosen.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "000156_1466",
+   "label": "cards/000156/files/1466_ruby_24735.zip::kojosaibo.txt",
+   "matrix_count": 6,
+   "rust_count": 6
+  },
+  {
+   "work_id": "000157_834",
+   "label": "cards/000157/files/834_ruby.zip::TOUKOKU1.TXT",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000158_4854",
+   "label": "cards/000158/files/4854_ruby_30098.zip::momono_shizuku.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000160_1243",
+   "label": "cards/000160/files/1243_ruby_18302.zip::kanchoza_jiken.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000160_1255",
+   "label": "cards/000160/files/1255_ruby_6570.zip::haisennikki.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000160_3517",
+   "label": "cards/000160/files/3517_ruby_20402.zip::kushukano_nihon.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000160_45621",
+   "label": "cards/000160/files/45621_ruby_20106.zip::ango_suji.txt",
+   "matrix_count": 20,
+   "rust_count": 20
+  },
+  {
+   "work_id": "000160_876",
+   "label": "cards/000160/files/876_ruby.zip::robot_ruby.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000160_876",
+   "label": "cards/000160/files/876_ruby_2975.zip::robot_satsugai_jiken.txt",
+   "matrix_count": 3,
+   "rust_count": 3
+  },
+  {
+   "work_id": "000169_2582",
+   "label": "cards/000169/files/2582_ruby_20704.zip::nihon_dasshutsuki.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000179_943",
+   "label": "cards/000179/files/943_ruby_20711.zip::yureito.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000183_45316",
+   "label": "cards/000183/files/45316_txt_40414.zip::koshokumu.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000183_45348",
+   "label": "cards/000183/files/45348_ruby_40108.zip::kiyuorai.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000183_52879",
+   "label": "cards/000183/files/52879_ruby_42867.zip::nagekino_kujaku.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000183_52894",
+   "label": "cards/000183/files/52894_ruby_42398.zip::aojiroki_koen.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000212_4839",
+   "label": "cards/000212/files/4839_ruby_19248.zip::haruno_kawatare.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000221_48094",
+   "label": "cards/000221/files/48094_txt_40602.zip::closeup.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000221_48115",
+   "label": "cards/000221/files/48115_ruby_38609.zip::darega_naniyue_kareo.txt",
+   "matrix_count": 5,
+   "rust_count": 5
+  },
+  {
+   "work_id": "000230_55635",
+   "label": "cards/000230/files/55635_ruby_49036.zip::sensoshi_taikan.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000262_48055",
+   "label": "cards/000262/files/48055_ruby_39269.zip::bochino_satsujin.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000262_48076",
+   "label": "cards/000262/files/48076_ruby_39277.zip::shigaisen.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000283_3226",
+   "label": "cards/000283/files/3226_ruby_1818.zip::02suzukayama.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000283_3227",
+   "label": "cards/000283/files/3227_ruby_1846.zip::03mibuto_shimabara.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000283_4323",
+   "label": "cards/000283/files/4323_ruby_12200.zip::32benshinno_maki.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000283_4343",
+   "label": "cards/000283/files/4343_ruby_14878.zip::38nodono_maki.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000290_24377",
+   "label": "cards/000290/files/24377_ruby_19091.zip::tangesazen_kokezaru.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000308_46589",
+   "label": "cards/000308/files/46589_ruby_24941.zip::hikageno_machi.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000311_16000",
+   "label": "cards/000311/files/16000_txt_28463.zip::todaideno_hanashino_genko.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000311_1979",
+   "label": "cards/000311/files/1979_ruby_6275.zip::zurakatta_shinkichi.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000311_2726",
+   "label": "cards/000311/files/2726_ruby_7408.zip::smolyanoi.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000311_2734",
+   "label": "cards/000311/files/2734_ruby_7416.zip::sovet_bundan.txt",
+   "matrix_count": 10,
+   "rust_count": 10
+  },
+  {
+   "work_id": "000311_33186",
+   "label": "cards/000311/files/33186_ruby_11223.zip::04gokuchueno_tegami1937.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000311_33188",
+   "label": "cards/000311/files/33188_ruby_11225.zip::06gokuchueno_tegami1939.txt",
+   "matrix_count": 3,
+   "rust_count": 3
+  },
+  {
+   "work_id": "000311_33189",
+   "label": "cards/000311/files/33189_ruby_15702.zip::07gokuchueno_tegami1940.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000311_4198",
+   "label": "cards/000311/files/4198_txt_14679.zip::4198nobuko_sosaku_memo1.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000311_4212",
+   "label": "cards/000311/files/4212_txt_14690.zip::4212kojo_rodosha.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000311_4213",
+   "label": "cards/000311/files/4213_ruby_14691.zip::4213chibusa_sosaku_memo.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000311_4220",
+   "label": "cards/000311/files/4220_ruby_14698.zip::4220jokei_aki.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000311_4228",
+   "label": "cards/000311/files/4228_ruby_14706.zip::4228zweig.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000311_4240",
+   "label": "cards/000311/files/4240_txt_14718.zip::4240haibokuno_bigaku.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000311_46235",
+   "label": "cards/000311/files/46235_ruby_37805.zip::02nikki1914.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000311_46239",
+   "label": "cards/000311/files/46239_ruby_51181.zip::06nikki1920.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000311_46254",
+   "label": "cards/000311/files/46254_ruby_65663.zip::23nikki1939.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000311_46261",
+   "label": "cards/000311/files/46261_ruby_69929.zip::31nikki1948.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000372_44908",
+   "label": "cards/000372/files/44908_ruby_47928.zip::shinano_kodaihoritsu.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "000416_57136",
+   "label": "cards/000416/files/57136_ruby_59998.zip::henshushitsuyori_1913_06.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000740_49078",
+   "label": "cards/000740/files/49078_ruby_39540.zip::hatachino_etude.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000866_3039",
+   "label": "cards/000866/files/3039_ruby_19888.zip::amatsukyo_komonjo_hihan.txt",
+   "matrix_count": 28,
+   "rust_count": 28
+  },
+  {
+   "work_id": "000879_45761",
+   "label": "cards/000879/files/45761_ruby_38235.zip::kappa.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000879_69",
+   "label": "cards/000879/files/69_ruby_1321.zip::kappa.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "000885_2557",
+   "label": "cards/000885/files/2557_ruby_13911.zip::akiko_shihen_zenshu.txt",
+   "matrix_count": 6,
+   "rust_count": 6
+  },
+  {
+   "work_id": "000908_51792",
+   "label": "cards/000908/files/51792_ruby_39989.zip::057keio_sannen_sangatsu.txt",
+   "matrix_count": 10,
+   "rust_count": 10
+  },
+  {
+   "work_id": "000908_51960",
+   "label": "cards/000908/files/51960_ruby_41164.zip::101keio_sannen_kugatsu.txt",
+   "matrix_count": 7,
+   "rust_count": 8
+  },
+  {
+   "work_id": "000933_18403",
+   "label": "cards/000933/files/18403_ruby_14404.zip::aigowaka.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "000933_47174",
+   "label": "cards/000933/files/47174_ruby_36846.zip::shijimakara.txt",
+   "matrix_count": 5,
+   "rust_count": 9
+  },
+  {
+   "work_id": "000933_47176",
+   "label": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "matrix_count": 16,
+   "rust_count": 26
+  },
+  {
+   "work_id": "000933_47177",
+   "label": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "matrix_count": 14,
+   "rust_count": 30
+  },
+  {
+   "work_id": "000933_47196",
+   "label": "cards/000933/files/47196_ruby_35629.zip::nihonbungakuno_hassei1.txt",
+   "matrix_count": 1,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001021_49269",
+   "label": "cards/001021/files/49269_ruby_49545.zip::yokaigaku.txt",
+   "matrix_count": 4,
+   "rust_count": 6
+  },
+  {
+   "work_id": "001021_49373",
+   "label": "cards/001021/files/49373_ruby_39099.zip::meishinkai.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "001045_4881",
+   "label": "cards/001045/files/4881_ruby_18562.zip::a_little_princess.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001095_42626",
+   "label": "cards/001095/files/42626_ruby_59990.zip::furenzoku_satsujinjiken.txt",
+   "matrix_count": 20,
+   "rust_count": 20
+  },
+  {
+   "work_id": "001095_43163",
+   "label": "cards/001095/files/43163_ruby_59445.zip::fukuin_satsujin_jiken.txt",
+   "matrix_count": 12,
+   "rust_count": 12
+  },
+  {
+   "work_id": "001143_43422",
+   "label": "cards/001143/files/43422_ruby_23689.zip::chinjosho.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "001224_46076",
+   "label": "cards/001224/files/46076_ruby_49472.zip::mato.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001224_47498",
+   "label": "cards/001224/files/47498_ruby_36852.zip::02ainori_ubaguruma.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001224_47499",
+   "label": "cards/001224/files/47499_ruby_36853.zip::03shanikusaino_chainafuku.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001310_55609",
+   "label": "cards/001310/files/55609_ruby_53015.zip::haikueno_michi.txt",
+   "matrix_count": 97,
+   "rust_count": 97
+  },
+  {
+   "work_id": "001311_47647",
+   "label": "cards/001311/files/47647_ruby_40706.zip::tengugaiden.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "001312_49301",
+   "label": "cards/001312/files/49301_ruby_33968.zip::haikara_ko.txt",
+   "matrix_count": 6,
+   "rust_count": 6
+  },
+  {
+   "work_id": "001344_54437",
+   "label": "cards/001344/files/54437_ruby_49129.zip::eta_genryuko.txt",
+   "matrix_count": 1,
+   "rust_count": 5
+  },
+  {
+   "work_id": "001344_54856",
+   "label": "cards/001344/files/54856_ruby_49473.zip::zokuhoshiko.txt",
+   "matrix_count": 5,
+   "rust_count": 5
+  },
+  {
+   "work_id": "001344_54858",
+   "label": "cards/001344/files/54858_ruby_49322.zip::hoben_ko.txt",
+   "matrix_count": 1,
+   "rust_count": 1
+  },
+  {
+   "work_id": "001369_51204",
+   "label": "cards/001369/files/51204_ruby_62107.zip::yoshidashoin.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001383_56698",
+   "label": "cards/001383/files/56698_ruby_59448.zip::01sasameyuki_jokan.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001383_56874",
+   "label": "cards/001383/files/56874_ruby_68455.zip::tade_ku_mushi.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001383_57416",
+   "label": "cards/001383/files/57416_ruby_71251.zip::02sasameyuki_chukan.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001402_49946",
+   "label": "cards/001402/files/49946_txt_59449.zip::itetsu.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001422_50296",
+   "label": "cards/001422/files/50296_ruby_70693.zip::imono_kojo.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001468_51160",
+   "label": "cards/001468/files/51160_ruby_41939.zip::kuchuseifuku.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001558_52332",
+   "label": "cards/001558/files/52332_ruby_46190.zip::fujiya_hotel.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001597_53720",
+   "label": "cards/001597/files/53720_ruby_63490.zip::shuppan_ho.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001669_54465",
+   "label": "cards/001669/files/54465_txt_48840.zip::anketo.txt",
+   "matrix_count": 6,
+   "rust_count": 6
+  },
+  {
+   "work_id": "001669_54469",
+   "label": "cards/001669/files/54469_ruby_49045.zip::mimikosui.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001670_54605",
+   "label": "cards/001670/files/54605_ruby_56470.zip::042koshin_yokocho.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "001670_55679",
+   "label": "cards/001670/files/55679_ruby_52710.zip::098benifude_ganmon.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001670_56126",
+   "label": "cards/001670/files/56126_ruby_69281.zip::02niou_odoriko.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001670_56127",
+   "label": "cards/001670/files/56127_ruby_70698.zip::03obake_wakashu.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001670_56128",
+   "label": "cards/001670/files/56128_ruby_70699.zip::04koino_fuzaishomei.txt",
+   "matrix_count": 3,
+   "rust_count": 3
+  },
+  {
+   "work_id": "001670_56129",
+   "label": "cards/001670/files/56129_ruby_71875.zip::05akumano_hangonko.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001670_56130",
+   "label": "cards/001670/files/56130_ruby_71876.zip::06ningyono_gokumon.txt",
+   "matrix_count": 3,
+   "rust_count": 3
+  },
+  {
+   "work_id": "001670_56131",
+   "label": "cards/001670/files/56131_ruby_74179.zip::07kanrakuno_muma.txt",
+   "matrix_count": 3,
+   "rust_count": 3
+  },
+  {
+   "work_id": "001670_56132",
+   "label": "cards/001670/files/56132_ruby_74178.zip::08hebitsukaino_musume.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001670_56230",
+   "label": "cards/001670/files/56230_ruby_65451.zip::042koshin_yokocho.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "001670_56382",
+   "label": "cards/001670/files/56382_ruby_67957.zip::098benifude_ganmon.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001670_56702",
+   "label": "cards/001670/files/56702_ruby_57346.zip::odoru_bijinzo.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001750_55806",
+   "label": "cards/001750/files/55806_ruby_57031.zip::onshi.txt",
+   "matrix_count": 8,
+   "rust_count": 8
+  },
+  {
+   "work_id": "001750_57299",
+   "label": "cards/001750/files/57299_ruby_71641.zip::dassen_musuko.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001750_57368",
+   "label": "cards/001750/files/57368_ruby_74029.zip::gutara_dochuki.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_56647",
+   "label": "cards/001779/files/56647_ruby_58166.zip::nisen_doka.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_56659",
+   "label": "cards/001779/files/56659_ruby_75882.zip::majutsushi.txt",
+   "matrix_count": 8,
+   "rust_count": 8
+  },
+  {
+   "work_id": "001779_56669",
+   "label": "cards/001779/files/56669_ruby_58718.zip::shonen_tanteidan.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "001779_56670",
+   "label": "cards/001779/files/56670_ruby_59514.zip::yokai_hakase.txt",
+   "matrix_count": 6,
+   "rust_count": 6
+  },
+  {
+   "work_id": "001779_56673",
+   "label": "cards/001779/files/56673_ruby_58784.zip::kaiki_yonju_menso.txt",
+   "matrix_count": 6,
+   "rust_count": 6
+  },
+  {
+   "work_id": "001779_56674",
+   "label": "cards/001779/files/56674_ruby_61552.zip::uchu_kaijin.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_56675",
+   "label": "cards/001779/files/56675_ruby_60091.zip::tettono_kaijin.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "001779_56676",
+   "label": "cards/001779/files/56676_ruby_61995.zip::haiirono_kyojin.txt",
+   "matrix_count": 8,
+   "rust_count": 8
+  },
+  {
+   "work_id": "001779_56682",
+   "label": "cards/001779/files/56682_ruby_64896.zip::maho_ningyo.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "001779_56683",
+   "label": "cards/001779/files/56683_ruby_63024.zip::kimenjono_himitsu.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "001779_56684",
+   "label": "cards/001779/files/56684_ruby_65241.zip::yako_ningen.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_56686",
+   "label": "cards/001779/files/56686_ruby_65429.zip::tantei_shonen.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_56689",
+   "label": "cards/001779/files/56689_ruby_63811.zip::denjin_emu.txt",
+   "matrix_count": 6,
+   "rust_count": 6
+  },
+  {
+   "work_id": "001779_57105",
+   "label": "cards/001779/files/57105_ruby_59617.zip::akai_kabutomushi.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_57106",
+   "label": "cards/001779/files/57106_ruby_64301.zip::dai_kinkai.txt",
+   "matrix_count": 8,
+   "rust_count": 8
+  },
+  {
+   "work_id": "001779_57108",
+   "label": "cards/001779/files/57108_ruby_60855.zip::tetsujin_kyu.txt",
+   "matrix_count": 6,
+   "rust_count": 6
+  },
+  {
+   "work_id": "001779_57109",
+   "label": "cards/001779/files/57109_ruby_60781.zip::tojono_kijutsushi.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "001779_57228",
+   "label": "cards/001779/files/57228_ruby_58697.zip::kaijin_nijumenso.txt",
+   "matrix_count": 8,
+   "rust_count": 8
+  },
+  {
+   "work_id": "001779_57229",
+   "label": "cards/001779/files/57229_ruby_61307.zip::tomei_kaijin.txt",
+   "matrix_count": 6,
+   "rust_count": 6
+  },
+  {
+   "work_id": "001779_57230",
+   "label": "cards/001779/files/57230_ruby_59440.zip::fushigina_hito.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_57240",
+   "label": "cards/001779/files/57240_ruby_60876.zip::akumano_monsho.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_57244",
+   "label": "cards/001779/files/57244_ruby_74166.zip::hakuhatsu_ki.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_57502",
+   "label": "cards/001779/files/57502_ruby_62060.zip::tantei_shosetsuno_nazo.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_57517",
+   "label": "cards/001779/files/57517_ruby_71257.zip::kyofu_o.txt",
+   "matrix_count": 10,
+   "rust_count": 10
+  },
+  {
+   "work_id": "001779_57519",
+   "label": "cards/001779/files/57519_ruby_73853.zip::jigoku_fukei.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_57522",
+   "label": "cards/001779/files/57522_ruby_74187.zip::yochu.txt",
+   "matrix_count": 6,
+   "rust_count": 6
+  },
+  {
+   "work_id": "001779_58463",
+   "label": "cards/001779/files/58463_ruby_69515.zip::tsukito_tebukuro.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_58467",
+   "label": "cards/001779/files/58467_ruby_73667.zip::ryokino_hate.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001779_58486",
+   "label": "cards/001779/files/58486_ruby_68458.zip::kageotoko.txt",
+   "matrix_count": 16,
+   "rust_count": 16
+  },
+  {
+   "work_id": "001885_59516",
+   "label": "cards/001885/files/59516_ruby_67843.zip::fujino_kohaku_kushu.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001918_61170",
+   "label": "cards/001918/files/61170_ruby_74827.zip::kujirayokan.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "001955_58807",
+   "label": "cards/001955/files/58807_ruby_63584.zip::jinsei_giji_taiken_gemu.txt",
+   "matrix_count": 13,
+   "rust_count": 13
+  },
+  {
+   "work_id": "002049_60426",
+   "label": "cards/002049/files/60426_ruby_73440.zip::ikkyu_san.txt",
+   "matrix_count": 2,
+   "rust_count": 2
+  },
+  {
+   "work_id": "002265_62687",
+   "label": "cards/002265/files/62687_ruby_78203.zip::dohatsu.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  },
+  {
+   "work_id": "002265_62688",
+   "label": "cards/002265/files/62688_ruby_78209.zip::waru.txt",
+   "matrix_count": 4,
+   "rust_count": 4
+  }
+ ],
+ "diff_count": 128,
+ "diff": [
+  {
+   "work": "cards/000125/files/1317_ruby_22263.zip::kokushikan_satsujin_jiken.txt",
+   "line": 1877,
+   "text": "［＃「　　」は罫囲み］ベ　　　　　［＃「　　　　　」は罫囲み］砒石の　　　　［＃「　　　　」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000125/files/1317_ruby_22263.zip::kokushikan_satsujin_jiken.txt",
+   "line": 1878,
+   "text": "［＃「　　　　」は罫囲み］、胸腺死の危　　　　［＃「　　　　」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000125/files/1317_ruby_22263.zip::kokushikan_satsujin_jiken.txt",
+   "line": 1880,
+   "text": "［＃「　」は罫囲み］犠牲とするに忍　　　　［＃「　　　　」は罫囲み］を以て、生れた女児を男児に換えて、生長後余が秘書として手許　　　　　［＃「　　　　　」は罫囲み］紙谷伸子なり。それ故、旗太郎は　　　　［＃「　　　　」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000125/files/1317_ruby_22263.zip::kokushikan_satsujin_jiken.txt",
+   "line": 1877,
+   "text": "［＃「　　　　　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000125/files/1317_ruby_22263.zip::kokushikan_satsujin_jiken.txt",
+   "line": 1877,
+   "text": "［＃「　　　　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000125/files/1317_ruby_22263.zip::kokushikan_satsujin_jiken.txt",
+   "line": 1877,
+   "text": "［＃「　　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000125/files/1317_ruby_22263.zip::kokushikan_satsujin_jiken.txt",
+   "line": 1878,
+   "text": "［＃「　　　　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000125/files/1317_ruby_22263.zip::kokushikan_satsujin_jiken.txt",
+   "line": 1880,
+   "text": "［＃「　　　　　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000125/files/1317_ruby_22263.zip::kokushikan_satsujin_jiken.txt",
+   "line": 1880,
+   "text": "［＃「　　　　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000125/files/1317_ruby_22263.zip::kokushikan_satsujin_jiken.txt",
+   "line": 1880,
+   "text": "［＃「　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000311/files/16000_txt_28463.zip::todaideno_hanashino_genko.txt",
+   "line": 63,
+   "text": "「近代戦争からみると、日本は喜劇をやっていたようなものだ。そしてキ劇の［＃「キ劇の」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000311/files/16000_txt_28463.zip::todaideno_hanashino_genko.txt",
+   "line": 63,
+   "text": "［＃「キ劇の」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000311/files/33186_ruby_11223.zip::04gokuchueno_tegami1937.txt",
+   "line": 145,
+   "text": "「百合子」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000311/files/33186_ruby_11223.zip::04gokuchueno_tegami1937.txt",
+   "line": 145,
+   "text": "［＃「百合子」は罫囲み、手紙の中では上記の印］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000311/files/46261_ruby_69929.zip::31nikki1948.txt",
+   "line": 86,
+   "text": "［＃「二月二十五日」は同行大見出し］（水）［＃「二月二十五日（水）」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000311/files/46261_ruby_69929.zip::31nikki1948.txt",
+   "line": 86,
+   "text": "［＃「二月二十五日（水）」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000908/files/51960_ruby_41164.zip::101keio_sannen_kugatsu.txt",
+   "line": 19,
+   "text": "［＃「　　」は罫囲み］失敬　　　［＃「　　　」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000908/files/51960_ruby_41164.zip::101keio_sannen_kugatsu.txt",
+   "line": 19,
+   "text": "［＃「　　　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000908/files/51960_ruby_41164.zip::101keio_sannen_kugatsu.txt",
+   "line": 19,
+   "text": "［＃「　　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47174_ruby_36846.zip::shijimakara.txt",
+   "line": 30,
+   "text": "［＃「しゞま」は罫囲み］に於いて、どう言ふ発想法を採つたか。ある時代の後に、ほ［＃「ほ」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47174_ruby_36846.zip::shijimakara.txt",
+   "line": 31,
+   "text": "［＃「ほ」は罫囲み］は神語の比喩表現と解釈せられる事となつた。かう言ふ現象の起るのは、神が如何なる意思からするのであらうと言ふ考へ方が一転して、此問題に対して、神はかうした現象を示した、此現象の示す所は、どうであるかと考へる様になる。第一歩は原因を考へるのであるが、此に到つて結果を問ふ形になる。此まではまだ象徴であるが、次には現象のみならずある物体が不意に出現し、或はある変化が個物の上に起る事があると其処に、神意の寓つてゐる事を信じる。此時期に居ると、象徴観の外に、比喩的解釈法を採る事になる。厳密に言へば、象徴時代のなごりがむた［＃「むた」は罫囲み］で、比喩時代に入つてほ［＃「ほ」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47174_ruby_36846.zip::shijimakara.txt",
+   "line": 34,
+   "text": "「磐《イハ》ね」「木《キ》ねだち」「草のかき葉」も神言を表する能力があつたとする考へが是である。我が古代の言語伝承に従へば、之をことゝふ［＃「ことゝふ」は罫囲み］或はことゝひ［＃「ことゝひ」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47174_ruby_36846.zip::shijimakara.txt",
+   "line": 30,
+   "text": "［＃「しゞま」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47174_ruby_36846.zip::shijimakara.txt",
+   "line": 30,
+   "text": "［＃「ほ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47174_ruby_36846.zip::shijimakara.txt",
+   "line": 31,
+   "text": "［＃「ほ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47174_ruby_36846.zip::shijimakara.txt",
+   "line": 31,
+   "text": "［＃「むた」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47174_ruby_36846.zip::shijimakara.txt",
+   "line": 34,
+   "text": "［＃「ことゝひ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47174_ruby_36846.zip::shijimakara.txt",
+   "line": 34,
+   "text": "［＃「ことゝふ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 24,
+   "text": "［＃「まれびと」は罫囲み］と言ひ、其屈折がまらひと［＃「まらひと」は罫囲み］・まらうど［＃「まらうど」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 29,
+   "text": "［＃「まれ」に傍線］は珍重尊貴の義のうづ［＃「うづ」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 32,
+   "text": "［＃「まれびと」は罫囲み］とは何か。神である。時を定めて来り臨む大神である。（大空から）或は海のあなたから、ある村に限つて富みと齢《ヨハヒ》とその他若干の幸福とを齎して来るものと、その村々の人々が信じてゐた神の事なのである。此神は、空想に止らなかつた。古代の人々は、屋の戸を神の押《オソ》ぶるおとづれと聞いた。おとづる［＃「おとづる」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 33,
+   "text": "［＃「高天［＃（个）］原」は罫囲み］と言ひ、海のあなたと考へる村人は、常世《トコヨ》の国［＃「常世の国」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 35,
+   "text": "［＃「日のみ子」は罫囲み］なる語のある訣である。而も合理化した歴史と歩調をあはせる処から、日のみ子［＃「日のみ子」に傍線］とすめみまの―みこと［＃「すめみまの―みこと」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 40,
+   "text": "［＃「おぼつかぐら」は太字、罫囲み］と言ふ。海のあなたの楽土をにらいかない（又、ぎらいかない［＃「ぎらいかない」に傍線］・じらいかない［＃「じらいかない」に傍線］など）又まやのくに［＃「まやのくに」は太字、罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 48,
+   "text": "［＃「よ」は罫囲み］と言ふ語は、古くは穀物或は米を斥《サ》したものと思はれる。後には米の稔りを言ふ様になつた。とし［＃「とし」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 50,
+   "text": "［＃「よ」は罫囲み］なる語の性欲的な意義を持つたものゝ出て来た為に、内容側の結合が遂げられて、「永遠の情欲」の国を考へ出したのではあるまいか。此意義の「よ」の側だけは、稍論理を辿り過ぎたかの不安を自ら持つてゐる。とこよ［＃「とこよ」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 51,
+   "text": "「死の島」の観念が、段々抽象的になつて幽界《カクリヨ》と言つた神と精霊の国と考へられる。其が一段の変化を経ると、最初の印象は全然失はないまでも、古代人としての理想を極度に負うた国土と考へる様になつたのである。かうした考へ方の基礎は、水葬の印象から来る。わが国に於いても、尠くとも出雲人の上には、其痕跡が見えてゐる。水葬した人々のゐる国土を海のあなたに考へ、その国に対する恐れが、常夜・根《ネ》の国を形づくる様になつた。其と共に現《ウツ》し身にとつては恐しいが、常にある親しみを持たれてゐると期待の出来る此｜幽《カク》り身《ミ》の人々が、恩寵の来訪をすると思ふ様になつたのである。だから此稀人に対する感情は単純な憧憬や懐しみではない。必其土台には深い畏怖がある。かうなると、常世の国が二つの性質を持つて、時には一つ、又ある時には二つにも分けられて来る。「常世」と「根」との対立がこれだ。信仰系統の整理がついてからは、村々の生活に根柢的の関係を持つ常世神は、段々疎外せられ、性質も忘却と共に変つて来た。大体平安朝末から文献に見えるあらえびす［＃「あらえびす」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 60,
+   "text": "「人」と言ふのが適してゐた。又、其が「人」のする事である事を知つて居たからかも知れない。我々の祖先は、之にまれびと［＃「まれびと」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 64,
+   "text": "［＃「新室」は罫囲み］の祝ひの細目である。大体「新室」の祝ひであるべき事を、毎年宮廷では繰り返して、大殿祭《オホトノホガヒ》［＃「大殿祭」は罫囲み］と称へてゐた。其唱へる所の呪言も、新室ほがひ［＃「新室ほがひ」に傍線］と言ふ方が適切な表現を持つてゐる。大殿祭の儀式には、問題は多いが、此時夜に入つて、神の群行を学んで、宮廷の常用門とも見るべき西方の門扉をおとづれるのである。此神の一行と見るべきものが、宮廷の主人なる天子常用の殿舎だけを呪うて廻る。此式が、神今食・新嘗祭の前夜に行ふ事になつてゐるのは、古代は刈りあげ祭りの時に一度行うた事を示してゐる。即後世神の職掌分化して御歳《ミトシ》神と命けた「田の神」を祭る式の附属の様に見えるが、やはり此精霊を祀るのでなく、常世神を迎へたのであらう。なぜならば、大殿祭は、刈り上げ祭りの上に、新室ほがひ［＃「新室ほがひ」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 24,
+   "text": "［＃「まらうど」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 24,
+   "text": "［＃「まらひと」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 24,
+   "text": "［＃「まれびと」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 29,
+   "text": "［＃「うづ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 32,
+   "text": "［＃「おとづる」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 32,
+   "text": "［＃「まれびと」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 33,
+   "text": "［＃「常世の国」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 33,
+   "text": "［＃「高天［＃（个）］原」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 35,
+   "text": "［＃「すめみまの―みこと」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 35,
+   "text": "［＃「日のみ子」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 40,
+   "text": "［＃「おぼつかぐら」は太字、罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 40,
+   "text": "［＃「まやのくに」は太字、罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 48,
+   "text": "［＃「とし」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 48,
+   "text": "［＃「よ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 50,
+   "text": "［＃「とこよ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 50,
+   "text": "［＃「よ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 51,
+   "text": "［＃「あらえびす」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 60,
+   "text": "［＃「まれびと」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 64,
+   "text": "［＃「大殿祭」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 64,
+   "text": "［＃「新室」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47176_ruby_36848.zip::tokoyoto_marebitoto.txt",
+   "line": 64,
+   "text": "［＃「新室ほがひ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 27,
+   "text": "［＃「ほぐ」は罫囲み］・ほがふ［＃「ほがふ」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 29,
+   "text": "「ほ［＃「ほ」に傍点、罫囲み］に出づ」「ほ［＃「ほ」に傍点、罫囲み］にあらはる」「ほ［＃「ほ」に傍点、罫囲み］にあぐ」など言ふ歌詞が、限りなく繰り返されてゐて、その根本の意義はいまだに漠としてゐる。必学者は秀《ホ》や穂《ホ》を以て解決出来た様なふりで居る。併し、ほぐ［＃「ほぐ」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 41,
+   "text": "「ほ」と卜象との関係は後で説くが、さうした物質を「ほ」とする外、ある動物又は人間を以てし、又其等のある時の状態を以て暗示する事がある。垂仁天皇の時、ほむちわけの［＃「ほむちわけの」に傍線］皇子が出雲へ向ふのに、三つの道の何れをとらうかと言ふ事になつて、「ふとまに」卜ふと、本道になつてゐる二道では、跛《アシナヘ》・盲に出くはすだらう。だから紀州路は脇道ではあるが縁起のよい道だと出たので、其によつたとある。此も実は訣らぬ話で、跛盲に逢ふと、其道は呪はれてゐると言ふ心あたりを得たのであらう。さうした経験の積み重《かさな》りから、かうした逆の言ひ方が生じたものと思ふ。更に此より先、出雲大社に詣でるのが果して神の意かどうかを問ふのに、あけたつの［＃「あけたつの」に傍線］みこは、甘橿《アマカシ》の丘《ヲカ》の鷺が落ちたら神の意思と信じると言ふ約束をたてゝ置いて鷺をおとし、又其を飛び立たせ、熊橿の葉を枯らしたり蘇らしたりして、神の意思を試してゐる。此はうけひ［＃「うけひ」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 43,
+   "text": "「ほ」と言ふ語は早く忘れられて、専ら語部《カタリベ》の口から移つて行つた歌詞となつて了うた。其と共に別の語が其位置をとつて、而も意味が一方に偏する事になつて来た。たゝる［＃「たゝる」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 44,
+   "text": "［＃「たゝる」は罫囲み］と言ふ語は、記紀既に祟《スヰ》の字を宛てゝゐるから奈良朝に既に神の咎め・神の禍など言ふ意義が含まれて来てゐたものと見える。其にも拘らず、古いものから平安の初めにかけて、後代とは大分違うた用語例を持つてゐる。最古い意義は神意が現れると言ふところにある。允恭紀に淡路の島で狩りせられて、終に獲物がなかつたので、占はれると、島の神祟りて曰はく、獣をとらせないのは自分の心だ。赤石の海底の真珠を自分に献つたら獣をとらせようと言うたとある。此文の、卜うたら神が祟つたと言ふのは、今の祟るでない。雄略紀の「十握劔に祟りて曰はく」と言ふのも、さうである。「たつ」と言ふ語は現れる・出ると言ふ意義が古いので、其から、出発・起居などの観念が纏つて来たのである。「月たつ」など言ふのも、月の朔日が来ると言ふよりは、月末に隠れた月が現れると言ふのが元である。「向ひの山に月たゝり［＃「たゝり」に白丸傍点］見ゆ」などを見ても、知れるであらう。月神の出現を示すのである。其が段々内的になつて来て、神意の現れる事を示す語になる。更にそこに、意義が固定すると、「けしき―たつ」「おもかげ―たつ」など言ふ信仰抜きながら幽界を思はせる様な内容を持つた、捉へ難きものゝ出現の意になる。たゝり［＃「たゝり」に傍線］はたつ［＃「たつ」に傍線］のあり［＃「あり」に傍線］と複合した形で、後世風にはたてり［＃「たてり」に傍線］と言ふところである。「祟《タヽ》りて言ふ」は「立有而《タヽリテ》言ふ」と言ふ事になる。神現れて言ふが内化した神意現れて言ふとの意で、実は「言ふ」のでなく、「しゞま」の「ほ」を示すのであつた。ところが此処に考へねばならぬのは、善い意味の神は「そしり」「ことゝひ」を自在にするが、わるい意味の神又は、含む所があつて心を示さない神が、専ら「ほ」を示す事に変つて来る。「ほ」の意味の下落でもあり、同時に「ほ」なる語の用ゐられなくなつた一つの原因とも思はれる。かうした場合に、唯ある現象のみ見せて、其由つて来る理由を示さないと言ふ形をとる。あるわるい現象を見て、神の「ほ」と感じ、其意味する所を問ふと言ふよりも寧其原因を求め聞いて、其に対する処置を採らうと言ふ事になる。かう言ふ風に展開して来ると、既にたゝり［＃「たゝり」は罫囲み］の観念が確立した訣である。でも其古いものはやはり、人の過失や責任から「たゝり」があるのではなく、神がある事を要求する為に、人困らせの現象を示す風であつた。淡路島神は珠の欲しさであつた。龍田の神は社に祀られたい考へから作物をまづ荒してゐる。即人の注意を惹く為の「ほ」に過ぎない。かうしてくれるかどうかとの強談判に過ぎないので、人のせゐ［＃「せゐ」に傍点］ではなかつた。かうして「たゝり」が「祟」の字義にはまつて来る。此が奈良朝或は其以前の此語の内容である。ところが、神の内容が段々醇化して来ると、さうした「たゝり」を人間の過・罪から出るものと考へて来る。平安朝に入つては其色彩が強くなつて、天長四年の詔などに見えて来る。「御体｜愈《ヤス》からず大坐《オホマ》しますによりて占へ求むるに、稲荷の社の樹を伐れる罪、祟りに出づと申す……」。「たゝり［＃「たゝり」に傍線］にいづ」と言ふ語と「ほ［＃「ほ」に傍線］にいづ」と言ふ語とには、輪郭には大した変りはない。唯内容には複雑味が加つて来てゐる。「たゝり［＃「たゝり」に傍線］にいづ」はたゝり［＃「たゝり」に傍線］として表すと言ふ事である。其を直にたゝる［＃「たゝる」に傍線］とも古くから言うてゐる。但し、「……にたゝる」と言つた発想をとる。「何々となつてほ［＃「ほ」に傍線］を示す」と言ふ事になるのである。語法は後まで固定して残つてゐても、言語情調や意義は、早くから変化してゐるのだから、「島の神たゝりて曰はく……」など言ふ様な表現を用ゐる事になつたのである。古い俤にかへすと、「獣一つすら獲ぬほ［＃「ほ」に傍線］を示し給へるは、何れの神にいまして、いかなる御心かおはしますとて卜ふるに、神の心出で来たり。……」と言ふ風にあるべき処である。して見れば、「……にたゝる［＃「たゝる」に傍線］」と言つた語法は、其以前から保存せられたものと見てよい。十握の劔を「ほ」として出現せしめられた、古い形の「たゝり」は「ほ」と言ふ語で表すべきものであつて、単に現象のみならず、ある物質をも出したのが、次第に一つの傾きに固定して来たのであつた。\r\n此序《このついで》に言ふべきは、たゝふ［＃「たゝふ」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 47,
+   "text": "［＃「ほ」は罫囲み］を語根とした動詞が、ほぐ［＃「ほぐ」は罫囲み］であり、又ほむ［＃「ほむ」は罫囲み］と言ふ形もある。ほぐが語根化して再活用すると、ほがふ［＃「ほがふ」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 53,
+   "text": "「天神地祇共に罪し給へ」とあるのは、「罪し給はむ」と言はぬ処に古意がある。「君をおきて、他心《アダシゴヽロ》をわが持たば、末の松山、波も越えなむ」（古今東歌）。此歌常識風に漠然と、波の越える山だからと感じもし、解釈もせられて、末の松山浪越し峠など言ふ地名もあり、地質の上から波の痕跡ある陸前海岸の山を、其と定めたりして居るのは、とんだ話である。其でなくとも単に、「末の松山を浪の越えざる如く」と比喩に解してゐる説もある。だが、此は恋の誓ひの古い形で、波の被《カブ》さりさうもない末の松山を誓ひに立てゝ来た処に意味があるのである。而も越えなむ［＃「越えなむ」は罫囲み］と言ふ語も、「誓ひに反いたら波が越えるだらう」と将来に対する想像的な約束ではない。此場合のなむ［＃「なむ」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 55,
+   "text": "［＃「ちかふ」に傍線］と言ふが、他人の心の善悪を判じかねて、悪なら禍あれ、善なら事なかれと言ふ観念から出る呪言は、とこひ［＃「とこひ」は罫囲み］であり、其をする事をとこふ［＃「とこふ」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 57,
+   "text": "［＃「とこひ」に傍線］が悪に対する懲罰を請ふ方法と言ふ風に考へられ、更に転じて自分を不利に陥らした相手に罰の下る事を願ふ呪言と言ふ考へに移つて、純然たる呪咀となる。だが、復讐観念の伴うてゐないとこひ［＃「とこひ」に傍線］はなかつた。秋山［＃（ノ）］下冰壮夫《シタビヲトコ》に対する春山［＃（ノ）］霞壮夫の御母《ミオヤ》の採つた方法などは、此例のとこひ［＃「とこひ」に傍線］の著しい例である。嫉妬・我欲等の利己の動機から出るものは、かしり［＃「かしり」は罫囲み］（動詞かしる［＃「かしる」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 61,
+   "text": "［＃「かしる」に傍線］為に、様々の物を用ゐてゐる中、秋山下冰壮夫のかたみ［＃「かたみ」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 62,
+   "text": "［＃「かしり」に傍線］の呪文を見ると、全くかたみ［＃「かたみ」は罫囲み］を以て「ほ」と一つに扱うてゐるではないか。かしる［＃「かしる」に傍線］の語原は知れぬが、選択を神に任せる対象的のとこひ［＃「とこひ」に傍線］から一転したものなる事は明らかである。かしりつく［＃「かしりつく」に傍線］事が受け身にとつてはまじこる［＃「まじこる」は罫囲み］で、之を却ける法を行ふ事を、まじなふ［＃「まじなふ」は罫囲み］と言うたらしい。語原まじ［＃「まじ」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 63,
+   "text": "［＃「のろふ」は罫囲み］と言ふのは、平安朝の用語例で見ると、語根に既に呪咀の義がある様に思はせる「のろ／＼し」など言ふ語がある。けれどものろふ［＃「のろふ」に傍線］の分化した意義ばかりしか残らなかつた時代に、出来た新語の語根に、逆に呪咀の義を感ずる様になつてゐたと見るべきであらう。のろふ［＃「のろふ」に傍線］がさうした分化を遂げるには、罵《ノ》る・叱《ノ》るなどの悪し様に言ふと言つた用語例が助けてゐる事であらう。まじなふ［＃「まじなふ」に傍線］だけが少し違ふが、うけふ［＃「うけふ」に傍線］以下皆一類の語で呪文が悪用せられて行く傾向を見せてゐる。同時に、「ほ」の出現を問題にせなくなつて来る。「ほむ」と「ほぐ」とに違ふ所があるとしたら、「ほむ」にはおだてる［＃「おだてる」に傍線］意を持つて来てゐる事である。此点は、ねぐ［＃「ねぐ」は罫囲み］も共通であつた。「ねぐ」の最初から願ふ義でなかつた事は、「ねぎらふ」の語根なる「ねぐ」と同根なる事である。「すめら吾《ワ》がうづのみ手もちかき撫でぞねぎ給ふ。とり撫でぞほめ給ふ」など言ふのは、唯の犒ひではない。対句としての意味の近似性を中心にして、其に「ねがふ」の語根である事を併せて考へると、義は大分変つて来る。まだある勤労を致さない先から「ねぎ給ふ」と言うてゐるので見ると、どうしても労力の結果に対する予め褒める誇張的な表現の語を言ふのに違ひない。「お前はえらいから、うまくするに疑ひがない」など言ふ風なのが、ねぐ［＃「ねぐ」に傍線］の本義らしい。上の詔勅は其用語例が倫理観を伴うて来てゐるが、古意はそこにあるので、禰宜《ネギ》と言ふ語も、ほんとうに訣つて来るのである。語根のね［＃「ね」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 65,
+   "text": "「凡《スベ》て此《コヽ》に諸物皆来聚しき。時に、中臣の遠祖｜天《アメノ》児屋命則以｜神祝祝之《カムホサキホサキキ》神祝々之。此［＃（ヲ）］云［＃（フ）］［＃二］加武保佐枳保佐枳々［＃（ト）］［＃一］［＃「神祝々之。此［＃（ヲ）］云［＃（フ）］［＃二］加武保佐枳保佐枳々［＃（ト）］［＃一］」は１段階小さな文字］」とあるほさく［＃「ほさく」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 66,
+   "text": "［＃「ほがひゞと」は罫囲み］参照）した側から考へられる事実があるのである。其由緒を陳弁する方面から「ほざく」を悪い意味に使ふ様になつたと見られる。其と共に「ふざける」と言ふ語原不明の近代語も、ほがひゞとの「おどけ祭文」の側から言うたものと見ることも出来さうである。「ことほぎ」を「こどき」と言うた事は其条に述べたが、此も亦、祭文として芸術化したものと見れば、後世の「口説《クドキ》」と言ふ叙事風な語り物の本義が知れるのである。「くど／＼」など言ふ副詞の語根「くど」から動詞化した「くどく」と言ふ語と同根と見、男女間のくどき言が多いからと考へて来たのは、実は間違ひかも知れない。口説《クドキ》の中に男女間の口舌《クゼツ》や妄執・煩悶ばかりを扱はぬ純粋な叙事詩もあるのである。さうすると、こどき［＃「こどき」は罫囲み］と言ふ語も文献に現れないで、民間信仰の上にくどき［＃「くどき」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 27,
+   "text": "［＃「ほがふ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 27,
+   "text": "［＃「ほぐ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 29,
+   "text": "［＃「ほぐ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 41,
+   "text": "［＃「うけひ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 43,
+   "text": "［＃「たゝる」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 44,
+   "text": "［＃「たゝり」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 44,
+   "text": "［＃「たゝる」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 45,
+   "text": "［＃「たゝふ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 47,
+   "text": "［＃「ほ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 47,
+   "text": "［＃「ほがふ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 47,
+   "text": "［＃「ほぐ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 47,
+   "text": "［＃「ほむ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 53,
+   "text": "［＃「なむ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 53,
+   "text": "［＃「越えなむ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 55,
+   "text": "［＃「とこひ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 55,
+   "text": "［＃「とこふ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 57,
+   "text": "［＃「かしり」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 57,
+   "text": "［＃「かしる」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 61,
+   "text": "［＃「かたみ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 62,
+   "text": "［＃「かたみ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 62,
+   "text": "［＃「まじ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 62,
+   "text": "［＃「まじこる」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 62,
+   "text": "［＃「まじなふ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 63,
+   "text": "［＃「ね」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 63,
+   "text": "［＃「ねぐ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 63,
+   "text": "［＃「のろふ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 65,
+   "text": "［＃「ほさく」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 66,
+   "text": "［＃「くどき」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 66,
+   "text": "［＃「こどき」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47177_ruby_36849.zip::ho_urakara.txt",
+   "line": 66,
+   "text": "［＃「ほがひゞと」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47196_ruby_35629.zip::nihonbungakuno_hassei1.txt",
+   "line": 81,
+   "text": "［＃「來＋力」、第4水準2-3-41］遣［＃二］左大臣橘宿禰諸兄［＃一］白［＃レ］仏。三宝《サンバウ》［＃（乃）］奴［＃（止）］仕奉［＃（流）］天皇［＃割り注］羅我［＃割り注終わり］命《ミコト》［＃（ラマト）］盧舎那［＃（ノ）］像［＃（能）］大前［＃（仁）］奏賜［＃割り注］部止［＃割り注終わり］奏［＃（久）］。此大倭［＃（ノ）］国者天地［＃（ノ）］開闢《ハジメ》［＃（ヨリ）］以来［＃（爾）］黄金［＃（波）］人国［＃割り注］用理［＃割り注終わり］献言［＃（波）］有［＃割り注］登毛［＃割り注終わり］斯地者無物［＃（止）］念［＃割り注］部流仁［＃割り注終わり］聞看食国中［＃（能）］東方陸奥国守従五位上百済王敬福［＃（伊）］部内少田郡［＃（仁）］黄金出［＃「出」は罫囲み］在奏［＃（弖）］献。此［＃（遠）］聞食驚［＃（伎）］悦［＃（備）］貴［＃（備）］念［＃割り注］久波［＃割り注終わり］盧舎那仏［＃（乃）］慈賜［＃（比）］福《サキ》［＃割り注］波閇［＃割り注終わり］賜物［＃（爾）］有［＃（止）］念［＃（閇）］受賜［＃（里）］恐［＃（理）］戴持、百官［＃（乃）］人等率［＃（天）］礼拝仕奉事［＃（遠）］挂畏《カケマクモ》三宝［＃（乃）］大前［＃（爾）］恐［＃（美）］恐［＃割り注］美毛［＃割り注終わり］奏賜［＃割り注］波久止［＃割り注終わり］奏。」従三位中務卿石上朝臣乙麻呂宣。現神御宇倭根子天皇［＃「現神御宇倭根子天皇」に白丸傍点］詔｜旨宣《ラマト》大命親王諸王諸臣百官人等天下公民衆聞食宣。高天原［＃（爾）］天降坐［＃（之）］天皇御世［＃（乎）］始［＃（天）］中今［＃（爾）］至［＃割り注］麻弖爾［＃割り注終わり］天皇御世御世天日嗣高御座［＃（爾）］坐［＃（弖）］治賜［＃（比）］恵賜来［＃（流）］食国天下［＃（乃）］業［＃割り注］止奈母［＃割り注終わり］神奈我良［＃（母）］所念行［＃割り注］久止［＃割り注終わり］宣大命衆聞食宣。加久治賜［＃（比）］恵賜来［＃（流）］天日嗣［＃（乃）］業［＃（止）］、今皇朕御世［＃（爾）］当［＃（弖）］坐者、天地［＃（乃）］心［＃（遠）］労［＃（弥）］重［＃（弥）］辱［＃（美）］恐［＃（美）］坐［＃（爾）］聞食食国［＃（乃）］東方陸奥国［＃（乃）］小田郡［＃（爾）］金出在［＃（止）］奏［＃（弖）］進［＃割り注］礼利［＃割り注終わり］……中略……又大伴佐伯宿禰［＃（波）］常［＃（母）］云如［＃「如」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/000933/files/47196_ruby_35629.zip::nihonbungakuno_hassei1.txt",
+   "line": 81,
+   "text": "［＃「出」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/000933/files/47196_ruby_35629.zip::nihonbungakuno_hassei1.txt",
+   "line": 81,
+   "text": "［＃「如」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/001021/files/49269_ruby_49545.zip::yokaigaku.txt",
+   "line": 210,
+   "text": "［＃「立春大吉」は罫囲み］の札を張り、方角悪きときはその方に四神之御札［＃「四神之御札」は罫囲み］を張り、また、夜道に物恐れせぬために我是鬼［＃「我是鬼」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/001021/files/49269_ruby_49545.zip::yokaigaku.txt",
+   "line": 227,
+   "text": "「迷故三界常、悟故十方空、本来無東西、奈所有南北。」（迷うはもとより三界《さんがい》の常、悟るはもとより十方空。本来東西なし、いかなる所、南北ある）と書せる札をはるなり。また、悪夢よけの法中に、「赫赫陽陽日出東方、断絶悪夢辟除不祥。」（赫々《かくかく》陽々、日は東方より出ず。悪夢を断絶して、不祥を辟除《へきじょ》す）と書きし札を、枕の近辺に置くことあり。また、瘧《おこり》と称する病を治する方法は、梨を厚く切りて、これに向かいて呪文《じゅもん》を唱うるなり。その文に曰く、「南方有池、池中有水、水中有魚、三頭九尾、不食人間五穀、唯食瘧鬼。」（南方に池あり、地中に水あり、水中に魚あり、三頭九尾、人間五穀を食わず、ただ瘧鬼《ぎゃくき》を食らう）と。これみな、文章上の意味についてその実を連想し、必ずその結果あるべしと自ら信じ、自ら安んずるに過ぎざるべし。その他、さきに示したる立春大吉［＃「立春大吉」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/001021/files/49269_ruby_49545.zip::yokaigaku.txt",
+   "line": 210,
+   "text": "［＃「四神之御札」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/001021/files/49269_ruby_49545.zip::yokaigaku.txt",
+   "line": 210,
+   "text": "［＃「我是鬼」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/001021/files/49269_ruby_49545.zip::yokaigaku.txt",
+   "line": 210,
+   "text": "［＃「立春大吉」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/001021/files/49269_ruby_49545.zip::yokaigaku.txt",
+   "line": 227,
+   "text": "［＃「立春大吉」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/001310/files/55609_ruby_53015.zip::haikueno_michi.txt",
+   "line": 1107,
+   "text": "［＃「咳」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/001310/files/55609_ruby_53015.zip::haikueno_michi.txt",
+   "line": 1107,
+   "text": "｜咳［＃「咳」は罫囲み］声《しわぶき》",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/001344/files/54437_ruby_49129.zip::eta_genryuko.txt",
+   "line": 102,
+   "text": "［＃「四条河原細工」に白丸傍点］九十人　　［＃「　　」は罫囲み］召［＃レ］之、鳥居穴掘［＃レ］之。酒直一連半　［＃「　」は罫囲み］［＃レ］之。猶穴不足之間、以［＃二］此　　［＃「　　」は罫囲み］［＃「　　」に白丸傍点］［＃一］下穴掘［＃レ］之。足代木一貫五百文之由、最初大工雖［＃レ］載［＃二］損色［＃一］、料足不［＃レ］可［＃レ］為之間、為［＃二］神　　［＃「　　」は罫囲み］［＃一］、流［＃レ］自［＃二］堀川［＃一］　　［＃「　　」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/001344/files/54437_ruby_49129.zip::eta_genryuko.txt",
+   "line": 102,
+   "text": "［＃「　　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/001344/files/54437_ruby_49129.zip::eta_genryuko.txt",
+   "line": 102,
+   "text": "［＃「　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/001344/files/54856_ruby_49473.zip::zokuhoshiko.txt",
+   "line": 300,
+   "text": "［＃「非人」に白丸傍点］等、吉野法師・伊賀・越前・淡路法師等、無［＃二］指過［＃一］、為［＃二］長吏法師［＃一］被［＃二］追却［＃一］之刻、奈良坂宿［＃「奈良坂宿」に白丸傍点］［＃（仁）］来歎申之間、幡［＃「幡」に「マヽ」の注記］磨法師者為［＃二］彼長吏法師［＃一］奉功無双者也。仍被［＃二］追却［＃一］之輩［＃（於）］欲［＃レ］令［＃二］安堵［＃一］、相具令［＃二］上洛［＃一］之処、苛法相　［＃「　」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/001344/files/54856_ruby_49473.zip::zokuhoshiko.txt",
+   "line": 676,
+   "text": "［＃「神子くし之事」に白丸傍点］、前前のごとく此主馬太夫ニ申付候間、先代　　［＃「　　」は罫囲み］",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/001344/files/54856_ruby_49473.zip::zokuhoshiko.txt",
+   "line": 300,
+   "text": "［＃「　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/001344/files/54856_ruby_49473.zip::zokuhoshiko.txt",
+   "line": 676,
+   "text": "［＃「　　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/001344/files/54858_ruby_49322.zip::hoben_ko.txt",
+   "line": 78,
+   "text": "「今昔物語」の、糸を盗んだ検非違使の話によっても明らかである。また同書に「放免共為［＃二］強盗［＃一］入［＃二］人家［＃一］被［＃レ］捕語」という話の中の放免は、東の獄の辺に住んだものどもだとあってみれば、無論検非違使庁の下部としての放免が、獄舎の辺に住んで、その獄舎の警固に任じていたものの事と思われる。同書の「西市［＃（ノ）］蔵［＃（ニ）］入［＃（ル）］［＃二］盗人［＃（ニ）］［＃一］語」の放免も、検非違使に随って蔵に閉じ籠められた盗人の追捕に向ったものである。また同書の「藤大夫　　［＃「　　」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/001344/files/54858_ruby_49322.zip::hoben_ko.txt",
+   "line": 78,
+   "text": "［＃「　　」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/001955/files/58807_ruby_63584.zip::jinsei_giji_taiken_gemu.txt",
+   "line": 46,
+   "text": "「そういうときはＳＵＩＣＩＤＥ［＃「ＳＵＩＣＩＤＥ」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/001955/files/58807_ruby_63584.zip::jinsei_giji_taiken_gemu.txt",
+   "line": 233,
+   "text": "「ソレダケハイケマセン。オ願イデス。ソレダケハヤメテ下サイ」炎のような球体が十億年ぶりにあなたに思念を送ってくる。だがあなたは一向に頓着せず、ＳＵＩＣＩＤＥ［＃「ＳＵＩＣＩＤＥ」は罫囲み",
+   "mode": "matrix_only"
+  },
+  {
+   "work": "cards/001955/files/58807_ruby_63584.zip::jinsei_giji_taiken_gemu.txt",
+   "line": 46,
+   "text": "［＃「ＳＵＩＣＩＤＥ」は罫囲み］",
+   "mode": "rust_only"
+  },
+  {
+   "work": "cards/001955/files/58807_ruby_63584.zip::jinsei_giji_taiken_gemu.txt",
+   "line": 233,
+   "text": "［＃「ＳＵＩＣＩＤＥ」は罫囲み］",
+   "mode": "rust_only"
+  }
+ ]
+}

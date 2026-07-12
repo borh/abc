@@ -207,11 +207,19 @@ facade version bumps (0.3.0 → 0.3.1) and joins C5's identity join key;
 otherwise the facade stays 0.3.0. The plan must not assume either
 outcome.
 
-**Corpus-bound expectations (grammar-true, Revision 2; checked by the
-gates, not asserted blindly):** adopted yokogumi pairs 1,582; adopted
-keigakomi pairs 25; declined raw-preserved markers 24 (10 orphan opens +
-14 rollback markers); 0 orphan closes; 0 interleavings; 1 proper
-nesting.
+**Corpus-bound expectations — PARSER-VISIBLE universe (amendment 3,
+checked by the gates, not asserted blindly):** adopted yokogumi pairs
+**1,552**; adopted keigakomi pairs 25; declined raw-preserved markers
+**14** (all reopen-rollback: the `000094_42338` line); 0 orphan opens;
+0 orphan closes; 0 interleavings. The gate's universe is standalone raw
+marker nodes in the C4 AAT dump, not source text: 70 source-text markers
+(1,582/25/24, the SOURCE-TEXT universe, unchanged and still true of the
+source text) never surface as standalone raw nodes — see the placement
+report's Revision 4 reconciliation
+(`docs/superpowers/reports/2026-07-12-bare-toggle-placement-attribution.md`),
+independently re-derived by
+`reports/aat-fidelity/bare-toggle-visibility-reconciliation.py` before
+this rebinding.
 
 **Decline observability (review P5-10, independence per P5-4):** declines
 must be countable per run, not silent — and the counts must be DERIVED,
@@ -289,15 +297,20 @@ local build and hinoki run is candidate-commit-bound.
      marker nodes, insert one `inline_container` of the matching kind
      whose content equals the previously-adjacent inline content and
      whose span satisfies Contract 1). Counters bound to expected
-     values: `adopted_yokogumi_pairs == 1582`,
+     values — **parser-visible universe (amendment 3)**:
+     `adopted_yokogumi_pairs == 1552`,
      `adopted_keigakomi_pairs == 25`. Any other difference class →
      exit 2.
    - *Whole-candidate invariant scan (not derivable from diffs):* over
-     the full C5 dump, every declined marker — the 24 (10 orphan opens +
-     14 rollback markers) — is verified present as a raw node with
+     the full C5 dump, every declined marker — the **14** (all
+     reopen-rollback) — is verified present as a raw node with
      source text and span identical to its C4 counterpart, with decline
-     reason counters bound (`orphan_open == 10`, `rollback == 14`,
-     `orphan_close == 0`, `interleave == 0`).
+     reason counters bound (`orphan_open == 0`, `rollback == 14`,
+     `orphan_close == 0`, `interleave == 0`). (The source-text universe's
+     1582/25/24 with `orphan_open == 10` remains true of the source text
+     but does not bind the gate; see the placement report's Revision 4
+     reconciliation for why 70 source-text markers are never
+     parser-visible.)
    - Byte equality in both checks is evaluated after substituting the
      adapter identity join key and an explicitly enumerated list of
      allowed metadata changes (and nothing else).

@@ -38,7 +38,10 @@ REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozo
 ABC_PRESERVATION_SCHEMA_ID = (
     "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
 )
-ABC_PRESERVATION_SCHEMA_VERSION = "0.2.0"
+# Rotated 0.2.0 -> 0.3.0: additive construct enum only (orthographic_annotation,
+# sentence_segmentation); reviewed rotation, see Task 7 report
+# docs/superpowers/reports/2026-07-12-abc-contract-0.3.0-confirmation.md.
+ABC_PRESERVATION_SCHEMA_VERSION = "0.3.0"
 TRUSTED_ABC_PRESERVATION_SCHEMA_PATH = (
     schemas_dir() / "parser-ir-publication-preservation.schema.json"
 ).resolve()

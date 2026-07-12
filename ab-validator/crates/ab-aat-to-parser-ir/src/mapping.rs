@@ -73,6 +73,38 @@ impl MappingDocument {
         Ok(document)
     }
 
+    /// Fail-closed generation binding: callers (CLI flags, audit config) may
+    /// pin an expected `mapping_version` and/or content hash so that editing
+    /// the live mapping file out from under an in-flight invocation is
+    /// detected instead of silently changing what that invocation exercises.
+    /// `expect_mapping_hash` is compared against [`Self::document_hash`] —
+    /// the same `abc_legacy_json_hash` the audit summary's registry row
+    /// already reports as `mapping_hash`, so there is exactly one hashing
+    /// scheme for this document.
+    pub fn check_expected_generation(
+        &self,
+        expect_mapping_version: Option<&str>,
+        expect_mapping_hash: Option<&str>,
+    ) -> Result<()> {
+        if let Some(expected) = expect_mapping_version
+            && self.mapping_version != expected
+        {
+            bail!(
+                "mapping generation mismatch: loaded mapping_version {} but --expect-mapping-version {expected}",
+                self.mapping_version
+            );
+        }
+        if let Some(expected_hash) = expect_mapping_hash
+            && self.document_hash != expected_hash
+        {
+            bail!(
+                "mapping generation mismatch: loaded mapping hash {} but --expect-mapping-hash {expected_hash}",
+                self.document_hash
+            );
+        }
+        Ok(())
+    }
+
     pub fn preflight(&self, schemas: &SchemaSet) -> Result<MappingIndex> {
         let value = serde_json::to_value(self)?;
         validate_value(&schemas.mapping_schema, &value, "AAT parser-IR mapping")?;

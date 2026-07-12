@@ -1,6 +1,6 @@
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.3.0",
+  "mapping_version": "0.4.0",
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 2,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
@@ -5461,6 +5461,22 @@
       "parser_ir_pointer": "source-note",
       "action": "project",
       "description": "explicit v2 source_note block → parser-IR source-note node, classification direct."
+    },
+    {
+      "rule_id": "S-13",
+      "category": "STRUCTURAL",
+      "aat_pointer": "blocks[].content[].yokogumi",
+      "parser_ir_pointer": "layout-span",
+      "action": "project",
+      "description": "inline yokogumi container inside paragraph content → parser-IR layout-span node (layout.kind=yokogumi), direction/marker projected. AAT container span is marker-inclusive; parser-IR spans are constructed from visible decoded text (convert.rs append_visible_content_text); marker bytes are not projected."
+    },
+    {
+      "rule_id": "S-14",
+      "category": "STRUCTURAL",
+      "aat_pointer": "blocks[].content[].keigakomi",
+      "parser_ir_pointer": "layout-span",
+      "action": "project",
+      "description": "inline keigakomi container inside paragraph content → parser-IR layout-span node (layout.kind=keigakomi), border/marker projected. AAT container span is marker-inclusive; parser-IR spans are constructed from visible decoded text (convert.rs append_visible_content_text); marker bytes are not projected."
     },
     {
       "rule_id": "L-469",

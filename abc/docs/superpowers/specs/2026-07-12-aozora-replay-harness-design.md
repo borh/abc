@@ -71,9 +71,12 @@ each testable alone:
 
 1. **`ensure-clone!`** — effect; owns the cache-dir place.
    `git clone --filter=blob:none --no-checkout <remote-url> <cache-dir>` when
-   absent; `git fetch origin <to-ref>` when present. Shells via argv vectors
-   (no string interpolation). Failures throw `ex-info` with
-   `{:cache-dir :remote-url}` and the cause chained.
+   absent; when present, first verifies provenance —
+   `git remote get-url origin` must equal `remote-url`, else `ex-info`
+   `{:cache-dir :expected-url :actual-url}` (the baseline must never record
+   one source while replaying another) — then `git fetch origin <to-ref>`.
+   Shells via argv vectors (no string interpolation). Failures throw
+   `ex-info` with `{:cache-dir :remote-url}` and the cause chained.
 2. **`plan`** — pure given repo state. Calls the audit namespace's scan
    planning to enumerate sampled representative refs for
    `{:zip-path :sample-period :from-ref :to-ref}`. **Production touch:** the
@@ -82,14 +85,26 @@ each testable alone:
    public fn `scan-plan` `[repo opts] → [ref-string …]`; `scan-history!` is
    refactored to call it. No behavior change (pinned by existing unit + sim
    tests P10–P12).
-3. **`prefetch-and-prevalidate!`** — for each planned ref: ensure the ZIP
-   blob is locally present (CLI `git cat-file blob <ref>:<zip-path>` — the
-   promisor machinery fetches ~5 MB per missing blob; skipped when
-   `--aozora-repo` is a full clone, where presence is guaranteed), then
-   pre-validate via JGit blob read: bytes open as a ZIP, a `.csv` entry
-   exists, and it parses to >0 data rows. Failing refs are dropped and
-   recorded as `{"ref" r "period" p "reason" one-of ["unreadable-zip"
-   "no-csv-entry" "no-data-rows" "missing-at-ref"]}`.
+3. **`prefetch-and-prevalidate!`** — runs identically for the managed cache
+   and `--aozora-repo` (a supplied repo may itself be partial, shallow, or
+   incomplete — completeness is never assumed; the flag only skips
+   `ensure-clone!`). For each planned ref, outcomes are tiered by CAUSE,
+   never lumped:
+   - **Path absent in the tree at that ref** (JGit TreeWalk finds no entry):
+     a source fact → exclusion, reason `"missing-at-ref"`.
+   - **Object promised but locally unavailable** (JGit
+     `MissingObjectException`): attempt one CLI promisor fetch
+     (`git cat-file blob <ref>:<zip-path>`); if the object is then readable,
+     continue. If the fetch fails or the repo has no promisor remote →
+     **environment failure, loud** `ex-info`
+     `{:ref :zip-path :repo :cause-tier :missing-local-object}` — never an
+     exclusion, because recording it as history would silently change the
+     sampled chain.
+   - **Blob readable but malformed as source data** (bytes don't open as a
+     ZIP / no `.csv` entry / zero data rows): a source fact → exclusion,
+     reason `"unreadable-zip"` / `"no-csv-entry"` / `"no-data-rows"`.
+   Exclusions are recorded as `{"ref" r "period" p "reason" …}`; only these
+   source-fact exclusions may affect pairing.
 4. **`replay!`** — runs `scan-history!` over the surviving refs (pairs are
    consecutive sampled representatives), digests each pair, assembles the
    baseline document, and either writes it (`--update`) or diffs it against
@@ -144,16 +159,28 @@ the deterministic JSON writer. No timestamps, no filesystem paths.
 
 ### `--check` diff classification
 
-`--check` exits 1 on any difference and prints a per-pair classification:
-`unchanged | replaced | added | removed`, plus a verdict:
+`--check` exits 1 on any difference and prints a per-pair classification
+(`unchanged | replaced | added | removed`) plus exactly one verdict. The
+verdicts are defined over input refs vs output digests, so an output change
+on unchanged inputs can never masquerade as a pin bump:
 
-- **pin-bump-shaped** — all pairs unchanged except: the final pair may be
-  `replaced` (the last period gained a later representative) and new pairs
-  may be `added` after it; `excluded` may gain entries only for new periods.
-  Expected after a pin bump with no code change.
-- **behavioral-change** — any earlier pair differs: the same input refs now
-  produce different reports, i.e. abc code behavior changed on real data.
-  Requires adjudication in the changing PR.
+- **configuration-change** — `baseline_format`, `zip_path`,
+  `sample_period`, or `remote_url` differ. Never expected implicitly;
+  requires a deliberate, explained baseline rewrite.
+- **pin-bump-shaped** — requires ALL of: (a) `pin_rev` changed; (b) every
+  common pair byte-identical, except that the final pair of the old baseline
+  may be `replaced` ONLY in the strict form: same `previous_ref`, different
+  `current_ref` (the final period gained a genuinely newer representative) —
+  a digest change on an unchanged `(previous_ref, current_ref)` input is
+  NEVER pin-bump-shaped; (c) `added` pairs appear only after that point;
+  (d) `excluded` gains entries only for periods newer than the old
+  baseline's last period. Expected after a pin bump with no code change.
+- **behavioral-change** — everything else. In particular: any pair whose
+  input refs are unchanged but whose digest differs (abc code now reports
+  differently on identical real inputs), any change at all while `pin_rev`
+  is unchanged (code change or nondeterminism — both demand investigation),
+  or exclusions appearing for historical periods. Requires adjudication in
+  the changing PR.
 
 ### Enforcement test
 
@@ -161,8 +188,15 @@ the deterministic JSON writer. No timestamps, no filesystem paths.
 
 - baseline parses; `baseline_format` known; pairs sorted by period;
   refs are 40-hex; digest fields present and shaped.
-- `pin_rev` equals `nodes.aozorabunko-src.locked.rev` parsed from
-  `flake.lock` (JSON — not regex over `flake.nix`).
+- `pin_rev` equals `nodes.aozorabunko-src.locked.rev` parsed from the
+  **authoritative lock: `abc/flake.lock`** (JSON — not regex over
+  `flake.nix`). This is the lock of the flake that declares
+  `aozorabunko-src` and whose recipes the replay uses; the CLI's default
+  `--to-ref` reads the same file, so test and tool cannot diverge.
+- the root `flake.lock` (`../flake.lock` from the test's cwd) carries the
+  SAME `aozorabunko-src` rev — a partial pin bump (one lock, not the other)
+  fails here with a message naming both files, instead of the root-built
+  environment quietly using a different catalog than the baseline pins.
 
 ### CLI and recipes
 
@@ -170,8 +204,9 @@ Flags: `--check` / `--update` (exactly one required), `--sample-period`
 (default `year`), `--to-ref` (default: the flake.lock pin), `--from-ref`,
 `--cache-dir` (default `$XDG_CACHE_HOME/abc/aozorabunko.git`, falling back to
 `~/.cache/abc/aozorabunko.git`), `--remote-url` (default the GitHub URL),
-`--aozora-repo` (use an existing clone; disables clone management and
-prefetch), `--baseline` (default the committed path), `--work-dir`
+`--aozora-repo` (use an existing clone; disables only `ensure-clone!` —
+prefetch/pre-validation always run, unit 3), `--baseline` (default the
+committed path), `--work-dir`
 (tool-owned, audit semantics). Non-default sampling/window flags refuse
 `--update` of the default baseline path (ad-hoc runs write wherever
 `--baseline` points, never the committed file).
@@ -196,31 +231,43 @@ Root justfile: `replay-aozora` (= `--check`) and `replay-aozora-update`.
 
 Two-tier, same taxonomy as everything else:
 
-- **Environment/source tier (loud):** clone/fetch/network failures, missing
-  path at ref during scan, forbidden exception classes escaping
-  `scan-history!` (on real data that is a new bug find — welcome), baseline
-  file unreadable. All `ex-info` with diagnostic keys (`:cache-dir`,
-  `:remote-url`, `:ref`, `:baseline`) except the forbidden classes, which
-  propagate as themselves.
-- **Representative tier (absorbed + pinned):** pre-validation failures become
-  `excluded` entries; per-work ingest faults inside a pair are already
-  absorbed and surface in the digest (`works_skipped`, `skipped_work_ids`);
-  validation failures surface as `status: validation_failed`.
+- **Environment tier (loud):** clone/fetch/network failures, cache
+  provenance mismatch, promised-but-unavailable local objects (after one
+  promisor fetch attempt — see unit 3), baseline file unreadable, and
+  forbidden exception classes escaping `scan-history!` — normatively the
+  prior spec's §Failure Taxonomy list: `NullPointerException`,
+  `AssertionError`, `StackOverflowError`, raw `java.util.zip.ZipException`
+  (on real data such an escape is a new bug find — welcome). All `ex-info`
+  with diagnostic keys (`:cache-dir`, `:remote-url`, `:ref`, `:baseline`)
+  except the forbidden classes, which propagate as themselves. If the scan
+  itself hits a missing path at a ref, that is a harness invariant violation
+  (pre-validation should have excluded or aborted first) — also loud.
+- **Source-fact tier (absorbed + pinned):** pre-validation source facts
+  (path absent at ref, malformed/empty catalog bytes) become `excluded`
+  entries; per-work ingest faults inside a pair are already absorbed and
+  surface in the digest (`works_skipped`, `skipped_work_ids`); validation
+  failures surface as `status: validation_failed`.
 
 ## Testing
 
 - **Pure units** (fixture-driven, `:unit`): digest shaping from a fixture
-  pair report; baseline compare + diff classification (unchanged /
-  pin-bump-shaped / behavioral-change cases); flake.lock pin parsing;
-  pre-validation on crafted byte arrays (valid zip, non-zip bytes, zip
-  without `.csv`, header-only CSV).
+  pair report; baseline compare + diff classification covering each verdict
+  boundary — unchanged; pin-bump-shaped (strict final-pair form: same
+  `previous_ref`, new `current_ref`, plus appends); behavioral-change for a
+  digest change on unchanged refs, for any change with unchanged `pin_rev`,
+  and for a historical-period exclusion; configuration-change for each
+  header field; flake.lock pin parsing (both locks, agreement and
+  divergence fixtures); pre-validation tiering on crafted inputs (valid
+  zip, non-zip bytes, zip without `.csv`, header-only CSV, path absent at
+  ref vs missing local object).
 - **Plumbing integration** (`:unit`, seconds, no network): a tiny local repo
   built with the sim render substrate (`sim-render/commit-zip-at!` etc. — the
   same substrate the audit unit tests use), replay run end-to-end with
   `--aozora-repo` and a temp `--baseline`: `--update` writes a well-formed
   baseline; immediate `--check` passes; a re-run after one more upstream-like
   commit classifies as pin-bump-shaped; a doctored baseline classifies as
-  behavioral-change.
+  behavioral-change; `ensure-clone!` against a cache whose `origin` URL
+  differs from `--remote-url` throws the provenance `ex-info`.
 - **`scan-plan` extraction + `:refs` option safety:** existing audit unit
   tests + sim P10–P12 pin the no-`:refs` path across the refactor; the
   plumbing integration test exercises the `:refs` path end-to-end, and one

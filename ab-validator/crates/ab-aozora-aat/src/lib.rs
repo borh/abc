@@ -2552,4 +2552,77 @@ mod tests {
         assert_eq!(line_ranges("a\rb"), vec![0..2, 2..3]);
         assert_eq!(line_ranges("a\n"), vec![0..2]);
     }
+
+    #[test]
+    fn bare_toggle_markers_arrive_as_ordered_directive_wire_nodes() {
+        // Wire-level preflight: the facade must deliver each bare-toggle
+        // marker as its own wire node whose span slices the exact token, in
+        // source order — paired markers included (adoption later consumes
+        // them, so THIS test, not the AAT fallback test, pins the stream the
+        // classifier reads). Observed wire mapping (plan amendment, main
+        // 9a480e39): open tokens arrive as `containerOpen` nodes and close
+        // tokens as `containerClose` nodes — not `directive`.
+        let src =
+            "ウサギ［＃横組み］（Hare）［＃横組み終わり］だ\n［＃罫囲み］三［＃罫囲み終わり］\n";
+        // Follow `projections` (lib.rs:415) for decode + parse + node_entries.
+        let decoded = decode_source_bytes(src.as_bytes()).unwrap();
+        let nodes: Vec<AozoraNode> = projections(&decoded.span_text).unwrap().0;
+        let expected = [
+            ("containerOpen", "［＃横組み］"),
+            ("containerClose", "［＃横組み終わり］"),
+            ("containerOpen", "［＃罫囲み］"),
+            ("containerClose", "［＃罫囲み終わり］"),
+        ];
+        let markers: Vec<&AozoraNode> = nodes
+            .iter()
+            .filter(|n| n.kind == "containerOpen" || n.kind == "containerClose")
+            .collect();
+        let marker_shapes: Vec<(&str, &str)> = markers
+            .iter()
+            .map(|n| (n.kind.as_str(), source_slice(&decoded.span_text, &n.span)))
+            .collect();
+        // One wire node per marker, exact source slice, expected kind — no
+        // merging into wider nodes, no extra marker nodes:
+        assert_eq!(
+            marker_shapes, expected,
+            "bare-toggle wire nodes deviate from the pinned shape"
+        );
+        // Ordered by span (the classifier depends on source order):
+        let starts: Vec<usize> = markers.iter().map(|n| n.span.start).collect();
+        assert!(
+            starts.windows(2).all(|w| w[0] < w[1]),
+            "marker spans not ordered: {starts:?}"
+        );
+    }
+
+    #[test]
+    fn bare_toggle_orphan_markers_stay_raw_in_aat() {
+        let src = "（例）［＃横組み］\nx［＃罫囲み終わり］y\n";
+        let doc = aat_value_for(src);
+        let mut raw_sources = Vec::new();
+        collect_raw_sources(&doc, &mut raw_sources);
+        for token in ["［＃横組み］", "［＃罫囲み終わり］"] {
+            assert!(
+                raw_sources.iter().any(|s| s == token),
+                "orphan token {token} must stay a raw node; raw sources: {raw_sources:?}"
+            );
+        }
+    }
+
+    fn collect_raw_sources(v: &Value, out: &mut Vec<String>) {
+        if let Some(obj) = v.as_object() {
+            if obj.get("kind").and_then(Value::as_str) == Some("raw")
+                && let Some(s) = obj.get("source").and_then(Value::as_str)
+            {
+                out.push(s.to_owned());
+            }
+            for key in ["blocks", "content", "children"] {
+                if let Some(arr) = obj.get(key).and_then(Value::as_array) {
+                    for item in arr {
+                        collect_raw_sources(item, out);
+                    }
+                }
+            }
+        }
+    }
 }

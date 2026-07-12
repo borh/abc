@@ -1,0 +1,47 @@
+{
+ "record": "phase5-c5-durable-identity",
+ "date": "2026-07-12",
+ "candidate_commit": "004deaf548f34a36abbc17d0f7a162df010a6292",
+ "superseded_candidates": [
+  "1f14e3696d2c993bb77f4e01bee1bfdb480e77fa"
+ ],
+ "candidate_bin_sha256": "00066926b8cb035c2b2a55691cfcb99d26c8450b87d960d058855a69afedd24d",
+ "join_key": "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 004deaf548f34a36abbc17d0f7a162df010a6292)",
+ "coordinates": {
+  "adapter": "ab-aozora",
+  "adapter_semver": "0.6.0",
+  "aat_schema": 2,
+  "facade_version": "0.3.0",
+  "wire_schema": 3
+ },
+ "mapping": {
+  "mapping_version": "0.4.0",
+  "mapping_hash": "sha256:cf177bee98af086fe728cbc1942e4f631b26ed5bb55aedc7d91b21f467c41f30",
+  "mapping_path": "data/aat-to-parser-ir-mapping-v2.json",
+  "frozen_mapping_version": "0.3.0",
+  "frozen_mapping_hash": "sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40",
+  "frozen_mapping_path": "data/aat-to-parser-ir-mapping-v2-0.3.0.json"
+ },
+ "corpus_store_path": "/nix/store/sdr1imwrxfldvlwzs2d2fhs11vxncgpx-aozorabunko-corpus",
+ "baseline_dump": {
+  "id": "ab-aozora-phase4-c4-27772b1",
+  "commit": "27772b1b75c9ceeb0b724095bbbb47f774f3a275",
+  "aat_dir": "/db/ab-validator/aat-corpus/ab-aozora-phase4-c4-27772b1/aat/ab-aozora",
+  "content_hash": "sha256:a19a3829125dde95a94da0077d5197d5b5645d64b4101dc3fb7c599a41f5ff80",
+  "content_hash_source": "reports/aat-fidelity/run-sets/current.json (adapters.ab-aozora.expected.content_hash)"
+ },
+ "candidate_dump": {
+  "id": "ab-aozora-phase5-c5-004deaf",
+  "out_dir": "/db/ab-validator/aat-corpus/ab-aozora-phase5-c5-004deaf",
+  "aat_dir": "/db/ab-validator/aat-corpus/ab-aozora-phase5-c5-004deaf/aat/ab-aozora",
+  "content_hash": "sha256:f89d36c7bb0d0ce7344840abf3e82538f54b3e515c23ac00c14b1c26bca5a484",
+  "content_hash_lib": "reports/lib/aat_hash.py hash_aat_dir (same lib resolve-run-set.py uses); independently recomputed and equal to metadata.json output_content_hash"
+ },
+ "expectation_rebinding_commit": "a443af0cd9b372f92b3e03c8d6645997c24b76a1",
+ "gates": {
+  "delta": "docs/superpowers/reports/2026-07-12-phase5-c5-delta.summary.json",
+  "conformance": "docs/superpowers/reports/2026-07-12-phase5-c5-conformance-gate.summary.json",
+  "perf": "docs/superpowers/reports/2026-07-12-phase5-c5-perf.summary.json",
+  "conversion": "docs/superpowers/reports/2026-07-12-phase5-c5-conversion-gate.summary.json"
+ }
+}

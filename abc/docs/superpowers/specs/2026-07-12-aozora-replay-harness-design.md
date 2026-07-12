@@ -122,6 +122,10 @@ unchanged). When `:refs` is absent, behavior is byte-identical to today
 
 Committed at `abc/test/resources/aozora-replay-baseline.json`, written with
 the deterministic JSON writer. No timestamps, no filesystem paths.
+Progress and timing (per-pair scan progress, per-phase durations for
+clone/plan/prefetch/scan) are emitted as log telemetry only — operationally
+required for a 1–2 h run and the source of the first-run measurements —
+and never enter the baseline.
 
 ```json
 {
@@ -169,10 +173,15 @@ on unchanged inputs can never masquerade as a pin bump:
   requires a deliberate, explained baseline rewrite.
 - **pin-bump-shaped** — requires ALL of: (a) `pin_rev` changed; (b) every
   common pair byte-identical, except that the final pair of the old baseline
-  may be `replaced` ONLY in the strict form: same `previous_ref`, different
-  `current_ref` (the final period gained a genuinely newer representative) —
-  a digest change on an unchanged `(previous_ref, current_ref)` input is
-  NEVER pin-bump-shaped; (c) `added` pairs appear only after that point;
+  may be `replaced` ONLY in the strict form: same `period`, same
+  `previous_ref`, different `current_ref` (the final period gained a
+  genuinely newer representative) — a digest change on an unchanged
+  `(previous_ref, current_ref)` input is NEVER pin-bump-shaped, nor is a
+  replacement that moves the pair to a different period (ancestry of the
+  new ref is not provable in the pure comparison; it is implied by the plan
+  sampling commits reachable from the fetched pin, and checked by human
+  review of the update diff); (c) `added` pairs appear only after that
+  point;
   (d) `excluded` gains entries only for periods newer than the old
   baseline's last period. Expected after a pin bump with no code change.
 - **behavioral-change** — everything else. In particular: any pair whose
@@ -205,8 +214,11 @@ Flags: `--check` / `--update` (exactly one required), `--sample-period`
 `--cache-dir` (default `$XDG_CACHE_HOME/abc/aozorabunko.git`, falling back to
 `~/.cache/abc/aozorabunko.git`), `--remote-url` (default the GitHub URL),
 `--aozora-repo` (use an existing clone; disables only `ensure-clone!` —
-prefetch/pre-validation always run, unit 3), `--baseline` (default the
-committed path), `--work-dir`
+prefetch/pre-validation always run, unit 3, and the repo's `origin` URL,
+when it has one, must match `--remote-url` exactly as the managed cache's
+must; a repo with no `origin` is allowed with a warning, and the baseline's
+`remote_url` is then a DECLARED upstream identity, not observed
+provenance), `--baseline` (default the committed path), `--work-dir`
 (tool-owned, audit semantics). Non-default sampling/window flags refuse
 `--update` of the default baseline path (ad-hoc runs write wherever
 `--baseline` points, never the committed file).

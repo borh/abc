@@ -125,6 +125,23 @@ with
 
 Also extend the `scan-history!` docstring with one sentence: "An explicit `:refs` vector (already-planned ref strings) bypasses internal planning; pairing, reporting, and work-dir semantics are unchanged."
 
+Add per-pair progress logging (operationally required for the 1–2 h replay;
+per-pair wall time is then derivable from the log timestamps, and the
+baseline stays timing-free). Add `[taoensso.telemere :as tel]` to the ns
+`:require`, and in the `scan-history!` loop insert as the first binding of
+the `let` that computes `current-ingest`:
+
+```clojure
+                            (let [_ (tel/log! :info
+                                              (str "history-scan pair "
+                                                   (inc (count acc)) "/"
+                                                   (count pairs-to-scan) " "
+                                                   previous-ref ".." current-ref))
+```
+
+(i.e. the existing `(let [current-ingest (ingest-ref! …)` gains a leading
+`_` binding with the log call; nothing else moves.)
+
 - [ ] **Step 4: Run to verify green**
 
 Run: `clojure -M:test:kaocha -m kaocha.runner --focus :unit` → PASS (including all pre-existing scan-history tests)
@@ -185,22 +202,37 @@ Create `abc/src/abc/tools/aozora_replay.clj`:
                       {:lock-path (str lock-path)})))
     rev))
 
+(defn- zip-signature?
+  "True when the bytes begin with a ZIP local-file-header (PK\\x03\\x04) or
+  empty-archive end-of-central-directory (PK\\x05\\x06) signature.
+  ZipInputStream.getNextEntry silently returns nil on most non-ZIP bytes,
+  which would misreport garbage as no-csv-entry — so the signature is
+  checked explicitly first."
+  [^bytes bs]
+  (and (>= (alength bs) 4)
+       (= 0x50 (bit-and 0xff (aget bs 0)))
+       (= 0x4B (bit-and 0xff (aget bs 1)))
+       (contains? #{[3 4] [5 6]}
+                  [(bit-and 0xff (aget bs 2)) (bit-and 0xff (aget bs 3))])))
+
 (defn catalog-bytes-fault
   "nil when the bytes are a usable catalog ZIP; otherwise the source-fact
   reason string. Only ZIP-structural problems are absorbed here; anything
   else escapes as a harness/environment concern."
   [^bytes bs]
-  (try
-    (with-open [zin (ZipInputStream. (ByteArrayInputStream. bs))]
-      (loop []
-        (if-let [entry (.getNextEntry zin)]
-          (if (string/ends-with? (.getName entry) ".csv")
-            (let [csv (String. (.readAllBytes zin) "UTF-8")]
-              (if (seq (ac/read-rows-from-string csv)) nil "no-data-rows"))
-            (recur))
-          "no-csv-entry")))
-    (catch ZipException _ "unreadable-zip")
-    (catch IOException _ "unreadable-zip")))
+  (if-not (zip-signature? bs)
+    "unreadable-zip"
+    (try
+      (with-open [zin (ZipInputStream. (ByteArrayInputStream. bs))]
+        (loop []
+          (if-let [entry (.getNextEntry zin)]
+            (if (string/ends-with? (.getName entry) ".csv")
+              (let [csv (String. (.readAllBytes zin) "UTF-8")]
+                (if (seq (ac/read-rows-from-string csv)) nil "no-data-rows"))
+              (recur))
+            "no-csv-entry")))
+      (catch ZipException _ "unreadable-zip")
+      (catch IOException _ "unreadable-zip"))))
 
 (defn pair-digest
   "Digest one scan pair-report into the pinned baseline pair shape."
@@ -246,12 +278,17 @@ Create `abc/src/abc/tools/aozora_replay.clj`:
                    :else "replaced")}))))
 
 (defn- strict-final-replacement?
-  "The ONLY replacement pin-bump-shaped tolerates: same previous_ref,
-  genuinely different current_ref (the final period gained a later
+  "The ONLY replacement pin-bump-shaped tolerates: same period, same
+  previous_ref, different current_ref (the final period gained a later
   representative). A digest change on unchanged input refs is never
-  pin-bump-shaped."
+  pin-bump-shaped, and neither is a replacement that moves the pair to a
+  different period. Ancestry of the new current_ref is not provable in a
+  pure comparison; it is implied by the plan (representatives are sampled
+  from commits reachable from the fetched pin) and by human review of the
+  update diff."
   [old-pair new-pair]
-  (and (= (get old-pair "previous_ref") (get new-pair "previous_ref"))
+  (and (= (get old-pair "period") (get new-pair "period"))
+       (= (get old-pair "previous_ref") (get new-pair "previous_ref"))
        (not= (get old-pair "current_ref") (get new-pair "current_ref"))))
 
 (defn- exclusions-only-newer? [old-doc new-doc]
@@ -387,6 +424,10 @@ Create `abc/test/abc/tools/aozora_replay_test.clj`:
       (is (= :behavioral-change
              (:verdict (replay/classify-diff
                         old (doc "pinB" [p1 (pair "r1" "r2" "2024" 9)] []))))))
+    (testing "final replacement that moves to a different period is NOT pin-bump-shaped"
+      (is (= :behavioral-change
+             (:verdict (replay/classify-diff
+                        old (doc "pinB" [p1 (pair "r1" "r3" "2025" 1)] []))))))
     (testing "historical pair change is behavioral even with pin bump"
       (is (= :behavioral-change
              (:verdict (replay/classify-diff
@@ -432,8 +473,8 @@ Add `[abc.sim.model]` to the ns require vector (used by `catalog-bytes-fault-tes
 
 - [ ] **Step 3: Run to verify green**
 
-Run: `clojure -M:test:kaocha -m kaocha.runner --focus :unit`
-Expected: PASS (new tests included).
+Run: `clojure -M:test:kaocha -m kaocha.runner --focus :unit` → PASS (new tests included)
+Run: `clojure -M:test:kaocha -m kaocha.runner --focus :simulation` → PASS
 
 - [ ] **Step 4: Commit**
 
@@ -472,7 +513,8 @@ Extend the ns form of `abc/src/abc/tools/aozora_replay.clj`:
             [abc.tools.json :as abc-json]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [taoensso.telemere :as tel])
   (:import [java.io ByteArrayInputStream IOException]
            [java.util.zip ZipException ZipInputStream]
            [org.eclipse.jgit.errors MissingObjectException]))
@@ -520,6 +562,27 @@ Append after the pure fns:
       (git! ["fetch" "origin"] {:dir dir}))
     (git! ["cat-file" "-e" (str ref "^{commit}")] {:dir dir})))
 
+(defn verify-origin!
+  "Verify a repo's origin URL matches the expected remote-url. The
+  baseline records remote_url as the upstream identity, so a repo whose
+  origin disagrees must be refused. A repo with NO origin remote (e.g. a
+  locally built test repo) is allowed with a warning: the recorded
+  remote_url is then a declared, not observed, upstream."
+  [repo-dir remote-url]
+  (let [{:keys [exit out]} (git* ["remote" "get-url" "origin"]
+                                 {:dir repo-dir})]
+    (if (zero? exit)
+      (let [actual (string/trim out)]
+        (when (not= actual remote-url)
+          (throw (ex-info (str "repo at " repo-dir " has origin " actual
+                               ", expected " remote-url)
+                          {:cache-dir (str repo-dir)
+                           :expected-url remote-url
+                           :actual-url actual}))))
+      (tel/log! :warn (str "repo at " repo-dir " has no origin remote; "
+                           "recording remote_url as declared upstream: "
+                           remote-url)))))
+
 (defn ensure-clone!
   "Create or update the managed blobless partial clone. Verifies cache
   provenance (origin URL must equal remote-url) before fetching — the
@@ -528,14 +591,7 @@ Append after the pure fns:
   [{:keys [cache-dir remote-url to-ref]}]
   (let [dir (io/file cache-dir)]
     (if (.exists (io/file dir ".git"))
-      (let [actual (string/trim (:out (git! ["remote" "get-url" "origin"]
-                                            {:dir dir})))]
-        (when (not= actual remote-url)
-          (throw (ex-info (str "cache clone at " dir " has origin " actual
-                               ", expected " remote-url)
-                          {:cache-dir (str dir)
-                           :expected-url remote-url
-                           :actual-url actual}))))
+      (verify-origin! (str dir) remote-url)
       (do (io/make-parents (io/file dir "placeholder"))
           (git! ["clone" "--filter=blob:none" "--no-checkout"
                  remote-url (str dir)]
@@ -599,27 +655,46 @@ Append after the pure fns:
 ;; ---------------------------------------------------------------------
 ;; Orchestration + CLI.
 
+(defn- log-phase!
+  "Progress + timing telemetry for the long-running phases. Timing lives
+  ONLY in logs (telemere timestamps), never in the baseline."
+  [phase started-ms detail]
+  (tel/log! :info (str "replay " phase " ("
+                       (- (System/currentTimeMillis) started-ms) " ms): "
+                       detail)))
+
 (defn replay-doc!
   "Plan, prefetch/pre-validate, scan, digest. Returns the baseline doc."
   [{:keys [aozora-repo cache-dir remote-url to-ref from-ref sample-period
            zip-path work-dir]}]
-  (let [repo-dir (or aozora-repo
-                     (ensure-clone! {:cache-dir cache-dir
-                                     :remote-url remote-url
-                                     :to-ref to-ref}))
+  (let [t0 (System/currentTimeMillis)
+        repo-dir (if aozora-repo
+                   (do (verify-origin! (str aozora-repo) remote-url)
+                       aozora-repo)
+                   (ensure-clone! {:cache-dir cache-dir
+                                   :remote-url remote-url
+                                   :to-ref to-ref}))
+        _ (log-phase! "clone-ready" t0 (str repo-dir))
         repo (abc-git/load-git-repo (str repo-dir))]
     (try
-      (let [pin-rev (.getName (abc-git/resolve-ref repo (or to-ref "HEAD")))
+      (let [t1 (System/currentTimeMillis)
+            pin-rev (.getName (abc-git/resolve-ref repo (or to-ref "HEAD")))
             plan (audit/scan-plan repo {:zip-path zip-path
                                         :from-ref from-ref
                                         :to-ref to-ref
                                         :sample-period sample-period})
+            _ (log-phase! "plan" t1 (str (count plan) " representatives"))
+            t2 (System/currentTimeMillis)
             {:keys [refs excluded]} (prefetch-and-prevalidate!
                                      repo repo-dir plan zip-path)
+            _ (log-phase! "prefetch" t2 (str (count refs) " usable, "
+                                             (count excluded) " excluded"))
+            t3 (System/currentTimeMillis)
             scan (audit/scan-history! {:aozora-repo (str repo-dir)
                                        :refs (mapv :ref refs)
                                        :zip-path zip-path
-                                       :work-dir work-dir})]
+                                       :work-dir work-dir})
+            _ (log-phase! "scan" t3 (str (count (:pairs scan)) " pairs"))]
         (baseline-doc {:remote-url remote-url
                        :pin-rev pin-rev
                        :zip-path zip-path
@@ -675,8 +750,10 @@ Append after the pure fns:
        "audit machinery and checks/updates the committed baseline.\n\n"
        summary))
 
-(defn- resolve-options
-  "Fill defaults that need runtime context and enforce mode guards."
+(defn resolve-options
+  "Fill defaults that need runtime context and enforce mode guards.
+  Public: this is the boundary that protects the committed baseline from
+  accidental ad-hoc overwrites, and it is tested directly."
   [{:keys [check update baseline sample-period from-ref to-ref] :as options}]
   (when (= (boolean check) (boolean update))
     (throw (ex-info "exactly one of --check / --update is required"
@@ -822,6 +899,44 @@ Append to `abc/test/abc/tools/aozora_replay_test.clj`:
         (delete-recursive cache)))))
 ```
 
+Append the destructive-default-baseline guard tests (this boundary prevents
+accidental replacement of checked-in evidence; note `:sample-period` is
+passed explicitly because tools.cli's default is absent in direct calls):
+
+```clojure
+(deftest resolve-options-guards-test
+  (let [pin (replay/locked-pin "flake.lock")]
+    (testing "exactly one of --check/--update"
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (replay/resolve-options {:sample-period "year"})))
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (replay/resolve-options {:check true :update true
+                                            :sample-period "year"}))))
+    (testing "default-baseline --update refuses non-default sampling/window"
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (replay/resolve-options {:update true
+                                            :sample-period "month"})))
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (replay/resolve-options {:update true
+                                            :sample-period "year"
+                                            :from-ref "somewhere"})))
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (replay/resolve-options {:update true
+                                            :sample-period "year"
+                                            :to-ref (apply str (repeat 40 "d"))}))))
+    (testing "explicit ad-hoc baseline is permitted with any flags"
+      (is (= "month" (:sample-period
+                      (replay/resolve-options {:update true
+                                               :sample-period "month"
+                                               :baseline "/tmp/adhoc.json"})))))
+    (testing "defaults resolve from runtime context"
+      (let [r (replay/resolve-options {:check true :sample-period "year"})]
+        (is (= pin (:to-ref r)))
+        (is (= replay/default-baseline-path (:baseline r)))
+        (is (= replay/default-remote-url (:remote-url r)))
+        (is (= replay/default-zip-path (:zip-path r)))))))
+```
+
 Also append the two tiering tests (spec test section: "path absent at ref vs
 missing local object"):
 
@@ -905,49 +1020,46 @@ git commit -m "feat(aozora-replay): clone management, tiered prefetch, replay CL
 
 ---
 
-### Task 4: first real replay run (controller-executed acceptance)
+### Task 4: first real replay run + enforcement test (one atomic commit)
 
 **Files:**
 - Create: `abc/test/resources/aozora-replay-baseline.json` (tool output, human-reviewed)
+- Test: `abc/test/abc/tools/aozora_replay_test.clj` (append enforcement test)
 
 This task is executed by the session controller directly (it needs network
-and ~1–2 h wall clock — not a subagent transcription task).
+and ~1–2 h wall clock — not a subagent transcription task). The baseline and
+the test that enforces its upstream identity land in ONE commit, so no
+intermediate state exists where the evidence is committed but unenforced.
 
-- [ ] **Step 1:** From the repo root: `just replay-aozora-update` (run in the background; a cold cache first clones blobless — record clone wall time and `du -sh` of the cache dir).
-- [ ] **Step 2:** Record in the PR/ledger: clone size, planning/walk time, per-pair time, total time, and the `excluded` entries with reasons (settles spec assumptions A5/A6).
+- [ ] **Step 1:** From the repo root: `just replay-aozora-update`, run in the background. Progress and phase/per-pair timing stream to the log (Task 1's per-pair lines + Task 3's `log-phase!` lines). Record `du -sh` of the cache dir after the clone.
+- [ ] **Step 2:** Record in the PR/ledger, from the telemere log timestamps: clone wall time and size, plan time, prefetch time, per-pair time range, total time, and the `excluded` entries with reasons (settles spec assumptions A5/A6).
 - [ ] **Step 3:** Human review of the produced baseline pair-by-pair — this review IS the adjudication of what the classifier historically reports on real data. Sanity expectations: `pin_rev` equals `abc/flake.lock`'s rev; ~13 pairs, periods 2013/2014…2026 (minus exclusions); recent pairs show `works_skipped` 0 and `person_conflicts` [].
 - [ ] **Step 4:** `just replay-aozora` → exits 0, verdict `unchanged` (same-machine determinism).
-- [ ] **Step 5: Commit**
-
-```bash
-git add test/resources/aozora-replay-baseline.json
-git commit -m "feat(aozora-replay): pin first real-history baseline (year-sampled)"
-```
-
----
-
-### Task 5: enforcement test (baseline shape + pin coupling, both locks)
-
-**Files:**
-- Test: `abc/test/abc/tools/aozora_replay_test.clj` (append)
-
-**Interfaces:**
-- Consumes: the committed baseline from Task 4; `replay/locked-pin`; `replay/baseline-format`, `replay/default-zip-path`, `replay/default-remote-url`, `replay/default-baseline-path`.
-
-- [ ] **Step 1: Write the test (fails only if Task 4's baseline is malformed — expected to pass immediately)**
+- [ ] **Step 5: Append the enforcement test**
 
 Append to `abc/test/abc/tools/aozora_replay_test.clj`:
 
 ```clojure
+(def ^:private drift-summary-required-keys
+  ["persons_previous" "persons_current" "works_previous" "works_current"
+   "added_person_ids" "removed_person_ids" "metadata_corrections"
+   "contributor_edge_additions" "contributor_edge_removals"
+   "contributor_edge_replacements" "split_candidates" "merge_candidates"
+   "ambiguous_replacements"])
+
 (deftest baseline-pin-coupling-test
   (let [doc (abc-json/read-json-file replay/default-baseline-path)
         pairs (vec (get doc "pairs"))
-        sha? (fn [s] (and (string? s) (re-matches #"[0-9a-f]{40}" s)))]
-    (testing "shape"
+        excluded (vec (get doc "excluded"))
+        sha? (fn [s] (and (string? s) (re-matches #"[0-9a-f]{40}" s)))
+        count? (fn [v] (and (int? v) (<= 0 v)))]
+    (testing "header shape"
       (is (= replay/baseline-format (get doc "baseline_format")))
       (is (= replay/default-zip-path (get doc "zip_path")))
       (is (= replay/default-remote-url (get doc "remote_url")))
       (is (= "year" (get doc "sample_period")))
+      (is (sha? (get doc "pin_rev"))))
+    (testing "pair shape"
       (is (seq pairs) "committed baseline must contain pairs")
       (is (= (mapv #(get % "period") pairs)
              (vec (sort (mapv #(get % "period") pairs))))
@@ -955,11 +1067,26 @@ Append to `abc/test/abc/tools/aozora_replay_test.clj`:
       (doseq [p pairs]
         (is (sha? (get p "previous_ref")) (pr-str p))
         (is (sha? (get p "current_ref")) (pr-str p))
+        (is (re-matches #"\d{4}(-\d{2})?" (or (get p "period") ""))
+            "committed pairs carry non-nil period keys")
         (is (contains? #{"ok" "validation_failed"} (get p "status")))
-        (is (map? (get p "drift_summary")))
-        (is (map? (get p "ingest"))))
-      (doseq [e (get doc "excluded")]
+        (doseq [k drift-summary-required-keys]
+          (is (count? (get-in p ["drift_summary" k]))
+              (str "drift_summary." k " in " (pr-str (get p "period")))))
+        (let [ingest (get p "ingest")]
+          (is (count? (get ingest "works_written")) (pr-str p))
+          (is (count? (get ingest "works_skipped")) (pr-str p))
+          (is (count? (get ingest "persons_written")) (pr-str p))
+          (is (vector? (get ingest "skipped_work_ids")) (pr-str p))
+          (is (every? string? (get ingest "skipped_work_ids")) (pr-str p))
+          (is (vector? (get ingest "person_conflicts")) (pr-str p))
+          (is (every? string? (get ingest "person_conflicts")) (pr-str p)))))
+    (testing "exclusion shape: unique, complete, known reasons"
+      (is (= (count excluded) (count (distinct (map #(get % "ref") excluded))))
+          "no duplicate excluded refs")
+      (doseq [e excluded]
         (is (sha? (get e "ref")) (pr-str e))
+        (is (contains? e "period") (pr-str e))
         (is (contains? #{"missing-at-ref" "unreadable-zip"
                          "no-csv-entry" "no-data-rows"}
                        (get e "reason")))))
@@ -974,14 +1101,18 @@ Append to `abc/test/abc/tools/aozora_replay_test.clj`:
           "partial pin bump: abc/flake.lock and the root flake.lock carry different aozorabunko-src revs"))))
 ```
 
-- [ ] **Step 2: Run to verify green**
+Negative-path note: `locked-pin-test` (Task 2) already proves mismatched or
+missing revs throw; the coupling assertions are plain `=` over `locked-pin`
+calls, so no lock-file editing is needed here.
 
-Run: `clojure -M:test:kaocha -m kaocha.runner --focus :unit` → PASS.
-Negative check (fixture-based, no lock editing): `locked-pin-test` in Task 2 already proves a mismatched/missing rev throws; the coupling assertion is a plain `=` over two `locked-pin` calls, so no additional negative fixture is required here.
+- [ ] **Step 6: Run to verify green**
 
-- [ ] **Step 3: Commit**
+Run: `clojure -M:test:kaocha -m kaocha.runner --focus :unit` → PASS
+Run: `clojure -M:test:kaocha -m kaocha.runner --focus :simulation` → PASS
+
+- [ ] **Step 7: Commit (baseline + enforcement together)**
 
 ```bash
-git add test/abc/tools/aozora_replay_test.clj
-git commit -m "test(aozora-replay): baseline shape + pin-coupling enforcement"
+git add test/resources/aozora-replay-baseline.json test/abc/tools/aozora_replay_test.clj
+git commit -m "feat(aozora-replay): pin first real-history baseline with enforcement test"
 ```

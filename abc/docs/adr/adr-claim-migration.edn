@@ -1,0 +1,131 @@
+{:schema-version "abc-adr-claim-migration-v1"
+ :baseline-revision "0542b7f43b0f47d0baf1620aa91d8d9312825cfa"
+ :baseline-manifest-hash "sha256:8072d1f35a78d5a2117de28b03eae68a0464bad469c06bacdbcc1724fe66cd00"
+ :entries
+ {[1 "sha256:a29b17fa870e6f4fc7a9b323cc83c19b85f5eb9ec5420fbe5b24ddfb771c043b"]
+  {:disposition :correct
+   :rationale "Narrow to committed success/failure and generated parser/warning manifests validating against the manifest schema."
+   :planned-evidence-boundaries [:generated-manifest-schema-fixtures]}
+  [1 "sha256:1c6823345014b9b13768dee0d2d1c66a609bb5ec9427d149dca6906c331dab54"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:inline-canonical-null-and-array-order]}
+  [1 "sha256:6d495f4c83d65f6dc7a1c4cebf20b528d6fe9befad0c262b5f407eed5bf63d35"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:nested-artifact-id-schema-rejection]}
+  [1 "sha256:1c1944449f07cf23fe00d574d585217a5649de20550c0651ae569c18aa0102ec"]
+  {:disposition :correct
+   :rationale "Narrow to the failure fixture carrying the exact asserted input identity, attempted recipe identity, validation status, and error sidecar fields."
+   :planned-evidence-boundaries [:failure-manifest-exact-fields]}
+  [1 "sha256:15c28d8861bde961e3cfec91dd7bea6cca5772243bc8b7e9235e104f2d73c77f"]
+  {:disposition :correct
+   :rationale "Narrow to two successful entries with the same artifact_id and different content hashes producing a reproducibility conflict; delete the nonexistent nondeterministic schema exception."
+   :planned-evidence-boundaries [:manifest-index-reproducibility-conflict]}
+  [1 "sha256:ab4a330ece0ea6e50fd48cada1856e74c91e9ec257aaffae15b073cb1dc2af0c"]
+  {:disposition :move-out-of-acceptance
+   :rationale "Move the non-JVM RFC 8785 condition verbatim to Future Verification because it is not yet a satisfied acceptance observation."
+   :planned-evidence-boundaries [:future-verification]}
+
+  [8 "sha256:6ac7568bd8453524f7266a60b9874b2af90606e67ee651e6d84424f42a78f3dd"]
+  {:disposition :move-out-of-acceptance
+   :rationale "Remove the duplicate unprovisioned raw-Clojure command from Acceptance Criteria; its implementation entry point is already present in the byte-immutable Decision section."
+   :planned-evidence-boundaries [:decision-implementation-entry-point]}
+  [8 "sha256:1db372595077f0faddd5a9d1656b1a5050ca54451054a7a4eaeb75bba327d309"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:wrapper-delegation]}
+  [8 "sha256:f74e34393b508b323d2ea38e90256f9db4c94f28d924113928b01d8e178b3e6b"]
+  {:disposition :correct
+   :rationale "Narrow to the supported Nix app exiting zero."
+   :planned-evidence-boundaries [:supported-nix-app-exit-zero]}
+  [8 "sha256:13d57a0ea34fc32256da82fcc1e444fff23ea139618a78005ef7d8bc0653abc8"]
+  {:disposition :correct
+   :rationale "Narrow to structural workflow wiring and do not claim a local or CI run from workflow text."
+   :planned-evidence-boundaries [:workflow-command-wiring]}
+  [8 "sha256:9a567d39554e3d21110c01b77594279f58a401bf4cef35fe881106e2ffc7e802"]
+  {:disposition :correct
+   :rationale "Narrow test-coverage prose to named pure-helper behavior."
+   :planned-evidence-boundaries [:named-pure-validation-helpers]}
+
+  [9 "sha256:fe9f8e4759ac0f34efea3c43c866d287189b1f0348269bf1b0da2f8a97bfdc84"]
+  {:disposition :correct
+   :rationale "Narrow to the direct generated-manifest schema test rather than the old materialization citation."
+   :planned-evidence-boundaries [:direct-generated-manifest-schema-test]}
+  [9 "sha256:43969f3009ca2ee74e08eca436ba0930d1c732fbd5939b4a1f98bacc7104451a"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:generated-content-hashes]}
+  [9 "sha256:1b27c88bd21889c0d55924f3b3188d3613e0798af2f17e975fcb34d225806fd1"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:mapping-divergence-sidecar-selection]}
+  [9 "sha256:67623330d2e10a4db342dc2aeb3586d3f56e6b1f715127b54d0f84c8799ea046"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:artifact-id-content-hash-distinction]}
+  [9 "sha256:32934fe5b8af881021dfd1872b6582c8631d3e7f8f58c27c7e4a4a1c64c367d9"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:parser-schema-compatibility-and-diagnostic-match]}
+  [9 "sha256:331ef38a78bbb0e51ec03c086f217e8acd98e210f6174fc7a64e833042ae0ee2"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:temporary-materialization-orchestration]}
+  [9 "sha256:d904804f6d05dda54eb08705a299b7dbee66b8e55c474da8ce86d6d60c5ff262"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:wrapper-delegation]}
+
+  [10 "sha256:4276aca66a1bcc292305c1ac71211544debabb8f4855d135cf7a45f6bcacff31"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:manifest-schema-jcs-hash]}
+  [10 "sha256:8dd0eec558392f721426161f0a47d017634e5483ed09dc8085d4a48a2ffb00ca"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:distinct-materialized-artifact-ids]}
+  [10 "sha256:aa30186391c6a310234f71e0cbf5b69000a6609f2fe396acb0d98c4434d52175"]
+  {:disposition :correct
+   :rationale "Replace 'test covers' prose with the manifest identity behavior it asserts."
+   :planned-evidence-boundaries [:materialized-manifest-identity-behavior]}
+  [10 "sha256:f2fd52b030dc92074964127d3bd207aa2fd18426b8e2945aa6c41d71e99b2801"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:schema-hash-mismatch-rejection]}
+  [10 "sha256:b65937a308a4582274e59a2a78e736aedf0753d7d64d70f2dfad3ff4922c497d"]
+  {:disposition :correct
+   :rationale "Narrow the operational claim to the supported Nix app validating materialized manifests."
+   :planned-evidence-boundaries [:supported-nix-app-manifest-validation]}
+
+  [11 "sha256:455ea3916f52e9f1ae5115bba514eadc97b3ed49a6d95efdf29659886158bdef"]
+  {:disposition :correct
+   :rationale "Narrow to the supported Nix app and its temporary materialization and schema-validation behavior."
+   :planned-evidence-boundaries [:supported-nix-app-temporary-materialization]}
+  [11 "sha256:f92fb00d7f506d651f02550fe60f89bf1a14faac120e45990927d994a1aa80f4"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:ordered-map-deterministic-json]}
+  [11 "sha256:1f95118d755dd472bfb4eb18b4754b45458b58bb62082caeb20a67d3d55bf91c"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:two-run-byte-identity]}
+
+  [33 "sha256:5f0ee5797b8e45e6292ed4015d791002b96ec3d18e980f699de73ce3203bf2d0"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:canonical-all-member-schema-fixture]}
+  [33 "sha256:0959a52cefbc2f84774ffa2aa1e90570683a76a2ed1c8d475c5aef6f2d3e5cda"]
+  {:disposition :correct
+   :rationale "Narrow to Clojure known-answer reproduction; keep the Rust consumer/producer authority rule in Decision rather than claiming the absence of a second producer as a durable observation."
+   :planned-evidence-boundaries [:clojure-known-answer-reproduction]}
+  [33 "sha256:843010d484c7dd27c661023f31c641d4d5c1830fc89a58ec126cd1771fcf93b4"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:repack-and-image-evolution]}
+  [33 "sha256:4ade2d07b6cd4e988cabe9473ee829f716d89f60eb00bcc42d2eb4393482d514"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:parser-ir-bundle-and-primary-roles]}
+  [33 "sha256:d09bfcf0212a3872e0eafa978200adb85aec3f0bc17bd64d3c89df5bd6ff88c6"]
+  {:disposition :retain
+   :planned-evidence-boundaries [:role-specific-snapshot-validation]}
+  [33 "sha256:ffa31a0ca8353317bfd1af26c58f8206d4db07772c26b3470438bba626a094ad"]
+  {:disposition :correct
+   :rationale "Split into ungated P16.3 and a dated D7 fixed-state structural observation."
+   :planned-evidence-boundaries [:ungated-p16-3 :dated-d7-fixed-state]}
+  [33 "sha256:2c2cc9e6482eecff33bce6934d3d1823dfa065511e45202942214deadc1451af"]
+  {:disposition :correct
+   :rationale "Narrow to complete legacy-shaped workset fixture readability and move broad historical-manifests prose to Historical Evidence."
+   :planned-evidence-boundaries [:legacy-shaped-workset-fixture-readability]}
+  [33 "sha256:9185a2cf95bbf10d77d5ee90ef5bc49200905679677c72649858962297878f64"]
+  {:disposition :correct
+   :rationale "Split into pinned corpus-report maxima and member-count, per-member-byte, and total-byte enforcement at both declared-size and streamed-byte boundaries."
+   :planned-evidence-boundaries [:pinned-source-bundle-corpus-maxima :archive-limit-enforcement]}
+  [33 "sha256:524dd9590000bfc7f77baa3f27497e677d04b836882bae24f131b8443cc6abdd"]
+  {:disposition :correct
+   :rationale "Narrow to exact strict atomic abort and best-effort counted non-release-admissible behavior: release_admissible=false, partial workflow, and build exit 1, without inventing a separate release validator."
+   :planned-evidence-boundaries [:strict-atomic-abort :best-effort-counted-non-release-admissible]}}}

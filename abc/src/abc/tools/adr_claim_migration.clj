@@ -5,7 +5,9 @@
             [abc.tools.schema :as schema]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.set :as set]))
+            [clojure.set :as set]
+            [clojure.tools.cli :as cli]
+            [abc.tools.json :as json]))
 
 (def ^:private baseline-schema-version "abc-adr-claim-migration-baseline-v1")
 (def ^:private ledger-schema-version "abc-adr-claim-migration-v1")
@@ -191,3 +193,27 @@
                               (normative-section-problems baseline adrs)
                               (validate-ledger baseline ledger claims options)))]
     {:baseline baseline :ledger ledger :by-key (:entries ledger) :problems problems}))
+
+(def cli-options
+  [[nil "--write-baseline PATH"]
+   [nil "--revision REV"]])
+
+(defn -main [& args]
+  (let [args (if (= "--" (first args)) (rest args) args)
+        {:keys [options errors]} (cli/parse-opts args cli-options)
+        output (:write-baseline options)
+        revision (:revision options)]
+    (cond
+      (or (seq errors) (nil? output) (nil? revision))
+      (System/exit 2)
+
+      (.exists (io/file output))
+      (do (binding [*out* *err*] (println "Refusing to replace immutable baseline:" output))
+          (System/exit 1))
+
+      :else
+      (let [value (baseline-value revision (adr/parse-all "docs/adr"))]
+        (json/write-deterministic-json-file! output value)
+        (println (str "Wrote baseline: " (get value "accepted_adr_count") " ADRs, "
+                      (get value "criterion_count") " criteria, "
+                      (get value "normative_section_count") " normative sections"))))))

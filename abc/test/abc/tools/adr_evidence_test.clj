@@ -23,7 +23,7 @@
     (catch java.io.FileNotFoundException _ nil)))
 
 (defn- valid-entry []
-  {:claim-id "ADR-0033-C1"
+  {:claim-id "ADR-0034-C1"
    :claim-kind :structural-invariant
    :evidence-kind :structural-test
    :evidence-path "test/abc/tools/adr_evidence_test.clj"

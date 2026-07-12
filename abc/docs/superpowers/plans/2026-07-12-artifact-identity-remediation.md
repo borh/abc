@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Follow `2026-07-12-remediation-program-sequencing.md`; begin after governance
-  enforcement, consume either migration family independently, and reserve ADR 0036.
+  enforcement, consume either migration family independently, and reserve ADR 0037.
 - Do not change the existing derivation hash algorithm.
 - `artifact_id` remains an exact compatibility alias during migration.
 - Equivalence assertions never feed linked derivation identities.
@@ -32,7 +32,7 @@
 - `abc/src/abc/tools/identity_contract.clj` — aliases and coordinate validation.
 - `abc/src/abc/tools/equivalence_index.clj` — relation-aware graph builder.
 - Existing manifest/index/snapshot schemas and tools — compatibility integration.
-- `abc/docs/adr/0036-identity-lattice-and-generation-equivalence.md` — governing ADR.
+- `abc/docs/adr/0037-identity-lattice-and-generation-equivalence.md` — governing ADR.
 - `abc/docs/reports/cross-generation-identity-migration.json` — mapping report.
 
 ### Task 1: Inventory and classify identifiers
@@ -70,7 +70,7 @@
 ### Task 5: Documentation, compatibility, and verification
 
 - [ ] Update public diagrams/docs to use derivation/content/subject/release terminology accurately.
-- [ ] Create ADR 0036 with typed evidence and artifact-kind applicability results.
+- [ ] Create ADR 0037 with typed evidence and artifact-kind applicability results.
 - [ ] Run manifest, manifest-index, snapshot-index, analysis identity, and diagram tests.
 - [ ] Run `cd abc && clojure -M:abc/validate-design-bundle`; require exit 0 with manifest and index validation successful.
 - [ ] Run `just validate-migration`; require exit 0 from all root and component checks.

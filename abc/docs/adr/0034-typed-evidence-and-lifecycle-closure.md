@@ -1,4 +1,4 @@
-# ADR 0033: Typed Evidence and Lifecycle Closure
+# ADR 0034: Typed Evidence and Lifecycle Closure
 
 Status: Proposed
 Date: 2026-07-12
@@ -42,14 +42,14 @@ not become runtime dependencies.
 
 ## Acceptance Criteria
 
-- **ADR-0033-C1 — structural invariant:**
+- **ADR-0034-C1 — structural invariant:**
   `test/abc/tools/adr_evidence_test.clj` demonstrates the closed compatibility
   matrix, derived predicates, input binding, and deterministic expiry behavior.
-- **ADR-0033-C2 — structural invariant:** `test/abc/tools/adr_test.clj` and
+- **ADR-0034-C2 — structural invariant:** `test/abc/tools/adr_test.clj` and
   `test/abc/tools/adr_governance_test.clj` demonstrate lifecycle validation,
   cycle-safe stable dependency witnesses, audit containment, and enforcement
   exit behavior.
-- **ADR-0033-C3 — corpus behavior, promotion condition:**
+- **ADR-0034-C3 — corpus behavior, promotion condition:**
   `docs/reports/adr-evidence-migration.json` must contain no problems after
   every Accepted criterion has a compatible passing evidence entry bound to
   current inputs.

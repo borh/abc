@@ -1,11 +1,11 @@
-# ADR 0034: Rights Assessment and External Statements
+# ADR 0035: Rights Assessment and External Statements
 
 Status: Proposed
 Date: 2026-07-12
 Validation scope: structural
 Release authority: none
 Amends: ADR 0018 [scope: Boolean-to-external-rights RDF mapping]
-Depends on: ADR 0033
+Depends on: ADR 0034
 Source: `docs/superpowers/specs/2026-07-11-rights-assessment-remediation-design.md`
 
 ## Implementation Status
@@ -43,17 +43,17 @@ claims and must not be released as a complete rights view.
 
 ## Acceptance Criteria
 
-- **ADR-0034-C1 — structural invariant:** metadata RDF tests demonstrate that
+- **ADR-0035-C1 — structural invariant:** metadata RDF tests demonstrate that
   true, false, nil, absent, and malformed legacy values emit no external rights
   statement.
-- **ADR-0034-C2 — fixture behavior:** SHACL accepts a work without an external
+- **ADR-0035-C2 — fixture behavior:** SHACL accepts a work without an external
   rights IRI while retaining the existing cardinality and IRI checks when one
   is present.
-- **ADR-0034-C3 — operational behavior:** materialize, full-build, and staging
+- **ADR-0035-C3 — operational behavior:** materialize, full-build, and staging
   release boundaries fail before writing artifacts while containment is active.
-- **ADR-0034-C4 — external semantics, promotion condition:** authoritative
+- **ADR-0035-C4 — external semantics, promotion condition:** authoritative
   evidence defines the Aozora source fields and every enabled external mapping.
-- **ADR-0034-C5 — corpus behavior, promotion condition:** migration is total or
+- **ADR-0035-C5 — corpus behavior, promotion condition:** migration is total or
   explicitly quarantines every record and publication accepts only valid
   assessments.
 

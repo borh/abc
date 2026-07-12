@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Follow `2026-07-12-remediation-program-sequencing.md`; consume the completed
-  shared source-assertion foundation and reserve ADR 0035.
+  shared source-assertion foundation and reserve ADR 0036.
 - Requires enforced typed governance before promotion.
 - Preserve `不詳`/`未詳` as explicit unknown source assertions.
 - Empty cells become `not-recorded`; `not-applicable` requires a named rule.
@@ -28,7 +28,7 @@
 - `abc/schemas/source-assertion.schema.json` — foundation-owned dependency; do not create or modify in this plan.
 - `abc/src/abc/tools/temporal_knowledge.clj` — classifier and validation.
 - Existing CSV/person/ingest/RDF/SHACL files — integration.
-- `abc/docs/adr/0035-temporal-knowledge-state.md` — corrective ADR.
+- `abc/docs/adr/0036-temporal-knowledge-state.md` — corrective ADR.
 - `abc/docs/reports/temporal-knowledge-migration.json` — partition and hashes.
 
 ### Task 1: Characterize current temporal behavior
@@ -73,5 +73,5 @@
 - [ ] Run focused temporal, CSV, person, ingest, RDF, and SHACL tests; require zero failures and zero errors.
 - [ ] Run `cd abc && clojure -M:abc/validate-design-bundle`; require exit 0 with the temporal schema and derived-view gates successful.
 - [ ] Run `just validate-migration`; require exit 0 from all root and component checks.
-- [ ] Create/promote ADR 0035 only when the typed full-corpus evidence passes.
+- [ ] Create/promote ADR 0036 only when the typed full-corpus evidence passes.
 - [ ] Commit `docs(adr): accept temporal knowledge-state contract`.

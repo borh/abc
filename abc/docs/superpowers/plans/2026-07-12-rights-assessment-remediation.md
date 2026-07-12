@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Follow `2026-07-12-remediation-program-sequencing.md`; consume the completed
-  shared source-assertion foundation and reserve ADR 0034.
+  shared source-assertion foundation and reserve ADR 0035.
 - Requires governance audit mode for containment and enforced governance before schema promotion.
 - Never infer `InC` from false, nil, absent, malformed, or unknown input.
 - Published manifests are immutable; `--refresh-manifest` is development-fixture-only.
@@ -30,7 +30,7 @@
 - `abc/src/abc/tools/rights_assessment.clj` — validation/mapping/RDF decision boundary.
 - Existing CSV, ingest, metadata/person, SHACL, schema, and test files — consumers.
 - `abc/docs/evidence/aozora-rights-source-contract.md` — bounded authoritative evidence.
-- `abc/docs/adr/0034-rights-assessment-and-external-statements.md` — corrective ADR.
+- `abc/docs/adr/0035-rights-assessment-and-external-statements.md` — corrective ADR.
 - `abc/docs/reports/rights-assessment-migration.json` — deterministic migration report.
 - `abc/data/publication-policy.edn` — explicit temporary rights-publication blocker.
 
@@ -49,7 +49,7 @@
 - [ ] Gather the Aozora field documentation, exact lexical values, work/person differences, jurisdiction, and effective-time semantics into the evidence document.
 - [ ] Hash the evidence document and register it as `:external-authority` with retrieval/review dates and source snapshot bindings.
 - [ ] Decide mappings strictly by the spec's two outcomes: exact match or source-only. Ambiguity selects source-only.
-- [ ] Add the resulting mapping table to ADR 0034; do not place interpretation only in code comments.
+- [ ] Add the resulting mapping table to ADR 0035; do not place interpretation only in code comments.
 - [ ] Commit `docs(rights): record Aozora rights source semantics`.
 
 ### Task 3: Add the rights-assessment schema and pure assessment module
@@ -80,4 +80,4 @@
 - [ ] Run `cd abc && clojure -M:abc/validate-design-bundle`; require exit 0 with schema, RDF, and SHACL gates reported successful.
 - [ ] Run `just validate-migration`; require exit 0 from all root and component checks.
 - [ ] Verify historical manifests against their original schemas and the migration partition totals.
-- [ ] Promote ADR 0034 only when typed evidence and full migration results pass; commit `docs(adr): accept rights assessment contract`.
+- [ ] Promote ADR 0035 only when typed evidence and full migration results pass; commit `docs(adr): accept rights assessment contract`.

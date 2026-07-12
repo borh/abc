@@ -43,7 +43,7 @@ Acceptance Criteria use stable claim IDs and cite entries in a new checked-in
 `docs/adr/adr-evidence.edn` registry. An entry contains:
 
 ```clojure
-{:claim-id "ADR-0033-C1"
+{:claim-id "ADR-0034-C1"
  :claim-kind :external-semantics
  :evidence-kind :external-authority
  :evidence-path "docs/evidence/..."

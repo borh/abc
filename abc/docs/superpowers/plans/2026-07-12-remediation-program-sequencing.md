@@ -63,15 +63,16 @@ preserve them.
 
 | ADR | Owner |
 | --- | --- |
-| 0033 | typed evidence and lifecycle closure |
-| 0034 | rights assessment and external statements |
-| 0035 | temporal knowledge state |
-| 0036 | identity lattice and generation equivalence |
-| 0037 | custom-parser ownership and neutral comparison |
-| 0038 | custom-parser release qualification |
+| 0033 | source bundle identity (Accepted before remediation execution) |
+| 0034 | typed evidence and lifecycle closure |
+| 0035 | rights assessment and external statements |
+| 0036 | temporal knowledge state |
+| 0037 | identity lattice and generation equivalence |
+| 0038 | custom-parser ownership and neutral comparison |
+| 0039 | custom-parser release qualification |
 
 No parallel worker may allocate another ADR in this range. New decisions start
-at ADR 0039 unless this ledger is amended first.
+at ADR 0040 unless this ledger is amended first.
 
 ## Shared Foundation Task
 

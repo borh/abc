@@ -32,8 +32,8 @@
 - `ab-validator/schemas/parser-comparison-study.schema.json` — machine-readable study/report contract.
 - Existing comparator/adapters/report crates — measurements.
 - `abc/data/parser-evidence-citations.edn` and parser evidence validator — typed citations.
-- `abc/docs/adr/0037-custom-parser-ownership-and-neutral-comparison.md` — corrective ADR.
-- `abc/docs/adr/0038-custom-parser-release-qualification.md` — qualification ADR.
+- `abc/docs/adr/0038-custom-parser-ownership-and-neutral-comparison.md` — corrective ADR.
+- `abc/docs/adr/0039-custom-parser-release-qualification.md` — qualification ADR.
 - `ab-validator/docs/superpowers/reports/...` — immutable result artifacts.
 
 ### Task 1: Freeze the research protocol
@@ -81,7 +81,7 @@
 
 ### Task 6: Repair ADR semantics and ownership
 
-- [ ] Create ADR 0037 stating project-owned custom-parser ownership independent of rankings and narrowing ADR 0030 to provenance/reusable-source conclusions.
+- [ ] Create ADR 0038 stating project-owned custom-parser ownership independent of rankings and narrowing ADR 0030 to provenance/reusable-source conclusions.
 - [ ] Preserve prior reports as historical evidence; do not rewrite inconvenient results.
 - [ ] Add evidence-validator tests rejecting comparison citations when used for admission or release claims.
 - [ ] Run ABC parser-evidence/governance tests and commit `docs(adr): separate parser ownership from comparison`.
@@ -91,7 +91,7 @@
 - [ ] Pin the qualification corpus and predeclare fatal, span, silent-drop, diagnostic, IR, publication-structure, time, memory, and timeout predicates.
 - [ ] Emit exact observed/expected values and derived verdicts; verify 0.969 fails a 1.0 predicate.
 - [ ] Admit the exact custom parser/adapter/mapping tuple through ADR 0023 separately from release qualification.
-- [ ] Create ADR 0038 only after every release predicate passes; failing results leave it Proposed.
+- [ ] Create ADR 0039 only after every release predicate passes; failing results leave it Proposed.
 - [ ] Run ABC and ab-validator focused Nix checks; require exit 0 with cargo check, clippy, fmt, tests, and ABC parser-evidence governance successful.
 - [ ] Run root `just validate-migration`; require exit 0 from all root and component checks.
 - [ ] Commit `feat(parser): qualify project-owned parser for release` only if the gate passes.

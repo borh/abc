@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Implement `docs/superpowers/specs/2026-07-12-adr-artifact-backed-evidence-enforcement-design.md` exactly.
-- This plan implements the protocol and audit inventory only. It does not migrate the 137 historical criteria or switch Nix to enforcement.
+- This plan implements the protocol and audit inventory only. It does not migrate the 146 historical criteria or switch Nix to enforcement.
 - Retire the existing inline `:observed`/`:inputs` contract; do not support old and new entry shapes concurrently.
 - Evidence bundles reject every non-integer JSON number and integers outside `[-9007199254740991, 9007199254740991]` recursively.
 - Benchmark observations use scaled integers and one of `nanoseconds`, `bytes`, `count`, or `parts-per-million`.
@@ -45,7 +45,7 @@
 - `abc/test/abc/tools/adr_test.clj` — claim-header parser and corpus inventory tests.
 - `abc/test/abc/tools/adr_governance_test.clj` — aggregate audit/enforce tests.
 - `abc/docs/reports/adr-evidence-migration.json` — audit output with lifecycle and typed-claim problems.
-- `abc/docs/reports/adr-claim-migration-inventory.json` — 25-ADR/137-criterion review inventory.
+- `abc/docs/reports/adr-claim-migration-inventory.json` — 26-ADR/146-criterion review inventory.
 
 ### Task 0: Reconcile the stacked branches and prove the execution baseline
 
@@ -479,7 +479,7 @@ git commit -m "feat(adr): validate hashed evidence bundles and input profiles"
 Replace the existing inline fixture with:
 
 ```clojure
-{:claim-id "ADR-0033-C1"
+{:claim-id "ADR-0034-C1"
  :claim-kind :structural-invariant
  :evidence-kind :structural-test
  :artifact-path "docs/evidence/adr-runs/governance.json"
@@ -621,9 +621,9 @@ Expected: exit 0. The report includes existing lifecycle problems, missing claim
 Update `current-repository-audit-inventory-is-explicit` to assert:
 
 ```clojure
-(= 25 accepted-adr-count)
-(= 137 accepted-criterion-count)
-(= 137 missing-claim-header-count)
+(= 26 accepted-adr-count)
+(= 146 accepted-criterion-count)
+(= 146 missing-claim-header-count)
 ```
 
 If any active branch legitimately changed the Accepted inventory before execution, update the spec and plan with the new measured counts before changing this assertion.
@@ -832,7 +832,8 @@ Use an explicit map in the namespace, not filename heuristics:
  22 "temporal-person-ingest" 23 "parser-ir-publication"
  24 "parser-ir-publication" 25 "parser-ir-publication"
  29 "diagrams-governance" 30 "parser-ir-publication"
- 31 "diagrams-governance" 32 "parser-ir-publication"}
+ 31 "diagrams-governance" 32 "parser-ir-publication"
+ 33 "foundation-runtime-identity"}
 ```
 
 Unknown Accepted ADRs are `unclassified` and make the CLI exit 1 after writing the report, forcing an explicit plan assignment.
@@ -854,7 +855,7 @@ clojure -M:abc/adr-evidence-inventory -- \
   --output docs/reports/adr-claim-migration-inventory.json
 ```
 
-Expected: exit 0; report says 25 Accepted ADRs and 137 criteria, with no `unclassified` rows.
+Expected: exit 0; report says 26 Accepted ADRs and 146 criteria, with no `unclassified` rows.
 
 - [ ] **Step 5: Run GREEN and commit**
 
@@ -945,7 +946,7 @@ Use the committed inventory to write five separate plans in later reviewed sessi
 2. schema/RDF/TEI claims;
 3. temporal/person/ingest claims;
 4. parser/IR/publication claims;
-5. diagrams/governance, ADR 0033 self-certification, and enforcement.
+5. diagrams/governance, ADR 0034 self-certification, and enforcement.
 
 Each plan must classify unsupported claims for scoped correction or demotion rather than inventing evidence.
 
@@ -968,6 +969,6 @@ If the worktree is already clean, do not create an empty verification commit.
 - Spec coverage: bundle schemas, safe numerics, input profiles, inline-contract retirement, claim parsing, typed joins, error deduplication, audit aggregation, and migration inventory each have an owning task.
 - Input-closure boundary: `clojure-test-v1` derives only the statically visible first-`ns`-form repository namespace graph. Runtime data, `load`, in-body `require`, and dynamic dependencies remain reviewable explicit inputs rather than being mislabeled as mechanically complete.
 - Trust boundary: traversal and real-path checks have one shared implementation, and executable capture refuses provenance from dirty worktrees.
-- Scope: the 137-criterion scientific review is deliberately decomposed into five follow-up plans; this plan ends at an honest failing enforcement checkpoint.
+- Scope: the 146-criterion scientific review is deliberately decomposed into five follow-up plans; this plan ends at an honest failing enforcement checkpoint.
 - Type consistency: `claim-id`, `claim-kind`, `artifact-path`, `artifact-hash`, `observation-key`, `input_profile`, and problem-kind names match the approved spec throughout.
 - No runtime solver dependency is introduced.

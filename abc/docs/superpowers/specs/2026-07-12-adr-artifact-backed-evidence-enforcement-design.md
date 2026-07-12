@@ -29,8 +29,8 @@ its tests; the old and new contracts never coexist as two accepted entry
 shapes.
 
 Enabling enforcement in this state would enforce only lifecycle metadata, not
-the typed-evidence regime described by ADR 0033. The current Accepted corpus
-contains 25 ADRs and 137 Acceptance Criteria, so migration must follow a real
+the typed-evidence regime described by ADR 0034. The current Accepted corpus
+contains 26 ADRs and 146 Acceptance Criteria, so migration must follow a real
 protocol rather than manufacture nominal passing entries.
 
 ## Decision
@@ -66,7 +66,7 @@ Accepted ADR criterion
 Every Accepted Acceptance Criterion begins with this exact form:
 
 ```markdown
-- **ADR-0033-C1 — structural-invariant:** Claim text and evidence citations.
+- **ADR-0034-C1 — structural-invariant:** Claim text and evidence citations.
 ```
 
 Claim IDs match `^ADR-[0-9]{4}-C[1-9][0-9]*$`. The four-digit claim prefix
@@ -97,7 +97,7 @@ coverage.
 An executable-evidence registry entry has this shape:
 
 ```clojure
-{:claim-id "ADR-0033-C1"
+{:claim-id "ADR-0034-C1"
  :claim-kind :structural-invariant
  :evidence-kind :structural-test
  :artifact-path "docs/evidence/adr-runs/adr-governance-tests.json"
@@ -304,7 +304,7 @@ Artifact-root failures such as a missing bundle, artifact-hash drift, invalid
 schema, or input-hash drift are emitted once per artifact/input root cause and
 carry a sorted `:affected-claim-ids` vector. Claim-local problems such as a
 missing observation or failed predicate remain per claim. This prevents one
-stale shared bundle from producing 137 indistinguishable diagnostics while
+stale shared bundle from producing 146 indistinguishable diagnostics while
 preserving its complete impact set.
 
 ## Migration and Enforcement
@@ -321,15 +321,15 @@ Migration proceeds without red intermediate commits:
 4. Join claims, registry entries, and artifacts in `adr-governance`; legacy
    mode remains unchanged.
 5. Generate bundles from real focused checks.
-6. Migrate the 137 Accepted criteria without deleting or weakening their
+6. Migrate the 146 Accepted criteria without deleting or weakening their
    substantive requirements.
 7. Resolve every unsupported criterion explicitly. Demotion or scoped
    correction is an expected and acceptable migration result, not an
    exceptional fallback; enforcement does not imply that all historical
    claims were supportable as written.
 8. Require an empty audit report.
-9. Add ADR 0033's structural and full-corpus evidence.
-10. Promote ADR 0033 and switch the Nix gate to enforcement in the same final
+9. Add ADR 0034's structural and full-corpus evidence.
+10. Promote ADR 0034 and switch the Nix gate to enforcement in the same final
    transition.
 
 The corpus migration is split into reviewable families:
@@ -339,7 +339,7 @@ The corpus migration is split into reviewable families:
 - temporal, person, and ingest;
 - parser, IR, and publication;
 - diagrams and governance; and
-- ADR 0033 self-certification and enforcement.
+- ADR 0034 self-certification and enforcement.
 
 Claims that lack adequate evidence are not given invented passing
 observations. Their governing scope remains or becomes Proposed through an

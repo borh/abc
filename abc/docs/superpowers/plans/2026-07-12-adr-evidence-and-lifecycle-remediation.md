@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Follow `2026-07-12-remediation-program-sequencing.md`; this plan runs after
-  the shared foundation and owns reserved ADR 0033.
+  the shared foundation and owns reserved ADR 0034.
 - Implement `2026-07-11-adr-evidence-and-lifecycle-remediation-design.md` exactly.
 - Keep graph traversal in ordinary deterministic Clojure; logic/solver models
   are review evidence and must not become production dependencies.
@@ -32,7 +32,7 @@
 - `abc/src/abc/tools/adr_governance.clj` — audit/enforce orchestration and report output.
 - `abc/test/abc/tools/adr_evidence_test.clj` — protocol and property tests.
 - `abc/test/abc/tools/adr_test.clj` — header and graph-closure tests.
-- `abc/docs/adr/0033-typed-evidence-and-lifecycle-closure.md` — governing ADR.
+- `abc/docs/adr/0034-typed-evidence-and-lifecycle-closure.md` — governing ADR.
 
 ### Task 1: Define the evidence protocol
 
@@ -72,11 +72,11 @@
 - [ ] Run the Nix audit gate; require exit 0 while its report contains the ADR 0031 → ADR 0029 path.
 - [ ] Commit with `git commit -m "feat(adr): audit lifecycle scope and dependency closure"`.
 
-### Task 4: Author ADR 0033 and repair canonical dependency closure
+### Task 4: Author ADR 0034 and repair canonical dependency closure
 
-**Files:** Create ADR 0033 and repair ADR 0031/0029 by extracting or accepting only the implemented graph contract.
+**Files:** Create ADR 0034 and repair ADR 0031/0029 by extracting or accepting only the implemented graph contract.
 
-- [ ] Add ADR 0033 as Proposed with structural evidence for the validator and full-corpus evidence as a promotion condition.
+- [ ] Add ADR 0034 as Proposed with structural evidence for the validator and full-corpus evidence as a promotion condition.
 - [ ] Resolve the only current noncanonical dependency and run audit mode; require no `:noncanonical-dependency-path` problems.
 - [ ] Commit the ADR/graph repair separately with `git commit -m "docs(adr): define typed governance and close canonical dependencies"`.
 
@@ -88,7 +88,7 @@
 - [ ] Replace overclaiming `prove/proves` language where the claim is non-structural.
 - [ ] Run audit mode; expect an empty problem list.
 - [ ] Switch the Nix `adr-governance` check from audit to enforcement, rerun governance, and require exit 0 with an empty problem array.
-- [ ] Promote ADR 0033 only if its own new-regime evidence passes.
+- [ ] Promote ADR 0034 only if its own new-regime evidence passes.
 - [ ] Commit corpus migration with `git commit -m "docs(adr): migrate acceptance evidence and lifecycle metadata"`.
 
 ### Task 6: Verify the governance workstream

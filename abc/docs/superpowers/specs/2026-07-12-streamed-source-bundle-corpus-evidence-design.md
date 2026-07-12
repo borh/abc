@@ -3,6 +3,11 @@
 **Date:** 2026-07-12
 **Status:** Proposed
 
+**Builds on:**
+
+- `docs/adr/0033-source-bundle-identity.md`
+- `docs/superpowers/specs/2026-07-12-source-bundle-identity-design.md`
+
 ## Problem
 
 The checked source-bundle corpus report currently measures member and total
@@ -17,6 +22,15 @@ production. It must not duplicate filename decoding, path normalization,
 collision policy, limit enforcement, or archive-error classification in a
 second corpus-only implementation.
 
+The production streaming implementation already exists inside
+`source-bundle/inspect-open-zip`: `read-member!` reads each body through a
+`DigestInputStream`, hashes it, and enforces actual-byte limits after the
+declared-size pre-check. This change is an extract-and-reuse refactor, not a new
+ZIP streamer. The current corpus report instead combines `raw-zip-stats`
+(declared sizes from a separate archive open) with `inspect-zip-metadata`
+(decoding, normalization, collision, and candidate evidence without body
+reads).
+
 ## Decision
 
 Separate source-bundle inspection into two cohesive operations:
@@ -27,6 +41,11 @@ Separate source-bundle inspection into two cohesive operations:
 Both production inspection and corpus evidence consume the same scan result.
 The corpus report therefore measures actual streamed bytes, not declared ZIP
 metadata, while production retains fail-loud admission semantics.
+
+As part of the migration, delete `source-bundle/inspect-zip-metadata` and
+`source-bundle-report/raw-zip-stats` after their callers move to the shared
+scan. No corpus-only filename, collision, candidate, or size construction
+remains.
 
 ## Shared Bounded Scan
 
@@ -74,6 +93,13 @@ structurally readable archive, including asset-only and otherwise
 admission-rejected bundles. Production still remains bounded and fails before
 any publication or manifest is authored.
 
+This changes rejection-path cost. A collision or wrong-cardinality bundle that
+currently fails after O(member-name) work will instead stream and hash its
+bounded bodies before rejection: at most 1,024 members, 16 MiB per member, and
+32 MiB total under v1 defaults. The extra work is accepted because these cases
+are rare, rejection-only, and the shared scan is what makes rejected-bundle
+evidence trustworthy. Success-path streaming cost is unchanged.
+
 ## Corpus Evidence
 
 The report walks only `cards/*/files/*.zip`, as today. For each archive it uses
@@ -91,7 +117,12 @@ For structurally readable archives it records:
 
 For archives that cannot be structurally opened, the report records the marked
 production reason and may invoke `7zz l -slt` only to classify historical
-recoverability. `7zz` output never supplies members, hashes, or admission.
+listability. `7zz` output never supplies members, hashes, or admission.
+
+`7zz l -slt` proves only that 7-Zip can list archive metadata. It does not prove
+that member bodies can be streamed or that a repaired archive would pass v1
+admission. The new report calls this disposition `7zz-listable`, not
+recoverable; it remains informational.
 
 The checked JSON gains:
 
@@ -100,9 +131,14 @@ The checked JSON gains:
   "measurement_construction": "abc-source-bundle-streamed-evidence-v1",
   "admitted_zip_count": 0,
   "rejected_zip_count": 0,
-  "rejection_reason_counts": {}
+  "rejection_reason_counts": {},
+  "java_unreadable_7zz_listable_count": 0,
+  "java_unreadable_7zz_unlistable_count": 0
 }
 ```
+
+The versioned report replaces the misleading historical
+`java_unreadable_7zz_recoverable_count` names with `7zz_listable` names.
 
 Existing readability, encoding, collision, damaged-path, and maximum fields
 remain for continuity, but the maximum fields now mean actual streamed bytes.
@@ -110,8 +146,40 @@ remain for continuity, but the maximum fields now mean actual streamed bytes.
 asset-only bundles are readable and rejected with
 `no-primary-text-member`.
 
+The report also pins every declared-versus-actual mismatch rather than only
+the maxima:
+
+```json
+{
+  "declared_actual_size_mismatch_member_count": 1,
+  "declared_actual_size_mismatches": [
+    {
+      "archive_path": "cards/001393/files/50710_ruby_36965.zip",
+      "member_path": "fushigino_kunino_alice_musical.txt",
+      "declared_bytes": 68007,
+      "actual_bytes": 68497
+    }
+  ]
+}
+```
+
+An independent full-corpus stream established the migration expectation for
+pin `0e9ea3e586eb0aa34039fabfc85a407d2f98b165`: the maximum member remains
+12,631,833 bytes and the maximum bundle total remains 27,874,310 bytes, but one
+non-maximum member has the understated declaration above. Those maxima must
+not be silently re-blessed if implementation produces different values; any
+other mismatch or maximum change is a migration finding to investigate.
+
 The report is deterministic: paths and reason maps are sorted, and no staged
 temporary path enters evidence.
+
+The checked gate now performs roughly 17,884 private staging copies plus full
+member streams instead of header-only size reads. This is an intentional CI
+runtime and I/O increase. The Nix-store corpus is immutable, but production
+uses staging to bind archive and member identity to one artifact; the gate
+keeps that same path rather than introducing a cheaper evidence-only branch.
+Implementation records the old and new gate wall times in the plan report. No
+hard runtime threshold is set until that first reproducible measurement exists.
 
 ## Limits and Future Pin Updates
 
@@ -153,6 +221,8 @@ prove:
 - damaged archives remain classification-only and never reach `7zz` for
   identity;
 - report construction/version and reason counts are deterministic; and
+- the one pinned declared/actual mismatch and unchanged actual maxima are
+  reproduced exactly; and
 - the full pinned-corpus Nix check reproduces the checked JSON byte-for-byte.
 
 The known RFC 8785 source-bundle fixture, snapshot validation, P16 composition,
@@ -172,7 +242,11 @@ and existing admission-disposition tests remain unchanged and green.
 
 - Production inspection and corpus evidence consume one shared bounded member
   scan.
+- `inspect-zip-metadata` and `raw-zip-stats` have no remaining definitions or
+  callers.
 - Checked maxima are computed from actual streamed bytes.
+- The checked report pins the known understated member declaration and rejects
+  any unreviewed mismatch or maximum change.
 - Every structurally readable pinned ZIP is streamed under production limits.
 - The report distinguishes structural readability from bundle admission.
 - Asset-only, collision, limit, and damaged-archive dispositions are stable and

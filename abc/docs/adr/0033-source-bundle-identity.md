@@ -82,6 +82,12 @@ Accepted on 2026-07-12 with the following implementation evidence:
 - The `source-bundle-corpus` Nix check reproduces the checked-in report for
   Aozora commit `0e9ea3e586eb0aa34039fabfc85a407d2f98b165` and verifies the
   production bounds and damaged-archive disposition.
+- The checked corpus report uses the same staged, bounded body scan as
+  production admission. Actual streamed maxima remain 12,631,833 bytes per
+  member and 27,874,310 bytes per bundle. It also pins one understated
+  central-directory declaration: `cards/001393/files/50710_ruby_36965.zip`
+  declares 68,007 bytes for `fushigino_kunino_alice_musical.txt`, while the
+  bounded stream reads 68,497.
 - AAT and parser-IR schemas expose `primary_text_hash`; the Rust converter's
   explicit `work_content_hash` option and CLI carry ABC's authoritative bundle
   identity without computing it. Rust tests pin alias validation, distinct

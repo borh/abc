@@ -1,7 +1,7 @@
 # Streamed Source-Bundle Corpus Evidence Design
 
 **Date:** 2026-07-12
-**Status:** Proposed
+**Status:** Implemented
 
 **Builds on:**
 
@@ -273,6 +273,32 @@ and existing admission-disposition tests remain unchanged and green.
 - Changing `abc-source-bundle-v1` identity bytes.
 - Changing publication, parser, or reuse behavior.
 - Rewriting historical corpus reports for older pins.
+
+## Implementation Evidence
+
+Implemented on 2026-07-12. `abc.tools.source-bundle/scan-zip` exposes the
+existing private-stage, bounded member stream, and `admit-scan!` applies the v1
+logical admission policy to its completed facts. Production `inspect-zip` and
+`abc.tools.source-bundle-report` now compose those same operations.
+`inspect-zip-metadata` and the report-local `raw-zip-stats` were deleted, so no
+second filename, collision, candidate, or size construction remains.
+
+The checked
+`data/source-bundle/aozorabunko-0e9ea3e-summary.json` records actual streamed
+maxima, admission counts, stable rejection reasons, and the exact 68,007 versus
+68,497 byte declaration mismatch. Focused `source-bundle-test` and
+`source-bundle-report-test` coverage pins scan/admission composition,
+byte-array content equality, raw EFS-bit accounting, resource-failure
+precedence, shared collision analysis, and protected error propagation. The
+`source-bundle-corpus` Nix check reproduces the report byte-for-byte.
+
+Using Bash `TIMEFORMAT` on the implementation workstation because
+`/usr/bin/time` was unavailable, the pre-change Nix corpus gate took 64.840
+seconds, the direct streamed report took 69.465 seconds, and a fresh streamed
+Nix corpus gate took 73.253 seconds. The pre-change timing was a fresh build in
+the sense that its output was not already built, though it did not use
+`--rebuild`; these values are implementation evidence, not a permanent CI
+threshold.
 
 ## Acceptance Criteria
 

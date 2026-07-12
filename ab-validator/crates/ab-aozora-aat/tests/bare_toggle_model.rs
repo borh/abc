@@ -1,6 +1,7 @@
 //! Rust↔Python mirror test + property-test target for the bare-toggle
-//! inline-container classifier (`pair_bare_toggles`, folded into
-//! `inline_content`'s LAST step in `src/lib.rs`; Phase 5 Task 4).
+//! inline-container classifier (`pair_bare_toggles` in `src/lib.rs`,
+//! applied AFTER block classification to every built content array via
+//! `pair_bare_toggles_in_blocks` — plan amendment 2; Phase 5 Task 4).
 //!
 //! `pair_bare_toggles` itself is `pub(crate)` — this integration test
 //! reaches it only indirectly, through the crate's public

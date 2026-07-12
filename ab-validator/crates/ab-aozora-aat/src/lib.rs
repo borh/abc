@@ -573,12 +573,17 @@ fn build_aat(
         .iter()
         .map(|entry| ((entry.span.start, entry.span.end), entry.clone()))
         .collect::<BTreeMap<_, _>>();
-    let mut blocks = blocks_from_inline_content(inline_content(
+    // Bare-toggle pairing runs AFTER block classification (plan
+    // amendment 2): `blocks_from_inline_content` must see the original node
+    // stream — raw toggle markers included — so paragraph/jizume
+    // segmentation matches the no-pass baseline; adoption then rewrites
+    // only the toggle spans inside the built tree.
+    let mut blocks = pair_bare_toggles_in_blocks(blocks_from_inline_content(inline_content(
         decoded,
         nodes,
         &gaiji_by_start,
         &ruby_by_span,
-    ));
+    )));
     let mut warnings = diagnostics
         .iter()
         .map(|diagnostic| diagnostic_warning(diagnostic, &decoded.span_ctx))
@@ -1424,13 +1429,14 @@ fn inline_content(
             "x-break-kind": "page"
         }));
     }
-    // LAST step: fold same-line bare-toggle marker pairs into inline
-    // yokogumi/keigakomi containers (Phase 5, Task 4). Runs over the fully
-    // built inline array; consumes only adopted marker nodes and preserves
-    // every other node unchanged and in order, so the downstream verbose
-    // block classifier (`blocks_from_inline_content`) sees the identical
-    // stream for all non-bare-toggle inputs.
-    pair_bare_toggles(content)
+    // NOTE (plan amendment 2, Task 9 delta-gate block): the bare-toggle
+    // pairing pass does NOT run here. It must run AFTER block
+    // classification (`pair_bare_toggles_in_blocks` in `build_aat`):
+    // consuming the raw `containerOpen`/`containerClose` marker nodes
+    // before `blocks_from_inline_content` scans this stream changes
+    // paragraph/jizume segmentation (the markers act as container
+    // boundaries during block classification — corpus work 000026_55738).
+    content
 }
 
 /// A same-line bare-toggle marker located in the inline array: its `content`
@@ -1469,10 +1475,39 @@ fn bare_toggle_construct_index(construct: &str) -> usize {
     usize::from(construct == "keigakomi")
 }
 
+/// Apply `pair_bare_toggles` to every content array of an already-built
+/// block tree (plan amendment 2): recurse into each node's `content`/
+/// `children` arrays FIRST, then run the pairing pass over the array at this
+/// level. Post-order matters — a container the pass creates holds nodes the
+/// per-line grammar already ruled on (adopted-into or declined-in-place), and
+/// re-running the pass inside it could re-adopt a pair the full line
+/// declined (e.g. a rolled-back same-construct pair sitting inside the other
+/// construct's adopted container). Running AFTER `blocks_from_inline_content`
+/// keeps block segmentation identical to the no-pass baseline: the raw
+/// bare-toggle `containerOpen`/`containerClose` marker nodes act as container
+/// boundaries during block classification, so consuming them earlier changed
+/// paragraph/jizume segmentation (corpus work `000026_55738`; 83-work delta).
+fn pair_bare_toggles_in_blocks(nodes: Vec<Value>) -> Vec<Value> {
+    let mut nodes = nodes;
+    for node in &mut nodes {
+        if let Some(map) = node.as_object_mut() {
+            for key in ["content", "children"] {
+                if let Some(Value::Array(items)) = map.get_mut(key) {
+                    *items = pair_bare_toggles_in_blocks(mem::take(items));
+                }
+            }
+        }
+    }
+    pair_bare_toggles(nodes)
+}
+
 /// Fold same-line bare-toggle marker pairs into inline containers, mirroring
 /// `classify_line` in `reports/aat-fidelity/bare-toggle-placement.py` (the
 /// normative two-pass grammar). A pure `Vec<Value> -> Vec<Value>` function
-/// applied as the last step of `inline_content`.
+/// applied to every block/container content array AFTER block classification
+/// (`pair_bare_toggles_in_blocks`, called from `build_aat` — plan
+/// amendment 2; the markers reach it as raw nodes the façade tagged
+/// `containerOpen`/`containerClose`).
 ///
 /// Pass 1 runs one global nesting stack over each line's markers in array (==
 /// source) order: a same-construct reopen invalidates the construct but still
@@ -2861,10 +2896,13 @@ mod tests {
         }
     }
 
-    /// The REAL pre-pass inline array the adapter feeds `pair_bare_toggles`,
-    /// built by reusing `inline_content` with the same inputs `build_aat`
-    /// constructs (no hand-built approximation). For zero-adoption lines the
-    /// pass is identity, so this equals the array the classifier reads.
+    /// A REAL adapter-built node array for `pair_bare_toggles`, produced by
+    /// reusing `inline_content` with the same inputs `build_aat` constructs
+    /// (no hand-built approximation). Since plan amendment 2 the adapter
+    /// applies the pass to the post-block-classification content arrays
+    /// (`pair_bare_toggles_in_blocks`), but for these single-paragraph,
+    /// zero-adoption lines block classification wraps the identical node
+    /// sequence in one paragraph, so the array the pass reads is this one.
     fn inline_array_for(line: &str) -> Vec<Value> {
         let src = format!("{line}\n");
         let decoded = decode_source_bytes(src.as_bytes()).unwrap();
@@ -3075,6 +3113,144 @@ mod tests {
             raws.iter().filter(|s| *s == "［＃横組み］").count(),
             1,
             "only line 2's orphan open stays raw: {raws:?}"
+        );
+    }
+
+    /// Depth-first search for a `kind:"raw"` node whose `source` equals
+    /// `source` exactly.
+    fn find_raw_with_source<'a>(v: &'a Value, source: &str) -> Option<&'a Value> {
+        match v {
+            Value::Object(map) => {
+                if map.get("kind").and_then(Value::as_str) == Some("raw")
+                    && map.get("source").and_then(Value::as_str) == Some(source)
+                {
+                    return Some(v);
+                }
+                for key in ["blocks", "content", "children"] {
+                    if let Some(child) = map.get(key)
+                        && let Some(found) = find_raw_with_source(child, source)
+                    {
+                        return Some(found);
+                    }
+                }
+                None
+            }
+            Value::Array(items) => items
+                .iter()
+                .find_map(|item| find_raw_with_source(item, source)),
+            _ => None,
+        }
+    }
+
+    /// Rebuild `v` with every yokogumi/keigakomi inline container expanded
+    /// back to `[open, ...content, close]` — the delta audit's projection
+    /// (adoption undone, everything else untouched). `open`/`close` are the
+    /// raw marker nodes the no-pass tree kept; suitable for single-pair
+    /// inputs (every container expands to the same marker pair).
+    fn expand_bare_toggle_containers(v: &Value, open: &Value, close: &Value) -> Value {
+        match v {
+            Value::Array(items) => Value::Array(
+                items
+                    .iter()
+                    .flat_map(|item| {
+                        let kind = item.get("kind").and_then(Value::as_str);
+                        if kind == Some("yokogumi") || kind == Some("keigakomi") {
+                            let mut out = vec![open.clone()];
+                            if let Some(children) = item.get("content").and_then(Value::as_array) {
+                                out.extend(
+                                    children
+                                        .iter()
+                                        .map(|c| expand_bare_toggle_containers(c, open, close)),
+                                );
+                            }
+                            out.push(close.clone());
+                            out
+                        } else {
+                            vec![expand_bare_toggle_containers(item, open, close)]
+                        }
+                    })
+                    .collect(),
+            ),
+            Value::Object(map) => {
+                let mut expanded = map.clone();
+                for key in ["blocks", "content", "children"] {
+                    if let Some(child) = map.get(key) {
+                        expanded.insert(
+                            key.to_owned(),
+                            expand_bare_toggle_containers(child, open, close),
+                        );
+                    }
+                }
+                Value::Object(expanded)
+            }
+            _ => v.clone(),
+        }
+    }
+
+    #[test]
+    fn bare_toggle_inside_jizume_block_preserves_block_structure() {
+        // Corpus shape 000026_55738 (Task 9 delta-gate BLOCK → plan
+        // amendment 2): a compound 字下げ (burasage) block whose body line
+        // carries a bare yokogumi pair, closed by ここで字下げ終わり, then
+        // another paragraph. With the pass running BEFORE block
+        // classification, consuming the marker nodes changed segmentation
+        // (`find_matching_jisage_close` no longer aborted at the bare
+        // `containerOpen`, so the terminator was consumed and the following
+        // paragraph merged into the burasage paragraph). The pass now runs
+        // post-block-classification: the FULL block tree must equal the
+        // no-pass tree except for exactly the adopted-pair rewrite.
+        let src = "［＃ここから２字下げ、折り返して３字下げ］\n\
+                   Ａ＝Ａ［＃横組み］ＡＢ［＃横組み終わり］\n\
+                   ［＃ここで字下げ終わり］\n\
+                   次の段落\n";
+
+        // (a) the pair adopts with the right content.
+        let doc = aat_value_for(src);
+        let container = find_first_node(&doc, "yokogumi");
+        let content = container["content"].as_array().unwrap();
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0]["kind"], "text");
+        assert_eq!(content[0]["value"], "ＡＢ");
+
+        // (b) strongest form (mirrors the delta audit's projection): expand
+        // the adopted container back to [open, content, close] and assert
+        // the whole block tree equals the tree built WITHOUT the pass —
+        // block kinds, paragraph segmentation, jizume terminator handling,
+        // spans, provenance: everything.
+        let decoded = decode_source_bytes(src.as_bytes()).unwrap();
+        let (nodes, _diagnostics, gaiji, ruby) = projections(&decoded.span_text).unwrap();
+        let gaiji_by_start = gaiji
+            .iter()
+            .map(|entry| (entry.span.start, entry.clone()))
+            .collect::<BTreeMap<_, _>>();
+        let ruby_by_span = ruby
+            .iter()
+            .map(|entry| ((entry.span.start, entry.span.end), entry.clone()))
+            .collect::<BTreeMap<_, _>>();
+        let no_pass_blocks = Value::Array(blocks_from_inline_content(inline_content(
+            &decoded,
+            &nodes,
+            &gaiji_by_start,
+            &ruby_by_span,
+        )));
+        let open = find_raw_with_source(&no_pass_blocks, "［＃横組み］")
+            .expect("no-pass tree keeps the open marker raw")
+            .clone();
+        let close = find_raw_with_source(&no_pass_blocks, "［＃横組み終わり］")
+            .expect("no-pass tree keeps the close marker raw")
+            .clone();
+        let expanded = expand_bare_toggle_containers(&doc["blocks"], &open, &close);
+        assert_eq!(
+            expanded, no_pass_blocks,
+            "block tree must differ from the no-pass tree ONLY by the adopted-pair rewrite"
+        );
+
+        // The regression's visible symptom, pinned directly: the 字下げ
+        // terminator must not be dropped.
+        let raws = raw_sources_of(&doc);
+        assert!(
+            raws.iter().any(|s| s == "［＃ここで字下げ終わり］"),
+            "jisage terminator dropped: {raws:?}"
         );
     }
 

@@ -1,5 +1,15 @@
 # Aozora Notation-Spec Comparison
 
+Note (Phase 5 closure): this file's `.summary.json` companion
+(`2026-07-12-phase5-c5-conformance.summary.json`) is byte-identical to
+`2026-07-12-phase4-retirement-conformance.summary.json` — expected from a
+deterministic pipeline run over unchanged legacy comparison-lane binaries
+after the Phase 4 retirement dropped 2 adapters from the wider Phase 4
+comparison set down to the 5 lanes reported here; the `ab-aozora` rows in
+this report independently verify zero row drift against the true C4
+baseline (`2026-07-12-phase5-c5-conformance-gate.summary.json`), not
+against this retirement snapshot.
+
 - vectors_dir: `/nix/store/55sq8wlgl97rfdyqvnncxyz4j33pp6l9-upstream-aozora-notation-spec/conformance/vectors`
 - rows: 635
 

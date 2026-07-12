@@ -34,8 +34,11 @@
   "id": "ab-aozora-phase5-c5-004deaf",
   "out_dir": "/db/ab-validator/aat-corpus/ab-aozora-phase5-c5-004deaf",
   "aat_dir": "/db/ab-validator/aat-corpus/ab-aozora-phase5-c5-004deaf/aat/ab-aozora",
-  "content_hash": "sha256:f89d36c7bb0d0ce7344840abf3e82538f54b3e515c23ac00c14b1c26bca5a484",
-  "content_hash_lib": "reports/lib/aat_hash.py hash_aat_dir (same lib resolve-run-set.py uses); independently recomputed and equal to metadata.json output_content_hash"
+  "aat_dir_content_hash": "sha256:153471c217fc734e96a7e9a641deb366a936a03c960945904ed1790d559c9055",
+  "aat_dir_content_hash_note": "the run-set pin (reports/aat-fidelity/run-sets/current.json adapters.ab-aozora.expected.content_hash after the atomic repoint, commit 3ec1d042); computed over aat_dir",
+  "output_content_hash": "sha256:f89d36c7bb0d0ce7344840abf3e82538f54b3e515c23ac00c14b1c26bca5a484",
+  "output_content_hash_note": "the metadata.json output_content_hash for out_dir (the candidate dump's parent output directory, one level above aat_dir); a distinct hash coordinate from aat_dir_content_hash, not a duplicate or a typo",
+  "content_hash_lib": "reports/lib/aat_hash.py hash_aat_dir (same lib resolve-run-set.py uses); both hashes independently recomputed and equal to their respective metadata.json fields"
  },
  "expectation_rebinding_commit": "a443af0cd9b372f92b3e03c8d6645997c24b76a1",
  "gates": {

@@ -4,12 +4,12 @@
   skip/reuse/rebuild of soranoha-build-publication over generated content
   trees, pin-chain composition (D7), and sampled integrity faults.
 
-  The parser adapter is stubbed with the REAL hash contract: parser-IR
-  source.work_content_hash = sha256 of the member bytes the adapter
-  receives (ab-aozora-aat decode_source_bytes hashes stdin;
-  ab-aat-to-parser-ir copies meta.source_hash). official-source.json
-  source_hash is the raw-ZIP hash, so the two can never agree — the D7
-  divergence gated in the pin-chain property."
+  The parser adapter is stubbed with the REAL split identity contract:
+  parser-IR source.work_content_hash is the bundle hash supplied by ABC,
+  while source.primary_text_hash is the independently computed member hash.
+  official-source.json source_hash remains the raw-ZIP compatibility alias,
+  so old snapshot validation still fails across roles — the D7 divergence
+  gated in the pin-chain property."
   (:require [abc.sim.divergences :as div]
             [abc.sim.gen :as sgen]
             [abc.sim.harness :as harness]
@@ -33,27 +33,30 @@
            [java.util.zip ZipEntry ZipOutputStream]))
 
 (defn- realistic-stub
-  "Adapter-chain double with the real hash contract (member-bytes hash;
-  see ns docstring and D7). Other fields mirror soranoha_test.clj's stub."
-  [{:keys [source-bytes aat-file parser-ir-file divergence-file]}]
+  "Adapter-chain double with the real split bundle/member hash contract."
+  [{:keys [source-bytes work-content-hash aat-file parser-ir-file
+           divergence-file]}]
   (let [member-hash (hash/format-sha256 (hash/sha256-bytes source-bytes))]
     (abc-json/write-deterministic-json-file!
      aat-file
      {"version" 1 "work_id" "stub" "blocks" []
       "meta" {"adapter" "stub" "adapter_version" "test"
-              "source_encoding" "utf-8" "source_hash" member-hash
+              "source_encoding" "utf-8"
+              "source_hash" member-hash
+              "primary_text_hash" member-hash
               "parse_complete" true "warnings" []}})
     (abc-json/write-deterministic-json-file!
      parser-ir-file
      {"schema_hash" (manifest/schema-hash "schemas/parser-ir.schema.json")
-      "source" {"work_content_hash" member-hash
+      "source" {"work_content_hash" work-content-hash
+                "primary_text_hash" member-hash
                 "encoding" "utf-8" "normalization" "source"}
       "derived_from" {"aat_adapter" "stub" "aat_adapter_version" "test-stub"
                       "aat_version" 1
                       "mapping_id" (str "https://w3id.org/abc/mappings/"
                                         "aat-v1-to-parser-ir-v1/generated-probe")
                       "mapping_schema_hash" (files/example-hash "38")
-                      "mapping_version" "0.2.0"}
+                      "mapping_version" "0.3.0"}
       "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
                                "splitter_id" "ab-plaintext-japanese-v1"
                                "coordinate_system" "decoded_utf8"
@@ -97,6 +100,10 @@
 (defn- official-source [out-root slug]
   (abc-json/read-json-file
    (io/file out-root "materialized-root" "works" slug "official-source.json")))
+
+(defn- source-bundle [out-root slug]
+  (abc-json/read-json-file
+   (io/file out-root "materialized-root" "works" slug "source-bundle.json")))
 
 (defn- pub-files [out-root slug]
   (into (sorted-map)
@@ -162,8 +169,9 @@
                                         :snapshot-date "2026-07-13" :replace? true}))]
           (is (= "passed" (get st slug-a)))
           (is (= "reused" (get st slug-b)))
-          (is (= tampered-hash (marker out slug-a)))
-          (is (= tampered-hash (get (official-source out slug-a) "source_hash"))))))))
+          (is (= tampered-hash (get (official-source out slug-a) "source_hash")))
+          (is (= (get (official-source out slug-a) "bundle_hash")
+                 (marker out slug-a))))))))
 
 (deftest p16-4-prior-marker-fault-test
   ^{:clj-kondo/ignore [:unresolved-symbol]}
@@ -181,7 +189,7 @@
                                         :snapshot-date "2026-07-13" :replace? true}))]
           (is (= "passed" (get st slug-a)))
           (is (= "reused" (get st slug-b)))
-          (is (= (get-in (render/content-sources m) ["000101" :source-hash])
+          (is (= (get (official-source out slug-a) "bundle_hash")
                  (marker out slug-a)))))
       (testing "missing marker → rebuild"
         (is (.delete (marker-file)))
@@ -203,8 +211,8 @@
                    (catch Throwable t t))]
         (is (some? t))
         (is (not (harness/forbidden-throw? t)))
-        (is (chain-clean-ex-info? t [:path]))
-        (is (some #(string/includes? (str (ex-message %)) "no .txt member")
+        (is (chain-clean-ex-info? t [:reason :archive-path]))
+        (is (some #(= :no-primary-text-member (:reason (ex-data %)))
                   (ex-chain t)))))))
 
 ;; --- P16.1 build ---------------------------------------------------------
@@ -224,13 +232,18 @@
                   (set (map (juxt #(get % "path") #(get % "reason"))
                             (get-in reports [:selection "rejected_sources"]))))
      :pins (every? (fn [{:keys [slug source_hash]}]
-                     (and (= source_hash (get (official-source out slug) "source_hash"))
-                          (= source_hash
-                             (get-in (abc-json/read-json-file
-                                      (io/file out "materialized-root" "works" slug
-                                               "source.manifest.json"))
-                                     ["manifest_identity_object" "work_content_hash"]))
-                          (= source_hash (marker out slug))))
+                     (let [official (official-source out slug)
+                           bundle (source-bundle out slug)]
+                       (and (= source_hash (get official "source_hash"))
+                            (= source_hash (get official "archive_hash"))
+                            (= (get official "bundle_hash")
+                               (get bundle "bundle_hash"))
+                            (= (get official "bundle_hash")
+                               (get-in (abc-json/read-json-file
+                                        (io/file out "materialized-root" "works" slug
+                                                 "source.manifest.json"))
+                                       ["manifest_identity_object" "work_content_hash"]))
+                            (= (get official "bundle_hash") (marker out slug)))))
                    (:selected expected))
      :statuses (and (every? #(= "passed" %) (vals st))
                     (= (count (:selected expected)) (count st))
@@ -295,11 +308,7 @@
                  ;; throws on the first mismatch
                              first-sel (first (sort-by (juxt :work_id :slug)
                                                        (:selected expected)))
-                             wid (:work_id first-sel)
-                             member-hash (hash/format-sha256
-                                          (hash/sha256-bytes
-                                           (.getBytes ^String (get-in m [:contents wid :text])
-                                                      StandardCharsets/UTF_8)))
+                             bundle-hash (get (source-bundle out (:slug first-sel)) "bundle_hash")
                              hard-ok?
                              (if-let [t (:thrown res)]
                                (let [d (some #(let [dd (ex-data %)]
@@ -309,9 +318,9 @@
                                       (chain-clean-ex-info?
                                        t [:work :parser-ir-path :official-source-path
                                           :work-content-hash :official-source-hash])
-                          ;; pin WHY it fails: member hash vs raw-ZIP hash
+                                      ;; pin WHY it fails: bundle hash vs raw-ZIP hash
                                       (= (:work d) (:slug first-sel))
-                                      (= (:work-content-hash d) member-hash)
+                                      (= (:work-content-hash d) bundle-hash)
                                       (= (:official-source-hash d) (:source_hash first-sel))))
                                true)]
                          (and hard-ok?
@@ -349,7 +358,7 @@
                                          (render/content-sources s-after)))
               before-slugs (mapv :slug selected-before)
               after-slugs (mapv :slug selected-after)
-              cur-hash (into {} (map (juxt :slug :source_hash)) selected-after)]
+              expected-slugs (set (map :slug selected-after))]
           (render/write-aozora-root! aozora s-before)
           (let [r1 (run-build! {:aozora-root aozora :out-root out
                                 :config-path config :snapshot-date "2026-07-01"})
@@ -360,6 +369,11 @@
                                   :config-path config :snapshot-date "2026-07-02"
                                   :replace? true})
                   st2 (statuses r2)
+                  cur-hash (into {}
+                                 (map (juxt #(get % "slug")
+                                            #(get % "bundle_hash")))
+                                 (filter #(contains? expected-slugs (get % "slug"))
+                                         (get-in r2 [:selection "selected_sources"])))
                   r2-markers (into {} (map (fn [slug] [slug (marker out slug)]))
                                    (keys cur-hash))
                   r2-files (into {} (map (fn [slug] [slug (pub-files out slug)]))

@@ -1,7 +1,7 @@
 # Streamed Source-Bundle Corpus Evidence Design
 
 **Date:** 2026-07-12
-**Status:** Proposed
+**Status:** Implemented
 
 **Builds on:**
 
@@ -160,11 +160,11 @@ asset-only bundles are readable and rejected with
 `no-primary-text-member`.
 
 `utf8_flagged_entry_count` continues to count the raw ZIP general-purpose EFS
-bit 11, not a name-source label inferred later. Under v1 precedence an EFS-set
-entry decodes through strict UTF-8 before Unicode Path consideration, so the
-current values coincide; the scan nevertheless retains the raw bit explicitly
-to keep the report field's definition stable. `legacy_flagged_entry_count`
-remains the complement over non-directory entries.
+bit 11, independently of the decoder's `name_source` label. Under v1
+precedence an EFS-set entry decodes through strict UTF-8; Unicode Path evidence
+is exercised by a separate EFS-unset case. The scan retains the raw bit
+explicitly rather than deriving either count from decoder selection.
+`legacy_flagged_entry_count` remains the complement over non-directory entries.
 
 The report also pins every declared-versus-actual mismatch rather than only
 the maxima:
@@ -252,8 +252,8 @@ prove:
 - damaged archives remain classification-only and never reach `7zz` for
   identity;
 - report construction/version and reason counts are deterministic; and
-- EFS/legacy counts remain raw-bit counts even when decoder precedence selects
-  a Unicode Path extra field; and
+- EFS/legacy counts are derived from raw bits rather than `name_source`, with
+  separate EFS and Unicode-extra cases; and
 - production limit failures abort without writing re-blessable evidence; and
 - one shared collision analysis drives scan evidence, admission, and persisted
   identity validation; and
@@ -274,6 +274,32 @@ and existing admission-disposition tests remain unchanged and green.
 - Changing publication, parser, or reuse behavior.
 - Rewriting historical corpus reports for older pins.
 
+## Implementation Evidence
+
+Implemented on 2026-07-12. `abc.tools.source-bundle/scan-zip` exposes the
+existing private-stage, bounded member stream, and `admit-scan!` applies the v1
+logical admission policy to its completed facts. Production `inspect-zip` and
+`abc.tools.source-bundle-report` now compose those same operations.
+`inspect-zip-metadata` and the report-local `raw-zip-stats` were deleted, so no
+second filename, collision, candidate, or size construction remains.
+
+The checked
+`data/source-bundle/aozorabunko-0e9ea3e-summary.json` records actual streamed
+maxima, admission counts, stable rejection reasons, and the exact 68,007 versus
+68,497 byte declaration mismatch. Focused `source-bundle-test` and
+`source-bundle-report-test` coverage pins scan/admission composition,
+byte-array content equality, raw EFS-bit accounting, resource-failure
+precedence, shared collision analysis, and protected error propagation. The
+`source-bundle-corpus` Nix check reproduces the report byte-for-byte.
+
+Using Bash `TIMEFORMAT` on the implementation workstation because
+`/usr/bin/time` was unavailable, the pre-change Nix corpus gate took 64.840
+seconds, the direct streamed report took 69.465 seconds, and a fresh streamed
+Nix corpus gate took 73.253 seconds. The pre-change timing was a fresh build in
+the sense that its output was not already built, though it did not use
+`--rebuild`; these values are implementation evidence, not a permanent CI
+threshold.
+
 ## Acceptance Criteria
 
 - Production inspection and corpus evidence consume one shared bounded member
@@ -290,8 +316,9 @@ and existing admission-disposition tests remain unchanged and green.
   implementation with domain-specific error translation.
 - Every structurally readable pinned ZIP is streamed under production limits.
 - The report distinguishes structural readability from bundle admission.
-- Asset-only, collision, limit, and damaged-archive dispositions are stable and
-  counted.
+- Asset-only, collision, and damaged-archive dispositions are stable and
+  counted; bounded-limit violations and every other incomplete scan abort the
+  gate instead of becoming re-blessable evidence.
 - Protected non-admission failures abort the gate unchanged.
 - `source-bundle-corpus` reproduces the versioned checked report exactly.
 - Existing source-bundle, snapshot, publication, simulation, governance, and

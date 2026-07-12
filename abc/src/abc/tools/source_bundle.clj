@@ -43,8 +43,30 @@
                           :archive-path (str archive-path)}
                          data))))
 
+(defn admission-error? [throwable]
+  (and (instance? clojure.lang.ExceptionInfo throwable)
+       (true? (::admission-error (ex-data throwable)))))
+
 (defn- unicode-fold [s]
   (UCharacter/foldCase ^String s true))
+
+(defn- path-collision-analysis [paths]
+  (let [by-path (group-by identity paths)
+        by-fold (group-by unicode-fold paths)]
+    {:nfc-collisions
+     (->> by-path
+          (filter #(> (count (val %)) 1))
+          (sort-by key)
+          (mapv (fn [[path duplicates]]
+                  {:path path :member-count (count duplicates)})))
+     :unicode-case-collisions
+     (->> by-fold
+          (keep (fn [[folded folded-paths]]
+                  (let [distinct-paths (vec (sort (distinct folded-paths)))]
+                    (when (> (count distinct-paths) 1)
+                      {:folded-path folded :paths distinct-paths}))))
+          (sort-by :folded-path)
+          vec)}))
 
 (defn- strict-decode [charset raw]
   (str (.decode (doto (.newDecoder ^Charset charset)
@@ -145,10 +167,11 @@
       (when-not (= paths sorted-paths)
         (identity-fail! :identity-member-order
                         {:paths paths :expected-paths sorted-paths}))
-      (when-not (= (count paths) (count (distinct paths)))
-        (identity-fail! :identity-member-path-collision {:paths paths}))
-      (let [folded (mapv unicode-fold paths)]
-        (when-not (= (count folded) (count (distinct folded)))
+      (let [{:keys [nfc-collisions unicode-case-collisions]}
+            (path-collision-analysis paths)]
+        (when (seq nfc-collisions)
+          (identity-fail! :identity-member-path-collision {:paths paths}))
+        (when (seq unicode-case-collisions)
           (identity-fail! :identity-member-case-fold-collision
                           {:paths paths})))
       (let [candidates (filterv primary-candidate? paths)
@@ -218,45 +241,13 @@
                   :decoded-path decoded
                   :path (normalize-member-path archive-path decoded)})))))
 
-(defn- collision-evidence [entries]
-  (let [by-path (group-by :path entries)
-        nfc-collision? (boolean (some #(> (count %) 1) (vals by-path)))
-        by-fold (group-by #(unicode-fold (:path %)) entries)
-        case-collision? (boolean
-                         (some #(> (count (distinct (map :path %))) 1)
-                               (vals by-fold)))]
-    {:nfc-collision? nfc-collision?
-     :unicode-case-collision? case-collision?}))
-
-(defn- validate-entry-collisions! [archive-path entries]
-  (let [by-path (group-by :path entries)]
-    (when-let [[path duplicates]
-               (first (sort-by key (filter #(> (count (val %)) 1) by-path)))]
-      (fail! :duplicate-member-path archive-path
-             {:path path :member-count (count duplicates)}))
-    (let [by-fold (group-by #(unicode-fold (:path %)) entries)]
-      (when-let [[folded collisions]
-                 (first (sort-by key
-                                 (filter #(> (count (val %)) 1) by-fold)))]
-        (fail! :case-fold-member-path-collision archive-path
-               {:folded-path folded
-                :paths (->> collisions (map :path) sort vec)})))
-    entries))
-
-(defn- choose-primary! [archive-path entries]
-  (let [candidates (filterv #(primary-candidate? (:path %)) entries)]
-    (case (count candidates)
-      0 (fail! :no-primary-text-member archive-path {:candidates []})
-      1 (:path (first candidates))
-      (fail! :multiple-primary-text-members archive-path
-             {:candidates (mapv :path candidates)}))))
-
 (defn- read-member!
-  [archive-path archive {:keys [entry path decoded-path]} primary-path
+  [archive-path archive {:keys [entry path decoded-path]} retained-path
    total-bytes {:keys [max-member-bytes max-total-bytes]}]
   (let [digest (MessageDigest/getInstance "SHA-256")
-        primary? (= path primary-path)
-        retained (when primary? (ByteArrayOutputStream.))
+        retained? (= path retained-path)
+        retained (when retained? (ByteArrayOutputStream.))
+        declared-bytes (.getSize ^ZipArchiveEntry entry)
         buffer (byte-array 8192)]
     (with-open [input (DigestInputStream. (.getInputStream ^ZipFile archive entry)
                                           digest)]
@@ -269,7 +260,11 @@
                         "byte_length" member-bytes
                         "member_hash" (hash/format-sha256
                                        (hash/bytes->hex (.digest digest)))}
-             :primary-bytes (when primary? (.toByteArray retained))}
+             :declared-bytes declared-bytes
+             :actual-bytes member-bytes
+             :efs-utf8-flag?
+             (.usesUTF8ForNames (.getGeneralPurposeBit ^ZipArchiveEntry entry))
+             :primary-bytes (when retained? (.toByteArray retained))}
             (let [next-member (+ member-bytes n)
                   next-total (+ @total-bytes n)]
               (when (> next-member max-member-bytes)
@@ -281,8 +276,7 @@
                        {:path path :actual-bytes next-total
                         :limit max-total-bytes}))
               (vreset! total-bytes next-total)
-              (when primary?
-                (.write retained buffer 0 n))
+              (when retained? (.write retained buffer 0 n))
               (recur next-member))))))))
 
 (defn- caused-by? [class throwable]
@@ -330,39 +324,52 @@
         (unreadable-zip! archive-path nil t)
         (throw t)))))
 
-(defn- validated-parser-entries [archive-path archive limits]
-  (let [entries (parser-decoded-entries archive-path archive)]
-    (validate-entry-collisions! archive-path entries)
+(defn- decoded-parser-entries [archive-path archive limits]
+  (let [entries (sort-by :path
+                         (parser-decoded-entries archive-path archive))]
     (validate-declared-limits! archive-path entries limits)
-    (sort-by :path entries)))
+    entries))
 
-(defn- inspect-open-zip [archive-path stable-file limits]
+(defn- scan-open-zip [archive-path stable-file limits]
   (with-open [archive (open-zip-archive archive-path stable-file)]
-    (let [entries (validated-parser-entries archive-path archive limits)
-          primary-path (choose-primary! archive-path entries)
+    (let [entries (decoded-parser-entries archive-path archive limits)
+          candidates (filterv #(primary-candidate? (:path %)) entries)
+          collision-analysis
+          (path-collision-analysis (mapv :path entries))
+          retained-path (when (= 1 (count candidates))
+                          (:path (first candidates)))
           total-bytes (volatile! 0)
-          read-results (mapv #(read-member! archive-path archive % primary-path
-                                            total-bytes limits)
-                             entries)
-          members (mapv :metadata read-results)
-          primary-bytes (:primary-bytes
-                         (first (filter :primary-bytes read-results)))
-          primary-hash (get (some #(when (= primary-path (get % "path")) %)
-                                  members)
-                            "member_hash")
-          identity-object
-          (validate-identity-object!
-           {"construction" construction
-            "members" (mapv #(select-keys % ["path" "member_hash"])
-                            members)
-            "primary_text_member" primary-path})]
-      {:identity-object identity-object
-       :bundle-hash (bundle-identity-hash identity-object)
+          reads (mapv #(read-member! archive-path archive % retained-path
+                                     total-bytes limits)
+                      entries)
+          members (mapv :metadata reads)
+          actuals (mapv :actual-bytes reads)]
+      {:archive-path (str archive-path)
        :archive-hash (hash/format-sha256 (files/sha256-file stable-file))
        :members members
-       :primary-text-member primary-path
-       :primary-text-hash primary-hash
-       :primary-text-bytes primary-bytes})))
+       :semantic-text-candidates (mapv :path candidates)
+       :collision-evidence
+       {:nfc-collision? (boolean (seq (:nfc-collisions
+                                       collision-analysis)))
+        :unicode-case-collision?
+        (boolean (seq (:unicode-case-collisions collision-analysis)))}
+       :stats
+       {:member-count (count members)
+        :max-member-bytes (reduce max 0 actuals)
+        :total-bytes @total-bytes
+        :utf8-count (count (filter :efs-utf8-flag? reads))
+        :legacy-count (count (remove :efs-utf8-flag? reads))
+        :declared-actual-size-mismatches
+        (->> reads
+             (keep (fn [{:keys [metadata declared-bytes actual-bytes]}]
+                     (when (and (not (neg? declared-bytes))
+                                (not= declared-bytes actual-bytes))
+                       {:member-path (get metadata "path")
+                        :declared-bytes declared-bytes
+                        :actual-bytes actual-bytes})))
+             vec)}
+       :primary-text-bytes
+       (:primary-bytes (first (filter :primary-bytes reads)))})))
 
 (defn- stage-archive! [zip-file]
   (let [staged (Files/createTempFile
@@ -379,27 +386,59 @@
         (Files/deleteIfExists staged)
         (throw t)))))
 
-(defn inspect-zip
-  ([zip-file]
-   (inspect-zip zip-file default-limits))
+(defn scan-zip
+  ([zip-file] (scan-zip zip-file default-limits))
   ([zip-file limits]
    (let [staged (stage-archive! zip-file)]
      (try
-       (inspect-open-zip zip-file staged (merge default-limits limits))
-       (finally
-         (Files/deleteIfExists (.toPath staged)))))))
+       (scan-open-zip zip-file staged (merge default-limits limits))
+       (finally (Files/deleteIfExists (.toPath staged)))))))
 
-(defn inspect-zip-metadata
-  "Apply the source-bundle name decoding, normalization, collision, and primary
-  candidate construction without reading or hashing member bodies. Intended for
-  bounded corpus evidence; admission must still use inspect-zip."
-  [zip-file]
-  (with-open [archive (open-zip-archive zip-file zip-file)]
-    (let [entries (parser-decoded-entries zip-file archive)]
-      (merge
-       {:semantic-text-member-count
-        (count (filter #(primary-candidate? (:path %)) entries))}
-       (collision-evidence entries)))))
+(defn- validate-admission-collisions! [archive-path members]
+  (let [{:keys [nfc-collisions unicode-case-collisions]}
+        (path-collision-analysis (mapv #(get % "path") members))]
+    (when-let [collision (first nfc-collisions)]
+      (fail! :duplicate-member-path archive-path collision))
+    (when-let [collision (first unicode-case-collisions)]
+      (fail! :case-fold-member-path-collision archive-path collision)))
+  members)
+
+(defn admit-scan! [scan]
+  (let [archive-path (:archive-path scan)
+        members (validate-admission-collisions! archive-path (:members scan))
+        candidates (:semantic-text-candidates scan)
+        primary-path (case (count candidates)
+                       0 (fail! :no-primary-text-member archive-path
+                                {:candidates []})
+                       1 (first candidates)
+                       (fail! :multiple-primary-text-members archive-path
+                              {:candidates candidates}))
+        primary-hash (get (some #(when (= primary-path (get % "path")) %)
+                                members)
+                          "member_hash")
+        primary-bytes (:primary-text-bytes scan)
+        retained-hash (when (some? primary-bytes)
+                        (hash/format-sha256
+                         (hash/sha256-bytes primary-bytes)))
+        identity-object
+        (validate-identity-object!
+         {"construction" construction
+          "members" (mapv #(select-keys % ["path" "member_hash"]) members)
+          "primary_text_member" primary-path})]
+    (when-not (and primary-hash (= primary-hash retained-hash))
+      (fail! :primary-text-retention-mismatch archive-path
+             {:primary-text-member primary-path}))
+    {:identity-object identity-object
+     :bundle-hash (bundle-identity-hash identity-object)
+     :archive-hash (:archive-hash scan)
+     :members members
+     :primary-text-member primary-path
+     :primary-text-hash primary-hash
+     :primary-text-bytes primary-bytes}))
+
+(defn inspect-zip
+  ([zip-file] (inspect-zip zip-file default-limits))
+  ([zip-file limits] (admit-scan! (scan-zip zip-file limits))))
 
 (defn write-manifest! [path inspection]
   (let [file (io/file path)

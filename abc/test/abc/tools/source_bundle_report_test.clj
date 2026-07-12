@@ -5,11 +5,33 @@
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is]])
   (:import [java.io FileNotFoundException InterruptedIOException]
+           [java.nio ByteBuffer ByteOrder]
            [java.nio.charset StandardCharsets]
            [java.nio.file NoSuchFileException]
            [java.nio.file Files]
            [org.apache.commons.compress.archivers.zip
             ZipArchiveEntry ZipArchiveOutputStream]))
+
+(defn- understate-first-central-size! [file declared-size]
+  (let [data (Files/readAllBytes (.toPath file))
+        signature (byte-array [0x50 0x4b 0x01 0x02])
+        offset (first
+                (for [start (range (inc (- (alength data)
+                                           (alength signature))))
+                      :when (every? true?
+                                    (map-indexed
+                                     (fn [i b]
+                                       (= b (aget data (+ start i))))
+                                     signature))]
+                  start))]
+    (when-not offset
+      (throw (ex-info "central directory signature not found" {:file file})))
+    (-> (ByteBuffer/wrap data)
+        (.order ByteOrder/LITTLE_ENDIAN)
+        (.putInt (+ offset 24) (int declared-size)))
+    (Files/write (.toPath file) data
+                 (make-array java.nio.file.OpenOption 0))
+    file))
 
 (defn- content-bytes [s]
   (.getBytes s StandardCharsets/UTF_8))
@@ -52,20 +74,38 @@
            failure
            (try
              (with-redefs-fn
-               {#'report/raw-zip-stats (fn [_] (throw failure))
-                #'report/sevenzip-readable?
+               {#'source-bundle/scan-zip (fn [_] (throw failure))
+                #'report/sevenzip-listable?
                 (fn [_] (swap! sevenzip-calls inc) false)}
                #(report/measure! (one-card-root)))
              (catch Throwable t t)))))
     (is (zero? @sevenzip-calls))))
 
-(deftest metadata-admission-failures-propagate-test
-  (is (thrown-with-msg?
-       clojure.lang.ExceptionInfo #"unsafe metadata"
-       (with-redefs [source-bundle/inspect-zip-metadata
-                     (fn [_] (throw (ex-info "unsafe metadata"
-                                             {:reason :unsafe-member-path})))]
-         (report/measure! (one-card-root))))))
+(deftest evidence-collector-trusts-only-marked-admission-errors-test
+  (let [spoof (ex-info "spoof" {:reason :unreadable-zip})]
+    (is (identical?
+         spoof
+         (try
+           (with-redefs [source-bundle/scan-zip (fn [_] (throw spoof))]
+             (report/measure! (one-card-root)))
+           (catch Throwable t t))))))
+
+(deftest production-limit-failures-abort-corpus-evidence-test
+  (let [sevenzip-calls (atom 0)
+        thrown
+        (try
+          (with-redefs [source-bundle/default-limits
+                        {:max-members 10
+                         :max-member-bytes 3
+                         :max-total-bytes 100}
+                        report/sevenzip-listable?
+                        (fn [_] (swap! sevenzip-calls inc) false)]
+            (report/measure! (one-card-root)))
+          nil
+          (catch clojure.lang.ExceptionInfo t t))]
+    (is (source-bundle/admission-error? thrown))
+    (is (= :member-too-large (:reason (ex-data thrown))))
+    (is (zero? @sevenzip-calls))))
 
 (deftest measure-pinned-corpus-shape-test
   (let [root (.toFile (Files/createTempDirectory
@@ -86,17 +126,28 @@
     (card-zip root "5" "case-collision.zip"
               [["A.png" (content-bytes "a")]
                ["a.png" (content-bytes "b")]])
-    (card-zip root "6" "limit.zip"
-              [["work.txt" (byte-array 11)] ["a.bin" (byte-array 7)]
-               ["b.bin" (byte-array 3)]])
+    (let [limit-zip (card-zip root "6" "limit.zip"
+                              [["work.txt" (byte-array 11)]
+                               ["a.bin" (byte-array 7)]
+                               ["b.bin" (byte-array 3)]])]
+      (understate-first-central-size! limit-zip 1))
     (let [damaged (io/file root "cards" "7" "files" "damaged.zip")]
       (io/make-parents damaged)
       (spit damaged "not a zip"))
     ;; Files outside cards/*/files/*.zip are deliberately invisible.
     (write-zip! (io/file root "other" "ignored.zip")
                 [["ignored.txt" (content-bytes "ignored")]])
-    (is (= {"readable_zip_count" 6
+    (is (= {"measurement_construction"
+            "abc-source-bundle-streamed-evidence-v1"
+            "readable_zip_count" 6
             "unreadable_zip_count" 1
+            "admitted_zip_count" 3
+            "rejected_zip_count" 4
+            "rejection_reason_counts"
+            {"case-fold-member-path-collision" 1
+             "duplicate-member-path" 1
+             "no-primary-text-member" 1
+             "unreadable-zip" 1}
             "semantic_text_member_counts" {"0" 3 "1" 3}
             "utf8_flagged_entry_count" 2
             "legacy_flagged_entry_count" 10
@@ -105,15 +156,27 @@
             "max_member_count" 3
             "max_member_bytes" 11
             "max_total_bytes" 21
-            "java_unreadable_7zz_recoverable_count" 0
-            "java_unreadable_7zz_unrecoverable_count" 1
+            "declared_actual_size_mismatch_member_count" 1
+            "declared_actual_size_mismatches"
+            [{"archive_path" "cards/6/files/limit.zip"
+              "member_path" "work.txt"
+              "declared_bytes" 1
+              "actual_bytes" 11}]
+            "java_unreadable_7zz_listable_count" 0
+            "java_unreadable_7zz_unlistable_count" 1
             "damaged_paths" ["cards/7/files/damaged.zip"]}
            (report/measure! root)))))
 
 (deftest checked-pinned-evidence-test
   (is (= {"aozorabunko_commit" "0e9ea3e586eb0aa34039fabfc85a407d2f98b165"
+          "measurement_construction"
+          "abc-source-bundle-streamed-evidence-v1"
           "readable_zip_count" 17884
           "unreadable_zip_count" 3
+          "admitted_zip_count" 17879
+          "rejected_zip_count" 8
+          "rejection_reason_counts"
+          {"no-primary-text-member" 5 "unreadable-zip" 3}
           "semantic_text_member_counts" {"0" 5 "1" 17879}
           "utf8_flagged_entry_count" 0
           "legacy_flagged_entry_count" 22860
@@ -122,8 +185,14 @@
           "max_member_count" 778
           "max_member_bytes" 12631833
           "max_total_bytes" 27874310
-          "java_unreadable_7zz_recoverable_count" 1
-          "java_unreadable_7zz_unrecoverable_count" 2
+          "declared_actual_size_mismatch_member_count" 1
+          "declared_actual_size_mismatches"
+          [{"archive_path" "cards/001393/files/50710_ruby_36965.zip"
+            "member_path" "fushigino_kunino_alice_musical.txt"
+            "declared_bytes" 68007
+            "actual_bytes" 68497}]
+          "java_unreadable_7zz_listable_count" 1
+          "java_unreadable_7zz_unlistable_count" 2
           "damaged_paths" ["cards/001154/files/chihobunkano_shinkensetsu.zip"
                            "cards/001505/files/58100_txt_60357.zip"
                            "cards/001562/files/56151_ruby_60063.zip"]}

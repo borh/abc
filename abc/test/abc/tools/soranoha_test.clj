@@ -27,6 +27,10 @@
 (defn- delete-tree! [file]
   (fixture/delete-tree! file))
 
+(defn- with-release-policy-allowed [f]
+  (with-redefs [publication-policy/assert-release-allowed! (constantly :ok)]
+    (f)))
+
 (def ^:private build-publication-csv
   (str "作品ID,作品名,作品名読み,ソート用読み,副題,副題読み,原題,初出,"
        "分類番号,文字遣い種別,作品著作権フラグ,公開日,最終更新日,図書カードURL,"
@@ -864,14 +868,15 @@
         output-a (io/file root "build-a")
         output-b (io/file root "build-b")
         build! (fn [output-root snapshot-date]
-                 (binding [build-publication/*derive-parser-ir!*
-                           stub-derive-parser-ir!]
-                   (is (zero? (soranoha/run!
-                               ["build-publication"
-                                "--aozora-root" (str aozora-root)
-                                "--config" "abc/config/publication-basic-ja.json"
-                                "--snapshot-date" snapshot-date
-                                "--output-root" (str output-root)])))))
+                 (with-release-policy-allowed
+                   #(binding [build-publication/*derive-parser-ir!*
+                              stub-derive-parser-ir!]
+                      (is (zero? (soranoha/run!
+                                  ["build-publication"
+                                   "--aozora-root" (str aozora-root)
+                                   "--config" "abc/config/publication-basic-ja.json"
+                                   "--snapshot-date" snapshot-date
+                                   "--output-root" (str output-root)]))))))
         identity (fn [output-root]
                    (let [work-dir (io/file output-root "materialized-root" "works"
                                            "000001_000879_000001_ruby_fixture")]
@@ -912,13 +917,14 @@
        (assoc (files/read-json (io/file "config" "publication-basic-ja.json"))
               "continue_on_failure" true))
       (let [thrown (try
-                     (binding [build-publication/*derive-parser-ir!*
-                               mismatching-stub]
-                       (build-publication/build-publication!
-                        ["--aozora-root" (str aozora-root)
-                         "--config" (str config-file)
-                         "--snapshot-date" "2026-07-08"
-                         "--output-root" (str output-root)]))
+                     (with-release-policy-allowed
+                       #(binding [build-publication/*derive-parser-ir!*
+                                  mismatching-stub]
+                          (build-publication/build-publication!
+                           ["--aozora-root" (str aozora-root)
+                            "--config" (str config-file)
+                            "--snapshot-date" "2026-07-08"
+                            "--output-root" (str output-root)])))
                      nil
                      (catch clojure.lang.ExceptionInfo t t))
             identity-data (some #(let [data (ex-data %)]
@@ -971,11 +977,12 @@
              (try
                (with-redefs [source-bundle/inspect-zip
                              (fn [& _] (throw failure))]
-                 (build-publication/build-publication!
-                  ["--aozora-root" (str aozora-root)
-                   "--config" (str config-file)
-                   "--snapshot-date" "2026-07-08"
-                   "--output-root" (str output-root)]))
+                 (with-release-policy-allowed
+                   #(build-publication/build-publication!
+                     ["--aozora-root" (str aozora-root)
+                      "--config" (str config-file)
+                      "--snapshot-date" "2026-07-08"
+                      "--output-root" (str output-root)])))
                (catch Throwable t t)))))
       (is (not (.exists output-root)))
       (finally
@@ -1019,11 +1026,12 @@
                (try
                  (with-redefs [source-bundle/inspect-zip
                                (fn [& _] (throw outer))]
-                   (build-publication/build-publication!
-                    ["--aozora-root" (str aozora-root)
-                     "--config" (str config-file)
-                     "--snapshot-date" "2026-07-08"
-                     "--output-root" (str output-root)]))
+                   (with-release-policy-allowed
+                     #(build-publication/build-publication!
+                       ["--aozora-root" (str aozora-root)
+                        "--config" (str config-file)
+                        "--snapshot-date" "2026-07-08"
+                        "--output-root" (str output-root)])))
                  (catch Throwable t t))))))
       (is (not (.exists output-root)))
       (finally
@@ -1038,11 +1046,12 @@
     (try
       (is (.delete work-zip))
       (let [thrown (try
-                     (build-publication/build-publication!
-                      ["--aozora-root" (str aozora-root)
-                       "--config" "abc/config/publication-basic-ja.json"
-                       "--snapshot-date" "2026-07-08"
-                       "--output-root" (str output-root)])
+                     (with-release-policy-allowed
+                       #(build-publication/build-publication!
+                         ["--aozora-root" (str aozora-root)
+                          "--config" "abc/config/publication-basic-ja.json"
+                          "--snapshot-date" "2026-07-08"
+                          "--output-root" (str output-root)]))
                      nil
                      (catch clojure.lang.ExceptionInfo t t))]
         (is (some? thrown))
@@ -1075,11 +1084,13 @@
                                     (swap! process-calls inc)
                                     (throw (ex-info "process recovery invoked" {})))}
                      #(try
-                        (build-publication/build-publication!
-                         ["--aozora-root" (str aozora-root)
-                          "--config" (str config-file)
-                          "--snapshot-date" "2026-07-08"
-                          "--output-root" (str output-root)])
+                        (with-release-policy-allowed
+                          (fn []
+                            (build-publication/build-publication!
+                             ["--aozora-root" (str aozora-root)
+                              "--config" (str config-file)
+                              "--snapshot-date" "2026-07-08"
+                              "--output-root" (str output-root)])))
                         nil
                         (catch Throwable t t)))]
         (is (some? thrown))

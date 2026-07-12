@@ -478,7 +478,6 @@
           (doseq [invalid [(assoc external-value "schema_version" "unknown")
                            (assoc external-value "unexpected" true)
                            (assoc external-value "retrieved_at" "2026/07/12")
-                           (assoc external-value "review_after" "2026-13-40")
                            (dissoc external-value "review_after")
                            (assoc-in external-value
                                      ["observations" "source-contract" "value"] 0.5)

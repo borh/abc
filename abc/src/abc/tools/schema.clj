@@ -5,8 +5,7 @@
             [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.string :as str])
-  (:import [com.networknt.schema SchemaRegistry SchemaRegistryConfig
-            InputFormat SpecificationVersion]))
+  (:import [com.networknt.schema SchemaRegistry InputFormat SpecificationVersion]))
 
 (defn read-schema [file]
   (abc-json/read-json-file file))
@@ -53,11 +52,6 @@
    SpecificationVersion/DRAFT_2020_12
    (reify java.util.function.Consumer
      (accept [_ builder]
-       (.schemaRegistryConfig
-        builder
-        (-> (SchemaRegistryConfig/builder)
-            (.formatAssertionsEnabled true)
-            (.build)))
        (.schemas builder (checked-in-schema-resources))))))
 
 (defn- ^:private instance-location->path-segments

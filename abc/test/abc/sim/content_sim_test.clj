@@ -20,6 +20,7 @@
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-source-snapshot :as snapshot]
+            [abc.tools.publication-policy :as publication-policy]
             [abc.tools.soranoha-build-publication :as build-publication]
             [abc.tools.source-bundle :as source-bundle]
             [abc.tools.source-snapshot-workset :as workset]
@@ -78,12 +79,14 @@
     (str f)))
 
 (defn- run-build! [{:keys [aozora-root out-root config-path snapshot-date replace?]}]
-  (let [exit (binding [build-publication/*derive-parser-ir!* realistic-stub
-                       *out* (java.io.StringWriter.)]
-               (build-publication/build-publication!
-                (cond-> ["--aozora-root" (str aozora-root) "--config" config-path
-                         "--output-root" (str out-root) "--snapshot-date" snapshot-date]
-                  replace? (conj "--replace"))))]
+  (let [exit (with-redefs [publication-policy/assert-release-allowed!
+                           (constantly :ok)]
+               (binding [build-publication/*derive-parser-ir!* realistic-stub
+                         *out* (java.io.StringWriter.)]
+                 (build-publication/build-publication!
+                  (cond-> ["--aozora-root" (str aozora-root) "--config" config-path
+                           "--output-root" (str out-root) "--snapshot-date" snapshot-date]
+                    replace? (conj "--replace")))))]
     {:exit exit
      :selection (abc-json/read-json-file (io/file out-root "source-selection-report.json"))
      :publications (abc-json/read-json-file

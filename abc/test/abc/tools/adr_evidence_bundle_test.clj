@@ -176,3 +176,17 @@
                  (:problems (bundle/validate-bundle
                              repo "docs/evidence/external.json" artifact-hash
                              ["ADR-0042-C1"])))))))
+
+(deftest external-evidence-rejects-impossible-calendar-dates
+  (let [value {"schema_version" "abc-adr-external-evidence-v1"
+               "source_url" "https://example.invalid/authority"
+               "retrieved_at" "2026-07-12"
+               "review_after" "2026-13-40"
+               "summary" {"path" "docs/evidence/authority-summary.md"
+                          "hash" (hash/format-sha256 (apply str (repeat 64 "0")))}
+               "input_profile" {"kind" "external-authority-v1"
+                                "explicit" []}
+               "inputs" {}
+               "observations" {"source-contract" {"value" "documented"}}}]
+    (is (= [:invalid-evidence-artifact]
+           (mapv :kind (bundle/validate-bundle-value value))))))

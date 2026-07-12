@@ -340,6 +340,43 @@
                             selected)
    "rejected_sources" (mapv identity rejected)})
 
+(def ^:private source-bundle-admission-reasons
+  #{:case-fold-member-path-collision
+    :duplicate-member-path
+    :invalid-member-name-encoding
+    :member-too-large
+    :multiple-primary-text-members
+    :no-primary-text-member
+    :too-many-members
+    :total-too-large
+    :unreadable-zip
+    :unsafe-member-path})
+
+(defn- source-bundle-admission-error? [t]
+  (and (instance? clojure.lang.ExceptionInfo t)
+       (contains? source-bundle-admission-reasons (:reason (ex-data t)))))
+
+(defn- derive-failure [candidate t]
+  (let [d (ex-data t)
+        actual (or (:actual d)
+                   (:actual-bytes d)
+                   (:declared-bytes d)
+                   (:member-count d))]
+    (cond-> {"work_id" (row-work-id (:row candidate))
+             "person_id" (row-person-id (:row candidate))
+             "text_zip_relpath" (:relpath candidate)
+             "error" (.getMessage t)
+             "reason" (some-> (:reason d) name)}
+      (:archive-path d) (assoc "archive_path" (:archive-path d))
+      (:path d) (assoc "path" (:path d))
+      (:decoded-path d) (assoc "decoded_path" (:decoded-path d))
+      (:normalized-path d) (assoc "normalized_path" (:normalized-path d))
+      (:limit d) (assoc "limit" (:limit d))
+      (some? actual) (assoc "actual" actual)
+      (:actual-bytes d) (assoc "actual_bytes" (:actual-bytes d))
+      (:declared-bytes d) (assoc "declared_bytes" (:declared-bytes d))
+      (:member-count d) (assoc "member_count" (:member-count d)))))
+
 (defn- materialize-selected-sources!
   [{:keys [aozora-root output-root parser-profile snapshot-date
            aozora-git-commit continue-on-failure]}]
@@ -380,11 +417,10 @@
                         (if continue-on-failure
                           (try
                             {:ok (derive-one candidate)}
-                            (catch Throwable t
-                              {:failed {"work_id" (row-work-id (:row candidate))
-                                        "person_id" (row-person-id (:row candidate))
-                                        "text_zip_relpath" (:relpath candidate)
-                                        "error" (.getMessage t)}}))
+                            (catch clojure.lang.ExceptionInfo t
+                              (if (source-bundle-admission-error? t)
+                                {:failed (derive-failure candidate t)}
+                                (throw t))))
                           {:ok (derive-one candidate)}))
                       selected-candidates)
         selected (vec (keep :ok results))
@@ -414,7 +450,8 @@
                        :derive_failed_count (count derive-failures)})))
     (let [report (-> (selection-report selected rejected)
                      (assoc "derive_failed_count" (count derive-failures)
-                            "derive_failures" derive-failures))]
+                            "derive_failures" derive-failures
+                            "release_admissible" (empty? derive-failures)))]
       (abc-json/write-deterministic-json-file!
        (io/file output-root "source-selection-report.json")
        report)
@@ -627,6 +664,9 @@
                  selection-report-file (io/file output-root
                                                 "source-selection-report.json")]
              {:state-updates {:materialization-result result}
+              :status (if (get-in result [:report "release_admissible"])
+                        :passed
+                        :partial)
               :outputs [{:role "source-selection-report"
                          :path (str selection-report-file)
                          :content_hash
@@ -684,21 +724,24 @@
           tmp-root (prepare-output-root! output-root replace)]
       (.mkdirs tmp-root)
       (let [opts (assoc opts :output-root tmp-root)
-            _ (workflow/run-workflow!
-               {:workflow-id "soranoha.build-publication.v1"
-                :run-id (str "build-publication:" snapshot-date)
-                :output-root tmp-root
-                :initial-state {:aozora-root aozora-root
-                                :config-value config-value
-                                :snapshot-date snapshot-date
-                                :output-root tmp-root
-                                :prior-output-root prior-output-root
-                                :opts opts}
-                :steps (build-publication-steps)})
+            workflow-result
+            (workflow/run-workflow!
+             {:workflow-id "soranoha.build-publication.v1"
+              :run-id (str "build-publication:" snapshot-date)
+              :output-root tmp-root
+              :initial-state {:aozora-root aozora-root
+                              :config-value config-value
+                              :snapshot-date snapshot-date
+                              :output-root tmp-root
+                              :prior-output-root prior-output-root
+                              :opts opts}
+              :steps (build-publication-steps)})
             final-root (promote-output-root! tmp-root output-root replace)]
         (println "build_publication_root:" (str final-root))
         (println "materialized_root:" (str (io/file final-root
                                                     "materialized-root")))
         (println "publications_root:" (str (io/file final-root
                                                     "publications")))
-        0))))
+        (if (= "passed" (get-in workflow-result [:run "status"]))
+          0
+          1)))))

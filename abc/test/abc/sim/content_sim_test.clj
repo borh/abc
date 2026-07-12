@@ -78,15 +78,16 @@
     (str f)))
 
 (defn- run-build! [{:keys [aozora-root out-root config-path snapshot-date replace?]}]
-  (binding [build-publication/*derive-parser-ir!* realistic-stub
-            *out* (java.io.StringWriter.)]
-    (build-publication/build-publication!
-     (cond-> ["--aozora-root" (str aozora-root) "--config" config-path
-              "--output-root" (str out-root) "--snapshot-date" snapshot-date]
-       replace? (conj "--replace"))))
-  {:selection (abc-json/read-json-file (io/file out-root "source-selection-report.json"))
-   :publications (abc-json/read-json-file
-                  (io/file out-root "publications" "publications-report.json"))})
+  (let [exit (binding [build-publication/*derive-parser-ir!* realistic-stub
+                       *out* (java.io.StringWriter.)]
+               (build-publication/build-publication!
+                (cond-> ["--aozora-root" (str aozora-root) "--config" config-path
+                         "--output-root" (str out-root) "--snapshot-date" snapshot-date]
+                  replace? (conj "--replace"))))]
+    {:exit exit
+     :selection (abc-json/read-json-file (io/file out-root "source-selection-report.json"))
+     :publications (abc-json/read-json-file
+                    (io/file out-root "publications" "publications-report.json"))}))
 
 (defn- statuses [reports]
   (into (sorted-map)
@@ -152,6 +153,69 @@
       (.write zip (.getBytes "png" StandardCharsets/UTF_8))
       (.closeEntry zip))
     (.toByteArray out)))
+
+(defn- unsafe-path-zip-bytes []
+  (let [out (ByteArrayOutputStream.)]
+    (with-open [zip (ZipOutputStream. out)]
+      (.putNextEntry zip (doto (ZipEntry. "../000101.txt") (.setTime 0)))
+      (.write zip (.getBytes text-a StandardCharsets/UTF_8))
+      (.closeEntry zip))
+    (.toByteArray out)))
+
+(deftest p16-admission-failure-disposition-test
+  ^{:clj-kondo/ignore [:unresolved-symbol]}
+  (with-temp-dirs [aozora strict-out cfg]
+    (let [m (synthetic-state)
+          best-out (io/file (.getParentFile strict-out) "best-effort")]
+      (render/write-aozora-root! aozora m)
+      (overwrite-zip! aozora m "000101" (unsafe-path-zip-bytes))
+      (testing "strict admission failure is atomic"
+        (let [strict-config (write-config! cfg false)
+              thrown (try
+                       (run-build! {:aozora-root aozora
+                                    :out-root strict-out
+                                    :config-path strict-config
+                                    :snapshot-date "2026-07-12"})
+                       nil
+                       (catch Throwable t t))]
+          (is (some? thrown))
+          (is (some #(= :unsafe-member-path (:reason (ex-data %)))
+                    (ex-chain thrown)))
+          (is (not (.exists strict-out)))))
+      (testing "best-effort promotes explicit non-releaseable evidence"
+        (let [best-config (write-config! cfg true)
+              reports (run-build! {:aozora-root aozora
+                                   :out-root best-out
+                                   :config-path best-config
+                                   :snapshot-date "2026-07-12"})
+              selection (:selection reports)
+              failure (first (get selection "derive_failures"))
+              workflow (abc-json/read-json-file
+                        (io/file best-out "workflow-run.json"))]
+          (is (= 1 (:exit reports)))
+          (is (= 1 (get selection "selected_source_count")))
+          (is (= 1 (get selection "derive_failed_count")))
+          (is (= 1 (count (get selection "derive_failures"))))
+          (is (false? (get selection "release_admissible")))
+          (is (= {"work_id" "000101"
+                  "person_id" "000001"
+                  "text_zip_relpath" "cards/000001/files/000101_t.zip"
+                  "reason" "unsafe-member-path"
+                  "decoded_path" "../000101.txt"
+                  "normalized_path" "../000101.txt"}
+                 (select-keys failure
+                              ["work_id" "person_id" "text_zip_relpath"
+                               "reason" "decoded_path" "normalized_path"])))
+          (is (string/includes? (get failure "error")
+                                "source bundle admission failed"))
+          (is (string/ends-with? (get failure "archive_path")
+                                 "cards/000001/files/000101_t.zip"))
+          (is (= {slug-b "passed"} (statuses reports)))
+          (is (= "partial" (get workflow "status")))
+          (is (= "partial" (get-in workflow ["steps" 0 "status"])))
+          (is (.exists (io/file best-out "source-selection-report.json")))
+          (is (.exists (io/file best-out "publications"
+                                "publications-report.json"))))))))
 
 (deftest p16-4-tamper-rebuild-test
   ^{:clj-kondo/ignore [:unresolved-symbol]}

@@ -803,6 +803,7 @@
                        (get % "member_hash"))
                     (get source-bundle "members"))]
           (is (= 1 (get report "selected_source_count")))
+          (is (true? (get report "release_admissible")))
           (is (<= 2 (get report "rejected_source_count")))
           (is (= ["cards/000879/files/000001_ruby_fixture.zip"]
                  (mapv #(get % "text_zip_relpath")
@@ -880,7 +881,7 @@
       (finally
         (delete-tree! root)))))
 
-(deftest build-publication-rejects-parser-identity-mismatch-test
+(deftest build-publication-best-effort-does-not-suppress-parser-identity-mismatch-test
   (let [root (fixture/temp-dir "abc-soranoha-build-identity-mismatch")
         aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
         output-root (io/file root "build-output")
@@ -901,7 +902,7 @@
       (abc-json/write-deterministic-json-file!
        config-file
        (assoc (files/read-json (io/file "config" "publication-basic-ja.json"))
-              "continue_on_failure" false))
+              "continue_on_failure" true))
       (let [thrown (try
                      (binding [build-publication/*derive-parser-ir!*
                                mismatching-stub]
@@ -928,6 +929,44 @@
                                         :actual-work-content-hash
                                         :expected-primary-text-hash
                                         :actual-primary-text-hash]))))))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-damaged-zip-does-not-invoke-process-recovery-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-damaged-zip")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        work-zip (io/file aozora-root "cards" "000879" "files"
+                          "000001_ruby_fixture.zip")
+        output-root (io/file root "build-output")
+        config-file (io/file root "strict-config.json")
+        process-calls (atom 0)
+        process-var (ns-resolve 'abc.tools.soranoha-build-publication
+                                'run-process!)]
+    (try
+      (with-open [out (io/output-stream work-zip)]
+        (.write out (.getBytes "damaged, not a ZIP" StandardCharsets/UTF_8)))
+      (abc-json/write-deterministic-json-file!
+       config-file
+       (assoc (files/read-json (io/file "config" "publication-basic-ja.json"))
+              "continue_on_failure" false))
+      (let [thrown (with-redefs-fn
+                     {process-var (fn [& _]
+                                    (swap! process-calls inc)
+                                    (throw (ex-info "process recovery invoked" {})))}
+                     #(try
+                        (build-publication/build-publication!
+                         ["--aozora-root" (str aozora-root)
+                          "--config" (str config-file)
+                          "--snapshot-date" "2026-07-08"
+                          "--output-root" (str output-root)])
+                        nil
+                        (catch Throwable t t)))]
+        (is (some? thrown))
+        (is (some #(= :unreadable-zip (:reason (ex-data %)))
+                  (take-while some?
+                              (iterate #(.getCause ^Throwable %) thrown))))
+        (is (zero? @process-calls))
+        (is (not (.exists output-root))))
       (finally
         (delete-tree! root)))))
 

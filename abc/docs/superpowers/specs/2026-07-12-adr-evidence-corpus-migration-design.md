@@ -55,6 +55,16 @@ historical, compound, or non-observable criteria are corrected.
 ADR number, original criterion index, original text, and SHA-256 of the exact
 original criterion text.
 
+The same baseline also records the exact body and SHA-256 of every
+`## Decision` and `## Hard Rule` section in the original 26 Accepted ADRs (26
+Decision sections and 8 Hard Rule sections). Migration validation rejects any
+addition, removal, or byte drift in those 34 normative sections. New ADRs 0038
+and 0034 are absent from this historical comparison; relation/lifecycle
+headers, Acceptance Criteria, Implementation Status, Historical Evidence, and
+Future Verification remain the explicitly mutable migration surfaces. This
+makes the delivery rule “amend Accepted decisions; do not rewrite them” a
+mechanical invariant rather than a review convention.
+
 `docs/adr/adr-claim-migration.edn` is the reviewed source ledger. Its header
 names that baseline revision and manifest hash. Entries are keyed by
 `[adr-number original-criterion-text-hash]`; the original index is descriptive

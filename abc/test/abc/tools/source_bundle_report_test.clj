@@ -1,9 +1,12 @@
 (ns abc.tools.source-bundle-report-test
   (:require [abc.tools.json :as json]
+            [abc.tools.source-bundle :as source-bundle]
             [abc.tools.source-bundle-report :as report]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is]])
-  (:import [java.nio.charset StandardCharsets]
+  (:import [java.io FileNotFoundException InterruptedIOException]
+           [java.nio.charset StandardCharsets]
+           [java.nio.file NoSuchFileException]
            [java.nio.file Files]
            [org.apache.commons.compress.archivers.zip
             ZipArchiveEntry ZipArchiveOutputStream]))
@@ -30,6 +33,39 @@
    (card-zip root card filename members false))
   ([root card filename members efs?]
    (write-zip! (io/file root "cards" card "files" filename) members efs?)))
+
+(defn- one-card-root []
+  (let [root (.toFile (Files/createTempDirectory
+                       "abc-source-bundle-report-taxonomy-"
+                       (make-array java.nio.file.attribute.FileAttribute 0)))]
+    (card-zip root "1" "work.zip" [["work.txt" (content-bytes "body")]])
+    root))
+
+(deftest programming-failures-do-not-invoke-sevenzip-test
+  (let [sevenzip-calls (atom 0)]
+    (doseq [failure [(AssertionError. "programming failure")
+                     (InterruptedIOException. "interrupted")
+                     (LinkageError. "linkage failure")
+                     (FileNotFoundException. "missing")
+                     (NoSuchFileException. "missing")]]
+      (is (identical?
+           failure
+           (try
+             (with-redefs-fn
+               {#'report/raw-zip-stats (fn [_] (throw failure))
+                #'report/sevenzip-readable?
+                (fn [_] (swap! sevenzip-calls inc) false)}
+               #(report/measure! (one-card-root)))
+             (catch Throwable t t)))))
+    (is (zero? @sevenzip-calls))))
+
+(deftest metadata-admission-failures-propagate-test
+  (is (thrown-with-msg?
+       clojure.lang.ExceptionInfo #"unsafe metadata"
+       (with-redefs [source-bundle/inspect-zip-metadata
+                     (fn [_] (throw (ex-info "unsafe metadata"
+                                             {:reason :unsafe-member-path})))]
+         (report/measure! (one-card-root))))))
 
 (deftest measure-pinned-corpus-shape-test
   (let [root (.toFile (Files/createTempDirectory
@@ -88,8 +124,8 @@
           "max_total_bytes" 27874310
           "java_unreadable_7zz_recoverable_count" 1
           "java_unreadable_7zz_unrecoverable_count" 2
-          "damaged_paths" ["cards/000035/files/258_ruby_5404.zip"
-                           "cards/001779/files/56651_ruby_57934.zip"
-                           "cards/002016/files/59475_ruby_70415.zip"]}
+          "damaged_paths" ["cards/001154/files/chihobunkano_shinkensetsu.zip"
+                           "cards/001505/files/58100_txt_60357.zip"
+                           "cards/001562/files/56151_ruby_60063.zip"]}
          (json/read-json-file
           "data/source-bundle/aozorabunko-0e9ea3e-summary.json"))))

@@ -260,6 +260,18 @@
       (is (= :unreadable-zip (:reason data)))
       (is (= (str file) (:archive-path data))))))
 
+(deftest metadata-inspection-propagates-unexpected-errors-test
+  (with-zips [zip (write-zip! (temp-file ".zip")
+                              [["work.txt" (utf8-bytes "body")]])]
+    (let [failure (AssertionError. "injected metadata failure")]
+      (is (identical?
+           failure
+           (try
+             (with-redefs-fn
+               {#'source-bundle/decoded-entries (fn [& _] (throw failure))}
+               #(source-bundle/inspect-zip-metadata zip))
+             (catch Throwable t t)))))))
+
 (deftest declared-and-streamed-limits-are-enforced-test
   (with-zips [zip (write-zip! (temp-file ".zip")
                               [["work.txt" (utf8-bytes "12345")]

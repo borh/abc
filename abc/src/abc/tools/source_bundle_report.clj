@@ -4,7 +4,9 @@
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]
             [clojure.string :as string])
-  (:import [java.nio.charset Charset]
+  (:import [java.io FileNotFoundException IOException InterruptedIOException]
+           [java.nio.charset Charset]
+           [java.nio.file FileSystemException]
            [org.apache.commons.compress.archivers.zip ZipArchiveEntry ZipFile]))
 
 (def pinned-aozorabunko-commit
@@ -70,14 +72,8 @@
    "damaged_paths" []})
 
 (defn- record-readable [summary zip-file raw]
-  (let [metadata (try
-                   (source-bundle/inspect-zip-metadata zip-file)
-                   (catch clojure.lang.ExceptionInfo e e))
-        reason (when (instance? clojure.lang.ExceptionInfo metadata)
-                 (:reason (ex-data metadata)))
-        semantic-count (if (map? metadata)
-                         (:semantic-text-member-count metadata)
-                         0)]
+  (let [metadata (source-bundle/inspect-zip-metadata zip-file)
+        semantic-count (:semantic-text-member-count metadata)]
     (-> summary
         (update "readable_zip_count" inc)
         (update-in ["semantic_text_member_counts" (str semantic-count)]
@@ -87,9 +83,9 @@
         (update "max_member_count" max (:member-count raw))
         (update "max_member_bytes" max (:member-bytes raw))
         (update "max_total_bytes" max (:total-bytes raw))
-        (cond-> (= reason :duplicate-member-path)
+        (cond-> (:nfc-collision? metadata)
           (update "nfc_collision_bundle_count" inc))
-        (cond-> (= reason :case-fold-member-path-collision)
+        (cond-> (:unicode-case-collision? metadata)
           (update "unicode_case_collision_bundle_count" inc)))))
 
 (defn- record-unreadable [summary root zip-file]
@@ -108,8 +104,11 @@
   (reduce (fn [summary zip-file]
             (let [raw (try
                         (raw-zip-stats zip-file)
-                        (catch Throwable t t))]
-              (if (instance? Throwable raw)
+                        (catch InterruptedIOException e (throw e))
+                        (catch FileNotFoundException e (throw e))
+                        (catch FileSystemException e (throw e))
+                        (catch IOException e e))]
+              (if (instance? IOException raw)
                 (record-unreadable summary aozora-root zip-file)
                 (record-readable summary zip-file raw))))
           (empty-summary)

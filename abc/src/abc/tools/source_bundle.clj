@@ -5,7 +5,7 @@
             [clojure.java.io :as io]
             [clojure.string :as string])
   (:import [com.ibm.icu.lang UCharacter]
-           [java.io ByteArrayOutputStream]
+           [java.io ByteArrayOutputStream IOException]
            [java.nio ByteBuffer]
            [java.nio.charset Charset CharacterCodingException CodingErrorAction
             StandardCharsets]
@@ -109,15 +109,27 @@
              {:declared-bytes (reduce + known-sizes)
               :limit max-total-bytes}))))
 
-(defn- validated-entries [archive-path archive limits]
-  (let [entries (->> (enumeration-seq (.getEntries ^ZipFile archive))
-                     (remove #(.isDirectory ^ZipArchiveEntry %))
-                     (mapv (fn [entry]
-                             (let [decoded (decoded-entry-name archive-path entry)]
-                               {:entry entry
-                                :decoded-path decoded
-                                :path (normalize-member-path archive-path decoded)}))))
-        by-path (group-by :path entries)]
+(defn- decoded-entries [archive-path archive]
+  (->> (enumeration-seq (.getEntries ^ZipFile archive))
+       (remove #(.isDirectory ^ZipArchiveEntry %))
+       (mapv (fn [entry]
+               (let [decoded (decoded-entry-name archive-path entry)]
+                 {:entry entry
+                  :decoded-path decoded
+                  :path (normalize-member-path archive-path decoded)})))))
+
+(defn- collision-evidence [entries]
+  (let [by-path (group-by :path entries)
+        nfc-collision? (boolean (some #(> (count %) 1) (vals by-path)))
+        by-fold (group-by #(unicode-fold (:path %)) entries)
+        case-collision? (boolean
+                         (some #(> (count (distinct (map :path %))) 1)
+                               (vals by-fold)))]
+    {:nfc-collision? nfc-collision?
+     :unicode-case-collision? case-collision?}))
+
+(defn- validate-entry-collisions! [archive-path entries]
+  (let [by-path (group-by :path entries)]
     (when-let [[path duplicates] (first (filter #(> (count (val %)) 1) by-path))]
       (fail! :duplicate-member-path archive-path
              {:path path :member-count (count duplicates)}))
@@ -127,6 +139,11 @@
         (fail! :case-fold-member-path-collision archive-path
                {:folded-path folded
                 :paths (mapv :path collisions)})))
+    entries))
+
+(defn- validated-entries [archive-path archive limits]
+  (let [entries (decoded-entries archive-path archive)]
+    (validate-entry-collisions! archive-path entries)
     (validate-declared-limits! archive-path entries limits)
     (sort-by :path entries)))
 
@@ -234,16 +251,14 @@
                             (.setCharset legacy-name-charset)
                             (.setUseUnicodeExtraFields true)
                             (.get))]
-      (let [entries (validated-entries
-                     zip-file archive
-                     {:max-members Long/MAX_VALUE
-                      :max-member-bytes Long/MAX_VALUE
-                      :max-total-bytes Long/MAX_VALUE})]
-        {:semantic-text-member-count
-         (count (filter #(primary-candidate? (:path %)) entries))}))
+      (let [entries (decoded-entries zip-file archive)]
+        (merge
+         {:semantic-text-member-count
+          (count (filter #(primary-candidate? (:path %)) entries))}
+         (collision-evidence entries))))
     (catch clojure.lang.ExceptionInfo e
       (throw e))
-    (catch Throwable t
+    (catch IOException t
       (fail! :unreadable-zip zip-file {:cause (.getMessage t)}))))
 
 (defn write-manifest! [path inspection]

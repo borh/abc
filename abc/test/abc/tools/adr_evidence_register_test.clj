@@ -53,7 +53,12 @@
           (is (nil? (:entries result))))))
     (is (seq (:problems (register/materialize-template
                          root (assoc (template [(entry)]) :unknown true)))))
-    (is (seq (:problems (register/materialize-template root {:entries [(entry)]}))))))
+    (is (seq (:problems (register/materialize-template root {:entries [(entry)]}))))
+    (is (= :invalid-registration-template
+           (-> (register/materialize-template root :not-a-map) :problems first :kind)))
+    (is (= :invalid-registration-entry
+           (-> (register/materialize-template root (template [:not-a-map]))
+               :problems first :kind)))))
 
 (deftest candidate-registry-replaces-owned-claims-deterministically
   (let [old-a (assoc (entry) :artifact-hash "old-a")
@@ -78,13 +83,8 @@
     (write! root "docs/evidence/adr-runs/example.json" (artifact "example-passes" "true"))
     (with-redefs [register/current-claims (constantly [{:claim-id "ADR-0001-C1"}
                                                        {:claim-id "ADR-9999-C1"}])
-                  evidence/load-matrix (constantly {})
-                  evidence/load-as-of (constantly "2026-07-12")
                   evidence/validate-registry
-                  (fn [{:keys [registry]}]
-                    (if (= "bad" (get-in registry [:entries 0 :artifact-hash]))
-                      [{:kind :artifact-hash-mismatch :claim-id "ADR-9999-C1"}]
-                      [{:kind :missing-claim-evidence :claim-id "ADR-9999-C1"}]))]
+                  (constantly [{:kind :missing-claim-evidence :claim-id "ADR-9999-C1"}])]
       (let [result (register/register! {:repo-root root :entries-path template-path
                                         :registry-path registry-path})
             first-bytes (slurp registry-file)]
@@ -99,15 +99,17 @@
                                              :registry-path registry-path}))))
       (is (= before (slurp registry-file))))
     (spit template-file (pr-str (template [(entry)])))
-    (with-redefs [register/current-claims (constantly [{:claim-id "ADR-0001-C1"}])
-                  evidence/load-matrix (constantly {})
-                  evidence/load-as-of (constantly "2026-07-12")
-                  evidence/validate-registry
-                  (constantly [{:kind :predicate-failed :claim-id "ADR-9999-C1"}])]
-      (let [before (slurp registry-file)]
-        (is (false? (:ok? (register/register! {:repo-root root :entries-path template-path
-                                               :registry-path registry-path}))))
-        (is (= before (slurp registry-file)))))))
+    (doseq [kind [:artifact-hash-mismatch :expired-evidence :predicate-failed]]
+      (testing (name kind)
+        (with-redefs [register/current-claims (constantly [{:claim-id "ADR-0001-C1"}])
+                      evidence/validate-registry
+                      (constantly [{:kind kind :claim-id "ADR-9999-C1"}])]
+          (let [before (slurp registry-file)
+                result (register/register! {:repo-root root :entries-path template-path
+                                            :registry-path registry-path})]
+            (is (false? (:ok? result)))
+            (is (= kind (-> result :problems first :kind)))
+            (is (= before (slurp registry-file)))))))))
 
 (deftest checked-jq-family-predicate-covers-all-problem-coordinate-shapes
   (let [root (temp-dir)

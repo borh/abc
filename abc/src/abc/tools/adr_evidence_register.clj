@@ -18,32 +18,37 @@
   (merge {:kind kind :message message} data))
 
 (defn- entry-shape-problems [entry]
-  (let [keys-present (set (keys entry))
-        forbidden (set/intersection forbidden-inline-keys keys-present)
-        unknown (set/difference keys-present entry-keys forbidden-inline-keys)
-        missing (set/difference entry-keys keys-present)]
-    (vec
-     (concat
-      (when (seq forbidden)
-        [(problem :invalid-registration-entry "registration entry contains forbidden inline values"
-                  :claim-id (:claim-id entry) :keys (vec (sort forbidden)))])
-      (when (seq unknown)
-        [(problem :invalid-registration-entry "registration entry contains unknown keys"
-                  :claim-id (:claim-id entry) :keys (vec (sort unknown)))])
-      (when (seq missing)
-        [(problem :invalid-registration-entry "registration entry is missing required keys"
-                  :claim-id (:claim-id entry) :keys (vec (sort missing)))])))))
+  (if-not (map? entry)
+    [(problem :invalid-registration-entry "registration entry must be a map")]
+    (let [keys-present (set (keys entry))
+          forbidden (set/intersection forbidden-inline-keys keys-present)
+          unknown (set/difference keys-present entry-keys forbidden-inline-keys)
+          missing (set/difference entry-keys keys-present)]
+      (vec
+       (concat
+        (when (seq forbidden)
+          [(problem :invalid-registration-entry "registration entry contains forbidden inline values"
+                    :claim-id (:claim-id entry) :keys (vec (sort forbidden)))])
+        (when (seq unknown)
+          [(problem :invalid-registration-entry "registration entry contains unknown keys"
+                    :claim-id (:claim-id entry) :keys (vec (sort unknown)))])
+        (when (seq missing)
+          [(problem :invalid-registration-entry "registration entry is missing required keys"
+                    :claim-id (:claim-id entry) :keys (vec (sort missing)))]))))))
 
 (defn materialize-template [repo-root template]
-  (let [template-problems
-        (vec
-         (concat
-          (when-not (= template-keys (set (keys template)))
-            [(problem :invalid-registration-template "registration template must have the exact key set")])
-          (when-not (= :abc-adr-evidence-registration-v1 (:schema-version template))
-            [(problem :invalid-registration-template "registration template schema version is unsupported")])
-          (when-not (vector? (:entries template))
-            [(problem :invalid-registration-template "registration template entries must be a vector")])))
+  (let [template-map? (map? template)
+        template-problems
+        (if-not template-map?
+          [(problem :invalid-registration-template "registration template must be a map")]
+          (vec
+           (concat
+            (when-not (= template-keys (set (keys template)))
+              [(problem :invalid-registration-template "registration template must have the exact key set")])
+            (when-not (= :abc-adr-evidence-registration-v1 (:schema-version template))
+              [(problem :invalid-registration-template "registration template schema version is unsupported")])
+            (when-not (vector? (:entries template))
+              [(problem :invalid-registration-template "registration template entries must be a vector")]))))
         entries (if (vector? (:entries template)) (:entries template) [])
         shape-problems (mapcat entry-shape-problems entries)
         results

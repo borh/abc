@@ -160,8 +160,7 @@ def find_dump_doc(
             matched.append(doc)
     if not matched:
         return None, (
-            f"work_id {work_id!r}: none of {len(candidates)} dump file(s) "
-            f"carry source_hash {want}"
+            f"work_id {work_id!r}: none of {len(candidates)} dump file(s) carry source_hash {want}"
         )
     if any(doc != matched[0] for doc in matched[1:]):
         return None, (
@@ -212,7 +211,9 @@ def walk_dump(doc: dict[str, Any]):
     def _walk(node, ancestor_block):
         if isinstance(node, dict):
             next_ancestor = ancestor_block
-            if "kind" in node and ("content" in node or "children" in node or "value" in node or "source" in node):
+            if "kind" in node and (
+                "content" in node or "children" in node or "value" in node or "source" in node
+            ):
                 # Blocks and inline nodes alike carry 'kind'; only update
                 # the "nearest block" ancestor when this dict looks like a
                 # structural block (has region_class/placement or is a
@@ -363,7 +364,11 @@ def reconcile_work(
                 continue
             declined = next(r["declined"] for r in recs if r["token"] == token)
             remaining = missing
-            for budget, cls in ((gap_budget, "GAP"), (tail_budget, "TAIL"), (other_budget, "ANOMALY_OTHER_TEXT")):
+            for budget, cls in (
+                (gap_budget, "GAP"),
+                (tail_budget, "TAIL"),
+                (other_budget, "ANOMALY_OTHER_TEXT"),
+            ):
                 take = min(remaining, budget.get(token, 0))
                 if take:
                     budget[token] -= take
@@ -527,8 +532,7 @@ def main() -> int:
     candidates = discover_entries(args.corpus)
     if args.jobs <= 1:
         records = [
-            process_candidate(str(args.corpus), str(entry), str(args.dump))
-            for entry in candidates
+            process_candidate(str(args.corpus), str(entry), str(args.dump)) for entry in candidates
         ]
     else:
         with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
@@ -569,8 +573,12 @@ def main() -> int:
                 for field in ("adopted_pairs", "orphan_open", "orphan_close", "reopen"):
                     totals[field][construct] += g[field][construct]
             for field in (
-                "interleave_events", "proper_nestings", "rollback_markers",
-                "lines_with_markers", "invalid_lines", "total_markers",
+                "interleave_events",
+                "proper_nestings",
+                "rollback_markers",
+                "lines_with_markers",
+                "invalid_lines",
+                "total_markers",
             ):
                 totals[field] += g[field]
         return totals
@@ -629,8 +637,10 @@ def main() -> int:
     missing_declined_total = sum(missing_declined_by_class.values())
 
     adopted_pairs_delta = {
-        "yokogumi": source_binding["adopted_yokogumi_pairs"] - dump_binding["adopted_yokogumi_pairs"],
-        "keigakomi": source_binding["adopted_keigakomi_pairs"] - dump_binding["adopted_keigakomi_pairs"],
+        "yokogumi": source_binding["adopted_yokogumi_pairs"]
+        - dump_binding["adopted_yokogumi_pairs"],
+        "keigakomi": source_binding["adopted_keigakomi_pairs"]
+        - dump_binding["adopted_keigakomi_pairs"],
     }
     declined_delta = source_binding["declined_markers"] - dump_binding["declined_markers"]
 

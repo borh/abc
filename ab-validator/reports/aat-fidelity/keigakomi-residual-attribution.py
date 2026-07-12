@@ -347,15 +347,21 @@ def scan_next_marker(text: str, offset: int, line: int) -> RawMarker | None:
     """Faithful port of ab-source-syntax's `scan_next_marker`."""
     note_end = _bottom_text_correction_note_end(text, offset)
     if note_end is not None:
-        return RawMarker(offset, note_end, line, "EditorialNoteBottomTextCorrection", text[offset:note_end])
+        return RawMarker(
+            offset, note_end, line, "EditorialNoteBottomTextCorrection", text[offset:note_end]
+        )
 
     note_end = _ruby_correction_note_end(text, offset)
     if note_end is not None:
-        return RawMarker(offset, note_end, line, "EditorialNoteRubyCorrection", text[offset:note_end])
+        return RawMarker(
+            offset, note_end, line, "EditorialNoteRubyCorrection", text[offset:note_end]
+        )
 
     note_end = _terminal_provenance_note_end(text, offset)
     if note_end is not None:
-        return RawMarker(offset, note_end, line, "SegmentBoundaryTerminalProvenance", text[offset:note_end])
+        return RawMarker(
+            offset, note_end, line, "SegmentBoundaryTerminalProvenance", text[offset:note_end]
+        )
 
     if text.startswith("※［＃", offset):
         content_start = offset + 3
@@ -371,7 +377,9 @@ def scan_next_marker(text: str, offset: int, line: int) -> RawMarker | None:
         if content_end is not None:
             marker_end = content_end + 1
             return RawMarker(offset, marker_end, line, "GaijiAscii", text[offset:marker_end])
-        return RawMarker(offset, content_start, line, "MalformedGaijiAscii", text[offset:content_start])
+        return RawMarker(
+            offset, content_start, line, "MalformedGaijiAscii", text[offset:content_start]
+        )
 
     if text.startswith("［＃", offset):
         content_start = offset + 2
@@ -379,7 +387,9 @@ def scan_next_marker(text: str, offset: int, line: int) -> RawMarker | None:
         if content_end is not None:
             marker_end = content_end + 1
             return RawMarker(offset, marker_end, line, "CommandFullwidth", text[offset:marker_end])
-        return RawMarker(offset, content_start, line, "MalformedCommand", text[offset:content_start])
+        return RawMarker(
+            offset, content_start, line, "MalformedCommand", text[offset:content_start]
+        )
 
     if text.startswith("[#", offset):
         content_start = offset + 2
@@ -387,7 +397,9 @@ def scan_next_marker(text: str, offset: int, line: int) -> RawMarker | None:
         if content_end is not None:
             marker_end = content_end + 1
             return RawMarker(offset, marker_end, line, "CommandAscii", text[offset:marker_end])
-        return RawMarker(offset, content_start, line, "MalformedCommandAscii", text[offset:content_start])
+        return RawMarker(
+            offset, content_start, line, "MalformedCommandAscii", text[offset:content_start]
+        )
 
     if text.startswith("｜", offset):
         base_start = offset + 1
@@ -405,7 +417,9 @@ def scan_next_marker(text: str, offset: int, line: int) -> RawMarker | None:
         if reading_end is not None:
             marker_end = reading_end + 1
             return RawMarker(offset, marker_end, line, "RubyImplicit", text[offset:marker_end])
-        return RawMarker(offset, reading_start, line, "MalformedImplicitRuby", text[offset:reading_start])
+        return RawMarker(
+            offset, reading_start, line, "MalformedImplicitRuby", text[offset:reading_start]
+        )
 
     if text.startswith("〔", offset):
         body_start = offset + 1
@@ -417,7 +431,9 @@ def scan_next_marker(text: str, offset: int, line: int) -> RawMarker | None:
             body = text[body_start:body_end]
             kind = _bracket_marker_kind(body)
             return RawMarker(offset, marker_end, line, kind, text[offset:marker_end])
-        return RawMarker(offset, body_start, line, "MalformedAccentNotation", text[offset:body_start])
+        return RawMarker(
+            offset, body_start, line, "MalformedAccentNotation", text[offset:body_start]
+        )
 
     return None
 
@@ -468,7 +484,9 @@ def rust_matches(text: str, compiled_patterns: list[re.Pattern[str]]) -> list[tu
             if marker.end == next_marker.start:
                 combined = marker.raw + next_marker.raw
                 matches_composite = _marker_matches_any(combined, compiled_patterns)
-                matches_part = matched_alone or _marker_matches_any(next_marker.raw, compiled_patterns)
+                matches_part = matched_alone or _marker_matches_any(
+                    next_marker.raw, compiled_patterns
+                )
                 if matches_composite and not matches_part:
                     occurrences.append((marker.line, combined, "composite"))
     return occurrences
@@ -515,7 +533,8 @@ def process_candidate(corpus_root_str: str, entry_str: str) -> dict[str, Any]:
     )
     if matrix_hits or rust_hits:
         record["matrix_hits"] = [
-            {"line": line, "text": matched, "pattern_index": idx} for line, matched, idx in matrix_hits
+            {"line": line, "text": matched, "pattern_index": idx}
+            for line, matched, idx in matrix_hits
         ]
         record["rust_hits"] = [
             {"line": line, "text": matched, "kind": kind} for line, matched, kind in rust_hits
@@ -570,7 +589,10 @@ def main() -> int:
             records = [future.result() for future in futures]
 
     by_class: dict[str, list[dict[str, Any]]] = {
-        "work": [], "non_work": [], "recovered_extra": [], "unreadable": [],
+        "work": [],
+        "non_work": [],
+        "recovered_extra": [],
+        "unreadable": [],
     }
     for record in records:
         by_class[record["class"]].append(record)

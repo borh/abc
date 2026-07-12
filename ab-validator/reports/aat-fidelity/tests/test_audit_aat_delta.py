@@ -1380,10 +1380,16 @@ def test_bare_toggle_identical_dumps_pass(tmp_path):
     base = write_dump(tmp_path, "a", docs)
     cand = write_dump(tmp_path, "b", docs)
     code, summary, err = run(
-        "bare-toggle-adoption", base, cand, tmp_path,
-        "--expected-adopted-yokogumi", "0",
-        "--expected-adopted-keigakomi", "0",
-        "--expected-declined", "1",
+        "bare-toggle-adoption",
+        base,
+        cand,
+        tmp_path,
+        "--expected-adopted-yokogumi",
+        "0",
+        "--expected-adopted-keigakomi",
+        "0",
+        "--expected-declined",
+        "1",
     )
     assert code == 0, (summary, err)
     assert summary["classes"]["identical"] == 1
@@ -1392,23 +1398,35 @@ def test_bare_toggle_identical_dumps_pass(tmp_path):
 
 def test_bare_toggle_adoption_rewrite_passes(tmp_path):
     inner = {
-        "kind": "text", "value": "（Hare）",
+        "kind": "text",
+        "value": "（Hare）",
         "span": {"line_start": 1, "line_end": 1, "byte_start": 12, "byte_end": 22},
     }
     base_docs = {
-        "w1": doc([para(
-            bare_marker("［＃横組み］", bs=0, be=12), inner,
-            bare_marker("［＃横組み終わり］", bs=22, be=40),
-        )])
+        "w1": doc(
+            [
+                para(
+                    bare_marker("［＃横組み］", bs=0, be=12),
+                    inner,
+                    bare_marker("［＃横組み終わり］", bs=22, be=40),
+                )
+            ]
+        )
     }
     cand_docs = {"w1": doc([para(toggle_container("yokogumi", [inner], bs=0, be=40))])}
     base = write_dump(tmp_path, "a", base_docs)
     cand = write_dump(tmp_path, "b", cand_docs)
     code, summary, err = run(
-        "bare-toggle-adoption", base, cand, tmp_path,
-        "--expected-adopted-yokogumi", "1",
-        "--expected-adopted-keigakomi", "0",
-        "--expected-declined", "0",
+        "bare-toggle-adoption",
+        base,
+        cand,
+        tmp_path,
+        "--expected-adopted-yokogumi",
+        "1",
+        "--expected-adopted-keigakomi",
+        "0",
+        "--expected-declined",
+        "0",
     )
     assert code == 0, (summary, err)
     assert summary["classes"]["toggle_adopted"] == 1
@@ -1417,14 +1435,20 @@ def test_bare_toggle_adoption_rewrite_passes(tmp_path):
 
 def test_bare_toggle_wrong_kind_fails(tmp_path):
     inner = {
-        "kind": "text", "value": "x",
+        "kind": "text",
+        "value": "x",
         "span": {"line_start": 1, "line_end": 1, "byte_start": 12, "byte_end": 13},
     }
     base_docs = {
-        "w1": doc([para(
-            bare_marker("［＃横組み］", bs=0, be=12), inner,
-            bare_marker("［＃横組み終わり］", bs=13, be=31),
-        )])
+        "w1": doc(
+            [
+                para(
+                    bare_marker("［＃横組み］", bs=0, be=12),
+                    inner,
+                    bare_marker("［＃横組み終わり］", bs=13, be=31),
+                )
+            ]
+        )
     }
     cand_docs = {"w1": doc([para(toggle_container("keigakomi", [inner], bs=0, be=31))])}
     base = write_dump(tmp_path, "a", base_docs)
@@ -1435,14 +1459,20 @@ def test_bare_toggle_wrong_kind_fails(tmp_path):
 
 def test_bare_toggle_content_loss_fails(tmp_path):
     inner = {
-        "kind": "text", "value": "x",
+        "kind": "text",
+        "value": "x",
         "span": {"line_start": 1, "line_end": 1, "byte_start": 12, "byte_end": 13},
     }
     base_docs = {
-        "w1": doc([para(
-            bare_marker("［＃横組み］", bs=0, be=12), inner,
-            bare_marker("［＃横組み終わり］", bs=13, be=31),
-        )])
+        "w1": doc(
+            [
+                para(
+                    bare_marker("［＃横組み］", bs=0, be=12),
+                    inner,
+                    bare_marker("［＃横組み終わり］", bs=13, be=31),
+                )
+            ]
+        )
     }
     cand_docs = {"w1": doc([para(toggle_container("yokogumi", [], bs=0, be=31))])}
     base = write_dump(tmp_path, "a", base_docs)
@@ -1465,8 +1495,12 @@ def test_bare_toggle_expected_counter_mismatch_fails(tmp_path):
     base = write_dump(tmp_path, "a", docs)
     cand = write_dump(tmp_path, "b", docs)
     code, _, _ = run(
-        "bare-toggle-adoption", base, cand, tmp_path,
-        "--expected-adopted-yokogumi", "1582",
+        "bare-toggle-adoption",
+        base,
+        cand,
+        tmp_path,
+        "--expected-adopted-yokogumi",
+        "1582",
     )
     assert code == 2
 
@@ -1477,14 +1511,20 @@ def test_bare_toggle_independence_missing_adoption_fails(tmp_path):
     # baseline) — the independent derivation must catch this even though
     # there is no structural diff to inspect (review P5-4).
     inner = {
-        "kind": "text", "value": "x",
+        "kind": "text",
+        "value": "x",
         "span": {"line_start": 1, "line_end": 1, "byte_start": 12, "byte_end": 13},
     }
     docs = {
-        "w1": doc([para(
-            bare_marker("［＃横組み］", bs=0, be=12), inner,
-            bare_marker("［＃横組み終わり］", bs=13, be=31),
-        )])
+        "w1": doc(
+            [
+                para(
+                    bare_marker("［＃横組み］", bs=0, be=12),
+                    inner,
+                    bare_marker("［＃横組み終わり］", bs=13, be=31),
+                )
+            ]
+        )
     }
     base = write_dump(tmp_path, "a", docs)
     cand = write_dump(tmp_path, "b", docs)
@@ -1502,16 +1542,22 @@ def test_bare_toggle_independence_invalid_adoption_fails(tmp_path):
     open_y = bare_marker("［＃横組み］", bs=0, be=12)
     open_k = bare_marker("［＃罫囲み］", bs=12, be=24)
     inner = {
-        "kind": "text", "value": "x",
+        "kind": "text",
+        "value": "x",
         "span": {"line_start": 1, "line_end": 1, "byte_start": 24, "byte_end": 25},
     }
     close_y = bare_marker("［＃横組み終わり］", bs=25, be=43)
     close_k = bare_marker("［＃罫囲み終わり］", bs=43, be=61)
     base_docs = {"w1": doc([para(open_y, open_k, inner, close_y, close_k)])}
     cand_docs = {
-        "w1": doc([para(
-            toggle_container("yokogumi", [open_k, inner], bs=0, be=43), close_k,
-        )])
+        "w1": doc(
+            [
+                para(
+                    toggle_container("yokogumi", [open_k, inner], bs=0, be=43),
+                    close_k,
+                )
+            ]
+        )
     }
     base = write_dump(tmp_path, "a", base_docs)
     cand = write_dump(tmp_path, "b", cand_docs)
@@ -1531,30 +1577,48 @@ def test_bare_toggle_compensating_cross_line_adoption_fails(tmp_path):
     # expected {1,0}) catches it — must exit 2.
     open_y1 = bare_marker("［＃横組み］", line=1, bs=0, be=12)
     inner1 = {
-        "kind": "text", "value": "x",
+        "kind": "text",
+        "value": "x",
         "span": {"line_start": 1, "line_end": 1, "byte_start": 12, "byte_end": 13},
     }
     close_y1 = bare_marker("［＃横組み終わり］", line=1, bs=13, be=31)
     open_y2 = bare_marker("［＃横組み］", line=2, bs=32, be=44)
     open_k2 = bare_marker("［＃罫囲み］", line=2, bs=44, be=56)
     inner2 = {
-        "kind": "text", "value": "y",
+        "kind": "text",
+        "value": "y",
         "span": {"line_start": 2, "line_end": 2, "byte_start": 56, "byte_end": 57},
     }
     close_y2 = bare_marker("［＃横組み終わり］", line=2, bs=57, be=75)
     close_k2 = bare_marker("［＃罫囲み終わり］", line=2, bs=75, be=93)
     base_docs = {
-        "w1": doc([para(
-            open_y1, inner1, close_y1,
-            open_y2, open_k2, inner2, close_y2, close_k2,
-        )])
+        "w1": doc(
+            [
+                para(
+                    open_y1,
+                    inner1,
+                    close_y1,
+                    open_y2,
+                    open_k2,
+                    inner2,
+                    close_y2,
+                    close_k2,
+                )
+            ]
+        )
     }
     cand_docs = {
-        "w1": doc([para(
-            open_y1, inner1, close_y1,  # line 1 left raw (missed adoption)
-            toggle_container("yokogumi", [open_k2, inner2], line=2, bs=32, be=75),
-            close_k2,  # line 2 wrongly adopted (grammar declares it invalid)
-        )])
+        "w1": doc(
+            [
+                para(
+                    open_y1,
+                    inner1,
+                    close_y1,  # line 1 left raw (missed adoption)
+                    toggle_container("yokogumi", [open_k2, inner2], line=2, bs=32, be=75),
+                    close_k2,  # line 2 wrongly adopted (grammar declares it invalid)
+                )
+            ]
+        )
     }
     base = write_dump(tmp_path, "a", base_docs)
     cand = write_dump(tmp_path, "b", cand_docs)
@@ -1579,32 +1643,43 @@ def test_bare_toggle_declined_by_reason_breakdown(tmp_path):
     # Totals: orphan_open 3, orphan_close 0, reopen_rollback 4,
     # interleave 1; declined_markers 8 (= 4 + 1 + 3).
     inner1 = {
-        "kind": "text", "value": "a",
+        "kind": "text",
+        "value": "a",
         "span": {"line_start": 1, "line_end": 1, "byte_start": 24, "byte_end": 25},
     }
     docs = {
-        "w1": doc([para(
-            # line 1: improper interleave
-            bare_marker("［＃横組み］", line=1, bs=0, be=12),
-            bare_marker("［＃罫囲み］", line=1, bs=12, be=24),
-            inner1,
-            bare_marker("［＃横組み終わり］", line=1, bs=25, be=43),
-            bare_marker("［＃罫囲み終わり］", line=1, bs=43, be=61),
-            # line 2: orphan open
-            bare_marker("［＃横組み］", line=2, bs=62, be=74),
-            # line 3: same-construct reopen
-            bare_marker("［＃横組み］", line=3, bs=75, be=87),
-            bare_marker("［＃横組み］", line=3, bs=87, be=99),
-            bare_marker("［＃横組み終わり］", line=3, bs=99, be=117),
-        )])
+        "w1": doc(
+            [
+                para(
+                    # line 1: improper interleave
+                    bare_marker("［＃横組み］", line=1, bs=0, be=12),
+                    bare_marker("［＃罫囲み］", line=1, bs=12, be=24),
+                    inner1,
+                    bare_marker("［＃横組み終わり］", line=1, bs=25, be=43),
+                    bare_marker("［＃罫囲み終わり］", line=1, bs=43, be=61),
+                    # line 2: orphan open
+                    bare_marker("［＃横組み］", line=2, bs=62, be=74),
+                    # line 3: same-construct reopen
+                    bare_marker("［＃横組み］", line=3, bs=75, be=87),
+                    bare_marker("［＃横組み］", line=3, bs=87, be=99),
+                    bare_marker("［＃横組み終わり］", line=3, bs=99, be=117),
+                )
+            ]
+        )
     }
     base = write_dump(tmp_path, "a", docs)
     cand = write_dump(tmp_path, "b", docs)
     code, summary, err = run(
-        "bare-toggle-adoption", base, cand, tmp_path,
-        "--expected-adopted-yokogumi", "0",
-        "--expected-adopted-keigakomi", "0",
-        "--expected-declined", "8",
+        "bare-toggle-adoption",
+        base,
+        cand,
+        tmp_path,
+        "--expected-adopted-yokogumi",
+        "0",
+        "--expected-adopted-keigakomi",
+        "0",
+        "--expected-declined",
+        "8",
     )
     assert code == 0, (summary, err)
     assert summary["classes"]["identical"] == 1

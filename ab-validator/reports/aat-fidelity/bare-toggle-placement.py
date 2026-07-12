@@ -101,18 +101,10 @@ TOKEN_KIND: dict[str, tuple[str, str]] = {
 class LineOutcome:
     """Result of running the Contract 1 grammar over one line."""
 
-    adopted_pairs: dict[str, int] = field(
-        default_factory=lambda: {c: 0 for c in CONSTRUCTS}
-    )
-    orphan_open: dict[str, int] = field(
-        default_factory=lambda: {c: 0 for c in CONSTRUCTS}
-    )
-    orphan_close: dict[str, int] = field(
-        default_factory=lambda: {c: 0 for c in CONSTRUCTS}
-    )
-    reopen: dict[str, int] = field(
-        default_factory=lambda: {c: 0 for c in CONSTRUCTS}
-    )
+    adopted_pairs: dict[str, int] = field(default_factory=lambda: {c: 0 for c in CONSTRUCTS})
+    orphan_open: dict[str, int] = field(default_factory=lambda: {c: 0 for c in CONSTRUCTS})
+    orphan_close: dict[str, int] = field(default_factory=lambda: {c: 0 for c in CONSTRUCTS})
+    reopen: dict[str, int] = field(default_factory=lambda: {c: 0 for c in CONSTRUCTS})
     interleave_events: int = 0
     proper_nestings: int = 0
     rollback_markers: int = 0
@@ -169,10 +161,7 @@ def classify_tokens(tokens: list[tuple[str, str]]) -> LineOutcome:
 
 
 def tokenize_line(line: str) -> list[tuple[str, str]]:
-    return [
-        TOKEN_KIND[match.group(0)]
-        for match in _TOKEN_ALTERNATION.finditer(line)
-    ]
+    return [TOKEN_KIND[match.group(0)] for match in _TOKEN_ALTERNATION.finditer(line)]
 
 
 def classify_line(line: str) -> LineOutcome:
@@ -259,7 +248,9 @@ def process_candidate(corpus_root_str: str, entry_str: str) -> dict[str, Any]:
     return record
 
 
-def accumulate(records: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str, collections.Counter[str]]]:
+def accumulate(
+    records: list[dict[str, Any]],
+) -> tuple[dict[str, Any], dict[str, collections.Counter[str]]]:
     grammar_totals = _empty_grammar_totals()
     form_frequency: dict[str, collections.Counter[str]] = {
         c: collections.Counter() for c in CONSTRUCTS
@@ -274,8 +265,13 @@ def accumulate(records: list[dict[str, Any]]) -> tuple[dict[str, Any], dict[str,
             for key in ("adopted_pairs", "orphan_open", "orphan_close", "reopen"):
                 grammar_totals[key][construct] += grammar[key][construct]
         for key in (
-            "interleave_events", "proper_nestings", "rollback_markers",
-            "lines_with_markers", "invalid_lines", "mixed_lines", "total_markers",
+            "interleave_events",
+            "proper_nestings",
+            "rollback_markers",
+            "lines_with_markers",
+            "invalid_lines",
+            "mixed_lines",
+            "total_markers",
         ):
             grammar_totals[key] += grammar[key]
     return grammar_totals, form_frequency
@@ -286,8 +282,13 @@ def touched_detail(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
         {
             key: record.get(key)
             for key in (
-                "work_id", "label", "reader", "decoding", "sha256",
-                "grammar", "samples",
+                "work_id",
+                "label",
+                "reader",
+                "decoding",
+                "sha256",
+                "grammar",
+                "samples",
             )
         }
         for record in records
@@ -305,19 +306,19 @@ def main() -> int:
 
     candidates = discover_entries(args.corpus)
     if args.jobs <= 1:
-        records = [
-            process_candidate(str(args.corpus), str(entry)) for entry in candidates
-        ]
+        records = [process_candidate(str(args.corpus), str(entry)) for entry in candidates]
     else:
         with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
             futures = [
-                pool.submit(process_candidate, str(args.corpus), str(entry))
-                for entry in candidates
+                pool.submit(process_candidate, str(args.corpus), str(entry)) for entry in candidates
             ]
             records = [future.result() for future in futures]
 
     by_class: dict[str, list[dict[str, Any]]] = {
-        "work": [], "non_work": [], "recovered_extra": [], "unreadable": [],
+        "work": [],
+        "non_work": [],
+        "recovered_extra": [],
+        "unreadable": [],
     }
     for record in records:
         by_class[record["class"]].append(record)
@@ -341,35 +342,27 @@ def main() -> int:
         ],
         "recovered_extra": [
             {
-                "rel": r["rel"], "label": r.get("label"),
-                "sha256": r.get("sha256"), "reader": r.get("reader"),
+                "rel": r["rel"],
+                "label": r.get("label"),
+                "sha256": r.get("sha256"),
+                "reader": r.get("reader"),
                 "touched": r.get("touched", False),
             }
             for r in by_class["recovered_extra"]
         ],
-        "unreadable": [
-            {"rel": r["rel"], "detail": r["detail"]} for r in by_class["unreadable"]
-        ],
+        "unreadable": [{"rel": r["rel"], "detail": r["detail"]} for r in by_class["unreadable"]],
         "grammar_totals": work_totals,
         "recovered_extra_grammar_totals": extra_totals,
         "works_touched": sum(1 for r in by_class["work"] if r.get("touched")),
         "works_with_invalid_lines": sum(
-            1
-            for r in by_class["work"]
-            if r.get("touched") and r["grammar"]["invalid_lines"]
+            1 for r in by_class["work"] if r.get("touched") and r["grammar"]["invalid_lines"]
         ),
         "form_frequency": {
-            construct: [
-                {"form": form, "count": count}
-                for form, count in counter.most_common()
-            ]
+            construct: [{"form": form, "count": count} for form, count in counter.most_common()]
             for construct, counter in work_forms.items()
         },
         "recovered_extra_form_frequency": {
-            construct: [
-                {"form": form, "count": count}
-                for form, count in counter.most_common()
-            ]
+            construct: [{"form": form, "count": count} for form, count in counter.most_common()]
             for construct, counter in extra_forms.items()
         },
         "touched_entries": touched_detail(by_class["work"]),

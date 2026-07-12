@@ -1167,7 +1167,10 @@ def derive_expected(base_doc):
         by_line.setdefault(line_start, []).append((span.get("byte_start"), node))
     expected_adopted = {"yokogumi": 0, "keigakomi": 0}
     expected_reasons = {
-        "orphan_open": 0, "orphan_close": 0, "reopen_rollback": 0, "interleave": 0,
+        "orphan_open": 0,
+        "orphan_close": 0,
+        "reopen_rollback": 0,
+        "interleave": 0,
     }
     expected_by_line: dict[int, dict[str, int]] = {}
     for line, entries in by_line.items():
@@ -1175,8 +1178,7 @@ def derive_expected(base_doc):
         tokens = [TOKEN_KIND[node["source"]] for _, node in entries]
         outcome = classify_tokens(tokens)
         expected_by_line[line] = {
-            construct: outcome.adopted_pairs[construct]
-            for construct in ("yokogumi", "keigakomi")
+            construct: outcome.adopted_pairs[construct] for construct in ("yokogumi", "keigakomi")
         }
         for construct in ("yokogumi", "keigakomi"):
             expected_adopted[construct] += outcome.adopted_pairs[construct]
@@ -1313,7 +1315,10 @@ def main() -> int:
             "adopted_keigakomi_pairs": 0,
             "declined_markers": 0,
             "declined_by_reason": {
-                "orphan_open": 0, "orphan_close": 0, "reopen_rollback": 0, "interleave": 0,
+                "orphan_open": 0,
+                "orphan_close": 0,
+                "reopen_rollback": 0,
+                "interleave": 0,
             },
         }
     handler = {
@@ -1337,8 +1342,16 @@ def main() -> int:
             die(f"{name}: processing failed ({type(err).__name__}: {err})")
     if args.mode == "bare-toggle-adoption":
         expected_checks = [
-            (args.expected_adopted_yokogumi, summary["details"]["adopted_yokogumi_pairs"], "adopted yokogumi pairs"),
-            (args.expected_adopted_keigakomi, summary["details"]["adopted_keigakomi_pairs"], "adopted keigakomi pairs"),
+            (
+                args.expected_adopted_yokogumi,
+                summary["details"]["adopted_yokogumi_pairs"],
+                "adopted yokogumi pairs",
+            ),
+            (
+                args.expected_adopted_keigakomi,
+                summary["details"]["adopted_keigakomi_pairs"],
+                "adopted keigakomi pairs",
+            ),
             (args.expected_declined, summary["details"]["declined_markers"], "declined markers"),
         ]
         for expected, actual, label in expected_checks:

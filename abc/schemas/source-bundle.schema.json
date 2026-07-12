@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/source-bundle.schema.json",
+  "title": "ABC Source Bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source_bundle_schema_id", "bundle_hash_algorithm", "bundle_hash", "archive_hash", "identity_object", "members"],
+  "properties": {
+    "source_bundle_schema_id": {"const": "https://w3id.org/abc/schemas/source-bundle.schema.json"},
+    "bundle_hash_algorithm": {"const": "sha256-rfc8785-jcs-abc-source-bundle-v1"},
+    "bundle_hash": {"$ref": "#/$defs/hash"},
+    "archive_hash": {"$ref": "#/$defs/hash"},
+    "identity_object": {"$ref": "#/$defs/identity"},
+    "members": {"type": "array", "items": {"$ref": "#/$defs/memberMetadata"}}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["construction", "members", "primary_text_member"],
+      "properties": {
+        "construction": {"const": "abc-source-bundle-v1"},
+        "members": {"type": "array", "items": {"$ref": "#/$defs/memberIdentity"}},
+        "primary_text_member": {"type": "string", "minLength": 1}
+      }
+    },
+    "memberIdentity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "member_hash"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "member_hash": {"$ref": "#/$defs/hash"}}
+    },
+    "memberMetadata": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "decoded_path", "name_source", "byte_length", "member_hash"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "decoded_path": {"type": "string", "minLength": 1},
+        "name_source": {"enum": ["efs-utf8", "unicode-extra", "windows-31j"]},
+        "byte_length": {"type": "integer", "minimum": 0},
+        "member_hash": {"$ref": "#/$defs/hash"}
+      }
+    }
+  }
+}

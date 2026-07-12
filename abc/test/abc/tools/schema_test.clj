@@ -32,6 +32,13 @@
            (get (files/read-json path) "version"))
         (str path " must expose the cross-repo schema contract version"))))
 
+(deftest source-bundle-schema-contract-test
+  (let [source-bundle-schema (schema/read-schema
+                              "schemas/source-bundle.schema.json")]
+    (is (= "https://w3id.org/abc/schemas/source-bundle.schema.json"
+           (get source-bundle-schema "$id")))
+    (is (= false (get source-bundle-schema "additionalProperties")))))
+
 (deftest schema-hash-test
   (testing "hashes are over parsed canonical JSON values, not source bytes"
     (let [file-a (java.io.File/createTempFile "abc-schema-a" ".json")

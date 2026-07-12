@@ -103,6 +103,9 @@
 
           :else [])))))
 
+(defn validate-bundle-value [value]
+  (artifact-validation-problems "<unwritten-evidence-bundle>" value []))
+
 (defn- namespace-relative-path [namespace-symbol]
   (str (-> (str namespace-symbol)
            (str/replace "." "/")

@@ -359,6 +359,7 @@ git commit -m "feat(adr): parse stable typed claim headers"
   - `load-bundle repo-root artifact-path -> {:value map :canonical-hash string} | {:problems vector}`
   - `derive-minimum-inputs repo-root input-profile -> sorted-set<string>`
   - `validate-bundle repo-root artifact-path expected-hash affected-claim-ids -> {:bundle map-or-nil :problems vector}`
+  - `validate-bundle-value value -> vector<problem>` for pure schema/date/safe-value validation before capture output is written
   - `observation bundle observation-key -> value-or-nil`
 
 - [ ] **Step 1: Write failing contained-path and hash tests**
@@ -734,8 +735,10 @@ after the command and before deriving inputs or writing output; a command that
 dirties the repository is invalid evidence capture. Derive and hash all profile
 inputs only after that check, obtain revision via
 `git rev-parse --verify HEAD`, write through
-`json/write-deterministic-json-file!`, and validate the result with the Task 3
-bundle validator before returning.
+the Task 3 pure `validate-bundle-value` API, then write through
+`json/write-deterministic-json-file!`. The capture output remains outside the
+repository; contained-path, registry-hash, and current-input checks apply after
+the reviewed bundle is committed and referenced by the registry.
 
 - [ ] **Step 4: Add CLI alias**
 

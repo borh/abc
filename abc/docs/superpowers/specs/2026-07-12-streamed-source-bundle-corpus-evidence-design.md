@@ -59,7 +59,7 @@ and the production limits. It:
 5. streams every member once through SHA-256;
 6. enforces per-member and total limits against actual bytes read;
 7. records exact `byte_length`, `member_hash`, decoded path, normalized path,
-   and filename-source classification;
+   filename-source classification, and the raw ZIP EFS bit;
 8. retains primary-text bytes only when exactly one semantic, non-packaging
    `.txt` candidate exists; and
 9. returns collision evidence and the semantic-text candidate list without
@@ -83,6 +83,13 @@ Admission consumes only the bounded scan result. It:
 - verifies the retained primary bytes and primary member hash agree; and
 - returns `bundle_hash`, `archive_hash`, members, primary identity, and primary
   bytes.
+
+One pure path-collision analysis computes exact NFC duplicates and ICU
+full-fold collisions. Scan evidence, admission error translation, and
+persisted-identity validation all call that function; they do not maintain
+parallel collision predicates. Admission translates its result to marked
+source-bundle reasons, while persisted-identity validation translates the same
+result to identity-policy reasons.
 
 `inspect-zip` stages, scans, then admits. Its public successful value and stable
 failure reasons remain unchanged.
@@ -152,6 +159,12 @@ remain for continuity, but the maximum fields now mean actual streamed bytes.
 asset-only bundles are readable and rejected with
 `no-primary-text-member`.
 
+`utf8_flagged_entry_count` continues to count the raw ZIP general-purpose EFS
+bit 11, not the decoder-precedence result. An entry decoded through a Unicode
+Path extra field can still be EFS-flagged; the scan therefore retains the raw
+bit separately from `name_source`. `legacy_flagged_entry_count` remains the
+complement over non-directory entries.
+
 The report also pins every declared-versus-actual mismatch rather than only
 the maxima:
 
@@ -195,14 +208,25 @@ does not silently raise limits or switch to declared sizes. A limit change
 requires a separate reviewed corpus-measurement run with an explicitly larger
 safety ceiling, documented headroom, and a production-policy update.
 
+Limit failures are not ordinary rejected-corpus evidence and cannot be
+re-blessed into the checked JSON. `too-many-members`, `member-too-large`, and
+`total-too-large` propagate from the evidence collector and abort report
+generation. Consequently every successfully written report satisfies
+`readable_zip_count + unreadable_zip_count = admitted_zip_count +
+rejected_zip_count = total visited ZIPs`.
+
 This change does not add a compressed-archive staging limit. That remains a
 separate resource-policy follow-up because it requires a measured compressed
 corpus maximum and a new admission limit.
 
 ## Error Handling
 
-- Marked source-bundle admission failures become deterministic rejected-corpus
-  evidence.
+- Marked logical-bundle admission failures produced by `admit-scan!` become
+  deterministic rejected-corpus evidence.
+- A marked failure before a complete scan aborts evidence generation, because
+  no actual-byte record exists to count. The sole exception is
+  `unreadable-zip`, which is recorded as structurally unreadable and may receive
+  informational `7zz` listability classification.
 - Archive-parser failures remain structurally unreadable and retain the
   authoritative caller-visible archive path.
 - Interruption, filesystem access failures, linkage errors, programming
@@ -227,6 +251,11 @@ prove:
 - damaged archives remain classification-only and never reach `7zz` for
   identity;
 - report construction/version and reason counts are deterministic; and
+- EFS/legacy counts remain raw-bit counts even when decoder precedence selects
+  a Unicode Path extra field; and
+- production limit failures abort without writing re-blessable evidence; and
+- one shared collision analysis drives scan evidence, admission, and persisted
+  identity validation; and
 - the one pinned declared/actual mismatch and unchanged actual maxima are
   reproduced exactly; and
 - the full pinned-corpus Nix check reproduces the checked JSON byte-for-byte.
@@ -253,6 +282,11 @@ and existing admission-disposition tests remain unchanged and green.
 - Checked maxima are computed from actual streamed bytes.
 - The checked report pins the known understated member declaration and rejects
   any unreviewed mismatch or maximum change.
+- EFS counts retain their raw-bit meaning independently of filename decoder
+  selection.
+- Any production limit violation aborts report generation.
+- Scan, admission, and persisted identities use one collision-analysis
+  implementation with domain-specific error translation.
 - Every structurally readable pinned ZIP is streamed under production limits.
 - The report distinguishes structural readability from bundle admission.
 - Asset-only, collision, limit, and damaged-archive dispositions are stable and

@@ -20,6 +20,8 @@
 - Actual maxima remain 12,631,833 member bytes and 27,874,310 total bytes.
 - Pin `cards/001393/files/50710_ruby_36965.zip` / `fushigino_kunino_alice_musical.txt`: declared 68,007, actual 68,497 bytes.
 - Do not add archive recovery, new limits, parser/publication behavior, or an identity migration.
+- Compare `:primary-text-bytes` with `java.util.Arrays/equals`; Clojure `=` on
+  two separately allocated byte arrays compares object identity.
 
 ---
 
@@ -63,7 +65,20 @@ The scan shape is:
 
 Expected: exit 0. Retain the duration for Task 3.
 
-- [ ] **Step 2: Write failing scan/admission tests**
+- [ ] **Step 2: Pre-flight the extraction against current source**
+
+```sh
+rg -n "defn- (inspect-open-zip|read-member!|primary-candidate?)|defn fail!|defn- stage-archive!" \
+  abc/src/abc/tools/source_bundle.clj
+rg -n "defmacro.*with-zips|defn- admission-data|defn- understate-first-central-size!" \
+  abc/test/abc/tools/source_bundle_test.clj
+```
+
+Expected: every named definition has exactly one match. Read the complete
+current definitions before replacing them; stop and revise the plan if entry
+keys, arities, or helper names differ.
+
+- [ ] **Step 3: Write failing scan/admission tests**
 
 Append to `abc/test/abc/tools/source_bundle_test.clj`:
 
@@ -79,7 +94,7 @@ Append to `abc/test/abc/tools/source_bundle_test.clj`:
     (let [asset-scan (source-bundle/scan-zip asset)
           collision-scan (source-bundle/scan-zip collision)]
       (is (= {:member-count 1 :max-member-bytes 5 :total-bytes 5
-              :utf8-count 0 :legacy-count 1
+              :utf8-count 1 :legacy-count 0
               :declared-actual-size-mismatches []}
              (:stats asset-scan)))
       (is (= [] (:semantic-text-candidates asset-scan)))
@@ -93,9 +108,27 @@ Append to `abc/test/abc/tools/source_bundle_test.clj`:
                                StandardCharsets/UTF_8)))
       (is (true? (get-in collision-scan
                          [:collision-evidence :unicode-case-collision?])))
-      (is (= :case-fold-member-path-collision
-             (:reason (admission-data
-                       #(source-bundle/admit-scan! collision-scan))))))))
+      (let [collision-error
+            (try
+              (source-bundle/admit-scan! collision-scan)
+              nil
+              (catch clojure.lang.ExceptionInfo t t))]
+        (is (source-bundle/admission-error? collision-error))
+        (is (= :case-fold-member-path-collision
+               (:reason (ex-data collision-error))))))))
+
+(deftest efs-count-is-independent-of-decoder-name-source-test
+  (with-zips
+    [zip (write-zip!
+          (temp-file ".zip")
+          [["作品.txt" (utf8-bytes "本文")]]
+          {:efs true
+           :unicode-extra
+           ZipArchiveOutputStream$UnicodeExtraFieldPolicy/ALWAYS})]
+    (let [scan (source-bundle/scan-zip zip)]
+      (is (= "unicode-extra" (get-in scan [:members 0 "name_source"])))
+      (is (= 1 (get-in scan [:stats :utf8-count])))
+      (is (= 0 (get-in scan [:stats :legacy-count])))))
 
 (deftest bounded-scan-pins-declared-versus-actual-bytes-test
   (with-zips [zip (write-zip! (temp-file ".zip")
@@ -111,8 +144,15 @@ Append to `abc/test/abc/tools/source_bundle_test.clj`:
   (with-zips [zip (write-zip! (temp-file ".zip")
                               [["work.txt" (utf8-bytes "body")]
                                ["figure.png" (byte-array [1 2 3])]])]
-    (is (= (source-bundle/admit-scan! (source-bundle/scan-zip zip))
-           (source-bundle/inspect-zip zip)))))
+    (let [scanned (source-bundle/admit-scan!
+                   (source-bundle/scan-zip zip))
+          inspected (source-bundle/inspect-zip zip)]
+      ;; Clojure byte-array equality is identity, not content equality.
+      (is (= (dissoc scanned :primary-text-bytes)
+             (dissoc inspected :primary-text-bytes)))
+      (is (java.util.Arrays/equals
+           ^bytes (:primary-text-bytes scanned)
+           ^bytes (:primary-text-bytes inspected))))))
 
 (deftest bounded-scan-failures-precede-logical-admission-test
   (with-zips [zip (write-zip! (temp-file ".zip")
@@ -133,7 +173,7 @@ Change staging-cleanup test redefinitions from
 `#'source-bundle/inspect-open-zip` to `#'source-bundle/scan-open-zip` after the
 new private function exists. Keep the metadata-only test until Task 2.
 
-- [ ] **Step 3: Verify RED**
+- [ ] **Step 4: Verify RED**
 
 ```sh
 cd abc
@@ -142,9 +182,9 @@ clojure -M:test:kaocha -m kaocha.runner --focus abc.tools.source-bundle-test
 
 Expected: missing `scan-zip` and `admit-scan!` compilation failures.
 
-- [ ] **Step 4: Expose marker authentication**
+- [ ] **Step 5: Expose marker authentication and one collision analysis**
 
-Add after `fail!`:
+Add `admission-error?` after `fail!`:
 
 ```clojure
 (defn admission-error? [throwable]
@@ -152,7 +192,42 @@ Add after `fail!`:
        (true? (::admission-error (ex-data throwable)))))
 ```
 
-- [ ] **Step 5: Extend `read-member!` without changing persisted members**
+Add `path-collision-analysis` after the existing `unicode-fold` definition so
+the var resolves in Clojure source order:
+
+```clojure
+(defn- path-collision-analysis [paths]
+  (let [by-path (group-by identity paths)
+        by-fold (group-by unicode-fold paths)]
+    {:nfc-collisions
+     (->> by-path
+          (filter #(> (count (val %)) 1))
+          (sort-by key)
+          (mapv (fn [[path duplicates]]
+                  {:path path :member-count (count duplicates)})))
+     :unicode-case-collisions
+     (->> by-fold
+          (keep (fn [[folded folded-paths]]
+                  (let [distinct-paths (vec (sort (distinct folded-paths)))]
+                    (when (> (count distinct-paths) 1)
+                      {:folded-path folded :paths distinct-paths}))))
+          (sort-by :folded-path)
+          vec)}))
+```
+
+Replace the duplicate/case-fold blocks inside `validate-identity-object!` with
+calls to this analysis, retaining the existing identity reasons:
+
+```clojure
+(let [{:keys [nfc-collisions unicode-case-collisions]}
+      (path-collision-analysis paths)]
+  (when (seq nfc-collisions)
+    (identity-fail! :identity-member-path-collision {:paths paths}))
+  (when (seq unicode-case-collisions)
+    (identity-fail! :identity-member-case-fold-collision {:paths paths})))
+```
+
+- [ ] **Step 6: Extend `read-member!` without changing persisted members**
 
 Replace it with the complete function below. The extra declared/actual keys are
 siblings of `:metadata` and therefore never enter persisted manifests.
@@ -179,6 +254,8 @@ siblings of `:metadata` and therefore never enter persisted manifests.
                                        (hash/bytes->hex (.digest digest)))}
              :declared-bytes declared-bytes
              :actual-bytes member-bytes
+             :efs-utf8-flag?
+             (.usesUTF8ForNames (.getGeneralPurposeBit ^ZipArchiveEntry entry))
              :primary-bytes (when retained? (.toByteArray retained))}
             (let [next-member (+ member-bytes n)
                   next-total (+ @total-bytes n)]
@@ -198,7 +275,7 @@ siblings of `:metadata` and therefore never enter persisted manifests.
 Do not add declared size to `:metadata`, the persisted manifest, or the
 identity object.
 
-- [ ] **Step 6: Extract `scan-open-zip` and `scan-zip`**
+- [ ] **Step 7: Extract `scan-open-zip` and `scan-zip`**
 
 Replace `validated-parser-entries` and `inspect-open-zip` with:
 
@@ -213,6 +290,8 @@ Replace `validated-parser-entries` and `inspect-open-zip` with:
   (with-open [archive (open-zip-archive archive-path stable-file)]
     (let [entries (decoded-parser-entries archive-path archive limits)
           candidates (filterv #(primary-candidate? (:path %)) entries)
+          collision-analysis
+          (path-collision-analysis (mapv :path entries))
           retained-path (when (= 1 (count candidates))
                           (:path (first candidates)))
           total-bytes (volatile! 0)
@@ -225,15 +304,17 @@ Replace `validated-parser-entries` and `inspect-open-zip` with:
        :archive-hash (hash/format-sha256 (files/sha256-file stable-file))
        :members members
        :semantic-text-candidates (mapv :path candidates)
-       :collision-evidence (collision-evidence entries)
+       :collision-evidence
+       {:nfc-collision? (boolean (seq (:nfc-collisions
+                                      collision-analysis)))
+        :unicode-case-collision?
+        (boolean (seq (:unicode-case-collisions collision-analysis)))}
        :stats
        {:member-count (count members)
         :max-member-bytes (reduce max 0 actuals)
         :total-bytes @total-bytes
-        :utf8-count (count (filter #(= "efs-utf8" (get % "name_source"))
-                                   members))
-        :legacy-count (count (remove #(= "efs-utf8" (get % "name_source"))
-                                     members))
+        :utf8-count (count (filter :efs-utf8-flag? reads))
+        :legacy-count (count (remove :efs-utf8-flag? reads))
         :declared-actual-size-mismatches
         (->> reads
              (keep (fn [{:keys [metadata declared-bytes actual-bytes]}]
@@ -261,30 +342,23 @@ order:
        (finally (Files/deleteIfExists (.toPath staged)))))))
 ```
 
-- [ ] **Step 7: Extract pure admission**
+- [ ] **Step 8: Extract pure admission with shared collision analysis**
 
 Add:
 
 ```clojure
-(defn- validate-scan-collisions! [archive-path members]
-  (let [paths (mapv #(get % "path") members)
-        by-path (group-by identity paths)]
-    (when-let [[path duplicates]
-               (first (sort-by key (filter #(> (count (val %)) 1) by-path)))]
-      (fail! :duplicate-member-path archive-path
-             {:path path :member-count (count duplicates)}))
-    (let [by-fold (group-by unicode-fold paths)]
-      (when-let [[folded collisions]
-                 (first (sort-by key
-                                 (filter #(> (count (distinct (val %))) 1)
-                                         by-fold)))]
-        (fail! :case-fold-member-path-collision archive-path
-               {:folded-path folded :paths (vec (sort collisions))}))))
+(defn- validate-admission-collisions! [archive-path members]
+  (let [{:keys [nfc-collisions unicode-case-collisions]}
+        (path-collision-analysis (mapv #(get % "path") members))]
+    (when-let [collision (first nfc-collisions)]
+      (fail! :duplicate-member-path archive-path collision))
+    (when-let [collision (first unicode-case-collisions)]
+      (fail! :case-fold-member-path-collision archive-path collision)))
   members)
 
 (defn admit-scan! [scan]
   (let [archive-path (:archive-path scan)
-        members (validate-scan-collisions! archive-path (:members scan))
+        members (validate-admission-collisions! archive-path (:members scan))
         candidates (:semantic-text-candidates scan)
         primary-path (case (count candidates)
                        0 (fail! :no-primary-text-member archive-path
@@ -316,10 +390,25 @@ Add:
   ([zip-file limits] (admit-scan! (scan-zip zip-file limits))))
 ```
 
-Delete old collision/primary validation functions only after remaining callers
-are migrated. Keep `inspect-zip-metadata` until Task 2.
+Delete old `collision-evidence`, `validate-entry-collisions!`,
+`choose-primary!`, `validated-parser-entries`, and `inspect-open-zip` only after
+the new callers compile. Keep `inspect-zip-metadata` until Task 2; temporarily
+make it derive booleans through `path-collision-analysis` rather than the
+deleted helper:
 
-- [ ] **Step 8: Verify GREEN and commit**
+```clojure
+(defn inspect-zip-metadata [zip-file]
+  (with-open [archive (open-zip-archive zip-file zip-file)]
+    (let [entries (parser-decoded-entries zip-file archive)
+          analysis (path-collision-analysis (mapv :path entries))]
+      {:semantic-text-member-count
+       (count (filter #(primary-candidate? (:path %)) entries))
+       :nfc-collision? (boolean (seq (:nfc-collisions analysis)))
+       :unicode-case-collision?
+       (boolean (seq (:unicode-case-collisions analysis)))})))
+```
+
+- [ ] **Step 9: Verify GREEN and commit**
 
 ```sh
 cd abc
@@ -389,6 +478,9 @@ Add `ByteBuffer` and `ByteOrder` to the imports, then copy the tested helper:
 In `measure-pinned-corpus-shape-test`, bind `limit.zip`, call
 `(understate-first-central-size! limit-zip 1)`, and expect:
 
+The existing `nfc-collision.zip` call passes `true` to `card-zip`, so its two
+entries have raw EFS bit 11 set and make the expected flagged count reachable.
+
 ```clojure
 {"measurement_construction" "abc-source-bundle-streamed-evidence-v1"
  "readable_zip_count" 6
@@ -430,6 +522,23 @@ Replace the metadata-spoof test with:
            (with-redefs [source-bundle/scan-zip (fn [_] (throw spoof))]
              (report/measure! (one-card-root)))
            (catch Throwable t t))))))
+
+(deftest production-limit-failures-abort-corpus-evidence-test
+  (let [sevenzip-calls (atom 0)
+        thrown
+        (try
+          (with-redefs [source-bundle/default-limits
+                        {:max-members 10
+                         :max-member-bytes 3
+                         :max-total-bytes 100}
+                        report/sevenzip-listable?
+                        (fn [_] (swap! sevenzip-calls inc) false)]
+            (report/measure! (one-card-root)))
+          nil
+          (catch clojure.lang.ExceptionInfo t t))]
+    (is (source-bundle/admission-error? thrown))
+    (is (= :member-too-large (:reason (ex-data thrown))))
+    (is (zero? @sevenzip-calls))))
 ```
 
 Update the protected-failure test to redefine `source-bundle/scan-zip` and
@@ -551,10 +660,10 @@ Add:
        (catch clojure.lang.ExceptionInfo t
          (if-not (source-bundle/admission-error? t)
            (throw t)
-           (case (:reason (ex-data t))
-             :unreadable-zip
+           (if (= :unreadable-zip (:reason (ex-data t)))
              (record-unreadable summary aozora-root zip-file)
-             (record-rejection summary (:reason (ex-data t))))))))
+             ;; No complete scan means no actual-byte evidence. Fail closed.
+             (throw t))))))
    (empty-summary)
    (corpus-zips aozora-root)))
 ```

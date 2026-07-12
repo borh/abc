@@ -45,8 +45,11 @@
 ;; cost (~0.4s vs ~0.03s for the actual validation). ph-schematron caches the
 ;; bound transformer inside a SchematronResourceSCH once it is used, so reusing
 ;; the resource across validations skips recompilation. Cache by canonical path
-;; + mtime so an edited schema busts the entry. Sequential use only (matches the
-;; TEI RelaxNG validator's contract).
+;; + mtime so an edited schema busts the entry. Safe for concurrent apply: the
+;; cached SchematronResourceSCH is fully compiled by .isValidSchematron before
+;; it is published into the atom, and each validate! call applies a fresh JAXP
+;; Transformer from the thread-safe compiled Templates, with no shared
+;; per-call mutable state.
 (defonce ^:private resource-cache (atom {}))
 
 (defn- schematron-resource [schema-path]

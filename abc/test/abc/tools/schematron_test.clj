@@ -232,6 +232,26 @@
       (is (= [:error]
              (mapv :severity findings))))))
 
+(deftest concurrent-validate-calls-do-not-interfere-test
+  (testing "each concurrent call collects only its own document's findings from the shared cached resource"
+    (let [results (->> (range 8)
+                       (mapv (fn [i]
+                               (let [[path label] (if (even? i)
+                                                    ["fixtures/tei/invalid/missing-title.xml" "missing-title"]
+                                                    ["fixtures/tei/invalid/ruby-missing-reading.xml" "ruby"])]
+                                 (future
+                                   (schematron/validate! {:schema-path schema-path
+                                                          :xml-path path
+                                                          :label label})))))
+                       (mapv deref))]
+      (doseq [{:keys [label findings]} results]
+        (let [own-rule-id (if (= label "missing-title") "abc-tei-header-title" "abc-ruby-complete")
+              other-rule-id (if (= label "missing-title") "abc-ruby-complete" "abc-tei-header-title")]
+          (is (= [own-rule-id] (mapv :rule-id findings))
+              (str label " must report only its own document's finding"))
+          (is (not-any? #{other-rule-id} (map :rule-id findings))
+              (str label " must not see the other document's finding")))))))
+
 (deftest multi-rule-pattern-evaluates-all-rules-test
   (testing "ISO Schematron patterns with multiple rules are evaluated"
     (let [schema (java.io.File/createTempFile "abc-sch-multi-rule" ".sch")

@@ -9,7 +9,7 @@
   threads (per-work loops are exercised in tests under a rebound
   *derive-parser-ir!*). When any f call throws, the original throwable
   propagates (ExecutionException unwrapped) after all tasks have completed;
-  in-flight work is not cancelled."
+  queued and in-flight work all runs to completion (not cancelled)."
   [concurrency f coll]
   (if (<= concurrency 1)
     (mapv f coll)

@@ -165,7 +165,7 @@ removed, the commit must say why it was safe.
   run over the same inputs.
 - `continue-on-failure` semantics unchanged (catch inside the task).
 - Fail-fast mode difference (accepted): sequential aborts at the first
-  failing work; parallel lets in-flight tasks finish before rethrowing the
+  failing work; parallel lets queued and in-flight tasks finish before rethrowing the
   same error. The end state is a superset of partial work; exit status and
   error identity are identical.
 - The helper must not leak threads on failure (shutdown in `finally`).

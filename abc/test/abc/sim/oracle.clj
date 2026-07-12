@@ -100,3 +100,26 @@
           "relation_to_work" rel
           "previous_person_ids" (vec (sort (get-in prev [:edges k] #{})))
           "current_person_ids" (vec (sort (get-in cur [:edges k] #{})))})))
+
+(defn expected-participant-updates
+  "Predicted drift_participant_updates for the window prev → cur,
+  restricted to {person_id, change_type} (P15). Presence in the projected
+  endpoints decides added/removed; model person-map equality decides
+  hash_changed — person_record_hash is a pure function of the person's
+  own fields (spec §Key facts). Sorted by person_id."
+  [prev cur participant-pids]
+  (let [p (:persons (projection prev))
+        c (:persons (projection cur))]
+    (vec
+     (keep (fn [pid]
+             (let [pp (get p pid) cp (get c pid)]
+               (cond
+                 (and pp cp (not= pp cp))
+                 {"person_id" pid "change_type" "hash_changed"}
+
+                 (and pp (nil? cp))
+                 {"person_id" pid "change_type" "removed"}
+
+                 (and cp (nil? pp))
+                 {"person_id" pid "change_type" "added"})))
+           (sort participant-pids)))))

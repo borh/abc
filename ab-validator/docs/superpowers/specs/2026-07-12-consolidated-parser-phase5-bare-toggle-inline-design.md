@@ -1,13 +1,15 @@
 # Consolidated parser Phase 5 — bare-toggle inline classification, denominator closure, coverage-green hygiene
 
 **Date:** 2026-07-12
-**Status:** approved design (brainstorm decisions recorded below)
+**Status:** revised design, revision 2 — review round 1 (blockers P5-1…P5-5,
+suggestions P5-6…P5-10, nits) incorporated; pending re-approval for
+planning.
 **Follows:** `2026-07-11-consolidated-parser-phase4-level3-admission-activation-design.md`
 (Phase 4 merged to main `ac2be926`; `ab-aozora 0.5.0` is the activated
 publication lane, AAT schema v2, mapping `0.3.0`).
 **Evidence base:** `docs/superpowers/reports/2026-07-12-bare-toggle-placement-attribution.md`
-(committed with this spec) and
-`2026-07-11-keigakomi-yokogumi-denominator-attribution.md`.
+**Revision 2** (grammar-true scan over the exact 17,886-entry production
+universe) and `2026-07-11-keigakomi-yokogumi-denominator-attribution.md`.
 
 ## Goal
 
@@ -19,42 +21,84 @@ errata, and restore the end-to-end green coverage verdict
 (`IR_PUBLICATION_COVERAGE_COMPLETE`) by completing the ABC custom-contract
 `0.3.0` confirmation, plus three small hygiene items.
 
+## Task 0 — repair the Phase 4 baseline (precondition, P5-1)
+
+At the spec commit, the integrated Phase 4 Rust baseline is red under the
+repository's own gates:
+
+- `cargo fmt --check` fails: committed formatting drift in
+  `crates/ab-aozora/tests/wire.rs` (~line 84) and
+  `crates/ab-aozora-aat/src/lib.rs`.
+- `just clippy` runs `cargo clippy --workspace --all-targets
+  --all-features`, which enables the facade's stub `cst`/`query` features —
+  documented in `crates/ab-aozora-facade/Cargo.toml` as *intentionally*
+  failing to compile (their `pub use aozora_cst::* / aozora_query::*`
+  re-exports have no crate to resolve; the crates were excluded from the
+  lift set by design). The gate and the stub-feature design contradict
+  each other; both cannot stand.
+
+Task 0 resolves both before any Phase 5 instrumentation lands:
+
+1. Commit the formatting fixes (`cargo fmt`).
+2. Resolve the clippy contradiction by **removing the stub `cst`/`query`
+   features and their `#[cfg(feature = …)]`-gated sections in
+   `crates/ab-aozora-facade/src/lib.rs`** (never-lifted crates; the
+   sections are permanently dead code — YAGNI). Alternative, if
+   upstream-feature-name parity must survive: scope the clippy gate's
+   feature set instead; the plan review adjudicates if the implementer
+   finds a reason to prefer it. Either way the resolution is its own
+   reviewed commit.
+3. Exit criteria, all green on one commit: `cargo check --workspace
+   --all-targets`, `cargo fmt --check`, `just clippy`, the Phase 4
+   checkpoint test suite, and a live
+   `reports/aat-fidelity/verify-phase4-checkpoint.py` → `CHECKPOINT OK`.
+
+Phase 5 work may not begin until Task 0's exit criteria hold; every
+subsequent task inherits the stay-green obligation.
+
 ## Ground truth that drives the design
 
-The placement-attribution audit (2026-07-12, pinned corpus store path
-identical to the frozen fidelity summary's) establishes:
+The placement + adoption-grammar audit (Revision 2 — production-parity
+reader bound fail-closed to exactly 17,886 entries, recoverable zips
+recovered and recorded, plaintext sources included, per-entry identity /
+reader-path / decode-mode / sha256 recorded) establishes:
 
-- **Every** bare-toggle occurrence is mid-line; **zero** markers stand
-  alone on a line.
-- **Every** close pairs with an open **on the same line**: 1,589 yokogumi
-  pairs (338 works) and 25 keigakomi pairs (8 works); **zero** cross-line
-  pairs.
-- 10 surplus `［＃横組み］` opens are unpaired (one per work, no close
-  anywhere in the work).
+- **Every** bare-toggle marker is mid-line; **zero** stand alone on a
+  line; **zero** pairs span lines.
+- Under the exact adoption grammar of Contract 1 (not naive pairing):
+  **adopted pairs = 1,582 yokogumi + 25 keigakomi**; declined markers =
+  **24** (10 orphan opens + 14 rollback markers), attributed in full:
+  the 10 orphans are the literal editorial example line
+  `（例）［＃横組み］` quoted in 凡例 sections; the 14 rollbacks are one
+  malformed 14-marker quotation line in `000094_42338`. Marker
+  arithmetic closes exactly: 3,238 = 2 × 1,607 + 24.
+- 0 improper interleavings, 0 orphan closes, 1 proper cross-construct
+  nesting, 0 lines mixing adopted and invalid groups.
 - Corpus usage is inline: Latin runs inside vertical text, boxed words
-  inside headings, multiple pairs per line, and cross-construct nesting
-  (a yokogumi pair inside a keigakomi pair on one line).
+  inside headings, multiple pairs per line.
 
 **Consequence:** the bare forms are *inline span* markup. The Phase 3/4
 carried framing ("extend the `yokogumi_block`/`keigakomi_block`
 classifiers") is superseded for these forms: the emission target is the
 existing AAT schema v2 `inline_container` kinds `"yokogumi"` /
-`"keigakomi"` (`data/aat-schema.json` `$defs/inline_container`), for which
-`ab-aat-to-parser-ir` conversion arms already exist
-(`crates/ab-aat-to-parser-ir/src/convert.rs`). No AAT schema bump: the
-document stays `version 2`.
+`"keigakomi"` (`data/aat-schema.json` `$defs/inline_container`). No AAT
+schema bump: the document stays `version 2`.
 
-## Decisions (brainstorm, all confirmed)
+## Decisions (brainstorm + review round 1)
 
 1. **Scope:** bare-toggle classifiers + hygiene cluster + keigakomi
    44-residual. Warigaki/kunten vocabulary ADR deferred to Phase 6.
-2. **Unpaired markers raw-preserve** (fail-closed; the compound-jizume
-   fallback precedent). No auto-close at EOF or at structural boundaries.
-3. **One identity rotation (C5)** covering both construct families;
-   hygiene and residual work are non-identity tasks.
+2. **Unpaired/invalid markers raw-preserve** (fail-closed; the
+   compound-jizume fallback precedent). No auto-close at EOF or at
+   structural boundaries. The corpus vindicates this: the 10 orphan opens
+   are notation examples that must never classify.
+3. **One identity rotation (C5)** covering both construct families.
+   Hygiene and residual work are non-identity tasks in independently
+   reviewable commits; none of them are part of C5's identity.
 4. **Keigakomi residual: attribute-or-errata**, not phase-blocking.
-5. **ABC drift: full confirmation** — flip the `0.3.0` custom contract to
-   `CONFIRMED_BY_ABC_INTEGRATION`, coverage back to `COMPLETE`.
+5. **ABC drift: full integration confirmation** — flip the `0.3.0` custom
+   contract to `CONFIRMED_BY_ABC_INTEGRATION`, coverage back to
+   `COMPLETE`, with recorded provenance (Contract 5).
 6. **Representation: inline spans, same-line only.** No cross-line or
    block classification of bare forms (zero corpus instances; a stray
    open pairing with a stray close thousands of lines away must never
@@ -63,6 +107,10 @@ document stays `version 2`.
    keigakomi inline-attr family 238): different recognition mechanism
    (back-reference to preceding quoted text); named follow-up, not
    Phase 5.
+8. **(Review P5-4) Line grammar is a total two-pass algorithm over one
+   global nesting stack** — specified normatively in Contract 1;
+   per-construct stacks are insufficient (they cannot distinguish proper
+   nesting from interleaving).
 
 ## Contract 1 — recognition and emission (the C5 classifier)
 
@@ -78,35 +126,67 @@ forms or the inline-attr forms (both carry intervening characters), so the
 existing block classifiers and raw handling of other families are
 untouched by construction.
 
-**Pairing rule (same line only, fail-closed):**
+**Line grammar (normative, total, two passes; the Python reference model
+is `classify_line` in `reports/aat-fidelity/bare-toggle-placement.py` and
+the Rust implementation must mirror it test-for-test — the
+`reports/lib/terminal_provenance.py` precedent):**
 
-- Within one decoded-source line, markers of both constructs are paired by
-  a document-order stack per construct.
-- An open pairs with the nearest following close of the same construct on
-  the **same line**.
-- Cross-construct proper nesting is admitted (e.g.
-  `［＃罫囲み］…［＃横組み］…［＃横組み終わり］…［＃罫囲み終わり］`);
-  the nested pair becomes a child `inline_container` of the outer pair's
-  content.
-- Fail-closed exclusions — **every marker of the affected construct on
-  that line stays a byte-identical raw node** (current behavior, no new
-  warning codes); for the interleaving case both constructs' markers on
-  the line stay raw:
-  - an open with no same-line close (includes the 10 corpus unpaired
-    opens and any hypothetical cross-line pair),
-  - a close with no same-line open,
-  - same-construct re-open before the pending open closes on that line,
-  - improper cross-construct interleaving (overlap without nesting, e.g.
-    A-open B-open A-close B-close).
+*Pass 1 — scan the line's bare-toggle tokens in order over ONE global
+nesting stack; record candidates and invalid constructs; emit nothing:*
+
+- **open K:** if a frame of construct K is already anywhere on the stack,
+  mark K invalid for this line (same-construct reopen); push the frame
+  regardless, so scanning stays total and deterministic.
+- **close K, stack empty:** mark K invalid (orphan close).
+- **close K, top of stack is K:** pop; record a candidate pair (with its
+  nesting position).
+- **close K, top of stack is J ≠ K:** improper interleaving; mark BOTH J
+  and K invalid; do not pop; the close pairs with nothing.
+- **end of line:** every frame still on the stack marks its construct
+  invalid (orphan open).
+
+*Pass 2 — adoption, only after the whole line's validity is known:*
+
+- A candidate pair is **adopted** iff its construct was not marked
+  invalid on this line.
+- Every marker of an invalid construct on this line — including the
+  markers of candidate pairs rolled back by construct invalidation —
+  stays a **byte-identical raw node** (current behavior, no new warning
+  codes).
+- **Invalidation is construct-scoped per line, decided explicitly
+  (review P5-4 item 4):** a valid construct's pair nested inside an
+  invalidated construct's markers still adopts. The invalid markers
+  remain raw inline nodes; the valid pair never depended on their
+  extent. (Corpus consequence: `000106_55753` adopts its 7 valid pairs
+  even though another of its lines carries the `（例）` orphan.)
+- Rewrites are atomic per line: a line either receives exactly its
+  adopted-pair rewrites or is byte-identical.
 
 **Emission (adopted pair):** one `inline_container` node with `kind`
 `"yokogumi"` or `"keigakomi"`, whose `content` is the normally-parsed
 inline content between the two markers (other inline markup inside the
-span parses exactly as it would outside it), and whose `span` covers the
-first byte of the open marker through the last byte of the close marker in
-ADR 0024 decoded-source coordinates. The two marker tokens are consumed by
-the adoption (they do not additionally appear as raw nodes) — mirroring
-how verbose containerOpen/Close raw pairs disappear into typed blocks.
+span parses exactly as it would outside it; a nested adopted pair becomes
+a child `inline_container`), and whose `span` covers the first byte of
+the open marker through the last byte of the close marker in ADR 0024
+decoded-source coordinates. The two marker tokens are consumed by the
+adoption (they do not additionally appear as raw nodes) — mirroring how
+verbose containerOpen/Close raw pairs disappear into typed blocks.
+
+**Property/model tests (required, review P5-4):** in addition to
+corpus-pinned fixtures for every grammar branch (adopt, sequential pairs,
+proper nesting, interleave, reopen, orphan open, orphan close,
+valid-beside-invalid on one line, rollback of an earlier pair by a later
+orphan), the Rust classifier gets a hegel property/model target (the
+repository's property-testing idiom, cf. the ruby-oracle spec) over
+generated token/text streams asserting at minimum:
+
+- every marker is consumed exactly once (adopted) or preserved exactly
+  once (raw) — never both, never neither;
+- invalid lines are byte-identical to their input;
+- classification is deterministic and idempotent;
+- changing one line never affects any other line's output;
+- emitted containers form a properly nested tree; parent spans contain
+  child spans; visible inline order is preserved.
 
 **Observability preflight (named plumbing task, Phase 4 blocker-5
 lesson):** before the classifier is written, a task must verify on real
@@ -114,36 +194,66 @@ wire output that the facade delivers bare-toggle markers as observable
 in-line nodes with exact source text and spans usable for the emission
 contract above. If any facade change is required to observe them, the
 facade version bumps (0.3.0 → 0.3.1) and joins C5's identity join key;
-otherwise the facade stays 0.3.0. The plan must not assume either outcome.
+otherwise the facade stays 0.3.0. The plan must not assume either
+outcome.
 
-**Corpus-bound expectations (checked by the delta audit, not asserted
-blindly):** adopted yokogumi pairs = 1,589; adopted keigakomi pairs = 25;
-unpaired raw-preserved opens = 10; all other works byte-identical.
+**Corpus-bound expectations (grammar-true, Revision 2; checked by the
+gates, not asserted blindly):** adopted yokogumi pairs 1,582; adopted
+keigakomi pairs 25; declined raw-preserved markers 24 (10 orphan opens +
+14 rollback markers); 0 orphan closes; 0 interleavings; 1 proper
+nesting.
 
-## Contract 2 — mapping 0.4.0
+**Decline observability (review P5-10):** declines must be countable per
+run, not silent. The delta audit (Contract 3, gate 1) reports the decline
+reason counters (orphan open / orphan close / reopen / interleave /
+rollback) and binds them to the expected values; the placement instrument
+remains a standing tool so any future corpus rotation re-derives the
+expectations before re-gating. Adapter-side warning enrichment stays a
+non-goal.
+
+## Contract 2 — mapping 0.4.0 (generation-preserving, P5-5)
 
 New inline emission produces AAT paths mapping `0.3.0` has no rules for
 (verified: `data/aat-to-parser-ir-mapping-v2.json` carries yokogumi /
 keigakomi rules only for the `*_block` kinds — S-05/S-06/S-09/S-10,
 U-13/U-14/U-39/U-40). Therefore:
 
-- `data/aat-to-parser-ir-mapping-v2.json` is edited in place:
-  `mapping_version` `0.3.0 → 0.4.0`, `source_aat_version` stays `2`, new
-  transform-rule descriptions for the inline `yokogumi` / `keigakomi`
-  container paths with observed-occurrence counters measured from the C5
-  dump (the S-08/I-32 accounting pattern: every observed path accounted,
-  no silent categories).
-- The new mapping hash is computed at freeze time and becomes the frozen
-  registry coordinate of the C5 row. The `0.3.0` hash
+- **Freeze `0.3.0` first:** a byte-exact copy of the current
+  `data/aat-to-parser-ir-mapping-v2.json` is committed as
+  `data/aat-to-parser-ir-mapping-v2-0.3.0.json` (immutable, the
+  `aat-schema-v1.json` precedent) **before** any 0.4.0 edit. The current
+  tree must always contain every mapping generation any registry row
+  binds — retaining a hash without the value it identifies is not
+  retention, and C4 conversion evidence must remain reproducible from
+  the checkout.
+- `data/aat-to-parser-ir-mapping-v2.json` then becomes `mapping_version`
+  `0.4.0` (`source_aat_version` stays `2`), adding transform-rule
+  descriptions for the inline `yokogumi` / `keigakomi` container paths
+  with observed-occurrence counters measured from the C5 dump (the
+  S-08/I-32 accounting pattern: every observed path accounted, no silent
+  categories).
+- **Span projection stated explicitly (review P5-7):** the AAT
+  `inline_container` span is marker-inclusive (Contract 1), but the
+  converter intentionally does not project AAT byte bounds — parser-IR
+  spans are constructed from visible decoded text
+  (`crates/ab-aat-to-parser-ir/src/convert.rs`, `append_visible_content_
+  text` region around line 2014). Mapping 0.4.0's rule descriptions for
+  these paths must state this projection so "conversion arms already
+  exist" cannot be misread as marker-inclusive span preservation.
+- **Dispatch binds the generation, not just the AAT version:** with two
+  mapping generations for schema v2, AAT-version-only selection is
+  insufficient. The converter (and `ab-check` where it validates
+  conversions) must select and verify the tuple (AAT schema generation,
+  mapping version, mapping hash, mapping file, parser-IR schema hash),
+  fail-closed on any mismatch; registry rows carry the full tuple, and
+  `verify-phase5-checkpoint.py` verifies the hash of the mapping file
+  each gate actually used.
+- The `0.3.0` hash
   (`sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40`)
-  remains the frozen coordinate of the existing rows — the registry is
-  append-only; no retro-edits.
-- Converter dispatch is unchanged: AAT version 2 selects the current
-  schema/mapping files; `ab-check` likewise. The frozen v1 pair is
-  untouched.
+  remains the frozen coordinate of the existing rows, now permanently
+  backed by the frozen file. The registry is append-only; no retro-edits.
 - The converter README's mapping section is updated in the same task
-  (version, hash, rule inventory) — no stale-hash repeat of the v1 line
-  defect.
+  (versions, hashes, generation table, rule inventory).
 
 ## Contract 3 — identity, gates, ceremony (C5)
 
@@ -155,49 +265,66 @@ recorded in a machine-readable identity file
 mapping `0.4.0` + hash); candidates are never derived from `HEAD`; every
 local build and hinoki run is candidate-commit-bound.
 
-**Gates (all fail-closed, all on the pinned 17,886-work corpus):**
+**Gates (all fail-closed, all on the pinned 17,886-entry corpus):**
 
 1. **Delta audit** — new `bare-toggle-adoption` mode in
-   `reports/aat-fidelity/audit-aat-delta.py`. Grammar: for each differing
-   work, the AAT delta must consist exactly of adopted-pair rewrites
-   (remove the two raw marker nodes, insert one `inline_container` of the
-   matching kind whose content equals the previously-adjacent inline
-   content and whose span satisfies Contract 1); counters
-   `adopted_yokogumi_pairs`, `adopted_keigakomi_pairs`,
-   `unpaired_raw_preserved`; expected values 1,589 / 25 / 10; any other
-   difference class → exit 2.
-2. **Conformance** — 25/25 `must` on the ab-aozora lane plus the seed
-   lane, zero drift outside adopted works.
-3. **Perf** — measure-first on the pinned hash-pinned workset; workset
-   median ≤ +10% blocks; `001562_56145` remains the individually watched
-   work (its +34.8% individual regression is median-absorbed but any
-   growth is investigated before admission). Inline-path changes touch
-   span composition — this is the phase's riskiest gate; the Phase 4
-   `from_entries` lesson (no `serde_json::Value` round-trips on hot
-   paths) applies to the new inline assembly.
-4. **Conversion audit** — 17,886 / 17,886 / 0
-   (parsed / raw-preserved / diagnostic) under mapping `0.4.0`.
+   `reports/aat-fidelity/audit-aat-delta.py`, **two separate checks**
+   (review P5-6):
+   - *Delta grammar over differing works:* every C4→C5 AAT difference
+     must consist exactly of adopted-pair rewrites (remove the two raw
+     marker nodes, insert one `inline_container` of the matching kind
+     whose content equals the previously-adjacent inline content and
+     whose span satisfies Contract 1). Counters bound to expected
+     values: `adopted_yokogumi_pairs == 1582`,
+     `adopted_keigakomi_pairs == 25`. Any other difference class →
+     exit 2.
+   - *Whole-candidate invariant scan (not derivable from diffs):* over
+     the full C5 dump, every declined marker — the 24 (10 orphan opens +
+     14 rollback markers) — is verified present as a raw node with
+     source text and span identical to its C4 counterpart, with decline
+     reason counters bound (`orphan_open == 10`, `rollback == 14`,
+     `orphan_close == 0`, `interleave == 0`).
+   - Byte equality in both checks is evaluated after substituting the
+     adapter identity join key and an explicitly enumerated list of
+     allowed metadata changes (and nothing else).
+2. **Conformance** — ab-aozora lane 25/25 `must`; seed lane over its 30
+   official-docs vectors holds the C4 baseline (22 pass / 8 warning /
+   0 fail / 0 skip) with zero regressions; zero drift outside adopted
+   works.
+3. **Perf** — measure-first on the pinned hash-pinned workset; a median
+   regression greater than 10% blocks admission; `001562_56145` remains
+   the individually watched work (its +34.8% individual regression is
+   median-absorbed but any growth is investigated before admission).
+   Inline-path changes touch span composition — this is the phase's
+   riskiest gate; the Phase 4 `from_entries` lesson (no
+   `serde_json::Value` round-trips on hot paths) applies to the new
+   inline assembly.
+4. **Conversion audit** — 17,886 attempted / 17,886 succeeded / 0 failed
+   under mapping `0.4.0`, with the frozen `0.3.0` file untouched.
 
 **Ceremony order (Phase 4-proven, unchanged):** producer gate reports
 frozen → registry row appended to `abc/data/aat-parser-ir-compatibility.edn`
-(C5 tuple + mapping 0.4.0 coordinate) → admission run with byte-exact
-whole-row equality (copy `--compat-edn-out` verbatim), `:admitted`
-captured → run-set repoint: **one atomic commit** updating the `ab-aozora`
-entry of `reports/aat-fidelity/run-sets/current.json` to the C5 dump
-(`aat_dir`, `adapter_version_contains`, `content_hash`) with an explicit
-allowed-paths list; no fixture or run-set content staged before that
-commit → `reports/aat-fidelity/verify-phase5-checkpoint.py` binds the gate
-summaries, both audit modes, the live admission re-run (fail-closed), and
-the repoint commit's tree (parent/child checks, `ACTIVATION_REQUIRED` /
-allowed-prefixes pattern from the Phase 4 verifier) → hinoki dump
-retention: the C5 dump joins the never-delete list; the C4 dump
-`ab-aozora-phase4-c4-27772b1` **remains never-delete** (prior run-set
-states reference it) — retention is append-only.
+(C5 tuple + mapping 0.4.0 coordinates per Contract 2) → admission run
+with byte-exact whole-row equality (copy `--compat-edn-out` verbatim),
+`:admitted` captured → run-set repoint: **one atomic commit** updating
+the `ab-aozora` entry of `reports/aat-fidelity/run-sets/current.json` to
+the C5 dump (`aat_dir`, `adapter_version_contains`, `content_hash`) with
+an explicit allowed-paths list; no fixture or run-set content staged
+before that commit → `reports/aat-fidelity/verify-phase5-checkpoint.py`
+binds the gate summaries, both delta-audit checks, the mapping-generation
+tuple of Contract 2, the live admission re-run (fail-closed), and the
+repoint commit's tree (parent/child checks, allowed-prefixes pattern from
+the Phase 4 verifier) → hinoki dump retention: the C5 dump joins the
+never-delete list; the C4 dump `ab-aozora-phase4-c4-27772b1` **remains
+never-delete** (prior run-set states reference it) — retention is
+append-only.
 
 **Rollback:** `git revert` of the repoint commit restores the C4 lane
-binding; registry rows are append-only and are not removed.
+binding (mapping 0.3.0 stays present in-tree per Contract 2, so the
+reverted state is fully reproducible); registry rows are append-only and
+are not removed.
 
-## Contract 4 — keigakomi 44-residual (attribute-or-errata)
+## Contract 4 — keigakomi 44-residual (attribute-or-errata, P5-8)
 
 Extend the denominator-attribution tooling
 (`reports/aat-fidelity/denominator-attribution.py` or a sibling script,
@@ -212,22 +339,34 @@ works/forms account for 717 − 673 = 44. Bounded outcome, either:
   include a form outside the matrix alternation, saying so plainly — the
   frozen summary itself is never edited); or
 - **Errata:** a frozen report recording the residual as irreducible under
-  the hypotheses checked, designating **673** (or the reconciled figure)
-  as the effective keigakomi denominator that future classifier rates
-  must cite.
+  the hypotheses checked. **An irreducible residual selects no winner**:
+  the errata preserves both figures — scanner-defined denominator 673,
+  frozen-instrument denominator 717, unresolved difference 44 — and
+  requires every future keigakomi rate to be labeled with the denominator
+  definition it uses (or reported as an interval over both). Designating
+  a single authoritative denominator requires an explained semantic
+  choice, which an unexplained residual cannot supply.
 
 Not phase-blocking; C5's gates do not depend on it.
 
-## Contract 5 — ABC custom-contract 0.3.0 confirmation
+## Contract 5 — ABC custom-contract 0.3.0 integration confirmation (P5-9)
 
 Mechanism per `docs/handoffs/source-region-coverage-abc-integration.md`
 and `reports/parser-ir/publication-coverage.py`: confirmation requires the
 trusted snapshots (`TRUSTED_ABC_PRESERVATION_SCHEMA_PATH` and the
 source-region schema/policy/manifest snapshot hashes) to match the
 ABC-side `0.3.0` artifacts, plus the required record/coverage classes and
-counters. The task syncs the ab-validator-side trusted snapshots to the
-ABC `0.3.0` artifacts (reviewing, not rubber-stamping, the diff — the
-snapshot sync is the integration review), then regenerates coverage.
+counters.
+
+Because copying the artifacts makes hash equality true by construction,
+the sync is only as strong as its recorded review. The task must produce
+a provenance record (in the task's report, cited by the coverage
+evidence) containing: the source ABC commit; source and destination
+hashes per artifact; the reviewed semantic diff (0.2.x → 0.3.0, what
+changed and why it is compatible); the review command evidence; and the
+compatibility conclusion. The result is labeled **integration
+confirmation** — the two sides agree on the 0.3.0 contract — not an
+independent semantic proof.
 
 **Exit assertions (all four, in one regenerated coverage summary):**
 
@@ -238,11 +377,11 @@ snapshot sync is the integration review), then regenerates coverage.
 
 with the three source-authority occurrence counters still 0 and
 `parser_evidence_coverage.verdict == FIVE_PARSER_EVIDENCE_COMPLETE`.
-Ordering: this lands **before** the C5 post-repoint coverage regeneration,
-so the phase's final coverage evidence is green end-to-end under the
-activated C5 wiring.
+Ordering: the confirmation lands **before** the C5 post-repoint coverage
+regeneration, so the phase's final coverage evidence is green end-to-end
+under the activated C5 wiring.
 
-## Contract 6 — hygiene items
+## Contract 6 — hygiene items (independent commits, not part of C5)
 
 1. **Converter README v1 hash line:** correct the v1 parser-IR schema hash
    citation to `a1e1b506…` (the hash the frozen v1 mapping binds). Doc
@@ -267,22 +406,29 @@ activated C5 wiring.
 - Cross-line bare-toggle pairing or block classification of bare forms
   (zero corpus instances; hazardous failure mode).
 - Warigaki/kunten vocabulary ADR (Phase 6).
-- Bare-toggle warning enrichment (unpaired markers stay silently raw, as
-  today).
+- Bare-toggle warning enrichment (declined markers stay silently raw at
+  the adapter; observability lives in the audit counters per Contract 1).
 - Any edit to frozen evidence reports or the frozen v1 schema/mapping
   pair.
 
 ## Task overview (plan will detail)
 
+0. Baseline repair (fmt drift; cst/query stub-feature contradiction; all
+   gates green + Phase 4 `CHECKPOINT OK`).
 1. Observability preflight (facade wire check for bare toggles).
-2. Instruments: `bare-toggle-adoption` delta-audit mode + tests;
-   `verify-phase5-checkpoint.py` skeleton.
-3. Classifier: same-line pairing + inline_container emission + tests
-   (corpus-pinned fixtures for each fail-closed exclusion class).
-4. Mapping 0.4.0 + converter README refresh.
+2. Instruments: `bare-toggle-adoption` delta-audit mode (both checks) +
+   tests; `verify-phase5-checkpoint.py` skeleton; grammar fixtures + the
+   Rust↔Python model mirror tests.
+3. Classifier: two-pass line grammar + inline_container emission +
+   branch fixtures + hegel property/model target.
+4. Mapping generation freeze (0.3.0 file) + mapping 0.4.0 +
+   generation-binding dispatch + converter README refresh.
 5. C5 identity close, hinoki full run, four gates.
 6. Registry row → admission → atomic run-set repoint → checkpoint.
-7. Keigakomi residual attribution/errata.
-8. ABC 0.3.0 confirmation + green coverage regeneration.
-9. Hygiene: README hash line, facade Segments-skip test, CRLF suppression.
+7. Keigakomi residual attribution/errata (dual-denominator rules per
+   Contract 4).
+8. ABC 0.3.0 integration confirmation with provenance record + green
+   coverage regeneration.
+9. Hygiene: README hash line, facade Segments-skip test, CRLF
+   suppression (independent commits).
 10. Closure: handoff addendum, ledger, memory.

@@ -1,79 +1,110 @@
-# Bare-toggle placement attribution (横組み / 罫囲み)
+# Bare-toggle placement + adoption-grammar attribution (横組み / 罫囲み) — Revision 2
 
-**Date:** 2026-07-12
-**Tool:** `reports/aat-fidelity/bare-toggle-placement.py`, run on hinoki
-against the pinned nix corpus store path
+**Date:** 2026-07-12 (Revision 2, same day; supersedes Revision 1 in place)
+**Tool:** `reports/aat-fidelity/bare-toggle-placement.py` (Revision 2), run
+on hinoki against the pinned nix corpus store path
 `/nix/store/sdr1imwrxfldvlwzs2d2fhs11vxncgpx-aozorabunko-corpus` — the
 identical store path recorded as `source_inventory.corpus` in the frozen
-fidelity summary (`2026-07-09-corpus-adapter-fidelity.summary.json`) and
-used by `2026-07-11-keigakomi-yokogumi-denominator-attribution.md`.
+fidelity summary (`2026-07-09-corpus-adapter-fidelity.summary.json`).
 **Output:** `2026-07-12-bare-toggle-placement-attribution.summary.json`
 (script output, verbatim).
 
-## Purpose
+## Revision 2 — what changed and why
 
-The denominator-attribution audit (2026-07-11) established that the `other`
-bucket for yokogumi/keigakomi is dominated by the **bare toggle** forms
-`［＃横組み］`/`［＃横組み終わり］` (1,599/1,589) and
-`［＃罫囲み］`/`［＃罫囲み終わり］` (25/25), and read them as a candidate
-extension of the *block* classifier ceiling ("the ceiling rises toward
-3,394 for yokogumi and 292 for keigakomi"). Before Phase 5 commits a
-classifier design to that reading, this audit decomposes every bare-toggle
-occurrence by **line placement** (marker alone on its line vs mid-line) and
-**pairing shape** (open/close on the same line vs across lines, stack-paired
-in document order).
+Revision 1's scanner used a private corpus reader (17,878 zip-borne
+entries; no plaintext sources; silent skips; no recovery of the two
+damaged-central-directory zips) and independent per-construct stack
+pairing that did not model the proposed classifier grammar. Review
+(P5-2/P5-3) rejected both. Revision 2:
 
-## Result — bare toggles are inline spans, not blocks
+- **Reads the production universe exactly.** The instrument imports the
+  litigated reader of `reports/source-regions/terminal-provenance-split.py`
+  (the instrument bound card-for-card to the Rust pipeline's 17,886-entry
+  universe during Phase 4): `cards/*/files/` discovery of `.zip` and bare
+  `.txt` candidates, content-sniffing zip-vs-plain dispatch, stdlib zip
+  reading with the local-header-trusting fallback, Shift_JIS
+  `errors="replace"` decode, `work_id_from_index_path` identity. The run
+  **fails (exit 2) unless exactly 17,886 entries are read**; this run read
+  17,886. Every excluded candidate is recorded with path and reason
+  (9 total: 5 zips with no `.txt` member — `_ttz`/`_etc` auxiliary
+  archives — and 4 zip-shaped files unreadable by both paths, the same
+  set the Rust pipeline excludes); the two recoverable
+  damaged-central-directory zips (`cards/001393/…50710_ruby_36965.zip`,
+  `cards/001505/…58100_txt_60357.zip`) are read via the fallback and
+  recorded as **recovered**, with hashes, not "unreadable". Per touched
+  entry the summary records work id, source label (archive::member),
+  reader path, decode mode, and source sha256.
+- **Measures the adoption grammar, not raw pairing.** `classify_line` in
+  the instrument is the normative Python model of the Phase 5 Contract 1
+  two-pass algorithm (one global nesting stack; same-construct reopen,
+  orphan open/close, and improper interleaving invalidate
+  construct-per-line; candidates rolled back if their construct is
+  invalidated; adoption only from valid lines). The Rust classifier must
+  mirror this model test-for-test.
 
-| construct | opens | closes | line-isolated | mid-line | same-line pairs | cross-line pairs | unpaired opens | unpaired closes | works | works w/ unpaired |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| yokogumi | 1,599 | 1,589 | **0** | 3,188 | **1,589** | **0** | 10 | 0 | 338 | 10 |
-| keigakomi | 25 | 25 | **0** | 50 | **25** | **0** | 0 | 0 | 8 | 0 |
+## Grammar-true result (the binding design-time expectations)
 
-Every bare-toggle marker in the corpus is **mid-line**, and every close
-pairs with an open **on the same line** (1,589 + 25 pairs; zero cross-line
-pairs, zero markers standing alone on a line). The samples in the summary
-JSON show the actual usage: short Latin/horizontal runs inside vertical
-text (`ウサギ［＃横組み］（Hare《ハーレ》）［＃横組み終わり］`) and boxed
-words inside headings
-(`［＃７字下げ］［＃大見出し］［＃罫囲み］［＃横組み］ハーレムの王…`),
-including multiple pairs per line and cross-construct nesting of a
-yokogumi pair inside a keigakomi pair.
+| counter | yokogumi | keigakomi |
+| --- | ---: | ---: |
+| **adopted pairs** | **1,582** | **25** |
+| orphan opens (raw) | 10 | 0 |
+| orphan closes | 0 | 0 |
+| same-construct reopen events | 1 | 0 |
 
-The 10 surplus `［＃横組み］` opens (1,599 − 1,589) are unpaired: 10
-distinct works each carry exactly one open with no close anywhere in the
-work (work IDs in the summary JSON's `samples.yokogumi.unpaired_works`).
+Whole-corpus grammar totals: 3,238 bare-toggle markers on 1,227 lines in
+344 touched entries; **3,214 markers adopted** (2 × 1,607 pairs), **24
+markers raw-preserved** (10 orphan opens + 14 rollback markers), 0
+improper-interleave events, 1 proper cross-construct nesting (a yokogumi
+pair inside a keigakomi pair), 0 lines mixing adopted and invalid groups,
+11 entries carrying an invalid line.
 
-**Consequence for the classifier design (supersedes the block-ceiling
-reading for these forms):** the bare-toggle forms are *inline span* markup.
-Classifying them as `yokogumi_block`/`keigakomi_block` would misrepresent
-100% of corpus usage; the correct target is the existing AAT schema v2
-`inline_container` kinds `"yokogumi"`/`"keigakomi"`. The
-denominator-attribution report's ceiling arithmetic (194 + 3,200 → 3,394
-*blocks*) remains correct as marker arithmetic but wrong as a block-count
-projection; future classifier rates for the bare forms must be read against
-the same-line-pair counts here (1,589 / 25), not against a block
-denominator.
+The marker arithmetic closes exactly: 3,238 = 3,214 + 24.
+
+**Note vs Revision 1:** naive per-construct pairing counted 1,589
+yokogumi "same-line pairs". Under the actual grammar, 7 of those pairs
+roll back — they share a line with an invalid same-construct marker — so
+the adoptable count is **1,582**. This is precisely the class of
+divergence Revision 1 could not see.
+
+## What the declined markers are (all 24, fully attributed)
+
+- **10 orphan opens = the editorial example line `（例）［＃横組み］`** in
+  10 entries' 凡例/notation-key sections (work ids in the summary JSON's
+  `touched_entries`, e.g. `000106_55753`, `000214_48790`, `001804_56765`):
+  Aozora's own注記 syntax being *quoted as an example*, never closed.
+  Raw preservation is the correct reading — a classifier that adopted
+  these would be wrong, and any auto-close variant would have swallowed
+  text into a phantom span.
+- **14 rollback markers = one malformed line in `000094_42338`**
+  (`nusumareta_tegami.txt`): a long quotation line carrying 14 yokogumi
+  markers where a re-open occurs while a span is still pending; all 7
+  candidate pairs on that line roll back, the whole line stays raw. The same work's other 14 pairs
+  (on valid lines) adopt.
+
+## Placement conclusion (unchanged from Revision 1, now over the full universe)
+
+Zero bare-toggle markers stand alone on a line; zero pairs span lines.
+Every adoptable occurrence is a same-line inline span (Latin runs inside
+vertical text, boxed words inside headings, multiple pairs per line, one
+cross-construct nesting). The bare forms are *inline span* markup; the
+correct AAT target is the existing schema-v2 `inline_container` kinds
+`"yokogumi"`/`"keigakomi"`, not the `*_block` classifiers. The
+denominator-attribution report's block-ceiling arithmetic (194 + 3,200 →
+3,394 yokogumi "blocks") remains correct as marker arithmetic but is
+superseded as a block-count projection for these forms; classifier rates
+for the bare forms must be read against the adopted-pair expectations
+here (1,582 / 25).
 
 ## Form-frequency context (verbatim in the summary JSON)
 
-The bare tokens sit inside the full marker vocabulary as follows (top
-forms): yokogumi — `［＃横組み］` 1,599, `［＃横組み終わり］` 1,589,
-`［＃ここから横組み］` 182, `［＃ここで横組み終わり］` 179, inline-attr
-`［＃「…」は横組み］` family and compound layout forms in the tail;
-keigakomi — `［＃ここから罫囲み］` 200, `［＃ここで罫囲み終わり］` 194,
-`［＃罫囲み］` 25, `［＃罫囲み終わり］` 25. The exact-token searches used
-here cannot substring-match the verbose or inline-attr forms (both carry
-intervening characters between `＃` and the construct token), so the bare
-counts are not inflated by other families.
-
-## Denominator note (named, not forced)
-
-This scan reads **17,878** zip-borne works (4 zip archives unreadable —
-the same known-bad set the 2026-07-11 audit skipped). The frozen fidelity
-figure of 17,886 additionally counts the 8 stray plaintext (non-zip)
-sources noted in the 2026-07-11 audit's corpus-layout note; those 8 are
-not scanned here. The Phase 5 delta audit runs over the pipeline's own
-17,886-work traversal and its adoption counters are the binding figures;
-this report's pair counts (1,589 / 25 / 10 unpaired) are the design-time
-expectation they are checked against.
+Bare tokens inside the full marker vocabulary (top forms): yokogumi —
+`［＃横組み］` 1,599, `［＃横組み終わり］` 1,589, `［＃ここから横組み］`
+182, `［＃ここで横組み終わり］` 179, then the inline-attr
+`［＃「…」は横組み］` family and compound layout forms; keigakomi —
+`［＃ここから罫囲み］` 200, `［＃ここで罫囲み終わり］` 194, `［＃罫囲み］`
+25, `［＃罫囲み終わり］` 25. The exact-token searches cannot
+substring-match the verbose or inline-attr forms (both carry intervening
+characters between `＃` and the construct token), so the bare counts are
+not inflated by other families. (Raw token counts 1,599/1,589 differ from
+the grammar's 1,582 adopted + 10 orphan-open + 14 rolled-back markers
+only in that the grammar accounts for *adoptability*, not presence.)

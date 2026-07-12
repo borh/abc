@@ -157,7 +157,7 @@ fn visible_text_for_sentence(nodes: &[Value], sentence: &Value) -> String {
 fn ortho_fixture_bundle() -> ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle {
     serde_json::from_value(json!({
         "work_id": "000000",
-        "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "primary_text_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
         "coordinate_system": "decoded_utf8",
         "detector_id": "HeuristicV1",
         "annotations": [
@@ -431,6 +431,134 @@ fn base_meta(source_encoding: &str, source_hash: &str) -> Value {
     })
 }
 
+#[test]
+fn supplied_bundle_hash_is_distinct_from_primary_text_hash() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "identity-test",
+        "blocks": [],
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        )
+    });
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: ConversionOptions {
+            work_content_hash: Some(
+                "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+                    .to_owned(),
+            ),
+            ..ConversionOptions::default()
+        },
+    })
+    .unwrap();
+    assert_eq!(
+        output.parser_ir["source"]["work_content_hash"],
+        "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+    );
+    assert_eq!(
+        output.parser_ir["source"]["primary_text_hash"],
+        "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+    );
+    assert!(!has_divergence_record(
+        &output,
+        "AMBIGUITY",
+        "meta.source_hash",
+        Some("source.work_content_hash")
+    ));
+    assert!(has_divergence_record(
+        &output,
+        "AMBIGUITY",
+        "meta.source_hash",
+        Some("source.primary_text_hash")
+    ));
+}
+
+#[test]
+fn explicit_aat_primary_text_hash_is_the_recorded_provenance() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let hash = "sha256:1111111111111111111111111111111111111111111111111111111111111111";
+    let mut meta = base_meta("utf-8", hash);
+    meta["primary_text_hash"] = json!(hash);
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: json!({
+            "version": 1,
+            "work_id": "identity-test",
+            "blocks": [],
+            "meta": meta
+        }),
+        mapping,
+        schemas,
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+    assert!(has_divergence_record(
+        &output,
+        "AMBIGUITY",
+        "meta.primary_text_hash",
+        Some("source.primary_text_hash")
+    ));
+    assert!(!has_divergence_record(
+        &output,
+        "AMBIGUITY",
+        "meta.source_hash",
+        Some("source.primary_text_hash")
+    ));
+}
+
+#[test]
+fn aat_primary_text_alias_mismatch_is_rejected() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let mut aat = json!({
+        "version": 1,
+        "work_id": "identity-test",
+        "blocks": [],
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        )
+    });
+    aat["meta"]["primary_text_hash"] =
+        json!("sha256:2222222222222222222222222222222222222222222222222222222222222222");
+    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: ConversionOptions::default(),
+    })
+    .unwrap_err();
+    assert!(error.to_string().contains("primary_text_hash"), "{error}");
+}
+
+#[test]
+fn invalid_supplied_work_content_hash_is_rejected() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "identity-test",
+        "blocks": [],
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        )
+    });
+    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: ConversionOptions {
+            work_content_hash: Some("sha256:not-a-hash".to_owned()),
+            ..ConversionOptions::default()
+        },
+    })
+    .unwrap_err();
+    assert!(error.to_string().contains("work_content_hash"), "{error}");
+}
+
 fn has_divergence_record(
     output: &ab_aat_to_parser_ir::ConversionOutput,
     category: &str,
@@ -465,7 +593,7 @@ fn legacy_schema_hashes_match_mapping_artifact() {
     );
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2"
+        "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"
     );
 }
 
@@ -520,12 +648,12 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.2.8");
+    assert_eq!(mapping.mapping_version, "0.4.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
     );
-    assert_eq!(mapping.transform_rule_descriptions.len(), 680);
+    assert_eq!(mapping.transform_rule_descriptions.len(), 681);
     assert!(mapping.transform_rule_descriptions.iter().all(|rule| {
         !matches!(
             rule.parser_ir_pointer.as_deref(),
@@ -541,6 +669,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
     assert!(synthetic_pointers.contains("sentences"));
     assert!(synthetic_pointers.contains("sentences[].tags"));
     assert!(synthetic_pointers.contains("orthographic_annotations"));
+    assert!(synthetic_pointers.contains("source.work_content_hash"));
     assert!(
         !mapping
             .transform_rule_descriptions
@@ -567,14 +696,14 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.4.0");
+    assert_eq!(mapping.mapping_version, "0.5.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
 }
 
 #[test]
-fn mapping_preflight_accepts_frozen_v2_0_3_0_artifact() {
+fn frozen_v2_0_3_0_artifact_retains_historical_coordinates() {
     let (repo_root, abc_root) = roots();
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2-0.3.0.json"))
@@ -585,7 +714,31 @@ fn mapping_preflight_accepts_frozen_v2_0_3_0_artifact() {
         "sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40"
     );
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
-    mapping.preflight(&schemas).unwrap();
+    assert_ne!(
+        mapping.target_parser_ir_schema_hash,
+        schema_hash(&schemas.parser_ir_schema).unwrap(),
+        "the frozen pre-Phase-5 generation must retain its historical parser-IR coordinate"
+    );
+}
+
+#[test]
+fn frozen_v2_0_4_0_artifact_retains_phase5_coordinates() {
+    let (repo_root, abc_root) = roots();
+    let mapping =
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2-0.4.0.json"))
+            .unwrap();
+    assert_eq!(mapping.mapping_version, "0.4.0");
+    assert_eq!(
+        mapping.document_hash,
+        "sha256:cf177bee98af086fe728cbc1942e4f631b26ed5bb55aedc7d91b21f467c41f30"
+    );
+    assert_eq!(mapping.source_aat_version, 2);
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    assert_ne!(
+        mapping.target_parser_ir_schema_hash,
+        schema_hash(&schemas.parser_ir_schema).unwrap(),
+        "the frozen Phase 5 generation must retain its historical parser-IR coordinate"
+    );
 }
 
 #[test]
@@ -640,6 +793,47 @@ fn orthographic_annotations_inject_into_schema_valid_parser_ir() {
 }
 
 #[test]
+fn distinct_bundle_hash_does_not_change_annotation_coordinate_identity() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let primary = "sha256:1111111111111111111111111111111111111111111111111111111111111111";
+    let bundle = "sha256:2222222222222222222222222222222222222222222222222222222222222222";
+    let annotations: ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle =
+        serde_json::from_value(json!({
+            "work_id": "000000",
+            "primary_text_hash": primary,
+            "coordinate_system": "decoded_utf8",
+            "detector_id": "HeuristicV1",
+            "annotations": []
+        }))
+        .unwrap();
+    let mut aat = ortho_fixture_aat();
+    aat["meta"]["primary_text_hash"] = json!(primary);
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: ConversionOptions {
+            work_content_hash: Some(bundle.to_owned()),
+            orthographic_annotations: Some(annotations),
+            ..default_test_options()
+        },
+    })
+    .unwrap();
+
+    assert_eq!(output.parser_ir["source"]["work_content_hash"], bundle);
+    assert_eq!(output.parser_ir["source"]["primary_text_hash"], primary);
+    assert_eq!(
+        output.parser_ir["orthographic_annotations"]["primary_text_hash"],
+        primary
+    );
+    assert!(
+        output.parser_ir["orthographic_annotations"]
+            .get("work_content_hash")
+            .is_none()
+    );
+}
+
+#[test]
 fn detect_orthographic_annotations_uses_parser_ir_sentence_coordinates() {
     let (schemas, mapping) = schemas_and_mapping();
     let bundle = ab_aat_to_parser_ir::ortho_detect::detect_orthographic_annotations(
@@ -652,7 +846,7 @@ fn detect_orthographic_annotations_uses_parser_ir_sentence_coordinates() {
 
     assert_eq!(bundle.work_id, "000000");
     assert_eq!(
-        bundle.work_content_hash,
+        bundle.primary_text_hash,
         "sha256:1111111111111111111111111111111111111111111111111111111111111111"
     );
     assert_eq!(
@@ -862,7 +1056,7 @@ fn ortho_indices_cover_multiple_annotations_in_one_sentence() {
     let bundle: ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle =
         serde_json::from_value(json!({
             "work_id": "000000",
-            "work_content_hash": hash,
+            "primary_text_hash": hash,
             "coordinate_system": "decoded_utf8",
             "detector_id": "HeuristicV1",
             "annotations": [
@@ -921,7 +1115,7 @@ fn ortho_annotation_spanning_two_sentences_tags_both() {
     let bundle: ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle =
         serde_json::from_value(json!({
             "work_id": "000000",
-            "work_content_hash": hash,
+            "primary_text_hash": hash,
             "coordinate_system": "decoded_utf8",
             "detector_id": "HeuristicV1",
             "annotations": [
@@ -1094,7 +1288,7 @@ fn divergence_records_aggregate_by_mapping_rule_and_validate_against_abc_schema(
         .record(
             "AMBIGUITY",
             Some("meta.source_hash"),
-            Some("source.work_content_hash"),
+            Some("source.primary_text_hash"),
             Some(json!(
                 "sha256:0000000000000000000000000000000000000000000000000000000000000000"
             )),
@@ -1107,7 +1301,7 @@ fn divergence_records_aggregate_by_mapping_rule_and_validate_against_abc_schema(
         .record(
             "AMBIGUITY",
             Some("meta.source_hash"),
-            Some("source.work_content_hash"),
+            Some("source.primary_text_hash"),
             None,
             None,
         )
@@ -3423,6 +3617,8 @@ fn cli_convert_writes_parser_ir_and_divergence_bundle() {
         .arg(&aat)
         .arg("--mapping")
         .arg(repo.join("data/aat-to-parser-ir-mapping-v1.json"))
+        .arg("--work-content-hash")
+        .arg("sha256:7777777777777777777777777777777777777777777777777777777777777777")
         .arg("--parser-ir-out")
         .arg(&parser_ir)
         .arg("--divergence-out")
@@ -3435,6 +3631,15 @@ fn cli_convert_writes_parser_ir_and_divergence_bundle() {
     assert!(status.success());
     assert!(parser_ir.exists());
     assert!(divergence.exists());
+    let output = read_json(&parser_ir).unwrap();
+    assert_eq!(
+        output["source"]["work_content_hash"],
+        "sha256:7777777777777777777777777777777777777777777777777777777777777777"
+    );
+    assert_eq!(
+        output["source"]["primary_text_hash"],
+        "sha256:6666666666666666666666666666666666666666666666666666666666666666"
+    );
 }
 
 #[test]

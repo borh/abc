@@ -398,6 +398,7 @@
               {
                 nativeBuildInputs = [
                   pkgs.clojure
+                  pkgs._7zz
                   pkgs.git
                   pkgs.git-cliff
                   pkgs.libxml2
@@ -531,6 +532,26 @@
                 cljfmt check src test
                 mkdir -p "$out"
                 echo "ABC focused Clojure lint and format checks passed." > "$out/result.txt"
+              '';
+
+          source-bundle-corpus =
+            pkgs.runCommand "abc-source-bundle-corpus"
+              {
+                nativeBuildInputs = [
+                  pkgs.clojure
+                  pkgs._7zz
+                ];
+              }
+              ''
+                ${copyWritableSource}
+                ${cljSandboxEnv}
+                actual="$TMPDIR/aozorabunko-source-bundle-summary.json"
+                clojure -M -m abc.tools.source-bundle-report \
+                  ${aozorabunko-src} "$actual"
+                cmp data/source-bundle/aozorabunko-0e9ea3e-summary.json "$actual"
+
+                mkdir -p "$out"
+                cp "$actual" "$out/summary.json"
               '';
 
           aat-parser-ir-probe-tests =

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors"],
   "additionalProperties": false,
@@ -34,6 +34,7 @@
       "additionalProperties": false,
       "properties": {
         "work_content_hash": { "$ref": "#/$defs/hash" },
+        "primary_text_hash": { "$ref": "#/$defs/hash" },
         "source_path": { "type": ["string", "null"] },
         "encoding": { "type": "string", "enum": ["Shift_JIS", "UTF-8", "EUC-JP", "unknown"] },
         "normalization": { "type": "string", "enum": ["source", "NFC", "NFKC"] }
@@ -200,14 +201,18 @@
       "type": "object",
       "required": [
         "work_id",
-        "work_content_hash",
         "coordinate_system",
         "detector_id",
         "annotations"
       ],
+      "anyOf": [
+        { "required": ["primary_text_hash"] },
+        { "required": ["work_content_hash"] }
+      ],
       "additionalProperties": false,
       "properties": {
         "work_id": { "type": "string" },
+        "primary_text_hash": { "$ref": "#/$defs/hash" },
         "work_content_hash": { "$ref": "#/$defs/hash" },
         "coordinate_system": { "const": "decoded_utf8" },
         "detector_id": { "$ref": "#/$defs/orthoDetectorId" },

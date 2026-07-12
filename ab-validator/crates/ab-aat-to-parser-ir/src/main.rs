@@ -31,6 +31,8 @@ enum Command {
         #[arg(long)]
         ortho_annotations: Option<PathBuf>,
         #[arg(long)]
+        work_content_hash: Option<String>,
+        #[arg(long)]
         mapping: PathBuf,
         #[arg(long)]
         parser_ir_out: PathBuf,
@@ -132,6 +134,7 @@ fn main() -> Result<()> {
         Command::Convert {
             aat,
             ortho_annotations,
+            work_content_hash,
             mapping,
             parser_ir_out,
             divergence_out,
@@ -161,6 +164,7 @@ fn main() -> Result<()> {
                 aat,
                 ConversionOptions {
                     orthographic_annotations,
+                    work_content_hash,
                     ..ConversionOptions::default()
                 },
             )?;

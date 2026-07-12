@@ -30,7 +30,7 @@ import sys
 # Hardcoded ABC parser-IR target identity (INVENTION: producer must pinch
 # ABC's schema_hash; AAT carries no such identifier).
 PARSER_IR_SCHEMA_ID = "https://w3id.org/abc/schemas/parser-ir.schema.json"
-PARSER_IR_SCHEMA_HASH = "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2"
+PARSER_IR_SCHEMA_HASH = "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"
 
 ENC_MAP = {
     "utf-8": "UTF-8",
@@ -685,7 +685,7 @@ def map_block(block, nodes, ledger_list, offset, path):
     return offset
 
 
-def map_meta_source(aat, ledger_list):
+def map_meta_source(aat, ledger_list, work_content_hash=None):
     """AAT meta -> parser-IR source + top-level identity."""
     meta = aat.get("meta", {})
     enc_in = meta.get("source_encoding", "utf-8")
@@ -709,13 +709,19 @@ def map_meta_source(aat, ledger_list):
                 ENC_DIVERGENCE[enc_in],
             )
         )
-    # work_content_hash vs source_hash: different semantics (content vs raw source bytes)
+    source_hash = meta.get("source_hash", "sha256:" + "0" * 64)
+    primary_text_hash = meta.get("primary_text_hash", source_hash)
+    if "primary_text_hash" in meta and primary_text_hash != source_hash:
+        raise ValueError("AAT meta.primary_text_hash must equal historical meta.source_hash alias")
+    primary_pointer = (
+        "meta.primary_text_hash" if "primary_text_hash" in meta else "meta.source_hash"
+    )
     ledger_list.append(
         ledger(
             "AMBIGUITY",
-            "meta.source_hash",
-            "source.work_content_hash",
-            "AAT hashes raw source bytes; parser-IR work_content_hash is content hash; identifier semantics differ",
+            primary_pointer,
+            "source.primary_text_hash",
+            "AAT parser-input identity projects to parser-IR primary_text_hash; source_hash is the historical fallback",
         )
     )
     # normalization: parser-IR requires it; AAT has none
@@ -737,7 +743,8 @@ def map_meta_source(aat, ledger_list):
         )
     )
     src = {
-        "work_content_hash": meta.get("source_hash", "sha256:" + "0" * 64),
+        "work_content_hash": work_content_hash or primary_text_hash,
+        "primary_text_hash": primary_text_hash,
         "source_path": None,
         "encoding": enc_out,
         "normalization": "source",

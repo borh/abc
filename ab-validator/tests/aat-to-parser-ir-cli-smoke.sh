@@ -16,6 +16,7 @@ cat > "$aat" <<'JSON'
     "adapter": "fixture",
     "adapter_version": "fixture 0.1.0",
     "source_encoding": "utf-8",
+    "primary_text_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
     "source_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
     "parse_complete": true,
     "warnings": []
@@ -36,6 +37,7 @@ convert_args=(
   convert
   --aat "$aat"
   --mapping "$repo_root/data/aat-to-parser-ir-mapping-v1.json"
+  --work-content-hash "sha256:6666666666666666666666666666666666666666666666666666666666666666"
   --parser-ir-out "$out_dir/parser-ir.json"
   --divergence-out "$out_dir/divergence.json"
   --abc-root "$abc_root"
@@ -57,11 +59,13 @@ jq -e '.derived_from.aat_version == 1' "$out_dir/parser-ir.json"
 jq -e '.derived_from.aat_adapter == "fixture"' "$out_dir/parser-ir.json"
 jq -e '.derived_from.aat_adapter_version == "fixture 0.1.0"' "$out_dir/parser-ir.json"
 jq -e '.derived_from.mapping_id == "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"' "$out_dir/parser-ir.json"
-jq -e '.derived_from.mapping_version == "0.2.8"' "$out_dir/parser-ir.json"
+jq -e '.derived_from.mapping_version == "0.4.0"' "$out_dir/parser-ir.json"
 jq -e '.derived_from.mapping_schema_hash == "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2"' "$out_dir/parser-ir.json"
 jq -e '.paragraphs[0].node_range == {"start":0,"end":2}' "$out_dir/parser-ir.json"
 jq -e '.paragraphs[0].role == "body"' "$out_dir/parser-ir.json"
-jq -e '.mapping.mapping_version == "0.2.8"' "$out_dir/divergence.json"
+jq -e '.source.work_content_hash == "sha256:6666666666666666666666666666666666666666666666666666666666666666"' "$out_dir/parser-ir.json"
+jq -e '.source.primary_text_hash == "sha256:7777777777777777777777777777777777777777777777777777777777777777"' "$out_dir/parser-ir.json"
+jq -e '.mapping.mapping_version == "0.4.0"' "$out_dir/divergence.json"
 jq -e 'all(.records[]; .aat_pointer != "meta.adapter" and .aat_pointer != "meta.adapter_version")' "$out_dir/divergence.json"
 jq -e 'any(.records[]; .aat_pointer == "meta.parse_complete")' "$out_dir/divergence.json"
 jq -e 'all(.records[]; .rule_id != null and .message != null and .count >= 1)' "$out_dir/divergence.json"

@@ -1,10 +1,10 @@
 {
-  "mapping_id": "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.5.0",
+  "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
+  "mapping_version": "0.2.8",
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
-  "source_aat_version": 2,
+  "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
+  "target_parser_ir_schema_hash": "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-01",
@@ -1042,17 +1042,17 @@
       "rule_id": "A-130",
       "category": "AMBIGUITY",
       "aat_pointer": "meta.source_hash",
-      "parser_ir_pointer": "source.primary_text_hash",
+      "parser_ir_pointer": "source.work_content_hash",
       "action": "project",
-      "description": "Historical AAT source_hash is the compatibility fallback for parser-IR primary_text_hash"
+      "description": "Observed 89169 occurrences; first_path=meta.source_hash. AAT hashes raw source bytes; parser-IR work_content_hash is content hash; identifier semantics differ"
     },
     {
-      "rule_id": "A-132",
+      "rule_id": "A-131",
       "category": "AMBIGUITY",
-      "aat_pointer": "meta.primary_text_hash",
-      "parser_ir_pointer": "source.primary_text_hash",
+      "aat_pointer": "meta.warnings[].line",
+      "parser_ir_pointer": "warnings[].span.line",
       "action": "project",
-      "description": "Canonical AAT primary_text_hash projects directly to parser-IR primary_text_hash; co-present AAT aliases must be equal"
+      "description": "Observed 115938 occurrences; first_path=meta.warnings[].line. AAT warning.line vs parser-IR diagnostic.span; coordinate not assembled"
     },
     {
       "rule_id": "I-01",
@@ -5445,86 +5445,6 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 119 occurrences; first_path=blocks[12].yokogumi_block. block_container kind 'yokogumi_block' has no parser-IR equivalent"
-    },
-    {
-      "rule_id": "S-11",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].jizume_block",
-      "parser_ir_pointer": null,
-      "action": "flatten",
-      "description": "jizume_block container collapsed on mixed-children fallback; layout not projected; children recurse without inherited layout"
-    },
-    {
-      "rule_id": "L-468",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].heading.indent",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "heading indentation has no parser-IR heading layout field; recorded, not projected."
-    },
-    {
-      "rule_id": "S-12",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].source_note",
-      "parser_ir_pointer": "source-note",
-      "action": "project",
-      "description": "explicit v2 source_note block → parser-IR source-note node, classification direct."
-    },
-    {
-      "rule_id": "S-13",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].content[].yokogumi",
-      "parser_ir_pointer": "layout-span",
-      "action": "project",
-      "description": "inline yokogumi container inside paragraph content → parser-IR layout-span node (layout.kind=yokogumi), direction/marker projected. AAT container span is marker-inclusive; parser-IR spans are constructed from visible decoded text (convert.rs append_visible_content_text); marker bytes are not projected."
-    },
-    {
-      "rule_id": "S-14",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].content[].keigakomi",
-      "parser_ir_pointer": "layout-span",
-      "action": "project",
-      "description": "inline keigakomi container inside paragraph content → parser-IR layout-span node (layout.kind=keigakomi), border/marker projected. AAT container span is marker-inclusive; parser-IR spans are constructed from visible decoded text (convert.rs append_visible_content_text); marker bytes are not projected."
-    },
-    {
-      "rule_id": "L-469",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].source_note.region_class",
-      "parser_ir_pointer": "(source-note.note_type)",
-      "action": "project",
-      "description": "region_class terminal_provenance → note_type source-attribution."
-    },
-    {
-      "rule_id": "L-470",
-      "category": "LOSS",
-      "aat_pointer": "meta.warnings[].code",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "AAT meta.warnings[].code has no parser-IR field; parser-IR carries warnings via its own diagnostics channel, the enriched field is sidecar-recorded."
-    },
-    {
-      "rule_id": "L-471",
-      "category": "LOSS",
-      "aat_pointer": "meta.warnings[].severity",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "AAT meta.warnings[].severity has no parser-IR field; parser-IR carries warnings via its own diagnostics channel, the enriched field is sidecar-recorded."
-    },
-    {
-      "rule_id": "L-472",
-      "category": "LOSS",
-      "aat_pointer": "meta.warnings[].span",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "AAT meta.warnings[].span has no parser-IR field; parser-IR carries warnings via its own diagnostics channel, the enriched field is sidecar-recorded."
-    },
-    {
-      "rule_id": "I-33",
-      "category": "INVENTION",
-      "aat_pointer": "blocks[].jizume_block",
-      "parser_ir_pointer": "indentation",
-      "action": "invent",
-      "description": "mixed-children jizume_block mapped to indentation node; width not projected on fallback; depth defaulted 1"
     }
   ],
   "synthetic_evidence_descriptions": [
@@ -5555,13 +5475,6 @@
       "source": "orthographic_sidecar",
       "action": "declare",
       "description": "Carries detector provenance and normalized text for tokenizer-facing katakana-to-hiragana normalization."
-    },
-    {
-      "evidence_id": "SYN-005",
-      "parser_ir_pointer": "source.work_content_hash",
-      "source": "converter_policy",
-      "action": "declare",
-      "description": "Carries authoritative bundle identity supplied at conversion, with primary-text identity fallback only for historical callers."
     }
   ],
   "loss_taxonomy": {

@@ -1,10 +1,10 @@
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.5.0",
+  "mapping_version": "0.4.0",
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 2,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec",
+  "target_parser_ir_schema_hash": "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-01",
@@ -1042,17 +1042,9 @@
       "rule_id": "A-130",
       "category": "AMBIGUITY",
       "aat_pointer": "meta.source_hash",
-      "parser_ir_pointer": "source.primary_text_hash",
+      "parser_ir_pointer": "source.work_content_hash",
       "action": "project",
-      "description": "Historical AAT source_hash is the compatibility fallback for parser-IR primary_text_hash"
-    },
-    {
-      "rule_id": "A-132",
-      "category": "AMBIGUITY",
-      "aat_pointer": "meta.primary_text_hash",
-      "parser_ir_pointer": "source.primary_text_hash",
-      "action": "project",
-      "description": "Canonical AAT primary_text_hash projects directly to parser-IR primary_text_hash; co-present AAT aliases must be equal"
+      "description": "Observed 89169 occurrences; first_path=meta.source_hash. AAT hashes raw source bytes; parser-IR work_content_hash is content hash; identifier semantics differ"
     },
     {
       "rule_id": "I-01",
@@ -5555,13 +5547,6 @@
       "source": "orthographic_sidecar",
       "action": "declare",
       "description": "Carries detector provenance and normalized text for tokenizer-facing katakana-to-hiragana normalization."
-    },
-    {
-      "evidence_id": "SYN-005",
-      "parser_ir_pointer": "source.work_content_hash",
-      "source": "converter_policy",
-      "action": "declare",
-      "description": "Carries authoritative bundle identity supplied at conversion, with primary-text identity fallback only for historical callers."
     }
   ],
   "loss_taxonomy": {

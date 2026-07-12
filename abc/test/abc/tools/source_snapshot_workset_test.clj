@@ -48,6 +48,7 @@
                    :parser_ir_path "works/alpha/parser-ir.json"
                    :metadata_record_path "works/alpha/metadata-record.json"
                    :official_source_path "works/alpha/official-source.json"
+                   :source_bundle_path "works/alpha/source-bundle.json"
                    :source_manifest_path "works/alpha/source.manifest.json"}
                   {:slug "zeta"
                    :title "二"
@@ -58,8 +59,45 @@
                    :parser_ir_path "works/zeta/parser-ir.json"
                    :metadata_record_path "works/zeta/metadata-record.json"
                    :official_source_path "works/zeta/official-source.json"
+                   :source_bundle_path "works/zeta/source-bundle.json"
                    :source_manifest_path "works/zeta/source.manifest.json"}]
                  (:works generated)))))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest generated-workset-requires-source-bundle-test
+  (let [root (fixture/temp-dir "abc-source-snapshot-workset-no-bundle")]
+    (try
+      (let [work-dir (fixture/materialized-work!
+                      root {:slug "broken"
+                            :title "一"
+                            :work-id "000001"
+                            :person-id "000101"
+                            :work-hash (fixture/example-hash "a1")})]
+        (.delete (io/file work-dir "source-bundle.json"))
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"missing source-bundle.json"
+             (workset/workset-from-root
+              {:input-root (str root)
+               :snapshot-scope "unit-test"
+               :snapshot-date "2026-07-07"}))))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest read-workset-resolves-source-bundle-path-test
+  (let [root (fixture/temp-dir "abc-source-snapshot-workset-resolve")
+        workset-file (io/file root "workset.edn")]
+    (try
+      (spit workset-file
+            (pr-str {:snapshot_scope "unit-test"
+                     :snapshot_date "2026-07-07"
+                     :works [{:slug "one"
+                              :source_bundle_path "one/source-bundle.json"}]}))
+      (is (= (str (.getCanonicalFile
+                   (io/file root "one" "source-bundle.json")))
+             (-> (workset/read-workset workset-file)
+                 :works first :resolved_source_bundle_path)))
       (finally
         (fixture/delete-tree! root)))))
 

@@ -54,6 +54,15 @@ LOSS_TAXONOMY = {
         "records_sidecar": True,
     },
 }
+SYNTHETIC_EVIDENCE_DESCRIPTIONS = [
+    {
+        "evidence_id": "SYN-005",
+        "parser_ir_pointer": "source.work_content_hash",
+        "source": "converter_policy",
+        "action": "declare",
+        "description": "Carries authoritative bundle identity supplied at conversion, with primary-text identity fallback only for historical callers.",
+    }
+]
 
 
 def aat_pointer_bucket(pointer):
@@ -90,7 +99,7 @@ def build_mapping_document_from_counts(
     first_path_by_rule,
     first_note_by_rule,
     repo_root=REPO_ROOT,
-    mapping_version="0.2.4",
+    mapping_version="0.4.0",
 ):
     rules = []
     for category in CATEGORY_ORDER:
@@ -125,11 +134,12 @@ def build_mapping_document_from_counts(
             repo_root / "schemas" / "parser-ir.schema.json"
         ),
         "transform_rule_descriptions": rules,
+        "synthetic_evidence_descriptions": SYNTHETIC_EVIDENCE_DESCRIPTIONS,
         "loss_taxonomy": LOSS_TAXONOMY,
     }
 
 
-def build_mapping_document(ledger_entries, repo_root=REPO_ROOT, mapping_version="0.2.4"):
+def build_mapping_document(ledger_entries, repo_root=REPO_ROOT, mapping_version="0.4.0"):
     counts, first_path, first_note = summarize_ledger(ledger_entries)
     return build_mapping_document_from_counts(
         counts,
@@ -150,7 +160,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("ledger_json", help="JSON file containing an array of probe ledger entries")
     parser.add_argument("--out", default=str(PROBE_DIR / "mapping.generated.json"))
-    parser.add_argument("--mapping-version", default="0.2.4")
+    parser.add_argument("--mapping-version", default="0.4.0")
     args = parser.parse_args()
 
     with open(args.ledger_json, encoding="utf-8") as f:

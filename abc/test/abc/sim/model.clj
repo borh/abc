@@ -4,7 +4,9 @@
   inapplicable events are recorded no-ops so sequence shrinking always
   yields valid histories.
   Spec: docs/superpowers/specs/2026-07-11-aozora-evolution-simulation-testing-design.md"
-  (:require [clojure.set] [clojure.string :as string]))
+  (:require [clojure.set] [clojure.string :as string])
+  (:import [com.ibm.icu.lang UCharacter]
+           [java.text Normalizer Normalizer$Form]))
 
 (def person-fields
   [:family_name :given_name :family_name_reading :given_name_reading
@@ -34,6 +36,38 @@
 (defn fresh-pid [m] (fmt6 (+ 900000 (:next-id m))))
 (defn fresh-wid [m] (fmt6 (+ 800000 (:next-id m))))
 
+(defn- normalized-member-path [path]
+  (when (string? path)
+    (Normalizer/normalize (string/replace path "\\" "/")
+                          Normalizer$Form/NFC)))
+
+(defn- safe-member-path? [path]
+  (when-let [normalized (normalized-member-path path)]
+    (let [segments (string/split normalized #"/" -1)]
+      (and (not (string/blank? normalized))
+           (not (string/starts-with? normalized "/"))
+           (not (re-find #"^[A-Za-z]:" normalized))
+           (not-any? #{"" "." ".."} segments)))))
+
+(defn- packaging-metadata? [path]
+  (or (string/starts-with? path "__MACOSX/")
+      (string/starts-with? (last (string/split path #"/")) "._")))
+
+(defn- semantic-text? [path]
+  (and (string/ends-with? (string/lower-case path) ".txt")
+       (not (packaging-metadata? path))))
+
+(defn- unicode-fold [path]
+  (UCharacter/foldCase ^String path true))
+
+(defn- admissible-image-paths? [wid images]
+  (let [raw-paths (cons (str wid ".txt") (keys images))
+        normalized (mapv normalized-member-path raw-paths)]
+    (and (every? safe-member-path? raw-paths)
+         (= (count normalized) (count (distinct normalized)))
+         (= (count normalized) (count (distinct (map unicode-fold normalized))))
+         (= 1 (count (filter semantic-text? normalized))))))
+
 (defn bootstrap
   "n works numbered 000101.., each with a distinct sole author 000001..,
   relation 著者."
@@ -59,13 +93,19 @@
               (not-every? #(contains? (:persons m) %) pids))
       (throw (ex-info "model invariant violated"
                       {:edge [wid rel] :pids pids :event event}))))
-  (doseq [[wid {:keys [text]}] (:contents m)]
+  (doseq [[wid {:keys [text images]}] (:contents m)]
     (when (or (not (contains? (:works m) wid))
               (not (string? text))
               (string/blank? text)
-              (not (string/includes? text wid)))
+              (not (string/includes? text wid))
+              (not (instance? clojure.lang.Sorted images))
+              (some (fn [[path content]]
+                      (or (not (string? path)) (string/blank? path)
+                          (not (string? content))))
+                    images)
+              (not (admissible-image-paths? wid images)))
       (throw (ex-info "model invariant violated"
-                      {:content wid :text text :event event}))))
+                      {:content wid :text text :images images :event event}))))
   nil)
 
 (defn- valid-relation? [relation]
@@ -160,7 +200,8 @@
                e edge-keys))))
 
 ;; --- content events (content-side evolution spec) ----------------------
-;; :contents is sorted-map wid → {:text s}. Text must embed the wid
+;; :contents is sorted-map wid → {:text s :images (sorted-map path content)}.
+;; Text must embed the wid
 ;; (uniqueness of member bytes across works — the invariant enforces it).
 
 (defmethod apply-event* :add-content
@@ -170,7 +211,7 @@
           (not (string? text)) (string/blank? text)
           (not (string/includes? text wid)))
     (no-op m)
-    (applied (assoc-in m [:contents wid] {:text text}) e [])))
+    (applied (assoc-in m [:contents wid] {:text text :images (sorted-map)}) e [])))
 
 (defmethod apply-event* :edit-content
   [m {:keys [wid text] :as e}]
@@ -186,6 +227,37 @@
   (if-not (contains? (:contents m) wid)
     (no-op m)
     (applied (update m :contents dissoc wid) e [])))
+
+(defn- valid-image-value? [path content]
+  (and (string? path) (not (string/blank? path)) (string? content)))
+
+(defn- admissible-image-update? [m wid path content]
+  (and (valid-image-value? path content)
+       (admissible-image-paths?
+        wid (assoc (get-in m [:contents wid :images] (sorted-map)) path content))))
+
+(defmethod apply-event* :add-image
+  [m {:keys [wid path content] :as e}]
+  (if (or (not (contains? (:contents m) wid))
+          (not (admissible-image-update? m wid path content))
+          (contains? (get-in m [:contents wid :images]) path))
+    (no-op m)
+    (applied (assoc-in m [:contents wid :images path] content) e [])))
+
+(defmethod apply-event* :edit-image
+  [m {:keys [wid path content] :as e}]
+  (if (or (not (admissible-image-update? m wid path content))
+          (not (contains? (get-in m [:contents wid :images] {}) path))
+          (= content (get-in m [:contents wid :images path])))
+    (no-op m)
+    (applied (assoc-in m [:contents wid :images path] content) e [])))
+
+(defmethod apply-event* :remove-image
+  [m {:keys [wid path] :as e}]
+  (if (or (not (safe-member-path? path))
+          (not (contains? (get-in m [:contents wid :images] {}) path)))
+    (no-op m)
+    (applied (update-in m [:contents wid :images] dissoc path) e [])))
 
 (defn edges-of [m pid]
   (vec (for [[k pids] (:edges m) :when (contains? pids pid)] k)))

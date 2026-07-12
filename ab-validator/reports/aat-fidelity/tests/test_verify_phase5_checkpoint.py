@@ -12,8 +12,8 @@ V5 = f"ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git {C5})"
 
 C4_COMMIT = "27772b1b75c9ceeb0b724095bbbb47f774f3a275"
 
-REAL_MAPPING_FILE = AB_VALIDATOR_ROOT / "data" / "aat-to-parser-ir-mapping-v2.json"
-REAL_FROZEN_MAPPING = AB_VALIDATOR_ROOT / "data" / "aat-to-parser-ir-mapping-v2-0.3.0.json"
+REAL_MAPPING_FILE = AB_VALIDATOR_ROOT / "data" / "aat-to-parser-ir-mapping-v2-0.4.0.json"
+REAL_FROZEN_MAPPING = REAL_MAPPING_FILE
 REAL_CONVERSION_FIXTURE = (
     AB_VALIDATOR_ROOT
     / "docs"
@@ -24,7 +24,8 @@ REAL_CONVERSION_FIXTURE = (
 
 MAPPING_VERSION = "0.4.0"
 MAPPING_HASH = "sha256:cf177bee98af086fe728cbc1942e4f631b26ed5bb55aedc7d91b21f467c41f30"
-FROZEN_MAPPING_HASH = "sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40"
+FROZEN_MAPPING_HASH = MAPPING_HASH
+FROZEN_MAPPING_BYTE_HASH = "8ebd74dcd0f29973e375a9c89654ffbccc9f15fb2f5c5b7a5c97a0bef6206a56"
 
 
 def gate_summary(gate, commit, version, bin_sha):
@@ -352,7 +353,7 @@ def test_mapping_generation_wrong_version_arg(tmp_path):
 
 def test_mapping_generation_frozen_hash_drift(tmp_path, monkeypatch):
     # Copy the frozen mapping file and mutate one field so its canonical
-    # hash drifts from the pinned 0.3.0 value, then point --frozen-mapping
+    # hash drifts from the pinned Phase 5 v2-0.4.0 value, then point --frozen-mapping
     # at the drifted copy directly (bypassing the `run()` helper's fixed
     # --frozen-mapping wiring).
     drifted = tmp_path / "drifted-frozen-mapping.json"
@@ -398,6 +399,15 @@ def test_mapping_generation_frozen_hash_drift(tmp_path, monkeypatch):
     ]
     p = subprocess.run(argv, capture_output=True, text=True)
     assert p.returncode == 1
+
+
+def test_phase5_mapping_fixture_has_exact_frozen_bytes_and_identity():
+    import hashlib
+
+    raw = REAL_FROZEN_MAPPING.read_bytes()
+    assert hashlib.sha256(raw).hexdigest() == FROZEN_MAPPING_BYTE_HASH
+    doc = json.loads(raw)
+    assert doc["mapping_version"] == MAPPING_VERSION
 
 
 def test_admission_capture_missing_admitted(tmp_path):

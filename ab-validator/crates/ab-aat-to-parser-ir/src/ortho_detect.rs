@@ -19,8 +19,9 @@ pub fn detect_orthographic_annotations(
         .and_then(Value::as_str)
         .context("AAT missing string work_id")?
         .to_owned();
-    let work_content_hash = aat
-        .pointer("/meta/source_hash")
+    let primary_text_hash = aat
+        .pointer("/meta/primary_text_hash")
+        .or_else(|| aat.pointer("/meta/source_hash"))
         .and_then(Value::as_str)
         .context("AAT missing string meta.source_hash")?
         .to_owned();
@@ -87,7 +88,7 @@ pub fn detect_orthographic_annotations(
 
     Ok(OrthoAnnotationsBundle {
         work_id,
-        work_content_hash,
+        primary_text_hash,
         coordinate_system: OrthoCoordinateSystem::DecodedUtf8,
         detector_id: detector.detector_id(),
         annotations: detector.detect(&spans),

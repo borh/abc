@@ -4,24 +4,24 @@
   skip/reuse/rebuild of soranoha-build-publication over generated content
   trees, pin-chain composition (D7), and sampled integrity faults.
 
-  The parser adapter is stubbed with the REAL hash contract: parser-IR
-  source.work_content_hash = sha256 of the member bytes the adapter
-  receives (ab-aozora-aat decode_source_bytes hashes stdin;
-  ab-aat-to-parser-ir copies meta.source_hash). official-source.json
-  source_hash is the raw-ZIP hash, so the two can never agree — the D7
-  divergence gated in the pin-chain property."
-  (:require [abc.sim.divergences :as div]
-            [abc.sim.gen :as sgen]
+  The parser adapter is stubbed with the REAL split identity contract:
+  parser-IR source.work_content_hash is the bundle hash supplied by ABC,
+  while source.primary_text_hash is the independently computed member hash.
+  official-source.json source_hash remains the raw-ZIP compatibility alias;
+  snapshot validation checks every role independently."
+  (:require [abc.sim.gen :as sgen]
             [abc.sim.harness :as harness]
             [abc.sim.model :as model]
             [abc.sim.oracle :as oracle]
             [abc.sim.render :as render]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
+            [abc.tools.jcs :as jcs]
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-source-snapshot :as snapshot]
             [abc.tools.soranoha-build-publication :as build-publication]
+            [abc.tools.source-bundle :as source-bundle]
             [abc.tools.source-snapshot-workset :as workset]
             [clojure.java.io :as io]
             [clojure.string :as string]
@@ -33,27 +33,30 @@
            [java.util.zip ZipEntry ZipOutputStream]))
 
 (defn- realistic-stub
-  "Adapter-chain double with the real hash contract (member-bytes hash;
-  see ns docstring and D7). Other fields mirror soranoha_test.clj's stub."
-  [{:keys [source-bytes aat-file parser-ir-file divergence-file]}]
+  "Adapter-chain double with the real split bundle/member hash contract."
+  [{:keys [source-bytes work-content-hash aat-file parser-ir-file
+           divergence-file]}]
   (let [member-hash (hash/format-sha256 (hash/sha256-bytes source-bytes))]
     (abc-json/write-deterministic-json-file!
      aat-file
      {"version" 1 "work_id" "stub" "blocks" []
       "meta" {"adapter" "stub" "adapter_version" "test"
-              "source_encoding" "utf-8" "source_hash" member-hash
+              "source_encoding" "utf-8"
+              "source_hash" member-hash
+              "primary_text_hash" member-hash
               "parse_complete" true "warnings" []}})
     (abc-json/write-deterministic-json-file!
      parser-ir-file
      {"schema_hash" (manifest/schema-hash "schemas/parser-ir.schema.json")
-      "source" {"work_content_hash" member-hash
+      "source" {"work_content_hash" work-content-hash
+                "primary_text_hash" member-hash
                 "encoding" "utf-8" "normalization" "source"}
       "derived_from" {"aat_adapter" "stub" "aat_adapter_version" "test-stub"
                       "aat_version" 1
                       "mapping_id" (str "https://w3id.org/abc/mappings/"
                                         "aat-v1-to-parser-ir-v1/generated-probe")
                       "mapping_schema_hash" (files/example-hash "38")
-                      "mapping_version" "0.2.0"}
+                      "mapping_version" "0.3.0"}
       "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
                                "splitter_id" "ab-plaintext-japanese-v1"
                                "coordinate_system" "decoded_utf8"
@@ -75,15 +78,16 @@
     (str f)))
 
 (defn- run-build! [{:keys [aozora-root out-root config-path snapshot-date replace?]}]
-  (binding [build-publication/*derive-parser-ir!* realistic-stub
-            *out* (java.io.StringWriter.)]
-    (build-publication/build-publication!
-     (cond-> ["--aozora-root" (str aozora-root) "--config" config-path
-              "--output-root" (str out-root) "--snapshot-date" snapshot-date]
-       replace? (conj "--replace"))))
-  {:selection (abc-json/read-json-file (io/file out-root "source-selection-report.json"))
-   :publications (abc-json/read-json-file
-                  (io/file out-root "publications" "publications-report.json"))})
+  (let [exit (binding [build-publication/*derive-parser-ir!* realistic-stub
+                       *out* (java.io.StringWriter.)]
+               (build-publication/build-publication!
+                (cond-> ["--aozora-root" (str aozora-root) "--config" config-path
+                         "--output-root" (str out-root) "--snapshot-date" snapshot-date]
+                  replace? (conj "--replace"))))]
+    {:exit exit
+     :selection (abc-json/read-json-file (io/file out-root "source-selection-report.json"))
+     :publications (abc-json/read-json-file
+                    (io/file out-root "publications" "publications-report.json"))}))
 
 (defn- statuses [reports]
   (into (sorted-map)
@@ -97,6 +101,10 @@
 (defn- official-source [out-root slug]
   (abc-json/read-json-file
    (io/file out-root "materialized-root" "works" slug "official-source.json")))
+
+(defn- source-bundle [out-root slug]
+  (abc-json/read-json-file
+   (io/file out-root "materialized-root" "works" slug "source-bundle.json")))
 
 (defn- pub-files [out-root slug]
   (into (sorted-map)
@@ -130,8 +138,8 @@
 
 (defn- synthetic-state []
   (-> (model/bootstrap 2)
-      (assoc-in [:contents "000101"] {:text text-a})
-      (assoc-in [:contents "000102"] {:text text-b})))
+      (assoc-in [:contents "000101"] {:text text-a :images (sorted-map)})
+      (assoc-in [:contents "000102"] {:text text-b :images (sorted-map)})))
 
 (defn- overwrite-zip! [aozora-root m wid ^bytes zip-bytes]
   (let [rel (get-in (render/content-sources m) [wid :relpath])
@@ -145,6 +153,187 @@
       (.write zip (.getBytes "png" StandardCharsets/UTF_8))
       (.closeEntry zip))
     (.toByteArray out)))
+
+(defn- unsafe-path-zip-bytes []
+  (let [out (ByteArrayOutputStream.)]
+    (with-open [zip (ZipOutputStream. out)]
+      (.putNextEntry zip (doto (ZipEntry. "../000101.txt") (.setTime 0)))
+      (.write zip (.getBytes text-a StandardCharsets/UTF_8))
+      (.closeEntry zip))
+    (.toByteArray out)))
+
+(defn- named-text-zip-bytes [entries]
+  (let [out (ByteArrayOutputStream.)]
+    (with-open [zip (ZipOutputStream. out)]
+      (doseq [[path content] entries]
+        (.putNextEntry zip (doto (ZipEntry. path) (.setTime 0)))
+        (.write zip (.getBytes content StandardCharsets/UTF_8))
+        (.closeEntry zip)))
+    (.toByteArray out)))
+
+(deftest p16-admission-failure-disposition-test
+  ^{:clj-kondo/ignore [:unresolved-symbol]}
+  (with-temp-dirs [aozora strict-out cfg]
+    (let [m (synthetic-state)
+          best-out (io/file (.getParentFile strict-out) "best-effort")]
+      (render/write-aozora-root! aozora m)
+      (overwrite-zip! aozora m "000101" (unsafe-path-zip-bytes))
+      (testing "strict admission failure is atomic"
+        (let [strict-config (write-config! cfg false)
+              thrown (try
+                       (run-build! {:aozora-root aozora
+                                    :out-root strict-out
+                                    :config-path strict-config
+                                    :snapshot-date "2026-07-12"})
+                       nil
+                       (catch Throwable t t))]
+          (is (some? thrown))
+          (is (some #(= :unsafe-member-path (:reason (ex-data %)))
+                    (ex-chain thrown)))
+          (is (not (.exists strict-out)))))
+      (testing "best-effort promotes explicit non-releaseable evidence"
+        (let [best-config (write-config! cfg true)
+              reports (run-build! {:aozora-root aozora
+                                   :out-root best-out
+                                   :config-path best-config
+                                   :snapshot-date "2026-07-12"})
+              selection (:selection reports)
+              failure (first (get selection "derive_failures"))
+              workflow (abc-json/read-json-file
+                        (io/file best-out "workflow-run.json"))]
+          (is (= 1 (:exit reports)))
+          (is (= 1 (get selection "selected_source_count")))
+          (is (= 1 (get selection "derive_failed_count")))
+          (is (= 1 (count (get selection "derive_failures"))))
+          (is (false? (get selection "release_admissible")))
+          (is (= {"work_id" "000101"
+                  "person_id" "000001"
+                  "text_zip_relpath" "cards/000001/files/000101_t.zip"
+                  "reason" "unsafe-member-path"
+                  "decoded_path" "../000101.txt"
+                  "normalized_path" "../000101.txt"}
+                 (select-keys failure
+                              ["work_id" "person_id" "text_zip_relpath"
+                               "reason" "decoded_path" "normalized_path"])))
+          (is (string/includes? (get failure "error")
+                                "source bundle admission failed"))
+          (is (string/ends-with? (get failure "archive_path")
+                                 "cards/000001/files/000101_t.zip"))
+          (is (= {slug-b "passed"} (statuses reports)))
+          (is (= "partial" (get workflow "status")))
+          (is (= "partial" (get-in workflow ["steps" 0 "status"])))
+          (is (.exists (io/file best-out "source-selection-report.json")))
+          (is (.exists (io/file best-out "publications"
+                                "publications-report.json"))))))))
+
+(deftest p16-best-effort-promotes-all-rejected-evidence-test
+  ^{:clj-kondo/ignore [:unresolved-symbol]}
+  (with-temp-dirs [aozora unsafe-out cfg]
+    (let [m (synthetic-state)
+          damaged-out (io/file (.getParentFile unsafe-out) "all-damaged")
+          config (write-config! cfg true)]
+      (testing "all unsafe works produce an empty partial publication set"
+        (render/write-aozora-root! aozora m)
+        (doseq [wid ["000101" "000102"]]
+          (overwrite-zip! aozora m wid (unsafe-path-zip-bytes)))
+        (let [reports (run-build! {:aozora-root aozora
+                                   :out-root unsafe-out
+                                   :config-path config
+                                   :snapshot-date "2026-07-12"})
+              workflow (abc-json/read-json-file
+                        (io/file unsafe-out "workflow-run.json"))]
+          (is (= 1 (:exit reports)))
+          (is (= 0 (get-in reports [:selection "selected_source_count"])))
+          (is (= 2 (get-in reports [:selection "derive_failed_count"])))
+          (is (= #{"unsafe-member-path"}
+                 (set (map #(get % "reason")
+                           (get-in reports [:selection "derive_failures"])))))
+          (is (false? (get-in reports [:selection "release_admissible"])))
+          (is (= 0 (get-in reports [:publications "publication_count"])))
+          (is (= "partial" (get workflow "status")))))
+      (testing "all damaged works follow the same counted disposition"
+        (render/write-aozora-root! aozora m)
+        (doseq [wid ["000101" "000102"]]
+          (overwrite-zip! aozora m wid
+                          (.getBytes "damaged ZIP" StandardCharsets/UTF_8)))
+        (let [reports (run-build! {:aozora-root aozora
+                                   :out-root damaged-out
+                                   :config-path config
+                                   :snapshot-date "2026-07-13"})]
+          (is (= 1 (:exit reports)))
+          (is (= 0 (get-in reports [:selection "selected_source_count"])))
+          (is (= 2 (get-in reports [:selection "derive_failed_count"])))
+          (is (= #{"unreadable-zip"}
+                 (set (map #(get % "reason")
+                           (get-in reports [:selection "derive_failures"])))))
+          (is (= 0 (get-in reports [:publications "publication_count"]))))))))
+
+(deftest p16-best-effort-preserves-cardinality-and-collision-diagnostics-test
+  ^{:clj-kondo/ignore [:unresolved-symbol]}
+  (with-temp-dirs [aozora collision-out cfg]
+    (let [m (synthetic-state)
+          multiple-root (render/temp-dir "sim-multiple-aozora")
+          multiple-out (io/file (.getParentFile collision-out) "multiple")
+          config (write-config! cfg true)]
+      (try
+        (render/write-aozora-root! aozora m)
+        (overwrite-zip! aozora m "000101"
+                        (named-text-zip-bytes [["é.txt" "lower"]
+                                               ["É.txt" "upper"]]))
+        (let [failure (first (get-in (run-build! {:aozora-root aozora
+                                                  :out-root collision-out
+                                                  :config-path config
+                                                  :snapshot-date "2026-07-12"})
+                                     [:selection "derive_failures"]))]
+          (is (= "case-fold-member-path-collision" (get failure "reason")))
+          (is (= "é.txt" (get failure "folded_path")))
+          (is (= ["É.txt" "é.txt"] (get failure "paths"))))
+        (render/write-aozora-root! multiple-root m)
+        (overwrite-zip! multiple-root m "000101"
+                        (named-text-zip-bytes [["two.txt" "two"]
+                                               ["one.txt" "one"]]))
+        (let [failure (first (get-in (run-build! {:aozora-root multiple-root
+                                                  :out-root multiple-out
+                                                  :config-path config
+                                                  :snapshot-date "2026-07-12"})
+                                     [:selection "derive_failures"]))]
+          (is (= "multiple-primary-text-members" (get failure "reason")))
+          (is (= ["one.txt" "two.txt"] (get failure "candidates"))))
+        (finally
+          (render/delete-tree! multiple-root))))))
+
+(deftest p16-best-effort-recognizes-wrapped-admission-cause-test
+  ^{:clj-kondo/ignore [:unresolved-symbol]}
+  (with-temp-dirs [aozora out cfg]
+    (let [m (synthetic-state)
+          config (write-config! cfg true)
+          inspect source-bundle/inspect-zip]
+      (render/write-aozora-root! aozora m)
+      (overwrite-zip! aozora m "000101" (unsafe-path-zip-bytes))
+      (let [reports
+            (with-redefs [source-bundle/inspect-zip
+                          (fn [& args]
+                            (try
+                              (apply inspect args)
+                              (catch Throwable admission
+                                (throw (ex-info "workflow wrapper"
+                                                {:wrapper true}
+                                                admission)))))]
+              (run-build! {:aozora-root aozora
+                           :out-root out
+                           :config-path config
+                           :snapshot-date "2026-07-12"}))
+            failures (get-in reports [:selection "derive_failures"])
+            failure (first failures)]
+        (is (= 1 (:exit reports)))
+        (is (= 1 (count failures)))
+        (is (= "unsafe-member-path" (get failure "reason")))
+        (is (= "../000101.txt" (get failure "decoded_path")))
+        (is (= "../000101.txt" (get failure "normalized_path")))
+        (is (string/includes? (get failure "error")
+                              "source bundle admission failed"))
+        (is (not= "workflow wrapper" (get failure "error")))
+        (is (= {slug-b "passed"} (statuses reports)))))))
 
 (deftest p16-4-tamper-rebuild-test
   ^{:clj-kondo/ignore [:unresolved-symbol]}
@@ -162,8 +351,9 @@
                                         :snapshot-date "2026-07-13" :replace? true}))]
           (is (= "passed" (get st slug-a)))
           (is (= "reused" (get st slug-b)))
-          (is (= tampered-hash (marker out slug-a)))
-          (is (= tampered-hash (get (official-source out slug-a) "source_hash"))))))))
+          (is (= tampered-hash (get (official-source out slug-a) "source_hash")))
+          (is (= (get (official-source out slug-a) "bundle_hash")
+                 (marker out slug-a))))))))
 
 (deftest p16-4-prior-marker-fault-test
   ^{:clj-kondo/ignore [:unresolved-symbol]}
@@ -181,7 +371,7 @@
                                         :snapshot-date "2026-07-13" :replace? true}))]
           (is (= "passed" (get st slug-a)))
           (is (= "reused" (get st slug-b)))
-          (is (= (get-in (render/content-sources m) ["000101" :source-hash])
+          (is (= (get (official-source out slug-a) "bundle_hash")
                  (marker out slug-a)))))
       (testing "missing marker → rebuild"
         (is (.delete (marker-file)))
@@ -203,9 +393,73 @@
                    (catch Throwable t t))]
         (is (some? t))
         (is (not (harness/forbidden-throw? t)))
-        (is (chain-clean-ex-info? t [:path]))
-        (is (some #(string/includes? (str (ex-message %)) "no .txt member")
+        (is (chain-clean-ex-info? t [:reason :archive-path]))
+        (is (some #(= :no-primary-text-member (:reason (ex-data %)))
                   (ex-chain t)))))))
+
+(deftest p16-image-repack-and-text-evolution-test
+  ^{:clj-kondo/ignore [:unresolved-symbol]}
+  (with-temp-dirs [aozora out cfg]
+    (let [config (write-config! cfg false)
+          m0 (-> (synthetic-state)
+                 (assoc-in [:contents "000101" :images]
+                           (sorted-map "images/表紙.png" "image-v1"
+                                       "__MACOSX/._notes.txt" "finder")))
+          m-image (assoc-in m0 [:contents "000101" :images "images/表紙.png"]
+                            "image-v2")
+          m-text (assoc-in m-image [:contents "000101" :text]
+                           "作品000101 本文 夏")]
+      (render/write-aozora-root! aozora m0)
+      (let [r0 (run-build! {:aozora-root aozora :out-root out
+                            :config-path config :snapshot-date "2026-07-01"})
+            base (official-source out slug-a)]
+        (is (= {slug-a "passed" slug-b "passed"} (statuses r0)))
+        (is (= "000101.txt" (get base "primary_text_member")))
+        (is (some #(= "__MACOSX/._notes.txt" (get % "path"))
+                  (get (source-bundle out slug-a) "members")))
+
+        (render/write-aozora-root! aozora m-image)
+        (let [r-image (run-build! {:aozora-root aozora :out-root out
+                                   :config-path config :snapshot-date "2026-07-02"
+                                   :replace? true})
+              image (official-source out slug-a)]
+          (testing "image change rebuilds through conservative bundle invalidation"
+            (is (= {slug-a "passed" slug-b "reused"} (statuses r-image)))
+            (is (not= (get base "bundle_hash") (get image "bundle_hash")))
+            (is (= (get base "primary_text_hash")
+                   (get image "primary_text_hash"))))
+
+          (render/write-aozora-root!
+           aozora m-image
+           {:zip-layouts {"000101" {:order :reverse
+                                    :mtime 1700000000000
+                                    :comment "metadata-only repack"
+                                    :compression :stored}}})
+          (let [r-repack (run-build! {:aozora-root aozora :out-root out
+                                      :config-path config
+                                      :snapshot-date "2026-07-03"
+                                      :replace? true})
+                repacked (official-source out slug-a)]
+            (testing "metadata-only repack changes archive identity and reuses"
+              (is (= {slug-a "reused" slug-b "reused"} (statuses r-repack)))
+              (is (not= (get image "archive_hash")
+                        (get repacked "archive_hash")))
+              (is (= (get image "bundle_hash") (get repacked "bundle_hash")))
+              (is (= (get image "primary_text_hash")
+                     (get repacked "primary_text_hash"))))
+
+            (render/write-aozora-root! aozora m-text)
+            (let [r-text (run-build! {:aozora-root aozora :out-root out
+                                      :config-path config
+                                      :snapshot-date "2026-07-04"
+                                      :replace? true})
+                  text-edited (official-source out slug-a)]
+              (testing "text edit changes bundle and primary text and rebuilds"
+                (is (= {slug-a "passed" slug-b "reused"} (statuses r-text)))
+                (is (not= (get repacked "bundle_hash")
+                          (get text-edited "bundle_hash")))
+                (is (not= (get repacked "primary_text_hash")
+                          (get text-edited "primary_text_hash")))))))))))
 
 ;; --- P16.1 build ---------------------------------------------------------
 
@@ -223,14 +477,19 @@
      :rejected (= (:rejected expected)
                   (set (map (juxt #(get % "path") #(get % "reason"))
                             (get-in reports [:selection "rejected_sources"]))))
-     :pins (every? (fn [{:keys [slug source_hash]}]
-                     (and (= source_hash (get (official-source out slug) "source_hash"))
-                          (= source_hash
-                             (get-in (abc-json/read-json-file
-                                      (io/file out "materialized-root" "works" slug
-                                               "source.manifest.json"))
-                                     ["manifest_identity_object" "work_content_hash"]))
-                          (= source_hash (marker out slug))))
+     :pins (every? (fn [{:keys [slug archive_hash bundle_hash]}]
+                     (let [official (official-source out slug)
+                           bundle (source-bundle out slug)]
+                       (and (= archive_hash (get official "source_hash"))
+                            (= archive_hash (get official "archive_hash"))
+                            (= bundle_hash (get official "bundle_hash"))
+                            (= bundle_hash (get bundle "bundle_hash"))
+                            (= bundle_hash
+                               (get-in (abc-json/read-json-file
+                                        (io/file out "materialized-root" "works" slug
+                                                 "source.manifest.json"))
+                                       ["manifest_identity_object" "work_content_hash"]))
+                            (= bundle_hash (marker out slug)))))
                    (:selected expected))
      :statuses (and (every? #(= "passed" %) (vals st))
                     (= (count (:selected expected)) (count st))
@@ -268,6 +527,54 @@
 
 ;; --- P16.3 pin-chain (D7) -------------------------------------------------
 
+(defn- pin-chain-work-checks [aozora out snapshot-input selected]
+  (let [{:keys [slug text_zip_relpath archive_hash bundle_hash
+                primary_text_hash primary_text_member members identity_object]}
+        selected
+        official (official-source out slug)
+        bundle (source-bundle out slug)
+        parser-ir (abc-json/read-json-file
+                   (io/file out "materialized-root" "works" slug "parser-ir.json"))
+        source-manifest (abc-json/read-json-file
+                         (io/file out "materialized-root" "works" slug
+                                  "source.manifest.json"))
+        primary-member-hash (get (some #(when (= primary_text_member
+                                                 (get % "path")) %)
+                                       members)
+                                 "member_hash")]
+    {:actual-archive (= archive_hash
+                        (hash/format-sha256
+                         (files/sha256-file (io/file aozora text_zip_relpath))))
+     :archive-alias (= archive_hash
+                       (get official "source_hash")
+                       (get official "archive_hash")
+                       (get bundle "archive_hash")
+                       (get snapshot-input "archive_hash"))
+     :independent-bundle (= bundle_hash
+                            (hash/format-sha256
+                             (hash/sha256-bytes
+                              (jcs/rfc8785-string-domain-json-bytes
+                               identity_object)))
+                            (get official "bundle_hash")
+                            (get bundle "bundle_hash")
+                            (get-in parser-ir ["source" "work_content_hash"])
+                            (get snapshot-input "work_content_hash")
+                            (get-in source-manifest
+                                    ["manifest_identity_object"
+                                     "work_content_hash"]))
+     :identity-object (= identity_object (get bundle "identity_object"))
+     :members (= members
+                 (mapv #(select-keys % ["path" "member_hash"])
+                       (get bundle "members")))
+     :primary-member (= primary_text_member
+                        (get official "primary_text_member")
+                        (get-in bundle ["identity_object" "primary_text_member"])
+                        (get snapshot-input "primary_text_member"))
+     :primary-integrity (= primary_text_hash primary-member-hash
+                           (get official "primary_text_hash")
+                           (get-in parser-ir ["source" "primary_text_hash"])
+                           (get snapshot-input "primary_text_hash"))}))
+
 (deftest p16-3-pin-chain-sim-test
   (harness/check!
    "P16.3 pin-chain" 5
@@ -283,42 +590,34 @@
                                     :config-path (write-config! cfg false)
                                     :snapshot-date "2026-07-12"})
                        (let [ws (io/file cfg "workset.edn")
+                             snapshot-file (io/file cfg "snapshot.json")
                              _ (workset/write-workset!
                                 {:input-root (str (io/file out "materialized-root"))
                                  :output-path (str ws)
                                  :snapshot-scope "sim" :snapshot-date "2026-07-12"})
-                             res (try {:ok (snapshot/materialize-source-snapshot!
-                                            {:workset-path (str ws)
-                                             :output-path (str (io/file cfg "snapshot.json"))})}
-                                      (catch Throwable t {:thrown t}))
-                 ;; workset works sort by [work_id slug]; snapshot-input
-                 ;; throws on the first mismatch
-                             first-sel (first (sort-by (juxt :work_id :slug)
-                                                       (:selected expected)))
-                             wid (:work_id first-sel)
-                             member-hash (hash/format-sha256
-                                          (hash/sha256-bytes
-                                           (.getBytes ^String (get-in m [:contents wid :text])
-                                                      StandardCharsets/UTF_8)))
-                             hard-ok?
-                             (if-let [t (:thrown res)]
-                               (let [d (some #(let [dd (ex-data %)]
-                                                (when (contains? dd :work-content-hash) dd))
-                                             (ex-chain t))]
-                                 (and (not (harness/forbidden-throw? t))
-                                      (chain-clean-ex-info?
-                                       t [:work :parser-ir-path :official-source-path
-                                          :work-content-hash :official-source-hash])
-                          ;; pin WHY it fails: member hash vs raw-ZIP hash
-                                      (= (:work d) (:slug first-sel))
-                                      (= (:work-content-hash d) member-hash)
-                                      (= (:official-source-hash d) (:source_hash first-sel))))
-                               true)]
-                         (and hard-ok?
-                              (div/expected-failure*
-                               :D7
-                               "P16.3: build-publication output composes with materialize-source-snapshot!"
-                               (fn [] (contains? res :ok)))))))))))
+                             result (snapshot/materialize-source-snapshot!
+                                     {:workset-path (str ws)
+                                      :output-path (str snapshot-file)})
+                             snapshot-value (abc-json/read-json-file snapshot-file)
+                             inputs (into {}
+                                          (map (juxt #(get % "slug") identity))
+                                          (get-in snapshot-value
+                                                  ["snapshot_identity_object"
+                                                   "snapshot_inputs"]))
+                             checks (into {}
+                                          (for [selected (:selected expected)
+                                                [role holds?]
+                                                (pin-chain-work-checks
+                                                 aozora out
+                                                 (get inputs (:slug selected))
+                                                 selected)]
+                                            [[(:slug selected) role] holds?]))]
+                         (when-not (every? val checks)
+                           (println "P16.3 failing role checks:"
+                                    (vec (keep (fn [[k v]] (when-not v k)) checks))))
+                         (and (= snapshot-file (:snapshot result))
+                              (= (count (:selected expected)) (count inputs))
+                              (every? val checks)))))))))
 
 ;; --- P16.2 evolution (the core) -------------------------------------------
 
@@ -349,7 +648,7 @@
                                          (render/content-sources s-after)))
               before-slugs (mapv :slug selected-before)
               after-slugs (mapv :slug selected-after)
-              cur-hash (into {} (map (juxt :slug :source_hash)) selected-after)]
+              expected-slugs (set (map :slug selected-after))]
           (render/write-aozora-root! aozora s-before)
           (let [r1 (run-build! {:aozora-root aozora :out-root out
                                 :config-path config :snapshot-date "2026-07-01"})
@@ -360,6 +659,11 @@
                                   :config-path config :snapshot-date "2026-07-02"
                                   :replace? true})
                   st2 (statuses r2)
+                  cur-hash (into {}
+                                 (map (juxt #(get % "slug")
+                                            #(get % "bundle_hash")))
+                                 (filter #(contains? expected-slugs (get % "slug"))
+                                         (get-in r2 [:selection "selected_sources"])))
                   r2-markers (into {} (map (fn [slug] [slug (marker out slug)]))
                                    (keys cur-hash))
                   r2-files (into {} (map (fn [slug] [slug (pub-files out slug)]))

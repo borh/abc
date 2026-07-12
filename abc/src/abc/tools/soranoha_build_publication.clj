@@ -8,6 +8,7 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-publication :as materialize-publication]
             [abc.tools.schema :as schema]
+            [abc.tools.source-bundle :as source-bundle]
             [abc.tools.workflow :as workflow]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]
@@ -103,31 +104,6 @@
                :relpath (aozora-work-zip? aozora-root file)}))
        vec))
 
-(def ^:private zip-name-charset
-  ;; Aozora work ZIPs carry Shift_JIS entry names (e.g. `ken'eki`, whose `'` is
-  ;; a raw 0x81 byte). java.util.zip defaults to UTF-8 and rejects those as
-  ;; "bad entry name"; windows-31j reads them correctly.
-  (java.nio.charset.Charset/forName "windows-31j"))
-
-(defn- text-member-name? [name]
-  (string/ends-with? (string/lower-case name) ".txt"))
-
-(defn- java-first-text-member
-  "First .txt member (name + bytes) via java.util.zip with the SJIS charset.
-  Throws ZipException on a structurally-broken central directory."
-  [zip-file]
-  (with-open [zf (ZipFile. (io/file zip-file) zip-name-charset)]
-    (if-let [member (some (fn [^ZipEntry entry]
-                            (when (and (not (.isDirectory entry))
-                                       (text-member-name? (.getName entry)))
-                              (.getName entry)))
-                          (enumeration-seq (.entries zf)))]
-      {:member member
-       :bytes (with-open [in (.getInputStream zf (.getEntry zf member))]
-                (.readAllBytes in))}
-      (throw (ex-info "work ZIP contains no .txt member"
-                      {:path (str zip-file)})))))
-
 (defn- slug [work-id person-id relpath]
   (let [basename (.getName (io/file relpath))
         stem (subs basename 0 (- (count basename) (count ".zip")))]
@@ -180,43 +156,6 @@
             exit (.waitFor proc)]
         {:exit exit :out-bytes out :err err}))))
 
-(defn- sevenzip-first-text-member
-  "Fallback for ZIPs java.util.zip cannot parse at all (e.g. a damaged central
-  directory / prepended-data archive that even the SJIS charset can't open):
-  extract with 7zz's tolerant reader into a temp dir and read the first .txt.
-  Extract-all avoids entry-name matching pitfalls."
-  [zip-file]
-  (let [bin (or (env-value "AB_SEVENZIP_BIN") "7zz")
-        tmp (.toFile (java.nio.file.Files/createTempDirectory
-                      "abc-7z"
-                      (make-array java.nio.file.attribute.FileAttribute 0)))]
-    (try
-      (let [{:keys [exit err]} (run-process! {:args [bin "x" "-y"
-                                                     (str "-o" tmp)
-                                                     (str zip-file)]})]
-        (when-not (zero? exit)
-          (throw (ex-info "7zz extraction failed"
-                          {:zip (str zip-file) :exit exit :stderr err})))
-        (if-let [txt (->> (file-seq tmp)
-                          (filter #(.isFile ^java.io.File %))
-                          (filter #(text-member-name? (.getName ^java.io.File %)))
-                          first)]
-          {:member (.getName ^java.io.File txt)
-           :bytes (java.nio.file.Files/readAllBytes (.toPath txt))}
-          (throw (ex-info "7zz found no .txt member" {:zip (str zip-file)}))))
-      (finally
-        (files/delete-tree! tmp)))))
-
-(defn- read-first-text-member
-  "Robustly read the first .txt member (name + bytes) from an Aozora work ZIP.
-  Primary path uses java.util.zip with the SJIS charset (recovers Shift_JIS
-  entry names); on a ZipException (structural corruption) it falls back to 7zz."
-  [zip-file]
-  (try
-    (java-first-text-member zip-file)
-    (catch java.util.zip.ZipException _
-      (sevenzip-first-text-member zip-file))))
-
 (defn- write-aat!
   "Run the aozora2html adapter wrapper (parse + align) over the raw source
   bytes, writing the AAT JSON to aat-file."
@@ -235,7 +174,7 @@
 
 (defn- convert-aat->parser-ir!
   "Run ab-aat-to-parser-ir convert, emitting parser-IR + divergence sidecar."
-  [{:keys [aat-file parser-ir-file divergence-file]}]
+  [{:keys [aat-file parser-ir-file divergence-file work-content-hash]}]
   (let [convert-bin (require-env "AB_AAT_TO_PARSER_IR_BIN" "ab-aat-to-parser-ir")
         mapping (require-env "AB_AAT_TO_PARSER_IR_MAPPING"
                              "aat→parser-IR mapping document")
@@ -243,6 +182,7 @@
         (run-process! {:args [convert-bin "convert"
                               "--aat" aat-file
                               "--mapping" mapping
+                              "--work-content-hash" work-content-hash
                               "--parser-ir-out" parser-ir-file
                               "--divergence-out" divergence-file]})]
     (when-not (zero? exit)
@@ -255,11 +195,12 @@
   aozora2html adapter to AAT, then ab-aat-to-parser-ir convert. Adapter
   resolution is lazy here so the injectable boundary below can be stubbed
   without the adapter binaries present."
-  [{:keys [parser-profile source-bytes aat-file parser-ir-file
+  [{:keys [parser-profile source-bytes work-content-hash aat-file parser-ir-file
            divergence-file]}]
   (let [adapter (resolve-adapter parser-profile)]
     (write-aat! aat-file {:adapter adapter :source-bytes source-bytes})
     (convert-aat->parser-ir! {:aat-file (str aat-file)
+                              :work-content-hash work-content-hash
                               :parser-ir-file (str parser-ir-file)
                               :divergence-file (str divergence-file)})))
 
@@ -287,14 +228,34 @@
    "notes" (str "Source manifest emitted by soranoha build-publication real "
                 "materialization.")})
 
-(defn- official-source [row relpath zip-member source-file source-hash]
+(defn- official-source
+  [row relpath source-file {:keys [archive-hash bundle-hash
+                                   primary-text-member primary-text-hash]}]
   {"work_id" (row-work-id row)
    "card_person_id" (row-person-id row)
    "text_url" (get row "テキストファイルURL")
    "text_zip_relpath" relpath
-   "zip_member" zip-member
-   "source_hash" source-hash
+   "zip_member" primary-text-member
+   "source_hash" archive-hash
+   "archive_hash" archive-hash
+   "bundle_hash" bundle-hash
+   "primary_text_member" primary-text-member
+   "primary_text_hash" primary-text-hash
    "source_bytes" (hash/byte-length source-file)})
+
+(defn- assert-parser-identities!
+  [parser-ir-file expected-work-hash expected-primary-hash]
+  (let [parser-ir (abc-json/read-json-file parser-ir-file)
+        actual-work-hash (get-in parser-ir ["source" "work_content_hash"])
+        actual-primary-hash (get-in parser-ir ["source" "primary_text_hash"])]
+    (when-not (and (= expected-work-hash actual-work-hash)
+                   (= expected-primary-hash actual-primary-hash))
+      (throw (ex-info "parser-IR source identity does not match inspected bundle"
+                      {:expected-work-content-hash expected-work-hash
+                       :actual-work-content-hash actual-work-hash
+                       :expected-primary-text-hash expected-primary-hash
+                       :actual-primary-text-hash actual-primary-hash})))
+    parser-ir))
 
 (defn- write-materialized-work!
   [{:keys [rows catalog-provenance materialized-root selected parser-profile
@@ -302,28 +263,36 @@
   (let [{:keys [row file relpath]} selected
         work-id (row-work-id row)
         person-id (row-person-id row)
-        work-hash (hash/format-sha256 (files/sha256-file file))
-        {zip-member :member source-bytes :bytes} (read-first-text-member file)
+        inspection (source-bundle/inspect-zip file)
+        work-hash (:bundle-hash inspection)
+        archive-hash (:archive-hash inspection)
+        primary-text-member (:primary-text-member inspection)
+        primary-text-hash (:primary-text-hash inspection)
+        source-bytes (:primary-text-bytes inspection)
         work-dir (io/file materialized-root "works"
                           (slug work-id person-id relpath))
         aat-file (io/file work-dir "aat.json")
         parser-ir-file (io/file work-dir "parser-ir.json")
         divergence-file (io/file work-dir "divergence.json")
+        source-bundle-file (io/file work-dir "source-bundle.json")
         source-manifest-file (io/file work-dir "source.manifest.json")
         persons-dir (io/file materialized-root "persons")
         metadata-file (io/file work-dir "metadata-record.json")]
     (.mkdirs work-dir)
     ;; Real AAT + parser-IR from the owned adapters (replaces the former stub),
     ;; through the injectable boundary so tests can stub it.
+    (source-bundle/write-manifest! source-bundle-file inspection)
     (*derive-parser-ir!* {:parser-profile parser-profile
                           :source-bytes source-bytes
+                          :work-content-hash work-hash
                           :aat-file aat-file
                           :parser-ir-file parser-ir-file
                           :divergence-file divergence-file})
+    (assert-parser-identities! parser-ir-file work-hash primary-text-hash)
     ;; Source truth + the source manifest publication materialization requires.
     (abc-json/write-deterministic-json-file!
      (io/file work-dir "official-source.json")
-     (official-source row relpath zip-member file work-hash))
+     (official-source row relpath file inspection))
     (abc-json/write-deterministic-json-file!
      source-manifest-file
      (work-source-manifest work-hash corpus-hash))
@@ -339,8 +308,14 @@
      :person_id person-id
      :slug (.getName work-dir)
      :text_zip_relpath relpath
-     :source_hash work-hash
-     :zip_member zip-member
+     :source_hash archive-hash
+     :archive_hash archive-hash
+     :bundle_hash work-hash
+     :work_content_hash work-hash
+     :primary_text_member primary-text-member
+     :primary_text_hash primary-text-hash
+     :zip_member primary-text-member
+     :source_bundle_path (str source-bundle-file)
      :aat_path (str aat-file)
      :parser_ir_path (str parser-ir-file)
      :source_manifest_path (str source-manifest-file)
@@ -356,9 +331,49 @@
                                "slug" (:slug source)
                                "text_zip_relpath" (:text_zip_relpath source)
                                "source_hash" (:source_hash source)
+                               "archive_hash" (:archive_hash source)
+                               "bundle_hash" (:bundle_hash source)
+                               "work_content_hash" (:work_content_hash source)
+                               "primary_text_member" (:primary_text_member source)
+                               "primary_text_hash" (:primary_text_hash source)
                                "zip_member" (:zip_member source)})
                             selected)
    "rejected_sources" (mapv identity rejected)})
+
+(defn- source-bundle-admission-error [t]
+  (loop [cause t
+         seen #{}]
+    (cond
+      (nil? cause) nil
+      (contains? seen cause) nil
+      (not (instance? clojure.lang.ExceptionInfo cause)) nil
+      (true? (::source-bundle/admission-error (ex-data cause)))
+      cause
+      :else (recur (.getCause ^Throwable cause) (conj seen cause)))))
+
+(defn- derive-failure [candidate t]
+  (let [d (ex-data t)
+        actual (or (:actual d)
+                   (:actual-bytes d)
+                   (:declared-bytes d)
+                   (:member-count d))]
+    (cond-> {"work_id" (row-work-id (:row candidate))
+             "person_id" (row-person-id (:row candidate))
+             "text_zip_relpath" (:relpath candidate)
+             "error" (.getMessage t)
+             "reason" (some-> (:reason d) name)}
+      (:archive-path d) (assoc "archive_path" (:archive-path d))
+      (:path d) (assoc "path" (:path d))
+      (:decoded-path d) (assoc "decoded_path" (:decoded-path d))
+      (:normalized-path d) (assoc "normalized_path" (:normalized-path d))
+      (:limit d) (assoc "limit" (:limit d))
+      (some? actual) (assoc "actual" actual)
+      (:actual-bytes d) (assoc "actual_bytes" (:actual-bytes d))
+      (:declared-bytes d) (assoc "declared_bytes" (:declared-bytes d))
+      (:member-count d) (assoc "member_count" (:member-count d))
+      (:paths d) (assoc "paths" (:paths d))
+      (:folded-path d) (assoc "folded_path" (:folded-path d))
+      (:candidates d) (assoc "candidates" (:candidates d)))))
 
 (defn- materialize-selected-sources!
   [{:keys [aozora-root output-root parser-profile snapshot-date
@@ -401,10 +416,10 @@
                           (try
                             {:ok (derive-one candidate)}
                             (catch Throwable t
-                              {:failed {"work_id" (row-work-id (:row candidate))
-                                        "person_id" (row-person-id (:row candidate))
-                                        "text_zip_relpath" (:relpath candidate)
-                                        "error" (.getMessage t)}}))
+                              (if-let [admission
+                                       (source-bundle-admission-error t)]
+                                {:failed (derive-failure candidate admission)}
+                                (throw t))))
                           {:ok (derive-one candidate)}))
                       selected-candidates)
         selected (vec (keep :ok results))
@@ -428,13 +443,14 @@
 
                                           :else
                                           "not-selected")})))]
-    (when-not (seq selected)
+    (when (and (empty? selected) (empty? derive-failures))
       (throw (ex-info "no catalog-backed work ZIPs were successfully derived"
                       {:aozora_root (str aozora-root)
                        :derive_failed_count (count derive-failures)})))
     (let [report (-> (selection-report selected rejected)
                      (assoc "derive_failed_count" (count derive-failures)
-                            "derive_failures" derive-failures))]
+                            "derive_failures" derive-failures
+                            "release_admissible" (empty? derive-failures)))]
       (abc-json/write-deterministic-json-file!
        (io/file output-root "source-selection-report.json")
        report)
@@ -563,20 +579,20 @@
 
 (defn- materialize-one-publication!
   [{:keys [output-root prior-output-root generated-at continue-on-failure work]}]
-  (let [{:keys [slug source_hash parser_ir_path source_manifest_path
+  (let [{:keys [slug work_content_hash parser_ir_path source_manifest_path
                 metadata_record_path persons_dir]} work
         pub-dir (io/file output-root "publications" slug)
         prior-pub-dir (when prior-output-root
                         (io/file prior-output-root "publications" slug))]
     (cond
       ;; Already materialized in this output-root from identical source.
-      (publication-up-to-date? pub-dir source_hash)
+      (publication-up-to-date? pub-dir work_content_hash)
       {:slug slug :status "skipped"
        :tei_manifest (str (io/file pub-dir "tei.manifest.json"))}
 
       ;; A prior promoted build holds a byte-identical-source publication —
       ;; copy it forward instead of recomputing (content-addressed cache hit).
-      (and prior-pub-dir (publication-up-to-date? prior-pub-dir source_hash))
+      (and prior-pub-dir (publication-up-to-date? prior-pub-dir work_content_hash))
       (do (copy-dir-files! prior-pub-dir pub-dir)
           {:slug slug :status "reused"
            :tei_manifest (str (io/file pub-dir "tei.manifest.json"))})
@@ -590,7 +606,7 @@
                        :persons-dir persons_dir
                        :output-dir (str pub-dir)
                        :generated-at generated-at})]
-          (spit (io/file pub-dir "source_work_content_hash.txt") source_hash)
+          (spit (io/file pub-dir "source_work_content_hash.txt") work_content_hash)
           {:slug slug :status "passed"
            :tei (str (:tei result))
            :tei_manifest (str (:tei-manifest result))
@@ -647,6 +663,9 @@
                  selection-report-file (io/file output-root
                                                 "source-selection-report.json")]
              {:state-updates {:materialization-result result}
+              :status (if (get-in result [:report "release_admissible"])
+                        :passed
+                        :partial)
               :outputs [{:role "source-selection-report"
                          :path (str selection-report-file)
                          :content_hash
@@ -704,21 +723,24 @@
           tmp-root (prepare-output-root! output-root replace)]
       (.mkdirs tmp-root)
       (let [opts (assoc opts :output-root tmp-root)
-            _ (workflow/run-workflow!
-               {:workflow-id "soranoha.build-publication.v1"
-                :run-id (str "build-publication:" snapshot-date)
-                :output-root tmp-root
-                :initial-state {:aozora-root aozora-root
-                                :config-value config-value
-                                :snapshot-date snapshot-date
-                                :output-root tmp-root
-                                :prior-output-root prior-output-root
-                                :opts opts}
-                :steps (build-publication-steps)})
+            workflow-result
+            (workflow/run-workflow!
+             {:workflow-id "soranoha.build-publication.v1"
+              :run-id (str "build-publication:" snapshot-date)
+              :output-root tmp-root
+              :initial-state {:aozora-root aozora-root
+                              :config-value config-value
+                              :snapshot-date snapshot-date
+                              :output-root tmp-root
+                              :prior-output-root prior-output-root
+                              :opts opts}
+              :steps (build-publication-steps)})
             final-root (promote-output-root! tmp-root output-root replace)]
         (println "build_publication_root:" (str final-root))
         (println "materialized_root:" (str (io/file final-root
                                                     "materialized-root")))
         (println "publications_root:" (str (io/file final-root
                                                     "publications")))
-        0))))
+        (if (= "passed" (get-in workflow-result [:run "status"]))
+          0
+          1)))))

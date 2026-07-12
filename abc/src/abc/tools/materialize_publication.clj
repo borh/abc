@@ -4,6 +4,7 @@
             [abc.tools.logging :as logging]
             [abc.tools.manifest :as manifest]
             [abc.tools.metadata-record :as metadata-record]
+            [abc.tools.parallel :as parallel]
             [abc.tools.parser-ir-plaintext :as plaintext]
             [abc.tools.parser-ir-publication-policy :as policy]
             [abc.tools.publication-policy :as publication-policy]
@@ -15,8 +16,7 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.tools.cli :as cli]
-            [taoensso.telemere :as tel])
-  (:import [java.util.concurrent Callable Executors]))
+            [taoensso.telemere :as tel]))
 
 (def default-generated-at "2026-07-03T00:00:00Z")
 (def publication-policy-path "data/parser-ir-publication-policy-v0.json")
@@ -663,19 +663,7 @@
     (max 1 (min requested (max 1 job-count)))))
 
 (defn- materialize-batch-jobs! [jobs concurrency]
-  (if (= 1 concurrency)
-    (mapv materialize-batch-job! jobs)
-    (let [executor (Executors/newFixedThreadPool concurrency)]
-      (try
-        (mapv #(.get %)
-              (.invokeAll executor
-                          (mapv (fn [job]
-                                  (reify Callable
-                                    (call [_]
-                                      (materialize-batch-job! job))))
-                                jobs)))
-        (finally
-          (.shutdown executor))))))
+  (parallel/ordered-pmap concurrency materialize-batch-job! jobs))
 
 (def workflow-run-schema-id
   "https://w3id.org/abc/schemas/workflow-run.schema.json")

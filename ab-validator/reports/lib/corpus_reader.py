@@ -62,12 +62,8 @@ _REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-_SPLIT_SCRIPT = (
-    _REPO_ROOT / "reports" / "source-regions" / "terminal-provenance-split.py"
-)
-_spec = importlib.util.spec_from_file_location(
-    "terminal_provenance_split", _SPLIT_SCRIPT
-)
+_SPLIT_SCRIPT = _REPO_ROOT / "reports" / "source-regions" / "terminal-provenance-split.py"
+_spec = importlib.util.spec_from_file_location("terminal_provenance_split", _SPLIT_SCRIPT)
 assert _spec is not None and _spec.loader is not None
 _split = importlib.util.module_from_spec(_spec)
 sys.modules.setdefault(_spec.name, _split)
@@ -77,9 +73,7 @@ discover_entries = _split.discover_entries
 is_text_entry = _split.is_text_entry
 sniffs_as_zip = _split.sniffs_as_zip
 work_id_from_index_path = _split.work_id_from_index_path
-_read_zip_member_bypassing_central_directory = (
-    _split._read_zip_member_bypassing_central_directory
-)
+_read_zip_member_bypassing_central_directory = _split._read_zip_member_bypassing_central_directory
 
 ZIP_NAME_ENCODING = "windows-31j"
 
@@ -94,7 +88,9 @@ class Candidate:
     label: str | None = None  # rel or rel::member for works
     work_id: str | None = None
     data: bytes | None = None
-    reader: str | None = None  # "plain" | "zip_stdlib" | "zip_local_header_fallback" | "zip_7zz_tolerant"
+    reader: str | None = (
+        None  # "plain" | "zip_stdlib" | "zip_local_header_fallback" | "zip_7zz_tolerant"
+    )
     detail: str | None = None  # failure/exclusion detail
 
 
@@ -139,8 +135,13 @@ def classify_candidate(corpus_root: pathlib.Path, path: pathlib.Path) -> Candida
     if not zip_shaped:
         data = path.read_bytes()
         return Candidate(
-            path=path, rel=rel, klass="work", label=rel,
-            work_id=work_id_from_index_path(rel), data=data, reader="plain",
+            path=path,
+            rel=rel,
+            klass="work",
+            label=rel,
+            work_id=work_id_from_index_path(rel),
+            data=data,
+            reader="plain",
         )
     # 1. stdlib with windows-31j member names.
     stdlib_error: str | None = None
@@ -149,16 +150,21 @@ def classify_candidate(corpus_root: pathlib.Path, path: pathlib.Path) -> Candida
             member = next((n for n in zf.namelist() if is_text_entry(n)), None)
             if member is None:
                 return Candidate(
-                    path=path, rel=rel, klass="non_work",
+                    path=path,
+                    rel=rel,
+                    klass="non_work",
                     detail="zip_no_text_member",
                 )
             try:
                 data = zf.read(member)
                 return Candidate(
-                    path=path, rel=rel, klass="work",
+                    path=path,
+                    rel=rel,
+                    klass="work",
                     label=f"{rel}::{member}",
                     work_id=work_id_from_index_path(f"{rel}::{member}"),
-                    data=data, reader="zip_stdlib",
+                    data=data,
+                    reader="zip_stdlib",
                 )
             except (zipfile.BadZipFile, OSError) as error:
                 stdlib_error = f"{type(error).__name__}: {error}"
@@ -169,10 +175,13 @@ def classify_candidate(corpus_root: pathlib.Path, path: pathlib.Path) -> Candida
     if recovered is not None:
         member, data = recovered
         return Candidate(
-            path=path, rel=rel, klass="work",
+            path=path,
+            rel=rel,
+            klass="work",
             label=f"{rel}::{member}",
             work_id=work_id_from_index_path(f"{rel}::{member}"),
-            data=data, reader="zip_local_header_fallback",
+            data=data,
+            reader="zip_local_header_fallback",
             detail=stdlib_error,
         )
     # 3. tolerant 7zz — recovers content NO production reader accepts.
@@ -180,20 +189,23 @@ def classify_candidate(corpus_root: pathlib.Path, path: pathlib.Path) -> Candida
     if extra is not None:
         member, data = extra
         return Candidate(
-            path=path, rel=rel, klass="recovered_extra",
+            path=path,
+            rel=rel,
+            klass="recovered_extra",
             label=f"{rel}::{member}",
             work_id=work_id_from_index_path(f"{rel}::{member}"),
-            data=data, reader="zip_7zz_tolerant",
+            data=data,
+            reader="zip_7zz_tolerant",
             detail=stdlib_error,
         )
     return Candidate(
-        path=path, rel=rel, klass="unreadable", detail=stdlib_error,
+        path=path,
+        rel=rel,
+        klass="unreadable",
+        detail=stdlib_error,
     )
 
 
 def classify_corpus(corpus_root: pathlib.Path) -> list[Candidate]:
     """Discover and classify every candidate, in sorted order."""
-    return [
-        classify_candidate(corpus_root, path)
-        for path in discover_entries(corpus_root)
-    ]
+    return [classify_candidate(corpus_root, path) for path in discover_entries(corpus_root)]

@@ -186,3 +186,33 @@
 
 (defn commit-zip-at! [git root zip-bytes message instant-str]
   (commit-file-at! git root zip-path zip-bytes message instant-str))
+
+(defn commit-history!
+  "Commit each model state as a ZIP-changing commit at the given instants
+  (same count as states). Returns the vector of RevCommits."
+  [git root states instants]
+  (mapv (fn [m instant i]
+          (commit-zip-at!
+           git root
+           (csv->zip-bytes (rows->csv (model->rows m)))
+           (str "state " i) instant))
+        states instants (range)))
+
+(defn monotone-instants
+  "n monthly instants in 2024 (n ≤ 12)."
+  [n]
+  (mapv #(format "2024-%02d-01T00:00:00Z" (inc %)) (range n)))
+
+(defmacro with-repo
+  "Temp JGit repo + temp work dir bound to the given symbols; the repo is
+  closed and both trees deleted on exit."
+  [[git-sym root-sym work-sym] & body]
+  `(let [~root-sym (temp-dir "sim-repo")
+         ~work-sym (temp-dir "sim-work")]
+     (try
+       (let [~git-sym (init-repo! ~root-sym)]
+         (try ~@body
+              (finally (.close ~git-sym))))
+       (finally
+         (delete-tree! ~root-sym)
+         (delete-tree! ~work-sym)))))

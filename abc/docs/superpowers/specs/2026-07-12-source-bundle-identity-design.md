@@ -386,6 +386,12 @@ Measured against flake input `aozorabunko-src` commit
   uncompressed member is 12,631,833 bytes, and the maximum total uncompressed
   bundle size is 27,874,310 bytes.
 
+The checked corpus report uses the same staged, bounded body scan as production
+admission. Actual streamed maxima remain 12,631,833 bytes per member and
+27,874,310 bytes per bundle. It also pins one understated central-directory
+declaration: `cards/001393/files/50710_ruby_36965.zip` declares 68,007 bytes for
+`fushigino_kunino_alice_musical.txt`, while the bounded stream reads 68,497.
+
 The primary-selector packaging-metadata exclusion is therefore required for
 real corpus admission, and windows-31j fallback is the measured normal case,
 not an exceptional compatibility path. The implementation records this

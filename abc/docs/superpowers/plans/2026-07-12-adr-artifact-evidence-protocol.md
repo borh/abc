@@ -109,6 +109,7 @@ Expected: exit 0. If the only failures remain the previously observed unresolved
 - Modify: `ab-validator/data/abc-schemas/schema-contracts.json`
 - Modify: `scripts/abc_schema_contracts.py`
 - Modify: `abc/src/abc/tools/validate_design_bundle.clj`
+- Modify: `abc/src/abc/tools/schema.clj`
 - Modify: `abc/test/abc/tools/validate_design_bundle_test.clj`
 
 **Interfaces:**
@@ -195,6 +196,9 @@ Dates require both `format: date` and
 `external-authority-v1`. Schema tests must prove that both lexical mistakes
 such as `2026/07/12` and impossible dates such as `2026-13-40` are rejected by
 the repository's configured validator.
+Configure the shared NetworkNT registry with format assertions enabled; the
+lexical pattern remains mandatory and Task 3 still parses dates independently
+as defense in depth.
 
 - [ ] **Step 4: Register and mirror schemas mechanically**
 
@@ -246,6 +250,7 @@ git add abc/schemas/adr-evidence-run.schema.json \
   ab-validator/data/abc-schemas/nix-schemas/adr-external-evidence.schema.json \
   ab-validator/data/abc-schemas/schema-contracts.json \
   scripts/abc_schema_contracts.py \
+  abc/src/abc/tools/schema.clj \
   abc/src/abc/tools/validate_design_bundle.clj \
   abc/test/abc/tools/validate_design_bundle_test.clj
 git commit -m "feat(adr): add immutable evidence bundle schemas"

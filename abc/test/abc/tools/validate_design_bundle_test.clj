@@ -1,6 +1,7 @@
 (ns abc.tools.validate-design-bundle-test
   (:require [abc.tools.aat-parser-ir-compat :as compat]
             [abc.tools.files :as files]
+            [abc.tools.json :as abc-json]
             [abc.tools.malli :as am]
             [abc.tools.manifest :as manifest]
             [abc.tools.manifest-index :as manifest-index]
@@ -409,6 +410,85 @@
         (validate/validate-json-schemas! [])
         (is (some #{"schemas/source-assertion.schema.json"}
                   @checked-paths))))))
+
+(deftest validate-json-schemas-includes-adr-evidence-contracts-test
+  (let [run-file (java.io.File/createTempFile "abc-adr-evidence-run" ".json")
+        external-file (java.io.File/createTempFile "abc-adr-external-evidence" ".json")
+        run-value {"schema_version" "abc-adr-evidence-run-v1"
+                   "producer" {"tool" "bin/kaocha"
+                               "command" "bin/kaocha --focus abc.tools.adr-evidence-test"
+                               "revision" "0000000000000000000000000000000000000000"}
+                   "input_profile" {"kind" "clojure-test-v1"
+                                    "roots" ["abc.tools.adr-evidence-test"]
+                                    "explicit" []}
+                   "inputs" {"test/abc/tools/adr_evidence_test.clj"
+                             "sha256:0000000000000000000000000000000000000000000000000000000000000000"}
+                   "observations" {"contract" {"value" true
+                                               "details" {"tests" 4
+                                                          "failures" 0
+                                                          "errors" 0}}}}
+        external-value {"schema_version" "abc-adr-external-evidence-v1"
+                        "source_url" "https://example.invalid/authority"
+                        "retrieved_at" "2026-07-12"
+                        "review_after" "2027-07-12"
+                        "summary" {"path" "docs/evidence/authority-summary.md"
+                                   "hash" "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+                        "input_profile" {"kind" "external-authority-v1"
+                                         "explicit" []}
+                        "inputs" {}
+                        "observations" {"source-contract" {"value" "documented"
+                                                           "details" {}}}}
+        checked-schemas (atom {})]
+    (try
+      (abc-json/write-deterministic-json-file! run-file run-value)
+      (abc-json/write-deterministic-json-file! external-file external-value)
+      (with-redefs [validate/schema-valid! (fn [schema path]
+                                             (swap! checked-schemas assoc path schema)
+                                             nil)
+                    validate/validate-json! (fn [& _args] nil)
+                    validate/validate-json-lines! (fn [& _args] nil)
+                    validate/validation-errors (fn [_schema value]
+                                                 (if (and (map? value)
+                                                          (contains? value "rule_id"))
+                                                   nil
+                                                   [:expected-error]))
+                    compat/load-registry (fn [] {:entries []})
+                    compat/validate-registry! (fn [_registry] :ok)
+                    parser-evidence/load-index (fn [] {:entries []})
+                    parser-evidence/validate-index! (fn [_index] :ok)]
+        (validate/validate-json-schemas! []))
+      (let [run-schema (get @checked-schemas "schemas/adr-evidence-run.schema.json")
+            external-schema (get @checked-schemas "schemas/adr-external-evidence.schema.json")]
+        (is (map? run-schema))
+        (is (map? external-schema))
+        (when (and run-schema external-schema)
+          (is (nil? (schema/validation-errors run-schema
+                                              (files/read-json run-file))))
+          (is (nil? (schema/validation-errors external-schema
+                                              (files/read-json external-file))))
+          (doseq [invalid [(assoc run-value "schema_version" "unknown")
+                           (assoc run-value "unexpected" true)
+                           (assoc-in run-value ["observations" "contract" "value"] 0.5)
+                           (assoc-in run-value ["observations" "contract" "value"] 9007199254740992)
+                           (assoc-in run-value ["observations" "contract" "details" "nested"]
+                                     [0.5])
+                           (assoc-in run-value ["observations" "contract" "details" "nested"]
+                                     [-9007199254740992])]]
+            (is (seq (schema/validation-errors run-schema invalid))))
+          (doseq [invalid [(assoc external-value "schema_version" "unknown")
+                           (assoc external-value "unexpected" true)
+                           (assoc external-value "retrieved_at" "2026/07/12")
+                           (assoc external-value "review_after" "2026-13-40")
+                           (dissoc external-value "review_after")
+                           (assoc-in external-value
+                                     ["observations" "source-contract" "value"] 0.5)
+                           (assoc-in external-value
+                                     ["observations" "source-contract" "details" "nested"]
+                                     [9007199254740992])]]
+            (is (seq (schema/validation-errors external-schema invalid))))))
+      (finally
+        (.delete run-file)
+        (.delete external-file)))))
 
 (deftest validate-json-schemas-includes-tei-eaj-comparison-fixture-test
   (testing "design-bundle schema pass validates the TEI-EAJ comparison export contract"

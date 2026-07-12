@@ -3,6 +3,20 @@
   "canonicalization": "abc-legacy-json-c14n-v0",
   "schemas": [
     {
+      "path": "data/abc-schemas/schemas/adr-evidence-run.schema.json",
+      "id": "https://w3id.org/abc/schemas/adr-evidence-run.schema.json",
+      "title": "ABC ADR Executable Evidence Run",
+      "version": "0.1.0",
+      "hash": "sha256:218e7c8990d2ae2a3ea6a7f62e082c97a7d85ab2037225bd0bbaee2a94c618e0"
+    },
+    {
+      "path": "data/abc-schemas/schemas/adr-external-evidence.schema.json",
+      "id": "https://w3id.org/abc/schemas/adr-external-evidence.schema.json",
+      "title": "ABC ADR External Authority Evidence",
+      "version": "0.1.0",
+      "hash": "sha256:f4dabc38d5952a0b7f8a975d148ae4d736520f1e8619f352f1ff214be7d9cd78"
+    },
+    {
       "path": "data/abc-schemas/schemas/analysis-recipe.schema.json",
       "id": "https://w3id.org/abc/schemas/analysis-recipe.schema.json",
       "title": "ABC Analysis Recipe",

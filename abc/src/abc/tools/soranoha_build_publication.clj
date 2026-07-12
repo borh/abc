@@ -22,21 +22,16 @@
 (def config-schema-path
   "schemas/soranoha-publication-build-config.schema.json")
 
-(def cli-options
-  [[nil "--aozora-root DIR" "Official aozorabunko checkout root."
-    :id :aozora-root]
-   [nil "--config FILE" "Soranoha publication build config JSON."
-    :id :config]
-   [nil "--snapshot-date DATE" "Snapshot date in UTC calendar form, YYYY-MM-DD."
-    :id :snapshot-date]
-   [nil "--output-root DIR" "Final output root."
-    :id :output-root]
-   [nil "--replace" "Replace an existing output root after a successful build."
-    :id :replace :default false]
-   [nil "--concurrency N"
-    "Worker threads for the per-work derive and publish loops (0 = all cores)."
-    :id :concurrency :default 0 :parse-fn #(Long/parseLong %)
-    :validate [#(>= % 0) "must be >= 0"]]])
+;; Temporary compatibility for the handwritten dispatcher. Removed when the
+;; soranoha command table becomes the sole parser.
+(def ^:private legacy-cli-options
+  [[nil "--aozora-root DIR" :id :aozora-root]
+   [nil "--config FILE" :id :config]
+   [nil "--snapshot-date DATE" :id :snapshot-date]
+   [nil "--output-root DIR" :id :output-root]
+   [nil "--replace" :id :replace :default false]
+   [nil "--concurrency N" :id :concurrency :default 0
+    :parse-fn #(Long/parseLong %)]])
 
 (defn- normalized-path [file]
   (string/replace (str file) "\\" "/"))
@@ -540,14 +535,10 @@
   (let [n (long (or requested 0))]
     (if (pos? n) n (.availableProcessors (Runtime/getRuntime)))))
 
-(defn- parse-args [args]
-  (let [{:keys [options errors]} (cli/parse-opts args cli-options)]
-    (when (seq errors)
-      (throw (ex-info (string/join "\n" errors) {:errors errors})))
-    (doseq [required [:aozora-root :config :output-root]]
-      (when (string/blank? (get options required))
-        (throw (ex-info (str (name required) " is required")
-                        {:missing required}))))
+(defn- parse-args [args-or-options]
+  (let [options (if (map? args-or-options)
+                  args-or-options
+                  (:options (cli/parse-opts args-or-options legacy-cli-options)))]
     (reduce (fn [opts k] (update opts k resolve-invocation-path))
             options
             [:aozora-root :config :output-root])))
@@ -740,9 +731,9 @@
                          :content_hash (manifest/file-hash report-file)}]}))}])
 
 (defn build-publication!
-  [args]
+  [options]
   (let [{:keys [aozora-root config snapshot-date output-root replace]
-         :as opts} (parse-args args)
+         :as opts} (parse-args options)
         config-value (read-config config)]
     (when (string/blank? snapshot-date)
       (throw (ex-info "snapshot-date is required for build-publication"

@@ -1005,10 +1005,10 @@
                        #(binding [build-publication/*derive-parser-ir!*
                                   mismatching-stub]
                           (build-publication/build-publication!
-                           ["--aozora-root" (str aozora-root)
-                            "--config" (str config-file)
-                            "--snapshot-date" "2026-07-08"
-                            "--output-root" (str output-root)])))
+                           {:aozora-root (str aozora-root)
+                            :config (str config-file)
+                            :snapshot-date "2026-07-08"
+                            :output-root (str output-root)})))
                      nil
                      (catch clojure.lang.ExceptionInfo t t))
             identity-data (some #(let [data (ex-data %)]
@@ -1063,10 +1063,10 @@
                              (fn [& _] (throw failure))]
                  (with-release-policy-allowed
                    #(build-publication/build-publication!
-                     ["--aozora-root" (str aozora-root)
-                      "--config" (str config-file)
-                      "--snapshot-date" "2026-07-08"
-                      "--output-root" (str output-root)])))
+                     {:aozora-root (str aozora-root)
+                      :config (str config-file)
+                      :snapshot-date "2026-07-08"
+                      :output-root (str output-root)})))
                (catch Throwable t t)))))
       (is (not (.exists output-root)))
       (finally
@@ -1112,10 +1112,10 @@
                                (fn [& _] (throw outer))]
                    (with-release-policy-allowed
                      #(build-publication/build-publication!
-                       ["--aozora-root" (str aozora-root)
-                        "--config" (str config-file)
-                        "--snapshot-date" "2026-07-08"
-                        "--output-root" (str output-root)])))
+                       {:aozora-root (str aozora-root)
+                        :config (str config-file)
+                        :snapshot-date "2026-07-08"
+                        :output-root (str output-root)})))
                  (catch Throwable t t))))))
       (is (not (.exists output-root)))
       (finally
@@ -1132,10 +1132,10 @@
       (let [thrown (try
                      (with-release-policy-allowed
                        #(build-publication/build-publication!
-                         ["--aozora-root" (str aozora-root)
-                          "--config" "abc/config/publication-basic-ja.json"
-                          "--snapshot-date" "2026-07-08"
-                          "--output-root" (str output-root)]))
+                         {:aozora-root (str aozora-root)
+                          :config "abc/config/publication-basic-ja.json"
+                          :snapshot-date "2026-07-08"
+                          :output-root (str output-root)}))
                      nil
                      (catch clojure.lang.ExceptionInfo t t))]
         (is (some? thrown))
@@ -1171,10 +1171,10 @@
                         (with-release-policy-allowed
                           (fn []
                             (build-publication/build-publication!
-                             ["--aozora-root" (str aozora-root)
-                              "--config" (str config-file)
-                              "--snapshot-date" "2026-07-08"
-                              "--output-root" (str output-root)])))
+                             {:aozora-root (str aozora-root)
+                              :config (str config-file)
+                              :snapshot-date "2026-07-08"
+                              :output-root (str output-root)})))
                         nil
                         (catch Throwable t t)))]
         (is (some? thrown))
@@ -1202,6 +1202,26 @@
       (is (not (.exists output-root)))
       (finally
         (delete-tree! root)))))
+
+(deftest build-publication-accepts-parsed-option-map-test
+  (let [parse-var (ns-resolve 'abc.tools.soranoha-build-publication 'parse-args)
+        resolve-var (ns-resolve 'abc.tools.soranoha-build-publication
+                                'resolve-invocation-path)]
+    (is (some? parse-var))
+    (is (some? resolve-var))
+    (is (= {:aozora-root "/invocation/a"
+            :config "/invocation/c.json"
+            :snapshot-date "2026-07-13"
+            :output-root "/invocation/o"
+            :replace false
+            :concurrency 3}
+           (with-redefs-fn {resolve-var #(str "/invocation/" %)}
+             #(@parse-var {:aozora-root "a"
+                           :config "c.json"
+                           :snapshot-date "2026-07-13"
+                           :output-root "o"
+                           :replace false
+                           :concurrency 3}))))))
 
 (deftest reproduce-command-skips-analysis-for-generated-publication-request-set-test
   (let [root (fixture/temp-dir "abc-soranoha-reproduce-publication-source")

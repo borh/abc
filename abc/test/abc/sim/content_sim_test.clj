@@ -84,9 +84,11 @@
                (binding [build-publication/*derive-parser-ir!* realistic-stub
                          *out* (java.io.StringWriter.)]
                  (build-publication/build-publication!
-                  (cond-> ["--aozora-root" (str aozora-root) "--config" config-path
-                           "--output-root" (str out-root) "--snapshot-date" snapshot-date]
-                    replace? (conj "--replace")))))]
+                  {:aozora-root (str aozora-root)
+                   :config config-path
+                   :output-root (str out-root)
+                   :snapshot-date snapshot-date
+                   :replace (boolean replace?)})))]
     {:exit exit
      :selection (abc-json/read-json-file (io/file out-root "source-selection-report.json"))
      :publications (abc-json/read-json-file

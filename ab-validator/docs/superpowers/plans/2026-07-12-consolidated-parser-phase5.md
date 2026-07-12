@@ -607,7 +607,9 @@ Checks to implement (each its own function, mirroring phase4's granularity):
 ### Task 4: The classifier — same-line bare-toggle pairing in `ab-aozora-aat`
 
 **Files:**
-- Modify: `crates/ab-aozora-aat/src/lib.rs` — new pairing pass + call site in `inline_content` (lib.rs:1358), unit tests in `mod tests`.
+- Modify: `crates/ab-aozora-aat/src/lib.rs` — new pairing pass + call site, unit tests in `mod tests`.
+
+> **Mid-execution amendment 2 (Task 9 delta-gate BLOCK, 2026-07-12):** the original placement — last step of `inline_content`, BEFORE block classification — is wrong: consuming marker nodes changes how `blocks_from_inline_content` segments paragraphs/jizume blocks (83 works regressed: merged burasage paragraphs, dropped 字下げ terminators). The pass must run AFTER block classification, applied recursively to every built block's/container's content array, so block segmentation sees the original node stream and adoption rewrites ONLY the toggle span. A regression test must pin the corpus shape that caught this (a bare toggle inside a compound 字下げ block, per work 000026_55738): block structure byte-identical to the pre-classifier output except the adopted container.
 
 **Interfaces:**
 - Consumes: the inline array `Vec<Value>` built by `inline_content` (nodes carry `kind`, `span` `{line_start,line_end,byte_start,byte_end}`); `raw_node` emission shape (`kind:"raw"`, `source`, `x-source-marker-kind:"directive"`); Task 1's pinned observability.

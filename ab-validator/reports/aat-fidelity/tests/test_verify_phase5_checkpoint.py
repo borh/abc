@@ -37,16 +37,22 @@ def gate_summary(gate, commit, version, bin_sha):
 
 
 def audit_doc():
+    # Parser-visible universe (plan amendment 3 / Task 9 reconciliation):
+    # the gate's universe is standalone raw marker nodes in the C4 AAT
+    # dump, not source text -- see
+    # docs/superpowers/reports/2026-07-12-bare-toggle-placement-attribution.md
+    # Revision 4. The source-text universe (1582/25/24) remains true of
+    # the source text but is not what the parser-visible corpus contains.
     return {
         "mode": "bare-toggle-adoption",
         "compared": 17886,
-        "classes": {"identical": 16304, "toggle_adopted": 1582},
+        "classes": {"identical": 16334, "toggle_adopted": 1552},
         "details": {
-            "adopted_yokogumi_pairs": 1582,
+            "adopted_yokogumi_pairs": 1552,
             "adopted_keigakomi_pairs": 25,
-            "declined_markers": 24,
+            "declined_markers": 14,
             "declined_by_reason": {
-                "orphan_open": 10,
+                "orphan_open": 0,
                 "orphan_close": 0,
                 "reopen_rollback": 14,
                 "interleave": 0,
@@ -272,14 +278,14 @@ def test_stage_wrong_version_pattern(tmp_path):
 
 def test_audit_wrong_adopted_count(tmp_path):
     def mutate(d):
-        d["audit"]["details"]["adopted_yokogumi_pairs"] = 1583
+        d["audit"]["details"]["adopted_yokogumi_pairs"] = 1553
 
     assert run(tmp_path, mutate).returncode == 1
 
 
 def test_audit_declined_by_reason_mismatch(tmp_path):
     def mutate(d):
-        d["audit"]["details"]["declined_by_reason"]["orphan_open"] = 11
+        d["audit"]["details"]["declined_by_reason"]["orphan_open"] = 1
 
     assert run(tmp_path, mutate).returncode == 1
 

@@ -15,9 +15,16 @@ and embedding the commit.
 Bare-toggle-adoption audit (--audit, Task 2's independently-derived summary
 over the C4 baseline / C5 candidate dumps -- never re-derived here, only
 bound): verdict PASS, mode "bare-toggle-adoption", compared==17886,
-details.adopted_yokogumi_pairs==1582, details.adopted_keigakomi_pairs==25,
-details.declined_markers==24, details.declined_by_reason=={orphan_open:10,
-orphan_close:0, reopen_rollback:14, interleave:0}.
+details.adopted_yokogumi_pairs==1552, details.adopted_keigakomi_pairs==25,
+details.declined_markers==14, details.declined_by_reason=={orphan_open:0,
+orphan_close:0, reopen_rollback:14, interleave:0}. These are the
+PARSER-VISIBLE corpus totals (plan amendment 3 / Task 9 reconciliation):
+the gate's universe is standalone raw marker nodes in the C4 AAT dump,
+not source text, and 70 source-text markers (1582/25/24, the
+placement report's unchanged source-text universe) never surface as
+standalone raw nodes -- see
+docs/superpowers/reports/2026-07-12-bare-toggle-placement-attribution.md's
+Revision 4 section.
 
 Conversion audit (--conversion, the REAL summary shape emitted by the
 aat-to-parser-ir full-audit tooling -- copy paths from the frozen Phase 4
@@ -83,11 +90,17 @@ GATES = ("delta", "conformance", "perf")
 VERSION_PATTERN = r"^ab-aozora 0\.6\.0 aat-schema 2 facade 0\.3\.0 wire-schema 3 \(git {c}\)$"
 
 AUDIT_MODE = "bare-toggle-adoption"
-AUDIT_ADOPTED_YOKOGUMI = 1582
+# Parser-visible universe (plan amendment 3 / Task 9 reconciliation): the
+# gate's universe is standalone raw marker nodes in the C4 AAT dump, not
+# source text. The source-text universe (1582/25/24) remains true of the
+# source text but is not what the parser-visible corpus contains -- see
+# docs/superpowers/reports/2026-07-12-bare-toggle-placement-attribution.md
+# Revision 4.
+AUDIT_ADOPTED_YOKOGUMI = 1552
 AUDIT_ADOPTED_KEIGAKOMI = 25
-AUDIT_DECLINED_MARKERS = 24
+AUDIT_DECLINED_MARKERS = 14
 AUDIT_DECLINED_BY_REASON = {
-    "orphan_open": 10,
+    "orphan_open": 0,
     "orphan_close": 0,
     "reopen_rollback": 14,
     "interleave": 0,

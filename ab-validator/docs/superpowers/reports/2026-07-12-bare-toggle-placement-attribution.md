@@ -116,3 +116,121 @@ characters between `＃` and the construct token), so the bare counts are
 not inflated by other families. (Raw token counts 1,599/1,589 differ from
 the grammar's 1,582 adopted + 10 orphan-open + 14 rolled-back markers
 only in that the grammar accounts for *adoptability*, not presence.)
+
+## Revision 4 — parser-visible binding (Task 9 reconciliation)
+
+**Date:** 2026-07-12. The corpus delta gate's per-work and per-line
+checks all passed over the full 17,886-work corpus, but the
+preregistered totals above (1,582 / 25 / 24) fired against the gate: they
+were derived from SOURCE TEXT (this report, Revisions 1–3), while the
+gate's actual universe is **parser-visible raw marker nodes in the C4 AAT
+dump** — a bare-toggle token that never surfaces as a standalone
+`{"kind": "raw", "source": "<exact token>"}` node cannot be adopted or
+counted as declined by anything downstream of the parser, no matter what
+the source text says.
+
+**Two universes, both true, of different things:**
+
+| universe | adopted yokogumi | adopted keigakomi | declined | declined_by_reason |
+| --- | ---: | ---: | ---: | --- |
+| **source-text** (Revisions 1–3 above, unchanged) | 1,582 | 25 | 24 | orphan_open 10, orphan_close 0, reopen_rollback 14, interleave 0 |
+| **parser-visible** (binds the delta gate) | 1,552 | 25 | 14 | orphan_open 0, orphan_close 0, reopen_rollback 14, interleave 0 |
+
+The delta gate (`audit-aat-delta.py bare-toggle-adoption`,
+`verify-phase5-checkpoint.py --audit`) binds the **parser-visible**
+row. The source-text row remains true of the source text and is not
+retracted; it simply is not what the parser-visible corpus contains.
+
+**Independent re-derivation.** A new instrument,
+`reports/aat-fidelity/bare-toggle-visibility-reconciliation.py`, was
+written and run FROM SCRATCH (not reusing or trusting Task 9's prior
+rerun classification) to close the 70-marker gap between the two
+universes' declined+adopted-marker totals (`1,582×2+24 = 3,238` markers
+source-side vs. the dump's `1,559×2+... = 3,168` standalone marker
+nodes: 3,238 − 3,168 = 70). Method:
+
+1. Count every bare-toggle token in each work's decoded source text
+   (`reports/lib/corpus_reader.py` discovery/decoding +
+   `bare-toggle-placement.py`'s `TOKEN_KIND` vocabulary and per-line
+   `classify_tokens` grammar).
+2. Count standalone raw marker nodes (`kind: "raw"`, `source` EXACTLY one
+   of the four tokens) in the matching C4 dump file, matched to its exact
+   source zip entry by `meta.source_hash` equality (never by `work_id`,
+   which is not unique per corpus entry — ruby/non-ruby card variants
+   share one).
+3. For every source-text occurrence with no matching dump node on the
+   same line, locate it in the work's AAT tree and classify it into
+   `GAP` / `LEGEND` / `TAIL` (or a 4th `ANOMALY_OTHER_TEXT` bucket that
+   would signal an unaccounted mechanism — zero occurrences found).
+
+Run on hinoki against the pinned corpus store
+(`/nix/store/sdr1imwrxfldvlwzs2d2fhs11vxncgpx-aozorabunko-corpus`) and
+the frozen C4 dump
+(`/db/ab-validator/aat-corpus/ab-aozora-phase4-c4-27772b1/aat/ab-aozora`),
+17,886/17,886 works matched with **zero** dump-match errors and **zero**
+anomalies. Output:
+`2026-07-12-bare-toggle-visibility-reconciliation.summary.json`
+(verbatim script output).
+
+**Result — exact agreement with Task 9's prior rerun classification, independently confirmed:**
+
+| class | markers | adopted-pair markers | declined markers | mechanism |
+| --- | ---: | ---: | ---: | --- |
+| `LEGEND` | 44 | 34 (17 pairs) | 10 | quoted notation-syntax examples inside the front-matter `【テキスト中に現れる記号について】` legend block — not markup, entirely absent from the AAT parse tree (no node of any kind captures this block) |
+| `TAIL` | 12 | 12 (6 pairs) | 0 | inside the post-`底本：` file tail, entirely absent from the AAT parse tree |
+| `GAP` | 14 | 14 (7 pairs) | 0 | embedded (as a substring, not a standalone node) inside one oversized `kind: "raw"` node whose `source` is a large unparsed span of original text, not an exact token — work `001111_42789` |
+| **total** | **70** | **60 (30 pairs)** | **10** | |
+
+Arithmetic closes exactly: adopted-pair delta `1,582 − 1,552 = 30` pairs
+= 17 (LEGEND) + 6 (TAIL) + 7 (GAP); declined delta `24 − 14 = 10`, all
+attributed to `LEGEND`'s 10 orphan-open markers (the `（例）［＃横組み］`
+truncated legend line, 10 works). The 33 differing works and every
+missing marker's line, class, and source-grammar verdict are enumerated
+in the reconciliation's `per_work` array.
+
+**Why each class is by-design invisible to the parser, not a bug:**
+
+- **`LEGEND`** — Every Aozora "notation key" front-matter block
+  (`【テキスト中に現れる記号について】`, immediately after the title/byline,
+  delimited by dashed rules) is boilerplate explaining the annotation
+  syntax itself, using the syntax as its own example
+  (`（例）［＃横組み］"Nevermore"［＃横組み終わり］`, or the truncated
+  `（例）［＃横組み］` alone for the 10 orphan-open works). This is prose
+  ABOUT the markup, quoted, never intended as live markup, and Phase
+  4's parser does not model this block as any node at all — it is
+  dropped before body parsing begins, the same way it is dropped from
+  every other structural accounting (headings, paragraphs) in these
+  works. A classifier that adopted these would be actively wrong.
+- **`TAIL`** — independent finding, refining rather than contradicting
+  Task 9's "inside Phase 4's source_note region" characterization: every
+  sampled `TAIL` marker sits specifically in the `colophon_metadata`
+  sub-state of `reports/lib/terminal_provenance.py`'s tail state
+  machine (triggered by a `※`/`入力：`/`校正：`-headed line), not in the
+  `terminal_provenance` sub-state. Phase 4's `source_note` node
+  emission (`placement: "back"`, `region_class: "terminal_provenance"`)
+  captures ONLY the recognized `底本：`/`底本の親本：` field lines — the
+  `terminal_provenance` sub-state — as text-inline values; the
+  `colophon_metadata` continuation (editorial notes, table-of-contents
+  echoes, and credit lines that happen to quote a bare-toggle marker)
+  is not modeled as any node at all, a pre-existing carried gap (Phase
+  4's `colophon_metadata`/`terminal_provenance` split is a documented,
+  measurement-deferred distinction — `reports/lib/source_region.py`'s
+  `needs_measurement_split` flag), not a Phase 5 regression.
+- **`GAP`** — one AAT node (`work 001111_42789`, a novel-length work)
+  carries a large unparsed span of the original source as a single raw
+  node's `source` string (261,858 characters, spanning many original
+  lines) rather than being decomposed into the usual per-token
+  `raw`/`text`/`ruby`/`gaiji` node sequence. The bare-toggle markers
+  inside that span are present as bytes but not as standalone marker
+  nodes, so they are invisible to any node-level classifier by
+  construction — the node itself, not just its markers, carries
+  unparsed source.
+
+**Binding:** the delta gate (Contract 1's "Corpus-bound expectations",
+Contract 3's delta-audit expected values in
+`docs/superpowers/specs/2026-07-12-consolidated-parser-phase5-bare-toggle-inline-design.md`,
+and `reports/aat-fidelity/verify-phase5-checkpoint.py`'s
+`check_audit`) binds the parser-visible figures — adopted 1,552
+yokogumi + 25 keigakomi pairs, 14 declined markers, reasons
+`{orphan_open: 0, orphan_close: 0, reopen_rollback: 14, interleave: 0}`
+— per this Revision 4 reconciliation.

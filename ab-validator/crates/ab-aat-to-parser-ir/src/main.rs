@@ -38,6 +38,13 @@ enum Command {
         divergence_out: PathBuf,
         #[arg(long)]
         abc_root: Option<PathBuf>,
+        /// Fail closed unless the loaded mapping's `mapping_version` equals this.
+        #[arg(long = "expect-mapping-version")]
+        expect_mapping_version: Option<String>,
+        /// Fail closed unless the loaded mapping's content hash equals this
+        /// (`sha256:…`, the same hash the audit summary reports as `mapping_hash`).
+        #[arg(long = "expect-mapping-hash")]
+        expect_mapping_hash: Option<String>,
     },
     DetectOrthoAnnotations {
         #[arg(long)]
@@ -48,6 +55,10 @@ enum Command {
         ortho_annotations_out: PathBuf,
         #[arg(long)]
         abc_root: Option<PathBuf>,
+        #[arg(long = "expect-mapping-version")]
+        expect_mapping_version: Option<String>,
+        #[arg(long = "expect-mapping-hash")]
+        expect_mapping_hash: Option<String>,
     },
     AuditCorpus {
         #[arg(long = "aat-dir", required = true)]
@@ -64,6 +75,10 @@ enum Command {
         jobs: usize,
         #[arg(long)]
         abc_root: Option<PathBuf>,
+        #[arg(long = "expect-mapping-version")]
+        expect_mapping_version: Option<String>,
+        #[arg(long = "expect-mapping-hash")]
+        expect_mapping_hash: Option<String>,
     },
     StructuralProbe {
         #[arg(long = "aat", required = true)]
@@ -76,6 +91,10 @@ enum Command {
         report_md: PathBuf,
         #[arg(long)]
         abc_root: Option<PathBuf>,
+        #[arg(long = "expect-mapping-version")]
+        expect_mapping_version: Option<String>,
+        #[arg(long = "expect-mapping-hash")]
+        expect_mapping_hash: Option<String>,
     },
     TeiEajStructuralExpansion {
         #[arg(long)]
@@ -90,6 +109,10 @@ enum Command {
         report_md: PathBuf,
         #[arg(long)]
         abc_root: Option<PathBuf>,
+        #[arg(long = "expect-mapping-version")]
+        expect_mapping_version: Option<String>,
+        #[arg(long = "expect-mapping-hash")]
+        expect_mapping_hash: Option<String>,
     },
     TeiEajAlignmentProbe {
         #[arg(long)]
@@ -113,6 +136,8 @@ fn main() -> Result<()> {
             parser_ir_out,
             divergence_out,
             abc_root,
+            expect_mapping_version,
+            expect_mapping_hash,
         } => {
             let repo_root = resolve_repo_root(&mapping)?;
             let abc_root = abc_root
@@ -120,6 +145,10 @@ fn main() -> Result<()> {
                 .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
+            mapping.check_expected_generation(
+                expect_mapping_version.as_deref(),
+                expect_mapping_hash.as_deref(),
+            )?;
             let schemas =
                 SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
             let orthographic_annotations = match ortho_annotations {
@@ -149,6 +178,8 @@ fn main() -> Result<()> {
             mapping,
             ortho_annotations_out,
             abc_root,
+            expect_mapping_version,
+            expect_mapping_hash,
         } => {
             let repo_root = resolve_repo_root(&mapping)?;
             let abc_root = abc_root
@@ -156,6 +187,10 @@ fn main() -> Result<()> {
                 .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
+            mapping.check_expected_generation(
+                expect_mapping_version.as_deref(),
+                expect_mapping_hash.as_deref(),
+            )?;
             let schemas =
                 SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
             let vibrato = std::sync::Arc::new(
@@ -182,6 +217,8 @@ fn main() -> Result<()> {
             compat_edn_out,
             jobs,
             abc_root,
+            expect_mapping_version,
+            expect_mapping_hash,
         } => {
             let repo_root = resolve_repo_root(&mapping)?;
             let summary = audit::run_audit(audit::CorpusAuditConfig {
@@ -193,6 +230,8 @@ fn main() -> Result<()> {
                 abc_root,
                 repo_root,
                 jobs,
+                expect_mapping_version,
+                expect_mapping_hash,
             })?;
             eprintln!(
                 "audited {} AAT files: {} succeeded, {} failed",
@@ -207,6 +246,8 @@ fn main() -> Result<()> {
             summary_json,
             report_md,
             abc_root,
+            expect_mapping_version,
+            expect_mapping_hash,
         } => {
             let repo_root = resolve_repo_root(&mapping)?;
             let abc_root = abc_root
@@ -217,6 +258,10 @@ fn main() -> Result<()> {
                 .map(|spec| parse_input_spec(spec))
                 .collect::<Result<Vec<_>>>()?;
             let mapping = MappingDocument::from_path(&mapping)?;
+            mapping.check_expected_generation(
+                expect_mapping_version.as_deref(),
+                expect_mapping_hash.as_deref(),
+            )?;
             let schemas =
                 SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
             let summary = run_structural_probe(StructuralProbeConfig {
@@ -239,6 +284,8 @@ fn main() -> Result<()> {
             summary_json,
             report_md,
             abc_root,
+            expect_mapping_version,
+            expect_mapping_hash,
         } => {
             let repo_root = resolve_repo_root(&mapping)?;
             let abc_root = abc_root
@@ -249,6 +296,10 @@ fn main() -> Result<()> {
                 .map(|spec| parse_input_spec(spec))
                 .collect::<Result<Vec<_>>>()?;
             let mapping = MappingDocument::from_path(&mapping)?;
+            mapping.check_expected_generation(
+                expect_mapping_version.as_deref(),
+                expect_mapping_hash.as_deref(),
+            )?;
             let schemas =
                 SchemaSet::load_for_aat_version(&repo_root, &abc_root, mapping.source_aat_version)?;
             let summary = run_tei_eaj_structural_expansion(TeiEajStructuralExpansionConfig {

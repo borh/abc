@@ -567,8 +567,23 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.3.0");
+    assert_eq!(mapping.mapping_version, "0.4.0");
     assert_eq!(mapping.source_aat_version, 2);
+    let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
+    mapping.preflight(&schemas).unwrap();
+}
+
+#[test]
+fn mapping_preflight_accepts_frozen_v2_0_3_0_artifact() {
+    let (repo_root, abc_root) = roots();
+    let mapping =
+        MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2-0.3.0.json"))
+            .unwrap();
+    assert_eq!(mapping.mapping_version, "0.3.0");
+    assert_eq!(
+        mapping.document_hash,
+        "sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40"
+    );
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &abc_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
 }
@@ -3414,6 +3429,112 @@ fn cli_convert_writes_parser_ir_and_divergence_bundle() {
         .arg(&divergence)
         .arg("--abc-root")
         .arg(abc)
+        .status()
+        .unwrap();
+
+    assert!(status.success());
+    assert!(parser_ir.exists());
+    assert!(divergence.exists());
+}
+
+#[test]
+fn cli_convert_rejects_mapping_generation_version_mismatch() {
+    let repo = repo_root();
+    let abc = abc_root(&repo);
+    let temp = tempfile::tempdir().unwrap();
+    let aat = temp.path().join("input.aat.json");
+    let parser_ir = temp.path().join("parser-ir.json");
+    let divergence = temp.path().join("divergence.json");
+    std::fs::write(
+        &aat,
+        r#"{
+  "version": 1,
+  "work_id": "cli",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [{"kind": "paragraph", "content": [{"kind": "text", "value": "A"}]}]
+}"#,
+    )
+    .unwrap();
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_ab-aat-to-parser-ir"))
+        .arg("convert")
+        .arg("--aat")
+        .arg(&aat)
+        .arg("--mapping")
+        .arg(repo.join("data/aat-to-parser-ir-mapping-v1.json"))
+        .arg("--parser-ir-out")
+        .arg(&parser_ir)
+        .arg("--divergence-out")
+        .arg(&divergence)
+        .arg("--abc-root")
+        .arg(&abc)
+        .arg("--expect-mapping-version")
+        .arg("0.9.9")
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    assert!(!parser_ir.exists());
+    assert!(!divergence.exists());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("mapping generation mismatch"),
+        "stderr was: {stderr}"
+    );
+}
+
+#[test]
+fn cli_convert_accepts_matching_mapping_generation_version_and_hash() {
+    let repo = repo_root();
+    let abc = abc_root(&repo);
+    let temp = tempfile::tempdir().unwrap();
+    let aat = temp.path().join("input.aat.json");
+    let parser_ir = temp.path().join("parser-ir.json");
+    let divergence = temp.path().join("divergence.json");
+    std::fs::write(
+        &aat,
+        r#"{
+  "version": 1,
+  "work_id": "cli",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [{"kind": "paragraph", "content": [{"kind": "text", "value": "A"}]}]
+}"#,
+    )
+    .unwrap();
+
+    let mapping_path = repo.join("data/aat-to-parser-ir-mapping-v1.json");
+    let mapping = MappingDocument::from_path(&mapping_path).unwrap();
+
+    let status = std::process::Command::new(env!("CARGO_BIN_EXE_ab-aat-to-parser-ir"))
+        .arg("convert")
+        .arg("--aat")
+        .arg(&aat)
+        .arg("--mapping")
+        .arg(&mapping_path)
+        .arg("--parser-ir-out")
+        .arg(&parser_ir)
+        .arg("--divergence-out")
+        .arg(&divergence)
+        .arg("--abc-root")
+        .arg(&abc)
+        .arg("--expect-mapping-version")
+        .arg(&mapping.mapping_version)
+        .arg("--expect-mapping-hash")
+        .arg(&mapping.document_hash)
         .status()
         .unwrap();
 

@@ -142,19 +142,26 @@ divergence **D7**.
 - Generated `:text` values embed the wid (e.g. `"作品<wid> 本文…<suffix>"`)
   so member bytes are unique per work and edits are guaranteed to change
   bytes.
-- Content events join the benign mix at moderate weight. `gen-add-content`
-  only targets states where the number of content-bearing works is below a
-  cap (default 4) — a generator-side bound, not a model rule — to keep the
-  real `materialize-publication!` cost per run small.
+- `:add-content` and `:remove-content` join the benign mix at moderate
+  weight. `gen-add-content` only targets states where the number of
+  content-bearing works is below a cap (default 4) — a generator-side
+  bound, not a model rule — to keep the real `materialize-publication!`
+  cost per run small.
+- **`:edit-content` is seeded-only — it never appears in the benign mix.**
+  This makes `find-applied :edit-content` locate the seeded edit uniquely
+  in the applied log (same mechanism as the forced drift intents), which
+  P16.2 uses to place its `s-before` checkpoint.
 - `history-gen` gains no new required knobs; the content cap is a
   `:content-cap` option with default 4.
 - A `content-history-gen` (thin wrapper over `history-gen`) seeds the
-  shape the evolution property needs, analogous to the forced drift
-  intents: two `:add-content` events on distinct bootstrap works early in
-  the event list, and one `:edit-content` on the first of them later in
-  the list. Benign events (including rare `:remove-work`) may still
-  invalidate the shape — which is why applicability is measured by ratio
-  counters (≥ 9/10), not assumed.
+  shape the evolution property needs: two `:add-content` events on
+  distinct bootstrap works early in the event list, and one
+  `:edit-content` on the **first** of them later in the list — so that at
+  the moment the edit applies, the second work's unchanged content is
+  positioned to be `"reused"` while the edited work is `"passed"`. Benign
+  events (rare `:remove-work`/`:remove-content`) may still invalidate the
+  shape — which is why applicability is measured by ratio counters
+  (≥ 9/10), not assumed.
 
 ### 3. `abc/test/abc/sim/render.clj` (modify — additive)
 
@@ -188,11 +195,15 @@ divergence **D7**.
 - `expected-selection [state]` →
   `{:selected [{:work_id :person_id :slug :text_zip_relpath :source_hash}]
     :rejected [{:path :reason}]}`.
-  Selected = content-bearing works in the projection; `:person_id`
-  replicates the last-row-wins rule: the winning row for a basename is the
-  **last CSV row of that work** in `model->rows` order. Rejected always
-  contains the two decoys and the catalog ZIP itself
-  (`not-under-cards-files`).
+  Selected = content-bearing works in the projection. `:person_id` is
+  derived from the **shared pure row projection**: the oracle calls
+  `render/model->rows` (the same function that produces the CSV the SUT
+  reads) and applies `catalog-index`'s documented last-row-wins reduction
+  — reduce rows in order into a basename→row map, take the winning row's
+  人物ID. The oracle never reconstructs the row ordering itself, so a
+  future change to `model->rows` serialization cannot make render and
+  oracle disagree for accidental reasons. Rejected always contains the two
+  decoys and the catalog ZIP itself (`not-under-cards-files`).
 - `expected-statuses [prev-state cur-state]` → map of `slug → "reused" |
   "passed"` over current-state slugs: `"reused"` iff the same slug existed
   in `expected-selection prev-state` **and** the zip bytes are identical
@@ -242,16 +253,25 @@ pattern). Contains:
     and `source.manifest.json manifest_identity_object.work_content_hash`
     equal `oracle/content-hash`; publications report has every slug
     `"passed"`, `failed 0`, `skipped 0`.
-- **P16.2 evolution** (the core) — from one history's fold, take
-  `s-before` (first state with non-empty selection) and `s-after` (final
-  state). Runs with no such `s-before` skip all assertions and count
-  toward the ratio denominator only. All other runs execute the full
-  assertion set (an all-`"reused"` outcome is a valid assertion of the
-  oracle); a run ticks as *applied* only when the expected status map
-  contains at least one `"passed"` and one `"reused"` — i.e. genuine
-  evolution was exercised — and `assert-applied-ratio!` runs against that
-  counter. Build `s-before` → out-root; render `s-after` to a fresh
-  aozora-root; rebuild with `--replace` into the same out-root.
+- **P16.2 evolution** (the core) — checkpoints are placed around the
+  seeded edit, not at the first non-empty selection (which would precede
+  the second work's content and could never produce a `"reused"` slug):
+  locate the seeded `:edit-content` via `find-applied` (unique, since the
+  benign mix never emits `:edit-content`), let `i` = the index of that
+  event in the history's events vector; `s-before` = `states[i]` (the
+  fold state immediately **before** the edit applies — after both seeded
+  `:add-content` events), `s-after` = the final state. Runs where
+  `find-applied` returns nil (seeded edit no-opped, e.g. its work's
+  content was removed first) or where `expected-selection s-before` is
+  empty skip all assertions and count toward the ratio denominator only.
+  All other runs execute the full assertion set; a run ticks as *applied*
+  only when the expected status map contains at least one `"passed"` and
+  one `"reused"` — genuine evolution exercised — and
+  `assert-applied-ratio!` runs against that counter (the seeded shape
+  makes this the overwhelmingly common case: the edited work rebuilds,
+  the untouched second work reuses). Build `s-before` → out-root; render
+  `s-after` to a fresh aozora-root; rebuild with `--replace` into the
+  same out-root.
   - Publications-report statuses equal `expected-statuses s-before
     s-after`; `skipped 0`, `failed 0`.
   - **No-stale-reuse invariant:** for every current slug,
@@ -272,6 +292,13 @@ pattern). Contains:
     `:work-content-hash` equals the member-bytes hash while
     `:official-source-hash` equals the raw-ZIP hash (pinning *why* it
     fails, not just that it fails).
+  - **Evidentiary boundary:** P16.3 composes ABC with a behavioral stub,
+    not the actual Rust adapter binaries. It pins the ABC-side composition
+    *under the current adapter hash contract* (member-bytes hash), which
+    was verified by code inspection at design time. If the Rust chain's
+    contract changes while the stub does not, D7 keeps reporting the old
+    divergence — the contract itself is guarded by the ab-validator
+    follow-up check named in Future work, at the ownership boundary.
 - **P16.4 faults** — deterministic single-run tests (not generative), one
   synthetic state with 2 content works, mirroring the drift-sidecar fault
   style:
@@ -304,10 +331,17 @@ pattern). Contains:
 
 `materialize-publication!` is real (plaintext + TEI + validation per passed
 work). Bounds: content cap 4; `check!` counts start at 10 for P16.1 and 5
-for P16.2 (each P16.2 run performs three builds). **Task 1 of the plan
-measures one stubbed single-work build** and the counts are calibrated so
-the focused namespace stays under ~90 s with CI seeds; the measured number
-and any adjustment are recorded in the plan's task report.
+for P16.2 (each P16.2 run performs three builds; CI runs three seeds, so
+the starting counts imply ~30 P16.1 builds and ~45 P16.2 builds). **Task 1
+of the plan benchmarks one complete representative P16.2 case** — four
+content works, at least one rebuilt and one reused, all three legs — and
+reports both cold and warm focused-namespace wall time, since a single-work
+multiplication would miss catalog rendering, temp-tree promotion, prior-dir
+copying, multi-work validation, and JVM warm-up. Counts are calibrated from
+that measurement toward a ~90 s focused-namespace target, with a floor:
+**at least 10 genuine-evolution (applied) P16.2 cases across the CI seeds**
+are preserved even if the wall-clock target must give. The measurement and
+calibration are recorded in the plan's task report.
 
 ## Non-goals
 
@@ -342,6 +376,11 @@ and any adjustment are recorded in the plan's task report.
   member bytes) at ADR level; then either `snapshot-input`, the
   official-source writer, or the adapter contract changes, and the D7 gate
   flips to a regression guard.
+- ab-validator contract check: a focused Rust test asserting that the
+  adapter's AAT `meta.source_hash` is the sha256 of the member bytes it
+  receives (`decode_source_bytes`), so a change to the adapter hash
+  contract surfaces at the ownership boundary rather than silently
+  invalidating P16.3's stub premise.
 - `snapshot-index` identity-invalidation and `workflow.cache` staleness
   properties (the deferred halves of the parent spec's content-side item).
 - Content-side faults through the `7zz` fallback in an environment that

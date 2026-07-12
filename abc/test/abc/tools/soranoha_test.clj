@@ -13,7 +13,7 @@
             [abc.tools.source-bundle :as source-bundle]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.test :refer [deftest is]])
+            [clojure.test :refer [deftest is testing]])
   (:import [java.io FileNotFoundException IOException InterruptedIOException]
            [java.nio.charset StandardCharsets]
            [java.nio.file AccessDeniedException NoSuchFileException]
@@ -857,6 +857,90 @@
             (is (zero? (soranoha/run!
                         ["validate-workflow"
                          (str build-workflow-run-file)]))))))
+      (finally
+        (delete-tree! root)))))
+
+(defn- two-work-aozora-fixture!
+  "official-aozora-fixture! plus a second catalog-backed work so parallel
+  ordering has something to scramble."
+  [root]
+  (official-aozora-fixture! root)
+  (let [second-row (str "\"000002\",\"鼻\",\"はな\",\"はな\",\"\",\"\",\"\","
+                        "\"\",\"NDC 913\",\"新字新仮名\",\"なし\",\"1997-10-29\","
+                        "\"2022-07-16\",\"https://www.aozora.gr.jp/cards/000879/card2.html\","
+                        "\"000879\",\"芥川\",\"竜之介\",\"あくたがわ\",\"りゅうのすけ\","
+                        "\"あくたかわ\",\"りゆうのすけ\",\"Akutagawa\",\"Ryunosuke\","
+                        "\"著者\",\"1892-03-01\",\"1927-07-24\",\"なし\","
+                        "\"鼻\",\"テスト出版社\",\"\",\"\",\"\",\"\",\"\",\"\","
+                        "\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"野口英司\",\"校正者\","
+                        "\"https://www.aozora.gr.jp/cards/000879/files/000002_ruby_fixture.zip\","
+                        "\"2022-07-16\",\"ShiftJIS\",\"JIS X 0208\",\"1\","
+                        "\"https://www.aozora.gr.jp/cards/000879/files/000002_15261.html\","
+                        "\"2022-07-16\",\"ShiftJIS\",\"JIS X 0208\",\"1\"\n")]
+    (write-zip! (io/file root "index_pages" "list_person_all_extended_utf8.zip")
+                {"list_person_all_extended_utf8.csv"
+                 (str build-publication-csv second-row)})
+    (write-zip! (io/file root "cards" "000879" "files"
+                         "000002_ruby_fixture.zip")
+                {"000002.txt" "第二の本文です。"}))
+  root)
+
+(defn- tree-file-hashes
+  "relative-path -> sha256 for every file under root, excluding the run-varying
+  records (concurrency in build-plan.json; timestamps in workflow-*.json)."
+  [root]
+  (let [root-file (io/file root)
+        excluded #{"build-plan.json" "workflow-run.json" "workflow-plan.json"}]
+    (->> (file-seq root-file)
+         (filter #(.isFile ^java.io.File %))
+         (remove #(excluded (.getName ^java.io.File %)))
+         (map (fn [^java.io.File f]
+                [(str (.relativize (.toPath root-file) (.toPath f)))
+                 (files/sha256-file (str f))]))
+         (into (sorted-map)))))
+
+(deftest build-publication-concurrency-is-recorded-and-deterministic-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-concurrency")
+        aozora-root (two-work-aozora-fixture! (io/file root "aozorabunko"))
+        run! (fn [output-root concurrency-arg]
+               (with-redefs [publication-policy/assert-release-allowed!
+                             (constantly :ok)]
+                 (binding [build-publication/*derive-parser-ir!*
+                           stub-derive-parser-ir!]
+                   (with-out-str
+                     (is (zero? (soranoha/run!
+                                 (cond-> ["build-publication"
+                                          "--aozora-root" (str aozora-root)
+                                          "--config" "abc/config/publication-basic-ja.json"
+                                          "--snapshot-date" "2026-07-12"
+                                          "--output-root" (str output-root)]
+                                   concurrency-arg
+                                   (into ["--concurrency" concurrency-arg])))))))))
+        sequential-root (io/file root "out-sequential")
+        parallel-root (io/file root "out-parallel")
+        default-root (io/file root "out-default")]
+    (try
+      (run! sequential-root "1")
+      (run! parallel-root "4")
+      (run! default-root nil)
+      (testing "resolved concurrency is recorded in build-plan.json"
+        (is (= 1 (get (files/read-json (io/file sequential-root "build-plan.json"))
+                      "concurrency")))
+        (is (= 4 (get (files/read-json (io/file parallel-root "build-plan.json"))
+                      "concurrency")))
+        (is (= (.availableProcessors (Runtime/getRuntime))
+               (get (files/read-json (io/file default-root "build-plan.json"))
+                    "concurrency"))
+            "absent flag must resolve to all cores"))
+      (testing "parallel output is byte-identical to sequential output"
+        (let [sequential-tree (tree-file-hashes sequential-root)
+              parallel-tree (tree-file-hashes parallel-root)]
+          (is (= 2 (get (files/read-json
+                         (io/file sequential-root "publications"
+                                  "publications-report.json"))
+                        "publication_count")))
+          (is (= (keys sequential-tree) (keys parallel-tree)))
+          (is (= sequential-tree parallel-tree))))
       (finally
         (delete-tree! root)))))
 

@@ -7,6 +7,7 @@
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-publication :as materialize-publication]
+            [abc.tools.parallel :as parallel]
             [abc.tools.publication-policy :as publication-policy]
             [abc.tools.schema :as schema]
             [abc.tools.source-bundle :as source-bundle]
@@ -31,7 +32,11 @@
    [nil "--output-root DIR" "Final output root."
     :id :output-root]
    [nil "--replace" "Replace an existing output root after a successful build."
-    :id :replace :default false]])
+    :id :replace :default false]
+   [nil "--concurrency N"
+    "Worker threads for the per-work derive and publish loops (0 = all cores)."
+    :id :concurrency :default 0 :parse-fn #(Long/parseLong %)
+    :validate [#(>= % 0) "must be >= 0"]]])
 
 (defn- normalized-path [file]
   (string/replace (str file) "\\" "/"))
@@ -378,7 +383,7 @@
 
 (defn- materialize-selected-sources!
   [{:keys [aozora-root output-root parser-profile snapshot-date
-           aozora-git-commit continue-on-failure]}]
+           aozora-git-commit continue-on-failure concurrency]}]
   (let [{:keys [csv-text catalog-csv-hash]} (read-catalog-zip aozora-root)
         rows (aozora-csv/read-rows-from-string csv-text)
         rows-by-basename (catalog-index rows)
@@ -412,17 +417,19 @@
         ;; rejects with "invalid CEN header") must not abort a whole-corpus
         ;; derive. With continue_on_failure, record and skip it; otherwise fail
         ;; loudly as before.
-        results (mapv (fn [candidate]
-                        (if continue-on-failure
-                          (try
-                            {:ok (derive-one candidate)}
-                            (catch Throwable t
-                              (if-let [admission
-                                       (source-bundle-admission-error t)]
-                                {:failed (derive-failure candidate admission)}
-                                (throw t))))
-                          {:ok (derive-one candidate)}))
-                      selected-candidates)
+        results (parallel/ordered-pmap
+                 concurrency
+                 (fn [candidate]
+                   (if continue-on-failure
+                     (try
+                       {:ok (derive-one candidate)}
+                       (catch Throwable t
+                         (if-let [admission
+                                  (source-bundle-admission-error t)]
+                           {:failed (derive-failure candidate admission)}
+                           (throw t))))
+                     {:ok (derive-one candidate)}))
+                 selected-candidates)
         selected (vec (keep :ok results))
         derive-failures (vec (keep :failed results))
         selected-relpaths (set (map :relpath selected-candidates))
@@ -509,7 +516,8 @@
    "request_set_label" (get config "request_set_label")
    "snapshot_scope" (get config "snapshot_scope")
    "selected_source_count" (get-in materialization-result
-                                   [:report "selected_source_count"])})
+                                   [:report "selected_source_count"])
+   "concurrency" (:concurrency opts)})
 
 (defn- resolve-invocation-path
   "Resolve a relative path arg against the caller's working directory. The app
@@ -525,6 +533,12 @@
       (if (or (.isAbsolute file) (string/blank? base))
         path
         (str (io/file base path))))))
+
+(defn- resolve-concurrency
+  "0 (or nil) means every available core; otherwise the requested count."
+  [requested]
+  (let [n (long (or requested 0))]
+    (if (pos? n) n (.availableProcessors (Runtime/getRuntime)))))
 
 (defn- parse-args [args]
   (let [{:keys [options errors]} (cli/parse-opts args cli-options)]
@@ -578,25 +592,35 @@
     (files/copy-file! (str f) (io/file to (.getName f))))
   to)
 
+(defn- relative-to-output-root
+  "Path of file relative to output-root, so publications-report.json survives
+  the tmp-root -> output-root promotion instead of pinning a since-renamed-away
+  absolute path (also keeps the report byte-identical regardless of
+  concurrency or the output-root's own absolute location)."
+  [output-root file]
+  (normalized-path (.relativize (normalized-abs-path output-root)
+                                (normalized-abs-path file))))
+
 (defn- materialize-one-publication!
   [{:keys [output-root prior-output-root generated-at continue-on-failure work]}]
   (let [{:keys [slug work_content_hash parser_ir_path source_manifest_path
                 metadata_record_path persons_dir]} work
         pub-dir (io/file output-root "publications" slug)
         prior-pub-dir (when prior-output-root
-                        (io/file prior-output-root "publications" slug))]
+                        (io/file prior-output-root "publications" slug))
+        rel (partial relative-to-output-root output-root)]
     (cond
       ;; Already materialized in this output-root from identical source.
       (publication-up-to-date? pub-dir work_content_hash)
       {:slug slug :status "skipped"
-       :tei_manifest (str (io/file pub-dir "tei.manifest.json"))}
+       :tei_manifest (rel (io/file pub-dir "tei.manifest.json"))}
 
       ;; A prior promoted build holds a byte-identical-source publication —
       ;; copy it forward instead of recomputing (content-addressed cache hit).
       (and prior-pub-dir (publication-up-to-date? prior-pub-dir work_content_hash))
       (do (copy-dir-files! prior-pub-dir pub-dir)
           {:slug slug :status "reused"
-           :tei_manifest (str (io/file pub-dir "tei.manifest.json"))})
+           :tei_manifest (rel (io/file pub-dir "tei.manifest.json"))})
 
       :else
       (try
@@ -609,9 +633,9 @@
                        :generated-at generated-at})]
           (spit (io/file pub-dir "source_work_content_hash.txt") work_content_hash)
           {:slug slug :status "passed"
-           :tei (str (:tei result))
-           :tei_manifest (str (:tei-manifest result))
-           :tei_validation_result (str (:tei-validation-result result))})
+           :tei (rel (:tei result))
+           :tei_manifest (rel (:tei-manifest result))
+           :tei_validation_result (rel (:tei-validation-result result))})
         (catch Throwable t
           (if continue-on-failure
             {:slug slug :status "failed" :error (.getMessage t)}
@@ -619,17 +643,19 @@
 
 (defn- materialize-publications!
   [{:keys [output-root prior-output-root materialization-result config-value
-           snapshot-date]}]
+           snapshot-date concurrency]}]
   (let [continue-on-failure (boolean (get config-value "continue_on_failure"))
         generated-at (generated-at-for snapshot-date)
-        results (mapv (fn [work]
-                        (materialize-one-publication!
-                         {:output-root output-root
-                          :prior-output-root prior-output-root
-                          :generated-at generated-at
-                          :continue-on-failure continue-on-failure
-                          :work work}))
-                      (:selected materialization-result))]
+        results (parallel/ordered-pmap
+                 concurrency
+                 (fn [work]
+                   (materialize-one-publication!
+                    {:output-root output-root
+                     :prior-output-root prior-output-root
+                     :generated-at generated-at
+                     :continue-on-failure continue-on-failure
+                     :work work}))
+                 (:selected materialization-result))]
     {:results results
      :report {"schema_version" "soranoha-build-publication-publications-v1"
               "corpus_snapshot_hash" (:corpus-snapshot-hash
@@ -649,9 +675,9 @@
 
 (defn- build-publication-steps []
   [{:id :materialize-source-selection
-    :requires [:aozora-root :output-root :config-value :snapshot-date]
+    :requires [:aozora-root :output-root :config-value :snapshot-date :opts]
     :produces [:materialization-result]
-    :run (fn [{:keys [aozora-root output-root config-value snapshot-date]}]
+    :run (fn [{:keys [aozora-root output-root config-value snapshot-date opts]}]
            (let [result (materialize-selected-sources!
                          {:aozora-root aozora-root
                           :output-root output-root
@@ -660,7 +686,8 @@
                           :aozora-git-commit (get (git-provenance aozora-root)
                                                   "aozora_git_commit")
                           :continue-on-failure
-                          (boolean (get config-value "continue_on_failure"))})
+                          (boolean (get config-value "continue_on_failure"))
+                          :concurrency (:concurrency opts)})
                  selection-report-file (io/file output-root
                                                 "source-selection-report.json")]
              {:state-updates {:materialization-result result}
@@ -689,17 +716,18 @@
                          :content_hash (manifest/file-hash plan-file)}]}))}
    {:id :materialize-publications
     :requires [:build-plan :config-value :materialization-result :output-root
-               :prior-output-root :snapshot-date]
+               :prior-output-root :snapshot-date :opts]
     :produces [:publication-result]
     :run (fn [{:keys [config-value materialization-result output-root
-                      prior-output-root snapshot-date]}]
+                      prior-output-root snapshot-date opts]}]
            (let [{:keys [results report]}
                  (materialize-publications!
                   {:output-root output-root
                    :prior-output-root prior-output-root
                    :materialization-result materialization-result
                    :config-value config-value
-                   :snapshot-date snapshot-date})
+                   :snapshot-date snapshot-date
+                   :concurrency (:concurrency opts)})
                  report-file (io/file output-root "publications"
                                       "publications-report.json")]
              (abc-json/write-deterministic-json-file! report-file report)
@@ -724,7 +752,9 @@
                               (when (.isDirectory f) (str f)))
           tmp-root (prepare-output-root! output-root replace)]
       (.mkdirs tmp-root)
-      (let [opts (assoc opts :output-root tmp-root)
+      (let [opts (-> opts
+                     (assoc :output-root tmp-root)
+                     (update :concurrency resolve-concurrency))
             workflow-result
             (workflow/run-workflow!
              {:workflow-id "soranoha.build-publication.v1"

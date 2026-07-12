@@ -83,6 +83,10 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 - `source_aat_version`: `1` (selects `data/aat-schema-v1.json`)
 - Mapping hash:
   `sha256:ffdfde35482b8e92fb929c40119cdfa8fa9019df53aa08f19359ac71584275c2`
+- Frozen pre-rotation v1 `0.2.8` artifact:
+  `data/aat-to-parser-ir-mapping-v1-0.2.8.json` (canonical hash
+  `sha256:952620ced4eb22f9771e6a10c3a1d4d93de604a8c33e360311f82b6e1eafc5b7`),
+  retained so historical compatibility-registry evidence remains reproducible
 - Mapping schema hash:
   `sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2`
 - Parser-IR schema hash:

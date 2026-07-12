@@ -23,6 +23,10 @@ if [[ "${AB_MAPPING_SMOKE_HERMETIC:-0}" == "1" ]]; then
     jq -e 'all(.transform_rule_descriptions[]; .parser_ir_pointer != "source.work_content_hash")' "$mapping"
     jq -e 'any(.synthetic_evidence_descriptions[]; .source == "converter_policy" and .parser_ir_pointer == "source.work_content_hash")' "$mapping"
   done
+  frozen_v1="$repo_root/data/aat-to-parser-ir-mapping-v1-0.2.8.json"
+  jq -e '.mapping_version == "0.2.8"' "$frozen_v1"
+  python "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/c14n.py" "$frozen_v1" \
+    | rg -F $'\tsha256:952620ced4eb22f9771e6a10c3a1d4d93de604a8c33e360311f82b6e1eafc5b7'
   exit 0
 fi
 

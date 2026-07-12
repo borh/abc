@@ -65,13 +65,11 @@ def write_dump(tmp_path, name, docs):
     return d
 
 
-def run(mode, base, cand, tmp_path):
+def run(mode, base, cand, tmp_path, *extra):
     out = tmp_path / "summary.json"
-    proc = subprocess.run(
-        [sys.executable, str(SCRIPT), mode, str(base), str(cand), "--summary-json", str(out)],
-        capture_output=True,
-        text=True,
-    )
+    argv = [sys.executable, str(SCRIPT), mode, str(base), str(cand), "--summary-json", str(out)]
+    argv.extend(extra)
+    proc = subprocess.run(argv, capture_output=True, text=True)
     summary = json.loads(out.read_text()) if out.exists() else None
     return proc.returncode, summary, proc.stderr
 
@@ -1341,4 +1339,181 @@ def test_append_mode_rejects_terminator_stripped_values(tmp_path):
     )
     cand = write_dump(tmp_path, "b", {"w1": v2_doc(base_blocks + [note])})
     code, _, _ = run("source-note-append", base, cand, tmp_path)
+    assert code == 2
+
+
+# --- bare-toggle-adoption mode (Phase 5, rotation C5) -----------------------
+#
+# NOTE: this file already defines `raw_marker(source, marker_kind, start)`
+# above (used by container-rewrite/v2-migration/source-note-append tests).
+# Its signature is incompatible with what these tests need (explicit
+# byte_start/byte_end independent of source length, plus the real AAT
+# `x-source-marker-kind` for a bare-toggle marker, which is
+# containerOpen/containerClose — not "directive"), so a same-named
+# redefinition here would silently shadow it and break every earlier test
+# that calls it. Hence a distinctly-named helper, `bare_marker`.
+
+_BARE_TOGGLE_OPEN_SOURCES = {"［＃横組み］", "［＃罫囲み］"}
+
+
+def bare_marker(source, line=1, bs=0, be=1):
+    marker_kind = "containerOpen" if source in _BARE_TOGGLE_OPEN_SOURCES else "containerClose"
+    return {
+        "kind": "raw",
+        "source": source,
+        "x-provenance": "parser-derived",
+        "x-source-marker-kind": marker_kind,
+        "span": {"line_start": line, "line_end": line, "byte_start": bs, "byte_end": be},
+    }
+
+
+def toggle_container(kind, content, line=1, bs=0, be=1):
+    return {
+        "kind": kind,
+        "content": content,
+        "span": {"line_start": line, "line_end": line, "byte_start": bs, "byte_end": be},
+    }
+
+
+def test_bare_toggle_identical_dumps_pass(tmp_path):
+    docs = {"w1": doc([para(bare_marker("［＃横組み］", bs=0, be=12))])}
+    base = write_dump(tmp_path, "a", docs)
+    cand = write_dump(tmp_path, "b", docs)
+    code, summary, err = run(
+        "bare-toggle-adoption", base, cand, tmp_path,
+        "--expected-adopted-yokogumi", "0",
+        "--expected-adopted-keigakomi", "0",
+        "--expected-declined", "1",
+    )
+    assert code == 0, (summary, err)
+    assert summary["classes"]["identical"] == 1
+    assert summary["details"]["declined_markers"] == 1
+
+
+def test_bare_toggle_adoption_rewrite_passes(tmp_path):
+    inner = {
+        "kind": "text", "value": "（Hare）",
+        "span": {"line_start": 1, "line_end": 1, "byte_start": 12, "byte_end": 22},
+    }
+    base_docs = {
+        "w1": doc([para(
+            bare_marker("［＃横組み］", bs=0, be=12), inner,
+            bare_marker("［＃横組み終わり］", bs=22, be=40),
+        )])
+    }
+    cand_docs = {"w1": doc([para(toggle_container("yokogumi", [inner], bs=0, be=40))])}
+    base = write_dump(tmp_path, "a", base_docs)
+    cand = write_dump(tmp_path, "b", cand_docs)
+    code, summary, err = run(
+        "bare-toggle-adoption", base, cand, tmp_path,
+        "--expected-adopted-yokogumi", "1",
+        "--expected-adopted-keigakomi", "0",
+        "--expected-declined", "0",
+    )
+    assert code == 0, (summary, err)
+    assert summary["classes"]["toggle_adopted"] == 1
+    assert summary["details"]["adopted_yokogumi_pairs"] == 1
+
+
+def test_bare_toggle_wrong_kind_fails(tmp_path):
+    inner = {
+        "kind": "text", "value": "x",
+        "span": {"line_start": 1, "line_end": 1, "byte_start": 12, "byte_end": 13},
+    }
+    base_docs = {
+        "w1": doc([para(
+            bare_marker("［＃横組み］", bs=0, be=12), inner,
+            bare_marker("［＃横組み終わり］", bs=13, be=31),
+        )])
+    }
+    cand_docs = {"w1": doc([para(toggle_container("keigakomi", [inner], bs=0, be=31))])}
+    base = write_dump(tmp_path, "a", base_docs)
+    cand = write_dump(tmp_path, "b", cand_docs)
+    code, _, _ = run("bare-toggle-adoption", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_bare_toggle_content_loss_fails(tmp_path):
+    inner = {
+        "kind": "text", "value": "x",
+        "span": {"line_start": 1, "line_end": 1, "byte_start": 12, "byte_end": 13},
+    }
+    base_docs = {
+        "w1": doc([para(
+            bare_marker("［＃横組み］", bs=0, be=12), inner,
+            bare_marker("［＃横組み終わり］", bs=13, be=31),
+        )])
+    }
+    cand_docs = {"w1": doc([para(toggle_container("yokogumi", [], bs=0, be=31))])}
+    base = write_dump(tmp_path, "a", base_docs)
+    cand = write_dump(tmp_path, "b", cand_docs)
+    code, _, _ = run("bare-toggle-adoption", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_bare_toggle_declined_marker_mutation_fails(tmp_path):
+    base_docs = {"w1": doc([para(bare_marker("（例）［＃横組み］", bs=0, be=20))])}
+    cand_docs = {"w1": doc([para(bare_marker("（例）［＃横組み］", bs=0, be=21))])}  # span drifted
+    base = write_dump(tmp_path, "a", base_docs)
+    cand = write_dump(tmp_path, "b", cand_docs)
+    code, _, _ = run("bare-toggle-adoption", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_bare_toggle_expected_counter_mismatch_fails(tmp_path):
+    docs = {"w1": doc([para(text("plain\n"))])}
+    base = write_dump(tmp_path, "a", docs)
+    cand = write_dump(tmp_path, "b", docs)
+    code, _, _ = run(
+        "bare-toggle-adoption", base, cand, tmp_path,
+        "--expected-adopted-yokogumi", "1582",
+    )
+    assert code == 2
+
+
+def test_bare_toggle_independence_missing_adoption_fails(tmp_path):
+    # Baseline implies (via classify_tokens) exactly one valid yokogumi
+    # adoption, but the candidate left the markers raw (byte-identical to
+    # baseline) — the independent derivation must catch this even though
+    # there is no structural diff to inspect (review P5-4).
+    inner = {
+        "kind": "text", "value": "x",
+        "span": {"line_start": 1, "line_end": 1, "byte_start": 12, "byte_end": 13},
+    }
+    docs = {
+        "w1": doc([para(
+            bare_marker("［＃横組み］", bs=0, be=12), inner,
+            bare_marker("［＃横組み終わり］", bs=13, be=31),
+        )])
+    }
+    base = write_dump(tmp_path, "a", docs)
+    cand = write_dump(tmp_path, "b", docs)
+    code, _, _ = run("bare-toggle-adoption", base, cand, tmp_path)
+    assert code == 2
+
+
+def test_bare_toggle_independence_invalid_adoption_fails(tmp_path):
+    # Baseline's yokogumi/keigakomi markers interleave on one line, so
+    # classify_tokens invalidates BOTH constructs — no adoption is expected.
+    # A candidate that nevertheless wraps the yokogumi span in a toggle
+    # container (byte-exact and structurally recoverable) must still be
+    # rejected: the independent derivation, not structural recoverability,
+    # decides adoption validity (review P5-4, the converse direction).
+    open_y = bare_marker("［＃横組み］", bs=0, be=12)
+    open_k = bare_marker("［＃罫囲み］", bs=12, be=24)
+    inner = {
+        "kind": "text", "value": "x",
+        "span": {"line_start": 1, "line_end": 1, "byte_start": 24, "byte_end": 25},
+    }
+    close_y = bare_marker("［＃横組み終わり］", bs=25, be=43)
+    close_k = bare_marker("［＃罫囲み終わり］", bs=43, be=61)
+    base_docs = {"w1": doc([para(open_y, open_k, inner, close_y, close_k)])}
+    cand_docs = {
+        "w1": doc([para(
+            toggle_container("yokogumi", [open_k, inner], bs=0, be=43), close_k,
+        )])
+    }
+    base = write_dump(tmp_path, "a", base_docs)
+    cand = write_dump(tmp_path, "b", cand_docs)
+    code, _, _ = run("bare-toggle-adoption", base, cand, tmp_path)
     assert code == 2

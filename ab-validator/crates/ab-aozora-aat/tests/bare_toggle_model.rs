@@ -330,10 +330,17 @@ fn assert_nesting_well_formed(v: &Value) {
                 if let Some(children) = map.get("content").and_then(Value::as_array) {
                     for child in children {
                         if let Some((child_start, child_end)) = span_bytes(child) {
+                            // STRICT containment on both ends: the parent
+                            // span runs from its open marker's byte_start to
+                            // its close marker's byte_end, and children sit
+                            // strictly between the two markers, so equality
+                            // on either end would mean a child overlapping a
+                            // consumed marker — a construction bug.
                             assert!(
-                                parent_start <= child_start && child_end <= parent_end,
-                                "child span [{child_start},{child_end}) escapes parent span \
-                                 [{parent_start},{parent_end}): parent={v}, child={child}"
+                                parent_start < child_start && child_end < parent_end,
+                                "child span [{child_start},{child_end}) not strictly inside \
+                                 parent span [{parent_start},{parent_end}): parent={v}, \
+                                 child={child}"
                             );
                         }
                     }
@@ -414,5 +421,27 @@ proptest! {
     fn nesting_well_formed(doc in bare_toggle_doc()) {
         let value = aat_value_for(&format!("{doc}\n"));
         assert_nesting_well_formed(&value);
+    }
+
+    /// Property 3 (ADAPTER-level determinism, per the task spec): running
+    /// the whole public pipeline (`aat_json_from_bytes` — decode, sanitize,
+    /// parse, classify, serialize) twice on the same input yields identical
+    /// output bytes, hence identical JSON. Byte equality is deliberately
+    /// stronger than `Value` equality (it also pins key order under the
+    /// default `BTreeMap` map, the `preserve_order` tripwire's concern).
+    /// The pass-level determinism property
+    /// (`bare_toggle_pass_is_deterministic`, `src/lib.rs` `mod tests`)
+    /// remains as a narrower, direct `pair_bare_toggles` check.
+    #[test]
+    fn deterministic(doc in bare_toggle_doc()) {
+        let src = format!("{doc}\n");
+        let first = ab_aozora_aat::aat_json_from_bytes(src.as_bytes()).unwrap();
+        let second = ab_aozora_aat::aat_json_from_bytes(src.as_bytes()).unwrap();
+        prop_assert_eq!(&first, &second, "adapter output must be byte-identical across runs");
+        // Redundant given byte equality, but asserts the spec's literal
+        // phrasing ("identical JSON") at the Value level too.
+        let first_value: Value = serde_json::from_slice(&first).unwrap();
+        let second_value: Value = serde_json::from_slice(&second).unwrap();
+        prop_assert_eq!(first_value, second_value);
     }
 }

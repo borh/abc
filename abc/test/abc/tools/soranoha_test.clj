@@ -955,7 +955,12 @@
                        (RuntimeException. "programming")
                        (ex-info "spoofed admission reason"
                                 {:reason :unsafe-member-path
-                                 :archive-path "not-from-inspector.zip"})]]
+                                 :archive-path "not-from-inspector.zip"})
+                       (ex-info "wrapper" {:wrapper true}
+                                (ex-info "wrapped spoofed admission reason"
+                                         {:reason :unsafe-member-path
+                                          :archive-path
+                                          "not-from-inspector.zip"}))]]
         (is (identical?
              failure
              (try

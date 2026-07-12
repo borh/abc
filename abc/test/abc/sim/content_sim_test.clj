@@ -22,6 +22,7 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-source-snapshot :as snapshot]
             [abc.tools.soranoha-build-publication :as build-publication]
+            [abc.tools.source-bundle :as source-bundle]
             [abc.tools.source-snapshot-workset :as workset]
             [clojure.java.io :as io]
             [clojure.string :as string]
@@ -301,6 +302,39 @@
           (is (= ["one.txt" "two.txt"] (get failure "candidates"))))
         (finally
           (render/delete-tree! multiple-root))))))
+
+(deftest p16-best-effort-recognizes-wrapped-admission-cause-test
+  ^{:clj-kondo/ignore [:unresolved-symbol]}
+  (with-temp-dirs [aozora out cfg]
+    (let [m (synthetic-state)
+          config (write-config! cfg true)
+          inspect source-bundle/inspect-zip]
+      (render/write-aozora-root! aozora m)
+      (overwrite-zip! aozora m "000101" (unsafe-path-zip-bytes))
+      (let [reports
+            (with-redefs [source-bundle/inspect-zip
+                          (fn [& args]
+                            (try
+                              (apply inspect args)
+                              (catch Throwable admission
+                                (throw (ex-info "workflow wrapper"
+                                                {:wrapper true}
+                                                admission)))))]
+              (run-build! {:aozora-root aozora
+                           :out-root out
+                           :config-path config
+                           :snapshot-date "2026-07-12"}))
+            failures (get-in reports [:selection "derive_failures"])
+            failure (first failures)]
+        (is (= 1 (:exit reports)))
+        (is (= 1 (count failures)))
+        (is (= "unsafe-member-path" (get failure "reason")))
+        (is (= "../000101.txt" (get failure "decoded_path")))
+        (is (= "../000101.txt" (get failure "normalized_path")))
+        (is (string/includes? (get failure "error")
+                              "source bundle admission failed"))
+        (is (not= "workflow wrapper" (get failure "error")))
+        (is (= {slug-b "passed"} (statuses reports)))))))
 
 (deftest p16-4-tamper-rebuild-test
   ^{:clj-kondo/ignore [:unresolved-symbol]}

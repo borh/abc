@@ -340,9 +340,16 @@
                             selected)
    "rejected_sources" (mapv identity rejected)})
 
-(defn- source-bundle-admission-error? [t]
-  (and (instance? clojure.lang.ExceptionInfo t)
-       (true? (::source-bundle/admission-error (ex-data t)))))
+(defn- source-bundle-admission-error [t]
+  (loop [cause t
+         seen #{}]
+    (cond
+      (nil? cause) nil
+      (contains? seen cause) nil
+      (and (instance? clojure.lang.ExceptionInfo cause)
+           (true? (::source-bundle/admission-error (ex-data cause))))
+      cause
+      :else (recur (.getCause ^Throwable cause) (conj seen cause)))))
 
 (defn- derive-failure [candidate t]
   (let [d (ex-data t)
@@ -408,9 +415,10 @@
                         (if continue-on-failure
                           (try
                             {:ok (derive-one candidate)}
-                            (catch clojure.lang.ExceptionInfo t
-                              (if (source-bundle-admission-error? t)
-                                {:failed (derive-failure candidate t)}
+                            (catch Throwable t
+                              (if-let [admission
+                                       (source-bundle-admission-error t)]
+                                {:failed (derive-failure candidate admission)}
                                 (throw t))))
                           {:ok (derive-one candidate)}))
                       selected-candidates)

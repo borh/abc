@@ -343,9 +343,7 @@ impl MorphAnalyzer for VibratoAnalyzer {
                 let range = token.range_byte();
                 RawToken {
                     emitted_surface: None,
-                    byte_span: Some(
-                        chunk.byte_offset + range.start..chunk.byte_offset + range.end,
-                    ),
+                    byte_span: Some(chunk.byte_offset + range.start..chunk.byte_offset + range.end),
                     features: parse_vibrato_feature_string(token.feature()),
                 }
             }));

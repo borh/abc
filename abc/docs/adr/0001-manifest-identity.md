@@ -4,7 +4,7 @@ Status: Accepted
 Date: 2026-04-26
 Accepted: 2026-04-28
 Supersedes: none
-Amended by: ADR 0010, ADR 0023, ADR 0027
+Amended by: ADR 0010, ADR 0023, ADR 0027, ADR 0033 [scope: work_content_hash equality relation]
 Source: `docs/high-level-architecture-note.md` v0.5
 
 ## Implementation Status

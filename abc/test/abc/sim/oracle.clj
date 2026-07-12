@@ -3,8 +3,109 @@
   model diff for accounting, report normalization, expected candidates.
   These read model states and applied intents; they never re-derive the
   classifier's decisions."
-  (:require [clojure.set :as set]
-            [clojure.walk :as walk]))
+  (:require [abc.tools.hash :as hash]
+            [abc.tools.jcs :as jcs]
+            [clojure.set :as set]
+            [clojure.string :as string]
+            [clojure.walk :as walk])
+  (:import [com.ibm.icu.lang UCharacter]
+           [java.nio.charset StandardCharsets]
+           [java.text Normalizer Normalizer$Form]))
+
+(def ^:private bundle-construction "abc-source-bundle-v1")
+
+(defn- normalize-identity-path [path]
+  (Normalizer/normalize (string/replace path "\\" "/") Normalizer$Form/NFC))
+
+(defn- safe-identity-path? [path]
+  (let [segments (string/split path #"/" -1)]
+    (and (not (string/blank? path))
+         (not (string/starts-with? path "/"))
+         (not (re-find #"^[A-Za-z]:" path))
+         (not-any? #{"" "." ".."} segments))))
+
+(defn- packaging-metadata? [path]
+  (or (string/starts-with? path "__MACOSX/")
+      (string/starts-with? (last (string/split path #"/")) "._")))
+
+(defn- primary-candidate? [path]
+  (and (string/ends-with? (string/lower-case path) ".txt")
+       (not (packaging-metadata? path))))
+
+(defn- reject! [reason data]
+  (throw (ex-info (str "oracle source bundle admission rejected: " (name reason))
+                  (assoc data :reason reason))))
+
+(defn- oracle-raw-members
+  "Independent model-to-member projection; intentionally does not use the
+  render namespace or production source-bundle code."
+  [m wid]
+  (let [{:keys [text images]} (get-in m [:contents wid])]
+    (into [[(str wid ".txt") (.getBytes ^String text StandardCharsets/UTF_8)]]
+          (map (fn [[path content]]
+                 [path (.getBytes ^String content StandardCharsets/UTF_8)]))
+          images)))
+
+(defn- oracle-members [m wid]
+  (let [members (mapv (fn [[raw-path ^bytes bytes]]
+                        (let [path (normalize-identity-path raw-path)]
+                          {:raw-path raw-path
+                           :path path
+                           :bytes bytes
+                           :member-hash (hash/format-sha256
+                                         (hash/sha256-bytes bytes))}))
+                      (oracle-raw-members m wid))]
+    (when-let [unsafe (first (remove #(safe-identity-path? (:path %)) members))]
+      (reject! :unsafe-member-path
+               {:decoded-path (:raw-path unsafe)
+                :normalized-path (:path unsafe)}))
+    (when-let [[path collisions]
+               (first (sort-by key
+                               (filter #(> (count (val %)) 1)
+                                       (group-by :path members))))]
+      (reject! :duplicate-member-path
+               {:path path :member-count (count collisions)}))
+    (when-let [[folded collisions]
+               (first (sort-by key
+                               (filter #(> (count (val %)) 1)
+                                       (group-by #(UCharacter/foldCase
+                                                   ^String (:path %) true)
+                                                 members))))]
+      (reject! :case-fold-member-path-collision
+               {:folded-path folded
+                :paths (->> collisions (map :path) sort vec)}))
+    (let [sorted-members (sort-by :path members)
+          candidates (filterv #(primary-candidate? (:path %)) sorted-members)]
+      (case (count candidates)
+        0 (reject! :no-primary-text-member {:candidates []})
+        1 {:members sorted-members :primary (first candidates)}
+        (reject! :multiple-primary-text-members
+                 {:candidates (mapv :path candidates)})))))
+
+(defn expected-content-identity
+  "Independent abc-source-bundle-v1 identity from model members plus the
+  separately rendered archive bytes. No production inspector/constructor is
+  called, making render/inspector mistakes falsifiable."
+  [m wid ^bytes archive-bytes]
+  (let [{oracle-members :members primary-member :primary}
+        (oracle-members m wid)
+        members (mapv (fn [{:keys [path member-hash]}]
+                        {"path" path "member_hash" member-hash})
+                      oracle-members)
+        primary (:path primary-member)
+        identity-object {"construction" bundle-construction
+                         "members" members
+                         "primary_text_member" primary}
+        primary-hash (:member-hash primary-member)]
+    {:identity-object identity-object
+     :members members
+     :archive-hash (hash/format-sha256 (hash/sha256-bytes archive-bytes))
+     :bundle-hash
+     (hash/format-sha256
+      (hash/sha256-bytes
+       (jcs/rfc8785-string-domain-json-bytes identity-object)))
+     :primary-text-member primary
+     :primary-text-hash primary-hash}))
 
 (defn projection
   "Restrict a model to what the CSV can express: works and persons that
@@ -100,3 +201,94 @@
           "relation_to_work" rel
           "previous_person_ids" (vec (sort (get-in prev [:edges k] #{})))
           "current_person_ids" (vec (sort (get-in cur [:edges k] #{})))})))
+
+(defn expected-participant-updates
+  "Predicted drift_participant_updates for the window prev → cur,
+  restricted to {person_id, change_type} (P15). Presence in the projected
+  endpoints decides added/removed; model person-map equality decides
+  hash_changed — person_record_hash is a pure function of the person's
+  own fields (spec §Key facts). Sorted by person_id."
+  [prev cur participant-pids]
+  (let [p (:persons (projection prev))
+        c (:persons (projection cur))]
+    (vec
+     (keep (fn [pid]
+             (let [pp (get p pid) cp (get c pid)]
+               (cond
+                 (and pp cp (not= pp cp))
+                 {"person_id" pid "change_type" "hash_changed"}
+
+                 (and pp (nil? cp))
+                 {"person_id" pid "change_type" "removed"}
+
+                 (and cp (nil? pp))
+                 {"person_id" pid "change_type" "added"})))
+           (sort participant-pids)))))
+
+(defn card-pid
+  "Person directory for a work's content zip: smallest pid over all of the
+  work's edges in the projection. Deterministic; shared by render (URL and
+  on-disk path) and the selection oracle. Intentionally NOT the slug's
+  person_id, which follows catalog-index's last-row-wins rule."
+  [proj wid]
+  (->> (:edges proj)
+       (keep (fn [[[ewid _rel] pids]] (when (= ewid wid) pids)))
+       (reduce into (sorted-set))
+       first))
+
+(defn- winning-rows
+  "basename → row via catalog-index's documented last-row-wins reduction
+  over the shared row projection (render/model->rows). The oracle consumes
+  the SUT's actual input rows — it never reconstructs their ordering."
+  [rows]
+  (reduce (fn [acc row]
+            (let [url (get row "テキストファイルURL")]
+              (if (string/blank? url)
+                acc
+                (assoc acc (last (string/split url #"/")) row))))
+          {}
+          rows))
+
+(defn expected-selection
+  "Predicted build-publication source selection. rows = (render/model->rows m);
+  sources = (render/content-sources m). :selected is sorted by
+  :text_zip_relpath (the SUT sorts selected_sources by relpath). :rejected is
+  the exact [path reason] set: the two decoys write-aozora-root! always
+  plants plus the catalog ZIP itself."
+  [rows sources]
+  (let [wins (winning-rows rows)
+        selected (for [[wid {:keys [basename relpath archive-hash bundle-hash
+                                    primary-text-hash primary-text-member members
+                                    identity-object]}] sources
+                       :let [row (get wins basename)]
+                       :when row
+                       :let [pid (get row "人物ID")]]
+                   {:work_id wid
+                    :person_id pid
+                    :slug (str wid "_" pid "_" wid "_t")
+                    :text_zip_relpath relpath
+                    :archive_hash archive-hash
+                    :bundle_hash bundle-hash
+                    :primary_text_hash primary-text-hash
+                    :primary_text_member primary-text-member
+                    :members members
+                    :identity_object identity-object})]
+    {:selected (vec (sort-by :text_zip_relpath selected))
+     :rejected #{["cards/999999/files/decoy.zip" "not-catalog-text-zip"]
+                 ["support/tools.zip" "not-under-cards-files"]
+                 ["index_pages/list_person_all_extended_utf8.zip" "not-under-cards-files"]}}))
+
+(defn expected-statuses
+  "slug → \"reused\"|\"passed\" over the current selection: reused iff the
+  identical slug existed previously with the identical bundle hash. Packaging
+  metadata can therefore change archive bytes without forcing a rebuild.
+  Slugs absent from the current selection are absent.
+  \"skipped\" is never predicted — pub-dirs are built in a fresh temp root,
+  so the skip branch is unreachable in normal runs; properties assert its
+  count is 0."
+  [prev-selection cur-selection]
+  (let [prev (into {} (map (juxt :slug :bundle_hash)) (:selected prev-selection))]
+    (into (sorted-map)
+          (map (fn [{:keys [slug bundle_hash]}]
+                 [slug (if (= bundle_hash (get prev slug)) "reused" "passed")]))
+          (:selected cur-selection))))

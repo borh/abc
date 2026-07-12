@@ -6,6 +6,14 @@ abc_root="${AB_ABC_ROOT:-$repo_root/data/abc-schemas}"
 out_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/aat-parser-ir-mapping-policy-smoke"
 aat_dir="$out_dir/aat"
 
+run_mapping_generator() {
+  if [[ "${AB_MAPPING_USE_SYSTEM_PYTHON:-0}" == "1" ]]; then
+    python "$@"
+  else
+    uv run --isolated --no-project --with 'jsonschema>=4.0' "$@"
+  fi
+}
+
 rm -rf "$out_dir"
 mkdir -p "$aat_dir"
 
@@ -107,15 +115,15 @@ cat > "$aat_dir/nested-warigaki.json" <<'JSON'
 }
 JSON
 
-uv run --isolated --no-project --with 'jsonschema>=4.0' \
+run_mapping_generator \
   "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/generate.py" \
   --aat-dir "$aat_dir" \
   --abc-root "$abc_root" \
-  --mapping-version 0.2.4 \
+  --mapping-version 0.4.0 \
   --out "$out_dir/mapping.json" \
   --summary-json "$out_dir/summary.json"
 
-jq -e '.mapping_version == "0.2.4"' "$out_dir/mapping.json"
+jq -e '.mapping_version == "0.4.0"' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; (.category != "STRUCTURAL") or ((.aat_pointer // "") | contains("paragraph") | not))' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "meta.adapter" and .aat_pointer != "meta.adapter_version")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer == "meta.parse_complete")' "$out_dir/mapping.json"
@@ -246,11 +254,11 @@ cat > "$layout_dir/layout.json" <<'JSON'
 }
 JSON
 
-uv run --isolated --no-project --with 'jsonschema>=4.0' \
+run_mapping_generator \
   "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/generate.py" \
   --aat-dir "$layout_dir" \
   --abc-root "$abc_root" \
-  --mapping-version 0.2.4 \
+  --mapping-version 0.4.0 \
   --out "$out_dir/layout-only.mapping.json" \
   --summary-json "$out_dir/layout-only.summary.json"
 

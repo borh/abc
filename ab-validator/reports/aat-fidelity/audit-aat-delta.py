@@ -44,9 +44,25 @@ invariants.
 
 import argparse
 import copy
+import importlib.util
 import json
 import pathlib
 import sys
+
+_AAT_FIDELITY = pathlib.Path(__file__).resolve().parent
+_bare_toggle_spec = importlib.util.spec_from_file_location(
+    "bare_toggle_placement", _AAT_FIDELITY / "bare-toggle-placement.py"
+)
+_bare_toggle_placement = importlib.util.module_from_spec(_bare_toggle_spec)
+sys.modules[_bare_toggle_spec.name] = _bare_toggle_placement
+_bare_toggle_spec.loader.exec_module(_bare_toggle_placement)
+
+# Normative Contract 1 grammar (reports/aat-fidelity/bare-toggle-placement.py):
+# classify_tokens is the two-pass model, TOKEN_KIND maps a marker string to
+# its (construct, open/close) pair. bare-toggle-adoption mode derives its
+# expectations from these — never from the placement report (review P5-4).
+classify_tokens = _bare_toggle_placement.classify_tokens
+TOKEN_KIND = _bare_toggle_placement.TOKEN_KIND
 
 LEGACY_WARNING = (
     "aozora upstream spans are sanitized-source byte offsets; "
@@ -991,15 +1007,282 @@ def source_note_append_mode(base_doc, cand_doc, name, summary):
         summary["classes"]["identical"] += 1
 
 
+# --- bare-toggle-adoption (Phase 5, rotation C5) ----------------------------
+#
+# Two checks in one pass per work: (1) diff-grammar — any difference between
+# baseline and candidate must consist EXACTLY of bare-toggle adoption
+# rewrites (raw containerOpen/content/containerClose -> a typed
+# yokogumi/keigakomi inline_container), verified by re-expanding the
+# candidate back to baseline shape and requiring byte-exact equality; (2) an
+# independent expectation derivation over the BASELINE's own bare-toggle raw
+# markers (never the placement report, never the candidate) that the
+# observed adoptions/declines must match exactly (review P5-4).
+
+BARE_TOGGLE_TOKENS = TOKEN_KIND  # {token: (construct, "open"/"close")}
+TOGGLE_KINDS = {"yokogumi", "keigakomi"}
+
+
+def iter_inline_arrays(node, path=""):
+    """Yield (array, path) for every blocks/content/children list, depth-first."""
+    if isinstance(node, dict):
+        for key in ("blocks", "content", "children"):
+            arr = node.get(key)
+            if isinstance(arr, list):
+                yield arr, f"{path}/{key}"
+                for i, item in enumerate(arr):
+                    yield from iter_inline_arrays(item, f"{path}/{key}[{i}]")
+
+
+def is_bare_toggle_raw(node):
+    return (
+        isinstance(node, dict)
+        and node.get("kind") == "raw"
+        and node.get("source") in BARE_TOGGLE_TOKENS
+    )
+
+
+def collect_bare_toggle_raws(doc):
+    """All raw nodes whose source is exactly one bare-toggle token."""
+    found = []
+    for arr, path in iter_inline_arrays(doc):
+        for i, node in enumerate(arr):
+            if is_bare_toggle_raw(node):
+                found.append((f"{path}[{i}]", node))
+    return found
+
+
+def normalize_adoption(node, name):
+    """Rewrite one candidate inline_container back to its baseline raw
+    sequence: [raw open marker, *content..., raw close marker]. Returns
+    None if the node is not a toggle adoption."""
+    if not isinstance(node, dict) or node.get("kind") not in TOGGLE_KINDS:
+        return None
+    kind = node["kind"]
+    open_token, close_token = {
+        "yokogumi": ("［＃横組み］", "［＃横組み終わり］"),
+        "keigakomi": ("［＃罫囲み］", "［＃罫囲み終わり］"),
+    }[kind]
+    span = node.get("span")
+    if not isinstance(span, dict):
+        die(f"{name}: toggle container missing span")
+    content = node.get("content")
+    if not isinstance(content, list):
+        die(f"{name}: toggle container missing content")
+    return kind, open_token, close_token, span, content
+
+
+def recover_markers(base_doc, container_span, open_token, close_token, name):
+    """Locate the single baseline raw open/close marker pair a candidate's
+    toggle-container span was adopted from — spans are RECOVERED FROM THE
+    BASELINE verbatim, never re-derived by the audit (review P5-4)."""
+    bs, be = container_span.get("byte_start"), container_span.get("byte_end")
+    opens, closes = [], []
+    for _, node in collect_bare_toggle_raws(base_doc):
+        span = node.get("span")
+        if not (
+            isinstance(span, dict)
+            and isinstance(span.get("byte_start"), int)
+            and isinstance(span.get("byte_end"), int)
+            and isinstance(bs, int)
+            and isinstance(be, int)
+            and span["byte_start"] >= bs
+            and span["byte_end"] <= be
+        ):
+            continue
+        if node.get("source") == open_token:
+            opens.append(node)
+        elif node.get("source") == close_token:
+            closes.append(node)
+    if len(opens) != 1:
+        die(
+            f"{name}: expected exactly one baseline {open_token!r} marker "
+            f"inside container span, found {len(opens)}"
+        )
+    if len(closes) != 1:
+        die(
+            f"{name}: expected exactly one baseline {close_token!r} marker "
+            f"inside container span, found {len(closes)}"
+        )
+    return opens[0], closes[0]
+
+
+def expand_adoptions(node, base_doc, name, adopted, adopted_by_line):
+    """Recursively copy `node`, splicing every yokogumi/keigakomi toggle
+    container back into its baseline raw-marker shape
+    [raw open, *content, raw close] (spans recovered verbatim from the
+    baseline via recover_markers) and tallying `adopted` by construct.
+
+    Each adoption is additionally BOUND TO ITS LINE via the recovered
+    baseline open marker's span line_start into `adopted_by_line`
+    ({line: {construct: count}}), so the caller can compare observed vs
+    expected adoptions PER marker-carrying line rather than per work —
+    per-work totals alone admit a compensating false-pass where a missed
+    valid adoption on one line offsets a wrong adoption on another (plan
+    amendment 0d323a72)."""
+    if isinstance(node, list):
+        out = []
+        for item in node:
+            normalized = normalize_adoption(item, name) if isinstance(item, dict) else None
+            if normalized is None:
+                out.append(expand_adoptions(item, base_doc, name, adopted, adopted_by_line))
+                continue
+            kind, open_token, close_token, span, content = normalized
+            adopted[kind] += 1
+            open_marker, close_marker = recover_markers(
+                base_doc, span, open_token, close_token, name
+            )
+            line = open_marker["span"]["line_start"]
+            adopted_by_line.setdefault(line, {"yokogumi": 0, "keigakomi": 0})[kind] += 1
+            out.append(copy.deepcopy(open_marker))
+            out.extend(expand_adoptions(content, base_doc, name, adopted, adopted_by_line))
+            out.append(copy.deepcopy(close_marker))
+        return out
+    if isinstance(node, dict):
+        return {
+            k: expand_adoptions(v, base_doc, name, adopted, adopted_by_line)
+            for k, v in node.items()
+        }
+    return node
+
+
+def derive_expected(base_doc):
+    """Independent expectation derivation (review P5-4 — the load-bearing
+    check): classify_tokens over the BASELINE's own bare-toggle raw
+    markers, grouped by physical line — never the placement report, never
+    the candidate.
+
+    Returns (expected_adopted, expected_reasons, expected_by_line):
+    per-work adoption totals, per-work decline reasons, and the per-LINE
+    adoption expectation {line: {construct: count}} for every
+    marker-carrying line (plan amendment 0d323a72 — the per-line map is
+    what forecloses compensating cross-line false-passes)."""
+    by_line: dict[int, list] = {}
+    for path, node in collect_bare_toggle_raws(base_doc):
+        span = node.get("span")
+        if not isinstance(span, dict):
+            die(f"bare-toggle marker missing span: {path}")
+        line_start, line_end = span.get("line_start"), span.get("line_end")
+        if line_start != line_end:
+            die(f"bare-toggle marker spans multiple lines: {path}")
+        by_line.setdefault(line_start, []).append((span.get("byte_start"), node))
+    expected_adopted = {"yokogumi": 0, "keigakomi": 0}
+    expected_reasons = {
+        "orphan_open": 0,
+        "orphan_close": 0,
+        "reopen_rollback": 0,
+        "interleave": 0,
+    }
+    expected_by_line: dict[int, dict[str, int]] = {}
+    for line, entries in by_line.items():
+        entries.sort(key=lambda e: e[0])
+        tokens = [TOKEN_KIND[node["source"]] for _, node in entries]
+        outcome = classify_tokens(tokens)
+        expected_by_line[line] = {
+            construct: outcome.adopted_pairs[construct] for construct in ("yokogumi", "keigakomi")
+        }
+        for construct in ("yokogumi", "keigakomi"):
+            expected_adopted[construct] += outcome.adopted_pairs[construct]
+        expected_reasons["orphan_open"] += sum(outcome.orphan_open.values())
+        expected_reasons["orphan_close"] += sum(outcome.orphan_close.values())
+        expected_reasons["reopen_rollback"] += outcome.rollback_markers
+        expected_reasons["interleave"] += outcome.interleave_events
+    return expected_adopted, expected_reasons, expected_by_line
+
+
+def count_declined(doc):
+    """Number of bare-toggle raw markers still physically present (i.e.
+    declined — never adopted) in `doc`."""
+    return len(collect_bare_toggle_raws(doc))
+
+
+_NO_ADOPTIONS = {"yokogumi": 0, "keigakomi": 0}
+
+
+def bare_toggle_adoption_mode(base_doc, cand_doc, name, summary):
+    base = strip_identity(base_doc)
+    cand = strip_identity(cand_doc)
+    expected_adopted, expected_reasons, expected_by_line = derive_expected(base)
+    expected_declined_total = sum(expected_reasons.values())
+
+    observed_adopted = {"yokogumi": 0, "keigakomi": 0}
+    observed_by_line: dict[int, dict[str, int]] = {}
+    if base == cand:
+        declined_doc = base
+    else:
+        # Difference exists: it must consist EXACTLY of adopted-pair
+        # rewrites. Strategy: project the candidate back to baseline shape
+        # by expanding every yokogumi/keigakomi inline_container into
+        # [raw open, *content, raw close]; the projection must equal the
+        # baseline byte-for-byte.
+        projected = expand_adoptions(cand, base, name, observed_adopted, observed_by_line)
+        if projected != base:
+            die(f"{name}: candidate differences are not pure toggle adoptions")
+        if observed_adopted["yokogumi"] + observed_adopted["keigakomi"] == 0:
+            die(f"{name}: differs from baseline but contains no toggle adoption")
+        declined_doc = cand
+
+    # Independence check (review P5-4), bound PER LINE (plan amendment
+    # 0d323a72): every marker-carrying line's OBSERVED adoptions must equal
+    # that line's baseline-derived EXPECTATION. This catches both
+    # directions — a candidate that failed to adopt a pair the derivation
+    # says is valid (observed 0, expected >0) AND a candidate that adopted
+    # a pair the derivation says is invalid — even when the rewrite is
+    # structurally recoverable, and even when the two errors would cancel
+    # in the per-work totals (the compensating false-pass).
+    for line in sorted(set(expected_by_line) | set(observed_by_line)):
+        expected_line = expected_by_line.get(line, _NO_ADOPTIONS)
+        observed_line = observed_by_line.get(line, _NO_ADOPTIONS)
+        if observed_line != expected_line:
+            die(
+                f"{name}: line {line}: observed toggle adoptions "
+                f"{observed_line} do not match the baseline-derived "
+                f"expectation {expected_line}"
+            )
+    # The per-line loop subsumes the per-work totals; this assertion is a
+    # belt-and-suspenders internal-consistency check, not a weaker gate.
+    if observed_adopted != expected_adopted:
+        die(
+            f"{name}: observed toggle adoptions {observed_adopted} do not "
+            f"match the baseline-derived expectation {expected_adopted}"
+        )
+
+    declined_count = count_declined(declined_doc)
+    if declined_count != expected_declined_total:
+        die(
+            f"{name}: declined marker count {declined_count} does not match "
+            f"the derivation total {expected_declined_total} "
+            f"(reasons: {expected_reasons})"
+        )
+
+    if base == cand:
+        summary["classes"]["identical"] += 1
+    else:
+        summary["classes"]["toggle_adopted"] += 1
+        summary["details"]["adopted_yokogumi_pairs"] += observed_adopted["yokogumi"]
+        summary["details"]["adopted_keigakomi_pairs"] += observed_adopted["keigakomi"]
+    summary["details"]["declined_markers"] += declined_count
+    for reason, value in expected_reasons.items():
+        summary["details"]["declined_by_reason"][reason] += value
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "mode",
-        choices=["container-rewrite", "span-confinement", "v2-migration", "source-note-append"],
+        choices=[
+            "container-rewrite",
+            "span-confinement",
+            "v2-migration",
+            "source-note-append",
+            "bare-toggle-adoption",
+        ],
     )
     ap.add_argument("baseline_dir")
     ap.add_argument("candidate_dir")
     ap.add_argument("--summary-json", required=True)
+    ap.add_argument("--expected-adopted-yokogumi", type=int, default=None)
+    ap.add_argument("--expected-adopted-keigakomi", type=int, default=None)
+    ap.add_argument("--expected-declined", type=int, default=None)
     args = ap.parse_args()
     base_files = load_dir(args.baseline_dir)
     cand_files = load_dir(args.candidate_dir)
@@ -1013,6 +1296,8 @@ def main() -> int:
         classes = {"migrated": 0, "jizume_rewritten": 0, "ruby_left_rewritten": 0}
     elif args.mode == "source-note-append":
         classes = {"identical": 0, "source_note_appended": 0}
+    elif args.mode == "bare-toggle-adoption":
+        classes = {"identical": 0, "toggle_adopted": 0}
     else:
         # Byte-identical shape to the pre-Task-8 output — untouched.
         classes = {"identical": 0, "rewritten": 0, "span_confined": 0}
@@ -1024,11 +1309,24 @@ def main() -> int:
     }
     if args.mode == "v2-migration":
         summary["details"] = {"both": 0, "compound_jizume_adopted": 0}
+    elif args.mode == "bare-toggle-adoption":
+        summary["details"] = {
+            "adopted_yokogumi_pairs": 0,
+            "adopted_keigakomi_pairs": 0,
+            "declined_markers": 0,
+            "declined_by_reason": {
+                "orphan_open": 0,
+                "orphan_close": 0,
+                "reopen_rollback": 0,
+                "interleave": 0,
+            },
+        }
     handler = {
         "container-rewrite": container_rewrite_mode,
         "span-confinement": span_confinement_mode,
         "v2-migration": v2_migration_mode,
         "source-note-append": source_note_append_mode,
+        "bare-toggle-adoption": bare_toggle_adoption_mode,
     }[args.mode]
     for name in sorted(base_files):
         # Fail-closed: ANY per-work exception (unreadable file, valid JSON
@@ -1042,6 +1340,23 @@ def main() -> int:
             handler(base_doc, cand_doc, name, summary)
         except Exception as err:
             die(f"{name}: processing failed ({type(err).__name__}: {err})")
+    if args.mode == "bare-toggle-adoption":
+        expected_checks = [
+            (
+                args.expected_adopted_yokogumi,
+                summary["details"]["adopted_yokogumi_pairs"],
+                "adopted yokogumi pairs",
+            ),
+            (
+                args.expected_adopted_keigakomi,
+                summary["details"]["adopted_keigakomi_pairs"],
+                "adopted keigakomi pairs",
+            ),
+            (args.expected_declined, summary["details"]["declined_markers"], "declined markers"),
+        ]
+        for expected, actual, label in expected_checks:
+            if expected is not None and expected != actual:
+                die(f"expected {label} {expected}, found {actual}")
     pathlib.Path(args.summary_json).write_text(json.dumps(summary, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
     return 0

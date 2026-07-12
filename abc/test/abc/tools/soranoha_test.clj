@@ -1,5 +1,6 @@
 (ns abc.tools.soranoha-test
   (:require [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.parser-evidence :as parser-evidence]
@@ -9,10 +10,13 @@
             [abc.tools.snapshot-index :as snapshot-index]
             [abc.tools.soranoha :as soranoha]
             [abc.tools.soranoha-build-publication :as build-publication]
+            [abc.tools.source-bundle :as source-bundle]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is]])
-  (:import [java.nio.charset StandardCharsets]
+  (:import [java.io FileNotFoundException IOException InterruptedIOException]
+           [java.nio.charset StandardCharsets]
+           [java.nio.file AccessDeniedException NoSuchFileException]
            [java.util.zip ZipEntry ZipOutputStream]))
 
 (defn- temp-json-path [prefix]
@@ -59,6 +63,16 @@
       (.write out (.getBytes (str content) StandardCharsets/UTF_8))
       (.closeEntry out))))
 
+(defn- write-repacked-zip!
+  [file entries comment]
+  (.mkdirs (.getParentFile (io/file file)))
+  (with-open [out (ZipOutputStream. (io/output-stream file))]
+    (.setComment out comment)
+    (doseq [[name content] entries]
+      (.putNextEntry out (doto (ZipEntry. name) (.setTime 0)))
+      (.write out (.getBytes (str content) StandardCharsets/UTF_8))
+      (.closeEntry out))))
+
 (defn- official-aozora-fixture! [root]
   (let [catalog (io/file root "index_pages" "list_person_all_extended_utf8.zip")
         work-zip (io/file root "cards" "000879" "files"
@@ -79,30 +93,35 @@
   "Test double for the adapter chain: writes a minimal, schema-valid parser-IR
   (empty body) so build-publication can be exercised without the aozora2html /
   ab-aat-to-parser-ir binaries."
-  [{:keys [aat-file parser-ir-file divergence-file]}]
-  (abc-json/write-deterministic-json-file!
-   aat-file
-   {"version" 1 "work_id" "stub" "blocks" []
-    "meta" {"adapter" "stub" "adapter_version" "test"
-            "source_encoding" "utf-8" "source_hash" (files/example-hash "aa")
-            "parse_complete" true "warnings" []}})
-  (abc-json/write-deterministic-json-file!
-   parser-ir-file
-   {"schema_hash" (manifest/schema-hash "schemas/parser-ir.schema.json")
-    "source" {"work_content_hash" (files/example-hash "17")
-              "encoding" "Shift_JIS" "normalization" "source"}
-    "derived_from" {"aat_adapter" "stub" "aat_adapter_version" "test-stub"
-                    "aat_version" 1
-                    "mapping_id" (str "https://w3id.org/abc/mappings/"
-                                      "aat-v1-to-parser-ir-v1/generated-probe")
-                    "mapping_schema_hash" (files/example-hash "38")
-                    "mapping_version" "0.2.0"}
-    "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
-                             "splitter_id" "ab-plaintext-japanese-v1"
-                             "coordinate_system" "decoded_utf8"
-                             "coverage" "body-paragraphs"}
-    "nodes" [] "warnings" [] "errors" []})
-  (abc-json/write-deterministic-json-file! divergence-file {"stub" true}))
+  [{:keys [source-bytes work-content-hash aat-file parser-ir-file
+           divergence-file]}]
+  (let [member-hash (hash/format-sha256 (hash/sha256-bytes source-bytes))]
+    (abc-json/write-deterministic-json-file!
+     aat-file
+     {"version" 1 "work_id" "stub" "blocks" []
+      "meta" {"adapter" "stub" "adapter_version" "test"
+              "source_encoding" "utf-8"
+              "source_hash" member-hash
+              "primary_text_hash" member-hash
+              "parse_complete" true "warnings" []}})
+    (abc-json/write-deterministic-json-file!
+     parser-ir-file
+     {"schema_hash" (manifest/schema-hash "schemas/parser-ir.schema.json")
+      "source" {"work_content_hash" work-content-hash
+                "primary_text_hash" member-hash
+                "encoding" "Shift_JIS" "normalization" "source"}
+      "derived_from" {"aat_adapter" "stub" "aat_adapter_version" "test-stub"
+                      "aat_version" 1
+                      "mapping_id" (str "https://w3id.org/abc/mappings/"
+                                        "aat-v1-to-parser-ir-v1/generated-probe")
+                      "mapping_schema_hash" (files/example-hash "38")
+                      "mapping_version" "0.3.0"}
+      "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
+                               "splitter_id" "ab-plaintext-japanese-v1"
+                               "coordinate_system" "decoded_utf8"
+                               "coverage" "body-paragraphs"}
+      "nodes" [] "warnings" [] "errors" []})
+    (abc-json/write-deterministic-json-file! divergence-file {"stub" true})))
 
 (defn- write-generated-source-request-set!
   [root label]
@@ -753,6 +772,7 @@
             slug "000001_000879_000001_ruby_fixture"
             work-dir (io/file output-root "materialized-root" "works" slug)
             official-source-file (io/file work-dir "official-source.json")
+            source-bundle-file (io/file work-dir "source-bundle.json")
             parser-ir-file (io/file work-dir "parser-ir.json")
             source-manifest-file (io/file work-dir "source.manifest.json")
             source-selection-report-file (io/file output-root
@@ -765,6 +785,7 @@
                                               "publications-report.json")]
         (is (string/includes? out "build_publication_root:"))
         (is (.exists official-source-file))
+        (is (.exists source-bundle-file))
         (is (.exists parser-ir-file))
         (is (.exists source-manifest-file))
         (is (.exists source-selection-report-file))
@@ -780,14 +801,42 @@
         (let [validation (files/read-json tei-validation-file)]
           (is (= "passed" (get validation "status"))))
         (let [report (files/read-json source-selection-report-file)
-              official-source (files/read-json official-source-file)]
+              selection (first (get report "selected_sources"))
+              official-source (files/read-json official-source-file)
+              source-bundle (files/read-json source-bundle-file)
+              parser-ir (files/read-json parser-ir-file)
+              primary-member (get official-source "primary_text_member")
+              primary-member-hash
+              (some #(when (= primary-member (get % "path"))
+                       (get % "member_hash"))
+                    (get source-bundle "members"))]
           (is (= 1 (get report "selected_source_count")))
+          (is (true? (get report "release_admissible")))
           (is (<= 2 (get report "rejected_source_count")))
           (is (= ["cards/000879/files/000001_ruby_fixture.zip"]
                  (mapv #(get % "text_zip_relpath")
                        (get report "selected_sources"))))
           (is (= "cards/000879/files/000001_ruby_fixture.zip"
-                 (get official-source "text_zip_relpath"))))
+                 (get official-source "text_zip_relpath")))
+          (is (= (get official-source "archive_hash")
+                 (get official-source "source_hash")))
+          (is (= (get source-bundle "archive_hash")
+                 (get official-source "archive_hash")
+                 (get selection "archive_hash")
+                 (get selection "source_hash")))
+          (is (= (get source-bundle "bundle_hash")
+                 (get official-source "bundle_hash")
+                 (get selection "bundle_hash")
+                 (get-in parser-ir ["source" "work_content_hash"])
+                 (get-in (files/read-json source-manifest-file)
+                         ["manifest_identity_object" "work_content_hash"])))
+          (is (= (get official-source "primary_text_hash")
+                 (get selection "primary_text_hash")
+                 (get-in parser-ir ["source" "primary_text_hash"])
+                 primary-member-hash))
+          (is (= primary-member
+                 (get-in source-bundle ["identity_object" "primary_text_member"])
+                 (get selection "primary_text_member"))))
         (let [publications-report (files/read-json publications-report-file)]
           (is (= 1 (get publications-report "publication_count")))
           (is (= 1 (get publications-report "passed")))
@@ -807,29 +856,240 @@
       (finally
         (delete-tree! root)))))
 
-(deftest build-publication-command-is-blocked-by-rights-containment-test
-  (let [root (fixture/temp-dir "abc-rights-publication-block")]
+(deftest build-publication-metadata-repack-preserves-logical-identity-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-repack")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        work-zip (io/file aozora-root "cards" "000879" "files"
+                          "000001_ruby_fixture.zip")
+        output-a (io/file root "build-a")
+        output-b (io/file root "build-b")
+        build! (fn [output-root snapshot-date]
+                 (binding [build-publication/*derive-parser-ir!*
+                           stub-derive-parser-ir!]
+                   (is (zero? (soranoha/run!
+                               ["build-publication"
+                                "--aozora-root" (str aozora-root)
+                                "--config" "abc/config/publication-basic-ja.json"
+                                "--snapshot-date" snapshot-date
+                                "--output-root" (str output-root)])))))
+        identity (fn [output-root]
+                   (let [work-dir (io/file output-root "materialized-root" "works"
+                                           "000001_000879_000001_ruby_fixture")]
+                     (files/read-json (io/file work-dir "official-source.json"))))]
     (try
-      (try
-        (build-publication/build-publication!
-         ["--aozora-root" "."
-          "--config" "abc/config/publication-basic-ja.json"
-          "--snapshot-date" "2026-07-08"
-          "--output-root" (str (io/file root "publication"))])
-        (is false "release publication must be blocked before materialization")
-        (catch clojure.lang.ExceptionInfo e
-          (is (= :blocked-pending-assessment-migration
-                 (:reason (ex-data e))))))
+      (write-repacked-zip! work-zip {"000001.txt" "本文です。"} "repack-a")
+      (build! output-a "2026-07-08")
+      (write-repacked-zip! work-zip {"000001.txt" "本文です。"} "repack-b")
+      (build! output-b "2026-07-09")
+      (let [a (identity output-a)
+            b (identity output-b)]
+        (is (not= (get a "archive_hash") (get b "archive_hash")))
+        (is (= (get a "bundle_hash") (get b "bundle_hash")))
+        (is (= (get a "primary_text_hash") (get b "primary_text_hash"))))
       (finally
         (delete-tree! root)))))
 
-(deftest stage-publication-command-is-blocked-by-rights-containment-test
-  (try
-    (soranoha/stage-publication! "missing-snapshot" "missing-output")
-    (is false "staging must be blocked before reading a snapshot")
-    (catch Throwable e
-      (is (= :blocked-pending-assessment-migration
-             (:reason (ex-data e)))))))
+(deftest build-publication-best-effort-does-not-suppress-parser-identity-mismatch-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-identity-mismatch")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        output-root (io/file root "build-output")
+        config-file (io/file root "strict-config.json")
+        mismatching-stub
+        (fn [opts]
+          (stub-derive-parser-ir! opts)
+          (let [parser-ir-file (:parser-ir-file opts)
+                parser-ir (files/read-json parser-ir-file)]
+            (abc-json/write-deterministic-json-file!
+             parser-ir-file
+             (-> parser-ir
+                 (assoc-in ["source" "work_content_hash"]
+                           (files/example-hash "31"))
+                 (assoc-in ["source" "primary_text_hash"]
+                           (files/example-hash "32"))))))]
+    (try
+      (abc-json/write-deterministic-json-file!
+       config-file
+       (assoc (files/read-json (io/file "config" "publication-basic-ja.json"))
+              "continue_on_failure" true))
+      (let [thrown (try
+                     (binding [build-publication/*derive-parser-ir!*
+                               mismatching-stub]
+                       (build-publication/build-publication!
+                        ["--aozora-root" (str aozora-root)
+                         "--config" (str config-file)
+                         "--snapshot-date" "2026-07-08"
+                         "--output-root" (str output-root)]))
+                     nil
+                     (catch clojure.lang.ExceptionInfo t t))
+            identity-data (some #(let [data (ex-data %)]
+                                   (when (contains? data
+                                                    :expected-work-content-hash)
+                                     data))
+                                (take-while some?
+                                            (iterate #(.getCause ^Throwable %)
+                                                     thrown)))]
+        (is (some? thrown))
+        (is (some? identity-data))
+        (is (= #{:expected-work-content-hash :actual-work-content-hash
+                 :expected-primary-text-hash :actual-primary-text-hash}
+               (set (keys (select-keys identity-data
+                                       [:expected-work-content-hash
+                                        :actual-work-content-hash
+                                        :expected-primary-text-hash
+                                        :actual-primary-text-hash]))))))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-best-effort-propagates-non-admission-failures-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-error-taxonomy")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        output-root (io/file root "build-output")
+        config-file (io/file root "best-effort-config.json")]
+    (try
+      (abc-json/write-deterministic-json-file!
+       config-file
+       (assoc (files/read-json (io/file "config" "publication-basic-ja.json"))
+              "continue_on_failure" true))
+      (doseq [failure [(AssertionError. "programming")
+                       (LinkageError. "linkage")
+                       (InterruptedException. "interrupted")
+                       (InterruptedIOException. "interrupted")
+                       (FileNotFoundException. "missing")
+                       (NoSuchFileException. "missing")
+                       (AccessDeniedException. "denied")
+                       (RuntimeException. "programming")
+                       (ex-info "spoofed admission reason"
+                                {:reason :unsafe-member-path
+                                 :archive-path "not-from-inspector.zip"})
+                       (ex-info "wrapper" {:wrapper true}
+                                (ex-info "wrapped spoofed admission reason"
+                                         {:reason :unsafe-member-path
+                                          :archive-path
+                                          "not-from-inspector.zip"}))]]
+        (is (identical?
+             failure
+             (try
+               (with-redefs [source-bundle/inspect-zip
+                             (fn [& _] (throw failure))]
+                 (build-publication/build-publication!
+                  ["--aozora-root" (str aozora-root)
+                   "--config" (str config-file)
+                   "--snapshot-date" "2026-07-08"
+                   "--output-root" (str output-root)]))
+               (catch Throwable t t)))))
+      (is (not (.exists output-root)))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-best-effort-does-not-traverse-protected-wrappers-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-protected-wrappers")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        unsafe-zip (io/file root "unsafe.zip")
+        output-root (io/file root "build-output")
+        config-file (io/file root "best-effort-config.json")]
+    (try
+      (write-zip! unsafe-zip {"../work.txt" "unsafe"})
+      (abc-json/write-deterministic-json-file!
+       config-file
+       (assoc (files/read-json (io/file "config" "publication-basic-ja.json"))
+              "continue_on_failure" true))
+      (let [admission (try
+                        (source-bundle/inspect-zip unsafe-zip)
+                        nil
+                        (catch clojure.lang.ExceptionInfo t t))
+            wrap (fn [outer]
+                   (.initCause ^Throwable outer admission)
+                   outer)
+            protected-outers
+            [(wrap (AssertionError. "assertion"))
+             (wrap (Error. "error"))
+             (wrap (LinkageError. "linkage"))
+             (wrap (InterruptedException. "interrupted"))
+             (wrap (InterruptedIOException. "interrupted IO"))
+             (wrap (IOException. "filesystem IO"))
+             (wrap (FileNotFoundException. "missing"))
+             (wrap (NoSuchFileException. "missing"))
+             (wrap (AccessDeniedException. "denied"))
+             (RuntimeException. "programming" admission)]]
+        (is (some? admission))
+        (is (true? (::source-bundle/admission-error (ex-data admission))))
+        (doseq [outer protected-outers]
+          (is (identical?
+               outer
+               (try
+                 (with-redefs [source-bundle/inspect-zip
+                               (fn [& _] (throw outer))]
+                   (build-publication/build-publication!
+                    ["--aozora-root" (str aozora-root)
+                     "--config" (str config-file)
+                     "--snapshot-date" "2026-07-08"
+                     "--output-root" (str output-root)]))
+                 (catch Throwable t t))))))
+      (is (not (.exists output-root)))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-best-effort-still-rejects-zero-attempted-candidates-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-no-candidates")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        work-zip (io/file aozora-root "cards" "000879" "files"
+                          "000001_ruby_fixture.zip")
+        output-root (io/file root "build-output")]
+    (try
+      (is (.delete work-zip))
+      (let [thrown (try
+                     (build-publication/build-publication!
+                      ["--aozora-root" (str aozora-root)
+                       "--config" "abc/config/publication-basic-ja.json"
+                       "--snapshot-date" "2026-07-08"
+                       "--output-root" (str output-root)])
+                     nil
+                     (catch clojure.lang.ExceptionInfo t t))]
+        (is (some? thrown))
+        (is (= "no catalog-backed work ZIPs were successfully derived"
+               (.getMessage thrown)))
+        (is (= 0 (:derive_failed_count (ex-data thrown))))
+        (is (not (.exists output-root))))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-damaged-zip-does-not-invoke-process-recovery-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-damaged-zip")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        work-zip (io/file aozora-root "cards" "000879" "files"
+                          "000001_ruby_fixture.zip")
+        output-root (io/file root "build-output")
+        config-file (io/file root "strict-config.json")
+        process-calls (atom 0)
+        process-var (ns-resolve 'abc.tools.soranoha-build-publication
+                                'run-process!)]
+    (try
+      (with-open [out (io/output-stream work-zip)]
+        (.write out (.getBytes "damaged, not a ZIP" StandardCharsets/UTF_8)))
+      (abc-json/write-deterministic-json-file!
+       config-file
+       (assoc (files/read-json (io/file "config" "publication-basic-ja.json"))
+              "continue_on_failure" false))
+      (let [thrown (with-redefs-fn
+                     {process-var (fn [& _]
+                                    (swap! process-calls inc)
+                                    (throw (ex-info "process recovery invoked" {})))}
+                     #(try
+                        (build-publication/build-publication!
+                         ["--aozora-root" (str aozora-root)
+                          "--config" (str config-file)
+                          "--snapshot-date" "2026-07-08"
+                          "--output-root" (str output-root)])
+                        nil
+                        (catch Throwable t t)))]
+        (is (some? thrown))
+        (is (some #(= :unreadable-zip (:reason (ex-data %)))
+                  (take-while some?
+                              (iterate #(.getCause ^Throwable %) thrown))))
+        (is (zero? @process-calls))
+        (is (not (.exists output-root))))
+      (finally
+        (delete-tree! root)))))
 
 (deftest build-publication-command-requires-snapshot-date-for-publication-config-test
   (let [root (fixture/temp-dir "abc-soranoha-build-publication-date")

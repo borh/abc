@@ -4,4 +4,6 @@
  :hooks
  {:analyze-call
   {abc.test-fs/with-temp-dir hooks.with-temp-dir/with-temp-dir
-   babashka.fs/with-temp-dir hooks.with-temp-dir/with-temp-dir}}}
+   babashka.fs/with-temp-dir hooks.with-temp-dir/with-temp-dir
+   abc.sim.render/with-repo hooks.sim-binding/with-symbol-bindings
+   abc.sim.drift-sidecar-sim-test/with-sidecar hooks.sim-binding/with-symbol-bindings}}}

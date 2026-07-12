@@ -11,7 +11,8 @@
             [abc.tools.person-drift-history :as drift-history]
             [abc.tools.validate-corpus :as validate-corpus]
             [clojure.java.io :as io]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [taoensso.telemere :as tel])
   (:import [java.time ZoneOffset]))
 
 (def ^:private default-zip-path
@@ -200,17 +201,27 @@
          (sort-by first)
          (mapv second))))
 
-(defn- history-scan-refs [repo zip-path from-ref to-ref sample-period]
+(defn scan-plan
+  "Public scan planning: the sampled representative commits for a history
+  scan, as [{:ref <sha> :period <period-key-or-nil>} ...] in log order.
+  `from-ref`, when supplied, is prepended with :period nil (it is a
+  comparison base, not a sampled representative). Used by scan-history!
+  internally and by abc.tools.aozora-replay to plan prefetch/pre-validation."
+  [repo {:keys [zip-path from-ref to-ref sample-period]
+         :or {zip-path default-zip-path}}]
   (let [opts (cond-> {}
                from-ref (assoc :from-ref from-ref)
                to-ref (assoc :to-ref to-ref))
-        touching-refs (mapv #(.getName %)
-                            (sample-commits-by-period
-                             (abc-git/commits-touching-path repo zip-path opts)
-                             sample-period))]
+        sampled (sample-commits-by-period
+                 (abc-git/commits-touching-path repo zip-path opts)
+                 sample-period)
+        entries (mapv (fn [c] {:ref (.getName c)
+                               :period (when sample-period
+                                         (commit-period-key sample-period c))})
+                      sampled)]
     (if from-ref
-      (vec (cons from-ref touching-refs))
-      touching-refs)))
+      (vec (cons {:ref from-ref :period nil} entries))
+      entries)))
 
 (defn- pair-refs [refs max-pairs]
   (let [pairs (partition 2 1 refs)]
@@ -233,9 +244,10 @@
    "drift_participant_updates" (reduce + 0 (map :drift_participant_update_count pairs))})
 
 (defn scan-history!
-  "Audit adjacent upstream commits that changed the configured CSV ZIP path."
+  "Audit adjacent upstream commits that changed the configured CSV ZIP path.
+  An explicit `:refs` vector (already-planned ref strings) bypasses internal planning; pairing, reporting, and work-dir semantics are unchanged."
   [{:keys [aozora-repo from-ref to-ref zip-path work-dir max-pairs
-           drift-persons-dir sample-period]
+           drift-persons-dir sample-period refs]
     :or {zip-path default-zip-path
          work-dir default-work-dir}}]
   (when-not aozora-repo
@@ -247,7 +259,11 @@
         previous-corpus (io/file work-root "scan-previous-corpus")
         current-corpus (io/file work-root "scan-current-corpus")]
     (try
-      (let [refs (history-scan-refs repo zip-path from-ref to-ref sample-period)
+      (let [refs (or refs
+                     (mapv :ref (scan-plan repo {:zip-path zip-path
+                                                 :from-ref from-ref
+                                                 :to-ref to-ref
+                                                 :sample-period sample-period})))
             pairs-to-scan (pair-refs refs max-pairs)]
         (if (empty? pairs-to-scan)
           {:status "ok"
@@ -266,7 +282,12 @@
                 reports (loop [remaining pairs-to-scan
                                acc []]
                           (if-let [[previous-ref current-ref] (first remaining)]
-                            (let [current-ingest (ingest-ref! repo current-ref zip-path
+                            (let [_ (tel/log! :info
+                                              (str "history-scan pair "
+                                                   (inc (count acc)) "/"
+                                                   (count pairs-to-scan) " "
+                                                   previous-ref ".." current-ref))
+                                  current-ingest (ingest-ref! repo current-ref zip-path
                                                               current-zip current-corpus)
                                   report (pair-report previous-ref current-ref
                                                       previous-corpus current-corpus

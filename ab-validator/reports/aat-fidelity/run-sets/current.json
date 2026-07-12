@@ -53,12 +53,12 @@
       }
     },
     "ab-aozora": {
-      "aat_dir": "${AB_DB_ROOT}/aat-corpus/ab-aozora-phase4-c4-27772b1/aat/ab-aozora",
-      "run_descriptor": "${AB_DB_ROOT}/aat-corpus/ab-aozora-phase4-c4-27772b1/metadata.json",
+      "aat_dir": "${AB_DB_ROOT}/aat-corpus/ab-aozora-phase5-c5-004deaf/aat/ab-aozora",
+      "run_descriptor": "${AB_DB_ROOT}/aat-corpus/ab-aozora-phase5-c5-004deaf/metadata.json",
       "expected": {
         "adapter_id": "ab-aozora",
-        "adapter_version_contains": "27772b1b75c9ceeb0b724095bbbb47f774f3a275",
-        "content_hash": "sha256:a19a3829125dde95a94da0077d5197d5b5645d64b4101dc3fb7c599a41f5ff80"
+        "adapter_version_contains": "004deaf548f34a36abbc17d0f7a162df010a6292",
+        "content_hash": "sha256:153471c217fc734e96a7e9a641deb366a936a03c960945904ed1790d559c9055"
       }
     }
   }

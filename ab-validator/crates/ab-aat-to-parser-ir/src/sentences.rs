@@ -1101,7 +1101,7 @@ mod tests {
     fn ortho_bundle() -> crate::ortho_annotations::OrthoAnnotationsBundle {
         serde_json::from_value(json!({
             "work_id": "000000",
-            "work_content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "primary_text_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
             "coordinate_system": "decoded_utf8",
             "detector_id": "HeuristicV1",
             "annotations": [{

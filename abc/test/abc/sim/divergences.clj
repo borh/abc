@@ -16,7 +16,9 @@
    :D5 {:case "P13.empty-csv" :status :fixed
         :notes "fixed 2026-07-11: zip entry points throw ex-info {:zip-path :row-count} when the CSV has no data rows"}
    :D6 {:case "P13.non-zip-bytes" :status :fixed
-        :notes "fixed 2026-07-11: read-zip-csv wraps ZipException as ex-info {:zip-path} with cause chained"}})
+        :notes "fixed 2026-07-11: read-zip-csv wraps ZipException as ex-info {:zip-path} with cause chained"}
+   :D7 {:case "P16.3 pin-chain" :status :fixed
+        :notes "fixed 2026-07-12: ADR 0033 separates archive, bundle, member, and primary-text identity; build supplies bundle identity and snapshot validates roles independently"}})
 
 (defn- entry [id]
   (or (get table id)

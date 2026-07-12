@@ -1,5 +1,6 @@
 (ns abc.tools.aozora-history-audit-test
-  (:require [abc.sim.render :as sim-render]
+  (:require [abc.git :as abc-git]
+            [abc.sim.render :as sim-render]
             [abc.tools.aozora-history-audit :as audit]
             [abc.tools.files :as files]
             [abc.tools.json :as json]
@@ -472,3 +473,37 @@
           (.close git)
           (delete-recursive repo-dir)
           (delete-recursive work-dir))))))
+
+(deftest scan-plan-and-refs-override-test
+  (testing "scan-plan returns sampled {:ref :period} entries; scan-history! :refs reproduces internal planning"
+    (let [repo-dir (temp-dir "abc-audit-scan-plan")
+          work-dir (temp-dir "abc-audit-scan-plan-work")
+          work-dir-2 (temp-dir "abc-audit-scan-plan-work2")
+          git (sim-render/init-repo! repo-dir)
+          state (fn [family] (sim-render/csv->zip-bytes
+                              (csv-text [(row {"姓" family})])))
+          c0 (sim-render/commit-zip-at! git repo-dir (state "壱") "s0" "2023-01-01T00:00:00Z")
+          c1 (sim-render/commit-zip-at! git repo-dir (state "弐") "s1" "2023-06-01T00:00:00Z")
+          c2 (sim-render/commit-zip-at! git repo-dir (state "参") "s2" "2024-06-01T00:00:00Z")]
+      (try
+        (let [repo (abc-git/load-git-repo (str repo-dir))
+              plan (try (audit/scan-plan repo {:sample-period "year"})
+                        (finally (.close repo)))]
+          ;; year sampling: 2023 → c1 (last in log order), 2024 → c2
+          (is (= [{:ref (.getName c1) :period "2023"}
+                  {:ref (.getName c2) :period "2024"}]
+                 plan))
+          (let [internal (audit/scan-history! {:aozora-repo (str repo-dir)
+                                               :from-ref (.getName c0)
+                                               :sample-period "year"
+                                               :work-dir (str work-dir)})
+                explicit (audit/scan-history! {:aozora-repo (str repo-dir)
+                                               :refs (into [(.getName c0)] (mapv :ref plan))
+                                               :work-dir (str work-dir-2)})]
+            (is (= (mapv (juxt :previous_ref :current_ref) (:pairs internal))
+                   (mapv (juxt :previous_ref :current_ref) (:pairs explicit))))))
+        (finally
+          (.close git)
+          (delete-recursive repo-dir)
+          (delete-recursive work-dir)
+          (delete-recursive work-dir-2))))))

@@ -8,7 +8,7 @@
 
 (def ^:private cross-project-schema-versions
   {"schemas/annotation-output.schema.json" "0.1.0"
-   "schemas/parser-ir.schema.json" "0.6.0"
+   "schemas/parser-ir.schema.json" "0.7.0"
    "schemas/aat-parser-ir-divergence.schema.json" "0.3.0"
    "schemas/aat-parser-ir-mapping.schema.json" "0.2.4"
    "schemas/alignment-probe-v1.schema.json" "0.1.0"
@@ -31,6 +31,13 @@
     (is (= expected-version
            (get (files/read-json path) "version"))
         (str path " must expose the cross-repo schema contract version"))))
+
+(deftest source-bundle-schema-contract-test
+  (let [source-bundle-schema (schema/read-schema
+                              "schemas/source-bundle.schema.json")]
+    (is (= "https://w3id.org/abc/schemas/source-bundle.schema.json"
+           (get source-bundle-schema "$id")))
+    (is (= false (get source-bundle-schema "additionalProperties")))))
 
 (deftest schema-hash-test
   (testing "hashes are over parsed canonical JSON values, not source bytes"

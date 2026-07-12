@@ -116,8 +116,8 @@ impl OffsetMap {
             if dst < e.dst_end {
                 return Ok(i);
             }
-            delta += (e.src_end - e.src_start).cast_signed()
-                - (e.dst_end - e.dst_start).cast_signed();
+            delta +=
+                (e.src_end - e.src_start).cast_signed() - (e.dst_end - e.dst_start).cast_signed();
         }
         Err(delta)
     }
@@ -155,7 +155,10 @@ pub struct SanitizeMaps {
 impl SanitizeMaps {
     #[must_use]
     pub fn to_source_offset(&self, dst: usize) -> usize {
-        self.steps.iter().rev().fold(dst, |o, m| m.to_source_offset(o))
+        self.steps
+            .iter()
+            .rev()
+            .fold(dst, |o, m| m.to_source_offset(o))
     }
 
     #[must_use]
@@ -300,21 +303,19 @@ pub fn sanitize_mapped(source: &str) -> SanitizeMappedOutput<'_> {
 
     // Step 4: accent decomposition inside tortoiseshell brackets.
     let mut accent_diagnostics: Vec<Diagnostic> = Vec::new();
-    let text: Cow<'_, str> =
-        if memmem::find(rule_isolated.as_bytes(), TORTOISE_OPEN_BYTES).is_some() {
-            let owned = rule_isolated.into_owned();
-            let mut edits = Vec::new();
-            let out = rewrite_accent_spans_collecting_core(
-                &owned,
-                &mut accent_diagnostics,
-                Some(&mut edits),
-            );
-            steps.push(OffsetMap { edits });
-            Cow::Owned(out)
-        } else {
-            steps.push(OffsetMap::default());
-            rule_isolated
-        };
+    let text: Cow<'_, str> = if memmem::find(rule_isolated.as_bytes(), TORTOISE_OPEN_BYTES)
+        .is_some()
+    {
+        let owned = rule_isolated.into_owned();
+        let mut edits = Vec::new();
+        let out =
+            rewrite_accent_spans_collecting_core(&owned, &mut accent_diagnostics, Some(&mut edits));
+        steps.push(OffsetMap { edits });
+        Cow::Owned(out)
+    } else {
+        steps.push(OffsetMap::default());
+        rule_isolated
+    };
 
     // Step 5: PUA sentinel neutralization — byte-length-preserving, so
     // this step never contributes a non-identity edit.
@@ -1302,7 +1303,11 @@ mod tests {
                 out.maps.to_source_end(i + ch.len_utf8()),
             );
             assert_eq!(e - s, ch.len_utf8(), "unedited char changed width at {i}");
-            assert_eq!(&src[s..e], &dst[i..i + ch.len_utf8()], "content drift at {i}");
+            assert_eq!(
+                &src[s..e],
+                &dst[i..i + ch.len_utf8()],
+                "content drift at {i}"
+            );
         }
         // Pin the traced rewrite: the `\n` produced from the lone `\r`
         // (dst byte 33, between 後 and 尾) IS an edit and maps to the

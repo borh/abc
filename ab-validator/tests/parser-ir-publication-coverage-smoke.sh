@@ -494,11 +494,11 @@ jq -e '.source_region_contract.verdict == "SOURCE_REGION_CONTRACT_CONFIRMED_BY_A
 jq -e '.source_region_contract.schema_id == "https://w3id.org/abc/schemas/source-region-coverage.schema.json"' "$summary_json" >/dev/null
 jq -e '.source_region_contract.schema_version == "aozora-source-region-coverage-v1"' "$summary_json" >/dev/null
 jq -e '.source_region_contract.policy_id == "https://w3id.org/abc/policies/source-region-publication-v0"' "$summary_json" >/dev/null
-jq -e '.source_region_contract.policy_version == "0.2.0"' "$summary_json" >/dev/null
+jq -e '.source_region_contract.policy_version == "0.3.0"' "$summary_json" >/dev/null
 jq -e '.source_region_contract.policy_classes | index("letter_address_origin")' "$summary_json" >/dev/null
 jq -e '.source_region_contract.missing_policy_classes == []' "$summary_json" >/dev/null
 jq -e '.source_region_contract.invalid_measurement_status_classes == []' "$summary_json" >/dev/null
-jq -e '.source_region_contract.missing_measurement_split_classes == ["colophon_metadata", "terminal_provenance"]' "$summary_json" >/dev/null
+jq -e '.source_region_contract.missing_measurement_split_classes == []' "$summary_json" >/dev/null
 jq -e '.source_region_contract.manifest_sidecar_role_present == true' "$summary_json" >/dev/null
 jq -e '.parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_COMPLETE"' "$summary_json" >/dev/null
 jq -e '.plaintext_policy.metadata_policy == "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance"' "$summary_json" >/dev/null
@@ -622,6 +622,11 @@ python "$repo_root/reports/parser-ir/publication-coverage.py" \
   --report-md "$candidate_report_md"
 
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$candidate_summary_json" >/dev/null
+# Task 7 (2026-07-12): ABC preservation contract rotated 0.2.0 -> 0.3.0
+# (additive construct enum only); pin regression coverage for both the
+# version match and the trusted-path match that gate CONFIRMED_BY_ABC_INTEGRATION.
+jq -e '.custom_contract.schema_version == "0.3.0"' "$candidate_summary_json" >/dev/null
+jq -e '.custom_contract.trusted_schema_path_match == true' "$candidate_summary_json" >/dev/null
 jq -e '.source_region_contract.verdict == "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$candidate_summary_json" >/dev/null
 jq -e '.tei_profile_contract.verdict == "TEI_PROFILE_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$candidate_summary_json" >/dev/null
 jq -e '.publication_bundle_contract.verdict == "PUBLICATION_BUNDLE_CONTRACT_CONFIRMED_BY_ABC_VALIDATION"' "$candidate_summary_json" >/dev/null

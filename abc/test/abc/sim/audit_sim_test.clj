@@ -11,31 +11,6 @@
             [clojure.test :refer [deftest is testing]]
             [clojure.test.check.properties :as prop]))
 
-(defn commit-history!
-  "Commit each model state as a ZIP-changing commit at the given instants
-  (same count as states). Returns the vector of RevCommits."
-  [git root states instants]
-  (mapv (fn [m instant i]
-          (render/commit-zip-at!
-           git root
-           (render/csv->zip-bytes (render/rows->csv (render/model->rows m)))
-           (str "state " i) instant))
-        states instants (range)))
-
-(defn- monotone-instants [n]
-  (mapv #(format "2024-%02d-01T00:00:00Z" (inc %)) (range n)))
-
-(defmacro with-repo [[git-sym root-sym work-sym] & body]
-  `(let [~root-sym (render/temp-dir "sim-repo")
-         ~work-sym (render/temp-dir "sim-work")]
-     (try
-       (let [~git-sym (render/init-repo! ~root-sym)]
-         (try ~@body
-              (finally (.close ~git-sym))))
-       (finally
-         (render/delete-tree! ~root-sym)
-         (render/delete-tree! ~work-sym)))))
-
 ;; P10.audit-vs-scan
 (deftest p10-audit-vs-scan-sim-test
   (harness/check! "P10.audit-vs-scan" 10
@@ -43,8 +18,8 @@
                                                          :forced :clean-split})]
                                 (let [{:keys [states]} (model/fold-history hist)
                                       two [(first states) (peek states)]]
-                                  (with-repo [git root work]
-                                    (let [[c1 c2] (commit-history! git root two (monotone-instants 2))
+                                  (render/with-repo [git root work]
+                                    (let [[c1 c2] (render/commit-history! git root two (render/monotone-instants 2))
                                           a (audit/audit! {:aozora-repo (str root)
                                                            :previous-ref (.getName c1)
                                                            :current-ref (.getName c2)
@@ -64,9 +39,9 @@
         m1 (:model (model/apply-event m0 {:event/type :edit-person :pid "000002"
                                           :field :family_name :value "改"}))
         m2 (:model (model/apply-event m1 split))]
-    (with-repo [git root work]
-      (let [[c0 c1] (commit-history! git root [m0 m1]
-                                     ["2024-01-01T00:00:00Z" "2024-02-01T00:00:00Z"])
+    (render/with-repo [git root work]
+      (let [[c0 c1] (render/commit-history! git root [m0 m1]
+                                            ["2024-01-01T00:00:00Z" "2024-02-01T00:00:00Z"])
             ;; unrelated commit that must be ignored by pairing
             _ (render/commit-file-at! git root "README.md" "noise" "noise"
                                       "2024-02-15T00:00:00Z")
@@ -77,7 +52,7 @@
                git root
                (render/csv->zip-bytes (render/rows->csv (render/model->rows m1)))
                "same bytes" "2024-02-20T00:00:00Z")
-            [c2] (commit-history! git root [m2] ["2024-03-01T00:00:00Z"])
+            [c2] (render/commit-history! git root [m2] ["2024-03-01T00:00:00Z"])
             s (audit/scan-history! {:aozora-repo (str root)
                                     :from-ref (.getName c0)
                                     :work-dir (str work)})]
@@ -98,8 +73,8 @@
         ;; years: 2023, 2023, 2024, 2025 → representatives: idx 1, 2, 3
         instants ["2023-01-01T00:00:00Z" "2023-12-01T00:00:00Z"
                   "2024-06-01T00:00:00Z" "2025-06-01T00:00:00Z"]]
-    (with-repo [git root work]
-      (let [cs (commit-history! git root states instants)
+    (render/with-repo [git root work]
+      (let [cs (render/commit-history! git root states instants)
             s (audit/scan-history! {:aozora-repo (str root)
                                     :from-ref (.getName (first cs))
                                     :sample-period "year"
@@ -120,8 +95,8 @@
         ;; non-contiguous log segments
         instants ["2023-01-01T00:00:00Z" "2024-03-01T00:00:00Z"
                   "2023-06-01T00:00:00Z" "2024-09-01T00:00:00Z"]]
-    (with-repo [git root work]
-      (let [cs (commit-history! git root [m0 s1 s2 s3] instants)
+    (render/with-repo [git root work]
+      (let [cs (render/commit-history! git root [m0 s1 s2 s3] instants)
             s (audit/scan-history! {:aozora-repo (str root)
                                     :from-ref (.getName (first cs))
                                     :sample-period "year"
@@ -149,8 +124,8 @@
                                                :field :family_name :value "改"}))]
         instants ["2023-06-01T00:00:00Z" "2024-02-01T00:00:00Z"
                   "2024-06-01T00:00:00Z" "2024-12-01T00:00:00Z"]]
-    (with-repo [git root work]
-      (let [cs (commit-history! git root states instants)
+    (render/with-repo [git root work]
+      (let [cs (render/commit-history! git root states instants)
             s (audit/scan-history! {:aozora-repo (str root)
                                     :from-ref (.getName (first cs))
                                     :sample-period "year"
@@ -166,7 +141,7 @@
   Returns {:result r} or {:threw ex}."
   [current-bytes]
   (let [m (model/bootstrap 2)]
-    (with-repo [git root work]
+    (render/with-repo [git root work]
       (let [clean (render/csv->zip-bytes (render/rows->csv (render/model->rows m)))
             c1 (render/commit-zip-at! git root clean "clean" "2024-01-01T00:00:00Z")
             c2 (render/commit-file-at! git root render/zip-path current-bytes
@@ -176,21 +151,6 @@
                                      :current-ref (.getName c2)
                                      :work-dir (str work)})}
              (catch Exception e {:threw e}))))))
-
-(defn- clean-ex-info? [e required-keys]
-  (and (instance? clojure.lang.ExceptionInfo e)
-       (every? #(contains? (ex-data e) %) required-keys)))
-
-(defn- forbidden-throw?
-  "True when the SUT escaped with an exception class the failure taxonomy
-  forbids outright (spec §Failure Taxonomy) — asserted even for
-  divergence-gated cases so a wrong-behavior regression cannot hide
-  behind an open divergence."
-  [e]
-  (or (instance? NullPointerException e)
-      (instance? AssertionError e)
-      (instance? StackOverflowError e)
-      (instance? java.util.zip.ZipException e)))
 
 ;; P13.ragged-row — D3: row-level fault must not abort; desired = work
 ;; skipped. Both directions of raggedness get a defined outcome.
@@ -228,23 +188,23 @@
   (doseq [[label csv] [["empty" ""]
                        ["header-only" (render/rows->csv [])]]]
     (let [{:keys [threw]} (audit-two! (render/csv->zip-bytes csv))]
-      (is (not (forbidden-throw? threw)) (str "P13.empty-csv/" label))
+      (is (not (harness/forbidden-throw? threw)) (str "P13.empty-csv/" label))
       (div/expected-failure :D5 (str "P13.empty-csv/" label)
-                            (clean-ex-info? threw [:zip-path])))))
+                            (harness/clean-ex-info? threw [:zip-path])))))
 
 ;; P13.no-csv-entry — current behavior matches spec: ex-info {:zip-path}.
 (deftest p13-no-csv-entry-sim-test
   (let [{:keys [threw]} (audit-two! (render/csv->zip-bytes "x" {:no-entry? true}))]
-    (is (clean-ex-info? threw [:zip-path])
+    (is (harness/clean-ex-info? threw [:zip-path])
         (str "expected ex-info with :zip-path, got: " (pr-str threw)))))
 
 ;; P13.non-zip-bytes — D6 fixed: wrapped ex-info, cause chained.
 (deftest p13-non-zip-bytes-sim-test
   (let [{:keys [threw]} (audit-two! "this is not a zip file")]
     (is (some? threw) "non-ZIP bytes must not produce a normal-looking report")
-    (is (not (forbidden-throw? threw)) "P13.non-zip-bytes")
+    (is (not (harness/forbidden-throw? threw)) "P13.non-zip-bytes")
     (div/expected-failure :D6 "P13.non-zip-bytes"
-                          (clean-ex-info? threw [:zip-path]))))
+                          (harness/clean-ex-info? threw [:zip-path]))))
 
 ;; P14.rerun — a reused --work-dir yields the same semantic report as a
 ;; fresh one.
@@ -252,9 +212,9 @@
   (let [m0 (model/bootstrap 2)
         m1 (:model (model/apply-event m0 {:event/type :edit-person :pid "000001"
                                           :field :family_name :value "改"}))]
-    (with-repo [git root work]
-      (let [[c1 c2] (commit-history! git root [m0 m1]
-                                     ["2024-01-01T00:00:00Z" "2024-02-01T00:00:00Z"])
+    (render/with-repo [git root work]
+      (let [[c1 c2] (render/commit-history! git root [m0 m1]
+                                            ["2024-01-01T00:00:00Z" "2024-02-01T00:00:00Z"])
             run! (fn [w] (oracle/semantic-report
                           (audit/audit! {:aozora-repo (str root)
                                          :previous-ref (.getName c1)

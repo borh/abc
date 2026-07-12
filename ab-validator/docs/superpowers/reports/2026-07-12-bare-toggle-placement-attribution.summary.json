@@ -1,67 +1,64 @@
 {
- "schema_version": "bare-toggle-placement-v2",
+ "schema_version": "bare-toggle-placement-v3",
  "corpus": "/nix/store/sdr1imwrxfldvlwzs2d2fhs11vxncgpx-aozorabunko-corpus",
  "reader": {
-  "provenance": "reports/source-regions/terminal-provenance-split.py (discover_entries + content-sniffing dispatch + stdlib/local-header zip reading), imported; see module docstring",
-  "decoding": "shift_jis/replace"
+  "provenance": "reports/lib/corpus_reader.py (shared contract; windows-31j member names, local-header bypass, tolerant 7zz)"
  },
- "entries_expected": 17886,
- "entries_scanned": 17886,
- "entries_excluded": [
+ "candidates_discovered": 17895,
+ "candidate_classes": {
+  "work": 17886,
+  "non_work": 5,
+  "recovered_extra": 2,
+  "unreadable": 2
+ },
+ "works_expected": 17886,
+ "works_scanned": 17886,
+ "non_work_archives": [
   {
-   "status": "excluded",
-   "label": "cards/000050/files/57476_etc_58134.zip",
-   "reason": "zip_no_text_member"
+   "rel": "cards/000050/files/57476_etc_58134.zip",
+   "detail": "zip_no_text_member"
   },
   {
-   "status": "excluded",
-   "label": "cards/000119/files/46429_ruby_26539.txt",
-   "reason": "zip_unreadable_both_paths"
+   "rel": "cards/000148/files/769_ttz.zip",
+   "detail": "zip_no_text_member"
   },
   {
-   "status": "excluded",
-   "label": "cards/000148/files/769_ttz.zip",
-   "reason": "zip_no_text_member"
+   "rel": "cards/000879/files/128_ttz.zip",
+   "detail": "zip_no_text_member"
   },
   {
-   "status": "excluded",
-   "label": "cards/000879/files/128_ttz.zip",
-   "reason": "zip_no_text_member"
+   "rel": "cards/001021/files/49355_etc_58116.zip",
+   "detail": "zip_no_text_member"
   },
   {
-   "status": "excluded",
-   "label": "cards/001021/files/49355_etc_58116.zip",
-   "reason": "zip_no_text_member"
-  },
-  {
-   "status": "excluded",
-   "label": "cards/001030/files/4812_ruby_14383.txt",
-   "reason": "zip_unreadable_both_paths"
-  },
-  {
-   "status": "excluded",
-   "label": "cards/001154/files/chihobunkano_shinkensetsu.zip",
-   "reason": "zip_unreadable_both_paths"
-  },
-  {
-   "status": "excluded",
-   "label": "cards/001248/files/46751_etc_57109.zip",
-   "reason": "zip_no_text_member"
-  },
-  {
-   "status": "excluded",
-   "label": "cards/001562/files/56151_ruby_60063.zip",
-   "reason": "zip_unreadable_both_paths"
+   "rel": "cards/001248/files/46751_etc_57109.zip",
+   "detail": "zip_no_text_member"
   }
  ],
- "recovered_zips": [
+ "recovered_extra": [
   {
-   "label": "cards/001393/files/50710_ruby_36965.zip::fushigino_kunino_alice_musical.txt",
-   "sha256": "e9761e5674af586fcee6a0f5976a898edc523ea15ca61a59906ca88807b90b0f"
+   "rel": "cards/000119/files/46429_ruby_26539.txt",
+   "label": "cards/000119/files/46429_ruby_26539.txt::kansho.txt",
+   "sha256": "d8d394ecce5af4d5788baf0c3839e240ac9bb39fc166441dcd07e0ec3a9b8471",
+   "reader": "zip_7zz_tolerant",
+   "touched": false
   },
   {
-   "label": "cards/001505/files/58100_txt_60357.zip::chobihige_samuel_no_hanashi.txt",
-   "sha256": "244a23852b05740b66ffc59ab6733f08666825fe62dee39f1d3add801acbc35b"
+   "rel": "cards/001030/files/4812_ruby_14383.txt",
+   "label": "cards/001030/files/4812_ruby_14383.txt::utukusii_mura.txt",
+   "sha256": "5ec3e02a325b6acbf08cd2c0544aedb52ba504bfc43dd54e81813c17bb0aa32d",
+   "reader": "zip_7zz_tolerant",
+   "touched": false
+  }
+ ],
+ "unreadable": [
+  {
+   "rel": "cards/001154/files/chihobunkano_shinkensetsu.zip",
+   "detail": "BadZipFile: File is not a zip file"
+  },
+  {
+   "rel": "cards/001562/files/56151_ruby_60063.zip",
+   "detail": "BadZipFile: File is not a zip file"
   }
  ],
  "grammar_totals": {
@@ -88,6 +85,31 @@
   "invalid_lines": 11,
   "mixed_lines": 0,
   "total_markers": 3238
+ },
+ "recovered_extra_grammar_totals": {
+  "adopted_pairs": {
+   "yokogumi": 0,
+   "keigakomi": 0
+  },
+  "orphan_open": {
+   "yokogumi": 0,
+   "keigakomi": 0
+  },
+  "orphan_close": {
+   "yokogumi": 0,
+   "keigakomi": 0
+  },
+  "reopen": {
+   "yokogumi": 0,
+   "keigakomi": 0
+  },
+  "interleave_events": 0,
+  "proper_nestings": 0,
+  "rollback_markers": 0,
+  "lines_with_markers": 0,
+  "invalid_lines": 0,
+  "mixed_lines": 0,
+  "total_markers": 0
  },
  "works_touched": 344,
  "works_with_invalid_lines": 11,
@@ -1253,13 +1275,16 @@
    }
   ]
  },
+ "recovered_extra_form_frequency": {
+  "yokogumi": [],
+  "keigakomi": []
+ },
  "touched_entries": [
   {
    "work_id": "000019_59374",
    "label": "cards/000019/files/59374_ruby_71620.zip::kakekko.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e86af1154ef74fcee242c59eec681b6fd05cd92a3c68864086a947e279094495",
    "grammar": {
     "adopted_pairs": {
@@ -1297,8 +1322,7 @@
    "work_id": "000026_55717",
    "label": "cards/000026/files/55717_ruby_56261.zip::deborudo_barumoru.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "088c9fbce43758501973e3ea53f62ebbd8b33a72bbbfaec2e33eed5922abcb95",
    "grammar": {
     "adopted_pairs": {
@@ -1336,8 +1360,7 @@
    "work_id": "000026_55732",
    "label": "cards/000026/files/55732_txt_57369.zip::shiron.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "742d8e1ad977a3f666d07c6df180bf0be3ccc4fddd43f919182bb4e4fa799c08",
    "grammar": {
     "adopted_pairs": {
@@ -1375,8 +1398,7 @@
    "work_id": "000026_55738",
    "label": "cards/000026/files/55738_txt_57360.zip::miyazawa_kenjino_sekai.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "58d87ba1d298597fc9938d243443b2860290d48489a4fb0b923eba8883acc41e",
    "grammar": {
     "adopted_pairs": {
@@ -1414,8 +1436,7 @@
    "work_id": "000034_519",
    "label": "cards/000034/files/519_ruby_2965.zip::koseieno_saidaiibutsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "35546239d81fe17291de00f1ffe26035639f6425653950125300425741d64f6e",
    "grammar": {
     "adopted_pairs": {
@@ -1456,8 +1477,7 @@
    "work_id": "000034_55507",
    "label": "cards/000034/files/55507_ruby_72607.zip::kirisuto_shintono_nagusame.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b8a9f1af3a620514cc4906189759319918994053d5eaa2c73061dc03d9cae99f",
    "grammar": {
     "adopted_pairs": {
@@ -1496,8 +1516,7 @@
    "work_id": "000035_2262",
    "label": "cards/000035/files/2262_txt_34628.zip::sarumen_kanja_kyu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "22066fce1e7041dc1c8052a4ae40becc1a3714a6ebe4dd95844620be7ad6f512",
    "grammar": {
     "adopted_pairs": {
@@ -1537,8 +1556,7 @@
    "work_id": "000035_2263",
    "label": "cards/000035/files/2263_ruby_2917.zip::sarumen_kanjya_shin.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "3caf6956fd0580ed5c1458f3f16cfd52c67140a7f91bf20059c92923d9c32ded",
    "grammar": {
     "adopted_pairs": {
@@ -1578,8 +1596,7 @@
    "work_id": "000035_2288",
    "label": "cards/000035/files/2288_ruby_33103.zip::ha.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e88f6ee6c899e800dcb30f9cbc4d6ccba7d5c73bc9cae4ab8dbdccadfe6bea68",
    "grammar": {
     "adopted_pairs": {
@@ -1617,8 +1634,7 @@
    "work_id": "000038_42202",
    "label": "cards/000038/files/42202_ruby_48058.zip::koharu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "67c480d3dc6ffecbcb969732de739e94052b6cc41547d12964712a1f2da9cb67",
    "grammar": {
     "adopted_pairs": {
@@ -1657,8 +1673,7 @@
    "work_id": "000042_24392",
    "label": "cards/000042/files/24392_ruby_13261.zip::ikyo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "bfb8195c6b3243182e9ac9d6de416a48a3e680882c78efb2cdd3a4e75935d4a4",
    "grammar": {
     "adopted_pairs": {
@@ -1696,8 +1711,7 @@
    "work_id": "000042_24401",
    "label": "cards/000042/files/24401_ruby_13373.zip::berlin_daigaku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "0238e2d637261c3c136de3bf1b124e50d9796d8fa1d52d19fa47195e5e8d4c08",
    "grammar": {
     "adopted_pairs": {
@@ -1736,8 +1750,7 @@
    "work_id": "000042_42768",
    "label": "cards/000042/files/42768_ruby_23742.zip::kotobano_fushigi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "101af18184599b2a2cc0495859e101e0415ae19e1b13cb04e84ba140751a9391",
    "grammar": {
     "adopted_pairs": {
@@ -1778,8 +1791,7 @@
    "work_id": "000042_43083",
    "label": "cards/000042/files/43083_ruby_23754.zip::lord_rayleigh.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "38bd871477f829edcd8051194fc33ddb2c7c6048646d74726efc08e53955a050",
    "grammar": {
     "adopted_pairs": {
@@ -1824,8 +1836,7 @@
    "work_id": "000061_377",
    "label": "cards/000061/files/377_ruby_2753.zip::kokugo_on'inno_hensen.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e2b7d787720c1a669244b4637b70cd749192bdddb45a5722127009745824eca1",
    "grammar": {
     "adopted_pairs": {
@@ -1863,8 +1874,7 @@
    "work_id": "000063_385",
    "label": "cards/000063/files/385_ruby_2182.zip::ichienbon.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "af788a5c9560e8121594db7931fc99024569acc3cae244e4fdf36dbc3a5ce415",
    "grammar": {
     "adopted_pairs": {
@@ -1902,8 +1912,7 @@
    "work_id": "000081_45473",
    "label": "cards/000081/files/45473_ruby_35666.zip::mijikai_kipen.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "92c892cc283cd395eb8480535cd29b4f6728e197694dcf7e437ece3327f64a50",
    "grammar": {
     "adopted_pairs": {
@@ -1942,8 +1951,7 @@
    "work_id": "000081_60685",
    "label": "cards/000081/files/60685_ruby_74028.zip::1931nendo_kyokuto_bijiterian_taikai_kenbunroku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4ba1ec30d345811dea1f10b55a8d6a19498e2641731e5dd13070d0b83934f773",
    "grammar": {
     "adopted_pairs": {
@@ -1982,8 +1990,7 @@
    "work_id": "000083_59353",
    "label": "cards/000083/files/59353_ruby_72282.zip::tzschallappoko.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "7a07b652819b2f98f044394c06ef510c421077e17645a5504296e229065a9105",
    "grammar": {
     "adopted_pairs": {
@@ -2021,8 +2028,7 @@
    "work_id": "000093_2536",
    "label": "cards/000093/files/2536_ruby_20126.zip::04hebi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e5c999bda9bde647e0c544f34aaa7417cf122abcf01e44f3a57c9576184b7bce",
    "grammar": {
     "adopted_pairs": {
@@ -2060,8 +2066,7 @@
    "work_id": "000093_2537",
    "label": "cards/000093/files/2537_ruby_21533.zip::05uma.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4ee9d38218524742cc1422b839a813c4a2eda9e96f510da8e33b0316292c831f",
    "grammar": {
     "adopted_pairs": {
@@ -2100,8 +2105,7 @@
    "work_id": "000093_52935",
    "label": "cards/000093/files/52935_ruby_61312.zip::shioni_kansuru_meishin.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "286f91930dd113a62c797aa1d148a2b69a22ee36a1e2d29ea3e54a72cedb7b39",
    "grammar": {
     "adopted_pairs": {
@@ -2140,8 +2144,7 @@
    "work_id": "000093_52936",
    "label": "cards/000093/files/52936_ruby_61313.zip::sogenni_tsuite.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "c7395627c42a79781c6e7035a30d32cb999c22822244f3b26a996bac05493488",
    "grammar": {
     "adopted_pairs": {
@@ -2186,8 +2189,7 @@
    "work_id": "000093_52937",
    "label": "cards/000093/files/52937_ruby_63228.zip::hasuno_hana_hiraku_oto_kikukoto.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b46cbcd988332645c1df3249a9980009e57d512b644726495386d0141b0437d8",
    "grammar": {
     "adopted_pairs": {
@@ -2232,8 +2234,7 @@
    "work_id": "000093_52939",
    "label": "cards/000093/files/52939_ruby_63229.zip::perukokuni_hyochakuseru_nihonjin.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b4e3418942ba6b2bd26aa08241fb1b889c6979f3f89d7010fb9c4c5b75fb1c9c",
    "grammar": {
     "adopted_pairs": {
@@ -2272,8 +2273,7 @@
    "work_id": "000094_2523",
    "label": "cards/000094/files/2523_ruby_19896.zip::william_wilson.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a44a717703563c116237de4b4bb99bf3ae2556cb65888e6ee12f8b55bb28c17c",
    "grammar": {
     "adopted_pairs": {
@@ -2311,8 +2311,7 @@
    "work_id": "000094_2524",
    "label": "cards/000094/files/2524_ruby_19895.zip::maelstrom_no_senka.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "025f9a6d611cb51f325fc6aecd47cf729e6bd40de40452b36deca3103dda1905",
    "grammar": {
     "adopted_pairs": {
@@ -2350,8 +2349,7 @@
    "work_id": "000094_2525",
    "label": "cards/000094/files/2525_ruby_15769.zip::koganemushi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "0b64bd909762d24d8728f3c5a99799fb5029dd2eabaff67e933d9509e1c4eb18",
    "grammar": {
     "adopted_pairs": {
@@ -2396,8 +2394,7 @@
    "work_id": "000094_2526",
    "label": "cards/000094/files/2526_ruby_17669.zip::hayasugiru_maiso.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "5b923b499954347a9395821f57a32e801c56e179f9cf6d57e10d0e5a1274205b",
    "grammar": {
     "adopted_pairs": {
@@ -2437,8 +2434,7 @@
    "work_id": "000094_42338",
    "label": "cards/000094/files/42338_ruby_15461.zip::nusumareta_tegami.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e656d92cc2351d376641e67c37294713531d6c7ffb5a2cb688ad484b16d88330",
    "grammar": {
     "adopted_pairs": {
@@ -2485,8 +2481,7 @@
    "work_id": "000094_56515",
    "label": "cards/000094/files/56515_ruby_69926.zip::shimeshi_awase.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "10030cead181fcc507a1d4fb6d3d9a31a003b11108a0a1bf09442519f02e9d83",
    "grammar": {
     "adopted_pairs": {
@@ -2528,8 +2523,7 @@
    "work_id": "000094_56517",
    "label": "cards/000094/files/56517_ruby_74169.zip::pesuto_o.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d8c525daf1ff5efe91ae5dec171411a3ac4f3f6fbabcf948cef0df8810d0c59b",
    "grammar": {
     "adopted_pairs": {
@@ -2570,8 +2564,7 @@
    "work_id": "000094_56535",
    "label": "cards/000094/files/56535_ruby_69925.zip::gunshuno_hito.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "26840b9af0b03f9a98e04306a7076bdde09100d057d23bae0dd08ba4f38258eb",
    "grammar": {
     "adopted_pairs": {
@@ -2616,8 +2609,7 @@
    "work_id": "000094_56536",
    "label": "cards/000094/files/56536_ruby_69264.zip::shotono_akuma.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "2d027341e30d5192543d232052d038e5540e302f6b780eb14a16bea00a74aa50",
    "grammar": {
     "adopted_pairs": {
@@ -2655,8 +2647,7 @@
    "work_id": "000094_605",
    "label": "cards/000094/files/605_ruby_20933.zip::morgue.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "52e92085cfb70f6b4b1fc9faac4b6fa1384f08fc51923e980c636f5fbe7e819e",
    "grammar": {
     "adopted_pairs": {
@@ -2700,8 +2691,7 @@
    "work_id": "000094_882",
    "label": "cards/000094/files/882_ruby_20929.zip::asshakeno_hokai.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a4e1808302766a30e659337bb695f028044216454080e5bd247030d75736ca9f",
    "grammar": {
     "adopted_pairs": {
@@ -2742,8 +2732,7 @@
    "work_id": "000106_2415",
    "label": "cards/000106/files/2415_ruby_6159.zip::omoide.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "1f44f6d18f421c92bc3a8eaf58872cf8b29b739988b491b7635373fbcca68503",
    "grammar": {
     "adopted_pairs": {
@@ -2788,8 +2777,7 @@
    "work_id": "000106_52347",
    "label": "cards/000106/files/52347_ruby_41539.zip::haruno_anji.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "642ed58415ff8e0a1f15dcdbeba298bf8c42c416c27ac3e9e5164b644b3e976c",
    "grammar": {
     "adopted_pairs": {
@@ -2827,8 +2815,7 @@
    "work_id": "000106_53493",
    "label": "cards/000106/files/53493_ruby_49073.zip::fureppu_torippu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "af5c7db835b75e84da90fe710d5e47c5e147a1848fb8e635c7b6196ac3172370",
    "grammar": {
     "adopted_pairs": {
@@ -2867,8 +2854,7 @@
    "work_id": "000106_55753",
    "label": "cards/000106/files/55753_ruby_60778.zip::yukito_hanabi_yogen.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "91e1501dffd7bc8cf5207403f1d7f4b2b15b1c6c08a2c3a499335f6e44632983",
    "grammar": {
     "adopted_pairs": {
@@ -2912,8 +2898,7 @@
    "work_id": "000106_55773",
    "label": "cards/000106/files/55773_txt_60777.zip::yukito_hanabi_kenji.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "28c164263bf548fc616fd6f0f79e0120398a8743b748cb272e7372fa5c2f2ced",
    "grammar": {
     "adopted_pairs": {
@@ -2953,8 +2938,7 @@
    "work_id": "000106_56857",
    "label": "cards/000106/files/56857_ruby_54476.zip::kirino_hana.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "3ebb25e69387070f00a142ec71301a1d58f8147654333169af45a2d7deb9bfcb",
    "grammar": {
     "adopted_pairs": {
@@ -2994,8 +2978,7 @@
    "work_id": "000113_4325",
    "label": "cards/000113/files/4325_ruby_67522.zip::45kaitenno_natsu01.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d6318a104015ed35c08bcb000ef15223b725ff6c0ef8b1d5b20054dfa38a521e",
    "grammar": {
     "adopted_pairs": {
@@ -3035,8 +3018,7 @@
    "work_id": "000113_4326",
    "label": "cards/000113/files/4326_ruby_67508.zip::45kaitenno_natsu02.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "af98465dd90ffb911df87503b5771cfb3df99fedf8184f1126c14d2f9594ddab",
    "grammar": {
     "adopted_pairs": {
@@ -3074,8 +3056,7 @@
    "work_id": "000113_4327",
    "label": "cards/000113/files/4327_ruby_67507.zip::45kaitenno_natsu03.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "dbb5f151b9bb287ab56af2a3bda842d5bb2337925bdf2684d0982f383212f584",
    "grammar": {
     "adopted_pairs": {
@@ -3114,8 +3095,7 @@
    "work_id": "000119_1743",
    "label": "cards/000119/files/1743_ruby_5730.zip::hikarito_kazeto_yume.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4a03b2ac982b35369c5a67352b77ddda076884a94033452b91e180d3c5a52bcf",
    "grammar": {
     "adopted_pairs": {
@@ -3153,8 +3133,7 @@
    "work_id": "000125_1067",
    "label": "cards/000125/files/1067_ruby_1929.zip::05inkora_parusutorisu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "8c103ab6b468e3f57ead5ec76a44e1aba1b2bf4775d5132e5722bb130d69e45d",
    "grammar": {
     "adopted_pairs": {
@@ -3199,8 +3178,7 @@
    "work_id": "000125_1317",
    "label": "cards/000125/files/1317_ruby_22263.zip::kokushikan_satsujin_jiken.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9318c6e256504527f0e5adc9600a1d18f630736ce8b814e7dd4a2c6e94687de2",
    "grammar": {
     "adopted_pairs": {
@@ -3244,8 +3222,7 @@
    "work_id": "000125_1320",
    "label": "cards/000125/files/1320_ruby_1925.zip::01homo_kodassu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4d3b7046f4678e7bf6377c2eb0f3402c969a14b28e482c010d0acbfff31f529b",
    "grammar": {
     "adopted_pairs": {
@@ -3290,8 +3267,7 @@
    "work_id": "000125_1321",
    "label": "cards/000125/files/1321_ruby_3826.zip::08seru_miku_shua.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "035e13c58888d52f3c7fb8385e639e789db59f31e97422f9d3e3e15a04335e0f",
    "grammar": {
     "adopted_pairs": {
@@ -3336,8 +3312,7 @@
    "work_id": "000125_4317",
    "label": "cards/000125/files/4317_ruby_9651.zip::10kara_jirunagan.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6157db67ce7ec1a77c9a60cb8fe466a06b52787f558cc4ad027b1e27d1487425",
    "grammar": {
     "adopted_pairs": {
@@ -3380,8 +3355,7 @@
    "work_id": "000125_665",
    "label": "cards/000125/files/665_ruby_1503.zip::03hamo_samuba_cho.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "0029edab74bd3f1dc542cf696b5a8ed6a0de8ad4039a17973354e0cdd73f4f98",
    "grammar": {
     "adopted_pairs": {
@@ -3419,8 +3393,7 @@
    "work_id": "000129_2080",
    "label": "cards/000129/files/2080_ruby_48151.zip::shigaramisoshino_sanboronbun.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4c8afd1b20ff5b4164499bd2cd1a79f2db4d7120d9e42c65ac3140bb6475cfbc",
    "grammar": {
     "adopted_pairs": {
@@ -3458,8 +3431,7 @@
    "work_id": "000129_45224",
    "label": "cards/000129/files/45224_ruby_19890.zip::gan.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "65a6516c7d3ddd57a18f84af876cf3224565ef487b6a2e1118c72f6b611d52b3",
    "grammar": {
     "adopted_pairs": {
@@ -3497,8 +3469,7 @@
    "work_id": "000129_49250",
    "label": "cards/000129/files/49250_ruby_48092.zip::furui_techokara.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "bb9246a3f1473416e136be1cad71a8428cb7df15ad5eef77ada013a7cbf11aa2",
    "grammar": {
     "adopted_pairs": {
@@ -3543,8 +3514,7 @@
    "work_id": "000136_731",
    "label": "cards/000136/files/731_ruby_3216.zip::02seisanryohari.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "86afb6b8fd0c8fb98bee268d26f16ca248c64f4e0ef7d3d622ee4850e9b75708",
    "grammar": {
     "adopted_pairs": {
@@ -3582,8 +3552,7 @@
    "work_id": "000141_51359",
    "label": "cards/000141/files/51359_ruby_61559.zip::01shinshu_romeo_to_juliet_no_jo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "36e8b02f7b155e55a53aaec4301f315db798c19e06c9d9d18d6e308c61242d8a",
    "grammar": {
     "adopted_pairs": {
@@ -3621,8 +3590,7 @@
    "work_id": "000146_49780",
    "label": "cards/000146/files/49780_ruby_38190.zip::13gochunikki13.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "11f5d5bccc1ad6f529a5a715d852b4af19385a2a830c25bf49d9f518f83106db",
    "grammar": {
     "adopted_pairs": {
@@ -3660,8 +3628,7 @@
    "work_id": "000148_770",
    "label": "cards/000148/files/770_ruby_1713.zip::koeber_rsensei.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a9e7e9d643ea3ae55a3204923141ccd346e6c27c912afb6c9b0983642bdcba62",
    "grammar": {
     "adopted_pairs": {
@@ -3699,8 +3666,7 @@
    "work_id": "000150_3309",
    "label": "cards/000150/files/3309_ruby_8192.zip::somokuchugyo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "64339ebb43372e19ecf8c6a0bb29a09b72ceab930b76af6a8c35569acd1b778a",
    "grammar": {
     "adopted_pairs": {
@@ -3740,8 +3706,7 @@
    "work_id": "000150_42243",
    "label": "cards/000150/files/42243_txt_23378.zip::shishuno_atoni.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "0b1d47740f09fe5cabe4f74775110043cb3525c07289e49f6f68a1aa338b9f8f",
    "grammar": {
     "adopted_pairs": {
@@ -3779,8 +3744,7 @@
    "work_id": "000150_46615",
    "label": "cards/000150/files/46615_ruby_50368.zip::02chabanashi1916.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "3063c08118cca21634dc66f192750b906bacb7c9cbfd89510777a31349db2a9c",
    "grammar": {
     "adopted_pairs": {
@@ -3819,8 +3783,7 @@
    "work_id": "000150_46616",
    "label": "cards/000150/files/46616_ruby_53776.zip::03chabanashi1917.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "2565bd4b4d97c2cee09068dac4a534a28bb9076e4996e6cdb16865645badbb7a",
    "grammar": {
     "adopted_pairs": {
@@ -3860,8 +3823,7 @@
    "work_id": "000150_46617",
    "label": "cards/000150/files/46617_ruby_53786.zip::04chabanashi1918.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "7d95ac53cbf951965dddffee56fec259f3fa298b4d2e3f1d377dcc6bcbe7d02d",
    "grammar": {
     "adopted_pairs": {
@@ -3906,8 +3868,7 @@
    "work_id": "000150_46619",
    "label": "cards/000150/files/46619_ruby_54705.zip::06chabanashi1922.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "fa6fdcdee29d1cdcaf1e9f9b9a2ddf40b99d0b56bfb3df4561066e431d2b5ce3",
    "grammar": {
     "adopted_pairs": {
@@ -3946,8 +3907,7 @@
    "work_id": "000150_46620",
    "label": "cards/000150/files/46620_ruby_54709.zip::07chabanashi1925.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "8482d99de7c9527a6974051c14171e10b23bf46f9edb6a1b4742c0790d3d9ce1",
    "grammar": {
     "adopted_pairs": {
@@ -3992,8 +3952,7 @@
    "work_id": "000150_46623",
    "label": "cards/000150/files/46623_ruby_54718.zip::10chabanashi1928.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "aa88437de7a817b83c00cf24fd686a72b6da0e698ab02d3ba8cb3af07e27b29c",
    "grammar": {
     "adopted_pairs": {
@@ -4031,8 +3990,7 @@
    "work_id": "000150_46625",
    "label": "cards/000150/files/46625_ruby_54723.zip::12chabanashi_shoshutsu_misho.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "024edb2073bfd03cf1e7c2ef3c900a36272b12a6fa3bd95f3dcf679d2e71e276",
    "grammar": {
     "adopted_pairs": {
@@ -4071,8 +4029,7 @@
    "work_id": "000153_46947",
    "label": "cards/000153/files/46947_ruby_32324.zip::torikage.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "206079967f87ce7ab42dbb4bbd1e1cd5da87a8271cce3c1cdc067894ab1181db",
    "grammar": {
     "adopted_pairs": {
@@ -4110,8 +4067,7 @@
    "work_id": "000153_47892",
    "label": "cards/000153/files/47892_ruby_30730.zip::yobikoto_kuchibue.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "406f5a2026ac52debdd167cf46e7abd0fdf723e3f58b66d430d17f47e2fe9fcf",
    "grammar": {
     "adopted_pairs": {
@@ -4152,8 +4108,7 @@
    "work_id": "000153_48144",
    "label": "cards/000153/files/48144_ruby_47164.zip::byoshitsu_yori.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b1faa902754d47942d47a7aae23f796feb21a1755954ab42671f110492f62c94",
    "grammar": {
     "adopted_pairs": {
@@ -4192,8 +4147,7 @@
    "work_id": "000153_48164",
    "label": "cards/000153/files/48164_txt_47148.zip::a_letter_from_prison.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "feeb9e2b8893243eb80b3d7c61bd5912f21d0ad1a16d61d67aa9cf9f03e1f072",
    "grammar": {
     "adopted_pairs": {
@@ -4231,8 +4185,7 @@
    "work_id": "000156_4156",
    "label": "cards/000156/files/4156_ruby_17540.zip::yukino_yoru.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "8786992a8354d2c9a243b3b9c91dabd4f3963dc1ad0e9d9eaa2b3763e05d5744",
    "grammar": {
     "adopted_pairs": {
@@ -4270,8 +4223,7 @@
    "work_id": "000160_46859",
    "label": "cards/000160/files/46859_ruby_40098.zip::kidokoka.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "51de8a07da2c5bfbdb426ca8e99295b77014b2b420d779ec2e4d7b22e5a31725",
    "grammar": {
     "adopted_pairs": {
@@ -4309,8 +4261,7 @@
    "work_id": "000165_2392",
    "label": "cards/000165/files/2392_ruby_18.zip::kaijin_jumankan.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "ebd8ad771c446f7ff955b1a1058e9e72a8a480e4fc341afb1c84ab688858dbec",
    "grammar": {
     "adopted_pairs": {
@@ -4352,8 +4303,7 @@
    "work_id": "000165_2395",
    "label": "cards/000165/files/2395_ruby_24.zip::nijugonenkanno_bunjin.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6e5e437a9c59eb130ca7fc2744a41a503a39a4b132769388c2757ca4a1247787",
    "grammar": {
     "adopted_pairs": {
@@ -4391,8 +4341,7 @@
    "work_id": "000165_49569",
    "label": "cards/000165/files/49569_ruby_43375.zip::saitoryokuu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "3df9119cbcee6776c4f71f9dbb010bda0de8db0e8d1378345f8306bbc8e3fa8b",
    "grammar": {
     "adopted_pairs": {
@@ -4433,8 +4382,7 @@
    "work_id": "000165_49573",
    "label": "cards/000165/files/49573_ruby_43406.zip::futabatei_shimeino_issho.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4f9f96d6aa0539117380601834b166d7ef37f52b7c2af8f8a022445ff56dc422",
    "grammar": {
     "adopted_pairs": {
@@ -4472,8 +4420,7 @@
    "work_id": "000165_49574",
    "label": "cards/000165/files/49574_ruby_43368.zip::futabatei_tsuiroku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "304c3621c9aaf23ed3808f10d4d9db2eeb443d95afdd4f2b3edc0057e0f4216a",
    "grammar": {
     "adopted_pairs": {
@@ -4511,8 +4458,7 @@
    "work_id": "000182_3506",
    "label": "cards/000182/files/3506_ruby_12196.zip::wagakono_shi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e9f33a97b43c6dfdbd3bfbf1251a828918f37926938ee903dddada51680dfda7",
    "grammar": {
     "adopted_pairs": {
@@ -4552,8 +4498,7 @@
    "work_id": "000183_45221",
    "label": "cards/000183/files/45221_ruby_39780.zip::murano_sutoaha.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d5ee80bc8899dc58da3d418d17caa170ddb2b9ebb4b6b2c503601197bdd3297b",
    "grammar": {
     "adopted_pairs": {
@@ -4592,8 +4537,7 @@
    "work_id": "000183_45288",
    "label": "cards/000183/files/45288_ruby_39762.zip::dansho.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a78277182cd8bb5bac93f27711ba9bbda4bb8560c1f66a7dd52cc14a99de2146",
    "grammar": {
     "adopted_pairs": {
@@ -4635,8 +4579,7 @@
    "work_id": "000183_45319",
    "label": "cards/000183/files/45319_ruby_29367.zip::shukufukusareta_hoshino_uta.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "1f81481701b6ca3003d8531be6a61667e5bd3c363739c9d93090710fa9e23aee",
    "grammar": {
     "adopted_pairs": {
@@ -4675,8 +4618,7 @@
    "work_id": "000183_45331",
    "label": "cards/000183/files/45331_ruby_40419.zip::yureinoderu_kyuden.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "2f54c51d0939cd4ffe3a0c948b07b9bce419351682285ee20e7423e88d070601",
    "grammar": {
     "adopted_pairs": {
@@ -4715,8 +4657,7 @@
    "work_id": "000183_45342",
    "label": "cards/000183/files/45342_ruby_40409.zip::awayuki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "29a23105e94e1614a8cc0671b5007654069a8f368584d46c1f64ab72c28d8d2b",
    "grammar": {
     "adopted_pairs": {
@@ -4755,8 +4696,7 @@
    "work_id": "000183_45344",
    "label": "cards/000183/files/45344_ruby_36981.zip::onino_mon.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "26430c5599911a6229b3a9d51e28d4b93a5b5d74f76902cb5bb05eb6e81c1444",
    "grammar": {
     "adopted_pairs": {
@@ -4794,8 +4734,7 @@
    "work_id": "000183_45345",
    "label": "cards/000183/files/45345_ruby_40250.zip::onnani_okubyona_otoko.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "901e0de6e0fa70dd57739f6a99f62fa7daea311639b13838aaa0b61f233cc3fe",
    "grammar": {
     "adopted_pairs": {
@@ -4833,8 +4772,7 @@
    "work_id": "000183_45350",
    "label": "cards/000183/files/45350_ruby_37037.zip::sake_nusutto.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "cfe50a957c28452bb111340421000163dbc0e302f05951b70b17f9aad013d7ea",
    "grammar": {
     "adopted_pairs": {
@@ -4872,8 +4810,7 @@
    "work_id": "000183_45356",
    "label": "cards/000183/files/45356_ruby_37275.zip::nanpufu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "895fcdc3ac7b9c00c8afaa79063129bca3c0522a509b8d402707a986e1b9ac0b",
    "grammar": {
     "adopted_pairs": {
@@ -4912,8 +4849,7 @@
    "work_id": "000183_45359",
    "label": "cards/000183/files/45359_ruby_40106.zip::hakusei.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "41b9eaa583f4024c276a8c366207ff1cf81b2a83277751d6a43daf97f0d5db93",
    "grammar": {
     "adopted_pairs": {
@@ -4952,8 +4888,7 @@
    "work_id": "000183_45361",
    "label": "cards/000183/files/45361_ruby_40410.zip::furyu_ryoko.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "807caf93762f14afdc1764f66a64f573c5409258ac6556fc6e5738453abb9d48",
    "grammar": {
     "adopted_pairs": {
@@ -4993,8 +4928,7 @@
    "work_id": "000183_45399",
    "label": "cards/000183/files/45399_ruby_39770.zip::ragadodaigaku_sankanki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a16b1c66b3978d57d416408a4c8eaf66b8b3e024f176c4e2728038b8259b49fe",
    "grammar": {
     "adopted_pairs": {
@@ -5032,8 +4966,7 @@
    "work_id": "000183_45403",
    "label": "cards/000183/files/45403_ruby_39784.zip::yamaokoete.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6224a00e540ff0ef1f940f0a01cbea0d6d059392787a4fea88ef6fdac1c8189f",
    "grammar": {
     "adopted_pairs": {
@@ -5071,8 +5004,7 @@
    "work_id": "000183_45404",
    "label": "cards/000183/files/45404_ruby_39782.zip::yamabikono_machi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "367fdc45c16e88db5071dcaf64b41beb9fa4167b8921b6db6f9e38c81f20a874",
    "grammar": {
     "adopted_pairs": {
@@ -5110,8 +5042,7 @@
    "work_id": "000183_45407",
    "label": "cards/000183/files/45407_ruby_39779.zip::maru_table_deno_hanashi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "410b3e7b824ad1565ce59bb81e48c4bd44d736a6209a3e4ad42d4c7205dfbde1",
    "grammar": {
     "adopted_pairs": {
@@ -5155,8 +5086,7 @@
    "work_id": "000183_45413",
    "label": "cards/000183/files/45413_ruby_38283.zip::natsutikakikoro.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "00e81b281007279d811456d3475717438e7f0d8e6b8938f9bebd079489976762",
    "grammar": {
     "adopted_pairs": {
@@ -5194,8 +5124,7 @@
    "work_id": "000183_45423",
    "label": "cards/000183/files/45423_ruby_38279.zip::kangyodo_fukei.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6610566153a1ab697c13ffa8f3d570743681fc1d9c303339009e8dfda4d66415",
    "grammar": {
     "adopted_pairs": {
@@ -5239,8 +5168,7 @@
    "work_id": "000183_45424",
    "label": "cards/000183/files/45424_ruby_38277.zip::kagehinata.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "aa76a4fcdcd3988d78c69264730981d6be967dcb1579fff035091779a0122b14",
    "grammar": {
     "adopted_pairs": {
@@ -5278,8 +5206,7 @@
    "work_id": "000183_45425",
    "label": "cards/000183/files/45425_ruby_38276.zip::kagamijigoku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "c671449a7ecacf282e4b1a962b295f44f70a74de31a43898cb07ae9a0f642db0",
    "grammar": {
     "adopted_pairs": {
@@ -5318,8 +5245,7 @@
    "work_id": "000183_45429",
    "label": "cards/000183/files/45429_ruby_38285.zip::omuno_omoide.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e6e180c96e156ecb0515491bd8e23c03ab2e2b76ea3560cc04133818b842f1cd",
    "grammar": {
     "adopted_pairs": {
@@ -5357,8 +5283,7 @@
    "work_id": "000183_45430",
    "label": "cards/000183/files/45430_ruby_38141.zip::aruhino_undo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "eb6e0b643d9542337f6b0501f15cb09bc382831ec1bef392c272ea3a68daa5bb",
    "grammar": {
     "adopted_pairs": {
@@ -5396,8 +5321,7 @@
    "work_id": "000183_45433",
    "label": "cards/000183/files/45433_ruby_37447.zip::akuhitsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "19e9776ba808a06198c13cd3846a08b68d2ba37977901b5a77b1b3dffef19cc2",
    "grammar": {
     "adopted_pairs": {
@@ -5438,8 +5362,7 @@
    "work_id": "000183_45436",
    "label": "cards/000183/files/45436_ruby_37444.zip::akaruku_kuraku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "031627e1fb22bb0521791c9f27d9b8918a8e56a9b2983ac647fc2091d6389508",
    "grammar": {
     "adopted_pairs": {
@@ -5477,8 +5400,7 @@
    "work_id": "000183_45437",
    "label": "cards/000183/files/45437_ruby_37522.zip::akuno_doigo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d4d97ee7f49a812411489a3526074d40e1485f430a47cde263cc1bfd37cd089d",
    "grammar": {
     "adopted_pairs": {
@@ -5518,8 +5440,7 @@
    "work_id": "000183_52747",
    "label": "cards/000183/files/52747_txt_43389.zip::wagayano_zuihitsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9a81d9c1ef35aefd287554851d21c84e5c950a2ee1ea2de8fe43ed9a6e81bff6",
    "grammar": {
     "adopted_pairs": {
@@ -5558,8 +5479,7 @@
    "work_id": "000183_52780",
    "label": "cards/000183/files/52780_ruby_44389.zip::kawajokiwa_mukashinomama.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "1d004cdf5ef3b911e665bf4c2a300af34b1256eb9da4d430666c4a59163d15ad",
    "grammar": {
     "adopted_pairs": {
@@ -5597,8 +5517,7 @@
    "work_id": "000183_52784",
    "label": "cards/000183/files/52784_txt_44498.zip::shoka_tsushin.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b1b81e7b2021d22131dd299a4e4c82cfdae9c5d1e9b8f83529cbc098af9d6b35",
    "grammar": {
     "adopted_pairs": {
@@ -5636,8 +5555,7 @@
    "work_id": "000183_52792",
    "label": "cards/000183/files/52792_ruby_44433.zip::kigeki_ko.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "0cb02c35624241b3991767b86a34d0125b43f91765011e55023f962f2a01bbb7",
    "grammar": {
     "adopted_pairs": {
@@ -5675,8 +5593,7 @@
    "work_id": "000183_52800",
    "label": "cards/000183/files/52800_ruby_44500.zip::takujo_enzetsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "3ba6d33fec533e892f36b43b891a1fd4e738801565be0da835dcbe7c8e5fa83b",
    "grammar": {
     "adopted_pairs": {
@@ -5714,8 +5631,7 @@
    "work_id": "000183_52820",
    "label": "cards/000183/files/52820_ruby_44537.zip::fujintegami_hanreibun.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "436333eda7d104b3c0cdfc3aad6eddb94588c3ecfa22cf2c2ca70f2f2ad6cec9",
    "grammar": {
     "adopted_pairs": {
@@ -5753,8 +5669,7 @@
    "work_id": "000183_52837",
    "label": "cards/000183/files/52837_ruby_44574.zip::romanteki_geppyo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "075239c2a1e70bcbeae4e7ac9483176044df0b790df2328d09fe42bb99bc7b34",
    "grammar": {
     "adopted_pairs": {
@@ -5794,8 +5709,7 @@
    "work_id": "000183_52839",
    "label": "cards/000183/files/52839_ruby_44539.zip::jogashimano_haru.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "2e5a3dc6ba5371d7f8b658a7f59511bd6c2cf020a26f29ce6bc874bcebe9fb24",
    "grammar": {
     "adopted_pairs": {
@@ -5833,8 +5747,7 @@
    "work_id": "000183_52840",
    "label": "cards/000183/files/52840_ruby_44783.zip::kenka_banashi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "7514bf43314cd072a1d8e087dd84e47c1c4ec8f67227502f7accc10ef8b431f4",
    "grammar": {
     "adopted_pairs": {
@@ -5873,8 +5786,7 @@
    "work_id": "000183_52848",
    "label": "cards/000183/files/52848_ruby_44803.zip::yuriika_dokugen.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6cefade4f2db019cd186fea94bbd3dfb62634fb42487e66fd851a28ec6fe4c27",
    "grammar": {
     "adopted_pairs": {
@@ -5912,8 +5824,7 @@
    "work_id": "000183_52855",
    "label": "cards/000183/files/52855_ruby_44791.zip::romanteki_jihyo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "f8833301d01ea66a96d919e45c76dec022aa2624d988ea2359358bfe9b779f4d",
    "grammar": {
     "adopted_pairs": {
@@ -5951,8 +5862,7 @@
    "work_id": "000183_52867",
    "label": "cards/000183/files/52867_ruby_44790.zip::raisu_waffuruno_tomo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "34f8e5e8a89cad83e4f47c0babd2a1638e65312cc5118b3fc618de3be0944d37",
    "grammar": {
     "adopted_pairs": {
@@ -5991,8 +5901,7 @@
    "work_id": "000183_52894",
    "label": "cards/000183/files/52894_ruby_42398.zip::aojiroki_koen.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "44a3c41e64dfa4e6455f1b78e53d2308402420825ae75ccb6c7816673cb62a11",
    "grammar": {
     "adopted_pairs": {
@@ -6030,8 +5939,7 @@
    "work_id": "000183_52914",
    "label": "cards/000183/files/52914_ruby_42868.zip::nemui_ichinichi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "f6efb3ff1714390f766bad29e2764589d8e98ab2b6537b9d421fc8c7b8ef7d69",
    "grammar": {
     "adopted_pairs": {
@@ -6069,8 +5977,7 @@
    "work_id": "000214_48790",
    "label": "cards/000214/files/48790_txt_72280.zip::bazanno_shosetsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "1f834bb2514d11e6040405dca97dda1419a5caa3cdf6a77f8bf72e085c60ac47",
    "grammar": {
     "adopted_pairs": {
@@ -6110,8 +6017,7 @@
    "work_id": "000214_48804",
    "label": "cards/000214/files/48804_ruby_64558.zip::j_k_huys_mans_no_shosetsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6ca0c4c575dc1ea3ec3ddced5fae866795048adf84bc671b23bb41649e9bec51",
    "grammar": {
     "adopted_pairs": {
@@ -6152,8 +6058,7 @@
    "work_id": "000214_48868",
    "label": "cards/000214/files/48868_ruby_68704.zip::saikaku_shoron.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "baccf7f46526525a36760fb50fc799d22eaf83561ec9fd0c7dbfd1cc777ddfe7",
    "grammar": {
     "adopted_pairs": {
@@ -6191,8 +6096,7 @@
    "work_id": "000214_48884",
    "label": "cards/000214/files/48884_ruby_71621.zip::shakaito_jiko.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "c08dd97407598f457920bf491f70ed2692e0a233de1f55a7bdb0165d860b28ca",
    "grammar": {
     "adopted_pairs": {
@@ -6231,8 +6135,7 @@
    "work_id": "000218_1914",
    "label": "cards/000218/files/1914_ruby_63481.zip::jinseiron_note.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "48a7b4774364743e1ddbe2bc7b809935bc88c100e2b407d48536251ce1fbd452",
    "grammar": {
     "adopted_pairs": {
@@ -6270,8 +6173,7 @@
    "work_id": "000218_46212",
    "label": "cards/000218/files/46212_ruby_44739.zip::kaishakugakuto_shujigaku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "fb14390cfec8f42c6b4540b93b6a54f4466e6bd3648b9afeb01c4da20fea1617",
    "grammar": {
     "adopted_pairs": {
@@ -6312,8 +6214,7 @@
    "work_id": "000218_46213",
    "label": "cards/000218/files/46213_ruby_44740.zip::kagaku_hihanno_kadai.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "11865091a7e7d70e543a4a62ffdc3bb857b1951d4ab8bb149cd960022bf39499",
    "grammar": {
     "adopted_pairs": {
@@ -6358,8 +6259,7 @@
    "work_id": "000218_46226",
    "label": "cards/000218/files/46226_ruby_44741.zip::marx_shugito_yuibutsuron.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "48a143b839a14cf549effb68ac07ca534bd5372adbe2a6525ec57c83a8d25f90",
    "grammar": {
     "adopted_pairs": {
@@ -6404,8 +6304,7 @@
    "work_id": "000218_46593",
    "label": "cards/000218/files/46593_txt_71649.zip::rekishi_tetsugaku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "456993181abf64b6806ed943a11492ef3b051f64025149e9b47b2e9b0d557415",
    "grammar": {
     "adopted_pairs": {
@@ -6450,8 +6349,7 @@
    "work_id": "000218_46845",
    "label": "cards/000218/files/46845_txt_29042.zip::jinseiron_noto.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4d748e6a0fb04d8061c0e379044df2015b3891ff4ef16dd3fc9002d65b370d15",
    "grammar": {
     "adopted_pairs": {
@@ -6489,8 +6387,7 @@
    "work_id": "000218_5007",
    "label": "cards/000218/files/5007_txt_47368.zip::yuibutsushikanto_gendaino_ishiki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "673436ad08694766de2d0c1834f3f7a4c75da3a0dab948f68b11f6299ac41621",
    "grammar": {
     "adopted_pairs": {
@@ -6535,8 +6432,7 @@
    "work_id": "000220_59227",
    "label": "cards/000220/files/59227_ruby_69919.zip::02hyotono_gyofuni_tsuite.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "82e4c806d43be2c50813f4c4f1fac725b22467ebf32967db9c224dc541c0249d",
    "grammar": {
     "adopted_pairs": {
@@ -6575,8 +6471,7 @@
    "work_id": "000221_48091",
    "label": "cards/000221/files/48091_ruby_40711.zip::homuzuno_tanteiho.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "eef8542d5080193c5d82e7e77efc7ce86ba0eb9789d7eb36ade54ddc401824ea",
    "grammar": {
     "adopted_pairs": {
@@ -6614,8 +6509,7 @@
    "work_id": "000221_48096",
    "label": "cards/000221/files/48096_ruby_41136.zip::uittehaku_kaisoki_sonota.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "0796295b9fb3facd6f9e69a76527de3b13f16189ee7ad4b4996c748bb11950d6",
    "grammar": {
     "adopted_pairs": {
@@ -6653,8 +6547,7 @@
    "work_id": "000226_1150",
    "label": "cards/000226/files/1150_ruby_38564.zip::uchuno_hajimari.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "22f1695e3233c28bbeb791f86c5ffa5ffeac2b1e584adbf1a87bf02162cbc06f",
    "grammar": {
     "adopted_pairs": {
@@ -6699,8 +6592,7 @@
    "work_id": "000255_47423",
    "label": "cards/000255/files/47423_ruby_58872.zip::samayou_machino_samayou_ie.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "51301ce410cbb750e43b7ab1e440e9d718e14ed390b14cbe73adc587d6dde728",
    "grammar": {
     "adopted_pairs": {
@@ -6738,8 +6630,7 @@
    "work_id": "000260_43420",
    "label": "cards/000260/files/43420_ruby_16757.zip::ketsuekigata_satsujinjiken.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d4b4241dc704cd9f4f042d13853ce45353e7e7ddc1b9a38b2bfa6964e07b249a",
    "grammar": {
     "adopted_pairs": {
@@ -6777,8 +6668,7 @@
    "work_id": "000264_42773",
    "label": "cards/000264/files/42773_ruby_38390.zip::03romeo_to_juliet.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d2c17563776cdb5cd1811dda864cd30119540e29ba2bba1501ace1bcd806e620",
    "grammar": {
     "adopted_pairs": {
@@ -6817,8 +6707,7 @@
    "work_id": "000272_4367",
    "label": "cards/000272/files/4367_ruby_8011.zip::03kitoshirono_genso.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "ea441f1b95fb481ee9bd9523b2d4b3d565f0cba2b718f1324212a1e41766dca3",
    "grammar": {
     "adopted_pairs": {
@@ -6856,8 +6745,7 @@
    "work_id": "000277_59445",
    "label": "cards/000277/files/59445_ruby_74003.zip::suwisu_nikki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "db427ef9a6fb7747a85c1991062d501084433215b6585fa633a3f4101011296d",
    "grammar": {
     "adopted_pairs": {
@@ -6902,8 +6790,7 @@
    "work_id": "000281_1713",
    "label": "cards/000281/files/1713_txt_43355.zip::kagaku_hohoron/kagaku_hohoron.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "69410ac34c5de621c1aafaf610d8b6fc9f7369159a67481ce2b852d62d47a3d4",
    "grammar": {
     "adopted_pairs": {
@@ -6948,8 +6835,7 @@
    "work_id": "000281_3590",
    "label": "cards/000281/files/3590_ruby_31063.zip::kagakuron.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "5b223eb4a8fda2156d8045dccbb3c5b6cb53d681c30e864b6589cff84741782e",
    "grammar": {
     "adopted_pairs": {
@@ -6991,8 +6877,7 @@
    "work_id": "000281_3591",
    "label": "cards/000281/files/3591_ruby_44531.zip::gijutsuno_tetsugaku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "c238f8a7c70d29b51c5ba806220c5461115cd83f7eb63c24f9d21fb5932fbe62",
    "grammar": {
     "adopted_pairs": {
@@ -7032,8 +6917,7 @@
    "work_id": "000281_3594",
    "label": "cards/000281/files/3594_ruby_37567.zip::ideorogino_ronrigaku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "2d23092d688bcff006b98f934f6c620a754ea48cc9aeaf22f7b36f80b34f5b7a",
    "grammar": {
     "adopted_pairs": {
@@ -7071,8 +6955,7 @@
    "work_id": "000281_3595",
    "label": "cards/000281/files/3595_ruby_38064.zip::ideorogi_gairon.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b338fe7dcafe473f3ab6e0ea2f866c598371adb1b741432c35e10648f22f3ccf",
    "grammar": {
     "adopted_pairs": {
@@ -7116,8 +6999,7 @@
    "work_id": "000281_3597",
    "label": "cards/000281/files/3597_ruby_41279.zip::gendaitetsugakukowa.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d16a1c4caabeecc111625c8b0dd5e05b8bab1c03b13bb6fed86b39ce8777a3cc",
    "grammar": {
     "adopted_pairs": {
@@ -7157,8 +7039,7 @@
    "work_id": "000281_3598",
    "label": "cards/000281/files/3598_ruby_47317.zip::gendai_yuibutsuron_kowa.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b7f52ac39d38f1f45328021ba7af0b8cae33412b929bceedba07614706e24841",
    "grammar": {
     "adopted_pairs": {
@@ -7203,8 +7084,7 @@
    "work_id": "000281_3602",
    "label": "cards/000281/files/3602_ruby_37826.zip::jiten.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "f1a13c81b21220b3bf5d9d56b9d2434b0e9ca8f23fd26ec15663828fc132fdd8",
    "grammar": {
     "adopted_pairs": {
@@ -7242,8 +7122,7 @@
    "work_id": "000281_43261",
    "label": "cards/000281/files/43261_ruby_41554.zip::butsuriteki_kukanno_seiritsumade.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "db8c4ab3fcc8c5d040d4ce77b8c1ca9a65cccd80de48bcdfa01ec8d1d53b3332",
    "grammar": {
     "adopted_pairs": {
@@ -7286,8 +7165,7 @@
    "work_id": "000281_43263",
    "label": "cards/000281/files/43263_txt_35051.zip::kikagakuto_kukan/kikagakuto_kukan.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a5c5dcf53a2777038292fc66af0a82496f8309ad731564dac5367d7e302c3cc1",
    "grammar": {
     "adopted_pairs": {
@@ -7329,8 +7207,7 @@
    "work_id": "000281_43264",
    "label": "cards/000281/files/43264_ruby_42627.zip::hanchutoshiteno_kukanni_tsuite.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "77ea915ed05ca679a1edaf274fccaf20534cffeeccecd56c9abe896dca3d5f7f",
    "grammar": {
     "adopted_pairs": {
@@ -7375,8 +7252,7 @@
    "work_id": "000281_43266",
    "label": "cards/000281/files/43266_ruby_34902.zip::kukangainenno_bunseki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e4f4ea0e65c91db7c25443320d66d1e05482c829ac6fd57f9eacbdee6b9d7859",
    "grammar": {
     "adopted_pairs": {
@@ -7421,8 +7297,7 @@
    "work_id": "000281_43267",
    "label": "cards/000281/files/43267_txt_26387.zip::kant_to_gendaino_kagaku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "415096c16fb9d9c8fdd00d8a9cb9084c892ad954ac07474490a5d5d3e3add322",
    "grammar": {
     "adopted_pairs": {
@@ -7460,8 +7335,7 @@
    "work_id": "000281_43268",
    "label": "cards/000281/files/43268_txt_53318.zip::emanueru_kanto_shizentetsugakugenri_kaisetsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6751b3a84be86975d1a0fdc57bbff21f2868bac59094acd8131fec6ec45d112e",
    "grammar": {
     "adopted_pairs": {
@@ -7503,8 +7377,7 @@
    "work_id": "000301_1872",
    "label": "cards/000301/files/1872_ruby_3491.zip::02hoso_yawa.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "763e8b97e576be550674641db0a1c8c74091613d83a360fc6960f7e6e0257d9a",
    "grammar": {
     "adopted_pairs": {
@@ -7549,8 +7422,7 @@
    "work_id": "000304_46461",
    "label": "cards/000304/files/46461_ruby_77907.zip::tokaino_ruijin_en.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "bc52eca741cc72cdbbb5d1209d3a81612d6dc76d0d876d480eef679dc5757a4f",
    "grammar": {
     "adopted_pairs": {
@@ -7590,8 +7462,7 @@
    "work_id": "000304_46473",
    "label": "cards/000304/files/46473_ruby_40503.zip::unmeino_sos.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "452f02a7dc11695e44f7c2e4be954f3860ffa78a5a0cd1f7f870f6a688b62621",
    "grammar": {
     "adopted_pairs": {
@@ -7629,8 +7500,7 @@
    "work_id": "000304_46475",
    "label": "cards/000304/files/46475_ruby_77669.zip::kaiyo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4f036408da0065eefc7032ec13bf249b67cf0b2a775eb6a115e481bc2fa24433",
    "grammar": {
     "adopted_pairs": {
@@ -7670,8 +7540,7 @@
    "work_id": "000304_46477",
    "label": "cards/000304/files/46477_ruby_40505.zip::somenju.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "cdebebbe024914bff9ea0671dc0c7af4c32418c719225a6b320b561993819e96",
    "grammar": {
     "adopted_pairs": {
@@ -7709,8 +7578,7 @@
    "work_id": "000304_46494",
    "label": "cards/000304/files/46494_ruby_40504.zip::tsuchikara_tega.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b4d556e36c226a6698855c1c13ffe2d919dc6038af7b78cccde71da73935544b",
    "grammar": {
     "adopted_pairs": {
@@ -7750,8 +7618,7 @@
    "work_id": "000307_56896",
    "label": "cards/000307/files/56896_ruby_55955.zip::yarigatake_kitakamaone.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "8e9336ae5b1df5b2d5773188bca98ccf5a9171c77ca0ad614ac3a32273422939",
    "grammar": {
     "adopted_pairs": {
@@ -7796,8 +7663,7 @@
    "work_id": "000311_2015",
    "label": "cards/000311/files/2015_ruby_42334.zip::nobuko.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "954cf24c3dfc93fe657c46dde449a3fcb7055e244bac640b2cce3fde369d68cf",
    "grammar": {
     "adopted_pairs": {
@@ -7836,8 +7702,7 @@
    "work_id": "000311_2734",
    "label": "cards/000311/files/2734_ruby_7416.zip::sovet_bundan.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d8f4cf9ca6436cbb5a7223bab0e5e337588dd45800c7c277ca38676732ffba4e",
    "grammar": {
     "adopted_pairs": {
@@ -7875,8 +7740,7 @@
    "work_id": "000311_33187",
    "label": "cards/000311/files/33187_ruby_11224.zip::05gokuchueno_tegami1938.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4902c9ed5d07fc542b0f959333f151f739a8da06f8940ca55809f1e898f3ffd0",
    "grammar": {
     "adopted_pairs": {
@@ -7914,8 +7778,7 @@
    "work_id": "000311_46235",
    "label": "cards/000311/files/46235_ruby_37805.zip::02nikki1914.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "0fa08b45bb1c4f6a0053c36028a93cd1d6371173598cacc665994b964fe08be0",
    "grammar": {
     "adopted_pairs": {
@@ -7955,8 +7818,7 @@
    "work_id": "000311_46236",
    "label": "cards/000311/files/46236_ruby_49083.zip::03nikki1916.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "825c94061ef76b944b91f9bbe2e0441ae941ce07467cf9dda59b54ba745f76cd",
    "grammar": {
     "adopted_pairs": {
@@ -7997,8 +7859,7 @@
    "work_id": "000311_46239",
    "label": "cards/000311/files/46239_ruby_51181.zip::06nikki1920.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "8631d3ee95279fe6a3b792f637ed6c52381f412142891783a70a867a5098eebb",
    "grammar": {
     "adopted_pairs": {
@@ -8037,8 +7898,7 @@
    "work_id": "000311_46240",
    "label": "cards/000311/files/46240_ruby_52707.zip::07nikki1921.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "49344353832e807bb97da797e7da45efb092df932b7e8ae9086c120d6b9c8cbf",
    "grammar": {
     "adopted_pairs": {
@@ -8081,8 +7941,7 @@
    "work_id": "000311_46240",
    "label": "cards/000311/files/46240_ruby_53131.zip::07nikki1921.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "49344353832e807bb97da797e7da45efb092df932b7e8ae9086c120d6b9c8cbf",
    "grammar": {
     "adopted_pairs": {
@@ -8125,8 +7984,7 @@
    "work_id": "000311_46241",
    "label": "cards/000311/files/46241_ruby_51490.zip::08nikki1922.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9d96a84a2cda2a3c60503a44e0c5b043565a4bfaa055359d5f3f8fbf6e91d65a",
    "grammar": {
     "adopted_pairs": {
@@ -8166,8 +8024,7 @@
    "work_id": "000311_46243",
    "label": "cards/000311/files/46243_ruby_53169.zip::10nikki1924.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9baa5c0b37f05f48378d316711744b5a753c6516f261f49912ecc1df67ec9ecc",
    "grammar": {
     "adopted_pairs": {
@@ -8207,8 +8064,7 @@
    "work_id": "000311_46244",
    "label": "cards/000311/files/46244_ruby_54461.zip::12nikki1926.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "3c573649c226039086d9f94f7e08be787107a351b3b819c0f0723b0bd5e1abd0",
    "grammar": {
     "adopted_pairs": {
@@ -8247,8 +8103,7 @@
    "work_id": "000311_46245",
    "label": "cards/000311/files/46245_ruby_55950.zip::13nikki1927.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4ad6198ce1dc1e10633c178c937ce2cf1992fd4191eff0b56223305dd95d5bfc",
    "grammar": {
     "adopted_pairs": {
@@ -8286,8 +8141,7 @@
    "work_id": "000311_46246",
    "label": "cards/000311/files/46246_ruby_57465.zip::14nikki1928.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "5e52950f5688fc5cde1e9f37bca7fe31a99681c80f187b2d0cc5e3bff768c330",
    "grammar": {
     "adopted_pairs": {
@@ -8330,8 +8184,7 @@
    "work_id": "000311_46247",
    "label": "cards/000311/files/46247_ruby_58050.zip::15nikki1929.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "56faabb2480bd488259a94395b43ce4726028ffdfd77768753aa67c725a2d490",
    "grammar": {
     "adopted_pairs": {
@@ -8376,8 +8229,7 @@
    "work_id": "000311_46248",
    "label": "cards/000311/files/46248_ruby_58880.zip::16nikki1930.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "2f83df8162547140f865903414db939ab81db39ce6cff5a61208bd32c1e83d4c",
    "grammar": {
     "adopted_pairs": {
@@ -8422,8 +8274,7 @@
    "work_id": "000311_46251",
    "label": "cards/000311/files/46251_ruby_62079.zip::20nikki1936.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "7f3b7311812e6f8151702c7f211b4ccf6b7f36a7e6253b7a2088740831ef563e",
    "grammar": {
     "adopted_pairs": {
@@ -8461,8 +8312,7 @@
    "work_id": "000311_46252",
    "label": "cards/000311/files/46252_ruby_63805.zip::21nikki1937.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "cabb77c4711b487fa0ce053fd88bfd480ce9f8397686d04945d0b88bb112a38e",
    "grammar": {
     "adopted_pairs": {
@@ -8500,8 +8350,7 @@
    "work_id": "000311_46259",
    "label": "cards/000311/files/46259_ruby_69063.zip::29nikki1946.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "5247a1e1dd54ec40974bb8b0d95023bc47da90c046126bbbd2ca2015e011dd15",
    "grammar": {
     "adopted_pairs": {
@@ -8539,8 +8388,7 @@
    "work_id": "000311_46260",
    "label": "cards/000311/files/46260_ruby_69299.zip::30nikki1947.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e25c8f7e74d71bb1a88f996984120de5907af18208d1c398baeed4e317c6f4bc",
    "grammar": {
     "adopted_pairs": {
@@ -8578,8 +8426,7 @@
    "work_id": "000311_46261",
    "label": "cards/000311/files/46261_ruby_69929.zip::31nikki1948.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "60967a3a1bfcf3fb05b3a71db090538f535655033efde5b548125e4e2bce9289",
    "grammar": {
     "adopted_pairs": {
@@ -8618,8 +8465,7 @@
    "work_id": "000311_4834",
    "label": "cards/000311/files/4834_ruby_60149.zip::17kangeki_nikki1929_1930.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4caf9dcfa1544c87366f2d6ab16a34d088ff4f00ff4929f5f113645ee52a6ab4",
    "grammar": {
     "adopted_pairs": {
@@ -8661,8 +8507,7 @@
    "work_id": "000595_46166",
    "label": "cards/000595/files/46166_ruby_21877.zip::chijo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "8e7ab0f84225a2c4fc163fd47eeddedfa23a3eea7261aa3fdd202cda6d6c770a",
    "grammar": {
     "adopted_pairs": {
@@ -8701,8 +8546,7 @@
    "work_id": "000678_55465",
    "label": "cards/000678/files/55465_txt_53012.zip::au_rimbaud.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "91ec71bf9fd4a8b1d7e7d7ee1651187e5f4e25e9907531cabfb5fda5333c7c93",
    "grammar": {
     "adopted_pairs": {
@@ -8740,8 +8584,7 @@
    "work_id": "000678_55472",
    "label": "cards/000678/files/55472_ruby_53025.zip::keikai.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "69e17f99151bc090a39322067598d5243f9c5d0079149f97bdfa22672ddf81e5",
    "grammar": {
     "adopted_pairs": {
@@ -8779,8 +8622,7 @@
    "work_id": "000718_46288",
    "label": "cards/000718/files/46288_ruby_25137.zip::kyoikuno_mokuteki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "de01cdd658cd719cf0baef949a1691bcd44f6724cc1e25f5935f84ce8fed9c90",
    "grammar": {
     "adopted_pairs": {
@@ -8818,8 +8660,7 @@
    "work_id": "000740_49078",
    "label": "cards/000740/files/49078_ruby_39540.zip::hatachino_etude.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "362c927d926919a8ebbaac2b73186f7ac8e828dbbb7a56888ba411cc12c6fb0a",
    "grammar": {
     "adopted_pairs": {
@@ -8859,8 +8700,7 @@
    "work_id": "000866_3039",
    "label": "cards/000866/files/3039_ruby_19888.zip::amatsukyo_komonjo_hihan.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "1ca512073e99c9f9cf9b504a786a402ece3a9a9c58a22ae0bb5918b5e437d340",
    "grammar": {
     "adopted_pairs": {
@@ -8901,8 +8741,7 @@
    "work_id": "000879_51215",
    "label": "cards/000879/files/51215_ruby_56333.zip::shanhai_yuki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "10b15d459ba0b8784ef8dd53f964b25855474c5ed917999a321804bf54c0747b",
    "grammar": {
     "adopted_pairs": {
@@ -8940,8 +8779,7 @@
    "work_id": "000879_56820",
    "label": "cards/000879/files/56820_ruby_60835.zip::furansu_bungakuto_boku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a752b77d1a5a5aa37e654840567f163674b821e5e8bd8f43702d052d119c9b16",
    "grammar": {
     "adopted_pairs": {
@@ -8979,8 +8817,7 @@
    "work_id": "000888_33205",
    "label": "cards/000888/files/33205_ruby_26003.zip::jekyll_to_hyde.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "521d6a28d49ed1cacc82bc4aa8cabba49c66a09ed2b77a852bbebec1e5bfc62b",
    "grammar": {
     "adopted_pairs": {
@@ -9019,8 +8856,7 @@
    "work_id": "000908_51960",
    "label": "cards/000908/files/51960_ruby_41164.zip::101keio_sannen_kugatsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9116e681e5bedc0e0925ac3a2ce2948a940e2146dc4167260e60b28dac96c298",
    "grammar": {
     "adopted_pairs": {
@@ -9058,8 +8894,7 @@
    "work_id": "000933_47550",
    "label": "cards/000933/files/47550_ruby_51133.zip::tachibanaakemi_hyoden.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "28948d0614fa4e27a4b7478fb5fa30ba478e0c0170ea40d94f5a800fbd08f736",
    "grammar": {
     "adopted_pairs": {
@@ -9097,8 +8932,7 @@
    "work_id": "000963_43102",
    "label": "cards/000963/files/43102_ruby_31948.zip::parutenon.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "67b23072af7e17b4737d4e7e5107056871bcfacbf9bada645357a974e7ed9004",
    "grammar": {
     "adopted_pairs": {
@@ -9136,8 +8970,7 @@
    "work_id": "000963_45635",
    "label": "cards/000963/files/45635_ruby_42357.zip::worikuno_shiro.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "194b63c1651132f09e9d7dcfa388c94b0b0e50d2d4eab10abea12760873a5514",
    "grammar": {
     "adopted_pairs": {
@@ -9175,8 +9008,7 @@
    "work_id": "000997_46908",
    "label": "cards/000997/files/46908_ruby_39584.zip::zoku_raiinkiroku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4b23d1a57b71177d5b38d6dc1f07f0dadb86c69736b605785d5d381bf7649f91",
    "grammar": {
     "adopted_pairs": {
@@ -9214,8 +9046,7 @@
    "work_id": "001030_47882",
    "label": "cards/001030/files/47882_ruby_42236.zip::xshino_techo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "38fb39a6888a01befd4b8a80d02e1d65db41494deabc564c5a3577795dc392c2",
    "grammar": {
     "adopted_pairs": {
@@ -9253,8 +9084,7 @@
    "work_id": "001030_47920",
    "label": "cards/001030/files/47920_ruby_50359.zip::natsuno_tegami.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "8859a10f4505b291ca9ddea60b9756bc0cce2ff4d7c890230207ad823a921579",
    "grammar": {
     "adopted_pairs": {
@@ -9292,8 +9122,7 @@
    "work_id": "001030_47933",
    "label": "cards/001030/files/47933_ruby_38440.zip::honno_koto.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "15255791eba90f070a7ee1467a67b246db5b41a61494d27b96984b56d8d28a76",
    "grammar": {
     "adopted_pairs": {
@@ -9331,8 +9160,7 @@
    "work_id": "001030_47968",
    "label": "cards/001030/files/47968_txt_51149.zip::mooriakkuno_koto.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "02c61c9d04602445fe5dcd79686e72cf70eb043c8b92510e4831b11240538137",
    "grammar": {
     "adopted_pairs": {
@@ -9371,8 +9199,7 @@
    "work_id": "001030_48307",
    "label": "cards/001030/files/48307_txt_37499.zip::noailles_fujin.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "65bad33d809f5d4970d27d00f9cc364b442c9725bf8573e1400fc2141e7ca0dd",
    "grammar": {
     "adopted_pairs": {
@@ -9410,8 +9237,7 @@
    "work_id": "001030_48309",
    "label": "cards/001030/files/48309_txt_50341.zip::maurice_de_guerin_to_eugenie.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9d49e81eceafe7a05e6f090c21984210d227949ed22a00f975c6343e410b8d95",
    "grammar": {
     "adopted_pairs": {
@@ -9449,8 +9275,7 @@
    "work_id": "001034_4823",
    "label": "cards/001034/files/4823_ruby_48360.zip::03kozakurahime_monogatari.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "3d7f3b943fe91acd9fbe52630718b82489212810df1f8a921f1757635dec5ba4",
    "grammar": {
     "adopted_pairs": {
@@ -9488,8 +9313,7 @@
    "work_id": "001055_46162",
    "label": "cards/001055/files/46162_ruby_55946.zip::dokugen_aika.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9d4190962ad852abb9bc43dfe6bd83360c4c9878dcd84663dfeadf23a9b04bd7",
    "grammar": {
     "adopted_pairs": {
@@ -9527,8 +9351,7 @@
    "work_id": "001059_5072",
    "label": "cards/001059/files/5072_ruby_38453.zip::donau_genryu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9dea71f553b2f9a334954ee8b5a10cb718487a91ab7d95f5184a3d62e2c2d510",
    "grammar": {
     "adopted_pairs": {
@@ -9572,8 +9395,7 @@
    "work_id": "001059_5077",
    "label": "cards/001059/files/5077_ruby_38455.zip::rigisanjono_ichiya.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "08a7b67563e041ab2ace337e3102cc6eda328f0c1ac11bd431e117a464117b27",
    "grammar": {
     "adopted_pairs": {
@@ -9612,8 +9434,7 @@
    "work_id": "001059_53506",
    "label": "cards/001059/files/53506_ruby_47190.zip::nankinmushi_nikki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "0831747c30ed1c0e2ff4b5c7ee3ba2ff84919b023d4e8ba3a40601e383db62d6",
    "grammar": {
     "adopted_pairs": {
@@ -9653,8 +9474,7 @@
    "work_id": "001059_53507",
    "label": "cards/001059/files/53507_ruby_47188.zip::nihon_ona.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "f24f3c851afcda68a96f3ab583085657379811b4f16601aa349ddd48cca6b979",
    "grammar": {
     "adopted_pairs": {
@@ -9693,8 +9513,7 @@
    "work_id": "001059_53508",
    "label": "cards/001059/files/53508_ruby_47191.zip::nihon_daijishin.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6dcaa33b9c475a178f58909347430111077138e676a2c65d7224bcb1fcf71f6d",
    "grammar": {
     "adopted_pairs": {
@@ -9734,8 +9553,7 @@
    "work_id": "001059_53509",
    "label": "cards/001059/files/53509_ruby_47187.zip::isar_gawa.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "11bc758e4e2e252395860b4fb2cd6985f7b4ec7e4741247c951de1c962f8873f",
    "grammar": {
     "adopted_pairs": {
@@ -9774,8 +9592,7 @@
    "work_id": "001059_53510",
    "label": "cards/001059/files/53510_ruby_47189.zip::vesuvio_san.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "20f11d49f7b4d87eda048df8687614778c4f42dd488ca08eef6f8496102e085b",
    "grammar": {
     "adopted_pairs": {
@@ -9814,8 +9631,7 @@
    "work_id": "001059_57007",
    "label": "cards/001059/files/57007_ruby_64561.zip::shihei_zuru.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "aace36c163ef4e6f4a40daad9297b92fd7286318ffc4bbfc860179517bd3f9a8",
    "grammar": {
     "adopted_pairs": {
@@ -9853,8 +9669,7 @@
    "work_id": "001059_57009",
    "label": "cards/001059/files/57009_ruby_66945.zip::tsuma.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a4c3745775921580264a3689d5e746cb09d57fbeea2d6701f0154a4833e84545",
    "grammar": {
     "adopted_pairs": {
@@ -9892,8 +9707,7 @@
    "work_id": "001081_42232",
    "label": "cards/001081/files/42232_ruby_23379.zip::shinshi_hasseijidaino_omoide.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "787a6106d7108aaeb10d27e54f5bc2312587d875a64cc693b7b8f8d522436911",
    "grammar": {
     "adopted_pairs": {
@@ -9931,8 +9745,7 @@
    "work_id": "001081_42233",
    "label": "cards/001081/files/42233_ruby_37101.zip::tenchi_ujo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9cc4b10fdc1f42387aaaaf8759d16404a3a2859378595cb00e24595cb9dc5c25",
    "grammar": {
     "adopted_pairs": {
@@ -9971,8 +9784,7 @@
    "work_id": "001081_56892",
    "label": "cards/001081/files/56892_txt_53716.zip::02jo_kozakurahime.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4c4b5bfaea1ecf29661300b4ba269fa6c4d2bdf28d10bfca4d7365b81e83a487",
    "grammar": {
     "adopted_pairs": {
@@ -10010,8 +9822,7 @@
    "work_id": "001094_42604",
    "label": "cards/001094/files/42604_ruby_26172.zip::08jan_balujan.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "8243c66c495e26eb632333da3a30e4188f91489b90748cd4d6dafdbcfdccea83",
    "grammar": {
     "adopted_pairs": {
@@ -10049,8 +9860,7 @@
    "work_id": "001095_45801",
    "label": "cards/001095/files/45801_ruby_38010.zip::farce_ni_tsuite.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "1dac24c6efbe67a0067e3d177df52e3eaad8b2864d6962f544f72d58e215d635",
    "grammar": {
     "adopted_pairs": {
@@ -10088,8 +9898,7 @@
    "work_id": "001095_45825",
    "label": "cards/001095/files/45825_ruby_38352.zip::iyokuteki_sosaku_bunshono_keishiki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "3b82b9f618302efe381ff4e8d87cf9a4447f02a45daba365e03ece2799d71786",
    "grammar": {
     "adopted_pairs": {
@@ -10127,8 +9936,7 @@
    "work_id": "001095_56809",
    "label": "cards/001095/files/56809_ruby_57993.zip::iyokuteki_sosaku_bunsho.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "c79360e90e9a61617217514f16817e2a6988ac4d56dd1ce8bb5557398b1438b8",
    "grammar": {
     "adopted_pairs": {
@@ -10166,8 +9974,7 @@
    "work_id": "001095_61138",
    "label": "cards/001095/files/61138_ruby_77616.zip::farce_ni_tsuite.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "fc094f39cc8c078f7492b3dd9a85418e885e5df2f15da1acbd8564d8636be6dd",
    "grammar": {
     "adopted_pairs": {
@@ -10206,8 +10013,7 @@
    "work_id": "001111_42789",
    "label": "cards/001111/files/42789_ruby_64055.zip::02jane_eyre.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "aa4c4a3c304207e6fee56dea546b51abccea172a8fabfedb66a8c2084bfdb9fe",
    "grammar": {
     "adopted_pairs": {
@@ -10252,8 +10058,7 @@
    "work_id": "001123_59726",
    "label": "cards/001123/files/59726_ruby_73425.zip::koshono_noroi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "dc7d0c8a6905e3a1aab45522183a7b60d78c4c23fb8519dfca6665fe8e94ef43",
    "grammar": {
     "adopted_pairs": {
@@ -10291,8 +10096,7 @@
    "work_id": "001143_43422",
    "label": "cards/001143/files/43422_ruby_23689.zip::chinjosho.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a73db6b70e355e0cef1a63bbd9ab85b84328759042589cf51e4944d12d8937d0",
    "grammar": {
     "adopted_pairs": {
@@ -10330,8 +10134,7 @@
    "work_id": "001143_55163",
    "label": "cards/001143/files/55163_ruby_48046.zip::hakaba.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "33b0beb624ab8fb3a9bd3a9127685efc52877319df22f29b91921c4f0bf963fe",
    "grammar": {
     "adopted_pairs": {
@@ -10369,8 +10172,7 @@
    "work_id": "001151_52934",
    "label": "cards/001151/files/52934_ruby_44906.zip::jukenseino_shuki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4654021ca5180fa909d0479a224900e925f976b3d7da3862b0a6dad29e528bc1",
    "grammar": {
     "adopted_pairs": {
@@ -10409,8 +10211,7 @@
    "work_id": "001153_54447",
    "label": "cards/001153/files/54447_ruby_51719.zip::genshikaku_tankyuno_omoide.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "276eefbb1ff04b26f3cb05002a366a9b49dbd9b0eca65718e0fdd7fbc73091c9",
    "grammar": {
     "adopted_pairs": {
@@ -10448,8 +10249,7 @@
    "work_id": "001154_43596",
    "label": "cards/001154/files/43596_ruby_50774.zip::hakubutsushi _atogaki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "2ba36873e591ea5fe9e880e2d29adc12fa382031a144550f92c3041b185befea",
    "grammar": {
     "adopted_pairs": {
@@ -10487,8 +10287,7 @@
    "work_id": "001154_44540",
    "label": "cards/001154/files/44540_ruby_26750.zip::sekai_nozoki_megane.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4df0b0390688cf9f2fc022d2f2b435b40bbd42a071626c65c6c703ec49a10ff5",
    "grammar": {
     "adopted_pairs": {
@@ -10527,8 +10326,7 @@
    "work_id": "001154_44567",
    "label": "cards/001154/files/44567_txt_26758.zip::akademino_kakitori.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4f739daf67e63f28d0d23570fc228fa0f46559e4acb29bff8b123cd4e57b99b7",
    "grammar": {
     "adopted_pairs": {
@@ -10566,8 +10364,7 @@
    "work_id": "001154_44584",
    "label": "cards/001154/files/44584_txt_28619.zip::jan_kokuto_saku_osorubeki_kodomotachi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "0b2cec2e0f6225ee4b6f58113b356978d46065b58f6b6a24a9bec261e0ba81c2",
    "grammar": {
     "adopted_pairs": {
@@ -10605,8 +10402,7 @@
    "work_id": "001154_44594",
    "label": "cards/001154/files/44594_txt_28634.zip::furansuni_okeru_sheikusupia.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d763a4fcfe2a7c394c1c05b358b32873e8e4a9fb28a84a0adb1ae9b8fcddd27a",
    "grammar": {
     "adopted_pairs": {
@@ -10644,8 +10440,7 @@
    "work_id": "001154_44696",
    "label": "cards/001154/files/44696_txt_37621.zip::engekito_seiji.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "3454a7e0f4f9c4508e161d6faae57e944fbdc281d9236c07a821444765a18db0",
    "grammar": {
     "adopted_pairs": {
@@ -10683,8 +10478,7 @@
    "work_id": "001154_44833",
    "label": "cards/001154/files/44833_txt_47183.zip::aru_new_face.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4d8f01e971a89d5eb9d0baadb5434b824dd7c8f7028f1c3d17e1ed9dc394e549",
    "grammar": {
     "adopted_pairs": {
@@ -10722,8 +10516,7 @@
    "work_id": "001154_44840",
    "label": "cards/001154/files/44840_txt_44910.zip::engekino_yoshiki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "345e1c87d856d586d2967ad5e672ef1eafa99d0af9e99056e2ac3d92552a809a",
    "grammar": {
     "adopted_pairs": {
@@ -10761,8 +10554,7 @@
    "work_id": "001154_44877",
    "label": "cards/001154/files/44877_ruby_44643.zip::hakubutsushi_jo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9c1c360f74148ff90b8391b26f1cfcfa699b77484225cc583f49871b7241e386",
    "grammar": {
     "adopted_pairs": {
@@ -10801,8 +10593,7 @@
    "work_id": "001155_51352",
    "label": "cards/001155/files/51352_ruby_38618.zip::shonentachi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "3bd14fb2f8be3ef396b2049bbcfb175cbbb6869046eb24f77ef45186404258c7",
    "grammar": {
     "adopted_pairs": {
@@ -10840,8 +10631,7 @@
    "work_id": "001155_51353",
    "label": "cards/001155/files/51353_ruby_38619.zip::shoharan.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "c8a2fa01e8309ec511666c0af7cecf347af54006f8d8506163f418dc30fcf4d0",
    "grammar": {
     "adopted_pairs": {
@@ -10879,8 +10669,7 @@
    "work_id": "001155_51354",
    "label": "cards/001155/files/51354_ruby_38620.zip::tomikuji.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "5e3d31de94fe37c59f90bf23c475aff8cbc191a120306e06d01b4812abd1c723",
    "grammar": {
     "adopted_pairs": {
@@ -10918,8 +10707,7 @@
    "work_id": "001155_51365",
    "label": "cards/001155/files/51365_ruby_38827.zip::nemui.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "c35b3c355ac48e7de3ba8e612308e616dda0dca5c97da8393e0bd515848b653f",
    "grammar": {
     "adopted_pairs": {
@@ -10957,8 +10745,7 @@
    "work_id": "001155_51366",
    "label": "cards/001155/files/51366_ruby_38826.zip::kashitanka.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d3b09a6e0c0953280101ae073a4b5699089431b56efeb9a86b545d3c7a7ba84b",
    "grammar": {
     "adopted_pairs": {
@@ -10996,8 +10783,7 @@
    "work_id": "001157_47222",
    "label": "cards/001157/files/47222_txt_29274.zip::kiregireno_tsuioku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e847004f19a7a8936824984636ecc3f83720e99b8f2a8f49779b4723a2d7c7a4",
    "grammar": {
     "adopted_pairs": {
@@ -11035,8 +10821,7 @@
    "work_id": "001157_49849",
    "label": "cards/001157/files/49849_ruby_45799.zip::mizuto_suna.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "254cd84f6f42d5f07c5dfb4a49d47340c8eb2600964f4793dc26b7f0e02cd8b6",
    "grammar": {
     "adopted_pairs": {
@@ -11074,8 +10859,7 @@
    "work_id": "001157_51402",
    "label": "cards/001157/files/51402_ruby_53995.zip::chehofu_josetsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "97ffc19fe672eebb1485bbbbf430a9845d8dd50f4012050d275ccbe12f24590b",
    "grammar": {
     "adopted_pairs": {
@@ -11113,8 +10897,7 @@
    "work_id": "001163_43657",
    "label": "cards/001163/files/43657_txt_30076.zip::niels_bohr.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "62cd0a66cb2ede092a77282fff2f5606f61ee38c849141a401a1588bf36f070b",
    "grammar": {
     "adopted_pairs": {
@@ -11155,8 +10938,7 @@
    "work_id": "001164_43670",
    "label": "cards/001164/files/43670_ruby_18588.zip::keizaigaku_kazei_shogenri.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "fd181092cad6e9102680e82eba10aae0fd645697701ba1965144b7a161239ff4",
    "grammar": {
     "adopted_pairs": {
@@ -11194,8 +10976,7 @@
    "work_id": "001166_43876",
    "label": "cards/001166/files/43876_ruby_40152.zip::geijutsuno_ningengakuteki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b9f884684f0e44f351bd5323893f6017bd711ccdd755ca868c30a8150f466e65",
    "grammar": {
     "adopted_pairs": {
@@ -11233,8 +11014,7 @@
    "work_id": "001190_50913",
    "label": "cards/001190/files/50913_ruby_39172.zip::tsuri.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "8330af1d7ea31cd0aeab7c99d38df27a65ab7069428fe7c3cd2a20639545e6c4",
    "grammar": {
     "adopted_pairs": {
@@ -11272,8 +11052,7 @@
    "work_id": "001209_54189",
    "label": "cards/001209/files/54189_ruby_68437.zip::02morino_seikatsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4020896eae429eec878378a47432b5c77216a22ac5c82278f2bf57800fbfc34b",
    "grammar": {
     "adopted_pairs": {
@@ -11313,8 +11092,7 @@
    "work_id": "001224_46105",
    "label": "cards/001224/files/46105_ruby_48090.zip::daikon.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6515f44166e37c41fb996c405af913ac90da29a19915da3f396534d4d9305fbf",
    "grammar": {
     "adopted_pairs": {
@@ -11354,8 +11132,7 @@
    "work_id": "001224_46109",
    "label": "cards/001224/files/46109_ruby_69262.zip::france_haku_nb.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b12bde4c4e0312d7affe81bdc20159f8bfec7b05fb3e76caeef3dc45aecb7f0f",
    "grammar": {
     "adopted_pairs": {
@@ -11393,8 +11170,7 @@
    "work_id": "001224_46110",
    "label": "cards/001224/files/46110_ruby_67991.zip::rinrakuno_kojono_oboegaki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "8b6c94b03230865d0bee632a37038ed5af6ba295b188404274bd545dde4e1ecc",
    "grammar": {
     "adopted_pairs": {
@@ -11433,8 +11209,7 @@
    "work_id": "001224_46112",
    "label": "cards/001224/files/46112_ruby_64292.zip::nankyokuki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6d905fa91743b6436c075440853d296649ea355f8fe6148005a2af6712f174e0",
    "grammar": {
     "adopted_pairs": {
@@ -11472,8 +11247,7 @@
    "work_id": "001224_47498",
    "label": "cards/001224/files/47498_ruby_36852.zip::02ainori_ubaguruma.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9882ab9bf8c1ff17c5a40974c0f9f9d9ba698ceacbeb2f72e286dfd34bb481a1",
    "grammar": {
     "adopted_pairs": {
@@ -11512,8 +11286,7 @@
    "work_id": "001224_51847",
    "label": "cards/001224/files/51847_ruby_71860.zip::chitei_jukoku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d933f6e0cb6dd62192023b0a267f132d51e60c7e88f291975edb41b3f65afb08",
    "grammar": {
     "adopted_pairs": {
@@ -11557,8 +11330,7 @@
    "work_id": "001234_46340",
    "label": "cards/001234/files/46340_ruby_24806.zip::faraday_no_den.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "82352ce8bda47cde7ccb7c65427b08703f4e12dbdff803f99d4d057527444395",
    "grammar": {
     "adopted_pairs": {
@@ -11600,8 +11372,7 @@
    "work_id": "001263_50359",
    "label": "cards/001263/files/50359_ruby_38319.zip::kisenga_taiheiyoo_odan.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9db481c23411e8b4c806f01b4ffd189d5bd42c91b4edb6a6713c99c0ad6f612a",
    "grammar": {
     "adopted_pairs": {
@@ -11639,8 +11410,7 @@
    "work_id": "001263_50371",
    "label": "cards/001263/files/50371_ruby_39708.zip::meijino_gojussen_ginka.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "130f14fe791a59388c8d6a21ceba3bd2b73a41d7c41d96f1951948fffd446ab8",
    "grammar": {
     "adopted_pairs": {
@@ -11678,8 +11448,7 @@
    "work_id": "001263_50373",
    "label": "cards/001263/files/50373_ruby_39158.zip::moods_cashey.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "52927e725aeac80f225a22fc9a0807fd76d2a30053bd9f8de6f510aff8afea0d",
    "grammar": {
     "adopted_pairs": {
@@ -11717,8 +11486,7 @@
    "work_id": "001266_51368",
    "label": "cards/001266/files/51368_ruby_55968.zip::shokubutsuki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "428132df6d34b54c9e4b563245b90ba75643a6883c3fd96b122fadc37da3a572",
    "grammar": {
     "adopted_pairs": {
@@ -11757,8 +11525,7 @@
    "work_id": "001266_55790",
    "label": "cards/001266/files/55790_txt_76864.zip::watashino_shinjo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "48155f18bc4162cbc0ad80e648261a86be3a81388770c537235e07ea8a03bb8d",
    "grammar": {
     "adopted_pairs": {
@@ -11798,8 +11565,7 @@
    "work_id": "001266_56695",
    "label": "cards/001266/files/56695_ruby_52792.zip::02dainibu_konkonroku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "73110c2213008c63b186cf867c3f768dc4e14f745c7e4d9904b605f1ca6567c1",
    "grammar": {
     "adopted_pairs": {
@@ -11837,8 +11603,7 @@
    "work_id": "001313_47744",
    "label": "cards/001313/files/47744_ruby_57793.zip::ihan_asakusa_toro.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "bef6cef8cb9c08b5666be34f9199a16aa2a51d06a358e912cbaf10e72f658240",
    "grammar": {
     "adopted_pairs": {
@@ -11876,8 +11641,7 @@
    "work_id": "001346_50142",
    "label": "cards/001346/files/50142_txt_40289.zip::ono_genkan_ietsu_gikyoku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b093b4fd139a50572c0a71a4963a914efec9eb05fe437b10c3b26c2a7d1d75dc",
    "grammar": {
     "adopted_pairs": {
@@ -11915,8 +11679,7 @@
    "work_id": "001380_50475",
    "label": "cards/001380/files/50475_ruby_60856.zip::hito_tokoki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "db23baf203c83d4c617ca67c2bff2adaca55e8186bd470f2d894b8709e6dee1a",
    "grammar": {
     "adopted_pairs": {
@@ -11956,8 +11719,7 @@
    "work_id": "001380_57354",
    "label": "cards/001380/files/57354_ruby_58040.zip::kawaii_yama.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e5f2b1fdaed8b64daa592960b497d243f74145414134a50753cc46393d37c2cf",
    "grammar": {
     "adopted_pairs": {
@@ -11995,8 +11757,7 @@
    "work_id": "001383_56693",
    "label": "cards/001383/files/56693_ruby_58787.zip::kyofu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "59d162b0748acef462fb48e5d358012934354d4980f484cc9e50649992203cd5",
    "grammar": {
     "adopted_pairs": {
@@ -12034,8 +11795,7 @@
    "work_id": "001383_56873",
    "label": "cards/001383/files/56873_ruby_62034.zip::manji.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "ae8d6f292fb608272a29d9f2ed70ae4cdbfb0abcde77ead0abfeae8e63f209bb",
    "grammar": {
     "adopted_pairs": {
@@ -12073,8 +11833,7 @@
    "work_id": "001383_57344",
    "label": "cards/001383/files/57344_ruby_77329.zip::kozono_yume.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "bf20564f62afebc62452b2b44345f37ec0e4a4611e936404e79132e708658dc2",
    "grammar": {
     "adopted_pairs": {
@@ -12117,8 +11876,7 @@
    "work_id": "001383_57413",
    "label": "cards/001383/files/57413_ruby_77927.zip::ningyono_nageki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "685fe28277c03e1882c7474f1f126ef358403ca47a85511e1697b5100f9e7d52",
    "grammar": {
     "adopted_pairs": {
@@ -12156,8 +11914,7 @@
    "work_id": "001383_58093",
    "label": "cards/001383/files/58093_ruby_62048.zip::chijinno_ai.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "7ef6d1e1ed52c1f50cc31065ce76fc130a4e5c13f404f1103a0808100dfb4829",
    "grammar": {
     "adopted_pairs": {
@@ -12202,8 +11959,7 @@
    "work_id": "001383_58153",
    "label": "cards/001383/files/58153_ruby_71264.zip::the_affair_of_two_watches.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a8162ab92c6b1c2f64c1bb498c4cba1763771acc774abcd982aedac45cd5119d",
    "grammar": {
     "adopted_pairs": {
@@ -12241,8 +11997,7 @@
    "work_id": "001383_59304",
    "label": "cards/001383/files/59304_ruby_74197.zip::seishun_monogatari.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "804801e321d5ec3b053b2b72d38f8d7a6d549280d278860ac19f1d82cd990d7e",
    "grammar": {
     "adopted_pairs": {
@@ -12282,8 +12037,7 @@
    "work_id": "001395_51364",
    "label": "cards/001395/files/51364_ruby_66504.zip::sakoku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "994061b6e9310bce02cf9e8e97109a5274a54c45ebe1f5505e949f75c3f317f9",
    "grammar": {
     "adopted_pairs": {
@@ -12322,8 +12076,7 @@
    "work_id": "001399_49924",
    "label": "cards/001399/files/49924_ruby_47791.zip::sakanato_haeno_shukujitsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "1b15833aa5ef586c9eaeeda69928f87178e64a6164131a38813a4e97a9a40259",
    "grammar": {
     "adopted_pairs": {
@@ -12361,8 +12114,7 @@
    "work_id": "001399_49930",
    "label": "cards/001399/files/49930_ruby_47633.zip::joo_sukaa.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "0fbf2d1eb6361708d6bde74bdf38aff35cf64a7852702b110d89af38d3ce09b6",
    "grammar": {
     "adopted_pairs": {
@@ -12400,8 +12152,7 @@
    "work_id": "001407_50112",
    "label": "cards/001407/files/50112_ruby_41726.zip::elizabeth_to_essex.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "fb1920195e7dcd52b26cff9cd1b9e4b9fdb245653adf337185f87f11090d7fe6",
    "grammar": {
     "adopted_pairs": {
@@ -12439,8 +12190,7 @@
    "work_id": "001411_59071",
    "label": "cards/001411/files/59071_ruby_69918.zip::01hyotono_gyofu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "3632b692a5c7a3f0c2953d4f0ce19bd73f1567a7a8f5366841cbaf58da41d78f",
    "grammar": {
     "adopted_pairs": {
@@ -12480,8 +12230,7 @@
    "work_id": "001421_50423",
    "label": "cards/001421/files/50423_ruby_46749.zip::santarono_nikki_daisan.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e9ba5f68d6767be70c66b400d132bca8bd0bc9b23f927aeb08887600adf2e2e7",
    "grammar": {
     "adopted_pairs": {
@@ -12520,8 +12269,7 @@
    "work_id": "001421_50424",
    "label": "cards/001421/files/50424_ruby_44375.zip::santarono_nikki_daini.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "8631ca48214d515cca4d5a75578ccb08af556ea05abb504c681769658b163e3f",
    "grammar": {
     "adopted_pairs": {
@@ -12560,8 +12308,7 @@
    "work_id": "001428_50328",
    "label": "cards/001428/files/50328_txt_64311.zip::sotaisei_riron/sotaisei_riron.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "172a624e985c03e5aabe6c19d7192554e51e3b8869333798584610495a23f1ba",
    "grammar": {
     "adopted_pairs": {
@@ -12604,8 +12351,7 @@
    "work_id": "001468_50750",
    "label": "cards/001468/files/50750_ruby_75925.zip::01shisen'o_koete.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "42ed00b2ca3c3e068bbdb36fccbc4e165c2d1de4c68a018f8f7ce5baa82a1783",
    "grammar": {
     "adopted_pairs": {
@@ -12646,8 +12392,7 @@
    "work_id": "001475_53144",
    "label": "cards/001475/files/53144_ruby_62535.zip::omokage.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "296ef3c224ea6e8ace069b6ba803a89b4ab140c765916ec7854b03c5c118b722",
    "grammar": {
     "adopted_pairs": {
@@ -12686,8 +12431,7 @@
    "work_id": "001475_53156",
    "label": "cards/001475/files/53156_ruby_73656.zip::tobira.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "631897bbf83f0e078a0aa6b515713ccb7c6597c5dd63833541f8a6abf40999eb",
    "grammar": {
     "adopted_pairs": {
@@ -12725,8 +12469,7 @@
    "work_id": "001478_53780",
    "label": "cards/001478/files/53780_ruby_60179.zip::01jo_morse_sensei.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "ef23fd575757fc20c07414f5e24d27a019df097617e25cedcfd130f3cf3d6d2d",
    "grammar": {
     "adopted_pairs": {
@@ -12764,8 +12507,7 @@
    "work_id": "001520_51825",
    "label": "cards/001520/files/51825_ruby_48020.zip::mingeino_seishitsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "15e4828835cfdbc9b637cf40fc6677e285de72c2f93b0c7903d4f9510196b33e",
    "grammar": {
     "adopted_pairs": {
@@ -12810,8 +12552,7 @@
    "work_id": "001520_54957",
    "label": "cards/001520/files/54957_ruby_54016.zip::kogeino_michi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "9559fc67bdff6b8457771c18f0b70a695aada7e442d34a3616cf980986c54b64",
    "grammar": {
     "adopted_pairs": {
@@ -12856,8 +12597,7 @@
    "work_id": "001538_60192",
    "label": "cards/001538/files/60192_ruby_74782.zip::christ_kyo_nyumon.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b77bde6cfb043bd34aed523cafdcd12c572f70cb5a434e07b1658193ca92571d",
    "grammar": {
     "adopted_pairs": {
@@ -12896,8 +12636,7 @@
    "work_id": "001538_60358",
    "label": "cards/001538/files/60358_ruby_76740.zip::ies_den.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "c1e1067816ec5b01a14003e0a1fd77bd0e2f1082d17c707115100237d96509a3",
    "grammar": {
     "adopted_pairs": {
@@ -12935,8 +12674,7 @@
    "work_id": "001539_54374",
    "label": "cards/001539/files/54374_ruby_46182.zip::09yakusha_kaisetsu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "20109d3d36a2b670db688cb469475c3ed81faa6cf336272e648e838269b28289",
    "grammar": {
     "adopted_pairs": {
@@ -12974,8 +12712,7 @@
    "work_id": "001558_52689",
    "label": "cards/001558/files/52689_ruby_46548.zip::furukawa_roppa_showanikki01.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b175a6a04f6a7b6cdc4a052ba334e373d33233dc5925f639fd7535602935dbd9",
    "grammar": {
     "adopted_pairs": {
@@ -13020,8 +12757,7 @@
    "work_id": "001558_52690",
    "label": "cards/001558/files/52690_ruby_47824.zip::furukawa_roppa_showanikki02.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "c55feb20095f470401623038b4113be46b3b814bd475c8615b5bd9c4c2ffc95f",
    "grammar": {
     "adopted_pairs": {
@@ -13059,8 +12795,7 @@
    "work_id": "001558_52692",
    "label": "cards/001558/files/52692_ruby_50173.zip::furukawa_roppa_showanikki04.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a754f3e906f9b18c5187aae948d584748e27e4f3bcb7f6da0d296019f668a48c",
    "grammar": {
     "adopted_pairs": {
@@ -13101,8 +12836,7 @@
    "work_id": "001558_52693",
    "label": "cards/001558/files/52693_ruby_51534.zip::furukawa_roppa_showanikki05.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "5746ba3b32c040d002eff00afa303b3000f2b198bb3b80588bee51c9fa843889",
    "grammar": {
     "adopted_pairs": {
@@ -13144,8 +12878,7 @@
    "work_id": "001562_54155",
    "label": "cards/001562/files/54155_ruby_69026.zip::wasure_nokorino_ki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "de43bf7fb51796f06a8e40c9c62d0dd9d278553ff01607fa98672acc6e1196db",
    "grammar": {
     "adopted_pairs": {
@@ -13183,8 +12916,7 @@
    "work_id": "001569_53208",
    "label": "cards/001569/files/53208_ruby_49865.zip::risshunno_tamago.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "666c47c7afa4a4b943b0457492fa2512aaa5f1407863bc5dfcaa71b0d7f6ebd0",
    "grammar": {
     "adopted_pairs": {
@@ -13222,8 +12954,7 @@
    "work_id": "001569_53219",
    "label": "cards/001569/files/53219_ruby_49861.zip::chikyuno_marui_hanashi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "c277a2b5fd5e93c181d8f2eca10eed8c3e91f56a8b0eaa7d1f51b4a468c4ab33",
    "grammar": {
     "adopted_pairs": {
@@ -13261,8 +12992,7 @@
    "work_id": "001569_53489",
    "label": "cards/001569/files/53489_ruby_49725.zip::senkohanabi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "57d56306a895f3f8ca55c3b6d04e34fb7f73cdcd698bf7c7b24a67944b99e0db",
    "grammar": {
     "adopted_pairs": {
@@ -13301,8 +13031,7 @@
    "work_id": "001569_57285",
    "label": "cards/001569/files/57285_ruby_60792.zip::kokusai_seppyo_iinkaino_kotonado.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e6901137ea95cdc2847fd282ab0e35801bb84613083a8b0036b857509e56c4e5",
    "grammar": {
     "adopted_pairs": {
@@ -13342,8 +13071,7 @@
    "work_id": "001569_57305",
    "label": "cards/001569/files/57305_ruby_60791.zip::juhyono_kagaku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "fe7245f0f8917ed14ff9e29c8aad559d42ad404613d0e074d8b35f528533f797",
    "grammar": {
     "adopted_pairs": {
@@ -13381,8 +13109,7 @@
    "work_id": "001569_57306",
    "label": "cards/001569/files/57306_ruby_63226.zip::sukuwareta_kibon.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "deba9b65ba8083349dd77f62b2677eb3d4d1786e760639b76df38d75bb58113a",
    "grammar": {
     "adopted_pairs": {
@@ -13420,8 +13147,7 @@
    "work_id": "001569_57450",
    "label": "cards/001569/files/57450_ruby_72796.zip::eikoku_nisshokuhanno_insho.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "5c9f57fff5100f8bf169b350019ee07b2702a5716c0bd75acd46850405792a5e",
    "grammar": {
     "adopted_pairs": {
@@ -13461,8 +13187,7 @@
    "work_id": "001569_57451",
    "label": "cards/001569/files/57451_ruby_60162.zip::kangetsuno_kubikukurino_rikigaku_sonota.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "785e3516e8bd23b9e791f3694f4c5c3c0c5b4818aaf125712ea9e96dcddee1ba",
    "grammar": {
     "adopted_pairs": {
@@ -13502,8 +13227,7 @@
    "work_id": "001569_57460",
    "label": "cards/001569/files/57460_ruby_69541.zip::senseio_meguru_hanashi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a763c1e7b3bb7f10813e184160c153123339ff8e7154dd1ecbf24720879f8c82",
    "grammar": {
     "adopted_pairs": {
@@ -13541,8 +13265,7 @@
    "work_id": "001569_57463",
    "label": "cards/001569/files/57463_ruby_63050.zip::torahiko_kawa.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "f6284f8326c3740b5a82b4c046f8fbcb9c27eb960cb2124391ec6f2c9b30672e",
    "grammar": {
     "adopted_pairs": {
@@ -13580,8 +13303,7 @@
    "work_id": "001569_57468",
    "label": "cards/001569/files/57468_ruby_63808.zip::richardson.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "fffbe8b0945d1b58ab442c71666892a98e6b00167ad9c01c5558eed8a7bcd698",
    "grammar": {
     "adopted_pairs": {
@@ -13620,8 +13342,7 @@
    "work_id": "001569_57866",
    "label": "cards/001569/files/57866_ruby_62131.zip::sugasugashisano_kenkyu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6854f770ed437472f9aa95ad20a53428b5b08ffe4edb16165d4ed53da5ee2f0c",
    "grammar": {
     "adopted_pairs": {
@@ -13659,8 +13380,7 @@
    "work_id": "001569_59188",
    "label": "cards/001569/files/59188_ruby_71432.zip::ineno_ichinichi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "bdfd02a6b2c709cf3c7ed2518c64c4bfe59b08fa7ac46422d05a60b7641c10b7",
    "grammar": {
     "adopted_pairs": {
@@ -13700,8 +13420,7 @@
    "work_id": "001569_59194",
    "label": "cards/001569/files/59194_txt_71260.zip::shinsendoto_kagaku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "3e8adb52bbcd8c2bdc4476d6d85ad72e786117ca0a87246d65e272a29a3f492e",
    "grammar": {
     "adopted_pairs": {
@@ -13739,8 +13458,7 @@
    "work_id": "001569_59199",
    "label": "cards/001569/files/59199_ruby_66300.zip::terada_torahikono_tsuiso.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "f85a77afdceed23d84ad625859da0d17b4bc748292ef7b509b5aa857d55476f4",
    "grammar": {
     "adopted_pairs": {
@@ -13778,8 +13496,7 @@
    "work_id": "001569_59202",
    "label": "cards/001569/files/59202_ruby_68420.zip::biwakono_mizu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "ffbc3eb3308d47b47a6ca84433d097e0e8edbd36f2a6a6259135cf5c04a4131c",
    "grammar": {
     "adopted_pairs": {
@@ -13825,8 +13542,7 @@
    "work_id": "001569_59219",
    "label": "cards/001569/files/59219_ruby_76212.zip::sumi_nagashino_butsuriteki_kenkyu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "04939820f042837715572619e2353deefd196bd81460c66bfd6ffb147478c742",
    "grammar": {
     "adopted_pairs": {
@@ -13869,8 +13585,7 @@
    "work_id": "001569_59220",
    "label": "cards/001569/files/59220_ruby_76222.zip::sumi_narabini_suzurino_butsurigakuteki_kenkyu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "c72f1980ab0166f4e0d6ef0410eb500b095db866dfe1671b6c3c5409613ccfd6",
    "grammar": {
     "adopted_pairs": {
@@ -13915,8 +13630,7 @@
    "work_id": "001569_59796",
    "label": "cards/001569/files/59796_ruby_77872.zip::busshin_ichinyono_kagaku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "1c3641e49e01fe335b982735d516aac6aefd39a4ac2da149cca83eb120c96291",
    "grammar": {
     "adopted_pairs": {
@@ -13956,8 +13670,7 @@
    "work_id": "001579_53947",
    "label": "cards/001579/files/53947_ruby_53526.zip::03aino_shishu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "34bff4c24ec93467ec5210a39ccd20033ccce53f89e6df2f574a3f306eea9a93",
    "grammar": {
     "adopted_pairs": {
@@ -13996,8 +13709,7 @@
    "work_id": "001581_53030",
    "label": "cards/001581/files/53030_ruby_57379.zip::irieno_hotori.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "304a8ffa077d3f86d848107d4ad5a57b69a44f33fe589c4041b534bb8e13c5eb",
    "grammar": {
     "adopted_pairs": {
@@ -14036,8 +13748,7 @@
    "work_id": "001581_54868",
    "label": "cards/001581/files/54868_ruby_49915.zip::karuizawanite.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "8ffbc7c2d6d0c1c69bf8d545bf5ab8d4ea5a84fd1fa7e6143dc7a7682b324ad7",
    "grammar": {
     "adopted_pairs": {
@@ -14077,8 +13788,7 @@
    "work_id": "001581_57319",
    "label": "cards/001581/files/57319_ruby_65964.zip::irieno_hotori.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d3a4185083df0cebd2cc6a92e9d12cd4ee4f206745f2f8f740bffa9c8f623c43",
    "grammar": {
     "adopted_pairs": {
@@ -14117,8 +13827,7 @@
    "work_id": "001597_53703",
    "label": "cards/001597/files/53703_txt_71417.zip::senni_kansuru_oboegaki_3.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "32bf8dd648cdca7dda7ec1366077b0fd7abacb2fc043ce8d983becb29728eebf",
    "grammar": {
     "adopted_pairs": {
@@ -14158,8 +13867,7 @@
    "work_id": "001597_53789",
    "label": "cards/001597/files/53789_txt_74031.zip::1931nen_sakuhin_daiichiban.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "ad61bf0972fb3492fc7e4d09d07298ddafdfb897d3e74a4918c7ff0171f53ae7",
    "grammar": {
     "adopted_pairs": {
@@ -14197,8 +13905,7 @@
    "work_id": "001617_53982",
    "label": "cards/001617/files/53982_ruby_58044.zip::harukanaru_dokei.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a37c9418301ceb916d97e767be244444d162e61d1bc0da576d818512a12d0436",
    "grammar": {
     "adopted_pairs": {
@@ -14236,8 +13943,7 @@
    "work_id": "001656_54270",
    "label": "cards/001656/files/54270_txt_53293.zip::shinrigaku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "477405cca14ac37d936459a811a3520a404c3bd37d9b64284df5abc568e0fbec",
    "grammar": {
     "adopted_pairs": {
@@ -14275,8 +13981,7 @@
    "work_id": "001670_55342",
    "label": "cards/001670/files/55342_ruby_75272.zip::meikyoku_ketteiban.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "ea606e49054953caebac275ef04424f4df1f4a9795f66e5381544ef1ce3df54c",
    "grammar": {
     "adopted_pairs": {
@@ -14321,8 +14026,7 @@
    "work_id": "001748_55796",
    "label": "cards/001748/files/55796_ruby_69505.zip::jishin_namazu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "b62dc473e9837929bf445600dd27c292462723d240649b256ebe2957e3450944",
    "grammar": {
     "adopted_pairs": {
@@ -14360,8 +14064,7 @@
    "work_id": "001758_55891",
    "label": "cards/001758/files/55891_ruby_56940.zip::venice_ni_shisu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4af11ccf9537eba3e3210b1ce7e86b38530c923b77dca2fb351c5b8b6a9e54c3",
    "grammar": {
     "adopted_pairs": {
@@ -14399,8 +14102,7 @@
    "work_id": "001759_45021",
    "label": "cards/001759/files/45021_ruby_57286.zip::venice_ni_shisu_kaisetus.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6245e846b5d973549b82b15b16ec1a95caa8cfc1e4fc7b07a1907f989cbab4ac",
    "grammar": {
     "adopted_pairs": {
@@ -14439,8 +14141,7 @@
    "work_id": "001763_59443",
    "label": "cards/001763/files/59443_ruby_74183.zip::rojinno_kokyoya_kodokushao_yakushita_koro.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "437681f280530f697244b484b9c7c3d2f5f61ef2f17c2b77b1f961a0ba8b455d",
    "grammar": {
     "adopted_pairs": {
@@ -14480,8 +14181,7 @@
    "work_id": "001763_60173",
    "label": "cards/001763/files/60173_txt_77199.zip::enko.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "fa2436234ecd8bbe2950f4e2c3dffb2ddab970eccaa59458efeacc7ede1f0f11",
    "grammar": {
     "adopted_pairs": {
@@ -14522,8 +14222,7 @@
    "work_id": "001764_55990",
    "label": "cards/001764/files/55990_ruby_60177.zip::03nihon_sonohi_sonohi.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d525fe8fcb42ece74486e130e5c332eda357b9701729092640853cd68154279d",
    "grammar": {
     "adopted_pairs": {
@@ -14568,8 +14267,7 @@
    "work_id": "001779_56682",
    "label": "cards/001779/files/56682_ruby_64896.zip::maho_ningyo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "62669be9d69bbe45bf79ceef8485136dd3233dc2f3a5e9a2ef4b596ff8866040",
    "grammar": {
     "adopted_pairs": {
@@ -14607,8 +14305,7 @@
    "work_id": "001779_57106",
    "label": "cards/001779/files/57106_ruby_64301.zip::dai_kinkai.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "95d3b67cbcfb1b155a6596b1f724b70301d2d563df8f98297ec92368435acbb8",
    "grammar": {
     "adopted_pairs": {
@@ -14646,8 +14343,7 @@
    "work_id": "001779_57502",
    "label": "cards/001779/files/57502_ruby_62060.zip::tantei_shosetsuno_nazo.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "588a19e5c6e148de65321911801bf799d509f2cf462ff71fe1a4c6429746c71e",
    "grammar": {
     "adopted_pairs": {
@@ -14685,8 +14381,7 @@
    "work_id": "001800_51339",
    "label": "cards/001800/files/51339_ruby_69536.zip::02kaidai_kreitserova_sonata.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "fbfcbaa635a3837b12d52596573a2df55cd54d9d0f7b75a5b81de54252970b93",
    "grammar": {
     "adopted_pairs": {
@@ -14724,8 +14419,7 @@
    "work_id": "001804_56765",
    "label": "cards/001804/files/56765_ruby_54477.zip::takubokuto_dekarutomeidai.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "e2aeafe5859044a669c0a44aaf0e67fe37b2a20675018bf37b98b163a6f6f46a",
    "grammar": {
     "adopted_pairs": {
@@ -14765,8 +14459,7 @@
    "work_id": "001833_58059",
    "label": "cards/001833/files/58059_ruby_61997.zip::sodo_kyoikuron.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "1ae5c5a7ae2ff52ef59e5006875ba522e95c5223e94f79d76ca378c57b5b8042",
    "grammar": {
     "adopted_pairs": {
@@ -14804,8 +14497,7 @@
    "work_id": "001848_59469",
    "label": "cards/001848/files/59469_ruby_68568.zip::05dai_ikkan_zuisoroku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "d368f7ae7f0556a6eafdfc04b9ee1c04c5b24b6ae45aa15c5b66928cad76c714",
    "grammar": {
     "adopted_pairs": {
@@ -14843,8 +14535,7 @@
    "work_id": "001848_59607",
    "label": "cards/001848/files/59607_ruby_69162.zip::06dai_nikan_zuisoroku.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "4f9aa26600cdfcdfe3067f42996b5538ad63f172648e93b9685471e5aad39518",
    "grammar": {
     "adopted_pairs": {
@@ -14889,8 +14580,7 @@
    "work_id": "001848_59608",
    "label": "cards/001848/files/59608_ruby_70312.zip::07zuisoroku_dai_sankan.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "872b52cf16d23804aa357185837d6ab1e6108883a071f41b47e9ce2e5e778609",
    "grammar": {
     "adopted_pairs": {
@@ -14929,8 +14619,7 @@
    "work_id": "001866_57499",
    "label": "cards/001866/files/57499_ruby_60656.zip::yuki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "10ada9bb27cade34ade378628074d29a6e1cc1302eb9aa4c76e7c2f6bd31b23d",
    "grammar": {
     "adopted_pairs": {
@@ -14969,8 +14658,7 @@
    "work_id": "001867_58196",
    "label": "cards/001867/files/58196_ruby_67376.zip::wagashieno_sho.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "35ece1fce2ec9779a29232e11bfdc168a4eced3431b253adea921b710ca590f8",
    "grammar": {
     "adopted_pairs": {
@@ -15009,8 +14697,7 @@
    "work_id": "001869_57495",
    "label": "cards/001869/files/57495_ruby_65434.zip::aobeka_monogatari.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "2601c0e13587fd4b12e83183f79205c61f26bfb881c55a7921e141e63b1f0d65",
    "grammar": {
     "adopted_pairs": {
@@ -15048,8 +14735,7 @@
    "work_id": "001869_57574",
    "label": "cards/001869/files/57574_ruby_63586.zip::aobeka_monogatari.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "6f9146c8ebfb92a7355d37dac2022934157104fe6a4bd10b1eeb5a93f8bdc093",
    "grammar": {
     "adopted_pairs": {
@@ -15087,8 +14773,7 @@
    "work_id": "001913_58143",
    "label": "cards/001913/files/58143_ruby_60661.zip::yorokobashiki_chishiki.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "cf7079a74f897bce230f17e76e45503fcc90405f24d2f71c3d6b9dc91a957162",
    "grammar": {
     "adopted_pairs": {
@@ -15130,8 +14815,7 @@
    "work_id": "001955_58807",
    "label": "cards/001955/files/58807_ruby_63584.zip::jinsei_giji_taiken_gemu.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "deb519ff3bb2c1b6ebd16619ccff91d9c9841f08bdc6a6b1bee1bc9d64238d71",
    "grammar": {
     "adopted_pairs": {
@@ -15170,8 +14854,7 @@
    "work_id": "001976_58924",
    "label": "cards/001976/files/58924_ruby_68225.zip::trappist_tenshienno_dotei.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "82b9ef0b70a46601ce62c62a66344e919990114f97f898d683c89bc3a3560386",
    "grammar": {
     "adopted_pairs": {
@@ -15209,8 +14892,7 @@
    "work_id": "001986_58958",
    "label": "cards/001986/files/58958_txt_63611.zip::jimaku_kanwa.txt",
    "reader": "zip_stdlib",
-   "recovered": false,
-   "decoding": "shift_jis/replace",
+   "decoding": "shift_jis/replace (BOM-gated utf-8 first)",
    "sha256": "a7744ad11a1ec7048b7bd2f5db82849e5c4b4f9bfb780ffd2a9e32e1822d1aad",
    "grammar": {
     "adopted_pairs": {

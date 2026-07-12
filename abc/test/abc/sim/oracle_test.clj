@@ -63,3 +63,31 @@
            (set (map (juxt #(get % "work_id") #(get % "relation_to_work")) cands))))
     (is (every? #(= ["000001"] (get % "source_person_ids")) cands))
     (is (every? #(= ["900001" "900002"] (get % "target_person_ids")) cands))))
+
+;; P15 participant-update oracle. bootstrap 2: works 000101/000102, sole
+;; authors 000001/000002.
+(deftest expected-participant-updates-test
+  (let [m0 (model/bootstrap 2)
+        edited (:model (model/apply-event
+                        m0 {:event/type :edit-person :pid "000001"
+                            :field :family_name :value "変"}))
+        ;; removing 000101 detaches sole author 000001 → drops from projection
+        removed (:model (model/apply-event
+                         m0 {:event/type :remove-work :wid "000101"}))]
+    (is (= [{"person_id" "000001" "change_type" "hash_changed"}]
+           (oracle/expected-participant-updates
+            m0 edited ["000001" "000002" "999999"]))
+        "field edit → hash_changed; untouched and never-present pids quiet")
+    (is (= [{"person_id" "000001" "change_type" "removed"}]
+           (oracle/expected-participant-updates m0 removed ["000001" "000002"])))
+    (is (= [{"person_id" "000001" "change_type" "added"}]
+           (oracle/expected-participant-updates removed m0 ["000001"])))
+    (is (= [] (oracle/expected-participant-updates m0 m0 ["000001" "999999"]))
+        "identical endpoints → no entries")
+    ;; cur = edit 000001, then detach 000002 (remove its sole work 000102)
+    (let [cur (:model (model/apply-event edited {:event/type :remove-work
+                                                 :wid "000102"}))]
+      (is (= [{"person_id" "000001" "change_type" "hash_changed"}
+              {"person_id" "000002" "change_type" "removed"}]
+             (oracle/expected-participant-updates m0 cur ["000002" "000001"]))
+          "multiple entries, sorted by person_id regardless of input order"))))

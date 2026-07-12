@@ -49,8 +49,25 @@ check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contr
 	@(cd abc && nix flake check --no-build)
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." nix flake check --no-build)
 
-validate-migration: check-no-build
+phase5-checkpoint:
+	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
+	nix build "./ab-validator#checks.$system.phase5-checkpoint" --print-build-logs
+
+validate-migration: check-no-build phase5-checkpoint
 
 # Unseeded simulation soak (15x counts); failures print the seed to replay.
 sim-soak:
 	cd abc && ABC_SIM_SOAK=1 clojure -M:test:kaocha -m kaocha.runner --focus :simulation
+
+# Replay the pinned aozorabunko history through the audit machinery and
+# diff against the committed baseline (needs network on a cold cache).
+replay-aozora:
+	cd abc && clojure -M:abc/aozora-replay -- --check
+
+# Re-run the replay and rewrite the committed baseline (adjudicate the
+# diff in the same PR as whatever caused it).
+replay-aozora-update:
+	cd abc && clojure -M:abc/aozora-replay -- --update
+
+source-bundle-corpus-check:
+	nix build ./abc#checks.x86_64-linux.source-bundle-corpus --print-build-logs

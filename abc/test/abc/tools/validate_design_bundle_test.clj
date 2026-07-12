@@ -168,7 +168,7 @@
   "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340")
 
 (def ^:private current-parser-ir-schema-hash
-  "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2")
+  "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec")
 
 (def ^:private parser-ir-schema-hash
   legacy-parser-ir-schema-hash)

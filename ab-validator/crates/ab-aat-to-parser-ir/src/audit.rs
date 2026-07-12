@@ -23,6 +23,8 @@ pub struct CorpusAuditConfig {
     pub abc_root: Option<PathBuf>,
     pub repo_root: PathBuf,
     pub jobs: usize,
+    pub expect_mapping_version: Option<String>,
+    pub expect_mapping_hash: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -269,6 +271,10 @@ struct AuditFileResult {
 pub fn run_audit(config: CorpusAuditConfig) -> Result<AuditSummary> {
     let started = Instant::now();
     let mapping = MappingDocument::from_path(&config.mapping_path)?;
+    mapping.check_expected_generation(
+        config.expect_mapping_version.as_deref(),
+        config.expect_mapping_hash.as_deref(),
+    )?;
     let abc_root = config
         .abc_root
         .clone()

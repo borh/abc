@@ -1,0 +1,7 @@
+CHECKPOINT OK
+
+================================================================
+NEGATIVE PROBE (deliberate): same invocation with --c5 27772b1b75c9ceeb0b724095bbbb47f774f3a275
+(the C4 sha) — expected CHECKPOINT FAIL, proving the verifier bites.
+================================================================
+CHECKPOINT FAIL: docs/superpowers/reports/2026-07-12-phase5-c5-delta.summary.json: commit '004deaf548f34a36abbc17d0f7a162df010a6292' != 27772b1b75c9ceeb0b724095bbbb47f774f3a275

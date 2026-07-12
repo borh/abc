@@ -594,3 +594,131 @@ longer exists). Rollback for the retirement is `git revert` of this commit
   facade lacks a facade-level assertion that `ruby_entries` skips
   Segments-base ruby (behavior covered by the adapter-level
   `gaiji_base_ruby_keeps_v1_typed_emission` test).
+
+### Phase 5 closure (2026-07-12)
+
+Phase 5 (bare-toggle inline classifier as identity rotation C5) is
+CHECKPOINT OK (`reports/aat-fidelity/verify-phase5-checkpoint.py`,
+`docs/superpowers/reports/2026-07-12-phase5-checkpoint.txt`), followed by
+a deliberate negative probe (same invocation pinned to the C4 sha instead
+of C5) that correctly returned `CHECKPOINT FAIL` — proving the verifier
+bites.
+
+**C5 identity:** commit `004deaf548f34a36abbc17d0f7a162df010a6292`, join
+key `ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git
+004deaf548f34a36abbc17d0f7a162df010a6292)`. This candidate superseded a
+first attempt, `1f14e3696d2c993bb77f4e01bee1bfdb480e77fa`, which the
+delta gate caught: a jizume-reflow placement defect affecting 83 works
+(see `docs/superpowers/reports/2026-07-12-phase5-identity.json` for both
+coordinates and `.superpowers/sdd/review-1f14e369..004deaf5.diff` for the
+fix).
+
+**Gates** (all frozen `2026-07-12-phase5-c5-*`):
+
+| Gate | Result |
+|---|---|
+| delta | 1552 yokogumi + 25 keigakomi adopted / 14 declined (reasons 0 orphan_open / 0 orphan_close / 14 reopen_rollback / 0 interleave), binding **per-line** across the whole corpus, over the **parser-visible** universe (placement report Revision 4: source-text 1582/25/24 reconciled against 44 LEGEND + 12 TAIL + 14 GAP non-parser-visible markers; independently re-derived, not read from the report) |
+| conformance | full lane 127 vectors + seed lane 30 vectors, zero row drift vs C4 (`must` 25/25, 0 fail, 0 skip both lanes) |
+| perf | +4.23% median (≤10% threshold); `001562_56145` individually watched at +0.00%. **Baseline-lane note**: this phase's perf baseline is the C4 binary itself (not the legacy lane), so this margin is not directly comparable to the Phase 3 (−4.09%) or Phase 4 (−7.96%/−7.93%) figures, which were measured against different baselines |
+| conversion | 17886 attempted / 17886 succeeded / 0 failed under mapping 0.4.0; new rules `S-13`/`S-14` declared with 0 observed occurrences — the converter's generic layout-span arm emits no divergence records for these kinds over this corpus |
+
+**Mapping generations:** `0.3.0` is FROZEN at
+`data/aat-to-parser-ir-mapping-v2-0.3.0.json`
+(`sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40`,
+reproduced byte-exact); `0.4.0` is live at
+`data/aat-to-parser-ir-mapping-v2.json`
+(`sha256:cf177bee98af086fe728cbc1942e4f631b26ed5bb55aedc7d91b21f467c41f30`).
+The converter is fail-closed on `--expect-mapping-version`/`--expect-mapping-hash`.
+
+**Ceremony:**
+
+- Registry row `56d5ddd7` (byte-exact copy of the producer-emitted EDN row).
+- Admission `9a3f6733`: `:status :admitted`.
+- Atomic repoint `3ec1d042`: `reports/aat-fidelity/run-sets/current.json`
+  ONLY, `ab-aozora.expected.content_hash =
+  sha256:153471c217fc734e96a7e9a641deb366a936a03c960945904ed1790d559c9055`
+  (the aat_dir-level hash — the run-set pin).
+- Postactivation coverage `c4c8cc98`:
+  `IR_PUBLICATION_COVERAGE_COMPLETE` — the first end-to-end COMPLETE
+  verdict since the ABC `0.3.0` policy rotation (contract confirmed this
+  phase, Task 7); 151 raw unsupported-derived rows fold to 0
+  `classified_but_not_admitted` / 0 `true_unsupported_gap` via 31
+  `admitted_by_custom_contract` + 120 `admitted_by_tei_profile`.
+- Checkpoint `bdaba29f`: `CHECKPOINT OK` + the deliberate negative probe
+  `CHECKPOINT FAIL` described above.
+
+**Keigakomi 44-residual:** ATTRIBUTED, not just explained away —
+`docs/superpowers/reports/2026-07-12-keigakomi-residual-attribution.md`
+traces the 673-vs-717 gap to a greedy-wildcard pattern swallow across 8
+works; both the 673 (flat-regex artifact) and 717 (per-marker semantic
+count) figures are reconciled, and 717 is recommended for citation going
+forward. Both figures were already correct in what they preserved — no
+content was ever lost, only miscounted by one measurement technique.
+
+**Retention (never-delete, append-only):** `ab-aozora-phase5-c5-004deaf`
+joins the never-delete list under `/db/ab-validator/aat-corpus/` —
+record BOTH hash coordinates: `aat_dir`-level
+`sha256:153471c217fc734e96a7e9a641deb366a936a03c960945904ed1790d559c9055`
+(the run-set pin) and parent `output_content_hash`
+`sha256:f89d36c7bb0d0ce7344840abf3e82538f54b3e515c23ac00c14b1c26bca5a484`
+(the dump's `metadata.json` output hash, one directory level up from
+`aat_dir`) — these are two distinct, non-interchangeable coordinates, not
+a duplicate. The C4 dump (`ab-aozora-phase4-c4-27772b1`) stays per the
+existing never-delete list. The superseded first-candidate dump,
+`ab-aozora-phase5-c5-1f14e36` (jizume-reflow defect), is DELETABLE on
+hinoki — cleanup is a controller action, not performed by this task.
+
+**Rollback:** `git revert` of `3ec1d042` restores the C4 lane in
+`current.json`; mapping `0.3.0` remains in-tree either way (it was frozen
+before the `0.4.0` edit, never edited itself); registry rows are
+append-only and are never reverted.
+
+**Baseline repair, ABC confirmation, and hygiene (one line each):**
+
+- Task 0 repaired the inherited Phase 4 baseline (fmt drift across 6
+  files; the uncompilable `cst`/`query` facade stub features removed) so
+  every later Phase 5 task started from a green gate set.
+- Task 7 confirmed the ABC `0.3.0` source-region policy contract, closing
+  the Phase 4 `BLOCKED_SOURCE_REGION_CONTRACT_MISSING` gap and enabling
+  this phase's `IR_PUBLICATION_COVERAGE_COMPLETE` verdict.
+- Hygiene: the converter README's stale v1 parser-IR hash line
+  (`0b495bb5…` → `a1e1b506…`) was corrected; the facade gained its own
+  `ruby_entries_skips_segments_base_ruby` test (previously only covered
+  at the adapter level); `verify-golden-spans.py` now suppresses the
+  documented CRLF-normalization false-positive signature with an explicit
+  `crlf_artifact_suppressed` counter rather than silently passing or
+  requiring a manual read of the diff.
+- The Phase 3/4 carried bare-toggle classifier ceiling item is CLOSED:
+  this phase's classifier is exactly that ceiling (`［＃横組み］…終わり`
+  and bare `［＃罫囲み］`), landed as the C5 rotation above.
+
+**Carried forward past Phase 5** (unresolved, not gating any Phase 5 gate):
+
+- Inline-attribute forms (116 yokogumi-adjacent + 238 keigakomi-adjacent
+  markers using attribute syntax rather than the bare-toggle grammar) —
+  named follow-up, out of this phase's scope by design.
+- Warigaki/kunten vocabulary still awaits its own ADR (deferred to
+  Phase 6); both remain raw-preserved.
+- Pre-existing split-brain dump storage: hinoki lacks the 4 legacy
+  comparison-lane dumps (`aozora-rs`, `aozora2`, `aozora2html`,
+  `aozora-epub3`), farspark lacks the `ab-aozora` dumps — neither gap is
+  new this phase.
+- The sandboxed `nix build .#checks.x86_64-linux.reports-pytest` check
+  lacks `git` on its `nativeBuildInputs` and so shows 42 failures
+  (`test_verify_phase4_checkpoint.py` / `test_verify_phase5_checkpoint.py`,
+  which shell out to `git`) in that sandbox only; the same suite passes
+  269/269 with `git` on `PATH` outside the sandbox. Pre-existing, not a
+  Phase 5 regression.
+- `S-13`/`S-14` conversion-rule recorder wiring, if rule-coverage gating
+  is ever added for these kinds (currently declared with 0 observed
+  occurrences and not gated).
+- Ledger-only, no code (final-review triage): Task 2's delta-audit
+  invariant scan validates candidate `inline_container` spans only by
+  bracketing (start/end order), not deeper structural well-formedness —
+  plan-explicit, not a gap found late. Task 11's composite-adjacency
+  regression test is a synthetic construction (no corpus-observed
+  instance of two adjacent, individually-non-matching keigakomi markers
+  bridging into one credited match was found), and Task 12b's facade
+  Segments-skip assertion could be tightened beyond a single positive
+  case. Both recorded as Minors for the final review to triage, not
+  fixed in this task.

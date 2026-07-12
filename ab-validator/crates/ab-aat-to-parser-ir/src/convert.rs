@@ -23,6 +23,7 @@ pub struct ConversionOptions {
     pub validate_input_aat: bool,
     pub validate_output_parser_ir: bool,
     pub orthographic_annotations: Option<OrthoAnnotationsBundle>,
+    pub work_content_hash: Option<String>,
 }
 
 impl Default for ConversionOptions {
@@ -31,6 +32,7 @@ impl Default for ConversionOptions {
             validate_input_aat: true,
             validate_output_parser_ir: true,
             orthographic_annotations: None,
+            work_content_hash: None,
         }
     }
 }
@@ -131,7 +133,7 @@ fn convert_preflighted(
         }
     }
 
-    let source = map_source(&aat, &mut recorder)?;
+    let source = map_source(&aat, &options, &mut recorder)?;
     recorder.record("INVENTION", None, Some("schema_id/schema_hash"), None, None)?;
     let mut warnings = map_warnings(&aat, &mut recorder)?;
     warnings
@@ -2091,8 +2093,32 @@ fn derived_from(aat: &Value, mapping: &MappingDocument) -> Result<Value> {
     }))
 }
 
-fn map_source(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value> {
+fn map_source(
+    aat: &Value,
+    options: &ConversionOptions,
+    recorder: &mut DivergenceRecorder,
+) -> Result<Value> {
     let meta = &aat["meta"];
+    let source_hash = meta
+        .get("source_hash")
+        .and_then(Value::as_str)
+        .unwrap_or("sha256:0000000000000000000000000000000000000000000000000000000000000000");
+    let primary_text_hash = meta
+        .get("primary_text_hash")
+        .and_then(Value::as_str)
+        .unwrap_or(source_hash);
+    if meta.get("primary_text_hash").is_some() && primary_text_hash != source_hash {
+        bail!(
+            "AAT meta.primary_text_hash must equal compatibility alias meta.source_hash: primary_text_hash={primary_text_hash} source_hash={source_hash}"
+        );
+    }
+    let work_content_hash = options
+        .work_content_hash
+        .as_deref()
+        .unwrap_or(primary_text_hash);
+    if !is_sha256_hash(work_content_hash) {
+        bail!("invalid work_content_hash; expected sha256 followed by 64 lowercase hex digits");
+    }
     let source_encoding = meta["source_encoding"].as_str().unwrap_or("utf-8");
     let encoding = match source_encoding {
         "utf-8" | "utf-8-bom" => "UTF-8",
@@ -2109,12 +2135,18 @@ fn map_source(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value> {
             Some(json!(encoding)),
         )?;
     }
+    let primary_text_pointer = if meta.get("primary_text_hash").is_some() {
+        "meta.primary_text_hash"
+    } else {
+        "meta.source_hash"
+    };
     recorder.record(
         "AMBIGUITY",
-        Some("meta.source_hash"),
-        Some("source.work_content_hash"),
-        meta.get("source_hash").cloned(),
-        meta.get("source_hash").cloned(),
+        Some(primary_text_pointer),
+        Some("source.primary_text_hash"),
+        meta.get(primary_text_pointer.trim_start_matches("meta."))
+            .cloned(),
+        Some(json!(primary_text_hash)),
     )?;
     recorder.record(
         "INVENTION",
@@ -2146,11 +2178,22 @@ fn map_source(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value> {
         recorder.record("LOSS", Some("meta.semantic_summary"), None, None, None)?;
     }
     Ok(json!({
-        "work_content_hash": meta["source_hash"].as_str().unwrap_or("sha256:0000000000000000000000000000000000000000000000000000000000000000"),
+        "work_content_hash": work_content_hash,
+        "primary_text_hash": primary_text_hash,
         "source_path": null,
         "encoding": encoding,
         "normalization": "source",
     }))
+}
+
+fn is_sha256_hash(value: &str) -> bool {
+    let Some(hex) = value.strip_prefix("sha256:") else {
+        return false;
+    };
+    hex.len() == 64
+        && hex
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
 fn map_warnings(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value> {

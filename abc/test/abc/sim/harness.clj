@@ -46,3 +46,20 @@
   (let [{:keys [applied total]} @counter]
     (is (and (pos? total) (>= (/ applied total) 9/10))
         (str name ": forced-event applied ratio " applied "/" total))))
+
+(defn clean-ex-info?
+  "Clean two-tier failure: ex-info carrying every required diagnostic key."
+  [e required-keys]
+  (and (instance? clojure.lang.ExceptionInfo e)
+       (every? #(contains? (ex-data e) %) required-keys)))
+
+(defn forbidden-throw?
+  "True when the SUT escaped with an exception class the failure taxonomy
+  forbids outright (spec §Failure Taxonomy) — asserted even for
+  divergence-gated cases so a wrong-behavior regression cannot hide
+  behind an open divergence."
+  [e]
+  (or (instance? NullPointerException e)
+      (instance? AssertionError e)
+      (instance? StackOverflowError e)
+      (instance? java.util.zip.ZipException e)))

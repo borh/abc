@@ -398,11 +398,17 @@
               {
                 nativeBuildInputs = [
                   pkgs.clojure
+                  pkgs._7zz
+                  pkgs.git
                   pkgs.git-cliff
                   pkgs.libxml2
                 ];
               }
               ''
+                # Replay tests exercise the real CLI and pin coupling. Keep the
+                # monorepo lock outside the writable abc source fixture, matching
+                # the repository layout while preserving its store-read-only mode.
+                cp ${../flake.lock} flake.lock
                 ${copyWritableSource}
                 ${cljSandboxEnv}
                 # Keep TEI schema-backed tests active in the sandbox. The schema is
@@ -526,6 +532,26 @@
                 cljfmt check src test
                 mkdir -p "$out"
                 echo "ABC focused Clojure lint and format checks passed." > "$out/result.txt"
+              '';
+
+          source-bundle-corpus =
+            pkgs.runCommand "abc-source-bundle-corpus"
+              {
+                nativeBuildInputs = [
+                  pkgs.clojure
+                  pkgs._7zz
+                ];
+              }
+              ''
+                ${copyWritableSource}
+                ${cljSandboxEnv}
+                actual="$TMPDIR/aozorabunko-source-bundle-summary.json"
+                clojure -M -m abc.tools.source-bundle-report \
+                  ${aozorabunko-src} "$actual"
+                cmp data/source-bundle/aozorabunko-0e9ea3e-summary.json "$actual"
+
+                mkdir -p "$out"
+                cp "$actual" "$out/summary.json"
               '';
 
           aat-parser-ir-probe-tests =

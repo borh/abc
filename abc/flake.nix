@@ -398,6 +398,7 @@
               {
                 nativeBuildInputs = [
                   pkgs.clojure
+                  pkgs._7zz
                   pkgs.git
                   pkgs.git-cliff
                   pkgs.libxml2

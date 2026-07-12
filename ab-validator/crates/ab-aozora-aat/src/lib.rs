@@ -2,12 +2,12 @@
 
 use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str, sync::LazyLock};
 
-use anyhow::Result;
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
+use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
 use regex::Regex;
-use serde::{Deserialize, Serialize};
 use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
@@ -142,7 +142,11 @@ fn terminator_ends(text: &str) -> Vec<usize> {
                 ends.push(i);
             }
             b'\r' => {
-                i += if bytes.get(i + 1) == Some(&b'\n') { 2 } else { 1 };
+                i += if bytes.get(i + 1) == Some(&b'\n') {
+                    2
+                } else {
+                    1
+                };
                 ends.push(i);
             }
             _ => i += 1,
@@ -404,7 +408,10 @@ fn lines_from(source: &str, offset: usize) -> impl Iterator<Item = (usize, &str)
     })
 }
 
-#[allow(clippy::type_complexity, reason = "one tuple per projected wire channel; a named struct would only restate the field set")]
+#[allow(
+    clippy::type_complexity,
+    reason = "one tuple per projected wire channel; a named struct would only restate the field set"
+)]
 fn projections(
     span_text: &str,
 ) -> Result<(
@@ -444,16 +451,17 @@ fn projections(
 /// `ruby_entries`, which can run into the tens of thousands for
 /// heavily-annotated works), where the `Value` overhead was measured to
 /// dominate wall time.
-fn from_entries<S: Serialize, T: DeserializeOwned>(
-    entries: &[S],
-) -> Result<Vec<T>> {
+fn from_entries<S: Serialize, T: DeserializeOwned>(entries: &[S]) -> Result<Vec<T>> {
     Ok(serde_json::from_slice(&serde_json::to_vec(entries)?)?)
 }
 
 // The wire envelope's schemaVersion check becomes a compile-time pin: the
 // from_entries round-trip is only valid against the wire shape this port
 // was written for.
-const _: () = assert!(aozora_json::SCHEMA_VERSION == 3, "incompatible wire schema version");
+const _: () = assert!(
+    aozora_json::SCHEMA_VERSION == 3,
+    "incompatible wire schema version"
+);
 
 /// Transform Aozora source bytes into AAT JSON output.
 ///
@@ -518,8 +526,9 @@ pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
         .map_err(|err| anyhow::anyhow!("decode_auto: {err:?}"))?;
     let doc = Document::new(source);
     let tree = doc.parse();
-    let mut data =
-        serde_json::to_value(aozora_json::diagnostic_entries(&decoded.sanitize_diagnostics))?;
+    let mut data = serde_json::to_value(aozora_json::diagnostic_entries(
+        &decoded.sanitize_diagnostics,
+    ))?;
     let mut parser_entries =
         serde_json::to_value(aozora_json::diagnostic_entries(tree.diagnostics()))?;
     // Sanitize-stage entries carry full-sanitized-text offsets → through
@@ -665,7 +674,10 @@ fn classify_tail(lines: &[&str]) -> (Vec<TailLineClass>, Vec<usize>) {
             classes.push(TailLineClass::Blank);
             continue;
         }
-        if PROVENANCE_HEADS.iter().any(|head| stripped.starts_with(head)) {
+        if PROVENANCE_HEADS
+            .iter()
+            .any(|head| stripped.starts_with(head))
+        {
             state = Some(TailState::Provenance);
             classes.push(TailLineClass::TerminalProvenance);
         } else if COLOPHON_HEADS.iter().any(|head| stripped.starts_with(head)) {
@@ -1712,7 +1724,10 @@ mod tests {
         assert!(!data.is_empty());
         for entry in data {
             let code = entry["code"].as_str().unwrap();
-            assert!(!code.contains('_') && !code.contains("::"), "not kebab: {code}");
+            assert!(
+                !code.contains('_') && !code.contains("::"),
+                "not kebab: {code}"
+            );
             assert!(entry["severity"].is_string());
             assert!(entry["span"]["start"].is_u64() && entry["span"]["end"].is_u64());
         }
@@ -1760,7 +1775,11 @@ mod tests {
             .iter()
             .filter(|e| e["code"] == "source-contains-pua")
             .collect();
-        assert_eq!(pua.len(), 1, "expected exactly one PUA diagnostic: {data:?}");
+        assert_eq!(
+            pua.len(),
+            1,
+            "expected exactly one PUA diagnostic: {data:?}"
+        );
         assert_eq!(pua[0]["severity"], "warning");
         assert_eq!(pua[0]["span"]["start"], 3);
         assert_eq!(pua[0]["span"]["end"], 6);
@@ -1782,16 +1801,16 @@ mod tests {
             .iter()
             .map(|e| e["code"].as_str().unwrap())
             .collect();
-        let pua_count = codes.iter().filter(|c| **c == "source-contains-pua").count();
+        let pua_count = codes
+            .iter()
+            .filter(|c| **c == "source-contains-pua")
+            .count();
         assert_eq!(pua_count, 1, "duplicate or missing PUA entry: {codes:?}");
         assert!(
             codes[0] == "source-contains-pua",
             "sanitize entries must come first: {codes:?}"
         );
-        assert!(
-            codes.iter().any(|c| *c == "unclosed-bracket"),
-            "{codes:?}"
-        );
+        assert!(codes.iter().any(|c| *c == "unclosed-bracket"), "{codes:?}");
     }
 
     #[test]
@@ -1807,7 +1826,11 @@ mod tests {
             .iter()
             .filter(|e| e["code"] == "tcy-target-not-found")
             .collect();
-        assert_eq!(tcy.len(), 1, "expected exactly one tcy diagnostic: {data:?}");
+        assert_eq!(
+            tcy.len(),
+            1,
+            "expected exactly one tcy diagnostic: {data:?}"
+        );
         assert_eq!(tcy[0]["severity"], "warning");
         assert_eq!(tcy[0]["span"]["start"], 6);
         assert_eq!(tcy[0]["span"]["end"], 35);
@@ -1835,7 +1858,11 @@ mod tests {
             .iter()
             .filter(|e| e["code"] == "source-contains-pua")
             .collect();
-        assert_eq!(pua.len(), 1, "expected exactly one PUA diagnostic: {data:?}");
+        assert_eq!(
+            pua.len(),
+            1,
+            "expected exactly one PUA diagnostic: {data:?}"
+        );
         assert_eq!(pua[0]["span"]["start"], 5);
         assert_eq!(pua[0]["span"]["end"], 8);
     }
@@ -2111,7 +2138,10 @@ mod tests {
     #[test]
     fn jizume_open_chars_recognizes_standalone_and_compound() {
         assert_eq!(jizume_open_chars("［＃ここから２３字詰め］"), Some(23));
-        assert_eq!(jizume_open_chars("［＃ここから６字下げ、折り返して７字下げ、２１字詰め］"), Some(21));
+        assert_eq!(
+            jizume_open_chars("［＃ここから６字下げ、折り返して７字下げ、２１字詰め］"),
+            Some(21)
+        );
         assert_eq!(jizume_open_chars("［＃ここから２字下げ］"), None);
         assert_eq!(jizume_open_chars("［＃ここで字詰め終わり］"), None);
         assert!(is_jizume_close("［＃ここで字詰め終わり］"));
@@ -2255,7 +2285,8 @@ mod tests {
         // coordinates (`aat-schema 2 facade 0.3.0 wire-schema 3`) are
         // unchanged by source_note emission.
         assert!(
-            adapter_version().starts_with("ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3")
+            adapter_version()
+                .starts_with("ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3")
         );
         let aat = aat_value_for("あ\n");
         assert_eq!(aat["version"], 2);
@@ -2277,11 +2308,17 @@ mod tests {
 
     #[test]
     fn classify_tail_continuation_after_provenance_head_is_provenance() {
-        let lines = ["底本：「日本文学全集1」集英社", "　　　1969（昭和44）年12月25日初版"];
+        let lines = [
+            "底本：「日本文学全集1」集英社",
+            "　　　1969（昭和44）年12月25日初版",
+        ];
         let (classes, _) = classify_tail(&lines);
         assert_eq!(
             classes,
-            vec![TailLineClass::TerminalProvenance, TailLineClass::TerminalProvenance]
+            vec![
+                TailLineClass::TerminalProvenance,
+                TailLineClass::TerminalProvenance
+            ]
         );
     }
 
@@ -2293,7 +2330,10 @@ mod tests {
     fn classify_tail_same_shaped_line_after_colophon_head_is_colophon() {
         let lines = ["入力：j.utiyama", "1998年7月28日公開"];
         let (classes, _) = classify_tail(&lines);
-        assert_eq!(classes, vec![TailLineClass::Colophon, TailLineClass::Colophon]);
+        assert_eq!(
+            classes,
+            vec![TailLineClass::Colophon, TailLineClass::Colophon]
+        );
     }
 
     #[test]
@@ -2329,11 +2369,17 @@ mod tests {
 
     #[test]
     fn classify_tail_oyahon_continuation_is_provenance() {
-        let lines = ["底本の親本：「新編 銀河鉄道の夜」新潮文庫", "　　　1989（平成元）年11月10日初版"];
+        let lines = [
+            "底本の親本：「新編 銀河鉄道の夜」新潮文庫",
+            "　　　1989（平成元）年11月10日初版",
+        ];
         let (classes, _) = classify_tail(&lines);
         assert_eq!(
             classes,
-            vec![TailLineClass::TerminalProvenance, TailLineClass::TerminalProvenance]
+            vec![
+                TailLineClass::TerminalProvenance,
+                TailLineClass::TerminalProvenance
+            ]
         );
     }
 
@@ -2355,7 +2401,11 @@ mod tests {
         let (classes, _) = classify_tail(&lines);
         assert_eq!(
             classes,
-            vec![TailLineClass::TerminalProvenance, TailLineClass::Blank, TailLineClass::Colophon]
+            vec![
+                TailLineClass::TerminalProvenance,
+                TailLineClass::Blank,
+                TailLineClass::Colophon
+            ]
         );
     }
 
@@ -2438,7 +2488,11 @@ mod tests {
     #[test]
     fn tail_free_work_has_no_source_note() {
         let aat = aat_value_for("本文だけ。\n");
-        assert!(top_level_blocks(&aat).iter().all(|b| b["kind"] != "source_note"));
+        assert!(
+            top_level_blocks(&aat)
+                .iter()
+                .all(|b| b["kind"] != "source_note")
+        );
     }
 
     #[test]
@@ -2473,7 +2527,10 @@ mod tests {
     #[test]
     fn unclassifiable_tail_line_falls_back_to_colophon_with_warning() {
         let mut decoded = decode_source_bytes("foo\n".as_bytes()).unwrap();
-        assert!(decoded.sanitized_tail.is_empty(), "sanity: no real tail in this input");
+        assert!(
+            decoded.sanitized_tail.is_empty(),
+            "sanity: no real tail in this input"
+        );
         decoded.sanitized_tail = "何かの一行\n底本：「X」Y社\n".to_owned();
         decoded.tail_offset = 0;
         let (blocks, warnings) = source_notes_from_tail(&decoded);

@@ -88,8 +88,10 @@ fn aat_output_matches_hand_verified_goldens() {
     for entry in fs::read_dir(data).unwrap() {
         let path = entry.unwrap().path();
         let name = path.file_name().unwrap().to_str().unwrap();
-        let golden = format!("{}/tests/goldens/{name}.expected.json",
-                             env!("CARGO_MANIFEST_DIR"));
+        let golden = format!(
+            "{}/tests/goldens/{name}.expected.json",
+            env!("CARGO_MANIFEST_DIR")
+        );
         let expected = fs::read(&golden).unwrap();
         let actual = ab_aozora_aat::aat_json_from_bytes(&fs::read(&path).unwrap()).unwrap();
         assert_eq!(actual, expected, "golden drift: {name}");

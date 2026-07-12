@@ -19,7 +19,7 @@
 - Checked-in capture descriptors are explicit inputs to their own bundles. Every dynamic schema, fixture, registry, report, and config input is explicit.
 - Capture only from a clean Stage A commit. A failed capture creates no registry entry.
 - Historical evidence retains exact historical coordinates; future guards move to `## Future Verification` and acquire no evidence obligation.
-- The baseline's 34 Decision/Hard Rule hashes are immutable. “Move” instructions relocate only duplicated Acceptance Criteria or Implementation Status prose; never cut, rewrite, or append to an original normative section.
+- The baseline's 36 explicitly inventoried normative-section hashes are immutable: 26 exact `## Decision` sections, ADR 0014's exact `## Decision Matrix`, eight exact `## Hard Rule` sections, and ADR 0016's exact `## Hard Rule (carried forward from ADR 0015)`. “Move” instructions relocate only duplicated Acceptance Criteria or Implementation Status prose; never cut, rewrite, or append to an original normative section.
 - Publication remains blocked by `data/publication-policy.edn`; release authority records decision scope, not current releasability.
 - Generated inventory and governance reports change in the same commit as their source ledger/registry changes.
 - Use `apply_patch` for hand edits, `nixfmt` for Nix formatting, and the root `justfile` as the final development entry point.
@@ -29,9 +29,9 @@
 ## File and interface map
 
 - Create `schemas/adr-claim-migration-baseline.schema.json`: closed JSON
-  contract for the immutable 146-row criterion baseline plus exact
-  `## Decision`/`## Hard Rule` section hashes for the original 26 Accepted
-  ADRs.
+  contract for the immutable 146-row criterion baseline plus the 36 exact,
+  explicitly coordinated normative-section hashes for the original 26
+  Accepted ADRs.
 - Create `src/abc/tools/adr_claim_migration.clj`: baseline hashing/loading and migration-ledger validation.
   - `(criterion-text-hash body) -> "sha256:<64 lowercase hex>"`, hashing the exact parsed criterion body UTF-8 bytes.
   - `(baseline-value revision adrs) -> deterministic JSON value`.
@@ -42,7 +42,7 @@
     absent from the baseline are outside this comparison.
   - `(validate-ledger baseline ledger claims-by-id {:keys [require-complete?]}) -> vector of problem maps`.
   - `(load-migration-state repo-root {:keys [require-complete?]}) -> {:baseline ... :ledger ... :by-key ... :problems [...]}`.
-- Create `docs/adr/adr-claim-migration-baseline.json`: immutable pre-edit snapshot.
+- Create `docs/adr/adr-claim-migration-baseline.json`: immutable pre-edit snapshot whose normative inventory is keyed by exact `[ADR, heading]` coordinates rather than heading-prefix inference.
 - Create/extend `docs/adr/adr-claim-migration.edn`: source ledger keyed by `[adr-number criterion-text-hash]`.
 - Modify `src/abc/tools/adr_evidence_inventory.clj`: `(inventory-value adrs migration-state)` joins dispositions/resulting IDs by baseline key; one-arity use is removed so callers cannot silently omit migration state.
 - Create `src/abc/tools/adr_evidence_register.clj`: materialize reviewed entry templates by deriving each bundle's canonical JCS hash, validate the resulting partial registry, and replace only the template-owned claim entries atomically.
@@ -56,6 +56,16 @@
   `component-clojure-test-v1`; this is the sole authorized way for an ABC
   evidence bundle to bind monorepo-relative `abc/...` and `ab-validator/...`
   inputs while retaining real-path containment.
+- Create `src/abc/tools/evidence_io.clj` and
+  `src/abc/tools/adr_evidence_runtime_inputs.clj`: the common traceable
+  repository-read boundary and checked runtime-input-manifest validator used
+  by every focused Clojure evidence boundary. Static namespace traversal owns
+  source closure only; it never certifies schemas, fixtures, registries,
+  reports, or configuration read at runtime.
+- Create sorted family manifests under `docs/evidence/adr-inputs/`.
+  Descriptor tests require exact equality between each boundary's manifest
+  paths and its declared runtime-data inputs, separately from descriptor
+  self-binding and derived namespace inputs.
 - Modify `src/abc/tools/adr.clj`: emit `:claim-header-outside-acceptance` when either exact non-acceptance section contains a typed claim header.
 - Create `nix/check-git-cliff-config.sh`: initialize a temporary repository, commit `feat: fixture`, and run git-cliff against the checked-in config.
 - Modify `flake.nix`: remove Git-cliff from the design-bundle app and add `checks.<system>.git-cliff-config`.
@@ -87,11 +97,14 @@
 
 Add tests asserting exact-body sensitivity, deterministic ADR/index ordering,
 146-row count, schema rejection of extra keys, duplicate `[adr,text_hash]`,
-text/hash disagreement, and baseline revision preservation. Also assert exact
-Decision/Hard Rule byte sensitivity, stable section ordering, and rejection
+text/hash disagreement, and baseline revision preservation. Also assert all
+36 explicit normative-coordinate byte sensitivities, stable section ordering, and rejection
 when an original Accepted ADR's normative section is added, removed, or
 changed; Implementation Status, relation headers, Acceptance Criteria,
 Historical Evidence, and Future Verification edits do not affect that guard.
+The inline fixture includes distinct exact `Decision`, `Decision Matrix`,
+`Hard Rule`, and `Hard Rule (carried forward from ADR 0015)` headings and
+proves no prefix-based discovery is used.
 Use an inline two-ADR fixture and assert the baseline row shape exactly:
 
 ```clojure
@@ -117,16 +130,21 @@ The baseline JSON top-level keys are exactly:
   "accepted_adr_count": 26,
   "criterion_count": 146,
   "criteria": [],
-  "normative_section_count": 34,
+  "normative_section_count": 36,
   "normative_sections": []
 }
 ```
 
 Sort rows by `[adr, original_criterion_index]`. Validate formatted hashes, exact recomputation from `original_text`, unique `[adr, original_text_hash]`, and count fields. Do not hash normalized Markdown or trim the parsed body.
 Each normative row has exactly `adr`, `file`, `section`, `original_text`, and
-`original_text_hash`; include one Decision row per original Accepted ADR and a
-Hard Rule row only when that exact heading exists. Hash exact parsed section
-body UTF-8 bytes and sort by `[adr, section]`.
+`original_text_hash`. Generate the inventory from an explicit checked
+coordinate table containing all 26 `[ADR, "Decision"]` coordinates, `[0014,
+"Decision Matrix"]`, the eight exact `[ADR, "Hard Rule"]` coordinates, and
+`[0016, "Hard Rule (carried forward from ADR 0015)"]`. Do not discover
+normative sections with `starts-with?`, a regex prefix, or a global heading
+name set. Fail when a coordinate is missing or when one of these 36 exact
+coordinates is duplicated. Hash exact parsed section body UTF-8 bytes and
+sort by `[adr, section]`.
 
 - [ ] **Step 4: Write failing ledger-validation tests**
 
@@ -144,7 +162,7 @@ Use this exact ledger contract:
    :resulting-claim-ids ["ADR-0001-C4"]}}}
 ```
 
-Assert rejection of an unknown/missing baseline key (when `require-complete?` is true), invalid disposition, missing non-retain rationale, empty planned boundaries on retained/corrected rows, duplicate resulting claim ID, absent current claim ID, baseline revision/hash mismatch, and a moved-out entry with nonempty resulting IDs. With `require-complete? false`, unreviewed baseline rows remain explicit inventory debt but already-present entries receive full validation; this is the only migration-time relaxation and plan 6 must invoke complete mode.
+Assert rejection of an unknown/missing baseline key (when `require-complete?` is true), invalid disposition, missing non-retain rationale, empty planned boundaries on retained/corrected rows, duplicate resulting claim ID, absent current claim ID, baseline revision/hash mismatch, and a moved-out entry with nonempty resulting IDs. With `require-complete? false`, unreviewed baseline rows remain explicit inventory debt but already-present entries receive full validation; this is the only migration-time relaxation. Plan 5 first invokes complete mode after all 146 dispositions exist, and plan 6 revalidates complete mode before switching enforcement.
 
 - [ ] **Step 5: Run ledger tests and verify RED**
 
@@ -161,7 +179,7 @@ Problem kinds must be stable keywords: `:invalid-migration-baseline`,
 `:duplicate-resulting-claim-id`, `:missing-resulting-claim-id`, and
 `:accepted-normative-section-drift`. `load-migration-state` always runs the
 normative comparison; `require-complete? false` relaxes missing ledger rows,
-not historical Decision/Hard Rule mutation.
+not historical mutation of any of the 36 inventoried normative coordinates.
 
 - [ ] **Step 7: Include the new JSON schema in design-bundle schema validation**
 
@@ -234,8 +252,9 @@ clojure -M:abc/adr-claim-migration -- \
   --revision "$revision"
 ```
 
-Expected: the manifest reports 26 ADRs, 146 criteria, and 34 normative
-sections (26 Decision plus 8 Hard Rule); re-running to `/tmp/baseline.json` is
+Expected: the manifest reports 26 ADRs, 146 criteria, and 36 normative
+sections (26 Decision, ADR 0014's Decision Matrix, eight exact Hard Rules, and
+ADR 0016's carried Hard Rule); re-running to `/tmp/baseline.json` is
 byte-identical.
 
 - [ ] **Step 5: Create the source ledger and enter all 35 foundation dispositions**
@@ -259,7 +278,9 @@ entry point is already present in the byte-immutable Decision section. Do not ad
 `resulting-claim-ids` until Task 6 finalizes Markdown. Non-foundation rows are
 intentionally absent at this family checkpoint and appear as unreviewed
 baseline debt; plans 2–5 own them. This uses `require-complete? false`; plan 6
-is the sole complete-mode transition.
+does not own the first complete-mode validation. Plan 5 performs the first
+`require-complete? true` validation after all 146 dispositions exist; plan 6
+revalidates completeness and alone switches governance enforcement.
 
 - [ ] **Step 6: Generate and inspect the audit inventory**
 
@@ -395,17 +416,24 @@ git add abc/src/abc/tools/adr_evidence_register.clj \
 git commit -m "feat(adr): add deterministic evidence registrar"
 ```
 
-### Task 2B: Monorepo-root component capture profile
+### Task 2B: Capture profiles and transitive runtime-input closure
 
 **Files:**
 - Modify: `abc/schemas/adr-evidence-run.schema.json`
 - Modify: `abc/src/abc/tools/adr_evidence_bundle.clj`
 - Modify: `abc/src/abc/tools/adr_evidence_capture.clj`
+- Create: `abc/src/abc/tools/evidence_io.clj`
+- Create: `abc/src/abc/tools/adr_evidence_runtime_inputs.clj`
+- Modify: `abc/src/abc/tools/files.clj`
+- Modify: `abc/src/abc/tools/json.clj`
+- Modify: `abc/src/abc/tools/hash.clj`
 - Modify: `abc/src/abc/tools/adr_evidence.clj`
 - Modify: `abc/src/abc/tools/adr_evidence_register.clj`
 - Modify: `abc/src/abc/tools/adr_governance.clj`
 - Modify: `abc/test/abc/tools/adr_evidence_bundle_test.clj`
 - Modify: `abc/test/abc/tools/adr_evidence_capture_test.clj`
+- Create: `abc/test/abc/tools/evidence_io_test.clj`
+- Create: `abc/test/abc/tools/adr_evidence_runtime_inputs_test.clj`
 - Modify: `abc/test/abc/tools/adr_governance_test.clj`
 - Modify: `abc/test/abc/tools/adr_evidence_register_test.clj`
 - Modify: `abc/flake.nix`
@@ -414,8 +442,39 @@ git commit -m "feat(adr): add deterministic evidence registrar"
 
 **Interfaces:**
 - Consumes: the version-1 capture descriptor and repository-containment
-  primitive.
+  primitive, preserving version 1 only for already-created legacy fixtures.
 - Produces:
+  - capture descriptor version `abc-adr-evidence-capture-v2`; every v2
+    `clojure-test-v1` or `component-clojure-test-v1` descriptor requires
+    a `:runtime-input-manifest` path under `docs/evidence/adr-inputs/` whose
+    basename equals the descriptor basename, while
+    `repo-files-v1` operational descriptors remain version 1 and bind their
+    Nix determinants explicitly;
+  - closed manifest value
+    `{:schema-version :abc-adr-runtime-inputs-v1 :paths [...]}` whose paths
+    are sorted, unique, contained, existing repository/workspace-relative
+    runtime-data paths;
+  - `(abc.tools.evidence-io/with-read-trace {:repo-root ... :workspace-root
+    ...} thunk) -> {:value ... :observed-paths [...]}` and
+    `(record-read! path) -> path`; absolute paths canonically contained by the
+    repository or workspace normalize to the same relative key as their
+    relative spelling. `(with-ephemeral-read-scope temp-root thunk)` permits
+    generated reads only below one canonical temporary root outside the
+    repository/workspace and excludes them from evidence inputs; repository
+    reads inside that scope are still recorded and every other external path
+    is rejected. The namespace
+    owns only an invocation-local trace hook and path recording and must not
+    require `abc.tools.files` or `abc.tools.hash`;
+  - existing `abc.tools.files` repository-read helpers,
+    `abc.tools.json/read-json-file`, and
+    `abc.tools.hash/sha256-file` call `record-read!` before reading, so tracing
+    covers production helpers transitively invoked by an evidence test;
+    add `(abc.tools.files/read-text path) -> string` for callers that
+    previously used direct `slurp`;
+  - `(assert-runtime-input-closure! {:repo-root ... :workspace-root ...
+    :descriptor ... :observed-paths ...}) -> true` or throws with exact
+    `:missing-runtime-input`, `:undeclared-runtime-input`,
+    `:invalid-runtime-input-manifest`, or containment problem data;
   - CLI option `--repo-root PATH`, defaulting to `.`;
   - validator option `--workspace-root PATH`, used only to resolve the new
     profile and required whenever such an artifact is present;
@@ -445,18 +504,23 @@ Create a temporary Git repository with `abc/src/example/core.clj`,
 descriptor value:
 
 ```clojure
-{:schema-version "abc-adr-evidence-capture-v1"
+{:schema-version "abc-adr-evidence-capture-v2"
  :tool "bash"
  :argv ["bash" "-lc" "cd abc && test -f ../ab-validator/docs/report.md"]
+ :runtime-input-manifest "abc/docs/evidence/adr-inputs/example.edn"
  :input-profile {:kind "component-clojure-test-v1"
                  :component-root "abc"
                  :roots ["example.core-test"]
                  :explicit ["abc/docs/evidence/adr-capture/example.edn"
+                            "abc/docs/evidence/adr-inputs/example.edn"
                             "ab-validator/docs/report.md"]}
  :observation-key "component-check-passes"}
 ```
 
-Assert `derive-minimum-inputs` returns the explicit paths plus
+Create `abc/docs/evidence/adr-inputs/example.edn` with
+`{:schema-version :abc-adr-runtime-inputs-v1 :paths
+["ab-validator/docs/report.md"]}`. Assert `derive-minimum-inputs` returns the
+explicit paths plus
 `abc/test/example/core_test.clj` and `abc/src/example/core.clj`. Assert capture
 with `:repo-root` equal to the temporary monorepo runs the command from that
 root and emits those monorepo-relative keys. Reject absolute, `..`, symlink-
@@ -480,6 +544,30 @@ Add governance CLI tests for both conventional argument vectors and an
 optional leading `--`; both must parse identical mode/root/workspace/report
 options. This normalizer matches the capture and inventory CLIs and prevents a
 separator from becoming a positional repository path.
+Add runtime-input tests proving:
+
+- version 2 rejects a missing manifest field, version 1 rejects that new
+  field, and a version-2 Clojure descriptor rejects a manifest path absent
+  from `:explicit`;
+- a manifest rejects unsorted, duplicate, absolute, `..`, missing, lexical-
+  escape, and symlink-escape paths;
+- `with-read-trace` records each traceable read once in sorted order and does
+  not record writes; relative and absolute spellings of the same contained
+  file collapse to one key. An ephemeral scope rejects a root inside the
+  repository/workspace and rejects reads outside its declared temporary root;
+- `assert-runtime-input-closure!` succeeds only when observed trace paths,
+  manifest `:paths`, and descriptor runtime-data inputs are exactly equal;
+  descriptor self, manifest self, and statically derived Clojure namespaces
+  are excluded from that equality;
+- the full statically derived source-and-test namespace closure of a v2
+  descriptor fails the bypass lint when it directly uses `slurp`,
+  `clojure.java.io/reader`, `Files/readAllBytes`, Jena path-loading APIs, or
+  another repository read that bypasses the hook. `spit` and other writes are
+  not reads. `abc.tools.files`, `abc.tools.hash`,
+  `abc.tools.json/read-json-file`, and a small named adapter
+  that calls `record-read!` immediately before a library path-load are the
+  only exemptions. A bypass in a transitive production helper therefore
+  fails the descriptor contract, not merely a bypass in the test namespace.
 
 - [ ] **Step 2: Run RED**
 
@@ -488,7 +576,9 @@ Run:
 ```bash
 cd abc
 bin/kaocha --focus abc.tools.adr-evidence-bundle-test \
-  --focus abc.tools.adr-evidence-capture-test
+  --focus abc.tools.adr-evidence-capture-test \
+  --focus abc.tools.evidence-io-test \
+  --focus abc.tools.adr-evidence-runtime-inputs-test
 ```
 
 Expected: FAIL because the new profile and CLI option are unsupported.
@@ -514,6 +604,49 @@ branch:
   }
 }
 ```
+
+Update the descriptor validator's closed key set and version dispatch. Version
+1 retains exactly the old keys. Version 2 permits and requires
+`:runtime-input-manifest` for either Clojure profile and rejects it for
+`repo-files-v1`. Do not silently reinterpret a version-1 descriptor as
+version 2. The emitted run bundle remains `abc-adr-evidence-run-v1`: the
+descriptor and manifest are themselves hashed inputs, so this strengthens
+capture preconditions without changing the observation artifact shape.
+
+Implement `evidence-io` as an acyclic trace-hook leaf. `with-read-trace` binds
+an invocation-local collector and `record-read!` resolves through
+`abc.tools.path-containment/path-state` before recording a workspace-relative
+path. Relative paths and canonical absolute paths contained by either root
+normalize identically. A dynamically bound ephemeral scope may suppress only
+generated reads canonically below its declared temporary root, which must be
+outside both roots; it never suppresses a repository/workspace read or permits
+another external path. It must not use global mutable state and must not
+require `files` or `hash`. Modify all repository-reading functions in
+`abc.tools.files`, `abc.tools.json/read-json-file`, and
+`abc.tools.hash/sha256-file` to call the hook before their existing read. A
+production helper that must give a path directly to Jena or another library
+uses a named traced adapter which calls `record-read!` immediately before the
+library call; do not whitelist arbitrary callers.
+
+The `:descriptor` option is exactly `{:path "..." :value descriptor-map}`;
+this avoids adding a second path option while keeping the descriptor path out
+of its own serialized value. `assert-runtime-input-closure!` loads the descriptor's manifest through the
+same contained read boundary, validates the closed two-key EDN shape, and
+compares sets only after separately proving the original vectors sorted and
+unique. For an ABC-local profile, runtime paths resolve below `repo-root`; for
+a component profile they resolve below `workspace-root`. Its expected
+explicit set is exactly:
+
+```clojure
+(into (sorted-set)
+      (concat (:paths manifest)
+              [descriptor-path (:runtime-input-manifest descriptor)]))
+```
+
+The caller supplies `:observed-paths` from the boundary's completed
+`with-read-trace` result. Capture refuses to execute a v2 descriptor whose
+static manifest/explicit comparison fails; the focused boundary test refuses
+to pass when the dynamic observed/manifest comparison fails.
 
 `derive-minimum-inputs` resolves the contained component root once and searches
 only its `test/` and `src/` directories. `capture!` continues to receive an
@@ -577,12 +710,15 @@ Run:
 cd abc
 bin/kaocha --focus abc.tools.adr-evidence-bundle-test \
   --focus abc.tools.adr-evidence-capture-test \
+  --focus abc.tools.evidence-io-test \
+  --focus abc.tools.adr-evidence-runtime-inputs-test \
   --focus abc.tools.adr-evidence-test \
   --focus abc.tools.adr-governance-test \
   --focus abc.tools.adr-evidence-register-test
 cd ..
 bash tests/root-flake-output-contract-smoke.sh
-nix build .#checks.x86_64-linux.monorepo-adr-governance
+system="$(nix eval --impure --raw --expr builtins.currentSystem)"
+nix build ".#checks.${system}.monorepo-adr-governance"
 ```
 
 Expected: all tests and the root audit check pass.
@@ -591,11 +727,17 @@ Expected: all tests and the root audit check pass.
 git add abc/schemas/adr-evidence-run.schema.json \
   abc/src/abc/tools/adr_evidence_bundle.clj \
   abc/src/abc/tools/adr_evidence_capture.clj \
+  abc/src/abc/tools/evidence_io.clj \
+  abc/src/abc/tools/adr_evidence_runtime_inputs.clj \
+  abc/src/abc/tools/files.clj \
+  abc/src/abc/tools/hash.clj \
   abc/src/abc/tools/adr_evidence.clj \
   abc/src/abc/tools/adr_evidence_register.clj \
   abc/src/abc/tools/adr_governance.clj \
   abc/test/abc/tools/adr_evidence_bundle_test.clj \
   abc/test/abc/tools/adr_evidence_capture_test.clj \
+  abc/test/abc/tools/evidence_io_test.clj \
+  abc/test/abc/tools/adr_evidence_runtime_inputs_test.clj \
   abc/test/abc/tools/adr_evidence_test.clj \
   abc/test/abc/tools/adr_governance_test.clj \
   abc/test/abc/tools/adr_evidence_register_test.clj \
@@ -949,6 +1091,8 @@ Expected: clean tree. Do not begin capture otherwise.
 - Create: `abc/docs/evidence/adr-capture/source-snapshot-fixtures.edn`
 - Create: `abc/docs/evidence/adr-capture/source-bundle-corpus.edn`
 - Create: `abc/docs/evidence/adr-capture/design-bundle-operational.edn`
+- Create: six same-stem manifests under `abc/docs/evidence/adr-inputs/` for
+  the focused Clojure descriptors
 - Create: `abc/docs/evidence/adr-entries/foundation.edn`
 
 **Interfaces:**
@@ -956,8 +1100,12 @@ Expected: clean tree. Do not begin capture otherwise.
 
 - [ ] **Step 1: Author descriptors with exact boundaries**
 
-Use `abc-adr-evidence-capture-v1`; include each descriptor's own path in
-`:input-profile :explicit`.
+Use `abc-adr-evidence-capture-v2` for the six focused Clojure descriptors and
+version 1 for the two `repo-files-v1` Nix boundaries. Every v2 descriptor sets
+`:runtime-input-manifest` with the same basename under
+`docs/evidence/adr-inputs/` and includes
+both its descriptor and manifest paths in `:input-profile :explicit`. Its
+manifest `:paths` vector is exactly the remaining explicit runtime-data paths.
 
 | Descriptor | Profile/command | Observation |
 |---|---|---|
@@ -978,6 +1126,15 @@ literally. Do not attach fixture claims to the operational observation.
 Extend `adr_evidence_capture_test.clj` to load every checked-in descriptor and
 assert exact key set, stable observation key, nonempty explicit set, and that
 the descriptor path is explicit.
+For every version-2 descriptor, invoke
+`adr-evidence-runtime-inputs/assert-runtime-input-closure!` first with the
+checked manifest paths as the observed trace to prove static descriptor
+equality, then run the focused evidence test that obtains its real observed
+trace through `evidence-io/with-read-trace`. Require zero missing or undeclared
+runtime paths. Scan only the focused evidence namespaces named by these
+descriptors and their complete statically derived source/test namespace
+closures; reject direct repository-read bypasses except the named traced
+adapters defined in Task 2B.
 For `design-bundle-operational.edn`, assert its explicit set equals the fixed
 wrapper/flake set union `(validate-design-bundle/evidence-input-paths)`; a new
 runtime-read file therefore fails the descriptor contract until it is bound.
@@ -1003,7 +1160,8 @@ Run: `cd abc && bin/kaocha --focus abc.tools.adr-evidence-capture-test`
 Expected: PASS.
 
 ```bash
-git add abc/docs/evidence/adr-capture abc/docs/evidence/adr-entries/foundation.edn \
+git add abc/docs/evidence/adr-capture abc/docs/evidence/adr-inputs \
+  abc/docs/evidence/adr-entries/foundation.edn \
   abc/test/abc/tools/adr_evidence_capture_test.clj
 git commit -m "docs(adr): pin foundation evidence capture commands"
 git status --short
@@ -1184,7 +1342,6 @@ shared operational bundle. Do not offer to switch enforcement.
   descriptor and bundle stems/observation keys are identical across Tasks 7–9.
 - Deliberate migration-mode boundary: incomplete non-foundation ledger coverage
   is allowed only with `require-complete? false` so sequential family commits
-  are possible. Plan 6 must use complete mode; this is the one implementation
-  detail requiring confirmation because the approved spec says unresolved
-  baseline keys fail without explicitly distinguishing intermediate family
-  checkpoints.
+  are possible. Plan 5 first proves complete mode after all family dispositions
+  land. Plan 6 repeats that proof while assembling the atomic enforcement
+  candidate and remains the sole audit-to-enforce authority.

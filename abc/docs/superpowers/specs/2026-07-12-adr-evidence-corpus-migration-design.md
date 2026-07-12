@@ -55,10 +55,14 @@ historical, compound, or non-observable criteria are corrected.
 ADR number, original criterion index, original text, and SHA-256 of the exact
 original criterion text.
 
-The same baseline also records the exact body and SHA-256 of every
-`## Decision` and `## Hard Rule` section in the original 26 Accepted ADRs (26
-Decision sections and 8 Hard Rule sections). Migration validation rejects any
-addition, removal, or byte drift in those 34 normative sections. New ADRs 0038
+The same baseline also records an explicit inventory of the exact body and
+SHA-256 of every normative section in the original 26 Accepted ADRs: 26
+`## Decision` sections, ADR 0014's `## Decision Matrix`, eight exact
+`## Hard Rule` sections, and ADR 0016's
+`## Hard Rule (carried forward from ADR 0015)`. Migration validation rejects
+any addition, removal, or byte drift in those 36 named normative sections.
+The inventory matches exact `[ADR, heading]` coordinates; it does not infer
+normative scope from a heading prefix. New ADRs 0038
 and 0034 are absent from this historical comparison; relation/lifecycle
 headers, Acceptance Criteria, Implementation Status, Historical Evidence, and
 Future Verification remain the explicitly mutable migration surfaces. This
@@ -105,6 +109,23 @@ Checked-in descriptors live under `docs/evidence/adr-capture/`. Executable
 bundles live under `docs/evidence/adr-runs/`. A descriptor is included in its
 own explicit input set so the recorded command/profile cannot drift without
 staling the bundle.
+
+Every executable bundle also has a mechanically checked runtime-data closure.
+Static namespace traversal establishes source-code closure only; it is never
+evidence that dynamically read schemas, fixtures, registries, reports, or
+configuration files are complete. Each focused evidence boundary publishes a
+sorted runtime-input manifest, its descriptor test requires exact equality
+between that manifest and the declared data inputs, and evidence-bound Clojure
+code routes repository reads through the traceable repository I/O boundary.
+Lint/tests reject direct read bypasses in those namespaces. Nix-backed
+boundaries instead name the exact check-specific flake lock, Nix expression,
+schema, and fixture determinants.
+
+The trace boundary normalizes relative paths and absolute paths contained by
+the repository/workspace to the same manifest key. Generated temporary reads
+may be excluded only inside an explicit ephemeral scope rooted outside both
+trees; that scope cannot suppress repository reads or authorize any other
+external path. External authority inputs remain declared evidence inputs.
 
 External-authority summaries and expert assessments live under
 `docs/evidence/external/`. They are bounded documents with independently
@@ -207,7 +228,8 @@ multiple ADRs. `clojure-test-v1`, `repo-files-v1`, and
 `operational-observation` are evidence kinds governed by the compatibility
 matrix. The two vocabularies are never interchangeable.
 
-- Focused Clojure boundaries use `clojure-test-v1`, with runtime data explicit.
+- Focused Clojure boundaries use `clojure-test-v1`, with runtime data explicit
+  and mechanically equal to the boundary's checked runtime-input manifest.
 - Rust or Python checks use `repo-files-v1` and a bounded command whose exit
   status is the observation.
 - Nix applications and checks use operational bundles and the exact supported
@@ -221,6 +243,9 @@ matrix. The two vocabularies are never interchangeable.
 A generic family-suite observation is forbidden when the suite does not
 assert every attached claim. Shared bundles should expose narrowly named
 observations or be split at the actual assertion boundary.
+An aggregate process result may support multiple claims only when each claim
+explicitly asserts that same aggregate process result; it cannot substitute
+for narrower fixture or structural semantics.
 
 ## Lifecycle Assignments
 
@@ -253,7 +278,7 @@ repository is currently releasable. Publication remains blocked by
 | 0025 | `fixture` | `publication` |
 | 0029 | `fixture` | `none` |
 | 0030 | `full-corpus` | `development` |
-| 0031 | `full-corpus` | `none` |
+| 0031 | `structural` | `none` |
 | 0032 | `full-corpus` | `development` |
 | 0033 | `full-corpus` | `publication` |
 
@@ -262,6 +287,11 @@ the now-contained Boolean-to-external-rights mapping. ADR 0035 may later
 restore publication authority to a corrected assessment contract. ADRs 0030
 and 0032 receive `development`: they authorize which code is developed and
 maintained while explicitly denying publication admission.
+
+ADR 0031 is `structural`: it owns parser, lifecycle, dependency, graph, and
+invalid-fixture policy behavior, but it does not self-certify current-corpus
+coverage. ADR 0034 alone owns the complete Accepted-corpus observation and the
+audit-to-enforce transition.
 
 ADR 0034 uses `full-corpus` and `none` on promotion. Its binding acceptance
 condition is complete Accepted-corpus conformance, not merely structural
@@ -302,6 +332,9 @@ implementation of the validator.
   when present it is from the closed set. The legacy Boolean emits no external
   rights assertion. Historical manifest-byte equality is not a current
   acceptance predicate.
+- Run TEI-schema-dependent evidence only through dedicated Nix checks that
+  provide Clojure and the pinned `TEI_SCHEMA_PATH`; a developer shell or
+  ambient executable is not an evidence boundary.
 
 ### Temporal, person, and ingest
 
@@ -339,6 +372,9 @@ implementation of the validator.
   satisfying admission or release claims.
 - Keep neutral comparison and release qualification separate. ADR 0039 cannot
   be Accepted until the exact tuple and every declared release predicate pass.
+- Publication-rendering evidence binds `abc/flake.lock` and
+  `abc/nix/tei-profile-artifacts.nix` together with the ODD/RNG/Schematron and
+  fixture inputs; the root lockfile is not a determinant of `./abc#...`.
 - Strengthen parser citation tests to recompute logical file hashes and reject
   explanatory/compatibility evidence at selection/admission transitions.
 - Preserve Phase 5 only under its frozen tuple:
@@ -405,6 +441,14 @@ reports `ok = true`, zero problems, the expected post-promotion counts, and
 audit/enforce problem-set parity on a deliberately invalid fixture. If it
 fails, ADR 0034 remains Proposed and the Nix gate remains in audit mode.
 
+Before assembling the candidate, the enforcement plan proves that the root
+governance derivation builds from the same detached-worktree layout used for
+capture. If nested-worktree flake evaluation fails, execution switches to a
+disposable full local clone with an ordinary `.git` directory; it never assumes
+that a successful `--no-build` evaluation executed the gate. The temporary
+post-promotion capture commit is preserved in a checked-in incremental Git
+bundle so each `producer_revision` remains recoverable after squash and GC.
+
 The atomic final commit contains ADR 0034 Accepted, all three evidence entries,
 valid artifacts, full registry coverage, regenerated views, and the Nix gate
 in enforcement mode. No committed intermediate state may mark ADR 0034
@@ -421,6 +465,13 @@ Accepted while CI remains audit-only.
 - If the final transition fails, retain ADR 0034 Proposed and audit mode.
   Repair forward; do not restore path-only evidence, inline observations,
   scoped dependency waivers, or placeholder passes.
+- Immediately after the atomic fast-forward, build the root
+  `monorepo-adr-governance` derivation, run the live enforcement app, and
+  assert that its strict report is successful and empty from the integration
+  checkout. If any member of that checkout-specific live check fails, create
+  a `git revert` of the transition commit, restoring the reviewed
+  pre-promotion audit state through a forward commit; do not leave enforcement
+  enabled with a red gate.
 
 ## Verification Strategy
 
@@ -434,11 +485,17 @@ The final verification set is:
 - focused ADR/evidence/governance tests;
 - all family-specific Clojure, Rust, Python, and Nix checks;
 - direct `nix run ./abc#validate-design-bundle`;
-- `nix build ./abc#checks.x86_64-linux.adr-governance` in enforcement mode;
-- `nix build ./abc#checks.x86_64-linux.clj-kondo`;
-- `nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests`;
+- `nix build .#checks.$(nix eval --impure --raw --expr
+  builtins.currentSystem).monorepo-adr-governance` in enforcement mode, both
+  before and immediately after fast-forward;
+- `nix build ./abc#checks.$(nix eval --impure --raw --expr
+  builtins.currentSystem).clj-kondo`;
+- `nix build ./abc#checks.$(nix eval --impure --raw --expr
+  builtins.currentSystem).clj-nix-focused-tests`;
 - regenerated diagram/schema drift checks;
-- root `just validate-migration`.
+- root `just validate-migration` as the aggregate evaluation/quality gate. Its
+  `nix flake check --no-build` steps do not execute governance, so they never
+  replace either explicit enforcement build.
 
 Completion means the migrated corpus, including ADR 0034, conforms to the
 implemented typed-evidence policy and enforcement is active. It does not mean

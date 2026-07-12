@@ -44,6 +44,10 @@ strictly as UTF-8; otherwise a valid Info-ZIP Unicode Path extra field wins,
 then raw names fall back strictly to windows-31j. NFC paths are screened for
 collisions with ICU4J 78.3 full Unicode case folding. Changing the decoder
 precedence or pinned Unicode folding data requires a new construction tag.
+Source-bundle v1 uses an explicit string-domain RFC 8785 serializer that keeps
+slashes and non-ASCII Unicode unescaped. The historical shared ABC JCS path is
+not changed in place because doing so would rotate and reinterpret older schema
+and artifact hashes.
 
 ABC owns archive inspection and bundle identity. The Clojure/JVM inspector is
 the sole v1 `bundle_hash` producer. Parser adapters own decoding and
@@ -68,8 +72,10 @@ Historical manifests retain their schema hashes and historical
 Accepted on 2026-07-12 with the following implementation evidence:
 
 - `abc.tools.source-bundle` implements the bounded, deterministic v1 ZIP
-  inspector; `source-bundle.schema.json` and canonical fixtures pin manifest,
-  path-decoding, Unicode-folding, limit, and JCS identity behavior.
+  inspector; `source-bundle.schema.json`,
+  `fixtures/source-bundle/abc-source-bundle-v1-known-answer.json`, and its
+  focused test pin manifest, path-decoding, Unicode-folding, limits, canonical
+  UTF-8 bytes, and the literal JCS digest.
 - The `source-bundle-corpus` Nix check reproduces the checked-in report for
   Aozora commit `0e9ea3e586eb0aa34039fabfc85a407d2f98b165` and verifies the
   production bounds and damaged-archive disposition.
@@ -122,8 +128,11 @@ whole-work identity, because the adapter receives only the primary text bytes.
 ## Acceptance Criteria
 
 - `schemas/source-bundle.schema.json` validates a canonical manifest covering
-  every non-directory member; `test/abc/tools/source_bundle_test.clj` and
-  `test/abc/tools/schema_test.clj` pin the producer and schema contracts.
+  every non-directory member;
+  `fixtures/source-bundle/abc-source-bundle-v1-known-answer.json`,
+  `test/abc/tools/source_bundle_test.clj`, and
+  `test/abc/tools/schema_test.clj` pin the producer, canonical bytes/digest,
+  and schema contracts.
 - The Clojure producer reproduces one checked-in canonical identity fixture and
   `bundle_hash` byte-for-byte. Rust remains a consumer until a conformant
   implementation reproduces that fixture; it must not author bundle identity.

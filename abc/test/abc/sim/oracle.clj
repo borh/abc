@@ -4,6 +4,7 @@
   These read model states and applied intents; they never re-derive the
   classifier's decisions."
   (:require [abc.tools.hash :as hash]
+            [abc.tools.jcs :as jcs]
             [clojure.set :as set]
             [clojure.string :as string]
             [clojure.walk :as walk])
@@ -99,7 +100,10 @@
     {:identity-object identity-object
      :members members
      :archive-hash (hash/format-sha256 (hash/sha256-bytes archive-bytes))
-     :bundle-hash (hash/format-sha256 (hash/sha256-json-jcs identity-object))
+     :bundle-hash
+     (hash/format-sha256
+      (hash/sha256-bytes
+       (jcs/rfc8785-string-domain-json-bytes identity-object)))
      :primary-text-member primary
      :primary-text-hash primary-hash}))
 

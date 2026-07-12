@@ -1,6 +1,7 @@
 (ns abc.tools.source-bundle
   (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
+            [abc.tools.jcs :as jcs]
             [abc.tools.json :as json]
             [clojure.java.io :as io]
             [clojure.string :as string])
@@ -23,6 +24,15 @@
                      :max-member-bytes 16777216
                      :max-total-bytes 33554432})
 (def ^:private legacy-name-charset (Charset/forName "windows-31j"))
+
+(defn bundle-identity-canonical-bytes
+  "Canonical UTF-8 bytes for the string-only abc-source-bundle-v1 identity."
+  [identity-object]
+  (jcs/rfc8785-string-domain-json-bytes identity-object))
+
+(defn bundle-identity-hash [identity-object]
+  (hash/format-sha256
+   (hash/sha256-bytes (bundle-identity-canonical-bytes identity-object))))
 
 (defn- fail! [reason archive-path data]
   (throw (ex-info (str "source bundle admission failed: " (name reason))
@@ -218,7 +228,7 @@
                                            members)
                            "primary_text_member" primary-path}]
       {:identity-object identity-object
-       :bundle-hash (hash/format-sha256 (hash/sha256-json-jcs identity-object))
+       :bundle-hash (bundle-identity-hash identity-object)
        :archive-hash (hash/format-sha256 (files/sha256-file zip-file))
        :members members
        :primary-text-member primary-path

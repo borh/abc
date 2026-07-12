@@ -70,6 +70,14 @@ The canonical identity object is a JSON value:
 sha256(RFC8785-JCS(source_bundle_identity_object))
 ```
 
+The v1 construction uses an explicit RFC 8785 string-domain serializer: `/`,
+non-ASCII Unicode, and U+2028/U+2029 are not optionally escaped, while object
+keys are sorted and required JSON escapes remain canonical. Numeric scalars are
+rejected because this identity object is string-only. ABC's older shared JCS
+entry point retains its historical Charred escaping behavior so existing
+schema and artifact hashes are not reinterpreted; source-bundle v1 does not use
+that legacy path.
+
 Identity fields record facts that can change logical interpretation, not every
 value derivable from the bytes. `primary_text_member` remains identity-bearing
 because selecting a different primary from the same member set changes the
@@ -138,10 +146,12 @@ byte changes to any member change `bundle_hash`.
 
 ABC owns source-package admission and logical bundle identity:
 
-1. `soranoha-build-publication` reads the original ZIP once through a safe
-   bundle inspector.
-2. The inspector produces member records, the chosen primary-text member bytes,
-   `archive_hash`, and `bundle_hash`.
+1. `soranoha-build-publication` invokes the bounded bundle inspector once per
+   selected ZIP.
+2. Within that invocation, the inspector opens member streams to enforce limits
+   and compute member hashes, then separately reads the archive bytes to compute
+   `archive_hash`. It produces member records, the chosen primary-text member
+   bytes, `archive_hash`, and `bundle_hash`.
 3. ABC writes `source-bundle.json` beside `official-source.json` and records
    both hashes in the selection report.
 4. ABC passes the primary-text bytes and an explicit identity context to the
@@ -307,12 +317,15 @@ rewrites old manifests in place.
 
 ## Testing
 
-- A canonical Clojure fixture pins canonical JSON bytes and `bundle_hash`. A
-  deferred Rust fixture must reproduce it before Rust authors bundle identity.
-- Property tests vary ZIP compression, timestamps, comments, and entry order
-  while holding members fixed; `bundle_hash` remains stable.
-- Property tests add, remove, rename, or alter arbitrary members; `bundle_hash`
-  changes.
+- A checked-in Clojure known-answer artifact pins canonical UTF-8 JSON bytes
+  containing both a slash and non-ASCII paths plus the literal `bundle_hash`.
+  A deferred Rust fixture must reproduce it before Rust authors bundle identity.
+- Deterministic contract cases vary ZIP compression, timestamps, comments, and
+  entry order while holding members fixed; `bundle_hash` remains stable.
+- Deterministic contract cases add, remove, rename, or alter members and prove
+  `bundle_hash` changes. The P16 simulation adds generative image/content
+  histories over those identity rules and deterministic image-edit,
+  text-edit, and metadata-only-repack witnesses.
 - Tests cover text plus images, packaging-metadata text members, rejected
   multiple semantic text members, empty directories, unsafe paths, duplicate
   normalized paths, and portability collisions.
@@ -400,8 +413,10 @@ not a claim to emulate every APFS/NTFS filename rule.
 Accepted on 2026-07-12 with the following implementation evidence:
 
 - `abc.tools.source-bundle` implements the bounded, deterministic v1 ZIP
-  inspector; `source-bundle.schema.json` and canonical fixtures pin manifest,
-  path-decoding, Unicode-folding, limit, and JCS identity behavior.
+  inspector; `source-bundle.schema.json` and
+  `fixtures/source-bundle/abc-source-bundle-v1-known-answer.json` pin manifest,
+  path-decoding, Unicode-folding, limit, and RFC 8785 canonical bytes/hash
+  behavior. The known answer includes both a slash and non-ASCII paths.
 - The `source-bundle-corpus` Nix check reproduces the checked-in report for
   Aozora commit `0e9ea3e586eb0aa34039fabfc85a407d2f98b165` and verifies the
   production bounds and damaged-archive disposition.

@@ -122,7 +122,7 @@
         member-projection (member-identity-projection
                            (get source-bundle-value "members"))
         recomputed-bundle-hash
-        (hash/format-sha256 (hash/sha256-json-jcs identity-object))
+        (source-bundle/bundle-identity-hash identity-object)
         parser-bundle-hash (get-in parser-ir ["source" "work_content_hash"])
         official-primary-hash (get official-source "primary_text_hash")
         parser-primary-hash (get-in parser-ir ["source" "primary_text_hash"])

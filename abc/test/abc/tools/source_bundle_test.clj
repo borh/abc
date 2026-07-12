@@ -16,6 +16,11 @@
 (defn- utf8-bytes [s]
   (.getBytes s StandardCharsets/UTF_8))
 
+(defn- hex-bytes [s]
+  (byte-array
+   (map #(unchecked-byte (Integer/parseInt % 16))
+        (re-seq #".." s))))
+
 (defn- temp-file [suffix]
   (.toFile (Files/createTempFile "abc-source-bundle-" suffix
                                  (make-array java.nio.file.attribute.FileAttribute 0))))
@@ -132,7 +137,7 @@
            "primary_text_member" "work.txt"}]
       (is (= "abc-source-bundle-v1" (get identity-object "construction")))
       (is (= expected-identity identity-object))
-      (is (= (hash/format-sha256 (hash/sha256-json-jcs expected-identity))
+      (is (= (source-bundle/bundle-identity-hash expected-identity)
              bundle-hash))
       (is (= (hash/format-sha256 (hash/sha256-file zip)) archive-hash))
       (is (= "work.txt" primary-text-member))
@@ -143,6 +148,27 @@
       (is (not= archive-hash bundle-hash))
       (is (every? #(not (contains? % "byte_length"))
                   (get identity-object "members"))))))
+
+(deftest source-bundle-v1-known-answer-test
+  (let [known-answer
+        (json/read-json-file
+         "fixtures/source-bundle/abc-source-bundle-v1-known-answer.json")
+        members
+        (mapv (fn [member]
+                [(get member "path")
+                 (if-let [content (get member "content_utf8")]
+                   (utf8-bytes content)
+                   (hex-bytes (get member "content_hex")))])
+              (get known-answer "input_members"))]
+    (with-zips [zip (write-zip! (temp-file ".zip") members)]
+      (let [{:keys [identity-object bundle-hash]}
+            (source-bundle/inspect-zip zip)
+            expected-canonical-bytes
+            (utf8-bytes (get known-answer "canonical_identity_utf8"))]
+        (is (= (seq expected-canonical-bytes)
+               (seq (source-bundle/bundle-identity-canonical-bytes
+                     identity-object))))
+        (is (= (get known-answer "bundle_hash") bundle-hash))))))
 
 (deftest repacking-does-not-change-bundle-identity-test
   (let [members [["work.txt" (utf8-bytes "same")]

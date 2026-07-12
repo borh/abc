@@ -16,6 +16,7 @@
             [abc.sim.render :as render]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
+            [abc.tools.jcs :as jcs]
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-source-snapshot :as snapshot]
@@ -551,7 +552,9 @@
                        (get snapshot-input "archive_hash"))
      :independent-bundle (= bundle_hash
                             (hash/format-sha256
-                             (hash/sha256-json-jcs identity_object))
+                             (hash/sha256-bytes
+                              (jcs/rfc8785-string-domain-json-bytes
+                               identity_object)))
                             (get official "bundle_hash")
                             (get bundle "bundle_hash")
                             (get-in parser-ir ["source" "work_content_hash"])

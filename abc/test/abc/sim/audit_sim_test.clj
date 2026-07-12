@@ -41,7 +41,7 @@
         m2 (:model (model/apply-event m1 split))]
     (render/with-repo [git root work]
       (let [[c0 c1] (render/commit-history! git root [m0 m1]
-                                     ["2024-01-01T00:00:00Z" "2024-02-01T00:00:00Z"])
+                                            ["2024-01-01T00:00:00Z" "2024-02-01T00:00:00Z"])
             ;; unrelated commit that must be ignored by pairing
             _ (render/commit-file-at! git root "README.md" "noise" "noise"
                                       "2024-02-15T00:00:00Z")
@@ -214,7 +214,7 @@
                                           :field :family_name :value "改"}))]
     (render/with-repo [git root work]
       (let [[c1 c2] (render/commit-history! git root [m0 m1]
-                                     ["2024-01-01T00:00:00Z" "2024-02-01T00:00:00Z"])
+                                            ["2024-01-01T00:00:00Z" "2024-02-01T00:00:00Z"])
             run! (fn [w] (oracle/semantic-report
                           (audit/audit! {:aozora-repo (str root)
                                          :previous-ref (.getName c1)

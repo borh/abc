@@ -146,7 +146,9 @@ Pin, with a test, that the facade wire already delivers bare-toggle markers as i
 
 Add to `crates/ab-aozora-aat/src/lib.rs` `mod tests`:
 
-**Test A — facade WIRE contract** (the stream the classifier will consume): drive the facade exactly the way `projections` (lib.rs:408–428) does — read that function first and reuse its parse + `aozora_json::node_entries` invocation — over a PAIRED input, and assert on the wire nodes themselves:
+**Test A — facade WIRE contract** (the stream the classifier will consume): drive the facade exactly the way `projections` (lib.rs:408–428) does — read that function first and reuse its parse + `aozora_json::node_entries` invocation — over a PAIRED input, and assert on the wire nodes themselves.
+
+> **Mid-execution amendment (Task 1 preflight finding, 2026-07-12):** the facade delivers bare-toggle markers as `containerOpen` (open tokens) / `containerClose` (close tokens) wire nodes, NOT `"directive"` as this plan originally assumed — one node per marker, exact span, source-ordered, raw-preserved fallback all hold, so the facade stays 0.3.0 and no design changes. Test A below must assert `kind == "containerOpen"` for the two open tokens and `kind == "containerClose"` for the two close tokens (replace the single `n.kind == "directive"` filter with this exact mapping). Task 4's marker identification is UNAFFECTED (it keys on raw-node `source`), but its prose mentions of `x-source-marker-kind: "directive"` read `"containerOpen"`/`"containerClose"` instead.
 
 ```rust
 #[test]

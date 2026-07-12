@@ -158,19 +158,31 @@ All properties assert **desired** behavior. Divergences found go into
   1. Generate a history with the forced drift intent; append one extra
      `:edit-person` event on the first successor pid (field
      `:family_name`, value `"変"` — outside the generator name pool) so
-     `hash_changed` coverage is guaranteed when the successor survives to
-     the end; the model's no-op totality keeps the append harmless
-     otherwise.
+     `hash_changed` coverage is guaranteed when the successor survives
+     attached to the end; the model's no-op totality keeps the append
+     harmless otherwise.
   2. Fold; author the sidecar from the applied forced intent
      (`sgen/find-applied`); write sidecars to a temp dir. If shrinking
      yields a history where the forced intent was not applied
      (`find-applied` returns nil), the property passes vacuously — there
      is no adjudicated event for an editor to record.
-  3. Commit first and last states (P10-style two-commit repo); run
-     `audit!` with `:drift-persons-dir`.
-  4. Assert the reported `drift_participant_updates`, projected to
-     `{person_id, change_type}`, equals the oracle's expected set exactly
-     (exact equality doubles as the quietness assertion for untouched
+  3. Locate the forced event's position in the history's event vector
+     (equality match on the applied intent's `:event`; the states vector
+     has one entry per event, so state index = event index + 1). Commit
+     three states: `s-before` (immediately before the forced event),
+     `s-after` (immediately after it), and `s-final`. Run `audit!` with
+     `:drift-persons-dir` over two explicit windows:
+     - **post-event window** (`s-after` → `s-final`) — the stated
+       lifecycle: accepted event first, participant edits later. The
+       pre-pid is absent from both endpoints (no entry); the appended
+       successor edit surfaces as `hash_changed`.
+     - **spanning window** (`s-before` → `s-final`) — the retrospective
+       case: the audit window straddles the original drift. The pre-pid
+       reports `removed`; surviving successors report `added`.
+  4. For each window, assert the reported `drift_participant_updates`,
+     projected to `{person_id, change_type}`, equals the oracle's
+     expected set for that window's endpoint states exactly (exact
+     equality doubles as the quietness assertion for untouched
      participants), plus the null-ness contract and `drift_event_ids` on
      every entry.
 - **P15.localization** (deterministic, `scan-history!`): states
@@ -181,11 +193,16 @@ All properties assert **desired** behavior. Divergences found go into
   `000001`; the never-present post pid yields no entry anywhere; summary
   `"drift_participant_updates"` = 1 = sum of per-pair counts.
 - **P15.invalid-sidecar** (deterministic loop over the four faults): clean
-  two-commit pair + corrupted sidecar dir. `audit!` must throw a clean
-  `ex-info` carrying `:persons-dir` and `:failures`, and never a forbidden
-  class (`NullPointerException`, `AssertionError`, `StackOverflowError`,
-  raw `java.util.zip.ZipException`). One fault (`:schema-hash-mismatch`)
-  is additionally driven through `scan-history!` to pin that the per-pair
+  two-commit pair + corrupted sidecar dir. Contract: both entry points
+  converge on the same `drift-index-map` validation boundary, so the full
+  fault sample pins the shared boundary through `audit!`, and a single
+  representative fault pins `scan-history!` propagation — exhaustive
+  duplication across entry points adds no evidence. Concretely: all four
+  faults through `audit!` must throw a clean `ex-info` carrying
+  `:persons-dir` and `:failures`, and never a forbidden class
+  (`NullPointerException`, `AssertionError`, `StackOverflowError`, raw
+  `java.util.zip.ZipException`); one fault (`:schema-hash-mismatch`) is
+  additionally driven through `scan-history!` to pin that the per-pair
   re-validation path (fact 5) is equally loud rather than absorbing the
   error into a pair entry.
 - **P15.rerun** (deterministic): with a valid sidecar present, a reused
@@ -231,9 +248,11 @@ cases so a wrong-behavior regression cannot hide behind an open divergence.
 - `clojure -M:test:kaocha -m kaocha.runner --focus :simulation` green from
   `abc/` with the checked-in seeds, including the four new P15 tests.
 - P15.lifecycle passes for both forced variants with exact-set equality
-  against the oracle.
+  against the oracle on both audited windows (post-event and spanning),
+  covering `hash_changed`, `removed`, and `added` between them.
 - P15.invalid-sidecar demonstrates loud, clean failure for all four
-  sampled faults on both entry points named above.
+  sampled faults through `audit!`, and for the representative
+  `:schema-hash-mismatch` fault through `scan-history!`.
 - No production namespace is modified; `abc.sim.model` and `abc.sim.gen`
   are unmodified.
 - Any divergence discovered is recorded in `abc.sim.divergences/table`

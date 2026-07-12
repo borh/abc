@@ -2554,7 +2554,7 @@ mod tests {
     }
 
     #[test]
-    fn bare_toggle_markers_arrive_as_ordered_directive_wire_nodes() {
+    fn bare_toggle_markers_arrive_as_ordered_container_wire_nodes() {
         // Wire-level preflight: the facade must deliver each bare-toggle
         // marker as its own wire node whose span slices the exact token, in
         // source order — paired markers included (adoption later consumes

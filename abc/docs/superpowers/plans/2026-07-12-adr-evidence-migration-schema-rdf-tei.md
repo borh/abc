@@ -15,7 +15,13 @@
 - Exact plan 1 APIs consumed: `abc.tools.adr-claim-migration/{baseline-value,baseline-hash,validate-baseline,validate-ledger,load-migration-state}` and `abc.tools.adr-evidence-inventory/inventory-value` with migration state.
 - Reuse, do not recapture, `docs/evidence/adr-runs/design-bundle-operational.json`, observation `design-bundle-exits-zero`, produced from `docs/evidence/adr-capture/design-bundle-operational.edn` by `nix run .#validate-design-bundle` in `abc/`.
 - Criterion correction precedes stable claim IDs. Audit mode remains active; this plan must not promote ADR 0034, capture corpus-wide governance evidence, or enable enforcement.
-- Plan 1's normative-section hash guard must remain green. Moving prose means relocating only Acceptance Criteria/Implementation Status duplicates; existing Decision and Hard Rule bytes never change.
+- Plan 1's 36-coordinate normative-section hash guard must remain green. Moving prose means relocating only Acceptance Criteria/Implementation Status duplicates; inventoried Decision, Decision Matrix, and Hard Rule bytes never change.
+- Every focused Clojure boundary uses capture descriptor version 2, a
+  same-stem checked manifest under `abc/docs/evidence/adr-inputs/`, and
+  `abc.tools.evidence-io`. Static namespace closure is source closure only.
+- TEI-schema-dependent observations run only as dedicated Nix checks that
+  provide both Clojure and the lock-pinned `TEI_SCHEMA_PATH`; neither a
+  developer shell nor an ambient executable is evidence.
 - A passing namespace supports only assertions it makes. Every runtime-read schema, fixture, context, sidecar, and generated view is an explicit descriptor input.
 - Direct commands use `:operational-behavior` / `:operational-observation`. All registry predicates here are `{:operator := :value true}`; registry entries never contain observations, inputs, or verdicts.
 - Capture only from a clean committed Stage A tree. The descriptor is included in its own explicit inputs, and initial output is written outside the repository.
@@ -58,7 +64,8 @@ Expected: all `test` commands exit 0 and status is empty. Stop otherwise.
 
 ```bash
 nix run ./abc#validate-design-bundle
-nix build ./abc#checks.x86_64-linux.git-cliff-config
+system="$(nix eval --impure --raw --expr builtins.currentSystem)"
+nix build "./abc#checks.${system}.git-cliff-config"
 ```
 
 Expected: both exit 0; design-bundle does not invoke Git-cliff.
@@ -77,7 +84,7 @@ Expected: audit exits 0 by audit semantics and inventory prints `31`. Do not tre
 
 **Files:**
 - Modify: `abc/src/abc/tools/validate_design_bundle.clj`
-- Modify: `abc/test/abc/tools/validate_design_bundle_test.clj`
+- Create: `abc/test/abc/tools/schema_validation_evidence_test.clj`
 
 **Interfaces:**
 - Consumes: plan 1's hermetic aggregate boundary.
@@ -85,7 +92,12 @@ Expected: audit exits 0 by audit semantics and inventory prints `31`. Do not tre
 
 - [ ] **Step 1: Write failing tests**
 
-Add these shapes, using existing imports/helpers:
+Add these shapes to the new focused namespace, using `abc.tools.evidence-io`
+for every repository read. The namespace contains only these four claim-level
+assertions plus its runtime-closure assertion. Wrap each assertion with
+`eio/with-read-trace` and use the trace-instrumented `abc.tools.files`
+helpers for reads; it must not run the 62-test
+`validate-design-bundle-test` family suite as evidence:
 
 ```clojure
 (deftest broken-manifest-is-rejected-test
@@ -95,18 +107,22 @@ Add these shapes, using existing imports/helpers:
 (deftest canonicalization-hash-mismatch-is-rejected-test
   (tfs/with-temp-dir [dir]
     ;; Write identity JSON, deliberately wrong .sha256, and equal array fixtures.
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                          #"canonical identity fixture hash mismatch"
-                          (validate/validate-canonicalization!
-                           {:expected (apply str (repeat 64 "0"))
-                            :identity-json (str (io/file dir "identity.json"))
-                            :array-a (str (io/file dir "array-a.json"))
-                            :array-b (str (io/file dir "array-b.json"))})))))
+    (eio/with-ephemeral-read-scope
+      dir
+      #(is (thrown-with-msg? clojure.lang.ExceptionInfo
+                             #"canonical identity fixture hash mismatch"
+                             (validate/validate-canonicalization!
+                              {:expected (apply str (repeat 64 "0"))
+                               :identity-json (str (io/file dir "identity.json"))
+                               :array-a (str (io/file dir "array-a.json"))
+                               :array-b (str (io/file dir "array-b.json"))}))))))
 
-(deftest supported-entrypoint-wiring-test
-  (is (string/includes? (slurp "bin/validate-design-bundle.sh")
-                        "exec clojure -M:abc/validate-design-bundle"))
-  (is (string/includes? (slurp ".github/workflows/validation.yml")
+(deftest supported-entrypoint-delegates-test
+  (is (string/includes? (files/read-text "bin/validate-design-bundle.sh")
+                        "exec clojure -M:abc/validate-design-bundle")))
+
+(deftest supported-ci-wiring-test
+  (is (string/includes? (files/read-text ".github/workflows/validation.yml")
                         ".#validate-design-bundle")))
 ```
 
@@ -114,7 +130,7 @@ Add these shapes, using existing imports/helpers:
 
 ```bash
 cd abc
-bin/kaocha --focus abc.tools.validate-design-bundle-test/canonicalization-hash-mismatch-is-rejected-test
+bin/kaocha --focus abc.tools.schema-validation-evidence-test/canonicalization-hash-mismatch-is-rejected-test
 ```
 
 Expected: FAIL with invalid arity because the injectable path seam does not exist.
@@ -139,9 +155,10 @@ Do not change comparison semantics or the aggregate call.
 
 ```bash
 cd abc
-bin/kaocha --focus abc.tools.validate-design-bundle-test
+bin/kaocha --focus abc.tools.schema-validation-evidence-test
 cd ..
-git add abc/src/abc/tools/validate_design_bundle.clj abc/test/abc/tools/validate_design_bundle_test.clj
+git add abc/src/abc/tools/validate_design_bundle.clj \
+  abc/test/abc/tools/schema_validation_evidence_test.clj
 git commit -m "test(abc): pin design-bundle contract failures"
 ```
 
@@ -150,23 +167,25 @@ Expected: 0 failures/errors; commit succeeds.
 ### Task 3: Add direct LOD, IIIF, Turtle, and rights assertions
 
 **Files:**
-- Modify: `abc/test/abc/tools/linked_art_test.clj`
-- Modify: `abc/test/abc/tools/iiif_test.clj`
-- Modify: `abc/test/abc/tools/manifest_to_rdf_test.clj`
-- Modify: `abc/test/abc/tools/metadata_record_test.clj`
+- Modify: `abc/test/abc/tools/schema_validation_evidence_test.clj`
+- Read: `abc/test/abc/tools/{linked_art,iiif,manifest_to_rdf,metadata_record,shacl}_test.clj`
 
 **Interfaces:**
 - Produces: assertions for canonical context, IIIF meta-schema/text-only values, bounded Turtle prefixes, DCNDL title mapping, legacy-predicate omission, and optional-rights SHACL behavior.
 
-- [ ] **Step 1: Write strengthening tests**
+- [ ] **Step 1: Write focused strengthening tests**
+
+Add these tests to `schema_validation_evidence_test.clj`. Copy the bounded
+assertion logic from the named existing tests, but wrap it in
+`eio/with-read-trace` and route every repository read through
+`abc.tools.files`. Do not execute an entire pre-existing namespace as evidence and
+do not attach one aggregate observation to all four boundaries.
 
 ```clojure
-;; linked_art_test.clj
 (deftest context-declares-canonical-abc-namespace-test
   (is (= "https://w3id.org/abc/"
          (get-in (files/read-json context-path) ["@context" "abc"]))))
 
-;; iiif_test.clj; require files and schema
 (deftest applicability-schema-is-valid-draft-2020-12-test
   (let [path "schemas/iiif-applicability.schema.json" value (files/read-json path)]
     (is (= "https://json-schema.org/draft/2020-12/schema" (get value "$schema")))
@@ -179,7 +198,7 @@ Expected: 0 failures/errors; commit succeeds.
     (is (re-find #"text-only" (get v "reason")))))
 ```
 
-In `manifest_to_rdf_test.clj`, define this literal vector and assert every file
+Define this literal vector and assert every file, read with `files/read-text`,
 contains exactly `@prefix abc: <https://w3id.org/abc/> .`; do not scan
 future/unowned files dynamically:
 
@@ -198,7 +217,7 @@ future/unowned files dynamically:
  "schemas/manifest.shacl.ttl"]
 ```
 
-In `metadata_record_test.clj`, directly assert the title reading triple uses `http://ndl.go.jp/dcndl/terms/titleTranscription`, its object is `らしょうもん`, and neither `https://w3id.org/abc/reading` nor `https://w3id.org/abc/copyrightExpired` occurs.
+Directly assert the title reading triple uses `http://ndl.go.jp/dcndl/terms/titleTranscription`, its object is `らしょうもん`, and neither `https://w3id.org/abc/reading` nor `https://w3id.org/abc/copyrightExpired` occurs.
 
 - [ ] **Step 2: Add optional-rights SHACL cases**
 
@@ -223,7 +242,7 @@ Temporarily use `https://w3id.org/abc/wrong/` as the expected context URI and ru
 
 ```bash
 cd abc
-bin/kaocha --focus abc.tools.linked-art-test/context-declares-canonical-abc-namespace-test
+bin/kaocha --focus abc.tools.schema-validation-evidence-test/context-declares-canonical-abc-namespace-test
 ```
 
 Expected: FAIL with URI mismatch. Restore the correct value. For rights, temporarily omit the second inserted triple and confirm the max-count case fails because no exception is thrown; restore the helper.
@@ -232,13 +251,9 @@ Expected: FAIL with URI mismatch. Restore the correct value. For rights, tempora
 
 ```bash
 cd abc
-bin/kaocha --focus abc.tools.linked-art-test
-bin/kaocha --focus abc.tools.iiif-test
-bin/kaocha --focus abc.tools.manifest-to-rdf-test
-bin/kaocha --focus abc.tools.metadata-record-test
-bin/kaocha --focus abc.tools.shacl-test
+bin/kaocha --focus abc.tools.schema-validation-evidence-test
 cd ..
-git add abc/test/abc/tools/{linked_art,iiif,manifest_to_rdf,metadata_record}_test.clj
+git add abc/test/abc/tools/schema_validation_evidence_test.clj
 git commit -m "test(abc): bind LOD IIIF and RDF contracts"
 ```
 
@@ -395,25 +410,83 @@ Expected: clean tree. This commit is the capture revision.
 ### Task 6: Define and capture narrow evidence boundaries
 
 **Files:**
+- Modify: `abc/flake.nix`
 - Create matching `.edn`/`.json` pairs under `abc/docs/evidence/adr-capture/` and `abc/docs/evidence/adr-runs/`:
-  `schema-validation-fixtures`, `tei-schematron-fixtures`, `tei-upstream-rng`, `tei-publication-sidecars`, `tei-profile-drift`, `linked-art-fixtures`, `iiif-applicability-fixtures`, `manifest-rdf-fixtures`, `metadata-rdf-rights`.
+  `schema-entrypoint-delegation`, `schema-empty-manifest`,
+  `schema-canonicalization-mismatch`, `schema-ci-wiring`,
+  `tei-schematron-fixtures`, `tei-upstream-rng`,
+  `tei-publication-sidecars`, `tei-profile-drift`, `linked-art-fixtures`,
+  `iiif-applicability-fixtures`, `manifest-rdf-fixtures`, and
+  `metadata-rdf-rights`.
+- Create one same-stem manifest for each of the eight focused Clojure
+  descriptors under `abc/docs/evidence/adr-inputs/`.
+- Modify: `abc/test/abc/tools/adr_evidence_capture_test.clj`
 - Create: `abc/docs/evidence/adr-entries/schema-rdf-tei.edn`
 
 **Interfaces:**
-- Consumes: `abc-adr-evidence-capture-v1` and plan 1 self-binding rule.
-- Produces: nine Boolean observations with exit code 0.
+- Consumes: plan 1 capture v2/runtime-input contract and version-1
+  `repo-files-v1` operational capture.
+- Produces: twelve narrowly named Boolean observations with exit code 0 and
+  three dedicated TEI Nix checks:
+  `adr-evidence-tei-project-fixtures`, `adr-evidence-tei-upstream-rng`, and
+  `adr-evidence-tei-publication-sidecars`.
 
-- [ ] **Step 1: Write descriptor contracts**
+- [ ] **Step 1: Add hermetic TEI evidence checks**
 
-For example, `linked-art-fixtures.edn` has this exact shape (the other rows use the same closed key set):
+In the checks `let`, reuse `copyWritableSource`, `cljSandboxEnv`,
+`cljDepsCache`, and `tei`. Each check has `pkgs.clojure` in
+`nativeBuildInputs`, exports `TEI_SCHEMA_PATH="${tei.teiAllSchema}"`, copies
+the writable source, establishes `cljSandboxEnv`, and invokes Clojure directly
+without `nix develop` or ambient `PATH` resolution:
+
+```nix
+adr-evidence-tei-upstream-rng =
+  pkgs.runCommand "abc-adr-evidence-tei-upstream-rng"
+    { nativeBuildInputs = [ pkgs.clojure ]; }
+    ''
+      ${copyWritableSource}
+      ${cljSandboxEnv}
+      export TEI_SCHEMA_PATH="${tei.teiAllSchema}"
+      clojure -M:test:kaocha -m kaocha.runner --focus abc.tools.tei-test
+      mkdir -p "$out"
+      touch "$out/passed"
+    '';
+```
+
+Create the project-fixtures check with the same body and focus
+`abc.tools.schematron-test` plus the exact TEI project-fixture vars in
+`abc.tools.validate-design-bundle-test`. Create the publication-sidecars check
+and focus only the exact sidecar/materialization vars in
+`abc.tools.materialize-publication-test`. Add a flake-output test asserting all
+three names, `pkgs.clojure`, and the pinned `TEI_SCHEMA_PATH` assignment.
+
+Run:
+
+```bash
+system="$(nix eval --impure --raw --expr builtins.currentSystem)"
+nix build "./abc#checks.${system}.adr-evidence-tei-upstream-rng"
+nix build "./abc#checks.${system}.adr-evidence-tei-project-fixtures"
+nix build "./abc#checks.${system}.adr-evidence-tei-publication-sidecars"
+```
+
+Expected: all three build. A negative contract test that removes
+`pkgs.clojure` or `TEI_SCHEMA_PATH` from a copied check expression must fail
+before this step is green.
+
+- [ ] **Step 2: Write descriptor and manifest contracts**
+
+For example, `linked-art-fixtures.edn` has this exact shape:
 
 ```clojure
-{:schema-version "abc-adr-evidence-capture-v1"
+{:schema-version "abc-adr-evidence-capture-v2"
  :tool "bin/kaocha"
- :argv ["bin/kaocha" "--focus" "abc.tools.linked-art-test"]
+ :argv ["bin/kaocha" "--focus"
+        "abc.tools.schema-validation-evidence-test/linked-art-fixtures-contract"]
+ :runtime-input-manifest "docs/evidence/adr-inputs/linked-art-fixtures.edn"
  :input-profile {:kind "clojure-test-v1"
-                 :roots ["abc.tools.linked-art-test"]
+                 :roots ["abc.tools.schema-validation-evidence-test"]
                  :explicit ["docs/evidence/adr-capture/linked-art-fixtures.edn"
+                            "docs/evidence/adr-inputs/linked-art-fixtures.edn"
                             "contexts/abc-v0.jsonld"
                             "examples/v0/example-work/manifest.json"
                             "examples/v0/example-work/metadata-record.json"
@@ -425,23 +498,47 @@ For example, `linked-art-fixtures.edn` has this exact shape (the other rows use 
 
 Use these exact boundaries:
 
-| Basename | Roots/command | Observation | Explicit runtime inputs (list literally in descriptor) |
-| --- | --- | --- | --- |
-| schema-validation-fixtures | `abc.tools.validate-design-bundle-test` | `schema-and-canonicalization-fixtures-pass` | self; manifest schema; four canonicalization fixtures; Bash wrapper; CI workflow |
-| tei-schematron-fixtures | schematron + validate-design-bundle test roots | `tei-project-schema-fixtures-pass` | self; ODD/RNG/Schematron; every catalog TEI fixture; Saxon pin file read by test |
-| tei-upstream-rng | argv `nix develop .#validation --command bin/kaocha --focus abc.tools.tei-test`; profile `repo-files-v1` | `tei-upstream-rng-fixture-passes` | self; `flake.nix`; `flake.lock`; `deps.edn`; `test/abc/tools/tei_test.clj`; `src/abc/tools/tei.clj`; committed example TEI; the project RNG; the lockfile pins the upstream TEI input whose store path is supplied as `TEI_SCHEMA_PATH` |
-| tei-publication-sidecars | `abc.tools.materialize-publication-test` | `tei-validation-sidecars-pass` | self; manifest/validation/preservation schemas; project RNG/Schematron; all example parser-IR/source/metadata/person inputs and publication policy read by test |
-| linked-art-fixtures | `abc.tools.linked-art-test` | `linked-art-fixtures-pass` | self; context; manifest; metadata; three LOD outputs |
-| iiif-applicability-fixtures | `abc.tools.iiif-test` | `iiif-applicability-fixtures-pass` | self; schema; example; all positive/negative IIIF fixtures |
-| manifest-rdf-fixtures | `abc.tools.manifest-to-rdf-test` | `manifest-rdf-fixtures-pass` | self; bounded 12 Turtle files; success/failure JSON; resource oracle |
-| metadata-rdf-rights | metadata-record + shacl test roots | `metadata-rdf-rights-pass` | self; metadata/person JSON+schemas; SHACL; metadata TTL; manifest inputs read by SHACL tests |
+| Basename | Exact focused var or Nix check | Observation |
+| --- | --- | --- |
+| schema-entrypoint-delegation | `abc.tools.schema-validation-evidence-test/supported-entrypoint-delegates-test` | `supported-entrypoint-delegates` |
+| schema-empty-manifest | `abc.tools.schema-validation-evidence-test/broken-manifest-is-rejected-test` | `empty-manifest-is-rejected` |
+| schema-canonicalization-mismatch | `abc.tools.schema-validation-evidence-test/canonicalization-hash-mismatch-is-rejected-test` | `canonicalization-mismatch-is-rejected` |
+| schema-ci-wiring | `abc.tools.schema-validation-evidence-test/supported-ci-wiring-test` | `supported-ci-wiring-is-present` |
+| tei-schematron-fixtures | `adr-evidence-tei-project-fixtures` | `tei-project-schema-fixtures-pass` |
+| tei-upstream-rng | `adr-evidence-tei-upstream-rng` | `tei-upstream-rng-fixture-passes` |
+| tei-publication-sidecars | `adr-evidence-tei-publication-sidecars` | `tei-validation-sidecars-pass` |
+| tei-profile-drift | existing `tei-profile-drift` | `tei-profile-derived-artifacts-match` |
+| linked-art-fixtures | `abc.tools.schema-validation-evidence-test/linked-art-fixtures-contract` | `linked-art-fixtures-pass` |
+| iiif-applicability-fixtures | `abc.tools.schema-validation-evidence-test/iiif-applicability-contract` | `iiif-applicability-fixtures-pass` |
+| manifest-rdf-fixtures | `abc.tools.schema-validation-evidence-test/manifest-rdf-contract` | `manifest-rdf-fixtures-pass` |
+| metadata-rdf-rights | `abc.tools.schema-validation-evidence-test/metadata-rdf-rights-contract` | `metadata-rdf-rights-pass` |
+
+The eight Clojure manifests list the exact paths read by their focused vars;
+the vars wrap their assertions in `eio/with-read-trace` and call plan 1's
+`assert-runtime-input-closure!`. Descriptor tests require exact equality among
+manifest paths, observed paths, and explicit data paths, and run the direct-I/O
+bypass lint. The three TEI Nix descriptors and `tei-profile-drift` remain
+version 1 `repo-files-v1`; each binds `flake.nix`, `flake.lock`,
+`nix/tei-profile-artifacts.nix`, the exact test/source/schema/fixture inputs,
+and its descriptor. They never use a runtime manifest.
+
+Extend `adr_evidence_capture_test.clj` with a table-driven assertion over all
+twelve descriptors. For each v2 row, load the closed same-stem manifest,
+assert the exact observation and focused var from the table, assert descriptor
+explicit inputs equal descriptor path + manifest path + manifest `:paths`, and
+invoke the transitive namespace-closure bypass lint. For each Nix row, assert
+version 1, no `:runtime-input-manifest`, a `bash -lc` command using
+`builtins.currentSystem`, and the exact check-specific `flake.nix`,
+`flake.lock`, `nix/tei-profile-artifacts.nix`, source, schema, and fixture
+determinants. Missing or extra paths fail this test.
 
 Direct Nix descriptor:
 
 ```clojure
 {:schema-version "abc-adr-evidence-capture-v1"
- :tool "nix"
- :argv ["nix" "build" ".#checks.x86_64-linux.tei-profile-drift"]
+ :tool "bash"
+ :argv ["bash" "-lc"
+        "system=$(nix eval --impure --raw --expr builtins.currentSystem); nix build .#checks.${system}.tei-profile-drift"]
  :input-profile {:kind "repo-files-v1" :roots []
                  :explicit ["docs/evidence/adr-capture/tei-profile-drift.edn"
                             "flake.nix" "flake.lock" "nix/tei-profile-artifacts.nix"
@@ -450,29 +547,33 @@ Direct Nix descriptor:
  :observation-key "tei-profile-derived-artifacts-match"}
 ```
 
-Create `schema-rdf-tei.edn` with the exact 30 claim joins in Task 7's table.
+Create `schema-rdf-tei.edn` with the exact 30 distinct claim IDs in Task 7's
+table and 31 entries total.
 It uses the closed registration-template shape from plan 1, contains no
 artifact hashes, and includes two entries for ADR-0017-C5 because that claim
 requires both manifest and metadata RDF observations.
 
-- [ ] **Step 2: Commit descriptors before capture**
+- [ ] **Step 3: Commit checks, descriptors, and manifests before capture**
 
 ```bash
-git add abc/docs/evidence/adr-capture \
-  abc/docs/evidence/adr-entries/schema-rdf-tei.edn
+git add abc/flake.nix abc/docs/evidence/adr-capture \
+  abc/docs/evidence/adr-inputs \
+  abc/docs/evidence/adr-entries/schema-rdf-tei.edn \
+  abc/test/abc/tools/adr_evidence_capture_test.clj
 git commit -m "docs(evidence): define schema RDF and TEI captures"
 git status --short
 ```
 
 Expected: clean tree. Descriptor self-hashes would otherwise stale immediately.
 
-- [ ] **Step 3: Capture outside repo**
+- [ ] **Step 4: Capture outside repo**
 
 Capture all basenames with this concrete loop:
 
 ```bash
 cd abc
-for basename in schema-validation-fixtures tei-schematron-fixtures \
+for basename in schema-entrypoint-delegation schema-empty-manifest \
+  schema-canonicalization-mismatch schema-ci-wiring tei-schematron-fixtures \
   tei-upstream-rng tei-publication-sidecars tei-profile-drift \
   linked-art-fixtures iiif-applicability-fixtures manifest-rdf-fixtures \
   metadata-rdf-rights; do
@@ -483,18 +584,16 @@ for basename in schema-validation-fixtures tei-schematron-fixtures \
 done
 ```
 
-Expected: capture exit 0 and status empty each time. The exact
-`nix develop .#validation --command ...` argv supplies the lockfile-pinned
-`TEI_SCHEMA_PATH`; never replace it with a machine-local or literal
-`/nix/store/...` path.
+Expected: capture exit 0 and status empty each time. TEI observations execute
+only the dedicated Nix checks; no descriptor invokes `nix develop`.
 
-- [ ] **Step 4: Validate and install all nine bundles**
+- [ ] **Step 5: Validate and install all twelve bundles**
 
 ```bash
-for f in /tmp/{schema-validation-fixtures,tei-schematron-fixtures,tei-upstream-rng,tei-publication-sidecars,tei-profile-drift,linked-art-fixtures,iiif-applicability-fixtures,manifest-rdf-fixtures,metadata-rdf-rights}.json; do
+for f in /tmp/{schema-entrypoint-delegation,schema-empty-manifest,schema-canonicalization-mismatch,schema-ci-wiring,tei-schematron-fixtures,tei-upstream-rng,tei-publication-sidecars,tei-profile-drift,linked-art-fixtures,iiif-applicability-fixtures,manifest-rdf-fixtures,metadata-rdf-rights}.json; do
   jq -e '.schema_version == "abc-adr-evidence-run-v1" and ([.observations[].value] | all)' "$f"
 done
-cp /tmp/{schema-validation-fixtures,tei-schematron-fixtures,tei-upstream-rng,tei-publication-sidecars,tei-profile-drift,linked-art-fixtures,iiif-applicability-fixtures,manifest-rdf-fixtures,metadata-rdf-rights}.json docs/evidence/adr-runs/
+cp /tmp/{schema-entrypoint-delegation,schema-empty-manifest,schema-canonicalization-mismatch,schema-ci-wiring,tei-schematron-fixtures,tei-upstream-rng,tei-publication-sidecars,tei-profile-drift,linked-art-fixtures,iiif-applicability-fixtures,manifest-rdf-fixtures,metadata-rdf-rights}.json docs/evidence/adr-runs/
 ```
 
 Expected: every `jq` passes. Do not commit until registry/report updates are ready.
@@ -503,28 +602,30 @@ Expected: every `jq` passes. Do not commit until registry/report updates are rea
 
 **Files:**
 - Modify: `abc/docs/adr/adr-evidence.edn`
-- Add: nine Task 6 bundles
+- Add: twelve Task 6 bundles
 - Use: `abc/docs/evidence/adr-entries/schema-rdf-tei.edn`
 - Regenerate: both migration reports
 
 **Interfaces:**
-- Consumes: nine bundles plus plan 1's `design-bundle-operational.json`/`design-bundle-exits-zero`.
+- Consumes: twelve bundles plus plan 1's `design-bundle-operational.json`/`design-bundle-exits-zero`.
 
 - [ ] **Step 1: Review the checked-in claim-level joins**
 
 | Claims | Evidence kind | Bundle / observation |
 | --- | --- | --- |
 | 0006-C1 | operational-observation | design-bundle-operational / design-bundle-exits-zero |
-| 0006-C2,C9 | structural-test | schema-validation / schema-and-canonicalization-fixtures-pass |
-| 0006-C3,C6 | fixture-conformance | schema-validation / same observation |
-| 0006-C4,C5; 0012-C2,C4,C5 | fixture-conformance | tei-schematron / tei-project-schema-fixtures-pass |
-| 0006-C7; 0013-C1..C3; 0017-C1..C3 | structural-test for 0017-C1, fixture-conformance otherwise | linked-art / linked-art-fixtures-pass |
-| 0006-C8; 0014-C1..C4 | structural-test for 0014-C1, fixture-conformance otherwise | iiif / iiif-applicability-fixtures-pass |
+| 0006-C2 | structural-test | schema-entrypoint-delegation / supported-entrypoint-delegates |
+| 0006-C3 | fixture-conformance | schema-empty-manifest / empty-manifest-is-rejected |
+| 0006-C6 | fixture-conformance | schema-canonicalization-mismatch / canonicalization-mismatch-is-rejected |
+| 0006-C9 | structural-test | schema-ci-wiring / supported-ci-wiring-is-present |
+| 0006-C4,C5; 0012-C2,C4,C5 | fixture-conformance | tei-schematron-fixtures / tei-project-schema-fixtures-pass |
+| 0006-C7; 0013-C1..C3; 0017-C1..C3 | structural-test for 0017-C1, fixture-conformance otherwise | linked-art-fixtures / linked-art-fixtures-pass |
+| 0006-C8; 0014-C1..C4 | structural-test for 0014-C1, fixture-conformance otherwise | iiif-applicability-fixtures / iiif-applicability-fixtures-pass |
 | 0012-C1 | operational-observation | tei-profile-drift / tei-profile-derived-artifacts-match |
 | 0012-C3 | fixture-conformance | tei-upstream-rng / tei-upstream-rng-fixture-passes |
 | 0012-C6 | fixture-conformance | tei-publication-sidecars / tei-validation-sidecars-pass |
-| 0017-C4 | structural-test | manifest-rdf / manifest-rdf-fixtures-pass |
-| 0017-C5 | fixture-conformance | two valid entries: manifest-rdf and metadata-rdf |
+| 0017-C4 | structural-test | manifest-rdf-fixtures / manifest-rdf-fixtures-pass |
+| 0017-C5 | fixture-conformance | two valid entries: manifest-rdf-fixtures and metadata-rdf-rights |
 | 0018-C1 | fixture-conformance | metadata-rdf-rights / metadata-rdf-rights-pass |
 | 0018-C2,C3 | fixture-conformance | metadata-rdf-rights / same observation |
 
@@ -576,15 +677,12 @@ git commit -m "docs(evidence): bind schema RDF and TEI claims"
 
 ```bash
 cd abc
-bin/kaocha --focus abc.tools.validate-design-bundle-test
-bin/kaocha --focus abc.tools.schematron-test
-bin/kaocha --focus abc.tools.tei-test
-bin/kaocha --focus abc.tools.materialize-publication-test
-bin/kaocha --focus abc.tools.linked-art-test
-bin/kaocha --focus abc.tools.iiif-test
-bin/kaocha --focus abc.tools.manifest-to-rdf-test
-bin/kaocha --focus abc.tools.metadata-record-test
-bin/kaocha --focus abc.tools.shacl-test
+bin/kaocha --focus abc.tools.schema-validation-evidence-test
+cd ..
+system="$(nix eval --impure --raw --expr builtins.currentSystem)"
+nix build "./abc#checks.${system}.adr-evidence-tei-upstream-rng"
+nix build "./abc#checks.${system}.adr-evidence-tei-project-fixtures"
+nix build "./abc#checks.${system}.adr-evidence-tei-publication-sidecars"
 ```
 
 Expected: 0 failures/errors in the same pinned environment used for capture.
@@ -594,10 +692,11 @@ Expected: 0 failures/errors in the same pinned environment used for capture.
 ```bash
 cd ..
 nix run ./abc#validate-design-bundle
-nix build ./abc#checks.x86_64-linux.tei-profile-drift
-nix build ./abc#checks.x86_64-linux.git-cliff-config
-nix build ./abc#checks.x86_64-linux.clj-kondo
-nix build ./abc#checks.x86_64-linux.clj-nix-focused-tests
+system="$(nix eval --impure --raw --expr builtins.currentSystem)"
+nix build "./abc#checks.${system}.tei-profile-drift"
+nix build "./abc#checks.${system}.git-cliff-config"
+nix build "./abc#checks.${system}.clj-kondo"
+nix build "./abc#checks.${system}.clj-nix-focused-tests"
 just validate-migration
 ```
 
@@ -618,9 +717,9 @@ Expected: `cmp` passes, Nix check remains audit mode, worktree is clean. Overall
 
 ## Concerns for execution review
 
-1. `tei-upstream-rng` deliberately obtains `TEI_SCHEMA_PATH` from
-   `nix develop .#validation`; if that command ceases to export the variable,
-   the capture must fail rather than accepting an ambient path.
+1. All TEI evidence is produced by dedicated Nix checks with Clojure and
+   `TEI_SCHEMA_PATH` in their derivation environment. A devshell success is
+   never accepted as substitute evidence.
 2. Plan 1's ledger validator decides whether overlapping original ADR 0012 rows may map many-to-one. Follow `validate-ledger`; do not loosen it.
 3. ADR 0018 stays Accepted with release authority `none`: this plan characterizes containment but does not promote ADR 0035 or restore publication authority.
 4. The 12-file Turtle inventory is deliberately bounded. Adding a new Turtle file later requires an explicit reviewed update, not an accidental glob expansion.

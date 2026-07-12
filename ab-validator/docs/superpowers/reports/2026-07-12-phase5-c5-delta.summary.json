@@ -1,46 +1,19 @@
 {
  "stage": "c5",
- "gate": "bare-toggle-adoption",
+ "gate": "delta",
  "candidate": {
   "commit": "004deaf548f34a36abbc17d0f7a162df010a6292",
   "bin_sha256": "00066926b8cb035c2b2a55691cfcb99d26c8450b87d960d058855a69afedd24d",
   "version": "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 004deaf548f34a36abbc17d0f7a162df010a6292)"
  },
  "verdict": "PASS",
+ "audit_summary": "2026-07-12-phase5-c5-delta-audit.summary.json",
  "details": {
-  "mode": "bare-toggle-adoption",
-  "compared": 17886,
-  "classes": {
-   "identical": 17544,
-   "toggle_adopted": 342
-  },
-  "verdict": "PASS",
-  "details": {
-   "adopted_yokogumi_pairs": 1552,
-   "adopted_keigakomi_pairs": 25,
-   "declined_markers": 14,
-   "declined_by_reason": {
-    "orphan_open": 0,
-    "orphan_close": 0,
-    "reopen_rollback": 14,
-    "interleave": 0
-   }
-  },
-  "expected_bindings": {
-   "adopted_yokogumi": 1552,
-   "adopted_keigakomi": 25,
-   "declined": 14,
-   "declined_by_reason": {
-    "orphan_open": 0,
-    "orphan_close": 0,
-    "reopen_rollback": 14,
-    "interleave": 0
-   }
-  },
   "expectation_rebinding_commit": "a443af0cd9b372f92b3e03c8d6645997c24b76a1",
   "reconciliation_summary": "docs/superpowers/reports/2026-07-12-bare-toggle-visibility-reconciliation.summary.json",
   "instrument_commit": "a443af0cd9b372f92b3e03c8d6645997c24b76a1",
   "baseline_dump": "/db/ab-validator/aat-corpus/ab-aozora-phase4-c4-27772b1/aat/ab-aozora",
   "candidate_dump": "/db/ab-validator/aat-corpus/ab-aozora-phase5-c5-004deaf/aat/ab-aozora"
- }
+ },
+ "notes": "re-shaped from the combined Task 9 freeze into verifier-native two-file form; values unchanged; see task-10 report."
 }

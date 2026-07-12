@@ -711,7 +711,7 @@
                 clojure -M:abc/adr-governance --mode audit
 
                 mkdir -p "$out"
-                echo "ADR lifecycle, relation, dependency, and evidence governance passed." > "$out/result.txt"
+                echo "ADR lifecycle, dependency, claim, artifact, freshness, and evidence audit completed." > "$out/result.txt"
               '';
           swi-prolog-smoke =
             pkgs.runCommand "abc-swi-prolog-smoke" { nativeBuildInputs = [ pkgs.swi-prolog ]; }

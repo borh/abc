@@ -1,7 +1,9 @@
 (ns abc.tools.adr-governance
   (:refer-clojure :exclude [run!])
   (:require [abc.tools.adr :as adr]
+            [abc.tools.adr-evidence :as evidence]
             [abc.tools.json :as json]
+            [clojure.java.io :as io]
             [clojure.tools.cli :as cli]))
 
 (def modes #{:legacy :audit :enforce})
@@ -11,15 +13,34 @@
     :default "legacy"]
    [nil "--report PATH" "Write a deterministic JSON problem report."]])
 
+(defn- accepted-claims [adrs]
+  (vec
+   (for [{:keys [file status criteria]} adrs
+         :when (= "Accepted" status)
+         {:keys [claim-id] :as criterion} criteria
+         :when claim-id]
+     (assoc criterion :file file :status status))))
+
+(defn- strict-problems [repo-root]
+  (let [adrs (adr/parse-all (io/file repo-root "docs/adr"))
+        adr-problems (adr/validate-adrs adrs repo-root)
+        evidence-problems
+        (evidence/validate-registry
+         {:repo-root repo-root
+          :claims (accepted-claims adrs)
+          :registry (evidence/load-registry)
+          :matrix (evidence/load-matrix)
+          :as-of (evidence/load-as-of)})]
+    (vec (concat adr-problems evidence-problems))))
+
 (defn run!
   ([repo-root]
    (let [problems (adr/validate-repository-legacy repo-root)]
      {:ok? (empty? problems) :problems problems}))
   ([repo-root {:keys [mode] :or {mode :legacy}}]
-   (let [problems ((if (= :legacy mode)
-                     adr/validate-repository-legacy
-                     adr/validate-repository)
-                   repo-root)
+   (let [problems (if (= :legacy mode)
+                    (adr/validate-repository-legacy repo-root)
+                    (strict-problems repo-root))
          ok? (empty? problems)]
      {:ok? ok?
       :exit-code (if (or ok? (= :audit mode)) 0 1)

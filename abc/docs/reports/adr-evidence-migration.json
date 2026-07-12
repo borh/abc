@@ -3,6 +3,882 @@
   "ok": false,
   "problems": [
     {
+      "criterion-index": 0,
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 5,
+      "file": "0001-manifest-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0002-parser-evaluation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0002-parser-evaluation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0002-parser-evaluation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0002-parser-evaluation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0002-parser-evaluation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 5,
+      "file": "0002-parser-evaluation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 6,
+      "file": "0002-parser-evaluation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 7,
+      "file": "0002-parser-evaluation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 5,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 6,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 7,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 8,
+      "file": "0006-v0-design-bundle-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0007-external-parser-validation-boundary.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0007-external-parser-validation-boundary.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0007-external-parser-validation-boundary.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0007-external-parser-validation-boundary.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0007-external-parser-validation-boundary.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0008-abc-tools-runtime.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0008-abc-tools-runtime.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0008-abc-tools-runtime.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0008-abc-tools-runtime.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0008-abc-tools-runtime.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 5,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 6,
+      "file": "0009-imported-output-materialization.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0010-manifest-identity-hardening.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0010-manifest-identity-hardening.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0010-manifest-identity-hardening.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0010-manifest-identity-hardening.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0010-manifest-identity-hardening.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0011-generated-fixture-policy.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0011-generated-fixture-policy.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0011-generated-fixture-policy.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0012-tei-odd-schematron-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0013-cultural-heritage-lod-profile.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0013-cultural-heritage-lod-profile.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0013-cultural-heritage-lod-profile.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0014-iiif-applicability.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0014-iiif-applicability.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0014-iiif-applicability.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0014-iiif-applicability.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0015-temporal-modeling.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0015-temporal-modeling.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0015-temporal-modeling.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0015-temporal-modeling.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0015-temporal-modeling.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0016-edtf-level1-decade-century.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0016-edtf-level1-decade-century.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0016-edtf-level1-decade-century.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0016-edtf-level1-decade-century.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0017-vocabulary-review.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0018-predicate-rename-batch-1.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0018-predicate-rename-batch-1.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0018-predicate-rename-batch-1.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0018-predicate-rename-batch-1.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0018-predicate-rename-batch-1.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0020-person-identity-drift-data-model.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0020-person-identity-drift-data-model.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0020-person-identity-drift-data-model.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0020-person-identity-drift-data-model.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0020-person-identity-drift-data-model.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 5,
+      "file": "0020-person-identity-drift-data-model.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 6,
+      "file": "0020-person-identity-drift-data-model.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 5,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 6,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 7,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 8,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 9,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 10,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 11,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 12,
+      "file": "0021-person-identity-drift-harness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0022-upstream-ingest-drift-awareness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0022-upstream-ingest-drift-awareness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0022-upstream-ingest-drift-awareness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0022-upstream-ingest-drift-awareness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0022-upstream-ingest-drift-awareness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 5,
+      "file": "0022-upstream-ingest-drift-awareness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 6,
+      "file": "0022-upstream-ingest-drift-awareness.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0023-owned-aat-parser-ir-mapping.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0023-owned-aat-parser-ir-mapping.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0023-owned-aat-parser-ir-mapping.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0023-owned-aat-parser-ir-mapping.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0023-owned-aat-parser-ir-mapping.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0024-parser-ir-span-and-ruby-direction.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0024-parser-ir-span-and-ruby-direction.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0024-parser-ir-span-and-ruby-direction.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0024-parser-ir-span-and-ruby-direction.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0024-parser-ir-span-and-ruby-direction.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 5,
+      "file": "0024-parser-ir-span-and-ruby-direction.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0025-parser-ir-publication-rendering.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0025-parser-ir-publication-rendering.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0025-parser-ir-publication-rendering.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0025-parser-ir-publication-rendering.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0025-parser-ir-publication-rendering.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 5,
+      "file": "0025-parser-ir-publication-rendering.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 6,
+      "file": "0025-parser-ir-publication-rendering.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0029-diagrams-as-gated-derived-views.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0029-diagrams-as-gated-derived-views.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0029-diagrams-as-gated-derived-views.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0029-diagrams-as-gated-derived-views.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0030-aozora-parser-selection.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0030-aozora-parser-selection.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0030-aozora-parser-selection.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0031-adr-governance-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0031-adr-governance-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0031-adr-governance-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0031-adr-governance-validation.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0032-parser-fork-hard-detach.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0032-parser-fork-hard-detach.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 0,
+      "file": "0033-source-bundle-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 1,
+      "file": "0033-source-bundle-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 2,
+      "file": "0033-source-bundle-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 3,
+      "file": "0033-source-bundle-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 4,
+      "file": "0033-source-bundle-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 5,
+      "file": "0033-source-bundle-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 6,
+      "file": "0033-source-bundle-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 7,
+      "file": "0033-source-bundle-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
+      "criterion-index": 8,
+      "file": "0033-source-bundle-identity.md",
+      "kind": "missing-claim-header",
+      "message": "Accepted criterion requires an exact claim header"
+    },
+    {
       "file": "0001-manifest-identity.md",
       "kind": "missing-validation-scope",
       "message": "Accepted status requires a Validation scope"
@@ -239,6 +1115,16 @@
     },
     {
       "file": "0032-parser-fork-hard-detach.md",
+      "kind": "missing-release-authority",
+      "message": "Accepted status requires a Release authority"
+    },
+    {
+      "file": "0033-source-bundle-identity.md",
+      "kind": "missing-validation-scope",
+      "message": "Accepted status requires a Validation scope"
+    },
+    {
+      "file": "0033-source-bundle-identity.md",
       "kind": "missing-release-authority",
       "message": "Accepted status requires a Release authority"
     }]

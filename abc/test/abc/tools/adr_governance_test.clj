@@ -1,54 +1,90 @@
 (ns abc.tools.adr-governance-test
   (:require [abc.tools.adr :as adr]
+            [abc.tools.adr-evidence :as evidence]
             [abc.tools.adr-governance :as governance]
             [abc.tools.json :as json]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]))
 
-(def ^:private sample-problem
-  {:file "docs/adr/0031-adr-governance-validation.md"
+(def ^:private lifecycle-problem
+  {:file "0031-adr-governance-validation.md"
    :kind :noncanonical-dependency-path
    :message "Accepted ADR reaches Proposed ADR"
    :path [31 29]})
 
-(defn- run-mode [mode]
-  (try
-    (governance/run! "." {:mode mode})
-    (catch clojure.lang.ArityException _ nil)))
+(def ^:private evidence-problem
+  {:file "0034-typed-evidence.md"
+   :criterion-index 0
+   :claim-id "ADR-0034-C1"
+   :kind :missing-claim-evidence
+   :message "Accepted claim has no evidence registry entry"})
 
-(deftest audit-and-enforce-mode-test
-  (with-redefs [adr/validate-repository (fn [_repo-root] [sample-problem])
-                adr/validate-repository-legacy (fn [_repo-root] [])]
-    (testing "audit reports problems without making the migration gate red"
-      (is (= {:ok? false
-              :exit-code 0
-              :mode :audit
-              :problems [sample-problem]}
-             (run-mode :audit))))
-    (testing "enforcement fails while legacy remains pre-migration compatible"
-      (is (= 1 (:exit-code (run-mode :enforce))))
-      (is (= 0 (:exit-code (run-mode :legacy)))))))
+(def ^:private parsed-adrs
+  [{:file "0034-typed-evidence.md"
+    :status "Accepted"
+    :criteria [{:criterion-index 0
+                :body "Claim."
+                :claim-id "ADR-0034-C1"
+                :claim-kind :structural-invariant}]}])
 
-(deftest audit-report-is-deterministic-json-test
+(defn- with-aggregate-stubs [f]
+  (with-redefs [adr/parse-all (fn [_dir] parsed-adrs)
+                adr/validate-adrs (fn [_adrs _repo] [lifecycle-problem])
+                adr/validate-repository-legacy (fn [_repo] [])
+                evidence/load-registry (fn [] {:entries []})
+                evidence/load-matrix (fn [] {})
+                evidence/load-as-of (fn [] "2026-07-12")
+                evidence/validate-registry
+                (fn [{:keys [claims]}]
+                  (is (= [{:file "0034-typed-evidence.md"
+                           :status "Accepted"
+                           :criterion-index 0
+                           :body "Claim."
+                           :claim-id "ADR-0034-C1"
+                           :claim-kind :structural-invariant}]
+                         claims))
+                  [evidence-problem])]
+    (f)))
+
+(deftest audit-and-enforce-aggregate-adr-and-evidence-problems
+  (with-aggregate-stubs
+    (fn []
+      (testing "audit reports every problem in ADR-then-evidence order"
+        (is (= {:ok? false :exit-code 0 :mode :audit
+                :problems [lifecycle-problem evidence-problem]}
+               (governance/run! "." {:mode :audit}))))
+      (testing "enforcement is nonzero on the same complete problem set"
+        (is (= {:ok? false :exit-code 1 :mode :enforce
+                :problems [lifecycle-problem evidence-problem]}
+               (governance/run! "." {:mode :enforce})))))))
+
+(deftest legacy-never-loads-or-validates-typed-evidence
+  (with-redefs [adr/validate-repository-legacy (fn [_repo] [])
+                evidence/load-registry (fn [] (throw (ex-info "must not load" {})))
+                evidence/validate-registry (fn [_] (throw (ex-info "must not run" {})))]
+    (is (= {:ok? true :exit-code 0 :mode :legacy :problems []}
+           (governance/run! "." {:mode :legacy})))))
+
+(deftest audit-report-preserves-claim-problem-coordinates
   (let [dir (.toFile (java.nio.file.Files/createTempDirectory
                       "adr-governance-test"
                       (make-array java.nio.file.attribute.FileAttribute 0)))
         report (io/file dir "report.json")]
     (try
-      (with-redefs [adr/validate-repository (fn [_repo-root] [sample-problem])
-                    adr/validate-repository-legacy (fn [_repo-root] [])]
-        (let [run-cli! (ns-resolve 'abc.tools.adr-governance 'run-cli!)
-              result (when run-cli!
-                       (run-cli! ["--mode" "audit"
-                                  "--report" (.getPath report) "."]))
-              value (when (.isFile report) (json/read-json-file report))]
-          (is (some? run-cli!))
-          (is (.isFile report))
-          (is (= 0 (:exit-code result)))
-          (is (= "audit" (get value "mode")))
-          (is (false? (get value "ok")))
-          (is (= [31 29] (get-in value ["problems" 0 "path"])))))
+      (with-aggregate-stubs
+        (fn []
+          (let [result (governance/run-cli!
+                        ["--mode" "audit" "--report" (.getPath report) "."])
+                value (json/read-json-file report)]
+            (is (= 0 (:exit-code result)))
+            (is (false? (get value "ok")))
+            (is (= {"file" "0034-typed-evidence.md"
+                    "criterion-index" 0
+                    "claim-id" "ADR-0034-C1"
+                    "kind" "missing-claim-evidence"}
+                   (select-keys (get-in value ["problems" 1])
+                                ["file" "criterion-index" "claim-id" "kind"]))))))
       (finally
         (doseq [file (reverse (file-seq dir))]
           (.delete file))))))
@@ -56,4 +92,7 @@
 (deftest nix-governance-check-selects-audit-mode-test
   (let [flake (slurp "flake.nix")]
     (is (string/includes? flake
-                          "clojure -M:abc/adr-governance --mode audit"))))
+                          "clojure -M:abc/adr-governance --mode audit"))
+    (is (string/includes?
+         flake
+         "ADR lifecycle, dependency, claim, artifact, freshness, and evidence audit completed."))))

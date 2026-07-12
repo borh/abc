@@ -13,10 +13,13 @@ abc_root="${AB_ABC_ROOT:-$repo_root/data/abc-schemas}"
 if [[ "${AB_MAPPING_SMOKE_HERMETIC:-0}" == "1" ]]; then
   bash "$repo_root/tests/aat-parser-ir-schema-hash-smoke.sh"
   bash "$repo_root/tests/aat-parser-ir-mapping-policy-smoke.sh"
+  jq -e '.mapping_version == "0.4.0"' \
+    "$repo_root/data/aat-to-parser-ir-mapping-v1.json"
+  jq -e '.mapping_version == "0.5.0"' \
+    "$repo_root/data/aat-to-parser-ir-mapping-v2.json"
   for mapping in \
     "$repo_root/data/aat-to-parser-ir-mapping-v1.json" \
     "$repo_root/data/aat-to-parser-ir-mapping-v2.json"; do
-    jq -e '.mapping_version == "0.4.0"' "$mapping"
     jq -e '.target_parser_ir_schema_hash == "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"' "$mapping"
     jq -e 'any(.transform_rule_descriptions[]; .aat_pointer == "meta.primary_text_hash" and .parser_ir_pointer == "source.primary_text_hash")' "$mapping"
     jq -e 'any(.transform_rule_descriptions[]; .aat_pointer == "meta.source_hash" and .parser_ir_pointer == "source.primary_text_hash")' "$mapping"
@@ -27,6 +30,10 @@ if [[ "${AB_MAPPING_SMOKE_HERMETIC:-0}" == "1" ]]; then
   jq -e '.mapping_version == "0.2.8"' "$frozen_v1"
   python "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/c14n.py" "$frozen_v1" \
     | rg -F $'\tsha256:952620ced4eb22f9771e6a10c3a1d4d93de604a8c33e360311f82b6e1eafc5b7'
+  frozen_v2_0_4="$repo_root/data/aat-to-parser-ir-mapping-v2-0.4.0.json"
+  jq -e '.mapping_version == "0.4.0"' "$frozen_v2_0_4"
+  python "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/c14n.py" "$frozen_v2_0_4" \
+    | rg -F $'\tsha256:cf177bee98af086fe728cbc1942e4f631b26ed5bb55aedc7d91b21f467c41f30'
   exit 0
 fi
 

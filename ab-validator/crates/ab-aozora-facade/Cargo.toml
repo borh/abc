@@ -81,18 +81,6 @@ schema = ["json", "dep:schemars"]
 # Downstream renderer authors enable this when writing property
 # tests over their own `AozoraVisitor` impls.
 proptest = ["dep:proptest", "dep:ab-aozora-proptest"]
-# Stub features (Task 3 lift): upstream's `cst` / `query` features gate
-# `dep:aozora-cst` / `dep:aozora-query`, neither of which is lifted (see the
-# NOTE above [dependencies]). Declared here as empty, dependency-less
-# features — matching upstream's feature *names* exactly, satisfying the
-# `#[cfg(feature = "cst")]` / `#[cfg(feature = "query")]` gates already
-# present in src/lib.rs (rustc's `unexpected_cfgs` check otherwise flags
-# them as unknown values) — while enabling either from the command line
-# correctly fails to compile (the gated `pub use aozora_cst::*` /
-# `aozora_query::*` re-exports have no crate to resolve), honestly
-# reflecting that this fork does not carry cst/query support.
-cst = []
-query = []
 
 [dev-dependencies]
 # Used by `tests/corpus_sweep.rs`, `tests/corpus_incremental_merge.rs`, and

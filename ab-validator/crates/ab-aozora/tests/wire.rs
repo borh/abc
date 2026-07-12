@@ -14,7 +14,7 @@ fn version_carries_the_identity_fields() {
     assert!(out.status.success());
     let text = String::from_utf8(out.stdout).unwrap();
     for field in [
-        "ab-aozora 0.5.0",
+        "ab-aozora 0.6.0",
         "aat-schema 2",
         "facade 0.3.0",
         "wire-schema 3",
@@ -84,7 +84,10 @@ fn mode_diagnostics_emits_schema3_envelope() {
 #[test]
 fn mode_diagnostics_no_partial_stdout_contract_holds() {
     // Unknown mode still exits 1 with empty stdout (contract unchanged).
-    let out = Command::new(bin()).args(["--mode", "nodes"]).output().unwrap();
+    let out = Command::new(bin())
+        .args(["--mode", "nodes"])
+        .output()
+        .unwrap();
     assert_eq!(out.status.code(), Some(1));
     assert!(out.stdout.is_empty());
 }

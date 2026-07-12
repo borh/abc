@@ -99,20 +99,43 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 
 - File: `data/aat-to-parser-ir-mapping-v2.json` (identity-rotated compatibility
   artifact; further edits require an explicit protocol/version rotation)
-- Mapping version: `0.4.0`
+- Mapping version: `0.5.0`
 - `source_aat_version`: `2` (selects `data/aat-schema.json`)
 - Mapping hash:
-  `sha256:d53da085a07eda4d69c6f4e30bacfccc2c7916d2f4b73375cca10a89dc9fbba7`
-- Frozen pre-rotation v2 `0.3.0` artifact:
+  `sha256:9be58ff3fea272c2a94ae16f05e3e362425e8bcdd20c482a4a842c13fe067142`
+- Frozen v2 `0.3.0` artifact:
   `data/aat-to-parser-ir-mapping-v2-0.3.0.json` (canonical hash
   `sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40`),
   retained so historical compatibility-registry evidence remains reproducible
+- Frozen Phase 5 v2 `0.4.0` artifact:
+  `data/aat-to-parser-ir-mapping-v2-0.4.0.json` (canonical hash
+  `sha256:cf177bee98af086fe728cbc1942e4f631b26ed5bb55aedc7d91b21f467c41f30`),
+  retained byte-for-byte for the admitted C5 registry row and frozen reports
 - Adds explicit source-note authority (`source_note` blocks), `jizume_block`
   layout projection, and typed (non-`x-`) layout fields with `x-` fallback,
   on top of the v1 rule set
 - `SchemaSet::load_for_aat_version` selects the (AAT schema, mapping)
   tuple by the mapping's `source_aat_version`; both mappings share the same
   mapping schema and target parser-IR schema
+
+#### Generations
+
+| Mapping version | File | Hash | Notes |
+| --- | --- | --- | --- |
+| `0.3.0` | `data/aat-to-parser-ir-mapping-v2-0.3.0.json` (frozen, byte-identical to the live file as it stood at the freeze commit; never edit) | `sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40` | Registry coordinate of the 0.2.0-era…C4 rows. |
+| `0.4.0` | `data/aat-to-parser-ir-mapping-v2-0.4.0.json` (frozen; never edit) | `sha256:cf177bee98af086fe728cbc1942e4f631b26ed5bb55aedc7d91b21f467c41f30` | Adds inline `yokogumi`/`keigakomi` container rules (`S-13`, `S-14`); admitted C5 coordinate. |
+| `0.5.0` | `data/aat-to-parser-ir-mapping-v2.json` (live) | `sha256:9be58ff3fea272c2a94ae16f05e3e362425e8bcdd20c482a4a842c13fe067142` | Preserves C5 rules and separates authoritative bundle identity from primary-text provenance. |
+
+A generation is frozen the moment its hash is cited by a registry row —
+copy it to a version-suffixed file (as `0.3.0` and `0.4.0` were) before
+continuing to edit the live file for the next generation.
+
+Converter subcommands that load a mapping accept
+`--expect-mapping-version <v>` and `--expect-mapping-hash <sha256:…>` to bind
+an invocation to a specific mapping generation. When either is given and the
+loaded mapping does not match, the command fails closed before doing any
+conversion work, instead of silently running against whatever the live file
+currently contains.
 
 ## Verification
 

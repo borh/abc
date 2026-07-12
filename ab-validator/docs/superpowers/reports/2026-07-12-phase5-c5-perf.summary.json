@@ -1,0 +1,67 @@
+{
+ "stage": "c5",
+ "gate": "perf",
+ "candidate": {
+  "commit": "004deaf548f34a36abbc17d0f7a162df010a6292",
+  "bin_sha256": "00066926b8cb035c2b2a55691cfcb99d26c8450b87d960d058855a69afedd24d",
+  "version": "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 004deaf548f34a36abbc17d0f7a162df010a6292)"
+ },
+ "verdict": "PASS",
+ "details": {
+  "runner_report": "docs/superpowers/reports/2026-07-12-phase5-c5-perf.runner.json",
+  "new_timeouts": 0,
+  "median_delta_pct": 4.23,
+  "baseline_workset_median_s": 0.591,
+  "candidate_workset_median_s": 0.616,
+  "threshold_pct": 10,
+  "baseline_bin": {
+   "commit": "27772b1b75c9ceeb0b724095bbbb47f774f3a275",
+   "bin_sha256": "9cd442bb01fed48974ac393d52990166c081ec21528398f14bf38631a6174ea9",
+   "version": "ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git 27772b1b75c9ceeb0b724095bbbb47f774f3a275)"
+  },
+  "machine": {
+   "node": "hinoki",
+   "machine": "x86_64",
+   "processor": "",
+   "cpu_count": 32
+  },
+  "per_work": [
+   {
+    "work_id": "001529_50685",
+    "baseline_median_s": 0.7167,
+    "candidate_median_s": 0.7665,
+    "delta_pct": 6.95
+   },
+   {
+    "work_id": "000311_2012",
+    "baseline_median_s": 0.3659,
+    "candidate_median_s": 0.3663,
+    "delta_pct": 0.11
+   },
+   {
+    "work_id": "001562_56146",
+    "baseline_median_s": 0.8665,
+    "candidate_median_s": 0.8669,
+    "delta_pct": 0.05
+   },
+   {
+    "work_id": "001562_56145",
+    "baseline_median_s": 0.9668,
+    "candidate_median_s": 0.9668,
+    "delta_pct": 0.0
+   },
+   {
+    "work_id": "000363_56656",
+    "baseline_median_s": 0.1653,
+    "candidate_median_s": 0.1652,
+    "delta_pct": -0.06
+   },
+   {
+    "work_id": "001562_33224",
+    "baseline_median_s": 0.4653,
+    "candidate_median_s": 0.4655,
+    "delta_pct": 0.04
+   }
+  ]
+ }
+}

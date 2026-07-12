@@ -398,11 +398,16 @@
               {
                 nativeBuildInputs = [
                   pkgs.clojure
+                  pkgs.git
                   pkgs.git-cliff
                   pkgs.libxml2
                 ];
               }
               ''
+                # Replay tests exercise the real CLI and pin coupling. Keep the
+                # monorepo lock outside the writable abc source fixture, matching
+                # the repository layout while preserving its store-read-only mode.
+                cp ${../flake.lock} flake.lock
                 ${copyWritableSource}
                 ${cljSandboxEnv}
                 # Keep TEI schema-backed tests active in the sandbox. The schema is

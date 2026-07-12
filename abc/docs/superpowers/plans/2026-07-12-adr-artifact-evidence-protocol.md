@@ -798,12 +798,12 @@ first criterion row:
 {"schema_version" "abc-adr-claim-migration-inventory-v1"
  "accepted_adr_count" 2
  "accepted_criterion_count" 3
- "families" {"foundation-runtime-identity" 1
+ "families" {"foundation-runtime-identity" 2
              "schema-rdf-tei" 0
              "temporal-person-ingest" 0
              "parser-ir-publication" 1
              "diagrams-governance" 0
-             "unclassified" 1}
+             "unclassified" 0}
  "criteria" [{"adr" 1
                "file" "0001-one.md"
                "criterion_index" 0

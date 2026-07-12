@@ -83,8 +83,11 @@
   [[nil "--descriptor PATH"]
    [nil "--output PATH"]])
 
+(defn- cli-args [args]
+  (if (= "--" (first args)) (rest args) args))
+
 (defn -main [& args]
-  (let [{:keys [options errors]} (cli/parse-opts args cli-options)]
+  (let [{:keys [options errors]} (cli/parse-opts (cli-args args) cli-options)]
     (try
       (when (or (seq errors) (nil? (:descriptor options)) (nil? (:output options)))
         (throw (ex-info "invalid evidence capture arguments" {:exit-code 2})))

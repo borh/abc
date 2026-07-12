@@ -45,6 +45,7 @@
                 (for [i (range 1 (inc n))] [(fmt6 (+ 100 i)) (base-work (fmt6 (+ 100 i)))]))
    :edges (into (sorted-map)
                 (for [i (range 1 (inc n))] [[(fmt6 (+ 100 i)) "著者"] #{(fmt6 i)}]))
+   :contents (sorted-map)
    :next-id 1})
 
 (defn check-invariants!
@@ -58,6 +59,13 @@
               (not-every? #(contains? (:persons m) %) pids))
       (throw (ex-info "model invariant violated"
                       {:edge [wid rel] :pids pids :event event}))))
+  (doseq [[wid {:keys [text]}] (:contents m)]
+    (when (or (not (contains? (:works m) wid))
+              (not (string? text))
+              (string/blank? text)
+              (not (string/includes? text wid)))
+      (throw (ex-info "model invariant violated"
+                      {:content wid :text text :event event}))))
   nil)
 
 (defn- valid-relation? [relation]
@@ -147,8 +155,37 @@
     (let [edge-keys (filter #(= wid (first %)) (keys (:edges m)))]
       (applied (-> m
                    (update :works dissoc wid)
+                   (update :contents dissoc wid)
                    (update :edges #(apply dissoc % edge-keys)))
                e edge-keys))))
+
+;; --- content events (content-side evolution spec) ----------------------
+;; :contents is sorted-map wid → {:text s}. Text must embed the wid
+;; (uniqueness of member bytes across works — the invariant enforces it).
+
+(defmethod apply-event* :add-content
+  [m {:keys [wid text] :as e}]
+  (if (or (not (contains? (:works m) wid))
+          (contains? (:contents m) wid)
+          (not (string? text)) (string/blank? text)
+          (not (string/includes? text wid)))
+    (no-op m)
+    (applied (assoc-in m [:contents wid] {:text text}) e [])))
+
+(defmethod apply-event* :edit-content
+  [m {:keys [wid text] :as e}]
+  (if (or (not (contains? (:contents m) wid))
+          (not (string? text)) (string/blank? text)
+          (not (string/includes? text wid))
+          (= text (get-in m [:contents wid :text])))
+    (no-op m)
+    (applied (assoc-in m [:contents wid :text] text) e [])))
+
+(defmethod apply-event* :remove-content
+  [m {:keys [wid] :as e}]
+  (if-not (contains? (:contents m) wid)
+    (no-op m)
+    (applied (update m :contents dissoc wid) e [])))
 
 (defn edges-of [m pid]
   (vec (for [[k pids] (:edges m) :when (contains? pids pid)] k)))

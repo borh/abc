@@ -436,20 +436,6 @@
   ([zip-file] (inspect-zip zip-file default-limits))
   ([zip-file limits] (admit-scan! (scan-zip zip-file limits))))
 
-(defn inspect-zip-metadata
-  "Apply the source-bundle name decoding, normalization, collision, and primary
-  candidate construction without reading or hashing member bodies. Intended for
-  bounded corpus evidence; admission must still use inspect-zip."
-  [zip-file]
-  (with-open [archive (open-zip-archive zip-file zip-file)]
-    (let [entries (parser-decoded-entries zip-file archive)
-          analysis (path-collision-analysis (mapv :path entries))]
-      {:semantic-text-member-count
-       (count (filter #(primary-candidate? (:path %)) entries))
-       :nfc-collision? (boolean (seq (:nfc-collisions analysis)))
-       :unicode-case-collision?
-       (boolean (seq (:unicode-case-collisions analysis)))})))
-
 (defn write-manifest! [path inspection]
   (let [file (io/file path)
         manifest-value

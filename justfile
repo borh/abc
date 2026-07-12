@@ -54,3 +54,13 @@ validate-migration: check-no-build
 # Unseeded simulation soak (15x counts); failures print the seed to replay.
 sim-soak:
 	cd abc && ABC_SIM_SOAK=1 clojure -M:test:kaocha -m kaocha.runner --focus :simulation
+
+# Replay the pinned aozorabunko history through the audit machinery and
+# diff against the committed baseline (needs network on a cold cache).
+replay-aozora:
+	cd abc && clojure -M:abc/aozora-replay -- --check
+
+# Re-run the replay and rewrite the committed baseline (adjudicate the
+# diff in the same PR as whatever caused it).
+replay-aozora-update:
+	cd abc && clojure -M:abc/aozora-replay -- --update

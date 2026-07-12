@@ -1,9 +1,12 @@
 (ns abc.tools.aozora-replay-test
-  (:require [abc.sim.model]
+  (:require [abc.git :as abc-git]
+            [abc.sim.model]
             [abc.sim.render :as sim-render]
             [abc.tools.aozora-replay :as replay]
             [abc.tools.json :as abc-json]
             [clojure.java.io :as io]
+            [clojure.java.shell]
+            [clojure.string]
             [clojure.test :refer [deftest is testing]])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
@@ -127,3 +130,173 @@
                       "skipped_work_ids" ["000101"] "persons_written" 4
                       "person_conflicts" ["000009"]}}
            digest))))
+
+(defn- commit-state! [git dir family instant]
+  (sim-render/commit-zip-at!
+   git dir
+   (sim-render/csv->zip-bytes
+    (sim-render/rows->csv
+     (sim-render/model->rows
+      (:model (abc.sim.model/apply-event
+               (abc.sim.model/bootstrap 1)
+               {:event/type :edit-person :pid "000001"
+                :field :family_name :value family})))))
+   (str "state " family) instant))
+
+(deftest replay-plumbing-integration-test
+  (let [repo-dir (temp-dir "abc-replay-repo")
+        work-dir (temp-dir "abc-replay-work")
+        baseline (io/file (temp-dir "abc-replay-base") "baseline.json")
+        git (sim-render/init-repo! repo-dir)]
+    (try
+      (commit-state! git repo-dir "壱" "2023-03-01T00:00:00Z")
+      (commit-state! git repo-dir "弐" "2024-03-01T00:00:00Z")
+      (commit-state! git repo-dir "参" "2025-03-01T00:00:00Z")
+      (let [opts {:aozora-repo (str repo-dir)
+                  :remote-url replay/default-remote-url
+                  :sample-period "year"
+                  :zip-path sim-render/zip-path
+                  :work-dir (str work-dir)}
+            doc1 (replay/replay-doc! opts)]
+        (testing "--update writes a well-formed baseline; immediate re-run is :unchanged"
+          (is (= ["2024" "2025"] (mapv #(get % "period") (get doc1 "pairs"))))
+          (is (= [] (get doc1 "excluded")))
+          (abc-json/write-deterministic-json-file! baseline doc1)
+          (is (= :unchanged
+                 (:verdict (replay/classify-diff
+                            (abc-json/read-json-file (str baseline))
+                            (replay/replay-doc! opts))))))
+        (testing "a new upstream-like commit classifies as pin-bump-shaped"
+          (commit-state! git repo-dir "肆" "2026-03-01T00:00:00Z")
+          (is (= :pin-bump-shaped
+                 (:verdict (replay/classify-diff
+                            doc1 (replay/replay-doc! opts))))))
+        (testing "a doctored historical pair classifies as behavioral-change"
+          (let [doctored (update-in doc1 ["pairs" 0 "drift_summary"
+                                          "metadata_corrections"]
+                                    (fnil inc 0))
+                fresh (replay/replay-doc! opts)]
+            (is (= :behavioral-change
+                   (:verdict (replay/classify-diff doctored fresh)))))))
+      (finally
+        (.close git)
+        (delete-recursive repo-dir)
+        (delete-recursive work-dir)
+        (delete-recursive (.getParentFile baseline))))))
+
+(deftest ensure-clone-provenance-test
+  (let [origin (temp-dir "abc-replay-origin")
+        cache (temp-dir "abc-replay-cache")]
+    (try
+      (let [git (sim-render/init-repo! origin)]
+        (commit-state! git origin "壱" "2023-03-01T00:00:00Z")
+        (.close git))
+      ;; a cache cloned from one URL...
+      (clojure.java.shell/sh "git" "clone" "--no-checkout"
+                             (str "file://" origin) (str (io/file cache "clone")))
+      ;; ...must be refused when the replay expects another
+      (let [e (try (replay/ensure-clone!
+                    {:cache-dir (str (io/file cache "clone"))
+                     :remote-url "https://example.invalid/other.git"})
+                   nil
+                   (catch clojure.lang.ExceptionInfo e e))]
+        (is (some? e))
+        (is (= "https://example.invalid/other.git"
+               (:expected-url (ex-data e))))
+        (is (string? (:actual-url (ex-data e)))))
+      (finally
+        (delete-recursive origin)
+        (delete-recursive cache)))))
+
+(deftest resolve-options-guards-test
+  (let [pin (replay/locked-pin "flake.lock")]
+    (testing "exactly one of --check/--update"
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (replay/resolve-options {:sample-period "year"})))
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (replay/resolve-options {:check true :update true
+                                            :sample-period "year"}))))
+    (testing "default-baseline --update refuses non-default sampling/window"
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (replay/resolve-options {:update true
+                                            :sample-period "month"})))
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (replay/resolve-options {:update true
+                                            :sample-period "year"
+                                            :from-ref "somewhere"})))
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (replay/resolve-options {:update true
+                                            :sample-period "year"
+                                            :to-ref (apply str (repeat 40 "d"))}))))
+    (testing "explicit ad-hoc baseline is permitted with any flags"
+      (is (= "month" (:sample-period
+                      (replay/resolve-options {:update true
+                                               :sample-period "month"
+                                               :baseline "/tmp/adhoc.json"})))))
+    (testing "defaults resolve from runtime context"
+      (let [r (replay/resolve-options {:check true :sample-period "year"})]
+        (is (= pin (:to-ref r)))
+        (is (= replay/default-baseline-path (:baseline r)))
+        (is (= replay/default-remote-url (:remote-url r)))
+        (is (= replay/default-zip-path (:zip-path r)))))))
+
+(deftest replay-missing-at-ref-exclusion-test
+  (let [repo-dir (temp-dir "abc-replay-noref")
+        work-dir (temp-dir "abc-replay-noref-work")
+        git (sim-render/init-repo! repo-dir)]
+    (try
+      ;; from-ref commit predates the ZIP path entirely
+      (let [c-nozip (sim-render/commit-file-at! git repo-dir "README.md"
+                                                "no zip yet" "init"
+                                                "2022-01-01T00:00:00Z")]
+        (commit-state! git repo-dir "壱" "2023-03-01T00:00:00Z")
+        (commit-state! git repo-dir "弐" "2024-03-01T00:00:00Z")
+        (let [doc (replay/replay-doc! {:aozora-repo (str repo-dir)
+                                       :remote-url replay/default-remote-url
+                                       :from-ref (.getName c-nozip)
+                                       :sample-period "year"
+                                       :zip-path sim-render/zip-path
+                                       :work-dir (str work-dir)})]
+          (is (= [{"ref" (.getName c-nozip) "period" nil
+                   "reason" "missing-at-ref"}]
+                 (get doc "excluded"))
+              "path absent in the historical tree is a pinned exclusion")
+          (is (= ["2024"] (mapv #(get % "period") (get doc "pairs")))
+              "pairing runs over the survivors")))
+      (finally
+        (.close git)
+        (delete-recursive repo-dir)
+        (delete-recursive work-dir)))))
+
+(deftest ensure-blob-bytes-missing-object-is-loud-test
+  ;; Deleting the loose blob fabricates a promised-but-absent object; the
+  ;; repo has no promisor remote, so the tier must be LOUD, never an
+  ;; exclusion.
+  (let [repo-dir (temp-dir "abc-replay-missing-obj")
+        git (sim-render/init-repo! repo-dir)]
+    (try
+      (let [c (commit-state! git repo-dir "壱" "2023-03-01T00:00:00Z")
+            blob-sha (clojure.string/trim
+                      (:out (clojure.java.shell/sh
+                             "git" "-C" (str repo-dir) "rev-parse"
+                             (str (.getName c) ":" sim-render/zip-path))))
+            obj (io/file repo-dir ".git" "objects"
+                         (subs blob-sha 0 2) (subs blob-sha 2))]
+        (is (.exists obj) "fresh commits leave loose objects")
+        (is (.delete obj))
+        (let [repo (abc-git/load-git-repo (str repo-dir))]
+          (try
+            (is (= :missing-object
+                   (replay/blob-availability repo (.getName c)
+                                             sim-render/zip-path)))
+            (let [e (try (replay/ensure-blob-bytes repo (str repo-dir)
+                                                   (.getName c)
+                                                   sim-render/zip-path)
+                         nil
+                         (catch clojure.lang.ExceptionInfo e e))]
+              (is (some? e))
+              (is (= :missing-local-object (:cause-tier (ex-data e)))))
+            (finally (.close repo)))))
+      (finally
+        (.close git)
+        (delete-recursive repo-dir)))))

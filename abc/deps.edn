@@ -78,6 +78,7 @@
   :abc/validate-corpus {:main-opts ["-m" "abc.tools.validate-corpus"]}
   :abc/person-drift-history {:main-opts ["-m" "abc.tools.person-drift-history"]}
   :abc/aozora-history-audit {:main-opts ["-m" "abc.tools.aozora-history-audit"]}
+  :abc/aozora-replay {:main-opts ["-m" "abc.tools.aozora-replay"]}
   :abc/aat-compat-admission {:main-opts ["-m" "abc.tools.aat-parser-ir-compat"]}
   :abc/diagrams {:main-opts ["-m" "abc.tools.diagram.registry"]}
   :abc/presentation-diagrams {:main-opts ["-m" "abc.tools.diagram.presentation-registry"]}

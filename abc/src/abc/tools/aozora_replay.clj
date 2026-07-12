@@ -2,11 +2,18 @@
   "Replay abc's audit machinery over the real pinned aozorabunko history
   and pin the per-pair findings as a committed baseline. Design:
   docs/superpowers/specs/2026-07-12-aozora-replay-harness-design.md."
-  (:require [abc.tools.aozora-csv :as ac]
+  (:require [abc.git :as abc-git]
+            [abc.tools.aozora-csv :as ac]
+            [abc.tools.aozora-history-audit :as audit]
+            [abc.tools.cli :as abc-cli]
             [abc.tools.json :as abc-json]
-            [clojure.string :as string])
+            [clojure.java.io :as io]
+            [clojure.java.shell :as shell]
+            [clojure.string :as string]
+            [taoensso.telemere :as tel])
   (:import [java.io ByteArrayInputStream IOException]
-           [java.util.zip ZipException ZipInputStream]))
+           [java.util.zip ZipException ZipInputStream]
+           [org.eclipse.jgit.errors MissingObjectException]))
 
 (def baseline-format 1)
 (def default-remote-url "https://github.com/aozorabunko/aozorabunko.git")
@@ -153,3 +160,271 @@
 
        :else
        :behavioral-change)}))
+
+;; ---------------------------------------------------------------------
+;; Git effects: managed partial clone + tiered blob availability.
+
+(defn default-cache-dir
+  "Managed-clone location. Deliberately on the /db/ data volume, not
+  ~/.cache: the partial clone is multi-GB-scale and ~/.cache is a small
+  tmpfs on the primary workstation."
+  []
+  "/db/abc/cache/aozorabunko")
+
+(defn- git*
+  "Run git with argv `args` (strings), optionally in `dir`. Returns the
+  clojure.java.shell result map; never throws on nonzero exit."
+  [args {:keys [dir out-enc]}]
+  (apply shell/sh
+         (concat ["git"]
+                 (when dir ["-C" (str dir)])
+                 (map str args)
+                 (when out-enc [:out-enc out-enc]))))
+
+(defn- git!
+  "Like git*, but nonzero exit throws ex-info with the command context."
+  [args {:keys [dir] :as opts}]
+  (let [{:keys [exit err] :as res} (git* args opts)]
+    (if (zero? exit)
+      res
+      (throw (ex-info (str "git " (string/join " " args) " failed ("
+                           exit "): " (string/trim (or err "")))
+                      {:git-args (vec (map str args))
+                       :dir (some-> dir str)
+                       :exit exit})))))
+
+(defn- ensure-commit!
+  "Ensure `ref` resolves to a commit object in `dir`, fetching if needed."
+  [dir ref]
+  (when-not (zero? (:exit (git* ["cat-file" "-e" (str ref "^{commit}")]
+                                {:dir dir})))
+    (when-not (zero? (:exit (git* ["fetch" "origin" ref] {:dir dir})))
+      (git! ["fetch" "origin"] {:dir dir}))
+    (git! ["cat-file" "-e" (str ref "^{commit}")] {:dir dir})))
+
+(defn verify-origin!
+  "Verify a repo's origin URL matches the expected remote-url. The
+  baseline records remote_url as the upstream identity, so a repo whose
+  origin disagrees must be refused. A repo with NO origin remote (e.g. a
+  locally built test repo) is allowed with a warning: the recorded
+  remote_url is then a declared, not observed, upstream."
+  [repo-dir remote-url]
+  (let [{:keys [exit out]} (git* ["remote" "get-url" "origin"]
+                                 {:dir repo-dir})]
+    (if (zero? exit)
+      (let [actual (string/trim out)]
+        (when (not= actual remote-url)
+          (throw (ex-info (str "repo at " repo-dir " has origin " actual
+                               ", expected " remote-url)
+                          {:cache-dir (str repo-dir)
+                           :expected-url remote-url
+                           :actual-url actual}))))
+      (tel/log! :warn (str "repo at " repo-dir " has no origin remote; "
+                           "recording remote_url as declared upstream: "
+                           remote-url)))))
+
+(defn ensure-clone!
+  "Create or update the managed blobless partial clone. Verifies cache
+  provenance (origin URL must equal remote-url) before fetching — the
+  baseline must never record one source while replaying another.
+  Returns cache-dir as a string."
+  [{:keys [cache-dir remote-url to-ref]}]
+  (let [dir (io/file cache-dir)]
+    (if (.exists (io/file dir ".git"))
+      (verify-origin! (str dir) remote-url)
+      (do (io/make-parents (io/file dir "placeholder"))
+          (git! ["clone" "--filter=blob:none" "--no-checkout"
+                 remote-url (str dir)]
+                {})))
+    (when to-ref (ensure-commit! (str dir) to-ref))
+    (str dir)))
+
+(defn blob-availability
+  "Tiered read of zip-path bytes at ref (spec unit 3):
+  {:bytes bs} | {:excluded \"missing-at-ref\"} | :missing-object."
+  [repo ref zip-path]
+  (try
+    {:bytes (abc-git/blob-bytes-at repo ref zip-path)}
+    (catch clojure.lang.ExceptionInfo e
+      (if (= zip-path (:path (ex-data e)))
+        {:excluded "missing-at-ref"}
+        (throw e)))
+    (catch MissingObjectException _ :missing-object)))
+
+(defn ensure-blob-bytes
+  "Bytes of zip-path at ref, attempting ONE CLI promisor fetch when the
+  object is promised but locally absent. A still-missing object is an
+  environment failure (loud), never an exclusion."
+  [repo repo-dir ref zip-path]
+  (let [r (blob-availability repo ref zip-path)]
+    (if (not= :missing-object r)
+      r
+      (do
+        (try
+          (git! ["cat-file" "blob" (str ref ":" zip-path)]
+                {:dir repo-dir :out-enc :bytes})
+          (catch Exception e
+            (throw (ex-info (str "object for " zip-path " at " ref
+                                 " is unavailable locally and the promisor "
+                                 "fetch failed")
+                            {:ref ref :zip-path zip-path :repo (str repo-dir)
+                             :cause-tier :missing-local-object}
+                            e))))
+        (let [r2 (blob-availability repo ref zip-path)]
+          (if (= :missing-object r2)
+            (throw (ex-info (str "object for " zip-path " at " ref
+                                 " still missing after promisor fetch")
+                            {:ref ref :zip-path zip-path :repo (str repo-dir)
+                             :cause-tier :missing-local-object}))
+            r2))))))
+
+(defn prefetch-and-prevalidate!
+  "Partition the plan into surviving refs and pinned source-fact
+  exclusions. Runs identically for managed caches and --aozora-repo."
+  [repo repo-dir plan zip-path]
+  (reduce
+   (fn [acc {:keys [ref period]}]
+     (let [{:keys [bytes excluded]} (ensure-blob-bytes repo repo-dir ref zip-path)
+           reason (or excluded (catalog-bytes-fault bytes))]
+       (if reason
+         (update acc :excluded conj {"ref" ref "period" period "reason" reason})
+         (update acc :refs conj {:ref ref :period period}))))
+   {:refs [] :excluded []}
+   plan))
+
+;; ---------------------------------------------------------------------
+;; Orchestration + CLI.
+
+(defn- log-phase!
+  "Progress + timing telemetry for the long-running phases. Timing lives
+  ONLY in logs (telemere timestamps), never in the baseline."
+  [phase started-ms detail]
+  (tel/log! :info (str "replay " phase " ("
+                       (- (System/currentTimeMillis) started-ms) " ms): "
+                       detail)))
+
+(defn replay-doc!
+  "Plan, prefetch/pre-validate, scan, digest. Returns the baseline doc."
+  [{:keys [aozora-repo cache-dir remote-url to-ref from-ref sample-period
+           zip-path work-dir]}]
+  (let [t0 (System/currentTimeMillis)
+        repo-dir (if aozora-repo
+                   (do (verify-origin! (str aozora-repo) remote-url)
+                       aozora-repo)
+                   (ensure-clone! {:cache-dir cache-dir
+                                   :remote-url remote-url
+                                   :to-ref to-ref}))
+        _ (log-phase! "clone-ready" t0 (str repo-dir))
+        repo (abc-git/load-git-repo (str repo-dir))]
+    (try
+      (let [t1 (System/currentTimeMillis)
+            pin-rev (.getName (abc-git/resolve-ref repo (or to-ref "HEAD")))
+            plan (audit/scan-plan repo {:zip-path zip-path
+                                        :from-ref from-ref
+                                        :to-ref to-ref
+                                        :sample-period sample-period})
+            _ (log-phase! "plan" t1 (str (count plan) " representatives"))
+            t2 (System/currentTimeMillis)
+            {:keys [refs excluded]} (prefetch-and-prevalidate!
+                                     repo repo-dir plan zip-path)
+            _ (log-phase! "prefetch" t2 (str (count refs) " usable, "
+                                             (count excluded) " excluded"))
+            t3 (System/currentTimeMillis)
+            scan (audit/scan-history! {:aozora-repo (str repo-dir)
+                                       :refs (mapv :ref refs)
+                                       :zip-path zip-path
+                                       :work-dir work-dir})
+            _ (log-phase! "scan" t3 (str (count (:pairs scan)) " pairs"))]
+        (baseline-doc {:remote-url remote-url
+                       :pin-rev pin-rev
+                       :zip-path zip-path
+                       :sample-period sample-period
+                       :excluded excluded
+                       :pairs (:pairs scan)
+                       :period-by-ref (into {} (map (juxt :ref :period)) refs)}))
+      (finally (.close repo)))))
+
+(defn run-replay!
+  "Run one replay in :check or :update mode. Returns a result map with
+  ::exit-fail? set for CLI dispatch."
+  [{:keys [check update baseline] :as opts}]
+  (let [doc (replay-doc! opts)]
+    (cond
+      update
+      (do (abc-json/write-deterministic-json-file! (io/file baseline) doc)
+          {:mode "update" :baseline (str baseline)
+           :pairs (count (get doc "pairs"))
+           :excluded (count (get doc "excluded"))
+           ::exit-fail? false})
+
+      check
+      (let [old (try (abc-json/read-json-file baseline)
+                     (catch Exception e
+                       (throw (ex-info (str "baseline unreadable: " baseline)
+                                       {:baseline (str baseline)} e))))
+            {:keys [verdict pair-changes]} (classify-diff old doc)]
+        {:mode "check" :baseline (str baseline)
+         :verdict (name verdict)
+         :pair_changes pair-changes
+         ::exit-fail? (not= :unchanged verdict)}))))
+
+(def ^:private cli-options
+  [[nil "--check" "Compare a fresh replay against the committed baseline"]
+   [nil "--update" "Rewrite the baseline from a fresh replay"]
+   [nil "--sample-period PERIOD" "Sampling period: month or year"
+    :default "year"]
+   [nil "--from-ref REF" "Optional window start (ad-hoc runs only)"]
+   [nil "--to-ref REF" "Replay end ref; defaults to the abc/flake.lock pin"]
+   [nil "--cache-dir DIR" "Managed partial-clone location"]
+   [nil "--remote-url URL" "Upstream remote for the managed clone"]
+   [nil "--aozora-repo DIR" "Use an existing clone (skips clone management only)"]
+   [nil "--baseline FILE" "Baseline path"]
+   [nil "--work-dir DIR" "Tool-owned scan work dir"
+    :default "out/aozora-replay"]
+   [nil "--zip-path PATH" "Catalog ZIP path inside the upstream repo"]
+   ["-h" "--help"]])
+
+(defn- usage [summary]
+  (str "Usage: clojure -M:abc/aozora-replay -- (--check | --update) [options]\n\n"
+       "Replays the pinned aozorabunko history (year-sampled) through the\n"
+       "audit machinery and checks/updates the committed baseline.\n\n"
+       summary))
+
+(defn resolve-options
+  "Fill defaults that need runtime context and enforce mode guards.
+  Public: this is the boundary that protects the committed baseline from
+  accidental ad-hoc overwrites, and it is tested directly."
+  [{:keys [check baseline sample-period from-ref to-ref] update? :update :as options}]
+  (when (= (boolean check) (boolean update?))
+    (throw (ex-info "exactly one of --check / --update is required"
+                    {:check (boolean check) :update (boolean update?)})))
+  (let [pin (locked-pin "flake.lock")
+        baseline (or baseline default-baseline-path)
+        default-baseline? (= baseline default-baseline-path)]
+    (when (and update? default-baseline?
+               (or (not= "year" sample-period)
+                   (some? from-ref)
+                   (and (some? to-ref) (not= to-ref pin))))
+      (throw (ex-info (str "refusing --update of the default baseline with "
+                           "non-default sampling/window flags; pass --baseline "
+                           "for ad-hoc runs")
+                      {:sample-period sample-period :from-ref from-ref
+                       :to-ref to-ref :pin pin})))
+    (-> options
+        (assoc :baseline baseline)
+        (update :to-ref #(or % pin))
+        (update :cache-dir #(or % (default-cache-dir)))
+        (update :remote-url #(or % default-remote-url))
+        (update :zip-path #(or % default-zip-path)))))
+
+(defn -main [& args]
+  (abc-cli/run-cli!
+   args
+   {:cli-options cli-options
+    :usage-fn usage
+    :run (fn [{:keys [options]}]
+           (let [result (run-replay! (resolve-options options))]
+             (println (abc-json/write-deterministic-json-str
+                       (dissoc result ::exit-fail?)))
+             result))
+    :fail? ::exit-fail?}))

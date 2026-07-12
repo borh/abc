@@ -14,9 +14,9 @@ fn version_carries_the_identity_fields() {
     assert!(out.status.success());
     let text = String::from_utf8(out.stdout).unwrap();
     for field in [
-        "ab-aozora 0.3.0",
-        "aat-schema 1",
-        "facade 0.2.0",
+        "ab-aozora 0.5.0",
+        "aat-schema 2",
+        "facade 0.3.0",
         "wire-schema 3",
         "git ",
     ] {

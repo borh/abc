@@ -245,7 +245,6 @@
         "upstream-aozora-notation-spec-src": "upstream-aozora-notation-spec-src",
         "upstream-aozora-parser-js-src": "upstream-aozora-parser-js-src",
         "upstream-aozora-rs-src": "upstream-aozora-rs-src",
-        "upstream-aozora-src": "upstream-aozora-src",
         "upstream-aozora2-src": "upstream-aozora2-src",
         "upstream-aozorabunko-extractor-src": "upstream-aozorabunko-extractor-src"
       }
@@ -350,23 +349,6 @@
         "owner": "kinoko0518",
         "repo": "aozora-rs",
         "rev": "2b2b8f641aee9fd92ed282f03ab060c18542700c",
-        "type": "github"
-      }
-    },
-    "upstream-aozora-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1783519963,
-        "narHash": "sha256-XS7BdCpcbfJoTRYcrHWwcCErmQFRfFF7U7FUQU2Ezsg=",
-        "owner": "P4suta",
-        "repo": "aozora",
-        "rev": "1a4f864603970983719655aa4af4525958ac2d38",
-        "type": "github"
-      },
-      "original": {
-        "owner": "P4suta",
-        "repo": "aozora",
-        "rev": "1a4f864603970983719655aa4af4525958ac2d38",
         "type": "github"
       }
     },

@@ -1,0 +1,25 @@
+{
+  "stage": "c3",
+  "gate": "migration",
+  "candidate": {
+    "commit": "c2b9b396271755bc0b898fdaed17c9c9cbe4666d",
+    "bin_sha256": "008790f777b05e00692d2e740ec1d2e7736830c7cdefa0661cf13a050d761e4d",
+    "version": "ab-aozora 0.4.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git c2b9b396271755bc0b898fdaed17c9c9cbe4666d)"
+  },
+  "verdict": "PASS",
+  "details": {
+    "mode": "v2-migration",
+    "compared": 17886,
+    "classes": {
+      "migrated": 17864,
+      "jizume_rewritten": 4,
+      "ruby_left_rewritten": 18
+    },
+    "verdict": "PASS",
+    "details": {
+      "both": 0,
+      "compound_jizume_adopted": 6
+    },
+    "instrument_commit": "22030d58ee0d31b59515151a31f0d1e5c24aa809"
+  }
+}

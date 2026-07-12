@@ -14,11 +14,9 @@ mkdir -p "$out_dir" "$(dirname "$summary_md")"
 oracle_target="$(target_for ab-oracle-cross-adapter)"
 aozora2_target="$(target_for aozora2-cross-adapter)"
 aozora_rs_target="$(target_for aozora-rs-cross-adapter)"
-aozora_target="$(target_for aozora-cross-adapter)"
 
 aozora2_bin="$(adapter_bin_path "$AB_VALIDATOR_ROOT/adapters/aozora2/Cargo.toml" aozora2-adapter "$aozora2_target")"
 aozora_rs_bin="$(adapter_bin_path "$AB_VALIDATOR_ROOT/adapters/aozora-rs/Cargo.toml" aozora-rs-adapter "$aozora_rs_target")"
-aozora_bin="$(adapter_bin_path "$AB_VALIDATOR_ROOT/adapters/aozora/Cargo.toml" aozora-adapter "$aozora_target")"
 aozora2html_bin="$AB_VALIDATOR_ROOT/adapters/aozora2html/aozora2html-adapter"
 
 case_args=()
@@ -41,7 +39,6 @@ fi
   --adapter "aozora2=$aozora2_bin" \
   --adapter "aozora-rs=$aozora_rs_bin" \
   --adapter "aozora2html=$aozora2html_bin" \
-  --adapter "aozora=$aozora_bin" \
   "${case_args[@]}" \
   --report-json "$report_json"
 

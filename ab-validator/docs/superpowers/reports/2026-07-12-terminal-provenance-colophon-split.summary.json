@@ -1,0 +1,235 @@
+{
+  "schema_version": "terminal-provenance-colophon-split-v1",
+  "verdict": "TERMINAL_PROVENANCE_SPLIT_OK",
+  "corpus_root": "/nix/store/sdr1imwrxfldvlwzs2d2fhs11vxncgpx-aozorabunko-corpus",
+  "works_scanned": 17886,
+  "works_with_terminal_provenance": 17735,
+  "works_with_colophon": 17734,
+  "works_without_tail": 151,
+  "works_unclassifiable": 0,
+  "terminal_provenance_lines": 84461,
+  "colophon_lines": 106363,
+  "head_line_hits": 91691,
+  "unreadable_entries": [
+    "cards/000050/files/57476_etc_58134.zip",
+    "cards/000119/files/46429_ruby_26539.txt",
+    "cards/000148/files/769_ttz.zip",
+    "cards/000879/files/128_ttz.zip",
+    "cards/001021/files/49355_etc_58116.zip",
+    "cards/001030/files/4812_ruby_14383.txt",
+    "cards/001154/files/chihobunkano_shinkensetsu.zip",
+    "cards/001248/files/46751_etc_57109.zip",
+    "cards/001562/files/56151_ruby_60063.zip"
+  ],
+  "unclassifiable_total": 0,
+  "unclassifiable_examples": [],
+  "provenance_samples": [
+    {
+      "work_id": "000005_53194",
+      "label": "cards/000005/files/53194_ruby_44732.zip::hatsukoi.txt",
+      "terminal_provenance_lines": 4
+    },
+    {
+      "work_id": "000005_55215",
+      "label": "cards/000005/files/55215_ruby_49076.zip::roshiano_kotoba.txt",
+      "terminal_provenance_lines": 5
+    },
+    {
+      "work_id": "000005_55216",
+      "label": "cards/000005/files/55216_ruby_49074.zip::asuwa_asuwa.txt",
+      "terminal_provenance_lines": 5
+    },
+    {
+      "work_id": "000005_55217",
+      "label": "cards/000005/files/55217_ruby_49075.zip::isso.txt",
+      "terminal_provenance_lines": 5
+    },
+    {
+      "work_id": "000005_5",
+      "label": "cards/000005/files/5_ruby_21311.zip::aibiki.txt",
+      "terminal_provenance_lines": 2
+    },
+    {
+      "work_id": "000006_1868",
+      "label": "cards/000006/files/1868_ruby_22436.zip::shosetsu_soron.txt",
+      "terminal_provenance_lines": 4
+    },
+    {
+      "work_id": "000006_1869",
+      "label": "cards/000006/files/1869_ruby_33306.zip::ukigumo.txt",
+      "terminal_provenance_lines": 5
+    },
+    {
+      "work_id": "000006_3310",
+      "label": "cards/000006/files/3310_ruby_8278.zip::heibon.txt",
+      "terminal_provenance_lines": 4
+    },
+    {
+      "work_id": "000006_3311",
+      "label": "cards/000006/files/3311_ruby_7023.zip::igonjyo_izoku_zengosaku.txt",
+      "terminal_provenance_lines": 4
+    },
+    {
+      "work_id": "000006_382",
+      "label": "cards/000006/files/382_ruby_22429.zip::watashiwa_kaigihada.txt",
+      "terminal_provenance_lines": 4
+    }
+  ],
+  "colophon_samples": [
+    {
+      "work_id": "000005_53194",
+      "label": "cards/000005/files/53194_ruby_44732.zip::hatsukoi.txt",
+      "colophon_lines": 7
+    },
+    {
+      "work_id": "000005_55215",
+      "label": "cards/000005/files/55215_ruby_49076.zip::roshiano_kotoba.txt",
+      "colophon_lines": 5
+    },
+    {
+      "work_id": "000005_55216",
+      "label": "cards/000005/files/55216_ruby_49074.zip::asuwa_asuwa.txt",
+      "colophon_lines": 5
+    },
+    {
+      "work_id": "000005_55217",
+      "label": "cards/000005/files/55217_ruby_49075.zip::isso.txt",
+      "colophon_lines": 5
+    },
+    {
+      "work_id": "000005_5",
+      "label": "cards/000005/files/5_ruby_21311.zip::aibiki.txt",
+      "colophon_lines": 6
+    },
+    {
+      "work_id": "000006_1868",
+      "label": "cards/000006/files/1868_ruby_22436.zip::shosetsu_soron.txt",
+      "colophon_lines": 6
+    },
+    {
+      "work_id": "000006_1869",
+      "label": "cards/000006/files/1869_ruby_33306.zip::ukigumo.txt",
+      "colophon_lines": 6
+    },
+    {
+      "work_id": "000006_3310",
+      "label": "cards/000006/files/3310_ruby_8278.zip::heibon.txt",
+      "colophon_lines": 7
+    },
+    {
+      "work_id": "000006_3311",
+      "label": "cards/000006/files/3311_ruby_7023.zip::igonjyo_izoku_zengosaku.txt",
+      "colophon_lines": 4
+    },
+    {
+      "work_id": "000006_382",
+      "label": "cards/000006/files/382_ruby_22429.zip::watashiwa_kaigihada.txt",
+      "colophon_lines": 6
+    }
+  ],
+  "boundary_rule": {
+    "tail_start_marker": "底本：",
+    "tail_start_rule": "the tail is every line from the first line whose content, after stripping leading whitespace, starts with 底本： -- mirrors aozora_body_range's `line.trim_start().starts_with(\"底本：\")` check in crates/ab-aozora-aat/src/lib.rs",
+    "provenance_heads": [
+      "底本：",
+      "底本の親本："
+    ],
+    "colophon_heads": [
+      "入力：",
+      "校正：",
+      "青空文庫作成ファイル：",
+      "※"
+    ],
+    "state_machine": {
+      "states": [
+        "provenance",
+        "colophon"
+      ],
+      "transitions": [
+        {
+          "when": "line (stripped) starts with a provenance_heads entry",
+          "set_state": "provenance",
+          "class": "terminal_provenance"
+        },
+        {
+          "when": "line (stripped) starts with a colophon_heads entry",
+          "set_state": "colophon",
+          "class": "colophon_metadata"
+        },
+        {
+          "when": "line is blank",
+          "set_state": null,
+          "class": "blank",
+          "note": "state is left unchanged, not cleared"
+        },
+        {
+          "when": "line is non-blank, matches no head, and state is set",
+          "set_state": null,
+          "class": "inherit_from_state",
+          "note": "class is terminal_provenance when state is provenance, colophon_metadata when state is colophon"
+        },
+        {
+          "when": "line is non-blank, matches no head, and state is unset",
+          "set_state": null,
+          "class": null,
+          "note": "fail-closed: raises UnclassifiableTail"
+        }
+      ]
+    }
+  },
+  "rule_extensions": [],
+  "rule_extensions_note": "empty: the brief's head-marker skeleton, unmodified, classified every tail line in this run with zero unclassifiable residual (works_unclassifiable == 0) -- no extension beyond 底本：/底本の親本： (provenance) and 入力：/校正：/青空文庫作成ファイル：/※ (colophon) was needed. Lines matching other colophon-shaped prefixes the reference scanner also recognizes (親本：/初出：/校閲：/作成日：/修正：/ファイル作成：) are still classified correctly: they inherit whatever state the block already carries rather than needing their own head entry, since they never open a NEW block by themselves in the corpus.",
+  "reference_coverage": {
+    "date": "2026-07-06",
+    "terminal_provenance_occurrences": 609,
+    "colophon_occurrences": 89416,
+    "reference_mechanism": "terminal_provenance_occurrences counts SegmentBoundaryTerminalProvenance markers (crates/ab-source-syntax/src/lib.rs terminal_provenance_note_end): a ［＃地付き］（…） note immediately followed by a 底本： line -- a narrow structural co-occurrence, not 'has a 底本 block'. colophon_metadata_occurrences counts LINES matching a fixed ~20-prefix set including 底本：/底本の親本：/親本：/初出： AND 入力：/校正：/校閲：/作成日：/修正：/ファイル作成：/青空文庫作成ファイル： together in ONE undifferentiated bucket (is_colophon_metadata_line in crates/ab-coverage/src/bin/source_inventory.rs) -- this conflation is exactly what ABC policy v0.2.0 flags needs_measurement_split and what this instrument splits. It is also a pure per-line prefix match with no state: it never counts a bare continuation line (an edition/date line, a plain name).",
+    "this_run_unit": "works_scanned/works_with_terminal_provenance/works_with_colophon count corpus TEXT ENTRIES (see works_scanned note above); terminal_provenance_lines/colophon_lines count ALL tail lines under the stateful rule (heads + inherited continuations); head_line_hits counts only the head-line subset (lines literally matching a provenance_heads/colophon_heads prefix) -- the comparable-in-kind figure to the reference's per-line prefix scan, modulo the head-list and prefix-set differences above."
+  },
+  "revision_2": {
+    "date": "2026-07-12",
+    "reason": "Task 15's C4-gate confinement audit found the Task 12 scanner disagreed with the Rust corpus pipeline's ground truth on exactly 6 of 17886 corpus text entries (out of 17886 total). Root cause: this reader used to dispatch zip-vs-plain by filename extension only; the pinned corpus contains files named `*.txt` whose actual bytes are zip archives, and two zip archives whose central directory disagrees with their own local file header. Fixed in reports/source-regions/terminal-provenance-split.py (entry selection now sniffs zip magic bytes by content, matching crates/ab-index/src/index.rs's `is_zip_file`; zip reading now falls back to trusting only the local file header when the central directory is corrupt or unreadable, matching crates/ab-index/src/index.rs and crates/ab-check/src/check.rs's `by_index_raw` + manual decompress, which never cross-checks a central-directory CRC/size). The normative boundary rule itself (reports/lib/terminal_provenance.py's classify_tail state machine, PROVENANCE_HEADS/COLOPHON_HEADS, tail-start marker) is UNCHANGED -- only entry selection/reading changed.",
+    "previous_binding": {
+      "works_with_terminal_provenance": 17733,
+      "works_without_tail": 153
+    },
+    "new_binding": {
+      "works_with_terminal_provenance": 17735,
+      "works_without_tail": 151
+    },
+    "defect_classes": [
+      {
+        "class": "A",
+        "description": "Stray/corrupt duplicate file read instead of the real corpus entry: a `.txt`-named file in a `cards/<id>/files/` directory whose actual bytes are a truncated/corrupt zip archive. Extension-based dispatch read its raw zip bytes as Shift_JIS garbage (misclassified no_tail) instead of excluding it, the way the Rust corpus pipeline does (`invalid Zip archive: No CDFH found`, omitted from index.json's 17886-entry universe).",
+        "entries": ["001030_4812", "000119_46429"],
+        "labels": [
+          "cards/001030/files/4812_ruby_14383.txt",
+          "cards/000119/files/46429_ruby_26539.txt"
+        ],
+        "resolution": "now correctly excluded (unreadable_entries), matching Rust exactly"
+      },
+      {
+        "class": "B",
+        "description": "Same root cause as Class A, but the zip data itself is genuinely valid: a `.txt`-named file in `cards/<id>/files/` whose actual bytes are a fully-formed, decompressible zip archive containing a genuine `底本：` tail. Extension-based dispatch misread it as raw Shift_JIS garbage, missing the real tail entirely (misclassified no_tail).",
+        "entries": ["001341_49658", "001585_53484"],
+        "labels": [
+          "cards/001341/files/49658_ruby_70064.txt",
+          "cards/001585/files/53484_ruby_56576.txt"
+        ],
+        "resolution": "now correctly read via content-sniffed zip dispatch; both find a genuine terminal_provenance tail, matching the Rust pipeline's real appended source_note"
+      },
+      {
+        "class": "C",
+        "description": "Two zip entries python's stdlib `zipfile` cannot read (one has a central-directory CRC/uncompressed-size that disagrees with its own local file header; one has a central directory/EOCD that is not parseable as a coherent whole at all), which the Rust `zip` crate's `by_index_raw` + manual decompress path reads fine (never cross-checking a central-directory CRC/size against the local header) -- correctly finding no tail on both.",
+        "entries": ["001393_50710", "001505_58100"],
+        "labels": [
+          "cards/001393/files/50710_ruby_36965.zip",
+          "cards/001505/files/58100_txt_60357.zip"
+        ],
+        "resolution": "now correctly read via a local-header-trusting fallback that never validates a central-directory CRC/size; both correctly resolve to no_tail, matching Rust"
+      }
+    ],
+    "verification": "the six named entries were independently traced against both a local aozorabunko mirror checked out at the exact pinned commit (0e9ea3e586eb0aa34039fabfc85a407d2f98b165) AND the actual pinned nix-store aozorabunko-corpus derivation used on hinoki, producing byte-identical read_entry_text/find_tail_start results in both places, matching Task 15's trace exactly. The full-corpus re-run (this file) landed on works_scanned=17886, works_with_terminal_provenance=17735, works_without_tail=151, works_unclassifiable=0 -- exactly the C4 confinement audit's ground truth (source_note_appended=17735, identical=151).",
+    "unchanged": "the normative boundary rule (reports/lib/terminal_provenance.py: classify_tail's state machine, PROVENANCE_HEADS/COLOPHON_HEADS, TAIL_START_MARKER, find_tail_start) was not modified at all -- this file was untouched by the fix. All 15 pre-existing classify_tail/find_tail_start tests continue to pass unmodified, proving semantic equivalence."
+  }
+}

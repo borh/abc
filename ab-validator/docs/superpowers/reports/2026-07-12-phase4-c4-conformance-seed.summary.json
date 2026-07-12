@@ -1,0 +1,2295 @@
+{
+  "schema_version": 2,
+  "vectors_dir": "/home/bor/Projects/soranoha/.worktrees/parser-fork-phase4/ab-validator/reports/parser-conformance/official-docs-seed",
+  "totals": {
+    "vectors": 30,
+    "adapters": 7,
+    "rows": 210,
+    "pass": 120,
+    "warning": 80,
+    "fail": 10,
+    "skip": 0
+  },
+  "rows": [
+    {
+      "vector": "official_accent_decomposition",
+      "feature": "accent",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'accent', 'span': {'start': 0, 'end': 16}}], got []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_accent_decomposition",
+      "feature": "accent",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['accent']\n      got:      ['unparsed-source-gap']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_accent_decomposition",
+      "feature": "accent",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['accent']\n      got:      ['unparsed-source-gap']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_accent_decomposition",
+      "feature": "accent",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['accent']\n      got:      ['emphasis']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_accent_decomposition",
+      "feature": "accent",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['accent']\n      got:      ['gaiji']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_accent_decomposition",
+      "feature": "accent",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['accent']\n      got:      ['emphasis']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_accent_decomposition",
+      "feature": "accent",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['accent']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bold",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'emphasis', 'span': {'start': 0, 'end': 39}}], got [{'kind': 'emphasis', 'span': {'start': 0, 'end': 36}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bold",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bold",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bold",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bold",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bold",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bold",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'emphasis', 'span': {'start': 0, 'end': 75}}], got [{'kind': 'bouten', 'span': {'start': 12, 'end': 48}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      ['bouten']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      ['bouten']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_double",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'emphasis', 'span': {'start': 0, 'end': 36}}], got [{'kind': 'bouten', 'span': {'start': 0, 'end': 36}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_double",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      ['bouten']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_double",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      ['bouten']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_double",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_double",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_double",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_double",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_left",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'emphasis', 'span': {'start': 0, 'end': 36}}], got [{'kind': 'bouten', 'span': {'start': 0, 'end': 36}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_left",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      ['bouten']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_left",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      ['bouten']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_left",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_left",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_left",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_left",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_wave",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'emphasis', 'span': {'start': 0, 'end': 30}}], got [{'kind': 'bouten', 'span': {'start': 0, 'end': 30}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_wave",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      ['bouten']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_wave",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      ['bouten']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_wave",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_wave",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_wave",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bousen_wave",
+      "feature": "bousen",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten",
+      "feature": "bouten",
+      "level": "must",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten",
+      "feature": "bouten",
+      "level": "must",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten",
+      "feature": "bouten",
+      "level": "must",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten",
+      "feature": "bouten",
+      "level": "must",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten",
+      "feature": "bouten",
+      "level": "must",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten",
+      "feature": "bouten",
+      "level": "must",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten",
+      "feature": "bouten",
+      "level": "must",
+      "adapter": "aozora-epub3",
+      "status": "fail",
+      "failures": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      []"
+      ],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      ['emphasis']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_double_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_double_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_double_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_double_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_double_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      ['emphasis']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_double_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_double_circle",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_fisheye",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_fisheye",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_fisheye",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_fisheye",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_fisheye",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      ['emphasis']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_fisheye",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_fisheye",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_left",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_left",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_left",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_left",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_left",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_left",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_left",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_saltire",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_saltire",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_saltire",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_saltire",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_saltire",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      ['emphasis']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_saltire",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_saltire",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_white_sesame",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_white_sesame",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_white_sesame",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_white_sesame",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_white_sesame",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_white_sesame",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_bouten_white_sesame",
+      "feature": "bouten",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['bouten']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_description_only",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_description_only",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_description_only",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_description_only",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_description_only",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_description_only",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_description_only",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora-epub3",
+      "status": "fail",
+      "failures": [
+        "nodes: kind sequence differs\n      expected: ['gaiji']\n      got:      []"
+      ],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora-epub3",
+      "status": "fail",
+      "failures": [
+        "nodes: kind sequence differs\n      expected: ['gaiji']\n      got:      []"
+      ],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213_kana",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213_kana",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213_kana",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213_kana",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213_kana",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213_kana",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_jisx0213_kana",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora-epub3",
+      "status": "fail",
+      "failures": [
+        "nodes: kind sequence differs\n      expected: ['gaiji']\n      got:      []"
+      ],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_unicode",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_unicode",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_unicode",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_unicode",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_unicode",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_unicode",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_gaiji_unicode",
+      "feature": "gaiji",
+      "level": "must",
+      "adapter": "aozora-epub3",
+      "status": "fail",
+      "failures": [
+        "nodes: kind sequence differs\n      expected: ['gaiji']\n      got:      []"
+      ],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_dogyo",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'heading', 'span': {'start': 0, 'end': 54}}], got [{'kind': 'headingHint', 'span': {'start': 9, 'end': 54}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_dogyo",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_dogyo",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_dogyo",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_dogyo",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_dogyo",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_dogyo",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'heading', 'span': {'start': 0, 'end': 66}}], got [{'kind': 'headingHint', 'span': {'start': 18, 'end': 66}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large_range",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'heading', 'span': {'start': 0, 'end': 63}}], got [{'kind': 'containerOpen', 'span': {'start': 0, 'end': 21}}, {'kind': 'containerClose', 'span': {'start': 33, 'end': 63}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large_range",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      ['containerOpen', 'containerClose']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large_range",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      ['containerOpen', 'containerClose']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large_range",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      ['containerClose']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large_range",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large_range",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      ['heading', 'heading']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_large_range",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_mado",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'heading', 'span': {'start': 0, 'end': 51}}], got [{'kind': 'headingHint', 'span': {'start': 9, 'end': 51}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_mado",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_mado",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_mado",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_mado",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_mado",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_mado",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_medium",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'heading', 'span': {'start': 0, 'end': 36}}], got [{'kind': 'headingHint', 'span': {'start': 3, 'end': 36}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_medium",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_medium",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_medium",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_medium",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_medium",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_medium",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_small",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'heading', 'span': {'start': 0, 'end': 42}}], got [{'kind': 'headingHint', 'span': {'start': 6, 'end': 42}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_small",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_small",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_small",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_small",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_small",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_heading_small",
+      "feature": "heading",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['heading']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_italic",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_italic",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_italic",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_italic",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_italic",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_italic",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_italic",
+      "feature": "emphasis",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['emphasis']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_jisage_ageage",
+      "feature": "layout",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'indent', 'span': {'start': 0, 'end': 60}}], got [{'kind': 'alignEnd', 'span': {'start': 0, 'end': 30}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_jisage_ageage",
+      "feature": "layout",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['indent']\n      got:      ['emphasis']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_jisage_ageage",
+      "feature": "layout",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['indent']\n      got:      ['emphasis']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_jisage_ageage",
+      "feature": "layout",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['indent']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_jisage_ageage",
+      "feature": "layout",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['indent']\n      got:      ['emphasis']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_jisage_ageage",
+      "feature": "layout",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['indent']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_jisage_ageage",
+      "feature": "layout",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['indent']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaicho",
+      "feature": "break",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: expected [{'kind': 'pageBreak', 'span': {'start': 0, 'end': 15}}], got [{'kind': 'sectionBreak', 'span': {'start': 0, 'end': 15}}]"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaicho",
+      "feature": "break",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['pageBreak']\n      got:      ['sectionBreak']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaicho",
+      "feature": "break",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['pageBreak']\n      got:      ['sectionBreak']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaicho",
+      "feature": "break",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['pageBreak']\n      got:      ['directive']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaicho",
+      "feature": "break",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['pageBreak']\n      got:      ['emphasis']"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaicho",
+      "feature": "break",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['pageBreak']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaicho",
+      "feature": "break",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['pageBreak']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaipage",
+      "feature": "break",
+      "level": "should",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaipage",
+      "feature": "break",
+      "level": "should",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaipage",
+      "feature": "break",
+      "level": "should",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaipage",
+      "feature": "break",
+      "level": "should",
+      "adapter": "aozora2",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['pageBreak']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaipage",
+      "feature": "break",
+      "level": "should",
+      "adapter": "aozora2html",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['pageBreak']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaipage",
+      "feature": "break",
+      "level": "should",
+      "adapter": "aozora-rs",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['pageBreak']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_pagebreak_kaipage",
+      "feature": "break",
+      "level": "should",
+      "adapter": "aozora-epub3",
+      "status": "warning",
+      "failures": [],
+      "warnings": [
+        "nodes: kind sequence differs\n      expected: ['pageBreak']\n      got:      []"
+      ],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_alphabet_base",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora",
+      "status": "fail",
+      "failures": [
+        "nodes: expected [{'kind': 'ruby', 'span': {'start': 0, 'end': 39}}], got [{'kind': 'ruby', 'span': {'start': 0, 'end': 27}}]"
+      ],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_alphabet_base",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_alphabet_base",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_alphabet_base",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_alphabet_base",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_alphabet_base",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_alphabet_base",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora-epub3",
+      "status": "fail",
+      "failures": [
+        "nodes: kind sequence differs\n      expected: ['ruby']\n      got:      []"
+      ],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_explicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora",
+      "status": "fail",
+      "failures": [
+        "nodes: expected [{'kind': 'ruby', 'span': {'start': 0, 'end': 39}}], got [{'kind': 'ruby', 'span': {'start': 0, 'end': 27}}]"
+      ],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_explicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_explicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_explicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_explicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_explicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_explicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora-epub3",
+      "status": "fail",
+      "failures": [
+        "nodes: kind sequence differs\n      expected: ['ruby']\n      got:      []"
+      ],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_implicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_implicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora-adapter",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_implicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "ab-aozora",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_implicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora2",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_implicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora2html",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_implicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora-rs",
+      "status": "pass",
+      "failures": [],
+      "warnings": [],
+      "skips": []
+    },
+    {
+      "vector": "official_ruby_implicit",
+      "feature": "ruby",
+      "level": "must",
+      "adapter": "aozora-epub3",
+      "status": "fail",
+      "failures": [
+        "nodes: kind sequence differs\n      expected: ['ruby']\n      got:      []"
+      ],
+      "warnings": [],
+      "skips": []
+    }
+  ]
+}

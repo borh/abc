@@ -601,11 +601,19 @@
               (assoc-in valid-source-region-policy
                         ["dispositions" 0 "plaintext_projection"]
                         "include")))))
-  (testing "requires terminal provenance and colophon rows to declare the current measurement split limitation"
+  (testing "requires measurement_status to be measured or needs_measurement_split"
     (is (seq (validate/source-region-policy-errors
               (assoc-in valid-source-region-policy
                         ["dispositions" 3 "measurement_status"]
-                        "measured"))))))
+                        "bogus"))))
+    (is (empty? (validate/source-region-policy-errors
+                 (assoc-in valid-source-region-policy
+                           ["dispositions" 3 "measurement_status"]
+                           "measured"))))
+    (is (empty? (validate/source-region-policy-errors
+                 (assoc-in valid-source-region-policy
+                           ["dispositions" 3 "measurement_status"]
+                           "needs_measurement_split"))))))
 
 (deftest source-region-publication-fixture-test
   (testing "fixture covers front apparatus, body text, body-end boundary, and back matter plaintext omission"

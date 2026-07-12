@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://abc.local/schemas/aat-v1.json",
+  "$id": "https://abc.local/schemas/aat-v2.json",
   "type": "object",
   "required": ["version", "work_id", "blocks", "meta"],
   "additionalProperties": false,
   "properties": {
-    "version": { "const": 1 },
+    "version": { "const": 2 },
     "work_id": { "type": "string" },
     "blocks": { "type": "array", "items": { "$ref": "#/$defs/block" } },
     "meta": { "$ref": "#/$defs/meta" }
@@ -135,19 +135,43 @@
     },
     "warning": {
       "type": "object",
-      "required": ["message"],
+      "required": ["code", "severity", "message"],
       "additionalProperties": false,
       "properties": {
-        "line": { "type": "integer", "minimum": 1 },
-        "path": { "type": "string" },
-        "message": { "type": "string" }
+        "code": { "type": "string" },
+        "severity": { "enum": ["error", "warning", "note"] },
+        "message": { "type": "string" },
+        "span": { "$ref": "#/$defs/span" },
+        "path": { "type": "string" }
+      }
+    },
+    "source_note": {
+      "type": "object",
+      "required": ["kind", "placement", "region_class", "content"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": { "const": "source_note" },
+        "placement": { "enum": ["front", "body", "back", "unknown"] },
+        "region_class": {
+          "enum": [
+            "front_legend",
+            "terminal_provenance",
+            "colophon_metadata",
+            "body_end_boundary",
+            "malformed_residue"
+          ]
+        },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/inline" } },
+        "span": { "$ref": "#/$defs/span" }
       }
     },
     "block": {
       "oneOf": [
         { "$ref": "#/$defs/paragraph" },
         { "$ref": "#/$defs/heading" },
-        { "$ref": "#/$defs/block_container" }
+        { "$ref": "#/$defs/block_container" },
+        { "$ref": "#/$defs/source_note" }
       ]
     },
     "inline": {
@@ -182,6 +206,7 @@
         "kind": { "const": "heading" },
         "level": { "type": "integer", "minimum": 1, "maximum": 3 },
         "style": { "type": "string" },
+        "indent": { "type": "integer", "minimum": 0 },
         "span": { "$ref": "#/$defs/span" },
         "content": { "type": "array", "items": { "$ref": "#/$defs/inline" } }
       }
@@ -198,12 +223,25 @@
             "quote_block",
             "keigakomi_block",
             "yokogumi_block",
-            "caption_block"
+            "caption_block",
+            "jizume_block"
           ]
         },
         "span": { "$ref": "#/$defs/span" },
+        "indent": { "type": "integer", "minimum": 0 },
+        "width": { "type": "integer", "minimum": 1 },
         "children": { "type": "array", "items": { "$ref": "#/$defs/block" } }
-      }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "jisage_block" } } },
+          "then": { "required": ["indent"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "jizume_block" } } },
+          "then": { "required": ["width"] }
+        }
+      ]
     },
     "text": {
       "type": "object",
@@ -301,9 +339,29 @@
         "size_type": { "type": "string" },
         "level": { "type": "integer" },
         "class_name": { "type": "string" },
+        "align": { "const": "right" },
+        "offset_from_end": { "type": "integer", "minimum": 0 },
+        "indent_first": { "type": "integer", "minimum": 0 },
+        "indent_rest": { "type": "integer", "minimum": 0 },
         "span": { "$ref": "#/$defs/span" },
         "content": { "type": "array", "items": { "$ref": "#/$defs/inline" } }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "style" }, "style_type": { "const": "chitsuki" } },
+            "required": ["style_type"]
+          },
+          "then": { "required": ["align", "offset_from_end"] }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "style" }, "style_type": { "const": "burasage" } },
+            "required": ["style_type"]
+          },
+          "then": { "required": ["indent_first", "indent_rest"] }
+        }
+      ]
     },
     "warigaki": {
       "type": "object",

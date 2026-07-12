@@ -4,7 +4,7 @@
 
 **Goal:** Migrate ADR 0029 and the structural scope of ADR 0031 to honest artifact-backed evidence after all ordinary ADR edits have settled.
 
-**Architecture:** Split graph contracts, workflow fixture behavior, registry drift, and ADR policy fixtures into five narrow observations. ADR 0031 remains structural and does not self-certify complete typed-evidence coverage; ADR 0034 is the sole authority for the complete-corpus observation and enforcement transition. Commit all descriptors and Plan 1's registration template first, capture every bundle into one external staging directory from the same clean revision, install them together, and register them atomically through Plan 1's tested registrar.
+**Architecture:** Split graph contracts, workflow fixture behavior, registry drift, and ADR policy fixtures into five narrow observations. ADR 0031 remains structural and does not self-certify complete typed-evidence coverage. This plan is the first to validate the complete 146-row migration ledger with `require-complete? true`; that ledger check is distinct from ADR 0034's later complete-corpus evidence observation. Plan 6 alone owns the enforcement transition. Commit all descriptors, their exact runtime-input manifests, closure tests, and Plan 1's registration template first, capture every bundle into one external staging directory from the same clean revision, install them together, and register them atomically through Plan 1's tested registrar.
 
 **Tech Stack:** Clojure/Kaocha, Mermaid generated views, EDN registries, deterministic JSON evidence bundles, Nix.
 
@@ -14,8 +14,9 @@
 - Use Plan 1's complete ledger validator, disposition-aware inventory, capture descriptors, hash-free entry templates, atomic registrar, and checked `nix/adr-family-clean.jq` predicate.
 - Diagram bytes prove deterministic declared views, not semantic correctness of the declared architecture.
 - Existing Accepted Decision/Hard Rule bodies remain byte-identical under plan 1's normative baseline; this plan changes criteria, lifecycle/relation headers, and generated views only.
-- ADR 0031 owns structural governance behavior only. ADR 0034 alone owns complete typed-evidence coverage, its immutable pre-promotion snapshot, and the enforcement transition.
-- Bind every runtime-read ADR, sidecar, architecture registry/prose file, workflow fixture, schema, and registered Mermaid output explicitly.
+- ADR 0031 owns structural governance behavior only. Plan 5 is the first complete-ledger (`require-complete? true`) validation. ADR 0034 owns the distinct complete-corpus observation and immutable pre-promotion snapshot; plan 6 alone owns the enforcement transition.
+- Bind every runtime-read ADR, sidecar, architecture registry/prose file, workflow fixture, schema, and registered Mermaid output explicitly through Plan 1's capture-v2 runtime-input contract.
+- Every descriptor names a checked `docs/evidence/adr-inputs/<stem>.edn` manifest with exact shape `{:schema-version :abc-adr-runtime-inputs-v1 :paths [...]}`. Its evidence test traces transitive production reads through Plan 1's instrumented shared file/hash helpers, calls `assert-runtime-input-closure!`, and passes the closure-wide bypass lint.
 - Capture all five bundles from one clean committed revision into a directory outside the repository. Install no bundle if any capture fails.
 - Audit mode remains active. ADR 0034 and the Nix enforcement flip are owned by plan 6.
 
@@ -57,8 +58,9 @@ Expected: both commands exit 0. Task 1 must then use Plan 1's
 
 ```bash
 git status --porcelain --untracked-files=all
-nix build ./abc#checks.x86_64-linux.diagram-drift \
-  ./abc#checks.x86_64-linux.presentation-diagram-drift
+system="$(nix eval --impure --raw --expr builtins.currentSystem)"
+nix build "./abc#checks.${system}.diagram-drift" \
+  "./abc#checks.${system}.presentation-diagram-drift"
 ```
 
 Expected: status prints nothing and both derivations build successfully.
@@ -188,6 +190,10 @@ Expected: commit succeeds and status is empty.
 **Files:**
 - Create: `docs/evidence/adr-capture/adr-graph-contract.edn`
 - Create: `docs/evidence/adr-capture/architecture-graph-contract.edn`
+- Create: `docs/evidence/adr-inputs/adr-graph-contract.edn`
+- Create: `docs/evidence/adr-inputs/architecture-graph-contract.edn`
+- Create: `test/abc/tools/diagram/adr_graph_evidence_test.clj`
+- Create: `test/abc/tools/diagram/architecture_graph_evidence_test.clj`
 
 **Interfaces:**
 - Produces: two committed, self-bound descriptors. Capturing is deferred until
@@ -195,34 +201,101 @@ Expected: commit succeeds and status is empty.
 
 - [ ] **Step 1: Write descriptors**
 
-Create `adr-graph-contract.edn` with the closed descriptor key set, schema
-version `abc-adr-evidence-capture-v1`, tool `bin/kaocha`, argv focused on
-`abc.tools.diagram.adr-graph-test`, a `clojure-test-v1` profile rooted at that
-namespace, observation `adr-graph-contracts-pass`, and explicit inputs
-containing self, every current `docs/adr/*.md` as literal sorted paths,
-`docs/adr/adr-relations.edn`, and `docs/adr/adr-graph.mmd`.
+Both descriptors use schema `abc-adr-evidence-capture-v2`, tool `bin/kaocha`,
+the `clojure-test-v1` profile, and a
+`:runtime-input-manifest "docs/evidence/adr-inputs/<stem>.edn"`. Focus their
+argv and roots on `abc.tools.diagram.adr-graph-evidence-test` and
+`abc.tools.diagram.architecture-graph-evidence-test`, respectively. Keep the
+existing observation keys `adr-graph-contracts-pass` and
+`architecture-graph-contracts-pass`.
 
-Create `architecture-graph-contract.edn` with the same closed key set, tool
-`bin/kaocha`, argv focused on
-`abc.tools.diagram.architecture-graph-test`, roots containing that namespace,
-observation `architecture-graph-contracts-pass`, and explicit inputs: self;
-every current `docs/adr/*.md`; `docs/architecture-stages.edn`;
-`docs/architecture.md`; `docs/architecture.mmd`;
-`schemas/schema-contracts.json`; and `schemas/manifest.schema.json`.
+The graph manifest contains its exact Accepted ADR Markdown set below plus
+`docs/adr/adr-relations.edn` and `docs/adr/adr-graph.mmd`. The architecture
+manifest contains the same exact Accepted set plus
+`docs/architecture-stages.edn`, `docs/architecture.md`,
+`docs/architecture.mmd`, `schemas/schema-contracts.json`, and
+`schemas/manifest.schema.json`. Each manifest has only `:schema-version` and
+`:paths`, with sorted unique repo-relative paths. Each descriptor's explicit
+runtime-data inputs equal manifest paths plus descriptor and manifest.
 
-Prove both descriptors contain the exact current Markdown set:
+Use this exact Accepted ADR Markdown set after plans 1–4; do not enumerate with
+a glob, and do not include `docs/adr/README.md`, Draft, Proposed, or Withdrawn
+ADRs:
+
+```clojure
+["docs/adr/0001-manifest-identity.md"
+ "docs/adr/0002-parser-evaluation.md"
+ "docs/adr/0006-v0-design-bundle-validation.md"
+ "docs/adr/0007-external-parser-validation-boundary.md"
+ "docs/adr/0008-abc-tools-runtime.md"
+ "docs/adr/0009-imported-output-materialization.md"
+ "docs/adr/0010-manifest-identity-hardening.md"
+ "docs/adr/0011-generated-fixture-policy.md"
+ "docs/adr/0012-tei-odd-schematron-validation.md"
+ "docs/adr/0013-cultural-heritage-lod-profile.md"
+ "docs/adr/0014-iiif-applicability.md"
+ "docs/adr/0015-temporal-modeling.md"
+ "docs/adr/0016-edtf-level1-decade-century.md"
+ "docs/adr/0017-vocabulary-review.md"
+ "docs/adr/0018-predicate-rename-batch-1.md"
+ "docs/adr/0020-person-identity-drift-data-model.md"
+ "docs/adr/0021-person-identity-drift-harness.md"
+ "docs/adr/0022-upstream-ingest-drift-awareness.md"
+ "docs/adr/0023-owned-aat-parser-ir-mapping.md"
+ "docs/adr/0024-parser-ir-span-and-ruby-direction.md"
+ "docs/adr/0025-parser-ir-publication-rendering.md"
+ "docs/adr/0029-diagrams-as-gated-derived-views.md"
+ "docs/adr/0030-aozora-parser-selection.md"
+ "docs/adr/0031-adr-governance-validation.md"
+ "docs/adr/0032-parser-fork-hard-detach.md"
+ "docs/adr/0033-source-bundle-identity.md"
+ "docs/adr/0038-custom-parser-ownership-and-neutral-comparison.md"]
+```
+
+The evidence tests parse these literal paths through Plan 1's instrumented
+shared file helpers, assert every parsed status is Accepted, exercise the
+shared parsed-value graph/architecture contracts, and invoke
+`assert-runtime-input-closure!` with
+`{:path descriptor-path :value descriptor}` and the traced paths.
+Production helpers invoked by the test must contribute their transitive reads;
+a wrapper-only trace is invalid. Prove both manifests contain the literal set:
 
 ```bash
 cd abc
-expected="$(rg --files docs/adr -g '*.md' | LC_ALL=C sort)"
-for descriptor in docs/evidence/adr-capture/{adr-graph-contract,architecture-graph-contract}.edn; do
-  actual="$(clojure -M -e '
+for manifest in docs/evidence/adr-inputs/{adr-graph-contract,architecture-graph-contract}.edn; do
+  clojure -M -e '
     (require (quote [clojure.edn :as edn]))
-    (->> (:explicit (:input-profile (edn/read-string (slurp (first *command-line-args*)))))
-         (filter #(re-matches #"docs/adr/.*[.]md" %))
-         sort
-         (run! println))' "$descriptor")"
-  test "$actual" = "$expected" || exit 1
+    (let [accepted #{"docs/adr/0001-manifest-identity.md"
+                     "docs/adr/0002-parser-evaluation.md"
+                     "docs/adr/0006-v0-design-bundle-validation.md"
+                     "docs/adr/0007-external-parser-validation-boundary.md"
+                     "docs/adr/0008-abc-tools-runtime.md"
+                     "docs/adr/0009-imported-output-materialization.md"
+                     "docs/adr/0010-manifest-identity-hardening.md"
+                     "docs/adr/0011-generated-fixture-policy.md"
+                     "docs/adr/0012-tei-odd-schematron-validation.md"
+                     "docs/adr/0013-cultural-heritage-lod-profile.md"
+                     "docs/adr/0014-iiif-applicability.md"
+                     "docs/adr/0015-temporal-modeling.md"
+                     "docs/adr/0016-edtf-level1-decade-century.md"
+                     "docs/adr/0017-vocabulary-review.md"
+                     "docs/adr/0018-predicate-rename-batch-1.md"
+                     "docs/adr/0020-person-identity-drift-data-model.md"
+                     "docs/adr/0021-person-identity-drift-harness.md"
+                     "docs/adr/0022-upstream-ingest-drift-awareness.md"
+                     "docs/adr/0023-owned-aat-parser-ir-mapping.md"
+                     "docs/adr/0024-parser-ir-span-and-ruby-direction.md"
+                     "docs/adr/0025-parser-ir-publication-rendering.md"
+                     "docs/adr/0029-diagrams-as-gated-derived-views.md"
+                     "docs/adr/0030-aozora-parser-selection.md"
+                     "docs/adr/0031-adr-governance-validation.md"
+                     "docs/adr/0032-parser-fork-hard-detach.md"
+                     "docs/adr/0033-source-bundle-identity.md"
+                     "docs/adr/0038-custom-parser-ownership-and-neutral-comparison.md"}
+          paths (set (:paths (edn/read-string (slurp (first *command-line-args*)))))
+          markdown (set (filter #(re-matches #"docs/adr/[0-9]{4}-.*[.]md" %) paths))]
+      (assert (= accepted markdown))
+      (assert (not (contains? paths "docs/adr/README.md"))))' "$manifest"
 done
 ```
 
@@ -230,8 +303,8 @@ done
 
 ```bash
 cd abc
-bin/kaocha --focus abc.tools.diagram.adr-graph-test \
-  --focus abc.tools.diagram.architecture-graph-test
+bin/kaocha --focus abc.tools.diagram.adr-graph-evidence-test \
+  --focus abc.tools.diagram.architecture-graph-evidence-test
 ```
 
 Expected: zero failures.
@@ -240,7 +313,11 @@ Expected: zero failures.
 
 ```bash
 git add abc/docs/evidence/adr-capture/adr-graph-contract.edn \
-  abc/docs/evidence/adr-capture/architecture-graph-contract.edn
+  abc/docs/evidence/adr-capture/architecture-graph-contract.edn \
+  abc/docs/evidence/adr-inputs/adr-graph-contract.edn \
+  abc/docs/evidence/adr-inputs/architecture-graph-contract.edn \
+  abc/test/abc/tools/diagram/adr_graph_evidence_test.clj \
+  abc/test/abc/tools/diagram/architecture_graph_evidence_test.clj
 git commit -m "test(diagrams): define graph evidence captures"
 git status --porcelain --untracked-files=all
 ```
@@ -255,6 +332,10 @@ Expected: commit succeeds and status is empty. Do not capture yet.
 **Files:**
 - Create: `docs/evidence/adr-capture/workflow-graph-fixtures.edn`
 - Create: `docs/evidence/adr-capture/diagram-registry-drift.edn`
+- Create: `docs/evidence/adr-inputs/workflow-graph-fixtures.edn`
+- Create: `docs/evidence/adr-inputs/diagram-registry-drift.edn`
+- Create: `test/abc/tools/diagram/workflow_graph_evidence_test.clj`
+- Create: `test/abc/tools/diagram/diagram_registry_evidence_test.clj`
 
 **Interfaces:**
 - Produces: two committed, self-bound descriptors; no run bundle or registry
@@ -262,31 +343,37 @@ Expected: commit succeeds and status is empty. Do not capture yet.
 
 - [ ] **Step 1: Define the workflow descriptor**
 
-Use tool `bin/kaocha`, argv/root focused on
-`abc.tools.diagram.workflow-graph-test`, observation
-`workflow-graph-fixtures-pass`, and explicit inputs containing self,
-`examples/workflow/passed.workflow-run.json`, and
+Use capture schema v2, tool `bin/kaocha`, argv/root focused on
+`abc.tools.diagram.workflow-graph-evidence-test`, observation
+`workflow-graph-fixtures-pass`, and a runtime manifest containing
+`examples/workflow/passed.workflow-run.json` and
 `schemas/workflow-run.schema.json`.
 
 - [ ] **Step 2: Define the registry/core descriptor**
 
-Use tool `bin/kaocha`, argv/roots focused on both
-`abc.tools.diagram.registry-test` and `abc.tools.diagram.core-test`,
-observation `diagram-registry-contracts-pass`, and explicit inputs containing
-self; every current `docs/adr/*.md` as literal sorted paths;
-`docs/adr/adr-relations.edn`; `docs/architecture-stages.edn`;
-`docs/architecture.md`; `schemas/schema-contracts.json`;
-`schemas/manifest.schema.json`; `docs/adr/adr-graph.mmd`; and
-`docs/architecture.mmd`. Run the exact Markdown-set comparison from Task 2
-against this descriptor before commit.
+Use capture schema v2, tool `bin/kaocha`, argv/root focused on
+`abc.tools.diagram.diagram-registry-evidence-test`, observation
+`diagram-registry-contracts-pass`, and a runtime manifest containing the exact
+Accepted ADR set from Task 2 plus `docs/adr/adr-relations.edn`,
+`docs/architecture-stages.edn`, `docs/architecture.md`,
+`schemas/schema-contracts.json`, `schemas/manifest.schema.json`,
+`docs/adr/adr-graph.mmd`, and `docs/architecture.mmd`. Run Task 2's literal
+Accepted-set comparison against this manifest before commit; no glob or README
+path is permitted.
+
+Both descriptors name their runtime manifests and make their explicit
+runtime-data set exactly manifest paths plus descriptor and manifest. Their
+evidence tests invoke the existing pure workflow/registry/core assertions
+under `with-read-trace`, route transitive production reads through Plan 1's
+instrumented shared helpers, call `assert-runtime-input-closure!`, and pass the
+closure-wide bypass lint.
 
 - [ ] **Step 3: Run focused checks**
 
 ```bash
 cd abc
-bin/kaocha --focus abc.tools.diagram.workflow-graph-test \
-  --focus abc.tools.diagram.registry-test \
-  --focus abc.tools.diagram.core-test
+bin/kaocha --focus abc.tools.diagram.workflow-graph-evidence-test \
+  --focus abc.tools.diagram.diagram-registry-evidence-test
 ```
 
 Expected: zero failures.
@@ -295,7 +382,11 @@ Expected: zero failures.
 
 ```bash
 git add abc/docs/evidence/adr-capture/workflow-graph-fixtures.edn \
-  abc/docs/evidence/adr-capture/diagram-registry-drift.edn
+  abc/docs/evidence/adr-capture/diagram-registry-drift.edn \
+  abc/docs/evidence/adr-inputs/workflow-graph-fixtures.edn \
+  abc/docs/evidence/adr-inputs/diagram-registry-drift.edn \
+  abc/test/abc/tools/diagram/workflow_graph_evidence_test.clj \
+  abc/test/abc/tools/diagram/diagram_registry_evidence_test.clj
 git commit -m "test(diagrams): define workflow and registry captures"
 git status --porcelain --untracked-files=all
 ```
@@ -308,23 +399,31 @@ Expected: commit succeeds and status is empty. Do not capture yet.
 
 **Files:**
 - Create: `docs/evidence/adr-capture/adr-policy-fixtures.edn`
+- Create: `docs/evidence/adr-inputs/adr-policy-fixtures.edn`
+- Create: `test/abc/tools/adr_policy_evidence_test.clj`
 
 **Interfaces:**
 - Produces: the fifth committed, self-bound descriptor.
 
 - [ ] **Step 1: Define and run the focused boundary**
 
-Use tool `bin/kaocha`, argv/root focused on `abc.tools.adr-test`, observation
-`adr-policy-fixtures-pass`, and explicit inputs containing self; every current
-`docs/adr/*.md` as literal sorted paths; `docs/adr/adr-relations.edn`;
-`docs/adr/claim-evidence-compatibility.edn`; and
+Use capture schema v2, tool `bin/kaocha`, argv/root focused on
+`abc.tools.adr-policy-evidence-test`, observation
+`adr-policy-fixtures-pass`, and a runtime manifest containing the exact
+Accepted ADR set from Task 2 plus `docs/adr/adr-relations.edn`,
+`docs/adr/claim-evidence-compatibility.edn`, and
 `docs/adr/governance-as-of.edn`. Synthetic temp fixtures remain derived test
-values and need no explicit path. Run the exact Markdown-set comparison from
-Task 2 before commit.
+values and need no explicit path. The descriptor names the manifest and its
+explicit runtime-data set is exactly manifest paths plus descriptor and
+manifest. The evidence test invokes the policy operation under
+`with-read-trace`, including transitive production reads through Plan 1's
+instrumented shared helpers, then calls `assert-runtime-input-closure!`.
+Run Task 2's literal Accepted-set comparison against this manifest and the
+closure-wide bypass lint before commit.
 
 ```bash
 cd abc
-bin/kaocha --focus abc.tools.adr-test
+bin/kaocha --focus abc.tools.adr-policy-evidence-test
 ```
 
 Expected: zero failures.
@@ -332,7 +431,9 @@ Expected: zero failures.
 - [ ] **Step 2: Commit the descriptor**
 
 ```bash
-git add abc/docs/evidence/adr-capture/adr-policy-fixtures.edn
+git add abc/docs/evidence/adr-capture/adr-policy-fixtures.edn \
+  abc/docs/evidence/adr-inputs/adr-policy-fixtures.edn \
+  abc/test/abc/tools/adr_policy_evidence_test.clj
 git commit -m "test(adr): define policy fixture capture"
 git status --porcelain --untracked-files=all
 ```
@@ -518,7 +619,7 @@ Expected: all commands exit 0.
 - [ ] **Step 2: Assert family closure**
 
 ```bash
-jq -e --arg family '^(ADR-)?(0029|0031)-' \
+jq -e --arg family '^ADR-(0029|0031)-' \
   -f nix/adr-family-clean.jq \
   docs/reports/adr-evidence-migration.json
 jq -e '
@@ -549,10 +650,11 @@ git add abc/docs/evidence/adr-runs/adr-graph-contract.json \
   abc/docs/reports/adr-evidence-migration.json \
   abc/docs/adr/adr-graph.mmd abc/docs/architecture.mmd
 git diff --cached --check
-nix build ./abc#checks.x86_64-linux.diagram-drift \
-  ./abc#checks.x86_64-linux.presentation-diagram-drift \
-  .#checks.x86_64-linux.monorepo-adr-governance \
-  ./abc#checks.x86_64-linux.clj-kondo
+system="$(nix eval --impure --raw --expr builtins.currentSystem)"
+nix build "./abc#checks.${system}.diagram-drift" \
+  "./abc#checks.${system}.presentation-diagram-drift" \
+  ".#checks.${system}.monorepo-adr-governance" \
+  "./abc#checks.${system}.clj-kondo"
 ```
 
 Expected: all derivations build successfully.
@@ -570,9 +672,10 @@ Expected: commit succeeds and status is empty.
 ## Plan Self-Review
 
 - Graph/API, workflow fixture, registry drift, and ADR policy observations are separate.
-- The complete 146-row immutable baseline ledger passes `require-complete? true`.
-- ADR 0031 remains structural and has no complete-corpus bundle to become circular or stale; ADR 0034 is the sole complete-coverage authority.
+- Plan 5 is the first point where the complete 146-row immutable baseline ledger passes `require-complete? true`; this is ledger completeness, not ADR 0034's complete-corpus evidence observation.
+- ADR 0031 remains structural and has no complete-corpus bundle to become circular or stale; ADR 0034 owns that later observation and immutable snapshot.
+- Every capture-v2 boundary has an exact runtime-input manifest, traces transitive production reads, and passes Plan 1's runtime-input closure assertion and closure-wide bypass lint.
 - All five bundles are staged externally from one clean revision, installed together, and joined through Plan 1's hash-deriving registrar/template interface.
 - Family closure uses checked `nix/adr-family-clean.jq`, covering file, `claim-id`, and `affected-claim-ids` ownership.
 - No diagram claim asserts semantic correctness of declared architecture values.
-- Audit remains active; plan 6 alone owns enforcement.
+- Audit remains active; plan 6 alone owns the enforcement transition.

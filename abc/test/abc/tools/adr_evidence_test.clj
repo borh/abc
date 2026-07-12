@@ -1,5 +1,7 @@
 (ns abc.tools.adr-evidence-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [abc.tools.adr-evidence :as evidence]
+            [abc.tools.adr-evidence-bundle :as bundle]
+            [clojure.test :refer [deftest is testing]]
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]))
@@ -14,92 +16,170 @@
    :domain-interpretation #{:expert-assessment :external-authority}
    :operational-behavior #{:operational-observation}})
 
-(def ^:private input-hash
+(def ^:private artifact-hash
   (str "sha256:" (apply str (repeat 64 "a"))))
 
-(defn- api [sym]
-  (try
-    (requiring-resolve (symbol "abc.tools.adr-evidence" (name sym)))
-    (catch java.io.FileNotFoundException _ nil)))
+(defn- claim
+  ([] (claim "ADR-0034-C1" :structural-invariant))
+  ([claim-id claim-kind]
+   {:claim-id claim-id
+    :claim-kind claim-kind
+    :file "0034-typed-evidence.md"
+    :criterion-index 0}))
 
 (defn- valid-entry []
   {:claim-id "ADR-0034-C1"
    :claim-kind :structural-invariant
    :evidence-kind :structural-test
-   :evidence-path "test/abc/tools/adr_evidence_test.clj"
-   :scope {:contract "typed-evidence-v1"}
-   :inputs {:source input-hash}
-   :expected {:operator := :value true}
-   :observed {:value true :inputs {:source input-hash}}})
+   :artifact-path "docs/evidence/adr-runs/governance.json"
+   :artifact-hash artifact-hash
+   :observation-key "typed-evidence-contract"
+   :expected {:operator := :value true}})
 
-(defn- problem-kinds [entry]
-  (if-let [f (api 'validate-entry)]
-    (set (map :kind (f expected-matrix "2026-07-12" entry)))
-    #{}))
+(defn- valid-bundle []
+  {"schema_version" "abc-adr-evidence-run-v1"
+   "observations" {"typed-evidence-contract" {"value" true}}})
+
+(defn- validate
+  ([claims entries]
+   (validate claims entries (valid-bundle)))
+  ([claims entries artifact]
+   (with-redefs [bundle/validate-bundle
+                 (fn [_repo _path _hash _affected]
+                   {:bundle artifact :problems []})]
+     (evidence/validate-registry
+      {:repo-root "."
+       :claims claims
+       :registry {:entries entries}
+       :matrix expected-matrix
+       :as-of "2026-07-12"}))))
+
+(defn- kinds [problems]
+  (set (map :kind problems)))
 
 (deftest checked-in-evidence-contract-test
-  (testing "the complete approved compatibility matrix is loadable"
-    (is (= expected-matrix
-           (when-let [f (api 'load-matrix)] (f)))))
-  (testing "the initial registry and deterministic reference clock are loadable"
-    (is (= {:entries []}
-           (when-let [f (api 'load-registry)] (f))))
-    (is (= "2026-07-12"
-           (when-let [f (api 'load-as-of)] (f))))))
+  (is (= expected-matrix (evidence/load-matrix)))
+  (is (= {:entries []} (evidence/load-registry)))
+  (is (= "2026-07-12" (evidence/load-as-of))))
 
-(deftest evidence-entry-validation-test
-  (testing "a compatible passing entry has no problems"
-    (is (empty? (problem-kinds (valid-entry)))))
-  (testing "claim/evidence types and stored verdicts are closed"
-    (is (contains? (problem-kinds (assoc (valid-entry)
-                                         :claim-kind :unknown-claim))
-                   :unknown-claim-kind))
-    (is (contains? (problem-kinds (assoc (valid-entry)
-                                         :evidence-kind :benchmark))
-                   :incompatible-evidence-kind))
-    (is (contains? (problem-kinds (assoc (valid-entry) :verdict :pass))
-                   :stored-verdict)))
-  (testing "observations must pass and bind the declared inputs"
-    (is (contains? (problem-kinds (assoc-in (valid-entry)
-                                            [:observed :value] false))
-                   :predicate-failed))
-    (is (contains? (problem-kinds (assoc-in (valid-entry)
-                                            [:observed :inputs :source]
-                                            (str "sha256:" (apply str (repeat 64 "b")))))
-                   :stale-inputs))))
+(deftest artifact-backed-entry-contract-is-closed
+  (is (empty? (validate [(claim)] [(valid-entry)])))
+  (doseq [forbidden [:observed :inputs :verdict]]
+    (is (contains? (kinds (validate [(claim)]
+                                    [(assoc (valid-entry) forbidden true)]))
+                   :forbidden-inline-evidence-value)))
+  (is (contains? (kinds (validate [(claim)]
+                                  [(assoc (valid-entry) :unexpected true)]))
+                 :invalid-evidence-entry))
+  (is (contains? (kinds (validate [(claim)]
+                                  [(dissoc (valid-entry) :artifact-path)]))
+                 :invalid-evidence-entry)))
 
-(deftest external-evidence-expiry-uses-explicit-as-of-test
-  (let [entry (-> (valid-entry)
-                  (assoc :claim-kind :external-semantics
-                         :evidence-kind :external-authority
-                         :retrieved-at "2026-01-01"
-                         :review-after "2026-07-11"))
-        validate-entry (api 'validate-entry)]
-    (is (contains? (problem-kinds entry) :expired-evidence))
-    (is (some? validate-entry))
-    (when validate-entry
-      (is (not (contains? (set (map :kind
-                                    (validate-entry expected-matrix
-                                                    "2026-07-11"
-                                                    entry)))
-                          :expired-evidence))))))
+(deftest registry-joins-claims-coverage-and-artifacts
+  (is (contains? (kinds (validate [(claim)] []))
+                 :missing-claim-evidence))
+  (is (contains? (kinds (validate [(claim)]
+                                  [(valid-entry) (valid-entry)]))
+                 :duplicate-evidence-entry))
+  (is (contains? (kinds (validate [(claim)]
+                                  [(assoc (valid-entry)
+                                          :claim-kind :fixture-behavior)]))
+                 :claim-kind-mismatch))
+  (is (contains? (kinds (validate [(claim)]
+                                  [(assoc (valid-entry)
+                                          :evidence-kind :unknown)]))
+                 :unknown-evidence-kind))
+  (is (contains? (kinds (validate [(claim)]
+                                  [(assoc (valid-entry)
+                                          :evidence-kind :benchmark)]))
+                 :incompatible-evidence-kind))
+  (is (contains? (kinds (validate [(claim)] [(valid-entry)]
+                                  {"schema_version" "abc-adr-evidence-run-v1"
+                                   "observations" {}}))
+                 :missing-observation)))
 
-(deftest evaluate-agrees-with-clojure-ordering-property-test
-  (let [evaluate (api 'evaluate)
-        result (when evaluate
-                 (tc/quick-check
-                  200
-                  (prop/for-all [a gen/small-integer
-                                 b gen/small-integer]
-                                (and (= (= a b) (evaluate {:operator := :value b}
-                                                          {:value a}))
-                                     (= (< a b) (evaluate {:operator :< :value b}
-                                                          {:value a}))
-                                     (= (<= a b) (evaluate {:operator :<= :value b}
-                                                           {:value a}))
-                                     (= (> a b) (evaluate {:operator :> :value b}
-                                                          {:value a}))
-                                     (= (>= a b) (evaluate {:operator :>= :value b}
-                                                           {:value a}))))))]
-    (is (some? evaluate))
+(deftest every-corroborating-entry-must-be-valid
+  (let [second-entry (assoc (valid-entry)
+                            :artifact-path "docs/evidence/adr-runs/second.json"
+                            :artifact-hash (str "sha256:" (apply str (repeat 64 "b"))))]
+    (is (empty? (validate [(claim)] [(valid-entry) second-entry])))
+    (is (contains? (kinds (validate [(claim)]
+                                    [(valid-entry)
+                                     (assoc second-entry :evidence-kind :benchmark)]))
+                   :incompatible-evidence-kind))))
+
+(deftest shared-artifact-root-problem-is-emitted-once
+  (let [claims [(claim "ADR-0034-C1" :structural-invariant)
+                (claim "ADR-0034-C2" :structural-invariant)]
+        entries [(valid-entry)
+                 (assoc (valid-entry) :claim-id "ADR-0034-C2")]
+        problems (with-redefs [bundle/validate-bundle
+                               (fn [_repo _path _hash affected]
+                                 {:bundle nil
+                                  :problems [{:kind :artifact-hash-mismatch
+                                              :affected-claim-ids affected}]})]
+                   (evidence/validate-registry
+                    {:repo-root "." :claims claims
+                     :registry {:entries entries}
+                     :matrix expected-matrix :as-of "2026-07-12"}))]
+    (is (= 1 (count (filter #(= :artifact-hash-mismatch (:kind %)) problems))))
+    (is (= ["ADR-0034-C1" "ADR-0034-C2"]
+           (:affected-claim-ids
+            (first (filter #(= :artifact-hash-mismatch (:kind %)) problems)))))))
+
+(deftest typed-predicate-results-distinguish-failure-from-type-error
+  (is (= {:status :pass}
+         (evidence/evaluate-result {:operator :> :value 1} 2)))
+  (is (= {:status :fail}
+         (evidence/evaluate-result {:operator :> :value 2} 1)))
+  (is (= {:status :type-error}
+         (evidence/evaluate-result {:operator :> :value 1} "2")))
+  (is (= {:status :type-error}
+         (evidence/evaluate-result {:operator :> :value 1}
+                                   9007199254740992)))
+  (is (= {:status :type-error}
+         (evidence/evaluate-result {:operator :contains :value "x"} "x")))
+  (is (= {:status :pass}
+         (evidence/evaluate-result {:operator :set= :value [2 1]} [1 2]))))
+
+(deftest benchmark-observation-requires-declared-scaled-integer-unit
+  (let [benchmark-claim (claim "ADR-0034-C1" :performance-bound)
+        benchmark-entry (assoc (valid-entry)
+                               :claim-kind :performance-bound
+                               :evidence-kind :benchmark
+                               :expected {:operator :<= :value 100})
+        artifact {"schema_version" "abc-adr-evidence-run-v1"
+                  "observations" {"typed-evidence-contract"
+                                  {"value" 50 "details" {}}}}]
+    (is (contains? (kinds (validate [benchmark-claim]
+                                    [benchmark-entry] artifact))
+                   :invalid-evidence-artifact))))
+
+(deftest external-expiry-uses-bundle-date-and-explicit-as-of
+  (let [external-claim (claim "ADR-0034-C1" :external-semantics)
+        external-entry (assoc (valid-entry)
+                              :claim-kind :external-semantics
+                              :evidence-kind :external-authority)
+        artifact {"schema_version" "abc-adr-external-evidence-v1"
+                  "review_after" "2026-07-11"
+                  "observations" {"typed-evidence-contract" {"value" true}}}]
+    (is (contains? (kinds (validate [external-claim]
+                                    [external-entry] artifact))
+                   :expired-evidence))))
+
+(deftest evaluate-result-agrees-with-clojure-ordering-property-test
+  (let [result (tc/quick-check
+                200
+                (prop/for-all
+                 [a gen/small-integer b gen/small-integer]
+                 (and (= {:status (if (= a b) :pass :fail)}
+                         (evidence/evaluate-result {:operator := :value b} a))
+                      (= {:status (if (< a b) :pass :fail)}
+                         (evidence/evaluate-result {:operator :< :value b} a))
+                      (= {:status (if (<= a b) :pass :fail)}
+                         (evidence/evaluate-result {:operator :<= :value b} a))
+                      (= {:status (if (> a b) :pass :fail)}
+                         (evidence/evaluate-result {:operator :> :value b} a))
+                      (= {:status (if (>= a b) :pass :fail)}
+                         (evidence/evaluate-result {:operator :>= :value b} a)))))]
     (is (true? (:pass? result)) (pr-str result))))

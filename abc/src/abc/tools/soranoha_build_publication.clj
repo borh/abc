@@ -346,8 +346,8 @@
     (cond
       (nil? cause) nil
       (contains? seen cause) nil
-      (and (instance? clojure.lang.ExceptionInfo cause)
-           (true? (::source-bundle/admission-error (ex-data cause))))
+      (not (instance? clojure.lang.ExceptionInfo cause)) nil
+      (true? (::source-bundle/admission-error (ex-data cause)))
       cause
       :else (recur (.getCause ^Throwable cause) (conj seen cause)))))
 

@@ -13,7 +13,7 @@
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is]])
-  (:import [java.io FileNotFoundException InterruptedIOException]
+  (:import [java.io FileNotFoundException IOException InterruptedIOException]
            [java.nio.charset StandardCharsets]
            [java.nio.file AccessDeniedException NoSuchFileException]
            [java.util.zip ZipEntry ZipOutputStream]))
@@ -972,6 +972,54 @@
                    "--snapshot-date" "2026-07-08"
                    "--output-root" (str output-root)]))
                (catch Throwable t t)))))
+      (is (not (.exists output-root)))
+      (finally
+        (delete-tree! root)))))
+
+(deftest build-publication-best-effort-does-not-traverse-protected-wrappers-test
+  (let [root (fixture/temp-dir "abc-soranoha-build-protected-wrappers")
+        aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
+        unsafe-zip (io/file root "unsafe.zip")
+        output-root (io/file root "build-output")
+        config-file (io/file root "best-effort-config.json")]
+    (try
+      (write-zip! unsafe-zip {"../work.txt" "unsafe"})
+      (abc-json/write-deterministic-json-file!
+       config-file
+       (assoc (files/read-json (io/file "config" "publication-basic-ja.json"))
+              "continue_on_failure" true))
+      (let [admission (try
+                        (source-bundle/inspect-zip unsafe-zip)
+                        nil
+                        (catch clojure.lang.ExceptionInfo t t))
+            wrap (fn [outer]
+                   (.initCause ^Throwable outer admission)
+                   outer)
+            protected-outers
+            [(wrap (AssertionError. "assertion"))
+             (wrap (Error. "error"))
+             (wrap (LinkageError. "linkage"))
+             (wrap (InterruptedException. "interrupted"))
+             (wrap (InterruptedIOException. "interrupted IO"))
+             (wrap (IOException. "filesystem IO"))
+             (wrap (FileNotFoundException. "missing"))
+             (wrap (NoSuchFileException. "missing"))
+             (wrap (AccessDeniedException. "denied"))
+             (RuntimeException. "programming" admission)]]
+        (is (some? admission))
+        (is (true? (::source-bundle/admission-error (ex-data admission))))
+        (doseq [outer protected-outers]
+          (is (identical?
+               outer
+               (try
+                 (with-redefs [source-bundle/inspect-zip
+                               (fn [& _] (throw outer))]
+                   (build-publication/build-publication!
+                    ["--aozora-root" (str aozora-root)
+                     "--config" (str config-file)
+                     "--snapshot-date" "2026-07-08"
+                     "--output-root" (str output-root)]))
+                 (catch Throwable t t))))))
       (is (not (.exists output-root)))
       (finally
         (delete-tree! root)))))

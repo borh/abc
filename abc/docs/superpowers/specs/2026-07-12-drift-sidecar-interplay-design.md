@@ -113,7 +113,7 @@ Authoring:
   and `_indexes/<person_id>.json` with the deterministic JSON writer used
   by `aozora_history_audit_test.clj`.
 
-Fault injection — `corrupt [dir event fault]` rewrites the already-written
+Fault injection — `corrupt! [dir event fault]` rewrites the already-written
 sidecar dir per fault keyword (each maps to a documented
 `person-drift/failure-codes` member):
 

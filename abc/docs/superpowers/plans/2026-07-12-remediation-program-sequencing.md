@@ -31,14 +31,15 @@ Every intermediate commit keeps the existing required checks green. Temporary
 semantic containment states use explicit publication blockers rather than
 shipping incomplete publication data.
 
-## In-Flight Worktree Integration Gates
+## Worktree Integration Gates
 
-Two pre-existing worktrees own code that later remediation tasks would touch:
+One prerequisite is merged but still has a quality-gate repair, and one
+pre-existing worktree still owns code that later remediation tasks would touch:
 
-| Branch | Worktree | Owned overlap | Required integration gate |
+| Branch | State | Owned overlap | Required integration gate |
 | --- | --- | --- | --- |
-| `feat/parser-fork-phase4` | `.worktrees/parser-fork-phase4` | `ab-aat-to-parser-ir`, AAT schemas/mapping, parser coordinates, Phase 4 admission evidence | Merge Phase 4 and establish a green Rust/Nix baseline before freezing parser-study revisions or executing parser remediation Tasks 2–8. |
-| `fix/aozora-evolution-divergences` | `.claude/worktrees/tokenizer-full-corpus-comparison` | `aozora_ingest.clj`, ingest tests, simulation divergence/failure behavior | Merge simulation hardening and establish green unit/simulation baselines before rights Task 4 or temporal Task 3 changes ingest integration. |
+| `feat/parser-fork-phase4` | Merged into `main` at `ac2be926`; scientific checkpoint and cargo check pass, cargo fmt/clippy remain red | `ab-aat-to-parser-ir`, AAT schemas/mapping, parser coordinates, Phase 4 admission evidence | Keep `ac2be926` as the baseline candidate, repair the integrated Rust quality failures, and require all focused Rust/Nix checks before freezing parser-study revisions. |
+| `fix/aozora-evolution-divergences` | Active in `.claude/worktrees/tokenizer-full-corpus-comparison` | `aozora_ingest.clj`, ingest tests, simulation divergence/failure behavior | Merge simulation hardening and establish green unit/simulation baselines before rights Task 4 or temporal Task 3 changes ingest integration. |
 
 The shared foundation, governance plan, rights containment/investigation/schema
 tasks, temporal characterization/schema tasks, and identity inventory may
@@ -46,11 +47,17 @@ proceed without waiting for these merges because their owned files do not
 overlap. Do not cherry-pick partial uncommitted Phase 4 work or reproduce the
 simulation fixes in remediation branches.
 
-After either prerequisite merges, rebase or recreate the relevant remediation
-worktree from the integrated main branch and rerun its baseline checks before
-continuing. The simulation branch's two-tier failure taxonomy and
-build/reconcile/write safety behavior become characterization requirements;
-the remediation must preserve them.
+The remediation worktree incorporated integrated `main` after the Phase 4
+merge. The committed Phase 4 checkpoint verifier reports `CHECKPOINT OK`, its
+16 focused tests pass, and cargo check passes. Cargo fmt currently reports
+committed drift, while cargo clippy cannot resolve `aozora_cst` and
+`aozora_query` in the all-feature facade build; therefore the parser-study
+freeze remains blocked on a green quality baseline. After the simulation
+prerequisite merges, incorporate that integrated main branch and rerun its
+baseline checks before continuing the overlapping rights and temporal tasks.
+The simulation branch's two-tier failure taxonomy and build/reconcile/write
+safety behavior become characterization requirements; the remediation must
+preserve them.
 
 ## ADR Number Reservation
 

@@ -116,6 +116,13 @@ into its own Accepted ADR.
 ADR 0031's dependency on Proposed ADR 0029 is repaired by extracting or
 accepting the generated-decision-graph contract; it is not grandfathered.
 
+The production validator computes this closure with an ordinary deterministic
+visited-set breadth-first traversal. That algorithm owns termination on cyclic
+input, stable target ordering, and the shortest witness path included in each
+problem. Logic-programming or solver formulations may independently check the
+reachability invariant during design review, but they are not production
+dependencies and do not replace witness-path construction.
+
 ### Honest language
 
 Governance rejects Acceptance Criteria that use `prove` or `proves` unless the

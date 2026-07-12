@@ -15,10 +15,13 @@
 - Do not change the existing derivation hash algorithm.
 - `artifact_id` remains an exact compatibility alias during migration.
 - Equivalence assertions never feed linked derivation identities.
+- Use union-find and deterministic DAG/topological algorithms in production;
+  logic/solver models remain independent review evidence.
 - Historical manifests are immutable.
 - Task 1 inventory may proceed immediately after governance enforcement. Tasks
-  2–4 use the integrated main branch; do not derive coordinate applicability or
-  generation links from unmerged parser Phase 4 or simulation worktree state.
+  2–4 use the integrated main branch, including Phase 4 at `ac2be926`; do not
+  derive coordinate applicability or generation links from the unmerged
+  simulation worktree state.
 
 ---
 

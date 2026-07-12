@@ -13,6 +13,8 @@
 - Follow `2026-07-12-remediation-program-sequencing.md`; this plan runs after
   the shared foundation and owns reserved ADR 0033.
 - Implement `2026-07-11-adr-evidence-and-lifecycle-remediation-design.md` exactly.
+- Keep graph traversal in ordinary deterministic Clojure; logic/solver models
+  are review evidence and must not become production dependencies.
 - Do not edit existing ADR Decisions in place; normative changes use new ADRs.
 - Preserve unrelated worktree changes.
 - Run focused tests with `cd abc && bin/kaocha --focus <namespace>`.
@@ -63,7 +65,9 @@
 - [ ] Write failing tests for missing/invalid lifecycle fields on Accepted ADRs and for direct/transitive Accepted-to-Proposed dependencies.
 - [ ] Add a generated cyclic dependency fixture proving closure traversal terminates and reports paths deterministically.
 - [ ] Run the focused ADR tests; expect the new assertions to fail.
-- [ ] Add the two closed header fields and replace the scoped waiver with tabled/visited-set transitive closure over `:depends-on`.
+- [ ] Add the two closed header fields and replace the scoped waiver with
+  deterministic visited-set breadth-first closure over `:depends-on`; emit the
+  shortest stable witness path for each noncanonical target.
 - [ ] Re-run tests; expect zero failures and the current corpus to report ADR 0031 → ADR 0029.
 - [ ] Run the Nix audit gate; require exit 0 while its report contains the ADR 0031 → ADR 0029 path.
 - [ ] Commit with `git commit -m "feat(adr): audit lifecycle scope and dependency closure"`.

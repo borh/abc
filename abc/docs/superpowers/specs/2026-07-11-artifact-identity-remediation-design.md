@@ -89,6 +89,10 @@ history.
 Contradictions are checked per relation, never by one generic cycle rule.
 Chiasmus formalization is used during design review to verify closure and DAG
 properties; the repository gate remains a deterministic Clojure validator.
+The validator uses union-find for `equivalent-facts` classes and ordinary
+visited-set/topological algorithms for directed relations. A logic engine is
+not a runtime dependency: it would still require separate deterministic path,
+ordering, and diagnostic construction.
 
 ## Compatibility
 

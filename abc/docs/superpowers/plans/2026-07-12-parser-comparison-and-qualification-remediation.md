@@ -17,10 +17,12 @@
 - Report native and adapter-normalized behavior separately.
 - No unqualified aggregate winner score.
 - Parser comparison cannot satisfy admission or release qualification.
-- Do not freeze Task 1 revisions or execute Tasks 2–8 until
-  `feat/parser-fork-phase4` is merged and its Rust/Nix checks pass. Phase 4 owns
-  the AAT schema, mapping/conversion audit, integration tests, and custom-parser
-  coordinates that this plan must measure rather than overwrite.
+- Phase 4 is integrated in `main` at `ac2be926`. Treat that commit as the
+  custom-parser baseline candidate, not yet a frozen baseline. Its scientific
+  checkpoint and cargo check pass, but cargo fmt and clippy remain red; do not
+  freeze Task 1 revisions until those integrated Rust/Nix checks also pass.
+  Phase 4 owns the AAT schema, mapping/conversion audit, integration tests, and
+  custom-parser coordinates that this plan must measure rather than overwrite.
 
 ---
 
@@ -36,10 +38,9 @@
 
 ### Task 1: Freeze the research protocol
 
-- [ ] Confirm `feat/parser-fork-phase4` is merged, the worktree has no required
-  uncommitted changes, and the integrated `ab-validator` cargo check/clippy/fmt
-  and focused tests pass; record the resulting commit as the custom-parser
-  baseline candidate.
+- [ ] Verify integrated commit `ac2be926` with the `ab-validator` cargo
+  check/clippy/fmt and focused Phase 4 checkpoint tests; record the observed
+  results alongside the frozen custom-parser baseline.
 - [ ] Inventory every serious existing parser and write explicit inclusion/exclusion rules independent of results.
 - [ ] Define research questions, corpus, revisions, native/adapted modes, exact denominators, failure/timeout/silent-drop rules, uncertainty, and missing-data handling.
 - [ ] Define per-axis outputs for construct coverage, fidelity, robustness, diagnostics, spans, performance, maintenance, packaging, and license.

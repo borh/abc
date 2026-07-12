@@ -1,8 +1,8 @@
 (ns abc.tools.adr
   (:require [clojure.java.io :as io]
+            [abc.tools.path-containment :as containment]
             [clojure.string :as str])
-  (:import [java.nio.file InvalidPathException Paths]
-           [java.time LocalDate]))
+  (:import [java.time LocalDate]))
 
 (def statuses #{"Draft" "Proposed" "Accepted" "Superseded" "Withdrawn"})
 (def validation-scopes #{"structural" "fixture" "smoke-corpus"
@@ -467,37 +467,18 @@
                  "an Accepted ADR dependency on Draft or Proposed requires scope"
                  :value item)))))
 
-(defn- raw-path [path]
-  (Paths/get path (make-array String 0)))
-
-(defn- traversal? [path]
-  (some #(= ".." (str %)) (iterator-seq (.iterator path))))
-
 (defn- evidence-path-state [repo-root path]
-  (try
-    (let [relative (raw-path path)
-          root (-> (io/file repo-root) .toPath .toAbsolutePath .normalize)
-          resolved (-> root (.resolve relative) .normalize)
-          allowed-root-name (when (pos? (.getNameCount relative))
-                              (str (.getName relative 0)))]
-      (cond
-        (.isAbsolute relative) {:problem :evidence-path-traversal}
-        (traversal? relative) {:problem :evidence-path-traversal}
-        (not (.startsWith resolved root)) {:problem :evidence-path-traversal}
-        (not (contains? evidence-roots allowed-root-name))
-        {:problem :evidence-path-traversal}
-        (not (.exists (.toFile resolved))) {:problem :missing-evidence-path}
-        :else
-        (let [real-repo-root (.toRealPath root (make-array java.nio.file.LinkOption 0))
-              allowed-root (-> root (.resolve allowed-root-name) .normalize)
-              real-allowed-root (.toRealPath allowed-root (make-array java.nio.file.LinkOption 0))
-              real-path (.toRealPath resolved (make-array java.nio.file.LinkOption 0))]
-          (if (and (.startsWith real-allowed-root real-repo-root)
-                   (.startsWith real-path real-allowed-root))
-            {:path (.toFile resolved)}
-            {:problem :evidence-real-path-escape}))))
-    (catch InvalidPathException _
-      {:problem :malformed-evidence-path})))
+  (let [{:keys [state relative] :as contained}
+        (containment/path-state repo-root path)
+        allowed-root-name (some-> relative (str/split #"[/\\]" 2) first)]
+    (case state
+      :ok (if (contains? evidence-roots allowed-root-name)
+            {:path (:path contained)}
+            {:problem :evidence-path-traversal})
+      :missing {:problem :missing-evidence-path}
+      :real-path-escape {:problem :evidence-real-path-escape}
+      :malformed-path {:problem :malformed-evidence-path}
+      {:problem :evidence-path-traversal})))
 
 (defn- evidence-path-problem [file item state]
   (when-let [kind (:problem state)]

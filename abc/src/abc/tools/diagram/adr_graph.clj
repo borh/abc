@@ -69,7 +69,7 @@
 
 (defn lint* []
   (let [adrs (adr/parse-all adr-dir)]
-    (vec (concat (adr/validate-adrs adrs ".")
+    (vec (concat (adr/validate-adrs-legacy adrs ".")
                  (lint-adrs adrs (load-relations))))))
 
 ;; --- build ------------------------------------------------------------------

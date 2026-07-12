@@ -375,6 +375,23 @@
                :path path
                :target-status (:status target)))))
 
+(defn- legacy-dependency-status-problems [adrs]
+  (let [by-number (into {} (map (juxt :num identity) adrs))]
+    (for [{source-status :status file :file relations :relations} adrs
+          {:keys [target scope] :as item} (:depends-on relations)
+          :let [target-status (:status (get by-number target))]
+          :when (and (= "Accepted" source-status)
+                     (or (and (#{"Draft" "Proposed"} target-status)
+                              (nil? scope))
+                         (#{"Withdrawn" "Superseded"} target-status)))]
+      (if (#{"Withdrawn" "Superseded"} target-status)
+        (problem :inactive-dependency file
+                 "an Accepted ADR cannot depend on a Withdrawn or Superseded ADR"
+                 :value item)
+        (problem :unscoped-nonaccepted-dependency file
+                 "an Accepted ADR dependency on Draft or Proposed requires scope"
+                 :value item)))))
+
 (defn- raw-path [path]
   (Paths/get path (make-array String 0)))
 
@@ -457,32 +474,58 @@
     (dependency-status-problems adrs)
     (mapcat #(evidence-problems repo-root %) adrs))))
 
+(def ^:private audit-only-problem-kinds
+  #{:missing-validation-scope
+    :missing-release-authority
+    :invalid-validation-scope
+    :invalid-release-authority
+    :noncanonical-dependency-path})
+
+(defn validate-adrs-legacy
+  "Validate with the pre-migration lifecycle/dependency policy. Parsing,
+  evidence containment, relation integrity, and prior dependency safety remain
+  enforced; audit-only lifecycle dimensions and closure do not block callers."
+  [adrs repo-root]
+  (vec
+   (concat
+    (remove #(contains? audit-only-problem-kinds (:kind %))
+            (validate-adrs adrs repo-root))
+    (legacy-dependency-status-problems adrs))))
+
+(defn- validate-repository* [validate-fn repo-root adr-dir]
+  (let [directory (io/file repo-root adr-dir)]
+    (cond
+      (not (.exists directory))
+      [(problem :missing-adr-directory adr-dir "ADR directory does not exist")]
+
+      (not (.isDirectory directory))
+      [(problem :invalid-adr-directory adr-dir "ADR path is not a directory")]
+
+      :else
+      (let [markdown-files (->> (or (.listFiles directory) [])
+                                (filter #(.isFile %))
+                                (map #(.getName %))
+                                (filter #(and (str/ends-with? % ".md")
+                                              (not= "README.md" %)))
+                                sort
+                                vec)
+            malformed (remove #(re-matches #"\d{4}-.+\.md" %) markdown-files)
+            adrs (parse-all directory)]
+        (vec
+         (concat
+          (when (empty? markdown-files)
+            [(problem :empty-adr-corpus adr-dir "ADR directory contains no ADR Markdown files")])
+          (for [filename malformed]
+            (problem :invalid-adr-filename filename
+                     "ADR filename must be `NNNN-title.md`"))
+          (validate-fn adrs (io/file repo-root))))))))
+
 (defn validate-repository
   ([repo-root] (validate-repository repo-root "docs/adr"))
   ([repo-root adr-dir]
-   (let [directory (io/file repo-root adr-dir)]
-     (cond
-       (not (.exists directory))
-       [(problem :missing-adr-directory adr-dir "ADR directory does not exist")]
+   (validate-repository* validate-adrs repo-root adr-dir)))
 
-       (not (.isDirectory directory))
-       [(problem :invalid-adr-directory adr-dir "ADR path is not a directory")]
-
-       :else
-       (let [markdown-files (->> (or (.listFiles directory) [])
-                                 (filter #(.isFile %))
-                                 (map #(.getName %))
-                                 (filter #(and (str/ends-with? % ".md")
-                                               (not= "README.md" %)))
-                                 sort
-                                 vec)
-             malformed (remove #(re-matches #"\d{4}-.+\.md" %) markdown-files)
-             adrs (parse-all directory)]
-         (vec
-          (concat
-           (when (empty? markdown-files)
-             [(problem :empty-adr-corpus adr-dir "ADR directory contains no ADR Markdown files")])
-           (for [filename malformed]
-             (problem :invalid-adr-filename filename
-                      "ADR filename must be `NNNN-title.md`"))
-           (validate-adrs adrs (io/file repo-root)))))))))
+(defn validate-repository-legacy
+  ([repo-root] (validate-repository-legacy repo-root "docs/adr"))
+  ([repo-root adr-dir]
+   (validate-repository* validate-adrs-legacy repo-root adr-dir)))

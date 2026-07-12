@@ -13,10 +13,13 @@
 
 (defn run!
   ([repo-root]
-   (let [problems (adr/validate-repository repo-root)]
+   (let [problems (adr/validate-repository-legacy repo-root)]
      {:ok? (empty? problems) :problems problems}))
   ([repo-root {:keys [mode] :or {mode :legacy}}]
-   (let [problems (adr/validate-repository repo-root)
+   (let [problems ((if (= :legacy mode)
+                     adr/validate-repository-legacy
+                     adr/validate-repository)
+                   repo-root)
          ok? (empty? problems)]
      {:ok? ok?
       :exit-code (if (or ok? (= :audit mode)) 0 1)

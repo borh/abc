@@ -487,3 +487,35 @@
            (kinds problems)))
     (is (= (inc (* 2 accepted-count)) (count problems)))
     (is (= [[31 29]] dependency-paths))))
+
+(deftest legacy-policy-keeps-audit-only-rules-nonblocking
+  (let [dir (temp-dir)]
+    (write-path! dir "test/evidence.clj" "(ns evidence)")
+    (write-adr! dir "0001-proposed.md"
+                (str "# ADR 0001: Proposed\n\nStatus: Proposed\n"
+                     "Date: 2026-07-10\n\n## Decision\n\nFuture.\n"))
+    (write-adr! dir "0002-accepted.md"
+                (str "# ADR 0002: Accepted\n\n"
+                     "Status: Accepted\nDate: 2026-07-10\nAccepted: 2026-07-10\n"
+                     "Depends on: ADR 0001 [scope: provisional contract]\n\n"
+                     "## Decision\n\nCurrent.\n\n"
+                     "## Implementation Status\n\nImplemented.\n\n"
+                     "## Acceptance Criteria\n\n- `test/evidence.clj`.\n"))
+    (let [adrs (adr/parse-all (.getPath dir))
+          strict-kinds (kinds (adr/validate-adrs adrs dir))]
+      (is (contains? strict-kinds :missing-validation-scope))
+      (is (contains? strict-kinds :missing-release-authority))
+      (is (contains? strict-kinds :noncanonical-dependency-path))
+      (is (empty? (adr/validate-adrs-legacy adrs dir))))))
+
+(deftest legacy-policy-retains-pre-migration-dependency-safety
+  (let [dir (temp-dir)]
+    (write-path! dir "test/evidence.clj" "(ns evidence)")
+    (write-adr! dir "0001-proposed.md"
+                (str "# ADR 0001: Proposed\n\nStatus: Proposed\n"
+                     "Date: 2026-07-10\n\n## Decision\n\nFuture.\n"))
+    (write-adr! dir "0002-accepted.md"
+                (accepted-body 2 "Accepted" "Depends on: ADR 0001\n"))
+    (is (contains? (kinds (adr/validate-adrs-legacy
+                           (adr/parse-all (.getPath dir)) dir))
+                   :unscoped-nonaccepted-dependency))))

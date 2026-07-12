@@ -18,16 +18,17 @@
     (catch clojure.lang.ArityException _ nil)))
 
 (deftest audit-and-enforce-mode-test
-  (with-redefs [adr/validate-repository (fn [_repo-root] [sample-problem])]
+  (with-redefs [adr/validate-repository (fn [_repo-root] [sample-problem])
+                adr/validate-repository-legacy (fn [_repo-root] [])]
     (testing "audit reports problems without making the migration gate red"
       (is (= {:ok? false
               :exit-code 0
               :mode :audit
               :problems [sample-problem]}
              (run-mode :audit))))
-    (testing "enforce and legacy modes fail on the same problems"
+    (testing "enforcement fails while legacy remains pre-migration compatible"
       (is (= 1 (:exit-code (run-mode :enforce))))
-      (is (= 1 (:exit-code (run-mode :legacy)))))))
+      (is (= 0 (:exit-code (run-mode :legacy)))))))
 
 (deftest audit-report-is-deterministic-json-test
   (let [dir (.toFile (java.nio.file.Files/createTempDirectory
@@ -35,7 +36,8 @@
                       (make-array java.nio.file.attribute.FileAttribute 0)))
         report (io/file dir "report.json")]
     (try
-      (with-redefs [adr/validate-repository (fn [_repo-root] [sample-problem])]
+      (with-redefs [adr/validate-repository (fn [_repo-root] [sample-problem])
+                    adr/validate-repository-legacy (fn [_repo-root] [])]
         (let [run-cli! (ns-resolve 'abc.tools.adr-governance 'run-cli!)
               result (when run-cli!
                        (run-cli! ["--mode" "audit"

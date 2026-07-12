@@ -9,13 +9,15 @@
   {:aat-path "aat.json"
    :parser-ir-path "parser-ir.json"
    :metadata-record-path "metadata-record.json"
-   :official-source-path "official-source.json"})
+   :official-source-path "official-source.json"
+   :source-bundle-path "source-bundle.json"})
 
 (def resolved-path-key
   {:aat_path :resolved_aat_path
    :parser_ir_path :resolved_parser_ir_path
    :metadata_record_path :resolved_metadata_record_path
    :official_source_path :resolved_official_source_path
+   :source_bundle_path :resolved_source_bundle_path
    :source_manifest_path :resolved_source_manifest_path})
 
 (def official-text-zip-relpath-pattern
@@ -122,6 +124,9 @@
         work-id (required-value work :work_id "metadata work")
         title (required-value work :title "metadata work")
         official-source-file (official-source work-dir work-id)
+        source-bundle-file (required-file work-dir
+                                          "source-bundle.json"
+                                          :source-bundle-path)
         person-id (or (author-person-id metadata-record)
                       (throw (ex-info "metadata record missing contributor person_id"
                                       {:metadata-record-path
@@ -138,6 +143,7 @@
      :parser_ir_path (relative-path path-base parser-ir-file)
      :metadata_record_path (relative-path path-base metadata-record-file)
      :official_source_path (relative-path path-base official-source-file)
+     :source_bundle_path (relative-path path-base source-bundle-file)
      :source_manifest_path (relative-path path-base
                                           (io/file work-dir
                                                    "source.manifest.json"))}))

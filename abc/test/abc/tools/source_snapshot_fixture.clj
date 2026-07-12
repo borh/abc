@@ -3,9 +3,12 @@
             [abc.tools.files :as files]
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
+            [abc.tools.source-bundle :as source-bundle]
             [clojure.java.io :as io])
-  (:import [java.nio.file Files]
-           [java.nio.file.attribute FileAttribute]))
+  (:import [java.nio.charset StandardCharsets]
+           [java.nio.file Files]
+           [java.nio.file.attribute FileAttribute]
+           [java.util.zip ZipEntry ZipOutputStream]))
 
 (defn temp-dir [prefix]
   (.toFile (Files/createTempDirectory prefix (make-array FileAttribute 0))))
@@ -33,24 +36,28 @@
     (abc-json/write-deterministic-json-file! file snapshot)
     snapshot))
 
-(defn parser-ir [work-hash]
-  {"schema_hash" (example-hash "41")
-   "source" {"work_content_hash" work-hash
-             "encoding" "Shift_JIS"
-             "normalization" "source"}
-   "derived_from" {"aat_adapter" "aozora2html"
-                   "aat_adapter_version" "aozora2html-adapter 0.1.0 gem-3.0.1"
-                   "aat_version" 1
-                   "mapping_id" "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
-                   "mapping_schema_hash" (example-hash "38")
-                   "mapping_version" "0.2.0"}
-   "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
-                            "splitter_id" "ab-plaintext-japanese-v1"
-                            "coordinate_system" "decoded_utf8"
-                            "coverage" "body-paragraphs"}
-   "nodes" []
-   "warnings" []
-   "errors" []})
+(defn parser-ir
+  ([work-hash] (parser-ir work-hash nil))
+  ([work-hash primary-text-hash]
+   {"schema_hash" (example-hash "41")
+    "source" (cond-> {"work_content_hash" work-hash
+                      "encoding" "Shift_JIS"
+                      "normalization" "source"}
+               primary-text-hash
+               (assoc "primary_text_hash" primary-text-hash))
+    "derived_from" {"aat_adapter" "aozora2html"
+                    "aat_adapter_version" "aozora2html-adapter 0.1.0 gem-3.0.1"
+                    "aat_version" 1
+                    "mapping_id" "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+                    "mapping_schema_hash" (example-hash "38")
+                    "mapping_version" "0.2.0"}
+    "sentence_segmentation" {"schema_version" "sentence-segmentation-v1"
+                             "splitter_id" "ab-plaintext-japanese-v1"
+                             "coordinate_system" "decoded_utf8"
+                             "coverage" "body-paragraphs"}
+    "nodes" []
+    "warnings" []
+    "errors" []}))
 
 (defn card-url [work-id person-id]
   (str "https://www.aozora.gr.jp/cards/" person-id "/card" work-id ".html"))
@@ -89,21 +96,64 @@
    "source_hash" work-hash
    "source_bytes" 1})
 
+(defn- official-source-v1
+  [work-id person-id {:keys [archive-hash bundle-hash
+                             primary-text-member primary-text-hash]}]
+  (assoc (official-source work-id person-id archive-hash)
+         "archive_hash" archive-hash
+         "bundle_hash" bundle-hash
+         "primary_text_member" primary-text-member
+         "primary_text_hash" primary-text-hash
+         "zip_member" primary-text-member))
+
+(defn- utf8-bytes [value]
+  (.getBytes value StandardCharsets/UTF_8))
+
+(defn- write-source-zip! [file work-id]
+  (.mkdirs (.getParentFile (io/file file)))
+  (with-open [out (ZipOutputStream. (io/output-stream file))]
+    (doseq [[path bytes] [[(str work-id ".txt")
+                           (utf8-bytes (str "本文 " work-id))]
+                          ["images/cover.png" (byte-array [1 2 3 4])]]]
+      (let [entry (doto (ZipEntry. path) (.setTime 0))]
+        (.putNextEntry out entry)
+        (.write out bytes)
+        (.closeEntry out))))
+  file)
+
+(defn- new-source-fixture! [work-dir work-id]
+  (let [zip-file (write-source-zip! (io/file work-dir "source.zip") work-id)
+        inspection (source-bundle/inspect-zip zip-file)
+        source-bundle-file (io/file work-dir "source-bundle.json")]
+    (source-bundle/write-manifest! source-bundle-file inspection)
+    {:archive-hash (:archive-hash inspection)
+     :bundle-hash (:bundle-hash inspection)
+     :primary-text-member (:primary-text-member inspection)
+     :primary-text-hash (:primary-text-hash inspection)
+     :source-bundle-file source-bundle-file}))
+
 (defn write-work-files!
-  [work-dir {:keys [title work-id person-id work-hash]}]
-  (abc-json/write-deterministic-json-file! (io/file work-dir "aat.json")
-                                           {"version" 1
-                                            "work_id" work-id
-                                            "blocks" []})
-  (abc-json/write-deterministic-json-file! (io/file work-dir "parser-ir.json")
-                                           (parser-ir work-hash))
-  (abc-json/write-deterministic-json-file!
-   (io/file work-dir "metadata-record.json")
-   (metadata-record work-id title person-id))
-  (abc-json/write-deterministic-json-file!
-   (io/file work-dir "official-source.json")
-   (official-source work-id person-id work-hash))
-  work-dir)
+  [work-dir {:keys [title work-id person-id work-hash legacy?]}]
+  (.mkdirs (io/file work-dir))
+  (let [identity (when-not legacy? (new-source-fixture! work-dir work-id))
+        parser-work-hash (or (:bundle-hash identity) work-hash)
+        parser-primary-hash (:primary-text-hash identity)]
+    (abc-json/write-deterministic-json-file! (io/file work-dir "aat.json")
+                                             {"version" 1
+                                              "work_id" work-id
+                                              "blocks" []})
+    (abc-json/write-deterministic-json-file! (io/file work-dir "parser-ir.json")
+                                             (parser-ir parser-work-hash
+                                                        parser-primary-hash))
+    (abc-json/write-deterministic-json-file!
+     (io/file work-dir "metadata-record.json")
+     (metadata-record work-id title person-id))
+    (abc-json/write-deterministic-json-file!
+     (io/file work-dir "official-source.json")
+     (if legacy?
+       (official-source work-id person-id work-hash)
+       (official-source-v1 work-id person-id identity)))
+    work-dir))
 
 (defn materialized-work!
   [root {:keys [slug] :as opts}]
@@ -121,4 +171,10 @@
      :parser_ir_path (str (io/file work-dir "parser-ir.json"))
      :metadata_record_path (str (io/file work-dir "metadata-record.json"))
      :official_source_path (str (io/file work-dir "official-source.json"))
+     :source_bundle_path (str (io/file work-dir "source-bundle.json"))
      :source_manifest_path (str (io/file work-dir "source.manifest.json"))}))
+
+(defn legacy-workset-entry!
+  [root opts]
+  (dissoc (workset-entry! root (assoc opts :legacy? true))
+          :source_bundle_path))

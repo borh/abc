@@ -1,6 +1,8 @@
 (ns abc.tools.materialize-source-snapshot-test
   (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
+            [abc.tools.json :as abc-json]
+            [abc.tools.manifest :as manifest]
             [abc.tools.materialize-source-snapshot :as materialize]
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.schema :as schema]
@@ -17,6 +19,34 @@
                    :snapshot_date "2026-07-04"
                    :works works}))
     workset-file))
+
+(defn- update-json! [path f]
+  (abc-json/write-deterministic-json-file! path (f (files/read-json path))))
+
+(defn- exception-info [f]
+  (try
+    (f)
+    nil
+    (catch clojure.lang.ExceptionInfo e e)))
+
+(defn- materialize-error [mutate!]
+  (let [root (fixture/temp-dir "abc-source-snapshot-corrupt")]
+    (try
+      (let [work (fixture/workset-entry!
+                  root {:slug "one"
+                        :title "一"
+                        :work-id "000001"
+                        :person-id "000101"
+                        :work-hash (fixture/example-hash "a1")})
+            workset-file (workset! root [work])]
+        (mutate! work)
+        (exception-info
+         #(materialize/materialize-source-snapshot!
+           {:workset-path (str workset-file)
+            :output-path (str (io/file root "snapshot.json"))
+            :generated-at generated-at})))
+      (finally
+        (fixture/delete-tree! root)))))
 
 (deftest materialize-source-snapshot-test
   (let [root (fixture/temp-dir "abc-source-snapshot")
@@ -67,6 +97,14 @@
                            ["source" "work_content_hash"])
                    (get-in manifest ["manifest_identity_object"
                                      "work_content_hash"])))
+            (is (= (manifest/file-hash (:source_bundle_path work))
+                   (get-in manifest ["content" "content_hash"])))
+            (is (some #{(manifest/file-hash (:source_bundle_path work))}
+                      (get-in manifest ["provenance" "used"])))
+            (is (= "application/json"
+                   (get-in manifest ["content" "media_type"])))
+            (is (= "source-bundle.json"
+                   (get-in manifest ["content" "path_hint"])))
             (is (= (metadata-record/record-hash
                     (files/read-json (:metadata_record_path work)))
                    (get-in manifest ["manifest_identity_object"
@@ -77,6 +115,192 @@
                    (get-in manifest ["sidecars" 0 "path_hint"]))))))
       (finally
         (fixture/delete-tree! root)))))
+
+(deftest snapshot-records-source-identity-roles-test
+  (let [root (fixture/temp-dir "abc-source-snapshot-roles")]
+    (try
+      (let [work (fixture/workset-entry!
+                  root {:slug "one"
+                        :title "一"
+                        :work-id "000001"
+                        :person-id "000101"
+                        :work-hash (fixture/example-hash "a1")})
+            out-file (io/file root "snapshot.json")]
+        (materialize/materialize-source-snapshot!
+         {:workset-path (str (workset! root [work]))
+          :output-path (str out-file)
+          :generated-at generated-at})
+        (let [input (get-in (files/read-json out-file)
+                            ["snapshot_identity_object" "snapshot_inputs" 0])
+              official (files/read-json (:official_source_path work))]
+          (is (= (get official "archive_hash") (get input "archive_hash")))
+          (is (not= (get input "archive_hash")
+                    (get input "work_content_hash")))
+          (is (= (get official "bundle_hash")
+                 (get input "work_content_hash")))
+          (is (= (get official "primary_text_hash")
+                 (get input "primary_text_hash")))
+          (is (= (get official "primary_text_member")
+                 (get input "primary_text_member")))
+          (is (= (:source_bundle_path work)
+                 (get input "source_bundle_path")))
+          (is (= (manifest/file-hash (:source_bundle_path work))
+                 (get input "source_bundle_file_hash")))))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest complete-legacy-workset-remains-readable-test
+  (let [root (fixture/temp-dir "abc-source-snapshot-legacy")]
+    (try
+      (let [work (fixture/legacy-workset-entry!
+                  root {:slug "one"
+                        :title "一"
+                        :work-id "000001"
+                        :person-id "000101"
+                        :work-hash (fixture/example-hash "a1")})
+            out-file (io/file root "snapshot.json")]
+        (is (= out-file
+               (:snapshot
+                (materialize/materialize-source-snapshot!
+                 {:workset-path (str (workset! root [work]))
+                  :output-path (str out-file)
+                  :generated-at generated-at}))))
+        (is (= (fixture/example-hash "a1")
+               (get-in (files/read-json out-file)
+                       ["snapshot_identity_object" "snapshot_inputs" 0
+                        "work_content_hash"])))
+        (let [source-manifest (files/read-json (:source_manifest_path work))]
+          (is (= (fixture/example-hash "a1")
+                 (get-in source-manifest ["content" "content_hash"])))
+          (is (= "text/plain; charset=Shift_JIS"
+                 (get-in source-manifest ["content" "media_type"])))
+          (is (= "source.txt"
+                 (get-in source-manifest ["content" "path_hint"])))))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest persisted-source-bundle-byte-hash-detects-later-corruption-test
+  (let [root (fixture/temp-dir "abc-source-snapshot-file-hash")]
+    (try
+      (let [work (fixture/workset-entry!
+                  root {:slug "one"
+                        :title "一"
+                        :work-id "000001"
+                        :person-id "000101"
+                        :work-hash (fixture/example-hash "a1")})
+            out-file (io/file root "snapshot.json")]
+        (materialize/materialize-source-snapshot!
+         {:workset-path (str (workset! root [work]))
+          :output-path (str out-file)
+          :generated-at generated-at})
+        (let [recorded (get-in (files/read-json out-file)
+                               ["snapshot_identity_object" "snapshot_inputs" 0
+                                "source_bundle_file_hash"])]
+          (spit (:source_bundle_path work) "\n" :append true)
+          (is (not= recorded (manifest/file-hash (:source_bundle_path work))))))
+      (finally
+        (fixture/delete-tree! root)))))
+
+(deftest partial-legacy-new-identity-modes-are-rejected-test
+  (doseq [[label mutate!]
+          [["missing workset source bundle path"
+            #(dissoc % :source_bundle_path)]
+           ["missing official archive hash"
+            (fn [work]
+              (update-json! (:official_source_path work)
+                            #(dissoc % "archive_hash"))
+              work)]
+           ["missing official bundle hash"
+            (fn [work]
+              (update-json! (:official_source_path work)
+                            #(dissoc % "bundle_hash"))
+              work)]
+           ["missing official primary member"
+            (fn [work]
+              (update-json! (:official_source_path work)
+                            #(dissoc % "primary_text_member"))
+              work)]
+           ["missing official primary hash"
+            (fn [work]
+              (update-json! (:official_source_path work)
+                            #(dissoc % "primary_text_hash"))
+              work)]
+           ["missing parser primary hash"
+            (fn [work]
+              (update-json! (:parser_ir_path work)
+                            #(update % "source" dissoc "primary_text_hash"))
+              work)]]]
+    (let [root (fixture/temp-dir "abc-source-snapshot-mixed")]
+      (try
+        (let [work (fixture/workset-entry!
+                    root {:slug "one"
+                          :title "一"
+                          :work-id "000001"
+                          :person-id "000101"
+                          :work-hash (fixture/example-hash "a1")})
+              mutated (mutate! work)
+              error (exception-info
+                     #(materialize/materialize-source-snapshot!
+                       {:workset-path (str (workset! root [mutated]))
+                        :output-path (str (io/file root "snapshot.json"))}))]
+          (is (= :mixed-source-identity-mode (:reason (ex-data error))) label))
+        (finally
+          (fixture/delete-tree! root))))))
+
+(deftest source-identity-corruptions-have-distinct-diagnostics-test
+  (let [other (fixture/example-hash "ff")
+        cases
+        [{:label "official archive alias"
+          :role :archive-alias
+          :mutate (fn [work]
+                    (update-json! (:official_source_path work)
+                                  #(assoc % "source_hash" other)))}
+         {:label "source bundle archive provenance"
+          :role :source-bundle-archive
+          :mutate (fn [work]
+                    (update-json! (:source_bundle_path work)
+                                  #(assoc % "archive_hash" other)))}
+         {:label "source bundle identity construction"
+          :role :bundle-construction
+          :mutate (fn [work]
+                    (update-json! (:source_bundle_path work)
+                                  #(assoc-in % ["identity_object" "members" 0
+                                                "member_hash"] other)))}
+         {:label "official bundle"
+          :role :official-bundle
+          :mutate (fn [work]
+                    (update-json! (:official_source_path work)
+                                  #(assoc % "bundle_hash" other)))}
+         {:label "parser bundle"
+          :role :parser-bundle
+          :mutate (fn [work]
+                    (update-json! (:parser_ir_path work)
+                                  #(assoc-in % ["source" "work_content_hash"]
+                                             other)))}
+         {:label "parser primary text"
+          :role :parser-primary-text
+          :mutate (fn [work]
+                    (update-json! (:parser_ir_path work)
+                                  #(assoc-in % ["source" "primary_text_hash"]
+                                             other)))}
+         {:label "primary member"
+          :role :primary-member
+          :mutate (fn [work]
+                    (let [primary (get (files/read-json
+                                        (:official_source_path work))
+                                       "primary_text_member")]
+                      (update-json!
+                       (:source_bundle_path work)
+                       #(update % "members"
+                                (fn [members]
+                                  (mapv (fn [member]
+                                          (if (= primary (get member "path"))
+                                            (assoc member "member_hash" other)
+                                            member))
+                                        members))))))}]]
+    (doseq [{:keys [label role mutate]} cases]
+      (let [error (materialize-error mutate)]
+        (is (= role (:identity-role (ex-data error))) label)))))
 
 (deftest materialized-source-snapshot-is-deterministic-test
   (let [root (fixture/temp-dir "abc-source-snapshot-deterministic")]

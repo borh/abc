@@ -194,9 +194,12 @@ input set. The initial profiles are:
 The offline validator reruns the selected profile's minimum-input derivation
 and rejects a bundle whose bound input set omits a derived file. Extra declared
 inputs are allowed and are also hash-checked. This does not claim automatic
-discovery of runtime resources, environment variables, external services, or
-arbitrary non-Clojure build graphs; workstream-specific generators must
-declare those inputs explicitly.
+discovery of `load`, `require` forms evaluated outside the first `ns` form,
+dynamically computed dependencies, runtime-read data files, environment
+variables, external services, or arbitrary non-Clojure build graphs. Such
+inputs must appear in `input_profile.explicit`. The profile guarantees the
+statically visible namespace closure plus those explicit inputs; it does not
+claim the complete runtime dependency graph.
 
 ### External-authority bundle contract
 
@@ -208,6 +211,12 @@ External evidence uses a separate closed deterministic JSON schema with
 - a repository-relative bounded-summary path and SHA-256 hash;
 - optional additional repository input bindings; and
 - named observations with the same value/details shape as executable bundles.
+
+Both dates must satisfy JSON Schema `format: date` and the lexical pattern
+`^[0-9]{4}-[0-9]{2}-[0-9]{2}$`. The validator also parses both values as real
+calendar dates. A missing or unparseable required date is
+`:invalid-evidence-artifact`; it never disables expiry by falling through to a
+non-expiring state.
 
 The validator remains offline. It recomputes the local summary and additional
 input hashes, resolves the named observation, and compares `review_after` to
@@ -226,10 +235,18 @@ sources stale at the same time.
 closure, criterion extraction, and claim-header syntax. It returns claim
 values but does not read evidence artifacts.
 
-`abc.tools.adr-evidence` owns registry validation, bundle loading and schema
-validation, canonical artifact hashing, repository input hashing, freshness,
-compatibility, observation lookup, and predicate evaluation. Its public API
-returns deterministic problem values and does not exit.
+`abc.tools.adr-evidence-bundle` owns bundle loading and schema validation,
+canonical artifact hashing, repository input hashing, freshness, input-profile
+derivation, and observation lookup.
+
+`abc.tools.adr-evidence` owns registry validation, claim-to-artifact joins,
+compatibility, and predicate evaluation. Both evidence modules expose pure
+validation APIs that return deterministic problem values and do not exit.
+
+`abc.tools.path-containment` owns the single lexical and real-path containment
+primitive used by both legacy ADR evidence-path checks and bundle validation.
+It has no governance semantics; it returns deterministic path states so the two
+callers cannot drift on traversal or symlink-escape handling.
 
 `abc.tools.adr-governance` is the sole aggregate gate. For audit and enforce
 modes it concatenates ADR structural problems with typed-evidence problems in
@@ -241,6 +258,14 @@ Run-bundle generation is separate from validation. Generators may execute
 tests and write deterministic reports. The offline validator only consumes
 committed artifacts and recomputes their identities. This keeps evidence
 execution, evidence capture, and policy evaluation separate.
+
+The version-1 executable capture tool requires `git status --porcelain
+--untracked-files=all` to be empty both immediately before and immediately
+after the evidence command. A revision from a dirty tree would not identify
+the bytes used to produce the bundle, even though input hashes remain
+authoritative. There is no dirty-tree override in version 1; capture output
+must be written outside the repository or created only after the final
+cleanliness check.
 
 ## Failure Taxonomy
 

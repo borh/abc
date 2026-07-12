@@ -18,7 +18,9 @@
 - Legacy governance mode retains the pre-migration Markdown/path behavior.
 - Audit mode accumulates typed problems and exits zero; enforce mode exits nonzero on the same problems.
 - Keep `governance-as-of.edn` as the single explicit repository evaluation epoch; never read the wall clock.
+- Treat absent or unparseable required external-evidence dates as invalid artifacts; malformed dates never disable expiry.
 - Ordinary deterministic Clojure owns runtime validation. Logic/solver tooling remains review-only.
+- Executable capture requires a clean Git worktree and has no dirty-tree override in version 1.
 - Before execution, integrate the active Phase 5 and simulation/replay branches and require a clean worktree. Do not overwrite their uncommitted files or repair simulation-owned lint failures in this branch.
 - Every commit runs its focused tests. The final gate is root `just validate-migration`; build the actual ADR governance and focused-test derivations as specified below.
 
@@ -31,6 +33,8 @@
 - `ab-validator/data/abc-schemas/nix-schemas/adr-evidence-run.schema.json` — executable-bundle schema mirror.
 - `ab-validator/data/abc-schemas/nix-schemas/adr-external-evidence.schema.json` — external-bundle schema mirror.
 - `abc/src/abc/tools/adr.clj` — criterion and claim-header parsing; no bundle reads.
+- `abc/src/abc/tools/path_containment.clj` — shared lexical and real-path containment primitive for legacy citations and evidence bundles.
+- `abc/test/abc/tools/path_containment_test.clj` — traversal and symlink-escape characterization tests shared by both callers.
 - `abc/src/abc/tools/adr_evidence_bundle.clj` — bundle loading, schema validation, safe-number walk, canonical hash, contained paths, input profiles, and root-cause diagnostics.
 - `abc/src/abc/tools/adr_evidence.clj` — new artifact-backed registry contract, claim coverage, compatibility, observation selection, and typed predicates.
 - `abc/src/abc/tools/adr_governance.clj` — aggregate Markdown plus typed-evidence problems.
@@ -113,7 +117,7 @@ Expected: exit 0. If the only failures remain the previously observed unresolved
 
 - [ ] **Step 1: Write failing schema-registration tests**
 
-Add `validate-json-schemas-includes-adr-evidence-contracts-test` to `abc/test/abc/tools/validate_design_bundle_test.clj`. The test writes one valid executable bundle and one valid external bundle to temporary files, invokes `validate-json-schemas!`, and asserts that changing either `schema_version` or adding `"unexpected": true` produces a validation error. Use these exact valid values:
+Add `validate-json-schemas-includes-adr-evidence-contracts-test` to `abc/test/abc/tools/validate_design_bundle_test.clj`. The test writes one valid executable bundle and one valid external bundle to temporary files, invokes `validate-json-schemas!`, and asserts that changing either `schema_version` or adding `"unexpected": true` produces a validation error. It also asserts that `retrieved_at` or `review_after` values with slash separators, impossible calendar dates, or missing required values are rejected. Use these exact valid values:
 
 ```clojure
 {"schema_version" "abc-adr-evidence-run-v1"
@@ -185,7 +189,12 @@ The external schema requires exactly:
 ]
 ```
 
-Dates use `format: date`; `summary` is closed and requires `path` plus a formatted hash; `input_profile.kind` is const `external-authority-v1`.
+Dates require both `format: date` and
+`pattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"`; `summary` is closed and requires
+`path` plus a formatted hash; `input_profile.kind` is const
+`external-authority-v1`. Schema tests must prove that both lexical mistakes
+such as `2026/07/12` and impossible dates such as `2026-13-40` are rejected by
+the repository's configured validator.
 
 - [ ] **Step 4: Register and mirror schemas mechanically**
 
@@ -330,6 +339,10 @@ git commit -m "feat(adr): parse stable typed claim headers"
 ### Task 3: Validate bundles, contained paths, and mechanically derived inputs
 
 **Files:**
+- Create: `abc/src/abc/tools/path_containment.clj`
+- Create: `abc/test/abc/tools/path_containment_test.clj`
+- Modify: `abc/src/abc/tools/adr.clj`
+- Modify: `abc/test/abc/tools/adr_test.clj`
 - Create: `abc/src/abc/tools/adr_evidence_bundle.clj`
 - Create: `abc/test/abc/tools/adr_evidence_bundle_test.clj`
 
@@ -349,6 +362,10 @@ Use a temporary repository with `src/example/core.clj`, `src/example/helper.clj`
 - missing bundle yields one `:missing-evidence-artifact`;
 - `../`, absolute, malformed, and symlink-escape artifact/input paths yield the corresponding path problem;
 - missing observation lookup returns nil without throwing.
+
+Add characterization cases around the existing legacy ADR evidence-path
+behavior. Traversal and symlink-escape inputs must yield the same problem kinds
+before and after extraction to the shared containment namespace.
 
 - [ ] **Step 2: Write failing input-profile tests**
 
@@ -371,6 +388,11 @@ assert the minimum set is exactly:
 
 Assert cycles terminate, `:refer`, `:as`, and vector libspecs resolve, reader evaluation is disabled, missing namespaces produce `:missing-evidence-input`, and omitting helper from bundle `inputs` produces `:missing-evidence-input`.
 
+Also prove the boundary of mechanical derivation: a `require` evaluated outside
+the first `ns` form and a runtime-read fixture are not discovered
+automatically, and both become covered only when their repository paths are
+listed in `input_profile.explicit`.
+
 - [ ] **Step 3: Run RED**
 
 ```bash
@@ -380,9 +402,24 @@ bin/kaocha --focus abc.tools.adr-evidence-bundle-test
 
 Expected: ERROR because the namespace does not exist.
 
-- [ ] **Step 4: Implement path and schema validation**
+- [ ] **Step 4: Extract shared path containment and implement schema validation**
 
-Reuse the lexical and real-path containment pattern from `abc.tools.adr/evidence-path-state`, generalized to allow only repository-relative paths below the repository root. Load the correct cached schema based on `schema_version`; unknown versions produce `:invalid-evidence-artifact`. Accumulate schema errors into one artifact-root problem with `:errors-humanized` and sorted `:affected-claim-ids`.
+Move the lexical normalization, traversal, and real-path/symlink-escape checks
+from the private `abc.tools.adr/evidence-path-state` implementation into
+`abc.tools.path-containment`. Keep the shared function policy-free: it returns
+stable path states and resolved paths, while each caller maps states to its own
+problem values. Rewire the legacy ADR caller and prove its characterization
+tests remain green. Do not retain a second containment implementation in the
+bundle namespace.
+
+Use that shared primitive to allow only repository-relative bundle and input
+paths below the repository root. Load the correct cached schema based on
+`schema_version`; unknown versions produce `:invalid-evidence-artifact`.
+Accumulate schema errors into one artifact-root problem with
+`:errors-humanized` and sorted `:affected-claim-ids`. Independently parse both
+required external dates as calendar dates; a missing or unparseable value is
+`:invalid-evidence-artifact`, even if schema `format` assertions are disabled
+or bypassed by a focused unit test.
 
 Compute the canonical hash from the parsed JSON value, not file bytes:
 
@@ -404,7 +441,9 @@ Require every derived minimum path to appear in `inputs`; allow extras. Recomput
 
 ```bash
 cd abc
-bin/kaocha --focus abc.tools.adr-evidence-bundle-test
+bin/kaocha --focus abc.tools.path-containment-test \
+  --focus abc.tools.adr-test \
+  --focus abc.tools.adr-evidence-bundle-test
 ```
 
 Expected: zero failures and zero errors.
@@ -413,7 +452,10 @@ Expected: zero failures and zero errors.
 
 ```bash
 git add abc/src/abc/tools/adr_evidence_bundle.clj \
-  abc/test/abc/tools/adr_evidence_bundle_test.clj
+  abc/test/abc/tools/adr_evidence_bundle_test.clj \
+  abc/src/abc/tools/path_containment.clj \
+  abc/test/abc/tools/path_containment_test.clj \
+  abc/src/abc/tools/adr.clj abc/test/abc/tools/adr_test.clj
 git commit -m "feat(adr): validate hashed evidence bundles and input profiles"
 ```
 
@@ -644,7 +686,13 @@ Assert the tool:
 - writes `schema_version: abc-adr-evidence-run-v1`;
 - records the repository `git rev-parse HEAD` value;
 - writes `value: true`, `details.exit_code: 0`, and input hashes derived from the profile;
-- emits byte-identical JSON across two successful runs at the same commit;
+- refuses before command execution when `git status --porcelain
+  --untracked-files=all` is non-empty, with no partial output;
+- refuses after a command dirties the repository and before hashing or writing
+  the bundle, with no partial output;
+- emits byte-identical JSON across two successful clean-tree runs at the same
+  commit, writing outputs outside the temporary repository (or removing the
+  first output before the second cleanliness check);
 - writes `value: false` and exit code 7 for `argv ["sh" "-c" "exit 7"]`, then exits 1 itself after the bundle is safely written;
 - rejects descriptor keys outside the exact set `#{:schema-version :tool :argv :input-profile :observation-key}`.
 
@@ -666,12 +714,17 @@ Expose:
 ;; => {:bundle map :exit-code int :output java.io.File}
 ```
 
-Validate the descriptor before execution. Run `ProcessBuilder` with the exact
-argv vector and repository root as its working directory. Consume stdout and
+Validate the descriptor, then require `git status --porcelain
+--untracked-files=all` to produce no output before executing the evidence
+command. Refuse a dirty tree with exit 2 and do not offer an override in version
+1. Run `ProcessBuilder` with the exact argv vector and repository root as its
+working directory. Consume stdout and
 stderr concurrently to avoid process-pipe deadlock, but do not place their
 machine- or timing-sensitive contents in the bundle. The deterministic command
-display is `(string/join " " (map pr-str argv))`. Derive and hash all profile
-inputs after the command finishes, obtain revision via
+display is `(string/join " " (map pr-str argv))`. Repeat the cleanliness check
+after the command and before deriving inputs or writing output; a command that
+dirties the repository is invalid evidence capture. Derive and hash all profile
+inputs only after that check, obtain revision via
 `git rev-parse --verify HEAD`, write through
 `json/write-deterministic-json-file!`, and validate the result with the Task 3
 bundle validator before returning.
@@ -693,8 +746,12 @@ clojure -M:abc/adr-evidence-capture -- \
 ```
 
 Invalid descriptors or validation failures exit 2 without writing a partial
-file. A completed failing command writes its bundle and exits 1. A passing
-command writes its bundle and exits 0.
+file. A dirty worktree is a validation failure; before execution the command is
+not started, and after execution no bundle is written. A completed, clean-tree
+failing command writes its bundle and exits 1. A passing command writes its
+bundle and exits 0. Document that capture must remain clean across execution
+and that the output should normally be outside the repository until it is
+reviewed and committed.
 
 - [ ] **Step 5: Run GREEN and commit**
 
@@ -830,6 +887,7 @@ git commit -m "docs(adr): inventory typed-claim migration corpus"
 ```bash
 cd abc
 bin/kaocha --focus abc.tools.adr-test \
+  --focus abc.tools.path-containment-test \
   --focus abc.tools.adr-evidence-bundle-test \
   --focus abc.tools.adr-evidence-test \
   --focus abc.tools.adr-governance-test \
@@ -908,6 +966,8 @@ If the worktree is already clean, do not create an empty verification commit.
 ## Plan Self-Review
 
 - Spec coverage: bundle schemas, safe numerics, input profiles, inline-contract retirement, claim parsing, typed joins, error deduplication, audit aggregation, and migration inventory each have an owning task.
+- Input-closure boundary: `clojure-test-v1` derives only the statically visible first-`ns`-form repository namespace graph. Runtime data, `load`, in-body `require`, and dynamic dependencies remain reviewable explicit inputs rather than being mislabeled as mechanically complete.
+- Trust boundary: traversal and real-path checks have one shared implementation, and executable capture refuses provenance from dirty worktrees.
 - Scope: the 137-criterion scientific review is deliberately decomposed into five follow-up plans; this plan ends at an honest failing enforcement checkpoint.
 - Type consistency: `claim-id`, `claim-kind`, `artifact-path`, `artifact-hash`, `observation-key`, `input_profile`, and problem-kind names match the approved spec throughout.
 - No runtime solver dependency is introduced.

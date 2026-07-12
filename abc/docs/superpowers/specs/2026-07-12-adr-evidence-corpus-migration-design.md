@@ -27,7 +27,8 @@ historical, compound, or non-observable criteria are corrected.
 2. Criterion correction precedes stable claim-ID assignment. Existing criteria
    have no claim IDs, so moving a review checklist or future guard out of
    Acceptance Criteria does not break an established identifier. After claim
-   headers land, criterion order and claim IDs are stable.
+   headers land, authored claim IDs are stable; criterion order is not an
+   identity coordinate.
 3. Correction is narrower than demotion. Correct or split an overbroad
    criterion while preserving the ADR's Accepted core. Demote an ADR only when
    the central decision lacks support.
@@ -49,9 +50,15 @@ historical, compound, or non-observable criteria are corrected.
 
 ### Migration decision ledger
 
-`docs/adr/adr-claim-migration.edn` is the reviewed source ledger. Before claim
-headers exist, entries are keyed by `[adr-number criterion-index]`. Each entry
-records exactly one disposition:
+`docs/adr/adr-claim-migration-baseline.json` is an immutable snapshot of the
+146 pre-review criteria. It records the migration branch's baseline revision,
+ADR number, original criterion index, original text, and SHA-256 of the exact
+original criterion text.
+
+`docs/adr/adr-claim-migration.edn` is the reviewed source ledger. Its header
+names that baseline revision and manifest hash. Entries are keyed by
+`[adr-number original-criterion-text-hash]`; the original index is descriptive
+only. Each entry records exactly one disposition:
 
 - `:retain` — the current statement is observable and supportable;
 - `:correct` — retain the decision but narrow or split the criterion;
@@ -61,9 +68,26 @@ records exactly one disposition:
 - `:demote-adr` — the central decision cannot remain Accepted.
 
 Every non-`:retain` entry carries a rationale. Every retained or corrected
-criterion names its planned evidence boundary. The generated migration
-inventory exposes these dispositions; it must not leave reviewed rows as
-`null`.
+criterion names its planned evidence boundary. After Stage A, every ledger
+entry also records `:resulting-claim-ids`, a vector that may be empty, contain
+one ID, or contain multiple IDs after a split. The inventory generator fails
+on a duplicate or unresolved baseline key and on a resulting claim ID that is
+absent from the current ADR corpus. The generated migration inventory exposes
+these mappings and dispositions; it must not leave reviewed rows as `null`.
+
+### Non-acceptance sections
+
+Two exact optional headings preserve useful prose without representing it as a
+satisfied acceptance observation:
+
+- `## Historical Evidence` records bounded past observations under their
+  original coordinates. It does not assert current freshness or authority.
+- `## Future Verification` records unsatisfied guards and the conditions that
+  would make them observable. It is not a backlog with implicit acceptance.
+
+Neither section may contain a typed claim header. ADR validation lints claim
+headers in either section as invalid. Moving text there does not create an
+evidence-registry obligation and cannot support Accepted status.
 
 ### Capture descriptors and bundles
 
@@ -82,8 +106,14 @@ entries never contain observations, input hashes, or stored verdicts.
 
 ### Generated reports
 
-`docs/reports/adr-claim-migration-inventory.json` reports the reviewed corpus,
-families, claim headers, citations, and dispositions.
+`docs/reports/adr-claim-migration-inventory.json` reports the reviewed live
+corpus, families, claim headers, citations, and dispositions. Its count may
+change when a baseline criterion is explicitly split or moved out of
+acceptance. The parent requirement to migrate 146 criteria means that all 146
+baseline rows receive a reviewed disposition and old-to-new mapping; it does
+not require preserving 146 live criteria after correction. Inventory tests
+and the generated report change in the same Stage A commit as any criterion
+split or removal, preserving the no-red-intermediate-commit invariant.
 `docs/reports/adr-evidence-migration.json` is the deterministic governance
 report. Generated reports are outputs, not hand-edited sources.
 
@@ -103,7 +133,9 @@ Each family is migrated in two clean-tree stages.
    test-first development.
 6. Add lifecycle headers and stable claim headers only after the corrected
    criterion set is final.
-7. Commit and verify the family in audit mode. Missing evidence is expected at
+7. Update the baseline-to-live disposition mapping, inventory expectations,
+   and generated inventory in the same commit as criterion corrections.
+8. Commit and verify the family in audit mode. Missing evidence is expected at
    this intermediate commit; new parser, lifecycle, graph, or dependency
    problems are not.
 
@@ -117,18 +149,39 @@ Each family is migrated in two clean-tree stages.
    condition.
 4. Add bundles and claim-level registry entries, then regenerate audit and
    inventory reports.
-5. Require the family audit debt to disappear without introducing a different
-   problem kind.
+5. Require this family's claim problem set to become empty. A missing-evidence
+   problem replaced by another problem for the same family claim is not
+   progress. Staleness in another family's bundle caused by an explicitly
+   shared live input is tracked and re-captured by that bundle's single owner;
+   it is not misreported as this family's failure.
 6. Commit bundles, registry entries, and generated reports together.
+
+Corpus-wide ADR, graph, registry, and governance bundles are not captured in
+families 1 through 4. They are owned once by the diagrams/governance or final
+enforcement plan, after ordinary ADR edits have settled. Cross-family bundles
+have exactly one named owner and are never independently re-authored by two
+plans.
 
 ## Shared Prerequisite
 
 The advertised `nix run ./abc#validate-design-bundle` boundary currently
 reaches the final Git-cliff check from a pinned Nix-store source that is not a
-Git repository. Several Accepted criteria claim that this command succeeds.
-The command is a core development validation boundary, so the first plan must
-repair and test the Git-cliff/store seam rather than narrow every criterion
-away from the supported Nix application.
+Git repository. Repository history is not part of the design bundle and cannot
+be made a fresh, hermetic input by tunneling the caller's checkout into the
+store launcher.
+
+The shared prerequisite therefore splits the trust boundaries:
+
+- `validate-design-bundle` becomes hermetic content/schema/fixture validation
+  and does not invoke Git-cliff;
+- a separate `git-cliff-config` Nix check validates `cliff.toml` in a synthetic
+  temporary Git repository with a fixed conventional commit; and
+- any claim about the project's real history belongs to a repo-context
+  operational observation, not the store-backed design-bundle app.
+
+This is an explicit correction of the old aggregate boundary, not a silent
+skip when `.git` is missing. The supported Nix design-bundle application must
+still exit zero and is captured directly after the split.
 
 The same prerequisite adds the migration-ledger schema/validation and teaches
 the inventory generator to report dispositions. No family evidence is
@@ -137,7 +190,12 @@ captured before this shared boundary is green.
 ## Evidence Boundaries
 
 Evidence boundaries are smaller than families and may support claims from
-multiple ADRs.
+multiple ADRs. `clojure-test-v1`, `repo-files-v1`, and
+`external-authority-v1` are input-profile kinds that determine freshness;
+`structural-test`, `fixture-conformance`, `corpus-measurement`, `benchmark`,
+`external-authority`, `cross-implementation`, `expert-assessment`, and
+`operational-observation` are evidence kinds governed by the compatibility
+matrix. The two vocabularies are never interchangeable.
 
 - Focused Clojure boundaries use `clojure-test-v1`, with runtime data explicit.
 - Rust or Python checks use `repo-files-v1` and a bounded command whose exit
@@ -306,18 +364,36 @@ ADR 0034 has three distinct boundaries:
 2. C2 is structural evidence for lifecycle/dependency witness behavior and
    audit/enforce command semantics. Stubbed command tests do not establish
    real-corpus success.
-3. C3 is a corpus measurement over the complete pre-promotion Accepted corpus
-   with `ok = true`, zero problems, exact counts, explicit evaluation epoch,
-   and bound validator inputs.
+3. C3 is a corpus measurement over an immutable pre-promotion snapshot of all
+   Accepted ADRs except ADR 0034, with `ok = true`, zero problems, exact counts,
+   explicit evaluation epoch, and bound snapshot/validator inputs.
 
 Audit exit zero is never evidence for C3 because audit intentionally exits zero
 when `ok` is false. The measurement producer must inspect report content or use
 a command whose exit code reflects `ok = true` and zero problems.
 
-The C3 boundary excludes its own future registry entry and bundle identity;
-otherwise the registry hash would depend on the bundle that depends on the
-registry. This pre-promotion bootstrap observation is followed by live strict
-enforcement on the final post-promotion tree.
+The bootstrap does not use an input exclusion or sanctioned under-binding.
+Before capture, the final plan writes a deterministic immutable snapshot under
+`docs/evidence/adr-bootstrap/` containing:
+
+- the pre-promotion Accepted ADR set and exact criterion/claim counts;
+- the pre-promotion registry, compatibility matrix, governance date, and audit
+  report;
+- a manifest of the exact ADR, validator, artifact, and generated-view hashes
+  used by that audit; and
+- the assertion `ok = true` with zero problems.
+
+The snapshot validator verifies this closed value against its manifest. The C3
+bundle binds the immutable snapshot, its validator, and its schema, not the
+later-mutated live registry or ADR files. Its measured subject is explicitly
+“the pre-promotion Accepted corpus excluding ADR 0034,” so it makes no current
+freshness claim about ADR 0034.
+
+The atomic transition then runs live strict enforcement over the complete
+post-promotion corpus including ADR 0034. Merge is forbidden unless that run
+reports `ok = true`, zero problems, the expected post-promotion counts, and
+audit/enforce problem-set parity on a deliberately invalid fixture. If it
+fails, ADR 0034 remains Proposed and the Nix gate remains in audit mode.
 
 The atomic final commit contains ADR 0034 Accepted, all three evidence entries,
 valid artifacts, full registry coverage, regenerated views, and the Nix gate
@@ -374,3 +450,9 @@ In one worktree they execute sequentially because they share the ADR registry,
 migration ledger, generated reports, and derived ADR graph. Plan 5 consumes
 the final corrected ADR set. Plan 6 consumes every prior family and is the only
 plan authorized to switch enforcement on.
+
+ADR numbers 0036 and 0037 remain reserved by
+`2026-07-12-remediation-program-sequencing.md` for temporal knowledge state and
+the identity lattice. ADR 0038 owns custom-parser ownership and neutral
+comparison semantics; ADR 0039 owns exact-tuple release qualification. New
+unrelated decisions begin at ADR 0040.

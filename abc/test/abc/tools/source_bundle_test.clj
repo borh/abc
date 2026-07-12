@@ -349,11 +349,11 @@
                        ["figure.png" (byte-array [9 8 7])]]]
     (with-zips [zip (write-zip! (temp-file ".zip") before-members)]
       (let [expected (inspection before-members)
-            original-inspect @#'source-bundle/inspect-open-zip
+            original-inspect @#'source-bundle/scan-open-zip
             staged-path (atom nil)
             actual
             (with-redefs-fn
-              {#'source-bundle/inspect-open-zip
+              {#'source-bundle/scan-open-zip
                (fn [archive-path staged-file limits]
                  (reset! staged-path staged-file)
                  (write-zip! zip after-members)
@@ -376,7 +376,7 @@
            failure
            (try
              (with-redefs-fn
-               {#'source-bundle/inspect-open-zip
+               {#'source-bundle/scan-open-zip
                 (fn [_archive-path staged-file _limits]
                   (reset! staged-path staged-file)
                   (throw failure))}
@@ -401,7 +401,7 @@
            failure
            (try
              (with-redefs-fn
-               {#'source-bundle/inspect-open-zip (fn [& _] (throw failure))}
+               {#'source-bundle/scan-open-zip (fn [& _] (throw failure))}
                #(source-bundle/inspect-zip zip))
              (catch Throwable t t)))))))
 
@@ -536,3 +536,99 @@
              (:reason (admission-data
                        #(source-bundle/validate-persisted-manifest!
                          resigned))))))))
+
+(deftest bounded-scan-streams-rejected-bundles-test
+  (with-zips
+    [asset (write-zip! (temp-file ".zip")
+                       [["image.png" (utf8-bytes "12345")]])
+     collision (write-zip! (temp-file ".zip")
+                           [["A.png" (utf8-bytes "a")]
+                            ["a.png" (utf8-bytes "bb")]
+                            ["work.txt" (utf8-bytes "body")]])]
+    (let [asset-scan (source-bundle/scan-zip asset)
+          collision-scan (source-bundle/scan-zip collision)]
+      (is (= {:member-count 1 :max-member-bytes 5 :total-bytes 5
+              :utf8-count 1 :legacy-count 0
+              :declared-actual-size-mismatches []}
+             (:stats asset-scan)))
+      (is (= [] (:semantic-text-candidates asset-scan)))
+      (is (nil? (:primary-text-bytes asset-scan)))
+      (is (= :no-primary-text-member
+             (:reason (admission-data
+                       #(source-bundle/admit-scan! asset-scan)))))
+      (is (= 3 (get-in collision-scan [:stats :member-count])))
+      (is (= ["work.txt"] (:semantic-text-candidates collision-scan)))
+      (is (= "body" (String. ^bytes (:primary-text-bytes collision-scan)
+                             StandardCharsets/UTF_8)))
+      (is (true? (get-in collision-scan
+                         [:collision-evidence :unicode-case-collision?])))
+      (let [collision-error
+            (try
+              (source-bundle/admit-scan! collision-scan)
+              nil
+              (catch clojure.lang.ExceptionInfo t t))]
+        (is (source-bundle/admission-error? collision-error))
+        (is (= :case-fold-member-path-collision
+               (:reason (ex-data collision-error))))))))
+
+(deftest efs-count-is-independent-of-decoder-name-source-test
+  (with-zips
+    [efs-zip (write-zip!
+              (temp-file ".zip")
+              [["作品.txt" (utf8-bytes "本文")]]
+              {:efs true
+               :unicode-extra
+               ZipArchiveOutputStream$UnicodeExtraFieldPolicy/NEVER})
+     extra-zip (write-zip!
+                (temp-file ".zip")
+                [["作品.txt" (utf8-bytes "本文")]]
+                {:efs false
+                 :unicode-extra
+                 ZipArchiveOutputStream$UnicodeExtraFieldPolicy/ALWAYS})]
+    (let [efs-scan (source-bundle/scan-zip efs-zip)
+          extra-scan (source-bundle/scan-zip extra-zip)]
+      (is (= "efs-utf8" (get-in efs-scan [:members 0 "name_source"])))
+      (is (= [1 0] [(get-in efs-scan [:stats :utf8-count])
+                    (get-in efs-scan [:stats :legacy-count])]))
+      (is (= "unicode-extra"
+             (get-in extra-scan [:members 0 "name_source"])))
+      (is (= [0 1] [(get-in extra-scan [:stats :utf8-count])
+                    (get-in extra-scan [:stats :legacy-count])])))))
+
+(deftest bounded-scan-pins-declared-versus-actual-bytes-test
+  (with-zips [zip (write-zip! (temp-file ".zip")
+                              [["work.txt" (utf8-bytes "12345")]])]
+    (understate-first-central-size! zip 1)
+    (let [scan (source-bundle/scan-zip zip)]
+      (is (= 5 (get-in scan [:stats :max-member-bytes])))
+      (is (= 5 (get-in scan [:stats :total-bytes])))
+      (is (= [{:member-path "work.txt" :declared-bytes 1 :actual-bytes 5}]
+             (get-in scan [:stats :declared-actual-size-mismatches]))))))
+
+(deftest inspect-zip-is-scan-plus-admission-test
+  (with-zips [zip (write-zip! (temp-file ".zip")
+                              [["work.txt" (utf8-bytes "body")]
+                               ["figure.png" (byte-array [1 2 3])]])]
+    (let [scanned (source-bundle/admit-scan!
+                   (source-bundle/scan-zip zip))
+          inspected (source-bundle/inspect-zip zip)]
+      ;; Clojure byte-array equality is identity, not content equality.
+      (is (= (dissoc scanned :primary-text-bytes)
+             (dissoc inspected :primary-text-bytes)))
+      (is (java.util.Arrays/equals
+           ^bytes (:primary-text-bytes scanned)
+           ^bytes (:primary-text-bytes inspected))))))
+
+(deftest bounded-scan-failures-precede-logical-admission-test
+  (with-zips [zip (write-zip! (temp-file ".zip")
+                              [["image.png" (utf8-bytes "12345")]])]
+    ;; Avoid the declared-size pre-check so the actual-byte stream proves the
+    ;; precedence over the bundle's simultaneous no-primary defect.
+    (understate-first-central-size! zip 1)
+    (is (= :member-too-large
+           (:reason
+            (admission-data
+             #(source-bundle/scan-zip
+               zip {:max-members 10
+                    :max-member-bytes 4
+                    :max-total-bytes 100})))))))

@@ -300,3 +300,63 @@
       (finally
         (.close git)
         (delete-recursive repo-dir)))))
+
+(def ^:private drift-summary-required-keys
+  ["persons_previous" "persons_current" "works_previous" "works_current"
+   "added_person_ids" "removed_person_ids" "metadata_corrections"
+   "contributor_edge_additions" "contributor_edge_removals"
+   "contributor_edge_replacements" "split_candidates" "merge_candidates"
+   "ambiguous_replacements"])
+
+(deftest baseline-pin-coupling-test
+  (let [doc (abc-json/read-json-file replay/default-baseline-path)
+        pairs (vec (get doc "pairs"))
+        excluded (vec (get doc "excluded"))
+        sha? (fn [s] (and (string? s) (re-matches #"[0-9a-f]{40}" s)))
+        count? (fn [v] (and (int? v) (<= 0 v)))]
+    (testing "header shape"
+      (is (= replay/baseline-format (get doc "baseline_format")))
+      (is (= replay/default-zip-path (get doc "zip_path")))
+      (is (= replay/default-remote-url (get doc "remote_url")))
+      (is (= "year" (get doc "sample_period")))
+      (is (sha? (get doc "pin_rev"))))
+    (testing "pair shape"
+      (is (seq pairs) "committed baseline must contain pairs")
+      (is (= (mapv #(get % "period") pairs)
+             (vec (sort (mapv #(get % "period") pairs))))
+          "pairs sorted by period")
+      (doseq [p pairs]
+        (is (sha? (get p "previous_ref")) (pr-str p))
+        (is (sha? (get p "current_ref")) (pr-str p))
+        (is (re-matches #"\d{4}(-\d{2})?" (or (get p "period") ""))
+            "committed pairs carry non-nil period keys")
+        (is (contains? #{"ok" "validation_failed"} (get p "status")))
+        (doseq [k drift-summary-required-keys]
+          (is (count? (get-in p ["drift_summary" k]))
+              (str "drift_summary." k " in " (pr-str (get p "period")))))
+        (let [ingest (get p "ingest")]
+          (is (count? (get ingest "works_written")) (pr-str p))
+          (is (count? (get ingest "works_skipped")) (pr-str p))
+          (is (count? (get ingest "persons_written")) (pr-str p))
+          (is (vector? (get ingest "skipped_work_ids")) (pr-str p))
+          (is (every? string? (get ingest "skipped_work_ids")) (pr-str p))
+          (is (vector? (get ingest "person_conflicts")) (pr-str p))
+          (is (every? string? (get ingest "person_conflicts")) (pr-str p)))))
+    (testing "exclusion shape: unique, complete, known reasons"
+      (is (= (count excluded) (count (distinct (map #(get % "ref") excluded))))
+          "no duplicate excluded refs")
+      (doseq [e excluded]
+        (is (sha? (get e "ref")) (pr-str e))
+        (is (contains? e "period") (pr-str e))
+        (is (contains? #{"missing-at-ref" "unreadable-zip"
+                         "no-csv-entry" "no-data-rows"}
+                       (get e "reason")))))
+    (testing "pin coupling: baseline pin == abc/flake.lock pin"
+      (is (= (replay/locked-pin "flake.lock") (get doc "pin_rev"))
+          (str "baseline pin_rev disagrees with abc/flake.lock — after a pin "
+               "bump, re-run `just replay-aozora-update`, adjudicate the "
+               "diff, and commit the new baseline")))
+    (testing "root flake.lock agrees with abc/flake.lock"
+      (is (= (replay/locked-pin "flake.lock")
+             (replay/locked-pin "../flake.lock"))
+          "partial pin bump: abc/flake.lock and the root flake.lock carry different aozorabunko-src revs"))))

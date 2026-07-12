@@ -1903,10 +1903,9 @@ mod tests {
     /// red — a parsed/`Value`-equality check would NOT catch this, since
     /// `Value::eq` for objects is order-independent.
     ///
-    /// Expected output re-pasted 2026-07-12 (Task 14: `ab-aozora` `0.4.0` →
-    /// `0.5.0` — the `source_note` emission itself is a no-op on this
-    /// input, which has no `底本：` tail, so only the version string
-    /// changes) via:
+    /// Expected output re-pasted 2026-07-12 (Task 8: `ab-aozora` `0.5.0` →
+    /// `0.6.0` — the C5 identity bump; no functional change, only the
+    /// version string) via:
     /// ```text
     /// export RUSTC_WRAPPER= SCCACHE_DISABLE=1
     /// cd ab-validator
@@ -1921,7 +1920,7 @@ mod tests {
     /// self.rev or "unknown"` and `build.rs`'s doc comment).
     #[test]
     fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
-        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
     }
@@ -2492,14 +2491,14 @@ mod tests {
     }
 
     #[test]
-    fn c4_identity_join_key_and_document_version() {
-        // Was the C3 identity test (Task 9); C4 (Task 14) bumps
-        // `ab-aozora` `0.4.0` → `0.5.0` — the schema-2 join key's other
+    fn c5_identity_join_key_and_document_version() {
+        // Was the C4 identity test (Task 14); C5 (Task 8) bumps
+        // `ab-aozora` `0.5.0` → `0.6.0` — the schema-2 join key's other
         // coordinates (`aat-schema 2 facade 0.3.0 wire-schema 3`) are
-        // unchanged by source_note emission.
+        // unchanged by this version-only bump.
         assert!(
             adapter_version()
-                .starts_with("ab-aozora 0.5.0 aat-schema 2 facade 0.3.0 wire-schema 3")
+                .starts_with("ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3")
         );
         let aat = aat_value_for("あ\n");
         assert_eq!(aat["version"], 2);

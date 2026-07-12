@@ -347,10 +347,10 @@
 (defn run-replay!
   "Run one replay in :check or :update mode. Returns a result map with
   ::exit-fail? set for CLI dispatch."
-  [{:keys [check update baseline] :as opts}]
+  [{:keys [check baseline] update? :update :as opts}]
   (let [doc (replay-doc! opts)]
     (cond
-      update
+      update?
       (do (abc-json/write-deterministic-json-file! (io/file baseline) doc)
           {:mode "update" :baseline (str baseline)
            :pairs (count (get doc "pairs"))

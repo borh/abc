@@ -79,7 +79,8 @@ cannot independently change interpretation.
 
 The persisted source-bundle manifest contains the identity object plus
 non-identity provenance such as `archive_hash`, each member's exact byte
-length, and its decoded pre-normalization path. It may later carry descriptive
+length, decoded pre-normalization path, and name source
+(\`efs-utf8|unicode-extra|windows-31j\`). It may later carry descriptive
 media types, but media-type detection is excluded from v1 identity because it
 depends on a detector and versioned policy. Normalized paths and member hashes
 are sufficient to identify the bundle content: adding byte length to identity

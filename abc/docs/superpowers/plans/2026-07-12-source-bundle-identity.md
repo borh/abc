@@ -78,10 +78,11 @@ Create source-bundle.schema.json:
     },
     "memberMetadata": {
       "type": "object", "additionalProperties": false,
-      "required": ["path", "decoded_path", "byte_length", "member_hash"],
+      "required": ["path", "decoded_path", "name_source", "byte_length", "member_hash"],
       "properties": {
         "path": {"type": "string", "minLength": 1},
         "decoded_path": {"type": "string", "minLength": 1},
+        "name_source": {"enum": ["efs-utf8", "unicode-extra", "windows-31j"]},
         "byte_length": {"type": "integer", "minimum": 0},
         "member_hash": {"$ref": "#/$defs/hash"}
       }
@@ -323,7 +324,7 @@ git commit -m "test(source): pin Aozora bundle admission evidence"
 - New AAT writers emit equal source_hash and primary_text_hash; historical source_hash-only AAT remains readable.
 - ConversionOptions gains work_content_hash: Option<String>.
 - CLI gains --work-content-hash.
-- New parser-IR source emits work_content_hash and primary_text_hash.
+- Parser-IR schema allows primary_text_hash for historical-reader compatibility; every new converter output emits it alongside work_content_hash.
 
 - [ ] **Step 1: Write failing Rust tests**
 
@@ -413,7 +414,7 @@ json!({
 })
 ~~~
 
-Add optional CLI field and pass it through. Add primary_text_hash to AAT emission. Allow it optionally in AAT schemas. Require it for newly emitted parser-IR and bump parser-IR version 0.6.0 → 0.7.0. Copy ABC schema byte-for-byte to both mirrors.
+Add optional CLI field and pass it through. Add primary_text_hash to AAT emission. Allow it optionally in AAT schemas and parser-IR schema so historical documents remain valid; converter tests require every new output to emit it. Bump parser-IR version 0.6.0 → 0.7.0. Copy ABC schema byte-for-byte to both mirrors.
 
 - [ ] **Step 4: Rotate mapping/goldens**
 
@@ -554,7 +555,7 @@ git commit -m "feat(publication): materialize source-bundle identity"
 **Interfaces:**
 - Best-effort failure records expose stable reason/path/limit fields.
 - release_admissible equals derive_failed_count==0.
-- Strict mode remains atomic abort; best-effort completion remains non-releaseable when failures exist.
+- Strict mode remains atomic abort. A best-effort run with failures promotes its evidence, marks the selection/workflow partial, returns 1, and remains non-releaseable.
 
 - [ ] **Step 1: Write failing strict/best-effort tests**
 
@@ -584,7 +585,7 @@ In best-effort catch, retain stable diagnostics:
              (:actual d) (assoc "actual" (:actual d)))})
 ~~~
 
-Add release_admissible to the report and make workflow/build status failed when false while still writing best-effort evidence.
+Add release_admissible to the report. Return :partial from the selection step when false; retain the completed workflow result, atomically promote the best-effort evidence, and return exit value 1 from build-publication! when the final workflow run is partial (0 only when passed).
 
 - [ ] **Step 4: Verify GREEN and commit**
 
@@ -682,7 +683,7 @@ clojure -M:test:kaocha -m kaocha.runner --focus abc.sim.content-test --focus abc
 
 - [ ] **Step 3: Extend render/oracle**
 
-Render sorted text+image members. Add zip-layout controls for order, mtime, comment, compression. Oracle uses production canonical identity constructor but independently hashes rendered archive bytes. Rename ambiguous :source_hash oracle data to :bundle_hash and update every consumer.
+Render sorted text+image members. Add zip-layout controls for order, mtime, comment, compression. The oracle independently constructs the specified sorted identity object from model members and hashes it; it must not call source-bundle/inspect-zip or its identity constructor. It independently hashes rendered archive bytes for archive_hash. Rename ambiguous :source_hash oracle data to :bundle_hash and update every consumer.
 
 - [ ] **Step 4: Flip P16.3 and D7**
 

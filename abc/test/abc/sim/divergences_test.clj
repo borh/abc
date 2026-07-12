@@ -3,7 +3,7 @@
             [clojure.test :refer [deftest is]]))
 
 (deftest table-covers-spec-entries-test
-  (is (= #{:D1 :D2 :D3 :D4 :D5 :D6} (set (keys div/table))))
+  (is (= #{:D1 :D2 :D3 :D4 :D5 :D6 :D7} (set (keys div/table))))
   (is (every? #(contains? #{:open :adjudicated-bug :adjudicated-intended :fixed}
                           (:status %))
               (vals div/table))))

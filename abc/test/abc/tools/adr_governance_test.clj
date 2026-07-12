@@ -96,3 +96,11 @@
     (is (string/includes?
          flake
          "ADR lifecycle, dependency, claim, artifact, freshness, and evidence audit completed."))))
+
+(deftest shared-clojure-app-launcher-sets-user-home-quietly-test
+  (let [flake (slurp "flake.nix")
+        start (string/index-of flake "mkCljLauncher =")
+        end (string/index-of flake "mkCljApp =" start)
+        launcher (subs flake start end)]
+    (is (not (string/includes? launcher "export JAVA_TOOL_OPTIONS")))
+    (is (string/includes? launcher "-J-Duser.home=${cljDepsCache}"))))

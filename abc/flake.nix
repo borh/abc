@@ -128,7 +128,6 @@
             }:
             pkgs.writeShellScript name ''
               export HOME="${cljDepsCache}"
-              export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
               export CLJ_CONFIG="${cljDepsCache}/.clojure"
               export GITLIBS="${cljDepsCache}/.gitlibs"
               export CLJ_CACHE="$(mktemp -d)"
@@ -138,7 +137,7 @@
               # (e.g. build-publication --output-root) against where the user ran.
               export ABC_INVOCATION_PWD="$PWD"
               cd ${./.}
-              exec ${pkgs.clojure}/bin/clojure -M:${alias} "$@"
+              exec ${pkgs.clojure}/bin/clojure -J-Duser.home=${cljDepsCache} -M:${alias} "$@"
             '';
           mkCljApp =
             {

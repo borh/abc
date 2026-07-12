@@ -85,6 +85,7 @@
   :abc/presentation-diagrams {:main-opts ["-m" "abc.tools.diagram.presentation-registry"]}
   :abc/adr-governance {:main-opts ["-m" "abc.tools.adr-governance"]}
   :abc/adr-evidence-capture {:main-opts ["-m" "abc.tools.adr-evidence-capture"]}
+  :abc/adr-evidence-register {:main-opts ["-m" "abc.tools.adr-evidence-register"]}
   :abc/adr-evidence-inventory {:main-opts ["-m" "abc.tools.adr-evidence-inventory"]}
   :abc/adr-claim-migration {:main-opts ["-m" "abc.tools.adr-claim-migration"]}
   :abc/workflow-graph {:main-opts ["-m" "abc.tools.diagram.workflow-graph"]}

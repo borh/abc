@@ -21,9 +21,10 @@ global usage text to stdout and return 0. The new CLI work is:
 
 ## Dependency and command table
 
-Add `org.babashka/cli` as a direct dependency in `abc/deps.edn` and update the
-lock. Its current transitive presence in `deps-lock.json` is not an acceptable
-active-code dependency.
+Add `org.babashka/cli` 0.12.75 as a direct dependency in `abc/deps.edn` and
+update the lock. This intentionally upgrades the transitive 0.5.40 artifact:
+0.12.75 provides the dispatch help/error hooks used by this design. Transitive
+presence is not an acceptable active-code dependency.
 
 Define an ordered `command-table` in `abc.tools.soranoha`. Each entry uses the
 library's table form and contains:

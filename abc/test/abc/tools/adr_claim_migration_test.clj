@@ -61,6 +61,14 @@
         [{:num 1 :file "0001-one.md" :status "Accepted"
           :criteria [] :section-bodies {}}]))))
 
+(deftest baseline-generation-rejects-a-duplicate-source-coordinate-test
+  (let [coordinates (migration/normative-coordinate-inventory)]
+    (with-redefs [migration/normative-coordinate-inventory
+                  (fn [] (conj coordinates (first coordinates)))]
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo #"duplicate normative coordinate"
+           (migration/baseline-value revision (adr/parse-all "docs/adr")))))))
+
 (deftest baseline-validation-test
   (let [baseline (actual-baseline)
         row (first (get baseline "criteria"))]

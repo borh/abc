@@ -10,11 +10,11 @@
 (def ^:private baseline-schema-version "abc-adr-claim-migration-baseline-v1")
 (def ^:private ledger-schema-version "abc-adr-claim-migration-v1")
 
-(def ^:private normative-coordinates
+(defn normative-coordinate-inventory []
   (let [decision-adrs [1 2 6 7 8 9 10 11 12 13 14 15 16 17 18 20 21 22
                        23 24 25 29 30 31 32 33]
         hard-rule-adrs [13 14 15 17 18 20 21 29]]
-    (set (concat (map #(vector % "Decision") decision-adrs)
+    (vec (concat (map #(vector % "Decision") decision-adrs)
                  [[14 "Decision Matrix"]]
                  (map #(vector % "Hard Rule") hard-rule-adrs)
                  [[16 "Hard Rule (carried forward from ADR 0015)"]]))))
@@ -41,7 +41,12 @@
      "original_text_hash" (criterion-text-hash body)}))
 
 (defn baseline-value [revision adrs]
-  (let [accepted (vec (accepted-adrs adrs))
+  (let [normative-coordinates (normative-coordinate-inventory)
+        duplicate-coordinates (->> normative-coordinates
+                                   frequencies
+                                   (keep (fn [[coordinate count]]
+                                           (when (< 1 count) coordinate))))
+        accepted (vec (accepted-adrs adrs))
         accepted-by-num (into {} (map (juxt :num identity) accepted))
         required-coordinates (filter (fn [[adr-number _]]
                                        (contains? accepted-by-num adr-number))
@@ -63,6 +68,9 @@
                                   row)))
                       (sort-by (juxt #(get % "adr") #(get % "section")))
                       vec)]
+    (when (seq duplicate-coordinates)
+      (throw (ex-info "Explicit inventory contains a duplicate normative coordinate"
+                      {:coordinates (vec duplicate-coordinates)})))
     (when (seq missing-coordinates)
       (throw (ex-info "Accepted ADR is missing an explicit normative coordinate"
                       {:coordinates (vec (sort missing-coordinates))})))
@@ -107,7 +115,8 @@
       [])))
 
 (defn normative-section-problems [baseline current-adrs]
-  (let [by-adr (into {} (map (juxt :num identity) current-adrs))
+  (let [normative-coordinates (normative-coordinate-inventory)
+        by-adr (into {} (map (juxt :num identity) current-adrs))
         expected (into {} (map (fn [row] [[(get row "adr") (get row "section")] row])
                                (get baseline "normative_sections")))
         original-adrs (set (map #(get % "adr") (get baseline "criteria")))]

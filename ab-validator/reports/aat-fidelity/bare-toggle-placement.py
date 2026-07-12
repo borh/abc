@@ -83,12 +83,8 @@ _REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-_SPLIT_SCRIPT = (
-    _REPO_ROOT / "reports" / "source-regions" / "terminal-provenance-split.py"
-)
-_spec = importlib.util.spec_from_file_location(
-    "terminal_provenance_split", _SPLIT_SCRIPT
-)
+_SPLIT_SCRIPT = _REPO_ROOT / "reports" / "source-regions" / "terminal-provenance-split.py"
+_spec = importlib.util.spec_from_file_location("terminal_provenance_split", _SPLIT_SCRIPT)
 assert _spec is not None and _spec.loader is not None
 _split = importlib.util.module_from_spec(_spec)
 sys.modules[_spec.name] = _split
@@ -114,9 +110,7 @@ CONTEXT_PATTERNS = {
     "keigakomi": re.compile(r"［＃[^］]*罫囲み[^］]*］"),
 }
 _TOKEN_ALTERNATION = re.compile(
-    "|".join(
-        re.escape(token) for pair in TOKENS.values() for token in pair
-    )
+    "|".join(re.escape(token) for pair in TOKENS.values() for token in pair)
 )
 _TOKEN_KIND = {
     token: (construct, kind)
@@ -129,18 +123,10 @@ _TOKEN_KIND = {
 class LineOutcome:
     """Result of running the Contract 1 grammar over one line."""
 
-    adopted_pairs: dict[str, int] = field(
-        default_factory=lambda: {c: 0 for c in CONSTRUCTS}
-    )
-    orphan_open: dict[str, int] = field(
-        default_factory=lambda: {c: 0 for c in CONSTRUCTS}
-    )
-    orphan_close: dict[str, int] = field(
-        default_factory=lambda: {c: 0 for c in CONSTRUCTS}
-    )
-    reopen: dict[str, int] = field(
-        default_factory=lambda: {c: 0 for c in CONSTRUCTS}
-    )
+    adopted_pairs: dict[str, int] = field(default_factory=lambda: {c: 0 for c in CONSTRUCTS})
+    orphan_open: dict[str, int] = field(default_factory=lambda: {c: 0 for c in CONSTRUCTS})
+    orphan_close: dict[str, int] = field(default_factory=lambda: {c: 0 for c in CONSTRUCTS})
+    reopen: dict[str, int] = field(default_factory=lambda: {c: 0 for c in CONSTRUCTS})
     interleave_events: int = 0
     proper_nestings: int = 0
     rollback_markers: int = 0
@@ -151,9 +137,7 @@ class LineOutcome:
 def classify_line(line: str) -> LineOutcome:
     """Normative two-pass model of the Contract 1 per-line grammar."""
     outcome = LineOutcome()
-    tokens = [
-        _TOKEN_KIND[match.group(0)] for match in _TOKEN_ALTERNATION.finditer(line)
-    ]
+    tokens = [_TOKEN_KIND[match.group(0)] for match in _TOKEN_ALTERNATION.finditer(line)]
     outcome.total_markers = len(tokens)
     if not tokens:
         return outcome
@@ -204,9 +188,7 @@ def sha256_hex(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def read_entry(
-    corpus_root: pathlib.Path, entry: pathlib.Path
-) -> dict[str, Any]:
+def read_entry(corpus_root: pathlib.Path, entry: pathlib.Path) -> dict[str, Any]:
     """Read one discovered candidate, mirroring the split reader's
     dispatch order exactly, but exposing the branch taken.
 
@@ -278,9 +260,7 @@ def process_entry(corpus_root_str: str, entry_str: str) -> dict[str, Any]:
         if counts:
             form_frequency[construct] = dict(counts)
     record["form_frequency"] = form_frequency
-    if not any(
-        token in text for pair in TOKENS.values() for token in pair
-    ):
+    if not any(token in text for pair in TOKENS.values() for token in pair):
         record["touched"] = False
         return record
     record["touched"] = True
@@ -336,14 +316,11 @@ def main() -> int:
 
     candidates = discover_entries(args.corpus)
     if args.jobs <= 1:
-        results = [
-            process_entry(str(args.corpus), str(entry)) for entry in candidates
-        ]
+        results = [process_entry(str(args.corpus), str(entry)) for entry in candidates]
     else:
         with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
             futures = [
-                pool.submit(process_entry, str(args.corpus), str(entry))
-                for entry in candidates
+                pool.submit(process_entry, str(args.corpus), str(entry)) for entry in candidates
             ]
             results = [future.result() for future in futures]
 
@@ -401,20 +378,13 @@ def main() -> int:
         "entries_scanned": len(ok),
         "entries_excluded": excluded,
         "recovered_zips": [
-            {"label": r["label"], "sha256": r["sha256"]}
-            for r in ok
-            if r["recovered"]
+            {"label": r["label"], "sha256": r["sha256"]} for r in ok if r["recovered"]
         ],
         "grammar_totals": grammar_totals,
         "works_touched": len(touched),
-        "works_with_invalid_lines": sum(
-            1 for r in touched if r["grammar"]["invalid_lines"]
-        ),
+        "works_with_invalid_lines": sum(1 for r in touched if r["grammar"]["invalid_lines"]),
         "form_frequency": {
-            construct: [
-                {"form": form, "count": count}
-                for form, count in counter.most_common()
-            ]
+            construct: [{"form": form, "count": count} for form, count in counter.most_common()]
             for construct, counter in form_frequency.items()
         },
         "touched_entries": [

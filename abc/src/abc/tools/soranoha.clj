@@ -22,6 +22,7 @@
             [abc.tools.soranoha-stage-publication :as stage-publication]
             [abc.tools.tar :as tar]
             [abc.tools.workflow :as workflow]
+            [babashka.cli :as cli]
             [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.string :as string])
@@ -1146,99 +1147,150 @@
       (println "work_count:" (:works-count source-snapshot-result))
       0)))
 
-(defn usage []
-  (string/join
-   "\n"
-   ["usage: soranoha <command> [args]"
-    ""
-    "commands:"
-    "  list-request-sets"
-    "  explain-request-set <label-or-request-set-json>"
-    "  resolve-request-set <label> <output-path> <source-snapshot-path>"
-    "  snapshot-index <label-or-request-set-json> <output-path>"
-    "  reproduce <label-or-request-set-json>"
-    "  validate <snapshot-root-or-index>"
-    "  validate-workflow <workflow-run-json>"
-    "  explain-snapshot <snapshot-index>"
-    "  publication-report <snapshot-root> <output-path>"
-    "  layout-report <snapshot-root> <output-path>"
-    "  stage-publication <snapshot-root> <output-root>"
-    "  source-snapshot <materialized-root> <output-root> <snapshot-scope> <snapshot-date>"
-    "  publication-rehearsal <materialized-root> <output-root> <request-set-label> <snapshot-scope> <snapshot-date>"
-    "  build-publication --aozora-root DIR --config FILE --snapshot-date YYYY-MM-DD --output-root DIR [--replace]"
-    "  annotation-join-stats <parser-ir-dir> <tokens-dir> <out-dir>"
-    "  annotation-join-stats-run <plan-json> <out-root>  (env: AB_AAT_TO_PARSER_IR_BIN, AB_MORPH_RUN_BIN)"]))
+(defn- positional-command [command-name doc arg-keys run]
+  {:cmds [command-name]
+   :fn (fn [{:keys [opts]}]
+         (apply run (map opts arg-keys)))
+   :doc doc
+   :args->opts arg-keys
+   :spec (into {}
+               (map (fn [arg-key]
+                      [arg-key {:ref (str "<" (name arg-key) ">")
+                                :coerce :string
+                                :require true}]))
+               arg-keys)
+   :restrict true})
 
-(def commands
-  {"list-request-sets" {:args 0
-                        :run list-request-sets!}
-   "explain-request-set" {:args 1
-                          :run explain-request-set!}
-   "resolve-request-set" {:args 3
-                          :run resolve-request-set!}
-   "snapshot-index" {:args 2
-                     :run snapshot-index!}
-   "reproduce" {:args 1
-                :run reproduce!}
-   "validate" {:args 1
-               :run validate!}
-   "validate-workflow" {:args 1
-                        :run validate-workflow!}
-   "explain-snapshot" {:args 1
-                       :run explain-snapshot!}
-   "publication-report" {:args 2
-                         :run publication-report!}
-   "layout-report" {:args 2
-                    :run layout-report!}
-   "stage-publication" {:args 2
-                        :run stage-publication!}
-   "source-snapshot" {:args 4
-                      :run source-snapshot!}
-   "publication-rehearsal" {:args 5
-                            :run publication-rehearsal!}
-   "build-publication" {:args :variadic
-                        :run (fn [& args]
-                               (build-publication/build-publication! args))}
-   "annotation-join-stats" {:args 3
-                            :run (fn [parser-ir-dir tokens-dir out-dir]
-                                   (annotation-join-stats/run-join-stats!
-                                    parser-ir-dir tokens-dir out-dir))}
-   "annotation-join-stats-run"
-   {:args 2
-    :run (fn [plan-file out-root]
-           (annotation-join-stats-run/run-annotation-join-stats-run!
-            {:plan-file plan-file
-             :out-root out-root
-             :converter-bin (System/getenv "AB_AAT_TO_PARSER_IR_BIN")
-             :tokenizer-bin (System/getenv "AB_MORPH_RUN_BIN")}))}})
+(def command-table
+  [(positional-command "list-request-sets"
+                       "List checked-in request sets."
+                       []
+                       (fn [] (list-request-sets!)))
+   (positional-command "explain-request-set"
+                       "Explain a request set and its identity."
+                       [:label-or-request-set-json]
+                       (fn [value] (explain-request-set! value)))
+   (positional-command "resolve-request-set"
+                       "Resolve a request set against a source snapshot."
+                       [:label :output-path :source-snapshot-path]
+                       (fn [& args] (apply resolve-request-set! args)))
+   (positional-command "snapshot-index"
+                       "Build a snapshot index from a request set."
+                       [:label-or-request-set-json :output-path]
+                       (fn [& args] (apply snapshot-index! args)))
+   (positional-command "reproduce"
+                       "Reproduce a snapshot from a request set."
+                       [:label-or-request-set-json]
+                       (fn [value] (reproduce! value)))
+   (positional-command "validate"
+                       "Validate a snapshot root or index."
+                       [:snapshot-root-or-index]
+                       (fn [value] (validate! value)))
+   (positional-command "validate-workflow"
+                       "Validate a workflow run record."
+                       [:workflow-run-json]
+                       (fn [value] (validate-workflow! value)))
+   (positional-command "explain-snapshot"
+                       "Explain a snapshot index and its identity."
+                       [:snapshot-index]
+                       (fn [value] (explain-snapshot! value)))
+   (positional-command "publication-report"
+                       "Write a publication report for a snapshot."
+                       [:snapshot-root :output-path]
+                       (fn [& args] (apply publication-report! args)))
+   (positional-command "layout-report"
+                       "Write a static-layout comparison report."
+                       [:snapshot-root :output-path]
+                       (fn [& args] (apply layout-report! args)))
+   (positional-command "stage-publication"
+                       "Stage a publication layout from a snapshot."
+                       [:snapshot-root :output-root]
+                       (fn [& args] (apply stage-publication! args)))
+   (positional-command "source-snapshot"
+                       "Materialize a publication source snapshot."
+                       [:materialized-root :output-root :snapshot-scope :snapshot-date]
+                       (fn [& args] (apply source-snapshot! args)))
+   (positional-command "publication-rehearsal"
+                       "Run the publication rehearsal workflow."
+                       [:materialized-root :output-root :request-set-label
+                        :snapshot-scope :snapshot-date]
+                       (fn [& args] (apply publication-rehearsal! args)))
+   {:cmds ["build-publication"]
+    :fn (fn [{:keys [opts]}]
+          (build-publication/build-publication! opts))
+    :doc "Build publication artifacts from an official Aozora checkout."
+    :spec {:aozora-root {:ref "DIR"
+                         :coerce :string
+                         :desc "Official aozorabunko checkout root."
+                         :require true}
+           :config {:ref "FILE"
+                    :coerce :string
+                    :desc "Soranoha publication build config JSON."
+                    :require true}
+           :snapshot-date {:ref "DATE"
+                           :coerce :string
+                           :desc "Snapshot date, YYYY-MM-DD."
+                           :require true}
+           :output-root {:ref "DIR"
+                         :coerce :string
+                         :desc "Final output root."
+                         :require true}
+           :replace {:coerce :boolean
+                     :desc "Replace an existing output root after a successful build."}
+           :concurrency {:ref "N"
+                         :coerce :long
+                         :default 0
+                         :validate {:pred #(>= % 0) :ex-msg "must be >= 0"}
+                         :desc "Worker threads (0 = all cores)."}}
+    :order [:aozora-root :config :snapshot-date :output-root
+            :replace :concurrency :help]
+    :restrict true}
+   (positional-command "annotation-join-stats"
+                       "Compare parser IR with morphological token output."
+                       [:parser-ir-dir :tokens-dir :out-dir]
+                       (fn [parser-ir-dir tokens-dir out-dir]
+                         (annotation-join-stats/run-join-stats!
+                          parser-ir-dir tokens-dir out-dir)))
+   (positional-command "annotation-join-stats-run"
+                       "Run annotation join statistics from a plan."
+                       [:plan-json :out-root]
+                       (fn [plan-file out-root]
+                         (annotation-join-stats-run/run-annotation-join-stats-run!
+                          {:plan-file plan-file
+                           :out-root out-root
+                           :converter-bin (System/getenv "AB_AAT_TO_PARSER_IR_BIN")
+                           :tokenizer-bin (System/getenv "AB_MORPH_RUN_BIN")})))])
+
+(defn normalize-help-args [args]
+  (let [args (vec args)]
+    (cond
+      (empty? args) ["--help"]
+      (= ["help"] args) ["--help"]
+      (and (= "help" (first args)) (= 2 (count args)))
+      [(second args) "--help"]
+      :else args)))
+
+(defn- usage-error! [data]
+  (binding [*out* *err*]
+    (println (cli/format-command-error data)))
+  (throw (ex-info "soranoha CLI usage error"
+                  {:soranoha/usage-error true})))
 
 (defn run! [args]
-  (let [[command & rest-args] args]
-    (cond
-      (or (nil? command) (= command "help") (= command "--help"))
-      (do (println (usage)) 0)
-
-      (not (contains? commands command))
-      (do (binding [*out* *err*]
-            (println "unknown command:" command)
-            (println (usage)))
-          2)
-
-      (let [arity (:args (get commands command))]
-        (and (integer? arity)
-             (not= arity (count rest-args))))
-      (do (binding [*out* *err*]
-            (println "wrong arity for command:" command)
-            (println (usage)))
-          2)
-
-      :else
-      (try
-        (apply (:run (get commands command)) rest-args)
-        (catch clojure.lang.ExceptionInfo e
-          (binding [*out* *err*]
-            (println (ex-message e)))
-          1)))))
+  (try
+    (let [result (binding [cli/*exit-fn* (fn [_] nil)]
+                   (cli/dispatch command-table
+                                 (normalize-help-args args)
+                                 {:prog "soranoha"
+                                  :help true
+                                  :error-fn usage-error!}))]
+      (if (integer? result) result 0))
+    (catch clojure.lang.ExceptionInfo e
+      (if (:soranoha/usage-error (ex-data e))
+        2
+        (do (binding [*out* *err*]
+              (println (ex-message e)))
+            1)))))
 
 (defn -main [& args]
   (System/exit (run! args)))

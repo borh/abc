@@ -1193,12 +1193,13 @@
         err (java.io.StringWriter.)]
     (try
       (binding [*err* err]
-        (is (= 1 (soranoha/run!
+        (is (= 2 (soranoha/run!
                   ["build-publication"
                    "--aozora-root" (str aozora-root)
                    "--config" "abc/config/publication-basic-ja.json"
                    "--output-root" (str output-root)]))))
-      (is (string/includes? (str err) "snapshot-date is required"))
+      (is (string/includes? (str err) "Required option"))
+      (is (string/includes? (str err) "--snapshot-date"))
       (is (not (.exists output-root)))
       (finally
         (delete-tree! root)))))
@@ -1257,7 +1258,7 @@
             err (java.io.StringWriter.)]
         (binding [*out* out *err* err]
           (is (= 0 (soranoha/run! args))))
-        (is (string/includes? (str out) "usage: soranoha"))
+        (is (string/includes? (str out) "Usage: soranoha"))
         (is (string/blank? (str err))))))
   (testing "unknown command is status 2 on stderr"
     (let [out (java.io.StringWriter.)
@@ -1265,15 +1266,58 @@
       (binding [*out* out *err* err]
         (is (= 2 (soranoha/run! ["nope"]))))
       (is (string/blank? (str out)))
-      (is (string/includes? (str err) "unknown command"))))
+      (is (string/includes? (str err) "Unknown command: nope"))))
   (testing "fixed positional arity is status 2 on stderr"
     (let [err (java.io.StringWriter.)]
       (binding [*err* err]
         (is (= 2 (soranoha/run! ["snapshot-index"]))))
-      (is (string/includes? (str err) "wrong arity")))))
+      (is (string/includes? (str err) "Required option")))))
+
+(deftest generated-command-help-test
+  (doseq [args [["help" "snapshot-index"]
+                ["snapshot-index" "--help"]
+                ["snapshot-index" "-h"]]]
+    (let [out (java.io.StringWriter.)
+          err (java.io.StringWriter.)]
+      (binding [*out* out *err* err]
+        (is (= 0 (soranoha/run! args))))
+      (is (string/includes? (str out) "Usage: soranoha snapshot-index"))
+      (is (string/includes? (str out) "<label-or-request-set-json>"))
+      (is (string/includes? (str out) "<output-path>"))
+      (is (string/includes? (str out) "--help"))
+      (is (string/blank? (str err))))))
+
+(deftest generated-build-publication-help-test
+  (let [out (with-out-str
+              (is (= 0 (soranoha/run! ["build-publication" "--help"]))))]
+    (doseq [fragment ["--aozora-root" "--config" "--snapshot-date"
+                      "--output-root" "--replace" "--concurrency" "--help"]]
+      (is (string/includes? out fragment)))))
+
+(deftest generated-global-help-lists-commands-test
+  (let [out (with-out-str
+              (is (= 0 (soranoha/run! ["--help"]))))]
+    (is (string/includes? out "Usage: soranoha"))
+    (is (string/includes? out "Commands:"))
+    (doseq [command ["snapshot-index" "build-publication"
+                     "annotation-join-stats-run"]]
+      (is (string/includes? out command)))))
+
+(deftest command-help-does-not-run-command-test
+  (let [ran? (atom false)]
+    (with-redefs [soranoha/snapshot-index! (fn [& _] (reset! ran? true))]
+      (is (= 0 (soranoha/run! ["snapshot-index" "--help"]))))
+    (is (false? @ran?))))
+
+(deftest malformed-help-requests-are-usage-errors-test
+  (doseq [args [["help" "nope"] ["help" "snapshot-index" "extra"]]]
+    (let [err (java.io.StringWriter.)]
+      (binding [*err* err]
+        (is (= 2 (soranoha/run! args))))
+      (is (not (string/blank? (str err)))))))
 
 (deftest unknown-command-returns-nonzero-test
   (let [err (java.io.StringWriter.)]
     (binding [*err* err]
       (is (= 2 (soranoha/run! ["nope"]))))
-    (is (string/includes? (str err) "unknown command"))))
+    (is (string/includes? (str err) "Unknown command"))))

@@ -14,24 +14,12 @@
             [abc.tools.workflow :as workflow]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]
-            [clojure.string :as string]
-            [clojure.tools.cli :as cli])
+            [clojure.string :as string])
   (:import [java.nio.file Files StandardCopyOption]
            [java.util.zip ZipEntry ZipFile]))
 
 (def config-schema-path
   "schemas/soranoha-publication-build-config.schema.json")
-
-;; Temporary compatibility for the handwritten dispatcher. Removed when the
-;; soranoha command table becomes the sole parser.
-(def ^:private legacy-cli-options
-  [[nil "--aozora-root DIR" :id :aozora-root]
-   [nil "--config FILE" :id :config]
-   [nil "--snapshot-date DATE" :id :snapshot-date]
-   [nil "--output-root DIR" :id :output-root]
-   [nil "--replace" :id :replace :default false]
-   [nil "--concurrency N" :id :concurrency :default 0
-    :parse-fn #(Long/parseLong %)]])
 
 (defn- normalized-path [file]
   (string/replace (str file) "\\" "/"))
@@ -535,13 +523,10 @@
   (let [n (long (or requested 0))]
     (if (pos? n) n (.availableProcessors (Runtime/getRuntime)))))
 
-(defn- parse-args [args-or-options]
-  (let [options (if (map? args-or-options)
-                  args-or-options
-                  (:options (cli/parse-opts args-or-options legacy-cli-options)))]
-    (reduce (fn [opts k] (update opts k resolve-invocation-path))
-            options
-            [:aozora-root :config :output-root])))
+(defn- parse-args [options]
+  (reduce (fn [opts k] (update opts k resolve-invocation-path))
+          options
+          [:aozora-root :config :output-root]))
 
 (defn- prepare-output-root! [output-root replace?]
   (let [output-root-file (io/file output-root)]

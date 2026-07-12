@@ -351,6 +351,13 @@
         (is (contains? #{"missing-at-ref" "unreadable-zip"
                          "no-csv-entry" "no-data-rows"}
                        (get e "reason")))))
+    (testing "pair-chain contiguity and pin tail"
+      (is (= (get doc "pin_rev") (get (peek pairs) "current_ref"))
+          "the pin must be the final pair's current_ref")
+      (doseq [[a b] (partition 2 1 pairs)]
+        (is (= (get a "current_ref") (get b "previous_ref"))
+            (str "chain break between " (get a "period")
+                 " and " (get b "period")))))
     (testing "pin coupling: baseline pin == abc/flake.lock pin"
       (is (= (replay/locked-pin "flake.lock") (get doc "pin_rev"))
           (str "baseline pin_rev disagrees with abc/flake.lock — after a pin "

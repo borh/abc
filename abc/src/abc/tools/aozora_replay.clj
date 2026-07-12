@@ -347,26 +347,26 @@
 (defn run-replay!
   "Run one replay in :check or :update mode. Returns a result map with
   ::exit-fail? set for CLI dispatch."
-  [{:keys [check baseline] update? :update :as opts}]
-  (let [doc (replay-doc! opts)]
-    (cond
-      update?
-      (do (abc-json/write-deterministic-json-file! (io/file baseline) doc)
-          {:mode "update" :baseline (str baseline)
-           :pairs (count (get doc "pairs"))
-           :excluded (count (get doc "excluded"))
-           ::exit-fail? false})
-
-      check
-      (let [old (try (abc-json/read-json-file baseline)
-                     (catch Exception e
-                       (throw (ex-info (str "baseline unreadable: " baseline)
-                                       {:baseline (str baseline)} e))))
-            {:keys [verdict pair-changes]} (classify-diff old doc)]
-        {:mode "check" :baseline (str baseline)
-         :verdict (name verdict)
-         :pair_changes pair-changes
-         ::exit-fail? (not= :unchanged verdict)}))))
+  [{:keys [baseline] update? :update :as opts}]
+  (if update?
+    (let [doc (replay-doc! opts)]
+      (abc-json/write-deterministic-json-file! (io/file baseline) doc)
+      {:mode "update" :baseline (str baseline)
+       :pairs (count (get doc "pairs"))
+       :excluded (count (get doc "excluded"))
+       ::exit-fail? false})
+    ;; check: read the committed baseline BEFORE the replay so an
+    ;; unreadable file fails in milliseconds, not after the scan
+    (let [old (try (abc-json/read-json-file baseline)
+                   (catch Exception e
+                     (throw (ex-info (str "baseline unreadable: " baseline)
+                                     {:baseline (str baseline)} e))))
+          doc (replay-doc! opts)
+          {:keys [verdict pair-changes]} (classify-diff old doc)]
+      {:mode "check" :baseline (str baseline)
+       :verdict (name verdict)
+       :pair_changes pair-changes
+       ::exit-fail? (not= :unchanged verdict)})))
 
 (def ^:private cli-options
   [[nil "--check" "Compare a fresh replay against the committed baseline"]
@@ -400,7 +400,10 @@
                     {:check (boolean check) :update (boolean update?)})))
   (let [pin (locked-pin "flake.lock")
         baseline (or baseline default-baseline-path)
-        default-baseline? (= baseline default-baseline-path)]
+        ;; canonical compare: the guard must not be bypassable by path
+        ;; spelling (./, absolute, ..) of the committed baseline
+        default-baseline? (= (.getCanonicalPath (io/file baseline))
+                             (.getCanonicalPath (io/file default-baseline-path)))]
     (when (and update? default-baseline?
                (or (not= "year" sample-period)
                    (some? from-ref)

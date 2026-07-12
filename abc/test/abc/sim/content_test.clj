@@ -3,6 +3,11 @@
   selection/status oracles) added by the content-side evolution spec."
   (:require [abc.sim.gen :as sgen]
             [abc.sim.model :as model]
+            [abc.sim.oracle :as oracle]
+            [abc.sim.render :as render]
+            [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
+            [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [clojure.test.check.generators :as gen]))
 
@@ -76,3 +81,51 @@
                                30 seed)
             fold (model/fold-history hist)]
         (is (every? #(<= (count (:contents %)) 4) (:states fold)))))))
+
+(defn- two-work-content-state []
+  (-> (model/bootstrap 2)
+      (assoc-in [:contents "000101"] {:text "作品000101 本文 春"})))
+
+(deftest card-pid-test
+  (let [m (-> (model/bootstrap 2)
+              (assoc-in [:edges ["000101" "翻訳者"]] #{"000002"}))
+        proj (oracle/projection m)]
+    (is (= "000001" (oracle/card-pid proj "000101")))
+    (is (= "000002" (oracle/card-pid proj "000102")))))
+
+(deftest content-render-test
+  (let [m (two-work-content-state)
+        rows (render/model->rows m)
+        row101 (first (filter #(= "000101" (get % "作品ID")) rows))
+        row102 (first (filter #(= "000102" (get % "作品ID")) rows))]
+    (is (some #(= "テキストファイルURL" %) render/headers))
+    (is (= "https://www.aozora.gr.jp/cards/000001/files/000101_t.zip"
+           (get row101 "テキストファイルURL")))
+    (is (= "" (get row102 "テキストファイルURL")))))
+
+(deftest text->zip-bytes-deterministic-test
+  (let [a (render/text->zip-bytes "作品000101 本文" "000101")
+        b (render/text->zip-bytes "作品000101 本文" "000101")
+        c (render/text->zip-bytes "作品000101 改" "000101")]
+    (is (java.util.Arrays/equals ^bytes a ^bytes b))
+    (is (not (java.util.Arrays/equals ^bytes a ^bytes c)))))
+
+(deftest write-aozora-root-test
+  (let [dir (render/temp-dir "sim-aroot")]
+    (try
+      (let [m (two-work-content-state)]
+        (render/write-aozora-root! dir m)
+        (is (.isFile (io/file dir render/zip-path)))
+        (is (.isFile (io/file dir "cards/000001/files/000101_t.zip")))
+        (is (.isFile (io/file dir "cards/999999/files/decoy.zip")))
+        (is (.isFile (io/file dir "support/tools.zip")))
+        (is (= "sim-fixture-head\n" (slurp (io/file dir ".git/HEAD"))))
+        (let [srcs (render/content-sources m)]
+          (is (= ["000101"] (vec (keys srcs))))
+          (is (= "cards/000001/files/000101_t.zip"
+                 (get-in srcs ["000101" :relpath])))
+          ;; the oracle pin equals the sha256 of the file actually written
+          (is (= (hash/format-sha256
+                  (files/sha256-file (io/file dir "cards/000001/files/000101_t.zip")))
+                 (get-in srcs ["000101" :source-hash])))))
+      (finally (render/delete-tree! dir)))))

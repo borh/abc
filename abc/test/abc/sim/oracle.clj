@@ -123,3 +123,14 @@
                  (and cp (nil? pp))
                  {"person_id" pid "change_type" "added"})))
            (sort participant-pids)))))
+
+(defn card-pid
+  "Person directory for a work's content zip: smallest pid over all of the
+  work's edges in the projection. Deterministic; shared by render (URL and
+  on-disk path) and the selection oracle. Intentionally NOT the slug's
+  person_id, which follows catalog-index's last-row-wins rule."
+  [proj wid]
+  (->> (:edges proj)
+       (keep (fn [[[ewid _rel] pids]] (when (= ewid wid) pids)))
+       (reduce into (sorted-set))
+       first))

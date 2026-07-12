@@ -5,6 +5,7 @@
   (:require [abc.sim.oracle :as oracle]
             [abc.tools.aozora-ingest :as ingest]
             [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.json :as json]
             [abc.tools.malli :as am]
             [charred.api :as charred]
@@ -23,6 +24,7 @@
   (vec (sort ["作品ID" "人物ID" "役割フラグ" "作品名" "作品名読み" "ソート用読み"
               "副題" "副題読み" "原題" "初出" "分類番号" "文字遣い種別"
               "作品著作権フラグ" "公開日" "最終更新日" "図書カードURL"
+              "テキストファイルURL"
               "底本名1" "底本出版社名1" "底本名2" "底本出版社名2"
               "底本初版発行年1" "底本初版発行年2"
               "入力に使用した版1" "入力に使用した版2"
@@ -54,16 +56,26 @@
    "図書カードURL" (str "https://www.aozora.gr.jp/cards/000001/card" wid ".html")
    "底本名1" (:edition_title w) "底本出版社名1" (:edition_publisher w)})
 
+(defn content-zip-name [wid] (str wid "_t.zip"))
+
+(defn- content-cells [m proj wid]
+  (if (contains? (:contents m) wid)
+    {"テキストファイルURL"
+     (str "https://www.aozora.gr.jp/cards/" (oracle/card-pid proj wid)
+          "/files/" (content-zip-name wid))}
+    {}))
+
 (defn model->rows
-  "One row per work-contributor-role tuple of projection(model), all 43
+  "One row per work-contributor-role tuple of projection(model), all 44
   headers present (blank when inapplicable), sorted by [wid relation pid]."
   [m]
-  (let [{:keys [persons works edges]} (oracle/projection m)]
+  (let [{:keys [persons works edges] :as proj} (oracle/projection m)]
     (vec (for [[[wid rel] pids] (sort edges)
                pid (sort pids)]
            (merge (zipmap headers (repeat ""))
                   (work-cells wid (get works wid))
                   (person-cells pid (get persons pid))
+                  (content-cells m proj wid)
                   {"役割フラグ" rel})))))
 
 (defn rows->csv
@@ -164,6 +176,54 @@
              (.write zip (.getBytes ^String csv StandardCharsets/UTF_8))))
        (.closeEntry zip))
      (.toByteArray out))))
+
+(defn text->zip-bytes
+  "Deterministic ZIP bytes for a work's text content: single member
+  <wid>.txt, UTF-8 text bytes, fixed entry mtime (same discipline as
+  csv->zip-bytes — byte-identical text ⇒ byte-identical zip, which is what
+  makes the reuse oracle sound)."
+  [text wid]
+  (let [out (ByteArrayOutputStream.)]
+    (with-open [zip (ZipOutputStream. out)]
+      (.putNextEntry zip (doto (ZipEntry. (str wid ".txt")) (.setTime 0)))
+      (.write zip (.getBytes ^String text StandardCharsets/UTF_8))
+      (.closeEntry zip))
+    (.toByteArray out)))
+
+(defn content-sources
+  "Per projected content-bearing work: card dir, basename, relpath, and the
+  sha256 pin of the exact ZIP bytes write-aozora-root! writes. Single source
+  of truth for paths and hashes on the oracle side."
+  [m]
+  (let [proj (oracle/projection m)]
+    (into (sorted-map)
+          (for [[wid {:keys [text]}] (:contents m)
+                :when (contains? (:works proj) wid)]
+            (let [cp (oracle/card-pid proj wid)]
+              [wid {:card-pid cp
+                    :basename (content-zip-name wid)
+                    :relpath (str "cards/" cp "/files/" (content-zip-name wid))
+                    :source-hash (hash/format-sha256
+                                  (hash/sha256-bytes (text->zip-bytes text wid)))}])))))
+
+(defn write-aozora-root!
+  "Render a model state as a plain aozora-root: catalog ZIP, per-work
+  content ZIPs (from content-sources, so paths/hashes agree with the
+  oracle), two deterministic rejection decoys, and a fake .git/HEAD (git
+  provenance is best-effort in the SUT)."
+  [dir m]
+  (let [write-bytes! (fn [relpath ^bytes bs]
+                       (let [f (io/file dir relpath)]
+                         (io/make-parents f)
+                         (with-open [o (io/output-stream f)] (.write o bs))))]
+    (write-bytes! zip-path (csv->zip-bytes (rows->csv (model->rows m))))
+    (doseq [[wid {:keys [relpath]}] (content-sources m)]
+      (write-bytes! relpath (text->zip-bytes (get-in m [:contents wid :text]) wid)))
+    (write-bytes! "cards/999999/files/decoy.zip" (text->zip-bytes "decoy 999999" "999999"))
+    (write-bytes! "support/tools.zip" (text->zip-bytes "tools 000000" "000000"))
+    (let [head (io/file dir ".git/HEAD")]
+      (io/make-parents head)
+      (spit head "sim-fixture-head\n"))))
 
 (defn init-repo! [dir]
   (-> (Git/init) (.setDirectory (io/file dir)) .call))

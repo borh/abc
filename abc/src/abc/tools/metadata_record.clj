@@ -94,15 +94,6 @@
     (cond-> {:rdf/value (get work "title")}
       reading (assoc :dcndl/titleTranscription reading))))
 
-(def ^:private public-domain-mark-iri
-  "<https://creativecommons.org/publicdomain/mark/1.0/>")
-
-(def ^:private in-copyright-iri
-  "<http://rightsstatements.org/vocab/InC/1.0/>")
-
-(defn- rights-iri [copyright-expired?]
-  (if copyright-expired? public-domain-mark-iri in-copyright-iri))
-
 (defn- contributor-blank [contributor]
   {:rdf/about (person-iri-bracketed (get contributor "person_id"))
    :dcterms/role (get contributor "relation_to_work")})
@@ -116,7 +107,6 @@
              :dcterms/identifier (->int-literal (get work "work_id"))
              :dcterms/title (title-blank-node work)
              :abc/orthographicStyle (get work "orthographic_style")
-             :dcterms/rights (rights-iri (get work "copyright_expired"))
              :dcterms/available (->date-literal (get work "aozora_available"))
              :dcterms/modified (->date-literal (get work "aozora_modified"))}
       (get work "ndc")

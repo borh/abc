@@ -211,7 +211,6 @@ abc:MetadataRecordWorkShape
   ] ;
   sh:property [
     sh:path dcterms:rights ;
-    sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:in (

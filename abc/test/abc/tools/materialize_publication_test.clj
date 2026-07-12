@@ -4,11 +4,47 @@
             [abc.tools.materialize-publication :as materialize]
             [abc.tools.parser-ir-publication-policy :as policy]
             [abc.tools.schema :as schema]
+            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
+
+(deftest rights-publication-containment-policy-is-active-test
+  (let [policy-file (io/file "data/publication-policy.edn")]
+    (is (.isFile policy-file) "rights publication policy must be checked in")
+    (when (.isFile policy-file)
+      (is (= :blocked-pending-assessment-migration
+             (:rights-publication (edn/read-string (slurp policy-file))))))))
+
+(deftest release-publication-is-blocked-during-rights-containment-test
+  (let [guard (try
+                (requiring-resolve
+                 'abc.tools.publication-policy/assert-release-allowed!)
+                (catch java.io.FileNotFoundException _ nil))]
+    (is (some? guard) "the release publication boundary must have a policy guard")
+    (when guard
+      (try
+        (guard)
+        (is false "release publication must be blocked during containment")
+        (catch clojure.lang.ExceptionInfo e
+          (is (= :blocked-pending-assessment-migration
+                 (:reason (ex-data e)))))))))
+
+(deftest release-materializer-crosses-the-rights-policy-boundary-test
+  (let [release-materializer
+        (ns-resolve 'abc.tools.materialize-publication
+                    'materialize-release-publication!)]
+    (is (some? release-materializer)
+        "release materialization must be distinct from fixture rendering")
+    (when release-materializer
+      (try
+        (release-materializer {})
+        (is false "the release materializer must fail before reading inputs")
+        (catch clojure.lang.ExceptionInfo e
+          (is (= :blocked-pending-assessment-migration
+                 (:reason (ex-data e)))))))))
 
 (def generated-at "2026-07-03T00:00:00Z")
 

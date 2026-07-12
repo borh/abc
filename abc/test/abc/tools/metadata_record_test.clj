@@ -4,7 +4,8 @@
             [abc.tools.malli :as am]
             [abc.tools.metadata-record :as mr]
             [clojure.string :as string]
-            [clojure.test :refer [deftest is testing use-fixtures]]))
+            [clojure.test :refer [deftest is testing use-fixtures]])
+  (:import [org.apache.jena.graph NodeFactory]))
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
 
@@ -103,6 +104,39 @@
       (is (contains? predicates "http://purl.org/dc/terms/title"))
       (is (contains? predicates "http://purl.org/dc/terms/creator"))
       (is (contains? predicates "http://purl.org/dc/terms/identifier")))))
+
+(deftest unassessed-copyright-flags-emit-no-external-rights-test
+  (testing "no legacy source flag implies an external rights statement"
+    (doseq [[label record]
+            [["true" (assoc-in @example-record ["work" "copyright_expired"] true)]
+             ["false" (assoc-in @example-record ["work" "copyright_expired"] false)]
+             ["nil" (assoc-in @example-record ["work" "copyright_expired"] nil)]
+             ["malformed" (assoc-in @example-record ["work" "copyright_expired"]
+                                    "unknown")]
+             ["absent" (update @example-record "work" dissoc
+                               "copyright_expired")]]]
+      (let [triples (iterator-seq (.find (mr/record->graph record)))
+            rights (filter #(= "http://purl.org/dc/terms/rights"
+                               (.getURI (.getPredicate %)))
+                           triples)]
+        (is (empty? rights)
+            (str "source state " label
+                 " must not emit dcterms:rights"))))))
+
+(deftest source-only-rights-graph-conforms-to-shacl-test
+  (testing "the metadata SHACL contract permits a work with no external rights IRI"
+    (let [shapes ((requiring-resolve 'abc.tools.shacl/load-shapes-graph))
+          data (mr/record+persons->graph
+                (assoc-in @example-record ["work" "copyright_expired"] false)
+                @example-persons-by-id)
+          rights-predicate (NodeFactory/createURI
+                            "http://purl.org/dc/terms/rights")]
+      (doseq [triple (iterator-seq (.find data nil rights-predicate nil))]
+        (.delete data triple))
+      (is (= :ok ((requiring-resolve 'abc.tools.shacl/validate!)
+                  {:shapes-graph shapes
+                   :data-graph data
+                   :label "source-only-rights"}))))))
 
 (deftest record+persons->ttl-matches-fixture-test
   (testing "compose-graph + ttl matches the committed metadata-record.ttl"

@@ -6,6 +6,7 @@
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.parser-ir-plaintext :as plaintext]
             [abc.tools.parser-ir-publication-policy :as policy]
+            [abc.tools.publication-policy :as publication-policy]
             [abc.tools.parser-ir-sentence-policy :as sentence-policy]
             [abc.tools.parser-ir-tei :as parser-ir-tei]
             [abc.tools.schematron :as schematron]
@@ -615,6 +616,13 @@
      :tei-manifest tei-manifest-file
      :tei-validation-result tei-validation-result-file}))
 
+(defn materialize-release-publication!
+  "Materialize release-facing artifacts after the global rights gate.
+  Development fixture validation calls materialize-publication! directly."
+  [opts]
+  (publication-policy/assert-release-allowed!)
+  (materialize-publication! opts))
+
 (defn- batch-job-value [job key]
   (or (get job key)
       (get job (name key))))
@@ -775,7 +783,8 @@
                          positional-generated-at
                          default-generated-at)]
     (if (:batch options)
-      (let [summary (materialize-publications-batch!
+      (let [_ (publication-policy/assert-release-allowed!)
+            summary (materialize-publications-batch!
                      {:batch-path (:batch options)
                       :summary-path (:summary options)
                       :jobs (:jobs options)})]
@@ -794,11 +803,12 @@
           (usage)
           (System/exit 2))
         (do
-          (materialize-publication! {:parser-ir-path parser-ir-path
-                                     :metadata-record-path metadata-record-path
-                                     :persons-dir persons-dir
-                                     :output-dir output-dir
-                                     :source-manifest-path (:source-manifest options)
-                                     :generated-at generated-at})
+          (materialize-release-publication!
+           {:parser-ir-path parser-ir-path
+            :metadata-record-path metadata-record-path
+            :persons-dir persons-dir
+            :output-dir output-dir
+            :source-manifest-path (:source-manifest options)
+            :generated-at generated-at})
           (tel/log! :info (str "materialized publication artifacts to "
                                output-dir)))))))

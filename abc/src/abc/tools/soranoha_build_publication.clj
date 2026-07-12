@@ -7,6 +7,7 @@
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-publication :as materialize-publication]
+            [abc.tools.publication-policy :as publication-policy]
             [abc.tools.schema :as schema]
             [abc.tools.workflow :as workflow]
             [clojure.java.io :as io]
@@ -699,6 +700,7 @@
     (when (string/blank? snapshot-date)
       (throw (ex-info "snapshot-date is required for build-publication"
                       {:config config})))
+    (publication-policy/assert-release-allowed!)
     (let [prior-output-root (let [f (io/file output-root)]
                               (when (.isDirectory f) (str f)))
           tmp-root (prepare-output-root! output-root replace)]

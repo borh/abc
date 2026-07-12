@@ -4,6 +4,7 @@ Status: Accepted
 Date: 2026-04-29
 Accepted: 2026-04-29
 Amends: ADR 0017
+Amended by: ADR 0034 [scope: Boolean-to-external-rights RDF mapping]
 
 ## Implementation Status
 

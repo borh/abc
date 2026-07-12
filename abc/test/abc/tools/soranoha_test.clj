@@ -3,6 +3,7 @@
             [abc.tools.json :as abc-json]
             [abc.tools.manifest :as manifest]
             [abc.tools.parser-evidence :as parser-evidence]
+            [abc.tools.publication-policy :as publication-policy]
             [abc.tools.request-set-resolver :as resolver]
             [abc.tools.source-snapshot-fixture :as fixture]
             [abc.tools.snapshot-index :as snapshot-index]
@@ -589,11 +590,13 @@
         (let [staged-index-file (io/file staged-root "index.json")
               analysis-archive-file (io/file staged-root
                                              "artifacts/analysis/batches/analysis-batch-0001.tar.zst")
-              out (with-out-str
-                    (is (zero? (soranoha/run!
-                                ["stage-publication"
-                                 (str snapshot-root)
-                                 (str staged-root)]))))]
+              out (with-redefs [publication-policy/assert-release-allowed!
+                                (constantly :ok)]
+                    (with-out-str
+                      (is (zero? (soranoha/run!
+                                  ["stage-publication"
+                                   (str snapshot-root)
+                                   (str staged-root)])))))]
           (is (string/includes? out (str staged-index-file)))
           (is (.exists staged-index-file))
           (when (.exists staged-index-file)
@@ -736,15 +739,17 @@
         aozora-root (official-aozora-fixture! (io/file root "aozorabunko"))
         output-root (io/file root "build-output")]
     (try
-      (let [out (binding [build-publication/*derive-parser-ir!*
-                          stub-derive-parser-ir!]
-                  (with-out-str
-                    (is (zero? (soranoha/run!
-                                ["build-publication"
-                                 "--aozora-root" (str aozora-root)
-                                 "--config" "abc/config/publication-basic-ja.json"
-                                 "--snapshot-date" "2026-07-08"
-                                 "--output-root" (str output-root)])))))
+      (let [out (with-redefs [publication-policy/assert-release-allowed!
+                              (constantly :ok)]
+                  (binding [build-publication/*derive-parser-ir!*
+                            stub-derive-parser-ir!]
+                    (with-out-str
+                      (is (zero? (soranoha/run!
+                                  ["build-publication"
+                                   "--aozora-root" (str aozora-root)
+                                   "--config" "abc/config/publication-basic-ja.json"
+                                   "--snapshot-date" "2026-07-08"
+                                   "--output-root" (str output-root)]))))))
             slug "000001_000879_000001_ruby_fixture"
             work-dir (io/file output-root "materialized-root" "works" slug)
             official-source-file (io/file work-dir "official-source.json")
@@ -801,6 +806,30 @@
                          (str build-workflow-run-file)]))))))
       (finally
         (delete-tree! root)))))
+
+(deftest build-publication-command-is-blocked-by-rights-containment-test
+  (let [root (fixture/temp-dir "abc-rights-publication-block")]
+    (try
+      (try
+        (build-publication/build-publication!
+         ["--aozora-root" "."
+          "--config" "abc/config/publication-basic-ja.json"
+          "--snapshot-date" "2026-07-08"
+          "--output-root" (str (io/file root "publication"))])
+        (is false "release publication must be blocked before materialization")
+        (catch clojure.lang.ExceptionInfo e
+          (is (= :blocked-pending-assessment-migration
+                 (:reason (ex-data e))))))
+      (finally
+        (delete-tree! root)))))
+
+(deftest stage-publication-command-is-blocked-by-rights-containment-test
+  (try
+    (soranoha/stage-publication! "missing-snapshot" "missing-output")
+    (is false "staging must be blocked before reading a snapshot")
+    (catch Throwable e
+      (is (= :blocked-pending-assessment-migration
+             (:reason (ex-data e)))))))
 
 (deftest build-publication-command-requires-snapshot-date-for-publication-config-test
   (let [root (fixture/temp-dir "abc-soranoha-build-publication-date")

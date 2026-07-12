@@ -12,6 +12,7 @@
             [abc.tools.materialize-publication :as materialize-publication]
             [abc.tools.materialize-source-snapshot :as materialize-source-snapshot]
             [abc.tools.parser-evidence :as parser-evidence]
+            [abc.tools.publication-policy :as publication-policy]
             [abc.tools.request-set-resolver :as request-set-resolver]
             [abc.tools.schema :as schema]
             [abc.tools.source-snapshot-workset :as source-snapshot-workset]
@@ -791,6 +792,7 @@
       0)))
 
 (defn stage-publication! [snapshot-root output-root]
+  (publication-policy/assert-release-allowed!)
   (let [root (io/file snapshot-root)
         output-root (io/file output-root)
         snapshot (read-valid-snapshot-index root)]

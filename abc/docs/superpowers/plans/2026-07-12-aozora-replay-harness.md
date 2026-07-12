@@ -15,7 +15,7 @@
 - Verdicts (spec §diff classification, verbatim semantics): `configuration-change` (header fields `baseline_format|zip_path|sample_period|remote_url` differ) / `pin-bump-shaped` (`pin_rev` changed; common pairs byte-identical except the final old pair may be replaced ONLY as same `previous_ref` + different `current_ref`; adds only appended; exclusions only for periods newer than the old final period) / `behavioral-change` (everything else, incl. ANY change while `pin_rev` unchanged).
 - Authoritative lock: `abc/flake.lock` (`nodes.aozorabunko-src.locked.rev`); root `flake.lock` must agree.
 - Baseline document: `baseline_format` 1; fields exactly as spec §Baseline document; deterministic JSON; no timestamps, no filesystem paths.
-- Defaults: remote-url `https://github.com/aozorabunko/aozorabunko.git`; zip-path `index_pages/list_person_all_extended_utf8.zip`; cache dir `$XDG_CACHE_HOME/abc/aozorabunko` (fallback `~/.cache/abc/aozorabunko`); baseline `test/resources/aozora-replay-baseline.json`; work-dir `out/aozora-replay`; sample-period `year`.
+- Defaults: remote-url `https://github.com/aozorabunko/aozorabunko.git`; zip-path `index_pages/list_person_all_extended_utf8.zip`; cache dir `/db/abc/cache/aozorabunko` (NEVER `~/.cache` — small tmpfs on the primary workstation; multi-GB artifacts belong on `/db/` or in-repo); baseline `test/resources/aozora-replay-baseline.json`; work-dir `out/aozora-replay`; sample-period `year`.
 - `--aozora-repo` disables ONLY `ensure-clone!`; prefetch/pre-validation always run.
 - `--update` of the DEFAULT baseline path refuses non-default `--sample-period`/`--from-ref`/explicit `--to-ref` differing from the lock pin.
 - Git shell-outs use argv vectors (never string interpolation); exactly: `clone --filter=blob:none --no-checkout`, `remote get-url origin`, `fetch`, `cat-file`.
@@ -526,10 +526,12 @@ Append after the pure fns:
 ;; ---------------------------------------------------------------------
 ;; Git effects: managed partial clone + tiered blob availability.
 
-(defn default-cache-dir []
-  (str (io/file (or (System/getenv "XDG_CACHE_HOME")
-                    (str (System/getProperty "user.home") "/.cache"))
-                "abc" "aozorabunko")))
+(defn default-cache-dir
+  "Managed-clone location. Deliberately on the /db/ data volume, not
+  ~/.cache: the partial clone is multi-GB-scale and ~/.cache is a small
+  tmpfs on the primary workstation."
+  []
+  "/db/abc/cache/aozorabunko")
 
 (defn- git*
   "Run git with argv `args` (strings), optionally in `dir`. Returns the

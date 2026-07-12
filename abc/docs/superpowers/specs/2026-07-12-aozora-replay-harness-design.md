@@ -211,8 +211,10 @@ on unchanged inputs can never masquerade as a pin bump:
 
 Flags: `--check` / `--update` (exactly one required), `--sample-period`
 (default `year`), `--to-ref` (default: the flake.lock pin), `--from-ref`,
-`--cache-dir` (default `$XDG_CACHE_HOME/abc/aozorabunko.git`, falling back to
-`~/.cache/abc/aozorabunko.git`), `--remote-url` (default the GitHub URL),
+`--cache-dir` (default `/db/abc/cache/aozorabunko` — NOT under `~/.cache`,
+which is a small tmpfs on the primary workstation; the clone is
+multi-GB-scale and belongs on the `/db/` data volume), `--remote-url`
+(default the GitHub URL),
 `--aozora-repo` (use an existing clone; disables only `ensure-clone!` —
 prefetch/pre-validation always run, unit 3, and the repo's `origin` URL,
 when it has one, must match `--remote-url` exactly as the managed cache's

@@ -119,16 +119,27 @@ Append to `abc/test/abc/tools/source_bundle_test.clj`:
 
 (deftest efs-count-is-independent-of-decoder-name-source-test
   (with-zips
-    [zip (write-zip!
-          (temp-file ".zip")
-          [["作品.txt" (utf8-bytes "本文")]]
-          {:efs true
-           :unicode-extra
-           ZipArchiveOutputStream$UnicodeExtraFieldPolicy/ALWAYS})]
-    (let [scan (source-bundle/scan-zip zip)]
-      (is (= "unicode-extra" (get-in scan [:members 0 "name_source"])))
-      (is (= 1 (get-in scan [:stats :utf8-count])))
-      (is (= 0 (get-in scan [:stats :legacy-count])))))
+    [efs-zip (write-zip!
+              (temp-file ".zip")
+              [["作品.txt" (utf8-bytes "本文")]]
+              {:efs true
+               :unicode-extra
+               ZipArchiveOutputStream$UnicodeExtraFieldPolicy/NEVER})
+     extra-zip (write-zip!
+                (temp-file ".zip")
+                [["作品.txt" (utf8-bytes "本文")]]
+                {:efs false
+                 :unicode-extra
+                 ZipArchiveOutputStream$UnicodeExtraFieldPolicy/ALWAYS})]
+    (let [efs-scan (source-bundle/scan-zip efs-zip)
+          extra-scan (source-bundle/scan-zip extra-zip)]
+      (is (= "efs-utf8" (get-in efs-scan [:members 0 "name_source"])))
+      (is (= [1 0] [(get-in efs-scan [:stats :utf8-count])
+                    (get-in efs-scan [:stats :legacy-count])]))
+      (is (= "unicode-extra"
+             (get-in extra-scan [:members 0 "name_source"])))
+      (is (= [0 1] [(get-in extra-scan [:stats :utf8-count])
+                    (get-in extra-scan [:stats :legacy-count])]))))
 
 (deftest bounded-scan-pins-declared-versus-actual-bytes-test
   (with-zips [zip (write-zip! (temp-file ".zip")

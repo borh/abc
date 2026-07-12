@@ -160,10 +160,11 @@ asset-only bundles are readable and rejected with
 `no-primary-text-member`.
 
 `utf8_flagged_entry_count` continues to count the raw ZIP general-purpose EFS
-bit 11, not the decoder-precedence result. An entry decoded through a Unicode
-Path extra field can still be EFS-flagged; the scan therefore retains the raw
-bit separately from `name_source`. `legacy_flagged_entry_count` remains the
-complement over non-directory entries.
+bit 11, not a name-source label inferred later. Under v1 precedence an EFS-set
+entry decodes through strict UTF-8 before Unicode Path consideration, so the
+current values coincide; the scan nevertheless retains the raw bit explicitly
+to keep the report field's definition stable. `legacy_flagged_entry_count`
+remains the complement over non-directory entries.
 
 The report also pins every declared-versus-actual mismatch rather than only
 the maxima:

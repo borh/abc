@@ -241,12 +241,5 @@
       "file": "0032-parser-fork-hard-detach.md",
       "kind": "missing-release-authority",
       "message": "Accepted status requires a Release authority"
-    },
-    {
-      "file": "0031-adr-governance-validation.md",
-      "kind": "noncanonical-dependency-path",
-      "message": "Accepted ADR dependency closure contains a non-Accepted ADR",
-      "path": [31,29],
-      "target-status": "Proposed"
     }]
 }

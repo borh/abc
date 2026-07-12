@@ -1,11 +1,21 @@
 # ADR 0029: Diagrams as Gated Derived Views
 
-Status: Proposed
+Status: Accepted
 Date: 2026-07-10
+Accepted: 2026-07-12
+Validation scope: fixture
+Release authority: none
 Supersedes: none
 Amended by: ADR 0031 [scope: ADR header and decision-graph source validation]
 Depends on: ADR 0006
 Source: `docs/superpowers/plans/2026-07-10-adr-and-system-diagrams.md`
+
+## Implementation Status
+
+Accepted on 2026-07-12 after the ADR, architecture, workflow, registry, and
+renderer test namespaces passed together and the Nix diagram-drift gate
+regenerated every committed view without differences. ADR 0031's implemented
+header/parser amendment is therefore closed over an Accepted graph contract.
 
 ## Context
 

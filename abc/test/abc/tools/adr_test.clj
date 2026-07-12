@@ -474,7 +474,9 @@
 
 (deftest current-repository-audit-inventory-is-explicit
   (let [adrs (adr/parse-all "docs/adr")
-        accepted-count (count (filter #(= "Accepted" (:status %)) adrs))
+        accepted (filter #(= "Accepted" (:status %)) adrs)
+        missing-scope-count (count (filter #(nil? (:validation-scope %)) accepted))
+        missing-authority-count (count (filter #(nil? (:release-authority %)) accepted))
         problems (adr/validate-repository ".")
         dependency-paths (->> problems
                               (filter #(= :noncanonical-dependency-path
@@ -482,11 +484,10 @@
                               (map :path)
                               vec)]
     (is (= #{:missing-validation-scope
-             :missing-release-authority
-             :noncanonical-dependency-path}
+             :missing-release-authority}
            (kinds problems)))
-    (is (= (inc (* 2 accepted-count)) (count problems)))
-    (is (= [[31 29]] dependency-paths))))
+    (is (= (+ missing-scope-count missing-authority-count) (count problems)))
+    (is (= [] dependency-paths))))
 
 (deftest legacy-policy-keeps-audit-only-rules-nonblocking
   (let [dir (temp-dir)]

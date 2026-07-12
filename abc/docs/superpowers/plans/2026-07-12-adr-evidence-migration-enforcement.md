@@ -4,7 +4,7 @@
 
 **Goal:** Close the evidence migration with an immutable, non-self-referential ADR 0034 bootstrap observation and atomically promote ADR 0034 while changing the Nix governance gate from audit to enforcement.
 
-**Architecture:** Plans 1–5 leave one clean, fully evidenced pre-promotion corpus. A focused bootstrap module snapshots that exact corpus, embeds every audited byte behind a manifest, validates the closed snapshot without consulting later-mutated live files, and supplies ADR-0034-C3; two synthetic focused bundles supply C1 and C2. A detached clean Stage-A worktree supplies post-promotion input hashes for C1–C3 and the four Plan 5 bundles staled by ADR/view changes; the completed tree is soft-reset and squashed directly onto the pre-promotion parent, fully verified, then fast-forwarded onto the integration branch once.
+**Architecture:** Plans 1–5 leave one clean, fully evidenced pre-promotion corpus. A focused bootstrap module snapshots that exact corpus, embeds every audited byte behind a manifest, validates the closed snapshot without consulting later-mutated live files, and supplies ADR-0034-C3; two synthetic focused bundles supply C1 and C2. A detached clean Stage-A workspace—proved by a real root-governance build, with a full-clone fallback—supplies post-promotion input hashes for C1–C3 and the four Plan 5 bundles staled by ADR/view changes. An incremental Git bundle preserves that producer commit; the completed tree is squashed directly onto the pre-promotion parent, verified, fast-forwarded once, and immediately re-built from the integration checkout with a forward-revert safety path.
 
 **Tech Stack:** Clojure 1.12, Kaocha/clojure.test, deterministic JSON/JCS SHA-256, JSON Schema, EDN, Git, jq, Mermaid derived views, Nix flakes, Just.
 
@@ -16,12 +16,19 @@
 - Audit exit zero is not evidence. Snapshot creation and C3 capture succeed only when report `ok` is true and `problems` is empty.
 - Never hash-bind C3 to the later-mutated live registry, ADR 0034 Markdown, final report, its own run bundle, or an input manifest containing its own artifact hash.
 - The snapshot contains exact pre-promotion bytes and hashes; the validator verifies only that closed value after promotion.
+- The incremental Git bundle preserves the clean post-promotion capture basis
+  for provenance only. It does not satisfy a claim, enter the registry, or
+  replace live strict validation.
 - Checked-in descriptors are explicit inputs to their bundles. C1/C2 bind only their synthetic assertion boundary and runtime-read schemas/matrix, never the live ADR corpus.
+- C1/C2/C3 descriptors consume Plan 1's checked runtime-input manifests; no
+  executable bootstrap bundle relies on namespace closure alone.
 - Capture from a clean committed pre-promotion tree into an external staging directory. A failed capture creates no registry entry.
 - ADR 0034 promotes with `Validation scope: full-corpus` and `Release authority: none`.
 - The final commit contains ADR 0034 Accepted, C1/C2/C3 entries and bundles, recaptured Plan 5 graph/policy bundles, regenerated inventory/governance reports and diagrams, and the root Nix `--mode enforce` switch. No Accepted/audit-only intermediate lands on the integration branch.
 - Publication remains governed independently by `data/publication-policy.edn`; enforcement does not imply publication admission.
 - Use `apply_patch` for hand edits, `nixfmt` for Nix, and the root `justfile` for the final gate.
+- Use `builtins.currentSystem`; no enforcement command hardcodes
+  `x86_64-linux`.
 
 ---
 
@@ -33,7 +40,7 @@
   - `(snapshot-value abc-root workspace-root) -> deterministic JSON value`; requires ADR 0034 Proposed, complete migration ledger, strict governance `ok = true`, and zero problems before embedding bytes and hashes.
   - `(validate-snapshot-value value) -> vector<problem>`; validates schema, Base64 payloads, hashes, Accepted-set/count agreement, report mode/ok/problem count, and manifest closure without reading live mutable governance files.
   - `(validate-snapshot-file path) -> vector<problem>`.
-  - `(final-transition-problems abc-root workspace-root snapshot) -> vector<problem>`; requires ADR 0034 Accepted, pre-count + 1 Accepted ADR, pre-count + 3 criteria, complete ledger, zero live strict problems, and an enforcement-mode root Nix check.
+  - `(final-transition-problems abc-root workspace-root snapshot) -> vector<problem>`; requires ADR 0034 Accepted, pre-count + 1 Accepted ADR, pre-count + 3 criteria, complete ledger, zero live strict problems, and static selection of enforcement mode in the root Nix check. The executed root Nix build remains a separate integration authority in Task 6.
   - CLI: every `--write PATH`, `--verify PATH`, and `--verify-final PATH` invocation also requires explicit `--repo-root PATH --workspace-root PATH`; each exits nonzero on any problem.
 - Create `test/abc/tools/adr_evidence_bootstrap_test.clj`: schema, manifest, snapshot, and final-transition tests.
 - Create `test/abc/tools/adr_0034_evidence_test.clj`: synthetic, repository-independent assertions for C1 and C2.
@@ -41,7 +48,12 @@
 - Create `fixtures/adr-governance-invalid/docs/adr/0001-invalid.md`: deliberately invalid lifecycle fixture used by parity tests.
 - Add alias `:abc/adr-evidence-bootstrap` to `deps.edn`.
 - Create `docs/evidence/adr-bootstrap/pre-promotion.json`: immutable snapshot.
+- Create `docs/evidence/adr-bootstrap/post-promotion-candidate.bundle`:
+  incremental Git bundle containing the temporary producer commit relative to
+  the pre-promotion parent.
 - Create descriptors `docs/evidence/adr-capture/adr-0034-c1.edn`, `adr-0034-c2.edn`, and `adr-0034-c3.edn`.
+- Create runtime-input manifests `docs/evidence/adr-inputs/adr-0034-c1.edn`,
+  `adr-0034-c2.edn`, and `adr-0034-c3.edn`.
 - Create run bundles `docs/evidence/adr-runs/adr-0034-c1.json`, `adr-0034-c2.json`, and `adr-0034-c3.json`.
 - Create `docs/evidence/adr-entries/adr-0034.edn`: hash-free input to plan 1's deterministic evidence registrar.
 - Modify `docs/adr/0034-typed-evidence-and-lifecycle-closure.md`, `docs/adr/adr-evidence.edn`, and root `flake.nix` only in the staged atomic transition.
@@ -90,7 +102,7 @@ The schema is closed and requires this shape:
 - [ ] **Step 1: Require a clean completed family checkpoint**
 
 ```bash
-git status --short
+test -z "$(git status --porcelain --untracked-files=all)"
 workspace_root="$(git rev-parse --show-toplevel)"
 cd "$workspace_root/abc"
 clojure -M:abc/adr-evidence-inventory -- \
@@ -346,6 +358,9 @@ Expected: commit only files actually changed; clean tree afterward.
 - Create: `docs/evidence/adr-capture/adr-0034-c1.edn`
 - Create: `docs/evidence/adr-capture/adr-0034-c2.edn`
 - Create: `docs/evidence/adr-capture/adr-0034-c3.edn`
+- Create: `docs/evidence/adr-inputs/adr-0034-c1.edn`
+- Create: `docs/evidence/adr-inputs/adr-0034-c2.edn`
+- Create: `docs/evidence/adr-inputs/adr-0034-c3.edn`
 - Create: `docs/evidence/adr-entries/adr-0034.edn`
 - Modify: `test/abc/tools/adr_evidence_capture_test.clj`
 
@@ -380,34 +395,53 @@ Expected: all exit 0 and the worktree remains clean.
 `adr-0034-c1.edn`:
 
 ```clojure
-{:schema-version "abc-adr-evidence-capture-v1"
+{:schema-version "abc-adr-evidence-capture-v2"
  :tool "bash"
  :argv ["bash" "-lc" "cd abc && bin/kaocha --focus abc.tools.adr-0034-evidence-test/adr-0034-c1-contract"]
+ :runtime-input-manifest "abc/docs/evidence/adr-inputs/adr-0034-c1.edn"
  :input-profile {:kind "component-clojure-test-v1"
                  :component-root "abc"
                  :roots ["abc.tools.adr-0034-evidence-test"]
                  :explicit ["abc/docs/evidence/adr-capture/adr-0034-c1.edn"
+                            "abc/docs/evidence/adr-inputs/adr-0034-c1.edn"
                             "abc/docs/adr/claim-evidence-compatibility.edn"
                             "abc/schemas/adr-evidence-run.schema.json"
                             "abc/schemas/adr-external-evidence.schema.json"]}
  :observation-key "typed-artifact-protocol-passes"}
 ```
 
-`adr-0034-c2.edn` uses the same tool, component profile, and root; its argv
+`adr-0034-c2.edn` uses capture descriptor version 2, the same tool, component profile, and root; its argv
 focuses `.../adr-0034-c2-contract`; its explicit inputs are
 `abc/docs/evidence/adr-capture/adr-0034-c2.edn` and
+`abc/docs/evidence/adr-inputs/adr-0034-c2.edn`,
 `abc/fixtures/adr-governance-invalid/docs/adr/0001-invalid.md`; and its
 observation is `lifecycle-and-mode-contract-passes`.
 
-`adr-0034-c3.edn` uses tool `bash`, `component-clojure-test-v1`, component root
+`adr-0034-c3.edn` uses capture descriptor version 2, tool `bash`, `component-clojure-test-v1`, component root
 `abc`, root `abc.tools.adr-evidence-bootstrap`, and argv
 `["bash" "-lc" "cd abc && clojure -M:abc/adr-evidence-bootstrap -- --repo-root . --workspace-root .. --verify docs/evidence/adr-bootstrap/pre-promotion.json"]`.
 Its explicit inputs are exactly
 `abc/docs/evidence/adr-capture/adr-0034-c3.edn`,
+`abc/docs/evidence/adr-inputs/adr-0034-c3.edn`,
 `abc/docs/evidence/adr-bootstrap/pre-promotion.json`, and
 `abc/schemas/adr-evidence-bootstrap.schema.json`; namespace closure derives
 the bootstrap validator and helper sources. Its observation key is
 `pre-promotion-corpus-conforms`.
+
+Each descriptor names its corresponding runtime-input manifest. The three
+manifests use Plan 1's closed
+`:abc-adr-runtime-inputs-v1` shape and list exactly the non-source paths shown
+above, excluding the descriptor and manifest themselves. Run each focused
+boundary with `abc.tools.evidence-io` tracing and require the observed
+repository-read set to equal its manifest `:paths`; source namespace loading
+remains the component profile's separate responsibility.
+
+For C1, C2, and C3, also run Plan 1's closure-wide bypass control over the
+descriptor's complete statically derived source and test namespace closure.
+Production reads exercised by a focused test must be recorded. Direct
+`slurp`, reader, `java.nio.file.Files`, Jena, or equivalent repository reads
+are rejected unless they are inside the shared `files`/`hash` adapters or a
+named adapter that calls `record-read!` immediately before the library load.
 
 - [ ] **Step 3: Extend descriptor contract tests**
 
@@ -415,6 +449,15 @@ Load all three descriptors and assert exact key set, component root `abc`,
 descriptor self-binding with `abc/...` paths, stable observation keys, C1/C2
 lack all live `abc/docs/adr/*.md` and `abc/docs/adr/adr-evidence.edn` inputs,
 and C3 lacks live registry/final report/ADR 0034 inputs.
+Call Plan 1's
+`abc.tools.adr-evidence-runtime-inputs/assert-runtime-input-closure!` for all
+three and add a negative
+case deleting one manifest path; it must fail with
+`:missing-runtime-input`. Pass each descriptor as the exact
+`{:path descriptor-path :value descriptor}` wrapper required by Plan 1.
+Run the shared full-closure bypass lint for each descriptor and add a
+synthetic transitive helper containing an uninstrumented repository read; it
+must fail even though the direct test namespace contains no bypass.
 
 Create this exact hash-free registration template:
 
@@ -458,6 +501,9 @@ git add abc/docs/evidence/adr-bootstrap/pre-promotion.json \
   abc/docs/evidence/adr-capture/adr-0034-c1.edn \
   abc/docs/evidence/adr-capture/adr-0034-c2.edn \
   abc/docs/evidence/adr-capture/adr-0034-c3.edn \
+  abc/docs/evidence/adr-inputs/adr-0034-c1.edn \
+  abc/docs/evidence/adr-inputs/adr-0034-c2.edn \
+  abc/docs/evidence/adr-inputs/adr-0034-c3.edn \
   abc/docs/evidence/adr-entries/adr-0034.edn \
   abc/test/abc/tools/adr_evidence_capture_test.clj
 git commit -m "docs(adr): freeze pre-promotion governance snapshot"
@@ -468,17 +514,18 @@ Expected: all checks pass and the tree is clean.
 
 ---
 
-### Task 4: Build a detached clean post-promotion capture revision
+### Task 4: Prove the candidate layout and build a clean post-promotion capture revision
 
 **Files:**
 - Modify only in detached worktree: `abc/docs/adr/0034-typed-evidence-and-lifecycle-closure.md`
+- Modify only in detached worktree: `abc/docs/evidence/adr-inputs/adr-graph-contract.edn`, `architecture-graph-contract.edn`, `diagram-registry-drift.edn`, and `adr-policy-fixtures.edn`
 - Regenerate only in detached worktree: migration inventory and registered Mermaid views.
 
 **Interfaces:**
 - Consumes: clean pre-promotion HEAD from Task 3.
 - Produces: a detached clean Stage-A commit with Accepted ADR 0034 and current views while the root gate remains audit mode. It never enters integration-branch history.
 
-- [ ] **Step 1: Create persistent external state and a detached worktree**
+- [ ] **Step 1: Prove nested-worktree Nix evaluation or select the full-clone fallback**
 
 ```bash
 workspace_root="$(git rev-parse --show-toplevel)"
@@ -488,12 +535,35 @@ mkdir -p "$state_dir/bundles"
 pre_head="$(git -C "$workspace_root" rev-parse HEAD)"
 candidate_dir="$state_dir/worktree"
 git -C "$workspace_root" worktree add --detach "$candidate_dir" "$pre_head"
-printf 'workspace_root=%q\nstate_dir=%q\npre_head=%q\ncandidate_dir=%q\n' \
-  "$workspace_root" "$state_dir" "$pre_head" "$candidate_dir" \
-  > "$state_dir/state.env"
 test -z "$(git -C "$workspace_root" status --porcelain --untracked-files=all)"
 test -z "$(git -C "$candidate_dir" status --porcelain --untracked-files=all)"
+system="$(nix eval --impure --raw --expr builtins.currentSystem)"
+if (cd "$candidate_dir" && nix build --no-link \
+    ".#checks.${system}.monorepo-adr-governance" --print-build-logs); then
+  candidate_layout=worktree
+else
+  git -C "$workspace_root" worktree remove --force "$candidate_dir"
+  rm -rf "$candidate_dir"
+  git clone --no-local --no-checkout "$workspace_root" "$candidate_dir"
+  git -C "$candidate_dir" checkout --detach "$pre_head"
+  candidate_layout=clone
+  if ! (cd "$candidate_dir" && nix build --no-link \
+      ".#checks.${system}.monorepo-adr-governance" --print-build-logs); then
+    echo "root governance build failed in worktree and full-clone layouts" >&2
+    rm -rf "$candidate_dir" "$state_dir"
+    exit 1
+  fi
+fi
+test -z "$(git -C "$candidate_dir" status --porcelain --untracked-files=all)"
+printf 'workspace_root=%q\nstate_dir=%q\npre_head=%q\ncandidate_dir=%q\ncandidate_layout=%q\nsystem=%q\n' \
+  "$workspace_root" "$state_dir" "$pre_head" "$candidate_dir" \
+  "$candidate_layout" "$system" > "$state_dir/state.env"
 ```
+
+Expected: the actual root governance derivation builds from the selected
+layout while the repository is still in audit mode. `--no-link` prevents a
+`result` symlink from dirtying the candidate. If both layouts fail, stop before
+editing ADR 0034; `nix flake check --no-build` is not a substitute.
 
 - [ ] **Step 2: Promote ADR 0034 only inside the detached candidate**
 
@@ -515,12 +585,41 @@ Keep root `flake.nix` in audit mode, then run:
 ```bash
 . "${TMPDIR:-/tmp}/soranoha-adr-plan6/state.env"
 cd "$candidate_dir/abc"
+# Add ADR 0034 to the literal, sorted Accepted-ADR set in each of these exact
+# runtime manifests. Do not use a glob and do not alter unrelated inputs.
+for manifest in adr-graph-contract architecture-graph-contract \
+  diagram-registry-drift adr-policy-fixtures; do
+  rg -n 'docs/adr/0034-typed-evidence-and-lifecycle-closure.md' \
+    "docs/evidence/adr-inputs/${manifest}.edn"
+done
+bin/kaocha --focus abc.tools.diagram.adr-graph-evidence-test \
+  --focus abc.tools.diagram.architecture-graph-evidence-test \
+  --focus abc.tools.diagram.diagram-registry-evidence-test \
+  --focus abc.tools.adr-policy-evidence-test
 clojure -M:abc/adr-evidence-inventory -- \
   --output docs/reports/adr-claim-migration-inventory.json
 clojure -M:abc/presentation-diagrams all
 clojure -M:abc/adr-governance -- \
   --repo-root "$candidate_dir/abc" --workspace-root "$candidate_dir" \
   --mode audit --report /tmp/adr-plan6-stage-a-audit.json
+jq -e '
+  def root:
+    if ((.["claim-id"] // "") | startswith("ADR-0034-"))
+    then "adr-0034-missing-evidence"
+    elif ((.["artifact-path"] // "") | endswith("/adr-graph-contract.json"))
+    then "adr-graph-contract"
+    elif ((.["artifact-path"] // "") | endswith("/architecture-graph-contract.json"))
+    then "architecture-graph-contract"
+    elif ((.["artifact-path"] // "") | endswith("/diagram-registry-drift.json"))
+    then "diagram-registry-drift"
+    elif ((.["artifact-path"] // "") | endswith("/adr-policy-fixtures.json"))
+    then "adr-policy-fixtures"
+    else "UNEXPECTED:\(.kind)" end;
+  ([.problems[] | root] | unique | sort) ==
+  (["adr-0034-missing-evidence", "adr-graph-contract",
+    "adr-policy-fixtures", "architecture-graph-contract",
+    "diagram-registry-drift"] | sort)
+' /tmp/adr-plan6-stage-a-audit.json
 ```
 
 Expected: audit reports ADR-0034 missing-evidence debt plus stale input/hash
@@ -534,6 +633,10 @@ view problem is allowed.
 ```bash
 . "${TMPDIR:-/tmp}/soranoha-adr-plan6/state.env"
 git -C "$candidate_dir" add abc/docs/adr/0034-typed-evidence-and-lifecycle-closure.md \
+  abc/docs/evidence/adr-inputs/adr-graph-contract.edn \
+  abc/docs/evidence/adr-inputs/architecture-graph-contract.edn \
+  abc/docs/evidence/adr-inputs/diagram-registry-drift.edn \
+  abc/docs/evidence/adr-inputs/adr-policy-fixtures.edn \
   abc/docs/reports/adr-claim-migration-inventory.json
 git -C "$candidate_dir" add -u abc/docs
 git -C "$candidate_dir" diff --cached --check
@@ -541,11 +644,27 @@ git -C "$candidate_dir" commit -m \
   "temp: stage ADR 0034 promotion evidence inputs"
 candidate_commit="$(git -C "$candidate_dir" rev-parse HEAD)"
 printf 'candidate_commit=%q\n' "$candidate_commit" >> "$state_dir/state.env"
+capture_ref="refs/abc-evidence/adr-0034-post-promotion-candidate"
+git -C "$candidate_dir" update-ref "$capture_ref" "$candidate_commit"
+git -C "$candidate_dir" bundle create \
+  "$state_dir/post-promotion-candidate.bundle" \
+  "$capture_ref" "^$pre_head"
+git -C "$candidate_dir" bundle verify \
+  "$state_dir/post-promotion-candidate.bundle"
+bundle_head="$(git -C "$candidate_dir" bundle list-heads \
+  "$state_dir/post-promotion-candidate.bundle" | awk 'NR == 1 {print $1}')"
+test "$bundle_head" = "$candidate_commit"
+git -C "$candidate_dir" bundle verify \
+  "$state_dir/post-promotion-candidate.bundle" 2>&1 \
+  | grep -F "$pre_head"
+git -C "$candidate_dir" update-ref -d "$capture_ref"
 test -z "$(git -C "$candidate_dir" status --porcelain --untracked-files=all)"
 test "$(git -C "$workspace_root" rev-parse HEAD)" = "$pre_head"
 ```
 
-Expected: the integration worktree remains byte-identical at `pre_head`.
+Expected: the integration worktree remains byte-identical at `pre_head`; the
+incremental bundle verifies and contains the exact `candidate_commit` plus its
+changed objects relative to `pre_head`.
 
 ---
 
@@ -557,10 +676,15 @@ Expected: the integration worktree remains byte-identical at `pre_head`.
 - Create: `docs/evidence/adr-runs/adr-0034-c1.json`
 - Create: `docs/evidence/adr-runs/adr-0034-c2.json`
 - Create: `docs/evidence/adr-runs/adr-0034-c3.json`
+- Create: `docs/evidence/adr-bootstrap/post-promotion-candidate.bundle`
 - Replace: `docs/evidence/adr-runs/adr-graph-contract.json`
 - Replace: `docs/evidence/adr-runs/architecture-graph-contract.json`
 - Replace: `docs/evidence/adr-runs/diagram-registry-drift.json`
 - Replace: `docs/evidence/adr-runs/adr-policy-fixtures.json`
+- Modify: `docs/evidence/adr-inputs/adr-graph-contract.edn`
+- Modify: `docs/evidence/adr-inputs/architecture-graph-contract.edn`
+- Modify: `docs/evidence/adr-inputs/diagram-registry-drift.edn`
+- Modify: `docs/evidence/adr-inputs/adr-policy-fixtures.edn`
 - Modify: root `flake.nix`
 - Modify: `test/abc/tools/adr_governance_test.clj`
 - Regenerate: `docs/reports/adr-claim-migration-inventory.json`
@@ -632,6 +756,10 @@ for stem in adr-0034-c1 adr-0034-c2 adr-0034-c3 \
   install -m 0644 "$state_dir/bundles/${stem}.json" \
     "$candidate_dir/abc/docs/evidence/adr-runs/${stem}.json"
 done
+install -m 0644 "$state_dir/post-promotion-candidate.bundle" \
+  "$candidate_dir/abc/docs/evidence/adr-bootstrap/post-promotion-candidate.bundle"
+git -C "$candidate_dir" bundle verify \
+  "$candidate_dir/abc/docs/evidence/adr-bootstrap/post-promotion-candidate.bundle"
 (cd "$candidate_dir/abc" && clojure -M:abc/adr-evidence-register -- \
   --workspace-root "$candidate_dir" \
   --entries docs/evidence/adr-entries/diagrams-governance.edn \
@@ -710,7 +838,7 @@ authority, so no commit-hash fixed point is introduced.
 
 ---
 
-### Task 6: Verify the clean final commit, fast-forward once, and clean up
+### Task 6: Verify the clean final commit, fast-forward once, and prove the integration checkout
 
 **Files:** Verification and branch update only.
 
@@ -725,6 +853,15 @@ authority, so no commit-hash fixed point is introduced.
 (cd "$candidate_dir/abc" && clojure -M:abc/adr-evidence-bootstrap -- \
   --repo-root "$candidate_dir/abc" --workspace-root "$candidate_dir" \
   --verify-final docs/evidence/adr-bootstrap/pre-promotion.json)
+git -C "$candidate_dir" bundle verify \
+  abc/docs/evidence/adr-bootstrap/post-promotion-candidate.bundle
+bundle_head="$(git -C "$candidate_dir" bundle list-heads \
+  abc/docs/evidence/adr-bootstrap/post-promotion-candidate.bundle \
+  | awk 'NR == 1 {print $1}')"
+test "$bundle_head" = "$candidate_commit"
+git -C "$candidate_dir" bundle verify \
+  abc/docs/evidence/adr-bootstrap/post-promotion-candidate.bundle 2>&1 \
+  | grep -F "$pre_head"
 (cd "$candidate_dir/abc" && bin/kaocha \
   --focus abc.tools.adr-0034-evidence-test \
   --focus abc.tools.adr-evidence-bootstrap-test \
@@ -768,6 +905,8 @@ test -z "$(git -C "$candidate_dir" status --porcelain --untracked-files=all)"
 ```
 
 Expected: exit 0 across ABC, ab-validator, Python, Nix formatting, and migration checks.
+This aggregate evaluates flake outputs with `--no-build`; it does not execute
+the enforcement derivation. Task 6 Steps 2 and 5 are the load-bearing builds.
 
 - [ ] **Step 4: Fast-forward the integration branch exactly once**
 
@@ -775,6 +914,13 @@ Expected: exit 0 across ABC, ab-validator, Python, Nix formatting, and migration
 . "${TMPDIR:-/tmp}/soranoha-adr-plan6/state.env"
 test "$(git -C "$workspace_root" rev-parse HEAD)" = "$pre_head"
 test -z "$(git -C "$workspace_root" status --porcelain --untracked-files=all)"
+if test "$candidate_layout" = clone; then
+  transfer_ref="refs/heads/abc-adr0034-final-transfer"
+  git -C "$candidate_dir" update-ref "$transfer_ref" "$final_commit"
+  git -C "$workspace_root" fetch "$candidate_dir" "$transfer_ref"
+  test "$(git -C "$workspace_root" rev-parse FETCH_HEAD)" = "$final_commit"
+  git -C "$candidate_dir" update-ref -d "$transfer_ref"
+fi
 git -C "$workspace_root" merge --ff-only "$final_commit"
 test "$(git -C "$workspace_root" rev-parse HEAD)" = "$final_commit"
 test "$(git -C "$workspace_root" rev-parse HEAD^)" = "$pre_head"
@@ -783,17 +929,44 @@ test "$(git -C "$workspace_root" rev-parse HEAD^)" = "$pre_head"
 Expected: one commit lands on the integration branch, directly parented to the
 pre-promotion checkpoint. The temporary Stage-A commit is not an ancestor.
 
-- [ ] **Step 5: Verify live enforcement, then remove temporary state**
+- [ ] **Step 5: Build live enforcement, forward-revert on failure, then clean up**
 
 ```bash
 . "${TMPDIR:-/tmp}/soranoha-adr-plan6/state.env"
-(cd "$workspace_root" && nix run ./abc#adr-governance -- \
-  --repo-root "$workspace_root/abc" --workspace-root "$workspace_root" \
-  --mode enforce \
-  --report /tmp/adr-final-enforce.json)
-jq -e '.ok == true and (.problems | length) == 0' \
-  /tmp/adr-final-enforce.json
-git -C "$workspace_root" worktree remove "$candidate_dir"
+live_enforcement_ok() {
+  (cd "$workspace_root" && nix build --no-link \
+    ".#checks.${system}.monorepo-adr-governance" --print-build-logs) &&
+  (cd "$workspace_root" && nix run ./abc#adr-governance -- \
+    --repo-root "$workspace_root/abc" --workspace-root "$workspace_root" \
+    --mode enforce \
+    --report /tmp/adr-final-enforce.json) &&
+  jq -e '.ok == true and (.problems | length) == 0' \
+    /tmp/adr-final-enforce.json
+}
+if ! live_enforcement_ok; then
+  if ! git -C "$workspace_root" revert --no-edit "$final_commit"; then
+    echo "FATAL: live enforcement failed and forward revert failed; temporary state retained" >&2
+    exit 2
+  fi
+  if ! (cd "$workspace_root" && nix build --no-link \
+      ".#checks.${system}.monorepo-adr-governance" --print-build-logs); then
+    echo "FATAL: transition reverted but restored audit gate is red; temporary state retained" >&2
+    exit 2
+  fi
+  if test "$candidate_layout" = worktree; then
+    git -C "$workspace_root" worktree remove --force "$candidate_dir"
+  else
+    rm -rf "$candidate_dir"
+  fi
+  rm -rf "$state_dir"
+  echo "post-merge live enforcement failed; transition reverted to audit" >&2
+  exit 1
+fi
+if test "$candidate_layout" = worktree; then
+  git -C "$workspace_root" worktree remove "$candidate_dir"
+else
+  rm -rf "$candidate_dir"
+fi
 rm -rf "$state_dir"
 test -z "$(git -C "$workspace_root" status --porcelain --untracked-files=all)"
 ```
@@ -801,11 +974,12 @@ test -z "$(git -C "$workspace_root" status --porcelain --untracked-files=all)"
 ### Abort protocol
 
 Before Step 4's fast-forward, any failure leaves the integration branch at
-`pre_head`. Remove the detached worktree with `git -C "$workspace_root"
-worktree remove --force "$candidate_dir"`, delete `state_dir`, and repair
-forward from the clean integration worktree. After fast-forward, do not reset
-or weaken evidence; the same final commit already passed all gates, so diagnose
-and repair forward.
+`pre_head`. Remove the candidate with `git worktree remove --force` in
+`worktree` mode or `rm -rf` in `clone` mode, delete `state_dir`, and repair
+forward from the clean integration worktree. After fast-forward, the only
+automatic recovery is the Step 5 `git revert` if any member of the
+authoritative live-enforcement check (root build, live app, or strict report
+assertion) fails; never reset or weaken evidence validation.
 
 ---
 
@@ -820,4 +994,13 @@ and repair forward.
   the four stale Plan 5 bundles, but never becomes integration history; the
   only branch commit that marks ADR 0034 Accepted also contains the recaptures,
   all joins, reports/views, and enforcement.
+- Candidate provenance: an incremental checked-in Git bundle keeps the
+  temporary `producer_revision` recoverable after squash; input hashes remain
+  freshness authority.
+- Checkout safety: the actual governance derivation is built in the selected
+  candidate layout before promotion work, built again on the final candidate,
+  and built once more after fast-forward. A checkout-specific failure creates
+  a forward revert to the audited pre-promotion state.
+- Aggregate honesty: `just validate-migration` remains useful but its
+  `--no-build` evaluations are never described as executing enforcement.
 - Placeholder scan: canonical hashes are execution-produced by plan 1's registrar from exact Task 5 bundle bytes; no hand-computed, templated, or file-byte hash is permitted.

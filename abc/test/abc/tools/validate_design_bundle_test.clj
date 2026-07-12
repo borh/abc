@@ -168,6 +168,9 @@
 (def ^:private v6-parser-ir-schema-hash
   "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340")
 
+(def ^:private v0-6-parser-ir-schema-hash
+  "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2")
+
 (def ^:private current-parser-ir-schema-hash
   "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec")
 
@@ -768,6 +771,10 @@
        (validate/schema-hash-errors
         {"parser_ir_schema_hash" level3-parser-ir-schema-hash
          "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"})))
+  (is (empty?
+       (validate/schema-hash-errors
+        {"parser_ir_schema_hash" v0-6-parser-ir-schema-hash
+         "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"})))
   (is (= [(str "ab-validator parser_ir_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash " current-parser-ir-schema-hash)
           "ab-validator diagnostic_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000008 does not match ABC diagnostic schema hash sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"]
          (validate/schema-hash-errors
@@ -778,6 +785,9 @@
   (is (empty?
        (validate/parser-ir-schema-hash-errors
         {"schema_hash" legacy-parser-ir-schema-hash})))
+  (is (empty?
+       (validate/parser-ir-schema-hash-errors
+        {"schema_hash" v0-6-parser-ir-schema-hash})))
   (is (= [(str "ab-validator parser IR schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash " current-parser-ir-schema-hash)]
          (validate/parser-ir-schema-hash-errors
           {"schema_hash" (files/example-hash "04")}))))

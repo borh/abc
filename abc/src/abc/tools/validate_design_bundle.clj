@@ -42,7 +42,8 @@
     "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411"
     "sha256:0ab6f07e681b7adb14b9cacb14e4f406ef122151df4d1554503e77a3f1faf8c2"
     "sha256:0b495bb5c12c4d76482afefdaedb5464a74672ffbd5282f9c67d5f419d39a340"
-    "sha256:40d7ff6683a395e8727de55574c3af1fd70475cfa325ae5b67cc19fdb3eb32b6"})
+    "sha256:40d7ff6683a395e8727de55574c3af1fd70475cfa325ae5b67cc19fdb3eb32b6"
+    "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2"})
 
 (defn accepted-parser-ir-schema-hashes []
   (conj legacy-parser-ir-schema-hashes

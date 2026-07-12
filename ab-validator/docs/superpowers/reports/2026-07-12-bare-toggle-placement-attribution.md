@@ -1,46 +1,54 @@
-# Bare-toggle placement + adoption-grammar attribution (横組み / 罫囲み) — Revision 2
+# Bare-toggle placement + adoption-grammar attribution (横組み / 罫囲み) — Revision 3
 
-**Date:** 2026-07-12 (Revision 2, same day; supersedes Revision 1 in place)
-**Tool:** `reports/aat-fidelity/bare-toggle-placement.py` (Revision 2), run
-on hinoki against the pinned nix corpus store path
+**Date:** 2026-07-12 (Revision 3, same day; supersedes Revisions 1–2 in place)
+**Tool:** `reports/aat-fidelity/bare-toggle-placement.py` (Revision 3) over
+the shared reader contract `reports/lib/corpus_reader.py`, run on hinoki
+against the pinned nix corpus store path
 `/nix/store/sdr1imwrxfldvlwzs2d2fhs11vxncgpx-aozorabunko-corpus` — the
 identical store path recorded as `source_inventory.corpus` in the frozen
 fidelity summary (`2026-07-09-corpus-adapter-fidelity.summary.json`).
 **Output:** `2026-07-12-bare-toggle-placement-attribution.summary.json`
 (script output, verbatim).
 
-## Revision 2 — what changed and why
+## Revision history
 
-Revision 1's scanner used a private corpus reader (17,878 zip-borne
-entries; no plaintext sources; silent skips; no recovery of the two
-damaged-central-directory zips) and independent per-construct stack
-pairing that did not model the proposed classifier grammar. Review
-(P5-2/P5-3) rejected both. Revision 2:
+Rev 1: private corpus reader (17,878 zip works, no plaintext, silent
+skips) + naive per-construct pairing — rejected (review round 1,
+P5-2/P5-3). Rev 2: split-scanner reader + exact adoption grammar —
+review round 2 (P5-1) rejected the residual "unreadable both paths"
+bucket as an unverified exclusion. Rev 3 (this revision) resolves it
+with an explicit four-class candidate classification.
 
-- **Reads the production universe exactly.** The instrument imports the
-  litigated reader of `reports/source-regions/terminal-provenance-split.py`
-  (the instrument bound card-for-card to the Rust pipeline's 17,886-entry
-  universe during Phase 4): `cards/*/files/` discovery of `.zip` and bare
-  `.txt` candidates, content-sniffing zip-vs-plain dispatch, stdlib zip
-  reading with the local-header-trusting fallback, Shift_JIS
-  `errors="replace"` decode, `work_id_from_index_path` identity. The run
-  **fails (exit 2) unless exactly 17,886 entries are read**; this run read
-  17,886. Every excluded candidate is recorded with path and reason
-  (9 total: 5 zips with no `.txt` member — `_ttz`/`_etc` auxiliary
-  archives — and 4 zip-shaped files unreadable by both paths, the same
-  set the Rust pipeline excludes); the two recoverable
-  damaged-central-directory zips (`cards/001393/…50710_ruby_36965.zip`,
-  `cards/001505/…58100_txt_60357.zip`) are read via the fallback and
-  recorded as **recovered**, with hashes, not "unreadable". Per touched
-  entry the summary records work id, source label (archive::member),
-  reader path, decode mode, and source sha256.
-- **Measures the adoption grammar, not raw pairing.** `classify_line` in
-  the instrument is the normative Python model of the Phase 5 Contract 1
-  two-pass algorithm (one global nesting stack; same-construct reopen,
-  orphan open/close, and improper interleaving invalidate
-  construct-per-line; candidates rolled back if their construct is
-  invalidated; adoption only from valid lines). The Rust classifier must
-  mirror this model test-for-test.
+## Candidate universe (Revision 3 — every discovered candidate classified)
+
+`reports/lib/corpus_reader.py` discovers every `cards/*/files/*.zip` and
+bare `*.txt` candidate and classifies each into exactly one class,
+reading zips with windows-31j member names (the true Shift_JIS entry
+names), the local-header-trusting bypass for the two known
+central-directory corruption shapes, and a tolerant 7zz extraction as
+last resort:
+
+| class | count | meaning |
+| --- | ---: | --- |
+| `work` | **17,886** | readable work sources — exactly the production universe (`ab-index` `collect_source_files`); the grammar expectations bind to this class |
+| `non_work` | 5 | zips with no `.txt` member (`_ttz`/`_etc` auxiliary archives) — excluded by design, matching the Rust pipeline |
+| `recovered_extra` | 2 | readable ONLY by tolerant 7zz (nonzero exit, content extracted): `cards/000119/…46429_ruby_26539.txt::kansho.txt`, `cards/001030/…4812_ruby_14383.txt::utukusii_mura.txt`. Outside the production universe — the Rust pipeline skips them and ABC's own 7zz fallback (abc `0bf4beed`) throws on nonzero exit. Scanned separately: **both contain zero bare-toggle markers**, so their exclusion from the binding counts is now verified, not assumed |
+| `unreadable` | 2 | no known reader yields text: `cards/001154/…chihobunkano_shinkensetsu.zip`, `cards/001562/…56151_ruby_60063.zip` (`BadZipFile`; 7zz extracts nothing) |
+
+17,886 + 5 + 2 + 2 = 17,895 discovered candidates. The run fails
+(exit 2) unless the `work` class is exactly 17,886. Per touched work the
+summary records work id, source label (archive::member), reader path,
+decode mode, and source sha256.
+
+**Grammar model:** `classify_tokens` (and its text wrapper
+`classify_line`) in the instrument is the normative Python model of the
+Phase 5 Contract 1 two-pass algorithm (one global nesting stack;
+same-construct reopen, orphan open/close, and improper interleaving
+invalidate construct-per-line; candidates rolled back if their construct
+is invalidated; adoption only from valid lines). The token-level entry
+point exists so the delta audit can derive expected adoptions and
+decline reasons independently from a baseline AAT dump's raw marker
+nodes. The Rust classifier must mirror the model test-for-test.
 
 ## Grammar-true result (the binding design-time expectations)
 

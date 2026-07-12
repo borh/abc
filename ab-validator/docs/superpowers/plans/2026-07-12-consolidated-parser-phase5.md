@@ -11,8 +11,9 @@
 ## Global Constraints
 
 - Exact recognition tokens, nothing else: yokogumi open `［＃横組み］` close `［＃横組み終わり］`; keigakomi open `［＃罫囲み］` close `［＃罫囲み終わり］`.
-- Line grammar is the spec's Contract 1 two-pass algorithm over ONE global nesting stack; the normative Python model is `classify_line` in `reports/aat-fidelity/bare-toggle-placement.py`; the Rust implementation mirrors it test-for-test.
-- Corpus-bound expectations (grammar-true, Revision 2): adopted yokogumi pairs **1582**; adopted keigakomi pairs **25**; declined raw-preserved markers **24** = 10 orphan opens + 14 rollback markers; 0 orphan closes; 0 interleavings; 1 proper cross-construct nesting.
+- Line grammar is the spec's Contract 1 two-pass algorithm over ONE global nesting stack; the normative Python model is `classify_tokens` (text wrapper `classify_line`) in `reports/aat-fidelity/bare-toggle-placement.py`; the Rust implementation mirrors it test-for-test.
+- Corpus-bound expectations (grammar-true, placement report Revision 3 — four-class candidate classification over `reports/lib/corpus_reader.py`, the two tolerant-7zz-only recoveries verified toggle-free): adopted yokogumi pairs **1582**; adopted keigakomi pairs **25**; declined raw-preserved markers **24** = 10 orphan opens + 14 rollback markers; 0 orphan closes; 0 interleavings; 1 proper cross-construct nesting.
+- Independence rule (review P5-4): the delta audit DERIVES expected adoptions and decline reasons from the baseline dump's raw marker nodes via `classify_tokens`; the placement report is preregistered design evidence, never a gate input.
 - Invalid markers stay byte-identical raw nodes; no new warning codes; invalidation is construct-scoped per line; rewrites are atomic per line.
 - Adopted-pair emission: one `inline_container` `{"kind": "yokogumi"|"keigakomi", "content": [...], "span": ...}`; span covers first byte of open marker through last byte of close marker in ADR 0024 decoded-source coordinates; marker tokens are consumed.
 - No AAT schema bump — documents stay `version 2`. AAT schema files are untouched.
@@ -36,6 +37,7 @@
 | `crates/ab-aozora-aat/Cargo.toml` | proptest dev-dep (Task 5); version bump (Task 8) |
 | `crates/ab-aozora-aat/tests/goldens/*` | golden `adapter_version` bumps (Task 8) |
 | `crates/ab-aozora-aat/tests/bare_toggle_model.rs` | Rust↔Python mirror + property tests (Task 5) |
+| `reports/lib/corpus_reader.py` | shared source-reading contract (landed with the plan; consumed by the placement instrument and Task 11) |
 | `reports/aat-fidelity/audit-aat-delta.py` (+ `tests/`) | `bare-toggle-adoption` mode (Task 2) |
 | `reports/aat-fidelity/bare-toggle-model-vectors.json` | shared grammar test vectors (Task 2) |
 | `reports/aat-fidelity/verify-phase5-checkpoint.py` (+ `tests/`) | checkpoint verifier (Task 3) |
@@ -51,7 +53,7 @@
 | `abc/data/aat-parser-ir-compatibility.edn` | C5 row (Task 10) |
 | `reports/aat-fidelity/run-sets/current.json` | atomic repoint (Task 10) |
 
-Task order note: Tasks 2–3 (instruments) precede Task 8 (identity close) per the identity discipline. Task 7 (ABC confirmation) is independent and must land before Task 10's post-repoint coverage regeneration.
+**EXECUTION ORDER (binding; review P5-3 moved the mapping freeze ahead of the verifier): 0 → 1 → 2 → 6 (mapping freeze + 0.4.0) → 3 (verifier) → 4 → 5 → 7 → 8 → 9 → 10 → 11 → 12 → 13.** Task numbers are stable identifiers, not execution order. Tasks 2, 6, 3 (instruments + mapping generations) all precede Task 8 (identity close) per the identity discipline. Task 7 (ABC confirmation) is independent and must land before Task 10's post-repoint coverage regeneration.
 
 ---
 
@@ -76,15 +78,21 @@ cd ab-validator && cargo fmt && cargo fmt --check
 Expected: second command exits 0, no output.
 
 ```bash
-git add -u && git commit -m "chore(rust): clear committed formatting drift (fmt --check green)"
+git add crates/ab-aozora/tests/wire.rs crates/ab-aozora-aat/src/lib.rs crates/ab-aozora-aat/tests/goldens.rs crates/ab-aozora-pipeline/src/lexer/sanitize.rs crates/ab-morph-analyzers/src/span_builder.rs crates/ab-morph-analyzers/src/vibrato.rs
+git status --porcelain   # verify ONLY the six fmt files are staged; unstage anything else
+git commit -m "chore(rust): clear committed formatting drift (fmt --check green)"
 ```
+(If `cargo fmt` touched files beyond these six, list them in the report and stage them too — but investigate first; unexpected drift outside the known set may indicate uncommitted local work that must NOT be swept into this commit.)
 
 - [ ] **Step 2: Verify the clippy failure is exactly the stub features**
 
 ```bash
-cd ab-validator && cargo clippy --workspace --all-targets --all-features 2>&1 | grep -E "aozora_cst|aozora_query" | head -5
+cd ab-validator
+cargo clippy --workspace --all-targets --all-features 2>clippy.err; echo "clippy_exit=$?"
+grep -E "^error" clippy.err | grep -vE "aozora_cst|aozora_query|could not compile \`ab-aozora-facade\`" | head -10
+rm clippy.err
 ```
-Expected: unresolved-crate errors naming `aozora_cst` / `aozora_query`. If clippy fails for ANY OTHER reason, STOP and report BLOCKED — that is a different inherited failure the plan does not know about.
+Expected: `clippy_exit` NON-zero, and the second grep prints NOTHING (every error line names `aozora_cst`/`aozora_query` or the facade compile failure they cause). If the second grep prints anything, STOP and report BLOCKED — that is a different inherited failure the plan does not know about.
 
 - [ ] **Step 3: Remove the stub features and their gated modules**
 
@@ -112,7 +120,8 @@ Expected: `CHECKPOINT OK`, exit 0. Requires `/db` run-set dumps only if the run-
 - [ ] **Step 6: Commit**
 
 ```bash
-git add -u && git commit -m "chore(facade): remove uncompilable cst/query stub features
+git add crates/ab-aozora-facade/src/lib.rs crates/ab-aozora-facade/Cargo.toml
+git commit -m "chore(facade): remove uncompilable cst/query stub features
 
 just clippy runs --all-features; the stub features were documented as
 intentionally failing to compile, so the gate and the design
@@ -133,24 +142,57 @@ Pin, with a test, that the facade wire already delivers bare-toggle markers as i
 - Consumes: `aat_value_for(src: &str) -> Value` (lib.rs:1980), `find_node`/`collect_spans` test helpers.
 - Produces: the pinned wire contract Task 4 builds on: bare toggles surface in AAT inline content as `{"kind":"raw","source":"［＃横組み］","x-source-marker-kind":"directive",...}` nodes.
 
-- [ ] **Step 1: Write the failing-or-passing pin test**
+- [ ] **Step 1: Write TWO pin tests (review P5-5 — wire contract and AAT fallback are separate claims)**
 
 Add to `crates/ab-aozora-aat/src/lib.rs` `mod tests`:
 
+**Test A — facade WIRE contract** (the stream the classifier will consume): drive the facade exactly the way `projections` (lib.rs:408–428) does — read that function first and reuse its parse + `aozora_json::node_entries` invocation — over a PAIRED input, and assert on the wire nodes themselves:
+
 ```rust
 #[test]
-fn bare_toggle_markers_surface_as_raw_directive_nodes() {
-    // Preflight for the Phase 5 classifier (spec Contract 1): before any
-    // pairing exists, both bare tokens must already be observable as
-    // in-line raw nodes carrying the exact source text and a span.
+fn bare_toggle_markers_arrive_as_ordered_directive_wire_nodes() {
+    // Wire-level preflight: the facade must deliver each bare-toggle
+    // marker as its own `directive` node whose span slices the exact
+    // token, in source order — paired markers included (adoption later
+    // consumes them, so THIS test, not the AAT fallback test, pins the
+    // stream the classifier reads).
     let src = "ウサギ［＃横組み］（Hare）［＃横組み終わり］だ\n［＃罫囲み］三［＃罫囲み終わり］\n";
+    // Follow `projections` (lib.rs:408) for decode + parse + node_entries.
+    let decoded = /* same decode call `projections` uses on src.as_bytes() */;
+    let nodes: Vec<AozoraNode> = /* same node_entries -> from_entries path */;
+    let expected = ["［＃横組み］", "［＃横組み終わり］", "［＃罫囲み］", "［＃罫囲み終わり］"];
+    let directives: Vec<&AozoraNode> =
+        nodes.iter().filter(|n| n.kind == "directive").collect();
+    let directive_sources: Vec<&str> = directives
+        .iter()
+        .map(|n| source_slice(&decoded.span_text, &n.span))
+        .collect();
+    for token in expected {
+        assert!(
+            directive_sources.iter().any(|s| *s == token),
+            "token {token} missing from directive wire nodes: {directive_sources:?}"
+        );
+    }
+    // Ordered by span (the classifier depends on source order):
+    let starts: Vec<usize> = directives.iter().map(|n| n.span.start).collect();
+    assert!(starts.windows(2).all(|w| w[0] < w[1]), "directive spans not ordered: {starts:?}");
+}
+```
+(The two `/* … */` holes are deliberate: transcribe the exact two calls `projections` makes — do not invent a parallel decode path. If `AozoraNode`'s fields differ from `kind`/`span`, adjust field access, not the assertions.)
+
+**Test B — AAT raw fallback for non-adopted markers** (uses ORPHAN inputs so it stays valid after the classifier lands):
+
+```rust
+#[test]
+fn bare_toggle_orphan_markers_stay_raw_in_aat() {
+    let src = "（例）［＃横組み］\nx［＃罫囲み終わり］y\n";
     let doc = aat_value_for(src);
     let mut raw_sources = Vec::new();
     collect_raw_sources(&doc, &mut raw_sources);
-    for token in ["［＃横組み］", "［＃横組み終わり］", "［＃罫囲み］", "［＃罫囲み終わり］"] {
+    for token in ["［＃横組み］", "［＃罫囲み終わり］"] {
         assert!(
             raw_sources.iter().any(|s| s == token),
-            "token {token} not observable as a raw inline node; raw sources: {raw_sources:?}"
+            "orphan token {token} must stay a raw node; raw sources: {raw_sources:?}"
         );
     }
 }
@@ -173,14 +215,14 @@ fn collect_raw_sources(v: &Value, out: &mut Vec<String>) {
 }
 ```
 
-Note: if the markers surface inside a single merged `unparsed-source-gap` raw node rather than one raw node per marker, the assertion fails — inspect the actual `raw_sources` output. Markers embedded in a wider raw `source` string still count as observable ONLY if each token is a standalone node; a merged gap means the classifier must split on marker boundaries, which is a design change — STOP and escalate with the observed shape.
+Note for Test A: if a marker surfaces merged into a wider node rather than one `directive` node per marker, the assertion fails — a merged shape means the classifier must split on marker boundaries, which is a design change: STOP and escalate with the observed node list.
 
-- [ ] **Step 2: Run it**
+- [ ] **Step 2: Run both**
 
 ```bash
-cd ab-validator && cargo test -p ab-aozora-aat bare_toggle_markers_surface -- --nocapture
+cd ab-validator && cargo test -p ab-aozora-aat bare_toggle -- --nocapture
 ```
-Expected: PASS (facade delivers `directive` wire nodes per `crates/ab-aozora-syntax/src/degraded.rs`, and the adapter's `_` fallback arm at lib.rs:1395 emits one `raw_node` per directive). On FAIL: report BLOCKED with the printed `raw_sources`.
+Expected: both PASS (facade delivers `directive` wire nodes per `crates/ab-aozora-syntax/src/degraded.rs`; the adapter's `_` fallback arm at lib.rs:1395 emits one `raw_node` per directive). On FAIL: report BLOCKED with the printed node/raw lists. Neither test needs modification when Task 4's classifier lands: Test A pins the wire (unaffected by AAT-side adoption), Test B uses only orphan markers.
 
 - [ ] **Step 3: Record the preflight outcome**
 
@@ -218,8 +260,8 @@ Two deliverables: (a) a shared JSON vector file encoding the Contract 1 grammar'
 - Test: `reports/aat-fidelity/tests/test_audit_aat_delta.py` (append) and `reports/aat-fidelity/tests/test_bare_toggle_model.py` (create)
 
 **Interfaces:**
-- Consumes: `classify_line(line) -> LineOutcome` from `reports/aat-fidelity/bare-toggle-placement.py` (fields: `adopted_pairs: dict[str,int]`, `orphan_open`, `orphan_close`, `reopen` — all per-construct dicts; `interleave_events: int`, `proper_nestings: int`, `rollback_markers: int`, `invalid_constructs: set[str]`, `total_markers: int`). Existing audit helpers: `die(msg)`, `load_dir`, `strip_identity`, the `summary` dict shape, mode handler signature `(base_doc, cand_doc, name, summary)`.
-- Produces: mode name `bare-toggle-adoption` with CLI `audit-aat-delta.py bare-toggle-adoption BASELINE_DIR CANDIDATE_DIR --summary-json OUT [--expected-adopted-yokogumi N --expected-adopted-keigakomi N --expected-declined N]`; summary `classes` bucket `{identical, toggle_adopted}` plus `details {adopted_yokogumi_pairs, adopted_keigakomi_pairs, declined_markers, declined_by_reason: {orphan_open, orphan_close, reopen_rollback, interleave}}`. Task 9's hinoki run and Task 3's verifier consume this summary shape.
+- Consumes: `classify_tokens(tokens: list[tuple[str, str]]) -> LineOutcome` and `TOKEN_KIND: dict[str, tuple[str, str]]` from `reports/aat-fidelity/bare-toggle-placement.py` (LineOutcome fields: `adopted_pairs: dict[str,int]`, `orphan_open`, `orphan_close`, `reopen` — all per-construct dicts; `interleave_events: int`, `proper_nestings: int`, `rollback_markers: int`, `invalid_constructs: set[str]`, `total_markers: int`). Import via importlib exactly as `tests/test_bare_toggle_model.py` does. Existing audit helpers: `die(msg)`, `load_dir`, `strip_identity`, the `summary` dict shape, mode handler signature `(base_doc, cand_doc, name, summary)`.
+- Produces: mode name `bare-toggle-adoption` with CLI `audit-aat-delta.py bare-toggle-adoption BASELINE_DIR CANDIDATE_DIR --summary-json OUT [--expected-adopted-yokogumi N --expected-adopted-keigakomi N --expected-declined N]`; summary `classes` bucket `{identical, toggle_adopted}` plus `details {adopted_yokogumi_pairs, adopted_keigakomi_pairs, declined_markers, declined_by_reason: {orphan_open, orphan_close, reopen_rollback, interleave}}` — **all derived from the baseline dump via `classify_tokens`, never read from the placement report (review P5-4)**. Task 9's hinoki run and Task 3's verifier consume this summary shape.
 
 - [ ] **Step 1: Write the vector file**
 
@@ -511,8 +553,11 @@ def bare_toggle_adoption_mode(base_doc, cand_doc, name, summary):
     count_declined(cand, name, summary)
 ```
 
-`expand_adoptions(cand, base, name, adopted)` recursively copies `cand`; whenever it meets a dict with `kind in TOGGLE_KINDS` inside an inline array, it calls `normalize_adoption`, increments `adopted[kind]`, and splices `[make_raw(open_token, span_head), *recursed_content, make_raw(close_token, span_tail)]` in its place. The two synthetic raw markers' spans are RECOVERED FROM THE BASELINE: find in `base` the raw node with `source == token` whose span lies inside the container's span (fail-closed `die` if zero or >1 match) and use it verbatim — this makes the projection byte-exact without the audit re-deriving span arithmetic. `count_declined(doc, name, summary)` runs `collect_bare_toggle_raws` and adds `len(found)` to `details["declined_markers"]`; each found marker in the CANDIDATE must also exist in the BASELINE with identical `source` and `span` (raw-preservation invariant; `die` otherwise). Reason attribution: reconstruct each marker's line from sibling nodes is NOT attempted — instead the mode requires `--placement-summary` (optional path arg): when given, it reads the Revision 2 instrument summary and binds `details["declined_by_reason"]` from its `grammar_totals` (`orphan_open` → sum of per-construct `orphan_open`, `reopen_rollback` → `rollback_markers`, `interleave` → `interleave_events`, `orphan_close` likewise), then asserts `declined_markers == orphan_open + orphan_close + rollback_markers` from that summary. When the flag is absent (unit tests), reasons stay zero and only the total is checked.
+`expand_adoptions(cand, base, name, adopted)` recursively copies `cand`; whenever it meets a dict with `kind in TOGGLE_KINDS` inside an inline array, it calls `normalize_adoption`, increments `adopted[kind]`, and splices `[make_raw(open_token, span_head), *recursed_content, make_raw(close_token, span_tail)]` in its place. The two synthetic raw markers' spans are RECOVERED FROM THE BASELINE: find in `base` the raw node with `source == token` whose span lies inside the container's span (fail-closed `die` if zero or >1 match) and use it verbatim — this makes the projection byte-exact without the audit re-deriving span arithmetic.
+
+**Independent expectation derivation (review P5-4 — this is the load-bearing check):** add `derive_expected(base_doc) -> tuple[dict[str,int], dict[str,int]]`: collect the BASELINE's bare-toggle raw markers via `collect_bare_toggle_raws`, group them by line (`span["line_start"]`; `die` if any marker's `line_start != line_end`), order each group by `span["byte_start"]`, map each to its `(construct, kind)` via `TOKEN_KIND[source]`, and run `classify_tokens` per line. Sum into `(expected_adopted: {yokogumi, keigakomi}, expected_reasons: {orphan_open, orphan_close, reopen_rollback, interleave})` where `reopen_rollback` accumulates `rollback_markers` and the orphan counters sum both constructs. Per work, the mode then asserts: observed adoptions (from `expand_adoptions`) == that work's expected adoptions (`die` on mismatch, naming the work); accumulated into `details`, with `declined_by_reason` from the derivation and `declined_markers` from `count_declined`. Cross-check: `declined_markers == expected_reasons["orphan_open"] + expected_reasons["orphan_close"] + expected_reasons["reopen_rollback"] + <markers consumed by interleave events per the derivation>` — `die` if the arithmetic does not close. `count_declined(doc, name, summary)` runs `collect_bare_toggle_raws` over the CANDIDATE and requires each found marker to exist in the BASELINE with identical `source` and `span` (raw-preservation invariant; `die` otherwise). The placement report is NOT an input to this mode.
 3. Wire the three `--expected-*` flags: after the walk loop in `main`, if a flag is not None and the accumulated detail differs, `die(f"expected adopted yokogumi {n}, found {m}")` etc.
+4. Unit tests must include one INDEPENDENCE case: a baseline whose markers imply (via `classify_tokens`) one adoption, paired with a candidate that did NOT adopt it (markers still raw) → exit 2 ("candidate failed to adopt an expected pair"), and the converse (candidate adopts a pair the derivation says is invalid) → exit 2. Add both to the Step 4 test list.
 
 - [ ] **Step 7: Run the tests**
 
@@ -542,14 +587,14 @@ Model on `reports/aat-fidelity/verify-phase4-checkpoint.py` (read it first — r
 
 Checks to implement (each its own function, mirroring phase4's granularity):
 1. `check_stage`: the three C5 gate summaries carry `verdict: "PASS"`, one shared `candidate.commit == --c5`, one shared `bin_sha256`, `version` matching `^ab-aozora 0\.6\.0 aat-schema 2 facade 0\.3\.0 wire-schema 3 \(git <c5>\)$`.
-2. `check_audit`: audit summary `verdict == "PASS"`, `mode == "bare-toggle-adoption"`, `compared == 17886`, `details.adopted_yokogumi_pairs == 1582`, `details.adopted_keigakomi_pairs == 25`, `details.declined_markers == 24`, `details.declined_by_reason == {"orphan_open": 10, "orphan_close": 0, "reopen_rollback": 14, "interleave": 0}`.
-3. `check_conversion`: conversion summary `files_scanned == files_succeeded == 17886`, `files_failed == 0`, `mapping_version == "0.4.0"`, and `mapping_hash` equal to `--mapping-hash`.
-4. `check_mapping_generation`: recompute sha256 of `--mapping-file` bytes → must equal `--mapping-hash`; recompute sha256 of `--frozen-mapping` bytes → must equal `sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40`; `json.load(--mapping-file)["mapping_version"] == --mapping-version`; frozen file's `mapping_version == "0.3.0"`. (Note: if the registry hashes are canonical-JSON document hashes rather than raw byte hashes, match the hashing used by the conversion audit — check how `mapping_hash` in the C4 EDN row was computed (`ab-aat-to-parser-ir` sources, `document_hash`-style vs file bytes) and mirror it; the frozen-file check may then be `document_hash(frozen) == 7249cd72…`. The implementer MUST verify which hash the registry stores before coding this check.)
+2. `check_audit`: audit summary `verdict == "PASS"`, `mode == "bare-toggle-adoption"`, `compared == 17886`, `details.adopted_yokogumi_pairs == 1582`, `details.adopted_keigakomi_pairs == 25`, `details.declined_markers == 24`, `details.declined_by_reason == {"orphan_open": 10, "orphan_close": 0, "reopen_rollback": 14, "interleave": 0}` (these are independently derived by the audit from the baseline dump — Task 2).
+3. `check_conversion` (REAL summary shape — copy paths from `docs/superpowers/reports/2026-07-12-ab-aozora-phase4-c4-conversion-audit.summary.json`): `summary["totals"]["files_attempted"] == summary["totals"]["files_succeeded"] == 17886`, `summary["totals"]["files_failed"] == 0`, `summary["mapping"]["mapping_version"] == "0.4.0"`, `summary["mapping"]["mapping_hash"] == --mapping-hash`.
+4. `check_mapping_generation`: the registry/converter hash is the CANONICAL document hash — `abc_legacy_json_hash` (`crates/ab-aat-to-parser-ir/src/mapping.rs:63–68`), whose Python mirror is `reports/lib/legacy_json_c14n.py` (`canonical_json` → sha256 → `"sha256:" + hex`). Use the lib (import it; do NOT hash raw file bytes): canonical hash of `--mapping-file`'s parsed JSON == `--mapping-hash`; canonical hash of `--frozen-mapping`'s parsed JSON == `sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40`; `--mapping-file`'s `mapping_version == --mapping-version`; frozen file's `mapping_version == "0.3.0"`. (Task 6 Step 1 verifies the 7249cd72 reproduction BEFORE this task executes — see EXECUTION ORDER.)
 5. `check_admission`: verbatim from phase4 (capture contains `:status :admitted`; re-run `--admission-cmd` with cwd `<repo-root>/abc`, require exit 0 + `:admitted`).
-6. `check_repoint` (adapted `check_activation`): `git show --name-only` of `--repoint-commit`; changed paths ⊇ `{"ab-validator/reports/aat-fidelity/run-sets/current.json"}` and every path within an allowed set (exact list fixed in Task 10 — start with only `current.json` required and `ab-validator/docs/` allowed for the retention-note edit; the Task 10 implementer updates the constant to the actual commit shape BEFORE the commit is made, never after); parent blob's `ab-aozora` entry must contain the C4 commit `27772b1b…`, child blob and live file must contain `adapter_version_contains == --c5` and exactly 5 adapters.
+6. `check_repoint` (adapted `check_activation`): `git show --name-only` of `--repoint-commit`; changed paths must be EXACTLY `{"ab-validator/reports/aat-fidelity/run-sets/current.json"}` (Task 10 commits only that file; retention notes go in the closure commit — review P5-8 alignment); parent blob's `ab-aozora` entry must contain the C4 commit `27772b1b…`, child blob and live file must contain `adapter_version_contains == --c5` and exactly 5 adapters.
 7. `check_coverage`: coverage summary asserts `source_region_contract.verdict == "SOURCE_REGION_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"`, `custom_contract.verdict == "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"`, `tei_profile_contract.verdict == "TEI_PROFILE_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"`, top-level `verdict == "IR_PUBLICATION_COVERAGE_COMPLETE"`, `parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_COMPLETE"`, and the three source-authority occurrence counters == 0 (copy the counter names from `check_coverage` in verify-phase4-checkpoint.py:331).
 
-- [ ] **Step 1: Write failing tests** — `tests/test_verify_phase5_checkpoint.py` builds tmp gate/audit/conversion/coverage JSON fixtures + a tiny git repo (`git init`; commit a parent `current.json` with the C4 entry, then a child commit swapping to a C5 entry) and asserts: all-green fixtures → exit 0 + `CHECKPOINT OK`; then one negative per check (9+ tests): wrong adopted count, wrong mapping hash, frozen file byte-drift, missing `:admitted`, extra path in repoint commit, coverage verdict not COMPLETE, stage commit mismatch, conversion failure count, declined_by_reason mismatch. Skip the live-admission subprocess in tests via `--admission-cmd "true"`-style stub plus a capture file containing `:status :admitted` — and one test asserting a cmd that prints nothing fails.
+- [ ] **Step 1: Write failing tests** — `tests/test_verify_phase5_checkpoint.py` builds fixtures + a tiny git repo (`git init`; commit a parent `current.json` with the C4 entry, then a child commit swapping to a C5 entry) and asserts: all-green fixtures → exit 0 + `CHECKPOINT OK`; then one negative per check (10+ tests): wrong adopted count, wrong mapping hash, frozen-file canonical-hash drift, missing `:admitted`, extra path in repoint commit, coverage verdict not COMPLETE, stage commit mismatch, conversion failure count, declined_by_reason mismatch, admission command with no output. The conversion fixture is a COPY of the real `docs/superpowers/reports/2026-07-12-ab-aozora-phase4-c4-conversion-audit.summary.json` with only `totals`/`mapping` fields mutated per test — never an invented simplified shape (review P5-3). The green-path admission stub is `--admission-cmd "echo ':status :admitted'"` (the verifier requires `:admitted` in stdout; `true` prints nothing and MUST fail — that is the tenth negative test).
 - [ ] **Step 2: Run tests — expect failure (file absent).** `python3 -m pytest reports/aat-fidelity/tests/test_verify_phase5_checkpoint.py -q`
 - [ ] **Step 3: Implement** the script per the check list above (argparse exactly as in Interfaces; helpers copied from phase4 verifier with a comment naming the origin).
 - [ ] **Step 4: Run tests — all pass.** Also rerun the phase4 verifier tests if any helper was extracted rather than copied (prefer copying; do NOT refactor phase4's frozen instrument).
@@ -611,9 +656,34 @@ fn bare_toggle_nested_pair_becomes_child_container() {
 }
 ```
 
-Also add the two invariants tests: `bare_toggle_invalid_line_is_byte_identical` (compare full AAT of the interleave vector's line against the AAT produced BEFORE this task — pin by asserting all four markers survive as raw nodes and no yokogumi/keigakomi container exists) and `bare_toggle_multi_line_isolation` (two lines: valid pair on line 1, orphan on line 2 → line 1 adopts, line 2 raw — corpus case `000106_55753`).
+Also add the invariants tests (review P5-6 — STRUCTURAL EQUALITY, not marker survival). Make `pair_bare_toggles` `pub(crate)` so tests call it directly:
 
-- [ ] **Step 2: Run — expect all new tests fail** (`cargo test -p ab-aozora-aat bare_toggle`): no containers are produced yet (except the Task 1 preflight test which must KEEP passing until this task's implementation lands, then be UPDATED: after adoption exists, the preflight test's input pairs adopt, so change its input lines to orphan forms — e.g. `（例）［＃横組み］` and a lone `［＃罫囲み終わり］` — preserving its purpose of pinning raw observability for non-adopted markers; do this in the same commit as the implementation).
+```rust
+#[test]
+fn bare_toggle_zero_adoption_input_is_structurally_unchanged() {
+    // For every shared vector with zero adoptions, the pass must return
+    // the input array UNCHANGED — full structural equality, so no text,
+    // span, provenance, ordering, or field can drift unnoticed.
+    for line in [
+        "（例）［＃横組み］",                                          // orphan open
+        "ab［＃横組み終わり］cd",                                       // orphan close
+        "［＃横組み］a［＃横組み］b［＃横組み終わり］",                    // reopen
+        "［＃横組み］［＃罫囲み］x［＃横組み終わり］［＃罫囲み終わり］",     // interleave
+        "［＃横組み］a［＃横組み終わり］［＃横組み］",                     // rollback
+    ] {
+        let content = inline_array_for(line); // helper: build the pre-pass
+        // inline array for a one-line paragraph (extract the array the
+        // adapter feeds pair_bare_toggles — factor a small test hook or
+        // reuse inline_content directly with the same inputs).
+        let out = pair_bare_toggles(content.clone());
+        assert_eq!(out, content, "zero-adoption line must be identity: {line}");
+    }
+}
+```
+
+plus `bare_toggle_multi_line_isolation` (two lines: valid pair on line 1, orphan on line 2 → line 1 adopts, line 2's nodes structurally unchanged — corpus case `000106_55753`).
+
+- [ ] **Step 2: Run — expect all new tests fail** (`cargo test -p ab-aozora-aat bare_toggle`): no containers are produced yet. Task 1's two preflight tests keep passing unmodified before AND after this task (the wire test is unaffected by AAT-side adoption; the fallback test uses only orphan markers).
 - [ ] **Step 3: Implement `pair_bare_toggles`** per the contract above, called at the end of `inline_content`. Keep it a pure function `Vec<Value> -> Vec<Value>`; no `serde_json::Value` round-trips beyond the array manipulation itself (perf: the pass must be O(n) when a paragraph contains no markers — early-return on "no raw node with a bare-toggle source").
 - [ ] **Step 4: Run the full adapter suite** — `cargo test -p ab-aozora-aat`. Expected: all pass INCLUDING goldens (the five golden fixtures contain no bare toggles — verify with `grep -l "横組み］" crates/ab-aozora-aat/tests/goldens/` returning nothing; if a golden does contain one, regenerate it per `tests/goldens.rs`'s documented regeneration flow and include the diff in the commit).
 - [ ] **Step 5: Full workspace green** — `cargo check --workspace --all-targets && cargo fmt --check && just clippy`.
@@ -625,7 +695,7 @@ Also add the two invariants tests: `bare_toggle_invalid_line_is_byte_identical` 
 
 **Files:**
 - Create: `crates/ab-aozora-aat/tests/bare_toggle_model.rs`
-- Modify: `crates/ab-aozora-aat/Cargo.toml` (add `[dev-dependencies] proptest = "1.11"` and `serde_json` if not already a dev-dep)
+- Modify: `crates/ab-aozora-aat/Cargo.toml` (add `[dev-dependencies] proptest.workspace = true` — the workspace pins proptest 1.5 at `ab-validator/Cargo.toml:201`; never add a second literal version — and `serde_json` if not already a dev-dep)
 
 **Interfaces:**
 - Consumes: `reports/aat-fidelity/bare-toggle-model-vectors.json` (Task 2), the adapter's public AAT entry point used by `aat_value_for` (check `mod tests` — it calls `aat_json_from_bytes`; the integration test must use the crate's public API: verify `aat_json_from_bytes` (or its public wrapper) is exported; if it is `pub(crate)`, use the `ab-aozora` binary via `tests/goldens.rs`'s pattern instead — read goldens.rs first and reuse its invocation helper).
@@ -638,7 +708,7 @@ Generator: token soup lines — `prop::collection::vec(prop_oneof![Just("［＃�
 
 Properties (each a separate `#[test]` inside `proptest!`):
 1. `every_marker_consumed_or_preserved_exactly_once`: count of token occurrences in input == (2 × containers of that construct… careful: containers consume one open+one close each) + raw-node survivors of that token. Exact check per token string: input occurrences == raw survivors + (containers of the construct, counted once for the open token and once for the close token).
-2. `invalid_only_lines_byte_identical`: if a generated line's `classify_line`-equivalent has zero adoptions (recompute expected adoptions in Rust with a tiny reimplementation of pass 1/2 over the token list — 30 lines, kept INSIDE the test file as the oracle), then the AAT for that line contains all its markers as raw nodes.
+2. `invalid_only_lines_structurally_unchanged`: if a generated line has zero adoptions (recompute expected adoptions in Rust with a tiny reimplementation of pass 1/2 over the token list — 30 lines, kept INSIDE the test file as the oracle), then `pair_bare_toggles(content.clone()) == content` — full structural equality of the pre-pass inline array (review P5-6), not mere marker survival.
 3. `deterministic`: running the adapter twice on the same input yields identical JSON.
 4. `line_isolation`: for a 2-line input, the AAT of line 1's paragraph content equals the AAT produced from line 1 alone (modulo spans' line numbers — compare kinds+values+sources only).
 5. `nesting_well_formed`: recursively, every `yokogumi`/`keigakomi` container's children spans lie within the parent span, and no container of the same kind is its own direct descendant on the same line without an intervening… (keep simple: parent span strictly contains child spans — that is the spec property).
@@ -669,7 +739,18 @@ cd ab-validator && cp data/aat-to-parser-ir-mapping-v2.json data/aat-to-parser-i
 cmp data/aat-to-parser-ir-mapping-v2.json data/aat-to-parser-ir-mapping-v2-0.3.0.json && echo BYTE-IDENTICAL
 git add data/aat-to-parser-ir-mapping-v2-0.3.0.json && git commit -m "chore(mapping): freeze mapping generation 0.3.0 as immutable file (pre-0.4.0)"
 ```
-Then verify the frozen generation's registry hash: determine how the C4 row's `mapping_hash` (`sha256:7249cd72…`) was computed by reading the hash-producing code in `crates/ab-aat-to-parser-ir` (search for `mapping_hash`; it may be a canonical-document hash rather than file bytes). Reproduce that computation against the frozen file and confirm it yields `7249cd72…`. Record the command + result in the task report (Task 3's `check_mapping_generation` mirrors this exact computation).
+Then verify the frozen generation's registry hash. The scheme is known: `abc_legacy_json_hash` (`crates/ab-aat-to-parser-ir/src/mapping.rs:63–68`), Python mirror `reports/lib/legacy_json_c14n.py`. Reproduce:
+
+```bash
+python3 -c "
+import json, hashlib, sys
+sys.path.insert(0, '.')
+from reports.lib.legacy_json_c14n import canonical_json
+doc = json.load(open('data/aat-to-parser-ir-mapping-v2-0.3.0.json'))
+print('sha256:' + hashlib.sha256(canonical_json(doc).encode()).hexdigest())
+"
+```
+Expected output: `sha256:7249cd727ef2da90dcd591e6009bead9235fe1c140697ee6bd70aacd9e85ee40` (check `canonical_json`'s exact API in the lib first — if callers are expected to use a provided hash helper, use that). If it does NOT reproduce, STOP: the hashing assumption is wrong and Task 3's `check_mapping_generation` must not be built on it. Record the command + output in the task report.
 
 - [ ] **Step 2: Failing converter test for generation binding.** In `tests/integration.rs` add: running the converter with `--expect-mapping-version 0.9.9` against the live mapping exits non-zero with a message containing `mapping generation mismatch`; with the correct version+hash it succeeds. (Follow the file's existing test harness pattern for invoking the binary/library.)
 - [ ] **Step 3: Implement**: add the two optional args, thread to `preflight`, add checks (after the existing tuple checks at mapping.rs:96–107):
@@ -693,7 +774,7 @@ if let Some(expected_hash) = expect_mapping_hash {
 }
 ```
 (`computed_hash` = whatever the audit already computes for the registry row — reuse that code path, do not introduce a second hashing scheme.)
-- [ ] **Step 4: Edit the live mapping to 0.4.0.** Set `mapping_version: "0.4.0"`. Add transform-rule descriptions for the two new observed path families, following the file's existing entry shape exactly (copy an S-rule entry as a template — e.g. S-05 — and adjust): one rule for inline `yokogumi` containers, one for inline `keigakomi` containers (next free S-numbers), each with: the path pattern the converter will observe (`…content[].yokogumi` family — transcribe the pattern format used by existing inline_container rules for `style`), `disposition` matching how existing inline_container kinds convert, an `observed` counter field set to 0 with a note "populated at C5 freeze (Task 9 re-emits the audited counts)", and a description that STATES THE SPAN PROJECTION: "AAT container span is marker-inclusive; parser-IR spans are constructed from visible decoded text (convert.rs `append_visible_content_text`); marker bytes are not projected." Do NOT renumber or edit any existing rule.
+- [ ] **Step 4: Edit the live mapping to 0.4.0 — schema-valid fields ONLY (review P5-2).** Set `mapping_version: "0.4.0"`. Add transform-rule descriptions for the two new path families, following the file's existing entry shape EXACTLY (copy an S-rule entry — e.g. S-05 — as a template and keep ONLY the properties the mapping schema admits; `MappingRule` in `crates/ab-aat-to-parser-ir/src/mapping.rs:12` has six properties and the schema sets `additionalProperties: false` — adding any other key fails the mapping's own preflight): one rule for inline `yokogumi` containers, one for inline `keigakomi` containers (next free S-numbers), with the path pattern format used by existing inline_container rules for `style`, a `disposition` matching how existing inline_container kinds convert, and a description that STATES THE SPAN PROJECTION: "AAT container span is marker-inclusive; parser-IR spans are constructed from visible decoded text (convert.rs `append_visible_content_text`); marker bytes are not projected." **No occurrence counters in the mapping — empirical counts live in the conversion-audit report only. Mapping 0.4.0 is FROZEN by this commit, before the authoritative conversion run, and is never rewritten from its own run's observations** (the hash committed here is the hash the registry row binds). Verify the mapping passes its own preflight (`cargo test -p ab-aat-to-parser-ir`). Do NOT renumber or edit any existing rule. Record the 0.4.0 canonical hash (same command as Step 1, against the live file) in the task report and in `.superpowers/sdd/phase5-identity.json`.
 - [ ] **Step 5: README generation table.** In `crates/ab-aat-to-parser-ir/README.md`'s v2 section add a two-row generation table: `0.3.0 — frozen at data/aat-to-parser-ir-mapping-v2-0.3.0.json, hash sha256:7249cd72… (registry coordinate of the 0.2.0-era…C4 rows)` / `0.4.0 — live at data/aat-to-parser-ir-mapping-v2.json, hash computed by audit-corpus, binds C5+`. Keep the existing "computed, never hand-written" note for the live file.
 - [ ] **Step 6: Tests + green.** `cargo test -p ab-aat-to-parser-ir && cargo check --workspace --all-targets && cargo fmt --check && just clippy`. Also re-run the converter's full test suite and `python3 -m pytest reports/aat-fidelity/tests/ -q` (no instrument reads the live mapping's version yet, but the canary tests in ab-check/ab-oracle read schema files — confirm untouched).
 - [ ] **Step 7: Commit** — `git commit -m "feat(converter): mapping 0.4.0 with inline toggle rules + generation-binding preflight"`
@@ -749,14 +830,14 @@ python3 reports/aat-fidelity/audit-aat-delta.py bare-toggle-adoption \
   /db/ab-validator/aat-corpus/ab-aozora-phase4-c4-27772b1/aat/ab-aozora \
   /db/ab-validator/aat-corpus/ab-aozora-phase5-c5-<short>/aat/ab-aozora \
   --summary-json ~/phase5-delta.summary.json \
-  --placement-summary <repo>/docs/superpowers/reports/2026-07-12-bare-toggle-placement-attribution.summary.json \
   --expected-adopted-yokogumi 1582 --expected-adopted-keigakomi 25 --expected-declined 24
 ```
-Expected: exit 0, `classes.toggle_adopted` == number of works carrying ≥1 adoption, `identical == 17886 - toggle_adopted`, details exactly 1582/25/24 with reasons 10/0/14/0. **Any exit 2 blocks the phase: diagnose, fix, MOVE C5, rerun.**
+Expected: exit 0, `classes.toggle_adopted` == number of works carrying ≥1 adoption, `identical == 17886 - toggle_adopted`, details exactly 1582/25/24 with `declined_by_reason == {orphan_open: 10, orphan_close: 0, reopen_rollback: 14, interleave: 0}` — all DERIVED by the audit from the C4 baseline dump (the placement report is not an input; agreement with its preregistered numbers is the independent confirmation). **Any exit 2 blocks the phase: diagnose, fix, MOVE C5, rerun.**
 3. **Conformance**: `just aozora-notation-spec-comparison` (full, 127 vectors) and `just official-docs-seed-comparison` (30 vectors) with the C5 binary wired as the ab-aozora adapter (the recipe builds from the checked-out tree — confirm the checkout IS C5); then `reports/parser-conformance/compare-adapter-rows.py` against the C4 summaries (`2026-07-12-phase4-c4-conformance{,-seed}.summary.json`) → gate summary with `must_fail: 0, must_skip: 0, differing_full: 0, differing_seed: 0`. Bare toggles appear in no conformance vector — any row drift is a regression.
 4. **Perf**: `python3 reports/aat-fidelity/run-perf-workset.py --workset data/perf-workset.json --corpus /db/ab-validator/perf-workset-corpus-v1 --baseline-cmd "<C4 binary> --mode aat" --baseline-id-bin <C4 binary> --candidate-cmd "<C5 binary> --mode aat" --candidate-id-bin <C5 binary> --runs 5 --out ~/phase5-perf.runner.json` — baseline is the C4 binary (build it from commit `27772b1b…` in a scratch checkout). Gate: median regression ≤ 10% (expect ≈0: the pass is O(n) skip for 17,542 untouched works); record `001562_56145` individually.
-5. **Conversion audit**: `just aat-to-parser-ir-full-audit` equivalent with explicit `--mapping data/aat-to-parser-ir-mapping-v2.json --expect-mapping-version 0.4.0 --expect-mapping-hash <hash>` over the C5 dump → summary with 17886/17886/0 + `--compat-edn-out` for Task 10; the mapping hash printed in the summary is recorded into the identity file and used in Task 3's/10's checkpoint args. Also update the 0.4.0 mapping's two new rules' `observed` counters from this audit's output IF the audit reports them (this is a mapping file edit AFTER C5 — mapping is not part of the adapter identity, but IS part of the registry row; do this edit BEFORE the registry row freeze, rerun the audit to confirm hash stability, and record both hashes if the counter edit changed the hash — the ROW binds the final hash).
-6. **Gate summaries**: wrap each raw output in the Phase 4 gate-summary shape (`stage: "c5"`, `gate`, `verdict`, `candidate {commit, bin_sha256}`, `version` = full join key with `(git <C5>)`).
+5. **Conversion audit**: `just aat-to-parser-ir-full-audit` equivalent with explicit `--mapping data/aat-to-parser-ir-mapping-v2.json --expect-mapping-version 0.4.0 --expect-mapping-hash <0.4.0 canonical hash from Task 6>` over the C5 dump → summary with `totals.files_attempted == totals.files_succeeded == 17886`, `totals.files_failed == 0`, `mapping.mapping_version == "0.4.0"`, `mapping.mapping_hash == <that hash>` + `--compat-edn-out` for Task 10. **The mapping is frozen (Task 6) and is NEVER edited from this run's observations (review P5-2)** — the new rules' empirical occurrence counts appear in the audit report only.
+6. **Durable identity record (review P5-7)**: commit `docs/superpowers/reports/<dated>-phase5-identity.json` containing: `candidate_commit` (C5), `candidate_bin_sha256`, the full join key, `facade_version`/`wire_schema`/`aat_schema` coordinates, `mapping_version` + canonical `mapping_hash` (0.4.0) + `frozen_mapping_hash` (0.3.0), corpus store path, baseline dump identity (`ab-aozora-phase4-c4-27772b1` + its run-set `content_hash`), candidate dump identity (path + `hash_aat_dir` content hash). `.superpowers/sdd/phase5-identity.json` remains git-ignored WORKING state; the committed record is the reviewable identity.
+7. **Gate summaries**: wrap each raw output in the Phase 4 gate-summary shape (`stage: "c5"`, `gate`, `verdict`, `candidate {commit, bin_sha256}`, `version` = full join key with `(git <C5>)`).
 
 Commit all frozen reports + summaries locally under `docs/superpowers/reports/` (dated), plus the runner JSONs verbatim.
 
@@ -766,7 +847,7 @@ Commit all frozen reports + summaries locally under `docs/superpowers/reports/` 
 
 - [ ] **Step 1: Registry row.** Append the C5 row to `abc/data/aat-parser-ir-compatibility.edn` by copying the row from Task 9's `--compat-edn-out` file VERBATIM (byte-exact whole-row equality is the admission rule — never hand-edit). Expected row fields: `:aat_adapter_version "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git <C5>)"`, `:mapping_version "0.4.0"`, `:mapping_hash` = Task 9's final hash, evidence scope 17886/17886/0. Commit (abc-side commit).
 - [ ] **Step 2: Admission.** `cd abc && clojure -M:abc/aat-compat-admission -- --candidates <repo>/ab-validator/docs/superpowers/reports/<dated>-ab-aozora-phase5-c5-compat.edn | tee <repo>/ab-validator/docs/superpowers/reports/<dated>-phase5-admission-report.txt` (`set -o pipefail`). Expected `:status :admitted`. Commit the capture.
-- [ ] **Step 3: Atomic repoint commit.** ONE commit touching ONLY `reports/aat-fidelity/run-sets/current.json`: the `ab-aozora` entry's `aat_dir`/`run_descriptor` → the C5 dump paths, `adapter_version_contains` → `<C5>`, `content_hash` → `sha256:<hash_aat_dir of the C5 dump>` (compute with the same `reports/aat-fidelity/lib/aat_hash.py` function `resolve-run-set.py` uses — run `python3 -c "from reports.aat_fidelity... "` or a tiny helper; verify by running `python3 reports/aat-fidelity/resolve-run-set.py` → lock resolves green). Update Task 3's verifier `REPOINT_REQUIRED`/allowed-prefixes constants to exactly this commit's file set BEFORE committing the verifier change (verifier constant update is part of the PRE-repoint instrument commit, not the repoint commit itself; if the repoint commit shape changed since Task 3, amend the verifier FIRST in its own commit, then make the repoint commit).
+- [ ] **Step 3: Atomic repoint commit.** ONE commit touching EXACTLY ONE file, `ab-validator/reports/aat-fidelity/run-sets/current.json` (the verifier's `check_repoint` requires exactly this set — Task 3): the `ab-aozora` entry's `aat_dir`/`run_descriptor` → the C5 dump paths, `adapter_version_contains` → `<C5>`, `content_hash` → `sha256:<hash_aat_dir of the C5 dump>` (compute with the same `reports/aat-fidelity/lib/aat_hash.py` function `resolve-run-set.py` uses; verify by running `python3 reports/aat-fidelity/resolve-run-set.py` → lock resolves green). Retention notes, docs, and any other change go in OTHER commits.
 - [ ] **Step 4: Post-repoint coverage regeneration** (C5 wiring + Task 7 confirmation): run the coverage recipe; expect ALL Contract 5 assertions (top-level COMPLETE). Freeze as the phase's postactivation coverage report.
 - [ ] **Step 5: Checkpoint.** Run `verify-phase5-checkpoint.py` with every argument bound (gates from Task 9, audit summary, conversion summary, admission capture + live re-run cmd, `--repoint-commit <sha>`, `--run-set reports/aat-fidelity/run-sets/current.json`, `--coverage <postactivation summary>`, `--c5 <C5>`, mapping args from Task 6/9) `| tee` into the frozen checkpoint report (`set -o pipefail`). Expected: `CHECKPOINT OK` exit 0. Then run ONE negative probe (e.g. `--c5 <wrong sha>`) and record its `CHECKPOINT FAIL` in the report — proving the verifier bites.
 - [ ] **Step 6: Retention.** Record in the closure doc + memory: `ab-aozora-phase5-c5-<short>` joins the never-delete dump list (append-only; C4 dump stays).
@@ -821,8 +902,19 @@ fn ruby_entries_skips_segments_base_ruby() {
 
 - Append a Phase 5 closure section to `docs/handoffs/2026-07-10-parser-fork-provenance.md`: C5 identity + join key, gates table, mapping generation table (0.3.0 frozen file / 0.4.0 live), repoint commit, checkpoint result, coverage COMPLETE, keigakomi residual outcome, retention list (append C5 dump), rollback (revert repoint commit; mapping 0.3.0 remains in-tree).
 - Ledger: final Phase 5 section entries in `.superpowers/sdd/progress.md`.
-- Verify workspace green one last time: `cargo check --workspace --all-targets && cargo fmt --check && just clippy && python3 -m pytest reports/ -q` plus `nix flake check` at repo root if `ab-validator/flake.nix` inputs changed (they should NOT this phase — no flake input edits are planned; if any task touched one, run `nix flake update ab-validator` at the monorepo root per the Phase 4 lesson).
+- Verify workspace green one last time: `cargo check --workspace --all-targets && cargo fmt --check && just clippy && python3 -m pytest reports/ -q`, plus the monorepo's primary gate at the REPO ROOT: `just validate-migration` (root `justfile:52` — review P5-8 named this as the omitted primary check). `nix flake check` at repo root if `ab-validator/flake.nix` inputs changed (they should NOT this phase — no flake input edits are planned; if any task touched one, run `nix flake update ab-validator` at the monorepo root per the Phase 4 lesson).
 - Commit closure docs.
+
+## Review round 2 (plan review P5-1…P5-8) — incorporated
+
+- P5-1: placement evidence regenerated as Revision 3 over the shared `reports/lib/corpus_reader.py` contract (four-class candidate classification; windows-31j member names; tolerant 7zz). Empirical outcome: 17,886 works + 5 non-work + 2 recovered-extra (BOTH toggle-free — verified, so 1582/25/24 stands over the full readable universe) + 2 unreadable (named, no known reader). Note the review's premise was partially wrong: the four excluded files were not SJIS-name ZIPs (Python reads those; Java rejected them), and ABC's own strict 7zz fallback throws on the nonzero exits these need — recovery required a MORE tolerant reader than production has, which is why the two recoveries are a separate class outside the gate universe.
+- P5-2: no `observed` field in mapping rules (schema forbids it); counts live in the audit report; mapping 0.4.0 frozen before the authoritative run, never rewritten from its own observations.
+- P5-3: verifier binds `.totals.files_attempted/succeeded/failed` and `.mapping.mapping_version/mapping_hash`; canonical hash via `reports/lib/legacy_json_c14n.py` (mirror of `abc_legacy_json_hash`); real conversion-summary fixture; mapping freeze ordered before the verifier (see EXECUTION ORDER).
+- P5-4: the audit derives expected adoptions + decline reasons from the baseline dump via `classify_tokens` (token-level entry point added to the instrument); placement report demoted to preregistered evidence; independence negative-tests added.
+- P5-5: preflight split into a facade-wire test (paired markers, exact sources, ordered spans) and an AAT orphan-fallback test; neither changes when the classifier lands.
+- P5-6: zero-adoption identity asserted as full structural equality on `pair_bare_toggles` input/output, in unit tests and the property target.
+- P5-7: durable committed identity record (Task 9 deliverable 6); the `.superpowers` file is working state only.
+- P5-8: pipefail-safe clippy verification with an exact-crate filter; explicit-path staging (no `git add -u`); admission stub echoes `:admitted` (+ negative test for silent success); repoint commit = exactly `current.json` in both Task 3 and Task 10; root `just validate-migration` added to the final gate; `proptest.workspace = true`.
 
 ## Self-review notes (writing-plans checklist applied)
 

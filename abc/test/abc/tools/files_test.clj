@@ -103,3 +103,14 @@
                         (doall (rest paths))
                         nil
                         (catch java.io.IOException e e)))))))
+
+(deftest sorted-path-seq-propagates-security-errors-on-realization-test
+  (fs/with-temp-dir [root {}]
+    (let [failure (SecurityException. "listing denied")
+          paths (#'files/sorted-path-seq* root (fn [_] (throw failure)))]
+      (is (= root (first paths)))
+      (is (identical? failure
+                      (try
+                        (doall (rest paths))
+                        nil
+                        (catch SecurityException e e)))))))

@@ -1,5 +1,6 @@
 (ns abc.tools.source-assertion-test
   (:require [clojure.java.io :as io]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]))
 
 (def ^:private valid-present
@@ -35,3 +36,13 @@
   (testing "snapshot identity is a formatted SHA-256 value"
     (is (seq (validation-errors (assoc valid-present
                                        "snapshot_hash" "not-a-hash"))))))
+
+(deftest production-subprocesses-use-babashka-process-test
+  (let [sources (->> (file-seq (io/file "src"))
+                     (filter #(.isFile ^java.io.File %))
+                     (filter #(re-find #"\.cljc?$" (.getName ^java.io.File %))))]
+    (doseq [source sources :let [text (slurp source)]]
+      (is (not (string/includes? text "clojure.java.shell")) (str source))
+      (is (not (string/includes? text "ProcessBuilder")) (str source))
+      (is (not (re-find #"Runtime/getRuntime[^)]*\)\s*\.exec" text))
+          (str source)))))

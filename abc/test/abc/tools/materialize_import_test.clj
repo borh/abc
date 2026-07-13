@@ -2,6 +2,7 @@
   (:require [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-import :as materialize]
+            [abc.tools.validate-design-bundle :as validate]
             [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is]])
@@ -39,6 +40,15 @@
          (manifest/schema-hash "schemas/manifest.schema.json")))
   (is (not= (str "sha256:" (files/sha256-file "schemas/manifest.schema.json"))
             (manifest/schema-hash "schemas/manifest.schema.json"))))
+
+(deftest diagnostic-schema-hash-requires-the-exact-current-contract-test
+  (let [mismatch (files/example-hash "99")
+        errors (validate/schema-hash-errors
+                (temp-manifest-inputs {"diagnostic_schema_hash" mismatch}))]
+    (is (= 1 (count errors)))
+    (is (re-find (re-pattern (str "diagnostic_schema_hash " mismatch
+                                  " does not match ABC diagnostic schema hash"))
+                 (first errors)))))
 
 (deftest artifact-id-test
   (let [identity-object {"b" "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"

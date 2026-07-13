@@ -8,6 +8,12 @@
                           (:status %))
               (vals div/table))))
 
+(deftest d7-pin-chain-fix-is-dated-and-structural-test
+  (is (= :fixed (get-in div/table [:D7 :status])))
+  (is (re-find #"2026-07-12" (get-in div/table [:D7 :notes])))
+  (is (re-find #"archive, bundle, member, and primary-text identity"
+               (get-in div/table [:D7 :notes]))))
+
 (deftest expected-failure-inverts-while-open-test
   ;; Inversion semantics are pinned against a synthetic open entry so this
   ;; test stays valid as the real divergences get fixed.

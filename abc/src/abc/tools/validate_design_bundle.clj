@@ -318,6 +318,76 @@
     (throw (ex-info (string/join "\n" errors)
                     {:errors errors}))))
 
+(def ^:private design-schema-inputs
+  ["schemas/aat-parser-ir-divergence-bundle.schema.json"
+   "schemas/aat-parser-ir-divergence.schema.json"
+   "schemas/aat-parser-ir-mapping.schema.json"
+   "schemas/adr-claim-migration-baseline.schema.json"
+   "schemas/adr-evidence-run.schema.json"
+   "schemas/adr-external-evidence.schema.json"
+   "schemas/analysis-recipe.schema.json"
+   "schemas/analysis-result.schema.json"
+   "schemas/annotation-output.schema.json"
+   "schemas/comparison-report.schema.json"
+   "schemas/diagnostic.schema.json"
+   "schemas/iiif-applicability.schema.json"
+   "schemas/manifest-inputs.schema.json"
+   "schemas/manifest.schema.json"
+   "schemas/pack-policy.schema.json"
+   "schemas/parser-ir-publication-preservation.schema.json"
+   "schemas/parser-ir.schema.json"
+   "schemas/person-drift-event.schema.json"
+   "schemas/person-drift-index.schema.json"
+   "schemas/request-set.schema.json"
+   "schemas/run-summary.schema.json"
+   "schemas/snapshot-index.schema.json"
+   "schemas/source-assertion.schema.json"
+   "schemas/source-region-coverage.schema.json"
+   "schemas/tei-eaj-comparison.schema.json"
+   "schemas/tei-validation-result.schema.json"
+   "schemas/token-output.schema.json"
+   "schemas/workflow-run.schema.json"])
+
+(def ^:private design-data-inputs
+  ["data/aat-parser-ir-compatibility.edn"
+   "data/analysis-recipes/literary-basic-ja-v1.json"
+   "data/analysis-recipes/token-basic-ja-v1.json"
+   "data/pack-policies/no-pack-v1.json"
+   "data/pack-policies/parquet-basic-v1.json"
+   "data/parser-evidence-citations.edn"
+   "data/request-sets/demo-basic-ja.json"
+   "data/request-sets/full-corpus-analysis-basic-ja.json"
+   "data/request-sets/full-corpus-basic-ja.json"
+   "data/request-sets/full-corpus-publication-basic-ja.json"
+   "data/request-sets/smoke-basic-ja.json"])
+
+(def ^:private design-fixture-inputs
+  ["examples/ab-validator-output/comparison-report.json"
+   "examples/ab-validator-output/divergence.json"
+   "examples/ab-validator-output/manifest-inputs.json"
+   "examples/ab-validator-output/parser-ir.json"
+   "examples/ab-validator-output/run-summary.jsonl"
+   "examples/ab-validator-output/source-region-coverage.json"
+   "examples/ab-validator-output/warnings.jsonl"
+   "examples/v0/example-work/analysis-result.json"
+   "examples/v0/example-work/body-annotations.json"
+   "examples/v0/example-work/failure-manifest.example.json"
+   "examples/v0/example-work/manifest.json"
+   "examples/v0/example-work/parser-ir.json"
+   "examples/v0/example-work/source.manifest.json"
+   "examples/v0/example-work/tei-validation-result.json"
+   "examples/v0/example-work/token-stream.json"
+   "examples/v0/example-work/warnings.jsonl"
+   "examples/v0/snapshot/snapshot-index.json"
+   "examples/workflow/passed.workflow-run.json"
+   "fixtures/tei-eaj-comparison/workset-export.json"])
+
+(defn evidence-input-paths []
+  (->> (concat design-schema-inputs design-data-inputs design-fixture-inputs)
+       distinct
+       sort
+       vec))
+
 (defn validate-json-schemas! [extra-manifest-paths]
   (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
         adr-claim-migration-baseline-schema (files/read-json "schemas/adr-claim-migration-baseline.schema.json")

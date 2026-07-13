@@ -1,6 +1,7 @@
 (ns abc.tools.validate-design-bundle-test
   (:require [abc.tools.aat-parser-ir-compat :as compat]
             [abc.tools.files :as files]
+            [abc.tools.evidence-io :as evidence-io]
             [abc.tools.json :as abc-json]
             [abc.tools.malli :as am]
             [abc.tools.manifest :as manifest]
@@ -36,6 +37,13 @@
         run!)
       (run!))
     (is (false? @reached?))))
+
+(deftest evidence-input-catalog-equals-the-pure-schema-validation-read-set-test
+  (let [traced (evidence-io/with-read-trace
+                 {:identity-root "." :cwd-root "."}
+                 #(validate/validate-json-schemas! []))]
+    (is (= (validate/evidence-input-paths)
+           (:repository-paths traced)))))
 
 (deftest publication-view-temp-directory-cleanup-test
   (fs/with-temp-dir [root {}]

@@ -113,17 +113,11 @@
          "ADR lifecycle, dependency, claim, artifact, freshness, and evidence audit completed."))))
 
 (deftest root-schema-stage-b-governance-debt-predicate-is-exact-test
-  (let [root-flake (slurp (fs/file "../flake.nix"))
-        exact-predicate
-        (str "(.problems | length) == 195 and\n"
-             "                  ([.problems[].kind] | group_by(.) | map({(.[0]): length}) | add) == {\n"
-             "                    \"input-hash-mismatch\": 89,\n"
-             "                    \"missing-claim-header\": 80,\n"
-             "                    \"missing-release-authority\": 13,\n"
-             "                    \"missing-validation-scope\": 13\n"
-             "                  }")]
-    (is (string/includes? root-flake exact-predicate))
-    (is (not (string/includes? root-flake "(.problems | length) == 149")))))
+  (let [root-flake (slurp (fs/file "../flake.nix"))]
+    (is (string/includes? root-flake "abc/nix/adr-problem-identities.jq"))
+    (is (string/includes? root-flake
+                          "cmp expected-problem-identities.json actual-problem-identities.json"))
+    (is (not (string/includes? root-flake "(.problems | length) ==")))))
 
 (deftest shared-clojure-app-launcher-sets-user-home-quietly-test
   (let [flake (slurp "flake.nix")

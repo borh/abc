@@ -244,6 +244,7 @@
       (let [path "examples/v0/example-work/iiif/applicability.json"
             value (files/read-json path)]
         (is (nil? (iiif/validate-applicability! path)))
+        (is (contains? value "derived_manifest"))
         (is (= (= "applicable" (get value "status"))
                (string? (get value "derived_manifest"))))))))
 
@@ -253,6 +254,7 @@
     (fn []
       (let [value (files/read-json
                    "examples/v0/example-work/iiif/applicability.json")]
+        (is (contains? value "derived_manifest"))
         (is (= ["000127" "not_applicable" nil]
                [(get value "work_id")
                 (get value "status")

@@ -44,6 +44,80 @@
                                  #(evidence-io/with-ephemeral-root identity identity))
                                (catch Exception e e)))))))))
 
+(deftest ephemeral-root-requires-trace-and-external-workspace-test
+  (let [identity (fs/file (fs/create-temp-dir {:prefix "identity-auth-"}))
+        workspace (fs/file (fs/create-temp-dir {:prefix "workspace-auth-"}))
+        workspace-alias (fs/file workspace "nested" "..")]
+    (fs/create-dirs (fs/file workspace "nested"))
+    (is (= :invalid-ephemeral-root
+           (:kind (ex-data (try
+                             (evidence-io/with-ephemeral-root workspace identity)
+                             (catch Exception e e))))))
+    (is (= :invalid-ephemeral-root
+           (:kind (ex-data (try
+                             (evidence-io/with-read-trace
+                               {:identity-root identity
+                                :cwd-root identity
+                                :workspace-root workspace}
+                               #(evidence-io/with-ephemeral-root
+                                  workspace-alias identity))
+                             (catch Exception e e))))))))
+
+(deftest read-trace-workspace-defaults-to-canonical-identity-test
+  (let [identity (fs/file (fs/create-temp-dir {:prefix "identity-default-"}))]
+    (is (= (fs/file (fs/canonicalize identity))
+           (:value
+            (evidence-io/with-read-trace
+              {:identity-root identity :cwd-root identity}
+              #(:workspace-root evidence-io/*read-trace*)))))))
+
+(deftest owned-ephemeral-root-owns-lifecycle-and-traces-rereads-test
+  (let [identity (fs/file (fs/create-temp-dir {:prefix "identity-owned-"}))
+        workspace (fs/file (fs/create-temp-dir {:prefix "workspace-owned-"}))
+        seen (atom nil)
+        result (evidence-io/with-read-trace
+                 {:identity-root identity
+                  :cwd-root identity
+                  :workspace-root workspace}
+                 #(evidence-io/with-owned-ephemeral-root
+                    (fn [root]
+                      (reset! seen root)
+                      (is (fs/directory? root))
+                      (is (not (fs/starts-with? (fs/canonicalize root)
+                                                (fs/canonicalize identity))))
+                      (is (not (fs/starts-with? (fs/canonicalize root)
+                                                (fs/canonicalize workspace))))
+                      (let [generated (fs/file root "generated.txt")]
+                        (spit generated "generated")
+                        (files/read-text generated)
+                        (files/read-text generated)
+                        :ok))))]
+    (is (= :ok (:value result)))
+    (is (= [(str (fs/canonicalize (fs/file @seen "generated.txt")))]
+           (:ephemeral-paths result)))
+    (is (false? (fs/exists? @seen)))))
+
+(deftest owned-ephemeral-root-cleans-up-after-throw-test
+  (let [identity (fs/file (fs/create-temp-dir {:prefix "identity-throw-"}))
+        workspace (fs/file (fs/create-temp-dir {:prefix "workspace-throw-"}))
+        seen (atom nil)]
+    (is (thrown? Exception
+                 (evidence-io/with-read-trace
+                   {:identity-root identity
+                    :cwd-root identity
+                    :workspace-root workspace}
+                   #(evidence-io/with-owned-ephemeral-root
+                      (fn [root]
+                        (reset! seen root)
+                        (throw (Exception.)))))))
+    (is (false? (fs/exists? @seen)))))
+
+(deftest owned-ephemeral-root-requires-active-trace-test
+  (is (= :invalid-ephemeral-root
+         (:kind (ex-data (try
+                           (evidence-io/with-owned-ephemeral-root identity)
+                           (catch Exception e e)))))))
+
 (deftest ephemeral-copy-cannot-launder-a-repository-read-test
   (let [identity (fs/file (fs/create-temp-dir {:prefix "identity-copy-"}))
         temp (fs/file (fs/create-temp-dir {:prefix "ephemeral-copy-"}))

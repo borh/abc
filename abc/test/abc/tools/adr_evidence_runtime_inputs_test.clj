@@ -42,7 +42,8 @@
     (write! root "src/abc/tools/evidence_io.clj"
             (str "(ns abc.tools.evidence-io)\n"
                  "(defn with-read-trace [options thunk] (thunk))\n"
-                 "(defn with-ephemeral-root [root thunk] (thunk))\n"))
+                 "(defn with-ephemeral-root [root thunk] (thunk))\n"
+                 "(defn with-owned-ephemeral-root [thunk] (thunk \"tmp\"))\n"))
     (write! root "src/abc/tools/files.clj"
             "(ns abc.tools.files)\n(defn with-zip-file [archive callback] (callback archive))\n")
     (write! root "src/abc/tools/adr_evidence_runtime_inputs.clj"
@@ -353,6 +354,7 @@
         expected '{abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace! #{1}
                    abc.tools.evidence-io/with-read-trace #{1}
                    abc.tools.evidence-io/with-ephemeral-root #{1}
+                   abc.tools.evidence-io/with-owned-ephemeral-root #{0}
                    abc.tools.files/with-zip-file #{1}}]
     (is (= expected (select-keys signatures (keys expected))))
     (is (= (set (keys expected))
@@ -361,6 +363,7 @@
             [["deep owner" "(runtime/with-validated-read-trace! {} (first [slurp]))"]
              ["read trace" "(evidence-io/with-read-trace {} (first [slurp]))"]
              ["ephemeral root" "(evidence-io/with-ephemeral-root \"tmp\" (first [slurp]))"]
+             ["owned ephemeral root" "(evidence-io/with-owned-ephemeral-root (first [slurp]))"]
              ["zip callback" "(files/with-zip-file \"fixture.zip\" (first [slurp]))"]
              ["hidden process" "(evidence-io/with-ephemeral-root \"tmp\" (get {:run process/process} :run))"]]]
       (let [root (boundary-analyzer-repo
@@ -379,6 +382,13 @@
                      "(defn contract [] "
                      "(evidence-io/with-ephemeral-root \"tmp\" (fn [] true)))"))]
       (is (= ['abc.tools.evidence-io/with-ephemeral-root 'example.core/contract]
+             (:reachable-vars
+              (runtime/analyze-reachable-vars root ['example.core/contract])))))
+    (let [root (boundary-analyzer-repo
+                (str "(ns example.core (:require [abc.tools.evidence-io :as evidence-io]))\n"
+                     "(defn contract [] "
+                     "(evidence-io/with-owned-ephemeral-root (fn [_] true)))"))]
+      (is (= ['abc.tools.evidence-io/with-owned-ephemeral-root 'example.core/contract]
              (:reachable-vars
               (runtime/analyze-reachable-vars root ['example.core/contract])))))))
 

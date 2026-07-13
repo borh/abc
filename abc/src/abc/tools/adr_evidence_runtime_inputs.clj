@@ -108,10 +108,11 @@
 (defn with-validated-read-trace!
   "Run a physical-read boundary and validate that boundary's completed trace
   against the descriptor runtime-input manifest before returning its value."
-  [{:keys [identity-root cwd-root] :as options} thunk]
+  [{:keys [identity-root cwd-root workspace-root] :as options} thunk]
   (let [{:keys [value repository-paths]}
         (evidence-io/with-read-trace {:identity-root identity-root
-                                      :cwd-root cwd-root}
+                                      :cwd-root cwd-root
+                                      :workspace-root workspace-root}
           thunk)]
     (assert-runtime-input-closure! (assoc options :repository-paths repository-paths))
     value))
@@ -159,6 +160,7 @@
 (def ^:private trusted-adapter-vars
   '#{abc.tools.evidence-io/with-read-trace
      abc.tools.evidence-io/with-ephemeral-root
+     abc.tools.evidence-io/with-owned-ephemeral-root
      abc.tools.evidence-io/record-read!
      abc.tools.adr-evidence-runtime-inputs/assert-runtime-input-closure!
      abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace!
@@ -182,6 +184,7 @@
   '{abc.tools.adr-evidence-runtime-inputs/with-validated-read-trace! #{1}
     abc.tools.evidence-io/with-read-trace #{1}
     abc.tools.evidence-io/with-ephemeral-root #{1}
+    abc.tools.evidence-io/with-owned-ephemeral-root #{0}
     abc.tools.files/with-zip-file #{1}
     clojure.core/apply :first
     clojure.core/map :first

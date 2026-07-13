@@ -46,27 +46,40 @@
                         {:kind :external-read-denied :path (str file)})))))
   path)
 
-(defn with-read-trace [{:keys [identity-root cwd-root]} thunk]
+(defn with-read-trace [{:keys [identity-root cwd-root workspace-root]} thunk]
   (let [identity-root (canonical-file identity-root)
         cwd-root (canonical-file cwd-root)
+        workspace-root (canonical-file (or workspace-root identity-root))
         repository (atom (sorted-set))
         ephemeral (atom (sorted-set))]
     (binding [*read-trace* {:identity-root identity-root :cwd-root cwd-root
+                            :workspace-root workspace-root
                             :repository repository :ephemeral ephemeral}
               *ephemeral-roots* []]
       {:value (thunk)
        :repository-paths (vec @repository)
        :ephemeral-paths (vec @ephemeral)})))
 
+(defn- validate-external-root! [{:keys [identity-root workspace-root]} root]
+  (let [root (canonical-file root)]
+    (when (some #(or (below? % root) (below? root %))
+                [identity-root workspace-root])
+      (throw (ex-info "ephemeral root must be outside the identity and workspace trees"
+                      {:kind :invalid-ephemeral-root :path (str root)})))))
+
 (defn with-ephemeral-root [temp-root thunk]
   (if-not *read-trace*
     (throw (ex-info "ephemeral reads require an active read trace"
                     {:kind :invalid-ephemeral-root}))
-    (let [root (canonical-file temp-root)
-          identity-root (:identity-root *read-trace*)]
-      (when (or (below? identity-root root)
-                (below? root identity-root))
-        (throw (ex-info "ephemeral root must be outside the identity tree"
-                        {:kind :invalid-ephemeral-root :path (str root)})))
+    (let [root (canonical-file temp-root)]
+      (validate-external-root! *read-trace* root)
       (binding [*ephemeral-roots* (conj *ephemeral-roots* root)]
         (thunk)))))
+
+(defn with-owned-ephemeral-root [thunk]
+  (when-not *read-trace*
+    (throw (ex-info "owned ephemeral roots require an active read trace"
+                    {:kind :invalid-ephemeral-root})))
+  (fs/with-temp-dir [root {:prefix "abc-evidence-"}]
+    (validate-external-root! *read-trace* root)
+    (with-ephemeral-root root #(thunk root))))

@@ -203,14 +203,58 @@ Make these exact semantic changes before production edits:
 ;; soranoha_test.clj archive expectation:
 (is (= ["z.tar.zst"]
        (get (#'soranoha/archive-summary root) "paths")))
-
-;; soranoha_test.clj work ZIP expectation:
-(is (= []
-       (mapv (comp fs/path :file)
-             (#'build-publication/work-zip-files root))))
 ```
 
-Replace permission-based “unlistable directory is empty” tests; listing propagation is already deterministic at the helper boundary and must not rely on effective UID behavior.
+Delete these permission-based tests by name; do not translate their `chmod 000`
+fixtures to the new contract:
+
+- `recursive-traversals-treat-unlistable-directories-as-empty-test` from
+  `abc/test/abc/tools/soranoha_test.clj`;
+- `workset-treats-an-unlistable-directory-as-empty-test` from
+  `abc/test/abc/tools/source_snapshot_workset_test.clj`.
+
+After deleting the workset permission test, also remove its now-unused
+`java.nio.file.Files` and `java.nio.file.attribute.PosixFilePermissions` imports.
+
+Their effective-UID-dependent fixtures cannot prove propagation. The helper test in
+Task 1 proves the general lazy propagation rule. Add this deterministic schema-consumer
+test to prove the highest-impact consumer delegates listing without swallowing the
+exception:
+
+```clojure
+(deftest checked-in-schema-resources-propagates-listing-failures-test
+  (with-temp-dir [dir]
+    (let [failure (java.io.IOException. "schema listing failed")]
+      (with-redefs [fs/list-dir (fn [_] (throw failure))]
+        (is (identical? failure
+                        (try
+                          (#'schema/checked-in-schema-resources dir)
+                          nil
+                          (catch java.io.IOException e e))))))))
+```
+
+This is a consumer-level delegation assertion, not an attempt to unload and reload the
+schema namespace. Namespace initialization calls this same eager consumer; the Nix test
+in Task 3 proves successful load from the store tree.
+
+Add a real RED work-ZIP link test to `abc/test/abc/tools/soranoha_test.clj`; there is no
+existing work-ZIP symlink characterization to rewrite:
+
+```clojure
+(deftest work-zip-files-does-not-descend-through-directory-symlinks-test
+  (fs/with-temp-dir [base {}]
+    (let [root (fs/path base "root")
+          external (fs/path base "external")]
+      (fs/create-dirs root)
+      (fs/create-dirs external)
+      (spit (fs/file external "work.zip") "zip")
+      (fs/create-sym-link (fs/path root "linked") external)
+      (is (= []
+             (#'build-publication/work-zip-files root))))))
+```
+
+Against the old traversal this returns one map whose `:file` is
+`root/linked/work.zip`; after migration it returns the asserted empty vector.
 
 In `source_snapshot_workset_test.clj`, replace the existing link test with these two tests:
 
@@ -273,7 +317,11 @@ bin/kaocha --focus abc.tools.schema-test \
   --focus abc.tools.soranoha-test
 ```
 
-Expected: the new descendant-link exclusion assertions fail against the compatibility traversals. The “link itself is a work dir” assertion should already pass and documents the intentional boundary behavior.
+Expected: the schema, layout-report, archive, nested-workset, and work-ZIP exclusion
+assertions fail against the compatibility traversals. The schema propagation assertion
+also fails because the current consumer catches the injected exception. The “link itself
+is a work dir” assertion should already pass and documents the intentional boundary
+behavior.
 
 - [ ] **Step 3: Replace every duplicated traversal with the helper**
 

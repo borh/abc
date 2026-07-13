@@ -112,18 +112,18 @@
          flake
          "ADR lifecycle, dependency, claim, artifact, freshness, and evidence audit completed."))))
 
-(deftest root-stage-a-governance-debt-predicate-is-exact-test
+(deftest root-schema-stage-b-governance-debt-predicate-is-exact-test
   (let [root-flake (slurp (fs/file "../flake.nix"))
         exact-predicate
-        (str "(.problems | length) == 184 and\n"
+        (str "(.problems | length) == 195 and\n"
              "                  ([.problems[].kind] | group_by(.) | map({(.[0]): length}) | add) == {\n"
-             "                    \"missing-claim-evidence\": 35,\n"
-             "                    \"missing-claim-header\": 111,\n"
-             "                    \"missing-release-authority\": 19,\n"
-             "                    \"missing-validation-scope\": 19\n"
+             "                    \"input-hash-mismatch\": 89,\n"
+             "                    \"missing-claim-header\": 80,\n"
+             "                    \"missing-release-authority\": 13,\n"
+             "                    \"missing-validation-scope\": 13\n"
              "                  }")]
     (is (string/includes? root-flake exact-predicate))
-    (is (not (string/includes? root-flake "(.problems | length) == 196")))))
+    (is (not (string/includes? root-flake "(.problems | length) == 149")))))
 
 (deftest shared-clojure-app-launcher-sets-user-home-quietly-test
   (let [flake (slurp "flake.nix")

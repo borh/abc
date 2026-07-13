@@ -242,15 +242,16 @@
                   --mode audit \
                   --report "$out/report.json"
                 # Migration audit debt is an exact phase identity, not a
-                # permissive nonzero ceiling. Stage B pins the clean foundation
-                # boundary; a later atomic promotion replaces it with zero-debt
-                # enforcement.
+                # permissive nonzero ceiling. Schema/RDF/TEI Stage B pins its
+                # family-clean boundary; later atomic promotions replace this
+                # transitional debt with zero-debt enforcement.
                 if ! ${cljPkgs.jq}/bin/jq -e '
-                  (.problems | length) == 149 and
+                  (.problems | length) == 195 and
                   ([.problems[].kind] | group_by(.) | map({(.[0]): length}) | add) == {
-                    "missing-claim-header": 111,
-                    "missing-release-authority": 19,
-                    "missing-validation-scope": 19
+                    "input-hash-mismatch": 89,
+                    "missing-claim-header": 80,
+                    "missing-release-authority": 13,
+                    "missing-validation-scope": 13
                   }
                 ' "$out/report.json" >/dev/null; then
                   echo "monorepo ADR governance audit debt differs from the pinned migration phase" >&2

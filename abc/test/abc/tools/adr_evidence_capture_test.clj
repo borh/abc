@@ -135,7 +135,8 @@
 
 (deftest checked-in-schema-rdf-tei-observation-boundaries-are-valid-test
   (let [repo-root (fs/file (fs/canonicalize "."))
-        workspace-root (fs/file (fs/canonicalize ".."))
+        monorepo-layout? (fs/directory? "../abc")
+        workspace-root (fs/file (fs/canonicalize (if monorepo-layout? ".." ".")))
         catalog-value (catalog/load-catalog!
                        repo-root
                        "data/adr-evidence/schema-rdf-tei-observation-catalog.edn")
@@ -174,14 +175,23 @@
             (is (contains? (operational-problem-kinds extra)
                            :operational-input-set-mismatch)
                 (str stem " rejects an extra determinant")))
-          (is (map?
-               (runtime/validate-runtime-input-manifest!
-                {:repo-root repo-root
-                 :workspace-root workspace-root
-                 :descriptor {:path (str "abc/" descriptor-path)
-                              :value (update descriptor :runtime-input-manifest
-                                             #(str "abc/" %))}}))
-              stem))))))
+          (let [runtime-descriptor
+                (if monorepo-layout?
+                  {:path (str "abc/" descriptor-path)
+                   :value (update descriptor :runtime-input-manifest
+                                  #(str "abc/" %))}
+                  {:path descriptor-path
+                   :value (update-in descriptor [:input-profile :explicit]
+                                     #(mapv (fn [path]
+                                              (str/replace path #"^abc/" ""))
+                                            %))})]
+            (is (map?
+                 (runtime/validate-runtime-input-manifest!
+                  (cond-> {:repo-root repo-root
+                           :workspace-root workspace-root
+                           :descriptor runtime-descriptor}
+                    (not monorepo-layout?) (assoc :component-root "abc"))))
+                stem)))))))
 
 (defn- temp-dir [prefix]
   (fs/file (fs/create-temp-dir {:prefix prefix})))

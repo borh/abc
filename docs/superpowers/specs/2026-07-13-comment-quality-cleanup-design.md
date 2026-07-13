@@ -407,16 +407,21 @@ rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
 # C10: zero transient Phase refs
 # Matches project-management Phase labels (Phase-C, Phase-3 Lane B, Phase 1.2,
 # post-Phase-F, pre-Phase, Phase-0 responsibility) while excluding algorithm-
-# stage markers of the form "// --- Phase N: description ---" and path-
-# excluding sentences.rs (where all Phase refs are algorithm-stage markers).
+# stage markers of the form "// --- Phase N: description ---", path-
+# excluding sentences.rs (all Phase refs are algorithm-stage), and
+# path-excluding ortho-detect-ml/src/main.rs (string-literal report output).
 rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
   -i '\b(phase[- ][a-f]|phase[- ]lane|phase\s+\d\.\d|post-phase|pre-phase)\b' \
   ab-validator/ abc/src/ \
-  | grep -v 'sentences\.rs'
+  | grep -v 'sentences\.rs' \
+  | grep -v 'ortho-detect-ml/src/main\.rs'
 # C10-keep: verify algorithm-stage markers are still present
 rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
   '// --- Phase [0-9]:' ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs
-# Expected: matches (Phase 0 through Phase 5 + Phase-2 on line 509)
+# Expected: matches (Phase 0 through Phase 5 section markers).
+# Line 509 ("Phase-2 outer position") is protected by the sentences.rs path
+# exclusion and is not caught by the keep grep, which is fine — it's an
+# internal algorithm reference, not a transient label.
 
 # C11: the 6 stable invariant names are still present (NOT deleted)
 # Each of these should return matches — their presence is the pass condition.
@@ -435,9 +440,11 @@ done
 - C4 filters out the 6 stable invariant names via `grep -v` on the #NNN
   values. These are listed explicitly — not excluded by regex — so the command
   is auditable.
-- C10 excludes `sentences.rs` (all Phase refs there are algorithm-stage
-  markers) and uses `phase[- ][a-f]` to match transient lettered phases
-  (Phase-C, Phase-F) without matching numbered algorithm phases (Phase 0–5).
+- C10 excludes `sentences.rs` and `ortho-detect-ml/src/main.rs` (all Phase
+  refs in the former are algorithm-stage markers; the latter's Phase 2.5 refs
+  are in string-literal report output, not comments) and uses `phase[- ][a-f]`
+  to match transient lettered phases (Phase-C, Phase-F) without matching
+  numbered algorithm phases (Phase 0–5).
 - C10-keep is a presence check for algorithm-stage markers.
 - C11 is a presence check for the 6 kept invariant numbers.
 - Exit code 1 from ripgrep means "no matches found" (pass for C1–C10). Exit

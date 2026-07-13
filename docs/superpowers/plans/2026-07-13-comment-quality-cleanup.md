@@ -58,9 +58,9 @@ document moves.
 4. Dated spec/report references and handoff references are rewritten as
    self-contained prose; durable rationale is extracted into ADRs
    before the reference is removed.
-5. TODOs are converted to factual limitation statements. UNSTABLE
-   markers are removed (duplicating what `#[doc(hidden)]` already
-   communicates to tooling).
+5. TODOs are converted to factual limitation statements. Per-item
+   UNSTABLE markers are consolidated into a single crate- or
+   module-level `# Stability` section.
 6. References to upstream/external specifications (JIS, Unicode, TEI,
    IIIF, RDF, SHACL, JSON-LD) and to specific ADRs remain permitted.
 
@@ -189,13 +189,14 @@ git commit -m "adr: extract durable rationale from transient docs before cleanup
 
 ---
 
-### Task 1: Rewrite `ab-validator/crates/ab-aozora-aat/src/lib.rs`
+### Task 1: Rewrite `ab-validator/crates/ab-aozora-aat/`
 
 **Files:**
 - Modify: `ab-validator/crates/ab-aozora-aat/src/lib.rs`
+- Modify: `ab-validator/crates/ab-aozora-aat/tests/goldens.rs`
 
 **Categories:** B (Task/Plan labels), C (dated spec/report refs), K (transient Phase refs)
-~25 occurrences across 18 lines.
+~27 occurrences across both files.
 
 - [ ] **Step 1: Rewrite Task/Plan labels (Category B)**
 
@@ -241,7 +242,31 @@ The terminal-provenance-colophon-split.md rationale was extracted in Task 0c. Re
 |------|-----|-----|
 | 1942 | ```/// `docs/handoffs/2026-07-10-parser-fork-provenance.md`'s feature-unification hazard section``` | ```/// The `serde_json/preserve_order` feature, if leaked into this crate's feature graph, would switch `Value`'s map from `BTreeMap` to `IndexMap`, changing serialization order.``` |
 
-- [ ] **Step 4: Verify**
+- [ ] **Step 4: Rewrite Phase labels in goldens.rs**
+
+```bash
+rg -n -i '\bphase\b' ab-validator/crates/ab-aozora-aat/tests/goldens.rs
+```
+
+| Line | Old | New |
+|------|-----|-----|
+| 1 | `(Phase 3 rotation B).` | (delete parenthetical) |
+| 10 | `(Task 15; updated Task 14` | (delete — already covered by Task label removal above) |
+| 28 | `Task 14 retains it` | `retains it` |
+
+Also check `bare_toggle_model.rs`:
+
+```bash
+rg -n -i '\b(task|phase|plan)\b' ab-validator/crates/ab-aozora-aat/tests/bare_toggle_model.rs
+```
+| Line | Old | New |
+|------|-----|-----|
+| 4 | `plan amendment 2; Phase 5 Task 4).` | (delete parenthetical) |
+| 17 | `(Task 2)` | (delete tag) |
+| 204 | `(Phase 5 Task 5 spec).` | (delete parenthetical) |
+| 427 | `per the task spec` | `per the spec` |
+
+- [ ] **Step 5: Verify**
 
 ```bash
 # C2: zero Task/Plan labels in this file
@@ -258,11 +283,15 @@ rg -n 'docs/superpowers/(specs|reports)/' \
 rg -n 'docs/handoffs/' ab-validator/crates/ab-aozora-aat/src/lib.rs
 # Expected: no matches
 
+rg -n -i '\b(task\s*\d+|plan\s+[a-g]\.?\d|plan\s+amendment|plan\s+blocker)\b' \
+  ab-validator/crates/ab-aozora-aat/
+# Expected: no matches
+
 nix build ./ab-validator#checks.x86_64-linux.cargo-check
 nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
 ```
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add ab-validator/crates/ab-aozora-aat/src/lib.rs
@@ -292,9 +321,9 @@ The #237 references name the incremental re-parse feature. Replace with descript
 | 326 | `// #237 Tier 2 (PR-1) — structure-sharing piece-sequence.` | `// Structure-sharing piece-sequence for incremental region-find.` |
 | 344 | `specialisation the #237 Tier 2 design calls` | `specialisation the incremental design calls` |
 | 508 | `/// The #237 Tier 2 unified, truly incremental representation of a parse's three` | `/// The unified, truly incremental representation of a parse's three` |
-| 511 | `UNSTABLE ... (the #237 incremental` | `UNSTABLE ... (the incremental` |
-| 910 | `UNSTABLE ... (the #237 incremental API).` | `UNSTABLE ... (the incremental API).` |
 | 2136 | `documents (#237` | `documents (` |
+
+**Note:** Lines 511 and 910 are handled by Step 4 (UNSTABLE) — do NOT edit them in this step.
 
 - [ ] **Step 2: Rewrite #202 references (#202 = minimal-diff splice)**
 
@@ -527,7 +556,7 @@ git commit -m "chore(ab-aozora-pipeline): remove Task 13 and Phase 3 labels from
 
 **Files:**
 - Modify: `ab-validator/crates/ab-aozora-encoding/src/gaiji.rs` (D: #122, #181, #189, #326)
-- Modify: `ab-validator/crates/ab-aozora-pipeline/src/pipeline.rs` (D: #180, #202, #384 Track 2)
+- Modify: `ab-validator/crates/ab-aozora-pipeline/src/pipeline.rs` (D: #180, #202)
 - Modify: `ab-validator/crates/ab-aozora-facade/src/splice.rs` (D: #202)
 - Modify: `ab-validator/crates/ab-aozora-encoding/build.rs` (D: #89, #122, #326)
 - Modify: `ab-validator/crates/ab-aozora-render/src/spelling/source.rs` (D: #202)
@@ -790,6 +819,7 @@ git commit -m "chore: remove transient refs from facade/encoding crates and pipe
 - `ab-validator/crates/ab-aozora-corpus/` (J: Tier)
 - `ab-validator/crates/ab-aozora-proptest/` (J: Tier)
 - `ab-validator/crates/ab-aat-to-parser-ir/` (A: handoff, H: speculative)
+- `ab-validator/crates/ab-ir/` (K: transient Phase — `src/lib.rs` line 384 `# Phase 2 status`)
 - `ab-validator/crates/ab-warehouse/` (C: dated report)
 - `ab-validator/crates/ab-check/` (A: handoff)
 - `ab-validator/crates/ab-aozora/` (C: dated spec)
@@ -807,10 +837,14 @@ Delete all Task/Plan labels from comments. Key files: `lib.rs` (lines 569, 2884,
 
 TODO in pipeline.rs:1917: change to `// --ortho-detect is not yet threaded through the parallel/warehouse/selected paths.`
 
-- [ ] **Step 2: ortho-detect — Issue 2, Spec Decision #10, speculative**
+- [ ] **Step 2: ortho-detect — Issue 2, Spec Decision #10, Phase labels**
+
+Files: `policy.rs`, `historical.rs`, `types.rs`, `features.rs`, `ml.rs`
 
 policy.rs line 1: `(Issue 2, F3 / P1)` → delete parenthetical
 historical.rs line 1: `(Issue 2, Phase-3 Lane B / M2)` → `Historical-kana → modern-kana surface modernizer.` (delete parenthetical and transient Phase label)
+historical.rs line 221: `The Phase-3 Lane B` → `The` (delete Phase label)
+types.rs line 54: `The Phase-3 Lane B` → `The` (delete Phase label)
 features.rs line 181: `(spec Decision #10 partitions` → `(partitions`
 ml.rs line 23: `Per spec Decision #10.` → delete sentence
 
@@ -846,6 +880,10 @@ generators.rs lines 17, 96, 120: `Tier H` → `setext-vs-decorative-rule` or jus
 
 canonical_json.rs line 19: handoff reference → rewrite as inline rationale (already in the prose)
 structural_probe.rs line 733: `eventually export durable source aliases` → `// Source aliases are not yet exported; relying on this temporary mapping.`
+
+- [ ] **Step 8a: ab-ir — transient Phase reference**
+
+`ab-validator/crates/ab-ir/src/lib.rs` line 384: `/// # Phase 2 status — RESERVED, no producer yet` → `/// # Status — RESERVED, no producer yet`
 
 - [ ] **Step 9: warehouse, check, aozora, epub3 — handoffs and dated refs**
 
@@ -1010,17 +1048,20 @@ rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
 # C10: zero transient Phase refs
 # Matches project-management Phase labels (Phase-C, Phase-3 Lane B, Phase 1.2,
 # post-Phase-F, pre-Phase) while excluding algorithm-stage markers of the form
-# "// --- Phase N: description ---" and path-excluding sentences.rs.
+# "// --- Phase N: description ---", path-excluding sentences.rs (all Phase
+# refs are algorithm-stage), and path-excluding ortho-detect-ml/src/main.rs
+# (string-literal markdown report output).
 rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
   -i '\b(phase[- ][a-f]|phase[- ]lane|phase\s+\d\.\d|post-phase|pre-phase)\b' \
   ab-validator/ abc/src/ \
-  | grep -v 'sentences\.rs'
+  | grep -v 'sentences\.rs' \
+  | grep -v 'ortho-detect-ml/src/main\.rs'
 # Expected: no matches
 
 # C10-keep: verify algorithm-stage markers are still present
 rg -n --type-add 'src:*.{rs,clj,cljc,cljs}' -t src \
   '// --- Phase [0-9]:' ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs
-# Expected: matches (Phase 0 through Phase 5 + Phase-2 on line 509)
+# Expected: matches (Phase 0 through Phase 5 section markers).
 
 # C11: 6 stable invariant names still present
 for n in 78 228 331 333 384 435; do

@@ -58,12 +58,15 @@
        :else item))
    value))
 
-(defn- abc-legacy-json-c14n-v0-hash [mapping]
+(defn- abc-legacy-json-c14n-v0 [value]
   ;; Compatibility port of ab-validator's abc_legacy_json_c14n_v0: deep key
-  ;; sorting, compact UTF-8 JSON, historical slash escaping, then SHA-256.
-  (let [sorted (walk/postwalk #(if (map? %) (into (sorted-map) %) %) mapping)]
-    (str "sha256:" (hash/sha256-string
-                    (json/write-json-str sorted :escape-unicode false)))))
+  ;; sorting, compact UTF-8 JSON, and historical slash escaping.
+  (let [sorted (walk/postwalk #(if (map? %) (into (sorted-map) %) %) value)]
+    (-> (json/write-json-str sorted :escape-slash false :escape-unicode false)
+        (string/replace "/" "\\/"))))
+
+(defn- abc-legacy-json-c14n-v0-hash [mapping]
+  (str "sha256:" (hash/sha256-string (abc-legacy-json-c14n-v0 mapping))))
 
 (defn- mismatch [relative key-path expected-value actual]
   {:problem :phase5-coordinate-mismatch
@@ -103,21 +106,31 @@
                 :candidate (get summary "candidate")}]
     (compare-map relative (normalize expected-gate) (normalize actual))))
 
+(defn- exactly-one [relative key-path values]
+  (if (= 1 (count values))
+    {:value (nth values 0) :problems []}
+    {:value nil :problems [(mismatch relative key-path 1 (count values))]}))
+
 (defn frozen-tuple-problems [monorepo-root]
   (let [mapping-relative "ab-validator/data/aat-to-parser-ir-mapping-v2-0.4.0.json"
         mapping-file (path monorepo-root mapping-relative)
         mapping (files/read-json mapping-file)
-        producer (-> (files/read-edn (path monorepo-root compat-path)) :entries first normalize)
+        producer-selection (exactly-one compat-path [:entries]
+                                        (:entries (files/read-edn
+                                                   (path monorepo-root compat-path))))
+        producer (some-> (:value producer-selection) normalize)
         expected-row (select-keys expected row-keys)
         registry-relative "abc/data/aat-parser-ir-compatibility.edn"
         registry-rows (mapv normalize
                             (:entries (files/read-edn (path monorepo-root registry-relative))))
-        matches (filterv #(= (select-keys producer match-keys)
+        matches (filterv #(= (select-keys expected match-keys)
                              (select-keys % match-keys))
                          registry-rows)
         audit-relative (str reports-prefix "2026-07-12-ab-aozora-phase5-c5-conversion-audit.summary.json")
         audit (files/read-json (path monorepo-root audit-relative))
-        audit-row (normalize (first (get audit "compatibility_candidates")))
+        audit-selection (exactly-one audit-relative [:compatibility-candidates]
+                                     (get audit "compatibility_candidates"))
+        audit-row (some-> (:value audit-selection) normalize)
         schema-relative "abc/schemas/parser-ir.schema.json"
         schema (files/read-json (path monorepo-root schema-relative))
         schema-hash (str "sha256:" (hash/sha256-json-jcs schema))
@@ -130,26 +143,58 @@
      (remove
       nil?
       (concat
-       (compare-map compat-path expected-row producer)
+       (:problems producer-selection)
+       (when producer (compare-map compat-path expected-row producer))
        [(compare-coordinate mapping-relative [:mapping-byte-sha256]
                             (:mapping-byte-sha256 expected) (hash/sha256-file mapping-file))
         (compare-coordinate mapping-relative [:mapping-hash]
                             (:mapping-hash expected)
                             (abc-legacy-json-c14n-v0-hash mapping))
-        (compare-coordinate schema-relative [:parser-ir-schema-hash]
-                            "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"
-                            schema-hash)
+        (when (= (:parser-ir-schema-hash expected) schema-hash)
+          (mismatch schema-relative [:parser-ir-schema-hash]
+                    :not-historical schema-hash))
         (compare-coordinate schema-relative [:source-role-alternatives]
                             #{"primary_text_hash" "work_content_hash"} schema-alternatives)]
-       (compare-map audit-relative expected-row audit-row)
+       (:problems audit-selection)
+       (when audit-row (compare-map audit-relative expected-row audit-row))
+       (compare-map audit-relative
+                    {:totals {:files-attempted (get-in expected [:evidence-scope :files-scanned])
+                              :files-succeeded (get-in expected [:evidence-scope :files-succeeded])
+                              :files-failed (get-in expected [:evidence-scope :files-failed])}
+                     :mapping {:mapping-id (:mapping-id expected)
+                               :mapping-version (:mapping-version expected)
+                               :mapping-hash (:mapping-hash expected)
+                               :mapping-schema-hash (:mapping-schema-hash expected)
+                               :parser-ir-schema-id (:parser-ir-schema-id expected)
+                               :parser-ir-schema-hash (:parser-ir-schema-hash expected)
+                               :rules-total (get-in expected [:evidence-scope :rules-total])}}
+                    {:totals (select-keys (normalize (get audit "totals"))
+                                          [:files-attempted :files-succeeded :files-failed])
+                     :mapping (let [mapping-summary (normalize (get audit "mapping"))]
+                                {:mapping-id (:mapping-id mapping-summary)
+                                 :mapping-version (:mapping-version mapping-summary)
+                                 :mapping-hash (:mapping-hash mapping-summary)
+                                 :mapping-schema-hash (:mapping-schema-hash mapping-summary)
+                                 :parser-ir-schema-id (:target-parser-ir-schema-id mapping-summary)
+                                 :parser-ir-schema-hash (:target-parser-ir-schema-hash mapping-summary)
+                                 :rules-total (:rules-total mapping-summary)})})
        (if (= 1 (count matches))
-         (compare-map registry-relative producer (first matches))
-         [(mismatch registry-relative match-keys 1 (count matches))])
+         (when producer (compare-map registry-relative producer (nth matches 0)))
+         [(mismatch registry-relative [:entries] 1 (count matches))])
        (mapcat (fn [[relative gate]] (gate-problems monorepo-root relative gate))
                [[(str reports-prefix "2026-07-12-phase5-c5-delta.summary.json") "delta"]
                 [(str reports-prefix "2026-07-12-phase5-c5-conformance-gate.summary.json") "conformance"]
                 [(str reports-prefix "2026-07-12-phase5-c5-perf.summary.json") "perf"]
                 [conversion-relative "conversion"]])
+       (compare-map conversion-relative
+                    {:details {:files-attempted (get-in expected [:evidence-scope :files-scanned])
+                               :files-succeeded (get-in expected [:evidence-scope :files-succeeded])
+                               :files-failed (get-in expected [:evidence-scope :files-failed])
+                               :mapping-version (:mapping-version expected)
+                               :mapping-hash (:mapping-hash expected)}}
+                    {:details (select-keys (normalize (get conversion "details"))
+                                           [:files-attempted :files-succeeded :files-failed
+                                            :mapping-version :mapping-hash])})
        [(compare-coordinate conversion-relative [:converter-bin-sha256]
                             (:converter-bin-sha256 expected)
                             (get-in conversion ["details" "converter_bin_sha256"]))

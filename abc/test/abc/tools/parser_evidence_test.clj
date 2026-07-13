@@ -1,6 +1,9 @@
 (ns abc.tools.parser-evidence-test
   (:require [abc.tools.malli :as am]
+            [abc.tools.hash :as hash]
             [abc.tools.parser-evidence :as parser-evidence]
+            [abc.test-fs :refer [with-temp-dir]]
+            [babashka.fs :as fs]
             [clojure.edn :as edn]
             [clojure.test :refer [deftest is testing use-fixtures]]
             [clojure.test.check :as tc]
@@ -25,6 +28,77 @@
 (defn- has-error?
   [pattern errors]
   (boolean (some #(re-find pattern %) errors)))
+
+(deftest parser-evidence-duplicate-keys-have-named-pure-targets-test
+  (is (= (:evidence_id valid-entry)
+         (parser-evidence/evidence-id-key valid-entry)))
+  (is (= ((juxt :logical_path :sha256) valid-entry)
+         (parser-evidence/logical-file-key valid-entry))))
+
+(deftest parser-evidence-citation-files-are-content-addressed-test
+  (with-temp-dir [base]
+    (let [root (fs/file base "monorepo")
+          outside (fs/file base "outside.md")
+          passing (fs/file root "docs/passing.md")
+          drifted (fs/file root "docs/drifted.md")
+          escaped (fs/file root "docs/escaped.md")]
+      (fs/create-dirs (fs/parent passing))
+      (spit passing "passing bytes")
+      (spit drifted "changed bytes")
+      (spit outside "outside bytes")
+      (fs/create-sym-link escaped outside)
+      (let [index {:entries [{:evidence_id "passing"
+                              :logical_path "docs/passing.md"
+                              :sha256 (str "sha256:" (hash/sha256-file passing))}
+                             {:evidence_id "missing"
+                              :logical_path "docs/missing.md"
+                              :sha256 (str "sha256:" (apply str (repeat 64 "0")))}
+                             {:evidence_id "drifted"
+                              :logical_path "docs/drifted.md"
+                              :sha256 (str "sha256:" (apply str (repeat 64 "0")))}
+                             {:evidence_id "lexical-escape"
+                              :logical_path "../outside.md"
+                              :sha256 (str "sha256:" (hash/sha256-file outside))}
+                             {:evidence_id "real-path-escape"
+                              :logical_path "docs/escaped.md"
+                              :sha256 (str "sha256:" (hash/sha256-file outside))}]}]
+        (is (= [(sorted-map :kind :citation-missing
+                            :evidence-id "missing"
+                            :logical-path "docs/missing.md")
+                (sorted-map :kind :citation-hash-mismatch
+                            :evidence-id "drifted"
+                            :logical-path "docs/drifted.md")
+                (sorted-map :kind :citation-path-traversal
+                            :evidence-id "lexical-escape"
+                            :logical-path "../outside.md")
+                (sorted-map :kind :citation-real-path-escape
+                            :evidence-id "real-path-escape"
+                            :logical-path "docs/escaped.md")]
+               (parser-evidence/citation-file-problems root index)))))))
+
+(deftest historical-parser-citation-rows-are-exact-and-not-neutral-study-test
+  (let [root (fs/canonicalize "..")
+        ids #{"ab-validator/aozora-parser-comparison-study-2026-07-08"
+              "ab-validator/parser-fork-candidacy-faithful-comparison-2026-07-08"
+              "ab-validator/parser-comparison-followups-2026-07-09"}
+        rows (->> (:entries (parser-evidence/load-index))
+                  (filter #(contains? ids (:evidence_id %))))
+        expected {"ab-validator/aozora-parser-comparison-study-2026-07-08"
+                  ["ab-validator/docs/superpowers/reports/2026-07-08-aozora-parser-comparison-study.md"
+                   "sha256:8f68178186c9ccad2514c833098f3ffbc725183699757d5dc8182678c5826a59"]
+                  "ab-validator/parser-fork-candidacy-faithful-comparison-2026-07-08"
+                  ["ab-validator/docs/superpowers/reports/2026-07-08-parser-fork-candidacy-faithful-comparison.md"
+                   "sha256:ec0e5b7cdef6ea0c14b6ba59af8a35eb7b742b12a3da74683f771873330933e8"]
+                  "ab-validator/parser-comparison-followups-2026-07-09"
+                  ["ab-validator/docs/superpowers/specs/2026-07-09-parser-comparison-followups-handoff.md"
+                   "sha256:e13c904f36ddc4180f1326cdc375e6939716487e55318349c86c64e5158d2aa0"]}]
+    (is (= expected
+           (into {} (map (juxt :evidence_id
+                               (juxt :logical_path :sha256)) rows))))
+    (is (empty? (parser-evidence/citation-file-problems root {:entries rows})))
+    (is (every? #(not (contains? % :study_contract)) rows))
+    (is (every? #(not (contains? % :neutral_comparison)) rows))
+    (is (every? #(not= :neutral-comparison (:evidence_class %)) rows))))
 
 (deftest parser-evidence-index-validation-test
   (testing "accepts the committed evidence index"

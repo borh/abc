@@ -1,7 +1,9 @@
 (ns abc.tools.parser-evidence
   (:require [abc.tools.edn-registry :as registry]
             [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
             [abc.tools.malli :as am]
+            [abc.tools.path-containment :as path-containment]
             [clojure.string :as string]
             [malli.core :as m]))
 
@@ -37,6 +39,31 @@
        entry)
       (parser-evidence-malli-errors idx entry)))))
 
+(defn evidence-id-key [entry] (:evidence_id entry))
+
+(defn logical-file-key [entry] [(:logical_path entry) (:sha256 entry)])
+
+(defn citation-file-problems
+  [monorepo-root index]
+  (->> (:entries index)
+       (keep (fn [{:keys [evidence_id logical_path sha256]}]
+               (let [{:keys [state path]}
+                     (path-containment/path-state monorepo-root logical_path)
+                     kind (case state
+                            :missing :citation-missing
+                            :path-traversal :citation-path-traversal
+                            :malformed-path :citation-path-traversal
+                            :real-path-escape :citation-real-path-escape
+                            :ok (when-not (= sha256
+                                             (str "sha256:"
+                                                  (hash/sha256-file path)))
+                                  :citation-hash-mismatch))]
+                 (when kind
+                   (sorted-map :kind kind
+                               :evidence-id evidence_id
+                               :logical-path logical_path)))))
+       vec))
+
 (defn- duplicate-errors
   [entries]
   (let [dupes (fn [key-fn label]
@@ -49,8 +76,8 @@
                                (str "Parser evidence index duplicates " label
                                     " " k " at entries "
                                     (string/join ", " (map second pairs))))))))]
-    (vec (concat (dupes :evidence_id ":evidence_id")
-                 (dupes (juxt :logical_path :sha256)
+    (vec (concat (dupes evidence-id-key ":evidence_id")
+                 (dupes logical-file-key
                         "logical_path + sha256")))))
 
 (defn index-errors

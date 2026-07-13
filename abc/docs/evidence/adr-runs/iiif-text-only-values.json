@@ -72,7 +72,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.schema-validation-evidence-test\/iiif-text-only-values-contract-test\"",
-    "revision": "86c9b1fee08dc177c6003dba95a1842853871743",
+    "revision": "053669700d26e5040f522595e80a4bfb8942efe1",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

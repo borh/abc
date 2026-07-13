@@ -58,7 +58,7 @@
     "abc\/src\/abc\/tools\/tei_header.clj": "sha256:5cd035450cdbf1e1eceb7de02161629087a5241f543291f30a8ae4a0b9bd9b3e",
     "abc\/src\/abc\/tools\/validate_design_bundle.clj": "sha256:fcbf00fdbb7d822002670b7d657079255f1b48ca8647a33c7ab40accc67421c4",
     "abc\/test\/abc\/tools\/evidence_test_support.clj": "sha256:95b0174e4ac2188cf0b12255d8899d7d278a1b6f1dfbcd608b4ca16138a02bcc",
-    "abc\/test\/abc\/tools\/schema_validation_evidence_test.clj": "sha256:a30893b98be47cd4087f4a12398f22d30e351e0199a9a6d0cb69e3d58455fbd4"
+    "abc\/test\/abc\/tools\/schema_validation_evidence_test.clj": "sha256:03018bdf93c378e6808f501c375e24a4976b05a9586866e77c1ed786c7904392"
   },
   "observations":
   {
@@ -74,7 +74,7 @@
   "producer":
   {
     "command": "\"bin\/kaocha\" \"--focus\" \"abc.tools.schema-validation-evidence-test\/metadata-rdf-parity-test\"",
-    "revision": "93a693027f24a35caaabdd3faa7a0411f1ebf187",
+    "revision": "053669700d26e5040f522595e80a4bfb8942efe1",
     "tool": "bin\/kaocha"
   },
   "schema_version": "abc-adr-evidence-run-v1"

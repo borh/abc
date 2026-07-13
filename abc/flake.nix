@@ -185,7 +185,6 @@
             env = ''
               export PATH="${
                 pkgs.lib.makeBinPath [
-                  pkgs.git-cliff
                   pkgs.libxml2
                 ]
               }:''${PATH:-}"
@@ -398,6 +397,19 @@
           '';
         in
         {
+          git-cliff-config =
+            pkgs.runCommand "abc-git-cliff-config"
+              {
+                nativeBuildInputs = [
+                  pkgs.git
+                  pkgs.git-cliff
+                ];
+              }
+              ''
+                bash ${./nix/check-git-cliff-config.sh} ${./cliff.toml}
+                touch "$out"
+              '';
+
           clj-nix-focused-tests =
             pkgs.runCommand "abc-clj-nix-focused-tests"
               {

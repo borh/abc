@@ -19,6 +19,24 @@
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
 
+(deftest design-bundle-does-not-run-repository-history-checks-test
+  (let [git-cliff-var (ns-resolve 'abc.tools.validate-design-bundle
+                                  'validate-git-cliff!)
+        reached? (atom false)
+        run! #(with-redefs [validate/validate-publication-output! (fn [_])
+                            validate/validate-xml! (fn [])
+                            validate/validate-tei! (fn [& _])
+                            validate/validate-tei-schematron! (fn [_])]
+                (validate/validate-design-bundle!))]
+    (if git-cliff-var
+      (with-redefs-fn {git-cliff-var
+                       (fn []
+                         (reset! reached? true)
+                         (throw (ex-info "repository-history sentinel reached" {})))}
+        run!)
+      (run!))
+    (is (false? @reached?))))
+
 (deftest publication-view-temp-directory-cleanup-test
   (fs/with-temp-dir [root {}]
     (let [committed (fs/file root "committed")

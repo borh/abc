@@ -97,3 +97,73 @@ nix build ./abc#checks.x86_64-linux.clj-kondo
 ```
 
 Result: exit 0.
+
+---
+
+# ADR Evidence Migration Task 4: Hermetic Design Bundle and Synthetic Git-cliff Check
+
+## Status
+
+Implemented and verified. No evidence contracts were changed.
+
+## RED evidence
+
+Before editing, from the monorepo root:
+
+```sh
+nix run ./abc#validate-design-bundle
+```
+
+Exited 1 after `==> Checking git-cliff configuration` with `could not find repository` at the Nix-store ABC source.
+
+The new focused sentinel test was then run before production changes:
+
+```sh
+cd abc && bin/kaocha --focus abc.tools.validate-design-bundle-test/design-bundle-does-not-run-repository-history-checks-test
+```
+
+Result: `1 tests, 1 assertions, 1 errors, 0 failures`; the error was the expected `repository-history sentinel reached` at the old final Git-cliff stage.
+
+## GREEN evidence
+
+Focused sentinel: `1 tests, 1 assertions, 0 failures`.
+
+Complete namespace in the pinned flake dev-shell environment:
+
+```sh
+nix develop ./abc#default -c bash -lc \
+  'cd abc && bin/kaocha --focus abc.tools.validate-design-bundle-test'
+```
+
+Result: `67 tests, 231 assertions, 0 failures`.
+
+The direct local namespace run passed 65 tests and retained its two documented `TEI_SCHEMA_PATH` environment errors; the pinned dev shell supplied the required upstream schema for the complete GREEN run.
+
+Production boundaries:
+
+```sh
+bash abc/nix/check-git-cliff-config.sh abc/cliff.toml
+nix run ./abc#validate-design-bundle
+system="$(nix eval --impure --raw --expr builtins.currentSystem)"
+nix build "./abc#checks.${system}.git-cliff-config" --print-build-logs
+```
+
+All exited 0. The design-bundle output ended after IIIF with `design bundle validation ok` and contained no Git-cliff stage. The dedicated check generated a nonempty changelog in a synthetic repository.
+
+Quality checks:
+
+- `nix fmt abc/flake.nix`: passed.
+- `clj-paren-repair` on the modified Clojure files: no changes needed.
+- `clj-kondo --lint src/abc/tools/validate_design_bundle.clj test/abc/tools/validate_design_bundle_test.clj`: 0 errors, 0 warnings.
+- `git diff --check`: exit 0.
+
+## Files
+
+- `abc/src/abc/tools/validate_design_bundle.clj`
+- `abc/test/abc/tools/validate_design_bundle_test.clj`
+- `abc/nix/check-git-cliff-config.sh`
+- `abc/flake.nix`
+
+## Concerns
+
+None known.

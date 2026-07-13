@@ -826,10 +826,6 @@
                             {:committed (str committed)
                              :regenerated (str regen)}))))))))
 
-(defn validate-git-cliff! []
-  (run-command! "git-cliff" "--config" "cliff.toml" "--unreleased" "--strip" "header"
-                "--output" "/tmp/abc-changelog-check.md"))
-
 (defn validate-publication-output! [publication-output]
   (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
         preservation-schema (files/read-json "schemas/parser-ir-publication-preservation.schema.json")
@@ -1180,9 +1176,6 @@
         (tel/log! :info "==> Checking IIIF applicability record (ADR 0014)")
         (iiif/validate-applicability! "examples/v0/example-work/iiif/applicability.json")
         (tel/log! :info "iiif applicability record ok")
-        (tel/log! :info "==> Checking git-cliff configuration")
-        (validate-git-cliff!)
-        (tel/log! :info "git-cliff config ok")
         (tel/log! :info "design bundle validation ok")))))
 
 (defn -main [& _args]

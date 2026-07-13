@@ -56,9 +56,9 @@
         first-result (capture/capture!
                       {:repo-root repo :descriptor (descriptor ["sh" "-c" "exit 0"])
                        :output first-output})
-        second-result (capture/capture!
-                       {:repo-root repo :descriptor (descriptor ["sh" "-c" "exit 0"])
-                        :output second-output})
+        _ (capture/capture!
+           {:repo-root repo :descriptor (descriptor ["sh" "-c" "exit 0"])
+            :output second-output})
         value (json/read-json-file first-output)]
     (is (= 0 (:exit-code first-result)))
     (is (= (slurp first-output) (slurp second-output)))

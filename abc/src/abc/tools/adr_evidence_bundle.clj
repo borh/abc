@@ -3,7 +3,8 @@
             [abc.tools.json :as json]
             [abc.tools.path-containment :as containment]
             [abc.tools.schema :as schema]
-            [clojure.java.io :as io]
+            [abc.tools.files :as files]
+            [babashka.fs :as fs]
             [clojure.string :as str])
   (:import [clojure.lang LineNumberingPushbackReader]
            [java.time LocalDate]))
@@ -128,7 +129,7 @@
                        :namespace (str namespace-symbol)})))))
 
 (defn- ns-requires [file]
-  (with-open [reader (LineNumberingPushbackReader. (io/reader file))]
+  (with-open [reader (LineNumberingPushbackReader. (files/reader file))]
     (let [form (binding [*read-eval* false]
                  (read {:eof nil} reader))]
       (if (and (seq? form) (= 'ns (first form)))
@@ -157,7 +158,7 @@
                 relative (resolve-namespace repo-root namespace-symbol required?)]
             (if-not relative
               (recur queue (conj visited namespace-symbol) paths)
-              (let [dependencies (ns-requires (io/file repo-root relative))]
+              (let [dependencies (ns-requires (fs/file repo-root relative))]
                 (recur (into queue dependencies)
                        (conj visited namespace-symbol)
                        (conj paths relative)))))))
@@ -175,7 +176,7 @@
       "component-clojure-test-v1"
       (let [component-root (value-at input-profile :component-root)
             state (containment/path-state repo-root component-root)]
-        (when-not (and (= :ok (:state state)) (.isDirectory ^java.io.File (:path state)))
+        (when-not (and (= :ok (:state state)) (fs/directory? (:path state)))
           (throw (ex-info "component root is missing or escapes the workspace"
                           {:kind :missing-evidence-input
                            :component-root component-root
@@ -228,7 +229,7 @@
           (problem :missing-evidence-input
                    "derived evidence input is not bound by the artifact"
                    affected-claim-ids :artifact-path artifact-path :input-path path))
-        (for [[path expected-hash] (sort-by key inputs)
+        (for [[path _] (sort-by key inputs)
               :let [state (containment/path-state input-root path)]
               :when (not= :ok (:state state))]
           (problem (case (:state state)

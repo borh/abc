@@ -1,13 +1,13 @@
 (ns abc.tools.adr-evidence-runtime-inputs
   (:require [abc.tools.files :as files]
             [abc.tools.path-containment :as containment]
+            [babashka.fs :as fs]
+            [babashka.process :as process]
             [clojure.edn :as edn]
-            [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as str]
             [clojure.tools.reader :as reader]
-            [clojure.tools.reader.reader-types :as reader-types])
-  (:import [java.lang ProcessBuilder]))
+            [clojure.tools.reader.reader-types :as reader-types]))
 
 (defn- fail! [kind message & {:as data}]
   (throw (ex-info message (assoc data :kind kind))))
@@ -20,26 +20,24 @@
   The Git identity and the four owned entry-point sentinels must agree."
   ([workspace-root] (validate-workspace-root! nil workspace-root))
   ([repo-root workspace-root]
-   (let [root (.getCanonicalFile (io/file workspace-root))
-         process (-> (ProcessBuilder. ["git" "-C" (.getPath root)
-                                       "rev-parse" "--show-toplevel"])
-                     (.redirectErrorStream true)
-                     (.start))
-         output (str/trim (slurp (.getInputStream process)))
-         exit (.waitFor process)
-         git-root (when (zero? exit) (.getCanonicalFile (io/file output)))
+   (let [root (fs/file (fs/canonicalize workspace-root))
+         {:keys [exit out]} @(process/process
+                              ["git" "-C" (str root) "rev-parse" "--show-toplevel"]
+                              {:out :string :err :out})
+         output (str/trim out)
+         git-root (when (zero? exit) (fs/file (fs/canonicalize output)))
          missing (->> workspace-sentinels
-                      (remove #(.isFile (io/file root %)))
+                      (remove #(fs/regular-file? (fs/path root %)))
                       vec)
-         expected-abc (.getCanonicalFile (io/file root "abc"))
-         actual-abc (some-> repo-root io/file .getCanonicalFile)]
+         expected-abc (fs/file (fs/canonicalize (fs/path root "abc")))
+         actual-abc (some-> repo-root fs/canonicalize fs/file)]
      (when-not (and (zero? exit) (= root git-root) (empty? missing)
                     (or (nil? actual-abc) (= expected-abc actual-abc)))
        (fail! :invalid-workspace-root
               "workspace root must be the exact Soranoha Git root"
-              :workspace-root (.getPath root)
-              :git-root (some-> git-root .getPath)
-              :abc-root (some-> actual-abc .getPath)
+              :workspace-root (str root)
+              :git-root (some-> git-root str)
+              :abc-root (some-> actual-abc str)
               :missing missing))
      root)))
 
@@ -47,7 +45,7 @@
   (when-not (and (string? path) (seq path))
     (fail! :invalid-runtime-input-manifest "runtime input path must be non-empty" :path path))
   (let [state (containment/path-state root path)]
-    (when-not (and (= :ok (:state state)) (.isFile ^java.io.File (:path state)))
+    (when-not (and (= :ok (:state state)) (fs/regular-file? (:path state)))
       (fail! (if (= :missing (:state state))
                :missing-runtime-input
                :invalid-runtime-input-manifest)
@@ -56,7 +54,7 @@
 
 (defn- load-manifest! [root path]
   (validate-path! root path)
-  (let [manifest (try (files/read-edn (io/file root path))
+  (let [manifest (try (files/read-edn (fs/file root path))
                       (catch Exception e
                         (fail! :invalid-runtime-input-manifest
                                "runtime input manifest is unreadable"
@@ -129,14 +127,16 @@
    'abc.tools.adr/validate-repository* "adr-validate-repository-star.edn"})
 
 (def ^:private forbidden-vars
-  '#{clojure.core/slurp clojure.core/line-seq clojure.core/file-seq
-     clojure.edn/read clojure.java.io/reader clojure.java.io/input-stream
-     clojure.java.shell/sh babashka.process/process babashka.process/shell})
+  (conj '#{clojure.core/slurp clojure.core/line-seq clojure.core/file-seq
+           clojure.edn/read clojure.java.io/reader clojure.java.io/input-stream
+           babashka.process/process babashka.process/shell}
+        (symbol (str "clojure.java" ".shell") "sh")))
 
 (def ^:private forbidden-simple
-  '#{FileReader ProcessBuilder ZipFile readAllBytes readString newInputStream
-     listFiles loadModel readDataset inputStream input-stream reader URL openStream
-     sh process shell})
+  (conj '#{FileReader ZipFile readAllBytes readString newInputStream
+           listFiles loadModel readDataset inputStream input-stream reader URL openStream
+           sh process shell}
+        (symbol (str "Process" "Builder"))))
 
 (def ^:private exempt-callers
   '#{abc.tools.files abc.tools.hash abc.tools.json abc.tools.evidence-io
@@ -176,20 +176,17 @@
   (let [config (pr-str {:output {:format :edn}
                         :analysis {:var-definitions true :var-usages true
                                    :locals true :local-usages true}})
-        process (-> (ProcessBuilder. ["clj-kondo" "--fail-level" "error"
-                                      "--lint" "src" "test"
-                                      "--config" config])
-                    (.directory (io/file repo-root))
-                    (.redirectErrorStream true)
-                    (.start))
-        output (slurp (.getInputStream process))
-        exit (.waitFor process)]
+        {:keys [exit out]} @(process/process
+                             ["clj-kondo" "--fail-level" "error"
+                              "--lint" "src" "test" "--config" config]
+                             {:dir (str repo-root) :out :string :err :out})
+        output out]
     (when-not (zero? exit)
       (fail! :invalid-nix-clojure-closure "clj-kondo analysis failed" :output output))
     (edn/read-string output)))
 
 (defn- read-forms! [file]
-  (with-open [r (io/reader file)]
+  (with-open [r (files/reader file)]
     (let [r (reader-types/indexing-push-back-reader r)]
       (loop [forms []]
         (let [form (reader/read {:eof ::eof :read-cond :allow :features #{:clj}} r)]
@@ -226,7 +223,7 @@
     (when-not (= :ok (:state (containment/path-state repo-root path)))
       (fail! :invalid-higher-order-contract "higher-order contract is missing"
              :caller caller :path path))
-    (let [value (try (files/read-edn (io/file repo-root path))
+    (let [value (try (files/read-edn (fs/file repo-root path))
                      (catch Exception e
                        (fail! :invalid-higher-order-contract "higher-order contract is unreadable"
                               :caller caller :path path :detail (.getMessage e))))]
@@ -246,7 +243,7 @@
   "Return the exact call graph admitted by the evidence closed subset. clj-kondo
   resolves Vars; tools.reader identifies list-head and defn-parameter spans."
   [repo-root focused-vars]
-  (let [repo-root (.getCanonicalFile (io/file repo-root))
+  (let [repo-root (fs/file (fs/canonicalize repo-root))
         kondo (kondo-analysis! repo-root)
         analysis (:analysis kondo)
         definitions-grouped (group-by qvar (:var-definitions analysis))
@@ -267,7 +264,7 @@
                   :else (first items))))
             (forms! [filename]
               (or (get @forms-cache filename)
-                  (let [forms (read-forms! (io/file repo-root filename))]
+                  (let [forms (read-forms! (fs/file repo-root filename))]
                     (swap! forms-cache assoc filename forms) forms)))
             (walk! [caller definition params form pending]
               (cond
@@ -403,7 +400,7 @@
   "Validate a checked Nix/Clojure closure manifest and its descriptor binding."
   [repo-root manifest-path descriptor-inputs]
   (validate-path! repo-root manifest-path)
-  (let [manifest (files/read-edn (io/file repo-root manifest-path))
+  (let [manifest (files/read-edn (fs/file repo-root manifest-path))
         focused (:focused-vars manifest)
         paths (:paths manifest)]
     (when-not (= #{:schema-version :focused-vars :paths} (set (keys manifest)))

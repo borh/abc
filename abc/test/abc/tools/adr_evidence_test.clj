@@ -1,7 +1,7 @@
 (ns abc.tools.adr-evidence-test
   (:require [abc.tools.adr-evidence :as evidence]
             [abc.tools.adr-evidence-bundle :as bundle]
-            [clojure.test :refer [deftest is testing]]
+            [clojure.test :refer [deftest is]]
             [clojure.test.check :as tc]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]))

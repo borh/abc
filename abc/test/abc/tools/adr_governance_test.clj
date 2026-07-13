@@ -116,5 +116,5 @@
       (governance/run-cli! argv)
       (governance/run-cli! (into ["--"] argv)))
     (is (= [["/repo/abc" {:mode :audit :workspace-root "/repo"}]
-             ["/repo/abc" {:mode :audit :workspace-root "/repo"}]]
-            @calls))))
+            ["/repo/abc" {:mode :audit :workspace-root "/repo"}]]
+           @calls))))

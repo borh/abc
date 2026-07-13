@@ -1,7 +1,6 @@
 (ns abc.tools.adr-evidence-register-test
   (:require [abc.tools.adr-evidence :as evidence]
             [abc.tools.adr-evidence-register :as register]
-            [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]])
   (:import [java.nio.file Files]

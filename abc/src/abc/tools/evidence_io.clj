@@ -1,19 +1,19 @@
 (ns abc.tools.evidence-io
   (:require [abc.tools.path-containment :as containment]
-            [clojure.java.io :as io]
+            [babashka.fs :as fs]
             [clojure.string :as str]))
 
 (def ^:dynamic *read-trace* nil)
 (def ^:dynamic *ephemeral-roots* [])
 
 (defn- canonical-file [file]
-  (.getCanonicalFile (io/file file)))
+  (fs/file (fs/canonicalize file)))
 
 (defn- below? [root file]
   (.startsWith (.toPath (canonical-file file)) (.toPath (canonical-file root))))
 
 (defn- relative-key [root file]
-  (-> (.relativize (.toPath (canonical-file root)) (.toPath (canonical-file file)))
+  (-> (fs/relativize (canonical-file root) (canonical-file file))
       str
       (str/replace "\\" "/")))
 
@@ -22,10 +22,10 @@
   [path]
   (when *read-trace*
     (let [{:keys [identity-root cwd-root repository ephemeral]} *read-trace*
-          supplied (io/file path)
-          file (canonical-file (if (.isAbsolute supplied)
+          supplied (fs/path path)
+          file (canonical-file (if (fs/absolute? supplied)
                                  supplied
-                                 (io/file cwd-root (str path))))]
+                                 (fs/path cwd-root (str path))))]
       (cond
         (below? identity-root file)
         (let [key (relative-key identity-root file)
@@ -39,11 +39,11 @@
           (swap! repository conj key))
 
         (some #(below? % file) *ephemeral-roots*)
-        (swap! ephemeral conj (.getPath file))
+        (swap! ephemeral conj (str file))
 
         :else
         (throw (ex-info "external read is not authorized by this evidence boundary"
-                        {:kind :external-read-denied :path (.getPath file)})))))
+                        {:kind :external-read-denied :path (str file)})))))
   path)
 
 (defn with-read-trace [{:keys [identity-root cwd-root]} thunk]
@@ -67,6 +67,6 @@
       (when (or (below? identity-root root)
                 (below? root identity-root))
         (throw (ex-info "ephemeral root must be outside the identity tree"
-                        {:kind :invalid-ephemeral-root :path (.getPath root)})))
+                        {:kind :invalid-ephemeral-root :path (str root)})))
       (binding [*ephemeral-roots* (conj *ephemeral-roots* root)]
         (thunk)))))

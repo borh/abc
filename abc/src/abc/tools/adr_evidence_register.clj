@@ -3,11 +3,11 @@
             [abc.tools.adr-evidence :as evidence]
             [abc.tools.adr-evidence-bundle :as bundle]
             [abc.tools.adr-evidence-runtime-inputs :as runtime-inputs]
+            [abc.tools.cli :as abc-cli]
+            [abc.tools.files :as files]
             [abc.tools.path-containment :as containment]
-            [clojure.edn :as edn]
-            [clojure.java.io :as io]
-            [clojure.set :as set]
-            [clojure.tools.cli :as cli])
+            [babashka.fs :as fs]
+            [clojure.set :as set])
   (:import [java.nio.file CopyOption Files StandardCopyOption]))
 
 (def ^:private template-keys #{:schema-version :entries})
@@ -87,7 +87,7 @@
 
 (defn current-claims [repo-root]
   (vec
-   (for [{:keys [file status criteria]} (adr/parse-all (io/file repo-root "docs/adr"))
+   (for [{:keys [file status criteria]} (adr/parse-all (fs/file repo-root "docs/adr"))
          :when (= "Accepted" status)
          {:keys [claim-id] :as criterion} criteria
          :when claim-id]
@@ -121,27 +121,27 @@
 (defn register! [{:keys [repo-root workspace-root entries-path registry-path]}]
   (try
     (let [_ (when (and workspace-root
-                       (not= (.getCanonicalFile (io/file repo-root))
-                             (.getCanonicalFile (io/file workspace-root))))
+                       (not= (fs/canonicalize repo-root)
+                             (fs/canonicalize workspace-root)))
               (runtime-inputs/validate-workspace-root! repo-root workspace-root))
           entries-file (contained-file repo-root entries-path)
           registry-file (contained-file repo-root registry-path)
-          template (edn/read-string (slurp entries-file))
+          template (files/read-edn entries-file)
           materialized (materialize-template repo-root template)]
       (if (seq (:problems materialized))
         {:ok? false :problems (:problems materialized)}
         (let [entries (:entries materialized)
               owned (set (map :claim-id entries))
-              candidate (candidate-registry (edn/read-string (slurp registry-file)) entries)
+              candidate (candidate-registry (files/read-edn registry-file) entries)
               problems (evidence/validate-registry
                         {:repo-root repo-root
                          :workspace-root (or workspace-root repo-root)
                          :claims (current-claims repo-root)
                          :registry candidate
-                         :matrix (edn/read-string
-                                  (slurp (contained-file repo-root evidence/matrix-path)))
-                         :as-of (:as-of (edn/read-string
-                                         (slurp (contained-file repo-root evidence/as-of-path))))})
+                         :matrix (files/read-edn
+                                  (contained-file repo-root evidence/matrix-path))
+                         :as-of (:as-of (files/read-edn
+                                         (contained-file repo-root evidence/as-of-path)))})
               blocking (vec (remove #(allowed-migration-problem? owned %) problems))]
           (if (seq blocking)
             {:ok? false :problems problems}
@@ -155,17 +155,23 @@
 (def cli-options [[nil "--entries PATH"] [nil "--registry PATH"]
                   [nil "--workspace-root PATH"]])
 
-(defn- cli-args [args]
-  (if (= "--" (first args)) (rest args) args))
+(defn usage [_]
+  "Usage: clojure -M:abc/adr-evidence-register --entries PATH --registry PATH [--workspace-root PATH]")
 
 (defn -main [& args]
-  (let [{:keys [options errors]} (cli/parse-opts (cli-args args) cli-options)
-        result (if (or (seq errors) (nil? (:entries options)) (nil? (:registry options)))
-                 {:ok? false :problems [(problem :invalid-cli "--entries and --registry are required")]}
-                 (register! {:repo-root "." :entries-path (:entries options)
-                             :workspace-root (or (:workspace-root options) ".")
-                             :registry-path (:registry options)}))]
-    (if (:ok? result)
-      (println "Registered" (:registered result) "evidence entries")
-      (binding [*out* *err*] (println (pr-str (:problems result)))))
-    (System/exit (if (:ok? result) 0 1))))
+  (abc-cli/run-cli!
+   args
+   {:cli-options cli-options
+    :required [:entries :registry]
+    :max-args 0
+    :usage-fn usage
+    :run (fn [{:keys [options]}]
+           (let [result (register! {:repo-root "."
+                                    :entries-path (:entries options)
+                                    :workspace-root (or (:workspace-root options) ".")
+                                    :registry-path (:registry options)})]
+             (if (:ok? result)
+               (println "Registered" (:registered result) "evidence entries")
+               (binding [*out* *err*] (println (pr-str (:problems result)))))
+             result))
+    :fail? (complement :ok?)}))

@@ -2,9 +2,9 @@
   (:refer-clojure :exclude [run!])
   (:require [abc.tools.adr :as adr]
             [abc.tools.adr-evidence :as evidence]
+            [abc.tools.cli :as abc-cli]
             [abc.tools.json :as json]
-            [clojure.java.io :as io]
-            [clojure.tools.cli :as cli]))
+            [babashka.fs :as fs]))
 
 (def modes #{:legacy :audit :enforce})
 
@@ -24,7 +24,7 @@
      (assoc criterion :file file :status status))))
 
 (defn- strict-problems [repo-root workspace-root]
-  (let [adrs (adr/parse-all (io/file repo-root "docs/adr"))
+  (let [adrs (adr/parse-all (fs/file repo-root "docs/adr"))
         adr-problems (adr/validate-adrs adrs repo-root)
         evidence-problems
         (evidence/validate-registry
@@ -59,8 +59,8 @@
   "Parse CLI arguments, run governance, optionally write a report, and return
   the result value without exiting the process."
   [args]
-  (let [args (if (= "--" (first args)) (rest args) args)
-        {:keys [options arguments errors]} (cli/parse-opts args cli-options)
+  (let [{:keys [options arguments errors]}
+        (abc-cli/parse args {:cli-options cli-options})
         mode (keyword (:mode options))]
     (if (or (seq errors) (not (contains? modes mode)) (> (count arguments) 1))
       {:ok? false
@@ -76,10 +76,32 @@
           (json/write-deterministic-json-file! path (report-value result)))
         result))))
 
+(defn usage [_]
+  "Usage: clojure -M:abc/adr-governance [--mode legacy|audit|enforce] [--report PATH] [--repo-root PATH] [--workspace-root PATH] [REPO_ROOT]")
+
+(defn- emit-result! [{:keys [ok? problems] :as result}]
+  (binding [*out* *err*]
+    (doseq [{:keys [file kind message]} problems]
+      (println "ADR-LINT" file (str (name kind) ":") message)))
+  (when ok? (println "ADR governance valid"))
+  result)
+
 (defn -main [& args]
-  (let [{:keys [ok? problems exit-code]} (run-cli! args)]
-    (binding [*out* *err*]
-      (doseq [{:keys [file kind message]} problems]
-        (println "ADR-LINT" file (str (name kind) ":") message)))
-    (when ok? (println "ADR governance valid"))
-    (System/exit exit-code)))
+  (abc-cli/run-cli!
+   args
+   {:cli-options cli-options
+    :max-args 1
+    :usage-fn usage
+    :run (fn [{:keys [options arguments]}]
+           (let [mode (keyword (:mode options))]
+             (when-not (contains? modes mode)
+               (throw (ex-info "invalid ADR governance mode"
+                               {:mode (:mode options)})))
+             (let [repo-root (or (:repo-root options) (first arguments) ".")
+                   result (run! repo-root {:mode mode
+                                           :workspace-root (or (:workspace-root options)
+                                                               repo-root)})]
+               (when-let [path (:report options)]
+                 (json/write-deterministic-json-file! path (report-value result)))
+               (emit-result! result))))
+    :fail? (comp pos? :exit-code)}))

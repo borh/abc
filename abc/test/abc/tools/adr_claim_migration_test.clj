@@ -3,7 +3,7 @@
             [abc.tools.adr-claim-migration :as migration]
             [abc.tools.files :as files]
             [abc.tools.schema :as schema]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.test :refer [deftest is]]))
 
 (def revision "0123456789012345678901234567890123456789")
 
